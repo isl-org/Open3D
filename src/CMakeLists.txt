@@ -7,12 +7,15 @@ set(Open3DV_VERSION_MINOR "0")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# config options
+option(Open3DV_BUILD_TESTS "Build the Open3DV test programs" ON)
+
 # default built type
-IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Release CACHE STRING
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING
       "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
       FORCE)
-ENDIF(NOT CMAKE_BUILD_TYPE)
+endif(NOT CMAKE_BUILD_TYPE)
 
 # set include directories
 include_directories(
@@ -51,4 +54,7 @@ endif(WIN32)
 add_subdirectory(External)
 add_subdirectory(Core)
 add_subdirectory(Tools)
-add_subdirectory(Test)
+
+if(Open3DV_BUILD_TESTS)
+	add_subdirectory(Test)
+endif(Open3DV_BUILD_TESTS)

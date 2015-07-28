@@ -6,6 +6,8 @@
 
 int main(int argc, char *argv[])
 {
+	using namespace three;
+
 	PointCloud point_cloud;
 	std::cout << "Pointcloud has " << point_cloud.points_.size() << " points." << std::endl;
 

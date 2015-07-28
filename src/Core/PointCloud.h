@@ -3,6 +3,8 @@
 #include <vector>
 #include <Eigen/Core>
 
+namespace three {
+
 class PointCloud
 {
 public:
@@ -11,10 +13,12 @@ public:
 	
 public:
 	bool HasNormal() {
-		return normals_.size() == 0;
+		return normals_.size() == points_.size();
 	}
 
 public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;
 };
+
+}	// namespace three

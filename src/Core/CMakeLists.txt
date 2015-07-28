@@ -1,7 +1,5 @@
 file(GLOB CORE_ALL_HEADER_FILES "*.h")
 file(GLOB CORE_ALL_SOURCE_FILES "*.cpp")
-source_group("Header Files" FILES ${CORE_ALL_HEADER_FILES})
-source_group("Source Files" FILES ${CORE_ALL_SOURCE_FILES})
 add_library(Core ${Open3DV_LIB_TYPE} ${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES})
 
 install(TARGETS Core
