@@ -1,0 +1,2 @@
+add_executable(TestPointCloud TestPointCloud.cpp)
+target_link_libraries(TestPointCloud Core)
