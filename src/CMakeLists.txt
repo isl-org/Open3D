@@ -34,6 +34,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/bin)
 # Set OS-specific things here
 if(WIN32)
 	add_definitions(-DWINDOWS)
+	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)		# suppress C4996 warning
 	message(STATUS "Compiling on Windows")
 	if(MSVC)
 		message(STATUS "Compiling with MSVC")
@@ -53,6 +54,7 @@ endif(WIN32)
 
 add_subdirectory(External)
 add_subdirectory(Core)
+add_subdirectory(IO)
 add_subdirectory(Tools)
 
 if(Open3DV_BUILD_TESTS)
