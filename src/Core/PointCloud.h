@@ -13,12 +13,17 @@ public:
 	
 public:
 	bool HasNormal() {
-		return normals_.size() == points_.size();
+		return points_.size() > 0 && normals_.size() == points_.size();
+	}
+
+	bool HasColor() {
+		return points_.size() > 0 && colors_.size() == points_.size();
 	}
 
 public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;
+	std::vector<Eigen::Vector3d> colors_;
 };
 
 }	// namespace three
