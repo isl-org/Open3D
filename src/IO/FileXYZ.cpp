@@ -13,7 +13,7 @@ bool ReadPointCloudFromXYZ(
 		double x, y, z;
 
 		while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-			if (sscanf(line_buffer, "%ld %ld %ld", &x, &y, &z) == 3) {
+			if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
 				pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
 			}
 		}
