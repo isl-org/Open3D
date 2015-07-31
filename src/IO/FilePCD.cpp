@@ -36,15 +36,27 @@ namespace {
 enum PCDDataType {
 	PCD_DATA_ASCII = 0,
 	PCD_DATA_BINARY = 1,
-	PCD_DATA_BINARY_COMPRESSED = 2,	// Currently unsupported
+	PCD_DATA_BINARY_COMPRESSED = 2
 };
 
-PCDDataType ReadPCDHeader(FILE *file, PointCloud &pointcloud)
+bool ReadPCDHeader(FILE *file, PointCloud &pointcloud, PCDDataType &data_type)
 {
 	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
 
-
 	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
+		if (line_buffer[0] == 0 || line_buffer[0] == '#') {
+			continue;
+		}
+		const std::string line_str(line_buffer);
+		if (size_t pos = line_str.find_first_of(" \t\r") != std::string::npos) {
+			std::string line_type = line_str.substr(0, pos);
+			if (line_type == "VERSION") {
+				continue;
+			}
+			if (line_type == "FIELDS" || line_type == "COLUMNS") {
+				continue;
+			}
+		}
 	}
 
 	return PCD_DATA_ASCII;
