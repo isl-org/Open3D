@@ -9,7 +9,7 @@
 void PrintPointCloud(const three::PointCloud &pointcloud) {
 	using namespace three;
 	
-	bool pointcloud_has_normal = pointcloud.HasNormal();
+	bool pointcloud_has_normal = pointcloud.HasNormals();
 	PrintInfo("Pointcloud has %lu points.\n",
 			pointcloud.points_.size());
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
@@ -46,25 +46,29 @@ int main(int argc, char *argv[])
 
 	// 2. test pointcloud IO.
 
-	const std::string filename("test.xyz");
+	const std::string filename_xyz("test.xyz");
+	const std::string filename_ply("test.ply");
 
-	if (WritePointCloudToXYZ(filename, pointcloud)) {
-		PrintWarning("Successfully wrote %s\n\n", filename.c_str());
-	} else {
-		PrintError("Failed to write %s\n\n", filename.c_str());
-	}
-
-	PointCloud pointcloud_copy;
-	if (ReadPointCloudFromPLY(argv[1], pointcloud_copy)) {
+	if (ReadPointCloudFromPLY(argv[1], pointcloud)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
-		PrintPointCloud(pointcloud_copy);
-		if (WritePointCloudToXYZ(filename, pointcloud_copy)) {
-			PrintWarning("Successfully wrote %s\n\n", filename.c_str());
+		PrintPointCloud(pointcloud);
+		
+		PointCloud pointcloud_copy;
+		pointcloud_copy.CloneFrom(pointcloud);
+		
+		if (WritePointCloudToXYZ(filename_xyz, pointcloud)) {
+			PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
 		} else {
-			PrintError("Failed to write %s\n\n", filename.c_str());
+			PrintError("Failed to write %s\n\n", filename_xyz.c_str());
+		}
+
+		if (WritePointCloudToPLY(filename_ply, pointcloud_copy)) {
+			PrintWarning("Successfully wrote %s\n\n", filename_ply.c_str());
+		} else {
+			PrintError("Failed to write %s\n\n", filename_ply.c_str());
 		}
 	} else {
-		PrintError("Failed to read %s\n\n", filename.c_str());
+		PrintError("Failed to read %s\n\n", argv[1]);
 	}
 
 	// n. test end

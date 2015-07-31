@@ -37,6 +37,7 @@ bool ReadPointCloudFromPLY(
 
 bool WritePointCloudToPLY(
 		const std::string &filename,
-		const PointCloud &pointcloud);
+		const PointCloud &pointcloud,
+		const bool write_ascii = false);
 
 }	// namespace three

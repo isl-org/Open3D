@@ -35,7 +35,7 @@ bool WritePointCloudToXYZN(
 		const std::string &filename,
 		const PointCloud &pointcloud)
 {
-	if (pointcloud.HasNormal() == false) {
+	if (pointcloud.HasNormals() == false) {
 		return false;
 	}
 

@@ -59,17 +59,14 @@ int ReadColorCallback(p_ply_argument argument)
 	ply_get_argument_user_data(argument, 
 			reinterpret_cast<void **>(&state_ptr), &index);
 	double value = ply_get_argument_value(argument);
-	state_ptr->pointcloud_ptr->points_[state_ptr->color_index](index) = value / 255.0;
+	state_ptr->pointcloud_ptr->points_[state_ptr->color_index](index) =
+			value / 255.0;
 	if (index == 2) {	// reading 'z'
 		state_ptr->color_index++;
 		if (state_ptr->color_index > state_ptr->color_num) {
 			return 0;
 		}
 	}
-	return 1;
-}
-
-int WriteVertexCallback(p_ply_argument argument) {
 	return 1;
 }
 
@@ -81,11 +78,11 @@ bool ReadPointCloudFromPLY(
 {
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {
-		PrintDebug("Open PLY failed: unable to open file.\n");
+		PrintDebug("Read PLY failed: unable to open file.\n");
 		return false;
 	}
 	if (!ply_read_header(ply_file)) {
-		PrintDebug("Open PLY failed: unable to parse header.\n");
+		PrintDebug("Read PLY failed: unable to parse header.\n");
 		return false;
 	}
 
@@ -107,7 +104,7 @@ bool ReadPointCloudFromPLY(
 	ply_set_read_cb(ply_file, "vertex", "blue",  ReadColorCallback, &state, 2);
 
 	if (state.vertex_num <= 0) {
-		PrintDebug("Open PLY failed: number of vertex <= 0.\n");
+		PrintDebug("Read PLY failed: number of vertex <= 0.\n");
 		return false;
 	}
 
@@ -121,7 +118,7 @@ bool ReadPointCloudFromPLY(
 	pointcloud.colors_.resize(state.color_num);
 
 	if (!ply_read(ply_file)) {
-		PrintDebug("Open PLY failed: unable to read file.\n");
+		PrintDebug("Read PLY failed: unable to read file.\n");
 		return false;
 	}
 
@@ -131,8 +128,61 @@ bool ReadPointCloudFromPLY(
 
 bool WritePointCloudToPLY(
 		const std::string &filename,
-		const PointCloud &pointcloud)
+		const PointCloud &pointcloud,
+		const bool write_ascii/* = false*/)
 {
+	if (pointcloud.HasPoints() == false) {
+		PrintDebug("Write PLY failed: point cloud has 0 points.\n");
+		return false;
+	}
+	
+	p_ply ply_file = ply_create(filename.c_str(),
+			write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
+	if (!ply_file) {
+		PrintDebug("Write PLY failed: unable to open file.\n");
+		return false;
+	}
+	ply_add_comment(ply_file, "Created by Open3DV");
+	ply_add_element(ply_file, "vertex",
+			static_cast<long>(pointcloud.points_.size()));
+	ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+	ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+	ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+	if (pointcloud.HasNormals()) {
+		ply_add_property(ply_file, "nx", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+		ply_add_property(ply_file, "ny", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+		ply_add_property(ply_file, "nz", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+	}
+	if (pointcloud.HasColors()) {
+		ply_add_property(ply_file, "red", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
+		ply_add_property(ply_file, "green", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
+		ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
+	}
+	if (!ply_write_header(ply_file)) {
+		PrintDebug("Write PLY failed: unable to write header.\n");
+		return false;
+	}
+	
+	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+		const Eigen::Vector3d &point = pointcloud.points_[i];
+		ply_write(ply_file, point(0));
+		ply_write(ply_file, point(1));
+		ply_write(ply_file, point(2));
+		if (pointcloud.HasNormals()) {
+			const Eigen::Vector3d &normal = pointcloud.normals_[i];
+			ply_write(ply_file, normal(0));
+			ply_write(ply_file, normal(1));
+			ply_write(ply_file, normal(2));
+		}
+		if (pointcloud.HasColors()) {
+			const Eigen::Vector3d &color = pointcloud.colors_[i];
+			ply_write(ply_file, color(0) * 255.0);
+			ply_write(ply_file, color(0) * 255.0);
+			ply_write(ply_file, color(0) * 255.0);
+		}
+	}
+
+	ply_close(ply_file);
 	return true;
 }
 
