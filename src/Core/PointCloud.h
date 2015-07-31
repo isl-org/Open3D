@@ -12,13 +12,15 @@ public:
 	~PointCloud(void);
 	
 public:
-	bool HasNormal() {
+	bool HasNormal() const {
 		return points_.size() > 0 && normals_.size() == points_.size();
 	}
 
-	bool HasColor() {
+	bool HasColor() const {
 		return points_.size() > 0 && colors_.size() == points_.size();
 	}
+
+	void Clear() { points_.clear(); normals_.clear(); colors_.clear(); }
 
 public:
 	std::vector<Eigen::Vector3d> points_;

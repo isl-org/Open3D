@@ -23,4 +23,20 @@ bool WritePointCloudToXYZ(
 		const std::string &filename,
 		const PointCloud &pointcloud);
 
+bool ReadPointCloudFromXYZN(
+		const std::string &filename,
+		PointCloud &pointcloud);
+
+bool WritePointCloudToXYZN(
+		const std::string &filename,
+		const PointCloud &pointcloud);
+
+bool ReadPointCloudFromPLY(
+		const std::string &filename,
+		PointCloud &pointcloud);
+
+bool WritePointCloudToPLY(
+		const std::string &filename,
+		const PointCloud &pointcloud);
+
 }	// namespace three
