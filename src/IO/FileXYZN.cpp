@@ -1,6 +1,8 @@
 #include "Config.h"
 #include "PointCloudIO.h"
 
+#include <cstdio>
+
 namespace three{
 
 bool ReadPointCloudFromXYZN(
