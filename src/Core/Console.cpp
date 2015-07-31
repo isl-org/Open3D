@@ -1,6 +1,7 @@
 #include "Console.h"
 
 #include <cstdio>
+#include <cstdarg>
 #ifdef WIN32
 #include <windows.h>
 #endif
