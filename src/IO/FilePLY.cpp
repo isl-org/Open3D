@@ -42,7 +42,7 @@ int ReadNormalCallback(p_ply_argument argument)
 	ply_get_argument_user_data(argument, 
 			reinterpret_cast<void **>(&state_ptr), &index);
 	double value = ply_get_argument_value(argument);
-	state_ptr->pointcloud_ptr->points_[state_ptr->normal_index](index) = value;
+	state_ptr->pointcloud_ptr->normals_[state_ptr->normal_index](index) = value;
 	if (index == 2) {	// reading 'z'
 		state_ptr->normal_index++;
 		if (state_ptr->normal_index > state_ptr->normal_num) {
@@ -59,7 +59,7 @@ int ReadColorCallback(p_ply_argument argument)
 	ply_get_argument_user_data(argument, 
 			reinterpret_cast<void **>(&state_ptr), &index);
 	double value = ply_get_argument_value(argument);
-	state_ptr->pointcloud_ptr->points_[state_ptr->color_index](index) =
+	state_ptr->pointcloud_ptr->colors_[state_ptr->color_index](index) =
 			value / 255.0;
 	if (index == 2) {	// reading 'z'
 		state_ptr->color_index++;
@@ -177,8 +177,8 @@ bool WritePointCloudToPLY(
 		if (pointcloud.HasColors()) {
 			const Eigen::Vector3d &color = pointcloud.colors_[i];
 			ply_write(ply_file, color(0) * 255.0);
-			ply_write(ply_file, color(0) * 255.0);
-			ply_write(ply_file, color(0) * 255.0);
+			ply_write(ply_file, color(1) * 255.0);
+			ply_write(ply_file, color(2) * 255.0);
 		}
 	}
 
