@@ -24,36 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloud.h"
+#include "Config.h"
+#include "PointCloudIO.h"
+
+#include <cstdio>
 
 namespace three{
 
-PointCloud::PointCloud(void)
+namespace {
+
+enum PCDDataType {
+	PCD_DATA_ASCII = 0,
+	PCD_DATA_BINARY = 1,
+	PCD_DATA_BINARY_COMPRESSED = 2,	// Currently unsupported
+};
+
+PCDDataType ReadPCDHeader(FILE *file, PointCloud &pointcloud)
 {
+	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
+
+
+	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
+	}
+
+	return PCD_DATA_ASCII;
 }
 
-PointCloud::~PointCloud(void)
+}	// unnamed namespace
+
+bool ReadPointCloudFromPCD(
+		const std::string &filename,
+		PointCloud &pointcloud)
 {
+	return true;
 }
-	
-void PointCloud::CloneFrom(const PointCloud &reference)
+
+bool WritePointCloudToPCD(
+		const std::string &filename,
+		const PointCloud &pointcloud,
+		const bool write_ascii/* = false*/,
+		const bool compressed/* = false*/)
 {
-	Clear();
-
-	points_.resize(reference.points_.size());
-	for (size_t i = 0; i < reference.points_.size(); i++) {
-		points_[i] = reference.points_[i];
-	}
-
-	normals_.resize(reference.normals_.size());
-	for (size_t i = 0; i < reference.normals_.size(); i++) {
-		normals_[i] = reference.normals_[i];
-	}
-
-	colors_.resize(reference.colors_.size());
-	for (size_t i = 0; i < reference.colors_.size(); i++) {
-		colors_[i] = reference.colors_[i];
-	}
+	return true;
 }
 
 }	// namespace three
