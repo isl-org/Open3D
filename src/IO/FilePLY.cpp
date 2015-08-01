@@ -27,7 +27,6 @@
 #include "Config.h"
 #include "PointCloudIO.h"
 
-#include <Core/Console.h>
 #include <External/rply/rply.h>
 
 namespace three{

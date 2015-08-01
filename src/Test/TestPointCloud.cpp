@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include <iostream>
-#include <Core/Console.h>
-#include <Core/PointCloud.h>
-#include <IO/PointCloudIO.h>
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
 void PrintPointCloud(const three::PointCloud &pointcloud) {
 	using namespace three;
@@ -93,6 +93,10 @@ int main(int argc, char *argv[])
 	} else {
 		PrintError("Failed to read %s\n\n", argv[1]);
 	}
+
+	// 3. test pointcloud visualization
+
+	Visualizer visualizer;
 
 	// n. test end
 

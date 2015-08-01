@@ -28,7 +28,7 @@
 
 #include <string>
 
-#include <Core/PointCloud.h>
+#include <Core/Core.h>
 
 namespace three {
 

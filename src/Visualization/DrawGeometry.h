@@ -24,36 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloud.h"
+#pragma once
 
-namespace three{
+#include <string>
 
-PointCloud::PointCloud()
-{
-}
+#include <Core/Core.h>
 
-PointCloud::~PointCloud()
-{
-}
-	
-void PointCloud::CloneFrom(const PointCloud &reference)
-{
-	Clear();
+namespace three {
 
-	points_.resize(reference.points_.size());
-	for (size_t i = 0; i < reference.points_.size(); i++) {
-		points_[i] = reference.points_[i];
-	}
-
-	normals_.resize(reference.normals_.size());
-	for (size_t i = 0; i < reference.normals_.size(); i++) {
-		normals_[i] = reference.normals_[i];
-	}
-
-	colors_.resize(reference.colors_.size());
-	for (size_t i = 0; i < reference.colors_.size(); i++) {
-		colors_[i] = reference.colors_[i];
-	}
-}
+/// The convenient function of drawing a point cloud
+/// This function is a GLFW wrapper that creates a named window and draws a 
+/// pointcloud.
+/// Due to the limitation of GLFW, this function MUST be called from the main
+/// thread. It blocks the main thread until the window is closed.
+void DrawPointCloud(const std::string &window_name, const PointCloud &pointcloud);
 
 }	// namespace three

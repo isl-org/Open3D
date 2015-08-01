@@ -21,6 +21,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 include_directories(
 	${Open3DV_SOURCE_DIR}
 	${Open3DV_SOURCE_DIR}/External/Eigen
+	${Open3DV_SOURCE_DIR}/External/GLFW/include	
 	)
 
 # all static link, no dynamic links
@@ -55,6 +56,7 @@ endif(WIN32)
 add_subdirectory(External)
 add_subdirectory(Core)
 add_subdirectory(IO)
+add_subdirectory(Visualization)
 add_subdirectory(Tools)
 
 if(Open3DV_BUILD_TESTS)

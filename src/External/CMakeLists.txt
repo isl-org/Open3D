@@ -1,1 +1,1 @@
-add_subdirectory(rply)
+add_subdirectory(GLFW)

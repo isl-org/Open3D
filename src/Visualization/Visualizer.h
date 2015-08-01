@@ -24,36 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloud.h"
+#pragma once
 
-namespace three{
+#include <string>
 
-PointCloud::PointCloud()
-{
-}
+#include <GLFW/glfw3.h>
+#include <Core/Core.h>
 
-PointCloud::~PointCloud()
-{
-}
-	
-void PointCloud::CloneFrom(const PointCloud &reference)
-{
-	Clear();
+namespace three {
 
-	points_.resize(reference.points_.size());
-	for (size_t i = 0; i < reference.points_.size(); i++) {
-		points_[i] = reference.points_[i];
-	}
+class Visualizer  {
+public:
+	Visualizer();
+	~Visualizer();
 
-	normals_.resize(reference.normals_.size());
-	for (size_t i = 0; i < reference.normals_.size(); i++) {
-		normals_[i] = reference.normals_[i];
-	}
+public:
+	bool CreateWindow(const std::string window_name = "Open3DV", 
+			const int width = 640, const int height = 480);
+	void Run();
+	void AsyncRun();	// this call will not block the main thread.
 
-	colors_.resize(reference.colors_.size());
-	for (size_t i = 0; i < reference.colors_.size(); i++) {
-		colors_[i] = reference.colors_[i];
-	}
-}
+protected:
+	// main rendering function
+	virtual void Render();
+
+	// callback functions
+	virtual void WindowRefreshCallback(GLFWwindow *window);
+	virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
+	virtual void MouseMoveCallback();
+	virtual void MouseScrollCallback();
+	virtual void MouseButtonCallback();
+
+protected:
+	// window
+	GLFWwindow* window_;
+
+	// control
+	int window_width_;
+	int window_height_;
+
+	// geometry to be rendered
+	std::vector<const PointCloud *> pointclouds_;
+};
 
 }	// namespace three
