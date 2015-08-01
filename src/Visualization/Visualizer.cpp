@@ -87,6 +87,26 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	};
 	glfwSetFramebufferSizeCallback(window_, window_resize_callback);
 
+	auto mouse_move_callback = [](GLFWwindow *window, double x, double y) {
+		static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
+				MouseMoveCallback(window, x, y);
+	};
+	glfwSetCursorPosCallback(window_, mouse_move_callback);
+
+	auto mouse_scroll_callback = [](GLFWwindow *window, double x, double y) {
+		static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
+				MouseScrollCallback(window, x, y);
+	};
+	glfwSetScrollCallback(window_, mouse_scroll_callback);
+
+	auto mouse_button_callback = [](GLFWwindow *window,
+			int button, int action, int mods)
+	{
+		static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
+				MouseButtonCallback(window, button, action, mods);
+	};
+	glfwSetMouseButtonCallback(window_, mouse_button_callback);
+
 	return true;
 }
 
@@ -110,15 +130,16 @@ void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 {
 }
 
-void Visualizer::MouseMoveCallback()
+void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 {
 }
 
-void Visualizer::MouseScrollCallback()
+void Visualizer::MouseScrollCallback(GLFWwindow* window, double x, double y)
 {
 }
 
-void Visualizer::MouseButtonCallback()
+void Visualizer::MouseButtonCallback(GLFWwindow* window,
+		int button, int action, int mods)
 {
 }
 

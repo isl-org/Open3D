@@ -51,9 +51,9 @@ protected:
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);
 	virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
-	virtual void MouseMoveCallback();
-	virtual void MouseScrollCallback();
-	virtual void MouseButtonCallback();
+	virtual void MouseMoveCallback(GLFWwindow* window, double x, double y);
+	virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
+	virtual void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
 protected:
 	// window
