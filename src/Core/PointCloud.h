@@ -36,7 +36,12 @@ class PointCloud
 public:
 	PointCloud(void);
 	~PointCloud(void);
-	
+
+public:
+	void CloneFrom(const PointCloud &reference);
+	Eigen::Vector3d GetMinBound() const;
+	Eigen::Vector3d GetMaxBound() const;
+
 public:
 	bool HasPoints() const {
 		return points_.size() > 0;
@@ -52,8 +57,6 @@ public:
 
 	void Clear() { points_.clear(); normals_.clear(); colors_.clear(); }
 	
-	void CloneFrom(const PointCloud &reference);
-
 public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;

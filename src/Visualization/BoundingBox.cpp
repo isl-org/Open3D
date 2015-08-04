@@ -24,8 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
 #include "BoundingBox.h"
-#include "Visualizer.h"
-#include "DrawGeometry.h"
+
+namespace three{
+
+BoundingBox::BoundingBox() :
+		min_bound_(0.0, 0.0, 0.0),
+		max_bound_(0.0, 0.0, 0.0)
+{
+}
+
+BoundingBox::~BoundingBox()
+{
+}
+
+void BoundingBox::Reset()
+{
+	min_bound_.setZero();
+	max_bound_.setZero();
+}
+
+void BoundingBox::AddPointCloud(const PointCloud &pointcloud)
+{
+	if (GetSize() == 0.0) {	// empty box
+		min_bound_ = pointcloud.GetMinBound();
+		max_bound_ = pointcloud.GetMaxBound();
+	} else {
+		auto pointcloud_min_bound = pointcloud.GetMinBound();
+		auto pointcloud_max_bound = pointcloud.GetMaxBound();
+		min_bound_(0) = std::min(min_bound_(0), pointcloud_min_bound(0));
+		min_bound_(1) = std::min(min_bound_(1), pointcloud_min_bound(1));
+		min_bound_(2) = std::min(min_bound_(2), pointcloud_min_bound(2));
+		max_bound_(0) = std::min(max_bound_(0), pointcloud_max_bound(0));
+		max_bound_(1) = std::min(max_bound_(1), pointcloud_max_bound(1));
+		max_bound_(2) = std::min(max_bound_(2), pointcloud_max_bound(2));
+	}
+}
+
+}	// namespace three

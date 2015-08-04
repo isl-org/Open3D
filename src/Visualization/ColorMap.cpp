@@ -24,8 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "ColorMap.h"
 
-#include "BoundingBox.h"
-#include "Visualizer.h"
-#include "DrawGeometry.h"
+namespace three{
+
+ColorMap::ColorMap()
+{
+}
+
+ColorMap::~ColorMap()
+{
+}
+
+Eigen::Vector3d ColorMapGray::GetColor(double value)
+{
+	return Eigen::Vector3d(value, value, value);
+}
+
+Eigen::Vector3d ColorMapJet::GetColor(double value)
+{
+	return Eigen::Vector3d(
+			JetBase(value * 2.0 - 1.5),		// red
+			JetBase(value * 2.0 - 1.0),		// green
+			JetBase(value * 2.0 - 0.5));	// blue
+}
+
+}	// namespace three

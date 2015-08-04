@@ -26,6 +26,43 @@
 
 #pragma once
 
-#include "BoundingBox.h"
-#include "Visualizer.h"
-#include "DrawGeometry.h"
+#include <Core/Core.h>
+
+namespace three {
+
+class BoundingBox  {
+public:
+	BoundingBox();
+	~BoundingBox();
+
+public:
+	void Reset();
+	void AddPointCloud(const PointCloud &pointcloud);
+
+public:
+	Eigen::Vector3d GetCenter() const {
+		return (min_bound_ + max_bound_) * 0.5;
+	}
+
+	double GetSize() const {
+		return (max_bound_ - min_bound_).maxCoeff();
+	}
+
+	double GetXPercentage(double x) {
+		return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
+	}
+
+	double GetYPercentage(double y) {
+		return (y - min_bound_(1)) / (max_bound_(1) - min_bound_(1));
+	}
+
+	double GetZPercentage(double z) {
+		return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
+	}
+
+protected:
+	Eigen::Vector3d min_bound_;
+	Eigen::Vector3d max_bound_;
+};
+
+}	// namespace three

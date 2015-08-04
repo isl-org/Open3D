@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include <iostream>
+#include <memory>
+
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
@@ -35,6 +37,13 @@ void PrintPointCloud(const three::PointCloud &pointcloud) {
 	bool pointcloud_has_normal = pointcloud.HasNormals();
 	PrintInfo("Pointcloud has %lu points.\n",
 			pointcloud.points_.size());
+
+	Eigen::Vector3d min_bound = pointcloud.GetMinBound();
+	Eigen::Vector3d max_bound = pointcloud.GetMaxBound();
+	PrintInfo("Bounding box is: (%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)\n",
+			min_bound(0), min_bound(1), min_bound(2),
+			max_bound(0), max_bound(1), max_bound(2));
+
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		if (pointcloud_has_normal) {
 			const Eigen::Vector3d &point = pointcloud.points_[i];
@@ -54,7 +63,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	//SetVerbosityLevel(VERBOSE_ALWAYS);
+	SetVerbosityLevel(VERBOSE_ALWAYS);
 
 	// 1. test basic pointcloud functions.
 	
@@ -97,7 +106,14 @@ int main(int argc, char *argv[])
 	// 3. test pointcloud visualization
 
 	Visualizer visualizer;
+	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
+	pointcloud_ptr->CloneFrom(pointcloud);
+	visualizer.AddPointCloud(pointcloud_ptr);
+	visualizer.CreateWindow();
+	visualizer.Run();
 
+
+	//while (!visualizer.IsWindowTerminated());
 	// n. test end
 
 	PrintAlways("End of the test.\n");

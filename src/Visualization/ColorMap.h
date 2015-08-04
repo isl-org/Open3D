@@ -26,6 +26,50 @@
 
 #pragma once
 
-#include "BoundingBox.h"
-#include "Visualizer.h"
-#include "DrawGeometry.h"
+#include <Eigen/Core>
+
+namespace three {
+
+class ColorMap  {
+public:
+	ColorMap();
+	~ColorMap();
+
+public:
+	/// Function to get a color from a value in [0..1]
+	virtual Eigen::Vector3d GetColor(double value) = 0;
+};
+
+class ColorMapGray : public ColorMap {
+public:
+	virtual Eigen::Vector3d GetColor(double value);
+};
+
+/// See Matlab's Jet colormap
+class ColorMapJet : public ColorMap {
+public:
+	virtual Eigen::Vector3d GetColor(double value);
+
+protected:
+	double Interpolate(double value, 
+			double y0, double x0, double y1, double x1)
+	{
+		return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
+	}
+
+	double JetBase(double value) {
+		if (value <= -0.75) { 
+			return 0.0;
+		} else if (value <= -0.25) {
+			return Interpolate(value, 0.0, -0.75, 1.0, -0.25);
+		} else if (value <= 0.25) {
+			return 1.0;
+		} else if (value <= 0.75) {
+			return Interpolate(value, 1.0, 0.25, 0.0, 0.75);
+		} else {
+			return 0.0;
+		}
+	}
+};
+
+}	// namespace three
