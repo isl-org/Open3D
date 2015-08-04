@@ -55,8 +55,8 @@ Visualizer::Visualizer() :
 		is_redraw_required_(true),
 		pointcloud_render_mode_(),
 		color_map_ptr_(new ColorMapJet),
-		projection_type_(PROJECTION_PERSPECTIVE),
-		window_width_(0), window_height_(0),
+		mouse_control_(),
+		view_control_(),
 		background_color_(1.0, 1.0, 1.0)
 {
 }
@@ -139,23 +139,9 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	return true;
 }
 
-void Visualizer::ResetBoundingBox()
-{
-	bounding_box_.Reset();
-	for (size_t i = 0; i < pointcloud_ptrs_.size(); i++) {
-		bounding_box_.AddPointCloud(*pointcloud_ptrs_[i]);
-	}
-	is_redraw_required_ = true;
-}
-
 void Visualizer::ResetViewPoint()
 {
-	field_of_view_ = 60.0;
-	view_ratio_ = bounding_box_.GetSize();
-	lookat_ = bounding_box_.GetCenter();
-	up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
-	distance_ = view_ratio_ / tan(field_of_view_ * 0.5 / 180.0 * M_PI);
-	eye_ = lookat_ + Eigen::Vector3d(0.0, 0.0, 1.0) * distance_;
+	view_control_.Reset();
 	is_redraw_required_ = true;
 }
 
@@ -191,7 +177,8 @@ void Visualizer::AddPointCloud(
 		std::shared_ptr<const PointCloud> pointcloud_ptr)
 {
 	pointcloud_ptrs_.push_back(pointcloud_ptr);
-	bounding_box_.AddPointCloud(*pointcloud_ptr);
+	view_control_.bounding_box_.AddPointCloud(*pointcloud_ptr);
+	view_control_.SetProjectionParameters();
 	is_redraw_required_ = true;
 }
 
@@ -219,33 +206,47 @@ void Visualizer::InitOpenGL()
 
 void Visualizer::SetViewPoint()
 {
-	if (window_height_ <= 0) {
+	if (view_control_.window_height_ <= 0) {
 		return;
 	}
 
-	// In this function, we set the view points based on all the viewing
-	// variables that have been CORRECTLY set. This function does not check
-	// the correctness. All variables must be maintained by other functions.
-
 	glfwMakeContextCurrent(window_);
-	glViewport(0, 0, window_width_, window_height_);
+	glViewport(0, 0, 
+			view_control_.window_width_, view_control_.window_height_);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	if (projection_type_ == PROJECTION_PERSPECTIVE) {
-		gluPerspective(field_of_view_, aspect_,
-				distance_ - 1.0 * bounding_box_.GetSize(),
-				distance_ + 3.0 * bounding_box_.GetSize());
+	if (view_control_.GetProjectionType() == 
+			view_control_.PROJECTION_PERSPECTIVE)
+	{
+		// Perspective projection
+		gluPerspective(view_control_.field_of_view_, view_control_.aspect_,
+				std::max(0.0001, view_control_.distance_ - 
+				1.0 * view_control_.bounding_box_.GetSize()),
+				view_control_.distance_ + 
+				3.0 * view_control_.bounding_box_.GetSize());
 	} else {
-		glOrtho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
-				-view_ratio_, view_ratio_,
-				-1.0 * bounding_box_.GetSize(),
-				1.0 * bounding_box_.GetSize());
+		// Orthogonal projection
+		// We use some black magic to support distance_ in orthogonal view
+		glOrtho(-view_control_.aspect_ * view_control_.view_ratio_,
+				view_control_.aspect_ * view_control_.view_ratio_,
+				-view_control_.view_ratio_, view_control_.view_ratio_,
+				view_control_.distance_ - 
+				1.0 * view_control_.bounding_box_.GetSize(),
+				view_control_.distance_ + 
+				1.0 * view_control_.bounding_box_.GetSize());
 	}
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(eye_(0), eye_(1), eye_(2),
-			lookat_(0), lookat_(1), lookat_(2),
-			up_(0), up_(1), up_(2));
+	gluLookAt(view_control_.eye_(0), 
+			view_control_.eye_(1), 
+			view_control_.eye_(2),
+			view_control_.lookat_(0),
+			view_control_.lookat_(1),
+			view_control_.lookat_(2),
+			view_control_.up_(0),
+			view_control_.up_(1),
+			view_control_.up_(2));
 }
 
 void Visualizer::Render()
@@ -390,15 +391,15 @@ void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
 	switch (pointcloud_render_mode_.pointcloud_color_option) {
 	case POINTCLOUDCOLOR_X:
 		color = color_map_ptr_->GetColor(
-				bounding_box_.GetXPercentage(point(0)));
+				view_control_.bounding_box_.GetXPercentage(point(0)));
 		break;
 	case POINTCLOUDCOLOR_Y:
 		color = color_map_ptr_->GetColor(
-				bounding_box_.GetYPercentage(point(1)));
+				view_control_.bounding_box_.GetYPercentage(point(1)));
 		break;
 	case POINTCLOUDCOLOR_Z:
 		color = color_map_ptr_->GetColor(
-				bounding_box_.GetZPercentage(point(2)));
+				view_control_.bounding_box_.GetZPercentage(point(2)));
 		break;
 	case POINTCLOUDCOLOR_COLOR:
 		if (pointcloud.HasColors()) {
@@ -408,7 +409,7 @@ void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
 	case POINTCLOUDCOLOR_DEFAULT:
 	default:
 		color = color_map_ptr_->GetColor(
-				bounding_box_.GetZPercentage(point(2)));
+				view_control_.bounding_box_.GetZPercentage(point(2)));
 		break;
 	}
 	glColor3d(color(0), color(1), color(2));
@@ -424,25 +425,42 @@ void Visualizer::WindowRefreshCallback(GLFWwindow *window)
 
 void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 {
-	window_width_ = w;
-	window_height_ = h;
-	aspect_ = (double)window_width_ / (double)window_height_;
-
-	SetViewPoint();
+	view_control_.window_width_ = w;
+	view_control_.window_height_ = h;
+	view_control_.aspect_ = (double)view_control_.window_width_ / 
+			(double)view_control_.window_height_;
+	view_control_.SetProjectionParameters();
 	is_redraw_required_ = true;
 }
 
 void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 {
+	mouse_control_.mouse_position_x = x;
+	mouse_control_.mouse_position_y = y;
 }
 
 void Visualizer::MouseScrollCallback(GLFWwindow* window, double x, double y)
 {
+	view_control_.Scale(y);
+	is_redraw_required_ = true;
 }
 
 void Visualizer::MouseButtonCallback(GLFWwindow* window,
 		int button, int action, int mods)
 {
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (action == GLFW_PRESS) {
+			mouse_control_.is_mouse_left_button_down = true;
+			if (mods & GLFW_MOD_CONTROL) {
+				mouse_control_.is_control_key_down = true;
+			} else {
+				mouse_control_.is_control_key_down = false;
+			}
+		} else {
+			mouse_control_.is_mouse_left_button_down = false;
+			mouse_control_.is_control_key_down = false;
+		}
+	}
 }
 
 void Visualizer::KeyPressCallback(GLFWwindow *window,
@@ -503,23 +521,25 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
 				pointcloud_render_mode_.pointcloud_size);
 		break;
+	case GLFW_KEY_PAGE_UP:
+		view_control_.ChangeFieldOfView(1.0);
+		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
+				view_control_.field_of_view_);
+		break;
+	case GLFW_KEY_PAGE_DOWN:
+		view_control_.ChangeFieldOfView(-1.0);
+		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
+				view_control_.field_of_view_);
+		break;
 	case GLFW_KEY_N:
-		pointcloud_render_mode_.show_normal = !pointcloud_render_mode_.show_normal;
+		pointcloud_render_mode_.show_normal = 
+				!pointcloud_render_mode_.show_normal;
 		PrintDebug("[Visualizer] Point normal rendering %s.\n",
 				pointcloud_render_mode_.show_normal ? "ON" : "OFF");
 		break;
 	case GLFW_KEY_R:
 		ResetViewPoint();
 		PrintDebug("[Visualizer] Reset view point.\n");
-		break;
-	case GLFW_KEY_P:
-		if (projection_type_ == PROJECTION_ORTHOGONAL) {
-			projection_type_ = PROJECTION_PERSPECTIVE;
-			PrintDebug("[Visualizer] Set PERSPECTIVE projection.\n");
-		} else {
-			projection_type_ = PROJECTION_ORTHOGONAL;
-			PrintDebug("[Visualizer] Set ORTHOGONAL projection.\n");
-		}
 		break;
 	}
 
