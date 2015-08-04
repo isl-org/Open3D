@@ -180,10 +180,14 @@ public:
 			SetProjectionParameters();
 		}
 
-		void Rotate() {
+		void Rotate(double x, double y) {
+
+			SetProjectionParameters();
 		}
 
-		void Translate() {
+		void Translate(double x, double y) {
+
+			SetProjectionParameters();
 		}
 	};
 

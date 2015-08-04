@@ -435,6 +435,17 @@ void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 
 void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 {
+	if (mouse_control_.is_mouse_left_button_down) {
+		if (mouse_control_.is_control_key_down) {
+			view_control_.Translate(
+					mouse_control_.mouse_position_x - x,
+					y - mouse_control_.mouse_position_y);
+		} else {
+			view_control_.Rotate(
+				mouse_control_.mouse_position_x - x,
+				y - mouse_control_.mouse_position_y);
+		}
+	}
 	mouse_control_.mouse_position_x = x;
 	mouse_control_.mouse_position_y = y;
 }
@@ -521,12 +532,12 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
 				pointcloud_render_mode_.pointcloud_size);
 		break;
-	case GLFW_KEY_PAGE_UP:
+	case GLFW_KEY_RIGHT_BRACKET:
 		view_control_.ChangeFieldOfView(1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
 				view_control_.field_of_view_);
 		break;
-	case GLFW_KEY_PAGE_DOWN:
+	case GLFW_KEY_LEFT_BRACKET:
 		view_control_.ChangeFieldOfView(-1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
 				view_control_.field_of_view_);
