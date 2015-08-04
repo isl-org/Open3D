@@ -29,11 +29,15 @@
 #include <string>
 #include <memory>
 
+#ifndef GLFW_INCLUDE_GLU
 #define GLFW_INCLUDE_GLU
+#endif
 #include <GLFW/glfw3.h>
 #include <Core/Core.h>
-#include <Visualization/BoundingBox.h>
-#include <Visualization/ColorMap.h>
+
+#include "ColorMap.h"
+#include "BoundingBox.h"
+#include "ViewControl.h"
 
 namespace three {
 
@@ -44,38 +48,38 @@ public:
 		COLORMAP_JET = 1,
 	};
 
-	enum PointCloudColorOption {
-		POINTCLOUDCOLOR_DEFAULT = 0,
-		POINTCLOUDCOLOR_COLOR = 1,
-		POINTCLOUDCOLOR_X = 2,
-		POINTCLOUDCOLOR_Y = 3,
-		POINTCLOUDCOLOR_Z = 4,
+	enum PointColorOption {
+		POINTCOLOR_DEFAULT = 0,
+		POINTCOLOR_COLOR = 1,
+		POINTCOLOR_X = 2,
+		POINTCOLOR_Y = 3,
+		POINTCOLOR_Z = 4,
 	};
 
 	struct PointCloudRenderMode {
 	public:
-		double pointcloud_size;
-		PointCloudColorOption pointcloud_color_option;
+		double point_size;
+		PointColorOption point_color_option;
 		bool show_normal;
 
-		const double MAX_POINT_SIZE = 15.0;
-		const double MIN_POINT_SIZE = 1.0;
+		const double POINT_SIZE_MAX = 25.0;
+		const double POINT_SIZE_MIN = 1.0;
+		const double POINT_SIZE_STEP = 1.0;
+		const double POINT_SIZE_DEFAULT = 5.0;
 
 		PointCloudRenderMode() : 
-				pointcloud_size(1.0), 
-				pointcloud_color_option(POINTCLOUDCOLOR_DEFAULT),
+				point_color_option(POINTCOLOR_DEFAULT),
 				show_normal(false)
-		{}
-
-		void IncreasePointCloudSize() {
-			if (pointcloud_size < MAX_POINT_SIZE - 0.5) {
-				pointcloud_size += 1.0;
-			}
+		{
+			point_size = POINT_SIZE_DEFAULT;
 		}
-		
-		void DecreasePointCloudSize() {
-			if (pointcloud_size > MIN_POINT_SIZE + 0.5) {
-				pointcloud_size -= 1.0;
+
+		void ChangePointSize(double change) {
+			double new_point_size = point_size + change * POINT_SIZE_STEP;
+			if (new_point_size >= POINT_SIZE_MIN && 
+					new_point_size <= POINT_SIZE_MAX)
+			{
+				point_size = new_point_size;
 			}
 		}
 	};
@@ -93,102 +97,6 @@ public:
 				mouse_position_x(0.0),
 				mouse_position_y(0.0)
 		{}
-	};
-
-	struct ViewControl {
-	public:
-		const double FIELD_OF_VIEW_MAX = 90.0;
-		const double FIELD_OF_VIEW_MIN = 0.0;
-		const double FIELD_OF_VIEW_DEFAULT = 60.0;
-		const double FIELD_OF_VIEW_STEP = 10.0;
-
-		const double ZOOM_DEFAULT = 0.7;
-		const double ZOOM_MIN = 0.1;
-		const double ZOOM_MAX = 2.0;
-		const double ZOOM_STEP = 0.02;
-
-		enum ProjectionType {
-			PROJECTION_PERSPECTIVE = 0,
-			PROJECTION_ORTHOGONAL = 1,
-		};
-
-		BoundingBox bounding_box_;
-		Eigen::Vector3d eye_;
-		Eigen::Vector3d lookat_;
-		Eigen::Vector3d up_;
-		Eigen::Vector3d front_;
-		double distance_;
-		double field_of_view_;
-		double zoom_;
-		double view_ratio_;
-		double aspect_;
-		int window_width_;
-		int window_height_;
-
-		ViewControl() :
-				window_width_(0), window_height_(0)
-		{}
-
-		ProjectionType GetProjectionType() {
-			if (field_of_view_ > 
-					FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP / 2.0)
-			{
-				return PROJECTION_PERSPECTIVE;
-			} else {
-				return PROJECTION_ORTHOGONAL;
-			}
-		}
-
-		void Reset() {
-			field_of_view_ = FIELD_OF_VIEW_DEFAULT;
-			zoom_ = ZOOM_DEFAULT;
-			lookat_ = bounding_box_.GetCenter();
-			up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
-			front_ = Eigen::Vector3d(0.0, 0.0, 1.0);
-			SetProjectionParameters();
-		}
-
-		void SetProjectionParameters() {
-			if (GetProjectionType() == PROJECTION_PERSPECTIVE) {
-				view_ratio_ = zoom_ * bounding_box_.GetSize();
-				distance_ = view_ratio_ / 
-						tan(field_of_view_ * 0.5 / 180.0 * M_PI);
-				eye_ = lookat_ + front_ * distance_;
-			} else {
-				view_ratio_ = zoom_ * bounding_box_.GetSize();
-				distance_ = bounding_box_.GetSize();
-				eye_ = lookat_ + front_ * distance_;
-			}
-		}
-
-		void ChangeFieldOfView(double step) {
-			double field_of_view_new = field_of_view_ + 
-					step * FIELD_OF_VIEW_STEP;
-			if (field_of_view_new >= FIELD_OF_VIEW_MIN &&
-					field_of_view_new <= FIELD_OF_VIEW_MAX)
-			{
-				field_of_view_ = field_of_view_new;
-			}
-			SetProjectionParameters();
-		}
-
-		void Scale(double scale) {
-			double zoom_new = zoom_ + scale * ZOOM_STEP;
-			if (zoom_new >= ZOOM_MIN && zoom_new <= ZOOM_MAX) {
-				zoom_ = zoom_new;
-			}
-			SetProjectionParameters();
-		}
-
-		void Rotate(double x, double y) {
-
-			SetProjectionParameters();
-		}
-
-		void Translate(double x, double y) {
-
-			SetProjectionParameters();
-		}
 	};
 
 public:
@@ -219,11 +127,6 @@ protected:
 	/// Note that we use a view point dependent lighting scheme, thus light 
 	/// should be set during rendering.
 	virtual void InitOpenGL();
-
-	/// Function to set view points
-	/// This function obtains OpenGL context and calls OpenGL functions to set
-	/// the view point.
-	virtual void SetViewPoint();
 
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and

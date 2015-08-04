@@ -34,8 +34,11 @@ namespace {
 
 class GLFWEnvironmentSingleton {
 public:
-	GLFWEnvironmentSingleton() { PrintWarning("init\n");}
-	~GLFWEnvironmentSingleton() { glfwTerminate(); PrintWarning("destruct\n");}
+	GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n");}
+	~GLFWEnvironmentSingleton() {
+		glfwTerminate();
+		PrintDebug("GLFW destruct.\n");
+	}
 
 public:
 	static int InitGLFW() {
@@ -177,8 +180,7 @@ void Visualizer::AddPointCloud(
 		std::shared_ptr<const PointCloud> pointcloud_ptr)
 {
 	pointcloud_ptrs_.push_back(pointcloud_ptr);
-	view_control_.bounding_box_.AddPointCloud(*pointcloud_ptr);
-	view_control_.SetProjectionParameters();
+	view_control_.AddPointCloud(*pointcloud_ptr);
 	is_redraw_required_ = true;
 }
 
@@ -204,54 +206,11 @@ void Visualizer::InitOpenGL()
 	SetDefaultMeshMaterial();
 }
 
-void Visualizer::SetViewPoint()
-{
-	if (view_control_.window_height_ <= 0) {
-		return;
-	}
-
-	glfwMakeContextCurrent(window_);
-	glViewport(0, 0, 
-			view_control_.window_width_, view_control_.window_height_);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	if (view_control_.GetProjectionType() == 
-			view_control_.PROJECTION_PERSPECTIVE)
-	{
-		// Perspective projection
-		gluPerspective(view_control_.field_of_view_, view_control_.aspect_,
-				std::max(0.0001, view_control_.distance_ - 
-				1.0 * view_control_.bounding_box_.GetSize()),
-				view_control_.distance_ + 
-				3.0 * view_control_.bounding_box_.GetSize());
-	} else {
-		// Orthogonal projection
-		// We use some black magic to support distance_ in orthogonal view
-		glOrtho(-view_control_.aspect_ * view_control_.view_ratio_,
-				view_control_.aspect_ * view_control_.view_ratio_,
-				-view_control_.view_ratio_, view_control_.view_ratio_,
-				view_control_.distance_ - 
-				1.0 * view_control_.bounding_box_.GetSize(),
-				view_control_.distance_ + 
-				1.0 * view_control_.bounding_box_.GetSize());
-	}
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(view_control_.eye_(0), 
-			view_control_.eye_(1), 
-			view_control_.eye_(2),
-			view_control_.lookat_(0),
-			view_control_.lookat_(1),
-			view_control_.lookat_(2),
-			view_control_.up_(0),
-			view_control_.up_(1),
-			view_control_.up_(2));
-}
-
 void Visualizer::Render()
 {
-	SetViewPoint();
+	glfwMakeContextCurrent(window_);
+	view_control_.SetViewPoint();
+
 	// retrieve some OpenGL matrices that can make some operations easy.
 	// e.g., gluProject
 	glGetDoublev(GL_MODELVIEW_MATRIX, m_glModelview);
@@ -275,10 +234,15 @@ void Visualizer::Render()
 
 void Visualizer::PrintVisualizerHelp()
 {
+	PrintInfo("Mouse options:\n");
+	PrintInfo("    Left btn + drag        : Rotate.\n");
+	PrintInfo("    Ctrl + left btn + drag : Translate.\n");
+	PrintInfo("    Wheel                  : Zoom in/out.\n");
+	PrintInfo("\n");
 	PrintInfo("Keyboard options:\n");
 	PrintInfo("    Q, Esc      : Exit window.\n");
 	PrintInfo("    R           : Reset view point.\n");
-	PrintInfo("    P           : Switch projection between perspective and orthogonal.\n");
+	PrintInfo("    [/]         : Increase/decrease field of view.\n");
 	PrintInfo("    +/-         : Increase/decrease point size.\n");
 	PrintInfo("    0..4        : Point color options.\n");
 	PrintInfo("                  0 - Default behavior, use z value to render.\n");
@@ -290,6 +254,7 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("                  0 - Gray scale color.\n");
 	PrintInfo("                  1 - JET color map.\n");
 	PrintInfo("    N           : Turn on/off normal rendering.\n");
+	PrintInfo("\n");
 }
 
 void Visualizer::SetDefaultMeshMaterial()
@@ -374,7 +339,7 @@ void Visualizer::DrawPointCloud(const PointCloud &pointcloud)
 {
 	glDisable(GL_LIGHTING);
 	glDisable(GL_POLYGON_OFFSET_FILL);
-	glPointSize(GLfloat(pointcloud_render_mode_.pointcloud_size));
+	glPointSize(GLfloat(pointcloud_render_mode_.point_size));
 	glBegin(GL_POINTS);
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		PointCloudColorHandler(pointcloud, i);
@@ -388,28 +353,28 @@ void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
 {
 	auto point = pointcloud.points_[i];
 	Eigen::Vector3d color;
-	switch (pointcloud_render_mode_.pointcloud_color_option) {
-	case POINTCLOUDCOLOR_X:
+	switch (pointcloud_render_mode_.point_color_option) {
+	case POINTCOLOR_X:
 		color = color_map_ptr_->GetColor(
-				view_control_.bounding_box_.GetXPercentage(point(0)));
+				view_control_.GetBoundingBox().GetXPercentage(point(0)));
 		break;
-	case POINTCLOUDCOLOR_Y:
+	case POINTCOLOR_Y:
 		color = color_map_ptr_->GetColor(
-				view_control_.bounding_box_.GetYPercentage(point(1)));
+				view_control_.GetBoundingBox().GetYPercentage(point(1)));
 		break;
-	case POINTCLOUDCOLOR_Z:
+	case POINTCOLOR_Z:
 		color = color_map_ptr_->GetColor(
-				view_control_.bounding_box_.GetZPercentage(point(2)));
+				view_control_.GetBoundingBox().GetZPercentage(point(2)));
 		break;
-	case POINTCLOUDCOLOR_COLOR:
+	case POINTCOLOR_COLOR:
 		if (pointcloud.HasColors()) {
 			color = pointcloud.colors_[i];
 			break;
 		}
-	case POINTCLOUDCOLOR_DEFAULT:
+	case POINTCOLOR_DEFAULT:
 	default:
 		color = color_map_ptr_->GetColor(
-				view_control_.bounding_box_.GetZPercentage(point(2)));
+				view_control_.GetBoundingBox().GetZPercentage(point(2)));
 		break;
 	}
 	glColor3d(color(0), color(1), color(2));
@@ -425,11 +390,7 @@ void Visualizer::WindowRefreshCallback(GLFWwindow *window)
 
 void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 {
-	view_control_.window_width_ = w;
-	view_control_.window_height_ = h;
-	view_control_.aspect_ = (double)view_control_.window_width_ / 
-			(double)view_control_.window_height_;
-	view_control_.SetProjectionParameters();
+	view_control_.ChangeWindowSize(w, h);
 	is_redraw_required_ = true;
 }
 
@@ -442,12 +403,13 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 					y - mouse_control_.mouse_position_y);
 		} else {
 			view_control_.Rotate(
-				mouse_control_.mouse_position_x - x,
-				y - mouse_control_.mouse_position_y);
+					mouse_control_.mouse_position_x - x,
+					y - mouse_control_.mouse_position_y);
 		}
 	}
 	mouse_control_.mouse_position_x = x;
 	mouse_control_.mouse_position_y = y;
+	is_redraw_required_ = true;
 }
 
 void Visualizer::MouseScrollCallback(GLFWwindow* window, double x, double y)
@@ -477,7 +439,7 @@ void Visualizer::MouseButtonCallback(GLFWwindow* window,
 void Visualizer::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
-	if (action != GLFW_PRESS) {
+	if (action == GLFW_RELEASE) {
 		return;
 	}
 
@@ -495,8 +457,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapGray);
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
 		} else {
-			pointcloud_render_mode_.pointcloud_color_option =
-					POINTCLOUDCOLOR_DEFAULT;
+			pointcloud_render_mode_.point_color_option =
+					POINTCOLOR_DEFAULT;
 			PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
 		}
 		break;
@@ -505,42 +467,42 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapJet);
 			PrintDebug("[Visualizer] Color map set to JET.\n");
 		} else {
-			pointcloud_render_mode_.pointcloud_color_option =
-					POINTCLOUDCOLOR_COLOR;
+			pointcloud_render_mode_.point_color_option =
+					POINTCOLOR_COLOR;
 			PrintDebug("[Visualizer] Point color set to COLOR.\n");
 		}
 		break;
 	case GLFW_KEY_2:
-		pointcloud_render_mode_.pointcloud_color_option = POINTCLOUDCOLOR_X;
+		pointcloud_render_mode_.point_color_option = POINTCOLOR_X;
 		PrintDebug("[Visualizer] Point color set to X.\n");
 		break;
 	case GLFW_KEY_3:
-		pointcloud_render_mode_.pointcloud_color_option = POINTCLOUDCOLOR_Y;
+		pointcloud_render_mode_.point_color_option = POINTCOLOR_Y;
 		PrintDebug("[Visualizer] Point color set to Y.\n");
 		break;
 	case GLFW_KEY_4:
-		pointcloud_render_mode_.pointcloud_color_option = POINTCLOUDCOLOR_Z;
+		pointcloud_render_mode_.point_color_option = POINTCOLOR_Z;
 		PrintDebug("[Visualizer] Point color set to Z.\n");
 		break;
 	case GLFW_KEY_MINUS:
-		pointcloud_render_mode_.DecreasePointCloudSize();
+		pointcloud_render_mode_.ChangePointSize(-1.0);
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				pointcloud_render_mode_.pointcloud_size);
+				pointcloud_render_mode_.point_size);
 		break;
 	case GLFW_KEY_EQUAL:
-		pointcloud_render_mode_.IncreasePointCloudSize();
+		pointcloud_render_mode_.ChangePointSize(1.0);
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				pointcloud_render_mode_.pointcloud_size);
+				pointcloud_render_mode_.point_size);
 		break;
 	case GLFW_KEY_RIGHT_BRACKET:
 		view_control_.ChangeFieldOfView(1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_.field_of_view_);
+				view_control_.GetFieldOfView());
 		break;
 	case GLFW_KEY_LEFT_BRACKET:
 		view_control_.ChangeFieldOfView(-1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_.field_of_view_);
+				view_control_.GetFieldOfView());
 		break;
 	case GLFW_KEY_N:
 		pointcloud_render_mode_.show_normal = 

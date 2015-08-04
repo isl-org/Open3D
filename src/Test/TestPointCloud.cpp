@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VERBOSE_ALWAYS);
+	//SetVerbosityLevel(VERBOSE_ALWAYS);
 
 	// 1. test basic pointcloud functions.
 	

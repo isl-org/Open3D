@@ -28,41 +28,72 @@
 
 #include <Core/Core.h>
 
+#include "BoundingBox.h"
+
 namespace three {
 
-class BoundingBox  {
+class ViewControl {
 public:
-	BoundingBox();
-	~BoundingBox();
+	const double FIELD_OF_VIEW_MAX = 90.0;
+	const double FIELD_OF_VIEW_MIN = 0.0;
+	const double FIELD_OF_VIEW_DEFAULT = 60.0;
+	const double FIELD_OF_VIEW_STEP = 5.0;
+
+	const double ZOOM_DEFAULT = 0.7;
+	const double ZOOM_MIN = 0.1;
+	const double ZOOM_MAX = 2.0;
+	const double ZOOM_STEP = 0.02;
+
+	const double ROTATION_RADIAN_PER_PIXEL = 0.003;
+
+	enum ProjectionType {
+		PROJECTION_PERSPECTIVE = 0,
+		PROJECTION_ORTHOGONAL = 1,
+	};
 
 public:
+	ViewControl();
+	~ViewControl();
+
+public:
+	/// Function to set view points
+	/// This function obtains OpenGL context and calls OpenGL functions to set
+	/// the view point.
+	void SetViewPoint();
+
+	ProjectionType GetProjectionType();
 	void Reset();
-	void AddPointCloud(const PointCloud &pointcloud);
+	void SetProjectionParameters();
+	void ChangeFieldOfView(double step);
+	void ChangeWindowSize(int width, int height);
+	void Scale(double scale);
+	void Rotate(double x, double y);
+	void Translate(double x, double y);
 
-public:
-	Eigen::Vector3d GetCenter() const {
-		return (min_bound_ + max_bound_) * 0.5;
+	const BoundingBox &GetBoundingBox() {
+		return bounding_box_;
 	}
 
-	double GetSize() const {
-		return (max_bound_ - min_bound_).maxCoeff();
+	void AddPointCloud(const PointCloud &pointcloud) {
+		bounding_box_.AddPointCloud(pointcloud);
+		SetProjectionParameters();
 	}
 
-	double GetXPercentage(double x) const {
-		return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
-	}
-
-	double GetYPercentage(double y) const {
-		return (y - min_bound_(1)) / (max_bound_(1) - min_bound_(1));
-	}
-
-	double GetZPercentage(double z) const {
-		return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
-	}
+	double GetFieldOfView() const { return field_of_view_; }
 
 protected:
-	Eigen::Vector3d min_bound_;
-	Eigen::Vector3d max_bound_;
+	BoundingBox bounding_box_;
+	Eigen::Vector3d eye_;
+	Eigen::Vector3d lookat_;
+	Eigen::Vector3d up_;
+	Eigen::Vector3d front_;
+	double distance_;
+	double field_of_view_;
+	double zoom_;
+	double view_ratio_;
+	double aspect_;
+	int window_width_;
+	int window_height_;
 };
 
 }	// namespace three
