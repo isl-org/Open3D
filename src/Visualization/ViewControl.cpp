@@ -28,6 +28,10 @@
 
 #include <Eigen/Dense>
 
+#ifdef __APPLE__
+#include <GLKit/GLKMatrix4.h>
+#endif
+
 #ifndef GLFW_INCLUDE_GLU
 #define GLFW_INCLUDE_GLU
 #endif
@@ -144,9 +148,16 @@ void ViewControl::SetViewPoint()
 	if (GetProjectionType() == PROJECTION_PERSPECTIVE)
 	{
 		// Perspective projection
+#ifdef __APPLE__
+		glMultMatrixf(GLKMatrix4MakePerspective(
+				field_of_view_ / 180.0 * M_PI, aspect_,
+				std::max(0.0001, distance_ - 1.0 * bounding_box_.GetSize()),
+				distance_ + 1.0 * bounding_box_.GetSize()).m);
+#else
 		gluPerspective(field_of_view_, aspect_,
-				std::max(0.0001, distance_ - 3.0 * bounding_box_.GetSize()),
-				distance_ + 3.0 * bounding_box_.GetSize());
+				std::max(0.0001, distance_ - 1.0 * bounding_box_.GetSize()),
+				distance_ + 1.0 * bounding_box_.GetSize());
+#endif
 	} else {
 		// Orthogonal projection
 		// We use some black magic to support distance_ in orthogonal view
@@ -158,9 +169,15 @@ void ViewControl::SetViewPoint()
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+#ifdef __APPLE__
+	glMultMatrixf(GLKMatrix4MakeLookAt(eye_(0), eye_(1), eye_(2),
+			lookat_(0),	lookat_(1),	lookat_(2),
+			up_(0),	up_(1),	up_(2)).m);
+#else
 	gluLookAt(eye_(0), eye_(1), eye_(2),
 			lookat_(0),	lookat_(1),	lookat_(2),
 			up_(0),	up_(1),	up_(2));
+#endif
 }
 
 }	// namespace three

@@ -55,11 +55,11 @@ public:
 
 Visualizer::Visualizer() : 
 		window_(NULL),
+		mouse_control_(),
+		view_control_(),
 		is_redraw_required_(true),
 		pointcloud_render_mode_(),
 		color_map_ptr_(new ColorMapJet),
-		mouse_control_(),
-		view_control_(),
 		background_color_(1.0, 1.0, 1.0)
 {
 }
@@ -301,15 +301,15 @@ void Visualizer::SetDefaultLighting(const BoundingBox &bounding_box)
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
 	//light1
-	Eigen::Vector3d light_position_eigen1 =
-			Eigen::Vector3d(-4.0, -4.0, -2.0) * bounding_box.GetSize() * 0.5 +
-			bounding_box.GetCenter();
+//	Eigen::Vector3d light_position_eigen1 =
+//			Eigen::Vector3d(-4.0, -4.0, -2.0) * bounding_box.GetSize() * 0.5 +
+//			bounding_box.GetCenter();
 	GLfloat	light_ambient1[] = {0.3f, 0.3f, 0.3f, 1.0f};
 	GLfloat	light_diffuse1[] = {0.4f, 0.4f, 0.4f, 1.0f};
-	GLfloat light_specular1[] = {0.5f, 0.5f, 0.5f, 1.0f};
-	GLfloat light_position1[] = {(GLfloat)light_position_eigen1(0),
-			(GLfloat)light_position_eigen1(1),
-			(GLfloat)light_position_eigen1(2), 0.0f};
+//	GLfloat light_specular1[] = {0.5f, 0.5f, 0.5f, 1.0f};
+//	GLfloat light_position1[] = {(GLfloat)light_position_eigen1(0),
+//			(GLfloat)light_position_eigen1(1),
+//			(GLfloat)light_position_eigen1(2), 0.0f};
 	glLightfv( GL_LIGHT1, GL_AMBIENT, light_ambient1);
 	glLightfv( GL_LIGHT1, GL_DIFFUSE, light_diffuse1);
 //	glLightfv( GL_LIGHT1, GL_SPECULAR, light_specular1);

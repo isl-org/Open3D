@@ -54,7 +54,7 @@ endif()
 
 if (APPLE)
     # For some reason, CMake doesn't know about .m
-    set_source_files_properties(${glfw_SOURCES} PROPERTIES LANGUAGE C)
+	set_source_files_properties(${glfw_SOURCES} PROPERTIES LANGUAGE C)
 endif()
 
 add_library(glfw ${glfw_SOURCES} ${glfw_HEADERS})
