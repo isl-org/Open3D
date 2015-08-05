@@ -106,7 +106,7 @@ public:
 public:
 	bool CreateWindow(const std::string window_name = "Open3DV", 
 			const int width = 640, const int height = 480,
-			const int left = 100, const int top = 100);
+			const int left = 50, const int top = 50);
 	void ResetViewPoint();
 	void Run();
 	void AsyncRun();	// this call will not block the main thread.
