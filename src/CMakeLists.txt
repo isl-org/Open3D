@@ -8,7 +8,7 @@ set(Open3DV_VERSION_MINOR "0")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # enable c++11
-set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+set(CMAKE_CXX_FLAGS "-std=c++11")
 
 # config options
 option(Open3DV_BUILD_TESTS "Build the Open3DV test programs" ON)
