@@ -56,6 +56,7 @@ int ReadVertexCallback(p_ply_argument argument)
 		if (state_ptr->vertex_index > state_ptr->vertex_num) {
 			return 0;
 		}
+		AdvanceConsoleProgress();
 	}
 	return 1;
 }
@@ -141,6 +142,8 @@ bool ReadPointCloudFromPLY(
 	pointcloud.points_.resize(state.vertex_num);
 	pointcloud.normals_.resize(state.normal_num);
 	pointcloud.colors_.resize(state.color_num);
+	
+	ResetConsoleProgress(state.vertex_num, "Reading PLY: ");
 
 	if (!ply_read(ply_file)) {
 		PrintDebug("Read PLY failed: unable to read file.\n");
@@ -188,6 +191,8 @@ bool WritePointCloudToPLY(
 		return false;
 	}
 	
+	ResetConsoleProgress(pointcloud.points_.size(), "Writing PLY: ");
+	
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		const Eigen::Vector3d &point = pointcloud.points_[i];
 		ply_write(ply_file, point(0));
@@ -205,6 +210,7 @@ bool WritePointCloudToPLY(
 			ply_write(ply_file, color(1) * 255.0);
 			ply_write(ply_file, color(2) * 255.0);
 		}
+		AdvanceConsoleProgress();
 	}
 
 	ply_close(ply_file);

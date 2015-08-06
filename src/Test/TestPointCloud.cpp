@@ -83,16 +83,16 @@ int main(int argc, char *argv[])
 
 	if (ReadPointCloudFromPLY(argv[1], pointcloud)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
-		PrintPointCloud(pointcloud);
+		//PrintPointCloud(pointcloud);
 		
 		PointCloud pointcloud_copy;
 		pointcloud_copy.CloneFrom(pointcloud);
 		
-		if (WritePointCloudToXYZ(filename_xyz, pointcloud)) {
-			PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
-		} else {
-			PrintError("Failed to write %s\n\n", filename_xyz.c_str());
-		}
+		//if (WritePointCloudToXYZ(filename_xyz, pointcloud)) {
+		//	PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
+		//} else {
+		//	PrintError("Failed to write %s\n\n", filename_xyz.c_str());
+		//}
 
 		if (WritePointCloudToPLY(filename_ply, pointcloud_copy)) {
 			PrintWarning("Successfully wrote %s\n\n", filename_ply.c_str());
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
 	pointcloud_ptr->CloneFrom(pointcloud);
 	visualizer.AddPointCloud(pointcloud_ptr);
-	visualizer.CreateWindow("Open3DV", 1600, 960);
+	visualizer.CreateWindow("Open3DV", 1600, 900);
 	visualizer.Run();
 
 

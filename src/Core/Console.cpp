@@ -28,6 +28,7 @@
 
 #include <cstdio>
 #include <cstdarg>
+#include <string>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -80,10 +81,43 @@ void ResetConsoleColor()
 {
 #ifdef WIN32
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+	SetConsoleTextAttribute(h,
+			FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
 #else
 	printf("%c[0;m", 0x1B);
 #endif
+}
+
+int expected_console_count = 0;
+	
+int current_console_progress = 0;
+
+int current_console_progress_pixel = 0;
+
+std::string console_progress_info = "";
+	
+const int CONSOLE_PROGRESS_RESOLUTION = 40;
+
+void PrintConsoleProgress()
+{
+	if (current_console_progress == expected_console_count) {
+		PrintInfo("%s[%s] 100%%\n", console_progress_info.c_str(),
+				std::string(CONSOLE_PROGRESS_RESOLUTION, '=').c_str());
+	} else {
+		int new_console_progress_pixel = current_console_progress *
+				CONSOLE_PROGRESS_RESOLUTION / expected_console_count;
+		if (new_console_progress_pixel > current_console_progress_pixel) {
+			current_console_progress_pixel = new_console_progress_pixel;
+			int percent = current_console_progress *
+					100 / expected_console_count;
+			PrintInfo("%s[%s>%s] %d%%\r", console_progress_info.c_str(),
+					std::string(current_console_progress_pixel, '=').c_str(),
+					std::string(CONSOLE_PROGRESS_RESOLUTION - 1 -
+					current_console_progress_pixel, ' ').c_str(),
+					percent);
+			fflush(stdout);
+		}
+	}
 }
 
 }	// unnamed namespace
@@ -154,6 +188,27 @@ void PrintAlways(const char *format, ...)
 		va_end(args);
 		ResetConsoleColor();
 	}
+}
+	
+void ResetConsoleProgress(const int expected_count,
+		const std::string &progress_info/* = ""*/)
+{
+	if (expected_count > 0) {
+		expected_console_count = expected_count;
+		current_console_progress = 0;
+	} else {
+		expected_console_count = 1;
+		current_console_progress = 1;
+	}
+	current_console_progress_pixel = -1;
+	console_progress_info = progress_info;
+	PrintConsoleProgress();
+}
+	
+void AdvanceConsoleProgress()
+{
+	current_console_progress++;
+	PrintConsoleProgress();
 }
 
 }	// namespace three

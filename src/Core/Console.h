@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace three {
 	
 enum VerbosityLevel {
@@ -49,5 +51,10 @@ void PrintInfo(const char *format, ...);
 void PrintDebug(const char *format, ...);
 
 void PrintAlways(const char *format, ...);
+	
+void ResetConsoleProgress(const int expected_count,
+		const std::string &progress_info = "");
+
+void AdvanceConsoleProgress();
 
 }	// namespace three
