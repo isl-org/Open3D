@@ -191,7 +191,8 @@ bool WritePointCloudToPLY(
 		return false;
 	}
 	
-	ResetConsoleProgress(pointcloud.points_.size(), "Writing PLY: ");
+	ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
+			"Writing PLY: ");
 	
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		const Eigen::Vector3d &point = pointcloud.points_[i];
