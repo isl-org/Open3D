@@ -500,8 +500,11 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		}
 		break;
 	case GLFW_KEY_4:
-		pointcloud_render_mode_.point_color_option = POINTCOLOR_Z;
-		PrintDebug("[Visualizer] Point color set to Z.\n");
+		if (mods & GLFW_MOD_CONTROL) {
+		} else {
+			pointcloud_render_mode_.point_color_option = POINTCOLOR_Z;
+			PrintDebug("[Visualizer] Point color set to Z.\n");
+		}
 		break;
 	case GLFW_KEY_MINUS:
 		pointcloud_render_mode_.ChangePointSize(-1.0);
