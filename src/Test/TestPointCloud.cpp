@@ -83,7 +83,6 @@ int main(int argc, char *argv[])
 
 	if (ReadPointCloudFromPLY(argv[1], pointcloud)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
-		//PrintPointCloud(pointcloud);
 		
 		PointCloud pointcloud_copy;
 		pointcloud_copy.CloneFrom(pointcloud);
@@ -108,6 +107,7 @@ int main(int argc, char *argv[])
 	Visualizer visualizer;
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
 	pointcloud_ptr->CloneFrom(pointcloud);
+	pointcloud_ptr->NormalizeNormal();
 	visualizer.AddPointCloud(pointcloud_ptr);
 	visualizer.CreateWindow("Open3DV", 1600, 900);
 	visualizer.Run();

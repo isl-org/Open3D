@@ -152,6 +152,7 @@ protected:
 	virtual void DrawPointCloud(const PointCloud &pointcloud);
 	virtual void PointCloudColorHandler(const PointCloud &pointcloud,
 			size_t i);
+	virtual void DrawPointCloudNormal(const PointCloud &pointcloud);
 
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);

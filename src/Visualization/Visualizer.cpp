@@ -354,10 +354,12 @@ void Visualizer::DrawPointCloud(const PointCloud &pointcloud)
 	glBegin(GL_POINTS);
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		PointCloudColorHandler(pointcloud, i);
-		auto point = pointcloud.points_[i];
+		const Eigen::Vector3d &point = pointcloud.points_[i];
 		glVertex3d(point(0), point(1), point(2));
 	}
 	glEnd();
+	
+	DrawPointCloudNormal(pointcloud);
 }
 
 void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
@@ -389,6 +391,28 @@ void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
 		break;
 	}
 	glColor3d(color(0), color(1), color(2));
+}
+
+void Visualizer::DrawPointCloudNormal(const PointCloud &pointcloud)
+{
+	if (!pointcloud.HasNormals() || !pointcloud_render_mode_.show_normal) {
+		return;
+	}
+	glDisable(GL_LIGHTING);
+	glDisable(GL_POLYGON_OFFSET_FILL);
+	glLineWidth(1.0f);
+	glColor3d(0.0, 0.0, 0.0);
+	glBegin(GL_LINES);
+	double line_length = pointcloud_render_mode_.point_size *
+			0.01 * view_control_.GetBoundingBox().GetSize();
+	for (size_t i = 0; i < pointcloud.normals_.size(); i++) {
+		const Eigen::Vector3d &point = pointcloud.points_[i];
+		const Eigen::Vector3d &normal = pointcloud.normals_[i];
+		Eigen::Vector3d end_point = point + normal * line_length;
+		glVertex3d(point(0), point(1), point(2));
+		glVertex3d(end_point(0), end_point(1), end_point(2));
+	}
+	glEnd();
 }
 
 void Visualizer::WindowRefreshCallback(GLFWwindow *window)

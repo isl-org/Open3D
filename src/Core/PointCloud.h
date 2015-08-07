@@ -57,6 +57,12 @@ public:
 
 	void Clear() { points_.clear(); normals_.clear(); colors_.clear(); }
 	
+	void NormalizeNormal() {
+		for (size_t i = 0; i < normals_.size(); i++) {
+			normals_[i].normalize();
+		}
+	}
+	
 public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;
