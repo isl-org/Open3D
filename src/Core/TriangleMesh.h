@@ -26,70 +26,38 @@
 
 #pragma once
 
+#include <vector>
 #include <Eigen/Core>
+
+#include "Geometry.h"
 
 namespace three {
 
-enum ColorMapOption {
-	COLORMAP_GRAY = 0,
-	COLORMAP_JET = 1,
-	COLORMAP_SUMMER = 2,
-	COLORMAP_WINTER = 3,
-};
-
-class ColorMap  {
+class TriangleMesh : public Geometry
+{
 public:
-	ColorMap();
-	virtual ~ColorMap();
+	TriangleMesh();
+	virtual ~TriangleMesh();
 
 public:
-	/// Function to get a color from a value in [0..1]
-	virtual Eigen::Vector3d GetColor(double value) = 0;
-
-protected:
-	double Interpolate(double value, 
-			double y0, double x0, double y1, double x1)
-	{
-		return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
+	virtual bool CloneFrom(const Geometry &mesh);
+	virtual Eigen::Vector3d GetMinBound() const;
+	virtual Eigen::Vector3d GetMaxBound() const;
+	virtual void Clear();
+	virtual bool IsEmpty() const;
+	
+public:
+	bool HasVertices() const {
+		return vertices_.size() > 0;
 	}
-};
-
-class ColorMapGray : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
-};
-
-/// See Matlab's Jet colormap
-class ColorMapJet : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
-
-protected:
-	double JetBase(double value) {
-		if (value <= -0.75) { 
-			return 0.0;
-		} else if (value <= -0.25) {
-			return Interpolate(value, 0.0, -0.75, 1.0, -0.25);
-		} else if (value <= 0.25) {
-			return 1.0;
-		} else if (value <= 0.75) {
-			return Interpolate(value, 1.0, 0.25, 0.0, 0.75);
-		} else {
-			return 0.0;
-		}
+	
+	bool HasTriangles() const {
+		return triangles_.size() > 0;
 	}
-};
-
-/// See Matlab's Summer colormap
-class ColorMapSummer : public ColorMap {
+	
 public:
-	virtual Eigen::Vector3d GetColor(double value);
-};
-
-/// See Matlab's Winter colormap
-class ColorMapWinter : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
+	std::vector<Eigen::Vector3d> vertices_;
+	std::vector<Eigen::Vector3i> triangles_;
 };
 
 }	// namespace three

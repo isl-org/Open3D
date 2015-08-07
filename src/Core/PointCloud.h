@@ -29,18 +29,22 @@
 #include <vector>
 #include <Eigen/Core>
 
+#include "Geometry.h"
+
 namespace three {
 
-class PointCloud
+class PointCloud : public Geometry
 {
 public:
-	PointCloud(void);
-	~PointCloud(void);
+	PointCloud();
+	virtual ~PointCloud();
 
 public:
-	void CloneFrom(const PointCloud &reference);
-	Eigen::Vector3d GetMinBound() const;
-	Eigen::Vector3d GetMaxBound() const;
+	virtual bool CloneFrom(const Geometry &reference);
+	virtual Eigen::Vector3d GetMinBound() const;
+	virtual Eigen::Vector3d GetMaxBound() const;
+	virtual void Clear();
+	virtual bool IsEmpty() const;
 
 public:
 	bool HasPoints() const {
@@ -54,8 +58,6 @@ public:
 	bool HasColors() const {
 		return points_.size() > 0 && colors_.size() == points_.size();
 	}
-
-	void Clear() { points_.clear(); normals_.clear(); colors_.clear(); }
 	
 	void NormalizeNormal() {
 		for (size_t i = 0; i < normals_.size(); i++) {

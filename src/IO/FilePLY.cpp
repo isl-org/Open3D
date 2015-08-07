@@ -159,7 +159,7 @@ bool WritePointCloudToPLY(
 		const PointCloud &pointcloud,
 		const bool write_ascii/* = false*/)
 {
-	if (pointcloud.HasPoints() == false) {
+	if (pointcloud.IsEmpty()) {
 		PrintDebug("Write PLY failed: point cloud has 0 points.\n");
 		return false;
 	}

@@ -74,8 +74,8 @@ public:
 		return bounding_box_;
 	}
 
-	void AddPointCloud(const PointCloud &pointcloud) {
-		bounding_box_.AddPointCloud(pointcloud);
+	void AddGeometry(const Geometry &geometry) {
+		bounding_box_.AddGeometry(geometry);
 		SetProjectionParameters();
 	}
 

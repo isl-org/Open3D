@@ -96,7 +96,7 @@ public:
 
 public:
 	Visualizer();
-	~Visualizer();
+	virtual ~Visualizer();
 
 public:
 	/// Function to create a window and initialize GLFW
@@ -120,9 +120,12 @@ public:
 	/// heavy task behind the scene.
 	bool PollEvents();
 
-	// handle geometry
-	void AddPointCloud(std::shared_ptr<const PointCloud> pointcloud_ptr);
+	/// Function to add geometry to the scene
+	/// The geometry can be any derived class of the Geometry interface.
+	void AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 	bool HasGeometry();
+
+	virtual void PrintVisualizerHelp();
 
 protected:
 	// rendering functions
@@ -141,8 +144,6 @@ protected:
 	/// The function first sets view point, then draw geometry (pointclouds and
 	/// meshes individually).
 	virtual void Render();
-
-	virtual void PrintVisualizerHelp();
 	void ResetViewPoint();
 	void SetDefaultMeshMaterial();
 	void SetDefaultLighting(const BoundingBox &bounding_box);
@@ -153,6 +154,9 @@ protected:
 	virtual void PointCloudColorHandler(const PointCloud &pointcloud,
 			size_t i);
 	virtual void DrawPointCloudNormal(const PointCloud &pointcloud);
+	
+	/// Function to draw a triangle mesh
+	virtual void DrawTriangleMesh(const TriangleMesh &mesh);
 
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);
@@ -180,7 +184,7 @@ protected:
 	Eigen::Vector3d background_color_;
 
 	// geometry to be rendered
-	std::vector<std::shared_ptr<const PointCloud>> pointcloud_ptrs_;
+	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 
 	// data to be retrieved
 	GLint	m_glViewport[4];

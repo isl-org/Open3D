@@ -37,7 +37,7 @@ public:
 
 public:
 	void Reset();
-	void AddPointCloud(const PointCloud &pointcloud);
+	void AddGeometry(const Geometry &geometry);
 
 public:
 	Eigen::Vector3d GetCenter() const {

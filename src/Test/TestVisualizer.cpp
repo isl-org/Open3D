@@ -24,72 +24,45 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <iostream>
+#include <memory>
 
-#include <Eigen/Core>
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
-namespace three {
+int main(int argc, char *argv[])
+{
+	using namespace three;
 
-enum ColorMapOption {
-	COLORMAP_GRAY = 0,
-	COLORMAP_JET = 1,
-	COLORMAP_SUMMER = 2,
-	COLORMAP_WINTER = 3,
-};
+	//SetVerbosityLevel(VERBOSE_ALWAYS);
 
-class ColorMap  {
-public:
-	ColorMap();
-	virtual ~ColorMap();
-
-public:
-	/// Function to get a color from a value in [0..1]
-	virtual Eigen::Vector3d GetColor(double value) = 0;
-
-protected:
-	double Interpolate(double value, 
-			double y0, double x0, double y1, double x1)
-	{
-		return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
+	// 1. load some geometry
+	
+	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
+	if (ReadPointCloudFromPLY(argv[1], *pointcloud_ptr)) {
+		PrintWarning("Successfully read %s\n", argv[1]);
+	} else {
+		PrintError("Failed to read %s\n\n", argv[1]);
 	}
-};
+	pointcloud_ptr->NormalizeNormal();
 
-class ColorMapGray : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
-};
+	// 2. test visualization.
 
-/// See Matlab's Jet colormap
-class ColorMapJet : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
+	Visualizer visualizer1;
+	visualizer1.AddGeometry(pointcloud_ptr);
+	visualizer1.CreateWindow("Open3DV", 1600, 900);
 
-protected:
-	double JetBase(double value) {
-		if (value <= -0.75) { 
-			return 0.0;
-		} else if (value <= -0.25) {
-			return Interpolate(value, 0.0, -0.75, 1.0, -0.25);
-		} else if (value <= 0.25) {
-			return 1.0;
-		} else if (value <= 0.75) {
-			return Interpolate(value, 1.0, 0.25, 0.0, 0.75);
-		} else {
-			return 0.0;
-		}
+	Visualizer visualizer2;
+	visualizer2.AddGeometry(pointcloud_ptr);
+	visualizer2.CreateWindow("Open3DV", 800, 450);
+	
+	while (visualizer1.PollEvents() && visualizer2.PollEvents()) {
+		
 	}
-};
 
-/// See Matlab's Summer colormap
-class ColorMapSummer : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
-};
+	//while (!visualizer.IsWindowTerminated());
+	// n. test end
 
-/// See Matlab's Winter colormap
-class ColorMapWinter : public ColorMap {
-public:
-	virtual Eigen::Vector3d GetColor(double value);
-};
-
-}	// namespace three
+	PrintInfo("End of the test.\n");
+}

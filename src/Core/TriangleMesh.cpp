@@ -24,81 +24,76 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloud.h"
+#include "TriangleMesh.h"
 
 namespace three{
 
-PointCloud::PointCloud()
+TriangleMesh::TriangleMesh()
 {
-	SetGeometryType(GEOMETRY_POINTCLOUD);
+	SetGeometryType(GEOMETRY_TRIANGLEMESH);
 }
 
-PointCloud::~PointCloud()
+TriangleMesh::~TriangleMesh()
 {
 }
 	
-bool PointCloud::CloneFrom(const Geometry &reference)
+bool TriangleMesh::CloneFrom(const Geometry &reference)
 {
 	if (reference.GetGeometryType() != GetGeometryType()) {
 		// always return when the types do not match
 		return false;
 	}
-	
+
 	Clear();
-	const PointCloud &pointcloud = static_cast<const PointCloud &>(reference);
-	points_.resize(pointcloud.points_.size());
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		points_[i] = pointcloud.points_[i];
+	const TriangleMesh &mesh = static_cast<const TriangleMesh &>(reference);
+	vertices_.resize(mesh.vertices_.size());
+	for (size_t i = 0; i < mesh.vertices_.size(); i++) {
+		vertices_[i] = mesh.vertices_[i];
 	}
-	normals_.resize(pointcloud.normals_.size());
-	for (size_t i = 0; i < pointcloud.normals_.size(); i++) {
-		normals_[i] = pointcloud.normals_[i];
-	}
-	colors_.resize(pointcloud.colors_.size());
-	for (size_t i = 0; i < pointcloud.colors_.size(); i++) {
-		colors_[i] = pointcloud.colors_[i];
+	triangles_.resize(mesh.triangles_.size());
+	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+		triangles_[i] = mesh.triangles_[i];
 	}
 	return true;
 }
 
-Eigen::Vector3d PointCloud::GetMinBound() const
+Eigen::Vector3d TriangleMesh::GetMinBound() const
 {
-	if (!HasPoints()) {
+	if (!HasVertices()) {
 		return Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
-	auto itr_x = std::min_element(points_.begin(), points_.end(),
+	auto itr_x = std::min_element(vertices_.begin(), vertices_.end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
-	auto itr_y = std::min_element(points_.begin(), points_.end(),
+	auto itr_y = std::min_element(vertices_.begin(), vertices_.end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
-	auto itr_z = std::min_element(points_.begin(), points_.end(),
+	auto itr_z = std::min_element(vertices_.begin(), vertices_.end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-Eigen::Vector3d PointCloud::GetMaxBound() const
+Eigen::Vector3d TriangleMesh::GetMaxBound() const
 {
-	if (!HasPoints()) {
+	if (!HasVertices()) {
 		return Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
-	auto itr_x = std::max_element(points_.begin(), points_.end(),
+	auto itr_x = std::max_element(vertices_.begin(), vertices_.end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
-	auto itr_y = std::max_element(points_.begin(), points_.end(),
+	auto itr_y = std::max_element(vertices_.begin(), vertices_.end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
-	auto itr_z = std::max_element(points_.begin(), points_.end(),
+	auto itr_z = std::max_element(vertices_.begin(), vertices_.end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 	
-void PointCloud::Clear()
+void TriangleMesh::Clear()
 {
-	points_.clear();
-	normals_.clear();
-	colors_.clear();
+	vertices_.clear();
+	triangles_.clear();
 }
-	
-bool PointCloud::IsEmpty() const
+
+bool TriangleMesh::IsEmpty() const
 {
-	return !HasPoints();
+	return !HasVertices();
 }
 
 }	// namespace three

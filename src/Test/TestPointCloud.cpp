@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
 	pointcloud_ptr->CloneFrom(pointcloud);
 	pointcloud_ptr->NormalizeNormal();
-	visualizer.AddPointCloud(pointcloud_ptr);
+	visualizer.AddGeometry(pointcloud_ptr);
 	visualizer.CreateWindow("Open3DV", 1600, 900);
 	visualizer.Run();
 
