@@ -49,4 +49,20 @@ Eigen::Vector3d ColorMapJet::GetColor(double value)
 			JetBase(value * 2.0 - 0.5));	// blue
 }
 
+Eigen::Vector3d ColorMapSummer::GetColor(double value)
+{
+	return Eigen::Vector3d(
+			Interpolate(value, 0.0, 0.0, 1.0, 1.0),
+			Interpolate(value, 0.5, 0.0, 1.0, 1.0),
+			0.4);
+}
+
+Eigen::Vector3d ColorMapWinter::GetColor(double value)
+{
+	return Eigen::Vector3d(
+			0.0,
+			Interpolate(value, 0.0, 0.0, 1.0, 1.0),
+			Interpolate(value, 1.0, 0.0, 0.5, 1.0));
+}
+
 }	// namespace three

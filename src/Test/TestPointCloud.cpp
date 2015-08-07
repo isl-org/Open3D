@@ -112,7 +112,6 @@ int main(int argc, char *argv[])
 	visualizer.CreateWindow("Open3DV", 1600, 900);
 	visualizer.Run();
 
-
 	//while (!visualizer.IsWindowTerminated());
 	// n. test end
 

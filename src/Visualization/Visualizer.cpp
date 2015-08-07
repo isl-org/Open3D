@@ -138,42 +138,45 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 				WindowCloseCallback(window);
 	};
 	glfwSetWindowCloseCallback(window_, window_close_callback);
+	
+	glfwMakeContextCurrent(window_);
+	glfwSwapInterval(1);
+
+	int window_width, window_height;
+	glfwGetFramebufferSize(window_, &window_width, &window_height);
+	WindowResizeCallback(window_, window_width, window_height);
+
+	InitOpenGL();
+	ResetViewPoint();
 
 	return true;
-}
-
-void Visualizer::ResetViewPoint()
-{
-	view_control_.Reset();
-	is_redraw_required_ = true;
 }
 
 void Visualizer::Run()
 {
 	glfwMakeContextCurrent(window_);
-	glfwSwapInterval(1);
-
-	int width, height;
-	glfwGetFramebufferSize(window_, &width, &height);
-	WindowResizeCallback(window_, width, height);
-
-	InitOpenGL();
-	ResetViewPoint();
-
-	while (!glfwWindowShouldClose(window_)) {
-		if (is_redraw_required_) {
-			WindowRefreshCallback(window_);
-		}
-
-		// An alternative method is glfwPollEvents().
-		// It returns immediately and only process events that are already in the
-		// event queue.
-		glfwWaitEvents();
+	while (WaitEvents()) {
 	}
 }
 
-void Visualizer::AsyncRun()
+bool Visualizer::WaitEvents()
 {
+	glfwMakeContextCurrent(window_);
+	if (is_redraw_required_) {
+		WindowRefreshCallback(window_);
+	}
+	glfwWaitEvents();
+	return !glfwWindowShouldClose(window_);
+}
+
+bool Visualizer::PollEvents()
+{
+	glfwMakeContextCurrent(window_);
+	if (is_redraw_required_) {
+		WindowRefreshCallback(window_);
+	}
+	glfwPollEvents();
+	return !glfwWindowShouldClose(window_);
 }
 
 void Visualizer::AddPointCloud(
@@ -250,11 +253,19 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("                  2 - x coordinate as color.\n");
 	PrintInfo("                  3 - y coordinate as color.\n");
 	PrintInfo("                  4 - z coordinate as color.\n");
-	PrintInfo("    Ctrl + 0..1 : Color map options.\n");
+	PrintInfo("    Ctrl + 0..3 : Color map options.\n");
 	PrintInfo("                  0 - Gray scale color.\n");
 	PrintInfo("                  1 - JET color map.\n");
+	PrintInfo("                  2 - SUMMER color map.\n");
+	PrintInfo("                  3 - WINTER color map.\n");
 	PrintInfo("    N           : Turn on/off normal rendering.\n");
 	PrintInfo("\n");
+}
+
+void Visualizer::ResetViewPoint()
+{
+	view_control_.Reset();
+	is_redraw_required_ = true;
 }
 
 void Visualizer::SetDefaultMeshMaterial()
@@ -457,8 +468,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapGray);
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option =
-					POINTCOLOR_DEFAULT;
+			pointcloud_render_mode_.point_color_option = POINTCOLOR_DEFAULT;
 			PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
 		}
 		break;
@@ -467,18 +477,27 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapJet);
 			PrintDebug("[Visualizer] Color map set to JET.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option =
-					POINTCOLOR_COLOR;
+			pointcloud_render_mode_.point_color_option = POINTCOLOR_COLOR;
 			PrintDebug("[Visualizer] Point color set to COLOR.\n");
 		}
 		break;
 	case GLFW_KEY_2:
-		pointcloud_render_mode_.point_color_option = POINTCOLOR_X;
-		PrintDebug("[Visualizer] Point color set to X.\n");
+		if (mods & GLFW_MOD_CONTROL) {
+			color_map_ptr_.reset(new ColorMapSummer);
+			PrintDebug("[Visualizer] Color map set to SUMMER.\n");
+		} else {
+			pointcloud_render_mode_.point_color_option = POINTCOLOR_X;
+			PrintDebug("[Visualizer] Point color set to X.\n");
+		}
 		break;
 	case GLFW_KEY_3:
-		pointcloud_render_mode_.point_color_option = POINTCOLOR_Y;
-		PrintDebug("[Visualizer] Point color set to Y.\n");
+		if (mods & GLFW_MOD_CONTROL) {
+			color_map_ptr_.reset(new ColorMapWinter);
+			PrintDebug("[Visualizer] Color map set to WINTER.\n");
+		} else {
+			pointcloud_render_mode_.point_color_option = POINTCOLOR_Y;
+			PrintDebug("[Visualizer] Point color set to Y.\n");
+		}
 		break;
 	case GLFW_KEY_4:
 		pointcloud_render_mode_.point_color_option = POINTCOLOR_Z;

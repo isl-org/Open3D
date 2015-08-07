@@ -43,11 +43,6 @@ namespace three {
 
 class Visualizer  {
 public:
-	enum ColorMapOption {
-		COLORMAP_GRAY = 0,
-		COLORMAP_JET = 1,
-	};
-
 	enum PointColorOption {
 		POINTCOLOR_DEFAULT = 0,
 		POINTCOLOR_COLOR = 1,
@@ -104,12 +99,26 @@ public:
 	~Visualizer();
 
 public:
+	/// Function to create a window and initialize GLFW
+	/// This function MUST be called from the main thread.
 	bool CreateWindow(const std::string window_name = "Open3DV", 
 			const int width = 640, const int height = 480,
 			const int left = 50, const int top = 50);
-	void ResetViewPoint();
+	
+	/// Function to activate the window
+	/// This function will block the current thread until the window is closed.
 	void Run();
-	void AsyncRun();	// this call will not block the main thread.
+
+	/// Function to process the event queue and return if the window is closed
+	/// Use this function if you want to manage the while loop yourself. This
+	/// function will block the thread.
+	bool WaitEvents();
+	
+	/// Function to process the event queue and return if the window is closed
+	/// Use this function if you want to manage the while loop yourself. This
+	/// function will NOT block the thread. Thus it is suitable for computation
+	/// heavy task behind the scene.
+	bool PollEvents();
 
 	// handle geometry
 	void AddPointCloud(std::shared_ptr<const PointCloud> pointcloud_ptr);
@@ -134,6 +143,7 @@ protected:
 	virtual void Render();
 
 	virtual void PrintVisualizerHelp();
+	void ResetViewPoint();
 	void SetDefaultMeshMaterial();
 	void SetDefaultLighting(const BoundingBox &bounding_box);
 

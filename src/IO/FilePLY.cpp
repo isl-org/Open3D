@@ -82,7 +82,7 @@ int ReadColorCallback(p_ply_argument argument)
 {
 	PLYReaderState *state_ptr;
 	long index;
-	ply_get_argument_user_data(argument, 
+	ply_get_argument_user_data(argument,
 			reinterpret_cast<void **>(&state_ptr), &index);
 	double value = ply_get_argument_value(argument);
 	state_ptr->pointcloud_ptr->colors_[state_ptr->color_index](index) =
