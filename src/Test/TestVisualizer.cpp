@@ -47,6 +47,14 @@ int main(int argc, char *argv[])
 	}
 	pointcloud_ptr->NormalizeNormal();
 
+	std::shared_ptr<TriangleMesh> mesh_ptr(new TriangleMesh);
+	if (ReadTriangleMeshFromPLY(argv[2], *mesh_ptr)) {
+		PrintWarning("Successfully read %s\n", argv[2]);
+	} else {
+		PrintError("Failed to read %s\n\n", argv[2]);
+	}
+	mesh_ptr->NormalizeNormal();
+	
 	// 2. test visualization.
 
 	Visualizer visualizer1;
@@ -54,7 +62,7 @@ int main(int argc, char *argv[])
 	visualizer1.CreateWindow("Open3DV", 1600, 900);
 
 	Visualizer visualizer2;
-	visualizer2.AddGeometry(pointcloud_ptr);
+	visualizer2.AddGeometry(mesh_ptr);
 	visualizer2.CreateWindow("Open3DV", 800, 450);
 	
 	while (visualizer1.PollEvents() && visualizer2.PollEvents()) {

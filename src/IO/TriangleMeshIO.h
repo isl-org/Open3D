@@ -26,56 +26,29 @@
 
 #pragma once
 
-#include <vector>
-#include <Eigen/Core>
+#include <string>
 
-#include "Geometry.h"
+#include <Core/Core.h>
 
 namespace three {
 
-class TriangleMesh : public Geometry
-{
-public:
-	TriangleMesh();
-	virtual ~TriangleMesh();
+/// The general entrance for reading a TriangleMesh from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return If the read function is successful. 
+bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh);
 
-public:
-	virtual bool CloneFrom(const Geometry &mesh);
-	virtual Eigen::Vector3d GetMinBound() const;
-	virtual Eigen::Vector3d GetMaxBound() const;
-	virtual void Clear();
-	virtual bool IsEmpty() const;
-	
-public:
-	bool HasVertices() const {
-		return vertices_.size() > 0;
-	}
-	
-	bool HasTriangles() const {
-		return triangles_.size() > 0;
-	}
-	
-	bool HasVertexNormals() const {
-		return vertices_.size() > 0 &&
-				vertex_normals_.size() == vertices_.size();
-	}
-	
-	bool HasVertexColors() const {
-		return vertices_.size() > 0 &&
-				vertex_colors_.size() == vertices_.size();
-	}
-	
-	void NormalizeNormal() {
-		for (size_t i = 0; i < vertex_normals_.size(); i++) {
-			vertex_normals_[i].normalize();
-		}
-	}
-public:
-	std::vector<Eigen::Vector3d> vertices_;
-	std::vector<Eigen::Vector3d> vertex_normals_;
-	std::vector<Eigen::Vector3d> vertex_colors_;
-	std::vector<Eigen::Vector3i> triangles_;
-	std::vector<Eigen::Vector3d> triangle_normals_;
-};
+/// The general entrance for writing a TriangleMesh to a file
+/// The function calls write functions based on the extension name of filename.
+/// \return If the write function is successful. 
+bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh);
+
+bool ReadTriangleMeshFromPLY(
+		const std::string &filename,
+		TriangleMesh &mesh);
+
+bool WriteTriangleMeshToPLY(
+		const std::string &filename,
+		const TriangleMesh &mesh,
+		const bool write_ascii = false);
 
 }	// namespace three

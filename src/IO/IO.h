@@ -27,3 +27,4 @@
 #pragma once
 
 #include "PointCloudIO.h"
+#include "TriangleMeshIO.h"

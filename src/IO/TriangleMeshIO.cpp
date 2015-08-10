@@ -24,58 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "TriangleMeshIO.h"
 
-#include <vector>
-#include <Eigen/Core>
+namespace three{
 
-#include "Geometry.h"
-
-namespace three {
-
-class TriangleMesh : public Geometry
+bool ReadTriangleMesh(std::string filename, TriangleMesh &mesh)
 {
-public:
-	TriangleMesh();
-	virtual ~TriangleMesh();
+	return false;
+}
 
-public:
-	virtual bool CloneFrom(const Geometry &mesh);
-	virtual Eigen::Vector3d GetMinBound() const;
-	virtual Eigen::Vector3d GetMaxBound() const;
-	virtual void Clear();
-	virtual bool IsEmpty() const;
-	
-public:
-	bool HasVertices() const {
-		return vertices_.size() > 0;
-	}
-	
-	bool HasTriangles() const {
-		return triangles_.size() > 0;
-	}
-	
-	bool HasVertexNormals() const {
-		return vertices_.size() > 0 &&
-				vertex_normals_.size() == vertices_.size();
-	}
-	
-	bool HasVertexColors() const {
-		return vertices_.size() > 0 &&
-				vertex_colors_.size() == vertices_.size();
-	}
-	
-	void NormalizeNormal() {
-		for (size_t i = 0; i < vertex_normals_.size(); i++) {
-			vertex_normals_[i].normalize();
-		}
-	}
-public:
-	std::vector<Eigen::Vector3d> vertices_;
-	std::vector<Eigen::Vector3d> vertex_normals_;
-	std::vector<Eigen::Vector3d> vertex_colors_;
-	std::vector<Eigen::Vector3i> triangles_;
-	std::vector<Eigen::Vector3d> triangle_normals_;
-};
+bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh)
+{
+	return false;
+}
 
 }	// namespace three
