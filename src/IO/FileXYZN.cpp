@@ -59,7 +59,9 @@ bool ReadPointCloudFromXYZN(
 
 bool WritePointCloudToXYZN(
 		const std::string &filename,
-		const PointCloud &pointcloud)
+		const PointCloud &pointcloud,
+		const bool write_ascii/* = false*/,
+		const bool compressed/* = false*/)
 {
 	if (pointcloud.HasNormals() == false) {
 		return false;

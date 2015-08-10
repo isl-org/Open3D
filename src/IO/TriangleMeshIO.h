@@ -39,8 +39,11 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh);
 
 /// The general entrance for writing a TriangleMesh to a file
 /// The function calls write functions based on the extension name of filename.
-/// \return If the write function is successful. 
-bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh);
+/// If the write function supports binary encoding and compression, the later
+/// two parameter will be used. Otherwise they will be ignored.
+/// \return If the write function is successful.
+bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
+		const bool write_ascii = false, const bool compressed = false);
 
 bool ReadTriangleMeshFromPLY(
 		const std::string &filename,
@@ -49,6 +52,7 @@ bool ReadTriangleMeshFromPLY(
 bool WriteTriangleMeshToPLY(
 		const std::string &filename,
 		const TriangleMesh &mesh,
-		const bool write_ascii = false);
+		const bool write_ascii = false,
+		const bool compressed = false);
 
 }	// namespace three

@@ -26,16 +26,65 @@
 
 #include "PointCloudIO.h"
 
+#include <unordered_map>
+
 namespace three{
 
-bool ReadPointCloud(std::string filename, PointCloud &pointcloud)
+namespace {
+
+const std::unordered_map<std::string,
+		std::function<bool(const std::string &, PointCloud &)>>
+		file_extension_to_pointcloud_read_function
+		{{".xyz", ReadPointCloudFromXYZ},
+		{".xyzn", ReadPointCloudFromXYZN},
+		{".ply", ReadPointCloudFromPLY},
+		{".pcd", ReadPointCloudFromPCD},
+		};
+
+const std::unordered_map<std::string,
+		std::function<bool(const std::string &, const PointCloud &,
+		const bool, const bool)>>
+		file_extension_to_pointcloud_write_function
+		{{".xyz", WritePointCloudToXYZ},
+		{".xyzn", WritePointCloudToXYZN},
+		{".ply", WritePointCloudToPLY},
+		{".pcd", WritePointCloudToPCD},
+		};
+}	// unnamed namespace
+
+bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 {
-	return false;
+	size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos) {
+		PrintDebug("Read PointCloud failed: unknown file extension.");
+		return false;
+	}
+	std::string filename_ext = filename.substr(dot_pos);
+	auto map_itr =
+			file_extension_to_pointcloud_read_function.find(filename_ext);
+	if (map_itr == file_extension_to_pointcloud_read_function.end()) {
+		PrintDebug("Read PointCloud failed: unknown file extension.");
+		return false;
+	}
+	return map_itr->second(filename, pointcloud);
 }
 
-bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud)
+bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
+		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
 {
-	return false;
+	size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos) {
+		PrintDebug("Write PointCloud failed: unknown file extension.");
+		return false;
+	}
+	std::string filename_ext = filename.substr(dot_pos);
+	auto map_itr =
+	file_extension_to_pointcloud_write_function.find(filename_ext);
+	if (map_itr == file_extension_to_pointcloud_write_function.end()) {
+		PrintDebug("Write PointCloud failed: unknown file extension.");
+		return false;
+	}
+	return map_itr->second(filename, pointcloud, write_ascii, compressed);
 }
 
 }	// namespace three

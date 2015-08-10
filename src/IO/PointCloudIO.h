@@ -39,8 +39,11 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud);
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
+/// If the write function supports binary encoding and compression, the later
+/// two parameter will be used. Otherwise they will be ignored.
 /// \return If the write function is successful. 
-bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud);
+bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
+		const bool write_ascii = false, const bool compressed = false);
 
 bool ReadPointCloudFromXYZ(
 		const std::string &filename,
@@ -48,7 +51,9 @@ bool ReadPointCloudFromXYZ(
 
 bool WritePointCloudToXYZ(
 		const std::string &filename,
-		const PointCloud &pointcloud);
+		const PointCloud &pointcloud,
+		const bool write_ascii = false,
+		const bool compressed = false);
 
 bool ReadPointCloudFromXYZN(
 		const std::string &filename,
@@ -56,7 +61,9 @@ bool ReadPointCloudFromXYZN(
 
 bool WritePointCloudToXYZN(
 		const std::string &filename,
-		const PointCloud &pointcloud);
+		const PointCloud &pointcloud,
+		const bool write_ascii = false,
+		const bool compressed = false);
 
 bool ReadPointCloudFromPLY(
 		const std::string &filename,
@@ -65,7 +72,8 @@ bool ReadPointCloudFromPLY(
 bool WritePointCloudToPLY(
 		const std::string &filename,
 		const PointCloud &pointcloud,
-		const bool write_ascii = false);
+		const bool write_ascii = false,
+		const bool compressed = false);
 
 bool ReadPointCloudFromPCD(
 		const std::string &filename,

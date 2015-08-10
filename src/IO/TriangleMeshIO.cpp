@@ -26,16 +26,60 @@
 
 #include "TriangleMeshIO.h"
 
-namespace three{
+#include <unordered_map>
 
-bool ReadTriangleMesh(std::string filename, TriangleMesh &mesh)
+namespace three{
+	
+namespace {
+	
+const std::unordered_map<std::string,
+		std::function<bool(const std::string &, TriangleMesh &)>>
+		file_extension_to_trianglemesh_read_function
+		{{".ply", ReadTriangleMeshFromPLY},
+		};
+
+const std::unordered_map<std::string,
+		std::function<bool(const std::string &, const TriangleMesh &,
+		const bool, const bool)>>
+		file_extension_to_trianglemesh_write_function
+		{{".ply", WriteTriangleMeshToPLY},
+		};
+
+}	// unnamed namespace
+
+bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 {
-	return false;
+	size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos) {
+		PrintDebug("Read TriangleMesh failed: unknown file extension.");
+		return false;
+	}
+	std::string filename_ext = filename.substr(dot_pos);
+	auto map_itr =
+			file_extension_to_trianglemesh_read_function.find(filename_ext);
+	if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
+		PrintDebug("Read TriangleMesh failed: unknown file extension.");
+		return false;
+	}
+	return map_itr->second(filename, mesh);
 }
 
-bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh)
+bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
+		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
 {
-	return false;
+	size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos) {
+		PrintDebug("Write TriangleMesh failed: unknown file extension.");
+		return false;
+	}
+	std::string filename_ext = filename.substr(dot_pos);
+	auto map_itr =
+			file_extension_to_trianglemesh_write_function.find(filename_ext);
+	if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
+		PrintDebug("Write TriangleMesh failed: unknown file extension.");
+		return false;
+	}
+	return map_itr->second(filename, mesh, write_ascii, compressed);
 }
 
 }	// namespace three

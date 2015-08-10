@@ -81,19 +81,19 @@ int main(int argc, char *argv[])
 	const std::string filename_xyz("test.xyz");
 	const std::string filename_ply("test.ply");
 
-	if (ReadPointCloudFromPLY(argv[1], pointcloud)) {
+	if (ReadPointCloud(argv[1], pointcloud)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
 		
 		PointCloud pointcloud_copy;
 		pointcloud_copy.CloneFrom(pointcloud);
 		
-		//if (WritePointCloudToXYZ(filename_xyz, pointcloud)) {
-		//	PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
-		//} else {
-		//	PrintError("Failed to write %s\n\n", filename_xyz.c_str());
-		//}
+		if (WritePointCloud(filename_xyz, pointcloud)) {
+			PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
+		} else {
+			PrintError("Failed to write %s\n\n", filename_xyz.c_str());
+		}
 
-		if (WritePointCloudToPLY(filename_ply, pointcloud_copy)) {
+		if (WritePointCloud(filename_ply, pointcloud_copy)) {
 			PrintWarning("Successfully wrote %s\n\n", filename_ply.c_str());
 		} else {
 			PrintError("Failed to write %s\n\n", filename_ply.c_str());

@@ -264,7 +264,8 @@ bool ReadPointCloudFromPLY(
 bool WritePointCloudToPLY(
 		const std::string &filename,
 		const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/)
+		const bool write_ascii/* = false*/,
+		const bool compressed/* = false*/)
 {
 	if (pointcloud.IsEmpty()) {
 		PrintDebug("Write PLY failed: point cloud has 0 points.\n");
@@ -396,7 +397,8 @@ bool ReadTriangleMeshFromPLY(
 bool WriteTriangleMeshToPLY(
 		const std::string &filename,
 		const TriangleMesh &mesh,
-		const bool write_ascii/* = false*/)
+		const bool write_ascii/* = false*/,
+		const bool compressed/* = false*/)
 {
 	if (mesh.IsEmpty()) {
 		PrintDebug("Write PLY failed: mesh has 0 vertices.\n");

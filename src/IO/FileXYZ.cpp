@@ -56,7 +56,9 @@ bool ReadPointCloudFromXYZ(
 
 bool WritePointCloudToXYZ(
 		const std::string &filename,
-		const PointCloud &pointcloud)
+		const PointCloud &pointcloud,
+		const bool write_ascii/* = false*/,
+		const bool compressed/* = false*/)
 {
 	FILE *file = fopen(filename.c_str(), "w");
 	if (file == NULL) {
