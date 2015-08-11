@@ -121,9 +121,6 @@ int main(int argc, char *argv[])
 			Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitX()));
 	pointcloud_transformed_ptr->Transform(
 			trans_to_origin.inverse() * transformation * trans_to_origin);
-	std::cout << transformation << std::endl;
-	std::cout << trans_to_origin << std::endl;
-	std::cout << trans_to_origin.inverse() * transformation * trans_to_origin << std::endl;
 
 	visualizer.AddGeometry(pointcloud_ptr);
 	visualizer.AddGeometry(pointcloud_transformed_ptr);
