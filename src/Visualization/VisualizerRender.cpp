@@ -30,10 +30,6 @@ namespace three{
 
 void Visualizer::InitOpenGL()
 {
-	// Mesh
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glPolygonOffset(1.0, 1.0);
-
 	// depth test
 	glEnable(GL_DEPTH_TEST);
 	glClearDepth(1.0f);
@@ -170,7 +166,6 @@ void Visualizer::SetDefaultLighting(const BoundingBox &bounding_box)
 void Visualizer::DrawPointCloud(const PointCloud &pointcloud)
 {
 	glDisable(GL_LIGHTING);
-	glDisable(GL_POLYGON_OFFSET_FILL);
 	glPointSize(GLfloat(pointcloud_render_mode_.point_size));
 	glBegin(GL_POINTS);
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
@@ -220,7 +215,6 @@ void Visualizer::DrawPointCloudNormal(const PointCloud &pointcloud)
 		return;
 	}
 	glDisable(GL_LIGHTING);
-	glDisable(GL_POLYGON_OFFSET_FILL);
 	glLineWidth(1.0f);
 	glColor3d(0.0, 0.0, 0.0);
 	glBegin(GL_LINES);
@@ -238,7 +232,29 @@ void Visualizer::DrawPointCloudNormal(const PointCloud &pointcloud)
 
 void Visualizer::DrawTriangleMesh(const TriangleMesh &mesh)
 {
+	switch (mesh_render_mode_.mesh_render_option) {
+	case MESHRENDER_VERTEXCOLOR:
+		glDisable(GL_LIGHTING);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		break;
+	case MESHRENDER_SMOOTHSHADE:
+		SetDefaultLighting(view_control_.GetBoundingBox());
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		break;
+	case MESHRENDER_WIREFRAME:
+		glDisable(GL_LIGHTING);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		break;
+	case MESHRENDER_FLATSHADE:
+	default:
+		SetDefaultLighting(view_control_.GetBoundingBox());
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		break;
+	}
 	
+	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+		const Eigen::Vector3i & triangle = mesh.triangles_[i];
+	}
 }
 
 }	// namespace three

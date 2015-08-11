@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	// 1. load some geometry
 	
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
-	if (ReadPointCloudFromPLY(argv[1], *pointcloud_ptr)) {
+	if (ReadPointCloud(argv[1], *pointcloud_ptr)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
 	} else {
 		PrintError("Failed to read %s\n\n", argv[1]);
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	pointcloud_ptr->NormalizeNormal();
 
 	std::shared_ptr<TriangleMesh> mesh_ptr(new TriangleMesh);
-	if (ReadTriangleMeshFromPLY(argv[2], *mesh_ptr)) {
+	if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
 		PrintWarning("Successfully read %s\n", argv[2]);
 	} else {
 		PrintError("Failed to read %s\n\n", argv[2]);

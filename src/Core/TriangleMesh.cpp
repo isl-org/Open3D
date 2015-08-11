@@ -96,4 +96,20 @@ bool TriangleMesh::IsEmpty() const
 	return !HasVertices();
 }
 
+void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
+{
+	for (size_t i = 0; i < vertices_.size(); i++) {
+		Eigen::Vector4d new_point = transformation * Eigen::Vector4d(
+				vertices_[i](0), vertices_[i](1), vertices_[i](2), 1.0);
+		vertices_[i] = new_point.block<3, 1>(0, 0);
+	}
+	
+	for (size_t i = 0; i < vertex_normals_.size(); i++) {
+		Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
+				vertex_normals_[i](0), vertex_normals_[i](1),
+				vertex_normals_[i](2), 0.0);
+		vertex_normals_[i] = new_normal.block<3, 1>(0, 0);
+	}
+}
+
 }	// namespace three

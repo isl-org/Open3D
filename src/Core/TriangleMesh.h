@@ -45,6 +45,7 @@ public:
 	virtual Eigen::Vector3d GetMaxBound() const;
 	virtual void Clear();
 	virtual bool IsEmpty() const;
+	virtual void Transform(const Eigen::Matrix4d &transformation);
 	
 public:
 	bool HasVertices() const {
@@ -75,7 +76,6 @@ public:
 	std::vector<Eigen::Vector3d> vertex_normals_;
 	std::vector<Eigen::Vector3d> vertex_colors_;
 	std::vector<Eigen::Vector3i> triangles_;
-	std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
 }	// namespace three

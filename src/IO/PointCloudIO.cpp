@@ -79,7 +79,7 @@ bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
 	}
 	std::string filename_ext = filename.substr(dot_pos);
 	auto map_itr =
-	file_extension_to_pointcloud_write_function.find(filename_ext);
+			file_extension_to_pointcloud_write_function.find(filename_ext);
 	if (map_itr == file_extension_to_pointcloud_write_function.end()) {
 		PrintDebug("Write PointCloud failed: unknown file extension.");
 		return false;

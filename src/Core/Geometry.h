@@ -48,6 +48,7 @@ public:
 	virtual Eigen::Vector3d GetMaxBound() const = 0;
 	virtual void Clear() = 0;
 	virtual bool IsEmpty() const = 0;
+	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
 	
 	GeometryType GetGeometryType() const { return geometry_type_; }
 

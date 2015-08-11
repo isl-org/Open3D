@@ -100,5 +100,20 @@ bool PointCloud::IsEmpty() const
 {
 	return !HasPoints();
 }
+	
+void PointCloud::Transform(const Eigen::Matrix4d &transformation)
+{
+	for (size_t i = 0; i < points_.size(); i++) {
+		Eigen::Vector4d new_point = transformation * Eigen::Vector4d(
+				points_[i](0), points_[i](1), points_[i](2), 1.0);
+		points_[i] = new_point.block<3, 1>(0, 0);
+	}
+	
+	for (size_t i = 0; i < normals_.size(); i++) {
+		Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
+				normals_[i](0), normals_[i](1), normals_[i](2), 0.0);
+		normals_[i] = new_normal.block<3, 1>(0, 0);
+	}
+}
 
 }	// namespace three

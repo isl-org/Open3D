@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <memory>
+#include <Eigen/Dense>
 
 #include <Core/Core.h>
 #include <IO/IO.h>
@@ -108,7 +109,24 @@ int main(int argc, char *argv[])
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
 	pointcloud_ptr->CloneFrom(pointcloud);
 	pointcloud_ptr->NormalizeNormal();
+	BoundingBox bounding_box;
+	bounding_box.AddGeometry(*pointcloud_ptr);
+	
+	std::shared_ptr<PointCloud> pointcloud_transformed_ptr(new PointCloud);
+	pointcloud_transformed_ptr->CloneFrom(*pointcloud_ptr);
+	Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
+	trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
+	Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
+	transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
+			Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitX()));
+	pointcloud_transformed_ptr->Transform(
+			trans_to_origin.inverse() * transformation * trans_to_origin);
+	std::cout << transformation << std::endl;
+	std::cout << trans_to_origin << std::endl;
+	std::cout << trans_to_origin.inverse() * transformation * trans_to_origin << std::endl;
+
 	visualizer.AddGeometry(pointcloud_ptr);
+	visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.CreateWindow("Open3DV", 1600, 900);
 	visualizer.Run();
 

@@ -45,6 +45,7 @@ public:
 	virtual Eigen::Vector3d GetMaxBound() const;
 	virtual void Clear();
 	virtual bool IsEmpty() const;
+	virtual void Transform(const Eigen::Matrix4d &transformation);
 
 public:
 	bool HasPoints() const {

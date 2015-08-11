@@ -53,16 +53,16 @@ public:
 
 	struct PointCloudRenderMode {
 	public:
-		double point_size;
-		PointColorOption point_color_option;
-		bool show_normal;
-
 		const double POINT_SIZE_MAX = 25.0;
 		const double POINT_SIZE_MIN = 1.0;
 		const double POINT_SIZE_STEP = 1.0;
 		const double POINT_SIZE_DEFAULT = 5.0;
+		
+		double point_size;
+		PointColorOption point_color_option;
+		bool show_normal;
 
-		PointCloudRenderMode() : 
+		PointCloudRenderMode() :
 				point_color_option(POINTCOLOR_DEFAULT),
 				show_normal(false)
 		{
@@ -78,6 +78,25 @@ public:
 			}
 		}
 	};
+
+	enum MeshRenderOption {
+		MESHRENDER_VERTEXCOLOR = 0,
+		MESHRENDER_FLATSHADE = 1,
+		MESHRENDER_SMOOTHSHADE = 2,
+		MESHRENDER_WIREFRAME = 3,
+	};
+	
+	struct MeshRenderMode {
+	public:
+		const Eigen::Vector3d DEFAULT_COLOR = Eigen::Vector3d(0.5, 0.5, 0.5);
+		
+		MeshRenderOption mesh_render_option;
+		
+		MeshRenderMode() :
+				mesh_render_option(MESHRENDER_FLATSHADE)
+		{}
+	};
+
 
 	struct MouseControl {
 	public:
@@ -180,10 +199,11 @@ protected:
 
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;
+	MeshRenderMode mesh_render_mode_;
 	std::shared_ptr<ColorMap> color_map_ptr_;
 	Eigen::Vector3d background_color_;
 
-	// geometry to be rendered
+	// geometry to be renCodered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 
 	// data to be retrieved
