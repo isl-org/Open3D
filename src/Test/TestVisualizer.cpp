@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	visualizer1.CreateWindow("Open3DV", 1600, 900);
 
 	Visualizer visualizer2;
-	visualizer2.AddGeometry(mesh_ptr);
+	visualizer2.AddGeometry(pointcloud_ptr);
 	visualizer2.CreateWindow("Open3DV", 800, 450);
 	
 	while (visualizer1.PollEvents() && visualizer2.PollEvents()) {
