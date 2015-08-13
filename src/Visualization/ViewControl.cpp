@@ -27,14 +27,6 @@
 #include "ViewControl.h"
 
 #include <Eigen/Dense>
-
-#ifdef __APPLE__
-#include <GLKit/GLKMatrix4.h>
-#endif
-
-#ifndef GLFW_INCLUDE_GLU
-#define GLFW_INCLUDE_GLU
-#endif
 #include <GLFW/glfw3.h>
 
 namespace three{
@@ -143,41 +135,31 @@ void ViewControl::SetViewPoint()
 		return;
 	}
 	glViewport(0, 0, window_width_, window_height_);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
 	if (GetProjectionType() == PROJECTION_PERSPECTIVE)
 	{
 		// Perspective projection
-#ifdef __APPLE__
-		glMultMatrixf(GLKMatrix4MakePerspective(
-				field_of_view_ / 180.0 * M_PI, aspect_,
-				std::max(0.0001, distance_ - 1.0 * bounding_box_.GetSize()),
-				distance_ + 1.0 * bounding_box_.GetSize()).m);
-#else
-		gluPerspective(field_of_view_, aspect_,
+		projection_matrix_ = GLHelper::Perspective(field_of_view_, aspect_,
 				std::max(0.0001, distance_ - 1.0 * bounding_box_.GetSize()),
 				distance_ + 1.0 * bounding_box_.GetSize());
-#endif
 	} else {
 		// Orthogonal projection
 		// We use some black magic to support distance_ in orthogonal view
-		glOrtho(-aspect_ * view_ratio_,	aspect_ * view_ratio_,
+		projection_matrix_ = GLHelper::Ortho(
+				-aspect_ * view_ratio_,	aspect_ * view_ratio_,
 				-view_ratio_, view_ratio_,
 				distance_ - 3.0 * bounding_box_.GetSize(),
 				distance_ + 3.0 * bounding_box_.GetSize());
 	}
-
+	view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_ );
+	model_matrix_ = GLHelper::GLMatrix4f::Identity();
+	MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
+	
+	// deprecated functions of legacy OpenGL
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-#ifdef __APPLE__
-	glMultMatrixf(GLKMatrix4MakeLookAt(eye_(0), eye_(1), eye_(2),
-			lookat_(0),	lookat_(1),	lookat_(2),
-			up_(0),	up_(1),	up_(2)).m);
-#else
-	gluLookAt(eye_(0), eye_(1), eye_(2),
-			lookat_(0),	lookat_(1),	lookat_(2),
-			up_(0),	up_(1),	up_(2));
-#endif
+	glMultMatrixf(MVP_matrix_.data());
 }
 
 }	// namespace three

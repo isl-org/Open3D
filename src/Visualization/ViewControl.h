@@ -29,6 +29,7 @@
 #include <Core/Core.h>
 
 #include "BoundingBox.h"
+#include "VisualizerHelper.h"
 
 namespace three {
 
@@ -94,6 +95,10 @@ protected:
 	double aspect_;
 	int window_width_;
 	int window_height_;
+	GLHelper::GLMatrix4f projection_matrix_;
+	GLHelper::GLMatrix4f view_matrix_;
+	GLHelper::GLMatrix4f model_matrix_;
+	GLHelper::GLMatrix4f MVP_matrix_;
 };
 
 }	// namespace three

@@ -29,9 +29,6 @@
 #include <string>
 #include <memory>
 
-#ifndef GLFW_INCLUDE_GLU
-#define GLFW_INCLUDE_GLU
-#endif
 #include <GLFW/glfw3.h>
 #include <Core/Core.h>
 
@@ -205,11 +202,6 @@ protected:
 
 	// geometry to be renCodered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
-
-	// data to be retrieved
-	GLint	m_glViewport[4];
-	GLdouble m_glModelview[16];
-	GLdouble m_glProjection[16];
 };
 
 }	// namespace three

@@ -46,12 +46,6 @@ void Visualizer::Render()
 	glfwMakeContextCurrent(window_);
 	view_control_.SetViewPoint();
 
-	// retrieve some OpenGL matrices that can make some operations easy.
-	// e.g., gluProject
-	glGetDoublev(GL_MODELVIEW_MATRIX, m_glModelview);
-	glGetDoublev(GL_PROJECTION_MATRIX, m_glProjection);
-	glGetIntegerv(GL_VIEWPORT, m_glViewport);
-
 	glClearColor((GLclampf)background_color_(0),
 			(GLclampf)background_color_(1),
 			(GLclampf)background_color_(2), 1.0f);
