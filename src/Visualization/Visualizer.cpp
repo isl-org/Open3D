@@ -72,6 +72,8 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 		const int width/* = 640*/, const int height/* = 480*/,
 		const int left/* = 50*/, const int top/* = 50*/)
 {
+	PrintInfo("%s", three::glsl::PointCloudVertexShader);
+	
 	if (window_) {	// window already created
 		glfwSetWindowPos(window_, left, top);
 		glfwSetWindowSize(window_, width, height);

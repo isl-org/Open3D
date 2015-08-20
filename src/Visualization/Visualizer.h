@@ -32,6 +32,7 @@
 #include <GLFW/glfw3.h>
 #include <Core/Core.h>
 
+#include "Shader.h"
 #include "ColorMap.h"
 #include "BoundingBox.h"
 #include "ViewControl.h"

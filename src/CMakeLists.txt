@@ -61,9 +61,9 @@ endif(WIN32)
 
 add_subdirectory(External)
 add_subdirectory(Core)
+add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
-add_subdirectory(Tools)
 
 if(Open3DV_BUILD_TESTS)
 	add_subdirectory(Test)
