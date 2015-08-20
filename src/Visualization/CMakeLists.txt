@@ -5,7 +5,7 @@ add_custom_command(
 	WORKING_DIRECTORY ${Open3DV_SOURCE_DIR}/Visualization/
 )
 set(ShaderOutputFiles "Shader.h")
-file(GLOB SHADER_FILES "shader/*.glsl")
+file(GLOB SHADER_FILES "Shader/*.glsl")
 foreach(file ${SHADER_FILES})
 	add_custom_command(
 		OUTPUT "${file}.out"
@@ -14,7 +14,6 @@ foreach(file ${SHADER_FILES})
 	)
 	set(ShaderOutputFiles ${ShaderOutputFiles} "${file}.out")
 endforeach(file)
-message("${ShaderOutputFiles}")
 add_custom_target(ShaderFileTarget ALL DEPENDS ${ShaderOutputFiles})
 
 source_group("Shader" FILES ${SHADER_FILES})
