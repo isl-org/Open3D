@@ -1,20 +1,22 @@
 # some black magic to automatically create a header file from shader files
+file(GLOB SHADER_FILES "Shader/*.glsl")
 add_custom_command(
-	OUTPUT Shader.h
+	OUTPUT ${Open3DV_SOURCE_DIR}/Visualization/Shader.h
 	COMMAND EncodeShader Shader.h
 	WORKING_DIRECTORY ${Open3DV_SOURCE_DIR}/Visualization/
+	DEPENDS ${SHADER_FILES} EncodeShader
 )
-set(ShaderOutputFiles "Shader.h")
-file(GLOB SHADER_FILES "Shader/*.glsl")
 foreach(file ${SHADER_FILES})
 	add_custom_command(
-		OUTPUT "${file}.out"
+		OUTPUT ${Open3DV_SOURCE_DIR}/Visualization/Shader.h
 		COMMAND EncodeShader Shader.h ${file}
 		WORKING_DIRECTORY ${Open3DV_SOURCE_DIR}/Visualization/
+		DEPENDS ${SHADER_FILES} EncodeShader
+		APPEND
 	)
-	set(ShaderOutputFiles ${ShaderOutputFiles} "${file}.out")
 endforeach(file)
-add_custom_target(ShaderFileTarget ALL DEPENDS ${ShaderOutputFiles})
+add_custom_target(ShaderFileTarget ALL
+	DEPENDS ${Open3DV_SOURCE_DIR}/Visualization/Shader.h)
 
 source_group("Shader" FILES ${SHADER_FILES})
 file(GLOB VISUALIZATION_ALL_HEADER_FILES "*.h")
@@ -24,6 +26,7 @@ add_library(Visualization ${Open3DV_LIB_TYPE}
 	${VISUALIZATION_ALL_HEADER_FILES}
 	${SHADER_FILES}
 )
+add_dependencies(Visualization ShaderFileTarget)
 
 install(TARGETS Visualization
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
