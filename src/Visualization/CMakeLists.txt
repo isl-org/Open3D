@@ -14,6 +14,7 @@ foreach(file ${SHADER_FILES})
 	)
 	set(ShaderOutputFiles ${ShaderOutputFiles} "${file}.out")
 endforeach(file)
+message("${ShaderOutputFiles}")
 add_custom_target(ShaderFileTarget ALL DEPENDS ${ShaderOutputFiles})
 
 source_group("Shader" FILES ${SHADER_FILES})
