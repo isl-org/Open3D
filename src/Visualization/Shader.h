@@ -7,6 +7,24 @@ namespace three {
 
 namespace glsl {
 
+const char PointCloudFragmentShader[] = 
+"#version 120\n"
+"\n"
+"varying vec3 fragmentColor;\n"
+"\n"
+"void main(){\n"
+"	gl_FragColor = vec4(fragmentColor, 1);\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
 const char PointCloudVertexShader[] = 
 "#version 120\n"
 "\n"
@@ -21,7 +39,6 @@ const char PointCloudVertexShader[] =
 "	gl_Position =  MVP * vec4(vertexPosition_modelspace, 1);\n"
 "	fragmentColor = vertexColor;\n"
 "}\n"
-"\n"
 ;
 
 }  // namespace three::glsl

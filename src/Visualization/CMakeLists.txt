@@ -17,6 +17,7 @@ foreach(file ${SHADER_FILES})
 endforeach(file)
 add_custom_target(ShaderFileTarget ALL
 	DEPENDS ${Open3DV_SOURCE_DIR}/Visualization/Shader.h)
+set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 source_group("Shader" FILES ${SHADER_FILES})
 file(GLOB VISUALIZATION_ALL_HEADER_FILES "*.h")
