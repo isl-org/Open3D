@@ -28,8 +28,13 @@
 
 namespace three{
 
-void Visualizer::InitOpenGL()
+bool Visualizer::InitOpenGL()
 {
+	if (glewInit() != GLEW_OK) {
+		PrintError("Failed to initialize GLEW.\n");
+		return false;
+	}
+	
 	// depth test
 	glEnable(GL_DEPTH_TEST);
 	glClearDepth(1.0f);
@@ -39,6 +44,8 @@ void Visualizer::InitOpenGL()
 
 	// mesh material
 	SetDefaultMeshMaterial();
+	
+	return true;
 }
 
 void Visualizer::Render()

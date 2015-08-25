@@ -29,6 +29,7 @@
 #include <string>
 #include <memory>
 
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <Core/Core.h>
 
@@ -155,7 +156,7 @@ protected:
 	/// Mesh material
 	/// Note that we use a view point dependent lighting scheme, thus light 
 	/// should be set during rendering.
-	virtual void InitOpenGL();
+	virtual bool InitOpenGL();
 
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and

@@ -72,8 +72,6 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 		const int width/* = 640*/, const int height/* = 480*/,
 		const int left/* = 50*/, const int top/* = 50*/)
 {
-	PrintInfo("%s", three::glsl::PointCloudVertexShader);
-	
 	if (window_) {	// window already created
 		glfwSetWindowPos(window_, left, top);
 		glfwSetWindowSize(window_, width, height);
@@ -85,6 +83,10 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 		PrintError("Failed to initialize GLFW\n");
 		return false;
 	}
+	
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
 	window_ = glfwCreateWindow(width, height, window_name.c_str(), NULL, NULL);
 	if (!window_) {
@@ -147,7 +149,10 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	glfwGetFramebufferSize(window_, &window_width, &window_height);
 	WindowResizeCallback(window_, window_width, window_height);
 
-	InitOpenGL();
+	if (InitOpenGL() == false) {
+		return false;
+	}
+	
 	ResetViewPoint();
 
 	return true;
