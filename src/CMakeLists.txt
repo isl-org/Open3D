@@ -37,13 +37,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/bin)
 if(WIN32)
 	add_definitions(-DWINDOWS)
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)		# suppress C4996 warning
-	add_definitions(-DGLEW_STATIC /WD4273)		# enable GLEW for windows
-
+	add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
 	message(STATUS "Compiling on Windows")
 	if(MSVC)
 		message(STATUS "Compiling with MSVC")
 		add_definitions(-DNOMINMAX)
 		add_definitions(-D_USE_MATH_DEFINES)
+		add_definitions(/wd4273)		# suppress GLEW warnings
 	endif(MSVC)
 elseif(CYGWIN)
 	message(STATUS "Compiling on Cygwin")
