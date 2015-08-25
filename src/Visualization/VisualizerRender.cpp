@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "Visualizer.h"
-#include "Shader.h"
 
 namespace three{
 
@@ -50,71 +49,6 @@ bool Visualizer::InitOpenGL()
 	// mesh material
 	SetDefaultMeshMaterial();
 	
-	return true;
-}
-	
-bool Visualizer::CompileShaders()
-{
-	shaders_.vertex_shader_pointcloud_default =
-			glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(shaders_.vertex_shader_pointcloud_default, 1,
-			&glsl::PointCloudVertexShader, NULL);
-	glCompileShader(shaders_.vertex_shader_pointcloud_default);
-	if (ValidateShader(shaders_.vertex_shader_pointcloud_default) == false) {
-		return false;
-	}
-	
-	shaders_.vertex_shader_pointcloud_x = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(shaders_.vertex_shader_pointcloud_x, 1,
-				   &glsl::PointCloudXVertexShader, NULL);
-	glCompileShader(shaders_.vertex_shader_pointcloud_x);
-	if (ValidateShader(shaders_.vertex_shader_pointcloud_x) == false) {
-		return false;
-	}
-
-	shaders_.vertex_shader_pointcloud_y = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(shaders_.vertex_shader_pointcloud_y, 1,
-				   &glsl::PointCloudYVertexShader, NULL);
-	glCompileShader(shaders_.vertex_shader_pointcloud_y);
-	if (ValidateShader(shaders_.vertex_shader_pointcloud_y) == false) {
-		return false;
-	}
-
-	shaders_.vertex_shader_pointcloud_z = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(shaders_.vertex_shader_pointcloud_z, 1,
-				   &glsl::PointCloudZVertexShader, NULL);
-	glCompileShader(shaders_.vertex_shader_pointcloud_z);
-	if (ValidateShader(shaders_.vertex_shader_pointcloud_z) == false) {
-		return false;
-	}
-	
-	shaders_.fragment_shader_pointcloud_default =
-			glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(shaders_.fragment_shader_pointcloud_default, 1,
-				   &glsl::PointCloudFragmentShader, NULL);
-	glCompileShader(shaders_.fragment_shader_pointcloud_default);
-	if (ValidateShader(shaders_.fragment_shader_pointcloud_default) == false) {
-		return false;
-	}
-	
-	return true;
-}
-	
-bool Visualizer::ValidateShader(GLuint shader_index)
-{
-	GLint result = GL_FALSE;
-	int info_log_length;
-	glGetShaderiv(shader_index, GL_COMPILE_STATUS, &result);
-	if (result == GL_FALSE) {
-		glGetShaderiv(shader_index, GL_INFO_LOG_LENGTH, &info_log_length);
-		if (info_log_length > 0) {
-			std::vector<char> error_message(info_log_length + 1);
-			glGetShaderInfoLog(shader_index, info_log_length, NULL,
-					&error_message[0]);
-			PrintError("Shader error: %s\n", &error_message[0]);
-		}
-		return false;
-	}
 	return true;
 }
 
