@@ -106,7 +106,7 @@ bool Visualizer::ValidateShader(GLuint shader_index)
 	int info_log_length;
 	glGetShaderiv(shader_index, GL_COMPILE_STATUS, &result);
 	glGetShaderiv(shader_index, GL_INFO_LOG_LENGTH, &info_log_length);
-	if (info_log_length > 0) {
+	if (result == GL_FALSE && info_log_length > 0) {
 		std::vector<char> error_message(info_log_length + 1);
 		glGetShaderInfoLog(shader_index, info_log_length, NULL,
 						   &error_message[0]);
