@@ -33,7 +33,6 @@
 #include <GLFW/glfw3.h>
 #include <Core/Core.h>
 
-#include "Shader.h"
 #include "ColorMap.h"
 #include "BoundingBox.h"
 #include "ViewControl.h"
@@ -111,6 +110,16 @@ public:
 				mouse_position_y(0.0)
 		{}
 	};
+	
+	struct ShaderContainer {
+	public:
+		GLuint vertex_shader_pointcloud_default;
+		GLuint vertex_shader_pointcloud_x;
+		GLuint vertex_shader_pointcloud_y;
+		GLuint vertex_shader_pointcloud_z;
+		
+		GLuint fragment_shader_pointcloud_default;
+	};
 
 public:
 	Visualizer();
@@ -157,6 +166,8 @@ protected:
 	/// Note that we use a view point dependent lighting scheme, thus light 
 	/// should be set during rendering.
 	virtual bool InitOpenGL();
+	bool CompileShaders();
+	bool ValidateShader(GLuint shader_index);
 
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and
@@ -204,6 +215,9 @@ protected:
 
 	// geometry to be renCodered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
+	
+	// shaders
+	ShaderContainer shaders_;
 };
 
 }	// namespace three

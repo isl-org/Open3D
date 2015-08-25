@@ -78,7 +78,7 @@ void WriteStringHeader(const std::string &string_name, FILE *file)
 {
 	fprintf(file, "namespace three {\n\n");
 	fprintf(file, "namespace glsl {\n\n");
-	fprintf(file, "const char %s[] = \n", string_name.c_str());
+	fprintf(file, "const char * %s = \n", string_name.c_str());
 }
 
 void WriteStringFooter(FILE *file)

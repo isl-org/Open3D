@@ -9,5 +9,6 @@ varying vec3 fragment_color;
 void main()
 {
 	gl_Position =  MVP * vec4(vertex_position, 1);
-	fragment_color = vertex_color;
+	fragment_color = vec3(vertex_position.x, vertex_position.x,
+			vertex_position.x);
 }
