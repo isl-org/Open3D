@@ -35,7 +35,7 @@ bool Visualizer::InitOpenGL()
 		return false;
 	}
 	
-	if (CompileShaders() == false) {
+	if (pointcloud_default_shader_.Compile() == false) {
 		return false;
 	}
 	

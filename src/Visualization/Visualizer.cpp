@@ -65,6 +65,7 @@ Visualizer::Visualizer() :
 
 Visualizer::~Visualizer()
 {
+	pointcloud_default_shader_.Release();
 	glfwTerminate();	// to be safe
 }
 

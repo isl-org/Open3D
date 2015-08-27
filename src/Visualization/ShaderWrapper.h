@@ -24,9 +24,55 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
-#include "Shader.h"
+#pragma once
 
-namespace three{
+#include <GL/glew.h>
+
+namespace three {
+
+namespace glsl {
+	
+class ShaderWrapper {
+public:
+	ShaderWrapper();
+	virtual ~ShaderWrapper();
+	
+public:
+	virtual bool Compile() = 0;
+	virtual void Release() = 0;
+	
+protected:
+	bool ValidateShader(GLuint shader_index);
+	bool ValidateProgram(GLuint program_index);
+	bool CompileShaders(
+			const GLchar **vertex_shader_code,
+			const GLchar **geometry_shader_code,
+			const GLchar **fragment_shader_code);
+	void ReleaseProgram();
+	
+protected:
+	GLuint vertex_shader_;
+	GLuint geometry_shader_;
+	GLuint fragment_shader_;
+	GLuint program_;
+	bool valid_;
+};
+	
+class PointCloudShaderDefault : public ShaderWrapper {
+public:
+	PointCloudShaderDefault();
+	virtual ~PointCloudShaderDefault();
+	
+public:
+	virtual bool Compile();
+	virtual void Release();
+	
+private:
+	GLuint vertex_position;
+	GLuint vertex_color;
+	GLuint MVP;
+};
+	
+}	// namespace three::glsl
 
 }	// namespace three

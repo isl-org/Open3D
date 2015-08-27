@@ -36,6 +36,7 @@
 #include "ColorMap.h"
 #include "BoundingBox.h"
 #include "ViewControl.h"
+#include "ShaderWrapper.h"
 
 namespace three {
 
@@ -111,16 +112,6 @@ public:
 		{}
 	};
 	
-	struct ShaderContainer {
-	public:
-		GLuint vertex_shader_pointcloud_default;
-		GLuint vertex_shader_pointcloud_x;
-		GLuint vertex_shader_pointcloud_y;
-		GLuint vertex_shader_pointcloud_z;
-		
-		GLuint fragment_shader_pointcloud_default;
-	};
-
 public:
 	Visualizer();
 	virtual ~Visualizer();
@@ -166,8 +157,6 @@ protected:
 	/// Note that we use a view point dependent lighting scheme, thus light 
 	/// should be set during rendering.
 	virtual bool InitOpenGL();
-	bool CompileShaders();
-	bool ValidateShader(GLuint shader_index);
 
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and
@@ -213,11 +202,11 @@ protected:
 	std::shared_ptr<ColorMap> color_map_ptr_;
 	Eigen::Vector3d background_color_;
 
-	// geometry to be renCodered
+	// geometry to be rendered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 	
 	// shaders
-	ShaderContainer shaders_;
+	glsl::PointCloudShaderDefault pointcloud_default_shader_;
 };
 
 }	// namespace three
