@@ -24,8 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
+#pragma once
 
-namespace three{
+#include "ShaderWrapper.h"
+
+namespace three {
+
+namespace glsl {
+	
+class ShaderPointCloudDefault : public ShaderWrapper {
+public:
+	ShaderPointCloudDefault();
+	virtual ~ShaderPointCloudDefault();
+	
+public:
+	virtual bool Compile();
+	virtual void Release();
+	virtual bool BindGeometry(const Geometry &geometry);
+	virtual void Render(const ViewControl &view);
+	
+private:
+	GLuint vertex_position;
+	GLuint vertex_color;
+	GLuint MVP;
+};
+	
+}	// namespace three::glsl
 
 }	// namespace three

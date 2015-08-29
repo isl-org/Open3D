@@ -81,6 +81,8 @@ public:
 	}
 
 	double GetFieldOfView() const { return field_of_view_; }
+	
+	GLHelper::GLMatrix4f GetMVPMatrix() const { return MVP_matrix_; }
 
 protected:
 	BoundingBox bounding_box_;

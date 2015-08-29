@@ -36,7 +36,7 @@
 #include "ColorMap.h"
 #include "BoundingBox.h"
 #include "ViewControl.h"
-#include "ShaderWrapper.h"
+#include "ShaderPointCloud.h"
 
 namespace three {
 
@@ -206,7 +206,7 @@ protected:
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 	
 	// shaders
-	glsl::PointCloudShaderDefault pointcloud_default_shader_;
+	glsl::ShaderPointCloudDefault pointcloud_default_shader_;
 };
 
 }	// namespace three

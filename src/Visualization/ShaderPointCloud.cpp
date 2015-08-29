@@ -24,8 +24,45 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Visualizer.h"
+#include "ShaderPointCloud.h"
+
+#include "Shader.h"
 
 namespace three{
+
+namespace glsl {
+
+ShaderPointCloudDefault::ShaderPointCloudDefault()
+{
+}
+
+ShaderPointCloudDefault::~ShaderPointCloudDefault()
+{
+}
+
+bool ShaderPointCloudDefault::Compile()
+{
+	return CompileShaders(
+			&PointCloudVertexShader,
+			NULL,
+			&PointCloudFragmentShader);
+}
+
+void ShaderPointCloudDefault::Release()
+{
+	ReleaseProgram();
+}
+
+bool ShaderPointCloudDefault::BindGeometry(const Geometry &geometry)
+{
+	return true;
+}
+
+void ShaderPointCloudDefault::Render(const ViewControl &view)
+{
+	
+}
+
+}
 
 }	// namespace three

@@ -27,6 +27,9 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <Core/Core.h>
+
+#include "ViewControl.h"
 
 namespace three {
 
@@ -40,6 +43,8 @@ public:
 public:
 	virtual bool Compile() = 0;
 	virtual void Release() = 0;
+	virtual bool BindGeometry(const Geometry &geometry) = 0;
+	virtual void Render(const ViewControl &view) = 0;
 	
 protected:
 	bool ValidateShader(GLuint shader_index);
@@ -57,22 +62,7 @@ protected:
 	GLuint program_;
 	bool valid_;
 };
-	
-class PointCloudShaderDefault : public ShaderWrapper {
-public:
-	PointCloudShaderDefault();
-	virtual ~PointCloudShaderDefault();
-	
-public:
-	virtual bool Compile();
-	virtual void Release();
-	
-private:
-	GLuint vertex_position;
-	GLuint vertex_color;
-	GLuint MVP;
-};
-	
+
 }	// namespace three::glsl
 
 }	// namespace three

@@ -27,7 +27,6 @@
 #include "ShaderWrapper.h"
 
 #include <Core/Core.h>
-#include "Shader.h"
 
 namespace three{
 
@@ -149,29 +148,6 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index)
 	return true;
 }
 
-// functions of PointCloudShaderDefault
-
-PointCloudShaderDefault::PointCloudShaderDefault()
-{
-}
-
-PointCloudShaderDefault::~PointCloudShaderDefault()
-{
-}
-
-bool PointCloudShaderDefault::Compile()
-{
-	return CompileShaders(
-			&PointCloudVertexShader,
-			NULL,
-			&PointCloudFragmentShader);
-}
-
-void PointCloudShaderDefault::Release()
-{
-	ReleaseProgram();
-}
-
-}
+}	// namespace three::glsl
 
 }	// namespace three
