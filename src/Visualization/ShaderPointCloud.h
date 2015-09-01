@@ -39,14 +39,20 @@ public:
 	
 public:
 	virtual bool Compile();
-	virtual void Release();
 	virtual bool BindGeometry(const Geometry &geometry);
-	virtual void Render(const ViewControl &view);
-	
-private:
-	GLuint vertex_position;
-	GLuint vertex_color;
-	GLuint MVP;
+	virtual bool Render(const ViewControl &view);
+	virtual void Release();
+
+protected:
+	virtual void UnbindGeometry();
+
+protected:
+	GLsizei count_;
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_color_;
+	GLuint vertex_color_buffer_;
+	GLuint MVP_;
 };
 	
 }	// namespace three::glsl

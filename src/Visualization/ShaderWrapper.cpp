@@ -33,10 +33,11 @@ namespace three{
 namespace glsl {
 
 ShaderWrapper::ShaderWrapper() :
-		valid_(false)
+		compiled_(false),
+		bound_(false)
 {
 }
-	
+
 ShaderWrapper::~ShaderWrapper()
 {
 }
@@ -100,16 +101,16 @@ bool ShaderWrapper::CompileShaders(
 		glDeleteShader(fragment_shader_);
 	}
 	
-	valid_ = true;
+	compiled_ = true;
 	return true;
 }
 
 void ShaderWrapper::ReleaseProgram()
 {
-	if (valid_) {
+	if (compiled_) {
 		glDeleteProgram(program_);
 	}
-	valid_ = false;
+	compiled_ = false;
 }
 
 bool ShaderWrapper::ValidateShader(GLuint shader_index)

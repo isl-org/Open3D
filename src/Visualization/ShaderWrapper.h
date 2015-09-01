@@ -42,9 +42,12 @@ public:
 	
 public:
 	virtual bool Compile() = 0;
-	virtual void Release() = 0;
 	virtual bool BindGeometry(const Geometry &geometry) = 0;
-	virtual void Render(const ViewControl &view) = 0;
+	virtual bool Render(const ViewControl &view) = 0;
+	virtual void Release() = 0;
+
+protected:
+	virtual void UnbindGeometry() = 0;
 	
 protected:
 	bool ValidateShader(GLuint shader_index);
@@ -60,7 +63,8 @@ protected:
 	GLuint geometry_shader_;
 	GLuint fragment_shader_;
 	GLuint program_;
-	bool valid_;
+	bool compiled_;
+	bool bound_;
 };
 
 }	// namespace three::glsl
