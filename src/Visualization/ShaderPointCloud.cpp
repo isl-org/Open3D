@@ -54,7 +54,7 @@ bool ShaderPointCloudDefault::Compile()
 	vertex_position_ = glGetAttribLocation(program_, "vertex_position");
 	vertex_color_ = glGetAttribLocation(program_, "vertex_color");
 	MVP_ = glGetUniformLocation(program_, "MVP");
-	
+
 	return true;
 }
 
@@ -99,6 +99,7 @@ bool ShaderPointCloudDefault::BindGeometry(const Geometry &geometry)
 	
 	count_ = (GLsizei)pointcloud.points_.size();
 	bound_ = true;
+	
 	return true;
 }
 

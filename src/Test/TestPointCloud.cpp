@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
 	if (ReadPointCloud(argv[1], pointcloud)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
 		
+		/*
 		PointCloud pointcloud_copy;
 		pointcloud_copy.CloneFrom(pointcloud);
 		
@@ -99,6 +100,7 @@ int main(int argc, char *argv[])
 		} else {
 			PrintError("Failed to write %s\n\n", filename_ply.c_str());
 		}
+		 */
 	} else {
 		PrintError("Failed to read %s\n\n", argv[1]);
 	}
@@ -122,9 +124,9 @@ int main(int argc, char *argv[])
 	pointcloud_transformed_ptr->Transform(
 			trans_to_origin.inverse() * transformation * trans_to_origin);
 
-	visualizer.AddGeometry(pointcloud_ptr);
-	visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.CreateWindow("Open3DV", 1600, 900);
+	visualizer.AddGeometry(pointcloud_ptr);
+	//visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.Run();
 
 	//while (!visualizer.IsWindowTerminated());

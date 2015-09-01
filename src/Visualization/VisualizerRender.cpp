@@ -61,6 +61,9 @@ void Visualizer::Render()
 			(GLclampf)background_color_(1),
 			(GLclampf)background_color_(2), 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPointSize(GLfloat(pointcloud_render_mode_.point_size));
+	
+	pointcloud_default_shader_.Render(view_control_);
 
 	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
 		// dispatch geometry
