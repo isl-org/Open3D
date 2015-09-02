@@ -74,6 +74,7 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 		const int left/* = 50*/, const int top/* = 50*/)
 {
 	if (window_) {	// window already created
+		glfwSetWindowTitle(window_, window_name.c_str());
 		glfwSetWindowPos(window_, left, top);
 		glfwSetWindowSize(window_, width, height);
 		return true;
