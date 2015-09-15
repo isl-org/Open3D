@@ -189,8 +189,8 @@ bool Visualizer::PollEvents()
 
 void Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
-	geometry_ptrs_.push_back(geometry_ptr);
-	//pointcloud_default_shader_.BindGeometry(*geometry_ptr);
+	//geometry_ptrs_.push_back(geometry_ptr);
+	pointcloud_default_shader_.BindGeometry(*geometry_ptr);
 	view_control_.AddGeometry(*geometry_ptr);
 	ResetViewPoint();
 	is_redraw_required_ = true;

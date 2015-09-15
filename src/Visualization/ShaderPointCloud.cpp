@@ -83,21 +83,32 @@ bool ShaderPointCloudDefault::BindGeometry(const Geometry &geometry)
 	// UnbindGeometry() with Buffer Object Streaming mechanisms.
 	UnbindGeometry();
 	
+	// Copy data to renderer's own container. A double-to-float cast is
+	// performed for performance reason.
+	points_copy_.resize(pointcloud.points_.size());
+	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+		points_copy_[i] = pointcloud.points_[i].cast<float>();
+	}
+	colors_copy_.resize(pointcloud.colors_.size());
+	for (size_t i = 0; i < pointcloud.colors_.size(); i++) {
+		colors_copy_[i] = pointcloud.colors_[i].cast<float>();
+	}
+	
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glBufferData(GL_ARRAY_BUFFER,
-			pointcloud.points_.size() * sizeof(Eigen::Vector3d),
-			pointcloud.points_.data(),
+			points_copy_.size() * sizeof(Eigen::Vector3f),
+			points_copy_.data(),
 			GL_STATIC_DRAW);
 	glGenBuffers(1, &vertex_color_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glBufferData(GL_ARRAY_BUFFER,
-			pointcloud.colors_.size() * sizeof(Eigen::Vector3d),
-			pointcloud.colors_.data(),
+			colors_copy_.size() * sizeof(Eigen::Vector3f),
+			colors_copy_.data(),
 			GL_STATIC_DRAW);
 	
-	count_ = (GLsizei)pointcloud.points_.size();
+	count_ = (GLsizei)points_copy_.size();
 	bound_ = true;
 	
 	return true;
@@ -110,6 +121,8 @@ void ShaderPointCloudDefault::UnbindGeometry()
 		glDeleteBuffers(1, &vertex_color_buffer_);
 	}
 	count_ = 0;
+	points_copy_.clear();
+	colors_copy_.clear();
 	bound_ = false;
 }
 
@@ -123,10 +136,10 @@ bool ShaderPointCloudDefault::Render(const ViewControl &view)
 	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
 	glEnableVertexAttribArray(vertex_position_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-	glVertexAttribPointer(vertex_position_, 3, GL_DOUBLE, GL_FALSE, 0, NULL);
+	glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(vertex_color_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-	glVertexAttribPointer(vertex_color_, 3, GL_DOUBLE, GL_FALSE, 0, NULL);
+	glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glDrawArrays(GL_POINTS, 0, count_);
 	glDisableVertexAttribArray(vertex_position_);
 	glDisableVertexAttribArray(vertex_color_);

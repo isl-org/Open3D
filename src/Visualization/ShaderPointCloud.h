@@ -53,6 +53,9 @@ protected:
 	GLuint vertex_color_;
 	GLuint vertex_color_buffer_;
 	GLuint MVP_;
+	
+	std::vector<Eigen::Vector3f> points_copy_;
+	std::vector<Eigen::Vector3f> colors_copy_;
 };
 	
 }	// namespace three::glsl
