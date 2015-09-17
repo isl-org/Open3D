@@ -109,8 +109,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = 
-					PointCloudRenderMode::POINTCOLOR_DEFAULT;
+			pointcloud_render_mode_.SetPointColorOption(
+					PointCloudRenderMode::POINTCOLOR_DEFAULT);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
 		}
@@ -124,8 +124,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to JET.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = 
-					PointCloudRenderMode::POINTCOLOR_COLOR;
+			pointcloud_render_mode_.SetPointColorOption(
+					PointCloudRenderMode::POINTCOLOR_COLOR);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to COLOR.\n");
 		}
@@ -139,8 +139,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to SUMMER.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = 
-					PointCloudRenderMode::POINTCOLOR_X;
+			pointcloud_render_mode_.SetPointColorOption(
+					PointCloudRenderMode::POINTCOLOR_X);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to X.\n");
 		}
@@ -154,8 +154,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to WINTER.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = 
-					PointCloudRenderMode::POINTCOLOR_Y;
+			pointcloud_render_mode_.SetPointColorOption(
+					PointCloudRenderMode::POINTCOLOR_Y);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to Y.\n");
 		}
@@ -164,21 +164,27 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		if (mods & GLFW_MOD_CONTROL) {
 		} else if (mods & GLFW_MOD_SHIFT) {
 		} else {
-			pointcloud_render_mode_.point_color_option = 
-					PointCloudRenderMode::POINTCOLOR_Z;
+			pointcloud_render_mode_.SetPointColorOption(
+					PointCloudRenderMode::POINTCOLOR_Z);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to Z.\n");
 		}
 		break;
 	case GLFW_KEY_MINUS:
 		pointcloud_render_mode_.ChangePointSize(-1.0);
+		if (pointcloud_render_mode_.IsNormalShown()) {
+			UpdateGeometry();
+		}
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				pointcloud_render_mode_.point_size);
+				pointcloud_render_mode_.GetPointSize());
 		break;
 	case GLFW_KEY_EQUAL:
 		pointcloud_render_mode_.ChangePointSize(1.0);
+		if (pointcloud_render_mode_.IsNormalShown()) {
+			UpdateGeometry();
+		}
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				pointcloud_render_mode_.point_size);
+				pointcloud_render_mode_.GetPointSize());
 		break;
 	case GLFW_KEY_RIGHT_BRACKET:
 		view_control_.ChangeFieldOfView(1.0);
@@ -191,10 +197,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 				view_control_.GetFieldOfView());
 		break;
 	case GLFW_KEY_N:
-		pointcloud_render_mode_.show_normal = 
-				!pointcloud_render_mode_.show_normal;
+		pointcloud_render_mode_.ToggleShowNormal();
+		UpdateGeometry();
 		PrintDebug("[Visualizer] Point normal rendering %s.\n",
-				pointcloud_render_mode_.show_normal ? "ON" : "OFF");
+				pointcloud_render_mode_.IsNormalShown() ? "ON" : "OFF");
 		break;
 	case GLFW_KEY_R:
 		ResetViewPoint();

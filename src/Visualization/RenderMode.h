@@ -73,29 +73,49 @@ public:
 
 public:
 	PointCloudRenderMode() :
-			point_color_option(POINTCOLOR_DEFAULT),
-			show_normal(false)
+			point_color_option_(POINTCOLOR_DEFAULT),
+			show_normal_(false)
 	{
 		SetRenderModeType(RENDERMODE_POINTCLOUD);
-		point_size = POINT_SIZE_DEFAULT;
+		point_size_ = POINT_SIZE_DEFAULT;
 	}
 
 	virtual ~PointCloudRenderMode() {}
 
 public:
+	double GetPointSize() const {
+		return point_size_;
+	}
+
 	void ChangePointSize(double change) {
-		double new_point_size = point_size + change * POINT_SIZE_STEP;
+		double new_point_size = point_size_ + change * POINT_SIZE_STEP;
 		if (new_point_size >= POINT_SIZE_MIN && 
 				new_point_size <= POINT_SIZE_MAX)
 		{
-			point_size = new_point_size;
+			point_size_ = new_point_size;
 		}
 	}
 
-public:
-	double point_size;
-	PointColorOption point_color_option;
-	bool show_normal;
+	PointColorOption GetPointColorOption() const {
+		return point_color_option_;
+	}
+
+	void SetPointColorOption(PointColorOption option) {
+		point_color_option_ = option;
+	}
+
+	void ToggleShowNormal() {
+		show_normal_ = !show_normal_;
+	}
+
+	bool IsNormalShown() const {
+		return show_normal_;
+	}
+
+private:
+	double point_size_;
+	PointColorOption point_color_option_;
+	bool show_normal_;
 };
 
 }	// namespace three

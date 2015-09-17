@@ -70,7 +70,7 @@ void Visualizer::Render()
 		const Geometry &geometry = *geometry_ptrs_[i];
 		switch (geometry.GetGeometryType()) {
 		case Geometry::GEOMETRY_POINTCLOUD:
-			glPointSize(GLfloat(pointcloud_render_mode_.point_size));
+			glPointSize(GLfloat(pointcloud_render_mode_.GetPointSize()));
 			shader_ptrs_[i]->Render(view_control_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
@@ -187,27 +187,6 @@ void Visualizer::SetDefaultLighting(const BoundingBox &bounding_box)
 	glEnable(GL_LIGHT1);
 	glEnable(GL_LIGHT2);
 	glEnable(GL_LIGHTING);
-}
-
-void Visualizer::DrawPointCloudNormal(const PointCloud &pointcloud)
-{
-	if (!pointcloud.HasNormals() || !pointcloud_render_mode_.show_normal) {
-		return;
-	}
-	glDisable(GL_LIGHTING);
-	glLineWidth(1.0f);
-	glColor3d(0.0, 0.0, 0.0);
-	glBegin(GL_LINES);
-	double line_length = pointcloud_render_mode_.point_size *
-			0.01 * view_control_.GetBoundingBox().GetSize();
-	for (size_t i = 0; i < pointcloud.normals_.size(); i++) {
-		const Eigen::Vector3d &point = pointcloud.points_[i];
-		const Eigen::Vector3d &normal = pointcloud.normals_[i];
-		Eigen::Vector3d end_point = point + normal * line_length;
-		glVertex3d(point(0), point(1), point(2));
-		glVertex3d(end_point(0), end_point(1), end_point(2));
-	}
-	glEnd();
 }
 
 void Visualizer::DrawTriangleMesh(const TriangleMesh &mesh)

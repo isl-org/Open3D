@@ -50,7 +50,6 @@ protected:
 	virtual void UnbindGeometry();
 
 protected:
-	GLsizei count_;
 	GLuint vertex_position_;
 	GLuint vertex_position_buffer_;
 	GLuint vertex_color_;
@@ -59,6 +58,9 @@ protected:
 	
 	std::vector<Eigen::Vector3f> points_copy_;
 	std::vector<Eigen::Vector3f> colors_copy_;
+
+	GLsizei point_num_;
+	bool show_normal_;
 };
 	
 }	// namespace three::glsl

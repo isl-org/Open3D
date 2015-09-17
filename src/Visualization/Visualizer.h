@@ -141,10 +141,6 @@ protected:
 	void SetDefaultMeshMaterial();
 	void SetDefaultLighting(const BoundingBox &bounding_box);
 
-	/// Function to draw a point cloud
-	/// This function use PointCloudColorHandler to assign color for points.
-	virtual void DrawPointCloudNormal(const PointCloud &pointcloud);
-	
 	/// Function to draw a triangle mesh
 	virtual void DrawTriangleMesh(const TriangleMesh &mesh);
 

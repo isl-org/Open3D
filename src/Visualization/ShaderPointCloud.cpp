@@ -34,7 +34,8 @@ namespace three{
 namespace glsl {
 
 ShaderPointCloudDefault::ShaderPointCloudDefault() :
-		count_(0)
+		point_num_(0),
+		show_normal_(false)
 {
 }
 
@@ -93,15 +94,16 @@ bool ShaderPointCloudDefault::BindGeometry(
 
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
+	point_num_ = (GLsizei)pointcloud.points_.size();
 	points_copy_.resize(pointcloud.points_.size());
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		points_copy_[i] = pointcloud.points_[i].cast<float>();
 	}
-	colors_copy_.resize(pointcloud.colors_.size());
-	for (size_t i = 0; i < pointcloud.colors_.size(); i++) {
+	colors_copy_.resize(pointcloud.points_.size());
+	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		auto point = pointcloud.points_[i];
 		Eigen::Vector3d color;
-		switch (pointcloud_render_mode.point_color_option) {
+		switch (pointcloud_render_mode.GetPointColorOption()) {
 		case PointCloudRenderMode::POINTCOLOR_X:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetXPercentage(point(0)));
@@ -127,6 +129,27 @@ bool ShaderPointCloudDefault::BindGeometry(
 		}
 		colors_copy_[i] = color.cast<float>();
 	}
+
+	// Set up normal if it is enabled
+	if (pointcloud_render_mode.IsNormalShown() && pointcloud.HasNormals()) {
+		show_normal_ = true;
+		points_copy_.resize(point_num_ * 3);
+		colors_copy_.resize(point_num_ * 3);
+		double line_length = pointcloud_render_mode.GetPointSize() *
+				0.01 * view.GetBoundingBox().GetSize();
+		const Eigen::Vector3f default_normal_color(0.1f, 0.1f, 0.1f);
+		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+			auto point = pointcloud.points_[i];
+			auto normal = pointcloud.normals_[i];
+			points_copy_[point_num_ + i * 2] = point.cast<float>();
+			points_copy_[point_num_ + i * 2 + 1] = 
+					(point + normal * line_length).cast<float>();
+			colors_copy_[point_num_ + i * 2] = default_normal_color;
+			colors_copy_[point_num_ + i * 2 + 1] = default_normal_color;
+		}
+	} else {
+		show_normal_ = false;
+	}
 	
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
@@ -142,9 +165,7 @@ bool ShaderPointCloudDefault::BindGeometry(
 			colors_copy_.data(),
 			GL_STATIC_DRAW);
 	
-	count_ = (GLsizei)points_copy_.size();
-	bound_ = true;
-	
+	bound_ = true;	
 	return true;
 }
 
@@ -153,16 +174,16 @@ void ShaderPointCloudDefault::UnbindGeometry()
 	if (bound_) {
 		glDeleteBuffers(1, &vertex_position_buffer_);
 		glDeleteBuffers(1, &vertex_color_buffer_);
-		count_ = 0;
 		points_copy_.clear();
 		colors_copy_.clear();
 		bound_ = false;
+		point_num_ = 0;
 	}
 }
 
 bool ShaderPointCloudDefault::Render(const ViewControl &view)
 {
-	if (compiled_ == false || bound_ == false) {
+	if (compiled_ == false || bound_ == false || point_num_ <= 0) {
 		return false;
 	}
 	
@@ -174,7 +195,10 @@ bool ShaderPointCloudDefault::Render(const ViewControl &view)
 	glEnableVertexAttribArray(vertex_color_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glDrawArrays(GL_POINTS, 0, count_);
+	glDrawArrays(GL_POINTS, 0, point_num_);
+	if (show_normal_) {
+		glDrawArrays(GL_LINES, point_num_, point_num_ * 2);
+	}
 	glDisableVertexAttribArray(vertex_position_);
 	glDisableVertexAttribArray(vertex_color_);
 	
