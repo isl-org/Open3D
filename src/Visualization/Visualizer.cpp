@@ -58,6 +58,7 @@ Visualizer::Visualizer() :
 		view_control_(),
 		is_redraw_required_(true),
 		is_shader_update_required_(true),
+		is_initialized_(false),
 		pointcloud_render_mode_(),
 		mesh_render_mode_(),
 		color_map_ptr_(new ColorMapJet),
@@ -193,6 +194,10 @@ bool Visualizer::PollEvents()
 
 bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
+	if (is_initialized_ == false) {
+		return false;
+	}
+
 	if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_UNKNOWN) {
 		return false;

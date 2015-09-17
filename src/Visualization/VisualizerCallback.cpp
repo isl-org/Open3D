@@ -105,11 +105,14 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_VERTEXCOLOR;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			color_map_ptr_.reset(new ColorMapGray);
+			//color_map_ptr_.reset(new ColorMapGray);
+			SetGlobalColorMap(ColorMap::COLORMAP_GRAY);
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
 		} else {
 			pointcloud_render_mode_.point_color_option = 
 					PointCloudRenderMode::POINTCOLOR_DEFAULT;
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
 		}
 		break;
@@ -118,11 +121,14 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_FLATSHADE;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			color_map_ptr_.reset(new ColorMapJet);
+			//color_map_ptr_.reset(new ColorMapJet);
+			SetGlobalColorMap(ColorMap::COLORMAP_JET);
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to JET.\n");
 		} else {
 			pointcloud_render_mode_.point_color_option = 
 					PointCloudRenderMode::POINTCOLOR_COLOR;
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to COLOR.\n");
 		}
 		break;
@@ -131,11 +137,14 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_SMOOTHSHADE;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			color_map_ptr_.reset(new ColorMapSummer);
+			//color_map_ptr_.reset(new ColorMapSummer);
+			SetGlobalColorMap(ColorMap::COLORMAP_SUMMER);
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to SUMMER.\n");
 		} else {
 			pointcloud_render_mode_.point_color_option = 
 					PointCloudRenderMode::POINTCOLOR_X;
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to X.\n");
 		}
 		break;
@@ -144,11 +153,14 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_WIREFRAME;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			color_map_ptr_.reset(new ColorMapWinter);
+			//color_map_ptr_.reset(new ColorMapWinter);
+			SetGlobalColorMap(ColorMap::COLORMAP_WINTER);
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to WINTER.\n");
 		} else {
 			pointcloud_render_mode_.point_color_option = 
 					PointCloudRenderMode::POINTCOLOR_Y;
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to Y.\n");
 		}
 		break;
@@ -158,6 +170,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		} else {
 			pointcloud_render_mode_.point_color_option = 
 					PointCloudRenderMode::POINTCOLOR_Z;
+			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to Z.\n");
 		}
 		break;

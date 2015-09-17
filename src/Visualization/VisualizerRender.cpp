@@ -44,7 +44,8 @@ bool Visualizer::InitOpenGL()
 
 	// mesh material
 	SetDefaultMeshMaterial();
-	
+
+	is_initialized_ = true;
 	return true;
 }
 
@@ -91,8 +92,10 @@ void Visualizer::UpdateShaders()
 		const Geometry &geometry = *geometry_ptrs_[i];
 		switch (geometry.GetGeometryType()) {
 		case Geometry::GEOMETRY_POINTCLOUD:
-			shader_ptrs_[i]->BindGeometry(*geometry_ptrs_[i], 
-					pointcloud_render_mode_);
+			shader_ptrs_[i]->BindGeometry(
+					*geometry_ptrs_[i], 
+					pointcloud_render_mode_,
+					view_control_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
 		case Geometry::GEOMETRY_UNKNOWN:
@@ -219,14 +222,14 @@ void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
 				view_control_.GetBoundingBox().GetZPercentage(point(2)));
 		break;
 	case PointCloudRenderMode::POINTCOLOR_COLOR:
-		if (pointcloud.HasColors()) {
-			color = pointcloud.colors_[i];
-			break;
-		}
 	case PointCloudRenderMode::POINTCOLOR_DEFAULT:
 	default:
-		color = color_map_ptr_->GetColor(
-				view_control_.GetBoundingBox().GetZPercentage(point(2)));
+		if (pointcloud.HasColors()) {
+			color = pointcloud.colors_[i];
+		} else {
+			color = color_map_ptr_->GetColor(
+					view_control_.GetBoundingBox().GetZPercentage(point(2)));
+		}
 		break;
 	}
 	glColor3d(color(0), color(1), color(2));

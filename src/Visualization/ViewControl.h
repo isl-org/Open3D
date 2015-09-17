@@ -71,7 +71,7 @@ public:
 	void Rotate(double x, double y);
 	void Translate(double x, double y);
 
-	const BoundingBox &GetBoundingBox() {
+	const BoundingBox &GetBoundingBox() const {
 		return bounding_box_;
 	}
 

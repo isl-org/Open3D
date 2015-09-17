@@ -88,15 +88,15 @@ void ResetConsoleColor()
 #endif
 }
 
-int expected_console_count = 0;
+static int expected_console_count = 0;
 	
-int current_console_progress = 0;
+static int current_console_progress = 0;
 
-int current_console_progress_pixel = 0;
+static int current_console_progress_pixel = 0;
 
-std::string console_progress_info = "";
+static std::string console_progress_info = "";
 	
-const int CONSOLE_PROGRESS_RESOLUTION = 40;
+static const int CONSOLE_PROGRESS_RESOLUTION = 40;
 
 void PrintConsoleProgress()
 {

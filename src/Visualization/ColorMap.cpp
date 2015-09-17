@@ -28,6 +28,12 @@
 
 namespace three{
 
+namespace {
+
+static std::shared_ptr<ColorMap> global_colormap_ptr(new ColorMapJet);
+
+}	// unnamed namespace
+
 ColorMap::ColorMap()
 {
 }
@@ -36,12 +42,12 @@ ColorMap::~ColorMap()
 {
 }
 
-Eigen::Vector3d ColorMapGray::GetColor(double value)
+Eigen::Vector3d ColorMapGray::GetColor(double value) const
 {
 	return Eigen::Vector3d(value, value, value);
 }
 
-Eigen::Vector3d ColorMapJet::GetColor(double value)
+Eigen::Vector3d ColorMapJet::GetColor(double value) const
 {
 	return Eigen::Vector3d(
 			JetBase(value * 2.0 - 1.5),		// red
@@ -49,7 +55,7 @@ Eigen::Vector3d ColorMapJet::GetColor(double value)
 			JetBase(value * 2.0 - 0.5));	// blue
 }
 
-Eigen::Vector3d ColorMapSummer::GetColor(double value)
+Eigen::Vector3d ColorMapSummer::GetColor(double value) const
 {
 	return Eigen::Vector3d(
 			Interpolate(value, 0.0, 0.0, 1.0, 1.0),
@@ -57,12 +63,36 @@ Eigen::Vector3d ColorMapSummer::GetColor(double value)
 			0.4);
 }
 
-Eigen::Vector3d ColorMapWinter::GetColor(double value)
+Eigen::Vector3d ColorMapWinter::GetColor(double value) const
 {
 	return Eigen::Vector3d(
 			0.0,
 			Interpolate(value, 0.0, 0.0, 1.0, 1.0),
 			Interpolate(value, 1.0, 0.0, 0.5, 1.0));
+}
+
+std::shared_ptr<const ColorMap> GetGlobalColorMap()
+{
+	return global_colormap_ptr;
+}
+
+void SetGlobalColorMap(ColorMap::ColorMapOption option)
+{
+	switch (option) {
+	case ColorMap::COLORMAP_GRAY:
+		global_colormap_ptr.reset(new ColorMapGray);
+		break;
+	case ColorMap::COLORMAP_SUMMER:
+		global_colormap_ptr.reset(new ColorMapSummer);
+		break;
+	case ColorMap::COLORMAP_WINTER:
+		global_colormap_ptr.reset(new ColorMapWinter);
+		break;
+	case ColorMap::COLORMAP_JET:
+	default:
+		global_colormap_ptr.reset(new ColorMapJet);
+		break;
+	}
 }
 
 }	// namespace three

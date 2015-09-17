@@ -171,6 +171,7 @@ protected:
 	ViewControl view_control_;
 	bool is_redraw_required_;
 	bool is_shader_update_required_;
+	bool is_initialized_;
 
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;

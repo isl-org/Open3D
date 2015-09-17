@@ -27,6 +27,7 @@
 #include "ShaderPointCloud.h"
 
 #include "Shader.h"
+#include "ColorMap.h"
 
 namespace three{
 
@@ -66,7 +67,8 @@ void ShaderPointCloudDefault::Release()
 
 bool ShaderPointCloudDefault::BindGeometry(
 		const Geometry &geometry, 
-		const RenderMode &mode)
+		const RenderMode &mode,
+		const ViewControl &view)
 {
 	// Sanity check to see if this geometry is worth binding.
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
@@ -77,6 +79,9 @@ bool ShaderPointCloudDefault::BindGeometry(
     if (pointcloud.HasPoints() == false) {
 		return false;
 	}
+	const PointCloudRenderMode &pointcloud_render_mode = 
+			(const PointCloudRenderMode &)mode;
+	const ColorMap &global_color_map = *GetGlobalColorMap();
 
 	// If there is already geometry, we first unbind it.
 	// In the default PointCloud render mode, we use GL_STATIC_DRAW. When
@@ -94,7 +99,33 @@ bool ShaderPointCloudDefault::BindGeometry(
 	}
 	colors_copy_.resize(pointcloud.colors_.size());
 	for (size_t i = 0; i < pointcloud.colors_.size(); i++) {
-		colors_copy_[i] = pointcloud.colors_[i].cast<float>();
+		auto point = pointcloud.points_[i];
+		Eigen::Vector3d color;
+		switch (pointcloud_render_mode.point_color_option) {
+		case PointCloudRenderMode::POINTCOLOR_X:
+			color = global_color_map.GetColor(
+					view.GetBoundingBox().GetXPercentage(point(0)));
+			break;
+		case PointCloudRenderMode::POINTCOLOR_Y:
+			color = global_color_map.GetColor(
+					view.GetBoundingBox().GetYPercentage(point(1)));
+			break;
+		case PointCloudRenderMode::POINTCOLOR_Z:
+			color = global_color_map.GetColor(
+					view.GetBoundingBox().GetZPercentage(point(2)));
+			break;
+		case PointCloudRenderMode::POINTCOLOR_COLOR:
+		case PointCloudRenderMode::POINTCOLOR_DEFAULT:
+		default:
+			if (pointcloud.HasColors()) {
+				color = pointcloud.colors_[i];
+			} else {
+				color = global_color_map.GetColor(
+						view.GetBoundingBox().GetZPercentage(point(2)));
+			}
+			break;
+		}
+		colors_copy_[i] = color.cast<float>();
 	}
 	
 	// Create buffers and bind the geometry

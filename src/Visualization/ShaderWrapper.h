@@ -45,7 +45,8 @@ public:
 	virtual bool Compile() = 0;
 	virtual bool BindGeometry(
 			const Geometry &geometry, 
-			const RenderMode &mode) = 0;
+			const RenderMode &mode,
+			const ViewControl &view) = 0;
 	virtual bool Render(const ViewControl &view) = 0;
 	virtual void Release() = 0;
 

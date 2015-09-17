@@ -39,7 +39,10 @@ public:
 	
 public:
 	virtual bool Compile();
-	virtual bool BindGeometry(const Geometry &geometry, const RenderMode &mode);
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
 	virtual bool Render(const ViewControl &view);
 	virtual void Release();
 
