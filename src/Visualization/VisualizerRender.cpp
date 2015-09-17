@@ -189,52 +189,6 @@ void Visualizer::SetDefaultLighting(const BoundingBox &bounding_box)
 	glEnable(GL_LIGHTING);
 }
 
-void Visualizer::DrawPointCloud(const PointCloud &pointcloud)
-{
-	glDisable(GL_LIGHTING);
-	glPointSize(GLfloat(pointcloud_render_mode_.point_size));
-	glBegin(GL_POINTS);
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		PointCloudColorHandler(pointcloud, i);
-		const Eigen::Vector3d &point = pointcloud.points_[i];
-		glVertex3d(point(0), point(1), point(2));
-	}
-	glEnd();
-	
-	DrawPointCloudNormal(pointcloud);
-}
-
-void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
-{
-	auto point = pointcloud.points_[i];
-	Eigen::Vector3d color;
-	switch (pointcloud_render_mode_.point_color_option) {
-	case PointCloudRenderMode::POINTCOLOR_X:
-		color = color_map_ptr_->GetColor(
-				view_control_.GetBoundingBox().GetXPercentage(point(0)));
-		break;
-	case PointCloudRenderMode::POINTCOLOR_Y:
-		color = color_map_ptr_->GetColor(
-				view_control_.GetBoundingBox().GetYPercentage(point(1)));
-		break;
-	case PointCloudRenderMode::POINTCOLOR_Z:
-		color = color_map_ptr_->GetColor(
-				view_control_.GetBoundingBox().GetZPercentage(point(2)));
-		break;
-	case PointCloudRenderMode::POINTCOLOR_COLOR:
-	case PointCloudRenderMode::POINTCOLOR_DEFAULT:
-	default:
-		if (pointcloud.HasColors()) {
-			color = pointcloud.colors_[i];
-		} else {
-			color = color_map_ptr_->GetColor(
-					view_control_.GetBoundingBox().GetZPercentage(point(2)));
-		}
-		break;
-	}
-	glColor3d(color(0), color(1), color(2));
-}
-
 void Visualizer::DrawPointCloudNormal(const PointCloud &pointcloud)
 {
 	if (!pointcloud.HasNormals() || !pointcloud_render_mode_.show_normal) {

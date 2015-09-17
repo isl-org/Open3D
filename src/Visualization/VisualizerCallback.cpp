@@ -105,7 +105,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_VERTEXCOLOR;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			//color_map_ptr_.reset(new ColorMapGray);
 			SetGlobalColorMap(ColorMap::COLORMAP_GRAY);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
@@ -121,7 +120,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_FLATSHADE;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			//color_map_ptr_.reset(new ColorMapJet);
 			SetGlobalColorMap(ColorMap::COLORMAP_JET);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to JET.\n");
@@ -137,7 +135,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_SMOOTHSHADE;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			//color_map_ptr_.reset(new ColorMapSummer);
 			SetGlobalColorMap(ColorMap::COLORMAP_SUMMER);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to SUMMER.\n");
@@ -153,7 +150,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			mesh_render_mode_.mesh_render_option = MESHRENDER_WIREFRAME;
 			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
-			//color_map_ptr_.reset(new ColorMapWinter);
 			SetGlobalColorMap(ColorMap::COLORMAP_WINTER);
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to WINTER.\n");

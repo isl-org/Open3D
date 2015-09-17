@@ -61,7 +61,6 @@ Visualizer::Visualizer() :
 		is_initialized_(false),
 		pointcloud_render_mode_(),
 		mesh_render_mode_(),
-		color_map_ptr_(new ColorMapJet),
 		background_color_(1.0, 1.0, 1.0)
 {
 }

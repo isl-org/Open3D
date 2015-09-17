@@ -143,9 +143,6 @@ protected:
 
 	/// Function to draw a point cloud
 	/// This function use PointCloudColorHandler to assign color for points.
-	virtual void DrawPointCloud(const PointCloud &pointcloud);
-	virtual void PointCloudColorHandler(const PointCloud &pointcloud,
-			size_t i);
 	virtual void DrawPointCloudNormal(const PointCloud &pointcloud);
 	
 	/// Function to draw a triangle mesh
@@ -176,7 +173,6 @@ protected:
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;
 	MeshRenderMode mesh_render_mode_;
-	std::shared_ptr<ColorMap> color_map_ptr_;
 	Eigen::Vector3d background_color_;
 
 	// geometry to be rendered
