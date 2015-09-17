@@ -37,7 +37,7 @@
 #include "BoundingBox.h"
 #include "ViewControl.h"
 #include "RenderMode.h"
-#include "ShaderPointCloud.h"
+#include "ShaderWrapper.h"
 
 namespace three {
 
@@ -103,11 +103,16 @@ public:
 	/// heavy task behind the scene.
 	bool PollEvents();
 
-	/// Function to add geometry to the scene
-	/// The geometry can be any derived class of the Geometry interface.
-	void AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
-	bool HasGeometry();
+	/// Function to add geometry to the scene and create corresponding shaders
+	/// This function MUST be called after CreateWindow().
+	/// This function returns FALSE when the geometry is of an unsupported type.
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 
+	/// Function to update shaders
+	/// Call this function when geometry or rendermode has been changed.
+	void UpdateGeometry();
+
+	bool HasGeometry();
 	virtual void PrintVisualizerHelp();
 
 protected:
@@ -127,6 +132,11 @@ protected:
 	/// The function first sets view point, then draw geometry (pointclouds and
 	/// meshes individually).
 	virtual void Render();
+
+	/// Function to update VBOs in shader containers
+	/// This function is called in lazy mode, i.e., only triggers when
+	/// is_shader_update_required is true.
+	void UpdateShaders();
 	void ResetViewPoint();
 	void SetDefaultMeshMaterial();
 	void SetDefaultLighting(const BoundingBox &bounding_box);
@@ -160,6 +170,7 @@ protected:
 	MouseControl mouse_control_;
 	ViewControl view_control_;
 	bool is_redraw_required_;
+	bool is_shader_update_required_;
 
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;
@@ -171,7 +182,7 @@ protected:
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 	
 	// shaders
-	glsl::ShaderPointCloudDefault pointcloud_default_shader_;
+	std::vector<std::shared_ptr<glsl::ShaderWrapper>> shader_ptrs_;
 };
 
 }	// namespace three

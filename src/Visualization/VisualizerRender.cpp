@@ -34,11 +34,7 @@ bool Visualizer::InitOpenGL()
 		PrintError("Failed to initialize GLEW.\n");
 		return false;
 	}
-	
-	if (pointcloud_default_shader_.Compile() == false) {
-		return false;
-	}
-	
+		
 	// depth test
 	glEnable(GL_DEPTH_TEST);
 	glClearDepth(1.0f);
@@ -55,26 +51,28 @@ bool Visualizer::InitOpenGL()
 void Visualizer::Render()
 {
 	glfwMakeContextCurrent(window_);
+
+	if (is_shader_update_required_) {
+		UpdateShaders();
+		is_shader_update_required_ = false;
+	}
+
 	view_control_.SetViewPoint();
 
 	glClearColor((GLclampf)background_color_(0),
 			(GLclampf)background_color_(1),
 			(GLclampf)background_color_(2), 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPointSize(GLfloat(pointcloud_render_mode_.point_size));
-	
-	pointcloud_default_shader_.Render(view_control_);
 
 	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
 		// dispatch geometry
 		const Geometry &geometry = *geometry_ptrs_[i];
 		switch (geometry.GetGeometryType()) {
 		case Geometry::GEOMETRY_POINTCLOUD:
-			DrawPointCloud(static_cast<const PointCloud &>(geometry));
+			glPointSize(GLfloat(pointcloud_render_mode_.point_size));
+			shader_ptrs_[i]->Render(view_control_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
-			DrawTriangleMesh(static_cast<const TriangleMesh &>(geometry));
-			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
 			break;
@@ -85,6 +83,23 @@ void Visualizer::Render()
 	//SetDefaultLighting(bounding_box_);
 
 	glfwSwapBuffers(window_);
+}
+
+void Visualizer::UpdateShaders()
+{
+	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
+		const Geometry &geometry = *geometry_ptrs_[i];
+		switch (geometry.GetGeometryType()) {
+		case Geometry::GEOMETRY_POINTCLOUD:
+			shader_ptrs_[i]->BindGeometry(*geometry_ptrs_[i], 
+					pointcloud_render_mode_);
+			break;
+		case Geometry::GEOMETRY_TRIANGLEMESH:
+		case Geometry::GEOMETRY_UNKNOWN:
+		default:
+			break;
+		}
+	}
 }
 
 void Visualizer::ResetViewPoint()

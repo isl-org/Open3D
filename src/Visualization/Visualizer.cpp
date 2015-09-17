@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Visualizer.h"
+#include "ShaderPointCloud.h"
 
 namespace three{
 
@@ -56,6 +57,7 @@ Visualizer::Visualizer() :
 		mouse_control_(),
 		view_control_(),
 		is_redraw_required_(true),
+		is_shader_update_required_(true),
 		pointcloud_render_mode_(),
 		mesh_render_mode_(),
 		color_map_ptr_(new ColorMapJet),
@@ -65,7 +67,9 @@ Visualizer::Visualizer() :
 
 Visualizer::~Visualizer()
 {
-	pointcloud_default_shader_.Release();
+	for (size_t i = 0; i < shader_ptrs_.size(); i++) {
+		shader_ptrs_[i]->Release();
+	}
 	glfwTerminate();	// to be safe
 }
 
@@ -187,15 +191,34 @@ bool Visualizer::PollEvents()
 	return !glfwWindowShouldClose(window_);
 }
 
-void Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
+bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
-	//geometry_ptrs_.push_back(geometry_ptr);
-	pointcloud_default_shader_.BindGeometry(
-			*geometry_ptr, 
-			pointcloud_render_mode_);
+	if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_UNKNOWN) {
+		return false;
+	} else if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_POINTCLOUD) {
+		std::shared_ptr<glsl::ShaderPointCloudDefault> shader_ptr(
+				new glsl::ShaderPointCloudDefault);
+		if (shader_ptr->Compile() == false) {
+			return false;
+		}
+		shader_ptrs_.push_back(shader_ptr);
+	} else if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_TRIANGLEMESH) {
+		return false;
+	}
+
+	geometry_ptrs_.push_back(geometry_ptr);
 	view_control_.AddGeometry(*geometry_ptr);
 	ResetViewPoint();
-	is_redraw_required_ = true;
+	UpdateGeometry();
+	return true;
+}
+
+void Visualizer::UpdateGeometry()
+{
+	is_shader_update_required_ = true;
 }
 
 bool Visualizer::HasGeometry()

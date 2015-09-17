@@ -109,8 +109,8 @@ void ShaderWrapper::ReleaseProgram()
 {
 	if (compiled_) {
 		glDeleteProgram(program_);
+		compiled_ = false;
 	}
-	compiled_ = false;
 }
 
 bool ShaderWrapper::ValidateShader(GLuint shader_index)

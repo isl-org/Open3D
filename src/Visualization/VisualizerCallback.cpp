@@ -32,8 +32,8 @@ void Visualizer::WindowRefreshCallback(GLFWwindow *window)
 {
 	if (is_redraw_required_) {
 		Render();
+		is_redraw_required_ = false;
 	}
-	is_redraw_required_ = false;
 }
 
 void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
