@@ -36,48 +36,13 @@
 #include "ColorMap.h"
 #include "BoundingBox.h"
 #include "ViewControl.h"
+#include "RenderMode.h"
 #include "ShaderPointCloud.h"
 
 namespace three {
 
 class Visualizer  {
 public:
-	enum PointColorOption {
-		POINTCOLOR_DEFAULT = 0,
-		POINTCOLOR_COLOR = 1,
-		POINTCOLOR_X = 2,
-		POINTCOLOR_Y = 3,
-		POINTCOLOR_Z = 4,
-	};
-
-	struct PointCloudRenderMode {
-	public:
-		const double POINT_SIZE_MAX = 25.0;
-		const double POINT_SIZE_MIN = 1.0;
-		const double POINT_SIZE_STEP = 1.0;
-		const double POINT_SIZE_DEFAULT = 5.0;
-		
-		double point_size;
-		PointColorOption point_color_option;
-		bool show_normal;
-
-		PointCloudRenderMode() :
-				point_color_option(POINTCOLOR_DEFAULT),
-				show_normal(false)
-		{
-			point_size = POINT_SIZE_DEFAULT;
-		}
-
-		void ChangePointSize(double change) {
-			double new_point_size = point_size + change * POINT_SIZE_STEP;
-			if (new_point_size >= POINT_SIZE_MIN && 
-					new_point_size <= POINT_SIZE_MAX)
-			{
-				point_size = new_point_size;
-			}
-		}
-	};
-
 	enum MeshRenderOption {
 		MESHRENDER_VERTEXCOLOR = 0,
 		MESHRENDER_FLATSHADE = 1,

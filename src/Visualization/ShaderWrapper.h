@@ -30,6 +30,7 @@
 #include <Core/Core.h>
 
 #include "ViewControl.h"
+#include "RenderMode.h"
 
 namespace three {
 
@@ -42,7 +43,9 @@ public:
 	
 public:
 	virtual bool Compile() = 0;
-	virtual bool BindGeometry(const Geometry &geometry) = 0;
+	virtual bool BindGeometry(
+			const Geometry &geometry, 
+			const RenderMode &mode) = 0;
 	virtual bool Render(const ViewControl &view) = 0;
 	virtual void Release() = 0;
 

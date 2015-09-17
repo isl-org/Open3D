@@ -40,6 +40,7 @@ public:
 	};
 	
 public:
+	Geometry();
 	virtual ~Geometry();
 
 public:

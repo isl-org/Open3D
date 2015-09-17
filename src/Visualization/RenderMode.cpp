@@ -24,40 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "RenderMode.h"
 
-#include "ShaderWrapper.h"
+namespace three{
 
-namespace three {
+RenderMode::RenderMode()
+{
+}
 
-namespace glsl {
-	
-class ShaderPointCloudDefault : public ShaderWrapper {
-public:
-	ShaderPointCloudDefault();
-	virtual ~ShaderPointCloudDefault();
-	
-public:
-	virtual bool Compile();
-	virtual bool BindGeometry(const Geometry &geometry, const RenderMode &mode);
-	virtual bool Render(const ViewControl &view);
-	virtual void Release();
-
-protected:
-	virtual void UnbindGeometry();
-
-protected:
-	GLsizei count_;
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_color_;
-	GLuint vertex_color_buffer_;
-	GLuint MVP_;
-	
-	std::vector<Eigen::Vector3f> points_copy_;
-	std::vector<Eigen::Vector3f> colors_copy_;
-};
-	
-}	// namespace three::glsl
+RenderMode::~RenderMode()
+{
+}
 
 }	// namespace three

@@ -28,6 +28,11 @@
 
 namespace three{
 
+Geometry::Geometry() :
+		geometry_type_(GEOMETRY_UNKNOWN)
+{
+}
+
 Geometry::~Geometry()
 {
 }

@@ -64,14 +64,17 @@ void ShaderPointCloudDefault::Release()
 	ReleaseProgram();
 }
 
-bool ShaderPointCloudDefault::BindGeometry(const Geometry &geometry)
+bool ShaderPointCloudDefault::BindGeometry(
+		const Geometry &geometry, 
+		const RenderMode &mode)
 {
 	// Sanity check to see if this geometry is worth binding.
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
+			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
 		return false;
 	}
-	const PointCloud &pointcloud = (const PointCloud&)geometry;
-	if (pointcloud.HasPoints() == false || pointcloud.HasColors() == false) {
+	const PointCloud &pointcloud = (const PointCloud &)geometry;
+    if (pointcloud.HasPoints() == false) {
 		return false;
 	}
 
@@ -82,7 +85,7 @@ bool ShaderPointCloudDefault::BindGeometry(const Geometry &geometry)
 	// implementing a new ShaderWrapper using GL_STREAM_DRAW, and replace
 	// UnbindGeometry() with Buffer Object Streaming mechanisms.
 	UnbindGeometry();
-	
+
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
 	points_copy_.resize(pointcloud.points_.size());
@@ -119,11 +122,11 @@ void ShaderPointCloudDefault::UnbindGeometry()
 	if (bound_) {
 		glDeleteBuffers(1, &vertex_position_buffer_);
 		glDeleteBuffers(1, &vertex_color_buffer_);
+		count_ = 0;
+		points_copy_.clear();
+		colors_copy_.clear();
+		bound_ = false;
 	}
-	count_ = 0;
-	points_copy_.clear();
-	colors_copy_.clear();
-	bound_ = false;
 }
 
 bool ShaderPointCloudDefault::Render(const ViewControl &view)

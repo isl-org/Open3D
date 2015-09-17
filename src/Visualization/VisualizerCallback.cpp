@@ -108,7 +108,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapGray);
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = POINTCOLOR_DEFAULT;
+			pointcloud_render_mode_.point_color_option = 
+					PointCloudRenderMode::POINTCOLOR_DEFAULT;
 			PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
 		}
 		break;
@@ -120,7 +121,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapJet);
 			PrintDebug("[Visualizer] Color map set to JET.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = POINTCOLOR_COLOR;
+			pointcloud_render_mode_.point_color_option = 
+					PointCloudRenderMode::POINTCOLOR_COLOR;
 			PrintDebug("[Visualizer] Point color set to COLOR.\n");
 		}
 		break;
@@ -132,7 +134,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapSummer);
 			PrintDebug("[Visualizer] Color map set to SUMMER.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = POINTCOLOR_X;
+			pointcloud_render_mode_.point_color_option = 
+					PointCloudRenderMode::POINTCOLOR_X;
 			PrintDebug("[Visualizer] Point color set to X.\n");
 		}
 		break;
@@ -144,7 +147,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			color_map_ptr_.reset(new ColorMapWinter);
 			PrintDebug("[Visualizer] Color map set to WINTER.\n");
 		} else {
-			pointcloud_render_mode_.point_color_option = POINTCOLOR_Y;
+			pointcloud_render_mode_.point_color_option = 
+					PointCloudRenderMode::POINTCOLOR_Y;
 			PrintDebug("[Visualizer] Point color set to Y.\n");
 		}
 		break;
@@ -152,7 +156,8 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		if (mods & GLFW_MOD_CONTROL) {
 		} else if (mods & GLFW_MOD_SHIFT) {
 		} else {
-			pointcloud_render_mode_.point_color_option = POINTCOLOR_Z;
+			pointcloud_render_mode_.point_color_option = 
+					PointCloudRenderMode::POINTCOLOR_Z;
 			PrintDebug("[Visualizer] Point color set to Z.\n");
 		}
 		break;

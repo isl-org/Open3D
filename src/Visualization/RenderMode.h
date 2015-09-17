@@ -26,38 +26,76 @@
 
 #pragma once
 
-#include "ShaderWrapper.h"
+#include <Core/Core.h>
 
 namespace three {
 
-namespace glsl {
-	
-class ShaderPointCloudDefault : public ShaderWrapper {
+/// Base RenderMode class
+class RenderMode {
 public:
-	ShaderPointCloudDefault();
-	virtual ~ShaderPointCloudDefault();
-	
+	enum RenderModeType {
+		RENDERMODE_UNKNOWN = 0,
+		RENDERMODE_POINTCLOUD = 1,
+		RENDERMODE_TRIANGLEMESH = 2,
+	};
+
 public:
-	virtual bool Compile();
-	virtual bool BindGeometry(const Geometry &geometry, const RenderMode &mode);
-	virtual bool Render(const ViewControl &view);
-	virtual void Release();
+	RenderMode();
+	virtual ~RenderMode();
+
+public:
+	RenderModeType GetRenderModeType() const { return rendermode_type_; }
 
 protected:
-	virtual void UnbindGeometry();
-
-protected:
-	GLsizei count_;
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_color_;
-	GLuint vertex_color_buffer_;
-	GLuint MVP_;
+	void SetRenderModeType(RenderModeType type) {
+		rendermode_type_ = type;
+	}
 	
-	std::vector<Eigen::Vector3f> points_copy_;
-	std::vector<Eigen::Vector3f> colors_copy_;
+private:
+	RenderModeType rendermode_type_;
 };
-	
-}	// namespace three::glsl
+
+/// RenderMode class for PointCloud
+class PointCloudRenderMode : public RenderMode {
+public:
+	enum PointColorOption {
+		POINTCOLOR_DEFAULT = 0,
+		POINTCOLOR_COLOR = 1,
+		POINTCOLOR_X = 2,
+		POINTCOLOR_Y = 3,
+		POINTCOLOR_Z = 4,
+	};
+
+	const double POINT_SIZE_MAX = 25.0;
+	const double POINT_SIZE_MIN = 1.0;
+	const double POINT_SIZE_STEP = 1.0;
+	const double POINT_SIZE_DEFAULT = 5.0;
+
+public:
+	PointCloudRenderMode() :
+			point_color_option(POINTCOLOR_DEFAULT),
+			show_normal(false)
+	{
+		SetRenderModeType(RENDERMODE_POINTCLOUD);
+		point_size = POINT_SIZE_DEFAULT;
+	}
+
+	virtual ~PointCloudRenderMode() {}
+
+public:
+	void ChangePointSize(double change) {
+		double new_point_size = point_size + change * POINT_SIZE_STEP;
+		if (new_point_size >= POINT_SIZE_MIN && 
+				new_point_size <= POINT_SIZE_MAX)
+		{
+			point_size = new_point_size;
+		}
+	}
+
+public:
+	double point_size;
+	PointColorOption point_color_option;
+	bool show_normal;
+};
 
 }	// namespace three

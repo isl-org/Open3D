@@ -250,7 +250,7 @@ bool ReadPointCloudFromPLY(
 	pointcloud.normals_.resize(state.normal_num);
 	pointcloud.colors_.resize(state.color_num);
 	
-	ResetConsoleProgress(state.vertex_num, "Reading PLY: ");
+	ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
 
 	if (!ply_read(ply_file)) {
 		PrintDebug("Read PLY failed: unable to read file.\n");
@@ -258,6 +258,7 @@ bool ReadPointCloudFromPLY(
 	}
 
 	ply_close(ply_file);
+	AdvanceConsoleProgress();
 	return true;
 }
 

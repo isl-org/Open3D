@@ -191,24 +191,24 @@ void Visualizer::PointCloudColorHandler(const PointCloud &pointcloud, size_t i)
 	auto point = pointcloud.points_[i];
 	Eigen::Vector3d color;
 	switch (pointcloud_render_mode_.point_color_option) {
-	case POINTCOLOR_X:
+	case PointCloudRenderMode::POINTCOLOR_X:
 		color = color_map_ptr_->GetColor(
 				view_control_.GetBoundingBox().GetXPercentage(point(0)));
 		break;
-	case POINTCOLOR_Y:
+	case PointCloudRenderMode::POINTCOLOR_Y:
 		color = color_map_ptr_->GetColor(
 				view_control_.GetBoundingBox().GetYPercentage(point(1)));
 		break;
-	case POINTCOLOR_Z:
+	case PointCloudRenderMode::POINTCOLOR_Z:
 		color = color_map_ptr_->GetColor(
 				view_control_.GetBoundingBox().GetZPercentage(point(2)));
 		break;
-	case POINTCOLOR_COLOR:
+	case PointCloudRenderMode::POINTCOLOR_COLOR:
 		if (pointcloud.HasColors()) {
 			color = pointcloud.colors_[i];
 			break;
 		}
-	case POINTCOLOR_DEFAULT:
+	case PointCloudRenderMode::POINTCOLOR_DEFAULT:
 	default:
 		color = color_map_ptr_->GetColor(
 				view_control_.GetBoundingBox().GetZPercentage(point(2)));
