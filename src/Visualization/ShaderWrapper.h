@@ -57,9 +57,9 @@ protected:
 	bool ValidateShader(GLuint shader_index);
 	bool ValidateProgram(GLuint program_index);
 	bool CompileShaders(
-			const GLchar **vertex_shader_code,
-			const GLchar **geometry_shader_code,
-			const GLchar **fragment_shader_code);
+			const char * const vertex_shader_code,
+			const char * const geometry_shader_code,
+			const char * const fragment_shader_code);
 	void ReleaseProgram();
 	
 protected:

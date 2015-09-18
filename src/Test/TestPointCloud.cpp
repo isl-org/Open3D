@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	Visualizer visualizer;
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
 	pointcloud_ptr->CloneFrom(pointcloud);
-	pointcloud_ptr->NormalizeNormal();
+	pointcloud_ptr->NormalizeNormals();
 	BoundingBox bounding_box;
 	bounding_box.AddGeometry(*pointcloud_ptr);
 	

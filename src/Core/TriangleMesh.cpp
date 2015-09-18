@@ -36,6 +36,32 @@ TriangleMesh::TriangleMesh()
 TriangleMesh::~TriangleMesh()
 {
 }
+
+void TriangleMesh::ComputeTriangleNormals()
+{
+	triangle_normals_.resize(triangles_.size());
+	for (size_t i = 0; i < triangles_.size(); i++) {
+		auto &triangle = triangles_[i];
+		Eigen::Vector3d v01 = vertices_[triangle(1)] - vertices_[triangle(0)];
+		Eigen::Vector3d v02 = vertices_[triangle(2)] - vertices_[triangle(0)];
+		triangle_normals_[i] = v01.cross(v02);
+	}
+}
+
+void TriangleMesh::ComputeVertexNormals()
+{
+	if (HasTriangleNormals() == false) {
+		ComputeTriangleNormals();
+	}
+
+	vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
+	for (size_t i = 0; i < triangles_.size(); i++) {
+		auto &triangle = triangles_[i];
+		vertex_normals_[triangle(0)] += triangle_normals_[i];
+		vertex_normals_[triangle(1)] += triangle_normals_[i];
+		vertex_normals_[triangle(2)] += triangle_normals_[i];
+	}
+}
 	
 bool TriangleMesh::CloneFrom(const Geometry &reference)
 {
@@ -50,9 +76,21 @@ bool TriangleMesh::CloneFrom(const Geometry &reference)
 	for (size_t i = 0; i < mesh.vertices_.size(); i++) {
 		vertices_[i] = mesh.vertices_[i];
 	}
+	vertex_normals_.resize(mesh.vertex_normals_.size());
+	for (size_t i = 0; i < mesh.vertex_normals_.size(); i++) {
+		vertex_normals_[i] = mesh.vertex_normals_[i];
+	}
+	vertex_colors_.resize(mesh.vertex_colors_.size());
+	for (size_t i = 0; i < mesh.vertex_colors_.size(); i++) {
+		vertex_colors_[i] = mesh.vertex_colors_[i];
+	}
 	triangles_.resize(mesh.triangles_.size());
 	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
 		triangles_[i] = mesh.triangles_[i];
+	}
+	triangle_normals_.resize(mesh.triangle_normals_.size());
+	for (size_t i = 0; i < mesh.triangle_normals_.size(); i++) {
+		triangle_normals_[i] = mesh.triangle_normals_[i];
 	}
 	return true;
 }
@@ -109,6 +147,13 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 				vertex_normals_[i](0), vertex_normals_[i](1),
 				vertex_normals_[i](2), 0.0);
 		vertex_normals_[i] = new_normal.block<3, 1>(0, 0);
+	}
+
+	for (size_t i = 0; i < triangle_normals_.size(); i++) {
+		Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
+				triangle_normals_[i](0), triangle_normals_[i](1),
+				triangle_normals_[i](2), 0.0);
+		triangle_normals_[i] = new_normal.block<3, 1>(0, 0);
 	}
 }
 

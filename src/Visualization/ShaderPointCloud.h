@@ -56,9 +56,6 @@ protected:
 	GLuint vertex_color_buffer_;
 	GLuint MVP_;
 	
-	std::vector<Eigen::Vector3f> points_copy_;
-	std::vector<Eigen::Vector3f> colors_copy_;
-
 	GLsizei point_num_;
 	bool show_normal_;
 };

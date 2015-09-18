@@ -24,31 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ShaderPointCloud.h"
+#include "ShaderTriangleMesh.h"
 
 #include "Shader.h"
-#include "ColorMap.h"
 
 namespace three{
 
 namespace glsl {
 
-ShaderPointCloudDefault::ShaderPointCloudDefault() :
-		point_num_(0),
-		show_normal_(false)
+ShaderTriangleMeshDefault::ShaderTriangleMeshDefault()
 {
 }
 
-ShaderPointCloudDefault::~ShaderPointCloudDefault()
+ShaderTriangleMeshDefault::~ShaderTriangleMeshDefault()
 {
 }
 
-bool ShaderPointCloudDefault::Compile()
+bool ShaderTriangleMeshDefault::Compile()
 {
 	if (CompileShaders(
-			PointCloudVertexShader,
+			TriangleMeshVertexShader,
 			NULL,
-			PointCloudFragmentShader) == false)
+			TriangleMeshFragmentShader) == false)
 	{
 		return false;
 	}
@@ -60,29 +57,28 @@ bool ShaderPointCloudDefault::Compile()
 	return true;
 }
 
-void ShaderPointCloudDefault::Release()
+void ShaderTriangleMeshDefault::Release()
 {
 	UnbindGeometry();
 	ReleaseProgram();
 }
 
-bool ShaderPointCloudDefault::BindGeometry(
+bool ShaderTriangleMeshDefault::BindGeometry(
 		const Geometry &geometry, 
 		const RenderMode &mode,
 		const ViewControl &view)
 {
 	// Sanity check to see if this geometry is worth binding.
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
+			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
 		return false;
 	}
-	const PointCloud &pointcloud = (const PointCloud &)geometry;
-    if (pointcloud.HasPoints() == false) {
+	const TriangleMesh &mesh = (const TriangleMesh &)geometry;
+    if (mesh.HasTriangles() == false) {
 		return false;
 	}
-	const PointCloudRenderMode &pointcloud_render_mode = 
-			(const PointCloudRenderMode &)mode;
-	const ColorMap &global_color_map = *GetGlobalColorMap();
+	//const PointCloudRenderMode &pointcloud_render_mode = 
+		//	(const PointCloudRenderMode &)mode;
 
 	// If there is already geometry, we first unbind it.
 	// In the default PointCloud render mode, we use GL_STATIC_DRAW. When
@@ -92,14 +88,15 @@ bool ShaderPointCloudDefault::BindGeometry(
 	// UnbindGeometry() with Buffer Object Streaming mechanisms.
 	UnbindGeometry();
 
+	/*
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
 	point_num_ = (GLsizei)pointcloud.points_.size();
-	std::vector<Eigen::Vector3f> points_copy(pointcloud.points_.size());
+	points_copy_.resize(pointcloud.points_.size());
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		points_copy[i] = pointcloud.points_[i].cast<float>();
+		points_copy_[i] = pointcloud.points_[i].cast<float>();
 	}
-	std::vector<Eigen::Vector3f> colors_copy(pointcloud.points_.size());
+	colors_copy_.resize(pointcloud.points_.size());
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		auto point = pointcloud.points_[i];
 		Eigen::Vector3d color;
@@ -127,25 +124,25 @@ bool ShaderPointCloudDefault::BindGeometry(
 			}
 			break;
 		}
-		colors_copy[i] = color.cast<float>();
+		colors_copy_[i] = color.cast<float>();
 	}
 
 	// Set up normal if it is enabled
 	if (pointcloud_render_mode.IsNormalShown() && pointcloud.HasNormals()) {
 		show_normal_ = true;
-		points_copy.resize(point_num_ * 3);
-		colors_copy.resize(point_num_ * 3);
+		points_copy_.resize(point_num_ * 3);
+		colors_copy_.resize(point_num_ * 3);
 		double line_length = pointcloud_render_mode.GetPointSize() *
 				0.01 * view.GetBoundingBox().GetSize();
 		const Eigen::Vector3f default_normal_color(0.1f, 0.1f, 0.1f);
 		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 			auto point = pointcloud.points_[i];
 			auto normal = pointcloud.normals_[i];
-			points_copy[point_num_ + i * 2] = point.cast<float>();
-			points_copy[point_num_ + i * 2 + 1] = 
+			points_copy_[point_num_ + i * 2] = point.cast<float>();
+			points_copy_[point_num_ + i * 2 + 1] = 
 					(point + normal * line_length).cast<float>();
-			colors_copy[point_num_ + i * 2] = default_normal_color;
-			colors_copy[point_num_ + i * 2 + 1] = default_normal_color;
+			colors_copy_[point_num_ + i * 2] = default_normal_color;
+			colors_copy_[point_num_ + i * 2 + 1] = default_normal_color;
 		}
 	} else {
 		show_normal_ = false;
@@ -155,33 +152,33 @@ bool ShaderPointCloudDefault::BindGeometry(
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glBufferData(GL_ARRAY_BUFFER,
-			points_copy.size() * sizeof(Eigen::Vector3f),
-			points_copy.data(),
+			points_copy_.size() * sizeof(Eigen::Vector3f),
+			points_copy_.data(),
 			GL_STATIC_DRAW);
 	glGenBuffers(1, &vertex_color_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glBufferData(GL_ARRAY_BUFFER,
-			colors_copy.size() * sizeof(Eigen::Vector3f),
-			colors_copy.data(),
+			colors_copy_.size() * sizeof(Eigen::Vector3f),
+			colors_copy_.data(),
 			GL_STATIC_DRAW);
 	
+	*/
 	bound_ = true;	
 	return true;
 }
 
-void ShaderPointCloudDefault::UnbindGeometry()
+void ShaderTriangleMeshDefault::UnbindGeometry()
 {
 	if (bound_) {
 		glDeleteBuffers(1, &vertex_position_buffer_);
 		glDeleteBuffers(1, &vertex_color_buffer_);
 		bound_ = false;
-		point_num_ = 0;
 	}
 }
 
-bool ShaderPointCloudDefault::Render(const ViewControl &view)
+bool ShaderTriangleMeshDefault::Render(const ViewControl &view)
 {
-	if (compiled_ == false || bound_ == false || point_num_ <= 0) {
+	if (compiled_ == false || bound_ == false) {
 		return false;
 	}
 	
@@ -193,10 +190,7 @@ bool ShaderPointCloudDefault::Render(const ViewControl &view)
 	glEnableVertexAttribArray(vertex_color_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glDrawArrays(GL_POINTS, 0, point_num_);
-	if (show_normal_) {
-		glDrawArrays(GL_LINES, point_num_, point_num_ * 2);
-	}
+	//glDrawArrays(GL_POINTS, 0, point_num_);
 	glDisableVertexAttribArray(vertex_position_);
 	glDisableVertexAttribArray(vertex_color_);
 	

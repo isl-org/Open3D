@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	} else {
 		PrintError("Failed to read %s\n\n", argv[1]);
 	}
-	pointcloud_ptr->NormalizeNormal();
+	pointcloud_ptr->NormalizeNormals();
 
 	std::shared_ptr<TriangleMesh> mesh_ptr(new TriangleMesh);
 	if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
@@ -53,8 +53,9 @@ int main(int argc, char *argv[])
 	} else {
 		PrintError("Failed to read %s\n\n", argv[2]);
 	}
-	mesh_ptr->NormalizeNormal();
-	
+	mesh_ptr->ComputeVertexNormals();
+	mesh_ptr->NormalizeNormals();
+
 	// 2. test visualization.
 
 	Visualizer visualizer1;

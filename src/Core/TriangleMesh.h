@@ -46,6 +46,9 @@ public:
 	virtual void Clear();
 	virtual bool IsEmpty() const;
 	virtual void Transform(const Eigen::Matrix4d &transformation);
+
+	void ComputeTriangleNormals();
+	void ComputeVertexNormals();
 	
 public:
 	bool HasVertices() const {
@@ -53,7 +56,7 @@ public:
 	}
 	
 	bool HasTriangles() const {
-		return triangles_.size() > 0;
+		return vertices_.size() > 0 && triangles_.size() > 0;
 	}
 	
 	bool HasVertexNormals() const {
@@ -65,17 +68,27 @@ public:
 		return vertices_.size() > 0 &&
 				vertex_colors_.size() == vertices_.size();
 	}
+
+	bool HasTriangleNormals() const {
+		return HasTriangles() &&
+				triangles_.size() == triangle_normals_.size();
+	}
 	
-	void NormalizeNormal() {
+	void NormalizeNormals() {
 		for (size_t i = 0; i < vertex_normals_.size(); i++) {
 			vertex_normals_[i].normalize();
 		}
+		for (size_t i = 0; i < triangle_normals_.size(); i++) {
+			triangle_normals_[i].normalize();
+		}
 	}
+
 public:
 	std::vector<Eigen::Vector3d> vertices_;
 	std::vector<Eigen::Vector3d> vertex_normals_;
 	std::vector<Eigen::Vector3d> vertex_colors_;
 	std::vector<Eigen::Vector3i> triangles_;
+	std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
 }	// namespace three

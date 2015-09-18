@@ -26,50 +26,37 @@
 
 #pragma once
 
-#include <vector>
-#include <Eigen/Core>
-
-#include "Geometry.h"
+#include "ShaderWrapper.h"
 
 namespace three {
 
-class PointCloud : public Geometry
-{
-public:
-	PointCloud();
-	virtual ~PointCloud();
-
-public:
-	virtual bool CloneFrom(const Geometry &reference);
-	virtual Eigen::Vector3d GetMinBound() const;
-	virtual Eigen::Vector3d GetMaxBound() const;
-	virtual void Clear();
-	virtual bool IsEmpty() const;
-	virtual void Transform(const Eigen::Matrix4d &transformation);
-
-public:
-	bool HasPoints() const {
-		return points_.size() > 0;
-	}
-
-	bool HasNormals() const {
-		return points_.size() > 0 && normals_.size() == points_.size();
-	}
-
-	bool HasColors() const {
-		return points_.size() > 0 && colors_.size() == points_.size();
-	}
+namespace glsl {
 	
-	void NormalizeNormals() {
-		for (size_t i = 0; i < normals_.size(); i++) {
-			normals_[i].normalize();
-		}
-	}
+class ShaderTriangleMeshDefault : public ShaderWrapper {
+public:
+	ShaderTriangleMeshDefault();
+	virtual ~ShaderTriangleMeshDefault();
 	
 public:
-	std::vector<Eigen::Vector3d> points_;
-	std::vector<Eigen::Vector3d> normals_;
-	std::vector<Eigen::Vector3d> colors_;
+	virtual bool Compile();
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
+	virtual bool Render(const ViewControl &view);
+	virtual void Release();
+
+protected:
+	virtual void UnbindGeometry();
+
+protected:
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_color_;
+	GLuint vertex_color_buffer_;
+	GLuint MVP_;
 };
+	
+}	// namespace three::glsl
 
 }	// namespace three
