@@ -81,6 +81,10 @@ public:
 	Visualizer();
 	virtual ~Visualizer();
 
+	// Suppress default copy constructor and copy functions
+	Visualizer(const Visualizer &) = delete;
+	Visualizer &operator=(const Visualizer &) = delete;
+
 public:
 	/// Function to create a window and initialize GLFW
 	/// This function MUST be called from the main thread.
