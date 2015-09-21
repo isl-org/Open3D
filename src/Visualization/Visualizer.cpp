@@ -67,6 +67,9 @@ Visualizer::Visualizer() :
 
 Visualizer::~Visualizer()
 {
+	for (auto shader_ptr : shader_ptrs_) {
+		shader_ptr->Release();
+	}
 	glfwTerminate();	// to be safe
 }
 
