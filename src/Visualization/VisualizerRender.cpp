@@ -45,7 +45,6 @@ bool Visualizer::InitOpenGL()
 	// mesh material
 	SetDefaultMeshMaterial();
 
-	is_initialized_ = true;
 	return true;
 }
 

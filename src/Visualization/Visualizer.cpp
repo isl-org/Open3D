@@ -158,11 +158,15 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	
 	ResetViewPoint();
 
+	is_initialized_ = true;
 	return true;
 }
 
 void Visualizer::Run()
 {
+	if (is_initialized_ == false) {
+		return;
+	}
 	glfwMakeContextCurrent(window_);
 	while (WaitEvents()) {
 	}
@@ -170,6 +174,9 @@ void Visualizer::Run()
 
 bool Visualizer::WaitEvents()
 {
+	if (is_initialized_ == false) {
+		return false;
+	}
 	glfwMakeContextCurrent(window_);
 	if (is_redraw_required_) {
 		WindowRefreshCallback(window_);
@@ -180,6 +187,9 @@ bool Visualizer::WaitEvents()
 
 bool Visualizer::PollEvents()
 {
+	if (is_initialized_ == false) {
+		return false;
+	}
 	glfwMakeContextCurrent(window_);
 	if (is_redraw_required_) {
 		WindowRefreshCallback(window_);
