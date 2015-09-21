@@ -26,6 +26,8 @@
 
 #include "TriangleMesh.h"
 
+#include <Eigen/Geometry>
+
 namespace three{
 
 TriangleMesh::TriangleMesh()
