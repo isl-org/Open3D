@@ -41,6 +41,7 @@ ShaderPointCloudDefault::ShaderPointCloudDefault() :
 
 ShaderPointCloudDefault::~ShaderPointCloudDefault()
 {
+	Release();
 }
 
 bool ShaderPointCloudDefault::Compile()

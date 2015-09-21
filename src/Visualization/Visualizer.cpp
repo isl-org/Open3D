@@ -67,9 +67,6 @@ Visualizer::Visualizer() :
 
 Visualizer::~Visualizer()
 {
-	for (size_t i = 0; i < shader_ptrs_.size(); i++) {
-		shader_ptrs_[i]->Release();
-	}
 	glfwTerminate();	// to be safe
 }
 

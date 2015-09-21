@@ -80,8 +80,6 @@ public:
 public:
 	Visualizer();
 	virtual ~Visualizer();
-
-	// Suppress default copy constructor and copy functions
 	Visualizer(const Visualizer &) = delete;
 	Visualizer &operator=(const Visualizer &) = delete;
 

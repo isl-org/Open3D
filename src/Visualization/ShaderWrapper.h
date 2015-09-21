@@ -40,6 +40,8 @@ class ShaderWrapper {
 public:
 	ShaderWrapper();
 	virtual ~ShaderWrapper();
+	ShaderWrapper(const ShaderWrapper &) = delete;
+	ShaderWrapper &operator=(const ShaderWrapper &) = delete;
 	
 public:
 	virtual bool Compile() = 0;
