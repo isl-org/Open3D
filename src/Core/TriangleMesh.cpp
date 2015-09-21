@@ -26,7 +26,7 @@
 
 #include "TriangleMesh.h"
 
-#include <Eigen/Geometry>
+#include <Eigen/Dense>
 
 namespace three{
 
