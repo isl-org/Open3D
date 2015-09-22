@@ -182,12 +182,18 @@ void ShaderPointCloudDefault::UnbindGeometry()
 	}
 }
 
-bool ShaderPointCloudDefault::Render(const ViewControl &view)
+bool ShaderPointCloudDefault::Render(
+		const RenderMode &mode, 
+		const ViewControl &view)
 {
-	if (compiled_ == false || bound_ == false || point_num_ <= 0) {
+	if (compiled_ == false || bound_ == false || point_num_ <= 0 ||
+			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
 		return false;
 	}
 	
+	auto rendermode = (const PointCloudRenderMode &)mode;
+	glPointSize(GLfloat(rendermode.GetPointSize()));
+
 	glUseProgram(program_);
 	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
 	glEnableVertexAttribArray(vertex_position_);

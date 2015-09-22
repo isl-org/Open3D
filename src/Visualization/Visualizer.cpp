@@ -254,12 +254,24 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("    Wheel                  : Zoom in/out.\n");
 	PrintInfo("\n");
 	PrintInfo("Keyboard options:\n");
+	PrintInfo("  -- General control --\n");
 	PrintInfo("    Q, Esc       : Exit window.\n");
+	PrintInfo("    H            : Print help message.\n");
 	PrintInfo("    R            : Reset view point.\n");
 	PrintInfo("    [/]          : Increase/decrease field of view.\n");
+	PrintInfo("  -- Render mode control --\n");
 	PrintInfo("    +/-          : Increase/decrease point size.\n");
-	PrintInfo("    0..4         : Point color options.\n");
-	PrintInfo("                   0 - Default behavior, use z value to render.\n");
+	PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
+	PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
+	PrintInfo("  -- Color control --\n");
+	PrintInfo("    0..4         : Set point cloud color option.\n");
+	PrintInfo("                   0 - Default behavior, render point color.\n");
+	PrintInfo("                   1 - Render point color.\n");
+	PrintInfo("                   2 - x coordinate as color.\n");
+	PrintInfo("                   3 - y coordinate as color.\n");
+	PrintInfo("                   4 - z coordinate as color.\n");
+	PrintInfo("    Ctrl + 0..4  : Set mesh color option.\n");
+	PrintInfo("                   0 - Default behavior, render uniform turquoise color.\n");
 	PrintInfo("                   1 - Render point color.\n");
 	PrintInfo("                   2 - x coordinate as color.\n");
 	PrintInfo("                   3 - y coordinate as color.\n");
@@ -269,12 +281,6 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("                   1 - JET color map.\n");
 	PrintInfo("                   2 - SUMMER color map.\n");
 	PrintInfo("                   3 - WINTER color map.\n");
-	PrintInfo("    Ctrl + 0..3  : Mesh rendering options.\n");
-	PrintInfo("                   0 - Render with vertex colors.\n");
-	PrintInfo("                   1 - Render flat polygons.\n");
-	PrintInfo("                   2 - Render smooth polygons.\n");
-	PrintInfo("                   3 - Render wireframe.\n");
-	PrintInfo("    N            : Turn on/off normal rendering.\n");
 	PrintInfo("\n");
 }
 

@@ -176,7 +176,9 @@ void ShaderTriangleMeshDefault::UnbindGeometry()
 	}
 }
 
-bool ShaderTriangleMeshDefault::Render(const ViewControl &view)
+bool ShaderTriangleMeshDefault::Render(
+		const RenderMode &mode,
+		const ViewControl &view)
 {
 	if (compiled_ == false || bound_ == false) {
 		return false;

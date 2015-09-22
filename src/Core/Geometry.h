@@ -59,7 +59,7 @@ protected:
 	}
 	
 private:
-	GeometryType geometry_type_;
+	GeometryType geometry_type_ = GEOMETRY_UNKNOWN;
 };
 
 }	// namespace three

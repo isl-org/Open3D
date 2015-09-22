@@ -43,25 +43,6 @@ namespace three {
 
 class Visualizer  {
 public:
-	enum MeshRenderOption {
-		MESHRENDER_VERTEXCOLOR = 0,
-		MESHRENDER_FLATSHADE = 1,
-		MESHRENDER_SMOOTHSHADE = 2,
-		MESHRENDER_WIREFRAME = 3,
-	};
-	
-	struct MeshRenderMode {
-	public:
-		const Eigen::Vector3d DEFAULT_COLOR = Eigen::Vector3d(0.5, 0.5, 0.5);
-		
-		MeshRenderOption mesh_render_option;
-		
-		MeshRenderMode() :
-				mesh_render_option(MESHRENDER_FLATSHADE)
-		{}
-	};
-
-
 	struct MouseControl {
 	public:
 		bool is_mouse_left_button_down;
@@ -143,9 +124,6 @@ protected:
 	void SetDefaultMeshMaterial();
 	void SetDefaultLighting(const BoundingBox &bounding_box);
 
-	/// Function to draw a triangle mesh
-	virtual void DrawTriangleMesh(const TriangleMesh &mesh);
-
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);
 	virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
@@ -170,7 +148,7 @@ protected:
 
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;
-	MeshRenderMode mesh_render_mode_;
+	TriangleMeshRenderMode mesh_render_mode_;
 	Eigen::Vector3d background_color_;
 
 	// geometry to be rendered

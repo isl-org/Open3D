@@ -43,7 +43,9 @@ public:
 			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view);
-	virtual bool Render(const ViewControl &view);
+	virtual bool Render(
+			const RenderMode &mode,
+			const ViewControl &view);
 	virtual void Release();
 
 protected:
@@ -59,6 +61,9 @@ protected:
 	GLHelper::GLVector3f light_position_world_;
 	GLHelper::GLVector3f light_color_;
 	GLHelper::GLVector3f light_power_;
+
+	Eigen::Vector3f default_color_ = 
+			Eigen::Vector3f(0.25f, 0.652647f, 0.254303f);
 };
 	
 }	// namespace three::glsl

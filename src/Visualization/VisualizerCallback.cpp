@@ -92,18 +92,64 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 	}
 
 	switch (key) {
-	case GLFW_KEY_H:
-		PrintVisualizerHelp();
-		break;
 	case GLFW_KEY_ESCAPE:
 	case GLFW_KEY_Q:
 		glfwSetWindowShouldClose(window_, GL_TRUE);
 		PrintDebug("[Visualizer] Window closing.\n");
 		break;
+	case GLFW_KEY_H:
+		PrintVisualizerHelp();
+		break;
+	case GLFW_KEY_R:
+		ResetViewPoint();
+		PrintDebug("[Visualizer] Reset view point.\n");
+		break;
+	case GLFW_KEY_LEFT_BRACKET:
+		view_control_.ChangeFieldOfView(-1.0);
+		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
+				view_control_.GetFieldOfView());
+		break;
+	case GLFW_KEY_RIGHT_BRACKET:
+		view_control_.ChangeFieldOfView(1.0);
+		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
+				view_control_.GetFieldOfView());
+		break;
+	case GLFW_KEY_EQUAL:
+		pointcloud_render_mode_.ChangePointSize(1.0);
+		if (pointcloud_render_mode_.IsNormalShown()) {
+			UpdateGeometry();
+		}
+		PrintDebug("[Visualizer] Point size set to %.2f.\n",
+				pointcloud_render_mode_.GetPointSize());
+		break;
+	case GLFW_KEY_MINUS:
+		pointcloud_render_mode_.ChangePointSize(-1.0);
+		if (pointcloud_render_mode_.IsNormalShown()) {
+			UpdateGeometry();
+		}
+		PrintDebug("[Visualizer] Point size set to %.2f.\n",
+				pointcloud_render_mode_.GetPointSize());
+		break;
+	case GLFW_KEY_N:
+		pointcloud_render_mode_.ToggleShowNormal();
+		UpdateGeometry();
+		PrintDebug("[Visualizer] Point normal rendering %s.\n",
+				pointcloud_render_mode_.IsNormalShown() ? "ON" : "OFF");
+		break;
+	case GLFW_KEY_S:
+		mesh_render_mode_.ToggleShadingOption();
+		UpdateGeometry();
+		PrintDebug("[Visualizer] Mesh shading mode is %s.\n",
+				mesh_render_mode_.GetMeshShadeOption() == 
+				TriangleMeshRenderMode::MESHSHADE_FLATSHADE ? 
+				"FLAT" : "SMOOTH");
+		break;
 	case GLFW_KEY_0:
 		if (mods & GLFW_MOD_CONTROL) {
-			mesh_render_mode_.mesh_render_option = MESHRENDER_VERTEXCOLOR;
-			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
+			mesh_render_mode_.SetMeshColorOption(
+					TriangleMeshRenderMode::TRIANGLEMESH_DEFAULT);
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Mesh color set to DEFAULT.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
 			SetGlobalColorMap(ColorMap::COLORMAP_GRAY);
 			UpdateGeometry();
@@ -117,8 +163,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_1:
 		if (mods & GLFW_MOD_CONTROL) {
-			mesh_render_mode_.mesh_render_option = MESHRENDER_FLATSHADE;
-			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
+			mesh_render_mode_.SetMeshColorOption(
+					TriangleMeshRenderMode::TRIANGLEMESH_COLOR);
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Mesh color set to COLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
 			SetGlobalColorMap(ColorMap::COLORMAP_JET);
 			UpdateGeometry();
@@ -132,8 +180,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_2:
 		if (mods & GLFW_MOD_CONTROL) {
-			mesh_render_mode_.mesh_render_option = MESHRENDER_SMOOTHSHADE;
-			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
+			mesh_render_mode_.SetMeshColorOption(
+					TriangleMeshRenderMode::TRIANGLEMESH_X);
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Mesh color set to X.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
 			SetGlobalColorMap(ColorMap::COLORMAP_SUMMER);
 			UpdateGeometry();
@@ -147,8 +197,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_3:
 		if (mods & GLFW_MOD_CONTROL) {
-			mesh_render_mode_.mesh_render_option = MESHRENDER_WIREFRAME;
-			PrintDebug("[Visualizer] Mesh render mode set to VERTEXCOLOR.\n");
+			mesh_render_mode_.SetMeshColorOption(
+					TriangleMeshRenderMode::TRIANGLEMESH_Y);
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Mesh color set to Y.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
 			SetGlobalColorMap(ColorMap::COLORMAP_WINTER);
 			UpdateGeometry();
@@ -162,6 +214,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_4:
 		if (mods & GLFW_MOD_CONTROL) {
+			mesh_render_mode_.SetMeshColorOption(
+					TriangleMeshRenderMode::TRIANGLEMESH_Z);
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Mesh color set to Z.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
 		} else {
 			pointcloud_render_mode_.SetPointColorOption(
@@ -170,41 +226,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			PrintDebug("[Visualizer] Point color set to Z.\n");
 		}
 		break;
-	case GLFW_KEY_MINUS:
-		pointcloud_render_mode_.ChangePointSize(-1.0);
-		if (pointcloud_render_mode_.IsNormalShown()) {
-			UpdateGeometry();
-		}
-		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				pointcloud_render_mode_.GetPointSize());
-		break;
-	case GLFW_KEY_EQUAL:
-		pointcloud_render_mode_.ChangePointSize(1.0);
-		if (pointcloud_render_mode_.IsNormalShown()) {
-			UpdateGeometry();
-		}
-		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				pointcloud_render_mode_.GetPointSize());
-		break;
-	case GLFW_KEY_RIGHT_BRACKET:
-		view_control_.ChangeFieldOfView(1.0);
-		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_.GetFieldOfView());
-		break;
-	case GLFW_KEY_LEFT_BRACKET:
-		view_control_.ChangeFieldOfView(-1.0);
-		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_.GetFieldOfView());
-		break;
-	case GLFW_KEY_N:
-		pointcloud_render_mode_.ToggleShowNormal();
-		UpdateGeometry();
-		PrintDebug("[Visualizer] Point normal rendering %s.\n",
-				pointcloud_render_mode_.IsNormalShown() ? "ON" : "OFF");
-		break;
-	case GLFW_KEY_R:
-		ResetViewPoint();
-		PrintDebug("[Visualizer] Reset view point.\n");
+	default:
 		break;
 	}
 

@@ -43,7 +43,7 @@ bool Visualizer::InitOpenGL()
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 	// mesh material
-	SetDefaultMeshMaterial();
+	glEnable(GL_CULL_FACE);
 
 	return true;
 }
@@ -69,18 +69,16 @@ void Visualizer::Render()
 		const Geometry &geometry = *geometry_ptrs_[i];
 		switch (geometry.GetGeometryType()) {
 		case Geometry::GEOMETRY_POINTCLOUD:
-			glPointSize(GLfloat(pointcloud_render_mode_.GetPointSize()));
-			shader_ptrs_[i]->Render(view_control_);
+			shader_ptrs_[i]->Render(pointcloud_render_mode_, view_control_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
+			shader_ptrs_[i]->Render(mesh_render_mode_, view_control_);
+			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
 			break;
 		}
 	}
-
-	// call this when there is a mesh
-	//SetDefaultLighting(bounding_box_);
 
 	glfwSwapBuffers(window_);
 }
@@ -97,6 +95,10 @@ void Visualizer::UpdateShaders()
 					view_control_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
+			shader_ptrs_[i]->BindGeometry(
+					*geometry_ptrs_[i],
+					mesh_render_mode_,
+					view_control_);
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
 			break;
@@ -186,33 +188,6 @@ void Visualizer::SetDefaultLighting(const BoundingBox &bounding_box)
 	glEnable(GL_LIGHT1);
 	glEnable(GL_LIGHT2);
 	glEnable(GL_LIGHTING);
-}
-
-void Visualizer::DrawTriangleMesh(const TriangleMesh &mesh)
-{
-	switch (mesh_render_mode_.mesh_render_option) {
-	case MESHRENDER_VERTEXCOLOR:
-		glDisable(GL_LIGHTING);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		break;
-	case MESHRENDER_SMOOTHSHADE:
-		SetDefaultLighting(view_control_.GetBoundingBox());
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		break;
-	case MESHRENDER_WIREFRAME:
-		glDisable(GL_LIGHTING);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		break;
-	case MESHRENDER_FLATSHADE:
-	default:
-		SetDefaultLighting(view_control_.GetBoundingBox());
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		break;
-	}
-	
-	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
-		const Eigen::Vector3i & triangle = mesh.triangles_[i];
-	}
 }
 
 }	// namespace three

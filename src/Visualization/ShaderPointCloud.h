@@ -43,7 +43,9 @@ public:
 			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view);
-	virtual bool Render(const ViewControl &view);
+	virtual bool Render(
+			const RenderMode &mode,
+			const ViewControl &view);
 	virtual void Release();
 
 protected:

@@ -118,4 +118,74 @@ private:
 	bool show_normal_;
 };
 
+/// RenderMode class for TriangleMesh
+class TriangleMeshRenderMode : public RenderMode {
+public:
+	enum MeshShadeOption {
+		MESHSHADE_FLATSHADE = 0,
+		MESHSHADE_SMOOTHSHADE = 1,
+	};
+
+	enum MeshColorOption {
+		TRIANGLEMESH_DEFAULT = 0,
+		TRIANGLEMESH_COLOR = 1,
+		TRIANGLEMESH_X = 2,
+		TRIANGLEMESH_Y = 3,
+		TRIANGLEMESH_Z = 4,
+	};
+
+	enum LightingOption {
+		LIGHTING_DEFAULT = 0,
+	};
+
+public:
+	TriangleMeshRenderMode() :
+			mesh_shade_option_(MESHSHADE_FLATSHADE),
+			mesh_color_option_(TRIANGLEMESH_DEFAULT),
+			lighting_option_(LIGHTING_DEFAULT)
+	{
+		SetRenderModeType(RENDERMODE_TRIANGLEMESH);
+	}
+
+	virtual ~TriangleMeshRenderMode() {}
+
+public:
+	void ToggleShadingOption() {
+		if (mesh_shade_option_ == MESHSHADE_FLATSHADE) {
+			mesh_shade_option_ = MESHSHADE_SMOOTHSHADE;
+		} else {
+			mesh_shade_option_ = MESHSHADE_FLATSHADE;
+		}
+	}
+
+	MeshShadeOption GetMeshShadeOption() const {
+		return mesh_shade_option_;
+	}
+
+	void SetMeshShadeOption(MeshShadeOption option) {
+		mesh_shade_option_ = option;
+	}
+
+	MeshColorOption GetMeshColorOption() const {
+		return mesh_color_option_;
+	}
+
+	void SetMeshColorOption(MeshColorOption option) {
+		mesh_color_option_ = option;
+	}
+
+	LightingOption GetLightingOption() const {
+		return lighting_option_;
+	}
+
+	void SetLightingOption(LightingOption option) {
+		lighting_option_ = option;
+	}
+
+private:
+	MeshShadeOption mesh_shade_option_;
+	MeshColorOption mesh_color_option_;
+	LightingOption lighting_option_;
+};
+
 }	// namespace three
