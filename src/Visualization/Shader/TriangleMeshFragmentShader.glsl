@@ -6,7 +6,6 @@ varying vec3 eye_dir_camera;
 varying vec3 light_dir_camera;
 varying vec3 fragment_color;
 
-uniform mat4 MV;
 uniform vec3 light_position_world;
 uniform vec3 light_color;
 uniform float light_power;
@@ -23,7 +22,7 @@ void main()
 	vec3 l = normalize(light_dir_camera);
 	float cos_theta = clamp(dot(n, l), 0, 1);
 
-	vec3 E = normalize(eye_direction_camera);
+	vec3 E = normalize(eye_dir_camera);
 	vec3 R = reflect(-l, n);
 	float cos_alpha = clamp(dot(E, R), 0, 1);
 

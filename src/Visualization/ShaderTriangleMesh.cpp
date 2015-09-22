@@ -181,6 +181,8 @@ bool ShaderTriangleMeshDefault::Render(const ViewControl &view)
 	if (compiled_ == false || bound_ == false) {
 		return false;
 	}
+
+	return true;
 	
 	glUseProgram(program_);
 	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());

@@ -50,6 +50,7 @@ bool ShaderPointCloudDefault::Compile()
 			NULL,
 			PointCloudFragmentShader) == false)
 	{
+		PrintWarning("[ShaderPointCloudDefault] Compiling shaders failed.\n");
 		return false;
 	}
 	
@@ -74,10 +75,12 @@ bool ShaderPointCloudDefault::BindGeometry(
 	// Sanity check to see if this geometry is worth binding.
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+		PrintWarning("[ShaderPointCloudDefault] Binding failed with wrong binding type.\n");
 		return false;
 	}
 	const PointCloud &pointcloud = (const PointCloud &)geometry;
     if (pointcloud.HasPoints() == false) {
+		PrintWarning("[ShaderPointCloudDefault] Binding failed with empty pointcloud.\n");
 		return false;
 	}
 	const PointCloudRenderMode &pointcloud_render_mode = 

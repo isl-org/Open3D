@@ -55,6 +55,10 @@ protected:
 	GLuint vertex_color_;
 	GLuint vertex_color_buffer_;
 	GLuint MVP_;
+
+	GLHelper::GLVector3f light_position_world_;
+	GLHelper::GLVector3f light_color_;
+	GLHelper::GLVector3f light_power_;
 };
 	
 }	// namespace three::glsl

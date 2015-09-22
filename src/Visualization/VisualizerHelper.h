@@ -37,6 +37,8 @@ namespace GLHelper {
 
 typedef Eigen::Matrix<GLfloat, 4, 4, Eigen::ColMajor> GLMatrix4f;
 
+typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
+
 GLMatrix4f LookAt(
 		const Eigen::Vector3d &eye,
 		const Eigen::Vector3d &lookat,

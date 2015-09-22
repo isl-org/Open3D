@@ -83,6 +83,15 @@ public:
 	double GetFieldOfView() const { return field_of_view_; }
 	
 	GLHelper::GLMatrix4f GetMVPMatrix() const { return MVP_matrix_; }
+	GLHelper::GLMatrix4f GetProjectionMatrix() const {
+		return projection_matrix_;
+	}
+	GLHelper::GLMatrix4f GetViewMatrix() const { return view_matrix_; }
+	GLHelper::GLMatrix4f GetModelMatrix() const { return model_matrix_; }
+	GLHelper::GLVector3f GetEye() const { return eye_.cast<GLfloat>(); }
+	GLHelper::GLVector3f GetLookat() const { return lookat_.cast<GLfloat>(); }
+	GLHelper::GLVector3f GetUp() const { return up_.cast<GLfloat>(); }
+	GLHelper::GLVector3f GetFront() const { return front_.cast<GLfloat>(); }
 
 protected:
 	BoundingBox bounding_box_;

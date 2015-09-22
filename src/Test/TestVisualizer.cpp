@@ -59,12 +59,12 @@ int main(int argc, char *argv[])
 	// 2. test visualization.
 
 	Visualizer visualizer1;
-	visualizer1.CreateWindow("Open3DV", 1600, 900);
+	visualizer1.CreateWindow("Open3DV PointCloud", 1600, 900);
 	visualizer1.AddGeometry(pointcloud_ptr);
 
 	Visualizer visualizer2;
-	visualizer2.CreateWindow("Open3DV", 800, 450);
-	visualizer2.AddGeometry(pointcloud_ptr);
+	visualizer2.CreateWindow("Open3DV Mesh", 1000, 600);
+	visualizer2.AddGeometry(mesh_ptr);
 	
 	while (visualizer1.PollEvents() && visualizer2.PollEvents()) {
 		
