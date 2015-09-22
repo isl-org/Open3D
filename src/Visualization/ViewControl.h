@@ -52,9 +52,6 @@ public:
 		PROJECTION_ORTHOGONAL = 1,
 	};
 
-public:
-	ViewControl();
-	~ViewControl();
 
 public:
 	/// Function to set view points
@@ -94,6 +91,8 @@ public:
 	GLHelper::GLVector3f GetFront() const { return front_.cast<GLfloat>(); }
 
 protected:
+	int window_width_ = 0;
+	int window_height_ = 0;
 	BoundingBox bounding_box_;
 	Eigen::Vector3d eye_;
 	Eigen::Vector3d lookat_;
@@ -104,8 +103,6 @@ protected:
 	double zoom_;
 	double view_ratio_;
 	double aspect_;
-	int window_width_;
-	int window_height_;
 	GLHelper::GLMatrix4f projection_matrix_;
 	GLHelper::GLMatrix4f view_matrix_;
 	GLHelper::GLMatrix4f model_matrix_;

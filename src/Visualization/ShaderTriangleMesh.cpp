@@ -32,14 +32,6 @@ namespace three{
 
 namespace glsl {
 
-ShaderTriangleMeshDefault::ShaderTriangleMeshDefault()
-{
-}
-
-ShaderTriangleMeshDefault::~ShaderTriangleMeshDefault()
-{
-}
-
 bool ShaderTriangleMeshDefault::Compile()
 {
 	if (CompileShaders(

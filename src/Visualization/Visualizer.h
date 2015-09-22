@@ -137,19 +137,19 @@ protected:
 
 protected:
 	// window
-	GLFWwindow* window_;
+	GLFWwindow* window_ = NULL;
 
 	// control
 	MouseControl mouse_control_;
 	ViewControl view_control_;
-	bool is_redraw_required_;
-	bool is_shader_update_required_;
-	bool is_initialized_;
+	bool is_redraw_required_ = true;
+	bool is_shader_update_required_ = true;
+	bool is_initialized_ = false;
 
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;
 	TriangleMeshRenderMode mesh_render_mode_;
-	Eigen::Vector3d background_color_;
+	Eigen::Vector3d background_color_ = Eigen::Vector3d(1.0, 1.0, 1.0);
 
 	// geometry to be rendered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;

@@ -34,8 +34,8 @@ namespace glsl {
 	
 class ShaderTriangleMeshDefault : public ShaderWrapper {
 public:
-	ShaderTriangleMeshDefault();
-	virtual ~ShaderTriangleMeshDefault();
+	ShaderTriangleMeshDefault() {}
+	virtual ~ShaderTriangleMeshDefault() {}
 	
 public:
 	virtual bool Compile();

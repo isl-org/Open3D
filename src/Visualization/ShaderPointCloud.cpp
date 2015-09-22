@@ -33,16 +33,6 @@ namespace three{
 
 namespace glsl {
 
-ShaderPointCloudDefault::ShaderPointCloudDefault() :
-		point_num_(0),
-		show_normal_(false)
-{
-}
-
-ShaderPointCloudDefault::~ShaderPointCloudDefault()
-{
-}
-
 bool ShaderPointCloudDefault::Compile()
 {
 	if (CompileShaders(

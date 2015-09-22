@@ -32,16 +32,6 @@ namespace three{
 
 namespace glsl {
 
-ShaderWrapper::ShaderWrapper() :
-		compiled_(false),
-		bound_(false)
-{
-}
-
-ShaderWrapper::~ShaderWrapper()
-{
-}
-
 bool ShaderWrapper::CompileShaders(
 		const char * const vertex_shader_code,
 		const char * const geometry_shader_code,

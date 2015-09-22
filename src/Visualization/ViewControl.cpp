@@ -31,15 +31,6 @@
 
 namespace three{
 
-ViewControl::ViewControl() :
-		window_width_(0), window_height_(0)
-{
-}
-
-ViewControl::~ViewControl()
-{
-}
-
 ViewControl::ProjectionType ViewControl::GetProjectionType()
 {
 	if (field_of_view_ > FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP / 2.0) {
@@ -131,7 +122,8 @@ void ViewControl::Translate(double x, double y)
 
 void ViewControl::SetViewPoint()
 {
-	if (window_height_ <= 0) {
+	if (window_height_ <= 0 || window_width_ <= 0) {
+		PrintWarning("[ViewControl] SetViewPoint() failed because window height and width are not set.");
 		return;
 	}
 	glViewport(0, 0, window_width_, window_height_);

@@ -38,8 +38,8 @@ namespace glsl {
 	
 class ShaderWrapper {
 public:
-	ShaderWrapper();
-	virtual ~ShaderWrapper();
+	ShaderWrapper() {}
+	virtual ~ShaderWrapper() {}
 	ShaderWrapper(const ShaderWrapper &) = delete;
 	ShaderWrapper &operator=(const ShaderWrapper &) = delete;
 	
@@ -71,8 +71,8 @@ protected:
 	GLuint geometry_shader_;
 	GLuint fragment_shader_;
 	GLuint program_;
-	bool compiled_;
-	bool bound_;
+	bool compiled_ = false;
+	bool bound_ = false;
 };
 
 }	// namespace three::glsl

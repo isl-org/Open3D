@@ -34,14 +34,6 @@ static std::shared_ptr<ColorMap> global_colormap_ptr(new ColorMapJet);
 
 }	// unnamed namespace
 
-ColorMap::ColorMap()
-{
-}
-
-ColorMap::~ColorMap()
-{
-}
-
 Eigen::Vector3d ColorMapGray::GetColor(double value) const
 {
 	return Eigen::Vector3d(value, value, value);

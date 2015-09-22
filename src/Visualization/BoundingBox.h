@@ -32,10 +32,6 @@ namespace three {
 
 class BoundingBox  {
 public:
-	BoundingBox();
-	~BoundingBox();
-
-public:
 	void Reset();
 	void AddGeometry(const Geometry &geometry);
 
@@ -61,8 +57,8 @@ public:
 	}
 
 protected:
-	Eigen::Vector3d min_bound_;
-	Eigen::Vector3d max_bound_;
+	Eigen::Vector3d min_bound_ = Eigen::Vector3d::Zero();
+	Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
 };
 
 }	// namespace three

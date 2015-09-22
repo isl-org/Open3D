@@ -40,8 +40,8 @@ public:
 	};
 
 public:
-	RenderMode();
-	virtual ~RenderMode();
+	RenderMode() {}
+	virtual ~RenderMode() {}
 
 public:
 	RenderModeType GetRenderModeType() const { return rendermode_type_; }

@@ -34,8 +34,8 @@ namespace glsl {
 	
 class ShaderPointCloudDefault : public ShaderWrapper {
 public:
-	ShaderPointCloudDefault();
-	virtual ~ShaderPointCloudDefault();
+	ShaderPointCloudDefault() {}
+	virtual ~ShaderPointCloudDefault() {}
 	
 public:
 	virtual bool Compile();
@@ -58,8 +58,8 @@ protected:
 	GLuint vertex_color_buffer_;
 	GLuint MVP_;
 	
-	GLsizei point_num_;
-	bool show_normal_;
+	GLsizei point_num_ = 0;
+	bool show_normal_ = false;
 };
 	
 }	// namespace three::glsl

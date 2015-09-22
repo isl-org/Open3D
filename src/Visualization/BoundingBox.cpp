@@ -28,16 +28,6 @@
 
 namespace three{
 
-BoundingBox::BoundingBox() :
-		min_bound_(0.0, 0.0, 0.0),
-		max_bound_(0.0, 0.0, 0.0)
-{
-}
-
-BoundingBox::~BoundingBox()
-{
-}
-
 void BoundingBox::Reset()
 {
 	min_bound_.setZero();

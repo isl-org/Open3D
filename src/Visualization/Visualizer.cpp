@@ -53,16 +53,7 @@ public:
 
 }	// unnamed namespace
 
-Visualizer::Visualizer() : 
-		window_(NULL),
-		mouse_control_(),
-		view_control_(),
-		is_redraw_required_(true),
-		is_shader_update_required_(true),
-		is_initialized_(false),
-		pointcloud_render_mode_(),
-		mesh_render_mode_(),
-		background_color_(1.0, 1.0, 1.0)
+Visualizer::Visualizer()
 {
 }
 
@@ -249,20 +240,24 @@ bool Visualizer::HasGeometry()
 void Visualizer::PrintVisualizerHelp()
 {
 	PrintInfo("Mouse options:\n");
+	PrintInfo("\n");
 	PrintInfo("    Left btn + drag        : Rotate.\n");
 	PrintInfo("    Ctrl + left btn + drag : Translate.\n");
 	PrintInfo("    Wheel                  : Zoom in/out.\n");
 	PrintInfo("\n");
 	PrintInfo("Keyboard options:\n");
+	PrintInfo("\n");
 	PrintInfo("  -- General control --\n");
 	PrintInfo("    Q, Esc       : Exit window.\n");
 	PrintInfo("    H            : Print help message.\n");
 	PrintInfo("    R            : Reset view point.\n");
 	PrintInfo("    [/]          : Increase/decrease field of view.\n");
+	PrintInfo("\n");
 	PrintInfo("  -- Render mode control --\n");
 	PrintInfo("    +/-          : Increase/decrease point size.\n");
 	PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
 	PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
+	PrintInfo("\n");
 	PrintInfo("  -- Color control --\n");
 	PrintInfo("    0..4         : Set point cloud color option.\n");
 	PrintInfo("                   0 - Default behavior, render point color.\n");
