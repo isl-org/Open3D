@@ -47,8 +47,8 @@ public:
 	virtual bool IsEmpty() const;
 	virtual void Transform(const Eigen::Matrix4d &transformation);
 
-	void ComputeTriangleNormals();
-	void ComputeVertexNormals();
+	void ComputeTriangleNormals(bool normalized = true);
+	void ComputeVertexNormals(bool normalized = true);
 	
 public:
 	bool HasVertices() const {

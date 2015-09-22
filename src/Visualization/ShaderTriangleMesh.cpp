@@ -27,6 +27,9 @@
 #include "ShaderTriangleMesh.h"
 
 #include "Shader.h"
+#include "ColorMap.h"
+
+#include <iostream>
 
 namespace three{
 
@@ -43,8 +46,15 @@ bool ShaderTriangleMeshDefault::Compile()
 	}
 	
 	vertex_position_ = glGetAttribLocation(program_, "vertex_position");
+	vertex_normal_ = glGetAttribLocation(program_, "vertex_normal");
 	vertex_color_ = glGetAttribLocation(program_, "vertex_color");
 	MVP_ = glGetUniformLocation(program_, "MVP");
+	V_ = glGetUniformLocation(program_, "V");
+	M_ = glGetUniformLocation(program_, "M");
+	light_position_world_ = 
+			glGetUniformLocation(program_, "light_position_world");
+	light_color_ = glGetUniformLocation(program_, "light_color");
+	light_power_ = glGetUniformLocation(program_, "light_power");
 
 	return true;
 }
@@ -63,14 +73,22 @@ bool ShaderTriangleMeshDefault::BindGeometry(
 	// Sanity check to see if this geometry is worth binding.
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
+		PrintWarning("[ShaderTriangleMeshDefault] Binding failed with wrong binding type.\n");
 		return false;
 	}
 	const TriangleMesh &mesh = (const TriangleMesh &)geometry;
-    if (mesh.HasTriangles() == false) {
+	if (mesh.HasTriangles() == false) {
+		PrintWarning("[ShaderPointCloudDefault] Binding failed with empty mesh.\n");
 		return false;
 	}
-	//const PointCloudRenderMode &pointcloud_render_mode = 
-		//	(const PointCloudRenderMode &)mode;
+	if (mesh.HasTriangleNormals() == false || 
+			mesh.HasVertexNormals() == false) {
+		PrintWarning("[ShaderPointCloudDefault] Binding failed because mesh has no normals.\n");
+		PrintWarning("[ShaderPointCloudDefault] Call ComputeVertexNormals() before binding.\n");
+		return false;
+	}
+	const auto &mesh_render_mode = (const TriangleMeshRenderMode &)mode;
+	const ColorMap &global_color_map = *GetGlobalColorMap();
 
 	// If there is already geometry, we first unbind it.
 	// In the default PointCloud render mode, we use GL_STATIC_DRAW. When
@@ -80,81 +98,79 @@ bool ShaderTriangleMeshDefault::BindGeometry(
 	// UnbindGeometry() with Buffer Object Streaming mechanisms.
 	UnbindGeometry();
 
-	/*
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
-	point_num_ = (GLsizei)pointcloud.points_.size();
-	points_copy_.resize(pointcloud.points_.size());
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		points_copy_[i] = pointcloud.points_[i].cast<float>();
-	}
-	colors_copy_.resize(pointcloud.points_.size());
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		auto point = pointcloud.points_[i];
-		Eigen::Vector3d color;
-		switch (pointcloud_render_mode.GetPointColorOption()) {
-		case PointCloudRenderMode::POINTCOLOR_X:
-			color = global_color_map.GetColor(
-					view.GetBoundingBox().GetXPercentage(point(0)));
-			break;
-		case PointCloudRenderMode::POINTCOLOR_Y:
-			color = global_color_map.GetColor(
-					view.GetBoundingBox().GetYPercentage(point(1)));
-			break;
-		case PointCloudRenderMode::POINTCOLOR_Z:
-			color = global_color_map.GetColor(
-					view.GetBoundingBox().GetZPercentage(point(2)));
-			break;
-		case PointCloudRenderMode::POINTCOLOR_COLOR:
-		case PointCloudRenderMode::POINTCOLOR_DEFAULT:
-		default:
-			if (pointcloud.HasColors()) {
-				color = pointcloud.colors_[i];
-			} else {
+	vertex_num_ = (GLsizei)mesh.triangles_.size() * 3;
+	std::vector<Eigen::Vector3f> vertices_copy(vertex_num_);
+	std::vector<Eigen::Vector3f> colors_copy(vertex_num_);
+	std::vector<Eigen::Vector3f> normals_copy(vertex_num_);
+
+	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+		const auto &triangle = mesh.triangles_[i];
+		for (size_t j = 0; j < 3; j++) {
+			size_t idx = i * 3 + j;
+			size_t vi = triangle(j);
+			const auto &vertex = mesh.vertices_[vi];
+			vertices_copy[idx] = vertex.cast<float>();
+
+			Eigen::Vector3d color;
+			switch (mesh_render_mode.GetMeshColorOption()) {
+			case TriangleMeshRenderMode::TRIANGLEMESH_X:
 				color = global_color_map.GetColor(
-						view.GetBoundingBox().GetZPercentage(point(2)));
+						view.GetBoundingBox().GetXPercentage(vertex(0)));
+				break;
+			case TriangleMeshRenderMode::TRIANGLEMESH_Y:
+				color = global_color_map.GetColor(
+						view.GetBoundingBox().GetYPercentage(vertex(1)));
+				break;
+			case TriangleMeshRenderMode::TRIANGLEMESH_Z:
+				color = global_color_map.GetColor(
+						view.GetBoundingBox().GetZPercentage(vertex(2)));
+				break;
+			case TriangleMeshRenderMode::TRIANGLEMESH_COLOR:
+				if (mesh.HasVertexColors()) {
+					color = mesh.vertex_colors_[vi] * 10.0;
+					break;
+				}
+			case TriangleMeshRenderMode::TRIANGLEMESH_DEFAULT:
+			default:
+				color = default_color_;
+				break;
 			}
-			break;
+			colors_copy[idx] = color.cast<float>();
+
+			if (mesh_render_mode.GetMeshShadeOption() == 
+					TriangleMeshRenderMode::MESHSHADE_FLATSHADE) {
+				normals_copy[idx] = mesh.triangle_normals_[i].cast<float>();
+			} else {
+				normals_copy[idx] = mesh.vertex_normals_[vi].cast<float>();
+			}
 		}
-		colors_copy_[i] = color.cast<float>();
 	}
 
-	// Set up normal if it is enabled
-	if (pointcloud_render_mode.IsNormalShown() && pointcloud.HasNormals()) {
-		show_normal_ = true;
-		points_copy_.resize(point_num_ * 3);
-		colors_copy_.resize(point_num_ * 3);
-		double line_length = pointcloud_render_mode.GetPointSize() *
-				0.01 * view.GetBoundingBox().GetSize();
-		const Eigen::Vector3f default_normal_color(0.1f, 0.1f, 0.1f);
-		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-			auto point = pointcloud.points_[i];
-			auto normal = pointcloud.normals_[i];
-			points_copy_[point_num_ + i * 2] = point.cast<float>();
-			points_copy_[point_num_ + i * 2 + 1] = 
-					(point + normal * line_length).cast<float>();
-			colors_copy_[point_num_ + i * 2] = default_normal_color;
-			colors_copy_[point_num_ + i * 2 + 1] = default_normal_color;
-		}
-	} else {
-		show_normal_ = false;
-	}
-	
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glBufferData(GL_ARRAY_BUFFER,
-			points_copy_.size() * sizeof(Eigen::Vector3f),
-			points_copy_.data(),
+			vertices_copy.size() * sizeof(Eigen::Vector3f),
+			vertices_copy.data(),
+			GL_STATIC_DRAW);
+	glGenBuffers(1, &vertex_normal_buffer_);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
+	glBufferData(GL_ARRAY_BUFFER,
+			normals_copy.size() * sizeof(Eigen::Vector3f),
+			normals_copy.data(),
 			GL_STATIC_DRAW);
 	glGenBuffers(1, &vertex_color_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glBufferData(GL_ARRAY_BUFFER,
-			colors_copy_.size() * sizeof(Eigen::Vector3f),
-			colors_copy_.data(),
+			colors_copy.size() * sizeof(Eigen::Vector3f),
+			colors_copy.data(),
 			GL_STATIC_DRAW);
 	
-	*/
+	lights_on_ = !(mesh_render_mode.GetMeshColorOption() == 
+			TriangleMeshRenderMode::TRIANGLEMESH_COLOR && 
+			mesh.HasVertexColors());
 	bound_ = true;	
 	return true;
 }
@@ -163,8 +179,21 @@ void ShaderTriangleMeshDefault::UnbindGeometry()
 {
 	if (bound_) {
 		glDeleteBuffers(1, &vertex_position_buffer_);
+		glDeleteBuffers(1, &vertex_normal_buffer_);
 		glDeleteBuffers(1, &vertex_color_buffer_);
 		bound_ = false;
+	}
+}
+
+void ShaderTriangleMeshDefault::SetLight(
+		const TriangleMeshRenderMode &mode, 
+		const ViewControl &view)
+{
+	if (mode.GetLightingOption() == TriangleMeshRenderMode::LIGHTING_DEFAULT) {
+		const auto &box = view.GetBoundingBox();
+		light_position_world_data_ = view.GetEye().cast<float>();
+		light_color_data_ = GLHelper::GLVector3f(1.0, 1.0, 1.0);
+		light_power_data_ = lights_on_ ? 2.0f : 0.0f;
 	}
 }
 
@@ -172,24 +201,36 @@ bool ShaderTriangleMeshDefault::Render(
 		const RenderMode &mode,
 		const ViewControl &view)
 {
-	if (compiled_ == false || bound_ == false) {
+	if (compiled_ == false || bound_ == false || vertex_num_ <= 0 ||
+			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
 		return false;
 	}
-
-	return true;
 	
+	const auto &rendermode = (const TriangleMeshRenderMode &)mode;
+
+	SetLight(rendermode, view);
+
 	glUseProgram(program_);
 	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
+	glUniformMatrix4fv(V_, 1, GL_FALSE, view.GetViewMatrix().data());
+	glUniformMatrix4fv(M_, 1, GL_FALSE, view.GetModelMatrix().data());
+	glUniform3fv(light_position_world_, 1, light_position_world_data_.data());
+	glUniform3fv(light_color_, 1, light_color_data_.data());
+	glUniform1f(light_power_, light_power_data_);
 	glEnableVertexAttribArray(vertex_position_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(vertex_normal_);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
+	glVertexAttribPointer(vertex_normal_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(vertex_color_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	//glDrawArrays(GL_POINTS, 0, point_num_);
+	glDrawArrays(GL_TRIANGLES, 0, vertex_num_);
 	glDisableVertexAttribArray(vertex_position_);
+	glDisableVertexAttribArray(vertex_normal_);
 	glDisableVertexAttribArray(vertex_color_);
-	
+
 	return true;
 }
 

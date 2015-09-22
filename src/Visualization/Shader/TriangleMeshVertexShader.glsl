@@ -1,8 +1,8 @@
 #version 120
 
 attribute vec3 vertex_position;
-attribute vec3 vertex_color;
 attribute vec3 vertex_normal;
+attribute vec3 vertex_color;
 
 varying vec3 vertex_position_world;
 varying vec3 vertex_normal_camera;

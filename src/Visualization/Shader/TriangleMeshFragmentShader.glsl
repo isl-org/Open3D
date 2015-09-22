@@ -27,6 +27,6 @@ void main()
 	float cos_alpha = clamp(dot(E, R), 0, 1);
 
 	gl_FragColor.rgb = ambient_color + 
-			diffuse_color * light_color * light_power * cos_theta / distance2 +
-			specular_color * light_color * light_power * pow(cos_alpha, 5) / distance2;
+			diffuse_color * light_color * light_power * cos_theta +
+			specular_color * light_color * light_power * pow(cos_alpha, 5);
 }

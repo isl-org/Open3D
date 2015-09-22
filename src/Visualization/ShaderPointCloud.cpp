@@ -69,12 +69,11 @@ bool ShaderPointCloudDefault::BindGeometry(
 		return false;
 	}
 	const PointCloud &pointcloud = (const PointCloud &)geometry;
-    if (pointcloud.HasPoints() == false) {
+	if (pointcloud.HasPoints() == false) {
 		PrintWarning("[ShaderPointCloudDefault] Binding failed with empty pointcloud.\n");
 		return false;
 	}
-	const PointCloudRenderMode &pointcloud_render_mode = 
-			(const PointCloudRenderMode &)mode;
+	const auto &pointcloud_render_mode = (const PointCloudRenderMode &)mode;
 	const ColorMap &global_color_map = *GetGlobalColorMap();
 
 	// If there is already geometry, we first unbind it.
@@ -88,13 +87,11 @@ bool ShaderPointCloudDefault::BindGeometry(
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
 	point_num_ = (GLsizei)pointcloud.points_.size();
-	std::vector<Eigen::Vector3f> points_copy(pointcloud.points_.size());
+	std::vector<Eigen::Vector3f> points_copy(point_num_);
+	std::vector<Eigen::Vector3f> colors_copy(point_num_);
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		points_copy[i] = pointcloud.points_[i].cast<float>();
-	}
-	std::vector<Eigen::Vector3f> colors_copy(pointcloud.points_.size());
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		auto point = pointcloud.points_[i];
+		const auto &point = pointcloud.points_[i];
+		points_copy[i] = point.cast<float>();
 		Eigen::Vector3d color;
 		switch (pointcloud_render_mode.GetPointColorOption()) {
 		case PointCloudRenderMode::POINTCOLOR_X:
@@ -132,8 +129,8 @@ bool ShaderPointCloudDefault::BindGeometry(
 				0.01 * view.GetBoundingBox().GetSize();
 		const Eigen::Vector3f default_normal_color(0.1f, 0.1f, 0.1f);
 		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-			auto point = pointcloud.points_[i];
-			auto normal = pointcloud.normals_[i];
+			const auto &point = pointcloud.points_[i];
+			const auto &normal = pointcloud.normals_[i];
 			points_copy[point_num_ + i * 2] = point.cast<float>();
 			points_copy[point_num_ + i * 2 + 1] = 
 					(point + normal * line_length).cast<float>();
@@ -181,7 +178,7 @@ bool ShaderPointCloudDefault::Render(
 		return false;
 	}
 	
-	auto rendermode = (const PointCloudRenderMode &)mode;
+	const auto &rendermode = (const PointCloudRenderMode &)mode;
 	glPointSize(GLfloat(rendermode.GetPointSize()));
 
 	glUseProgram(program_);

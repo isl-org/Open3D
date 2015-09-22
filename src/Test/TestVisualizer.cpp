@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
 		PrintError("Failed to read %s\n\n", argv[2]);
 	}
 	mesh_ptr->ComputeVertexNormals();
-	mesh_ptr->NormalizeNormals();
 
 	// 2. test visualization.
 

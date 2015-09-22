@@ -50,20 +50,32 @@ public:
 
 protected:
 	virtual void UnbindGeometry();
+	virtual void SetLight(
+			const TriangleMeshRenderMode &mode, 
+			const ViewControl &view);
 
 protected:
 	GLuint vertex_position_;
 	GLuint vertex_position_buffer_;
 	GLuint vertex_color_;
 	GLuint vertex_color_buffer_;
+	GLuint vertex_normal_;
+	GLuint vertex_normal_buffer_;
 	GLuint MVP_;
+	GLuint V_;
+	GLuint M_;
+	GLuint light_position_world_;
+	GLuint light_color_;
+	GLuint light_power_;
 
-	GLHelper::GLVector3f light_position_world_;
-	GLHelper::GLVector3f light_color_;
-	GLHelper::GLVector3f light_power_;
+	GLHelper::GLVector3f light_position_world_data_;
+	GLHelper::GLVector3f light_color_data_;
+	GLfloat light_power_data_;
 
-	Eigen::Vector3f default_color_ = 
-			Eigen::Vector3f(0.25f, 0.652647f, 0.254303f);
+	Eigen::Vector3d default_color_ = Eigen::Vector3d(0.25, 0.652647, 0.254303);
+	
+	GLsizei vertex_num_ = 0;
+	bool lights_on_ = true;
 };
 	
 }	// namespace three::glsl

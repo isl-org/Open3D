@@ -80,8 +80,8 @@ const char * const TriangleMeshFragmentShader =
 "	float cos_alpha = clamp(dot(E, R), 0, 1);\n"
 "\n"
 "	gl_FragColor.rgb = ambient_color + \n"
-"			diffuse_color * light_color * light_power * cos_theta / distance2 +\n"
-"			specular_color * light_color * light_power * pow(cos_alpha, 5) / distance2;\n"
+"			diffuse_color * light_color * light_power * cos_theta +\n"
+"			specular_color * light_color * light_power * pow(cos_alpha, 5);\n"
 "}\n"
 ;
 
@@ -97,8 +97,8 @@ const char * const TriangleMeshVertexShader =
 "#version 120\n"
 "\n"
 "attribute vec3 vertex_position;\n"
-"attribute vec3 vertex_color;\n"
 "attribute vec3 vertex_normal;\n"
+"attribute vec3 vertex_color;\n"
 "\n"
 "varying vec3 vertex_position_world;\n"
 "varying vec3 vertex_normal_camera;\n"
