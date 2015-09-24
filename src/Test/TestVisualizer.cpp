@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 		double color_index = 0.0;
 		double color_index_step = 0.05;
 
-		auto update_colors_func = [&](double index) {
+		auto update_colors_func = [&cloud_ptr](double index) {
 			auto color_map_ptr = GetGlobalColorMap();
 			for (auto &c : cloud_ptr->colors_) {
 				c = color_map_ptr->GetColor(index);
