@@ -159,10 +159,6 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 
 void Visualizer::Run()
 {
-	if (is_initialized_ == false) {
-		return;
-	}
-	glfwMakeContextCurrent(window_);
 	while (WaitEvents()) {
 	}
 }
@@ -230,6 +226,12 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 void Visualizer::UpdateGeometry()
 {
 	is_shader_update_required_ = true;
+	is_redraw_required_ = true;
+}
+
+void Visualizer::UpdateRender()
+{
+	is_redraw_required_ = true;
 }
 
 bool Visualizer::HasGeometry()

@@ -95,8 +95,13 @@ public:
 	/// Call this function when geometry or rendermode has been changed.
 	void UpdateGeometry();
 
+	/// Function to set the redraw flag as dirty
+	void UpdateRender();
+
 	bool HasGeometry();
 	virtual void PrintVisualizerHelp();
+
+	ViewControl &GetViewControl() { return view_control_; }
 
 protected:
 	// rendering functions

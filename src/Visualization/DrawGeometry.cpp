@@ -28,8 +28,55 @@
 
 namespace three{
 
-void DrawPointCloud(const std::string &window_name, const PointCloud &pointcloud)
+bool DrawGeometry(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		const std::string window_name/* = "Open3DV"*/, 
+		const int width/* = 640*/, const int height/* = 480*/,
+		const int left/* = 50*/, const int top/* = 50*/)
 {
+	Visualizer visualizer;
+	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+			false) {
+		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		return false;
+	}
+	if (visualizer.AddGeometry(geometry_ptr) == false) {
+		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+		return false;
+	}
+	visualizer.Run();
+	return true;
+}
+
+bool DrawGeometryWithCallback(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		std::function<bool(Visualizer &)> callback_func,
+		const std::string window_name/* = "Open3DV"*/, 
+		const int width/* = 640*/, const int height/* = 480*/,
+		const int left/* = 50*/, const int top/* = 50*/)
+{
+	Visualizer visualizer;
+	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+			false) {
+		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		return false;
+	}
+	if (visualizer.AddGeometry(geometry_ptr) == false) {
+		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+		return false;
+	}
+	while (visualizer.PollEvents()) {
+		if (callback_func(visualizer)) {
+			visualizer.UpdateGeometry();
+		}
+
+		// Set render flag as dirty anyways, because when we use callback
+		// functions, we assume something has been changed in the callback and
+		// the redraw event should be triggered.
+		visualizer.UpdateRender();
+	}
+	visualizer.Run();
+	return true;
 }
 
 }	// namespace three

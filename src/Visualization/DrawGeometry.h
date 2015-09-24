@@ -27,16 +27,30 @@
 #pragma once
 
 #include <string>
+#include <memory>
+#include <functional>
 
 #include <Core/Core.h>
 
+#include "Visualizer.h"
+
 namespace three {
 
-/// The convenient function of drawing a point cloud
-/// This function is a GLFW wrapper that creates a named window and draws a 
-/// pointcloud.
-/// Due to the limitation of GLFW, this function MUST be called from the main
-/// thread. It blocks the main thread until the window is closed.
-void DrawPointCloud(const std::string &window_name, const PointCloud &pointcloud);
+/// The convenient function of drawing something
+/// This function is a wrapper that calls the core functions of Visualizer.
+/// This function MUST be called from the main thread. It blocks the main thread
+/// until the window is closed.
+bool DrawGeometry(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		const std::string window_name = "Open3DV", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50);
+
+bool DrawGeometryWithCallback(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		std::function<bool(Visualizer &)> callback_func,
+		const std::string window_name = "Open3DV", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50);
 
 }	// namespace three

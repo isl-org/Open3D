@@ -201,7 +201,7 @@ void ShaderTriangleMeshDefault::SetLight(
 				cast<float>();
 		light_color_data_.block<4, 1>(0, 1) = 
 				GLHelper::GLVector4f(1.0, 1.0, 1.0, 1.0);
-		light_power_data_(1) = lights_on_ ? 0.4f : 0.0f;
+		light_power_data_(1) = lights_on_ ? 0.5f : 0.0f;
 		light_position_world_data_.block<3, 1>(0, 2) = 
 				(box.GetCenter() + Eigen::Vector3d(-2, 2, -2) * box.GetSize()).
 				cast<float>();
