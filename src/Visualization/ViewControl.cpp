@@ -59,15 +59,16 @@ void ViewControl::SetProjectionParameters()
 		eye_ = lookat_ + front_ * distance_;
 	} else {
 		view_ratio_ = zoom_ * bounding_box_.GetSize();
-		distance_ = bounding_box_.GetSize();
+		//distance_ = bounding_box_.GetSize();
+		distance_ = view_ratio_ / 
+				std::tan(FIELD_OF_VIEW_STEP * 0.5 / 180.0 * M_PI);
 		eye_ = lookat_ + front_ * distance_;
 	}
 }
 
 void ViewControl::ChangeFieldOfView(double step)
 {
-	double field_of_view_new = field_of_view_ + 
-			step * FIELD_OF_VIEW_STEP;
+	double field_of_view_new = field_of_view_ + step * FIELD_OF_VIEW_STEP;
 	if (field_of_view_new >= FIELD_OF_VIEW_MIN &&
 			field_of_view_new <= FIELD_OF_VIEW_MAX)
 	{

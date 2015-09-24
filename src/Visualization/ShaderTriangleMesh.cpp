@@ -29,8 +29,6 @@
 #include "Shader.h"
 #include "ColorMap.h"
 
-#include <iostream>
-
 namespace three{
 
 namespace glsl {
@@ -52,9 +50,9 @@ bool ShaderTriangleMeshDefault::Compile()
 	V_ = glGetUniformLocation(program_, "V");
 	M_ = glGetUniformLocation(program_, "M");
 	light_position_world_ = 
-			glGetUniformLocation(program_, "light_position_world");
-	light_color_ = glGetUniformLocation(program_, "light_color");
-	light_power_ = glGetUniformLocation(program_, "light_power");
+			glGetUniformLocation(program_, "light_position_world_4");
+	light_color_ = glGetUniformLocation(program_, "light_color_4");
+	light_power_ = glGetUniformLocation(program_, "light_power_4");
 
 	return true;
 }
@@ -191,24 +189,31 @@ void ShaderTriangleMeshDefault::SetLight(
 {
 	if (mode.GetLightingOption() == TriangleMeshRenderMode::LIGHTING_DEFAULT) {
 		const auto &box = view.GetBoundingBox();
+		light_position_world_data_.setOnes();
 		light_position_world_data_.block<3, 1>(0, 0) = 
-				(box.GetCenter() + Eigen::Vector3d(0, 0, 2) * box.GetSize()).
+				(box.GetCenter() + Eigen::Vector3d(2, 2, 2) * box.GetSize()).
 				cast<float>();
-		light_color_data_.block<3, 1>(0, 0) = 
-				GLHelper::GLVector3f(1.0, 1.0, 1.0);
-		light_power_data_(0) = lights_on_ ? 1.0f : 0.0f;
+		light_color_data_.block<4, 1>(0, 0) = 
+				GLHelper::GLVector4f(1.0, 1.0, 1.0, 1.0);
+		light_power_data_(0) = lights_on_ ? 0.5f : 0.0f;
 		light_position_world_data_.block<3, 1>(0, 1) = 
-				(box.GetCenter() + Eigen::Vector3d(2, 0, -1.5) * box.GetSize()).
+				(box.GetCenter() + Eigen::Vector3d(2, -2, -2) * box.GetSize()).
 				cast<float>();
-		light_color_data_.block<3, 1>(0, 1) = 
-				GLHelper::GLVector3f(1.0, 1.0, 1.0);
-		light_power_data_(1) = lights_on_ ? 1.0f : 0.0f;
+		light_color_data_.block<4, 1>(0, 1) = 
+				GLHelper::GLVector4f(1.0, 1.0, 1.0, 1.0);
+		light_power_data_(1) = lights_on_ ? 0.4f : 0.0f;
 		light_position_world_data_.block<3, 1>(0, 2) = 
-				(box.GetCenter() + Eigen::Vector3d(-2, 0, -1.5) * box.GetSize()).
+				(box.GetCenter() + Eigen::Vector3d(-2, 2, -2) * box.GetSize()).
 				cast<float>();
-		light_color_data_.block<3, 1>(0, 2) = 
-				GLHelper::GLVector3f(1.0, 1.0, 1.0);
-		light_power_data_(2) = lights_on_ ? 1.0f : 0.0f;
+		light_color_data_.block<4, 1>(0, 2) = 
+				GLHelper::GLVector4f(1.0, 1.0, 1.0, 1.0);
+		light_power_data_(2) = lights_on_ ? 0.5f : 0.0f;
+		light_position_world_data_.block<3, 1>(0, 3) = 
+				(box.GetCenter() + Eigen::Vector3d(-2, -2, 2) * box.GetSize()).
+				cast<float>();
+		light_color_data_.block<4, 1>(0, 3) = 
+				GLHelper::GLVector4f(1.0, 1.0, 1.0, 1.0);
+		light_power_data_(3) = lights_on_ ? 0.7f : 0.0f;
 	}
 }
 
@@ -229,9 +234,10 @@ bool ShaderTriangleMeshDefault::Render(
 	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
 	glUniformMatrix4fv(V_, 1, GL_FALSE, view.GetViewMatrix().data());
 	glUniformMatrix4fv(M_, 1, GL_FALSE, view.GetModelMatrix().data());
-	glUniform3fv(light_position_world_, 3, light_position_world_data_.data());
-	glUniform3fv(light_color_, 3, light_color_data_.data());
-	glUniform1fv(light_power_, 3, light_power_data_.data());
+	glUniformMatrix4fv(light_position_world_, 1, GL_FALSE, 
+			light_position_world_data_.data());
+	glUniformMatrix4fv(light_color_, 1, GL_FALSE, light_color_data_.data());
+	glUniform4fv(light_power_, 1, light_power_data_.data());
 	glEnableVertexAttribArray(vertex_position_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);

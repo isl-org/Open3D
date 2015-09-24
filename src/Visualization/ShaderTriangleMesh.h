@@ -68,10 +68,10 @@ protected:
 	GLuint light_color_;
 	GLuint light_power_;
 
-	// At most support 3 lights
-	GLHelper::GLMatrix3f light_position_world_data_;
-	GLHelper::GLMatrix3f light_color_data_;
-	GLHelper::GLVector3f light_power_data_;
+	// At most support 4 lights
+	GLHelper::GLMatrix4f light_position_world_data_;
+	GLHelper::GLMatrix4f light_color_data_;
+	GLHelper::GLVector4f light_power_data_;
 
 	Eigen::Vector3d default_color_ = 
 			Eigen::Vector3d(0.439216, 0.858824, 0.858824);
