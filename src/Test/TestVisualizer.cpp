@@ -103,9 +103,7 @@ int main(int argc, char *argv[])
 		DrawGeometryWithCallback(cloud_ptr, [&](Visualizer &vis) {
 					color_index += color_index_step;
 					if (color_index > 2.0) color_index -= 2.0;
-					std::cout << cloud_ptr->colors_[0] << std::endl;
-					update_colors_func(abs(color_index - 1.0));
-					std::cout << cloud_ptr->colors_[0] << std::endl;
+					update_colors_func(fabs(color_index - 1.0));
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 					return true;
 				}, "PointCloud", 1600, 900);
