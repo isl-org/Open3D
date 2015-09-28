@@ -1,0 +1,23 @@
+This folder contains a set of external libraries that are used in Open3DV.
+
+We intend to make Open3DV self-contained and cross-platformly consistent. So
+Open3DV does not detect system installed libraries and always link to these
+external libraries.
+
+--------------------------------------------------------------------------------
+Eigen 3.2.5    Mainly MPL2 license    http://eigen.tuxfamily.org/
+A high-level C++ library of template headers for linear algebra, matrix and 
+vector operations, numerical solvers and related algorithms
+--------------------------------------------------------------------------------
+GLFW 3.1.1     zlib/libpng license    http://www.glfw.org/
+A cross-platform library for creating windows with OpenGL contexts and receiving
+input and events
+--------------------------------------------------------------------------------
+GLEW 1.13.0    MIT License            http://glew.sourceforge.net/
+A cross-platform open-source C/C++ extension loading library
+--------------------------------------------------------------------------------
+RPly 1.1.3     MIT license            http://w3.impa.br/~diego/software/rply/
+A library to read and write PLY files
+--------------------------------------------------------------------------------
+liblzf 3.6     BSD license            http://oldhome.schmorp.de/marc/liblzf.html
+A compression library used for parsing pcd files
