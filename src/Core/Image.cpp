@@ -24,10 +24,60 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "Console.h"
-#include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
 #include "Image.h"
+
+namespace three{
+
+Image::Image()
+{
+	SetGeometryType(GEOMETRY_IMAGE);
+}
+
+Image::~Image()
+{
+}
+	
+bool Image::CloneFrom(const Geometry &reference)
+{
+	if (reference.GetGeometryType() != GetGeometryType()) {
+		// always return when the types do not match
+		return false;
+	}
+	Clear();
+	const Image &image = static_cast<const Image &>(reference);
+	width_ = image.width_;
+	height_ = image.height_;
+	num_of_channels_ = image.num_of_channels_;
+	bytes_per_channel_ = image.bytes_per_channel_;
+	data_ = image.data_;
+	return true;
+}
+
+Eigen::Vector3d Image::GetMinBound() const
+{
+	return Eigen::Vector3d(0.0, 0.0, 0.0);
+}
+
+Eigen::Vector3d Image::GetMaxBound() const
+{
+	return Eigen::Vector3d(0.0, 0.0, 0.0);
+}
+	
+void Image::Clear()
+{
+	width_ = 0;
+	height_ = 0;
+	data_.clear();
+}
+	
+bool Image::IsEmpty() const
+{
+	return !HasData();
+}
+	
+void Image::Transform(const Eigen::Matrix4d &transformation)
+{
+	// Transform function does not perform on Image.
+}
+
+}	// namespace three

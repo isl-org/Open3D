@@ -26,8 +26,40 @@
 
 #pragma once
 
-#include "Console.h"
-#include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
+#include "ShaderWrapper.h"
+
+namespace three {
+
+namespace glsl {
+	
+class ShaderImageDefault : public ShaderWrapper {
+public:
+	ShaderImageDefault() {}
+	virtual ~ShaderImageDefault() {}
+	
+public:
+	virtual bool Compile();
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
+	virtual bool Render(
+			const RenderMode &mode,
+			const ViewControl &view);
+	virtual void Release();
+
+protected:
+	virtual void UnbindGeometry();
+
+protected:
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_UV_;
+	GLuint vertex_UV_buffer_;
+	GLuint image_texture_;
+	GLuint image_texture_buffer_;
+};
+	
+}	// namespace three::glsl
+
+}	// namespace three

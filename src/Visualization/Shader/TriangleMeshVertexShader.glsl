@@ -17,7 +17,7 @@ uniform mat4 light_position_world_4;
 
 void main()
 {
-	gl_Position =  MVP * vec4(vertex_position, 1);
+	gl_Position = MVP * vec4(vertex_position, 1);
 	vertex_position_world = (M * vec4(vertex_position, 1)).xyz;
 
 	vec3 vertex_position_camera = (V * M * vec4(vertex_position, 1)).xyz;

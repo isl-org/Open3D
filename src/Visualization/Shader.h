@@ -7,6 +7,49 @@ namespace three {
 
 namespace glsl {
 
+const char * const ImageFragmentShader = 
+"#version 120\n"
+"\n"
+"varying vec2 UV;\n"
+"uniform sampler2D image_texture;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_FragColor = texture(image_texture, UV);\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
+const char * const ImageVertexShader = 
+"#version 120\n"
+"\n"
+"attribute vec3 vertex_position;\n"
+"attribute vec2 vertex_UV;\n"
+"\n"
+"varying vec2 UV;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_Position = vec4(vertex_position, 1);\n"
+"	UV = vertex_UV;\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
 const char * const PointCloudFragmentShader = 
 "#version 120\n"
 "\n"
@@ -37,7 +80,7 @@ const char * const PointCloudVertexShader =
 "\n"
 "void main()\n"
 "{\n"
-"	gl_Position =  MVP * vec4(vertex_position, 1);\n"
+"	gl_Position = MVP * vec4(vertex_position, 1);\n"
 "	fragment_color = vertex_color;\n"
 "}\n"
 ;
@@ -133,7 +176,7 @@ const char * const TriangleMeshVertexShader =
 "\n"
 "void main()\n"
 "{\n"
-"	gl_Position =  MVP * vec4(vertex_position, 1);\n"
+"	gl_Position = MVP * vec4(vertex_position, 1);\n"
 "	vertex_position_world = (M * vec4(vertex_position, 1)).xyz;\n"
 "\n"
 "	vec3 vertex_position_camera = (V * M * vec4(vertex_position, 1)).xyz;\n"

@@ -26,8 +26,42 @@
 
 #pragma once
 
-#include "Console.h"
+#include <vector>
+#include <Eigen/Core>
+
 #include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
+
+namespace three {
+
+class Image : public Geometry
+{
+public:
+	Image();
+	virtual ~Image();
+
+public:
+	virtual bool CloneFrom(const Geometry &reference);
+	virtual Eigen::Vector3d GetMinBound() const;
+	virtual Eigen::Vector3d GetMaxBound() const;
+	virtual void Clear();
+	virtual bool IsEmpty() const;
+	virtual void Transform(const Eigen::Matrix4d &transformation);
+
+public:
+	bool HasData() const {
+		return width_ > 0 && height_ > 0 && data_.size() > 0;
+	}
+	
+	void AllocateDataBuffer() {
+		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
+	}
+	
+public:
+	int width_ = 0;
+	int height_ = 0;
+	int num_of_channels_ = 0;
+	int bytes_per_channel_ = 0;
+	std::vector<unsigned char> data_;
+};
+
+}	// namespace three

@@ -37,6 +37,7 @@ public:
 		RENDERMODE_UNKNOWN = 0,
 		RENDERMODE_POINTCLOUD = 1,
 		RENDERMODE_TRIANGLEMESH = 2,
+		RENDERMODE_IMAGE = 3,
 	};
 
 public:
@@ -72,12 +73,9 @@ public:
 	const double POINT_SIZE_DEFAULT = 5.0;
 
 public:
-	PointCloudRenderMode() :
-			point_color_option_(POINTCOLOR_DEFAULT),
-			show_normal_(false)
+	PointCloudRenderMode()
 	{
 		SetRenderModeType(RENDERMODE_POINTCLOUD);
-		point_size_ = POINT_SIZE_DEFAULT;
 	}
 
 	virtual ~PointCloudRenderMode() {}
@@ -113,9 +111,9 @@ public:
 	}
 
 private:
-	double point_size_;
-	PointColorOption point_color_option_;
-	bool show_normal_;
+	double point_size_ = POINT_SIZE_DEFAULT;
+	PointColorOption point_color_option_ = POINTCOLOR_DEFAULT;
+	bool show_normal_ = false;
 };
 
 /// RenderMode class for TriangleMesh
@@ -139,10 +137,7 @@ public:
 	};
 
 public:
-	TriangleMeshRenderMode() :
-			mesh_shade_option_(MESHSHADE_FLATSHADE),
-			mesh_color_option_(TRIANGLEMESH_DEFAULT),
-			lighting_option_(LIGHTING_DEFAULT)
+	TriangleMeshRenderMode()
 	{
 		SetRenderModeType(RENDERMODE_TRIANGLEMESH);
 	}
@@ -183,9 +178,38 @@ public:
 	}
 
 private:
-	MeshShadeOption mesh_shade_option_;
-	MeshColorOption mesh_color_option_;
-	LightingOption lighting_option_;
+	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
+	MeshColorOption mesh_color_option_ = TRIANGLEMESH_DEFAULT;
+	LightingOption lighting_option_ = LIGHTING_DEFAULT;
+};
+
+/// RenderMode class for Image
+class ImageRenderMode : public RenderMode {
+public:
+	enum ImageStretchOption {
+		IMAGE_STRETCH_WITH_WINDOW = 0,
+		//IMAGE_NO_STRETCH = 1,
+	};
+
+public:
+	ImageRenderMode()
+	{
+		SetRenderModeType(RENDERMODE_IMAGE);
+	}
+
+	virtual ~ImageRenderMode() {}
+
+public:
+	ImageStretchOption GetImageStretchOption() const {
+		return image_stretch_option_;
+	}
+
+	void SetImageStretchOption(ImageStretchOption option) {
+		image_stretch_option_ = option;
+	}
+
+private:
+	ImageStretchOption image_stretch_option_ = IMAGE_STRETCH_WITH_WINDOW;
 };
 
 }	// namespace three
