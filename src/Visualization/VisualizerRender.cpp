@@ -74,6 +74,9 @@ void Visualizer::Render()
 		case Geometry::GEOMETRY_TRIANGLEMESH:
 			shader_ptrs_[i]->Render(mesh_render_mode_, view_control_);
 			break;
+		case Geometry::GEOMETRY_IMAGE:
+			shader_ptrs_[i]->Render(image_render_mode_, view_control_);
+			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
 			break;
