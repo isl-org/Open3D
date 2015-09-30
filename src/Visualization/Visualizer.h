@@ -126,8 +126,6 @@ protected:
 	/// is_shader_update_required is true.
 	void UpdateShaders();
 	void ResetViewPoint();
-	void SetDefaultMeshMaterial();
-	void SetDefaultLighting(const BoundingBox &bounding_box);
 
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);
@@ -154,6 +152,7 @@ protected:
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;
 	TriangleMeshRenderMode mesh_render_mode_;
+	ImageRenderMode image_render_mode_;
 	Eigen::Vector3d background_color_ = Eigen::Vector3d(1.0, 1.0, 1.0);
 
 	// geometry to be rendered

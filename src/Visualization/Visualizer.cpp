@@ -27,6 +27,7 @@
 #include "Visualizer.h"
 #include "ShaderPointCloud.h"
 #include "ShaderTriangleMesh.h"
+#include "ShaderImage.h"
 
 namespace three{
 
@@ -200,16 +201,21 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 		return false;
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_POINTCLOUD) {
-		std::shared_ptr<glsl::ShaderPointCloudDefault> shader_ptr(
-				new glsl::ShaderPointCloudDefault);
+		auto shader_ptr = std::make_shared<glsl::ShaderPointCloudDefault>();
 		if (shader_ptr->Compile() == false) {
 			return false;
 		}
 		shader_ptrs_.push_back(shader_ptr);
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_TRIANGLEMESH) {
-		std::shared_ptr<glsl::ShaderTriangleMeshDefault> shader_ptr(
-				new glsl::ShaderTriangleMeshDefault);
+		auto shader_ptr = std::make_shared<glsl::ShaderTriangleMeshDefault>();
+		if (shader_ptr->Compile() == false) {
+			return false;
+		}
+		shader_ptrs_.push_back(shader_ptr);
+	} else if (geometry_ptr->GetGeometryType() ==
+			Geometry::GEOMETRY_IMAGE) {
+		auto shader_ptr = std::make_shared<glsl::ShaderImageDefault>();
 		if (shader_ptr->Compile() == false) {
 			return false;
 		}
