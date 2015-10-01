@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 
 set(VERSION "1.2.8")
-set(ZLIB_LIB_NAME zlib)
+set(ZLIB_LIBRARY zlib)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(CheckTypeSize)
@@ -42,16 +42,17 @@ if(MSVC)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
-configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.cmakein
-		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+#configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.cmakein
+#		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
+#include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 #============================================================================
 # zlib
 #============================================================================
 
 set(ZLIB_PUBLIC_HDRS
-    ${CMAKE_CURRENT_BINARY_DIR}/zconf.h
+    #${CMAKE_CURRENT_BINARY_DIR}/zconf.h
+	zconf.h
     zlib.h
 )
 set(ZLIB_PRIVATE_HDRS
@@ -83,9 +84,10 @@ set(ZLIB_SRCS
     zutil.c
 )
 
-add_library(zlib STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
-set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
-set_target_properties(zlib PROPERTIES
-        OUTPUT_NAME ${ZLIB_LIB_NAME}
+add_library(${ZLIB_LIBRARY} STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+set_target_properties(${ZLIB_LIBRARY} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
+set_target_properties(${ZLIB_LIBRARY} PROPERTIES
+        OUTPUT_NAME ${ZLIB_LIBRARY}
         FOLDER "External"
     )
+list(APPEND IMAGE_LIBRARIES "${ZLIB_LIBRARY}")
