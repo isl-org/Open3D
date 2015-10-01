@@ -19,5 +19,11 @@ A cross-platform open-source C/C++ extension loading library
 RPly 1.1.3     MIT license            http://w3.impa.br/~diego/software/rply/
 A library to read and write PLY files
 --------------------------------------------------------------------------------
+zlib 1.2.8     zlib license           http://www.zlib.net/
+A compression library used for parsing pcd files
+--------------------------------------------------------------------------------
+libpng 1.6.18  libpng license         http://www.libpng.org/
+A compression library used for parsing pcd files
+--------------------------------------------------------------------------------
 liblzf 3.6     BSD license            http://oldhome.schmorp.de/marc/liblzf.html
 A compression library used for parsing pcd files
