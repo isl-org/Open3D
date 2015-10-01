@@ -227,7 +227,6 @@ bool ShaderTriangleMeshDefault::Render(
 	}
 	
 	const auto &rendermode = (const TriangleMeshRenderMode &)mode;
-
 	SetLight(rendermode, view);
 
 	glUseProgram(program_);

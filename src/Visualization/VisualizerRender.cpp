@@ -42,7 +42,7 @@ bool Visualizer::InitOpenGL()
 	// pixel alignment
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-	// mesh material
+	// polygon rendering
 	glEnable(GL_CULL_FACE);
 
 	return true;
@@ -102,11 +102,13 @@ void Visualizer::UpdateShaders()
 					*geometry_ptrs_[i],
 					mesh_render_mode_,
 					view_control_);
+			break;
 		case Geometry::GEOMETRY_IMAGE:
 			shader_ptrs_[i]->BindGeometry(
 					*geometry_ptrs_[i],
 					image_render_mode_,
 					view_control_);
+			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
 			break;

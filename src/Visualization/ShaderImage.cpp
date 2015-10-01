@@ -86,21 +86,38 @@ bool ShaderImageDefault::BindGeometry(
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
 	
-	/*
 	// Create buffers and bind the geometry
+	const GLfloat vertex_position_buffer_data[18] = {
+		-1.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
+	};
+	const GLfloat vertex_UV_buffer_data[12] = {
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+	};
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER,
-			points_copy.size() * sizeof(Eigen::Vector3f),
-			points_copy.data(),
-			GL_STATIC_DRAW);
-	glGenBuffers(1, &vertex_color_buffer_);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-	glBufferData(GL_ARRAY_BUFFER,
-			colors_copy.size() * sizeof(Eigen::Vector3f),
-			colors_copy.data(),
-			GL_STATIC_DRAW);
-	*/
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position_buffer_data), 
+			vertex_position_buffer_data, GL_STATIC_DRAW);
+	glGenBuffers(1, &vertex_UV_buffer_);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_UV_buffer_);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_UV_buffer_data),
+			vertex_UV_buffer_data, GL_STATIC_DRAW);
+
+	glGenTextures(1, &image_texture_buffer_);
+	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width_, image.height_, 0, 
+			GL_RGB, GL_UNSIGNED_BYTE, image.data_.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
 
 	bound_ = true;	
 	return true;
@@ -126,23 +143,21 @@ bool ShaderImageDefault::Render(
 	}
 	
 	const auto &rendermode = (const ImageRenderMode &)mode;
+	glPointSize(10.0f);
 
-	/*
 	glUseProgram(program_);
-	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
+	glUniform1i(image_texture_, 0);
 	glEnableVertexAttribArray(vertex_position_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(vertex_color_);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-	glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glDrawArrays(GL_POINTS, 0, point_num_);
-	if (show_normal_) {
-		glDrawArrays(GL_LINES, point_num_, point_num_ * 2);
-	}
+	glEnableVertexAttribArray(vertex_UV_);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_UV_buffer_);
+	glVertexAttribPointer(vertex_UV_, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(vertex_position_);
-	glDisableVertexAttribArray(vertex_color_);
-	*/
+	glDisableVertexAttribArray(vertex_UV_);
 	
 	return true;
 }

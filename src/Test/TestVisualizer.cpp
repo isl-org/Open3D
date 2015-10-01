@@ -124,6 +124,13 @@ int main(int argc, char *argv[])
 				image_ptr->data_[index + 2] = 0;
 			}
 		}
+		for (int i = 20; i < 400; i++) {
+			int j = 100;
+			int index = (i + j * image_ptr->width_) * 3;
+			image_ptr->data_[index] = 0;
+			image_ptr->data_[index + 1] = 0;
+			image_ptr->data_[index + 2] = 255;
+		}
 		DrawGeometry(image_ptr, "Image", image_ptr->width_, image_ptr->height_);
 	}
 
