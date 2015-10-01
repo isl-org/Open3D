@@ -84,6 +84,10 @@ set(ZLIB_SRCS
     zutil.c
 )
 
+if (APPLE)
+    add_compile_options(-Wno-implicit-function-declaration)
+endif(APPLE)
+
 add_library(${ZLIB_LIBRARY} STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 set_target_properties(${ZLIB_LIBRARY} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 set_target_properties(${ZLIB_LIBRARY} PROPERTIES

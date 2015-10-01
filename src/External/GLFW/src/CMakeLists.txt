@@ -55,6 +55,8 @@ endif()
 if (APPLE)
     # For some reason, CMake doesn't know about .m
 	set_source_files_properties(${glfw_SOURCES} PROPERTIES LANGUAGE C)
+	# Suppress a warning created by this version of glfw
+    add_compile_options(-Wno-deprecated)
 endif()
 
 add_library(glfw ${glfw_SOURCES} ${glfw_HEADERS})
