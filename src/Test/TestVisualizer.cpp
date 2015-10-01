@@ -63,7 +63,8 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		mesh_ptr->ComputeVertexNormals();
-		DrawGeometryWithCallback(mesh_ptr, [&](Visualizer &vis) {
+		DrawGeometryWithCallback(mesh_ptr, 
+				[&](Visualizer &vis) {
 					vis.GetViewControl().Rotate(10, 0);
 					std::this_thread::sleep_for(std::chrono::milliseconds(30));
 					vis.UpdateRender();
@@ -100,7 +101,8 @@ int main(int argc, char *argv[])
 		};
 		update_colors_func(1.0);
 
-		DrawGeometryWithCallback(cloud_ptr, [&](Visualizer &vis) {
+		DrawGeometryWithCallback(cloud_ptr,
+				[&](Visualizer &vis) {
 					color_index += color_index_step;
 					if (color_index > 2.0) color_index -= 2.0;
 					update_colors_func(fabs(color_index - 1.0));
@@ -109,11 +111,20 @@ int main(int argc, char *argv[])
 				}, "PointCloud", 1600, 900);
 	} else if (option == "image") {
 		auto image_ptr = std::make_shared<Image>();
-		image_ptr->width_ = 200;
-		image_ptr->height_ = 150;
+		image_ptr->width_ = 600;
+		image_ptr->height_ = 450;
 		image_ptr->num_of_channels_ = 3;
 		image_ptr->bytes_per_channel_ = 1;
 		image_ptr->AllocateDataBuffer();
+		for (int i = 0; i < image_ptr->width_; i++) {
+			for (int j = 0; j < image_ptr->height_; j++) {
+				int index = (i + j * image_ptr->width_) * 3;
+				image_ptr->data_[index] = 255;
+				image_ptr->data_[index + 1] = 0;
+				image_ptr->data_[index + 2] = 0;
+			}
+		}
+		DrawGeometry(image_ptr, "Image", image_ptr->width_, image_ptr->height_);
 	}
 
 	PrintInfo("End of the test.\n");

@@ -15,7 +15,7 @@ const char * const ImageFragmentShader =
 "\n"
 "void main()\n"
 "{\n"
-"	gl_FragColor = texture(image_texture, UV);\n"
+"	gl_FragColor = texture2D(image_texture, UV);\n"
 "}\n"
 ;
 
