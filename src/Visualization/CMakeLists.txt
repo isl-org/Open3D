@@ -34,6 +34,7 @@ add_library(Visualization ${Open3DV_LIB_TYPE}
 	${SHADER_FILES}
 )
 add_dependencies(Visualization ShaderFileTarget)
+target_link_libraries(Visualization glfw)
 
 install(TARGETS Visualization
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
