@@ -27,6 +27,7 @@
 #include "TriangleMeshIO.h"
 
 #include <unordered_map>
+#include "IOHelper.h"
 
 namespace three{
 	
@@ -35,30 +36,29 @@ namespace {
 const std::unordered_map<std::string,
 		std::function<bool(const std::string &, TriangleMesh &)>>
 		file_extension_to_trianglemesh_read_function
-		{{".ply", ReadTriangleMeshFromPLY},
+		{{"ply", ReadTriangleMeshFromPLY},
 		};
 
 const std::unordered_map<std::string,
 		std::function<bool(const std::string &, const TriangleMesh &,
 		const bool, const bool)>>
 		file_extension_to_trianglemesh_write_function
-		{{".ply", WriteTriangleMeshToPLY},
+		{{"ply", WriteTriangleMeshToPLY},
 		};
 
 }	// unnamed namespace
 
 bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 {
-	size_t dot_pos = filename.find_last_of(".");
-	if (dot_pos == std::string::npos) {
-		PrintDebug("Read TriangleMesh failed: unknown file extension.");
+	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	if (filename_ext.empty()) {
+		PrintDebug("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
-	std::string filename_ext = filename.substr(dot_pos);
-	auto map_itr =
+	auto map_itr = 
 			file_extension_to_trianglemesh_read_function.find(filename_ext);
 	if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
-		PrintDebug("Read TriangleMesh failed: unknown file extension.");
+		PrintDebug("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, mesh);
@@ -67,16 +67,15 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
 {
-	size_t dot_pos = filename.find_last_of(".");
-	if (dot_pos == std::string::npos) {
-		PrintDebug("Write TriangleMesh failed: unknown file extension.");
+	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	if (filename_ext.empty()) {
+		PrintDebug("Write TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
-	std::string filename_ext = filename.substr(dot_pos);
 	auto map_itr =
 			file_extension_to_trianglemesh_write_function.find(filename_ext);
 	if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
-		PrintDebug("Write TriangleMesh failed: unknown file extension.");
+		PrintDebug("Write TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, mesh, write_ascii, compressed);

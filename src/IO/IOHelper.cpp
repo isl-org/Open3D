@@ -24,8 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
 #include "ImageIO.h"
+
+#include <algorithm>
+
+namespace three{
+	
+namespace IOHelper {
+
+std::string GetFileExtensionInLowerCase(const std::string &filename)
+{
+	size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos || dot_pos == filename.length() - 1) {
+		return "";
+	}
+	std::string filename_ext = filename.substr(dot_pos + 1);
+	std::transform(filename_ext.begin(), filename_ext.end(), 
+			filename_ext.begin(), ::tolower);
+	return filename_ext;
+}
+
+}	// namespace IOHelper
+
+}	// namespace three

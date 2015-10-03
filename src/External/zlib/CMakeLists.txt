@@ -94,4 +94,3 @@ set_target_properties(${ZLIB_LIBRARY} PROPERTIES
         OUTPUT_NAME ${ZLIB_LIBRARY}
         FOLDER "External"
     )
-list(APPEND IMAGE_LIBRARIES "${ZLIB_LIBRARY}")

@@ -76,4 +76,3 @@ set_target_properties(${PNG_LIBRARY} PROPERTIES
         OUTPUT_NAME ${PNG_LIBRARY}
         FOLDER "External"
     )
-list(APPEND IMAGE_LIBRARIES "${PNG_LIBRARY}")

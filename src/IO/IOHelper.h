@@ -26,6 +26,14 @@
 
 #pragma once
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
+#include <string>
+
+namespace three {
+
+namespace IOHelper {
+
+std::string GetFileExtensionInLowerCase(const std::string &filename);
+
+}	// namespace IOHelper
+
+}	// namespace three

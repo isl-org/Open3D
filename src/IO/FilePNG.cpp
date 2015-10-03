@@ -24,8 +24,52 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
 #include "ImageIO.h"
+
+#include <External/libpng/png.h>
+#include <External/zlib/zlib.h>
+
+namespace three{
+
+bool ReadImageFromPNG(const std::string &filename, Image &image)
+{
+	png_image pngimage;
+	memset(&pngimage, 0, sizeof(pngimage));
+	pngimage.version = PNG_IMAGE_VERSION;
+	if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
+		PrintDebug("Read PNG failed: unable to parse header.\n");
+		return false;
+	}
+	
+	// We only support two channel type: gray, and RGB.
+	// There is no alpha channel.
+	// bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
+	image.bytes_per_channel_ = (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ?
+			2 : 1;
+	image.num_of_channels_ = (pngimage.format & PNG_FORMAT_FLAG_COLOR) ?
+			3 : 1;
+	image.width_ = pngimage.width;
+	image.height_ = pngimage.height;
+	image.AllocateDataBuffer();
+
+	pngimage.format = 0;
+	if (image.bytes_per_channel_ == 2) {
+		pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
+	}
+	if (image.num_of_channels_ == 3) {
+		pngimage.format |= PNG_FORMAT_FLAG_COLOR;
+	}
+	if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 
+			0, NULL) == 0) {
+		PrintDebug("Read PNG failed: unable to read file.\n");
+		return false;
+	}
+	return true;
+}
+
+bool WriteImageToPNG(const std::string &filename, const Image &image)
+{
+	return true;
+}
+
+}	// namespace three

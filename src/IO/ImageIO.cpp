@@ -24,66 +24,57 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudIO.h"
+#include "ImageIO.h"
 
 #include <unordered_map>
 #include "IOHelper.h"
 
 namespace three{
-
+	
 namespace {
-
+	
 const std::unordered_map<std::string,
-		std::function<bool(const std::string &, PointCloud &)>>
-		file_extension_to_pointcloud_read_function
-		{{"xyz", ReadPointCloudFromXYZ},
-		{"xyzn", ReadPointCloudFromXYZN},
-		{"ply", ReadPointCloudFromPLY},
-		{"pcd", ReadPointCloudFromPCD},
+		std::function<bool(const std::string &, Image &)>>
+		file_extension_to_image_read_function
+		{{"png", ReadImageFromPNG},
 		};
 
 const std::unordered_map<std::string,
-		std::function<bool(const std::string &, const PointCloud &,
-		const bool, const bool)>>
-		file_extension_to_pointcloud_write_function
-		{{"xyz", WritePointCloudToXYZ},
-		{"xyzn", WritePointCloudToXYZN},
-		{"ply", WritePointCloudToPLY},
-		{"pcd", WritePointCloudToPCD},
+		std::function<bool(const std::string &, const Image &)>>
+		file_extension_to_image_write_function
+		{{"png", WriteImageToPNG},
 		};
+
 }	// unnamed namespace
 
-bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
+bool ReadImage(const std::string &filename, Image &image)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Read PointCloud failed: unknown file extension.\n");
+		PrintDebug("Read Image failed: unknown file extension.\n");
 		return false;
 	}
-	auto map_itr =
-			file_extension_to_pointcloud_read_function.find(filename_ext);
-	if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-		PrintDebug("Read PointCloud failed: unknown file extension.\n");
+	auto map_itr = file_extension_to_image_read_function.find(filename_ext);
+	if (map_itr == file_extension_to_image_read_function.end()) {
+		PrintDebug("Read Image failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, pointcloud);
+	return map_itr->second(filename, image);
 }
 
-bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
+bool WriteImage(const std::string &filename, const Image &image)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Write PointCloud failed: unknown file extension.\n");
+		PrintDebug("Write Image failed: unknown file extension.\n");
 		return false;
 	}
-	auto map_itr =
-			file_extension_to_pointcloud_write_function.find(filename_ext);
-	if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-		PrintDebug("Write PointCloud failed: unknown file extension.\n");
+	auto map_itr = file_extension_to_image_write_function.find(filename_ext);
+	if (map_itr == file_extension_to_image_write_function.end()) {
+		PrintDebug("Write Image failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, pointcloud, write_ascii, compressed);
+	return map_itr->second(filename, image);
 }
 
 }	// namespace three

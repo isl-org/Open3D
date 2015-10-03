@@ -111,25 +111,11 @@ int main(int argc, char *argv[])
 				}, "PointCloud", 1600, 900);
 	} else if (option == "image") {
 		auto image_ptr = std::make_shared<Image>();
-		image_ptr->width_ = 600;
-		image_ptr->height_ = 450;
-		image_ptr->num_of_channels_ = 3;
-		image_ptr->bytes_per_channel_ = 1;
-		image_ptr->AllocateDataBuffer();
-		for (int i = 0; i < image_ptr->width_; i++) {
-			for (int j = 0; j < image_ptr->height_; j++) {
-				int index = (i + j * image_ptr->width_) * 3;
-				image_ptr->data_[index] = 255;
-				image_ptr->data_[index + 1] = 0;
-				image_ptr->data_[index + 2] = 0;
-			}
-		}
-		for (int i = 20; i < 400; i++) {
-			int j = 100;
-			int index = (i + j * image_ptr->width_) * 3;
-			image_ptr->data_[index] = 0;
-			image_ptr->data_[index + 1] = 0;
-			image_ptr->data_[index + 2] = 255;
+		if (ReadImage(argv[2], *image_ptr)) {
+			PrintWarning("Successfully read %s\n", argv[2]);
+		} else {
+			PrintError("Failed to read %s\n\n", argv[2]);
+			return 0;
 		}
 		DrawGeometry(image_ptr, "Image", image_ptr->width_, image_ptr->height_);
 	}
