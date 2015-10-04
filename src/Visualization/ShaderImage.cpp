@@ -116,8 +116,16 @@ bool ShaderImageDefault::BindGeometry(
 	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width_, image.height_, 0, 
 			GL_RGB, GL_UNSIGNED_BYTE, image.data_.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+
+	if (image_render_mode.GetInterpolationOption() == 
+			ImageRenderMode::IMAGE_INTERPOLATION_NEAREST) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
 	bound_ = true;	
 	return true;

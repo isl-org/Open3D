@@ -41,6 +41,7 @@ bool Visualizer::InitOpenGL()
 
 	// pixel alignment
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	// polygon rendering
 	glEnable(GL_CULL_FACE);

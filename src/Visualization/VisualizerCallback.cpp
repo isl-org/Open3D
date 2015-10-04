@@ -144,6 +144,14 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 				TriangleMeshRenderMode::MESHSHADE_FLATSHADE ? 
 				"FLAT" : "SMOOTH");
 		break;
+	case GLFW_KEY_I:
+		image_render_mode_.ToggleInterpolationOption();
+		UpdateGeometry();
+		PrintDebug("[Visualizer] Image interpolation mode is %s.\n",
+				image_render_mode_.GetInterpolationOption() == 
+				ImageRenderMode::IMAGE_INTERPOLATION_NEAREST ? 
+				"NEARST" : "LINEAR");
+		break;
 	case GLFW_KEY_0:
 		if (mods & GLFW_MOD_CONTROL) {
 			mesh_render_mode_.SetMeshColorOption(

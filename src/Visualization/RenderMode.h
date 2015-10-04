@@ -190,6 +190,10 @@ public:
 		IMAGE_STRETCH_WITH_WINDOW = 0,
 		//IMAGE_NO_STRETCH = 1,
 	};
+	enum ImageInterpolationOption {
+		IMAGE_INTERPOLATION_NEAREST = 0,
+		IMAGE_INTERPOLATION_LINEAR = 1,
+	};
 
 public:
 	ImageRenderMode()
@@ -208,8 +212,22 @@ public:
 		image_stretch_option_ = option;
 	}
 
+	void ToggleInterpolationOption() {
+		if (image_interpolation_option_ == IMAGE_INTERPOLATION_NEAREST) {
+			image_interpolation_option_ = IMAGE_INTERPOLATION_LINEAR;
+		} else {
+			image_interpolation_option_ = IMAGE_INTERPOLATION_NEAREST;
+		}
+	}
+
+	ImageInterpolationOption GetInterpolationOption() const {
+		return image_interpolation_option_;
+	}
+
 private:
 	ImageStretchOption image_stretch_option_ = IMAGE_STRETCH_WITH_WINDOW;
+	ImageInterpolationOption image_interpolation_option_ = 
+			IMAGE_INTERPOLATION_NEAREST;
 };
 
 }	// namespace three
