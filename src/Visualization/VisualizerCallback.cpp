@@ -40,6 +40,11 @@ void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 {
 	view_control_.ChangeWindowSize(w, h);
 	is_redraw_required_ = true;
+	for (auto geometry_ptr : geometry_ptrs_) {
+		if (geometry_ptr->GetGeometryType() == Geometry::GEOMETRY_IMAGE) {
+			UpdateGeometry();
+		}
+	}
 }
 
 void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
@@ -151,6 +156,12 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 				image_render_mode_.GetInterpolationOption() == 
 				ImageRenderMode::IMAGE_INTERPOLATION_NEAREST ? 
 				"NEARST" : "LINEAR");
+		break;
+	case GLFW_KEY_T:
+		image_render_mode_.ToggleImageStretchOption();
+		UpdateGeometry();
+		PrintDebug("[Visualizer] Image stretch mode is #%d.\n",
+				int(image_render_mode_.GetImageStretchOption()));
 		break;
 	case GLFW_KEY_0:
 		if (mods & GLFW_MOD_CONTROL) {

@@ -266,6 +266,7 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
 	PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
 	PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
+	PrintInfo("    T            : Toggle among image render: no stretch / keep ratio / freely stretch.\n");
 	PrintInfo("\n");
 	PrintInfo("  -- Color control --\n");
 	PrintInfo("    0..4         : Set point cloud color option.\n");

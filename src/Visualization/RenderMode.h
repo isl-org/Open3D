@@ -187,8 +187,9 @@ private:
 class ImageRenderMode : public RenderMode {
 public:
 	enum ImageStretchOption {
-		IMAGE_STRETCH_WITH_WINDOW = 0,
-		//IMAGE_NO_STRETCH = 1,
+		IMAGE_ORIGINAL_SIZE = 0,
+		IMAGE_STRETCH_KEEP_RATIO = 1,
+		IMAGE_STRETCH_WITH_WINDOW = 2,
 	};
 	enum ImageInterpolationOption {
 		IMAGE_INTERPOLATION_NEAREST = 0,
@@ -208,8 +209,14 @@ public:
 		return image_stretch_option_;
 	}
 
-	void SetImageStretchOption(ImageStretchOption option) {
-		image_stretch_option_ = option;
+	void ToggleImageStretchOption() {
+		if (image_stretch_option_ == IMAGE_ORIGINAL_SIZE) {
+			image_stretch_option_ = IMAGE_STRETCH_KEEP_RATIO;
+		} else if (image_stretch_option_ == IMAGE_STRETCH_KEEP_RATIO) {
+			image_stretch_option_ = IMAGE_STRETCH_WITH_WINDOW;
+		} else {
+			image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
+		}
 	}
 
 	void ToggleInterpolationOption() {
@@ -225,7 +232,7 @@ public:
 	}
 
 private:
-	ImageStretchOption image_stretch_option_ = IMAGE_STRETCH_WITH_WINDOW;
+	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
 	ImageInterpolationOption image_interpolation_option_ = 
 			IMAGE_INTERPOLATION_NEAREST;
 };

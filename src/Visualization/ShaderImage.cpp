@@ -87,13 +87,36 @@ bool ShaderImageDefault::BindGeometry(
 	// performed for performance reason.
 	
 	// Create buffers and bind the geometry
+	GLfloat ratio_x, ratio_y;
+	switch (image_render_mode.GetImageStretchOption()) {
+	case ImageRenderMode::IMAGE_STRETCH_KEEP_RATIO:
+		ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
+		ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
+		if (ratio_x < ratio_y) {
+			ratio_x /= ratio_y;
+			ratio_y = 1.0f;
+		} else {
+			ratio_y /= ratio_x;
+			ratio_x = 1.0f;
+		}
+		break;
+	case ImageRenderMode::IMAGE_STRETCH_WITH_WINDOW:
+		ratio_x = 1.0f;
+		ratio_y = 1.0f;
+		break;
+	case ImageRenderMode::IMAGE_ORIGINAL_SIZE:
+	default:
+		ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
+		ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
+		break;
+	}
 	const GLfloat vertex_position_buffer_data[18] = {
-		-1.0f, -1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		1.0f, 1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f,
-		1.0f, 1.0f, 0.0f,
-		-1.0f, 1.0f, 0.0f,
+		-ratio_x, -ratio_y, 0.0f,
+		ratio_x, -ratio_y, 0.0f,
+		ratio_x, ratio_y, 0.0f,
+		-ratio_x, -ratio_y, 0.0f,
+		ratio_x, ratio_y, 0.0f,
+		-ratio_x, ratio_y, 0.0f,
 	};
 	const GLfloat vertex_UV_buffer_data[12] = {
 		0.0f, 1.0f,
