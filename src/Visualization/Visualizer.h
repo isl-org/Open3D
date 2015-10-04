@@ -102,6 +102,7 @@ public:
 	virtual void PrintVisualizerHelp();
 
 	ViewControl &GetViewControl() { return view_control_; }
+	void CaptureScreen(const std::string &filename = "", bool do_render = true);
 
 protected:
 	// rendering functions
@@ -126,7 +127,6 @@ protected:
 	/// is_shader_update_required is true.
 	void UpdateShaders();
 	void ResetViewPoint();
-	void CaptureScreen(const std::string &filename = "", bool do_render = true);
 
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);
