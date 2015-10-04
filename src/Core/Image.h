@@ -51,7 +51,21 @@ public:
 	bool HasData() const {
 		return width_ > 0 && height_ > 0 && data_.size() > 0;
 	}
+
+	void PrepareImage(int width, int height, int num_of_channels, 
+			int bytes_per_channel) {
+		width_ = width;
+		height_ = height;
+		num_of_channels_ = num_of_channels;
+		bytes_per_channel_ = bytes_per_channel;
+		AllocateDataBuffer();
+	}
+
+	int BytesPerLine() const {
+		return width_ * num_of_channels_ * bytes_per_channel_;
+	}
 	
+protected:
 	void AllocateDataBuffer() {
 		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
 	}

@@ -134,19 +134,29 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 		png_filename = GetCurrentTimeStamp() + ".png";
 	}
 	Image screen_image;
-	screen_image.width_ = view_control_.GetWindowWidth();
-	screen_image.height_ = view_control_.GetWindowHeight();
-	screen_image.bytes_per_channel_ = 1;
-	screen_image.num_of_channels_ = 3;
-	screen_image.AllocateDataBuffer();
+	screen_image.PrepareImage(view_control_.GetWindowWidth(),
+			view_control_.GetWindowHeight(), 3, 1);
 	if (do_render) {
 		Render();
+		is_redraw_required_ = false;
 	}
 	glFinish();
 	glReadPixels(0, 0, view_control_.GetWindowWidth(), 
 			view_control_.GetWindowHeight(), GL_RGB, GL_UNSIGNED_BYTE,
 			screen_image.data_.data());
-	WriteImage(png_filename, screen_image);
+
+	// glReadPixels get the screen in a vertically flipped manner
+	// Thus we should flip it back.
+	Image png_image;
+	png_image.PrepareImage(view_control_.GetWindowWidth(),
+			view_control_.GetWindowHeight(), 3, 1);
+	int bytes_per_line = screen_image.BytesPerLine();
+	for (int i = 0; i < screen_image.height_; i++) {
+		memcpy(png_image.data_.data() + bytes_per_line * i,
+				screen_image.data_.data() + bytes_per_line * 
+				(screen_image.height_ - i - 1), bytes_per_line);
+	}
+	WriteImage(png_filename, png_image);
 }
 
 }	// namespace three
