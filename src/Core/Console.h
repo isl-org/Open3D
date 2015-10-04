@@ -29,6 +29,8 @@
 #include <string>
 
 namespace three {
+
+#define DEFAULT_IO_BUFFER_SIZE 1024
 	
 enum VerbosityLevel {
 	VERBOSE_ERROR = 0,
@@ -56,5 +58,7 @@ void ResetConsoleProgress(const int expected_count,
 		const std::string &progress_info = "");
 
 void AdvanceConsoleProgress();
+
+std::string GetCurrentTimeStamp();
 
 }	// namespace three

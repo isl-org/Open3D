@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Config.h"
 #include "PointCloudIO.h"
 
 #include <cstdio>

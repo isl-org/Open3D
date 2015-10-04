@@ -109,6 +109,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		ResetViewPoint();
 		PrintDebug("[Visualizer] Reset view point.\n");
 		break;
+	case GLFW_KEY_PRINT_SCREEN:
+		CaptureScreen();
+		PrintDebug("[Visualizer] Print screen.\n");
+		break;
 	case GLFW_KEY_LEFT_BRACKET:
 		view_control_.ChangeFieldOfView(-1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",

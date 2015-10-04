@@ -33,7 +33,7 @@ namespace three{
 
 namespace {
 
-const std::unordered_map<std::string,
+static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, PointCloud &)>>
 		file_extension_to_pointcloud_read_function
 		{{"xyz", ReadPointCloudFromXYZ},
@@ -42,7 +42,7 @@ const std::unordered_map<std::string,
 		{"pcd", ReadPointCloudFromPCD},
 		};
 
-const std::unordered_map<std::string,
+static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, const PointCloud &,
 		const bool, const bool)>>
 		file_extension_to_pointcloud_write_function

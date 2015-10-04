@@ -31,6 +31,23 @@
 
 namespace three{
 
+namespace {
+
+void SetPNGImageFromImage(const Image &image, png_image &pngimage)
+{
+	pngimage.width = image.width_;
+	pngimage.height = image.height_;
+	pngimage.format = 0;
+	if (image.bytes_per_channel_ == 2) {
+		pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
+	}
+	if (image.num_of_channels_ == 3) {
+		pngimage.format |= PNG_FORMAT_FLAG_COLOR;
+	}
+}
+
+}	// unnamed namespace
+
 bool ReadImageFromPNG(const std::string &filename, Image &image)
 {
 	png_image pngimage;
@@ -52,13 +69,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 	image.height_ = pngimage.height;
 	image.AllocateDataBuffer();
 
-	pngimage.format = 0;
-	if (image.bytes_per_channel_ == 2) {
-		pngimage.format |= PNG_FORMAT_FLAG_LINEAR;
-	}
-	if (image.num_of_channels_ == 3) {
-		pngimage.format |= PNG_FORMAT_FLAG_COLOR;
-	}
+	SetPNGImageFromImage(image, pngimage);
 	if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 
 			0, NULL) == 0) {
 		PrintDebug("Read PNG failed: unable to read file.\n");
@@ -69,6 +80,19 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 
 bool WriteImageToPNG(const std::string &filename, const Image &image)
 {
+	if (image.HasData() == false) {
+		PrintDebug("Write PNG failed: image has no data.\n");
+		return false;
+	}
+	png_image pngimage;
+	memset(&pngimage, 0, sizeof(pngimage));
+	pngimage.version = PNG_IMAGE_VERSION;
+	SetPNGImageFromImage(image, pngimage);
+	if (png_image_write_to_file(&pngimage, filename.c_str(), NULL, 
+			image.data_.data(), 0, NULL) == 0) {
+		PrintDebug("Write PNG failed: unable to write file.\n");
+		return false;
+	}
 	return true;
 }
 

@@ -33,13 +33,13 @@ namespace three{
 	
 namespace {
 	
-const std::unordered_map<std::string,
+static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, Image &)>>
 		file_extension_to_image_read_function
 		{{"png", ReadImageFromPNG},
 		};
 
-const std::unordered_map<std::string,
+static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, const Image &)>>
 		file_extension_to_image_write_function
 		{{"png", WriteImageToPNG},

@@ -26,6 +26,9 @@
 
 #include "Visualizer.h"
 
+#include <ctime>
+#include <IO/IO.h>
+
 namespace three{
 
 bool Visualizer::InitOpenGL()
@@ -121,6 +124,29 @@ void Visualizer::ResetViewPoint()
 {
 	view_control_.Reset();
 	is_redraw_required_ = true;
+}
+
+void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
+		bool do_render/* = true*/)
+{
+	std::string png_filename = filename;
+	if (png_filename.empty()) {
+		png_filename = GetCurrentTimeStamp() + ".png";
+	}
+	Image screen_image;
+	screen_image.width_ = view_control_.GetWindowWidth();
+	screen_image.height_ = view_control_.GetWindowHeight();
+	screen_image.bytes_per_channel_ = 1;
+	screen_image.num_of_channels_ = 3;
+	screen_image.AllocateDataBuffer();
+	if (do_render) {
+		Render();
+	}
+	glFinish();
+	glReadPixels(0, 0, view_control_.GetWindowWidth(), 
+			view_control_.GetWindowHeight(), GL_RGB, GL_UNSIGNED_BYTE,
+			screen_image.data_.data());
+	WriteImage(png_filename, screen_image);
 }
 
 }	// namespace three

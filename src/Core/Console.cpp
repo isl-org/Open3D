@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <string>
+#include <ctime>
 #include <stdint.h>
 #ifdef WIN32
 #include <windows.h>
@@ -210,6 +211,17 @@ void AdvanceConsoleProgress()
 {
 	current_console_progress++;
 	PrintConsoleProgress();
+}
+
+std::string GetCurrentTimeStamp()
+{
+	time_t rawtime;
+	struct tm *timeinfo;
+	char buffer[DEFAULT_IO_BUFFER_SIZE];
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(buffer, DEFAULT_IO_BUFFER_SIZE, "%Y-%m-%d-%H-%M-%S", timeinfo);
+	return std::string(buffer);
 }
 
 }	// namespace three
