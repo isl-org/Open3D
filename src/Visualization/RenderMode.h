@@ -231,10 +231,15 @@ public:
 		return image_interpolation_option_;
 	}
 
+	int GetMaxDepth() const { return max_depth_; }
+
+	void SetMaxDepth(int depth) { max_depth_ = depth; }
+
 private:
 	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
 	ImageInterpolationOption image_interpolation_option_ = 
 			IMAGE_INTERPOLATION_NEAREST;
+	int max_depth_ = 3000;
 };
 
 }	// namespace three

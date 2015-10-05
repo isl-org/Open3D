@@ -85,6 +85,40 @@ bool ShaderImageDefault::BindGeometry(
 
 	// Copy data to renderer's own container. A double-to-float cast is
 	// performed for performance reason.
+	const void *data_ptr;
+	Image render_image;
+	const ColorMap &global_color_map = *GetGlobalColorMap();
+	if (image.num_of_channels_ == 3 && image.bytes_per_channel_ == 1) {
+		data_ptr = image.data_.data();
+	} else {
+		render_image.PrepareImage(image.width_, image.height_, 3, 1);
+		if (image.num_of_channels_ == 1 && 
+				image.bytes_per_channel_ == 1) {
+			for (int i = 0; i < image.height_ * image.width_; i++) {
+				render_image.data_[i * 3] = image.data_[i];
+				render_image.data_[i * 3 + 1] = image.data_[i];
+				render_image.data_[i * 3 + 2] = image.data_[i];
+			}
+		} else if (image.num_of_channels_ == 3 && 
+				image.bytes_per_channel_ == 2) {
+			for (int i = 0; i < image.height_ * image.width_ * 3; i++) {
+				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
+				render_image.data_[i] = (unsigned char)((*p) & 0xff);
+			}
+		} else if (image.num_of_channels_ == 1 && 
+				image.bytes_per_channel_ == 2) {
+			const int max_depth = image_render_mode.GetMaxDepth();
+			for (int i = 0; i < image.height_ * image.width_; i++) {
+				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
+				double depth = std::min(double(*p) / double(max_depth), 1.0);
+				Eigen::Vector3d color = global_color_map.GetColor(depth);
+				render_image.data_[i * 3] = (unsigned char)(color(0) * 255);
+				render_image.data_[i * 3 + 1] = (unsigned char)(color(1) * 255);
+				render_image.data_[i * 3 + 2] = (unsigned char)(color(2) * 255);
+			}
+		}
+		data_ptr = render_image.data_.data();
+	}
 	
 	// Create buffers and bind the geometry
 	GLfloat ratio_x, ratio_y;
@@ -138,7 +172,7 @@ bool ShaderImageDefault::BindGeometry(
 	glGenTextures(1, &image_texture_buffer_);
 	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width_, image.height_, 0, 
-			GL_RGB, GL_UNSIGNED_BYTE, image.data_.data());
+			GL_RGB, GL_UNSIGNED_BYTE, data_ptr);
 
 	if (image_render_mode.GetInterpolationOption() == 
 			ImageRenderMode::IMAGE_INTERPOLATION_NEAREST) {
