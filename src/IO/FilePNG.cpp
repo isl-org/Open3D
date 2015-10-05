@@ -83,7 +83,7 @@ bool WriteImageToPNG(const std::string &filename, const Image &image)
 	memset(&pngimage, 0, sizeof(pngimage));
 	pngimage.version = PNG_IMAGE_VERSION;
 	SetPNGImageFromImage(image, pngimage);
-	if (png_image_write_to_file(&pngimage, filename.c_str(), NULL, 
+	if (png_image_write_to_file(&pngimage, filename.c_str(), 0, 
 			image.data_.data(), 0, NULL) == 0) {
 		PrintDebug("Write PNG failed: unable to write file.\n");
 		return false;

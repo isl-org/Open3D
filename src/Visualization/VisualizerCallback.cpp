@@ -109,6 +109,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		ResetViewPoint();
 		PrintDebug("[Visualizer] Reset view point.\n");
 		break;
+	case GLFW_KEY_P:
 	case GLFW_KEY_PRINT_SCREEN:
 		CaptureScreen();
 		PrintDebug("[Visualizer] Print screen.\n");

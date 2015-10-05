@@ -258,6 +258,7 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("  -- General control --\n");
 	PrintInfo("    Q, Esc       : Exit window.\n");
 	PrintInfo("    H            : Print help message.\n");
+	PrintInfo("    P, PrtScn    : Take a screen capture.\n");
 	PrintInfo("    R            : Reset view point.\n");
 	PrintInfo("    [/]          : Increase/decrease field of view.\n");
 	PrintInfo("\n");
