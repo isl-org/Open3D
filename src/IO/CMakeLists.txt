@@ -8,7 +8,7 @@ add_library(IO ${Open3DV_LIB_TYPE}
 	${IO_ALL_HEADER_FILES} ${IO_ALL_SOURCE_FILES}
 	${IO_RPLY_FILES} ${IO_LIBLZF_FILES}
 )
-target_link_libraries(IO png zlib)
+target_link_libraries(IO png zlib jpeg)
 
 install(TARGETS IO
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
