@@ -1,4 +1,5 @@
 add_subdirectory(GLFW)
+add_subdirectory(glew)
 add_subdirectory(zlib)
 add_subdirectory(libpng)
 add_subdirectory(libjpeg)

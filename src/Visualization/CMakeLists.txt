@@ -20,21 +20,15 @@ add_custom_target(ShaderFileTarget ALL
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 source_group("Shader" FILES ${SHADER_FILES})
-file(GLOB VISUALIZATION_GLEW_FILES
-	"../External/glew/include/GL/*.h"
-	"../External/glew/src/glew.c"
-)
-source_group("glew" FILES ${VISUALIZATION_GLEW_FILES})
 file(GLOB VISUALIZATION_ALL_HEADER_FILES "*.h")
 file(GLOB VISUALIZATION_ALL_SOURCE_FILES "*.cpp")
 add_library(Visualization ${Open3DV_LIB_TYPE}
 	${VISUALIZATION_ALL_SOURCE_FILES}
 	${VISUALIZATION_ALL_HEADER_FILES}
-	${VISUALIZATION_GLEW_FILES}
 	${SHADER_FILES}
 )
 add_dependencies(Visualization ShaderFileTarget)
-target_link_libraries(Visualization glfw)
+target_link_libraries(Visualization glfw glew)
 
 install(TARGETS Visualization
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

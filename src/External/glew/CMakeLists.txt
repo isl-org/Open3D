@@ -1,0 +1,16 @@
+project(glew C)
+
+cmake_minimum_required(VERSION 3.0.0)
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
+
+# SET LIBNAME
+set(GLEW_LIBRARY glew)
+
+file(GLOB glew_sources src/glew.c)
+file(GLOB glew_headers include/GL/*.h)
+
+add_library(${GLEW_LIBRARY} STATIC ${glew_sources} ${glew_headers})
+set_target_properties(${GLEW_LIBRARY} PROPERTIES
+        OUTPUT_NAME ${GLEW_LIBRARY}
+        FOLDER "External"
+    )
