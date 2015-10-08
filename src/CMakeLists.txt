@@ -54,6 +54,8 @@ elseif(APPLE)
 	add_definitions(-DUNIX)
 	# enable c++11
 	set(CMAKE_CXX_FLAGS "-std=c++11")
+	# compile speed optimization for clang
+	add_definitions(-Os)
 	message(STATUS "Compiling on OSX")
 elseif(UNIX)
 	add_definitions(-DUNIX)
