@@ -9,12 +9,6 @@ set(JPEG_LIBRARY jpeg)
 file(GLOB libjpeg_sources *.c)
 file(GLOB libjpeg_headers *.h)
 
-add_library(${JPEG_LIBRARY} STATIC ${libjpeg_sources} ${libjpeg_headers})
-set_target_properties(${JPEG_LIBRARY} PROPERTIES
-        OUTPUT_NAME ${JPEG_LIBRARY}
-        FOLDER "External"
-    )
-
 if(WIN32)
 	if(MSVC)
 		add_definitions(/wd4013)
@@ -23,5 +17,12 @@ if(WIN32)
 	endif(MSVC)
 elseif(CYGWIN)
 elseif(APPLE)
+	add_compile_options(-Wno-implicit-function-declaration)
 elseif(UNIX)
 endif(WIN32)
+
+add_library(${JPEG_LIBRARY} STATIC ${libjpeg_sources} ${libjpeg_headers})
+set_target_properties(${JPEG_LIBRARY} PROPERTIES
+        OUTPUT_NAME ${JPEG_LIBRARY}
+        FOLDER "External"
+    )
