@@ -48,4 +48,8 @@ bool ReadImageFromPNG(const std::string &filename, Image &image);
 
 bool WriteImageToPNG(const std::string &filename, const Image &image);
 
+bool ReadImageFromJPG(const std::string &filename, Image &image);
+
+bool WriteImageToJPG(const std::string &filename, const Image &image);
+
 }	// namespace three

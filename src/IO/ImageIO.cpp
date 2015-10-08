@@ -37,12 +37,16 @@ static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, Image &)>>
 		file_extension_to_image_read_function
 		{{"png", ReadImageFromPNG},
+		{"jpg", ReadImageFromJPG},
+		{"jpeg", ReadImageFromJPG},
 		};
 
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, const Image &)>>
 		file_extension_to_image_write_function
 		{{"png", WriteImageToPNG},
+		{"jpg", WriteImageToJPG},
+		{"jpeg", WriteImageToJPG},
 		};
 
 }	// unnamed namespace
