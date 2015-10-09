@@ -28,5 +28,5 @@ The free reference library for reading and writing PNGs
 libjpeg 9a     libjpeg license        http://libjpeg.sourceforge.net/
 A widely used C library for reading and writing JPEG image files
 --------------------------------------------------------------------------------
-liblzf 3.6     BSD license            http://oldhome.schmorp.de/marc/liblzf.html
-A compression library used for parsing pcd files
+jsoncpp 1.6.5  MIT license        https://github.com/open-source-parsers/jsoncpp
+A C++ library that allows manipulating JSON values
