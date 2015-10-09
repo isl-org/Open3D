@@ -210,11 +210,11 @@ bool ReadPointCloudFromPLY(
 	
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {
-		PrintDebug("Read PLY failed: unable to open file.\n");
+		PrintWarning("Read PLY failed: unable to open file.\n");
 		return false;
 	}
 	if (!ply_read_header(ply_file)) {
-		PrintDebug("Read PLY failed: unable to parse header.\n");
+		PrintWarning("Read PLY failed: unable to parse header.\n");
 		return false;
 	}
 
@@ -236,7 +236,7 @@ bool ReadPointCloudFromPLY(
 	ply_set_read_cb(ply_file, "vertex", "blue",  ReadColorCallback, &state, 2);
 
 	if (state.vertex_num <= 0) {
-		PrintDebug("Read PLY failed: number of vertex <= 0.\n");
+		PrintWarning("Read PLY failed: number of vertex <= 0.\n");
 		return false;
 	}
 
@@ -252,7 +252,7 @@ bool ReadPointCloudFromPLY(
 	ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
 
 	if (!ply_read(ply_file)) {
-		PrintDebug("Read PLY failed: unable to read file.\n");
+		PrintWarning("Read PLY failed: unable to read file.\n");
 		return false;
 	}
 
@@ -268,14 +268,14 @@ bool WritePointCloudToPLY(
 		const bool compressed/* = false*/)
 {
 	if (pointcloud.IsEmpty()) {
-		PrintDebug("Write PLY failed: point cloud has 0 points.\n");
+		PrintWarning("Write PLY failed: point cloud has 0 points.\n");
 		return false;
 	}
 	
 	p_ply ply_file = ply_create(filename.c_str(),
 			write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
 	if (!ply_file) {
-		PrintDebug("Write PLY failed: unable to open file.\n");
+		PrintWarning("Write PLY failed: unable to open file.\n");
 		return false;
 	}
 	ply_add_comment(ply_file, "Created by Open3DV");
@@ -295,7 +295,7 @@ bool WritePointCloudToPLY(
 		ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
 	}
 	if (!ply_write_header(ply_file)) {
-		PrintDebug("Write PLY failed: unable to write header.\n");
+		PrintWarning("Write PLY failed: unable to write header.\n");
 		return false;
 	}
 	
@@ -334,11 +334,11 @@ bool ReadTriangleMeshFromPLY(
 	
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {
-		PrintDebug("Read PLY failed: unable to open file.\n");
+		PrintWarning("Read PLY failed: unable to open file.\n");
 		return false;
 	}
 	if (!ply_read_header(ply_file)) {
-		PrintDebug("Read PLY failed: unable to parse header.\n");
+		PrintWarning("Read PLY failed: unable to parse header.\n");
 		return false;
 	}
 	
@@ -360,7 +360,7 @@ bool ReadTriangleMeshFromPLY(
 	ply_set_read_cb(ply_file, "vertex", "blue",  ReadColorCallback, &state, 2);
 	
 	if (state.vertex_num <= 0) {
-		PrintDebug("Read PLY failed: number of vertex <= 0.\n");
+		PrintWarning("Read PLY failed: number of vertex <= 0.\n");
 		return false;
 	}
 	
@@ -386,7 +386,7 @@ bool ReadTriangleMeshFromPLY(
 			"Reading PLY: ");
 	
 	if (!ply_read(ply_file)) {
-		PrintDebug("Read PLY failed: unable to read file.\n");
+		PrintWarning("Read PLY failed: unable to read file.\n");
 		return false;
 	}
 	
@@ -401,14 +401,14 @@ bool WriteTriangleMeshToPLY(
 		const bool compressed/* = false*/)
 {
 	if (mesh.IsEmpty()) {
-		PrintDebug("Write PLY failed: mesh has 0 vertices.\n");
+		PrintWarning("Write PLY failed: mesh has 0 vertices.\n");
 		return false;
 	}
 	
 	p_ply ply_file = ply_create(filename.c_str(),
 			write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
 	if (!ply_file) {
-		PrintDebug("Write PLY failed: unable to open file.\n");
+		PrintWarning("Write PLY failed: unable to open file.\n");
 		return false;
 	}
 	ply_add_comment(ply_file, "Created by Open3DV");
@@ -428,7 +428,7 @@ bool WriteTriangleMeshToPLY(
 		ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
 	}
 	if (!ply_write_header(ply_file)) {
-		PrintDebug("Write PLY failed: unable to write header.\n");
+		PrintWarning("Write PLY failed: unable to write header.\n");
 		return false;
 	}
 	

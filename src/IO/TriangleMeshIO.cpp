@@ -52,13 +52,13 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Read TriangleMesh failed: unknown file extension.\n");
+		PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr = 
 			file_extension_to_trianglemesh_read_function.find(filename_ext);
 	if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
-		PrintDebug("Read TriangleMesh failed: unknown file extension.\n");
+		PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, mesh);
@@ -69,13 +69,13 @@ bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Write TriangleMesh failed: unknown file extension.\n");
+		PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr =
 			file_extension_to_trianglemesh_write_function.find(filename_ext);
 	if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
-		PrintDebug("Write TriangleMesh failed: unknown file extension.\n");
+		PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, mesh, write_ascii, compressed);

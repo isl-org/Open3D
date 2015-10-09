@@ -38,7 +38,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 	JSAMPARRAY buffer;
 
 	if ((file_in = fopen(filename.c_str(), "rb")) == NULL) {
-		PrintDebug("Read JPG failed: unable to read file.\n");
+		PrintWarning("Read JPG failed: unable to open file.\n");
 		return false;
 	}
 
@@ -65,7 +65,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 	case JCS_CMYK:
 	case JCS_YCCK:
 	default:
-		PrintDebug("Read JPG failed: color space not supported.\n");
+		PrintWarning("Read JPG failed: color space not supported.\n");
 		jpeg_destroy_decompress(&cinfo);
 		fclose(file_in);
 		return false;
@@ -91,7 +91,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 bool WriteImageToJPG(const std::string &filename, const Image &image)
 {
 	if (image.HasData() == false) {
-		PrintDebug("Write PNG failed: image has no data.\n");
+		PrintWarning("Write PNG failed: image has no data.\n");
 		return false;
 	}
 	return true;

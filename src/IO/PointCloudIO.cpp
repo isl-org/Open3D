@@ -57,13 +57,13 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Read PointCloud failed: unknown file extension.\n");
+		PrintWarning("Read PointCloud failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr =
 			file_extension_to_pointcloud_read_function.find(filename_ext);
 	if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-		PrintDebug("Read PointCloud failed: unknown file extension.\n");
+		PrintWarning("Read PointCloud failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, pointcloud);
@@ -74,13 +74,13 @@ bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Write PointCloud failed: unknown file extension.\n");
+		PrintWarning("Write PointCloud failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr =
 			file_extension_to_pointcloud_write_function.find(filename_ext);
 	if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-		PrintDebug("Write PointCloud failed: unknown file extension.\n");
+		PrintWarning("Write PointCloud failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, pointcloud, write_ascii, compressed);

@@ -36,6 +36,7 @@ bool ReadPointCloudFromXYZ(
 {
 	FILE *file = fopen(filename.c_str(), "r");
 	if (file == NULL) {
+		PrintWarning("Read XYZ failed: unable to open file.\n");
 		return false;
 	}
 
@@ -61,6 +62,7 @@ bool WritePointCloudToXYZ(
 {
 	FILE *file = fopen(filename.c_str(), "w");
 	if (file == NULL) {
+		PrintWarning("Write XYZ failed: unable to open file.\n");
 		return false;
 	}
 
@@ -69,6 +71,8 @@ bool WritePointCloudToXYZ(
 		if (fprintf(file, "%.10f %.10f %.10f\n",
 				point(0), point(1), point(2)) < 0)
 		{
+			PrintWarning("Write XYZ failed: unable to write file.\n");
+			fclose(file);
 			return false;	// error happens during writting.
 		}
 	}

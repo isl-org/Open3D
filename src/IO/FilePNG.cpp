@@ -54,7 +54,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 	memset(&pngimage, 0, sizeof(pngimage));
 	pngimage.version = PNG_IMAGE_VERSION;
 	if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
-		PrintDebug("Read PNG failed: unable to parse header.\n");
+		PrintWarning("Read PNG failed: unable to parse header.\n");
 		return false;
 	}
 	
@@ -67,7 +67,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 	SetPNGImageFromImage(image, pngimage);
 	if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 
 			0, NULL) == 0) {
-		PrintDebug("Read PNG failed: unable to read file.\n");
+		PrintWarning("Read PNG failed: unable to read file.\n");
 		return false;
 	}
 	return true;
@@ -76,7 +76,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 bool WriteImageToPNG(const std::string &filename, const Image &image)
 {
 	if (image.HasData() == false) {
-		PrintDebug("Write PNG failed: image has no data.\n");
+		PrintWarning("Write PNG failed: image has no data.\n");
 		return false;
 	}
 	png_image pngimage;
@@ -85,7 +85,7 @@ bool WriteImageToPNG(const std::string &filename, const Image &image)
 	SetPNGImageFromImage(image, pngimage);
 	if (png_image_write_to_file(&pngimage, filename.c_str(), 0, 
 			image.data_.data(), 0, NULL) == 0) {
-		PrintDebug("Write PNG failed: unable to write file.\n");
+		PrintWarning("Write PNG failed: unable to write file.\n");
 		return false;
 	}
 	return true;

@@ -55,12 +55,12 @@ bool ReadImage(const std::string &filename, Image &image)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Read Image failed: unknown file extension.\n");
+		PrintWarning("Read Image failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr = file_extension_to_image_read_function.find(filename_ext);
 	if (map_itr == file_extension_to_image_read_function.end()) {
-		PrintDebug("Read Image failed: unknown file extension.\n");
+		PrintWarning("Read Image failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, image);
@@ -70,12 +70,12 @@ bool WriteImage(const std::string &filename, const Image &image)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintDebug("Write Image failed: unknown file extension.\n");
+		PrintWarning("Write Image failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr = file_extension_to_image_write_function.find(filename_ext);
 	if (map_itr == file_extension_to_image_write_function.end()) {
-		PrintDebug("Write Image failed: unknown file extension.\n");
+		PrintWarning("Write Image failed: unknown file extension.\n");
 		return false;
 	}
 	return map_itr->second(filename, image);
