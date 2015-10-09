@@ -88,12 +88,51 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 	return true;
 }
 
-bool WriteImageToJPG(const std::string &filename, const Image &image)
+bool WriteImageToJPG(const std::string &filename, const Image &image,
+		int quality/* = 90*/)
 {
 	if (image.HasData() == false) {
-		PrintWarning("Write PNG failed: image has no data.\n");
+		PrintWarning("Write JPG failed: image has no data.\n");
 		return false;
 	}
+	if (image.bytes_per_channel_ != 1 ||
+			(image.num_of_channels_ != 1 && image.num_of_channels_ != 3)) {
+		PrintWarning("Write JPG failed: unsupported image data.\n");
+		return false;
+	}
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+	FILE *file_out;
+	JSAMPROW row_pointer[1];
+
+	if ((file_out = fopen(filename.c_str(), "wb")) == NULL) {
+		PrintWarning("Write JPG failed: unable to open file.\n");
+		return false;
+	}
+
+	cinfo.err = jpeg_std_error(&jerr);
+	jpeg_create_compress(&cinfo);
+	jpeg_stdio_dest(&cinfo, file_out);
+	cinfo.image_width = image.width_;
+	cinfo.image_height = image.height_;
+	cinfo.input_components = image.num_of_channels_;
+	cinfo.in_color_space = 
+			(cinfo.input_components == 1 ? JCS_GRAYSCALE : JCS_RGB);
+	jpeg_set_defaults(&cinfo);
+	jpeg_set_quality(&cinfo, quality, TRUE);
+	jpeg_start_compress(&cinfo, TRUE);
+	int row_stride = image.width_ * image.num_of_channels_;
+	const unsigned char *pdata = image.data_.data();
+	std::vector<unsigned char> buffer(row_stride);
+	while (cinfo.next_scanline < cinfo.image_height) {
+		memcpy(buffer.data(), pdata, row_stride);
+		row_pointer[0] = buffer.data();
+		jpeg_write_scanlines(&cinfo, row_pointer, 1);
+		pdata += row_stride;
+	}
+	jpeg_finish_compress(&cinfo);
+	fclose(file_out);
+	jpeg_destroy_compress(&cinfo);
 	return true;
 }
 

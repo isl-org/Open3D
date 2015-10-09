@@ -42,14 +42,17 @@ bool ReadImage(const std::string &filename, Image &image);
 /// If the write function supports binary encoding and compression, the later
 /// two parameter will be used. Otherwise they will be ignored.
 /// \return If the write function is successful.
-bool WriteImage(const std::string &filename, const Image &image);
+bool WriteImage(const std::string &filename, const Image &image,
+		int quality = 90);
 
 bool ReadImageFromPNG(const std::string &filename, Image &image);
 
-bool WriteImageToPNG(const std::string &filename, const Image &image);
+bool WriteImageToPNG(const std::string &filename, const Image &image,
+		int quality);
 
 bool ReadImageFromJPG(const std::string &filename, Image &image);
 
-bool WriteImageToJPG(const std::string &filename, const Image &image);
+bool WriteImageToJPG(const std::string &filename, const Image &image,
+		int quality = 90);
 
 }	// namespace three

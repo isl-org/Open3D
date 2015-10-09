@@ -42,7 +42,7 @@ static const std::unordered_map<std::string,
 		};
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, const Image &)>>
+		std::function<bool(const std::string &, const Image &, int)>>
 		file_extension_to_image_write_function
 		{{"png", WriteImageToPNG},
 		{"jpg", WriteImageToJPG},
@@ -66,7 +66,8 @@ bool ReadImage(const std::string &filename, Image &image)
 	return map_itr->second(filename, image);
 }
 
-bool WriteImage(const std::string &filename, const Image &image)
+bool WriteImage(const std::string &filename, const Image &image,
+		int quality/* = 90*/)
 {
 	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
@@ -78,7 +79,7 @@ bool WriteImage(const std::string &filename, const Image &image)
 		PrintWarning("Write Image failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, image);
+	return map_itr->second(filename, image, quality);
 }
 
 }	// namespace three
