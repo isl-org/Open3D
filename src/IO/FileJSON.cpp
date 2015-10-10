@@ -24,9 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
 #include "ViewTrajectoryIO.h"
+
+#include <External/jsoncpp/include/json/json.h>
+
+namespace three{
+
+bool ReadViewTrajectoryFromJSON(const std::string &filename,
+		ViewTrajectory &trajectory)
+{
+	return true;
+}
+
+bool WriteViewTrajectoryToJSON(const std::string &filename,
+		const ViewTrajectory &trajectory)
+{
+	return true;
+}
+
+}	// namespace three

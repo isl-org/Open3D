@@ -30,6 +30,7 @@
 
 #include "BoundingBox.h"
 #include "VisualizerHelper.h"
+#include "ViewTrajectory.h"
 
 namespace three {
 
@@ -67,6 +68,8 @@ public:
 	void Scale(double scale);
 	void Rotate(double x, double y);
 	void Translate(double x, double y);
+	ViewTrajectory::ViewStatus ConvertToViewStatus();
+	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
 
 	const BoundingBox &GetBoundingBox() const {
 		return bounding_box_;

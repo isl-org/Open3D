@@ -26,7 +26,29 @@
 
 #pragma once
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
-#include "ViewTrajectoryIO.h"
+#include <string>
+
+#include <Core/Core.h>
+#include <Visualization/ViewTrajectory.h>
+
+namespace three {
+
+/// The general entrance for reading a ViewTrajectory from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return If the read function is successful. 
+bool ReadViewTrajectory(const std::string &filename, 
+		ViewTrajectory &trajectory);
+
+/// The general entrance for writing a ViewTrajectory to a file
+/// The function calls write functions based on the extension name of filename.
+/// \return If the write function is successful.
+bool WriteViewTrajectory(const std::string &filename, 
+		const ViewTrajectory &trajectory);
+
+bool ReadViewTrajectoryFromJSON(const std::string &filename,
+		ViewTrajectory &trajectory);
+
+bool WriteViewTrajectoryToJSON(const std::string &filename,
+		const ViewTrajectory &trajectory);
+
+}	// namespace three

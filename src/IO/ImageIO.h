@@ -37,10 +37,10 @@ namespace three {
 /// \return If the read function is successful. 
 bool ReadImage(const std::string &filename, Image &image);
 
-/// The general entrance for writing a TriangleMesh to a file
+/// The general entrance for writing an Image to a file
 /// The function calls write functions based on the extension name of filename.
-/// If the write function supports binary encoding and compression, the later
-/// two parameter will be used. Otherwise they will be ignored.
+/// If the write function supports quality, the parameter will be used. 
+/// Otherwise it will be ignored.
 /// \return If the write function is successful.
 bool WriteImage(const std::string &filename, const Image &image,
 		int quality = 90);

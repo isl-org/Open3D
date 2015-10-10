@@ -120,6 +120,27 @@ void ViewControl::Translate(double x, double y)
 	SetProjectionParameters();
 }
 
+ViewTrajectory::ViewStatus ViewControl::ConvertToViewStatus()
+{
+	ViewTrajectory::ViewStatus status;
+	status.field_of_view = field_of_view_;
+	status.zoom = zoom_;
+	status.lookat = lookat_;
+	status.up = up_;
+	status.front = front_;
+	return status;
+}
+
+void ViewControl::ConvertFromViewStatus(const ViewTrajectory::ViewStatus status)
+{
+	field_of_view_ = status.field_of_view;
+	zoom_ = status.zoom;
+	lookat_ = status.lookat;
+	up_ = status.up;
+	front_ = status.front;
+	SetProjectionParameters();
+}
+
 void ViewControl::SetViewPoint()
 {
 	if (window_height_ <= 0 || window_width_ <= 0) {
