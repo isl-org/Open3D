@@ -67,6 +67,29 @@ void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
 {
 }
 
+void ViewControlWithAnimation::ToggleTrajectoryLoop()
+{
+	switch (animation_mode_) {
+	case ANIMATION_FREEMODE:
+		view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
+		break;
+	case ANIMATION_REVIEWMODE:
+		view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
+		view_trajectory_.ComputeInterpolationCoefficients();
+		break;
+	case ANIMATION_PLAYMODE:
+	default:
+		break;
+	}
+}
+
+void ViewControlWithAnimation::ChangeTrajectoryInterval(int change)
+{
+	if (animation_mode_ != ANIMATION_PLAYMODE) {
+		view_trajectory_.ChangeInterval(change); 
+	}
+}
+
 ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
 {
 	ViewTrajectory::ViewStatus status;

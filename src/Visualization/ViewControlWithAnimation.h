@@ -35,7 +35,8 @@ class ViewControlWithAnimation : public ViewControl {
 public:
 	enum AnimationMode {
 		ANIMATION_FREEMODE = 0,
-		ANIMATION_PLAYMODE = 1,
+		ANIMATION_REVIEWMODE = 1,
+		ANIMATION_PLAYMODE = 2,
 	};
 
 public:
@@ -57,7 +58,15 @@ public:
 		view_trajectory_.view_status_.clear();
 	}
 	void AddSpinKeyFrames(int num_of_key_frames = 20);
-	size_t NumOfKeyFrames() { return view_trajectory_.view_status_.size(); }
+	size_t NumOfKeyFrames() const {
+		return view_trajectory_.view_status_.size();
+	}
+
+	void ToggleTrajectoryLoop();
+	void ChangeTrajectoryInterval(int change);
+	int GetTrajectoryInterval() const {
+		return view_trajectory_.interval_;
+	}
 
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();

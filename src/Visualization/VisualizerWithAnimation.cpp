@@ -86,8 +86,14 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		case GLFW_KEY_R:
 			break;
 		case GLFW_KEY_EQUAL:
+			view_control.ChangeTrajectoryInterval(1);
+			PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
+				view_control.GetTrajectoryInterval());
 			break;
 		case GLFW_KEY_MINUS:
+			view_control.ChangeTrajectoryInterval(-1);
+			PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
+				view_control.GetTrajectoryInterval());
 			break;
 		case GLFW_KEY_L:
 			break;
@@ -122,6 +128,8 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		case GLFW_KEY_RIGHT_BRACKET:
 			break;
 		}
+
+		is_redraw_required_ = true;
 	} else {
 		Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 	}
