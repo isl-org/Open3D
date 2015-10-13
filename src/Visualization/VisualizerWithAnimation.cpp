@@ -62,7 +62,8 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 
 bool VisualizerWithAnimation::InitViewControl()
 {
-	view_control_ptr_ = std::make_unique<ViewControlWithAnimation>();
+	view_control_ptr_ = std::unique_ptr<ViewControlWithAnimation>(
+			new ViewControlWithAnimation);
 	ResetViewPoint();
 	return true;
 }

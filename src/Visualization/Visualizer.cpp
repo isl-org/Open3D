@@ -162,7 +162,7 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 
 bool Visualizer::InitViewControl()
 {
-	view_control_ptr_ = std::make_unique<ViewControl>();
+	view_control_ptr_ = std::unique_ptr<ViewControl>(new ViewControl);
 	ResetViewPoint();
 	return true;
 }
