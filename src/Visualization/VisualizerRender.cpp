@@ -132,7 +132,7 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 {
 	std::string png_filename = filename;
 	if (png_filename.empty()) {
-		png_filename = GetCurrentTimeStamp() + ".png";
+		png_filename = "ScreenCapture_" + GetCurrentTimeStamp() + ".png";
 	}
 	Image screen_image;
 	screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),

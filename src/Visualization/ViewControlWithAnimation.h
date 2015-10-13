@@ -36,7 +36,6 @@ public:
 	enum AnimationMode {
 		ANIMATION_FREEMODE = 0,
 		ANIMATION_PLAYMODE = 1,
-		ANIMATION_RECORDINGMODE = 2,
 	};
 
 public:
@@ -45,6 +44,22 @@ public:
 	virtual void Scale(double scale);
 	virtual void Rotate(double x, double y);
 	virtual void Translate(double x, double y);
+
+	void AddLastKeyFrame() {
+		view_trajectory_.view_status_.push_back(ConvertToViewStatus());
+	}
+	void DeleteLastKeyFrame() {
+		if (!view_trajectory_.view_status_.empty()) {
+			view_trajectory_.view_status_.pop_back();
+		}
+	}
+	void ClearAllKeyFrames() {
+		view_trajectory_.view_status_.clear();
+	}
+	void AddSpinKeyFrames(int num_of_key_frames = 20);
+	size_t NumOfKeyFrames() { return view_trajectory_.view_status_.size(); }
+
+protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();
 	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
 

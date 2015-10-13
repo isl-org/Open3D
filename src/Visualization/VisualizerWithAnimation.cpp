@@ -44,14 +44,16 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	PrintInfo("    Alt + F      : Switch between free view mode (default) and animation mode.\n");
 	PrintInfo("    Alt + P      : Enter animation mode and play animation from beginning.\n");
 	PrintInfo("    Alt + R      : Enter animation mode, play animation, and record screen.\n");
+	PrintInfo("    Alt + +/-    : Increase/decrease interval between key frames.\n");
+	PrintInfo("    Alt + L      : Turn on/off camera path as a loop.\n");
+	PrintInfo("    Alt + S      : Save the camera path into a json file.\n");
+	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
 	PrintInfo("    Alt + A      : Add current camera pose to the camera path.\n");
 	PrintInfo("    Alt + D      : Delete the last camera pose in the camera path.\n");
 	PrintInfo("    Alt + N      : Insert 360 spin into the camera path.\n");
-	PrintInfo("    Alt + I      : Interpolate the camera path.\n");
-	PrintInfo("    Alt + L      : Interpolate the camera path into a loop.\n");
 	PrintInfo("    Alt + C      : Clear the camera path.\n");
-	PrintInfo("    Alt + S      : Save the camera path into a json file.\n");
+	PrintInfo("\n");
 	PrintInfo("    -- In animation mode --\n");
 	PrintInfo("    Alt + <-/->  : Go backward/forward a frame.\n");
 	PrintInfo("    Alt + [/]    : Go to beginning/end of the camera path.\n");
@@ -73,6 +75,8 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 	}
 
 	if (mods & GLFW_MOD_ALT) {
+		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+
 		switch (key) {
 		case GLFW_KEY_F:
 			break;
@@ -80,17 +84,33 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			break;
 		case GLFW_KEY_R:
 			break;
-		case GLFW_KEY_A:
+		case GLFW_KEY_EQUAL:
 			break;
-		case GLFW_KEY_D:
+		case GLFW_KEY_MINUS:
 			break;
-		case GLFW_KEY_N:
-			break;
-		case GLFW_KEY_I:
-			break;
-		case GLFW_KEY_C:
+		case GLFW_KEY_L:
 			break;
 		case GLFW_KEY_S:
+			break;
+		case GLFW_KEY_A:
+			view_control.AddLastKeyFrame();
+			PrintDebug("[Visualizer] Add key frame, # is %d.\n",
+					view_control.NumOfKeyFrames());
+			break;
+		case GLFW_KEY_D:
+			view_control.DeleteLastKeyFrame();
+			PrintDebug("[Visualizer] Delete last key frame, # is %d.\n",
+					view_control.NumOfKeyFrames());
+			break;
+		case GLFW_KEY_N:
+			view_control.AddSpinKeyFrames();
+			PrintDebug("[Visualizer] Add spin key frames, # is %d.\n",
+					view_control.NumOfKeyFrames());
+			break;
+		case GLFW_KEY_C:
+			view_control.ClearAllKeyFrames();
+			PrintDebug("[Visualizer] Clear key frames, # is %d.\n",
+					view_control.NumOfKeyFrames());
 			break;
 		case GLFW_KEY_LEFT:
 			break;

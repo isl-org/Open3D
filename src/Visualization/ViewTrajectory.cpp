@@ -30,7 +30,7 @@
 
 namespace three{
 
-void ViewTrajectory::InterpolateViewStatus(int interval/* = 30*/, 
+void ViewTrajectory::ComputeInterpolationCoefficients(
 		bool close_loop/* = false*/)
 {
 }

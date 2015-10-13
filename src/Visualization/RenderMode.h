@@ -177,10 +177,19 @@ public:
 		lighting_option_ = option;
 	}
 
+	void ToggleShowBackFace() {
+		show_back_face_ = !show_back_face_;
+	}
+
+	bool IsBackFaceShown() const {
+		return show_back_face_;
+	}
+
 private:
 	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
 	MeshColorOption mesh_color_option_ = TRIANGLEMESH_DEFAULT;
 	LightingOption lighting_option_ = LIGHTING_DEFAULT;
+	bool show_back_face_ = false;
 };
 
 /// RenderMode class for Image

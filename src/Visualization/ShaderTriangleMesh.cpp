@@ -228,6 +228,11 @@ bool ShaderTriangleMeshDefault::Render(
 	
 	const auto &rendermode = (const TriangleMeshRenderMode &)mode;
 	SetLight(rendermode, view);
+	if (rendermode.IsBackFaceShown()) {
+		glDisable(GL_CULL_FACE);
+	} else {
+		glEnable(GL_CULL_FACE);
+	}
 
 	glUseProgram(program_);
 	glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());

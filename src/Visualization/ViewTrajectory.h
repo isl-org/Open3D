@@ -42,11 +42,27 @@ public:
 		Eigen::Vector3d front;
 	};
 
+	const int INTERVAL_MAX = 59;
+	const int INTERVAL_MIN = 0;
+	const int INTERVAL_STEP = 1;
+	const int INTERVAL_DEFAULT = 29;
+
 public:
-	void InterpolateViewStatus(int interval = 30, bool close_loop = false);
+	void ComputeInterpolationCoefficients(bool close_loop = false);
+
+	void ChangeInterval(int change) {
+		int new_interval = interval_ + change * INTERVAL_STEP;
+		if (new_interval >= INTERVAL_MIN && new_interval <= INTERVAL_MAX)
+		{
+			interval_ = new_interval;
+		}
+	}
 
 public:
 	std::vector<ViewStatus> view_status_;
+	bool is_loop_;
+	double current_position_;
+	int interval_ = INTERVAL_DEFAULT;
 };
 
 }	// namespace three

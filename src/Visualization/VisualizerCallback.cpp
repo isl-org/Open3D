@@ -154,6 +154,11 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 				TriangleMeshRenderMode::MESHSHADE_FLATSHADE ? 
 				"FLAT" : "SMOOTH");
 		break;
+	case GLFW_KEY_B:
+		mesh_render_mode_.ToggleShowBackFace();
+		PrintDebug("[Visualizer] Mesh back face rendering %s.\n",
+				mesh_render_mode_.IsBackFaceShown() ? "ON" : "OFF");
+		break;
 	case GLFW_KEY_I:
 		image_render_mode_.ToggleInterpolationOption();
 		UpdateGeometry();

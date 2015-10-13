@@ -63,6 +63,10 @@ void ViewControlWithAnimation::Translate(double x, double y)
 	}
 }
 
+void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
+{
+}
+
 ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
 {
 	ViewTrajectory::ViewStatus status;
