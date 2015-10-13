@@ -26,38 +26,35 @@
 
 #pragma once
 
-#include <string>
-#include <memory>
-#include <functional>
-
-#include <Core/Core.h>
-
 #include "Visualizer.h"
-#include "VisualizerWithAnimation.h"
 
 namespace three {
 
-/// The convenient function of drawing something
-/// This function is a wrapper that calls the core functions of Visualizer.
-/// This function MUST be called from the main thread. It blocks the main thread
-/// until the window is closed.
-bool DrawGeometry(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+class VisualizerWithAnimation : public Visualizer  {
+public:
+	VisualizerWithAnimation();
+	virtual ~VisualizerWithAnimation();
+	VisualizerWithAnimation(const VisualizerWithAnimation &) = delete;
+	VisualizerWithAnimation &operator=(const VisualizerWithAnimation &) = 
+			delete;
 
-bool DrawGeometryWithAnimation(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+public:
+	virtual void PrintVisualizerHelp();
 
-bool DrawGeometryWithCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		std::function<bool(Visualizer &)> callback_func,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+protected:
+	virtual bool InitViewControl();
+	virtual void KeyPressCallback(GLFWwindow *window,
+			int key, int scancode, int action, int mods);
+		/*
+	// callback functions
+	virtual void WindowRefreshCallback(GLFWwindow *window);
+	virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
+	virtual void MouseMoveCallback(GLFWwindow* window, double x, double y);
+	virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
+	virtual void MouseButtonCallback(GLFWwindow* window,
+			int button, int action, int mods);
+	virtual void WindowCloseCallback(GLFWwindow *window);
+	*/
+};
 
 }	// namespace three

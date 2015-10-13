@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		mesh_ptr->ComputeVertexNormals();
-		DrawGeometry(mesh_ptr, "Mesh", 1600, 900);
+		DrawGeometryWithAnimation(mesh_ptr, "Mesh", 1600, 900);
 	} else if (option == "spin") {
 		auto mesh_ptr = std::make_shared<TriangleMesh>();
 		if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		cloud_ptr->NormalizeNormals();
-		DrawGeometry(cloud_ptr, "PointCloud", 1600, 900);
+		DrawGeometryWithAnimation(cloud_ptr, "PointCloud", 1600, 900);
 	} else if (option == "rainbow") {
 		auto cloud_ptr = std::make_shared<PointCloud>();
 		if (ReadPointCloud(argv[2], *cloud_ptr)) {

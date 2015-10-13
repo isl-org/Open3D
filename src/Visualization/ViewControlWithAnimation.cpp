@@ -24,40 +24,65 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "ViewControlWithAnimation.h"
 
-#include <string>
-#include <memory>
-#include <functional>
+namespace three{
 
-#include <Core/Core.h>
+void ViewControlWithAnimation::Reset()
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewControl::Reset();
+	}
+}
 
-#include "Visualizer.h"
-#include "VisualizerWithAnimation.h"
+void ViewControlWithAnimation::ChangeFieldOfView(double step)
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewControl::ChangeFieldOfView(step);
+	}
+}
 
-namespace three {
+void ViewControlWithAnimation::Scale(double scale)
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewControl::Scale(scale);
+	}
+}
 
-/// The convenient function of drawing something
-/// This function is a wrapper that calls the core functions of Visualizer.
-/// This function MUST be called from the main thread. It blocks the main thread
-/// until the window is closed.
-bool DrawGeometry(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+void ViewControlWithAnimation::Rotate(double x, double y)
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewControl::Rotate(x, y);
+	}
+}
 
-bool DrawGeometryWithAnimation(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+void ViewControlWithAnimation::Translate(double x, double y)
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewControl::Translate(x, y);
+	}
+}
 
-bool DrawGeometryWithCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		std::function<bool(Visualizer &)> callback_func,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
+{
+	ViewTrajectory::ViewStatus status;
+	status.field_of_view = field_of_view_;
+	status.zoom = zoom_;
+	status.lookat = lookat_;
+	status.up = up_;
+	status.front = front_;
+	return status;
+}
+
+void ViewControlWithAnimation::ConvertFromViewStatus(
+		const ViewTrajectory::ViewStatus status)
+{
+	field_of_view_ = status.field_of_view;
+	zoom_ = status.zoom;
+	lookat_ = status.lookat;
+	up_ = status.up;
+	front_ = status.front;
+	SetProjectionParameters();
+}
 
 }	// namespace three

@@ -144,17 +144,26 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	glfwMakeContextCurrent(window_);
 	glfwSwapInterval(1);
 
+	if (InitOpenGL() == false) {
+		return false;
+	}
+
+	if (InitViewControl() == false) {
+		return false;
+	}
+
 	int window_width, window_height;
 	glfwGetFramebufferSize(window_, &window_width, &window_height);
 	WindowResizeCallback(window_, window_width, window_height);
 
-	if (InitOpenGL() == false) {
-		return false;
-	}
-	
-	ResetViewPoint();
-
 	is_initialized_ = true;
+	return true;
+}
+
+bool Visualizer::InitViewControl()
+{
+	view_control_ptr_ = std::make_unique<ViewControl>();
+	ResetViewPoint();
 	return true;
 }
 
@@ -223,7 +232,7 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 	}
 
 	geometry_ptrs_.push_back(geometry_ptr);
-	view_control_.AddGeometry(*geometry_ptr);
+	view_control_ptr_->AddGeometry(*geometry_ptr);
 	ResetViewPoint();
 	UpdateGeometry();
 	return true;

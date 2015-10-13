@@ -61,7 +61,7 @@ void Visualizer::Render()
 		is_shader_update_required_ = false;
 	}
 
-	view_control_.SetViewPoint();
+	view_control_ptr_->SetViewPoint();
 
 	glClearColor((GLclampf)background_color_(0),
 			(GLclampf)background_color_(1),
@@ -73,13 +73,14 @@ void Visualizer::Render()
 		const Geometry &geometry = *geometry_ptrs_[i];
 		switch (geometry.GetGeometryType()) {
 		case Geometry::GEOMETRY_POINTCLOUD:
-			shader_ptrs_[i]->Render(pointcloud_render_mode_, view_control_);
+			shader_ptrs_[i]->Render(pointcloud_render_mode_, 
+					*view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
-			shader_ptrs_[i]->Render(mesh_render_mode_, view_control_);
+			shader_ptrs_[i]->Render(mesh_render_mode_, *view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_IMAGE:
-			shader_ptrs_[i]->Render(image_render_mode_, view_control_);
+			shader_ptrs_[i]->Render(image_render_mode_, *view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
@@ -99,19 +100,19 @@ void Visualizer::UpdateShaders()
 			shader_ptrs_[i]->BindGeometry(
 					*geometry_ptrs_[i], 
 					pointcloud_render_mode_,
-					view_control_);
+					*view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
 			shader_ptrs_[i]->BindGeometry(
 					*geometry_ptrs_[i],
 					mesh_render_mode_,
-					view_control_);
+					*view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_IMAGE:
 			shader_ptrs_[i]->BindGeometry(
 					*geometry_ptrs_[i],
 					image_render_mode_,
-					view_control_);
+					*view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
@@ -122,7 +123,7 @@ void Visualizer::UpdateShaders()
 
 void Visualizer::ResetViewPoint()
 {
-	view_control_.Reset();
+	view_control_ptr_->Reset();
 	is_redraw_required_ = true;
 }
 
@@ -134,22 +135,22 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 		png_filename = GetCurrentTimeStamp() + ".png";
 	}
 	Image screen_image;
-	screen_image.PrepareImage(view_control_.GetWindowWidth(),
-			view_control_.GetWindowHeight(), 3, 1);
+	screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
+			view_control_ptr_->GetWindowHeight(), 3, 1);
 	if (do_render) {
 		Render();
 		is_redraw_required_ = false;
 	}
 	glFinish();
-	glReadPixels(0, 0, view_control_.GetWindowWidth(), 
-			view_control_.GetWindowHeight(), GL_RGB, GL_UNSIGNED_BYTE,
+	glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(), 
+			view_control_ptr_->GetWindowHeight(), GL_RGB, GL_UNSIGNED_BYTE,
 			screen_image.data_.data());
 
 	// glReadPixels get the screen in a vertically flipped manner
 	// Thus we should flip it back.
 	Image png_image;
-	png_image.PrepareImage(view_control_.GetWindowWidth(),
-			view_control_.GetWindowHeight(), 3, 1);
+	png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
+			view_control_ptr_->GetWindowHeight(), 3, 1);
 	int bytes_per_line = screen_image.BytesPerLine();
 	for (int i = 0; i < screen_image.height_; i++) {
 		memcpy(png_image.data_.data() + bytes_per_line * i,

@@ -101,21 +101,17 @@ public:
 	bool HasGeometry();
 	virtual void PrintVisualizerHelp();
 
-	ViewControl &GetViewControl() { return view_control_; }
+	ViewControl &GetViewControl() { return *view_control_ptr_; }
 	void CaptureScreen(const std::string &filename = "", bool do_render = true);
 
 protected:
 	// rendering functions
 
 	/// Function to initialize OpenGL
-	/// The following things will be set:
-	/// PolygonMode
-	/// DepthTest
-	/// PixelStorei
-	/// Mesh material
-	/// Note that we use a view point dependent lighting scheme, thus light 
-	/// should be set during rendering.
 	virtual bool InitOpenGL();
+
+	/// Function to initialize ViewControl
+	virtual bool InitViewControl();
 
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and
@@ -145,10 +141,12 @@ protected:
 
 	// control
 	MouseControl mouse_control_;
-	ViewControl view_control_;
 	bool is_redraw_required_ = true;
 	bool is_shader_update_required_ = true;
 	bool is_initialized_ = false;
+
+	// view control
+	std::unique_ptr<ViewControl> view_control_ptr_;
 
 	// rendering properties
 	PointCloudRenderMode pointcloud_render_mode_;

@@ -38,7 +38,7 @@ void Visualizer::WindowRefreshCallback(GLFWwindow *window)
 
 void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 {
-	view_control_.ChangeWindowSize(w, h);
+	view_control_ptr_->ChangeWindowSize(w, h);
 	is_redraw_required_ = true;
 	for (auto geometry_ptr : geometry_ptrs_) {
 		if (geometry_ptr->GetGeometryType() == Geometry::GEOMETRY_IMAGE) {
@@ -51,11 +51,11 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 {
 	if (mouse_control_.is_mouse_left_button_down) {
 		if (mouse_control_.is_control_key_down) {
-			view_control_.Translate(
+			view_control_ptr_->Translate(
 					mouse_control_.mouse_position_x - x,
 					y - mouse_control_.mouse_position_y);
 		} else {
-			view_control_.Rotate(
+			view_control_ptr_->Rotate(
 					mouse_control_.mouse_position_x - x,
 					y - mouse_control_.mouse_position_y);
 		}
@@ -67,7 +67,7 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 
 void Visualizer::MouseScrollCallback(GLFWwindow* window, double x, double y)
 {
-	view_control_.Scale(y);
+	view_control_ptr_->Scale(y);
 	is_redraw_required_ = true;
 }
 
@@ -115,14 +115,14 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		PrintDebug("[Visualizer] Print screen.\n");
 		break;
 	case GLFW_KEY_LEFT_BRACKET:
-		view_control_.ChangeFieldOfView(-1.0);
+		view_control_ptr_->ChangeFieldOfView(-1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_.GetFieldOfView());
+				view_control_ptr_->GetFieldOfView());
 		break;
 	case GLFW_KEY_RIGHT_BRACKET:
-		view_control_.ChangeFieldOfView(1.0);
+		view_control_ptr_->ChangeFieldOfView(1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_.GetFieldOfView());
+				view_control_ptr_->GetFieldOfView());
 		break;
 	case GLFW_KEY_EQUAL:
 		pointcloud_render_mode_.ChangePointSize(1.0);

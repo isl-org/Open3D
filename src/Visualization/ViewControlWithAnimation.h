@@ -26,38 +26,31 @@
 
 #pragma once
 
-#include <string>
-#include <memory>
-#include <functional>
-
-#include <Core/Core.h>
-
-#include "Visualizer.h"
-#include "VisualizerWithAnimation.h"
+#include "ViewControl.h"
+#include "ViewTrajectory.h"
 
 namespace three {
 
-/// The convenient function of drawing something
-/// This function is a wrapper that calls the core functions of Visualizer.
-/// This function MUST be called from the main thread. It blocks the main thread
-/// until the window is closed.
-bool DrawGeometry(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+class ViewControlWithAnimation : public ViewControl {
+public:
+	enum AnimationMode {
+		ANIMATION_FREEMODE = 0,
+		ANIMATION_PLAYMODE = 1,
+		ANIMATION_RECORDINGMODE = 2,
+	};
 
-bool DrawGeometryWithAnimation(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+public:
+	virtual void Reset();
+	virtual void ChangeFieldOfView(double step);
+	virtual void Scale(double scale);
+	virtual void Rotate(double x, double y);
+	virtual void Translate(double x, double y);
+	ViewTrajectory::ViewStatus ConvertToViewStatus();
+	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
 
-bool DrawGeometryWithCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		std::function<bool(Visualizer &)> callback_func,
-		const std::string window_name = "Open3DV", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+protected:
+	AnimationMode animation_mode_ = ANIMATION_FREEMODE;
+	ViewTrajectory view_trajectory_;
+};
 
 }	// namespace three

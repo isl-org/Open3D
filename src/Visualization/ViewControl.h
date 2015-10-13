@@ -30,7 +30,6 @@
 
 #include "BoundingBox.h"
 #include "VisualizerHelper.h"
-#include "ViewTrajectory.h"
 
 namespace three {
 
@@ -53,7 +52,6 @@ public:
 		PROJECTION_ORTHOGONAL = 1,
 	};
 
-
 public:
 	/// Function to set view points
 	/// This function obtains OpenGL context and calls OpenGL functions to set
@@ -61,15 +59,13 @@ public:
 	void SetViewPoint();
 
 	ProjectionType GetProjectionType();
-	void Reset();
 	void SetProjectionParameters();
-	void ChangeFieldOfView(double step);
-	void ChangeWindowSize(int width, int height);
-	void Scale(double scale);
-	void Rotate(double x, double y);
-	void Translate(double x, double y);
-	ViewTrajectory::ViewStatus ConvertToViewStatus();
-	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
+	virtual void Reset();
+	virtual void ChangeFieldOfView(double step);
+	virtual void ChangeWindowSize(int width, int height);
+	virtual void Scale(double scale);
+	virtual void Rotate(double x, double y);
+	virtual void Translate(double x, double y);
 
 	const BoundingBox &GetBoundingBox() const {
 		return bounding_box_;
