@@ -100,14 +100,14 @@ std::string ViewControlWithAnimation::GetStatusString()
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
-			sprintf(buffer, "#%d keyframe (%d in total)", current_frame_ + 1,
+			sprintf(buffer, "#%lu keyframe (%lu in total)", current_frame_ + 1,
 					view_trajectory_.view_status_.size());
 		}
 	} else {
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
-			sprintf(buffer, "#%d frame (%d in total)", current_keyframe_ + 1,
+			sprintf(buffer, "#%lu frame (%lu in total)", current_keyframe_ + 1,
 					view_trajectory_.NumOfFrames());
 		}
 	}
