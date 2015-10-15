@@ -63,21 +63,54 @@ void ViewControlWithAnimation::Translate(double x, double y)
 	}
 }
 
-void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
-{
-}
-
-void ViewControlWithAnimation::ToggleTrajectoryLoop()
+void ViewControlWithAnimation::AddKeyFrame()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
+		ViewTrajectory::ViewStatus current_status = ConvertToViewStatus();
+		if (view_trajectory_.view_status_.empty()) {
+			view_trajectory_.view_status_.push_back(current_status);
+			current_keyframe_ = 0.0;
+		} else {
+			size_t current_index = CurrentKeyframe();
+			view_trajectory_.view_status_.insert(
+					view_trajectory_.view_status_.begin() + current_index + 1,
+					current_status);
+			current_keyframe_ = current_index + 1.0;
+		}
 	}
 }
 
-void ViewControlWithAnimation::ChangeTrajectoryInterval(int change)
+void ViewControlWithAnimation::UpdateKeyFrame()
+{
+	if (animation_mode_ == ANIMATION_FREEMODE &&
+			!view_trajectory_.view_status_.empty()) {
+		view_trajectory_.view_status_[CurrentKeyframe()] = 
+				ConvertToViewStatus();
+	}
+}
+
+void ViewControlWithAnimation::DeleteKeyFrame()
+{
+	if (animation_mode_ == ANIMATION_FREEMODE &&
+			!view_trajectory_.view_status_.empty()) {
+		size_t current_index = CurrentKeyframe();
+		view_trajectory_.view_status_.erase(
+				view_trajectory_.view_status_.begin() + current_index);
+		current_keyframe_ = RegularizeFrameIndex(current_index - 1.0,
+				view_trajectory_.view_status_.size(),
+				view_trajectory_.is_loop_);
+		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
+	}
+}
+
+void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		view_trajectory_.ChangeInterval(change); 
+		double radian_per_step = M_PI * 2.0 / double(num_of_key_frames);
+		for (int i = 0; i < num_of_key_frames; i++) {
+			ViewControl::Rotate(radian_per_step / ROTATION_RADIAN_PER_PIXEL, 0);
+			AddKeyFrame();
+		}
 	}
 }
 
@@ -100,15 +133,18 @@ std::string ViewControlWithAnimation::GetStatusString()
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
-			sprintf(buffer, "#%lu keyframe (%lu in total)", CurrentFrame() + 1,
-					view_trajectory_.view_status_.size());
+			sprintf(buffer, "#%lu keyframe (%lu in total%s)",
+					CurrentKeyframe() + 1,
+					view_trajectory_.view_status_.size(),
+					view_trajectory_.is_loop_ ? ", looped" : "");
 		}
 	} else {
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
-			sprintf(buffer, "#%lu frame (%lu in total)", CurrentKeyframe() + 1,
-					view_trajectory_.NumOfFrames());
+			sprintf(buffer, "#%lu frame (%lu in total%s)", CurrentFrame() + 1,
+					view_trajectory_.NumOfFrames(),
+					view_trajectory_.is_loop_ ? ", looped" : "");
 		}
 	}
 	return prefix + std::string(buffer);
@@ -116,24 +152,20 @@ std::string ViewControlWithAnimation::GetStatusString()
 
 void ViewControlWithAnimation::Step(double change)
 {
+	if (view_trajectory_.view_status_.empty()) {
+		return;
+	}
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		current_frame_ += change;
-		if (current_frame_ < 0.0) {
-			current_frame_ = 0.0;
-		}
-		if (current_frame_ > view_trajectory_.view_status_.size() - 1.0) {
-			current_frame_ = view_trajectory_.view_status_.size() - 1.0;
-		}
-		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentFrame()]);
-	} else {
 		current_keyframe_ += change;
-		if (current_keyframe_ < 0.0) {
-			current_keyframe_ = 0.0;
-		}
-		if (current_keyframe_ > view_trajectory_.NumOfFrames() - 1.0) {
-			current_keyframe_ = view_trajectory_.NumOfFrames() - 1.0;
-		}
+		current_keyframe_ = RegularizeFrameIndex(current_keyframe_,
+				view_trajectory_.view_status_.size(),
+				view_trajectory_.is_loop_);
 		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
+	} else {
+		current_frame_ += change;
+		current_frame_ = RegularizeFrameIndex(current_frame_,
+				view_trajectory_.NumOfFrames(), view_trajectory_.is_loop_);
+		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentFrame()]);
 	}
 }
 
@@ -157,6 +189,31 @@ void ViewControlWithAnimation::ConvertFromViewStatus(
 	up_ = status.up;
 	front_ = status.front;
 	SetProjectionParameters();
+}
+
+double ViewControlWithAnimation::RegularizeFrameIndex(double current_frame,
+		size_t num_of_frames, bool is_loop)
+{
+	if (num_of_frames == 0) {
+		return 0.0;
+	}
+	double frame_index = current_frame;
+	if (is_loop) {
+		while (int(round(frame_index)) < 0) {
+			frame_index += double(num_of_frames);
+		}
+		while (int(round(frame_index)) >= int(num_of_frames)) {
+			frame_index -= double(num_of_frames);
+		}
+	} else {
+		if (frame_index < 0.0) {
+			frame_index = 0.0;
+		}
+		if (frame_index > num_of_frames - 1.0) {
+			frame_index = num_of_frames - 1.0;
+		}
+	}
+	return frame_index;
 }
 
 }	// namespace three

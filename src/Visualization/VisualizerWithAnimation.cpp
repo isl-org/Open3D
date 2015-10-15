@@ -103,8 +103,10 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		case GLFW_KEY_S:
 			break;
 		case GLFW_KEY_LEFT:
+			view_control.Step(-1.0);
 			break;
 		case GLFW_KEY_RIGHT:
+			view_control.Step(1.0);
 			break;
 		case GLFW_KEY_LEFT_BRACKET:
 			break;
@@ -121,16 +123,20 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 				view_control.GetTrajectoryInterval());
 			break;
 		case GLFW_KEY_L:
+			view_control.ToggleTrajectoryLoop();
 			break;
 		case GLFW_KEY_A:
-			view_control.AddLastKeyFrame();
+			view_control.AddKeyFrame();
 			PrintDebug("[Visualizer] Insert key frame; %d remaining.\n",
 					view_control.NumOfKeyFrames());
 			break;
 		case GLFW_KEY_U:
+			view_control.UpdateKeyFrame();
+			PrintDebug("[Visualizer] Update key frame; %d remaining.\n",
+					view_control.NumOfKeyFrames());
 			break;
 		case GLFW_KEY_D:
-			view_control.DeleteLastKeyFrame();
+			view_control.DeleteKeyFrame();
 			PrintDebug("[Visualizer] Delete last key frame; %d remaining.\n",
 					view_control.NumOfKeyFrames());
 			break;

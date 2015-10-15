@@ -46,23 +46,26 @@ public:
 	virtual void Rotate(double x, double y);
 	virtual void Translate(double x, double y);
 
-	void AddLastKeyFrame() {
-		view_trajectory_.view_status_.push_back(ConvertToViewStatus());
-	}
-	void DeleteLastKeyFrame() {
-		if (!view_trajectory_.view_status_.empty()) {
-			view_trajectory_.view_status_.pop_back();
-		}
-	}
+	void AddKeyFrame();
+	void UpdateKeyFrame();
+	void DeleteKeyFrame();
+	void AddSpinKeyFrames(int num_of_key_frames = 20);
 	void ClearAllKeyFrames() {
 		view_trajectory_.view_status_.clear();
 	}
-	void AddSpinKeyFrames(int num_of_key_frames = 20);
 	size_t NumOfKeyFrames() const {
 		return view_trajectory_.view_status_.size();
 	}
-	void ToggleTrajectoryLoop();
-	void ChangeTrajectoryInterval(int change);
+	void ToggleTrajectoryLoop() {
+		if (animation_mode_ == ANIMATION_FREEMODE) {
+			view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
+		}
+	}
+	void ChangeTrajectoryInterval(int change) {
+		if (animation_mode_ == ANIMATION_FREEMODE) {
+			view_trajectory_.ChangeInterval(change); 
+		}
+	}
 	int GetTrajectoryInterval() const {
 		return view_trajectory_.interval_;
 	}
@@ -74,6 +77,8 @@ public:
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();
 	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
+	double RegularizeFrameIndex(double current_frame, size_t num_of_frames,
+			bool is_loop);
 
 protected:
 	AnimationMode animation_mode_ = ANIMATION_FREEMODE;
