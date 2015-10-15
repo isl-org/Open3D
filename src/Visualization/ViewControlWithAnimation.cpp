@@ -26,6 +26,8 @@
 
 #include "ViewControlWithAnimation.h"
 
+#include <IO/IO.h>
+
 namespace three{
 
 void ViewControlWithAnimation::Reset()
@@ -99,8 +101,8 @@ void ViewControlWithAnimation::DeleteKeyFrame()
 		current_keyframe_ = RegularizeFrameIndex(current_index - 1.0,
 				view_trajectory_.view_status_.size(),
 				view_trajectory_.is_loop_);
-		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
 	}
+	SetViewControlFromTrajectory();
 }
 
 void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
@@ -160,13 +162,47 @@ void ViewControlWithAnimation::Step(double change)
 		current_keyframe_ = RegularizeFrameIndex(current_keyframe_,
 				view_trajectory_.view_status_.size(),
 				view_trajectory_.is_loop_);
-		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
 	} else {
 		current_frame_ += change;
 		current_frame_ = RegularizeFrameIndex(current_frame_,
 				view_trajectory_.NumOfFrames(), view_trajectory_.is_loop_);
-		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentFrame()]);
 	}
+	SetViewControlFromTrajectory();
+}
+
+void ViewControlWithAnimation::GoToFirst()
+{
+	if (view_trajectory_.view_status_.empty()) {
+		return;
+	}
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		current_keyframe_ = 0.0;
+	} else {
+		current_frame_ = 0.0;
+	}
+	SetViewControlFromTrajectory();
+}
+
+void ViewControlWithAnimation::GoToLast()
+{
+	if (view_trajectory_.view_status_.empty()) {
+		return;
+	}
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		current_keyframe_ = view_trajectory_.view_status_.size() - 1.0;
+	} else {
+		current_frame_ = view_trajectory_.NumOfFrames() - 1.0;
+	}
+	SetViewControlFromTrajectory();
+}
+
+void ViewControlWithAnimation::TrajectoryCapture()
+{
+	if (view_trajectory_.view_status_.empty()) {
+		return;
+	}
+	WriteViewTrajectory("ViewTrajectory_" + GetCurrentTimeStamp() + ".json",
+			view_trajectory_);
 }
 
 ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
@@ -214,6 +250,19 @@ double ViewControlWithAnimation::RegularizeFrameIndex(double current_frame,
 		}
 	}
 	return frame_index;
+}
+
+void ViewControlWithAnimation::SetViewControlFromTrajectory()
+{
+	if (view_trajectory_.view_status_.empty()) {
+		return;
+	}
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
+	} else {
+		ConvertFromViewStatus(
+				view_trajectory_.GetInterpolatedFrame(CurrentFrame()));
+	}
 }
 
 }	// namespace three

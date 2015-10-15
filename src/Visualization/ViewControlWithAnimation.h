@@ -73,12 +73,16 @@ public:
 	size_t CurrentFrame() { return (size_t)round(current_frame_); }
 	size_t CurrentKeyframe() { return (size_t)round(current_keyframe_); }
 	void Step(double change);
+	void GoToFirst();
+	void GoToLast();
+	void TrajectoryCapture();
 
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();
 	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
 	double RegularizeFrameIndex(double current_frame, size_t num_of_frames,
 			bool is_loop);
+	void SetViewControlFromTrajectory();
 
 protected:
 	AnimationMode animation_mode_ = ANIMATION_FREEMODE;

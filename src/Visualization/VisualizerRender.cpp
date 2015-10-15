@@ -26,7 +26,6 @@
 
 #include "Visualizer.h"
 
-#include <ctime>
 #include <IO/IO.h>
 
 namespace three{

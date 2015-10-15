@@ -101,6 +101,7 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		case GLFW_KEY_R:
 			break;
 		case GLFW_KEY_S:
+			view_control.TrajectoryCapture();
 			break;
 		case GLFW_KEY_LEFT:
 			view_control.Step(-1.0);
@@ -109,8 +110,10 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			view_control.Step(1.0);
 			break;
 		case GLFW_KEY_LEFT_BRACKET:
+			view_control.GoToFirst();
 			break;
 		case GLFW_KEY_RIGHT_BRACKET:
+			view_control.GoToLast();
 			break;
 		case GLFW_KEY_EQUAL:
 			view_control.ChangeTrajectoryInterval(1);
