@@ -41,27 +41,27 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 {
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Animation control --\n");
-	PrintInfo("    Alt + F      : Switch between free view (edit) mode and preview mode.\n");
-	PrintInfo("    Alt + P      : Enter animation mode and play animation from beginning.\n");
-	PrintInfo("    Alt + R      : Enter animation mode, play animation, and record screen.\n");
-	PrintInfo("    Alt + S      : Save the camera path into a json file.\n");
+	PrintInfo("    Ctrl + F     : Switch between free view (edit) mode and preview mode.\n");
+	PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
+	PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
+	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
-	PrintInfo("    Alt + <-/->  : Go backward/forward a keyframe.\n");
-	PrintInfo("    Alt + Wheel  : Same as Alt + <-/->.\n");
-	PrintInfo("    Alt + [/]    : Go to the first/last keyframe.\n");
-	PrintInfo("    Alt + +/-    : Increase/decrease interval between keyframes.\n");
-	PrintInfo("    Alt + L      : Turn on/off camera path as a loop.\n");
-	PrintInfo("    Alt + A      : Add a keyframe right after the current keyframe.\n");
-	PrintInfo("    Alt + U      : Update the current keyframe.\n");
-	PrintInfo("    Alt + D      : Delete the current keyframe.\n");
-	PrintInfo("    Alt + N      : Add 360 spin right after the current keyframe.\n");
-	PrintInfo("    Alt + C      : Clear the entire camera path.\n");
+	PrintInfo("    Ctrl + <-/-> : Go backward/forward a keyframe.\n");
+	PrintInfo("    Ctrl + Wheel : Same as Alt + <-/->.\n");
+	PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
+	PrintInfo("    Ctrl + +/-   : Increase/decrease interval between keyframes.\n");
+	PrintInfo("    Ctrl + L     : Turn on/off camera path as a loop.\n");
+	PrintInfo("    Ctrl + A     : Add a keyframe right after the current keyframe.\n");
+	PrintInfo("    Ctrl + U     : Update the current keyframe.\n");
+	PrintInfo("    Ctrl + D     : Delete the current keyframe.\n");
+	PrintInfo("    Ctrl + N     : Add 360 spin right after the current keyframe.\n");
+	PrintInfo("    Ctrl + C     : Clear the entire camera path.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In preview mode --\n");
-	PrintInfo("    Alt + <-/->  : Go backward/forward a frame.\n");
-	PrintInfo("    Alt + Wheel  : Same as Alt + <-/->.\n");
-	PrintInfo("    Alt + [/]    : Go to beginning/end of the camera path.\n");
+	PrintInfo("    Ctrl + <-/-> : Go backward/forward a frame.\n");
+	PrintInfo("    Ctrl + Wheel : Same as Alt + <-/->.\n");
+	PrintInfo("    Ctrl + [/]   : Go to beginning/end of the camera path.\n");
 	PrintInfo("\n");
 }
 
@@ -90,7 +90,7 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		return;
 	}
 
-	if (mods & GLFW_MOD_ALT) {
+	if (mods & GLFW_MOD_CONTROL) {
 		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 
 		switch (key) {
@@ -155,17 +155,17 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 void VisualizerWithAnimation::MouseScrollCallback(GLFWwindow* window, 
 		double x, double y)
 {
-	if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
-			glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+			glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
 		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 		if (y > 0.0) {
 			// forward
-			for (int i = 0; i < (int)round(y); i++) {
+			for (int i = 0; i < std::max(1, (int)round(y)); i++) {
 				view_control.StepForward();
 			}
 		} else {
 			// backward
-			for (int i = 0; i < (int)round(-y); i++) {
+			for (int i = 0; i < std::max((int)round(-y), 1); i++) {
 				view_control.StepBackward();
 			}
 		}
