@@ -100,63 +100,40 @@ std::string ViewControlWithAnimation::GetStatusString()
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
-			sprintf(buffer, "#%lu keyframe (%lu in total)", current_frame_ + 1,
+			sprintf(buffer, "#%lu keyframe (%lu in total)", CurrentFrame() + 1,
 					view_trajectory_.view_status_.size());
 		}
 	} else {
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
-			sprintf(buffer, "#%lu frame (%lu in total)", current_keyframe_ + 1,
+			sprintf(buffer, "#%lu frame (%lu in total)", CurrentKeyframe() + 1,
 					view_trajectory_.NumOfFrames());
 		}
 	}
 	return prefix + std::string(buffer);
 }
 
-bool ViewControlWithAnimation::StepForward()
+void ViewControlWithAnimation::Step(double change)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		if (current_frame_ + 1 < view_trajectory_.view_status_.size()) {
-			current_frame_++;
-			ConvertFromViewStatus(
-					view_trajectory_.view_status_[current_frame_]);
-			return true;
-		} else {
-			return false;
+		current_frame_ += change;
+		if (current_frame_ < 0.0) {
+			current_frame_ = 0.0;
 		}
+		if (current_frame_ >= view_trajectory_.view_status_.size()) {
+			current_frame_ = view_trajectory_.view_status_.size() - 1.0;
+		}
+		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentFrame()]);
 	} else {
-		if (current_keyframe_ + 1 < view_trajectory_.NumOfFrames()) {
-			current_keyframe_++;
-			ConvertFromViewStatus(
-					view_trajectory_.GetInterpolatedFrame(current_keyframe_));
-			return true;
-		} else {
-			return false;
+		current_keyframe_ += change;
+		if (current_keyframe_ < 0.0) {
+			current_keyframe_ = 0.0;
 		}
-	}
-}
-
-bool ViewControlWithAnimation::StepBackward()
-{
-	if (animation_mode_ == ANIMATION_FREEMODE) {
-		if (current_frame_ > 0) {
-			current_frame_--;
-			ConvertFromViewStatus(
-					view_trajectory_.view_status_[current_frame_]);
-			return true;
-		} else {
-			return false;
+		if (current_keyframe_ >= view_trajectory_.NumOfFrames()) {
+			current_keyframe_ = view_trajectory_.NumOfFrames() - 1.0;
 		}
-	} else {
-		if (current_keyframe_ > 0) {
-			current_keyframe_--;
-			ConvertFromViewStatus(
-					view_trajectory_.GetInterpolatedFrame(current_keyframe_));
-			return true;
-		} else {
-			return false;
-		}
+		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
 	}
 }
 

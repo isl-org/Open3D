@@ -158,17 +158,7 @@ void VisualizerWithAnimation::MouseScrollCallback(GLFWwindow* window,
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
 			glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
 		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
-		if (y > 0.0) {
-			// forward
-			for (int i = 0; i < std::max(1, (int)round(y)); i++) {
-				view_control.StepForward();
-			}
-		} else {
-			// backward
-			for (int i = 0; i < std::max((int)round(-y), 1); i++) {
-				view_control.StepBackward();
-			}
-		}
+		view_control.Step(y);
 		is_redraw_required_ = true;
 		UpdateWindowTitle();
 	} else {

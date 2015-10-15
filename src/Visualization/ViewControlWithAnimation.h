@@ -67,8 +67,9 @@ public:
 		return view_trajectory_.interval_;
 	}
 	std::string GetStatusString();
-	bool StepForward();
-	bool StepBackward();
+	size_t CurrentFrame() { return (size_t)round(current_frame_); }
+	size_t CurrentKeyframe() { return (size_t)round(current_keyframe_); }
+	void Step(double change);
 
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();
@@ -77,8 +78,8 @@ protected:
 protected:
 	AnimationMode animation_mode_ = ANIMATION_FREEMODE;
 	ViewTrajectory view_trajectory_;
-	size_t current_frame_ = 0;
-	size_t current_keyframe_ = 0;
+	double current_frame_ = 0.0;
+	double current_keyframe_ = 0.0;
 };
 
 }	// namespace three
