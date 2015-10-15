@@ -70,8 +70,9 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 		const int width/* = 640*/, const int height/* = 480*/,
 		const int left/* = 50*/, const int top/* = 50*/)
 {
+	window_name_ = window_name;
 	if (window_) {	// window already created
-		glfwSetWindowTitle(window_, window_name.c_str());
+		UpdateWindowTitle();
 		glfwSetWindowPos(window_, left, top);
 		glfwSetWindowSize(window_, width, height);
 		return true;
@@ -87,7 +88,7 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
-	window_ = glfwCreateWindow(width, height, window_name.c_str(), NULL, NULL);
+	window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
 	if (!window_) {
 		PrintError("Failed to create window\n");
 		return false;
@@ -156,6 +157,7 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	glfwGetFramebufferSize(window_, &window_width, &window_height);
 	WindowResizeCallback(window_, window_width, window_height);
 
+	UpdateWindowTitle();
 	is_initialized_ = true;
 	return true;
 }
@@ -165,6 +167,13 @@ bool Visualizer::InitViewControl()
 	view_control_ptr_ = std::unique_ptr<ViewControl>(new ViewControl);
 	ResetViewPoint();
 	return true;
+}
+
+void Visualizer::UpdateWindowTitle()
+{
+	if (window_ != NULL) {
+		glfwSetWindowTitle(window_, window_name_.c_str());
+	}
 }
 
 void Visualizer::Run()

@@ -35,7 +35,7 @@ class ViewControlWithAnimation : public ViewControl {
 public:
 	enum AnimationMode {
 		ANIMATION_FREEMODE = 0,
-		ANIMATION_REVIEWMODE = 1,
+		ANIMATION_PREVIEWMODE = 1,
 		ANIMATION_PLAYMODE = 2,
 	};
 
@@ -61,12 +61,14 @@ public:
 	size_t NumOfKeyFrames() const {
 		return view_trajectory_.view_status_.size();
 	}
-
 	void ToggleTrajectoryLoop();
 	void ChangeTrajectoryInterval(int change);
 	int GetTrajectoryInterval() const {
 		return view_trajectory_.interval_;
 	}
+	std::string GetStatusString();
+	bool StepForward();
+	bool StepBackward();
 
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();
@@ -75,6 +77,8 @@ protected:
 protected:
 	AnimationMode animation_mode_ = ANIMATION_FREEMODE;
 	ViewTrajectory view_trajectory_;
+	size_t current_frame_ = 0;
+	size_t current_keyframe_ = 0;
 };
 
 }	// namespace three

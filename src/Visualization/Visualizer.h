@@ -113,6 +113,9 @@ protected:
 	/// Function to initialize ViewControl
 	virtual bool InitViewControl();
 
+	/// Function to set window title based on contents
+	virtual void UpdateWindowTitle();
+
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and
 	/// meshes individually).
@@ -138,6 +141,7 @@ protected:
 protected:
 	// window
 	GLFWwindow* window_ = NULL;
+	std::string window_name_ = "Open3DV";
 
 	// control
 	MouseControl mouse_control_;

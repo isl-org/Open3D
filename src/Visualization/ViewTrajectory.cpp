@@ -35,4 +35,9 @@ void ViewTrajectory::ComputeInterpolationCoefficients(
 {
 }
 
+ViewTrajectory::ViewStatus ViewTrajectory::GetInterpolatedFrame(size_t k)
+{
+	return ViewStatus();
+}
+
 }	// namespace three

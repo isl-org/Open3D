@@ -42,9 +42,11 @@ public:
 	virtual void PrintVisualizerHelp();
 
 protected:
+	virtual void UpdateWindowTitle();
 	virtual bool InitViewControl();
 	virtual void KeyPressCallback(GLFWwindow *window,
 			int key, int scancode, int action, int mods);
+	virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
 		/*
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);

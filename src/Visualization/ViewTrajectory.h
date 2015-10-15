@@ -58,10 +58,20 @@ public:
 		}
 	}
 
+	size_t NumOfFrames() {
+		if (view_status_.empty()) {
+			return 0;
+		} else {
+			return is_loop_ ? (interval_ + 1) * view_status_.size() :
+					(interval_ + 1) * (view_status_.size() - 1) + 1;
+		}
+	}
+
+	ViewStatus GetInterpolatedFrame(size_t k);
+
 public:
 	std::vector<ViewStatus> view_status_;
-	bool is_loop_;
-	double current_position_;
+	bool is_loop_ = false;
 	int interval_ = INTERVAL_DEFAULT;
 };
 

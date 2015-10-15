@@ -41,23 +41,38 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 {
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Animation control --\n");
-	PrintInfo("    Alt + F      : Switch between free view mode (default) and animation mode.\n");
+	PrintInfo("    Alt + F      : Switch between free view (edit) mode and preview mode.\n");
 	PrintInfo("    Alt + P      : Enter animation mode and play animation from beginning.\n");
 	PrintInfo("    Alt + R      : Enter animation mode, play animation, and record screen.\n");
-	PrintInfo("    Alt + +/-    : Increase/decrease interval between key frames.\n");
-	PrintInfo("    Alt + L      : Turn on/off camera path as a loop.\n");
 	PrintInfo("    Alt + S      : Save the camera path into a json file.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
-	PrintInfo("    Alt + A      : Add current camera pose to the camera path.\n");
-	PrintInfo("    Alt + D      : Delete the last camera pose in the camera path.\n");
-	PrintInfo("    Alt + N      : Insert 360 spin into the camera path.\n");
-	PrintInfo("    Alt + C      : Clear the camera path.\n");
+	PrintInfo("    Alt + <-/->  : Go backward/forward a keyframe.\n");
+	PrintInfo("    Alt + Wheel  : Same as Alt + <-/->.\n");
+	PrintInfo("    Alt + [/]    : Go to the first/last keyframe.\n");
+	PrintInfo("    Alt + +/-    : Increase/decrease interval between keyframes.\n");
+	PrintInfo("    Alt + L      : Turn on/off camera path as a loop.\n");
+	PrintInfo("    Alt + A      : Add a keyframe right after the current keyframe.\n");
+	PrintInfo("    Alt + U      : Update the current keyframe.\n");
+	PrintInfo("    Alt + D      : Delete the current keyframe.\n");
+	PrintInfo("    Alt + N      : Add 360 spin right after the current keyframe.\n");
+	PrintInfo("    Alt + C      : Clear the entire camera path.\n");
 	PrintInfo("\n");
-	PrintInfo("    -- In animation mode --\n");
+	PrintInfo("    -- In preview mode --\n");
 	PrintInfo("    Alt + <-/->  : Go backward/forward a frame.\n");
+	PrintInfo("    Alt + Wheel  : Same as Alt + <-/->.\n");
 	PrintInfo("    Alt + [/]    : Go to beginning/end of the camera path.\n");
 	PrintInfo("\n");
+}
+
+void VisualizerWithAnimation::UpdateWindowTitle()
+{
+	if (window_ != NULL) {
+		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+		std::string new_window_title = window_name_ + " - " + 
+				view_control.GetStatusString();
+		glfwSetWindowTitle(window_, new_window_title.c_str());
+	}
 }
 
 bool VisualizerWithAnimation::InitViewControl()
@@ -85,6 +100,16 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			break;
 		case GLFW_KEY_R:
 			break;
+		case GLFW_KEY_S:
+			break;
+		case GLFW_KEY_LEFT:
+			break;
+		case GLFW_KEY_RIGHT:
+			break;
+		case GLFW_KEY_LEFT_BRACKET:
+			break;
+		case GLFW_KEY_RIGHT_BRACKET:
+			break;
 		case GLFW_KEY_EQUAL:
 			view_control.ChangeTrajectoryInterval(1);
 			PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
@@ -97,41 +122,57 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			break;
 		case GLFW_KEY_L:
 			break;
-		case GLFW_KEY_S:
-			break;
 		case GLFW_KEY_A:
 			view_control.AddLastKeyFrame();
-			PrintDebug("[Visualizer] Add key frame, # is %d.\n",
+			PrintDebug("[Visualizer] Insert key frame; %d remaining.\n",
 					view_control.NumOfKeyFrames());
+			break;
+		case GLFW_KEY_U:
 			break;
 		case GLFW_KEY_D:
 			view_control.DeleteLastKeyFrame();
-			PrintDebug("[Visualizer] Delete last key frame, # is %d.\n",
+			PrintDebug("[Visualizer] Delete last key frame; %d remaining.\n",
 					view_control.NumOfKeyFrames());
 			break;
 		case GLFW_KEY_N:
 			view_control.AddSpinKeyFrames();
-			PrintDebug("[Visualizer] Add spin key frames, # is %d.\n",
+			PrintDebug("[Visualizer] Insert spin key frames; %d remaining.\n",
 					view_control.NumOfKeyFrames());
 			break;
 		case GLFW_KEY_C:
 			view_control.ClearAllKeyFrames();
-			PrintDebug("[Visualizer] Clear key frames, # is %d.\n",
+			PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
 					view_control.NumOfKeyFrames());
 			break;
-		case GLFW_KEY_LEFT:
-			break;
-		case GLFW_KEY_RIGHT:
-			break;
-		case GLFW_KEY_LEFT_BRACKET:
-			break;
-		case GLFW_KEY_RIGHT_BRACKET:
-			break;
 		}
-
 		is_redraw_required_ = true;
+		UpdateWindowTitle();
 	} else {
 		Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+	}
+}
+
+void VisualizerWithAnimation::MouseScrollCallback(GLFWwindow* window, 
+		double x, double y)
+{
+	if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS ||
+			glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS) {
+		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+		if (y > 0.0) {
+			// forward
+			for (int i = 0; i < (int)round(y); i++) {
+				view_control.StepForward();
+			}
+		} else {
+			// backward
+			for (int i = 0; i < (int)round(-y); i++) {
+				view_control.StepBackward();
+			}
+		}
+		is_redraw_required_ = true;
+		UpdateWindowTitle();
+	} else {
+		Visualizer::MouseScrollCallback(window, x, y);
 	}
 }
 

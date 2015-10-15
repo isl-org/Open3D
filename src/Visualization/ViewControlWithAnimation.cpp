@@ -69,24 +69,94 @@ void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
 
 void ViewControlWithAnimation::ToggleTrajectoryLoop()
 {
-	switch (animation_mode_) {
-	case ANIMATION_FREEMODE:
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
-		break;
-	case ANIMATION_REVIEWMODE:
-		view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
-		view_trajectory_.ComputeInterpolationCoefficients();
-		break;
-	case ANIMATION_PLAYMODE:
-	default:
-		break;
 	}
 }
 
 void ViewControlWithAnimation::ChangeTrajectoryInterval(int change)
 {
-	if (animation_mode_ != ANIMATION_PLAYMODE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		view_trajectory_.ChangeInterval(change); 
+	}
+}
+
+std::string ViewControlWithAnimation::GetStatusString()
+{
+	std::string prefix;
+	switch (animation_mode_) {
+	case ANIMATION_FREEMODE:
+		prefix = "Editing ";
+		break;
+	case ANIMATION_PREVIEWMODE:
+		prefix = "Previewing ";
+		break;
+	case ANIMATION_PLAYMODE:
+		prefix = "Playing ";
+		break;
+	}
+	char buffer[DEFAULT_IO_BUFFER_SIZE];
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		if (view_trajectory_.view_status_.empty()) {
+			sprintf(buffer, "empty trajectory");
+		} else {
+			sprintf(buffer, "#%d keyframe (%d in total)", current_frame_ + 1,
+					view_trajectory_.view_status_.size());
+		}
+	} else {
+		if (view_trajectory_.view_status_.empty()) {
+			sprintf(buffer, "empty trajectory");
+		} else {
+			sprintf(buffer, "#%d frame (%d in total)", current_keyframe_ + 1,
+					view_trajectory_.NumOfFrames());
+		}
+	}
+	return prefix + std::string(buffer);
+}
+
+bool ViewControlWithAnimation::StepForward()
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		if (current_frame_ + 1 < view_trajectory_.view_status_.size()) {
+			current_frame_++;
+			ConvertFromViewStatus(
+					view_trajectory_.view_status_[current_frame_]);
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		if (current_keyframe_ + 1 < view_trajectory_.NumOfFrames()) {
+			current_keyframe_++;
+			ConvertFromViewStatus(
+					view_trajectory_.GetInterpolatedFrame(current_keyframe_));
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
+bool ViewControlWithAnimation::StepBackward()
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		if (current_frame_ > 0) {
+			current_frame_--;
+			ConvertFromViewStatus(
+					view_trajectory_.view_status_[current_frame_]);
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		if (current_keyframe_ > 0) {
+			current_keyframe_--;
+			ConvertFromViewStatus(
+					view_trajectory_.GetInterpolatedFrame(current_keyframe_));
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
