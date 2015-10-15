@@ -121,7 +121,7 @@ void ViewControlWithAnimation::Step(double change)
 		if (current_frame_ < 0.0) {
 			current_frame_ = 0.0;
 		}
-		if (current_frame_ >= view_trajectory_.view_status_.size()) {
+		if (current_frame_ > view_trajectory_.view_status_.size() - 1.0) {
 			current_frame_ = view_trajectory_.view_status_.size() - 1.0;
 		}
 		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentFrame()]);
@@ -130,7 +130,7 @@ void ViewControlWithAnimation::Step(double change)
 		if (current_keyframe_ < 0.0) {
 			current_keyframe_ = 0.0;
 		}
-		if (current_keyframe_ >= view_trajectory_.NumOfFrames()) {
+		if (current_keyframe_ > view_trajectory_.NumOfFrames() - 1.0) {
 			current_keyframe_ = view_trajectory_.NumOfFrames() - 1.0;
 		}
 		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
