@@ -41,7 +41,8 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 {
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Animation control --\n");
-	PrintInfo("    Ctrl + F     : Switch between free view (edit) mode and preview mode.\n");
+	PrintInfo("    Ctrl + F     : Enter freeview (editing) mode.\n");
+	PrintInfo("    Ctrl + V     : Enter preview mode.\n");
 	PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
 	PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
 	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
@@ -95,6 +96,14 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 
 		switch (key) {
 		case GLFW_KEY_F:
+			view_control.SetAnimationMode(
+					ViewControlWithAnimation::ANIMATION_FREEMODE);
+			PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
+			break;
+		case GLFW_KEY_V:
+			view_control.SetAnimationMode(
+					ViewControlWithAnimation::ANIMATION_PREVIEWMODE);
+			PrintDebug("[Visualizer] Enter preview mode.\n");
 			break;
 		case GLFW_KEY_P:
 			break;
@@ -152,6 +161,9 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			view_control.ClearAllKeyFrames();
 			PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
 					view_control.NumOfKeyFrames());
+			break;
+		default:
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 			break;
 		}
 		is_redraw_required_ = true;

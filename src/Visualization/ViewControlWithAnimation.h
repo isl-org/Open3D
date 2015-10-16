@@ -46,6 +46,7 @@ public:
 	virtual void Rotate(double x, double y);
 	virtual void Translate(double x, double y);
 
+	void SetAnimationMode(AnimationMode mode);
 	void AddKeyFrame();
 	void UpdateKeyFrame();
 	void DeleteKeyFrame();

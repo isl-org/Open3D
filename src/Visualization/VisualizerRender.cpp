@@ -156,6 +156,8 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 				screen_image.data_.data() + bytes_per_line * 
 				(screen_image.height_ - i - 1), bytes_per_line);
 	}
+
+	PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
 	WriteImage(png_filename, png_image);
 }
 

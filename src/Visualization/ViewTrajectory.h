@@ -27,12 +27,16 @@
 #pragma once
 
 #include <vector>
+#include <tuple>
 #include <Eigen/Core>
 
 namespace three {
 
 class ViewTrajectory {
 public:
+	typedef Eigen::Matrix<double, 11, 4, Eigen::RowMajor> Matrix11x4d;
+	typedef Eigen::Matrix<double, 11, 1> Vector11d;
+
 	struct ViewStatus {
 	public:
 		double field_of_view;
@@ -40,7 +44,12 @@ public:
 		Eigen::Vector3d lookat;
 		Eigen::Vector3d up;
 		Eigen::Vector3d front;
+
+	public:
+		Vector11d ConvertToVector11d();
+		void ConvertFromVector11d(const ViewTrajectory::Vector11d &v);
 	};
+
 
 	const int INTERVAL_MAX = 59;
 	const int INTERVAL_MIN = 0;
@@ -48,7 +57,15 @@ public:
 	const int INTERVAL_DEFAULT = 29;
 
 public:
-	void ComputeInterpolationCoefficients(bool close_loop = false);
+	/// Function to compute a Cubic Spline Interpolation
+	/// See this paper for details:
+	/// Bartels, R. H.; Beatty, J. C.; and Barsky, B. A. "Hermite and Cubic 
+	/// Spline Interpolation." Ch. 3 in An Introduction to Splines for Use in 
+	/// Computer Graphics and Geometric Modelling. San Francisco, CA: Morgan 
+	/// Kaufmann, pp. 9-17, 1998.
+	/// Also see explanation on this page:
+	/// http://mathworld.wolfram.com/CubicSpline.html
+	void ComputeInterpolationCoefficients();
 
 	void ChangeInterval(int change) {
 		int new_interval = interval_ + change * INTERVAL_STEP;
@@ -73,12 +90,13 @@ public:
 		view_status_.clear();
 	}
 
-	ViewStatus GetInterpolatedFrame(size_t k);
+	std::tuple<bool, ViewStatus> GetInterpolatedFrame(size_t k);
 
 public:
 	std::vector<ViewStatus> view_status_;
 	bool is_loop_ = false;
 	int interval_ = INTERVAL_DEFAULT;
+	std::vector<Matrix11x4d> coeff_;
 };
 
 }	// namespace three

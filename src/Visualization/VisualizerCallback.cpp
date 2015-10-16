@@ -112,7 +112,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 	case GLFW_KEY_P:
 	case GLFW_KEY_PRINT_SCREEN:
 		CaptureScreen();
-		PrintDebug("[Visualizer] Print screen.\n");
 		break;
 	case GLFW_KEY_LEFT_BRACKET:
 		view_control_ptr_->ChangeFieldOfView(-1.0);

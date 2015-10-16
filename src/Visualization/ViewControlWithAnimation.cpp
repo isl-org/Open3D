@@ -40,7 +40,24 @@ void ViewControlWithAnimation::Reset()
 void ViewControlWithAnimation::ChangeFieldOfView(double step)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		ViewControl::ChangeFieldOfView(step);
+		if (!view_trajectory_.view_status_.empty()) {
+			// Once editing starts, lock ProjectionType.
+			// This is because ProjectionType cannot be easily switched in a
+			// smooth trajectory.
+			if (GetProjectionType() == PROJECTION_PERSPECTIVE) {
+				double new_fov = field_of_view_ + step * FIELD_OF_VIEW_STEP;
+				if (new_fov >= FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP &&
+						new_fov <= FIELD_OF_VIEW_MAX)
+				{
+					field_of_view_ = new_fov;
+				}
+			} else {
+				// do nothing, lock as PROJECTION_ORTHOGONAL
+			}
+			SetProjectionParameters();
+		} else {
+			ViewControl::ChangeFieldOfView(step);
+		}
 	}
 }
 
@@ -62,6 +79,24 @@ void ViewControlWithAnimation::Translate(double x, double y)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Translate(x, y);
+	}
+}
+
+void ViewControlWithAnimation::SetAnimationMode(AnimationMode mode)
+{
+	if (mode != ANIMATION_FREEMODE && view_trajectory_.view_status_.empty()) {
+		return;
+	}
+	animation_mode_ = mode;
+	switch (mode) {
+	case ANIMATION_PREVIEWMODE:
+	case ANIMATION_PLAYMODE:
+		view_trajectory_.ComputeInterpolationCoefficients();
+		GoToFirst();
+		break;
+	case ANIMATION_FREEMODE:
+	default:
+		break;
 	}
 }
 
@@ -201,9 +236,9 @@ bool ViewControlWithAnimation::TrajectoryCapture()
 	if (view_trajectory_.view_status_.empty()) {
 		return false;
 	}
-	return WriteViewTrajectory(
-			"ViewTrajectory_" + GetCurrentTimeStamp() + ".json",
-			view_trajectory_);
+	std::string filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
+	PrintDebug("[Visualizer] Trejactory capture to %s\n", filename.c_str());
+	return WriteViewTrajectory(filename, view_trajectory_);
 }
 
 bool ViewControlWithAnimation::LoadTrajectoryFromFile(
@@ -274,8 +309,13 @@ void ViewControlWithAnimation::SetViewControlFromTrajectory()
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
 	} else {
-		ConvertFromViewStatus(
-				view_trajectory_.GetInterpolatedFrame(CurrentFrame()));
+		bool success;
+		ViewTrajectory::ViewStatus status;
+		std::tie(success, status) = 
+				view_trajectory_.GetInterpolatedFrame(CurrentFrame());
+		if (success) {
+			ConvertFromViewStatus(status);
+		}
 	}
 }
 
