@@ -26,6 +26,8 @@
 
 #include "DrawGeometry.h"
 
+#include "ViewControlWithAnimation.h"
+
 namespace three{
 
 bool DrawGeometry(
@@ -52,7 +54,8 @@ bool DrawGeometryWithAnimation(
 		std::shared_ptr<const Geometry> geometry_ptr,
 		const std::string window_name/* = "Open3DV"*/, 
 		const int width/* = 640*/, const int height/* = 480*/,
-		const int left/* = 50*/, const int top/* = 50*/)
+		const int left/* = 50*/, const int top/* = 50*/,
+		const std::string json_filename/* = ""*/)
 {
 	VisualizerWithAnimation visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
@@ -63,6 +66,15 @@ bool DrawGeometryWithAnimation(
 	if (visualizer.AddGeometry(geometry_ptr) == false) {
 		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
 		return false;
+	}
+	auto &view_control = 
+			(ViewControlWithAnimation &)visualizer.GetViewControl();
+	if (json_filename.empty() == false) {
+		if (view_control.LoadTrajectoryFromFile(json_filename) == false) {
+			PrintWarning("[DrawGeometry] Failed loading json file.\n");
+			return false;
+		}
+		visualizer.UpdateWindowTitle();
 	}
 	visualizer.Run();
 	return true;

@@ -75,7 +75,8 @@ public:
 	void Step(double change);
 	void GoToFirst();
 	void GoToLast();
-	void TrajectoryCapture();
+	bool TrajectoryCapture();
+	bool LoadTrajectoryFromFile(const std::string filename);
 
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();

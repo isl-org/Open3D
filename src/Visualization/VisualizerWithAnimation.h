@@ -40,9 +40,9 @@ public:
 
 public:
 	virtual void PrintVisualizerHelp();
+	virtual void UpdateWindowTitle();
 
 protected:
-	virtual void UpdateWindowTitle();
 	virtual bool InitViewControl();
 	virtual void KeyPressCallback(GLFWwindow *window,
 			int key, int scancode, int action, int mods);

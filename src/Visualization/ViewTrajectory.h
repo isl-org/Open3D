@@ -67,6 +67,12 @@ public:
 		}
 	}
 
+	void Reset() {
+		is_loop_ = false;
+		interval_ = INTERVAL_DEFAULT;
+		view_status_.clear();
+	}
+
 	ViewStatus GetInterpolatedFrame(size_t k);
 
 public:

@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestVisualizer.exe [mesh|spin|pointcloud|rainbow|image] [filename]\n");
+		PrintInfo("    > TestVisualizer.exe [animation] [filename] [trajectoryfile]\n");
 		return 0;
 	}
 
@@ -117,6 +118,21 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		DrawGeometry(image_ptr, "Image", image_ptr->width_, image_ptr->height_);
+	} else if (option == "animation") {
+		auto mesh_ptr = std::make_shared<TriangleMesh>();
+		if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
+			PrintWarning("Successfully read %s\n", argv[2]);
+		} else {
+			PrintError("Failed to read %s\n\n", argv[2]);
+			return 0;
+		}
+		mesh_ptr->ComputeVertexNormals();
+		if (argc == 3) {
+			DrawGeometryWithAnimation(mesh_ptr, "Animation", 1600, 900);
+		} else {
+			DrawGeometryWithAnimation(mesh_ptr, "Animation", 1600, 900, 50, 50, 
+					argv[3]);
+		}
 	}
 
 	PrintInfo("End of the test.\n");

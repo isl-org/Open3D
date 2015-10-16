@@ -51,7 +51,8 @@ bool DrawGeometryWithAnimation(
 		std::shared_ptr<const Geometry> geometry_ptr,
 		const std::string window_name = "Open3DV", 
 		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
+		const int left = 50, const int top = 50,
+		const std::string json_filename = "");
 
 bool DrawGeometryWithCallback(
 		std::shared_ptr<const Geometry> geometry_ptr,

@@ -33,7 +33,7 @@ namespace three{
 
 namespace {
 
-Json::Value EigenVector3DToJsonArray(const Eigen::Vector3d &v)
+Json::Value EigenVector3dToJsonArray(const Eigen::Vector3d &v)
 {
 	Json::Value array;
 	array.append(v(0));
@@ -42,11 +42,60 @@ Json::Value EigenVector3DToJsonArray(const Eigen::Vector3d &v)
 	return array;
 }
 
+Eigen::Vector3d JsonArrayToEigenVector3d(const Json::Value &v)
+{
+	if (v.size() != 3) {
+		return Eigen::Vector3d::Zero();
+	} else {
+		return Eigen::Vector3d(v[0].asDouble(), v[1].asDouble(), 
+				v[2].asDouble());
+	}
+}
+
 }	// unnamed namespace
 
 bool ReadViewTrajectoryFromJSON(const std::string &filename,
 		ViewTrajectory &trajectory)
 {
+	std::ifstream file_in(filename);
+	if (file_in.is_open() == false) {
+		PrintWarning("Read JSON failed: unable to open file.\n");
+		return false;
+	}
+	Json::Value root_object;
+	Json::Reader reader;
+	bool is_parse_successful = reader.parse(file_in, root_object);
+	file_in.close();
+	if (is_parse_successful == false) {
+		PrintWarning("Read JSON failed: %s.\n", 
+				reader.getFormattedErrorMessages());
+		return false;
+	}
+	if (root_object.get("class_name", "").asString() != "ViewTrajectory" ||
+			root_object.get("version_major", 1).asInt() != 1 ||
+			root_object.get("version_minor", 0).asInt() != 0) {
+		PrintWarning("Read JSON failed: unsupported json format.\n");
+		return false;
+	}
+	trajectory.is_loop_ = root_object.get("is_loop", false).asBool();
+	trajectory.interval_ = root_object.get("interval", 29).asInt();
+	const Json::Value &trajectory_array = root_object["trajectory"];
+	if (trajectory_array.size() == 0) {
+		PrintWarning("Read JSON failed: empty trajectory.\n");
+		return false;
+	}
+	trajectory.view_status_.resize(trajectory_array.size());
+	for (int i = 0; i < (int)trajectory_array.size(); i++) {
+		const Json::Value &status_object = trajectory_array[i];
+		ViewTrajectory::ViewStatus status;
+		status.field_of_view = 
+				status_object.get("field_of_view", 60.0).asDouble();
+		status.zoom = status_object.get("zoom", 0.7).asDouble();
+		status.lookat = JsonArrayToEigenVector3d(status_object["lookat"]);
+		status.up = JsonArrayToEigenVector3d(status_object["up"]);
+		status.front = JsonArrayToEigenVector3d(status_object["front"]);
+		trajectory.view_status_[i] = status;
+	}
 	return true;
 }
 
@@ -64,9 +113,9 @@ bool WriteViewTrajectoryToJSON(const std::string &filename,
 		Json::Value status_object;
 		status_object["field_of_view"] = status.field_of_view;
 		status_object["zoom"] = status.zoom;
-		status_object["lookat"] = EigenVector3DToJsonArray(status.lookat);
-		status_object["up"] = EigenVector3DToJsonArray(status.up);
-		status_object["front"] = EigenVector3DToJsonArray(status.front);
+		status_object["lookat"] = EigenVector3dToJsonArray(status.lookat);
+		status_object["up"] = EigenVector3dToJsonArray(status.up);
+		status_object["front"] = EigenVector3dToJsonArray(status.front);
 		trajectory_array.append(status_object);
 	}
 

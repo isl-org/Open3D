@@ -100,6 +100,7 @@ public:
 
 	bool HasGeometry();
 	virtual void PrintVisualizerHelp();
+	virtual void UpdateWindowTitle();
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
 	void CaptureScreen(const std::string &filename = "", bool do_render = true);
@@ -112,9 +113,6 @@ protected:
 
 	/// Function to initialize ViewControl
 	virtual bool InitViewControl();
-
-	/// Function to set window title based on contents
-	virtual void UpdateWindowTitle();
 
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and

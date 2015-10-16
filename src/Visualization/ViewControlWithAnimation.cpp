@@ -196,13 +196,27 @@ void ViewControlWithAnimation::GoToLast()
 	SetViewControlFromTrajectory();
 }
 
-void ViewControlWithAnimation::TrajectoryCapture()
+bool ViewControlWithAnimation::TrajectoryCapture()
 {
 	if (view_trajectory_.view_status_.empty()) {
-		return;
+		return false;
 	}
-	WriteViewTrajectory("ViewTrajectory_" + GetCurrentTimeStamp() + ".json",
+	return WriteViewTrajectory(
+			"ViewTrajectory_" + GetCurrentTimeStamp() + ".json",
 			view_trajectory_);
+}
+
+bool ViewControlWithAnimation::LoadTrajectoryFromFile(
+		const std::string filename)
+{
+	bool success = ReadViewTrajectory(filename, view_trajectory_);
+	if (success == false) {
+		view_trajectory_.Reset();
+	}
+	current_keyframe_ = 0.0;
+	current_frame_ = 0.0;
+	SetViewControlFromTrajectory();
+	return success;
 }
 
 ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
