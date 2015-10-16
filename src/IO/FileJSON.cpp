@@ -68,7 +68,7 @@ bool ReadViewTrajectoryFromJSON(const std::string &filename,
 	file_in.close();
 	if (is_parse_successful == false) {
 		PrintWarning("Read JSON failed: %s.\n", 
-				reader.getFormattedErrorMessages());
+				reader.getFormattedErrorMessages().c_str());
 		return false;
 	}
 	if (root_object.get("class_name", "").asString() != "ViewTrajectory" ||
