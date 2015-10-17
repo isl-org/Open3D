@@ -144,7 +144,7 @@ std::tuple<bool, ViewTrajectory::ViewStatus>
 		ViewTrajectory::GetInterpolatedFrame(size_t k)
 {
 	ViewStatus status;
-	if (view_status_.empty() || k < 0 || k >= NumOfFrames()) {
+	if (view_status_.empty() || k >= NumOfFrames()) {
 		return std::make_tuple(false, status);
 	}
 	size_t segment_index = k / (interval_ + 1);
