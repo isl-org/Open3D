@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "VisualizerWithAnimation.h"
+
+#include <thread>
 #include "ViewControlWithAnimation.h"
 
 namespace three{
@@ -76,6 +78,28 @@ void VisualizerWithAnimation::UpdateWindowTitle()
 	}
 }
 
+void VisualizerWithAnimation::Play(bool recording/* = false*/)
+{
+	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	view_control.SetAnimationMode(ViewControlWithAnimation::ANIMATION_PLAYMODE);
+	is_redraw_required_ = true;
+	UpdateWindowTitle();
+	size_t index = 0;
+	char buffer[DEFAULT_IO_BUFFER_SIZE];
+	while (PollEvents() && !view_control.IsPlayingEnd(index)) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		index++;
+		if (recording) {
+			sprintf(buffer, recording_filename_format_.c_str(), index);
+			CaptureScreen(std::string(buffer), false);
+		}
+		view_control.Step(1.0);
+		is_redraw_required_ = true;
+		UpdateWindowTitle();
+	}
+	view_control.SetAnimationMode(ViewControlWithAnimation::ANIMATION_FREEMODE);
+}
+
 bool VisualizerWithAnimation::InitViewControl()
 {
 	view_control_ptr_ = std::unique_ptr<ViewControlWithAnimation>(
@@ -87,13 +111,12 @@ bool VisualizerWithAnimation::InitViewControl()
 void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
-	if (action == GLFW_RELEASE) {
+	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	if (action == GLFW_RELEASE || view_control.IsPlaying()) {
 		return;
 	}
 
 	if (mods & GLFW_MOD_CONTROL) {
-		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
-
 		switch (key) {
 		case GLFW_KEY_F:
 			view_control.SetAnimationMode(
@@ -106,8 +129,10 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			PrintDebug("[Visualizer] Enter preview mode.\n");
 			break;
 		case GLFW_KEY_P:
+			Play(false);
 			break;
 		case GLFW_KEY_R:
+			Play(true);
 			break;
 		case GLFW_KEY_S:
 			view_control.TrajectoryCapture();
@@ -173,18 +198,41 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 	}
 }
 
+void VisualizerWithAnimation::MouseMoveCallback(GLFWwindow* window, 
+		double x, double y)
+{
+	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	if (view_control.IsPlaying()) {
+		return;
+	}
+	Visualizer::MouseMoveCallback(window, x, y);
+}
+
 void VisualizerWithAnimation::MouseScrollCallback(GLFWwindow* window, 
 		double x, double y)
 {
+	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	if (view_control.IsPlaying()) {
+		return;
+	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
 			glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
-		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 		view_control.Step(y);
 		is_redraw_required_ = true;
 		UpdateWindowTitle();
 	} else {
 		Visualizer::MouseScrollCallback(window, x, y);
 	}
+}
+
+void VisualizerWithAnimation::MouseButtonCallback(GLFWwindow* window,
+		int button, int action, int mods)
+{
+	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	if (view_control.IsPlaying()) {
+		return;
+	}
+	Visualizer::MouseButtonCallback(window, button, action, mods);
 }
 
 }	// namespace three

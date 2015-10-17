@@ -71,17 +71,21 @@ public:
 		return view_trajectory_.interval_;
 	}
 	std::string GetStatusString();
-	size_t CurrentFrame() { return (size_t)round(current_frame_); }
-	size_t CurrentKeyframe() { return (size_t)round(current_keyframe_); }
 	void Step(double change);
 	void GoToFirst();
 	void GoToLast();
 	bool TrajectoryCapture();
 	bool LoadTrajectoryFromFile(const std::string filename);
+	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
+	bool IsPlayingEnd(size_t num) {
+		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
+	}
 
 protected:
 	ViewTrajectory::ViewStatus ConvertToViewStatus();
 	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
+	size_t CurrentFrame() { return (size_t)round(current_frame_); }
+	size_t CurrentKeyframe() { return (size_t)round(current_keyframe_); }
 	double RegularizeFrameIndex(double current_frame, size_t num_of_frames,
 			bool is_loop);
 	void SetViewControlFromTrajectory();

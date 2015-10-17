@@ -41,22 +41,25 @@ public:
 public:
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();
+	void Play(bool recording = false);
+	void RegisterRecordingFilenameFormat(std::string format) {
+		recording_filename_format_ = format;
+	}
 
 protected:
 	virtual bool InitViewControl();
-	virtual void KeyPressCallback(GLFWwindow *window,
-			int key, int scancode, int action, int mods);
-	virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
-		/*
-	// callback functions
-	virtual void WindowRefreshCallback(GLFWwindow *window);
-	virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
+	//virtual void WindowRefreshCallback(GLFWwindow *window);
+	//virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
 	virtual void MouseMoveCallback(GLFWwindow* window, double x, double y);
 	virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
 	virtual void MouseButtonCallback(GLFWwindow* window,
 			int button, int action, int mods);
-	virtual void WindowCloseCallback(GLFWwindow *window);
-	*/
+	virtual void KeyPressCallback(GLFWwindow *window,
+			int key, int scancode, int action, int mods);
+	//virtual void WindowCloseCallback(GLFWwindow *window);
+
+protected:
+	std::string recording_filename_format_ = "Animation_%06d.png";
 };
 
 }	// namespace three
