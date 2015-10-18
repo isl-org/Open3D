@@ -103,9 +103,7 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
 					view_control.SetAnimationMode(
 							ViewControlWithAnimation::ANIMATION_FREEMODE);
-					RegisterAnimationCallback(
-							std::function<bool(Visualizer &)>());
-					PrintInfo("xx %d\n", int(bool(animation_callback_func_)));
+					RegisterAnimationCallback(nullptr);
 				}
 				UpdateWindowTitle();
 				return false;
