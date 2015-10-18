@@ -104,6 +104,7 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 					view_control.SetAnimationMode(
 							ViewControlWithAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(nullptr);
+					PrintInfo("xx %d\n", int(bool(animation_callback_func_)));
 				}
 				UpdateWindowTitle();
 				return false;
