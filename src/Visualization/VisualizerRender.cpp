@@ -48,6 +48,9 @@ bool Visualizer::InitOpenGL()
 	// polygon rendering
 	glEnable(GL_CULL_FACE);
 
+	// glReadPixels always read front buffer
+	glReadBuffer(GL_FRONT);
+
 	return true;
 }
 
