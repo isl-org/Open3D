@@ -82,7 +82,7 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 {
 	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 	view_control.SetAnimationMode(ViewControlWithAnimation::ANIMATION_PLAYMODE);
-	Render();
+	is_redraw_required_ = true;
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
 	RegisterAnimationCallback(
@@ -104,9 +104,6 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 					view_control.SetAnimationMode(
 							ViewControlWithAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(nullptr);
-					PrintInfo("xx %d %d %d\n", int(bool(animation_callback_func_)),
-							(int(animation_callback_func_ == nullptr)),
-							int(animation_callback_func_));
 				}
 				UpdateWindowTitle();
 				return false;

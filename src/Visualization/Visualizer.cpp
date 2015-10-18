@@ -185,8 +185,8 @@ void Visualizer::UpdateWindowTitle()
 void Visualizer::Run()
 {
 	while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
-		if (bool(animation_callback_func_)) {
-			if (animation_callback_func_(*this)) {
+		if (bool(animation_callback_func_in_loop_)) {
+			if (animation_callback_func_in_loop_(*this)) {
 				UpdateGeometry();
 			}
 			// Set render flag as dirty anyways, because when we use callback
@@ -206,6 +206,7 @@ bool Visualizer::WaitEvents()
 	if (is_redraw_required_) {
 		WindowRefreshCallback(window_);
 	}
+	animation_callback_func_in_loop_ = animation_callback_func_;
 	glfwWaitEvents();
 	return !glfwWindowShouldClose(window_);
 }
@@ -219,6 +220,7 @@ bool Visualizer::PollEvents()
 	if (is_redraw_required_) {
 		WindowRefreshCallback(window_);
 	}
+	animation_callback_func_in_loop_ = animation_callback_func_;
 	glfwPollEvents();
 	return !glfwWindowShouldClose(window_);
 }

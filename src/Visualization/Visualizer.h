@@ -145,7 +145,9 @@ protected:
 	// window
 	GLFWwindow* window_ = NULL;
 	std::string window_name_ = "Open3DV";
-	std::function<bool(Visualizer &)> animation_callback_func_;
+	std::function<bool(Visualizer &)> animation_callback_func_in_loop_ 
+			= nullptr;
+	std::function<bool(Visualizer &)> animation_callback_func_ = nullptr;
 
 	// control
 	MouseControl mouse_control_;
