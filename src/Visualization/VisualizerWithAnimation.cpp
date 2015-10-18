@@ -105,6 +105,7 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 							ViewControlWithAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(
 							std::function<bool(Visualizer &)>());
+					PrintInfo("xx %d\n", int(bool(animation_callback_func_)));
 				}
 				UpdateWindowTitle();
 				return false;
