@@ -97,16 +97,7 @@ bool DrawGeometryWithCallback(
 		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
 		return false;
 	}
-	while (visualizer.PollEvents()) {
-		if (callback_func(visualizer)) {
-			visualizer.UpdateGeometry();
-		}
-
-		// Set render flag as dirty anyways, because when we use callback
-		// functions, we assume something has been changed in the callback and
-		// the redraw event should be triggered.
-		visualizer.UpdateRender();
-	}
+	visualizer.RegisterAnimationCallback(callback_func);
 	visualizer.Run();
 	return true;
 }

@@ -71,6 +71,11 @@ public:
 			const int width = 640, const int height = 480,
 			const int left = 50, const int top = 50);
 	
+	/// Function to register a callback function for animation
+	/// The callback function returns if UpdateGeometry() needs to be run
+	void RegisterAnimationCallback(
+			std::function<bool(Visualizer &)> callback_func);
+	
 	/// Function to activate the window
 	/// This function will block the current thread until the window is closed.
 	void Run();
@@ -140,6 +145,7 @@ protected:
 	// window
 	GLFWwindow* window_ = NULL;
 	std::string window_name_ = "Open3DV";
+	std::function<bool(Visualizer &)> animation_callback_func_;
 
 	// control
 	MouseControl mouse_control_;

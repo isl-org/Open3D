@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		mesh_ptr->ComputeVertexNormals();
-		DrawGeometryWithAnimation(mesh_ptr, "Mesh", 1600, 900);
+		DrawGeometry(mesh_ptr, "Mesh", 1600, 900);
 	} else if (option == "spin") {
 		auto mesh_ptr = std::make_shared<TriangleMesh>();
 		if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 					vis.GetViewControl().Rotate(10, 0);
 					std::this_thread::sleep_for(std::chrono::milliseconds(30));
 					return false;
-				}, "PointCloud", 1600, 900);
+				}, "Spin", 1600, 900);
 	} else if (option == "pointcloud") {
 		auto cloud_ptr = std::make_shared<PointCloud>();
 		if (ReadPointCloud(argv[2], *cloud_ptr)) {
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		cloud_ptr->NormalizeNormals();
-		DrawGeometryWithAnimation(cloud_ptr, "PointCloud", 1600, 900);
+		DrawGeometry(cloud_ptr, "PointCloud", 1600, 900);
 	} else if (option == "rainbow") {
 		auto cloud_ptr = std::make_shared<PointCloud>();
 		if (ReadPointCloud(argv[2], *cloud_ptr)) {
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 					update_colors_func(fabs(color_index - 1.0));
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 					return true;
-				}, "PointCloud", 1600, 900);
+				}, "Rainbow", 1600, 900);
 	} else if (option == "image") {
 		auto image_ptr = std::make_shared<Image>();
 		if (ReadImage(argv[2], *image_ptr)) {

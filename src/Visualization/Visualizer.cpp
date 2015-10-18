@@ -162,6 +162,12 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3DV"*/,
 	return true;
 }
 
+void Visualizer::RegisterAnimationCallback(
+		std::function<bool (Visualizer &)> callback_func)
+{
+	animation_callback_func_ = callback_func;
+}
+
 bool Visualizer::InitViewControl()
 {
 	view_control_ptr_ = std::unique_ptr<ViewControl>(new ViewControl);
@@ -178,7 +184,16 @@ void Visualizer::UpdateWindowTitle()
 
 void Visualizer::Run()
 {
-	while (WaitEvents()) {
+	while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
+		if (bool(animation_callback_func_)) {
+			if (animation_callback_func_(*this)) {
+				UpdateGeometry();
+			}
+			// Set render flag as dirty anyways, because when we use callback
+			// functions, we assume something has been changed in the callback
+			// and the redraw event should be triggered.
+			UpdateRender();
+		}
 	}
 }
 

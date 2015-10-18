@@ -82,22 +82,33 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 {
 	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 	view_control.SetAnimationMode(ViewControlWithAnimation::ANIMATION_PLAYMODE);
-	is_redraw_required_ = true;
+	Render();
 	UpdateWindowTitle();
-	size_t index = 0;
-	char buffer[DEFAULT_IO_BUFFER_SIZE];
-	while (PollEvents() && !view_control.IsPlayingEnd(index)) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		index++;
-		if (recording) {
-			sprintf(buffer, recording_filename_format_.c_str(), index);
-			CaptureScreen(std::string(buffer), false);
-		}
-		view_control.Step(1.0);
-		is_redraw_required_ = true;
-		UpdateWindowTitle();
-	}
-	view_control.SetAnimationMode(ViewControlWithAnimation::ANIMATION_FREEMODE);
+	recording_file_index_ = 0;
+	RegisterAnimationCallback(
+			[=](Visualizer &vis) {
+				// The lambda function captures no references to avoid dangling
+				// references
+				auto &view_control =
+						(ViewControlWithAnimation &)(*view_control_ptr_);
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				recording_file_index_++;
+				if (recording) {
+					char buffer[DEFAULT_IO_BUFFER_SIZE];
+					sprintf(buffer, recording_filename_format_.c_str(),
+							recording_file_index_);
+					CaptureScreen(std::string(buffer), false);
+				}
+				view_control.Step(1.0);
+				if (view_control.IsPlayingEnd(recording_file_index_)) {
+					view_control.SetAnimationMode(
+							ViewControlWithAnimation::ANIMATION_FREEMODE);
+					RegisterAnimationCallback(
+							std::function<bool(Visualizer &)>());
+				}
+				UpdateWindowTitle();
+				return false;
+			});
 }
 
 bool VisualizerWithAnimation::InitViewControl()

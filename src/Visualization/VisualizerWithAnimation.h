@@ -60,6 +60,7 @@ protected:
 
 protected:
 	std::string recording_filename_format_ = "Animation_%06d.png";
+	size_t recording_file_index_ = 0;
 };
 
 }	// namespace three
