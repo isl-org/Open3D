@@ -35,21 +35,31 @@
 int main()
 {
 	int i, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
-	int nThreads = 0, nTmp = nStart + nEnd;
-	unsigned uTmp = (unsigned((abs(nStart - nEnd) + 1)) *
-			unsigned(abs(nTmp))) / 2;
+	int nThreads = 1, nTmp = nStart + nEnd;
+	unsigned uTmp = (unsigned(nEnd - nStart + 1) *
+			unsigned(nTmp)) / 2;
 	int nSumCalc = uTmp;
 
 	if (nTmp < 0) {
 		nSumCalc = -nSumCalc;
 	}
 
+#ifdef _OPENMP
+	printf("OpenMP is supported.\n");
+#else
+	printf("OpenMP is not supported.\n");
+#endif
+
+#ifdef _OPENMP
 	omp_set_num_threads(NUM_THREADS);
+#endif
 
 #pragma omp parallel default(none) private(i) shared(nSum, nThreads, nStart, nEnd)
 	{
+#ifdef _OPENMP
 #pragma omp master
 		nThreads = omp_get_num_threads();
+#endif
 
 #pragma omp for
 		for (i = nStart; i <= nEnd; ++i) {

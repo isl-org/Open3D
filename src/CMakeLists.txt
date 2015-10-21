@@ -61,19 +61,19 @@ if(WIN32)
 elseif(CYGWIN)
 	message(STATUS "Compiling on Cygwin")
 	# enable c++11
-	set(CMAKE_CXX_FLAGS "-std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	add_definitions(-DCYGWIN)
 elseif(APPLE)
 	add_definitions(-DUNIX)
 	# enable c++11
-	set(CMAKE_CXX_FLAGS "-std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	# compile speed optimization for clang
 	add_definitions(-Os)
 	message(STATUS "Compiling on OSX")
 elseif(UNIX)
 	add_definitions(-DUNIX)
 	# enable c++11
-	set(CMAKE_CXX_FLAGS "-std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	message(STATUS "Compiling on Unix")
 endif(WIN32)
 
