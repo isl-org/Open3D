@@ -9,6 +9,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
 option(Open3DV_BUILD_TESTS "Build the Open3DV test programs" ON)
+option(USE_OPENMP "Use OpenMP multi-threading" ON)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
@@ -32,6 +33,18 @@ set(Open3DV_LIB_TYPE STATIC)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/bin)
+
+# Set OpenMP
+if (USE_OPENMP)
+    find_package(OpenMP)
+    if(OPENMP_FOUND)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+    else()
+        message(WARNING "OpenMP NOT found")
+    endif()
+endif()
 
 # Set OS-specific things here
 if(WIN32)
