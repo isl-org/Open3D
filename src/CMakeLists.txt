@@ -21,6 +21,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 # set include directories
 include_directories(
 	${Open3DV_SOURCE_DIR}
+	${Open3DV_SOURCE_DIR}/External
 	${Open3DV_SOURCE_DIR}/External/Eigen
 	${Open3DV_SOURCE_DIR}/External/GLFW/include
 	${Open3DV_SOURCE_DIR}/External/glew/include

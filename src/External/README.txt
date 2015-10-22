@@ -6,7 +6,7 @@ external libraries.
 
 --------------------------------------------------------------------------------
 Eigen 3.2.5    Mainly MPL2 license    http://eigen.tuxfamily.org/
-A high-level C++ library of template headers for linear algebra, matrix and 
+A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 --------------------------------------------------------------------------------
 GLFW 3.1.1     zlib/libpng license    http://www.glfw.org/
@@ -30,3 +30,7 @@ A widely used C library for reading and writing JPEG image files
 --------------------------------------------------------------------------------
 jsoncpp 1.6.5  MIT license        https://github.com/open-source-parsers/jsoncpp
 A C++ library that allows manipulating JSON values
+--------------------------------------------------------------------------------
+flann 1.8.4    BSD license            http://www.cs.ubc.ca/research/flann/
+A C++ library for performing fast approximate nearest neighbor searches in high
+dimensional spaces.
