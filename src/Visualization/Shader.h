@@ -7,6 +7,68 @@ namespace three {
 
 namespace glsl {
 
+const char * const ImageFragmentShader = 
+"#version 120\n"
+"\n"
+"varying vec2 UV;\n"
+"uniform sampler2D image_texture;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_FragColor = texture2D(image_texture, UV);\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
+const char * const ImageVertexShader = 
+"#version 120\n"
+"\n"
+"attribute vec3 vertex_position;\n"
+"attribute vec2 vertex_UV;\n"
+"\n"
+"varying vec2 UV;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_Position = vec4(vertex_position, 1);\n"
+"	UV = vertex_UV;\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
+const char * const PointCloudFragmentShader = 
+"#version 120\n"
+"\n"
+"varying vec3 fragment_color;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_FragColor = vec4(fragment_color, 1);\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
 const char * const PointCloudVertexShader = 
 "#version 120\n"
 "\n"
@@ -83,68 +145,6 @@ const char * const TriangleMeshFragmentShader =
 "			specular_color * light_color_4[2].xyz * light_power_4[2] * pow(cos_alpha[2], 5) +\n"
 "			diffuse_color * light_color_4[3].xyz * light_power_4[3] * cos_theta[3] +\n"
 "			specular_color * light_color_4[3].xyz * light_power_4[3] * pow(cos_alpha[3], 5);\n"
-"}\n"
-;
-
-}  // namespace three::glsl
-
-}  // namespace three
-
-namespace three {
-
-namespace glsl {
-
-const char * const ImageFragmentShader = 
-"#version 120\n"
-"\n"
-"varying vec2 UV;\n"
-"uniform sampler2D image_texture;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	gl_FragColor = texture2D(image_texture, UV);\n"
-"}\n"
-;
-
-}  // namespace three::glsl
-
-}  // namespace three
-
-namespace three {
-
-namespace glsl {
-
-const char * const ImageVertexShader = 
-"#version 120\n"
-"\n"
-"attribute vec3 vertex_position;\n"
-"attribute vec2 vertex_UV;\n"
-"\n"
-"varying vec2 UV;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	gl_Position = vec4(vertex_position, 1);\n"
-"	UV = vertex_UV;\n"
-"}\n"
-;
-
-}  // namespace three::glsl
-
-}  // namespace three
-
-namespace three {
-
-namespace glsl {
-
-const char * const PointCloudFragmentShader = 
-"#version 120\n"
-"\n"
-"varying vec3 fragment_color;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	gl_FragColor = vec4(fragment_color, 1);\n"
 "}\n"
 ;
 
