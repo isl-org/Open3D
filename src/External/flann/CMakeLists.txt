@@ -8,7 +8,7 @@ if (WIN32)
     # lots of warnings with cl.exe right now, use /W1
     add_definitions("/W1 -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS /bigobj")
 else(WIN32)
-    add_definitions( "-Wall -Wno-unknown-pragmas -Wno-unused-function" )
+    add_definitions( "-Wall -Wno-unknown-pragmas -Wno-unused-function -Wno-unused-local-typedef" )
 endif(WIN32)
 
 file(GLOB CPP_SOURCES flann_cpp.cpp)
