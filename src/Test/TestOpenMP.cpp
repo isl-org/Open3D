@@ -26,7 +26,9 @@
 
 #include <stdio.h>
 #include <math.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #define NUM_THREADS 4
 #define NUM_START 1
