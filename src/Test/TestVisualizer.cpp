@@ -39,8 +39,8 @@ int main(int argc, char *argv[])
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
-		PrintInfo("    > TestVisualizer.exe [mesh|spin|pointcloud|rainbow|image] [filename]\n");
-		PrintInfo("    > TestVisualizer.exe [animation] [filename] [trajectoryfile]\n");
+		PrintInfo("    > TestVisualizer [mesh|spin|pointcloud|rainbow|image] [filename]\n");
+		PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
 		return 0;
 	}
 
