@@ -51,7 +51,14 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	int nn = 20;
+	if (cloud_ptr->HasColors() == false) {
+		cloud_ptr->colors_.resize(cloud_ptr->points_.size());
+		for (size_t i = 0; i < cloud_ptr->points_.size(); i++) {
+			cloud_ptr->colors_[i].setZero();
+		}
+	}
+
+	int nn = std::min(20, (int)cloud_ptr->points_.size() - 1);
 	Matrix<double> dataset((double *)cloud_ptr->points_.data(),
 			cloud_ptr->points_.size(), 3 );
 	Matrix<double> query((double *)cloud_ptr->points_.data(), 1, 3);
@@ -64,7 +71,7 @@ int main(int argc, char **argv)
 	index.knnSearch(query, indices, dists, nn, SearchParams(-1, 0.0));
 	
 	for (size_t i = 0; i < indices_vec.size(); i++) {
-		PrintInfo("%lu, %f\n", indices_vec[i], dists_vec[i]);
+		PrintInfo("%lu, %f\n", indices_vec[i], sqrt(dists_vec[i]));
 		cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(1.0, 0.0, 0.0);
 	}
 	

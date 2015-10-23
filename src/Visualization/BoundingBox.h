@@ -56,6 +56,14 @@ public:
 		return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
 	}
 
+	std::string GetPrintInfo() const {
+		char buffer[DEFAULT_IO_BUFFER_SIZE];
+		sprintf(buffer, "[(%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)]",
+				min_bound_(0), min_bound_(1), min_bound_(2),
+				max_bound_(0), max_bound_(1), max_bound_(2));
+		return std::string(buffer);
+	}
+
 protected:
 	Eigen::Vector3d min_bound_ = Eigen::Vector3d::Zero();
 	Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
