@@ -31,6 +31,10 @@
 #ifndef FLANN_HPP_
 #define FLANN_HPP_
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4081 4244 4267 4291)
+#endif
 
 #include <vector>
 #include <string>
@@ -432,4 +436,9 @@ int hierarchicalClustering(const Matrix<typename Distance::ElementType>& points,
 }
 
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #endif /* FLANN_HPP_ */

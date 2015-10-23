@@ -90,7 +90,9 @@ BASIC_TYPE_SERIALIZER(float);
 BASIC_TYPE_SERIALIZER(double);
 BASIC_TYPE_SERIALIZER(bool);
 
-
+#ifdef _MSC_VER
+BASIC_TYPE_SERIALIZER(unsigned __int64);
+#endif
 
 // serializer for std::vector
 template<typename T>
