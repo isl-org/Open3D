@@ -51,6 +51,11 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
+	if ((int)cloud_ptr->points_.size() < 100) {
+		PrintError("Boring point cloud.\n");
+		return 0;
+	}
+
 	if (cloud_ptr->HasColors() == false) {
 		cloud_ptr->colors_.resize(cloud_ptr->points_.size());
 		for (size_t i = 0; i < cloud_ptr->points_.size(); i++) {
@@ -77,6 +82,18 @@ int main(int argc, char **argv)
 	
 	cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
 	
+	float r = float(sqrt(dists_vec[nn - 1]) * 2.0);
+	Matrix<double> query1((double *)cloud_ptr->points_.data() + 3 * 99, 1, 3);
+	int k = index.radiusSearch(query1, indices, dists, r * r, 
+			SearchParams(-1, 0.0));
+
+	PrintInfo("======== %d, %f ========\n", k, r);
+	for (size_t i = 0; i < k; i++) {
+		PrintInfo("%lu, %f\n", indices_vec[i], sqrt(dists_vec[i]));
+		cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(0.0, 0.0, 1.0);
+	}
+	cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
+
 	DrawGeometry(cloud_ptr, "TestFlann", 1600, 900);
 	return 0;
 }
