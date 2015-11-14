@@ -41,7 +41,7 @@
 
 namespace three {
 
-class Visualizer  {
+class Visualizer : public GeometryOwnerInterface {
 public:
 	struct MouseControl {
 	public:
@@ -52,7 +52,7 @@ public:
 
 		MouseControl() :
 				is_mouse_left_button_down(false),
-				is_control_key_down(false),
+				is_control_key_down(false),///
 				mouse_position_x(0.0),
 				mouse_position_y(0.0)
 		{}
@@ -92,18 +92,20 @@ public:
 	bool PollEvents();
 
 	/// Function to add geometry to the scene and create corresponding shaders
+	/// This function is part of GeometryOwnerInterface.
 	/// This function MUST be called after CreateWindow().
 	/// This function returns FALSE when the geometry is of an unsupported type.
-	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
+	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 
-	/// Function to update shaders
-	/// Call this function when geometry or rendermode has been changed.
-	void UpdateGeometry();
+	/// Function to update geometry
+	/// This function is part of GeometryOwnerInterface.
+	/// This function must be called when geometry has been changed. Otherwise
+	/// the behavior of Visualizer is undefined.
+	virtual bool UpdateGeometry();
 
-	/// Function to set the redraw flag as dirty
-	void UpdateRender();
+	/// This function is part of GeometryOwnerInterface.
+	virtual bool HasGeometry() const;
 
-	bool HasGeometry();
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();
 
@@ -111,8 +113,6 @@ public:
 	void CaptureScreen(const std::string &filename = "", bool do_render = true);
 
 protected:
-	// rendering functions
-
 	/// Function to initialize OpenGL
 	virtual bool InitOpenGL();
 
@@ -124,10 +124,16 @@ protected:
 	/// meshes individually).
 	virtual void Render();
 
+	/// Function to set the shader flag as dirty
+	void UpdateShaders();
+
+	/// Function to set the redraw flag as dirty
+	void UpdateRender();
+
 	/// Function to update VBOs in shader containers
 	/// This function is called in lazy mode, i.e., only triggers when
 	/// is_shader_update_required is true.
-	void UpdateShaders();
+	void ResetShaders();
 	void ResetViewPoint();
 
 	// callback functions

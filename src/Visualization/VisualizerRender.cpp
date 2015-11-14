@@ -59,7 +59,7 @@ void Visualizer::Render()
 	glfwMakeContextCurrent(window_);
 
 	if (is_shader_update_required_) {
-		UpdateShaders();
+		ResetShaders();
 		is_shader_update_required_ = false;
 	}
 
@@ -93,7 +93,7 @@ void Visualizer::Render()
 	glfwSwapBuffers(window_);
 }
 
-void Visualizer::UpdateShaders()
+void Visualizer::ResetShaders()
 {
 	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
 		const Geometry &geometry = *geometry_ptrs_[i];

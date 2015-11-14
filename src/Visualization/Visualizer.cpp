@@ -255,18 +255,25 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 			return false;
 		}
 		shader_ptrs_.push_back(shader_ptr);
+	} else {
+		return false;
 	}
 
 	geometry_ptrs_.push_back(geometry_ptr);
 	view_control_ptr_->AddGeometry(*geometry_ptr);
 	ResetViewPoint();
-	UpdateGeometry();
 	PrintDebug("Add geometry and update bounding box to %s\n", 
 			view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+	return UpdateGeometry();
+}
+
+bool Visualizer::UpdateGeometry()
+{
+	UpdateShaders();
 	return true;
 }
 
-void Visualizer::UpdateGeometry()
+void Visualizer::UpdateShaders()
 {
 	is_shader_update_required_ = true;
 	is_redraw_required_ = true;
@@ -277,7 +284,7 @@ void Visualizer::UpdateRender()
 	is_redraw_required_ = true;
 }
 
-bool Visualizer::HasGeometry()
+bool Visualizer::HasGeometry() const
 {
 	return !geometry_ptrs_.empty();
 }

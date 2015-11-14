@@ -26,11 +26,31 @@
 
 #pragma once
 
-#include "Console.h"
+#include <memory>
 #include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
 
-#include "GeometryOwnerInterface.h"
-#include "KDTreeFlann.h"
+namespace three {
+
+/// Class GeometryOwnerInterface defines the behavior of any class that may own
+/// single or multiple readonly Geometry object(s).
+/// This interface is used to define auxilary data structures that rely on the
+/// content of the geometry but do not change it. Examples include: Visualizer,
+/// KDTree.
+/// Note:
+/// 1. Once AddGeometry() is called, the interface owns the geometry. As long as
+/// the interface is active, the geometry must not be released. This is usually
+/// implemented via keeping a copy of std::shared_ptr.
+/// 2. The interface may copy data from the geometry, but may not change it.
+/// 3. If an added geometry is changed, the behavior of the interface is
+/// undefined. Programmers are responsible for calling UpdateGeometry() to
+/// notify the interface that the geometry has been changed and the interface
+/// should be updated accordingly.
+class GeometryOwnerInterface
+{
+public:
+	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) = 0;
+	virtual bool UpdateGeometry() = 0;
+	virtual bool HasGeometry() const = 0;
+};
+
+}	// namespace three

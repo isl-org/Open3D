@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 		PrintInfo("%lu, %f\n", indices_vec[i], sqrt(dists_vec[i]));
 		cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(1.0, 0.0, 0.0);
 	}
-	
+
 	cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
 	
 	float r = float(sqrt(dists_vec[nn - 1]) * 2.0);
@@ -95,5 +95,53 @@ int main(int argc, char **argv)
 	cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
 	DrawGeometry(cloud_ptr, "TestFlann", 1600, 900);
+
+	auto new_cloud_ptr = std::make_shared<PointCloud>();
+	if (ReadPointCloud(argv[1], *new_cloud_ptr)) {
+		PrintWarning("Successfully read %s\n", argv[1]);
+	} else {
+		PrintError("Failed to read %s\n\n", argv[1]);
+		return 0;
+	}
+
+	if ((int)new_cloud_ptr->points_.size() < 100) {
+		PrintError("Boring point cloud.\n");
+		return 0;
+	}
+
+	if (new_cloud_ptr->HasColors() == false) {
+		new_cloud_ptr->colors_.resize(new_cloud_ptr->points_.size());
+		for (size_t i = 0; i < new_cloud_ptr->points_.size(); i++) {
+			new_cloud_ptr->colors_[i].setZero();
+		}
+	}
+
+	KDTreeFlann kdtree;
+	kdtree.AddGeometry(new_cloud_ptr);
+	std::vector<int> new_indices_vec(nn);
+	std::vector<double> new_dists_vec(nn);
+	kdtree.SearchKNN(new_cloud_ptr->points_[0], nn, 
+			new_indices_vec, new_dists_vec);
+	
+	for (size_t i = 0; i < new_indices_vec.size(); i++) {
+		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
+		new_cloud_ptr->colors_[new_indices_vec[i]] = 
+				Eigen::Vector3d(1.0, 0.0, 0.0);
+	}
+
+	new_cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
+
+	k = kdtree.SearchRadius(new_cloud_ptr->points_[99], r * r, new_indices_vec,
+			new_dists_vec);
+
+	PrintInfo("======== %d, %f ========\n", k, r);
+	for (size_t i = 0; i < k; i++) {
+		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
+		new_cloud_ptr->colors_[new_indices_vec[i]] = 
+				Eigen::Vector3d(0.0, 0.0, 1.0);
+	}
+	new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
+
+	DrawGeometry(new_cloud_ptr, "TestKDTree", 1600, 900);
 	return 0;
 }
