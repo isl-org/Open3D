@@ -74,7 +74,8 @@ int KDTreeFlann::SearchKNN(const T &query, int nn, std::vector<int> &indices,
 
 template<typename T>
 int KDTreeFlann::SearchRadius(const T &query, double radius,
-		std::vector<int> &indices, std::vector<double> distance2, int max_nn)
+		std::vector<int> &indices, std::vector<double> distance2,
+		int max_nn/* = 100*/)
 {
 	if (HasGeometry() == false || query.rows() != dimension_) {
 		return -1;

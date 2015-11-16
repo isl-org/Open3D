@@ -76,6 +76,7 @@ bool KDTreeFlann::UpdateGeometry()
 	}
 	flann_index_.reset(new flann::Index<flann::L2<double>>(*flann_dataset_,
 			flann::KDTreeSingleIndexParams(10)));
+	flann_index_->buildIndex();
 	return true;
 }
 

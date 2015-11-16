@@ -26,6 +26,7 @@ extern void free JPP((void *ptr));
 #define SEEK_SET  0		/* if not, assume 0 is correct */
 #endif
 
+const int dummy_lnk4221;
 
 /*
  * Memory allocation and freeing are controlled by the regular library

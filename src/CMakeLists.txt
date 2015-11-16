@@ -38,7 +38,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/bin)
 # Set OS-specific things here
 if(WIN32)
 	add_definitions(-DWINDOWS)
-	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)		# suppress C4996 warning
+	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
 	add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
 	message(STATUS "Compiling on Windows")
 	if(MSVC)
