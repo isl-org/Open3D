@@ -32,5 +32,5 @@
 #include "TriangleMesh.h"
 #include "Image.h"
 
-#include "GeometryOwnerInterface.h"
+#include "IGeometryOwner.h"
 #include "KDTreeFlann.h"

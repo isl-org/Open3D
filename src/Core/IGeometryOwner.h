@@ -24,69 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "KDTreeFlann.h"
+#pragma once
 
-#include "PointCloud.h"
-#include "TriangleMesh.h"
+#include <memory>
+#include "Geometry.h"
 
-namespace three{
+namespace three {
 
-KDTreeFlann::~KDTreeFlann()
+/// Class IGeometryOwner defines the behavior of any class that may own
+/// single or multiple readonly Geometry object(s).
+/// This interface is used to define auxilary data structures that rely on the
+/// content of the geometry but do not change it. Examples include: Visualizer,
+/// KDTree.
+/// Note:
+/// 1. Once AddGeometry() is called, the interface owns the geometry. As long as
+/// the interface is active, the geometry must not be released. This is usually
+/// implemented via keeping a copy of std::shared_ptr.
+/// 2. The interface may copy data from the geometry, but may not change it.
+/// 3. If an added geometry is changed, the behavior of the interface is
+/// undefined. Programmers are responsible for calling UpdateGeometry() to
+/// notify the interface that the geometry has been changed and the interface
+/// should be updated accordingly.
+class IGeometryOwner
 {
-}
+public:
+	virtual ~IGeometryOwner() {}
 	
-bool KDTreeFlann::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
-{
-	switch (geometry_ptr->GetGeometryType()) {
-	case Geometry::GEOMETRY_POINTCLOUD:
-	case Geometry::GEOMETRY_TRIANGLEMESH:
-		geometry_ptr_ = geometry_ptr;
-		break;
-	case Geometry::GEOMETRY_IMAGE:
-	case Geometry::GEOMETRY_UNKNOWN:
-	default:
-		return false;
-		break;
-	}
-	return UpdateGeometry();
-}
-
-bool KDTreeFlann::UpdateGeometry()
-{
-	if (geometry_ptr_->GetGeometryType() == 
-			Geometry::GEOMETRY_POINTCLOUD) {
-		const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
-		if (pointcloud.HasPoints() == false) {
-			return false;
-		}
-		flann_dataset_.reset(new flann::Matrix<double>(
-				(double *)pointcloud.points_.data(),
-				pointcloud.points_.size(), 3
-				));
-		dimension_ = 3;
-	} else if (geometry_ptr_->GetGeometryType() == 
-			Geometry::GEOMETRY_TRIANGLEMESH) {
-		const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
-		if (mesh.HasVertices() == false) {
-			return false;
-		}
-		flann_dataset_.reset(new flann::Matrix<double>(
-				(double *)mesh.vertices_.data(),
-				mesh.vertices_.size(), 3
-				));
-		dimension_ = 3;
-	} else {
-		return false;
-	}
-	flann_index_.reset(new flann::Index<flann::L2<double>>(*flann_dataset_,
-			flann::KDTreeSingleIndexParams(10)));
-	flann_index_->buildIndex();
-	return true;
-}
-
-bool KDTreeFlann::HasGeometry() const
-{
-	return bool(geometry_ptr_);
-}
+public:
+	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) = 0;
+	virtual bool UpdateGeometry() = 0;
+	virtual bool HasGeometry() const = 0;
+};
 
 }	// namespace three

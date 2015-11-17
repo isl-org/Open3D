@@ -29,14 +29,17 @@
 #include <memory>
 #include <flann/flann.hpp>
 
-#include "GeometryOwnerInterface.h"
+#include "IGeometryOwner.h"
 
 namespace three {
 
-class KDTreeFlann : public GeometryOwnerInterface
+class KDTreeFlann : public IGeometryOwner
 {
 public:
-	// functions inherited from GeometryOwnerInterface
+	virtual ~KDTreeFlann();
+	
+public:
+	// functions inherited from IGeometryOwner
 	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 	virtual bool UpdateGeometry();
 	virtual bool HasGeometry() const;
