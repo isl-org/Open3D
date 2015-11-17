@@ -43,11 +43,11 @@ public:
 
 	template<typename T>
 	int SearchKNN(const T &query, int nn, std::vector<int> &indices,
-			std::vector<double> distance2);
+			std::vector<double> &distance2);
 
 	template<typename T>
 	int SearchRadius(const T &query, double radius, std::vector<int> &indices,
-			std::vector<double> distance2, int max_nn = 100);
+			std::vector<double> &distance2, int max_nn = 100);
 
 protected:
 	std::shared_ptr<const Geometry> geometry_ptr_;
@@ -58,7 +58,7 @@ protected:
 
 template<typename T>
 int KDTreeFlann::SearchKNN(const T &query, int nn, std::vector<int> &indices,
-		std::vector<double> distance2)
+		std::vector<double> &distance2)
 {
 	if (HasGeometry() == false || query.rows() != dimension_) {
 		return -1;
@@ -74,7 +74,7 @@ int KDTreeFlann::SearchKNN(const T &query, int nn, std::vector<int> &indices,
 
 template<typename T>
 int KDTreeFlann::SearchRadius(const T &query, double radius,
-		std::vector<int> &indices, std::vector<double> distance2,
+		std::vector<int> &indices, std::vector<double> &distance2,
 		int max_nn/* = 100*/)
 {
 	if (HasGeometry() == false || query.rows() != dimension_) {

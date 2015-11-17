@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 
 	new_cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
 
-	k = kdtree.SearchRadius(new_cloud_ptr->points_[99], r * r, new_indices_vec,
+	k = kdtree.SearchRadius(new_cloud_ptr->points_[99], r, new_indices_vec,
 			new_dists_vec);
 
 	PrintInfo("======== %d, %f ========\n", k, r);
