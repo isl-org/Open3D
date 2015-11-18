@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                       Open3DV: www.open3dv.org                           -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -278,7 +278,7 @@ bool WritePointCloudToPLY(
 		PrintWarning("Write PLY failed: unable to open file.\n");
 		return false;
 	}
-	ply_add_comment(ply_file, "Created by Open3DV");
+	ply_add_comment(ply_file, "Created by Open3D");
 	ply_add_element(ply_file, "vertex",
 			static_cast<long>(pointcloud.points_.size()));
 	ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
@@ -411,7 +411,7 @@ bool WriteTriangleMeshToPLY(
 		PrintWarning("Write PLY failed: unable to open file.\n");
 		return false;
 	}
-	ply_add_comment(ply_file, "Created by Open3DV");
+	ply_add_comment(ply_file, "Created by Open3D");
 	ply_add_element(ply_file, "vertex",
 					static_cast<long>(mesh.vertices_.size()));
 	ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);

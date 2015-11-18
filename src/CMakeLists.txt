@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-project(Open3DV)
+project(Open3D)
 
-set(Open3DV_VERSION_MAJOR "1")
-set(Open3DV_VERSION_MINOR "0")
+set(Open3D_VERSION_MAJOR "1")
+set(Open3D_VERSION_MINOR "0")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
-option(Open3DV_BUILD_TESTS "Build the Open3DV test programs" ON)
+option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(USE_OPENMP "Use OpenMP multi-threading" ON)
 
 # default built type
@@ -20,20 +20,20 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 # set include directories
 include_directories(
-	${Open3DV_SOURCE_DIR}
-	${Open3DV_SOURCE_DIR}/External
-	${Open3DV_SOURCE_DIR}/External/Eigen
-	${Open3DV_SOURCE_DIR}/External/GLFW/include
-	${Open3DV_SOURCE_DIR}/External/glew/include
+	${Open3D_SOURCE_DIR}
+	${Open3D_SOURCE_DIR}/External
+	${Open3D_SOURCE_DIR}/External/Eigen
+	${Open3D_SOURCE_DIR}/External/GLFW/include
+	${Open3D_SOURCE_DIR}/External/glew/include
 	)
 
 # all static link, no dynamic links
-set(Open3DV_LIB_TYPE STATIC)
+set(Open3D_LIB_TYPE STATIC)
 
 # if dynamic link is added, use if (WIN32) macro
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3DV_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/bin)
 
 # Set OS-specific things here
 if(WIN32)
@@ -87,7 +87,7 @@ add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
-message(STATUS "Open3DV_BUILD_TESTS=${Open3DV_BUILD_TESTS}")
-if(Open3DV_BUILD_TESTS)
+message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")
+if(Open3D_BUILD_TESTS)
 	add_subdirectory(Test)
-endif(Open3DV_BUILD_TESTS)
+endif(Open3D_BUILD_TESTS)

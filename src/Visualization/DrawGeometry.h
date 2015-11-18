@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// -                       Open3DV: www.open3dv.org                           -
+// -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
@@ -43,13 +43,13 @@ namespace three {
 /// until the window is closed.
 bool DrawGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
+		const std::string window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);
 
 bool DrawGeometryWithAnimation(
 		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string window_name = "Open3DV", 
+		const std::string window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50,
 		const std::string json_filename = "");
@@ -57,7 +57,7 @@ bool DrawGeometryWithAnimation(
 bool DrawGeometryWithCallback(
 		std::shared_ptr<const Geometry> geometry_ptr,
 		std::function<bool(Visualizer &)> callback_func,
-		const std::string window_name = "Open3DV", 
+		const std::string window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);
 

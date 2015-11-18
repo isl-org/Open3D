@@ -9,7 +9,7 @@ set(PNGLIB_RELEASE 18)
 set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_RELEASE})
 
 # needed packages
-include_directories("${Open3DV_SOURCE_DIR}/External/zlib")
+include_directories("${Open3D_SOURCE_DIR}/External/zlib")
 
 if(NOT WIN32)
   find_library(M_LIBRARY
