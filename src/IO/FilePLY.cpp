@@ -33,7 +33,7 @@ namespace three{
 
 namespace {
 
-namespace PLY_PoinCloud_Reader {
+namespace ply_poincloud_reader {
 
 struct PLYReaderState {
 	PointCloud *pointcloud_ptr;
@@ -101,9 +101,9 @@ int ReadColorCallback(p_ply_argument argument)
 	return 1;
 }
 	
-}	// namespace PLY_PoinCloud_Reader
+}	// namespace ply_poincloud_reader
 
-namespace PLY_TriangleMesh_Reader {
+namespace ply_trianglemesh_reader {
 
 struct PLYReaderState {
 	TriangleMesh *mesh_ptr;
@@ -198,7 +198,7 @@ int ReadFaceCallBack(p_ply_argument argument)
 }
 
 	
-}	// namespace PLY_TriangleMesh_Reader
+}	// namespace ply_trianglemesh_reader
 
 }	// unnamed namespace
 
@@ -206,7 +206,7 @@ bool ReadPointCloudFromPLY(
 		const std::string &filename,
 		PointCloud &pointcloud)
 {
-	using namespace PLY_PoinCloud_Reader;
+	using namespace ply_poincloud_reader;
 	
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {
@@ -330,7 +330,7 @@ bool ReadTriangleMeshFromPLY(
 		const std::string &filename,
 		TriangleMesh &mesh)
 {
-	using namespace PLY_TriangleMesh_Reader;
+	using namespace ply_trianglemesh_reader;
 	
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {

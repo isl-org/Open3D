@@ -34,3 +34,5 @@
 
 #include "IGeometryOwner.h"
 #include "KDTreeFlann.h"
+
+#include "VoxelDownSample.h"
