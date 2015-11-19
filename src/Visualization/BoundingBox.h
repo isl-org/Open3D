@@ -67,6 +67,11 @@ public:
 protected:
 	Eigen::Vector3d min_bound_ = Eigen::Vector3d::Zero();
 	Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
+
+public:
+	/// Eigen's black magic to prevent alignment issue
+	///   http://eigen.tuxfamily.org/dox-devel/group__TopicStructHavingEigenMembers.html
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }	// namespace three

@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 			SearchParams(-1, 0.0));
 
 	PrintInfo("======== %d, %f ========\n", k, r);
-	for (size_t i = 0; i < k; i++) {
+	for (int i = 0; i < k; i++) {
 		PrintInfo("%lu, %f\n", indices_vec[i], sqrt(dists_vec[i]));
 		cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(0.0, 0.0, 1.0);
 	}
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 			new_dists_vec);
 
 	PrintInfo("======== %d, %f ========\n", k, r);
-	for (size_t i = 0; i < k; i++) {
+	for (int i = 0; i < k; i++) {
 		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
 		new_cloud_ptr->colors_[new_indices_vec[i]] = 
 				Eigen::Vector3d(0.0, 0.0, 1.0);

@@ -94,7 +94,7 @@ static int64_t expected_console_count = 0;
 	
 static int64_t current_console_progress = 0;
 
-static int64_t current_console_progress_pixel = 0;
+static int current_console_progress_pixel = 0;
 
 static std::string console_progress_info = "";
 	
@@ -106,12 +106,12 @@ void PrintConsoleProgress()
 		PrintInfo("%s[%s] 100%%\n", console_progress_info.c_str(),
 				std::string(CONSOLE_PROGRESS_RESOLUTION, '=').c_str());
 	} else {
-		int64_t new_console_progress_pixel = current_console_progress *
-				CONSOLE_PROGRESS_RESOLUTION / expected_console_count;
+		int new_console_progress_pixel = int(current_console_progress *
+				CONSOLE_PROGRESS_RESOLUTION / expected_console_count);
 		if (new_console_progress_pixel > current_console_progress_pixel) {
 			current_console_progress_pixel = new_console_progress_pixel;
-			int64_t percent = current_console_progress *
-					100 / expected_console_count;
+			int percent = int(current_console_progress *
+					100 / expected_console_count);
 			PrintInfo("%s[%s>%s] %d%%\r", console_progress_info.c_str(),
 					std::string(current_console_progress_pixel, '=').c_str(),
 					std::string(CONSOLE_PROGRESS_RESOLUTION - 1 -
