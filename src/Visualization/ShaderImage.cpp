@@ -208,7 +208,6 @@ bool ShaderImageDefault::Render(
 	}
 	
 	const auto &rendermode = (const ImageRenderMode &)mode;
-	glPointSize(10.0f);
 
 	glUseProgram(program_);
 	glActiveTexture(GL_TEXTURE0);
