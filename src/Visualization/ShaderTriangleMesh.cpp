@@ -76,13 +76,13 @@ bool ShaderTriangleMeshDefault::BindGeometry(
 	}
 	const TriangleMesh &mesh = (const TriangleMesh &)geometry;
 	if (mesh.HasTriangles() == false) {
-		PrintWarning("[ShaderPointCloudDefault] Binding failed with empty mesh.\n");
+		PrintWarning("[ShaderTriangleMeshDefault] Binding failed with empty mesh.\n");
 		return false;
 	}
 	if (mesh.HasTriangleNormals() == false || 
 			mesh.HasVertexNormals() == false) {
-		PrintWarning("[ShaderPointCloudDefault] Binding failed because mesh has no normals.\n");
-		PrintWarning("[ShaderPointCloudDefault] Call ComputeVertexNormals() before binding.\n");
+		PrintWarning("[ShaderTriangleMeshDefault] Binding failed because mesh has no normals.\n");
+		PrintWarning("[ShaderTriangleMeshDefault] Call ComputeVertexNormals() before binding.\n");
 		return false;
 	}
 	const auto &mesh_render_mode = (const TriangleMeshRenderMode &)mode;
