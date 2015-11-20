@@ -39,16 +39,17 @@ public:
 	
 public:
 	virtual bool Compile();
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
 	virtual bool Render(
+			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view);
 	virtual void Release();
 
 protected:
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
 	virtual void UnbindGeometry();
 	virtual void SetLight(
 			const TriangleMeshRenderMode &mode, 

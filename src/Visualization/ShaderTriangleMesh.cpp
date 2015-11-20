@@ -218,9 +218,16 @@ void ShaderTriangleMeshDefault::SetLight(
 }
 
 bool ShaderTriangleMeshDefault::Render(
+		const Geometry &geometry,
 		const RenderMode &mode,
 		const ViewControl &view)
 {
+	if (compiled_ == false) {
+		Compile();
+	}
+	if (bound_ == false) {
+		BindGeometry(geometry, mode, view);
+	}
 	if (compiled_ == false || bound_ == false || vertex_num_ <= 0 ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
 		return false;

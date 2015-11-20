@@ -45,16 +45,18 @@ public:
 	
 public:
 	virtual bool Compile() = 0;
-	virtual bool BindGeometry(
-			const Geometry &geometry, 
-			const RenderMode &mode,
-			const ViewControl &view) = 0;
 	virtual bool Render(
+			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view) = 0;
 	virtual void Release() = 0;
+	void UpdateGeometry() { bound_ = false; }
 
 protected:
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view) = 0;
 	virtual void UnbindGeometry() = 0;
 	
 protected:

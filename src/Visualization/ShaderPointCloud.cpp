@@ -170,9 +170,16 @@ void ShaderPointCloudDefault::UnbindGeometry()
 }
 
 bool ShaderPointCloudDefault::Render(
-		const RenderMode &mode, 
+		const Geometry &geometry,
+		const RenderMode &mode,
 		const ViewControl &view)
 {
+	if (compiled_ == false) {
+		Compile();
+	}
+	if (bound_ == false) {
+		BindGeometry(geometry, mode, view);
+	}
 	if (compiled_ == false || bound_ == false || point_num_ <= 0 ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
 		return false;

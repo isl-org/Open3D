@@ -39,16 +39,17 @@ public:
 	
 public:
 	virtual bool Compile();
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
 	virtual bool Render(
+			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view);
 	virtual void Release();
 
 protected:
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
 	virtual void UnbindGeometry();
 
 protected:
@@ -58,6 +59,9 @@ protected:
 	GLuint vertex_UV_buffer_;
 	GLuint image_texture_;
 	GLuint image_texture_buffer_;
+	GLuint vertex_scale_;
+	
+	GLHelper::GLVector3f vertex_scale_data_;
 };
 	
 }	// namespace three::glsl

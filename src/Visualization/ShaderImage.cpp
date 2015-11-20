@@ -47,6 +47,7 @@ bool ShaderImageDefault::Compile()
 	vertex_position_ = glGetAttribLocation(program_, "vertex_position");
 	vertex_UV_ = glGetAttribLocation(program_, "vertex_UV");
 	image_texture_ = glGetUniformLocation(program_, "image_texture");
+	vertex_scale_ = glGetUniformLocation(program_, "vertex_scale");
 
 	return true;
 }
@@ -121,36 +122,13 @@ bool ShaderImageDefault::BindGeometry(
 	}
 	
 	// Create buffers and bind the geometry
-	GLfloat ratio_x, ratio_y;
-	switch (image_render_mode.GetImageStretchOption()) {
-	case ImageRenderMode::IMAGE_STRETCH_KEEP_RATIO:
-		ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
-		ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
-		if (ratio_x < ratio_y) {
-			ratio_x /= ratio_y;
-			ratio_y = 1.0f;
-		} else {
-			ratio_y /= ratio_x;
-			ratio_x = 1.0f;
-		}
-		break;
-	case ImageRenderMode::IMAGE_STRETCH_WITH_WINDOW:
-		ratio_x = 1.0f;
-		ratio_y = 1.0f;
-		break;
-	case ImageRenderMode::IMAGE_ORIGINAL_SIZE:
-	default:
-		ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
-		ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
-		break;
-	}
 	const GLfloat vertex_position_buffer_data[18] = {
-		-ratio_x, -ratio_y, 0.0f,
-		ratio_x, -ratio_y, 0.0f,
-		ratio_x, ratio_y, 0.0f,
-		-ratio_x, -ratio_y, 0.0f,
-		ratio_x, ratio_y, 0.0f,
-		-ratio_x, ratio_y, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
 	};
 	const GLfloat vertex_UV_buffer_data[12] = {
 		0.0f, 1.0f,
@@ -199,17 +177,52 @@ void ShaderImageDefault::UnbindGeometry()
 }
 
 bool ShaderImageDefault::Render(
-		const RenderMode &mode, 
+		const Geometry &geometry,
+		const RenderMode &mode,
 		const ViewControl &view)
 {
+	if (compiled_ == false) {
+		Compile();
+	}
+	if (bound_ == false) {
+		BindGeometry(geometry, mode, view);
+	}
 	if (compiled_ == false || bound_ == false ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_IMAGE) {
 		return false;
 	}
-	
-	const auto &rendermode = (const ImageRenderMode &)mode;
+
+	const Image &image = (const Image &)geometry;
+	const auto &image_render_mode = (const ImageRenderMode &)mode;
+	GLfloat ratio_x, ratio_y;
+	switch (image_render_mode.GetImageStretchOption()) {
+		case ImageRenderMode::IMAGE_STRETCH_KEEP_RATIO:
+			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
+			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
+			if (ratio_x < ratio_y) {
+				ratio_x /= ratio_y;
+				ratio_y = 1.0f;
+			} else {
+				ratio_y /= ratio_x;
+				ratio_x = 1.0f;
+			}
+			break;
+		case ImageRenderMode::IMAGE_STRETCH_WITH_WINDOW:
+			ratio_x = 1.0f;
+			ratio_y = 1.0f;
+			break;
+		case ImageRenderMode::IMAGE_ORIGINAL_SIZE:
+		default:
+			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
+			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
+			break;
+	}
+	vertex_scale_data_(0) = ratio_x;
+	vertex_scale_data_(1) = ratio_y;
+	vertex_scale_data_(2) = 1.0f;
 
 	glUseProgram(program_);
+	glUniform3fv(vertex_scale_, 1, vertex_scale_data_.data());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
 	glUniform1i(image_texture_, 0);

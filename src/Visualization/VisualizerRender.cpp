@@ -75,14 +75,18 @@ void Visualizer::Render()
 		const Geometry &geometry = *geometry_ptrs_[i];
 		switch (geometry.GetGeometryType()) {
 		case Geometry::GEOMETRY_POINTCLOUD:
-			shader_ptrs_[i]->Render(pointcloud_render_mode_, 
+			shader_ptrs_[i]->Render(
+					*geometry_ptrs_[i],
+					pointcloud_render_mode_,
 					*view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_TRIANGLEMESH:
-			shader_ptrs_[i]->Render(mesh_render_mode_, *view_control_ptr_);
+			shader_ptrs_[i]->Render(*geometry_ptrs_[i],
+					mesh_render_mode_, *view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_IMAGE:
-			shader_ptrs_[i]->Render(image_render_mode_, *view_control_ptr_);
+			shader_ptrs_[i]->Render(*geometry_ptrs_[i],
+					image_render_mode_, *view_control_ptr_);
 			break;
 		case Geometry::GEOMETRY_UNKNOWN:
 		default:
@@ -96,30 +100,7 @@ void Visualizer::Render()
 void Visualizer::ResetShaders()
 {
 	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
-		const Geometry &geometry = *geometry_ptrs_[i];
-		switch (geometry.GetGeometryType()) {
-		case Geometry::GEOMETRY_POINTCLOUD:
-			shader_ptrs_[i]->BindGeometry(
-					*geometry_ptrs_[i], 
-					pointcloud_render_mode_,
-					*view_control_ptr_);
-			break;
-		case Geometry::GEOMETRY_TRIANGLEMESH:
-			shader_ptrs_[i]->BindGeometry(
-					*geometry_ptrs_[i],
-					mesh_render_mode_,
-					*view_control_ptr_);
-			break;
-		case Geometry::GEOMETRY_IMAGE:
-			shader_ptrs_[i]->BindGeometry(
-					*geometry_ptrs_[i],
-					image_render_mode_,
-					*view_control_ptr_);
-			break;
-		case Geometry::GEOMETRY_UNKNOWN:
-		default:
-			break;
-		}
+		shader_ptrs_[i]->UpdateGeometry();
 	}
 }
 
