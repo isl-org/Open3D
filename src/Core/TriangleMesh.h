@@ -40,12 +40,12 @@ public:
 	virtual ~TriangleMesh();
 
 public:
-	virtual bool CloneFrom(const Geometry &mesh);
-	virtual Eigen::Vector3d GetMinBound() const;
-	virtual Eigen::Vector3d GetMaxBound() const;
-	virtual void Clear();
-	virtual bool IsEmpty() const;
-	virtual void Transform(const Eigen::Matrix4d &transformation);
+	bool CloneFrom(const Geometry &mesh) override;
+	Eigen::Vector3d GetMinBound() const override;
+	Eigen::Vector3d GetMaxBound() const override;
+	void Clear() override;
+	bool IsEmpty() const override;
+	void Transform(const Eigen::Matrix4d &transformation) override;
 
 	void ComputeTriangleNormals(bool normalized = true);
 	void ComputeVertexNormals(bool normalized = true);

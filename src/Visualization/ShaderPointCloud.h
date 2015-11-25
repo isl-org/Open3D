@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include "ShaderWrapper.h"
+#include "ShaderWrapperDeprecated.h"
 
 namespace three {
 
 namespace glsl {
 	
-class ShaderPointCloudDefault : public ShaderWrapper {
+class ShaderPointCloudDefault : public ShaderWrapperDeprecated {
 public:
 	ShaderPointCloudDefault() {}
 	virtual ~ShaderPointCloudDefault() {}
@@ -50,6 +50,10 @@ protected:
 			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view);
+	virtual bool PrepareRendering(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view) { return true; }
 	virtual void UnbindGeometry();
 
 protected:

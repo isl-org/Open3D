@@ -26,49 +26,72 @@
 
 #pragma once
 
-#include "ShaderWrapperDeprecated.h"
+#include <GL/glew.h>
+#include <Core/Core.h>
+
+#include "ViewControl.h"
+#include "RenderMode.h"
 
 namespace three {
 
 namespace glsl {
 	
-class ShaderImageDefault : public ShaderWrapperDeprecated {
+class ShaderWrapperDeprecated {
 public:
-	ShaderImageDefault() {}
-	virtual ~ShaderImageDefault() {}
+	ShaderWrapperDeprecated() {}
+	virtual ~ShaderWrapperDeprecated() {}
+	ShaderWrapperDeprecated(const ShaderWrapperDeprecated &) = delete;
+	ShaderWrapperDeprecated &operator=(const ShaderWrapperDeprecated &) = delete;
 	
 public:
-	virtual bool Compile();
+	/// Function to compile shader.
+	virtual bool Compile() = 0;
+	
+	/// Function to render geometry under condition of mode and view
+	/// Everything is updated passively in this model. Thus this function
+	/// compiles shaders if not yet, binds geometry if not yet, then do the
+	/// rendering.
 	virtual bool Render(
 			const Geometry &geometry,
 			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void Release();
+			const ViewControl &view) = 0;
+	virtual void Release() = 0;
+	void Invalidate() {
+		// Call this function when the shader is invalidated.
+		UnbindGeometry();
+	}
 
 protected:
 	virtual bool BindGeometry(
 			const Geometry &geometry,
 			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void UnbindGeometry();
+			const ViewControl &view) = 0;
+	virtual void UnbindGeometry() = 0;
 	virtual bool PrepareRendering(
 			const Geometry &geometry,
 			const RenderMode &mode,
-			const ViewControl &view) { return true; }
-
-
+			const ViewControl &view) = 0;
+	
 protected:
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_UV_;
-	GLuint vertex_UV_buffer_;
-	GLuint image_texture_;
-	GLuint image_texture_buffer_;
-	GLuint vertex_scale_;
+	bool ValidateShader(GLuint shader_index);
+	bool ValidateProgram(GLuint program_index);
+	bool CompileShaders(
+			const char * const vertex_shader_code,
+			const char * const geometry_shader_code,
+			const char * const fragment_shader_code);
+	void ReleaseProgram();
 	
-	GLHelper::GLVector3f vertex_scale_data_;
+protected:
+	GLuint vertex_shader_;
+	GLuint geometry_shader_;
+	GLuint fragment_shader_;
+	GLuint program_;
+	GLenum draw_arrays_mode_ = GL_POINTS;
+	GLsizei draw_arrays_size_ = 0;
+	bool compiled_ = false;
+	bool bound_ = false;
 };
-	
+
 }	// namespace three::glsl
 
 }	// namespace three

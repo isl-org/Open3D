@@ -25,77 +25,66 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <memory>
 
-#include <Eigen/Core>
+#include "ShaderWrapper.h"
 
 namespace three {
 
-class ColorMap  {
+namespace glsl {
+	
+class ShaderTriangleMeshDefault : public ShaderWrapper {
 public:
-	enum ColorMapOption {
-		COLORMAP_GRAY = 0,
-		COLORMAP_JET = 1,
-		COLORMAP_SUMMER = 2,
-		COLORMAP_WINTER = 3,
-	};
-
+	ShaderTriangleMeshDefault() {}
+	virtual ~ShaderTriangleMeshDefault() {}
+	
 public:
-	ColorMap() {};
-	virtual ~ColorMap() {};
-
-public:
-	/// Function to get a color from a value in [0..1]
-	virtual Eigen::Vector3d GetColor(double value) const = 0;
+	virtual bool Compile();
+	virtual bool Render(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
+	virtual void Release();
 
 protected:
-	double Interpolate(double value, 
-			double y0, double x0, double y1, double x1) const
-	{
-		return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
-	}
-};
-
-class ColorMapGray final : public ColorMap {
-public:
-	Eigen::Vector3d GetColor(double value) const override;
-};
-
-/// See Matlab's Jet colormap
-class ColorMapJet final : public ColorMap {
-public:
-	Eigen::Vector3d GetColor(double value) const override;
+	virtual bool BindGeometry(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view);
+	virtual void UnbindGeometry();
+	virtual bool PrepareRendering(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view) { return true; }
+	virtual void SetLight(
+			const TriangleMeshRenderMode &mode, 
+			const ViewControl &view);
 
 protected:
-	double JetBase(double value) const {
-		if (value <= -0.75) { 
-			return 0.0;
-		} else if (value <= -0.25) {
-			return Interpolate(value, 0.0, -0.75, 1.0, -0.25);
-		} else if (value <= 0.25) {
-			return 1.0;
-		} else if (value <= 0.75) {
-			return Interpolate(value, 1.0, 0.25, 0.0, 0.75);
-		} else {
-			return 0.0;
-		}
-	}
-};
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_color_;
+	GLuint vertex_color_buffer_;
+	GLuint vertex_normal_;
+	GLuint vertex_normal_buffer_;
+	GLuint MVP_;
+	GLuint V_;
+	GLuint M_;
+	GLuint light_position_world_;
+	GLuint light_color_;
+	GLuint light_power_;
 
-/// See Matlab's Summer colormap
-class ColorMapSummer final : public ColorMap {
-public:
-	Eigen::Vector3d GetColor(double value) const override;
-};
+	// At most support 4 lights
+	GLHelper::GLMatrix4f light_position_world_data_;
+	GLHelper::GLMatrix4f light_color_data_;
+	GLHelper::GLVector4f light_power_data_;
 
-/// See Matlab's Winter colormap
-class ColorMapWinter final : public ColorMap {
-public:
-	Eigen::Vector3d GetColor(double value) const override;
+	Eigen::Vector3d default_color_ = 
+			Eigen::Vector3d(0.439216, 0.858824, 0.858824);
+	
+	GLsizei vertex_num_ = 0;
+	bool lights_on_ = true;
 };
-
-/// Interface functions
-std::shared_ptr<const ColorMap> GetGlobalColorMap();
-void SetGlobalColorMap(ColorMap::ColorMapOption option);
+	
+}	// namespace three::glsl
 
 }	// namespace three

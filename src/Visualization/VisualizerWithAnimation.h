@@ -39,24 +39,21 @@ public:
 			delete;
 
 public:
-	virtual void PrintVisualizerHelp();
-	virtual void UpdateWindowTitle();
+	void PrintVisualizerHelp() override;
+	void UpdateWindowTitle() override;
 	void Play(bool recording = false);
 	void RegisterRecordingFilenameFormat(std::string format) {
 		recording_filename_format_ = format;
 	}
 
 protected:
-	virtual bool InitViewControl();
-	//virtual void WindowRefreshCallback(GLFWwindow *window);
-	//virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
-	virtual void MouseMoveCallback(GLFWwindow* window, double x, double y);
-	virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
-	virtual void MouseButtonCallback(GLFWwindow* window,
-			int button, int action, int mods);
-	virtual void KeyPressCallback(GLFWwindow *window,
-			int key, int scancode, int action, int mods);
-	//virtual void WindowCloseCallback(GLFWwindow *window);
+	bool InitViewControl() override;
+	void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
+	void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
+	void MouseButtonCallback(GLFWwindow* window,
+			int button, int action, int mods) override;
+	void KeyPressCallback(GLFWwindow *window,
+			int key, int scancode, int action, int mods) override;
 
 protected:
 	std::string recording_filename_format_ = "Animation_%06d.png";

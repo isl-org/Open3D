@@ -37,7 +37,7 @@
 #include "BoundingBox.h"
 #include "ViewControl.h"
 #include "RenderMode.h"
-#include "ShaderWrapper.h"
+#include "ShaderWrapperDeprecated.h"
 
 namespace three {
 
@@ -174,7 +174,7 @@ protected:
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 	
 	// shaders
-	std::vector<std::shared_ptr<glsl::ShaderWrapper>> shader_ptrs_;
+	std::vector<std::shared_ptr<glsl::ShaderWrapperDeprecated>> shader_ptrs_;
 };
 
 }	// namespace three

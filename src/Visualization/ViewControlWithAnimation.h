@@ -40,11 +40,11 @@ public:
 	};
 
 public:
-	virtual void Reset();
-	virtual void ChangeFieldOfView(double step);
-	virtual void Scale(double scale);
-	virtual void Rotate(double x, double y);
-	virtual void Translate(double x, double y);
+	void Reset() override;
+	void ChangeFieldOfView(double step) override;
+	void Scale(double scale) override;
+	void Rotate(double x, double y) override;
+	void Translate(double x, double y) override;
 
 	void SetAnimationMode(AnimationMode mode);
 	void AddKeyFrame();

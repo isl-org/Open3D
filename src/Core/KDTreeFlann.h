@@ -40,9 +40,9 @@ public:
 	
 public:
 	// functions inherited from IGeometryOwner
-	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
-	virtual bool UpdateGeometry();
-	virtual bool HasGeometry() const;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	bool UpdateGeometry() override;
+	bool HasGeometry() const override;
 
 	template<typename T>
 	int SearchKNN(const T &query, int nn, std::vector<int> &indices,

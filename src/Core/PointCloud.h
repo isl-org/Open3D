@@ -40,12 +40,12 @@ public:
 	virtual ~PointCloud();
 
 public:
-	virtual bool CloneFrom(const Geometry &reference);
-	virtual Eigen::Vector3d GetMinBound() const;
-	virtual Eigen::Vector3d GetMaxBound() const;
-	virtual void Clear();
-	virtual bool IsEmpty() const;
-	virtual void Transform(const Eigen::Matrix4d &transformation);
+	bool CloneFrom(const Geometry &reference) override;
+	Eigen::Vector3d GetMinBound() const override;
+	Eigen::Vector3d GetMaxBound() const override;
+	void Clear() override;
+	bool IsEmpty() const override;
+	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
 	bool HasPoints() const {

@@ -44,13 +44,22 @@ public:
 	ShaderWrapper &operator=(const ShaderWrapper &) = delete;
 	
 public:
+	/// Function to compile shader.
 	virtual bool Compile() = 0;
+	
+	/// Function to render geometry under condition of mode and view
+	/// Everything is updated passively in this model. Thus this function
+	/// compiles shaders if not yet, binds geometry if not yet, then do the
+	/// rendering.
 	virtual bool Render(
 			const Geometry &geometry,
 			const RenderMode &mode,
 			const ViewControl &view) = 0;
 	virtual void Release() = 0;
-	void UpdateGeometry() { bound_ = false; }
+	void Invalidate() {
+		// Call this function when the shader is invalidated.
+		UnbindGeometry();
+	}
 
 protected:
 	virtual bool BindGeometry(
@@ -58,6 +67,10 @@ protected:
 			const RenderMode &mode,
 			const ViewControl &view) = 0;
 	virtual void UnbindGeometry() = 0;
+	virtual bool PrepareRendering(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view) = 0;
 	
 protected:
 	bool ValidateShader(GLuint shader_index);
@@ -73,6 +86,8 @@ protected:
 	GLuint geometry_shader_;
 	GLuint fragment_shader_;
 	GLuint program_;
+	GLenum draw_arrays_mode_ = GL_POINTS;
+	GLsizei draw_arrays_size_ = 0;
 	bool compiled_ = false;
 	bool bound_ = false;
 };

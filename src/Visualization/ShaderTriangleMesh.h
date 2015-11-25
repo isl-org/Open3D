@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include "ShaderWrapper.h"
+#include "ShaderWrapperDeprecated.h"
 
 namespace three {
 
 namespace glsl {
 	
-class ShaderTriangleMeshDefault : public ShaderWrapper {
+class ShaderTriangleMeshDefault : public ShaderWrapperDeprecated {
 public:
 	ShaderTriangleMeshDefault() {}
 	virtual ~ShaderTriangleMeshDefault() {}
@@ -51,6 +51,10 @@ protected:
 			const RenderMode &mode,
 			const ViewControl &view);
 	virtual void UnbindGeometry();
+	virtual bool PrepareRendering(
+			const Geometry &geometry,
+			const RenderMode &mode,
+			const ViewControl &view) { return true; }
 	virtual void SetLight(
 			const TriangleMeshRenderMode &mode, 
 			const ViewControl &view);

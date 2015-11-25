@@ -100,7 +100,7 @@ void Visualizer::Render()
 void Visualizer::ResetShaders()
 {
 	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
-		shader_ptrs_[i]->UpdateGeometry();
+		shader_ptrs_[i]->Invalidate();
 	}
 }
 
