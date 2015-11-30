@@ -32,11 +32,39 @@ namespace three{
 
 namespace glsl {
 
+bool ShaderWrapper::Render(const three::Geometry &geometry,
+		const three::RenderMode &mode, const three::ViewControl &view)
+{
+	if (compiled_ == false) {
+		Compile();
+	}
+	if (bound_ == false) {
+		BindGeometry(geometry, mode, view);
+	}
+	if (compiled_ == false || bound_ == false) {
+		PrintWarning("[%s] Something is wrong in compiling or binding.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	return RenderGeometry(geometry, mode, view);
+}
+
+void ShaderWrapper::InvalidateGeometry()
+{
+	if (bound_) {
+		UnbindGeometry();
+	}
+}
+
 bool ShaderWrapper::CompileShaders(
 		const char * const vertex_shader_code,
 		const char * const geometry_shader_code,
 		const char * const fragment_shader_code)
 {
+	if (compiled_) {
+		return true;
+	}
+
 	if (vertex_shader_code != NULL) {
 		vertex_shader_ = glCreateShader(GL_VERTEX_SHADER);
 		const GLchar *vertex_shader_code_buffer = vertex_shader_code;

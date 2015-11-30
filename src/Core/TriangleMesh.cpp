@@ -30,9 +30,8 @@
 
 namespace three{
 
-TriangleMesh::TriangleMesh()
+TriangleMesh::TriangleMesh() : Geometry(GEOMETRY_TRIANGLEMESH)
 {
-	SetGeometryType(GEOMETRY_TRIANGLEMESH);
 }
 
 TriangleMesh::~TriangleMesh()

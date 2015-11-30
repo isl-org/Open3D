@@ -28,9 +28,8 @@
 
 namespace three{
 
-PointCloud::PointCloud()
+PointCloud::PointCloud() : Geometry(GEOMETRY_POINTCLOUD)
 {
-	SetGeometryType(GEOMETRY_POINTCLOUD);
 }
 
 PointCloud::~PointCloud()

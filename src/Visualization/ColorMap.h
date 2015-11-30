@@ -31,7 +31,8 @@
 
 namespace three {
 
-class ColorMap  {
+class ColorMap
+{
 public:
 	enum ColorMapOption {
 		COLORMAP_GRAY = 0,
@@ -56,15 +57,17 @@ protected:
 	}
 };
 
-class ColorMapGray final : public ColorMap {
+class ColorMapGray final : public ColorMap
+{
 public:
-	Eigen::Vector3d GetColor(double value) const override;
+	Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// See Matlab's Jet colormap
-class ColorMapJet final : public ColorMap {
+class ColorMapJet final : public ColorMap
+{
 public:
-	Eigen::Vector3d GetColor(double value) const override;
+	Eigen::Vector3d GetColor(double value) const final;
 
 protected:
 	double JetBase(double value) const {
@@ -83,15 +86,17 @@ protected:
 };
 
 /// See Matlab's Summer colormap
-class ColorMapSummer final : public ColorMap {
+class ColorMapSummer final : public ColorMap
+{
 public:
-	Eigen::Vector3d GetColor(double value) const override;
+	Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// See Matlab's Winter colormap
-class ColorMapWinter final : public ColorMap {
+class ColorMapWinter final : public ColorMap
+{
 public:
-	Eigen::Vector3d GetColor(double value) const override;
+	Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// Interface functions

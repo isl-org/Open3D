@@ -41,16 +41,13 @@ public:
 	};
 
 public:
-	RenderMode() {}
 	virtual ~RenderMode() {}
+
+protected:
+	RenderMode(RenderModeType type) : rendermode_type_(type) {}
 
 public:
 	RenderModeType GetRenderModeType() const { return rendermode_type_; }
-
-protected:
-	void SetRenderModeType(RenderModeType type) {
-		rendermode_type_ = type;
-	}
 	
 private:
 	RenderModeType rendermode_type_;
@@ -73,11 +70,7 @@ public:
 	const double POINT_SIZE_DEFAULT = 5.0;
 
 public:
-	PointCloudRenderMode()
-	{
-		SetRenderModeType(RENDERMODE_POINTCLOUD);
-	}
-
+	PointCloudRenderMode() : RenderMode(RENDERMODE_POINTCLOUD) {}
 	virtual ~PointCloudRenderMode() {}
 
 public:
@@ -137,11 +130,7 @@ public:
 	};
 
 public:
-	TriangleMeshRenderMode()
-	{
-		SetRenderModeType(RENDERMODE_TRIANGLEMESH);
-	}
-
+	TriangleMeshRenderMode() : RenderMode(RENDERMODE_TRIANGLEMESH) {}
 	virtual ~TriangleMeshRenderMode() {}
 
 public:
@@ -206,11 +195,7 @@ public:
 	};
 
 public:
-	ImageRenderMode()
-	{
-		SetRenderModeType(RENDERMODE_IMAGE);
-	}
-
+	ImageRenderMode() : RenderMode(RENDERMODE_IMAGE) {}
 	virtual ~ImageRenderMode() {}
 
 public:

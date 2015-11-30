@@ -36,41 +36,46 @@ namespace three {
 
 namespace glsl {
 	
-class ShaderWrapper {
+class ShaderWrapper
+{
 public:
-	ShaderWrapper() {}
 	virtual ~ShaderWrapper() {}
 	ShaderWrapper(const ShaderWrapper &) = delete;
 	ShaderWrapper &operator=(const ShaderWrapper &) = delete;
-	
-public:
-	/// Function to compile shader.
-	virtual bool Compile() = 0;
-	
-	/// Function to render geometry under condition of mode and view
-	/// Everything is updated passively in this model. Thus this function
-	/// compiles shaders if not yet, binds geometry if not yet, then do the
-	/// rendering.
-	virtual bool Render(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view) = 0;
-	virtual void Release() = 0;
-	void Invalidate() {
-		// Call this function when the shader is invalidated.
-		UnbindGeometry();
-	}
 
 protected:
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
+	ShaderWrapper(std::string name) : shader_name_(name) {}
+
+public:
+	/// Function to render geometry under condition of mode and view
+	/// The geometry is updated in a passive manner (bind only when needed).
+	/// Thus this function compiles shaders if not yet, binds geometry if not
+	/// yet, then do the rendering.
+	bool Render(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view);
+	
+	/// Function to invalidate the geometry (set the dirty flag and release
+	/// geometry resource)
+	void InvalidateGeometry();
+	
+	std::string GetShaderName() { return shader_name_; }
+	
+protected:
+	/// Function to compile shader
+	/// In a derived class, this must be declared as final, and called from
+	/// the constructor.
+	virtual bool Compile() = 0;
+	
+	/// Function to release resource
+	/// In a derived class, this must be declared as final, and called from
+	/// the destructor.
+	virtual void Release() = 0;
+
+	virtual bool BindGeometry(const Geometry &geometry, const RenderMode &mode,
 			const ViewControl &view) = 0;
+	virtual bool RenderGeometry(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) = 0;
 	virtual void UnbindGeometry() = 0;
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view) = 0;
 	
 protected:
 	bool ValidateShader(GLuint shader_index);
@@ -90,6 +95,14 @@ protected:
 	GLsizei draw_arrays_size_ = 0;
 	bool compiled_ = false;
 	bool bound_ = false;
+	
+	void SetShaderName(std::string shader_name) {
+		shader_name_ = shader_name;
+	}
+	
+private:
+	std::string shader_name_ = "ShaderWrapper";
+
 };
 
 }	// namespace three::glsl

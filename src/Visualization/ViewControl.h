@@ -33,7 +33,8 @@
 
 namespace three {
 
-class ViewControl {
+class ViewControl
+{
 public:
 	const double FIELD_OF_VIEW_MAX = 90.0;
 	const double FIELD_OF_VIEW_MIN = 0.0;

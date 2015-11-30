@@ -32,34 +32,28 @@ namespace three {
 
 namespace glsl {
 	
-class SimpleShader : public ShaderWrapper {
+class SimpleShader : public ShaderWrapper
+{
 public:
-	SimpleShader() {}
-	virtual ~SimpleShader() {}
-	
-public:
-	virtual bool Compile();
-	virtual bool Render(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void Release();
+	virtual ~SimpleShader() { Release(); }
 
 protected:
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void UnbindGeometry();
+	SimpleShader(std::string name) : ShaderWrapper(name) { Compile(); }
 	
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view) = 0;
-	virtual bool PrepareBinding(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view,
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
+
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points,
 			std::vector<Eigen::Vector3f> &colors) = 0;
 
@@ -71,18 +65,18 @@ protected:
 	GLuint MVP_;
 };
 
-class SimpleShaderForPointCloud : public SimpleShader {
+class SimpleShaderForPointCloud : public SimpleShader
+{
+public:
+	SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
+	
 protected:
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual bool PrepareBinding(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view,
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors);
+			std::vector<Eigen::Vector3f> &colors) final;
 };
 	
 }	// namespace three::glsl

@@ -28,9 +28,8 @@
 
 namespace three{
 
-Image::Image()
+Image::Image() : Geometry(GEOMETRY_IMAGE)
 {
-	SetGeometryType(GEOMETRY_IMAGE);
 }
 
 Image::~Image()

@@ -32,7 +32,8 @@
 
 namespace three {
 
-class ViewTrajectory {
+class ViewTrajectory
+{
 public:
 	typedef Eigen::Matrix<double, 11, 4, Eigen::RowMajor> Matrix11x4d;
 	typedef Eigen::Matrix<double, 11, 1> Vector11d;
@@ -49,7 +50,6 @@ public:
 		Vector11d ConvertToVector11d();
 		void ConvertFromVector11d(const ViewTrajectory::Vector11d &v);
 	};
-
 
 	const int INTERVAL_MAX = 59;
 	const int INTERVAL_MIN = 0;

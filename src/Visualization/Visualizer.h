@@ -41,7 +41,8 @@
 
 namespace three {
 
-class Visualizer : public IGeometryOwner {
+class Visualizer : public IGeometryOwner
+{
 public:
 	struct MouseControl {
 	public:

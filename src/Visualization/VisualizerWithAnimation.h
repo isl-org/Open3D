@@ -30,7 +30,8 @@
 
 namespace three {
 
-class VisualizerWithAnimation : public Visualizer  {
+class VisualizerWithAnimation : public Visualizer
+{
 public:
 	VisualizerWithAnimation();
 	virtual ~VisualizerWithAnimation();

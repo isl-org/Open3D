@@ -41,8 +41,10 @@ public:
 	};
 	
 public:
-	Geometry();
-	virtual ~Geometry();
+	virtual ~Geometry() {};
+	
+protected:
+	Geometry(GeometryType type) : geometry_type_(type) {}
 
 public:
 	virtual bool CloneFrom(const Geometry &reference) = 0;
@@ -53,11 +55,6 @@ public:
 	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
 	
 	GeometryType GetGeometryType() const { return geometry_type_; }
-
-protected:
-	void SetGeometryType(GeometryType type) {
-		geometry_type_ = type;
-	}
 	
 private:
 	GeometryType geometry_type_ = GEOMETRY_UNKNOWN;

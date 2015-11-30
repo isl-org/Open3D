@@ -40,7 +40,8 @@ bool SimpleShader::Compile()
 			NULL,
 			SimpleFragmentShader) == false)
 	{
-		PrintWarning("[SimpleShader] Compiling shaders failed.\n");
+		PrintWarning("[%s] Compiling shaders failed.\n",
+				GetShaderName().c_str());
 		return false;
 	}
 	
@@ -57,16 +58,14 @@ void SimpleShader::Release()
 	ReleaseProgram();
 }
 
-bool SimpleShader::BindGeometry(
-		const Geometry &geometry, 
-		const RenderMode &mode,
-		const ViewControl &view)
+bool SimpleShader::BindGeometry(const Geometry &geometry,
+		const RenderMode &mode, const ViewControl &view)
 {
 	// If there is already geometry, we first unbind it.
 	// We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
 	// rebind the geometry. Note that this approach is slow. If the geomtry is
 	// changing per frame, consider implementing a new ShaderWrapper using
-	// GL_STREAM_DRAW, and replace UnbindGeometry() with Buffer Object
+	// GL_STREAM_DRAW, and replace InvalidateGeometry() with Buffer Object
 	// Streaming mechanisms.
 	UnbindGeometry();
 
@@ -74,7 +73,8 @@ bool SimpleShader::BindGeometry(
 	std::vector<Eigen::Vector3f> points;
 	std::vector<Eigen::Vector3f> colors;
 	if (PrepareBinding(geometry, mode, view, points, colors) == false) {
-		PrintWarning("[SimpleShader] Binding failed when preparing data.\n");
+		PrintWarning("[%s] Binding failed when preparing data.\n",
+				GetShaderName().c_str());
 		return false;
 	}
 	
@@ -96,32 +96,12 @@ bool SimpleShader::BindGeometry(
 	return true;
 }
 
-void SimpleShader::UnbindGeometry()
+bool SimpleShader::RenderGeometry(const Geometry &geometry,
+		const RenderMode &mode, const ViewControl &view)
 {
-	if (bound_) {
-		glDeleteBuffers(1, &vertex_position_buffer_);
-		glDeleteBuffers(1, &vertex_color_buffer_);
-		bound_ = false;
-	}
-}
-
-bool SimpleShader::Render(
-		const Geometry &geometry,
-		const RenderMode &mode,
-		const ViewControl &view)
-{
-	if (compiled_ == false) {
-		Compile();
-	}
-	if (bound_ == false) {
-		BindGeometry(geometry, mode, view);
-	}
-	if (compiled_ == false || bound_ == false) {
-		PrintWarning("[SimpleShader] Something is wrong in compiling or binding.\n");
-		return false;
-	}
 	if (PrepareRendering(geometry, mode, view) == false) {
-		PrintWarning("[SimpleShader] Rendering failed during preparation.\n");
+		PrintWarning("[%s] Rendering failed during preparation.\n",
+				GetShaderName().c_str());
 		return false;
 	}
 	glUseProgram(program_);
@@ -138,14 +118,22 @@ bool SimpleShader::Render(
 	return true;
 }
 
-bool SimpleShaderForPointCloud::PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view)
+void SimpleShader::UnbindGeometry()
+{
+	if (bound_) {
+		glDeleteBuffers(1, &vertex_position_buffer_);
+		glDeleteBuffers(1, &vertex_color_buffer_);
+		bound_ = false;
+	}
+}
+
+bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
-		PrintWarning("[SimpleShaderForPointCloud] Rendering type is not PointCloud.\n");
+		PrintWarning("[%s] Rendering type is not PointCloud.\n",
+				GetShaderName().c_str());
 		return false;
 	}
 	const auto &rendermode = (const PointCloudRenderMode &)mode;
@@ -153,21 +141,21 @@ bool SimpleShaderForPointCloud::PrepareRendering(
 	return true;
 }
 
-bool SimpleShaderForPointCloud::PrepareBinding(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view,
+bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points,
 			std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
-		PrintWarning("[SimpleShaderForPointCloud] Binding type is not PointCloud.\n");
+		PrintWarning("[%s] Binding type is not PointCloud.\n",
+				GetShaderName().c_str());
 		return false;
 	}
 	const PointCloud &pointcloud = (const PointCloud &)geometry;
 	if (pointcloud.HasPoints() == false) {
-		PrintWarning("[SimpleShaderForPointCloud] Binding failed with empty pointcloud.\n");
+		PrintWarning("[%s] Binding failed with empty pointcloud.\n",
+				GetShaderName().c_str());
 		return false;
 	}
 	const auto &rendermode = (const PointCloudRenderMode &)mode;
@@ -205,7 +193,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(
 		colors[i] = color.cast<float>();
 	}
 	draw_arrays_mode_ = GL_POINTS;
-	draw_arrays_size_ = pointcloud.points_.size();
+	draw_arrays_size_ = points.size();
 	return true;
 }
 

@@ -30,7 +30,8 @@
 
 namespace three {
 
-class BoundingBox  {
+class BoundingBox
+{
 public:
 	void Reset();
 	void AddGeometry(const Geometry &geometry);

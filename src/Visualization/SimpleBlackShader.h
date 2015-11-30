@@ -32,33 +32,28 @@ namespace three {
 
 namespace glsl {
 	
-class SimpleBlackShader : public ShaderWrapper {
+class SimpleBlackShader : public ShaderWrapper
+{
 public:
-	SimpleBlackShader() {}
-	virtual ~SimpleBlackShader() {}
-	
-public:
-	virtual bool Compile();
-	virtual bool Render(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void Release();
+	virtual ~SimpleBlackShader() { Release(); }
 
 protected:
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void UnbindGeometry();
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view) = 0;
-	virtual bool PrepareBinding(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view,
+	SimpleBlackShader(std::string name) : ShaderWrapper(name) { Compile(); }
+
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
+
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points) = 0;
 
 protected:
@@ -67,30 +62,32 @@ protected:
 	GLuint MVP_;
 };
 	
-class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader {
+class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader
+{
+public:
+	SimpleBlackShaderForPointCloudNormal() :
+			SimpleBlackShader("SimpleBlackShaderForPointCloudNormal") {}
+
 protected:
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual bool PrepareBinding(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points);
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points) final;
 };
 
-class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader {
+class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader
+{
+public:
+	SimpleBlackShaderForTriangleMeshWireFrame() :
+			SimpleBlackShader("SimpleBlackShaderForTriangleMeshWireFrame") {}
+
 protected:
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual bool PrepareBinding(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points);
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points) final;
 };
 
 }	// namespace three::glsl
