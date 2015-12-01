@@ -86,6 +86,8 @@ set(ZLIB_SRCS
 
 if (APPLE)
     add_compile_options(-Wno-implicit-function-declaration)
+elseif(UNIX)
+    add_compile_options(-Wno-implicit-function-declaration)
 endif(APPLE)
 
 add_library(${ZLIB_LIBRARY} STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
