@@ -156,7 +156,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 		}
 	}
 	draw_arrays_mode_ = GL_LINES;
-	draw_arrays_size_ = points.size();
+	draw_arrays_size_ = GLsizei(points.size());
 	return true;
 }
 
@@ -200,7 +200,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
 		}
 	}
 	draw_arrays_mode_ = GL_TRIANGLES;
-	draw_arrays_size_ = points.size();
+	draw_arrays_size_ = GLsizei(points.size());
 	return true;
 }
 

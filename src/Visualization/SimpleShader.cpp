@@ -193,7 +193,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		colors[i] = color.cast<float>();
 	}
 	draw_arrays_mode_ = GL_POINTS;
-	draw_arrays_size_ = points.size();
+	draw_arrays_size_ = GLsizei(points.size());
 	return true;
 }
 
