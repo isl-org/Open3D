@@ -33,7 +33,8 @@ namespace three{
 
 namespace {
 
-class GLFWEnvironmentSingleton {
+class GLFWEnvironmentSingleton
+{
 public:
 	GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n");}
 	~GLFWEnvironmentSingleton() {

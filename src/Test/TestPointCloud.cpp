@@ -32,7 +32,8 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintPointCloud(const three::PointCloud &pointcloud) {
+void PrintPointCloud(const three::PointCloud &pointcloud)
+{
 	using namespace three;
 	
 	bool pointcloud_has_normal = pointcloud.HasNormals();
