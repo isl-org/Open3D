@@ -79,10 +79,8 @@ bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER,
-			points.size() * sizeof(Eigen::Vector3f),
-			points.data(),
-			GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
+			points.data(), GL_STATIC_DRAW);
 	
 	bound_ = true;	
 	return true;
@@ -115,8 +113,8 @@ void SimpleBlackShader::UnbindGeometry()
 }
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
-			const Geometry &geometry, const RenderMode &mode,
-			const ViewControl &view)
+		const Geometry &geometry, const RenderMode &mode,
+		const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
@@ -128,8 +126,8 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 }
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
-			const Geometry &geometry, const RenderMode &mode,
-			const ViewControl &view, std::vector<Eigen::Vector3f> &points)
+		const Geometry &geometry, const RenderMode &mode,
+		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
@@ -161,8 +159,8 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
-			const Geometry &geometry, const RenderMode &mode,
-			const ViewControl &view)
+		const Geometry &geometry, const RenderMode &mode,
+		const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
@@ -174,8 +172,8 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
-			const Geometry &geometry, const RenderMode &mode,
-			const ViewControl &view, std::vector<Eigen::Vector3f> &points)
+		const Geometry &geometry, const RenderMode &mode,
+		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
 			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {

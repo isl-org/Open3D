@@ -81,16 +81,12 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER,
-			points.size() * sizeof(Eigen::Vector3f),
-			points.data(),
-			GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
+			points.data(), GL_STATIC_DRAW);
 	glGenBuffers(1, &vertex_color_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-	glBufferData(GL_ARRAY_BUFFER,
-			colors.size() * sizeof(Eigen::Vector3f),
-			colors.data(),
-			GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
+			colors.data(), GL_STATIC_DRAW);
 	
 	bound_ = true;	
 	return true;

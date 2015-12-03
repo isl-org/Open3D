@@ -32,32 +32,34 @@ namespace three {
 
 namespace glsl {
 	
-class ShaderTriangleMeshDefault : public ShaderWrapper {
+class PhongShader : public ShaderWrapper
+{
 public:
-	ShaderTriangleMeshDefault() {}
-	virtual ~ShaderTriangleMeshDefault() {}
+	virtual ~PhongShader() { Release(); }
 	
-public:
-	virtual bool Compile();
-	virtual bool Render(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void Release();
+protected:
+	PhongShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderMode &mode,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
 
 protected:
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void UnbindGeometry();
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view) { return true; }
-	virtual void SetLight(
-			const TriangleMeshRenderMode &mode, 
-			const ViewControl &view);
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &normals,
+			std::vector<Eigen::Vector3f> &colors) = 0;
+	
+protected:
+	void SetBoundingBoxLight(const ViewControl &view, bool light_on = true);
 
 protected:
 	GLuint vertex_position_;
@@ -72,19 +74,48 @@ protected:
 	GLuint light_position_world_;
 	GLuint light_color_;
 	GLuint light_power_;
+	GLuint light_ambient_;
 
 	// At most support 4 lights
 	GLHelper::GLMatrix4f light_position_world_data_;
 	GLHelper::GLMatrix4f light_color_data_;
 	GLHelper::GLVector4f light_power_data_;
+	GLHelper::GLVector4f light_ambient_data_;
 
-	Eigen::Vector3d default_color_ = 
+	const Eigen::Vector3d default_color_ =
 			Eigen::Vector3d(0.439216, 0.858824, 0.858824);
-	
-	GLsizei vertex_num_ = 0;
-	bool lights_on_ = true;
 };
+
+class PhongShaderForPointCloud : public PhongShader
+{
+public:
+	PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
 	
+protected:
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &normals,
+			std::vector<Eigen::Vector3f> &colors) final;
+};
+
+class PhongShaderForTriangleMesh : public PhongShader
+{
+public:
+	PhongShaderForTriangleMesh() : PhongShader("PhongShaderForTriangleMesh") {}
+	
+protected:
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderMode &mode, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &normals,
+			std::vector<Eigen::Vector3f> &colors) final;
+};
+
 }	// namespace three::glsl
 
 }	// namespace three

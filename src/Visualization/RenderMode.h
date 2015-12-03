@@ -31,13 +31,17 @@
 namespace three {
 
 /// Base RenderMode class
-class RenderMode {
+class RenderMode
+{
 public:
 	enum RenderModeType {
 		RENDERMODE_UNKNOWN = 0,
 		RENDERMODE_POINTCLOUD = 1,
 		RENDERMODE_TRIANGLEMESH = 2,
 		RENDERMODE_IMAGE = 3,
+	};
+	enum LightingOption {
+		LIGHTING_DEFAULT = 0,
 	};
 
 public:
@@ -48,13 +52,32 @@ protected:
 
 public:
 	RenderModeType GetRenderModeType() const { return rendermode_type_; }
+
+	LightingOption GetLightingOption() const {
+		return lighting_option_;
+	}
+
+	void SetLightingOption(LightingOption option) {
+		lighting_option_ = option;
+	}
+
+	void ToggleLightOn() {
+		light_on_ = !light_on_;
+	}
+	
+	bool IsLightOn() const {
+		return light_on_;
+	}
 	
 private:
 	RenderModeType rendermode_type_;
+	LightingOption lighting_option_ = LIGHTING_DEFAULT;
+	bool light_on_ = false;
 };
 
 /// RenderMode class for PointCloud
-class PointCloudRenderMode : public RenderMode {
+class PointCloudRenderMode : public RenderMode
+{
 public:
 	enum PointColorOption {
 		POINTCOLOR_DEFAULT = 0,
@@ -102,6 +125,7 @@ public:
 	bool IsNormalShown() const {
 		return show_normal_;
 	}
+	
 
 private:
 	double point_size_ = POINT_SIZE_DEFAULT;
@@ -123,10 +147,6 @@ public:
 		TRIANGLEMESH_X = 2,
 		TRIANGLEMESH_Y = 3,
 		TRIANGLEMESH_Z = 4,
-	};
-
-	enum LightingOption {
-		LIGHTING_DEFAULT = 0,
 	};
 
 public:
@@ -158,14 +178,6 @@ public:
 		mesh_color_option_ = option;
 	}
 
-	LightingOption GetLightingOption() const {
-		return lighting_option_;
-	}
-
-	void SetLightingOption(LightingOption option) {
-		lighting_option_ = option;
-	}
-
 	void ToggleShowBackFace() {
 		show_back_face_ = !show_back_face_;
 	}
@@ -177,12 +189,12 @@ public:
 private:
 	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
 	MeshColorOption mesh_color_option_ = TRIANGLEMESH_DEFAULT;
-	LightingOption lighting_option_ = LIGHTING_DEFAULT;
 	bool show_back_face_ = false;
 };
 
 /// RenderMode class for Image
-class ImageRenderMode : public RenderMode {
+class ImageRenderMode : public RenderMode
+{
 public:
 	enum ImageStretchOption {
 		IMAGE_ORIGINAL_SIZE = 0,

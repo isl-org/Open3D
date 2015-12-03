@@ -8,11 +8,12 @@ varying vec3 fragment_color;
 
 uniform mat4 light_color_4;
 uniform vec4 light_power_4;
+uniform vec4 light_ambient;
 
 void main()
 {
 	vec3 diffuse_color = fragment_color;
-	vec3 ambient_color = vec3(0.1, 0.1, 0.1) * diffuse_color;
+	vec3 ambient_color = light_ambient.xyz * diffuse_color;
 	vec3 specular_color = vec3(0.8, 0.8, 0.8);
 	vec4 cos_theta;
 	vec4 cos_alpha;
