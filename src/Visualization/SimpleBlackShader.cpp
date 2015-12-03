@@ -58,7 +58,7 @@ void SimpleBlackShader::Release()
 }
 
 bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
 	// If there is already geometry, we first unbind it.
 	// We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
@@ -70,7 +70,7 @@ bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
 
 	// Prepare data to be passed to GPU
 	std::vector<Eigen::Vector3f> points;
-	if (PrepareBinding(geometry, mode, view, points) == false) {
+	if (PrepareBinding(geometry, option, view, points) == false) {
 		PrintWarning("[%s] Binding failed when preparing data.\n",
 				GetShaderName().c_str());
 		return false;
@@ -87,9 +87,9 @@ bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
 }
 
 bool SimpleBlackShader::RenderGeometry(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
-	if (PrepareRendering(geometry, mode, view) == false) {
+	if (PrepareRendering(geometry, option, view) == false) {
 		PrintWarning("[%s] Rendering failed during preparation.\n",
 				GetShaderName().c_str());
 		return false;
@@ -113,11 +113,10 @@ void SimpleBlackShader::UnbindGeometry()
 }
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
-		const Geometry &geometry, const RenderMode &mode,
+		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintWarning("[%s] Rendering type is not PointCloud.\n",
 				GetShaderName().c_str());
 		return false;
@@ -126,11 +125,10 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 }
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
-		const Geometry &geometry, const RenderMode &mode,
+		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintWarning("[%s] Binding type is not PointCloud.\n",
 				GetShaderName().c_str());
 		return false;
@@ -141,10 +139,9 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 				GetShaderName().c_str());
 		return false;
 	}
-	const auto &rendermode = (const PointCloudRenderMode &)mode;
 	points.resize(pointcloud.points_.size() * 2);
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		double line_length = rendermode.GetPointSize() *
+		double line_length = option.GetPointSize() *
 				0.01 * view.GetBoundingBox().GetSize();
 		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 			const auto &point = pointcloud.points_[i];
@@ -159,11 +156,10 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
-		const Geometry &geometry, const RenderMode &mode,
+		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		PrintWarning("[%s] Rendering type is not TriangleMesh.\n",
 				GetShaderName().c_str());
 		return false;
@@ -172,11 +168,10 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
-		const Geometry &geometry, const RenderMode &mode,
+		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		PrintWarning("[%s] Binding type is not TriangleMesh.\n",
 				GetShaderName().c_str());
 		return false;

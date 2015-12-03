@@ -30,7 +30,7 @@
 #include <Core/Core.h>
 
 #include "ViewControl.h"
-#include "RenderMode.h"
+#include "RenderOption.h"
 
 namespace three {
 
@@ -51,7 +51,7 @@ public:
 	/// The geometry is updated in a passive manner (bind only when needed).
 	/// Thus this function compiles shaders if not yet, binds geometry if not
 	/// yet, then do the rendering.
-	bool Render(const Geometry &geometry, const RenderMode &mode,
+	bool Render(const Geometry &geometry, const RenderOption &option,
 			const ViewControl &view);
 	
 	/// Function to invalidate the geometry (set the dirty flag and release
@@ -71,10 +71,10 @@ protected:
 	/// the destructor.
 	virtual void Release() = 0;
 
-	virtual bool BindGeometry(const Geometry &geometry, const RenderMode &mode,
-			const ViewControl &view) = 0;
+	virtual bool BindGeometry(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) = 0;
 	virtual bool RenderGeometry(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view) = 0;
+			const RenderOption &option, const ViewControl &view) = 0;
 	virtual void UnbindGeometry() = 0;
 	
 protected:

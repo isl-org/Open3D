@@ -43,17 +43,17 @@ protected:
 protected:
 	bool Compile() final;
 	void Release() final;
-	bool BindGeometry(const Geometry &geometry, const RenderMode &mode,
+	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
 			const ViewControl &view) final;
-	bool RenderGeometry(const Geometry &geometry, const RenderMode &mode,
+	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
 			const ViewControl &view) final;
 	void UnbindGeometry() final;
 
 protected:
 	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view) = 0;
+			const RenderOption &option, const ViewControl &view) = 0;
 	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view,
+			const RenderOption &option, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points) = 0;
 
 protected:
@@ -70,9 +70,9 @@ public:
 
 protected:
 	bool PrepareRendering(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view) final;
+			const RenderOption &option, const ViewControl &view) final;
 	bool PrepareBinding(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view,
+			const RenderOption &option, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points) final;
 };
 
@@ -84,9 +84,9 @@ public:
 
 protected:
 	bool PrepareRendering(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view) final;
+			const RenderOption &option, const ViewControl &view) final;
 	bool PrepareBinding(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view,
+			const RenderOption &option, const ViewControl &view,
 			std::vector<Eigen::Vector3f> &points) final;
 };
 

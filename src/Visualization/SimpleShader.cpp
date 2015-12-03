@@ -59,7 +59,7 @@ void SimpleShader::Release()
 }
 
 bool SimpleShader::BindGeometry(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
 	// If there is already geometry, we first unbind it.
 	// We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
@@ -72,7 +72,7 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
 	// Prepare data to be passed to GPU
 	std::vector<Eigen::Vector3f> points;
 	std::vector<Eigen::Vector3f> colors;
-	if (PrepareBinding(geometry, mode, view, points, colors) == false) {
+	if (PrepareBinding(geometry, option, view, points, colors) == false) {
 		PrintWarning("[%s] Binding failed when preparing data.\n",
 				GetShaderName().c_str());
 		return false;
@@ -93,9 +93,9 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
 }
 
 bool SimpleShader::RenderGeometry(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
-	if (PrepareRendering(geometry, mode, view) == false) {
+	if (PrepareRendering(geometry, option, view) == false) {
 		PrintWarning("[%s] Rendering failed during preparation.\n",
 				GetShaderName().c_str());
 		return false;
@@ -124,26 +124,23 @@ void SimpleShader::UnbindGeometry()
 }
 
 bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintWarning("[%s] Rendering type is not PointCloud.\n",
 				GetShaderName().c_str());
 		return false;
 	}
-	const auto &rendermode = (const PointCloudRenderMode &)mode;
-	glPointSize(GLfloat(rendermode.GetPointSize()));
+	glPointSize(GLfloat(option.GetPointSize()));
 	return true;
 }
 
 bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
-			const RenderMode &mode, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors)
+		const RenderOption &option, const ViewControl &view,
+		std::vector<Eigen::Vector3f> &points,
+		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintWarning("[%s] Binding type is not PointCloud.\n",
 				GetShaderName().c_str());
 		return false;
@@ -154,7 +151,6 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
-	const auto &rendermode = (const PointCloudRenderMode &)mode;
 	const ColorMap &global_color_map = *GetGlobalColorMap();
 	points.resize(pointcloud.points_.size());
 	colors.resize(pointcloud.points_.size());
@@ -162,21 +158,21 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		const auto &point = pointcloud.points_[i];
 		points[i] = point.cast<float>();
 		Eigen::Vector3d color;
-		switch (rendermode.GetPointColorOption()) {
-		case PointCloudRenderMode::POINTCOLOR_X:
+		switch (option.GetPointColorOption()) {
+		case RenderOption::POINTCOLOR_X:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetXPercentage(point(0)));
 			break;
-		case PointCloudRenderMode::POINTCOLOR_Y:
+		case RenderOption::POINTCOLOR_Y:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetYPercentage(point(1)));
 			break;
-		case PointCloudRenderMode::POINTCOLOR_Z:
+		case RenderOption::POINTCOLOR_Z:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetZPercentage(point(2)));
 			break;
-		case PointCloudRenderMode::POINTCOLOR_COLOR:
-		case PointCloudRenderMode::POINTCOLOR_DEFAULT:
+		case RenderOption::POINTCOLOR_COLOR:
+		case RenderOption::POINTCOLOR_DEFAULT:
 		default:
 			if (pointcloud.HasColors()) {
 				color = pointcloud.colors_[i];

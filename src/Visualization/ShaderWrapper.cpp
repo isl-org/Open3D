@@ -32,21 +32,21 @@ namespace three{
 
 namespace glsl {
 
-bool ShaderWrapper::Render(const three::Geometry &geometry,
-		const three::RenderMode &mode, const three::ViewControl &view)
+bool ShaderWrapper::Render(const Geometry &geometry, const RenderOption &option,
+		const ViewControl &view)
 {
 	if (compiled_ == false) {
 		Compile();
 	}
 	if (bound_ == false) {
-		BindGeometry(geometry, mode, view);
+		BindGeometry(geometry, option, view);
 	}
 	if (compiled_ == false || bound_ == false) {
 		PrintWarning("[%s] Something is wrong in compiling or binding.\n",
 				GetShaderName().c_str());
 		return false;
 	}
-	return RenderGeometry(geometry, mode, view);
+	return RenderGeometry(geometry, option, view);
 }
 
 void ShaderWrapper::InvalidateGeometry()

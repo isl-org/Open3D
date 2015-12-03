@@ -32,30 +32,29 @@ namespace three {
 
 namespace glsl {
 	
-class ShaderImageDefault : public ShaderWrapper {
+class ImageShader : public ShaderWrapper
+{
 public:
-	ShaderImageDefault() {}
-	virtual ~ShaderImageDefault() {}
-	
-public:
-	virtual bool Compile();
-	virtual bool Render(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void Release();
+	virtual ~ImageShader() { Release(); }
 
 protected:
-	virtual bool BindGeometry(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view);
-	virtual void UnbindGeometry();
-	virtual bool PrepareRendering(
-			const Geometry &geometry,
-			const RenderMode &mode,
-			const ViewControl &view) { return true; }
+	ImageShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
 
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			Image &image) = 0;
 
 protected:
 	GLuint vertex_position_;
@@ -67,6 +66,19 @@ protected:
 	GLuint vertex_scale_;
 	
 	GLHelper::GLVector3f vertex_scale_data_;
+};
+
+class ImageShaderForImage : public ImageShader
+{
+public:
+	ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
+
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) final;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			Image &render_image) final;
 };
 	
 }	// namespace three::glsl

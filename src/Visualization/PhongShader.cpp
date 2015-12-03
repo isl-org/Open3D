@@ -67,7 +67,7 @@ void PhongShader::Release()
 }
 
 bool PhongShader::BindGeometry(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
 	// If there is already geometry, we first unbind it.
 	// We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
@@ -81,8 +81,8 @@ bool PhongShader::BindGeometry(const Geometry &geometry,
 	std::vector<Eigen::Vector3f> points;
 	std::vector<Eigen::Vector3f> normals;
 	std::vector<Eigen::Vector3f> colors;
-	if (PrepareBinding(geometry, mode, view, points, normals, colors) == false)
-	{
+	if (PrepareBinding(geometry, option, view, points, normals, colors) ==
+			false) {
 		PrintWarning("[%s] Binding failed when preparing data.\n",
 				GetShaderName().c_str());
 		return false;
@@ -107,9 +107,9 @@ bool PhongShader::BindGeometry(const Geometry &geometry,
 }
 	
 bool PhongShader::RenderGeometry(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view)
+		const RenderOption &option, const ViewControl &view)
 {
-	if (PrepareRendering(geometry, mode, view) == false) {
+	if (PrepareRendering(geometry, option, view) == false) {
 		PrintWarning("[%s] Rendering failed during preparation.\n",
 				GetShaderName().c_str());
 		return false;
@@ -181,26 +181,24 @@ void PhongShader::SetBoundingBoxLight(const ViewControl &view,
 }
 
 bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-		const RenderMode &mode,const ViewControl &view)
+		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintWarning("[%s] Rendering type is not PointCloud.\n",
 				GetShaderName().c_str());
 		return false;
 	}
-	SetBoundingBoxLight(view, mode.IsLightOn());
+	SetBoundingBoxLight(view, option.IsLightOn());
 	return true;
 }
 
 bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view,
+		const RenderOption &option, const ViewControl &view,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &normals,
 		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintWarning("[%s] Binding type is not PointCloud.\n",
 				GetShaderName().c_str());
 		return false;
@@ -216,7 +214,6 @@ bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
-	const auto &rendermode = (const PointCloudRenderMode &)mode;
 	const ColorMap &global_color_map = *GetGlobalColorMap();
 	points.resize(pointcloud.points_.size());
 	normals.resize(pointcloud.points_.size());
@@ -227,21 +224,21 @@ bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		points[i] = point.cast<float>();
 		normals[i] = normal.cast<float>();
 		Eigen::Vector3d color;
-		switch (rendermode.GetPointColorOption()) {
-		case PointCloudRenderMode::POINTCOLOR_X:
+		switch (option.GetPointColorOption()) {
+		case RenderOption::POINTCOLOR_X:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetXPercentage(point(0)));
 			break;
-		case PointCloudRenderMode::POINTCOLOR_Y:
+		case RenderOption::POINTCOLOR_Y:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetYPercentage(point(1)));
 			break;
-		case PointCloudRenderMode::POINTCOLOR_Z:
+		case RenderOption::POINTCOLOR_Z:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetZPercentage(point(2)));
 			break;
-		case PointCloudRenderMode::POINTCOLOR_COLOR:
-		case PointCloudRenderMode::POINTCOLOR_DEFAULT:
+		case RenderOption::POINTCOLOR_COLOR:
+		case RenderOption::POINTCOLOR_DEFAULT:
 		default:
 			if (pointcloud.HasColors()) {
 				color = pointcloud.colors_[i];
@@ -259,17 +256,15 @@ bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 }
 
 bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
-		const RenderMode &mode,const ViewControl &view)
+		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		PrintWarning("[%s] Rendering type is not TriangleMesh.\n",
 				GetShaderName().c_str());
 		return false;
 	}
-	SetBoundingBoxLight(view, mode.IsLightOn());
-	const auto &rendermode = (const TriangleMeshRenderMode &)mode;
-	if (rendermode.IsBackFaceShown()) {
+	SetBoundingBoxLight(view, option.IsLightOn());
+	if (option.IsMeshBackFaceShown()) {
 		glDisable(GL_CULL_FACE);
 	} else {
 		glEnable(GL_CULL_FACE);
@@ -278,13 +273,12 @@ bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 }
 
 bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
-		const RenderMode &mode, const ViewControl &view,
+		const RenderOption &option, const ViewControl &view,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &normals,
 		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH ||
-			mode.GetRenderModeType() != RenderMode::RENDERMODE_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		PrintWarning("[%s] Binding type is not TriangleMesh.\n",
 				GetShaderName().c_str());
 		return false;
@@ -303,7 +297,6 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
-	const auto &rendermode = (const TriangleMeshRenderMode &)mode;
 	const ColorMap &global_color_map = *GetGlobalColorMap();
 	points.resize(mesh.triangles_.size() * 3);
 	normals.resize(mesh.triangles_.size() * 3);
@@ -318,33 +311,33 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			points[idx] = vertex.cast<float>();
 
 			Eigen::Vector3d color;
-			switch (rendermode.GetMeshColorOption()) {
-			case TriangleMeshRenderMode::TRIANGLEMESH_X:
+			switch (option.GetMeshColorOption()) {
+			case RenderOption::TRIANGLEMESH_X:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetXPercentage(vertex(0)));
 				break;
-			case TriangleMeshRenderMode::TRIANGLEMESH_Y:
+			case RenderOption::TRIANGLEMESH_Y:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetYPercentage(vertex(1)));
 				break;
-			case TriangleMeshRenderMode::TRIANGLEMESH_Z:
+			case RenderOption::TRIANGLEMESH_Z:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetZPercentage(vertex(2)));
 				break;
-			case TriangleMeshRenderMode::TRIANGLEMESH_COLOR:
+			case RenderOption::TRIANGLEMESH_COLOR:
 				if (mesh.HasVertexColors()) {
 					color = mesh.vertex_colors_[vi];
 					break;
 				}
-			case TriangleMeshRenderMode::TRIANGLEMESH_DEFAULT:
+			case RenderOption::TRIANGLEMESH_DEFAULT:
 			default:
-				color = default_color_;
+				color = option.MESH_DEFAULT_COLOR;
 				break;
 			}
 			colors[idx] = color.cast<float>();
 
-			if (rendermode.GetMeshShadeOption() ==
-					TriangleMeshRenderMode::MESHSHADE_FLATSHADE) {
+			if (option.GetMeshShadeOption() ==
+					RenderOption::MESHSHADE_FLATSHADE) {
 				normals[idx] = mesh.triangle_normals_[i].cast<float>();
 			} else {
 				normals[idx] = mesh.vertex_normals_[vi].cast<float>();
