@@ -72,8 +72,8 @@ public:
 		return bounding_box_;
 	}
 
-	void AddGeometry(const Geometry &geometry) {
-		bounding_box_.AddGeometry(geometry);
+	void FitInGeometry(const Geometry &geometry) {
+		bounding_box_.FitInGeometry(geometry);
 		SetProjectionParameters();
 	}
 

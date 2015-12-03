@@ -34,7 +34,7 @@ class BoundingBox
 {
 public:
 	void Reset();
-	void AddGeometry(const Geometry &geometry);
+	void FitInGeometry(const Geometry &geometry);
 
 public:
 	Eigen::Vector3d GetCenter() const {

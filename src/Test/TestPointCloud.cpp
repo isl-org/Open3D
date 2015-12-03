@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	pointcloud_ptr->CloneFrom(pointcloud);
 	pointcloud_ptr->NormalizeNormals();
 	BoundingBox bounding_box;
-	bounding_box.AddGeometry(*pointcloud_ptr);
+	bounding_box.FitInGeometry(*pointcloud_ptr);
 	
 	std::shared_ptr<PointCloud> pointcloud_transformed_ptr(new PointCloud);
 	pointcloud_transformed_ptr->CloneFrom(*pointcloud_ptr);
