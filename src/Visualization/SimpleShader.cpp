@@ -189,6 +189,82 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 	return true;
 }
 
+bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
+		const RenderOption &option, const ViewControl &view)
+{
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+		PrintWarning("[%s] Rendering type is not TriangleMesh.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	if (option.IsMeshBackFaceShown()) {
+		glDisable(GL_CULL_FACE);
+	} else {
+		glEnable(GL_CULL_FACE);
+	}
+	return true;
 }
+
+bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
+		const RenderOption &option, const ViewControl &view,
+		std::vector<Eigen::Vector3f> &points,
+		std::vector<Eigen::Vector3f> &colors)
+{
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+		PrintWarning("[%s] Binding type is not TriangleMesh.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	const TriangleMesh &mesh = (const TriangleMesh &)geometry;
+	if (mesh.HasTriangles() == false) {
+		PrintWarning("[%s] Binding failed with empty triangle mesh.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	const ColorMap &global_color_map = *GetGlobalColorMap();
+	points.resize(mesh.triangles_.size() * 3);
+	colors.resize(mesh.triangles_.size() * 3);
+	
+	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+		const auto &triangle = mesh.triangles_[i];
+		for (size_t j = 0; j < 3; j++) {
+			size_t idx = i * 3 + j;
+			size_t vi = triangle(j);
+			const auto &vertex = mesh.vertices_[vi];
+			points[idx] = vertex.cast<float>();
+
+			Eigen::Vector3d color;
+			switch (option.GetMeshColorOption()) {
+			case RenderOption::TRIANGLEMESH_X:
+				color = global_color_map.GetColor(
+						view.GetBoundingBox().GetXPercentage(vertex(0)));
+				break;
+			case RenderOption::TRIANGLEMESH_Y:
+				color = global_color_map.GetColor(
+						view.GetBoundingBox().GetYPercentage(vertex(1)));
+				break;
+			case RenderOption::TRIANGLEMESH_Z:
+				color = global_color_map.GetColor(
+						view.GetBoundingBox().GetZPercentage(vertex(2)));
+				break;
+			case RenderOption::TRIANGLEMESH_COLOR:
+				if (mesh.HasVertexColors()) {
+					color = mesh.vertex_colors_[vi];
+					break;
+				}
+			case RenderOption::TRIANGLEMESH_DEFAULT:
+			default:
+				color = option.MESH_DEFAULT_COLOR;
+				break;
+			}
+			colors[idx] = color.cast<float>();
+		}
+	}
+	draw_arrays_mode_ = GL_TRIANGLES;
+	draw_arrays_size_ = GLsizei(points.size());
+	return true;
+}
+
+}	// namespace three::glsl
 
 }	// namespace three

@@ -172,6 +172,14 @@ public:
 		return mesh_show_back_face_;
 	}
 	
+	void ToggleMeshShowWireframe() {
+		mesh_show_wireframe_ = !mesh_show_wireframe_;
+	}
+
+	bool IsMeshWireframeShown() const {
+		return mesh_show_wireframe_;
+	}
+
 	// Image options
 	ImageStretchOption GetImageStretchOption() const {
 		return image_stretch_option_;
@@ -207,6 +215,7 @@ private:
 	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
 	MeshColorOption mesh_color_option_ = TRIANGLEMESH_DEFAULT;
 	bool mesh_show_back_face_ = false;
+	bool mesh_show_wireframe_ = false;
 	
 	// Image options
 	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;

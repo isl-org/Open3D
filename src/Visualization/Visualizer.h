@@ -96,16 +96,16 @@ public:
 	/// This function is part of IGeometryOwner.
 	/// This function MUST be called after CreateWindow().
 	/// This function returns FALSE when the geometry is of an unsupported type.
-	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
 
 	/// Function to update geometry
 	/// This function is part of IGeometryOwner.
 	/// This function must be called when geometry has been changed. Otherwise
 	/// the behavior of Visualizer is undefined.
-	virtual bool UpdateGeometry();
+	bool UpdateGeometry() override;
 
 	/// This function is part of IGeometryOwner.
-	virtual bool HasGeometry() const;
+	bool HasGeometry() const override;
 
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();
