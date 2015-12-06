@@ -109,11 +109,6 @@ protected:
 	GLHelper::GLMatrix4f view_matrix_;
 	GLHelper::GLMatrix4f model_matrix_;
 	GLHelper::GLMatrix4f MVP_matrix_;
-
-public:
-	/// Eigen's black magic to prevent alignment issue
-	///   http://eigen.tuxfamily.org/dox-devel/group__TopicStructHavingEigenMembers.html
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }	// namespace three
