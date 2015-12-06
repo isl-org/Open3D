@@ -44,21 +44,12 @@ class GeometryRenderer : public IGeometryOwner
 public:
 	virtual ~GeometryRenderer() {}
 
-protected:
-	GeometryRenderer(Geometry::GeometryType type) : type_(type) {}
-
 public:
 	virtual bool Render(const RenderOption &option,
 			const ViewControl &view) = 0;
+	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) = 0;
 	virtual bool UpdateGeometry() = 0;
 
-	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) final {
-		if (geometry_ptr->GetGeometryType() != type_) {
-			return false;
-		}
-		geometry_ptr_ = geometry_ptr;
-		return UpdateGeometry();
-	}
 	bool HasGeometry() const final {
 		return bool(geometry_ptr_);
 	}
@@ -74,11 +65,11 @@ private:
 class PointCloudRenderer : public GeometryRenderer
 {
 public:
-	PointCloudRenderer() : GeometryRenderer(Geometry::GEOMETRY_POINTCLOUD) {}
 	virtual ~PointCloudRenderer() {}
 	
 public:
 	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
 	bool UpdateGeometry() override;
 	
 protected:
@@ -90,12 +81,11 @@ protected:
 class TriangleMeshRenderer : public GeometryRenderer
 {
 public:
-	TriangleMeshRenderer() : GeometryRenderer(Geometry::GEOMETRY_TRIANGLEMESH)
-	{}
 	virtual ~TriangleMeshRenderer() {}
 	
 public:
 	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
 	bool UpdateGeometry() override;
 	
 protected:
@@ -107,11 +97,11 @@ protected:
 class ImageRenderer : public GeometryRenderer
 {
 public:
-	ImageRenderer() : GeometryRenderer(Geometry::GEOMETRY_IMAGE) {}
 	virtual ~ImageRenderer() {}
 	
 public:
 	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
 	bool UpdateGeometry() override;
 	
 protected:

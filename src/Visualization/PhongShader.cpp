@@ -172,7 +172,7 @@ void PhongShader::SetBoundingBoxLight(const ViewControl &view,
 	light_color_data_.setOnes();
 
 	if (light_on) {
-		light_power_data_ = GLHelper::GLVector4f(0.5f, 0.5f, 0.5f, 0.5f);
+		light_power_data_ = GLHelper::GLVector4f(0.6f, 0.6f, 0.6f, 0.6f);
 		light_ambient_data_ = GLHelper::GLVector4f(0.1f, 0.1f, 0.1f, 1.0f);
 	} else {
 		light_power_data_ = GLHelper::GLVector4f::Zero();
@@ -188,6 +188,8 @@ bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
+	glDepthFunc(GL_LESS);
+	glPointSize(GLfloat(option.GetPointSize()));
 	SetBoundingBoxLight(view, option.IsLightOn());
 	return true;
 }
@@ -269,6 +271,10 @@ bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 	} else {
 		glEnable(GL_CULL_FACE);
 	}
+	glDepthFunc(GL_LESS);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1.0, 1.0);
 	return true;
 }
 

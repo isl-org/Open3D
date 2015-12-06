@@ -108,8 +108,7 @@ bool WriteViewTrajectoryToJSON(const std::string &filename,
 		return false;
 	}
 	Json::Value trajectory_array;
-	for (size_t i = 0; i < trajectory.view_status_.size(); i++) {
-		const auto &status = trajectory.view_status_[i];
+	for (const auto &status : trajectory.view_status_) {
 		Json::Value status_object;
 		status_object["field_of_view"] = status.field_of_view;
 		status_object["zoom"] = status.zoom;

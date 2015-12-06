@@ -121,6 +121,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 				GetShaderName().c_str());
 		return false;
 	}
+	glDepthFunc(GL_LESS);
 	return true;
 }
 
@@ -140,15 +141,13 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 		return false;
 	}
 	points.resize(pointcloud.points_.size() * 2);
+	double line_length = option.GetPointSize() *
+			0.01 * view.GetBoundingBox().GetSize();
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		double line_length = option.GetPointSize() *
-				0.01 * view.GetBoundingBox().GetSize();
-		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-			const auto &point = pointcloud.points_[i];
-			const auto &normal = pointcloud.normals_[i];
-			points[i * 2] = point.cast<float>();
-			points[i * 2 + 1] = (point + normal * line_length).cast<float>();
-		}
+		const auto &point = pointcloud.points_[i];
+		const auto &normal = pointcloud.normals_[i];
+		points[i * 2] = point.cast<float>();
+		points[i * 2 + 1] = (point + normal * line_length).cast<float>();
 	}
 	draw_arrays_mode_ = GL_LINES;
 	draw_arrays_size_ = GLsizei(points.size());
@@ -164,6 +163,10 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 				GetShaderName().c_str());
 		return false;
 	}
+	glLineWidth(1.0f);
+	glDepthFunc(GL_LEQUAL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDisable(GL_POLYGON_OFFSET_FILL);
 	return true;
 }
 

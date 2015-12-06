@@ -132,6 +132,7 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		return false;
 	}
 	glPointSize(GLfloat(option.GetPointSize()));
+	glDepthFunc(GL_LESS);
 	return true;
 }
 
@@ -202,6 +203,10 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 	} else {
 		glEnable(GL_CULL_FACE);
 	}
+	glDepthFunc(GL_LESS);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1.0, 1.0);
 	return true;
 }
 

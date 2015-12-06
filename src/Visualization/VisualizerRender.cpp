@@ -57,51 +57,19 @@ bool Visualizer::InitOpenGL()
 void Visualizer::Render()
 {
 	glfwMakeContextCurrent(window_);
-
-	if (is_shader_update_required_) {
-		ResetShaders();
-		is_shader_update_required_ = false;
-	}
-
+	
 	view_control_ptr_->SetViewPoint();
 
-	glClearColor((GLclampf)background_color_(0),
-			(GLclampf)background_color_(1),
-			(GLclampf)background_color_(2), 1.0f);
+	glClearColor((GLclampf)render_option_ptr_->BACKGROUND_COLOR(0),
+			(GLclampf)render_option_ptr_->BACKGROUND_COLOR(1),
+			(GLclampf)render_option_ptr_->BACKGROUND_COLOR(2), 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
-		// dispatch geometry
-		const Geometry &geometry = *geometry_ptrs_[i];
-		switch (geometry.GetGeometryType()) {
-		case Geometry::GEOMETRY_POINTCLOUD:
-			shader_ptrs_[i]->Render(
-					*geometry_ptrs_[i],
-					pointcloud_render_mode_,
-					*view_control_ptr_);
-			break;
-		case Geometry::GEOMETRY_TRIANGLEMESH:
-			shader_ptrs_[i]->Render(*geometry_ptrs_[i],
-					mesh_render_mode_, *view_control_ptr_);
-			break;
-		case Geometry::GEOMETRY_IMAGE:
-			shader_ptrs_[i]->Render(*geometry_ptrs_[i],
-					image_render_mode_, *view_control_ptr_);
-			break;
-		case Geometry::GEOMETRY_UNKNOWN:
-		default:
-			break;
-		}
+	for (const auto &renderer_ptr : renderer_ptrs_) {
+		renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
 	}
 
 	glfwSwapBuffers(window_);
-}
-
-void Visualizer::ResetShaders()
-{
-	for (size_t i = 0; i < geometry_ptrs_.size(); i++) {
-		shader_ptrs_[i]->Invalidate();
-	}
 }
 
 void Visualizer::ResetViewPoint()

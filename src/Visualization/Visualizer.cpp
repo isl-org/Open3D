@@ -25,9 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "Visualizer.h"
-#include "ShaderPointCloud.h"
-#include "ShaderTriangleMesh.h"
-#include "ShaderImage.h"
 
 namespace three{
 
@@ -61,9 +58,6 @@ Visualizer::Visualizer()
 
 Visualizer::~Visualizer()
 {
-	for (auto shader_ptr : shader_ptrs_) {
-		shader_ptr->Release();
-	}
 	glfwTerminate();	// to be safe
 }
 
@@ -154,6 +148,10 @@ bool Visualizer::CreateWindow(const std::string window_name/* = "Open3D"*/,
 		return false;
 	}
 
+	if (InitRenderOption() == false) {
+		return false;
+	}
+
 	int window_width, window_height;
 	glfwGetFramebufferSize(window_, &window_width, &window_height);
 	WindowResizeCallback(window_, window_width, window_height);
@@ -173,6 +171,12 @@ bool Visualizer::InitViewControl()
 {
 	view_control_ptr_ = std::unique_ptr<ViewControl>(new ViewControl);
 	ResetViewPoint();
+	return true;
+}
+
+bool Visualizer::InitRenderOption()
+{
+	render_option_ptr_ = std::unique_ptr<RenderOption>(new RenderOption);
 	return true;
 }
 
@@ -237,25 +241,25 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 		return false;
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_POINTCLOUD) {
-		auto shader_ptr = std::make_shared<glsl::ShaderPointCloudDefault>();
-		if (shader_ptr->Compile() == false) {
+		auto renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
+		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		shader_ptrs_.push_back(shader_ptr);
+		renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_TRIANGLEMESH) {
-		auto shader_ptr = std::make_shared<glsl::ShaderTriangleMeshDefault>();
-		if (shader_ptr->Compile() == false) {
+		auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
+		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		shader_ptrs_.push_back(shader_ptr);
+		renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_IMAGE) {
-		auto shader_ptr = std::make_shared<glsl::ShaderImageDefault>();
-		if (shader_ptr->Compile() == false) {
+		auto renderer_ptr = std::make_shared<glsl::ImageRenderer>();
+		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		shader_ptrs_.push_back(shader_ptr);
+		renderer_ptrs_.push_back(renderer_ptr);
 	} else {
 		return false;
 	}
@@ -270,14 +274,11 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 
 bool Visualizer::UpdateGeometry()
 {
-	UpdateShaders();
-	return true;
-}
-
-void Visualizer::UpdateShaders()
-{
-	is_shader_update_required_ = true;
-	is_redraw_required_ = true;
+	bool success = true;
+	for (const auto &renderer_ptr : renderer_ptrs_) {
+		success &= renderer_ptr->UpdateGeometry();
+	}
+	return success;
 }
 
 void Visualizer::UpdateRender()
@@ -308,9 +309,11 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("    [/]          : Increase/decrease field of view.\n");
 	PrintInfo("\n");
 	PrintInfo("  -- Render mode control --\n");
+	PrintInfo("    L            : Turn on/off lighting.\n");
 	PrintInfo("    +/-          : Increase/decrease point size.\n");
 	PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
 	PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
+	PrintInfo("    W            : Turn on/off mesh wireframe.\n");
 	PrintInfo("    B            : Turn on/off back face rendering.\n");
 	PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
 	PrintInfo("    T            : Toggle among image render: no stretch / keep ratio / freely stretch.\n");

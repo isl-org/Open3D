@@ -48,6 +48,20 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 	return success;
 }
 
+bool PointCloudRenderer::AddGeometry(
+		std::shared_ptr<const Geometry> geometry_ptr)
+{
+	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+		return false;
+	}
+	const auto &pointcloud = (const PointCloud &)(*geometry_ptr);
+	if (pointcloud.HasPoints() == false) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
 bool PointCloudRenderer::UpdateGeometry()
 {
 	simple_point_shader_.InvalidateGeometry();
@@ -74,6 +88,20 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 	return success;
 }
 
+bool TriangleMeshRenderer::AddGeometry(
+		std::shared_ptr<const Geometry> geometry_ptr)
+{
+	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+		return false;
+	}
+	const auto &mesh = (const TriangleMesh &)(*geometry_ptr);
+	if (mesh.HasTriangles() == false) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
 bool TriangleMeshRenderer::UpdateGeometry()
 {
 	simple_mesh_shader_.InvalidateGeometry();
@@ -85,6 +113,19 @@ bool TriangleMeshRenderer::UpdateGeometry()
 bool ImageRenderer::Render(const RenderOption &option, const ViewControl &view)
 {
 	return image_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
+{
+	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
+		return false;
+	}
+	const auto &image = (const Image &)(*geometry_ptr);
+	if (image.HasData() == false) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
 }
 
 bool ImageRenderer::UpdateGeometry()

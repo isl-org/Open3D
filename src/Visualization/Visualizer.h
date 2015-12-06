@@ -36,8 +36,8 @@
 #include "ColorMap.h"
 #include "BoundingBox.h"
 #include "ViewControl.h"
-#include "RenderMode.h"
-#include "ShaderWrapperDeprecated.h"
+#include "RenderOption.h"
+#include "GeometryRenderer.h"
 
 namespace three {
 
@@ -120,21 +120,17 @@ protected:
 	/// Function to initialize ViewControl
 	virtual bool InitViewControl();
 
+	/// Function to initialize RenderOption
+	virtual bool InitRenderOption();
+
 	/// Function to do the main rendering
 	/// The function first sets view point, then draw geometry (pointclouds and
 	/// meshes individually).
 	virtual void Render();
 
-	/// Function to set the shader flag as dirty
-	void UpdateShaders();
-
 	/// Function to set the redraw flag as dirty
 	void UpdateRender();
 
-	/// Function to update VBOs in shader containers
-	/// This function is called in lazy mode, i.e., only triggers when
-	/// is_shader_update_required is true.
-	void ResetShaders();
 	void ResetViewPoint();
 
 	// callback functions
@@ -159,23 +155,19 @@ protected:
 	// control
 	MouseControl mouse_control_;
 	bool is_redraw_required_ = true;
-	bool is_shader_update_required_ = true;
 	bool is_initialized_ = false;
 
 	// view control
 	std::unique_ptr<ViewControl> view_control_ptr_;
 
 	// rendering properties
-	PointCloudRenderMode pointcloud_render_mode_;
-	TriangleMeshRenderMode mesh_render_mode_;
-	ImageRenderMode image_render_mode_;
-	Eigen::Vector3d background_color_ = Eigen::Vector3d(1.0, 1.0, 1.0);
+	std::unique_ptr<RenderOption> render_option_ptr_;
 
 	// geometry to be rendered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 	
-	// shaders
-	std::vector<std::shared_ptr<glsl::ShaderWrapperDeprecated>> shader_ptrs_;
+	// renderers
+	std::vector<std::shared_ptr<glsl::GeometryRenderer>> renderer_ptrs_;
 };
 
 }	// namespace three

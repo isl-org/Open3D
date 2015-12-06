@@ -42,6 +42,8 @@ public:
 		TEXTURE_INTERPOLATION_LINEAR = 1,
 	};
 	
+	const Eigen::Vector3d BACKGROUND_COLOR = Eigen::Vector3d(1.0, 1.0, 1.0);
+	
 	// PointCloud options
 	enum PointColorOption {
 		POINTCOLOR_DEFAULT = 0,
@@ -202,7 +204,7 @@ public:
 private:
 	// global options
 	LightingOption lighting_option_ = LIGHTING_DEFAULT;
-	bool light_on_ = false;
+	bool light_on_ = true;
 	TextureInterpolationOption interpolation_option_ =
 			TEXTURE_INTERPOLATION_NEAREST;
 	
