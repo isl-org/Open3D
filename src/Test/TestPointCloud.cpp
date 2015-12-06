@@ -127,10 +127,14 @@ int main(int argc, char *argv[])
 
 	visualizer.CreateWindow("Open3D", 1600, 900);
 	visualizer.AddGeometry(pointcloud_ptr);
-	//visualizer.AddGeometry(pointcloud_transformed_ptr);
+	visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.Run();
 
-	//while (!visualizer.IsWindowTerminated());
+	// 4. test downsample
+	auto downsampled = std::make_shared<PointCloud>();
+	VoxelDownSample(*pointcloud_ptr, 0.05, *downsampled);
+	DrawGeometry(downsampled, "Down Sampled Pointcloud");
+
 	// n. test end
 
 	PrintAlways("End of the test.\n");

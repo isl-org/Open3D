@@ -78,10 +78,10 @@ public:
 	}
 
 private:
+	int num_of_points;
 	Eigen::Vector3d point;
 	Eigen::Vector3d normal;
 	Eigen::Vector3d color;
-	int num_of_points;
 };
 
 }	// unnamed namespace
