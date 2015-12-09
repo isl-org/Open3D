@@ -60,6 +60,10 @@ public:
 		return points_.size() > 0 && colors_.size() == points_.size();
 	}
 	
+	bool HasCurvatures() const {
+		return points_.size() > 0 && curvatures_.size() == points_.size();
+	}
+	
 	void NormalizeNormals() {
 		for (size_t i = 0; i < normals_.size(); i++) {
 			normals_[i].normalize();
@@ -70,6 +74,7 @@ public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;
 	std::vector<Eigen::Vector3d> colors_;
+	std::vector<double> curvatures_;
 };
 
 }	// namespace three
