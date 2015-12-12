@@ -40,12 +40,15 @@ public:
 	virtual ~PointCloud();
 
 public:
-	bool CloneFrom(const Geometry &reference) override;
 	Eigen::Vector3d GetMinBound() const override;
 	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;
 	bool IsEmpty() const override;
 	void Transform(const Eigen::Matrix4d &transformation) override;
+
+public:
+	virtual PointCloud &operator+=(const PointCloud &cloud);
+	virtual const PointCloud operator+(const PointCloud &cloud);
 
 public:
 	bool HasPoints() const {
@@ -76,5 +79,9 @@ public:
 	std::vector<Eigen::Vector3d> colors_;
 	std::vector<double> curvatures_;
 };
+
+// basic operations
+bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
+		PointCloud &output_cloud);
 
 }	// namespace three

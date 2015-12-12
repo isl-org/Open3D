@@ -40,7 +40,6 @@ public:
 	virtual ~Image();
 
 public:
-	bool CloneFrom(const Geometry &reference) override;
 	Eigen::Vector3d GetMinBound() const override;
 	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;

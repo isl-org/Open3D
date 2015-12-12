@@ -31,6 +31,18 @@
 
 namespace three{
 
+const double ViewControl::FIELD_OF_VIEW_MAX = 90.0;
+const double ViewControl::FIELD_OF_VIEW_MIN = 0.0;
+const double ViewControl::FIELD_OF_VIEW_DEFAULT = 60.0;
+const double ViewControl::FIELD_OF_VIEW_STEP = 5.0;
+
+const double ViewControl::ZOOM_DEFAULT = 0.7;
+const double ViewControl::ZOOM_MIN = 0.1;
+const double ViewControl::ZOOM_MAX = 2.0;
+const double ViewControl::ZOOM_STEP = 0.02;
+
+const double ViewControl::ROTATION_RADIAN_PER_PIXEL = 0.003;
+
 ViewControl::ProjectionType ViewControl::GetProjectionType()
 {
 	if (field_of_view_ > FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP / 2.0) {

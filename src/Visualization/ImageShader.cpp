@@ -216,7 +216,7 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 	}
 
 	if (image.num_of_channels_ == 3 && image.bytes_per_channel_ == 1) {
-		render_image.CloneFrom(image);
+		render_image = image;
 	} else {
 		render_image.PrepareImage(image.width_, image.height_, 3, 1);
 		if (image.num_of_channels_ == 1 && 

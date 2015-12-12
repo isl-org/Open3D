@@ -337,7 +337,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 				}
 			case RenderOption::TRIANGLEMESH_DEFAULT:
 			default:
-				color = option.MESH_DEFAULT_COLOR;
+				color = RenderOption::DEFAULT_MESH_COLOR;
 				break;
 			}
 			colors[idx] = color.cast<float>();

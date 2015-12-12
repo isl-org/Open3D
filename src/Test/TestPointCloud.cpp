@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	//SetVerbosityLevel(VERBOSE_ALWAYS);
+	SetVerbosityLevel(VERBOSE_ALWAYS);
 
 	// 1. test basic pointcloud functions.
 	
@@ -110,13 +110,13 @@ int main(int argc, char *argv[])
 
 	Visualizer visualizer;
 	std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
-	pointcloud_ptr->CloneFrom(pointcloud);
+	*pointcloud_ptr = pointcloud;
 	pointcloud_ptr->NormalizeNormals();
 	BoundingBox bounding_box;
 	bounding_box.FitInGeometry(*pointcloud_ptr);
 	
 	std::shared_ptr<PointCloud> pointcloud_transformed_ptr(new PointCloud);
-	pointcloud_transformed_ptr->CloneFrom(*pointcloud_ptr);
+	*pointcloud_transformed_ptr = *pointcloud_ptr;
 	Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
 	trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
 	Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
@@ -130,7 +130,11 @@ int main(int argc, char *argv[])
 	visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.Run();
 
-	// 4. test downsample
+	// 4. test operations
+	*pointcloud_transformed_ptr += *pointcloud_ptr;
+	DrawGeometry(pointcloud_transformed_ptr, "Combined Pointcloud");
+
+	// 5. test downsample
 	auto downsampled = std::make_shared<PointCloud>();
 	VoxelDownSample(*pointcloud_ptr, 0.05, *downsampled);
 	DrawGeometry(downsampled, "Down Sampled Pointcloud");

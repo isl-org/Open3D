@@ -36,17 +36,17 @@ namespace three {
 class ViewControl
 {
 public:
-	const double FIELD_OF_VIEW_MAX = 90.0;
-	const double FIELD_OF_VIEW_MIN = 0.0;
-	const double FIELD_OF_VIEW_DEFAULT = 60.0;
-	const double FIELD_OF_VIEW_STEP = 5.0;
+	static const double FIELD_OF_VIEW_MAX;
+	static const double FIELD_OF_VIEW_MIN;
+	static const double FIELD_OF_VIEW_DEFAULT;
+	static const double FIELD_OF_VIEW_STEP;
 
-	const double ZOOM_DEFAULT = 0.7;
-	const double ZOOM_MIN = 0.1;
-	const double ZOOM_MAX = 2.0;
-	const double ZOOM_STEP = 0.02;
+	static const double ZOOM_DEFAULT;
+	static const double ZOOM_MIN;
+	static const double ZOOM_MAX;
+	static const double ZOOM_STEP;
 
-	const double ROTATION_RADIAN_PER_PIXEL = 0.003;
+	static const double ROTATION_RADIAN_PER_PIXEL;
 
 	enum ProjectionType {
 		PROJECTION_PERSPECTIVE = 0,

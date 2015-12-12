@@ -30,6 +30,11 @@
 
 namespace three{
 
+const int ViewTrajectory::INTERVAL_MAX = 59;
+const int ViewTrajectory::INTERVAL_MIN = 0;
+const int ViewTrajectory::INTERVAL_STEP = 1;
+const int ViewTrajectory::INTERVAL_DEFAULT = 29;
+
 ViewTrajectory::Vector11d ViewTrajectory::ViewStatus::ConvertToVector11d()
 {
 	ViewTrajectory::Vector11d v;

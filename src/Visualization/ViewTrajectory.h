@@ -51,10 +51,10 @@ public:
 		void ConvertFromVector11d(const ViewTrajectory::Vector11d &v);
 	};
 
-	const int INTERVAL_MAX = 59;
-	const int INTERVAL_MIN = 0;
-	const int INTERVAL_STEP = 1;
-	const int INTERVAL_DEFAULT = 29;
+	static const int INTERVAL_MAX;
+	static const int INTERVAL_MIN;
+	static const int INTERVAL_STEP;
+	static const int INTERVAL_DEFAULT;
 
 public:
 	/// Function to compute a Cubic Spline Interpolation

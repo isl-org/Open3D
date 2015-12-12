@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VoxelDownSample.h"
+#include "PointCloud.h"
 
 #include <unordered_map>
 #include <tuple>

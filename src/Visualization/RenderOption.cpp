@@ -24,14 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "RenderOption.h"
 
-#include <memory>
-#include "PointCloud.h"
+namespace three{
 
-namespace three {
+const Eigen::Vector3d RenderOption::DEFAULT_BACKGROUND_COLOR = Eigen::Vector3d(
+		1.0, 1.0, 1.0);
 
-bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
-		PointCloud &output_cloud);
+const double RenderOption::POINT_SIZE_MAX = 25.0;
+const double RenderOption::POINT_SIZE_MIN = 1.0;
+const double RenderOption::POINT_SIZE_STEP = 1.0;
+const double RenderOption::POINT_SIZE_DEFAULT = 5.0;
+
+const Eigen::Vector3d RenderOption::DEFAULT_MESH_COLOR = Eigen::Vector3d(
+		0.439216, 0.858824, 0.858824);
 
 }	// namespace three

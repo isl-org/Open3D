@@ -40,15 +40,17 @@ public:
 	virtual ~TriangleMesh();
 
 public:
-	bool CloneFrom(const Geometry &mesh) override;
 	Eigen::Vector3d GetMinBound() const override;
 	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;
 	bool IsEmpty() const override;
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
-	void ComputeTriangleNormals(bool normalized = true);
-	void ComputeVertexNormals(bool normalized = true);
+public:
+	virtual TriangleMesh &operator+=(const TriangleMesh &mesh);
+	virtual const TriangleMesh operator+(const TriangleMesh &mesh);
+	virtual void ComputeTriangleNormals(bool normalized = true);
+	virtual void ComputeVertexNormals(bool normalized = true);
 	
 public:
 	bool HasVertices() const {

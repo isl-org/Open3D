@@ -47,7 +47,6 @@ protected:
 	Geometry(GeometryType type) : geometry_type_(type) {}
 
 public:
-	virtual bool CloneFrom(const Geometry &reference) = 0;
 	virtual Eigen::Vector3d GetMinBound() const = 0;
 	virtual Eigen::Vector3d GetMaxBound() const = 0;
 	virtual void Clear() = 0;

@@ -38,69 +38,6 @@ TriangleMesh::~TriangleMesh()
 {
 }
 
-void TriangleMesh::ComputeTriangleNormals(bool normalized/* = true*/)
-{
-	triangle_normals_.resize(triangles_.size());
-	for (size_t i = 0; i < triangles_.size(); i++) {
-		auto &triangle = triangles_[i];
-		Eigen::Vector3d v01 = vertices_[triangle(1)] - vertices_[triangle(0)];
-		Eigen::Vector3d v02 = vertices_[triangle(2)] - vertices_[triangle(0)];
-		triangle_normals_[i] = v01.cross(v02);
-	}
-	if (normalized) {
-		NormalizeNormals();
-	}
-}
-
-void TriangleMesh::ComputeVertexNormals(bool normalized/* = true*/)
-{
-	if (HasTriangleNormals() == false) {
-		ComputeTriangleNormals(false);
-	}
-	vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
-	for (size_t i = 0; i < triangles_.size(); i++) {
-		auto &triangle = triangles_[i];
-		vertex_normals_[triangle(0)] += triangle_normals_[i];
-		vertex_normals_[triangle(1)] += triangle_normals_[i];
-		vertex_normals_[triangle(2)] += triangle_normals_[i];
-	}
-	if (normalized) {
-		NormalizeNormals();
-	}
-}
-	
-bool TriangleMesh::CloneFrom(const Geometry &reference)
-{
-	if (reference.GetGeometryType() != GetGeometryType()) {
-		// always return when the types do not match
-		return false;
-	}
-
-	Clear();
-	const TriangleMesh &mesh = static_cast<const TriangleMesh &>(reference);
-	vertices_.resize(mesh.vertices_.size());
-	for (size_t i = 0; i < mesh.vertices_.size(); i++) {
-		vertices_[i] = mesh.vertices_[i];
-	}
-	vertex_normals_.resize(mesh.vertex_normals_.size());
-	for (size_t i = 0; i < mesh.vertex_normals_.size(); i++) {
-		vertex_normals_[i] = mesh.vertex_normals_[i];
-	}
-	vertex_colors_.resize(mesh.vertex_colors_.size());
-	for (size_t i = 0; i < mesh.vertex_colors_.size(); i++) {
-		vertex_colors_[i] = mesh.vertex_colors_[i];
-	}
-	triangles_.resize(mesh.triangles_.size());
-	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
-		triangles_[i] = mesh.triangles_[i];
-	}
-	triangle_normals_.resize(mesh.triangle_normals_.size());
-	for (size_t i = 0; i < mesh.triangle_normals_.size(); i++) {
-		triangle_normals_[i] = mesh.triangle_normals_[i];
-	}
-	return true;
-}
-
 Eigen::Vector3d TriangleMesh::GetMinBound() const
 {
 	if (!HasVertices()) {
@@ -160,6 +97,69 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 				triangle_normals_[i](0), triangle_normals_[i](1),
 				triangle_normals_[i](2), 0.0);
 		triangle_normals_[i] = new_normal.block<3, 1>(0, 0);
+	}
+}
+
+TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
+{
+	size_t old_vert_num = vertices_.size();
+	size_t old_tri_num = triangles_.size();
+	if (HasVertexNormals() && mesh.HasVertexNormals()) {
+		vertex_normals_.insert(vertex_normals_.end(),
+				mesh.vertex_normals_.begin(), mesh.vertex_normals_.end());
+	}
+	if (HasVertexColors() && mesh.HasVertexColors()) {
+		vertex_colors_.insert(vertex_colors_.end(),
+				mesh.vertex_colors_.begin(), mesh.vertex_colors_.end());
+	}
+	vertices_.insert(vertices_.end(), mesh.vertices_.begin(), 
+			mesh.vertices_.end());
+	if (HasTriangleNormals() && mesh.HasTriangleNormals()) {
+		triangle_normals_.insert(triangle_normals_.end(),
+				mesh.triangle_normals_.begin(), mesh.triangle_normals_.end());
+	}
+	triangles_.resize(triangles_.size() + mesh.triangles_.size());
+	Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num, 
+			(int)old_vert_num);
+	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+		triangles_[old_tri_num + i] = mesh.triangles_[i] + index_shift;
+	}
+	return (*this);
+}
+
+const TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh)
+{
+	return (TriangleMesh(*this) += mesh);
+}
+
+void TriangleMesh::ComputeTriangleNormals(bool normalized/* = true*/)
+{
+	triangle_normals_.resize(triangles_.size());
+	for (size_t i = 0; i < triangles_.size(); i++) {
+		auto &triangle = triangles_[i];
+		Eigen::Vector3d v01 = vertices_[triangle(1)] - vertices_[triangle(0)];
+		Eigen::Vector3d v02 = vertices_[triangle(2)] - vertices_[triangle(0)];
+		triangle_normals_[i] = v01.cross(v02);
+	}
+	if (normalized) {
+		NormalizeNormals();
+	}
+}
+
+void TriangleMesh::ComputeVertexNormals(bool normalized/* = true*/)
+{
+	if (HasTriangleNormals() == false) {
+		ComputeTriangleNormals(false);
+	}
+	vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
+	for (size_t i = 0; i < triangles_.size(); i++) {
+		auto &triangle = triangles_[i];
+		vertex_normals_[triangle(0)] += triangle_normals_[i];
+		vertex_normals_[triangle(1)] += triangle_normals_[i];
+		vertex_normals_[triangle(2)] += triangle_normals_[i];
+	}
+	if (normalized) {
+		NormalizeNormals();
 	}
 }
 

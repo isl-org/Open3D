@@ -60,9 +60,9 @@ void Visualizer::Render()
 	
 	view_control_ptr_->SetViewPoint();
 
-	glClearColor((GLclampf)render_option_ptr_->BACKGROUND_COLOR(0),
-			(GLclampf)render_option_ptr_->BACKGROUND_COLOR(1),
-			(GLclampf)render_option_ptr_->BACKGROUND_COLOR(2), 1.0f);
+	Eigen::Vector3d background_color = RenderOption::DEFAULT_BACKGROUND_COLOR;
+	glClearColor((GLclampf)background_color(0), (GLclampf)background_color(1),
+			(GLclampf)background_color(2), 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	for (const auto &renderer_ptr : renderer_ptrs_) {

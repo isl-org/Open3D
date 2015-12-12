@@ -35,30 +35,6 @@ PointCloud::PointCloud() : Geometry(GEOMETRY_POINTCLOUD)
 PointCloud::~PointCloud()
 {
 }
-	
-bool PointCloud::CloneFrom(const Geometry &reference)
-{
-	if (reference.GetGeometryType() != GetGeometryType()) {
-		// always return when the types do not match
-		return false;
-	}
-	
-	Clear();
-	const PointCloud &pointcloud = static_cast<const PointCloud &>(reference);
-	points_.resize(pointcloud.points_.size());
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		points_[i] = pointcloud.points_[i];
-	}
-	normals_.resize(pointcloud.normals_.size());
-	for (size_t i = 0; i < pointcloud.normals_.size(); i++) {
-		normals_[i] = pointcloud.normals_[i];
-	}
-	colors_.resize(pointcloud.colors_.size());
-	for (size_t i = 0; i < pointcloud.colors_.size(); i++) {
-		colors_[i] = pointcloud.colors_[i];
-	}
-	return true;
-}
 
 Eigen::Vector3d PointCloud::GetMinBound() const
 {
@@ -113,6 +89,30 @@ void PointCloud::Transform(const Eigen::Matrix4d &transformation)
 				normals_[i](0), normals_[i](1), normals_[i](2), 0.0);
 		normals_[i] = new_normal.block<3, 1>(0, 0);
 	}
+}
+
+PointCloud &PointCloud::operator+=(const PointCloud &cloud)
+{
+	if (HasNormals() && cloud.HasNormals()) {
+		normals_.insert(normals_.end(), cloud.normals_.begin(), 
+				cloud.normals_.end());
+	}
+	if (HasColors() && cloud.HasColors()) {
+		colors_.insert(colors_.end(), cloud.colors_.begin(), 
+				cloud.colors_.end());
+	}
+	if (HasCurvatures() && cloud.HasCurvatures()) {
+		curvatures_.insert(curvatures_.end(), cloud.curvatures_.begin(), 
+				cloud.curvatures_.end());
+	}
+	points_.insert(points_.end(), cloud.points_.begin(), 
+			cloud.points_.end());
+	return (*this);
+}
+
+const PointCloud PointCloud::operator+(const PointCloud &cloud)
+{
+	return (PointCloud(*this) += cloud);
 }
 
 }	// namespace three

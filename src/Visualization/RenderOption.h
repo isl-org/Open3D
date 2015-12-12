@@ -42,7 +42,7 @@ public:
 		TEXTURE_INTERPOLATION_LINEAR = 1,
 	};
 	
-	const Eigen::Vector3d BACKGROUND_COLOR = Eigen::Vector3d(1.0, 1.0, 1.0);
+	static const Eigen::Vector3d DEFAULT_BACKGROUND_COLOR;
 	
 	// PointCloud options
 	enum PointColorOption {
@@ -53,10 +53,10 @@ public:
 		POINTCOLOR_Z = 4,
 	};
 
-	const double POINT_SIZE_MAX = 25.0;
-	const double POINT_SIZE_MIN = 1.0;
-	const double POINT_SIZE_STEP = 1.0;
-	const double POINT_SIZE_DEFAULT = 5.0;
+	static const double POINT_SIZE_MAX;
+	static const double POINT_SIZE_MIN;
+	static const double POINT_SIZE_STEP;
+	static const double POINT_SIZE_DEFAULT;
 	
 	// TriangleMesh options
 	enum MeshShadeOption {
@@ -72,8 +72,7 @@ public:
 		TRIANGLEMESH_Z = 4,
 	};
 	
-	const Eigen::Vector3d MESH_DEFAULT_COLOR =
-			Eigen::Vector3d(0.439216, 0.858824, 0.858824);
+	static const Eigen::Vector3d DEFAULT_MESH_COLOR;
 
 	// Image options
 	enum ImageStretchOption {
