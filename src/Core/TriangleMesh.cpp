@@ -26,7 +26,12 @@
 
 #include "TriangleMesh.h"
 
+#include <unordered_map>
+#include <tuple>
+
 #include <Eigen/Dense>
+#include "CoreHelper.h"
+#include "Console.h"
 
 namespace three{
 
@@ -103,25 +108,34 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
 {
 	size_t old_vert_num = vertices_.size();
+	size_t add_vert_num = mesh.vertices_.size();
+	size_t new_vert_num = old_vert_num + add_vert_num;
 	size_t old_tri_num = triangles_.size();
+	size_t add_tri_num = mesh.triangles_.size();
+	size_t new_tri_num = old_tri_num + add_tri_num;
 	if (HasVertexNormals() && mesh.HasVertexNormals()) {
-		vertex_normals_.insert(vertex_normals_.end(),
-				mesh.vertex_normals_.begin(), mesh.vertex_normals_.end());
+		vertex_normals_.resize(new_vert_num);
+		for (size_t i = 0; i < add_vert_num; i++)
+			vertex_normals_[old_vert_num + i] = mesh.vertex_normals_[i];
 	}
 	if (HasVertexColors() && mesh.HasVertexColors()) {
-		vertex_colors_.insert(vertex_colors_.end(),
-				mesh.vertex_colors_.begin(), mesh.vertex_colors_.end());
+		vertex_colors_.resize(new_vert_num);
+		for (size_t i = 0; i < add_vert_num; i++)
+			vertex_colors_[old_vert_num + i] = mesh.vertex_colors_[i];
 	}
-	vertices_.insert(vertices_.end(), mesh.vertices_.begin(), 
-			mesh.vertices_.end());
+	vertices_.resize(new_vert_num);
+	for (size_t i = 0; i < add_vert_num; i++)
+		vertices_[old_vert_num + i] = mesh.vertices_[i];
+
 	if (HasTriangleNormals() && mesh.HasTriangleNormals()) {
-		triangle_normals_.insert(triangle_normals_.end(),
-				mesh.triangle_normals_.begin(), mesh.triangle_normals_.end());
+		triangle_normals_.resize(new_tri_num);
+		for (size_t i = 0; i < add_tri_num; i++)
+			triangle_normals_[old_tri_num + i] = mesh.triangle_normals_[i];
 	}
 	triangles_.resize(triangles_.size() + mesh.triangles_.size());
 	Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num, 
 			(int)old_vert_num);
-	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+	for (size_t i = 0; i < add_tri_num; i++) {
 		triangles_[old_tri_num + i] = mesh.triangles_[i] + index_shift;
 	}
 	return (*this);
@@ -161,6 +175,45 @@ void TriangleMesh::ComputeVertexNormals(bool normalized/* = true*/)
 	if (normalized) {
 		NormalizeNormals();
 	}
+}
+
+void TriangleMesh::RemoveDuplicatedVertices()
+{
+	typedef std::tuple<double, double, double> Coordinate3;
+	std::unordered_map<Coordinate3, size_t, hash_tuple::hash<Coordinate3>> 
+			point_to_old_index;
+	std::vector<size_t> index_old_to_new(vertices_.size());
+	bool has_vert_normal = HasVertexNormals();
+	bool has_vert_color = HasVertexColors();
+	size_t k = 0;											// new index
+	for (size_t i = 0; i < vertices_.size(); i++) {			// old index
+		Coordinate3 coord = std::make_tuple(vertices_[i](0), vertices_[i](1), 
+				vertices_[i](2));
+		if (point_to_old_index.find(coord) == point_to_old_index.end()) {
+			point_to_old_index[coord] = i;
+			vertices_[k] = vertices_[i];
+			if (has_vert_normal) vertex_normals_[k] = vertex_normals_[i];
+			if (has_vert_color) vertex_colors_[k] = vertex_colors_[i];
+			index_old_to_new[i] = k;
+			k++;
+		} else {
+			index_old_to_new[i] = point_to_old_index[coord];
+		}
+	}
+	vertices_.resize(k);
+	if (has_vert_normal) vertex_normals_.resize(k);
+	if (has_vert_color) vertex_colors_.resize(k);
+	for (auto &triangle : triangles_) {
+		triangle(0) = (int)index_old_to_new[triangle(0)];
+		triangle(1) = (int)index_old_to_new[triangle(1)];
+		triangle(2) = (int)index_old_to_new[triangle(2)];
+	}
+	PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n", 
+			index_old_to_new.size() - vertices_.size());
+}
+
+void TriangleMesh::RemoveDuplicatedTriangles()
+{
 }
 
 }	// namespace three

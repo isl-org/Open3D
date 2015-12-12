@@ -93,20 +93,30 @@ void PointCloud::Transform(const Eigen::Matrix4d &transformation)
 
 PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 {
+	// We do not use std::vector::insert to combine std::vector because it will
+	// crash if the pointcloud is added to itself.
+
+	size_t old_vert_num = points_.size();
+	size_t add_vert_num = cloud.points_.size();
+	size_t new_vert_num = old_vert_num + add_vert_num;
 	if (HasNormals() && cloud.HasNormals()) {
-		normals_.insert(normals_.end(), cloud.normals_.begin(), 
-				cloud.normals_.end());
+		normals_.resize(new_vert_num);
+		for (size_t i = 0; i < add_vert_num; i++)
+			normals_[old_vert_num + i] = cloud.normals_[i];
 	}
 	if (HasColors() && cloud.HasColors()) {
-		colors_.insert(colors_.end(), cloud.colors_.begin(), 
-				cloud.colors_.end());
+		colors_.resize(new_vert_num);
+		for (size_t i = 0; i < add_vert_num; i++)
+			colors_[old_vert_num + i] = cloud.colors_[i];
 	}
 	if (HasCurvatures() && cloud.HasCurvatures()) {
-		curvatures_.insert(curvatures_.end(), cloud.curvatures_.begin(), 
-				cloud.curvatures_.end());
+		curvatures_.resize(new_vert_num);
+		for (size_t i = 0; i < add_vert_num; i++)
+			curvatures_[old_vert_num + i] = cloud.curvatures_[i];
 	}
-	points_.insert(points_.end(), cloud.points_.begin(), 
-			cloud.points_.end());
+	points_.resize(new_vert_num);
+	for (size_t i = 0; i < add_vert_num; i++)
+		points_[old_vert_num + i] = cloud.points_[i];
 	return (*this);
 }
 

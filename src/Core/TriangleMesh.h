@@ -51,6 +51,8 @@ public:
 	virtual const TriangleMesh operator+(const TriangleMesh &mesh);
 	virtual void ComputeTriangleNormals(bool normalized = true);
 	virtual void ComputeVertexNormals(bool normalized = true);
+	virtual void RemoveDuplicatedVertices();
+	virtual void RemoveDuplicatedTriangles();
 	
 public:
 	bool HasVertices() const {
