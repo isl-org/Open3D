@@ -51,7 +51,7 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
 	PrintInfo("    Ctrl + <-/-> : Go backward/forward a keyframe.\n");
-	PrintInfo("    Ctrl + Wheel : Same as Alt + <-/->.\n");
+	PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
 	PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
 	PrintInfo("    Ctrl + +/-   : Increase/decrease interval between keyframes.\n");
 	PrintInfo("    Ctrl + L     : Turn on/off camera path as a loop.\n");
@@ -63,7 +63,7 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	PrintInfo("\n");
 	PrintInfo("    -- In preview mode --\n");
 	PrintInfo("    Ctrl + <-/-> : Go backward/forward a frame.\n");
-	PrintInfo("    Ctrl + Wheel : Same as Alt + <-/->.\n");
+	PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
 	PrintInfo("    Ctrl + [/]   : Go to beginning/end of the camera path.\n");
 	PrintInfo("\n");
 }

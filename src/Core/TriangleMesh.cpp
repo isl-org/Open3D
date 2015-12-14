@@ -197,7 +197,7 @@ void TriangleMesh::RemoveDuplicatedVertices()
 			index_old_to_new[i] = k;
 			k++;
 		} else {
-			index_old_to_new[i] = point_to_old_index[coord];
+			index_old_to_new[i] = index_old_to_new[point_to_old_index[coord]];
 		}
 	}
 	vertices_.resize(k);
