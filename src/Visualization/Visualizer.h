@@ -68,7 +68,7 @@ public:
 public:
 	/// Function to create a window and initialize GLFW
 	/// This function MUST be called from the main thread.
-	bool CreateWindow(const std::string window_name = "Open3D", 
+	bool CreateWindow(const std::string &window_name = "Open3D", 
 			const int width = 640, const int height = 480,
 			const int left = 50, const int top = 50);
 	

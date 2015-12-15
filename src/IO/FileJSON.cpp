@@ -62,10 +62,30 @@ bool ReadViewTrajectoryFromJSON(const std::string &filename,
 		PrintWarning("Read JSON failed: unable to open file.\n");
 		return false;
 	}
+	bool success = ReadViewTrajectoryFromJSONStream(file_in, trajectory);
+	file_in.close();
+	return success;
+}
+
+bool WriteViewTrajectoryToJSON(const std::string &filename,
+		const ViewTrajectory &trajectory)
+{
+	std::ofstream file_out(filename);
+	if (file_out.is_open() == false) {
+		PrintWarning("Write JSON failed: unable to open file.\n");
+		return false;
+	}
+	bool success = WriteViewTrajectoryToJSONStream(file_out, trajectory);
+	file_out.close();
+	return success;
+}
+
+bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
+		ViewTrajectory &trajectory)
+{
 	Json::Value root_object;
 	Json::Reader reader;
-	bool is_parse_successful = reader.parse(file_in, root_object);
-	file_in.close();
+	bool is_parse_successful = reader.parse(json_stream, root_object);
 	if (is_parse_successful == false) {
 		PrintWarning("Read JSON failed: %s.\n", 
 				reader.getFormattedErrorMessages().c_str());
@@ -99,14 +119,9 @@ bool ReadViewTrajectoryFromJSON(const std::string &filename,
 	return true;
 }
 
-bool WriteViewTrajectoryToJSON(const std::string &filename,
+bool WriteViewTrajectoryToJSONStream(std::ostream &json_stream,
 		const ViewTrajectory &trajectory)
 {
-	std::ofstream file_out(filename);
-	if (file_out.is_open() == false) {
-		PrintWarning("Write JSON failed: unable to open file.\n");
-		return false;
-	}
 	Json::Value trajectory_array;
 	for (const auto &status : trajectory.view_status_) {
 		Json::Value status_object;
@@ -127,8 +142,7 @@ bool WriteViewTrajectoryToJSON(const std::string &filename,
 	root_object["trajectory"] = trajectory_array;
 
 	Json::StyledStreamWriter writer;
-	writer.write(file_out, root_object);
-	file_out.close();
+	writer.write(json_stream, root_object);
 	return true;
 }
 

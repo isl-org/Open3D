@@ -75,8 +75,8 @@ public:
 	void Step(double change);
 	void GoToFirst();
 	void GoToLast();
-	bool TrajectoryCapture();
-	bool LoadTrajectoryFromFile(const std::string filename);
+	bool CaptureTrajectory(const std::string &filename = "");
+	bool LoadTrajectoryFromFile(const std::string &filename);
 	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());

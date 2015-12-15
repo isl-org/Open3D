@@ -231,18 +231,22 @@ void ViewControlWithAnimation::GoToLast()
 	SetViewControlFromTrajectory();
 }
 
-bool ViewControlWithAnimation::TrajectoryCapture()
+bool ViewControlWithAnimation::CaptureTrajectory(
+		const std::string &filename/* = ""*/)
 {
 	if (view_trajectory_.view_status_.empty()) {
 		return false;
 	}
-	std::string filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
+	std::string json_filename = filename;
+	if (json_filename.empty()) {
+		json_filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
+	}
 	PrintDebug("[Visualizer] Trejactory capture to %s\n", filename.c_str());
 	return WriteViewTrajectory(filename, view_trajectory_);
 }
 
 bool ViewControlWithAnimation::LoadTrajectoryFromFile(
-		const std::string filename)
+		const std::string &filename)
 {
 	bool success = ReadViewTrajectory(filename, view_trajectory_);
 	if (success == false) {

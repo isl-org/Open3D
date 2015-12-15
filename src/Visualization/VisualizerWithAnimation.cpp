@@ -44,7 +44,7 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Animation control --\n");
 	PrintInfo("    Ctrl + F     : Enter freeview (editing) mode.\n");
-	PrintInfo("    Ctrl + V     : Enter preview mode.\n");
+	PrintInfo("    Ctrl + W     : Enter preview mode.\n");
 	PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
 	PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
 	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
@@ -59,7 +59,7 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	PrintInfo("    Ctrl + U     : Update the current keyframe.\n");
 	PrintInfo("    Ctrl + D     : Delete the current keyframe.\n");
 	PrintInfo("    Ctrl + N     : Add 360 spin right after the current keyframe.\n");
-	PrintInfo("    Ctrl + C     : Clear the entire camera path.\n");
+	PrintInfo("    Ctrl + E     : Erase the entire camera path.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In preview mode --\n");
 	PrintInfo("    Ctrl + <-/-> : Go backward/forward a frame.\n");
@@ -133,7 +133,7 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 					ViewControlWithAnimation::ANIMATION_FREEMODE);
 			PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
 			break;
-		case GLFW_KEY_V:
+		case GLFW_KEY_W:
 			view_control.SetAnimationMode(
 					ViewControlWithAnimation::ANIMATION_PREVIEWMODE);
 			PrintDebug("[Visualizer] Enter preview mode.\n");
@@ -145,7 +145,7 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			Play(true);
 			break;
 		case GLFW_KEY_S:
-			view_control.TrajectoryCapture();
+			view_control.CaptureTrajectory();
 			break;
 		case GLFW_KEY_LEFT:
 			view_control.Step(-1.0);
@@ -192,7 +192,7 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			PrintDebug("[Visualizer] Insert spin key frames; %d remaining.\n",
 					view_control.NumOfKeyFrames());
 			break;
-		case GLFW_KEY_C:
+		case GLFW_KEY_E:
 			view_control.ClearAllKeyFrames();
 			PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
 					view_control.NumOfKeyFrames());
