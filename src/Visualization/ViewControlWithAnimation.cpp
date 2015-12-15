@@ -258,6 +258,39 @@ bool ViewControlWithAnimation::LoadTrajectoryFromFile(
 	return success;
 }
 
+bool ViewControlWithAnimation::SaveViewStatusToString(
+		std::string &view_status_string)
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewTrajectory::ViewStatus current_status = ConvertToViewStatus();
+		ViewTrajectory trajectory_with_current_status;
+		trajectory_with_current_status.view_status_.push_back(current_status);
+		return WriteViewTrajectoryToJSONString(view_status_string, 
+				trajectory_with_current_status);
+	} else {
+		return false;
+	}
+}
+
+bool ViewControlWithAnimation::LoadViewStatusFromString(
+		const std::string &view_status_string)
+{
+	if (animation_mode_ == ANIMATION_FREEMODE) {
+		ViewTrajectory trajectory_with_current_status;
+		if (ReadViewTrajectoryFromJSONString(view_status_string, 
+				trajectory_with_current_status) == false) {
+			return false;
+		}
+		if (trajectory_with_current_status.view_status_.size() != 1) {
+			return false;
+		}
+		ConvertFromViewStatus(trajectory_with_current_status.view_status_[0]);
+		return true;
+	} else {
+		return false;
+	}
+}
+
 ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
 {
 	ViewTrajectory::ViewStatus status;

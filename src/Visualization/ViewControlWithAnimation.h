@@ -77,6 +77,8 @@ public:
 	void GoToLast();
 	bool CaptureTrajectory(const std::string &filename = "");
 	bool LoadTrajectoryFromFile(const std::string &filename);
+	bool SaveViewStatusToString(std::string &view_status_string);
+	bool LoadViewStatusFromString(const std::string &view_status_string);
 	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());

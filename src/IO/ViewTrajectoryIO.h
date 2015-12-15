@@ -51,10 +51,10 @@ bool ReadViewTrajectoryFromJSON(const std::string &filename,
 bool WriteViewTrajectoryToJSON(const std::string &filename,
 		const ViewTrajectory &trajectory);
 
-bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
+bool ReadViewTrajectoryFromJSONString(const std::string &json_string,
 		ViewTrajectory &trajectory);
 
-bool WriteViewTrajectoryToJSONStream(std::ostream &json_stream,
+bool WriteViewTrajectoryToJSONString(std::string &json_string,
 		const ViewTrajectory &trajectory);
 
 }	// namespace three

@@ -27,6 +27,7 @@
 #include "ViewTrajectoryIO.h"
 
 #include <fstream>
+#include <sstream>
 #include <External/jsoncpp/include/json/json.h>
 
 namespace three{
@@ -50,34 +51,6 @@ Eigen::Vector3d JsonArrayToEigenVector3d(const Json::Value &v)
 		return Eigen::Vector3d(v[0].asDouble(), v[1].asDouble(), 
 				v[2].asDouble());
 	}
-}
-
-}	// unnamed namespace
-
-bool ReadViewTrajectoryFromJSON(const std::string &filename,
-		ViewTrajectory &trajectory)
-{
-	std::ifstream file_in(filename);
-	if (file_in.is_open() == false) {
-		PrintWarning("Read JSON failed: unable to open file.\n");
-		return false;
-	}
-	bool success = ReadViewTrajectoryFromJSONStream(file_in, trajectory);
-	file_in.close();
-	return success;
-}
-
-bool WriteViewTrajectoryToJSON(const std::string &filename,
-		const ViewTrajectory &trajectory)
-{
-	std::ofstream file_out(filename);
-	if (file_out.is_open() == false) {
-		PrintWarning("Write JSON failed: unable to open file.\n");
-		return false;
-	}
-	bool success = WriteViewTrajectoryToJSONStream(file_out, trajectory);
-	file_out.close();
-	return success;
 }
 
 bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
@@ -144,6 +117,50 @@ bool WriteViewTrajectoryToJSONStream(std::ostream &json_stream,
 	Json::StyledStreamWriter writer;
 	writer.write(json_stream, root_object);
 	return true;
+}
+
+}	// unnamed namespace
+
+bool ReadViewTrajectoryFromJSON(const std::string &filename,
+		ViewTrajectory &trajectory)
+{
+	std::ifstream file_in(filename);
+	if (file_in.is_open() == false) {
+		PrintWarning("Read JSON failed: unable to open file.\n");
+		return false;
+	}
+	bool success = ReadViewTrajectoryFromJSONStream(file_in, trajectory);
+	file_in.close();
+	return success;
+}
+
+bool WriteViewTrajectoryToJSON(const std::string &filename,
+		const ViewTrajectory &trajectory)
+{
+	std::ofstream file_out(filename);
+	if (file_out.is_open() == false) {
+		PrintWarning("Write JSON failed: unable to open file.\n");
+		return false;
+	}
+	bool success = WriteViewTrajectoryToJSONStream(file_out, trajectory);
+	file_out.close();
+	return success;
+}
+
+bool ReadViewTrajectoryFromJSONString(const std::string &json_string,
+		ViewTrajectory &trajectory)
+{
+	std::istringstream iss(json_string);
+	return ReadViewTrajectoryFromJSONStream(iss, trajectory);
+}
+
+bool WriteViewTrajectoryToJSONString(std::string &json_string,
+		const ViewTrajectory &trajectory)
+{
+	std::ostringstream oss;
+	bool success = WriteViewTrajectoryToJSONStream(oss, trajectory);
+	json_string = oss.str();
+	return success;
 }
 
 }	// namespace three

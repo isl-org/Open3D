@@ -50,6 +50,8 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
+	PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
+	PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
 	PrintInfo("    Ctrl + <-/-> : Go backward/forward a keyframe.\n");
 	PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
 	PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
@@ -121,6 +123,7 @@ bool VisualizerWithAnimation::InitViewControl()
 void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
+	std::string clipboard_string;
 	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 	if (action == GLFW_RELEASE || view_control.IsPlaying()) {
 		return;
@@ -146,6 +149,14 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			break;
 		case GLFW_KEY_S:
 			view_control.CaptureTrajectory();
+			break;
+		case GLFW_KEY_C:
+			view_control.SaveViewStatusToString(clipboard_string);
+			glfwSetClipboardString(window_, clipboard_string.c_str());
+			break;
+		case GLFW_KEY_V:
+			clipboard_string = std::string(glfwGetClipboardString(window_));
+			view_control.LoadViewStatusFromString(clipboard_string);
 			break;
 		case GLFW_KEY_LEFT:
 			view_control.Step(-1.0);
@@ -196,6 +207,22 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			view_control.ClearAllKeyFrames();
 			PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
 					view_control.NumOfKeyFrames());
+			break;
+		default:
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+			break;
+		}
+		is_redraw_required_ = true;
+		UpdateWindowTitle();
+	} else if (mods & GLFW_MOD_SUPER) {
+		switch (key) {
+		case GLFW_KEY_C:
+			view_control.SaveViewStatusToString(clipboard_string);
+			glfwSetClipboardString(window_, clipboard_string.c_str());
+			break;
+		case GLFW_KEY_V:
+			clipboard_string = std::string(glfwGetClipboardString(window_));
+			view_control.LoadViewStatusFromString(clipboard_string);
 			break;
 		default:
 			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
