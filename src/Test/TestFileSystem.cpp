@@ -28,7 +28,7 @@
 
 #include <IO/IO.h>
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	std::string directory;
 	if (argc <= 1) {
@@ -42,4 +42,5 @@ void main(int argc, char **argv)
 	for (const auto &filename : filenames) {
 		std::cout << filename << std::endl;
 	}
+	return 1;
 }

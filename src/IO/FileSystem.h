@@ -31,6 +31,10 @@
 
 namespace three {
 
+bool DirectoryExists(const std::string &directory);
+
+bool FileExists(const std::string &filename);
+
 void ListFilesInDirectory(const std::string &directory, 
 		std::vector<std::string> &filenames);
 
