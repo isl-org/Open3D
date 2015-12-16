@@ -24,26 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ImageIO.h"
+#include <Core/Core.h>
+#include <IO/IO.h>
 
-#include <algorithm>
-
-namespace three{
-	
-namespace IOHelper {
-
-std::string GetFileExtensionInLowerCase(const std::string &filename)
+void PrintHelp()
 {
-	size_t dot_pos = filename.find_last_of(".");
-	if (dot_pos == std::string::npos || dot_pos == filename.length() - 1) {
-		return "";
-	}
-	std::string filename_ext = filename.substr(dot_pos + 1);
-	std::transform(filename_ext.begin(), filename_ext.end(), 
-			filename_ext.begin(), ::tolower);
-	return filename_ext;
+	printf("Usage:\n");
+	printf("    > MergeMesh directory_path merged_filename\n");
+	printf("      Merge mesh files under <directory_path>.\n");
 }
 
-}	// namespace IOHelper
+int main(int argc, char **args)
+{
+	using namespace three;
+	using namespace three::filesystem;
 
-}	// namespace three
+	SetVerbosityLevel(VERBOSE_ALWAYS);
+	if (argc <= 2) {
+		PrintHelp();
+		return 0;
+	}
+
+	std::string directory(args[1]);
+	std::vector<std::string> filenames;
+	ListFilesInDirectory(directory, filenames);
+
+	auto merged_mesh_ptr = std::make_shared<TriangleMesh>();
+	for (const auto &filename : filenames) {
+		auto mesh_ptr = std::make_shared<TriangleMesh>();
+		if (ReadTriangleMesh(filename, *mesh_ptr)) {
+			*merged_mesh_ptr += *mesh_ptr;
+		}
+	}
+	merged_mesh_ptr->Purge();
+	WriteTriangleMesh(args[2], *merged_mesh_ptr);
+
+	return 1;
+}

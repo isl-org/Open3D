@@ -27,7 +27,7 @@
 #include "TriangleMeshIO.h"
 
 #include <unordered_map>
-#include "IOHelper.h"
+#include "FileSystem.h"
 
 namespace three{
 	
@@ -50,7 +50,8 @@ static const std::unordered_map<std::string,
 
 bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
@@ -67,7 +68,8 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
 		return false;

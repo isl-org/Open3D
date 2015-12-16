@@ -31,11 +31,17 @@
 
 namespace three {
 
+namespace filesystem {
+
+std::string GetFileExtensionInLowerCase(const std::string &filename);
+
 bool DirectoryExists(const std::string &directory);
 
 bool FileExists(const std::string &filename);
 
 bool ListFilesInDirectory(const std::string &directory, 
 		std::vector<std::string> &filenames);
+
+}	// namespace three::filesystem
 
 }	// namespace three

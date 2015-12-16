@@ -69,5 +69,5 @@ int main(int argc, char *argv[])
 
 	DrawGeometry(mesh1);
 
-	WriteTriangleMeshToPLY("temp.ply", *mesh1, true, true);
+	WriteTriangleMesh("temp.ply", *mesh1, true, true);
 }

@@ -26,6 +26,7 @@
 
 #include "FileSystem.h"
 
+#include <algorithm>
 #ifdef WINDOWS
 #include <dirent/dirent.h>
 #else
@@ -34,6 +35,23 @@
 #endif
 
 namespace three{
+
+namespace filesystem {
+
+std::string GetFileExtensionInLowerCase(const std::string &filename)
+{
+	size_t dot_pos = filename.find_last_of(".");
+	if (dot_pos == std::string::npos || dot_pos == filename.length() - 1) {
+		return "";
+	}
+	std::string filename_ext = filename.substr(dot_pos + 1);
+	if (filename_ext.find_first_of("/\\") != std::string::npos) {
+		return "";
+	}
+	std::transform(filename_ext.begin(), filename_ext.end(), 
+			filename_ext.begin(), ::tolower);
+	return filename_ext;
+}
 
 bool DirectoryExists(const std::string &directory)
 {
@@ -82,5 +100,7 @@ bool ListFilesInDirectory(const std::string &directory,
 	closedir(dir);
 	return true;
 }
+
+}	// namespace three::filesystem
 
 }	// namespace three

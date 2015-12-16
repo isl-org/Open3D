@@ -27,7 +27,7 @@
 #include "PointCloudIO.h"
 
 #include <unordered_map>
-#include "IOHelper.h"
+#include "FileSystem.h"
 
 namespace three{
 
@@ -55,7 +55,8 @@ static const std::unordered_map<std::string,
 
 bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read PointCloud failed: unknown file extension.\n");
 		return false;
@@ -72,7 +73,8 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
 		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write PointCloud failed: unknown file extension.\n");
 		return false;

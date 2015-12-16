@@ -28,19 +28,24 @@
 
 #include <IO/IO.h>
 
-int main(int argc, char **argv)
+int main(int argc, char **args)
 {
+	using namespace three::filesystem;
+
 	std::string directory;
 	if (argc <= 1) {
 		directory = ".";
 	} else {
-		directory = std::string(argv[1]);
+		directory = std::string(args[1]);
 	}
 	std::vector<std::string> filenames;
-	three::ListFilesInDirectory(directory, filenames);
+	ListFilesInDirectory(directory, filenames);
 
 	for (const auto &filename : filenames) {
 		std::cout << filename << std::endl;
+		std::cout << "extension name is : " << 
+				GetFileExtensionInLowerCase(filename) << std::endl;
+		std::cout << std::endl;
 	}
 	return 1;
 }

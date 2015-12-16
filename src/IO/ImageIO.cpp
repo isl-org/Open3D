@@ -27,7 +27,7 @@
 #include "ImageIO.h"
 
 #include <unordered_map>
-#include "IOHelper.h"
+#include "FileSystem.h"
 
 namespace three{
 	
@@ -53,7 +53,8 @@ static const std::unordered_map<std::string,
 
 bool ReadImage(const std::string &filename, Image &image)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read Image failed: unknown file extension.\n");
 		return false;
@@ -69,7 +70,8 @@ bool ReadImage(const std::string &filename, Image &image)
 bool WriteImage(const std::string &filename, const Image &image,
 		int quality/* = 90*/)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write Image failed: unknown file extension.\n");
 		return false;

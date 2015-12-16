@@ -27,7 +27,7 @@
 #include "ViewTrajectoryIO.h"
 
 #include <unordered_map>
-#include "IOHelper.h"
+#include "FileSystem.h"
 
 namespace three{
 	
@@ -50,7 +50,8 @@ static const std::unordered_map<std::string,
 bool ReadViewTrajectory(const std::string &filename, 
 		ViewTrajectory &trajectory)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read ViewTrajectory failed: unknown file extension.\n");
 		return false;
@@ -67,7 +68,8 @@ bool ReadViewTrajectory(const std::string &filename,
 bool WriteViewTrajectory(const std::string &filename, 
 		const ViewTrajectory &trajectory)
 {
-	std::string filename_ext = IOHelper::GetFileExtensionInLowerCase(filename);
+	std::string filename_ext = 
+			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write ViewTrajectory failed: unknown file extension.\n");
 		return false;
