@@ -24,11 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <iostream>
 
-#include "FileSystem.h"
+#include <IO/IO.h>
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
-#include "ViewTrajectoryIO.h"
+void main(int argc, char **argv)
+{
+	std::string directory;
+	if (argc <= 1) {
+		directory = ".";
+	} else {
+		directory = std::string(argv[1]);
+	}
+	std::vector<std::string> filenames;
+	three::ListFilesInDirectory(directory, filenames);
+
+	for (const auto &filename : filenames) {
+		std::cout << filename << std::endl;
+	}
+}

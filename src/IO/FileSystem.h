@@ -26,9 +26,12 @@
 
 #pragma once
 
-#include "FileSystem.h"
+#include <string>
+#include <vector>
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
-#include "ViewTrajectoryIO.h"
+namespace three {
+
+void ListFilesInDirectory(const std::string &directory, 
+		std::vector<std::string> &filenames);
+
+}	// namespace three

@@ -24,11 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
 #include "FileSystem.h"
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
-#include "ViewTrajectoryIO.h"
+#ifdef WINDOWS
+#include <dirent/dirent.h>
+#else
+#include <dirent.h>
+#endif
+
+namespace three{
+
+void ListFilesInDirectory(const std::string &directory, 
+		std::vector<std::string> &filenames)
+{
+	DIR *dir;
+	struct dirent *ent;
+	struct stat st;
+
+	dir = opendir(directory.c_str());
+	while ((ent = readdir(dir)) != NULL) {
+		const std::string file_name = ent->d_name;
+		const std::string full_file_name = directory + "/" + file_name;
+		if (file_name[0] == '.')
+			continue;
+		if (stat(full_file_name.c_str(), &st) == -1)
+			continue;
+		const bool is_directory = (st.st_mode & S_IFDIR) != 0;
+		if (is_directory)
+			continue;
+		filenames.push_back(full_file_name);
+	}
+	closedir(dir);
+}
+
+}	// namespace three

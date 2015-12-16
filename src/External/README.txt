@@ -33,4 +33,7 @@ A C++ library that allows manipulating JSON values
 --------------------------------------------------------------------------------
 flann 1.8.4    BSD license            http://www.cs.ubc.ca/research/flann/
 A C++ library for performing fast approximate nearest neighbor searches in high
-dimensional spaces.
+dimensional spaces
+--------------------------------------------------------------------------------
+dirent 1.21    MIT license            https://github.com/tronkko/dirent
+A C/C++ programming interface for cross-platform filesystem
