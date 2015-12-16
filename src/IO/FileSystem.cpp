@@ -37,54 +37,50 @@ namespace three{
 
 bool DirectoryExists(const std::string &directory)
 {
-    struct stat info;
-    if(stat(directory.c_str(), &info) == -1)
-        return false;
-    else if(info.st_mode & S_IFDIR)
-        return true;
-    else
-        return false;
+	struct stat info;
+	if (stat(directory.c_str(), &info) == -1)
+		return false;
+	return S_ISDIR(info.st_mode);
 }
 
 bool FileExists(const std::string &filename)
 {
-    struct stat info;
-    if(stat(filename.c_str(), &info) == -1)
-        return false;
-    else if(info.st_mode & S_IFDIR)
-        return false;
-    else
-        return true;
+	struct stat info;
+	if (stat(filename.c_str(), &info) == -1)
+		return false;
+	return S_ISREG(info.st_mode);
 }
 
-void ListFilesInDirectory(const std::string &directory,
-		std::vector<std::string> &filenames)
+bool ListFilesInDirectory(const std::string &directory,
+	std::vector<std::string> &filenames)
 {
-	if (DirectoryExists(directory) == false)
-		return;
+	if (directory.empty()) {
+		return false;
+	}
 	DIR *dir;
 	struct dirent *ent;
 	struct stat st;
-
 	dir = opendir(directory.c_str());
+	if (!dir) {
+		return false;
+	}
 	while ((ent = readdir(dir)) != NULL) {
 		const std::string file_name = ent->d_name;
+		if (file_name[0] == '.')
+			continue;
 		std::string full_file_name;
 		if (directory.back() == '/' || directory.back() == '\\') {
 			full_file_name = directory + file_name;
 		} else {
 			full_file_name = directory + "/" + file_name;
 		}
-		if (file_name[0] == '.')
-			continue;
 		if (stat(full_file_name.c_str(), &st) == -1)
 			continue;
-		const bool is_directory = (st.st_mode & S_IFDIR) != 0;
-		if (is_directory)
-			continue;
-		filenames.push_back(full_file_name);
+		if (S_ISREG(st.st_mode))
+			filenames.push_back(full_file_name);
 	}
 	closedir(dir);
+	return true;
 }
 
 }	// namespace three
