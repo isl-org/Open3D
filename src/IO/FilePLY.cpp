@@ -427,6 +427,9 @@ bool WriteTriangleMeshToPLY(
 		ply_add_property(ply_file, "green", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
 		ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
 	}
+	ply_add_element(ply_file, "face", 
+			static_cast<long>(mesh.triangles_.size()));
+	ply_add_property(ply_file, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT);
 	if (!ply_write_header(ply_file)) {
 		PrintWarning("Write PLY failed: unable to write header.\n");
 		return false;
@@ -435,24 +438,31 @@ bool WriteTriangleMeshToPLY(
 	ResetConsoleProgress(
 			static_cast<int>(mesh.vertices_.size() + mesh.triangles_.size()),
 			"Writing PLY: ");
-	
 	for (size_t i = 0; i < mesh.vertices_.size(); i++) {
-		const Eigen::Vector3d &vertex = mesh.vertices_[i];
+		const auto &vertex = mesh.vertices_[i];
 		ply_write(ply_file, vertex(0));
 		ply_write(ply_file, vertex(1));
 		ply_write(ply_file, vertex(2));
 		if (mesh.HasVertexNormals()) {
-			const Eigen::Vector3d &normal = mesh.vertex_normals_[i];
+			const auto &normal = mesh.vertex_normals_[i];
 			ply_write(ply_file, normal(0));
 			ply_write(ply_file, normal(1));
 			ply_write(ply_file, normal(2));
 		}
 		if (mesh.HasVertexColors()) {
-			const Eigen::Vector3d &color = mesh.vertex_colors_[i];
+			const auto &color = mesh.vertex_colors_[i];
 			ply_write(ply_file, color(0) * 255.0);
 			ply_write(ply_file, color(1) * 255.0);
 			ply_write(ply_file, color(2) * 255.0);
 		}
+		AdvanceConsoleProgress();
+	}
+	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
+		const auto &triangle = mesh.triangles_[i];
+		ply_write(ply_file, 3);
+		ply_write(ply_file, triangle(0));
+		ply_write(ply_file, triangle(1));
+		ply_write(ply_file, triangle(2));
 		AdvanceConsoleProgress();
 	}
 	

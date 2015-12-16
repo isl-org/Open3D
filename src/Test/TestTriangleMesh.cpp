@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <iostream>
+
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
@@ -46,14 +48,6 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	auto mesh = std::make_shared<TriangleMesh>();
-	mesh->vertices_.push_back(Eigen::Vector3d(1,0,0));
-	mesh->vertices_.push_back(Eigen::Vector3d(0,1,0));
-	mesh->vertices_.push_back(Eigen::Vector3d(1,0,0));
-	mesh->triangles_.push_back(Eigen::Vector3i(0,1,2));
-	*mesh += *mesh;
-	mesh->RemoveDuplicatedVertices();
-
 	auto mesh1 = std::make_shared<TriangleMesh>();
 	auto mesh2 = std::make_shared<TriangleMesh>();
 
@@ -65,13 +59,15 @@ int main(int argc, char *argv[])
 	PrintInfo("Mesh2 has %d vertices, %d triangles.\n", mesh2->vertices_.size(),
 			mesh2->triangles_.size());
 
-	*mesh1 += *mesh1;
+	*mesh1 += *mesh2;
 	PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n", 
 			mesh1->vertices_.size(), mesh1->triangles_.size());
 
-	mesh1->RemoveDuplicatedVertices();
+	mesh1->Purge();
 	PrintInfo("After purge vertices, Mesh1 has %d vertices, %d triangles.\n", 
 			mesh1->vertices_.size(), mesh1->triangles_.size());
 
 	DrawGeometry(mesh1);
+
+	WriteTriangleMeshToPLY("temp.ply", *mesh1, true, true);
 }
