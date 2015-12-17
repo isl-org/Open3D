@@ -142,6 +142,17 @@ int main(int argc, char **argv)
 	}
 	new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
+	k = kdtree.Search(new_cloud_ptr->points_[199], KDTreeSearchParamRadius(r), 
+			new_indices_vec, new_dists_vec);
+
+	PrintInfo("======== %d, %f ========\n", k, r);
+	for (int i = 0; i < k; i++) {
+		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
+		new_cloud_ptr->colors_[new_indices_vec[i]] = 
+				Eigen::Vector3d(0.0, 0.0, 1.0);
+	}
+	new_cloud_ptr->colors_[199] = Eigen::Vector3d(0.0, 1.0, 1.0);
+
 	DrawGeometry(new_cloud_ptr, "TestKDTree", 1600, 900);
 	return 0;
 }

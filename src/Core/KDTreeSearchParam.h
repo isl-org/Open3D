@@ -26,37 +26,47 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
 namespace three {
 
-class Geometry
+class KDTreeSearchParam
 {
 public:
-	enum GeometryType {
-		GEOMETRY_UNKNOWN = 0,
-		GEOMETRY_POINTCLOUD = 1,
-		GEOMETRY_TRIANGLEMESH = 2,
-		GEOMETRY_IMAGE = 3,
+	enum SearchType {
+		SEARCH_KNN = 0,
+		SEARCH_RADIUS = 1,
 	};
-	
-public:
-	virtual ~Geometry() {}
-	
-protected:
-	Geometry(GeometryType type) : geometry_type_(type) {}
 
 public:
-	virtual Eigen::Vector3d GetMinBound() const = 0;
-	virtual Eigen::Vector3d GetMaxBound() const = 0;
-	virtual void Clear() = 0;
-	virtual bool IsEmpty() const = 0;
-	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
-	
-	GeometryType GetGeometryType() const { return geometry_type_; }
-	
+	virtual ~KDTreeSearchParam() {}
+
+protected:
+	KDTreeSearchParam(SearchType type) : search_type_(type) {}
+
+public:
+	SearchType GetSearchType() const { return search_type_; }
+
 private:
-	GeometryType geometry_type_ = GEOMETRY_UNKNOWN;
+	SearchType search_type_;
+};
+
+class KDTreeSearchParamKNN : public KDTreeSearchParam
+{
+public:
+	KDTreeSearchParamKNN(int knn = 30) : KDTreeSearchParam(SEARCH_KNN),
+			knn_(knn) {}
+public:
+	int knn_;
+};
+
+class KDTreeSearchParamRadius : public KDTreeSearchParam
+{
+public:
+	KDTreeSearchParamRadius(double radius, int max_nn = -1) : 
+			KDTreeSearchParam(SEARCH_RADIUS),
+			radius_(radius), max_nn_(max_nn) {}
+public:
+	double radius_;
+	int max_nn_;
 };
 
 }	// namespace three

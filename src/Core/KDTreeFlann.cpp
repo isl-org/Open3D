@@ -31,10 +31,6 @@
 
 namespace three{
 
-KDTreeFlann::~KDTreeFlann()
-{
-}
-	
 bool KDTreeFlann::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
 	switch (geometry_ptr->GetGeometryType()) {
@@ -64,6 +60,7 @@ bool KDTreeFlann::UpdateGeometry()
 				pointcloud.points_.size(), 3
 				));
 		dimension_ = 3;
+		dataset_size_ = pointcloud.points_.size();
 	} else if (geometry_ptr_->GetGeometryType() == 
 			Geometry::GEOMETRY_TRIANGLEMESH) {
 		const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
@@ -75,6 +72,7 @@ bool KDTreeFlann::UpdateGeometry()
 				mesh.vertices_.size(), 3
 				));
 		dimension_ = 3;
+		dataset_size_ = mesh.vertices_.size();
 	} else {
 		return false;
 	}
