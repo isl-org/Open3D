@@ -31,7 +31,8 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <Core/Core.h>
+#include <Core/Geometry.h>
+#include <Core/IGeometryOwner.h>
 
 #include "ColorMap.h"
 #include "BoundingBox.h"

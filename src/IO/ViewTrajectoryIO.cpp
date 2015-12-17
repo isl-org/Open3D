@@ -27,6 +27,7 @@
 #include "ViewTrajectoryIO.h"
 
 #include <unordered_map>
+#include <Core/Console.h>
 #include "FileSystem.h"
 
 namespace three{

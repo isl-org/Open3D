@@ -26,6 +26,7 @@
 
 #include "ImageShader.h"
 
+#include <Core/Image.h>
 #include "Shader.h"
 #include "ColorMap.h"
 

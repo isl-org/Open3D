@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <vector>
+#include <Eigen/Dense>
 #include "ShaderWrapper.h"
 
 namespace three {

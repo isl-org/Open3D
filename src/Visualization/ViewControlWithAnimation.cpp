@@ -26,7 +26,7 @@
 
 #include "ViewControlWithAnimation.h"
 
-#include <IO/IO.h>
+#include <IO/ViewTrajectoryIO.h>
 
 namespace three{
 

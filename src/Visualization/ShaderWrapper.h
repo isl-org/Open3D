@@ -27,7 +27,7 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <Core/Core.h>
+#include <Core/Geometry.h>
 
 #include "ViewControl.h"
 #include "RenderOption.h"

@@ -29,8 +29,7 @@
 #include <string>
 #include <memory>
 #include <functional>
-
-#include <Core/Core.h>
+#include <Core/Geometry.h>
 
 #include "Visualizer.h"
 #include "VisualizerWithAnimation.h"

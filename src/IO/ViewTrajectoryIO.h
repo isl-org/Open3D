@@ -27,8 +27,6 @@
 #pragma once
 
 #include <string>
-
-#include <Core/Core.h>
 #include <Visualization/ViewTrajectory.h>
 
 namespace three {

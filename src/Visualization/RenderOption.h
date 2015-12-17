@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Core/Core.h>
+#include <Eigen/Dense>
 
 namespace three {
 

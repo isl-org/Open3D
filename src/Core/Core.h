@@ -26,11 +26,5 @@
 
 #pragma once
 
-#include "Console.h"
-#include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
-
-#include "IGeometryOwner.h"
-//#include "KDTreeFlann.h"
+#include "CoreBasic.h"
+#include "CoreFeature.h"

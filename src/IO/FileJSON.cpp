@@ -29,6 +29,7 @@
 #include <fstream>
 #include <sstream>
 #include <External/jsoncpp/include/json/json.h>
+#include <Core/Console.h>
 
 namespace three{
 

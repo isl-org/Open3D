@@ -27,6 +27,7 @@
 #include "PointCloudIO.h"
 
 #include <cstdio>
+#include <Core/Console.h>
 
 namespace three{
 

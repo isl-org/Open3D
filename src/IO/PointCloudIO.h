@@ -27,8 +27,7 @@
 #pragma once
 
 #include <string>
-
-#include <Core/Core.h>
+#include <Core/PointCloud.h>
 
 namespace three {
 

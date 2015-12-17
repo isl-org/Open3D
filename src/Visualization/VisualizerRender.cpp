@@ -26,7 +26,7 @@
 
 #include "Visualizer.h"
 
-#include <IO/IO.h>
+#include <IO/ImageIO.h>
 
 namespace three{
 

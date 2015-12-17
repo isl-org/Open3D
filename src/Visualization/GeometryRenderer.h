@@ -26,7 +26,8 @@
 
 #pragma once
 
-#include <Core/Core.h>
+#include <Core/Geometry.h>
+#include <Core/IGeometryOwner.h>
 
 #include "SimpleShader.h"
 #include "SimpleBlackShader.h"

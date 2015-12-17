@@ -28,6 +28,7 @@
 #include "TriangleMeshIO.h"
 
 #include <External/rply/rply.h>
+#include <Core/Console.h>
 
 namespace three{
 

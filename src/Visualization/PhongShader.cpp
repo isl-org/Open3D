@@ -26,6 +26,8 @@
 
 #include "PhongShader.h"
 
+#include <Core/PointCloud.h>
+#include <Core/TriangleMesh.h>
 #include "Shader.h"
 #include "ColorMap.h"
 

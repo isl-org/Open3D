@@ -26,32 +26,4 @@
 
 #pragma once
 
-#include <string>
-#include <Core/Image.h>
-
-namespace three {
-
-/// The general entrance for reading an Image from a file
-/// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful. 
-bool ReadImage(const std::string &filename, Image &image);
-
-/// The general entrance for writing an Image to a file
-/// The function calls write functions based on the extension name of filename.
-/// If the write function supports quality, the parameter will be used. 
-/// Otherwise it will be ignored.
-/// \return If the write function is successful.
-bool WriteImage(const std::string &filename, const Image &image,
-		int quality = 90);
-
-bool ReadImageFromPNG(const std::string &filename, Image &image);
-
-bool WriteImageToPNG(const std::string &filename, const Image &image,
-		int quality);
-
-bool ReadImageFromJPG(const std::string &filename, Image &image);
-
-bool WriteImageToJPG(const std::string &filename, const Image &image,
-		int quality = 90);
-
-}	// namespace three
+#include "KDTreeFlann.h"

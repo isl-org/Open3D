@@ -26,6 +26,8 @@
 
 #include "GeometryRenderer.h"
 
+#include <Core/CoreBasic.h>
+
 namespace three{
 
 namespace glsl {
