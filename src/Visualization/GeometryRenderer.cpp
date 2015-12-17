@@ -26,7 +26,9 @@
 
 #include "GeometryRenderer.h"
 
-#include <Core/CoreBasic.h>
+#include <Core/PointCloud.h>
+#include <Core/TriangleMesh.h>
+#include <Core/Image.h>
 
 namespace three{
 
