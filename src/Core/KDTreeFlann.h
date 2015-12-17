@@ -49,7 +49,7 @@ public:
 	bool HasGeometry() const override;
 
 	template<typename T>
-	int Search(const T &query, KDTreeSearchParam &param, 
+	int Search(const T &query, const KDTreeSearchParam &param, 
 			std::vector<int> &indices, std::vector<double> &distance2);
 
 	template<typename T>
@@ -69,16 +69,17 @@ protected:
 };
 
 template<typename T>
-int KDTreeFlann::Search(const T &query, KDTreeSearchParam &param, 
+int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param, 
 			std::vector<int> &indices, std::vector<double> &distance2)
 {
 	switch (param.GetSearchType()) {
 	case KDTreeSearchParam::SEARCH_KNN:
-		return SearchKNN(query, ((KDTreeSearchParamKNN &)param).knn_, 
+		return SearchKNN(query, ((const KDTreeSearchParamKNN &)param).knn_, 
 				indices, distance2);
 	case KDTreeSearchParam::SEARCH_RADIUS:
-		return SearchRadius(query, ((KDTreeSearchParamRadius &)param).radius_, 
-				indices, distance2, ((KDTreeSearchParamRadius &)param).max_nn_);
+		return SearchRadius(query, 
+				((const KDTreeSearchParamRadius &)param).radius_, indices, 
+				distance2, ((const KDTreeSearchParamRadius &)param).max_nn_);
 	default:
 		return -1;
 	}
