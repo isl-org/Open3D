@@ -24,69 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PointCloud.h"
 
-#include <vector>
-#include <Eigen/Core>
-#include "Geometry.h"
-#include "KDTreeSearchParam.h"
+namespace three{
 
-namespace three {
+namespace {
 
-class PointCloud : public Geometry
-{
-public:
-	PointCloud();
-	virtual ~PointCloud();
-
-public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
-	void Clear() override;
-	bool IsEmpty() const override;
-	void Transform(const Eigen::Matrix4d &transformation) override;
-
-public:
-	virtual PointCloud &operator+=(const PointCloud &cloud);
-	virtual const PointCloud operator+(const PointCloud &cloud);
-
-public:
-	bool HasPoints() const {
-		return points_.size() > 0;
-	}
-
-	bool HasNormals() const {
-		return points_.size() > 0 && normals_.size() == points_.size();
-	}
-
-	bool HasColors() const {
-		return points_.size() > 0 && colors_.size() == points_.size();
-	}
-	
-	bool HasCurvatures() const {
-		return points_.size() > 0 && curvatures_.size() == points_.size();
-	}
-	
-	void NormalizeNormals() {
-		for (size_t i = 0; i < normals_.size(); i++) {
-			normals_[i].normalize();
-		}
-	}
-	
-public:
-	std::vector<Eigen::Vector3d> points_;
-	std::vector<Eigen::Vector3d> normals_;
-	std::vector<Eigen::Vector3d> colors_;
-	std::vector<double> curvatures_;
-};
-
-// basic operations
-bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
-		PointCloud &output_cloud);
+}	// unnamed namespace
 
 bool EstimateNormal(PointCloud &cloud, 
-		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
-		const Eigen::Vector3d &orientation_reference = 
-		Eigen::Vector3d(0.0, 0.0, 1.0));
+		const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/,
+		const Eigen::Vector3d &orientation_reference
+		/* = Eigen::Vector3d(0.0, 0.0, 1.0)*/)
+{
+	bool has_normal = cloud.HasNormals();
+	if (cloud.HasNormals() == false) {
+		cloud.normals_.resize(cloud.points_.size());
+	}
+	if (cloud.HasCurvatures() == false) {
+		cloud.curvatures_.resize(cloud.points_.size());
+	}
+	// TODO
+	// https://github.com/PointCloudLibrary/pcl/blob/a654fe4188382416c99322cafbd9319c59a7355c/common/include/pcl/common/impl/centroid.hpp
+	// computeMeanAndCovarianceMatrix 
+	return true;
+}
 
 }	// namespace three

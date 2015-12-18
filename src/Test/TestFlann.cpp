@@ -29,7 +29,6 @@
 
 #include <flann/flann.hpp>
 #include <Core/Core.h>
-#include <Core/KDTreeFlann.h>
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
