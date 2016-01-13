@@ -29,4 +29,6 @@
 #include "BoundingBox.h"
 #include "Visualizer.h"
 #include "VisualizerWithAnimation.h"
+#include "ViewControl.h"
+#include "ViewControlWithAnimation.h"
 #include "DrawGeometry.h"

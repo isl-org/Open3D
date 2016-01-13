@@ -123,6 +123,7 @@ bool VisualizerWithAnimation::InitViewControl()
 void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
+	const char *clipboard_string_buffer;
 	std::string clipboard_string;
 	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
 	if (action == GLFW_RELEASE || view_control.IsPlaying()) {
@@ -155,8 +156,11 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 			glfwSetClipboardString(window_, clipboard_string.c_str());
 			break;
 		case GLFW_KEY_V:
-			clipboard_string = std::string(glfwGetClipboardString(window_));
-			view_control.LoadViewStatusFromString(clipboard_string);
+			clipboard_string_buffer = glfwGetClipboardString(window_);
+			if (clipboard_string_buffer != NULL) {
+				clipboard_string = std::string(clipboard_string_buffer);
+				view_control.LoadViewStatusFromString(clipboard_string);
+			}
 			break;
 		case GLFW_KEY_LEFT:
 			view_control.Step(-1.0);

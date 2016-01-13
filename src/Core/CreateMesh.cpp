@@ -24,59 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <iostream>
+#include "TriangleMesh.h"
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+namespace three{
 
-void PrintHelp()
+std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/, 
+		int resolution/* = 20*/)
 {
-	using namespace three;
-	PrintInfo("Usage :\n");
-	PrintInfo("    > TestTriangleMesh sphere\n");
-	PrintInfo("    > TestTriangleMesh merge <file1> <file2>\n");
+	auto mesh_ptr = std::make_shared<TriangleMesh>();
+	mesh_ptr->vertices_.resize(2 * resolution * (resolution -1 ) + 2);
+	mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, radius);
+	mesh_ptr->vertices_[1] = Eigen::Vector3d(0.0, 0.0, -radius);
+	double step = M_PI / (double)resolution;
+	for (int i = 1; i < resolution; i++) {
+		for (int j = 0; j < 2 * resolution; j++) {
+			double alpha = step * i;
+			double theta = step * j;
+			mesh_ptr->vertices_[2 + 2 * resolution * (i - 1) + j] = 
+					Eigen::Vector3d(sin(alpha) * cos(theta), 
+					sin(alpha) * sin(theta), cos(alpha)) * radius;
+		}
+	}
+	for (int j = 0; j < 2 * resolution; j++) {
+		int j1 = (j + 1) % (2 * resolution);
+		int base = 2;
+		mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, base + j, base + j1));
+		base = 2 + 2 * resolution * (resolution - 2);
+		mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, base + j1, base + j));
+	}
+	for (int i = 1; i < resolution - 1; i++) {
+		int base1 = 2 + 2 * resolution * (i - 1);
+		int base2 = base1 + 2 * resolution;
+		for (int j = 0; j < 2 * resolution; j++) {
+			int j1 = (j + 1) % (2 * resolution);
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j, 
+					base1 + j1, base1 + j));
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j, 
+					base2 + j1, base1 + j1));
+		}
+	}
+	return mesh_ptr;
 }
 
-int main(int argc, char *argv[])
-{
-	using namespace three;
-
-	SetVerbosityLevel(VERBOSE_ALWAYS);
-
-	if (argc < 2) {
-		PrintHelp();
-		return 0;
-	}
-
-	std::string option(argv[1]);
-	if (option == "sphere") {
-		auto mesh = CreateMeshSphere(0.05);
-		mesh->ComputeVertexNormals();
-		DrawGeometry(mesh);
-		WriteTriangleMesh("sphere.ply", *mesh, true, true);
-	} else if (option == "merge") {
-		auto mesh1 = std::make_shared<TriangleMesh>();
-		auto mesh2 = std::make_shared<TriangleMesh>();
-
-		ReadTriangleMesh(argv[1], *mesh1);
-		ReadTriangleMesh(argv[2], *mesh2);
-
-		PrintInfo("Mesh1 has %d vertices, %d triangles.\n", mesh1->vertices_.size(),
-				mesh1->triangles_.size());
-		PrintInfo("Mesh2 has %d vertices, %d triangles.\n", mesh2->vertices_.size(),
-				mesh2->triangles_.size());
-
-		*mesh1 += *mesh2;
-		PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n", 
-				mesh1->vertices_.size(), mesh1->triangles_.size());
-
-		mesh1->Purge();
-		PrintInfo("After purge vertices, Mesh1 has %d vertices, %d triangles.\n", 
-				mesh1->vertices_.size(), mesh1->triangles_.size());
-
-		DrawGeometry(mesh1);
-
-		WriteTriangleMesh("temp.ply", *mesh1, true, true);
-	}
-}
+}	// namespace three

@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Eigen/Core>
 
 #include "Geometry.h"
@@ -99,5 +100,8 @@ public:
 	std::vector<Eigen::Vector3i> triangles_;
 	std::vector<Eigen::Vector3d> triangle_normals_;
 };
+
+std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius = 1.0, 
+		int resolution = 20);
 
 }	// namespace three
