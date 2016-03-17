@@ -36,6 +36,7 @@ void PrintHelp()
 	PrintInfo("Usage :\n");
 	PrintInfo("    > TestTriangleMesh sphere\n");
 	PrintInfo("    > TestTriangleMesh merge <file1> <file2>\n");
+	PrintInfo("    > TestTriangleMesh normal <file1> <file2>\n");
 }
 
 int main(int argc, char *argv[])
@@ -59,8 +60,8 @@ int main(int argc, char *argv[])
 		auto mesh1 = std::make_shared<TriangleMesh>();
 		auto mesh2 = std::make_shared<TriangleMesh>();
 
-		ReadTriangleMesh(argv[1], *mesh1);
-		ReadTriangleMesh(argv[2], *mesh2);
+		ReadTriangleMesh(argv[2], *mesh1);
+		ReadTriangleMesh(argv[3], *mesh2);
 
 		PrintInfo("Mesh1 has %d vertices, %d triangles.\n", mesh1->vertices_.size(),
 				mesh1->triangles_.size());
@@ -78,5 +79,10 @@ int main(int argc, char *argv[])
 		DrawGeometry(mesh1);
 
 		WriteTriangleMesh("temp.ply", *mesh1, true, true);
+	} else if (option == "normal") {
+		auto mesh = std::make_shared<TriangleMesh>();
+		ReadTriangleMesh(argv[2], *mesh);
+		mesh->ComputeVertexNormals();
+		WriteTriangleMesh(argv[3], *mesh, true, true);
 	}
 }
