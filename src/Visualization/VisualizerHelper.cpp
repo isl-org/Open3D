@@ -27,6 +27,7 @@
 #include "VisualizerHelper.h"
 
 #include <cmath>
+#include <Eigen/Dense>
 
 namespace three {
 

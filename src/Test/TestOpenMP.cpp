@@ -36,7 +36,7 @@
 
 int main()
 {
-	int i, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
+	int i = 0, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
 	int nThreads = 1, nTmp = nStart + nEnd;
 	unsigned uTmp = (unsigned(nEnd - nStart + 1) *
 			unsigned(nTmp)) / 2;
