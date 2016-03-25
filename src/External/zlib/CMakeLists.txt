@@ -86,6 +86,7 @@ set(ZLIB_SRCS
 
 if (APPLE)
     add_compile_options(-Wno-implicit-function-declaration)
+    add_compile_options(-Wno-shift-negative-value)
 elseif(UNIX)
     add_compile_options(-Wno-implicit-function-declaration)
 endif(APPLE)
