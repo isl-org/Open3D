@@ -81,12 +81,28 @@ public:
 };
 
 // basic operations
+
+/// Function to downsample input_cloud into output_cloud with a voxel
+/// \param voxel_size defines the resolution of the voxel grid, smaller value 
+/// leads to denser output point cloud.
+/// Normals, colors, and curvatures are averaged if they exist.
 bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PointCloud &output_cloud);
 
-bool EstimateNormal(PointCloud &cloud, 
-		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
-		const Eigen::Vector3d &orientation_reference = 
-		Eigen::Vector3d(0.0, 0.0, 1.0));
+/// Function to compute the normals and curvatures of a point cloud
+/// \param cloud is the input point cloud. It also stores the output normals
+/// and curvatures.
+/// Normals are oriented with respect to the input point cloud is normals exist
+/// in the input.
+bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+
+/// Function to compute the normals and curvatures of a point cloud
+/// \param cloud is the input point cloud. It also stores the output normals
+/// and curvatures.
+/// Normals are oriented with respect to \param orientation_reference.
+bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+		const Eigen::Vector3d &orientation_reference,
+		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
 }	// namespace three

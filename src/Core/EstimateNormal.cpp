@@ -30,12 +30,48 @@ namespace three{
 
 namespace {
 
+std::pair<Eigen::Vector3d, double> ComputeNormalAndCurvature(
+		const PointCloud &cloud, const std::vector<int> &indices)
+{
+	Eigen::Vector3d normal;
+	double curvature = 0.0;
+	if (indices.size() == 0) {
+		return std::make_pair(normal, curvature);
+	}
+	Eigen::Matrix3d covariance;
+	Eigen::Matrix<double, 9, 1> cumulants;
+	for (size_t i = 0; i < indices.size(); i++) {
+		const Eigen::Vector3d &point = cloud.points_[indices[i]];
+		cumulants(0) += point(0);
+		cumulants(1) += point(1);
+		cumulants(2) += point(2);
+		cumulants(3) += point(0) * point(0);
+		cumulants(4) += point(0) * point(1);
+		cumulants(5) += point(0) * point(2);
+		cumulants(6) += point(1) * point(1);
+		cumulants(7) += point(1) * point(2);
+		cumulants(8) += point(2) * point(2);
+	}
+	cumulants /= (double)indices.size();
+	covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+	covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+	covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+	covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+	covariance(1, 0) = covariance(0, 1);
+	covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+	covariance(2, 0) = covariance(0, 2);
+	covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+	covariance(2, 1) = covariance(1, 2);
+
+	// TODO
+
+	return std::make_pair(normal, curvature);
+}
+
 }	// unnamed namespace
 
-bool EstimateNormal(PointCloud &cloud, 
-		const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/,
-		const Eigen::Vector3d &orientation_reference
-		/* = Eigen::Vector3d(0.0, 0.0, 1.0)*/)
+bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+		const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
 {
 	bool has_normal = cloud.HasNormals();
 	if (cloud.HasNormals() == false) {
@@ -47,6 +83,19 @@ bool EstimateNormal(PointCloud &cloud,
 	// TODO
 	// https://github.com/PointCloudLibrary/pcl/blob/a654fe4188382416c99322cafbd9319c59a7355c/common/include/pcl/common/impl/centroid.hpp
 	// computeMeanAndCovarianceMatrix 
+	return true;
+}
+
+bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+		const Eigen::Vector3d &orientation_reference,
+		const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
+{
+	if (cloud.HasNormals() == false) {
+		cloud.normals_.resize(cloud.points_.size());
+	}
+	if (cloud.HasCurvatures() == false) {
+		cloud.curvatures_.resize(cloud.points_.size());
+	}
 	return true;
 }
 
