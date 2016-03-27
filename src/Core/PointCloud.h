@@ -63,10 +63,6 @@ public:
 		return points_.size() > 0 && colors_.size() == points_.size();
 	}
 	
-	bool HasCurvatures() const {
-		return points_.size() > 0 && curvatures_.size() == points_.size();
-	}
-	
 	void NormalizeNormals() {
 		for (size_t i = 0; i < normals_.size(); i++) {
 			normals_[i].normalize();
@@ -77,7 +73,6 @@ public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;
 	std::vector<Eigen::Vector3d> colors_;
-	std::vector<double> curvatures_;
 };
 
 // basic operations
@@ -85,23 +80,21 @@ public:
 /// Function to downsample input_cloud into output_cloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 
 /// leads to denser output point cloud.
-/// Normals, colors, and curvatures are averaged if they exist.
+/// Normals and colors are averaged if they exist.
 bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PointCloud &output_cloud);
 
-/// Function to compute the normals and curvatures of a point cloud
-/// \param cloud is the input point cloud. It also stores the output normals
-/// and curvatures.
+/// Function to compute the normals of a point cloud
+/// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with respect to the input point cloud is normals exist
 /// in the input.
-bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+bool EstimateNormals(PointCloud &cloud,
 		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
-/// Function to compute the normals and curvatures of a point cloud
-/// \param cloud is the input point cloud. It also stores the output normals
-/// and curvatures.
+/// Function to compute the normals of a point cloud
+/// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with respect to \param orientation_reference.
-bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+bool EstimateNormals(PointCloud &cloud,
 		const Eigen::Vector3d &orientation_reference,
 		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 

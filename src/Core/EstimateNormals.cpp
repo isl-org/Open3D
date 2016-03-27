@@ -25,18 +25,20 @@
 // ----------------------------------------------------------------------------
 
 #include "PointCloud.h"
+#include "KDTreeFlann.h"
+
+#pragma warning(disable : 4522)
+#include <Eigen/Eigenvalues>
 
 namespace three{
 
 namespace {
 
-std::pair<Eigen::Vector3d, double> ComputeNormalAndCurvature(
-		const PointCloud &cloud, const std::vector<int> &indices)
+Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
+		const std::vector<int> &indices)
 {
-	Eigen::Vector3d normal;
-	double curvature = 0.0;
 	if (indices.size() == 0) {
-		return std::make_pair(normal, curvature);
+		return Eigen::Vector3d::Zero();
 	}
 	Eigen::Matrix3d covariance;
 	Eigen::Matrix<double, 9, 1> cumulants;
@@ -63,38 +65,34 @@ std::pair<Eigen::Vector3d, double> ComputeNormalAndCurvature(
 	covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
 	covariance(2, 1) = covariance(1, 2);
 
-	// TODO
-
-	return std::make_pair(normal, curvature);
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+	solver.compute(covariance, Eigen::ComputeEigenvectors);
+	return solver.eigenvectors().col(0);
 }
 
 }	// unnamed namespace
 
-bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+bool EstimateNormals(PointCloud &cloud,
 		const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
 {
 	bool has_normal = cloud.HasNormals();
 	if (cloud.HasNormals() == false) {
 		cloud.normals_.resize(cloud.points_.size());
 	}
-	if (cloud.HasCurvatures() == false) {
-		cloud.curvatures_.resize(cloud.points_.size());
-	}
-	// TODO
-	// https://github.com/PointCloudLibrary/pcl/blob/a654fe4188382416c99322cafbd9319c59a7355c/common/include/pcl/common/impl/centroid.hpp
-	// computeMeanAndCovarianceMatrix 
+	//KDTreeFlann kdtree;
+	//kdtree.AddGeometry()
+	//for (size_t i = 0; i < cloud.points_.size(); i++) {
+	//	std::vector<>
+	//}
 	return true;
 }
 
-bool EstimateNormalsAndCurvatures(PointCloud &cloud,
+bool EstimateNormals(PointCloud &cloud,
 		const Eigen::Vector3d &orientation_reference,
 		const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
 {
 	if (cloud.HasNormals() == false) {
 		cloud.normals_.resize(cloud.points_.size());
-	}
-	if (cloud.HasCurvatures() == false) {
-		cloud.curvatures_.resize(cloud.points_.size());
 	}
 	return true;
 }

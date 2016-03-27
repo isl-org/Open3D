@@ -109,11 +109,6 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 		for (size_t i = 0; i < add_vert_num; i++)
 			colors_[old_vert_num + i] = cloud.colors_[i];
 	}
-	if (HasCurvatures() && cloud.HasCurvatures()) {
-		curvatures_.resize(new_vert_num);
-		for (size_t i = 0; i < add_vert_num; i++)
-			curvatures_[old_vert_num + i] = cloud.curvatures_[i];
-	}
 	points_.resize(new_vert_num);
 	for (size_t i = 0; i < add_vert_num; i++)
 		points_[old_vert_num + i] = cloud.points_[i];

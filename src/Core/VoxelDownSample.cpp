@@ -45,8 +45,7 @@ public:
 			num_of_points(0),
 			point(0.0, 0.0, 0.0),
 			normal(0.0, 0.0, 0.0),
-			color(0.0, 0.0, 0.0),
-			curvature(0.0)
+			color(0.0, 0.0, 0.0)
 	{
 	}
 	
@@ -59,9 +58,6 @@ public:
 		}
 		if (cloud.HasColors()) {
 			color += cloud.colors_[index];
-		}
-		if (cloud.HasCurvatures()) {
-			curvature += cloud.curvatures_[index];
 		}
 		num_of_points++;
 	}
@@ -81,17 +77,11 @@ public:
 		return color / double(num_of_points);
 	}
 
-	double GetAverageCurvature()
-	{
-		return curvature / double(num_of_points);
-	}
-
 private:
 	int num_of_points;
 	Eigen::Vector3d point;
 	Eigen::Vector3d normal;
 	Eigen::Vector3d color;
-	double curvature;
 };
 
 }	// unnamed namespace
@@ -135,7 +125,6 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 	output_cloud.Clear();
 	bool has_normals = input_cloud.HasNormals();
 	bool has_colors = input_cloud.HasColors();
-	bool has_curvature = input_cloud.HasCurvatures();
 	for (auto accpoint : voxelindex_to_accpoint) {
 		output_cloud.points_.push_back(accpoint.second.GetAveragePoint());
 		if (has_normals) {
@@ -143,10 +132,6 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		}
 		if (has_colors) {
 			output_cloud.colors_.push_back(accpoint.second.GetAverageColor());
-		}
-		if (has_curvature) {
-			output_cloud.curvatures_.push_back(
-					accpoint.second.GetAverageCurvature());
 		}
 	}
 	
