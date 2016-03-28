@@ -24,15 +24,56 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "Console.h"
 #include "Timer.h"
 
-#include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
-#include "IGeometryOwner.h"
+#include <chrono>
 
-#include "KDTreeFlann.h"
+#include "Console.h"
+
+namespace three{
+
+Timer::Timer() :
+		start_time_in_milliseconds_(0.0), end_time_in_milliseconds_(0.0)
+{
+}
+
+Timer::~Timer()
+{
+}
+
+double Timer::GetSystemTimeInMilliseconds()
+{
+	std::chrono::duration<double, std::milli> current_time =
+			std::chrono::high_resolution_clock::now().time_since_epoch();
+	return current_time.count();
+}
+
+void Timer::Start()
+{
+	start_time_in_milliseconds_ = GetSystemTimeInMilliseconds();
+}
+
+void Timer::Stop()
+{
+	end_time_in_milliseconds_ = GetSystemTimeInMilliseconds();
+}
+
+void Timer::Print(const std::string &timer_info)
+{
+	PrintInfo("%s %.2f ms.\n", timer_info.c_str(),
+			end_time_in_milliseconds_ - start_time_in_milliseconds_);
+}
+
+ScopeTimer::ScopeTimer(const std::string &scope_timer_info/* = ""*/) :
+		scope_timer_info_(scope_timer_info)
+{
+	Timer::Start();
+}
+
+ScopeTimer::~ScopeTimer()
+{
+	Timer::Stop();
+	Timer::Print(scope_timer_info_);
+}
+
+}	// namespace three

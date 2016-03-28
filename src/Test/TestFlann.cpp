@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 	}
 
 	KDTreeFlann kdtree;
-	kdtree.AddGeometry(new_cloud_ptr);
+	kdtree.SetGeometry(*new_cloud_ptr);
 	std::vector<int> new_indices_vec(nn);
 	std::vector<double> new_dists_vec(nn);
 	kdtree.SearchKNN(new_cloud_ptr->points_[0], nn, 

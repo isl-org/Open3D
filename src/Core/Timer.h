@@ -26,13 +26,37 @@
 
 #pragma once
 
-#include "Console.h"
-#include "Timer.h"
+#include <string>
 
-#include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
-#include "IGeometryOwner.h"
+namespace three {
 
-#include "KDTreeFlann.h"
+class Timer
+{
+public:
+	Timer();
+	~Timer();
+
+public:
+	static double GetSystemTimeInMilliseconds();
+
+public:
+	void Start();
+	void Stop();
+	void Print(const std::string &timer_info);
+
+private:
+	double start_time_in_milliseconds_;
+	double end_time_in_milliseconds_;
+};
+
+class ScopeTimer : public Timer
+{
+public:
+	ScopeTimer(const std::string &scope_timer_info = "");
+	~ScopeTimer();
+
+private:
+	std::string scope_timer_info_;
+};
+
+}	// namespace three

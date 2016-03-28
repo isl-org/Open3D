@@ -31,11 +31,23 @@
 
 namespace three {
 
-/// Class IGeometryOwner defines the behavior of any class that may own
-/// single or multiple readonly Geometry object(s).
-/// This interface is used to define auxilary data structures that rely on the
-/// content of the geometry but do not change it. Examples include: Visualizer,
-/// KDTree.
+/// Class IGeometryOwner defines the behavior of a class that owns single or 
+/// multiple readonly Geometry object(s).
+/// Using this interface is discouraged unless there is a very good reason the
+/// data structure must own the geometry. This interface requires the input to
+/// be a smart pointer of a geometry object (instead of a local variable or a 
+/// reference). The smart pointer semantics can add complexity to the code. 
+/// Always think of alternative solutions like value copying before using this
+/// interface.
+///
+/// Example:
+/// Visualizer is a good example of this interface. It needs to be able to
+/// efficiently respond to the changes of the geometries. Thus value copying
+/// semantics is infeasible. Additionally, Visualizer needs to own the geometry
+/// since it needs to access the geometry data when a new shader is being bind.
+/// There is no guarantee that the lifetime of a Visualizer is always less than
+/// that of the geometries it owns. Thus, it has to be an IGeometryOwner.
+///
 /// Note:
 /// 1. Once AddGeometry() is called, the interface owns the geometry. As long as
 /// the interface is active, the geometry must not be released. This is usually

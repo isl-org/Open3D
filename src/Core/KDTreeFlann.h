@@ -29,12 +29,12 @@
 #include <memory>
 #include <flann/flann.hpp>
 
-#include "IGeometryOwner.h"
+#include "Geometry.h"
 #include "KDTreeSearchParam.h"
 
 namespace three {
 
-class KDTreeFlann : public IGeometryOwner
+class KDTreeFlann
 {
 public:
 	KDTreeFlann() {}
@@ -43,10 +43,7 @@ public:
 	KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 	
 public:
-	// functions inherited from IGeometryOwner
-	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
-	bool UpdateGeometry() override;
-	bool HasGeometry() const override;
+	bool SetGeometry(const Geometry &geometry);
 
 	template<typename T>
 	int Search(const T &query, const KDTreeSearchParam &param, 
@@ -61,7 +58,7 @@ public:
 			std::vector<double> &distance2, int max_nn = -1);
 
 protected:
-	std::shared_ptr<const Geometry> geometry_ptr_;
+	std::vector<Eigen::Vector3d> data_;
 	std::unique_ptr<flann::Matrix<double>> flann_dataset_;
 	std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
 	int dimension_ = 0;
@@ -90,7 +87,9 @@ template<typename T>
 int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
 		std::vector<double> &distance2)
 {
-	if (HasGeometry() == false || query.rows() != dimension_ || knn < 0) {
+	if (data_.empty() || dataset_size_ <= 0 || 
+			query.rows() != dimension_ || knn < 0)
+	{
 		return -1;
 	}
 	flann::Matrix<double> query_flann((double *)query.data(), 1, 3);
@@ -107,7 +106,7 @@ int KDTreeFlann::SearchRadius(const T &query, double radius,
 		std::vector<int> &indices, std::vector<double> &distance2,
 		int max_nn/* = -1*/)
 {
-	if (HasGeometry() == false || query.rows() != dimension_) {
+	if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_) {
 		return -1;
 	}
 	if (max_nn < 0) {

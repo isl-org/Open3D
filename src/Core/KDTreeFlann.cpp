@@ -31,12 +31,14 @@
 
 namespace three{
 
-bool KDTreeFlann::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
+bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 {
-	switch (geometry_ptr->GetGeometryType()) {
+	switch (geometry.GetGeometryType()) {
 	case Geometry::GEOMETRY_POINTCLOUD:
+		data_ = ((const PointCloud &)geometry).points_;
+		break;
 	case Geometry::GEOMETRY_TRIANGLEMESH:
-		geometry_ptr_ = geometry_ptr;
+		data_ = ((const TriangleMesh &)geometry).vertices_;
 		break;
 	case Geometry::GEOMETRY_IMAGE:
 	case Geometry::GEOMETRY_UNKNOWN:
@@ -44,47 +46,19 @@ bool KDTreeFlann::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 		return false;
 		break;
 	}
-	return UpdateGeometry();
-}
-
-bool KDTreeFlann::UpdateGeometry()
-{
-	if (geometry_ptr_->GetGeometryType() == 
-			Geometry::GEOMETRY_POINTCLOUD) {
-		const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
-		if (pointcloud.HasPoints() == false) {
-			return false;
-		}
-		flann_dataset_.reset(new flann::Matrix<double>(
-				(double *)pointcloud.points_.data(),
-				pointcloud.points_.size(), 3
-				));
-		dimension_ = 3;
-		dataset_size_ = pointcloud.points_.size();
-	} else if (geometry_ptr_->GetGeometryType() == 
-			Geometry::GEOMETRY_TRIANGLEMESH) {
-		const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
-		if (mesh.HasVertices() == false) {
-			return false;
-		}
-		flann_dataset_.reset(new flann::Matrix<double>(
-				(double *)mesh.vertices_.data(),
-				mesh.vertices_.size(), 3
-				));
-		dimension_ = 3;
-		dataset_size_ = mesh.vertices_.size();
-	} else {
+	if (data_.size() == 0) {
 		return false;
 	}
+	flann_dataset_.reset(new flann::Matrix<double>(
+		(double *)data_.data(),
+		data_.size(), 3
+		));
+	dimension_ = 3;
+	dataset_size_ = data_.size();
 	flann_index_.reset(new flann::Index<flann::L2<double>>(*flann_dataset_,
-			flann::KDTreeSingleIndexParams(10)));
+		flann::KDTreeSingleIndexParams(10)));
 	flann_index_->buildIndex();
 	return true;
-}
-
-bool KDTreeFlann::HasGeometry() const
-{
-	return bool(geometry_ptr_);
 }
 
 }	// namespace three
