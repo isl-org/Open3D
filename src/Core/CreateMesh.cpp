@@ -32,6 +32,9 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 		int resolution/* = 20*/)
 {
 	auto mesh_ptr = std::make_shared<TriangleMesh>();
+	if (radius <= 0.0 || resolution <= 0) {
+		return mesh_ptr;
+	}
 	mesh_ptr->vertices_.resize(2 * resolution * (resolution -1 ) + 2);
 	mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, radius);
 	mesh_ptr->vertices_[1] = Eigen::Vector3d(0.0, 0.0, -radius);
@@ -61,6 +64,89 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 					base1 + j1, base1 + j));
 			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j, 
 					base2 + j1, base1 + j1));
+		}
+	}
+	return mesh_ptr;
+}
+
+std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius/* = 1.0*/,
+		double height/* = 2.0*/, int resolution/* = 20*/, int split/* = 4*/)
+{
+	auto mesh_ptr = std::make_shared<TriangleMesh>();
+	if (radius <= 0.0 || height <= 0.0 || resolution <= 0 || split <= 0) {
+		return mesh_ptr;
+	}
+	mesh_ptr->vertices_.resize(resolution * (split + 1) + 2);
+	mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, height * 0.5);
+	mesh_ptr->vertices_[1] = Eigen::Vector3d(0.0, 0.0, -height * 0.5);
+	double step = M_PI * 2.0 / (double)resolution;
+	double h_step = height / (double)split;
+	for (int i = 0; i <= split; i++) {
+		for (int j = 0; j < resolution; j++) {
+			double theta = step * j;
+			mesh_ptr->vertices_[2 + resolution * i + j] =
+					Eigen::Vector3d(cos(theta) * radius, sin(theta) * radius, 
+					height * 0.5 - h_step * i);
+		}
+	}
+	for (int j = 0; j < resolution; j++) {
+		int j1 = (j + 1) % resolution;
+		int base = 2;
+		mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, base + j, base + j1));
+		base = 2 + resolution * split;
+		mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, base + j1, base + j));
+	}
+	for (int i = 0; i < split; i++) {
+		int base1 = 2 + resolution * i;
+		int base2 = base1 + resolution;
+		for (int j = 0; j < resolution; j++) {
+			int j1 = (j + 1) % resolution;
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
+					base1 + j1, base1 + j));
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
+					base2 + j1, base1 + j1));
+		}
+	}
+	return mesh_ptr;
+}
+
+std::shared_ptr<TriangleMesh> CreateMeshCone(double radius/* = 1.0*/,
+		double height/* = 2.0*/, int resolution/* = 20*/, int split/* = 4*/)
+{
+	auto mesh_ptr = std::make_shared<TriangleMesh>();
+	if (radius <= 0.0 || height <= 0.0 || resolution <= 0 || split <= 0) {
+		return mesh_ptr;
+	}
+	mesh_ptr->vertices_.resize(resolution * split + 2);
+	mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, 0.0);
+	mesh_ptr->vertices_[1] = Eigen::Vector3d(0.0, 0.0, height);
+	double step = M_PI * 2.0 / (double)resolution;
+	double h_step = height / (double)split;
+	double r_step = radius / (double)split;
+	for (int i = 0; i < split; i++) {
+		for (int j = 0; j < resolution; j++) {
+			double theta = step * j;
+			double r = r_step * (split - i);
+			mesh_ptr->vertices_[2 + resolution * i + j] =
+					Eigen::Vector3d(cos(theta) * r, sin(theta) * r, h_step * i);
+		}
+	}
+	for (int j = 0; j < resolution; j++) {
+		int j1 = (j + 1) % resolution;
+		int base = 2;
+		mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, base + j1, base + j));
+		base = 2 + resolution * (split - 1);
+		mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, base + j, base + j1));
+	}
+	for (int i = 0; i < split - 1; i++) {
+		int base1 = 2 + resolution * i;
+		int base2 = base1 + resolution;
+		for (int j = 0; j < resolution; j++) {
+			int j1 = (j + 1) % resolution;
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j1,
+					base1 + j, base1 + j1));
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j1,
+					base2 + j, base1 + j));
 		}
 	}
 	return mesh_ptr;

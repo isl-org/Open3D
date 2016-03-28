@@ -107,7 +107,25 @@ public:
 	std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
+/// Function to create a sphere mesh
+/// The sphere will be centered at (0, 0, 0). Its axis is aligned with z-axis.
+/// The longitudes will be split into \param resolution segments.
+/// The latitudes will be split into \param resolution * 2 segments.
 std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius = 1.0, 
 		int resolution = 20);
+
+/// Function to create a cylinder mesh
+/// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0, height/2).
+/// The circle will be split into \param resolution segments.
+/// The height will be split into \param split segments.
+std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius = 1.0,
+		double height = 2.0, int resolution = 20, int split = 4);
+
+/// Function to create a cone mesh
+/// The axis of the cone will be from (0, 0, 0) to (0, 0, height).
+/// The circle will be split into \param resolution segments.
+/// The height will be split into \param split segments.
+std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
+		double height = 2.0, int resolution = 20, int split = 1);
 
 }	// namespace three

@@ -56,6 +56,16 @@ int main(int argc, char *argv[])
 		mesh->ComputeVertexNormals();
 		DrawGeometry(mesh);
 		WriteTriangleMesh("sphere.ply", *mesh, true, true);
+	} else if (option == "cylinder") {
+		auto mesh = CreateMeshCylinder(0.5, 2.0);
+		mesh->ComputeVertexNormals();
+		DrawGeometry(mesh);
+		WriteTriangleMesh("cylinder.ply", *mesh, true, true);
+	} else if (option == "cone") {
+		auto mesh = CreateMeshCone(0.5, 2.0, 20, 3);
+		mesh->ComputeVertexNormals();
+		DrawGeometry(mesh);
+		WriteTriangleMesh("cone.ply", *mesh, true, true);
 	} else if (option == "merge") {
 		auto mesh1 = std::make_shared<TriangleMesh>();
 		auto mesh2 = std::make_shared<TriangleMesh>();
