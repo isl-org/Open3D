@@ -36,22 +36,61 @@ bool DrawGeometry(
 		const int width/* = 640*/, const int height/* = 480*/,
 		const int left/* = 50*/, const int top/* = 50*/)
 {
+	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
+	geometry_ptrs.push_back(geometry_ptr);
+	return DrawGeometries(geometry_ptrs, window_name, width, height, left, top);
+}
+
+bool DrawGeometryWithAnimation(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		const std::string &window_name/* = "Open3D"*/, 
+		const int width/* = 640*/, const int height/* = 480*/,
+		const int left/* = 50*/, const int top/* = 50*/,
+		const std::string &json_filename/* = ""*/)
+{
+	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
+	geometry_ptrs.push_back(geometry_ptr);
+	return DrawGeometriesWithAnimation(geometry_ptrs, window_name, width, 
+			height, left, top, json_filename);
+}
+
+bool DrawGeometryWithCallback(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		std::function<bool(Visualizer &)> callback_func,
+		const std::string &window_name/* = "Open3D"*/, 
+		const int width/* = 640*/, const int height/* = 480*/,
+		const int left/* = 50*/, const int top/* = 50*/)
+{
+	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
+	geometry_ptrs.push_back(geometry_ptr);
+	return DrawGeometriesWithCallback(geometry_ptrs, callback_func, window_name,
+			width, height, left, top);
+}
+
+bool DrawGeometries(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+		const std::string &window_name/* = "Open3D"*/, 
+		const int width/* = 640*/, const int height/* = 480*/,
+		const int left/* = 50*/, const int top/* = 50*/)
+{
 	Visualizer visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
 			false) {
 		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
 		return false;
 	}
-	if (visualizer.AddGeometry(geometry_ptr) == false) {
-		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-		return false;
+	for (const auto &geometry_ptr : geometry_ptrs) {
+		if (visualizer.AddGeometry(geometry_ptr) == false) {
+			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			return false;
+		}
 	}
 	visualizer.Run();
 	return true;
 }
 
-bool DrawGeometryWithAnimation(
-		std::shared_ptr<const Geometry> geometry_ptr,
+bool DrawGeometriesWithAnimation(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 		const std::string &window_name/* = "Open3D"*/, 
 		const int width/* = 640*/, const int height/* = 480*/,
 		const int left/* = 50*/, const int top/* = 50*/,
@@ -63,9 +102,11 @@ bool DrawGeometryWithAnimation(
 		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
 		return false;
 	}
-	if (visualizer.AddGeometry(geometry_ptr) == false) {
-		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-		return false;
+	for (const auto &geometry_ptr : geometry_ptrs) {
+		if (visualizer.AddGeometry(geometry_ptr) == false) {
+			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			return false;
+		}
 	}
 	auto &view_control = 
 			(ViewControlWithAnimation &)visualizer.GetViewControl();
@@ -80,8 +121,8 @@ bool DrawGeometryWithAnimation(
 	return true;
 }
 
-bool DrawGeometryWithCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
+bool DrawGeometriesWithCallback(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 		std::function<bool(Visualizer &)> callback_func,
 		const std::string &window_name/* = "Open3D"*/, 
 		const int width/* = 640*/, const int height/* = 480*/,
@@ -93,9 +134,11 @@ bool DrawGeometryWithCallback(
 		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
 		return false;
 	}
-	if (visualizer.AddGeometry(geometry_ptr) == false) {
-		PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-		return false;
+	for (const auto &geometry_ptr : geometry_ptrs) {
+		if (visualizer.AddGeometry(geometry_ptr) == false) {
+			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			return false;
+		}
 	}
 	visualizer.RegisterAnimationCallback(callback_func);
 	visualizer.Run();

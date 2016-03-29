@@ -34,10 +34,18 @@ namespace three {
 class BoundingBox
 {
 public:
+	BoundingBox();
+	BoundingBox(const Geometry &geometry);
+	~BoundingBox();
+
+public:
 	void Reset();
 	void FitInGeometry(const Geometry &geometry);
 
 public:
+	Eigen::Vector3d GetMinBound() const { return min_bound_; }
+	Eigen::Vector3d GetMaxBound() const { return max_bound_; }
+
 	Eigen::Vector3d GetCenter() const {
 		return (min_bound_ + max_bound_) * 0.5;
 	}

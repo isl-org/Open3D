@@ -26,7 +26,28 @@
 
 #include "TriangleMesh.h"
 
+#include <IO/TriangleMeshIO.h>
+
 namespace three{
+
+namespace {
+
+void PaintMeshWithUniformColor(TriangleMesh &mesh, const Eigen::Vector3d &color)
+{
+	mesh.vertex_colors_.resize(mesh.vertices_.size());
+	for (size_t i = 0; i < mesh.vertices_.size(); i++) {
+		mesh.vertex_colors_[i] = color;
+	}
+}
+
+}	// unnamed namespace
+
+std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename)
+{
+	auto mesh = std::make_shared<TriangleMesh>();
+	ReadTriangleMesh(filename, *mesh);
+	return mesh;
+}
 
 std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/, 
 		int resolution/* = 20*/)
@@ -150,6 +171,78 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius/* = 1.0*/,
 		}
 	}
 	return mesh_ptr;
+}
+
+std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius/* = 1.0*/,
+		double cone_radius/* = 1.5*/, double cylinder_height/* = 5.0*/,
+		double cone_height/* = 4.0*/, int resolution/* = 20*/,
+		int cylinder_split/* = 4*/, int cone_split/* = 1*/)
+{
+	Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
+	auto mesh_cylinder = CreateMeshCylinder(cylinder_radius, cylinder_height,
+			resolution, cylinder_split);
+	transformation(2, 3) = cylinder_height * 0.5;
+	mesh_cylinder->Transform(transformation);
+	auto mesh_cone = CreateMeshCone(cone_radius, cone_height, resolution,
+			cone_split);
+	transformation(2, 3) = cylinder_height;
+	mesh_cone->Transform(transformation);
+	auto mesh_arrow = mesh_cylinder;
+	*mesh_arrow += *mesh_cone;
+	return mesh_arrow;
+}
+
+std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
+		const Eigen::Vector3d &origin/* = Eigen::Vector3d(0.0, 0.0, 0.0)*/)
+{
+	auto mesh_frame = CreateMeshSphere(0.06 * size);
+	mesh_frame->ComputeVertexNormals();
+	PaintMeshWithUniformColor(*mesh_frame, Eigen::Vector3d(0.5, 0.5, 0.5));
+
+	std::shared_ptr<TriangleMesh> mesh_arrow;
+	Eigen::Matrix4d transformation;
+
+	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
+			0.2 * size);
+	mesh_arrow->ComputeVertexNormals();
+	PaintMeshWithUniformColor(*mesh_arrow, Eigen::Vector3d(1.0, 0.0, 0.0));
+	transformation <<
+			0, 0, 1, 0,
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 0, 1;
+	mesh_arrow->Transform(transformation);
+	*mesh_frame += *mesh_arrow;
+
+	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
+			0.2 * size);
+	mesh_arrow->ComputeVertexNormals();
+	PaintMeshWithUniformColor(*mesh_arrow, Eigen::Vector3d(0.0, 1.0, 0.0));
+	transformation <<
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			1, 0, 0, 0,
+			0, 0, 0, 1;
+	mesh_arrow->Transform(transformation);
+	*mesh_frame += *mesh_arrow;
+
+	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
+			0.2 * size);
+	mesh_arrow->ComputeVertexNormals();
+	PaintMeshWithUniformColor(*mesh_arrow, Eigen::Vector3d(0.0, 0.0, 1.0));
+	transformation <<
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1;
+	mesh_arrow->Transform(transformation);
+	*mesh_frame += *mesh_arrow;
+
+	transformation = Eigen::Matrix4d::Identity();
+	transformation.block<3, 1>(0, 3) = origin;
+	mesh_frame->Transform(transformation);
+
+	return mesh_frame;
 }
 
 }	// namespace three

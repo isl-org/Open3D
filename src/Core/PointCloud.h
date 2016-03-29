@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Eigen/Core>
 #include "Geometry.h"
 #include "KDTreeSearchParam.h"
@@ -75,7 +76,10 @@ public:
 	std::vector<Eigen::Vector3d> colors_;
 };
 
-// basic operations
+/// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
+/// Return an empty pointcloud if fail to read the file.
+std::shared_ptr<PointCloud> CreatePointCloudFromFile(
+		const std::string &filename);
 
 /// Function to downsample input_cloud into output_cloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 

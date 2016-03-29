@@ -60,4 +60,24 @@ bool DrawGeometryWithCallback(
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);
 
+bool DrawGeometries(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+		const std::string &window_name = "Open3D", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50);
+
+bool DrawGeometriesWithAnimation(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+		const std::string &window_name = "Open3D", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50,
+		const std::string &json_filename = "");
+
+bool DrawGeometriesWithCallback(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+		std::function<bool(Visualizer &)> callback_func,
+		const std::string &window_name = "Open3D", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50);
+
 }	// namespace three

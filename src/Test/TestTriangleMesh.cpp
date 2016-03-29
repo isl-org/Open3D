@@ -74,82 +74,29 @@ int main(int argc, char *argv[])
 		mesh->ComputeVertexNormals();
 		DrawGeometry(mesh);
 		WriteTriangleMesh("cone.ply", *mesh, true, true);
-	} else if (option == "frame") {
-		auto mesh = CreateMeshSphere(0.08);
+	} else if (option == "arrow") {
+		auto mesh = CreateMeshArrow();
 		mesh->ComputeVertexNormals();
-		PaintMesh(*mesh, Eigen::Vector3d(0.5, 0.5, 0.5));
-
-		std::shared_ptr<TriangleMesh> mesh1;
-		Eigen::Matrix4d trans1;
-
-		mesh1 = CreateMeshCylinder(0.05, 0.9);
-		mesh1->ComputeVertexNormals();
-		PaintMesh(*mesh1, Eigen::Vector3d(1.0, 0.0, 0.0));
-		trans1 << 0, 0, 1, 0.9 * 0.5,
-				1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 0, 1;
-		mesh1->Transform(trans1);
-		*mesh += *mesh1;
-
-		mesh1 = CreateMeshCone(0.08, 0.2);
-		mesh1->ComputeVertexNormals();
-		PaintMesh(*mesh1, Eigen::Vector3d(1.0, 0.0, 0.0));
-		trans1 << 0, 0, 1, 0.9,
-				1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 0, 1;
-		mesh1->Transform(trans1);
-		*mesh += *mesh1;
-
-		mesh1 = CreateMeshCylinder(0.05, 0.9);
-		mesh1->ComputeVertexNormals();
-		PaintMesh(*mesh1, Eigen::Vector3d(0.0, 1.0, 0.0));
-		trans1 << 0, 1, 0, 0,
-				0, 0, 1, 0.9 * 0.5,
-				1, 0, 0, 0,
-				0, 0, 0, 1;
-		mesh1->Transform(trans1);
-		*mesh += *mesh1;
-
-		mesh1 = CreateMeshCone(0.08, 0.2);
-		mesh1->ComputeVertexNormals();
-		PaintMesh(*mesh1, Eigen::Vector3d(0.0, 1.0, 0.0));
-		trans1 << 0, 1, 0, 0,
-				0, 0, 1, 0.9,
-				1, 0, 0, 0,
-				0, 0, 0, 1;
-		mesh1->Transform(trans1);
-		*mesh += *mesh1;
-
-		mesh1 = CreateMeshCylinder(0.05, 0.9);
-		mesh1->ComputeVertexNormals();
-		PaintMesh(*mesh1, Eigen::Vector3d(0.0, 0.0, 1.0));
-		trans1 << 1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 1, 0.9 * 0.5,
-				0, 0, 0, 1;
-		mesh1->Transform(trans1);
-		*mesh += *mesh1;
-
-		mesh1 = CreateMeshCone(0.08, 0.2);
-		mesh1->ComputeVertexNormals();
-		PaintMesh(*mesh1, Eigen::Vector3d(0.0, 0.0, 1.0));
-		trans1 << 1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 1, 0.9,
-				0, 0, 0, 1;
-		mesh1->Transform(trans1);
-		*mesh += *mesh1;
-
 		DrawGeometry(mesh);
-		WriteTriangleMesh("frame.ply", *mesh, true, true);
+		WriteTriangleMesh("arrow.ply", *mesh, true, true);
+	} else if (option == "frame") {
+		if (argc < 3) {
+			auto mesh = CreateMeshCoordinateFrame();
+			DrawGeometry(mesh);
+			WriteTriangleMesh("frame.ply", *mesh, true, true);
+		} else {
+			auto mesh = CreateMeshFromFile(argv[2]);
+			mesh->ComputeVertexNormals();
+			BoundingBox boundingbox(*mesh);
+			auto mesh_frame = CreateMeshCoordinateFrame(
+					boundingbox.GetSize() * 0.2, boundingbox.GetMinBound());
+			std::vector<std::shared_ptr<const Geometry>> meshes =
+					{mesh, mesh_frame};
+			DrawGeometries(meshes);
+		}
 	} else if (option == "merge") {
-		auto mesh1 = std::make_shared<TriangleMesh>();
-		auto mesh2 = std::make_shared<TriangleMesh>();
-
-		ReadTriangleMesh(argv[2], *mesh1);
-		ReadTriangleMesh(argv[3], *mesh2);
+		auto mesh1 = CreateMeshFromFile(argv[2]);
+		auto mesh2 = CreateMeshFromFile(argv[3]);
 
 		PrintInfo("Mesh1 has %d vertices, %d triangles.\n", mesh1->vertices_.size(),
 				mesh1->triangles_.size());
@@ -168,8 +115,7 @@ int main(int argc, char *argv[])
 
 		WriteTriangleMesh("temp.ply", *mesh1, true, true);
 	} else if (option == "normal") {
-		auto mesh = std::make_shared<TriangleMesh>();
-		ReadTriangleMesh(argv[2], *mesh);
+		auto mesh = CreateMeshFromFile(argv[2]);
 		mesh->ComputeVertexNormals();
 		WriteTriangleMesh(argv[3], *mesh, true, true);
 	}

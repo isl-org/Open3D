@@ -214,7 +214,7 @@ private:
 	
 	// TriangleMesh options
 	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
-	MeshColorOption mesh_color_option_ = TRIANGLEMESH_DEFAULT;
+	MeshColorOption mesh_color_option_ = TRIANGLEMESH_COLOR;
 	bool mesh_show_back_face_ = false;
 	bool mesh_show_wireframe_ = false;
 	
