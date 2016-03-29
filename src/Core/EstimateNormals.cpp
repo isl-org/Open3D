@@ -79,11 +79,13 @@ bool EstimateNormals(PointCloud &cloud,
 	if (cloud.HasNormals() == false) {
 		cloud.normals_.resize(cloud.points_.size());
 	}
-	//KDTreeFlann kdtree;
-	//kdtree.AddGeometry()
-	//for (size_t i = 0; i < cloud.points_.size(); i++) {
-	//	std::vector<>
-	//}
+	KDTreeFlann kdtree;
+	kdtree.SetGeometry(cloud);
+	for (size_t i = 0; i < cloud.points_.size(); i++) {
+		std::vector<int> indices(cloud.points_.size());
+		std::vector<double> distance2(cloud.points_.size());
+
+	}
 	return true;
 }
 
