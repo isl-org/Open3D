@@ -82,6 +82,7 @@ bool DrawGeometries(
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
 			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
@@ -105,6 +106,7 @@ bool DrawGeometriesWithAnimation(
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
 			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
@@ -113,6 +115,7 @@ bool DrawGeometriesWithAnimation(
 	if (json_filename.empty() == false) {
 		if (view_control.LoadTrajectoryFromFile(json_filename) == false) {
 			PrintWarning("[DrawGeometry] Failed loading json file.\n");
+			PrintWarning("[DrawGeometry] Possibly due to bad file or file does not contain trajectory.\n");
 			return false;
 		}
 		visualizer.UpdateWindowTitle();
@@ -137,6 +140,7 @@ bool DrawGeometriesWithCallback(
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
 			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
