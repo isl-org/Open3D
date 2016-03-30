@@ -139,6 +139,18 @@ int main(int argc, char *argv[])
 	VoxelDownSample(*pointcloud_ptr, 0.05, *downsampled);
 	DrawGeometry(downsampled, "Down Sampled Pointcloud");
 
+	// 6. test normal estimation
+	DrawGeometryWithKeyCallback(downsampled, GLFW_KEY_SPACE,
+			[&](Visualizer &vis) {
+				{
+				ScopeTimer timer("Normal estimation takes ");
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				}
+				PrintInfo("Done.\n");
+				return true;
+			}, "Press Space to Estimate Normal", 1600, 900);
+
 	// n. test end
 
 	PrintAlways("End of the test.\n");
