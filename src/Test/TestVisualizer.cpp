@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
-		PrintInfo("    > TestVisualizer [mesh|spin|pointcloud|rainbow|image] [filename]\n");
+		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image] [filename]\n");
 		PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
 		return 0;
 	}
@@ -64,7 +64,22 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		mesh_ptr->ComputeVertexNormals();
-		DrawGeometryWithCallback(mesh_ptr, 
+		DrawGeometryWithAnimationCallback(mesh_ptr, 
+				[&](Visualizer &vis) {
+					vis.GetViewControl().Rotate(10, 0);
+					std::this_thread::sleep_for(std::chrono::milliseconds(30));
+					return false;
+				}, "Spin", 1600, 900);
+	} else if (option == "slowspin") {
+		auto mesh_ptr = std::make_shared<TriangleMesh>();
+		if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
+			PrintWarning("Successfully read %s\n", argv[2]);
+		} else {
+			PrintError("Failed to read %s\n\n", argv[2]);
+			return 0;
+		}
+		mesh_ptr->ComputeVertexNormals();
+		DrawGeometryWithKeyCallback(mesh_ptr, GLFW_KEY_SPACE,
 				[&](Visualizer &vis) {
 					vis.GetViewControl().Rotate(10, 0);
 					std::this_thread::sleep_for(std::chrono::milliseconds(30));
@@ -101,7 +116,7 @@ int main(int argc, char *argv[])
 		};
 		update_colors_func(1.0);
 
-		DrawGeometryWithCallback(cloud_ptr,
+		DrawGeometryWithAnimationCallback(cloud_ptr,
 				[&](Visualizer &vis) {
 					color_index += color_index_step;
 					if (color_index > 2.0) color_index -= 2.0;
@@ -128,9 +143,9 @@ int main(int argc, char *argv[])
 		}
 		mesh_ptr->ComputeVertexNormals();
 		if (argc == 3) {
-			DrawGeometryWithAnimation(mesh_ptr, "Animation", 1600, 900);
+			DrawGeometryWithCustomAnimation(mesh_ptr, "Animation", 1600, 900);
 		} else {
-			DrawGeometryWithAnimation(mesh_ptr, "Animation", 1600, 900, 50, 50, 
+			DrawGeometryWithCustomAnimation(mesh_ptr, "Animation", 1600, 900, 50, 50, 
 					argv[3]);
 		}
 	}

@@ -32,7 +32,6 @@
 #include <Core/Geometry.h>
 
 #include "Visualizer.h"
-#include "VisualizerWithAnimation.h"
 
 namespace three {
 
@@ -46,16 +45,23 @@ bool DrawGeometry(
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);
 
-bool DrawGeometryWithAnimation(
+bool DrawGeometryWithCustomAnimation(
 		std::shared_ptr<const Geometry> geometry_ptr,
 		const std::string &window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50,
 		const std::string &json_filename = "");
 
-bool DrawGeometryWithCallback(
+bool DrawGeometryWithAnimationCallback(
 		std::shared_ptr<const Geometry> geometry_ptr,
 		std::function<bool(Visualizer &)> callback_func,
+		const std::string &window_name = "Open3D", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50);
+
+bool DrawGeometryWithKeyCallback(
+		std::shared_ptr<const Geometry> geometry_ptr,
+		const int key, std::function<bool(Visualizer &)> callback_func,
 		const std::string &window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);
@@ -66,16 +72,23 @@ bool DrawGeometries(
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);
 
-bool DrawGeometriesWithAnimation(
+bool DrawGeometriesWithCustomAnimation(
 		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 		const std::string &window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50,
 		const std::string &json_filename = "");
 
-bool DrawGeometriesWithCallback(
+bool DrawGeometriesWithAnimationCallback(
 		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 		std::function<bool(Visualizer &)> callback_func,
+		const std::string &window_name = "Open3D", 
+		const int width = 640, const int height = 480,
+		const int left = 50, const int top = 50);
+
+bool DrawGeometriesWithKeyCallback(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+		const int key, std::function<bool(Visualizer &)> callback_func,
 		const std::string &window_name = "Open3D", 
 		const int width = 640, const int height = 480,
 		const int left = 50, const int top = 50);

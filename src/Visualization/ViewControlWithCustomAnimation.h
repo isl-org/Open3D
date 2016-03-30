@@ -31,7 +31,7 @@
 
 namespace three {
 
-class ViewControlWithAnimation : public ViewControl
+class ViewControlWithCustomAnimation : public ViewControl
 {
 public:
 	enum AnimationMode {

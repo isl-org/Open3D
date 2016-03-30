@@ -30,14 +30,15 @@
 
 namespace three {
 
-class VisualizerWithAnimation : public Visualizer
+class VisualizerWithCustomAnimation : public Visualizer
 {
 public:
-	VisualizerWithAnimation();
-	virtual ~VisualizerWithAnimation();
-	VisualizerWithAnimation(const VisualizerWithAnimation &) = delete;
-	VisualizerWithAnimation &operator=(const VisualizerWithAnimation &) = 
+	VisualizerWithCustomAnimation();
+	virtual ~VisualizerWithCustomAnimation();
+	VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) = 
 			delete;
+	VisualizerWithCustomAnimation &operator=(
+			const VisualizerWithCustomAnimation &) = delete;
 
 public:
 	void PrintVisualizerHelp() override;

@@ -24,20 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControlWithAnimation.h"
+#include "ViewControlWithCustomAnimation.h"
 
 #include <IO/ViewTrajectoryIO.h>
 
 namespace three{
 
-void ViewControlWithAnimation::Reset()
+void ViewControlWithCustomAnimation::Reset()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Reset();
 	}
 }
 
-void ViewControlWithAnimation::ChangeFieldOfView(double step)
+void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		if (!view_trajectory_.view_status_.empty()) {
@@ -61,28 +61,28 @@ void ViewControlWithAnimation::ChangeFieldOfView(double step)
 	}
 }
 
-void ViewControlWithAnimation::Scale(double scale)
+void ViewControlWithCustomAnimation::Scale(double scale)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Scale(scale);
 	}
 }
 
-void ViewControlWithAnimation::Rotate(double x, double y)
+void ViewControlWithCustomAnimation::Rotate(double x, double y)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Rotate(x, y);
 	}
 }
 
-void ViewControlWithAnimation::Translate(double x, double y)
+void ViewControlWithCustomAnimation::Translate(double x, double y)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Translate(x, y);
 	}
 }
 
-void ViewControlWithAnimation::SetAnimationMode(AnimationMode mode)
+void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
 {
 	if (mode != ANIMATION_FREEMODE && view_trajectory_.view_status_.empty()) {
 		return;
@@ -100,7 +100,7 @@ void ViewControlWithAnimation::SetAnimationMode(AnimationMode mode)
 	}
 }
 
-void ViewControlWithAnimation::AddKeyFrame()
+void ViewControlWithCustomAnimation::AddKeyFrame()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewTrajectory::ViewStatus current_status = ConvertToViewStatus();
@@ -117,7 +117,7 @@ void ViewControlWithAnimation::AddKeyFrame()
 	}
 }
 
-void ViewControlWithAnimation::UpdateKeyFrame()
+void ViewControlWithCustomAnimation::UpdateKeyFrame()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE &&
 			!view_trajectory_.view_status_.empty()) {
@@ -126,7 +126,7 @@ void ViewControlWithAnimation::UpdateKeyFrame()
 	}
 }
 
-void ViewControlWithAnimation::DeleteKeyFrame()
+void ViewControlWithCustomAnimation::DeleteKeyFrame()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE &&
 			!view_trajectory_.view_status_.empty()) {
@@ -140,7 +140,7 @@ void ViewControlWithAnimation::DeleteKeyFrame()
 	SetViewControlFromTrajectory();
 }
 
-void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
+void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		double radian_per_step = M_PI * 2.0 / double(num_of_key_frames);
@@ -151,7 +151,7 @@ void ViewControlWithAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
 	}
 }
 
-std::string ViewControlWithAnimation::GetStatusString()
+std::string ViewControlWithCustomAnimation::GetStatusString()
 {
 	std::string prefix;
 	switch (animation_mode_) {
@@ -188,7 +188,7 @@ std::string ViewControlWithAnimation::GetStatusString()
 	return prefix + std::string(buffer);
 }
 
-void ViewControlWithAnimation::Step(double change)
+void ViewControlWithCustomAnimation::Step(double change)
 {
 	if (view_trajectory_.view_status_.empty()) {
 		return;
@@ -206,7 +206,7 @@ void ViewControlWithAnimation::Step(double change)
 	SetViewControlFromTrajectory();
 }
 
-void ViewControlWithAnimation::GoToFirst()
+void ViewControlWithCustomAnimation::GoToFirst()
 {
 	if (view_trajectory_.view_status_.empty()) {
 		return;
@@ -219,7 +219,7 @@ void ViewControlWithAnimation::GoToFirst()
 	SetViewControlFromTrajectory();
 }
 
-void ViewControlWithAnimation::GoToLast()
+void ViewControlWithCustomAnimation::GoToLast()
 {
 	if (view_trajectory_.view_status_.empty()) {
 		return;
@@ -232,7 +232,7 @@ void ViewControlWithAnimation::GoToLast()
 	SetViewControlFromTrajectory();
 }
 
-bool ViewControlWithAnimation::CaptureTrajectory(
+bool ViewControlWithCustomAnimation::CaptureTrajectory(
 		const std::string &filename/* = ""*/)
 {
 	if (view_trajectory_.view_status_.empty()) {
@@ -246,7 +246,7 @@ bool ViewControlWithAnimation::CaptureTrajectory(
 	return WriteViewTrajectory(filename, view_trajectory_);
 }
 
-bool ViewControlWithAnimation::LoadTrajectoryFromFile(
+bool ViewControlWithCustomAnimation::LoadTrajectoryFromFile(
 		const std::string &filename)
 {
 	bool success = ReadViewTrajectory(filename, view_trajectory_);
@@ -259,7 +259,7 @@ bool ViewControlWithAnimation::LoadTrajectoryFromFile(
 	return success;
 }
 
-bool ViewControlWithAnimation::SaveViewStatusToString(
+bool ViewControlWithCustomAnimation::SaveViewStatusToString(
 		std::string &view_status_string)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
@@ -273,7 +273,7 @@ bool ViewControlWithAnimation::SaveViewStatusToString(
 	}
 }
 
-bool ViewControlWithAnimation::LoadViewStatusFromString(
+bool ViewControlWithCustomAnimation::LoadViewStatusFromString(
 		const std::string &view_status_string)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
@@ -292,7 +292,7 @@ bool ViewControlWithAnimation::LoadViewStatusFromString(
 	}
 }
 
-ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
+ViewTrajectory::ViewStatus ViewControlWithCustomAnimation::ConvertToViewStatus()
 {
 	ViewTrajectory::ViewStatus status;
 	status.field_of_view = field_of_view_;
@@ -303,7 +303,7 @@ ViewTrajectory::ViewStatus ViewControlWithAnimation::ConvertToViewStatus()
 	return status;
 }
 
-void ViewControlWithAnimation::ConvertFromViewStatus(
+void ViewControlWithCustomAnimation::ConvertFromViewStatus(
 		const ViewTrajectory::ViewStatus status)
 {
 	field_of_view_ = status.field_of_view;
@@ -314,7 +314,7 @@ void ViewControlWithAnimation::ConvertFromViewStatus(
 	SetProjectionParameters();
 }
 
-double ViewControlWithAnimation::RegularizeFrameIndex(double current_frame,
+double ViewControlWithCustomAnimation::RegularizeFrameIndex(double current_frame,
 		size_t num_of_frames, bool is_loop)
 {
 	if (num_of_frames == 0) {
@@ -339,7 +339,7 @@ double ViewControlWithAnimation::RegularizeFrameIndex(double current_frame,
 	return frame_index;
 }
 
-void ViewControlWithAnimation::SetViewControlFromTrajectory()
+void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
 {
 	if (view_trajectory_.view_status_.empty()) {
 		return;

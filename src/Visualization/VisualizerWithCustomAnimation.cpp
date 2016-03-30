@@ -24,22 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerWithAnimation.h"
+#include "VisualizerWithCustomAnimation.h"
 
 #include <thread>
-#include "ViewControlWithAnimation.h"
+#include "ViewControlWithCustomAnimation.h"
 
 namespace three{
 
-VisualizerWithAnimation::VisualizerWithAnimation()
+VisualizerWithCustomAnimation::VisualizerWithCustomAnimation()
 {
 }
 
-VisualizerWithAnimation::~VisualizerWithAnimation()
+VisualizerWithCustomAnimation::~VisualizerWithCustomAnimation()
 {
 }
 
-void VisualizerWithAnimation::PrintVisualizerHelp()
+void VisualizerWithCustomAnimation::PrintVisualizerHelp()
 {
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Animation control --\n");
@@ -70,20 +70,22 @@ void VisualizerWithAnimation::PrintVisualizerHelp()
 	PrintInfo("\n");
 }
 
-void VisualizerWithAnimation::UpdateWindowTitle()
+void VisualizerWithCustomAnimation::UpdateWindowTitle()
 {
 	if (window_ != NULL) {
-		auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+		auto &view_control = (ViewControlWithCustomAnimation &)
+				(*view_control_ptr_);
 		std::string new_window_title = window_name_ + " - " + 
 				view_control.GetStatusString();
 		glfwSetWindowTitle(window_, new_window_title.c_str());
 	}
 }
 
-void VisualizerWithAnimation::Play(bool recording/* = false*/)
+void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
 {
-	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
-	view_control.SetAnimationMode(ViewControlWithAnimation::ANIMATION_PLAYMODE);
+	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+	view_control.SetAnimationMode(
+			ViewControlWithCustomAnimation::ANIMATION_PLAYMODE);
 	is_redraw_required_ = true;
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
@@ -92,7 +94,7 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 				// The lambda function captures no references to avoid dangling
 				// references
 				auto &view_control =
-						(ViewControlWithAnimation &)(*view_control_ptr_);
+						(ViewControlWithCustomAnimation &)(*view_control_ptr_);
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				recording_file_index_++;
 				if (recording) {
@@ -104,7 +106,7 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 				view_control.Step(1.0);
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
 					view_control.SetAnimationMode(
-							ViewControlWithAnimation::ANIMATION_FREEMODE);
+							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(nullptr);
 				}
 				UpdateWindowTitle();
@@ -112,20 +114,20 @@ void VisualizerWithAnimation::Play(bool recording/* = false*/)
 			});
 }
 
-bool VisualizerWithAnimation::InitViewControl()
+bool VisualizerWithCustomAnimation::InitViewControl()
 {
-	view_control_ptr_ = std::unique_ptr<ViewControlWithAnimation>(
-			new ViewControlWithAnimation);
+	view_control_ptr_ = std::unique_ptr<ViewControlWithCustomAnimation>(
+			new ViewControlWithCustomAnimation);
 	ResetViewPoint();
 	return true;
 }
 
-void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
+void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
 	const char *clipboard_string_buffer;
 	std::string clipboard_string;
-	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	if (action == GLFW_RELEASE || view_control.IsPlaying()) {
 		return;
 	}
@@ -134,12 +136,12 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 		switch (key) {
 		case GLFW_KEY_F:
 			view_control.SetAnimationMode(
-					ViewControlWithAnimation::ANIMATION_FREEMODE);
+					ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
 			PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
 			break;
 		case GLFW_KEY_W:
 			view_control.SetAnimationMode(
-					ViewControlWithAnimation::ANIMATION_PREVIEWMODE);
+					ViewControlWithCustomAnimation::ANIMATION_PREVIEWMODE);
 			PrintDebug("[Visualizer] Enter preview mode.\n");
 			break;
 		case GLFW_KEY_P:
@@ -239,20 +241,20 @@ void VisualizerWithAnimation::KeyPressCallback(GLFWwindow *window,
 	}
 }
 
-void VisualizerWithAnimation::MouseMoveCallback(GLFWwindow* window, 
+void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window, 
 		double x, double y)
 {
-	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	if (view_control.IsPlaying()) {
 		return;
 	}
 	Visualizer::MouseMoveCallback(window, x, y);
 }
 
-void VisualizerWithAnimation::MouseScrollCallback(GLFWwindow* window, 
+void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow* window, 
 		double x, double y)
 {
-	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	if (view_control.IsPlaying()) {
 		return;
 	}
@@ -266,10 +268,10 @@ void VisualizerWithAnimation::MouseScrollCallback(GLFWwindow* window,
 	}
 }
 
-void VisualizerWithAnimation::MouseButtonCallback(GLFWwindow* window,
+void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow* window,
 		int button, int action, int mods)
 {
-	auto &view_control = (ViewControlWithAnimation &)(*view_control_ptr_);
+	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	if (view_control.IsPlaying()) {
 		return;
 	}
