@@ -161,6 +161,12 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 	return true;
 }
 
+void Visualizer::DestroyWindow()
+{
+	is_initialized_ = false;
+	glfwDestroyWindow(window_);
+}
+
 void Visualizer::RegisterAnimationCallback(
 		std::function<bool (Visualizer &)> callback_func)
 {

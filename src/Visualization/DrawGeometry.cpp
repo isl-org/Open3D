@@ -102,6 +102,7 @@ bool DrawGeometries(
 		}
 	}
 	visualizer.Run();
+	visualizer.DestroyWindow();
 	return true;
 }
 
@@ -136,6 +137,7 @@ bool DrawGeometriesWithCustomAnimation(
 		visualizer.UpdateWindowTitle();
 	}
 	visualizer.Run();
+	visualizer.DestroyWindow();
 	return true;
 }
 
@@ -161,6 +163,7 @@ bool DrawGeometriesWithAnimationCallback(
 	}
 	visualizer.RegisterAnimationCallback(callback_func);
 	visualizer.Run();
+	visualizer.DestroyWindow();
 	return true;
 }
 
@@ -186,6 +189,7 @@ bool DrawGeometriesWithKeyCallback(
 	}
 	visualizer.RegisterKeyCallback(key, callback_func);
 	visualizer.Run();
+	visualizer.DestroyWindow();
 	return true;
 }
 

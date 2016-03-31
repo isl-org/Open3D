@@ -72,6 +72,10 @@ public:
 	bool CreateWindow(const std::string &window_name = "Open3D", 
 			const int width = 640, const int height = 480,
 			const int left = 50, const int top = 50);
+
+	/// Function to destroy a window
+	/// This function MUST be called from the main thread.
+	void DestroyWindow();
 	
 	/// Function to register a callback function for animation
 	/// The callback function returns if UpdateGeometry() needs to be run

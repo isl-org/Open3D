@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
 	visualizer.AddGeometry(pointcloud_ptr);
 	visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.Run();
+	visualizer.DestroyWindow();
 
 	// 4. test operations
 	*pointcloud_transformed_ptr += *pointcloud_ptr;
