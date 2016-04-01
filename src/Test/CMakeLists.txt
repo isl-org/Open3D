@@ -1,5 +1,5 @@
 add_executable(TestPointCloud TestPointCloud.cpp)
-target_link_libraries(TestPointCloud Visualization IO Core)
+target_link_libraries(TestPointCloud Visualization IO Core IO)
 set_target_properties(TestPointCloud PROPERTIES FOLDER "Test")
 
 add_executable(TestTriangleMesh TestTriangleMesh.cpp)
