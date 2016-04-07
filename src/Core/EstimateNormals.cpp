@@ -34,6 +34,49 @@ namespace three{
 
 namespace {
 
+double sqr(double x) { return x * x; }
+
+Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
+{
+	// Based on:
+	// https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
+	double p1 = sqr(A(0, 1)) + sqr(A(0, 2)) + sqr(A(1, 2));
+	Eigen::Vector3d eigenvalues;
+	if (p1 == 0.0) {
+		eigenvalues(0) = std::min(A(0, 0), std::min(A(1, 1), A(2, 2)));
+		eigenvalues(2) = std::max(A(0, 0), std::max(A(1, 1), A(2, 2)));
+		eigenvalues(1) = A.trace() - eigenvalues(0) - eigenvalues(2);
+	} else {
+		double q = A.trace() / 3.0;
+		double p2 = sqr((A(0, 0) - q)) + sqr(A(1, 1) - q) + sqr(A(2, 2) - q) + 
+				2 * p1;
+		double p = sqrt(p2 / 6.0);
+		Eigen::Matrix3d B = (1.0 / p) * (A - q * Eigen::Matrix3d::Identity());
+		double r = B.determinant() / 2.0;
+		double phi;
+		if (r <= -1) {
+			phi = M_PI / 3.0;
+		} else if (r >= 1) {
+			phi = 0.0;
+		} else {
+			phi = std::acos(r) / 3.0;
+		}
+		eigenvalues(0) = q + 2.0 * p * std::cos(phi);
+		eigenvalues(2) = q + 2.0 * p * std::cos(phi + 2.0 * M_PI / 3.0);
+		eigenvalues(1) = q * 3.0 - eigenvalues(0) - eigenvalues(2);
+	}
+
+	Eigen::Vector3d eigenvector = 
+			(A - Eigen::Matrix3d::Identity() * eigenvalues(0)) * 
+			(A.col(0) - Eigen::Vector3d(eigenvalues(1), 0.0, 0.0));
+	double len = eigenvector.norm();
+	if (len <= 0.0) {
+		return Eigen::Vector3d::Zero();
+	} else {
+		return eigenvector / len;
+	}
+}
+
 Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 		const std::vector<int> &indices)
 {
@@ -66,9 +109,10 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 	covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
 	covariance(2, 1) = covariance(1, 2);
 
-	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-	solver.compute(covariance, Eigen::ComputeEigenvectors);
-	return solver.eigenvectors().col(0);
+	return FastEigen3x3(covariance);
+	//Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+	//solver.compute(covariance, Eigen::ComputeEigenvectors);
+	//return solver.eigenvectors().col(0);
 }
 
 }	// unnamed namespace

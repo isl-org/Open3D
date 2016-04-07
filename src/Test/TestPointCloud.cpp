@@ -67,6 +67,19 @@ int main(int argc, char *argv[])
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 
+	auto pcd = CreatePointCloudFromFile(argv[1]);
+	{
+		ScopeTimer timer("Normal estimation takes ");
+		for (int i = 0; i < 10; i++) {
+			EstimateNormals(*pcd, 
+					three::KDTreeSearchParamKNN(20));
+		}
+	}
+
+	return 1;
+
+
+
 	// 1. test basic pointcloud functions.
 	
 	PointCloud pointcloud;
@@ -141,12 +154,36 @@ int main(int argc, char *argv[])
 	DrawGeometry(downsampled, "Down Sampled Pointcloud");
 
 	// 6. test normal estimation
-	DrawGeometryWithKeyCallback(downsampled, GLFW_KEY_SPACE,
+	DrawGeometryWithKeyCallback(pointcloud_ptr, GLFW_KEY_SPACE,
 			[&](Visualizer &vis) {
 				{
 				ScopeTimer timer("Normal estimation takes ");
+				/*
 				EstimateNormals(*downsampled, 
 						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				EstimateNormals(*downsampled, 
+						three::KDTreeSearchParamRadius(0.1));
+				*/
+				for (int i = 0; i < 10; i++) {
+					EstimateNormals(*pointcloud_ptr, 
+							three::KDTreeSearchParamKNN(20));
+					}
 				}
 				PrintInfo("Done.\n");
 				return true;
