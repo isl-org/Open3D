@@ -2,9 +2,12 @@
 
 which -s brew
 if [[ $? != 0 ]] ; then
-    echo "Install Homebrew."
-    echo "Please follow the instructions on http://brew.sh/"
+    echo "Please install Homebrew, follow the instructions on:"
+    echo ""
+    echo "        http://brew.sh/"
+    echo ""
     echo "After installation, run this script again."
+    exit
 else
     echo "Homebrew Detected."
     echo "Performing update ..."
