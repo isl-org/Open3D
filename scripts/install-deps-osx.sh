@@ -19,6 +19,6 @@ for pkg in cmake libusb; do
         echo "Package '$pkg' has already been installed."
     else
         echo "Package '$pkg' is being installed ..."
-        sudo brew install $pkg
+        brew install $pkg
     fi
 done
