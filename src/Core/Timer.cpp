@@ -58,6 +58,11 @@ void Timer::Stop()
 	end_time_in_milliseconds_ = GetSystemTimeInMilliseconds();
 }
 
+double Timer::GetDuration()
+{
+	return end_time_in_milliseconds_ - start_time_in_milliseconds_;
+}
+
 void Timer::Print(const std::string &timer_info)
 {
 	PrintInfo("%s %.2f ms.\n", timer_info.c_str(),
@@ -73,7 +78,32 @@ ScopeTimer::ScopeTimer(const std::string &scope_timer_info/* = ""*/) :
 ScopeTimer::~ScopeTimer()
 {
 	Timer::Stop();
-	Timer::Print(scope_timer_info_);
+	Timer::Print(scope_timer_info_ + " took");
+}
+
+FPSTimer::FPSTimer(const std::string &fps_timer_info/* = ""*/,
+			double time_to_print/* = 3000.0*/, int events_to_print/* = 100*/) :
+			fps_timer_info_(fps_timer_info), time_to_print_(time_to_print),
+			events_to_print_(events_to_print), event_count_(0)
+{
+}
+
+void FPSTimer::Signal()
+{
+	if (event_count_ == 0) {
+		Start(); Stop();
+		event_count_ = 1;
+	} else if (GetDuration() >= time_to_print_ ||
+			event_count_ >= events_to_print_) {
+		// print and reset
+		PrintInfo("%s at %.2f fps.\n", fps_timer_info_.c_str(),
+				double(event_count_ + 1) / GetDuration() * 1000.0);
+		Start(); Stop();
+		event_count_ = 1;
+	} else {
+		Stop();
+		event_count_++;
+	}
 }
 
 }	// namespace three

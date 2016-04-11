@@ -1,39 +1,58 @@
 This folder contains a set of external libraries that are used in Open3DV.
 
-We intend to make Open3DV self-contained and cross-platformly consistent. So
+We want to make Open3DV self-contained and cross-platformly consistent. So
 Open3DV does not detect system installed libraries and always link to these
 external libraries.
 
+Some external libraries rely on basic system level libraries such as OpenGL and
+libusb. Run corresponding script file under "script" directory to automatically
+config them.
+
 --------------------------------------------------------------------------------
-Eigen 3.2.5    Mainly MPL2 license    http://eigen.tuxfamily.org/
+Eigen                       3.2.5                            Mainly MPL2 license
 A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
+http://eigen.tuxfamily.org/
 --------------------------------------------------------------------------------
-GLFW 3.1.1     zlib/libpng license    http://www.glfw.org/
+GLFW                        3.1.1                            zlib/libpng license
 A cross-platform library for creating windows with OpenGL contexts and receiving
 input and events
+http://www.glfw.org/
 --------------------------------------------------------------------------------
-GLEW 1.13.0    MIT License            http://glew.sourceforge.net/
+GLEW                        1.13.0                                   MIT License
 A cross-platform open-source C/C++ extension loading library
+http://glew.sourceforge.net/
 --------------------------------------------------------------------------------
-RPly 1.1.3     MIT license            http://w3.impa.br/~diego/software/rply/
+RPly                        1.1.3                                    MIT license
 A library to read and write PLY files
+http://w3.impa.br/~diego/software/rply/
 --------------------------------------------------------------------------------
-zlib 1.2.8     zlib license           http://www.zlib.net/
+zlib                        1.2.8                                   zlib license
 A lossless data-compression library used by libpng
+http://www.zlib.net/
 --------------------------------------------------------------------------------
-libpng 1.6.18  libpng license         http://www.libpng.org/
+libpng                      1.6.18                                libpng license
 The free reference library for reading and writing PNGs
+http://www.libpng.org/
 --------------------------------------------------------------------------------
-libjpeg 9a     libjpeg license        http://libjpeg.sourceforge.net/
+libjpeg                     9a                                   libjpeg license
 A widely used C library for reading and writing JPEG image files
+http://libjpeg.sourceforge.net/
 --------------------------------------------------------------------------------
-jsoncpp 1.6.5  MIT license        https://github.com/open-source-parsers/jsoncpp
+jsoncpp                     1.6.5                                    MIT license
 A C++ library that allows manipulating JSON values
+https://github.com/open-source-parsers/jsoncpp
 --------------------------------------------------------------------------------
-flann 1.8.4    BSD license            http://www.cs.ubc.ca/research/flann/
+flann                       1.8.4                                    BSD license
 A C++ library for performing fast approximate nearest neighbor searches in high
 dimensional spaces
+http://www.cs.ubc.ca/research/flann/
 --------------------------------------------------------------------------------
-dirent 1.21    MIT license            https://github.com/tronkko/dirent
+dirent                      1.21                                     MIT license
+https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
+--------------------------------------------------------------------------------
+librealsense                0.9.1                               Apache-2 license
+A cross-platform library for capturing data from the Intel RealSense F200, SR300
+and R200 cameras
+https://github.com/IntelRealSense/librealsense

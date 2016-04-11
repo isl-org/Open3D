@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{
-		ScopeTimer timer("Normal estimation takes ");
+		ScopeTimer timer("Normal estimation");
 		for (int i = 0; i < 10; i++) {
 			EstimateNormals(*pcd, 
 					three::KDTreeSearchParamKNN(20));
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 	DrawGeometryWithKeyCallback(pointcloud_ptr, GLFW_KEY_SPACE,
 			[&](Visualizer &vis) {
 				{
-				ScopeTimer timer("Normal estimation takes ");
+				ScopeTimer timer("Normal estimation");
 				/*
 				EstimateNormals(*downsampled, 
 						three::KDTreeSearchParamRadius(0.1));

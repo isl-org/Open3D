@@ -4,11 +4,13 @@ project(Open3D)
 
 set(Open3D_VERSION_MAJOR "1")
 set(Open3D_VERSION_MINOR "0")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
+option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(USE_OPENMP "Use OpenMP multi-threading" ON)
 
 # default built type
@@ -25,6 +27,7 @@ include_directories(
 	${Open3D_SOURCE_DIR}/External/Eigen
 	${Open3D_SOURCE_DIR}/External/GLFW/include
 	${Open3D_SOURCE_DIR}/External/glew/include
+	${Open3D_SOURCE_DIR}/External/librealsense/include
 	)
 
 # all static link, no dynamic links
@@ -59,14 +62,18 @@ elseif(APPLE)
 	# compile speed optimization for clang
 	add_definitions(-Os)
 	# disable OpenMP since it is not currently supported on OSX
-	set(USE_OPENMP OFF)
 	message(STATUS "Compiling on OSX")
+	message(STATUS "Disable OpenMP since it is not supported on OSX.")
+	set(USE_OPENMP OFF)
 elseif(UNIX)
 	add_definitions(-DUNIX)
 	# enable c++11
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	add_compile_options(-Wno-deprecated-declarations)
+	# disable BUILD_LIBREALSENSE since it is not fully supported on Linux
 	message(STATUS "Compiling on Unix")
+	message(STATUS "Disable BUILD_LIBREALSENSE since it is not fully supported on Linux.")
+	set(Open3D_BUILD_LIBREALSENSE OFF)
 endif(WIN32)
 
 # Set OpenMP

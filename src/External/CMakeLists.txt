@@ -4,3 +4,7 @@ add_subdirectory(zlib)
 add_subdirectory(libpng)
 add_subdirectory(libjpeg)
 add_subdirectory(jsoncpp)
+
+if(Open3D_BUILD_LIBREALSENSE)
+	add_subdirectory(librealsense)
+endif(Open3D_BUILD_LIBREALSENSE)

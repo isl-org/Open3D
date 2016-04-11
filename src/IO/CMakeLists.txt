@@ -10,7 +10,7 @@ add_library(IO ${Open3D_LIB_TYPE}
 	${IO_ALL_HEADER_FILES} ${IO_ALL_SOURCE_FILES}
 	${IO_RPLY_FILES} ${IO_LIBLZF_FILES} ${IO_DIRENT_FILES}
 )
-target_link_libraries(IO png zlib jpeg jsoncpp)
+target_link_libraries(IO Core png zlib jpeg jsoncpp)
 
 install(TARGETS IO
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

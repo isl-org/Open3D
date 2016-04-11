@@ -282,8 +282,9 @@ bool Visualizer::UpdateGeometry()
 {
 	bool success = true;
 	for (const auto &renderer_ptr : renderer_ptrs_) {
-		success &= renderer_ptr->UpdateGeometry();
+		success = (success && renderer_ptr->UpdateGeometry());
 	}
+	UpdateRender();
 	return success;
 }
 
