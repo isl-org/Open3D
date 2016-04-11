@@ -89,6 +89,7 @@ if (USE_OPENMP)
 	endif()
 endif()
 
+message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
 add_subdirectory(External)
 add_subdirectory(Core)
 add_subdirectory(Tools)

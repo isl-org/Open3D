@@ -57,9 +57,9 @@ int main(int argc, char **args)
 	FPSTimer timer("Realsense stream");
 
 	Visualizer depth_vis, color_vis;
-	if (depth_vis.CreateWindow("Depth", 640, 480, 10, 10) == false ||
+	if (depth_vis.CreateWindow("Depth", 640, 480, 15, 50) == false ||
 			depth_vis.AddGeometry(depth_image_ptr) == false ||
-			color_vis.CreateWindow("Color", 1920, 1080, 100, 100) == false ||
+			color_vis.CreateWindow("Color", 1920, 1080, 675, 50) == false ||
 			color_vis.AddGeometry(color_image_ptr) == false) {
 		return 0;
 	}
