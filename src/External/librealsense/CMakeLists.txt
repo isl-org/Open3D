@@ -18,7 +18,7 @@ if(WIN32)
     add_definitions(-DRS_USE_WMF_BACKEND)
     if(MSVC)
         # suppress warnings
-		add_definitions(/wd4267 /wd4005 /wd4244 /wd4838 /wd4311 /wd4302)
+		add_definitions(/wd4267 /wd4005 /wd4244 /wd4838 /wd4311 /wd4302 /wd4819)
 	endif(MSVC)
 elseif(CYGWIN)
     set(realsense_sources ${librealsense_sources})
