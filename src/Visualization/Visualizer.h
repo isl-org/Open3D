@@ -173,6 +173,13 @@ protected:
 	
 	// renderers
 	std::vector<std::shared_ptr<glsl::GeometryRenderer>> renderer_ptrs_;
+	
+#ifdef __APPLE__
+	// MacBook with Retina display does not have a 1:1 mapping from screen
+	// coordinates to pixels. Thus we hack it back.
+	// http://www.glfw.org/faq.html#why-is-my-output-in-the-lower-left-corner-of-the-window
+	double pixel_to_screen_coordinate_ = 1.0;
+#endif //__APPLE__
 };
 
 }	// namespace three
