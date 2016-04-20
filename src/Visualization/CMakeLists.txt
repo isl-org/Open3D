@@ -28,7 +28,7 @@ add_library(Visualization ${Open3D_LIB_TYPE}
 	${SHADER_FILES}
 )
 add_dependencies(Visualization ShaderFileTarget)
-target_link_libraries(Visualization glfw glew)
+target_link_libraries(Visualization Core glfw glew)
 
 install(TARGETS Visualization
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

@@ -70,6 +70,14 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 		UpdateWindowTitle();
 		glfwSetWindowPos(window_, left, top);
 		glfwSetWindowSize(window_, width, height);
+#ifdef __APPLE__
+		glfwSetWindowSize(window_,
+				std::round(width * pixel_to_screen_coordinate_),
+				std::round(height * pixel_to_screen_coordinate_));
+		glfwSetWindowPos(window_,
+				std::round(left * pixel_to_screen_coordinate_),
+				std::round(top * pixel_to_screen_coordinate_));
+#endif //__APPLE__
 		return true;
 	}
 
@@ -90,7 +98,26 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 	}
 	glfwSetWindowPos(window_, left, top);
 	glfwSetWindowUserPointer(window_, this);
-
+	
+#ifdef __APPLE__
+	// Some hacks to get pixel_to_screen_coordinate_
+	glfwSetWindowSize(window_, 100, 100);
+	glfwSetWindowPos(window_, 100, 100);
+	int pixel_width_in_osx, pixel_height_in_osx;
+	glfwGetFramebufferSize(window_, &pixel_width_in_osx, &pixel_height_in_osx);
+	if (pixel_width_in_osx > 0) {
+		pixel_to_screen_coordinate_ = 100.0 / (double)pixel_width_in_osx;
+	} else {
+		pixel_to_screen_coordinate_ = 1.0;
+	}
+	glfwSetWindowSize(window_,
+			std::round(width * pixel_to_screen_coordinate_),
+			std::round(height * pixel_to_screen_coordinate_));
+	glfwSetWindowPos(window_,
+			std::round(left * pixel_to_screen_coordinate_),
+			std::round(top * pixel_to_screen_coordinate_));
+#endif //__APPLE__
+	
 	auto window_refresh_callback = [](GLFWwindow *window) {
 		static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
 				WindowRefreshCallback(window);
@@ -282,8 +309,9 @@ bool Visualizer::UpdateGeometry()
 {
 	bool success = true;
 	for (const auto &renderer_ptr : renderer_ptrs_) {
-		success &= renderer_ptr->UpdateGeometry();
+		success = (success && renderer_ptr->UpdateGeometry());
 	}
+	UpdateRender();
 	return success;
 }
 

@@ -3,6 +3,7 @@ file(GLOB CORE_ALL_SOURCE_FILES "*.cpp")
 add_library(Core ${Open3D_LIB_TYPE}
 	${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES}
 )
+target_link_libraries(Core IO)
 
 install(TARGETS Core
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

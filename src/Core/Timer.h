@@ -43,6 +43,9 @@ public:
 	void Start();
 	void Stop();
 	void Print(const std::string &timer_info);
+	
+protected:
+	double GetDuration();
 
 private:
 	double start_time_in_milliseconds_;
@@ -57,6 +60,24 @@ public:
 
 private:
 	std::string scope_timer_info_;
+};
+
+class FPSTimer : public Timer
+{
+public:
+	FPSTimer(const std::string &fps_timer_info = "",
+			double time_to_print = 3000.0, int events_to_print = 100);
+	
+	/// Function to signal an event
+	/// It automatically prints FPS information when duration is more than
+	/// time_to_print_, or event has been signaled events_to_print_ times.
+	void Signal();
+
+private:
+	std::string fps_timer_info_;
+	double time_to_print_;
+	int events_to_print_;
+	int event_count_;
 };
 
 }	// namespace three

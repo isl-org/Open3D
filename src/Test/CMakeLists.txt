@@ -1,5 +1,5 @@
 add_executable(TestPointCloud TestPointCloud.cpp)
-target_link_libraries(TestPointCloud Visualization IO Core IO)
+target_link_libraries(TestPointCloud Visualization IO Core)
 set_target_properties(TestPointCloud PROPERTIES FOLDER "Test")
 
 add_executable(TestTriangleMesh TestTriangleMesh.cpp)
@@ -20,6 +20,12 @@ set_target_properties(TestFlann PROPERTIES FOLDER "Test")
 add_executable(TestFileSystem TestFileSystem.cpp)
 target_link_libraries(TestFileSystem IO Core)
 set_target_properties(TestFileSystem PROPERTIES FOLDER "Test")
+
+if(Open3D_BUILD_LIBREALSENSE)
+    add_executable(TestRealSense TestRealSense.cpp)
+    target_link_libraries(TestRealSense Visualization realsense)
+    set_target_properties(TestRealSense PROPERTIES FOLDER "Test")
+endif(Open3D_BUILD_LIBREALSENSE)
 
 #file(GLOB TEST_DATA_FILES "TestData/*.*")
 #file(COPY ${TEST_DATA_FILES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestData)
