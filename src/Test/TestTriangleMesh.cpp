@@ -118,5 +118,36 @@ int main(int argc, char *argv[])
 		auto mesh = CreateMeshFromFile(argv[2]);
 		mesh->ComputeVertexNormals();
 		WriteTriangleMesh(argv[3], *mesh, true, true);
+	} else if (option == "scale") {
+		auto mesh = CreateMeshFromFile(argv[2]);
+		double scale = std::stod(argv[4]);
+		Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
+		trans(0, 0) = trans(1, 1) = trans(2, 2) = scale;
+		mesh->Transform(trans);
+		WriteTriangleMesh(argv[3], *mesh, true, true);
+	} else if (option == "distance") {
+		auto mesh1 = CreateMeshFromFile(argv[2]);
+		auto mesh2 = CreateMeshFromFile(argv[3]);
+		double scale = std::stod(argv[4]);
+		mesh1->vertex_colors_.resize(mesh1->vertices_.size());
+		KDTreeFlann kdtree;
+		kdtree.SetGeometry(*mesh2);
+		std::vector<int> indices(1);
+		std::vector<double> dists(1);
+		for (size_t i = 0; i < mesh1->vertices_.size(); i++) {
+			kdtree.SearchKNN(mesh1->vertices_[i], 1, indices, dists);
+			double color = std::min(sqrt(dists[0]) / scale, 1.0);
+			mesh1->vertex_colors_[i] = Eigen::Vector3d(color, color, color);
+		}
+		DrawGeometry(mesh1);
+	} else if (option == "showboth") {
+		auto mesh1 = CreateMeshFromFile(argv[2]);
+		PaintMesh(*mesh1, Eigen::Vector3d(1.0, 0.75, 0.0));
+		auto mesh2 = CreateMeshFromFile(argv[3]);
+		PaintMesh(*mesh2, Eigen::Vector3d(0.25, 0.25, 1.0));
+		std::vector<std::shared_ptr<const Geometry>> meshes;
+		meshes.push_back(mesh1);
+		meshes.push_back(mesh2);
+		DrawGeometries(meshes);
 	}
 }
