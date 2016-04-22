@@ -32,16 +32,25 @@ namespace {
 
 class GLFWEnvironmentSingleton
 {
-public:
+private:
 	GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n");}
+	GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
+	GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) = 
+			delete;
+public:
 	~GLFWEnvironmentSingleton() {
 		glfwTerminate();
 		PrintDebug("GLFW destruct.\n");
 	}
 
 public:
-	static int InitGLFW() {
+	static GLFWEnvironmentSingleton &GetInstance() {
 		static GLFWEnvironmentSingleton singleton;
+		return singleton;		
+	}
+
+	static int InitGLFW() {
+		GLFWEnvironmentSingleton::GetInstance();
 		return glfwInit();
 	}
 
