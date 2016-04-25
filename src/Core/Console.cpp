@@ -32,6 +32,7 @@
 #include <ctime>
 #include <algorithm>
 #include <stdint.h>
+#include <climits>
 #ifdef WIN32
 #include <windows.h>
 #endif
