@@ -28,12 +28,14 @@
 
 #include <cstdio>
 #include <cstdarg>
+#include <cstdlib>
 #include <string>
 #include <ctime>
 #include <algorithm>
 #include <climits>
-#include <stdint.h>
-#include <errno.h>
+#include <cmath>
+#include <cstdint>
+#include <cerrno>
 #ifdef WIN32
 #include <windows.h>
 #endif
