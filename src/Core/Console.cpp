@@ -31,8 +31,9 @@
 #include <string>
 #include <ctime>
 #include <algorithm>
-#include <stdint.h>
 #include <climits>
+#include <stdint.h>
+#include <errno.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
