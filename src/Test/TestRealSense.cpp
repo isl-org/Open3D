@@ -56,6 +56,48 @@ int main(int argc, char **args)
 	color_image_ptr->PrepareImage(1920, 1080, 3, 1);
 	FPSTimer timer("Realsense stream");
 
+	rs::extrinsics extrinsics = dev->get_extrinsics(rs::stream::depth, 
+			rs::stream::rectified_color);
+	for (int i = 0; i < 9; i++) {
+		PrintInfo("%.6f ", extrinsics.rotation[i]);
+	}
+	PrintInfo("\n");
+	for (int i = 0; i < 3; i++) {
+		PrintInfo("%.6f ", extrinsics.translation[i]);
+	}
+	PrintInfo("\n");
+
+	rs::intrinsics depth_intr = dev->get_stream_intrinsics(rs::stream::depth);
+	PrintInfo("%d %d %.6f %.6f %.6f %.6f\n", 
+			depth_intr.width, depth_intr.height,
+			depth_intr.fx, depth_intr.fy,
+			depth_intr.ppx, depth_intr.ppy);
+	for (int i = 0; i < 5; i++) {
+		PrintInfo("%.6f ", depth_intr.coeffs[i]);
+	}
+	PrintInfo("\n\n");
+
+	rs::intrinsics color_intr = dev->get_stream_intrinsics(rs::stream::color);
+	PrintInfo("%d %d %.6f %.6f %.6f %.6f\n", 
+			color_intr.width, color_intr.height,
+			color_intr.fx, color_intr.fy,
+			color_intr.ppx, color_intr.ppy);
+	for (int i = 0; i < 5; i++) {
+		PrintInfo("%.6f ", color_intr.coeffs[i]);
+	}
+	PrintInfo("\n\n");
+
+	rs::intrinsics rect_intr = dev->get_stream_intrinsics(
+			rs::stream::rectified_color);
+	PrintInfo("%d %d %.6f %.6f %.6f %.6f\n", 
+			rect_intr.width, rect_intr.height,
+			rect_intr.fx, rect_intr.fy,
+			rect_intr.ppx, rect_intr.ppy);
+	for (int i = 0; i < 5; i++) {
+		PrintInfo("%.6f ", rect_intr.coeffs[i]);
+	}
+	PrintInfo("\n\n");
+
 	Visualizer depth_vis, color_vis;
 	if (depth_vis.CreateWindow("Depth", 640, 480, 15, 50) == false ||
 			depth_vis.AddGeometry(depth_image_ptr) == false ||
@@ -70,7 +112,8 @@ int main(int argc, char **args)
 		memcpy(depth_image_ptr->data_.data(),
 				dev->get_frame_data(rs::stream::depth), 640 * 480 * 2);
 		memcpy(color_image_ptr->data_.data(),
-				dev->get_frame_data(rs::stream::color), 1920 * 1080 * 3);
+				dev->get_frame_data(rs::stream::rectified_color), 
+				1920 * 1080 * 3);
 		depth_vis.UpdateGeometry();
 		color_vis.UpdateGeometry();
 	}
