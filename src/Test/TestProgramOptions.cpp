@@ -24,52 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <Core/Core.h>
 
-#include <string>
+void PrintHelp()
+{
+	using namespace three;
+	PrintInfo("Usage :\n");
+	PrintInfo("    > TestTriangleMesh [--help] [--switch] [--int i] [--double d] [--string str]\n");
+}
 
-namespace three {
+int main(int argc, char *argv[])
+{
+	using namespace three;
+	if (argc == 1 || ProgramOptionExists(argc, argv, "--help")) {
+		PrintHelp();
+		return 1;
+	}
 
-#define DEFAULT_IO_BUFFER_SIZE 1024
-	
-enum VerbosityLevel {
-	VERBOSE_ERROR = 0,
-	VERBOSE_WARNING = 1,
-	VERBOSE_INFO = 2,
-	VERBOSE_DEBUG = 3,
-	VERBOSE_ALWAYS = 4
-};
-
-void SetVerbosityLevel(VerbosityLevel verbosity_level);
-
-VerbosityLevel GetVerbosityLevel();
-
-void PrintError(const char *format, ...);
-
-void PrintWarning(const char *format, ...);
-
-void PrintInfo(const char *format, ...);
-
-void PrintDebug(const char *format, ...);
-
-void PrintAlways(const char *format, ...);
-	
-void ResetConsoleProgress(const int expected_count,
-		const std::string &progress_info = "");
-
-void AdvanceConsoleProgress();
-
-std::string GetCurrentTimeStamp();
-
-std::string GetProgramOptionAsString(int argc, char **argv, 
-		const std::string &option, const std::string &default_value = "");
-
-int GetProgramOptionAsInt(int argc, char **argv, 
-		const std::string &option, const int default_value = 0);
-
-double GetProgramOptionAsDouble(int argc, char **argv, 
-		const std::string &option, const double default_value = 0.0);
-
-bool ProgramOptionExists(int argc, char **argv, const std::string &option);
-
-}	// namespace three
+	PrintInfo("Switch is %s.\n", 
+			ProgramOptionExists(argc, argv, "--switch") ? "ON" : "OFF");
+	PrintInfo("Int is %d\n", GetProgramOptionAsInt(argc, argv, "--int"));
+	PrintInfo("Double is %.10f\n", 
+			GetProgramOptionAsDouble(argc, argv, "--double"));
+	PrintInfo("String is %s\n", 
+			GetProgramOptionAsString(argc, argv, "--string").c_str());
+	return 1;
+}
