@@ -46,6 +46,10 @@ int main(int argc, char **args)
 	PrintInfo("    Serial number: %s\n", dev->get_serial());
 	PrintInfo("    Firmware version: %s\n\n", dev->get_firmware_version());
 	
+	dev->set_option(rs::option::color_enable_auto_exposure, 1.0);
+	dev->set_option(rs::option::color_exposure, 2000);
+	dev->set_option(rs::option::color_brightness, 100);
+
 	dev->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
 	dev->enable_stream(rs::stream::color, 1920, 1080, rs::format::rgb8, 30);
 	dev->start();
@@ -116,6 +120,11 @@ int main(int argc, char **args)
 				1920 * 1080 * 3);
 		depth_vis.UpdateGeometry();
 		color_vis.UpdateGeometry();
+		rs::option opts[2] = {rs::option::color_exposure, 
+				rs::option::color_enable_auto_exposure};
+		double value[2] = {0.0, 0.0};
+		dev->get_options((const rs::option *)opts, 2, (double *)value);
+		PrintInfo("%.4f %.4f\n", value[0], value[1]);
 	}
 	
 	//DrawGeometryWithAnimationCallback(depth_image_ptr,
