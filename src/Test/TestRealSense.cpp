@@ -47,8 +47,8 @@ int main(int argc, char **args)
 	PrintInfo("    Firmware version: %s\n\n", dev->get_firmware_version());
 	
 	dev->set_option(rs::option::color_enable_auto_exposure, 1.0);
-	dev->set_option(rs::option::color_exposure, 2000);
-	dev->set_option(rs::option::color_brightness, 100);
+	dev->set_option(rs::option::color_exposure, 625);
+	dev->set_option(rs::option::color_gain, 128);
 
 	dev->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
 	dev->enable_stream(rs::stream::color, 1920, 1080, rs::format::rgb8, 30);
@@ -120,11 +120,26 @@ int main(int argc, char **args)
 				1920 * 1080 * 3);
 		depth_vis.UpdateGeometry();
 		color_vis.UpdateGeometry();
-		rs::option opts[2] = {rs::option::color_exposure, 
-				rs::option::color_enable_auto_exposure};
-		double value[2] = {0.0, 0.0};
-		dev->get_options((const rs::option *)opts, 2, (double *)value);
-		PrintInfo("%.4f %.4f\n", value[0], value[1]);
+
+		/*
+		rs::option opts[10] = {
+				rs::option::color_enable_auto_exposure,
+				rs::option::color_exposure,
+				rs::option::color_backlight_compensation,
+				rs::option::color_brightness,
+				rs::option::color_contrast,
+				rs::option::color_gain,
+				rs::option::color_gamma,
+				rs::option::color_saturation,
+				rs::option::color_sharpness,
+				rs::option::color_hue
+				};
+		double value[10];
+		dev->get_options((const rs::option *)opts, 10, (double *)value);
+		PrintInfo("%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
+				value[0], value[1], value[2], value[3], value[4],
+				value[5], value[6], value[7], value[8], value[9]);
+		*/
 	}
 	
 	//DrawGeometryWithAnimationCallback(depth_image_ptr,
