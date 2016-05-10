@@ -124,20 +124,28 @@ int main(int argc, char *argv[])
 		Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
 		trans(0, 0) = trans(1, 1) = trans(2, 2) = scale;
 		mesh->Transform(trans);
-		WriteTriangleMesh(argv[3], *mesh, true, true);
+		WriteTriangleMesh(argv[3], *mesh);
 	} else if (option == "distance") {
 		auto mesh1 = CreateMeshFromFile(argv[2]);
 		auto mesh2 = CreateMeshFromFile(argv[3]);
+
 		double scale = std::stod(argv[4]);
 		mesh1->vertex_colors_.resize(mesh1->vertices_.size());
 		KDTreeFlann kdtree;
 		kdtree.SetGeometry(*mesh2);
 		std::vector<int> indices(1);
 		std::vector<double> dists(1);
+		double r = 0.0;
 		for (size_t i = 0; i < mesh1->vertices_.size(); i++) {
 			kdtree.SearchKNN(mesh1->vertices_[i], 1, indices, dists);
 			double color = std::min(sqrt(dists[0]) / scale, 1.0);
 			mesh1->vertex_colors_[i] = Eigen::Vector3d(color, color, color);
+			r += sqrt(dists[0]);
+		}
+		PrintInfo("Average distance is %.6f.\n",
+				r / (double)mesh1->vertices_.size());
+		if (argc > 5) {
+			WriteTriangleMesh(argv[5], *mesh1);
 		}
 		DrawGeometry(mesh1);
 	} else if (option == "showboth") {

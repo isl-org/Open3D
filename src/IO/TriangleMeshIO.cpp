@@ -63,7 +63,10 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 		PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, mesh);
+	bool success = map_itr->second(filename, mesh);
+	PrintDebug("Read TriangleMesh: %lu triangles and %lu vertices.\n", 
+			mesh.vertices_.size(), mesh.triangles_.size());
+	return success;
 }
 
 bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
@@ -81,7 +84,10 @@ bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 		PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, mesh, write_ascii, compressed);
+	bool success = map_itr->second(filename, mesh, write_ascii, compressed);
+	PrintDebug("Write TriangleMesh: %lu triangles and %lu vertices.\n", 
+			mesh.vertices_.size(), mesh.triangles_.size());
+	return success;
 }
 
 }	// namespace three
