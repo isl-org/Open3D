@@ -46,9 +46,11 @@ int main(int argc, char **args)
 	PrintInfo("    Serial number: %s\n", dev->get_serial());
 	PrintInfo("    Firmware version: %s\n\n", dev->get_firmware_version());
 	
-	dev->set_option(rs::option::color_enable_auto_exposure, 1.0);
+	dev->set_option(rs::option::color_enable_auto_exposure, 0.0);
 	dev->set_option(rs::option::color_exposure, 625);
 	dev->set_option(rs::option::color_gain, 128);
+	dev->set_option(rs::option::color_enable_auto_white_balance, 0.0);
+	dev->set_option(rs::option::color_white_balance, 2100.0);
 
 	dev->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
 	dev->enable_stream(rs::stream::color, 1920, 1080, rs::format::rgb8, 30);
@@ -120,6 +122,8 @@ int main(int argc, char **args)
 				1920 * 1080 * 3);
 		depth_vis.UpdateGeometry();
 		color_vis.UpdateGeometry();
+
+		PrintInfo("%.2f\n", dev->get_option(rs::option::color_white_balance));
 
 		/*
 		rs::option opts[10] = {
