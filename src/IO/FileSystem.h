@@ -39,9 +39,13 @@ bool DirectoryExists(const std::string &directory);
 
 bool MakeDirectory(const std::string &directory);
 
+bool MakeDirectoryHierarchy(const std::string &directory);
+
 bool DeleteDirectory(const std::string &directory);
 
 bool FileExists(const std::string &filename);
+
+bool RemoveFile(const std::string &filename);
 
 bool ListFilesInDirectory(const std::string &directory, 
 		std::vector<std::string> &filenames);

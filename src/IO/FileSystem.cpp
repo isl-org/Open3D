@@ -27,6 +27,7 @@
 #include "FileSystem.h"
 
 #include <algorithm>
+#include <cstdio>
 #ifdef WINDOWS
 #include <dirent/dirent.h>
 #include <direct.h>
@@ -72,6 +73,27 @@ bool MakeDirectory(const std::string &directory)
 #endif
 }
 
+bool MakeDirectoryHierarchy(const std::string &directory)
+{
+	std::string full_path;
+	if (directory.back() != '/' && directory.back() != '\\') {
+		full_path = directory + "/";
+	} else {
+		full_path = directory;
+	}
+	size_t curr_pos = full_path.find_first_of("/\\", 1);
+	while (curr_pos != std::string::npos) {
+		std::string subdir = full_path.substr(0, curr_pos + 1);
+		if (DirectoryExists(subdir) == false) {
+			if (MakeDirectory(subdir) == false) {
+				return false;
+			}
+		}
+		curr_pos = full_path.find_first_of("/\\", curr_pos + 1);
+	}
+	return true;
+}
+
 bool DeleteDirectory(const std::string &directory)
 {
 #ifdef WINDOWS
@@ -87,6 +109,11 @@ bool FileExists(const std::string &filename)
 	if (stat(filename.c_str(), &info) == -1)
 		return false;
 	return S_ISREG(info.st_mode);
+}
+
+bool RemoveFile(const std::string &filename)
+{
+	return (std::remove(filename.c_str()) == 0);
 }
 
 bool ListFilesInDirectory(const std::string &directory,

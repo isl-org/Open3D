@@ -66,12 +66,16 @@ int main(int argc, char **args)
 			std::cout << std::endl;
 		}
 	} else if (function == "mkdir") {
-		bool success = MakeDirectory(directory);
+		bool success = MakeDirectoryHierarchy(directory);
 		std::cout << "mkdir " << (success ? "succeeded" : "failed") 
 				<< std::endl;
 	} else if (function == "rmdir") {
 		bool success = DeleteDirectory(directory);
 		std::cout << "rmdir " << (success ? "succeeded" : "failed") 
+				<< std::endl;
+	} else if (function == "rmfile") {
+		bool success = RemoveFile(directory);
+		std::cout << "rmfile " << (success ? "succeeded" : "failed") 
 				<< std::endl;
 	}
 	return 1;
