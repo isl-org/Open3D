@@ -26,26 +26,53 @@
 
 #include <iostream>
 
+#include <Core/Core.h>
 #include <IO/IO.h>
+
+void PrintHelp()
+{
+	using namespace three;
+	PrintInfo("Usage :\n");
+	PrintInfo("    > TestFileSystem ls [dir]\n");
+	PrintInfo("    > TestFileSystem mkdir [dir]\n");
+	PrintInfo("    > TestFileSystem rmdir [dir]\n");
+}
 
 int main(int argc, char **args)
 {
 	using namespace three::filesystem;
 
-	std::string directory;
+	std::string directory, function;
 	if (argc <= 1) {
-		directory = ".";
+		PrintHelp();
+		return 0;
 	} else {
-		directory = std::string(args[1]);
+		function = std::string(args[1]);
+		if (argc <= 2) {
+			directory = ".";
+		} else {
+			directory = std::string(args[2]);
+		}
 	}
-	std::vector<std::string> filenames;
-	ListFilesInDirectory(directory, filenames);
 
-	for (const auto &filename : filenames) {
-		std::cout << filename << std::endl;
-		std::cout << "extension name is : " << 
-				GetFileExtensionInLowerCase(filename) << std::endl;
-		std::cout << std::endl;
+	if (function == "ls") {
+		std::vector<std::string> filenames;
+		ListFilesInDirectory(directory, filenames);
+
+		for (const auto &filename : filenames) {
+			std::cout << filename << std::endl;
+			std::cout << "extension name is : " << 
+					GetFileExtensionInLowerCase(filename) << std::endl;
+			std::cout << std::endl;
+		}
+	} else if (function == "mkdir") {
+		bool success = MakeDirectory(directory);
+		std::cout << "mkdir " << (success ? "succeeded" : "failed") 
+				<< std::endl;
+	} else if (function == "rmdir") {
+		bool success = DeleteDirectory(directory);
+		std::cout << "rmdir " << (success ? "succeeded" : "failed") 
+				<< std::endl;
 	}
 	return 1;
 }

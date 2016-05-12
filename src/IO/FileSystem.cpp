@@ -29,6 +29,7 @@
 #include <algorithm>
 #ifdef WINDOWS
 #include <dirent/dirent.h>
+#include <direct.h>
 #else
 #include <sys/stat.h>
 #include <dirent.h>
@@ -59,6 +60,24 @@ bool DirectoryExists(const std::string &directory)
 	if (stat(directory.c_str(), &info) == -1)
 		return false;
 	return S_ISDIR(info.st_mode);
+}
+
+bool MakeDirectory(const std::string &directory)
+{
+#ifdef WINDOWS
+	return (_mkdir(directory.c_str()) == 0);
+#else
+	return (mkdir(directory.c_str(), S_IRWXU) == 0);
+#endif
+}
+
+bool DeleteDirectory(const std::string &directory)
+{
+#ifdef WINDOWS
+	return (_rmdir(directory.c_str()) == 0);
+#else
+	return (rmdir(directory.c_str()) == 0);
+#endif
 }
 
 bool FileExists(const std::string &filename)

@@ -50,12 +50,13 @@ int main(int argc, char **args)
 	dev->set_option(rs::option::color_exposure, 625);
 	dev->set_option(rs::option::color_gain, 128);
 	dev->set_option(rs::option::color_enable_auto_white_balance, 0.0);
-	dev->set_option(rs::option::color_white_balance, 2100.0);
 
 	dev->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
 	dev->enable_stream(rs::stream::color, 1920, 1080, rs::format::rgb8, 30);
 	dev->start();
-	
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	dev->set_option(rs::option::color_white_balance, 2100.0);
+
 	auto depth_image_ptr = std::make_shared<Image>();
 	depth_image_ptr->PrepareImage(640, 480, 1, 2);
 	auto color_image_ptr = std::make_shared<Image>();

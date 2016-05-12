@@ -37,6 +37,10 @@ std::string GetFileExtensionInLowerCase(const std::string &filename);
 
 bool DirectoryExists(const std::string &directory);
 
+bool MakeDirectory(const std::string &directory);
+
+bool DeleteDirectory(const std::string &directory);
+
 bool FileExists(const std::string &filename);
 
 bool ListFilesInDirectory(const std::string &directory, 
