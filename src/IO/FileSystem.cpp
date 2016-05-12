@@ -33,6 +33,7 @@
 #else
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
 #endif
 
 namespace three{
