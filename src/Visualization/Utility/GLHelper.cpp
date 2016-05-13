@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerHelper.h"
+#include "GLHelper.h"
 
 #include <cmath>
 #include <Eigen/Dense>

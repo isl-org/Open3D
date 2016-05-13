@@ -28,8 +28,8 @@
 
 #include <Core/Geometry/Geometry.h>
 
-#include "BoundingBox.h"
-#include "VisualizerHelper.h"
+#include <Visualization/Utility/BoundingBox.h>
+#include <Visualization/Utility/GLHelper.h>
 
 namespace three {
 

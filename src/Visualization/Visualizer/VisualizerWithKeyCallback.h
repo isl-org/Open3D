@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "Visualizer.h"
+#include <Visualization/Visualizer/Visualizer.h>
 
 namespace three {
 

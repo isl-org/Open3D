@@ -34,11 +34,11 @@
 #include <Core/Geometry/Geometry.h>
 #include <Core/Geometry/IGeometryOwner.h>
 
-#include "ColorMap.h"
-#include "BoundingBox.h"
-#include "ViewControl.h"
-#include "RenderOption.h"
-#include "GeometryRenderer.h"
+#include <Visualization/Utility/ColorMap.h>
+#include <Visualization/Utility/BoundingBox.h>
+#include <Visualization/Visualizer/ViewControl.h>
+#include <Visualization/Visualizer/RenderOption.h>
+#include <Visualization/Shader/GeometryRenderer.h>
 
 namespace three {
 

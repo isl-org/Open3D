@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "PointCloud.h"
-#include "KDTreeFlann.h"
 
 #pragma warning(disable : 4522)
 #include <Eigen/Eigenvalues>
+#include <Core/Geometry/KDTreeFlann.h>
 
 namespace three{
 

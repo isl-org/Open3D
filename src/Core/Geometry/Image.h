@@ -29,7 +29,7 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include "Geometry.h"
+#include <Core/Geometry/Geometry.h>
 
 namespace three {
 

@@ -26,21 +26,22 @@
 
 #pragma once
 
-#include <Core/Geometry/Image.h>
-#include "ShaderWrapper.h"
+#include <vector>
+#include <Eigen/Core>
+#include <Visualization/Shader/ShaderWrapper.h>
 
 namespace three {
 
 namespace glsl {
 	
-class ImageShader : public ShaderWrapper
+class SimpleBlackShader : public ShaderWrapper
 {
 public:
-	virtual ~ImageShader() { Release(); }
+	virtual ~SimpleBlackShader() { Release(); }
 
 protected:
-	ImageShader(std::string name) : ShaderWrapper(name) { Compile(); }
-	
+	SimpleBlackShader(std::string name) : ShaderWrapper(name) { Compile(); }
+
 protected:
 	bool Compile() final;
 	void Release() final;
@@ -55,33 +56,42 @@ protected:
 			const RenderOption &option, const ViewControl &view) = 0;
 	virtual bool PrepareBinding(const Geometry &geometry,
 			const RenderOption &option, const ViewControl &view,
-			Image &image) = 0;
+			std::vector<Eigen::Vector3f> &points) = 0;
 
 protected:
 	GLuint vertex_position_;
 	GLuint vertex_position_buffer_;
-	GLuint vertex_UV_;
-	GLuint vertex_UV_buffer_;
-	GLuint image_texture_;
-	GLuint image_texture_buffer_;
-	GLuint vertex_scale_;
-	
-	GLHelper::GLVector3f vertex_scale_data_;
+	GLuint MVP_;
 };
-
-class ImageShaderForImage : public ImageShader
+	
+class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader
 {
 public:
-	ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
+	SimpleBlackShaderForPointCloudNormal() :
+			SimpleBlackShader("SimpleBlackShaderForPointCloudNormal") {}
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
+	bool PrepareRendering(const Geometry &geometry,
 			const RenderOption &option, const ViewControl &view) final;
-	virtual bool PrepareBinding(const Geometry &geometry,
+	bool PrepareBinding(const Geometry &geometry,
 			const RenderOption &option, const ViewControl &view,
-			Image &render_image) final;
+			std::vector<Eigen::Vector3f> &points) final;
 };
-	
+
+class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader
+{
+public:
+	SimpleBlackShaderForTriangleMeshWireFrame() :
+			SimpleBlackShader("SimpleBlackShaderForTriangleMeshWireFrame") {}
+
+protected:
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points) final;
+};
+
 }	// namespace three::glsl
 
 }	// namespace three

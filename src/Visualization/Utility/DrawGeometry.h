@@ -31,7 +31,7 @@
 #include <functional>
 #include <Core/Geometry/Geometry.h>
 
-#include "Visualizer.h"
+#include <Visualization/Visualizer/Visualizer.h>
 
 namespace three {
 

@@ -26,40 +26,62 @@
 
 #pragma once
 
-#include "Visualizer.h"
+#include <Core/Geometry/Image.h>
+#include <Visualization/Shader/ShaderWrapper.h>
 
 namespace three {
 
-class VisualizerWithCustomAnimation : public Visualizer
+namespace glsl {
+	
+class ImageShader : public ShaderWrapper
 {
 public:
-	VisualizerWithCustomAnimation();
-	virtual ~VisualizerWithCustomAnimation();
-	VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) = 
-			delete;
-	VisualizerWithCustomAnimation &operator=(
-			const VisualizerWithCustomAnimation &) = delete;
-
-public:
-	void PrintVisualizerHelp() override;
-	void UpdateWindowTitle() override;
-	void Play(bool recording = false);
-	void RegisterRecordingFilenameFormat(std::string format) {
-		recording_filename_format_ = format;
-	}
+	virtual ~ImageShader() { Release(); }
 
 protected:
-	bool InitViewControl() override;
-	void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
-	void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
-	void MouseButtonCallback(GLFWwindow* window,
-			int button, int action, int mods) override;
-	void KeyPressCallback(GLFWwindow *window,
-			int key, int scancode, int action, int mods) override;
+	ImageShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
 
 protected:
-	std::string recording_filename_format_ = "Animation_%06d.png";
-	size_t recording_file_index_ = 0;
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			Image &image) = 0;
+
+protected:
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_UV_;
+	GLuint vertex_UV_buffer_;
+	GLuint image_texture_;
+	GLuint image_texture_buffer_;
+	GLuint vertex_scale_;
+	
+	GLHelper::GLVector3f vertex_scale_data_;
 };
+
+class ImageShaderForImage : public ImageShader
+{
+public:
+	ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
+
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) final;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			Image &render_image) final;
+};
+	
+}	// namespace three::glsl
 
 }	// namespace three

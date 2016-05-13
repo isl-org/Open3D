@@ -28,7 +28,7 @@
 
 #include <vector>
 #include <Eigen/Core>
-#include "ShaderWrapper.h"
+#include <Visualization/Shader/ShaderWrapper.h>
 
 namespace three {
 

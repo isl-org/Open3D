@@ -29,8 +29,8 @@
 #include <GL/glew.h>
 #include <Core/Geometry/Geometry.h>
 
-#include "ViewControl.h"
-#include "RenderOption.h"
+#include <Visualization/Visualizer/ViewControl.h>
+#include <Visualization/Visualizer/RenderOption.h>
 
 namespace three {
 

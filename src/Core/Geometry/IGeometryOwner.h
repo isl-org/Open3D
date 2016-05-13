@@ -27,7 +27,7 @@
 #pragma once
 
 #include <memory>
-#include "Geometry.h"
+#include <Core/Geometry/Geometry.h>
 
 namespace three {
 

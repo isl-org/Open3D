@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Visualization/ViewTrajectory.h>
+#include <Visualization/Visualizer/ViewTrajectory.h>
 
 namespace three {
 

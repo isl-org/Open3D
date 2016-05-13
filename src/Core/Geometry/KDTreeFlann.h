@@ -29,8 +29,8 @@
 #include <memory>
 #include <flann/flann.hpp>
 
-#include "Geometry.h"
-#include "KDTreeSearchParam.h"
+#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/KDTreeSearchParam.h>
 
 namespace three {
 

@@ -29,12 +29,10 @@
 #include <Core/Geometry/Geometry.h>
 #include <Core/Geometry/IGeometryOwner.h>
 
-#include "SimpleShader.h"
-#include "SimpleBlackShader.h"
-#include "PhongShader.h"
-#include "ImageShader.h"
-#include "ViewControl.h"
-#include "RenderOption.h"
+#include <Visualization/Shader/SimpleShader.h>
+#include <Visualization/Shader/SimpleBlackShader.h>
+#include <Visualization/Shader/PhongShader.h>
+#include <Visualization/Shader/ImageShader.h>
 
 namespace three {
 

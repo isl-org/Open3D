@@ -26,9 +26,9 @@
 
 #include "DrawGeometry.h"
 
-#include "VisualizerWithCustomAnimation.h"
-#include "VisualizerWithKeyCallback.h"
-#include "ViewControlWithCustomAnimation.h"
+#include <Visualization/Visualizer/VisualizerWithCustomAnimation.h>
+#include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
+#include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
 
 namespace three{
 

@@ -26,11 +26,40 @@
 
 #pragma once
 
-#include "Utility/BoundingBox.h"
-#include "Utility/DrawGeometry.h"
+#include <Visualization/Visualizer/Visualizer.h>
 
-#include "Visualizer/Visualizer.h"
-#include "Visualizer/VisualizerWithCustomAnimation.h"
-#include "Visualizer/VisualizerWithKeyCallback.h"
-#include "Visualizer/ViewControl.h"
-#include "Visualizer/ViewControlWithCustomAnimation.h"
+namespace three {
+
+class VisualizerWithCustomAnimation : public Visualizer
+{
+public:
+	VisualizerWithCustomAnimation();
+	virtual ~VisualizerWithCustomAnimation();
+	VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) = 
+			delete;
+	VisualizerWithCustomAnimation &operator=(
+			const VisualizerWithCustomAnimation &) = delete;
+
+public:
+	void PrintVisualizerHelp() override;
+	void UpdateWindowTitle() override;
+	void Play(bool recording = false);
+	void RegisterRecordingFilenameFormat(std::string format) {
+		recording_filename_format_ = format;
+	}
+
+protected:
+	bool InitViewControl() override;
+	void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
+	void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
+	void MouseButtonCallback(GLFWwindow* window,
+			int button, int action, int mods) override;
+	void KeyPressCallback(GLFWwindow *window,
+			int key, int scancode, int action, int mods) override;
+
+protected:
+	std::string recording_filename_format_ = "Animation_%06d.png";
+	size_t recording_file_index_ = 0;
+};
+
+}	// namespace three

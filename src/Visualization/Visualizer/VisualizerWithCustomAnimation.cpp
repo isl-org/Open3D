@@ -27,7 +27,7 @@
 #include "VisualizerWithCustomAnimation.h"
 
 #include <thread>
-#include "ViewControlWithCustomAnimation.h"
+#include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
 
 namespace three{
 

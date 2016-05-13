@@ -29,8 +29,8 @@
 #include <algorithm>
 
 #include <Core/Geometry/Image.h>
-#include "Shader.h"
-#include "ColorMap.h"
+#include <Visualization/Shader/Shader.h>
+#include <Visualization/Utility/ColorMap.h>
 
 namespace three{
 

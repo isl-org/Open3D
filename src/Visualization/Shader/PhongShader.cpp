@@ -28,8 +28,8 @@
 
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/TriangleMesh.h>
-#include "Shader.h"
-#include "ColorMap.h"
+#include <Visualization/Shader/Shader.h>
+#include <Visualization/Utility/ColorMap.h>
 
 namespace three{
 

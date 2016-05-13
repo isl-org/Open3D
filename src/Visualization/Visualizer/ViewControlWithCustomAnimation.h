@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "ViewControl.h"
-#include "ViewTrajectory.h"
+#include <Visualization/Visualizer/ViewControl.h>
+#include <Visualization/Visualizer/ViewTrajectory.h>
 
 namespace three {
 

@@ -26,8 +26,8 @@
 
 #include "KDTreeFlann.h"
 
-#include "PointCloud.h"
-#include "TriangleMesh.h"
+#include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/TriangleMesh.h>
 
 namespace three{
 
