@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Core/Image.h>
+#include <Core/Geometry/Image.h>
 #include "ShaderWrapper.h"
 
 namespace three {

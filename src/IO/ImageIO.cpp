@@ -27,8 +27,8 @@
 #include "ImageIO.h"
 
 #include <unordered_map>
-#include <Core/Console.h>
-#include "FileSystem.h"
+#include <Core/Utility/Console.h>
+#include <Core/Utility/FileSystem.h>
 
 namespace three{
 	

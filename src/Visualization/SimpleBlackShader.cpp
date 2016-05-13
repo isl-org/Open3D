@@ -26,8 +26,8 @@
 
 #include "SimpleBlackShader.h"
 
-#include <Core/PointCloud.h>
-#include <Core/TriangleMesh.h>
+#include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/TriangleMesh.h>
 #include "Shader.h"
 #include "ColorMap.h"
 

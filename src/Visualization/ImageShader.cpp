@@ -26,13 +26,29 @@
 
 #include "ImageShader.h"
 
-#include <Core/Image.h>
+#include <algorithm>
+
+#include <Core/Geometry/Image.h>
 #include "Shader.h"
 #include "ColorMap.h"
 
 namespace three{
 
 namespace glsl {
+
+namespace {
+
+unsigned char ConvertColorFromFloatToUnsignedChar(float color)
+{
+	if (isnan(color)) {
+		return 0;
+	} else {
+		float unified_color = std::min(1.0f, std::max(0.0f, color));
+		return (unsigned char)(unified_color * 255.0f);
+	}
+}
+
+}	// unnamed namespace
 
 bool ImageShader::Compile()
 {
@@ -117,7 +133,8 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
 	} else {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+				GL_LINEAR_MIPMAP_LINEAR); 
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
@@ -222,19 +239,39 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 		render_image.PrepareImage(image.width_, image.height_, 3, 1);
 		if (image.num_of_channels_ == 1 && 
 				image.bytes_per_channel_ == 1) {
+			// grayscale image
 			for (int i = 0; i < image.height_ * image.width_; i++) {
 				render_image.data_[i * 3] = image.data_[i];
 				render_image.data_[i * 3 + 1] = image.data_[i];
 				render_image.data_[i * 3 + 2] = image.data_[i];
 			}
+		} else if (image.num_of_channels_ == 1 &&
+				image.bytes_per_channel_ == 4) {
+			// grayscale image with floating point per channel
+			for (int i = 0; i < image.height_ * image.width_; i++) {
+				float *p = (float*)(image.data_.data() + i * 4);
+				unsigned char color = ConvertColorFromFloatToUnsignedChar(*p);
+				render_image.data_[i * 3] = color;
+				render_image.data_[i * 3 + 1] = color;
+				render_image.data_[i * 3 + 2] = color;
+			}
+		} else if (image.num_of_channels_ == 3 &&
+				image.bytes_per_channel_ == 4) {
+			// RGB image with floating point per channel
+			for (int i = 0; i < image.height_ * image.width_ * 3; i++) {
+				float *p = (float*)(image.data_.data() + i * 4);
+				render_image.data_[i] = ConvertColorFromFloatToUnsignedChar(*p);
+			}
 		} else if (image.num_of_channels_ == 3 && 
 				image.bytes_per_channel_ == 2) {
+			// image with RGB channels, each channel is a 16-bit integer
 			for (int i = 0; i < image.height_ * image.width_ * 3; i++) {
 				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
 				render_image.data_[i] = (unsigned char)((*p) & 0xff);
 			}
 		} else if (image.num_of_channels_ == 1 && 
 				image.bytes_per_channel_ == 2) {
+			// depth image, one channel of 16-bit integer
 			const ColorMap &global_color_map = *GetGlobalColorMap();
 			const int max_depth = option.GetImageMaxDepth();
 			for (int i = 0; i < image.height_ * image.width_; i++) {

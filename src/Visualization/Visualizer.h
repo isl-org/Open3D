@@ -31,8 +31,8 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <Core/Geometry.h>
-#include <Core/IGeometryOwner.h>
+#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/IGeometryOwner.h>
 
 #include "ColorMap.h"
 #include "BoundingBox.h"
@@ -117,6 +117,7 @@ public:
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
 	void CaptureScreen(const std::string &filename = "", bool do_render = true);
+	void CaptureDepth(const std::string &filename = "", bool do_render = true);
 
 protected:
 	/// Function to initialize OpenGL

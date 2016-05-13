@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Core/Image.h>
+#include <Core/Geometry/Image.h>
 
 namespace three {
 

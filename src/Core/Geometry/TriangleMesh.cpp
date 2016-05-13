@@ -30,8 +30,8 @@
 #include <tuple>
 
 #include <Eigen/Dense>
-#include "CoreHelper.h"
-#include "Console.h"
+#include <Core/Utility/CoreHelper.h>
+#include <Core/Utility/Console.h>
 
 namespace three{
 

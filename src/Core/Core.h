@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include "Console.h"
-#include "Timer.h"
+#include "Utility/Console.h"
+#include "Utility/Timer.h"
+#include "Utility/FileSystem.h"
 
-#include "Geometry.h"
-#include "PointCloud.h"
-#include "TriangleMesh.h"
-#include "Image.h"
-#include "IGeometryOwner.h"
-
-#include "KDTreeFlann.h"
+#include "Geometry/Geometry.h"
+#include "Geometry/PointCloud.h"
+#include "Geometry/TriangleMesh.h"
+#include "Geometry/Image.h"
+#include "Geometry/IGeometryOwner.h"
+#include "Geometry/KDTreeFlann.h"

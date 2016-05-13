@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Core/Geometry.h>
+#include <Core/Geometry/Geometry.h>
 
 #include "BoundingBox.h"
 #include "VisualizerHelper.h"

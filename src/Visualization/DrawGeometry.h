@@ -29,7 +29,7 @@
 #include <string>
 #include <memory>
 #include <functional>
-#include <Core/Geometry.h>
+#include <Core/Geometry/Geometry.h>
 
 #include "Visualizer.h"
 

@@ -113,4 +113,40 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 	WriteImage(png_filename, png_image);
 }
 
+void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
+		bool do_render/* = true*/)
+{
+	std::string png_filename = filename;
+	if (png_filename.empty()) {
+		png_filename = "DepthCapture_" + GetCurrentTimeStamp() + ".png";
+	}
+	Image depth_image;
+	depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
+			view_control_ptr_->GetWindowHeight(), 1, 4);
+	if (do_render) {
+		Render();
+		is_redraw_required_ = false;
+	}
+	glFinish();
+	glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(), 
+			view_control_ptr_->GetWindowHeight(), GL_RGB, GL_FLOAT,
+			depth_image.data_.data());
+	/*
+	// glReadPixels get the screen in a vertically flipped manner
+	// Thus we should flip it back.
+	Image png_image;
+	png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
+			view_control_ptr_->GetWindowHeight(), 3, 1);
+	int bytes_per_line = screen_image.BytesPerLine();
+	for (int i = 0; i < screen_image.height_; i++) {
+		memcpy(png_image.data_.data() + bytes_per_line * i,
+				screen_image.data_.data() + bytes_per_line * 
+				(screen_image.height_ - i - 1), bytes_per_line);
+	}
+
+	PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
+	WriteImage(png_filename, png_image);
+	*/
+}
+
 }	// namespace three

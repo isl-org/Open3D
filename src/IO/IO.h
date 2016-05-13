@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include "FileSystem.h"
-
 #include "PointCloudIO.h"
 #include "TriangleMeshIO.h"
 #include "ImageIO.h"

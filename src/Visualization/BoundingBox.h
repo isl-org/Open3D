@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <Core/Geometry.h>
-#include <Core/Console.h>
+#include <Core/Geometry/Geometry.h>
+#include <Core/Utility/Console.h>
 
 namespace three {
 

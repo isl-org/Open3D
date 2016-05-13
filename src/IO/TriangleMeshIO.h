@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Core/TriangleMesh.h>
+#include <Core/Geometry/TriangleMesh.h>
 
 namespace three {
 

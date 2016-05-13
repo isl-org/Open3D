@@ -157,13 +157,13 @@ void ViewControl::SetViewPoint()
 	view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_ );
 	model_matrix_ = GLHelper::GLMatrix4f::Identity();
 	MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
-	
-	// deprecated functions of legacy OpenGL
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMultMatrixf(MVP_matrix_.data());
+
+	// uncomment to use the deprecated functions of legacy OpenGL
+	//glMatrixMode(GL_PROJECTION);
+	//glLoadIdentity();
+	//glMatrixMode(GL_MODELVIEW);
+	//glLoadIdentity();
+	//glMultMatrixf(MVP_matrix_.data());
 }
 
 }	// namespace three

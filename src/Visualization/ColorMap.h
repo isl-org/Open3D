@@ -99,7 +99,7 @@ public:
 };
 
 /// Interface functions
-std::shared_ptr<const ColorMap> GetGlobalColorMap();
+const std::shared_ptr<const ColorMap> GetGlobalColorMap();
 void SetGlobalColorMap(ColorMap::ColorMapOption option);
 
 }	// namespace three

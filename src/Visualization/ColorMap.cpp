@@ -26,11 +26,35 @@
 
 #include "ColorMap.h"
 
+#include <Core/Utility/Console.h>
+
 namespace three{
 
 namespace {
 
-static std::shared_ptr<ColorMap> global_colormap_ptr(new ColorMapJet);
+class GlobalColorMapSingleton
+{
+private:
+	GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
+		PrintDebug("Global colormap init.\n");
+	}
+	GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
+	GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) = 
+			delete;
+public:
+	~GlobalColorMapSingleton() {
+		PrintDebug("Global colormap destruct.\n");
+	}
+
+public:
+	static GlobalColorMapSingleton &GetInstance() {
+		static GlobalColorMapSingleton singleton;
+		return singleton;
+	}
+
+public:
+	std::shared_ptr<const ColorMap> color_map_;
+};
 
 }	// unnamed namespace
 
@@ -63,26 +87,30 @@ Eigen::Vector3d ColorMapWinter::GetColor(double value) const
 			Interpolate(value, 1.0, 0.0, 0.5, 1.0));
 }
 
-std::shared_ptr<const ColorMap> GetGlobalColorMap()
+const std::shared_ptr<const ColorMap> GetGlobalColorMap()
 {
-	return global_colormap_ptr;
+	return GlobalColorMapSingleton::GetInstance().color_map_;
 }
 
 void SetGlobalColorMap(ColorMap::ColorMapOption option)
 {
 	switch (option) {
 	case ColorMap::COLORMAP_GRAY:
-		global_colormap_ptr.reset(new ColorMapGray);
+		GlobalColorMapSingleton::GetInstance().color_map_.reset(
+				new ColorMapGray);
 		break;
 	case ColorMap::COLORMAP_SUMMER:
-		global_colormap_ptr.reset(new ColorMapSummer);
+		GlobalColorMapSingleton::GetInstance().color_map_.reset(
+				new ColorMapSummer);
 		break;
 	case ColorMap::COLORMAP_WINTER:
-		global_colormap_ptr.reset(new ColorMapWinter);
+		GlobalColorMapSingleton::GetInstance().color_map_.reset(
+				new ColorMapWinter);
 		break;
 	case ColorMap::COLORMAP_JET:
 	default:
-		global_colormap_ptr.reset(new ColorMapJet);
+		GlobalColorMapSingleton::GetInstance().color_map_.reset(
+				new ColorMapJet);
 		break;
 	}
 }

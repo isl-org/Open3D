@@ -28,7 +28,7 @@
 
 #include <External/libpng/png.h>
 #include <External/zlib/zlib.h>
-#include <Core/Console.h>
+#include <Core/Utility/Console.h>
 
 namespace three{
 
