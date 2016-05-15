@@ -28,31 +28,12 @@
 
 #include <fstream>
 #include <sstream>
-#include <External/jsoncpp/include/json/json.h>
+#include <jsoncpp/include/json/json.h>
 #include <Core/Utility/Console.h>
 
 namespace three{
 
 namespace {
-
-Json::Value EigenVector3dToJsonArray(const Eigen::Vector3d &v)
-{
-	Json::Value array;
-	array.append(v(0));
-	array.append(v(1));
-	array.append(v(2));
-	return array;
-}
-
-Eigen::Vector3d JsonArrayToEigenVector3d(const Json::Value &v)
-{
-	if (v.size() != 3) {
-		return Eigen::Vector3d::Zero();
-	} else {
-		return Eigen::Vector3d(v[0].asDouble(), v[1].asDouble(), 
-				v[2].asDouble());
-	}
-}
 
 bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
 		ViewTrajectory &trajectory)
@@ -65,56 +46,16 @@ bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
 				reader.getFormattedErrorMessages().c_str());
 		return false;
 	}
-	if (root_object.get("class_name", "").asString() != "ViewTrajectory" ||
-			root_object.get("version_major", 1).asInt() != 1 ||
-			root_object.get("version_minor", 0).asInt() != 0) {
-		PrintWarning("Read JSON failed: unsupported json format.\n");
-		return false;
-	}
-	trajectory.is_loop_ = root_object.get("is_loop", false).asBool();
-	trajectory.interval_ = root_object.get("interval", 29).asInt();
-	const Json::Value &trajectory_array = root_object["trajectory"];
-	if (trajectory_array.size() == 0) {
-		PrintWarning("Read JSON failed: empty trajectory.\n");
-		return false;
-	}
-	trajectory.view_status_.resize(trajectory_array.size());
-	for (int i = 0; i < (int)trajectory_array.size(); i++) {
-		const Json::Value &status_object = trajectory_array[i];
-		ViewTrajectory::ViewStatus status;
-		status.field_of_view = 
-				status_object.get("field_of_view", 60.0).asDouble();
-		status.zoom = status_object.get("zoom", 0.7).asDouble();
-		status.lookat = JsonArrayToEigenVector3d(status_object["lookat"]);
-		status.up = JsonArrayToEigenVector3d(status_object["up"]);
-		status.front = JsonArrayToEigenVector3d(status_object["front"]);
-		trajectory.view_status_[i] = status;
-	}
-	return true;
+	return trajectory.ConvertFromJsonValue(root_object);
 }
 
 bool WriteViewTrajectoryToJSONStream(std::ostream &json_stream,
 		const ViewTrajectory &trajectory)
 {
-	Json::Value trajectory_array;
-	for (const auto &status : trajectory.view_status_) {
-		Json::Value status_object;
-		status_object["field_of_view"] = status.field_of_view;
-		status_object["zoom"] = status.zoom;
-		status_object["lookat"] = EigenVector3dToJsonArray(status.lookat);
-		status_object["up"] = EigenVector3dToJsonArray(status.up);
-		status_object["front"] = EigenVector3dToJsonArray(status.front);
-		trajectory_array.append(status_object);
-	}
-
 	Json::Value root_object;
-	root_object["class_name"] = "ViewTrajectory";
-	root_object["version_major"] = 1;
-	root_object["version_minor"] = 0;
-	root_object["is_loop"] = trajectory.is_loop_;
-	root_object["interval"] = trajectory.interval_;
-	root_object["trajectory"] = trajectory_array;
-
+	if (trajectory.ConvertToJsonValue(root_object) == false) {
+		return false;
+	}
 	Json::StyledStreamWriter writer;
 	writer.write(json_stream, root_object);
 	return true;

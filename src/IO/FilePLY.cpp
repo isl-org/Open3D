@@ -27,7 +27,7 @@
 #include "PointCloudIO.h"
 #include "TriangleMeshIO.h"
 
-#include <External/rply/rply.h>
+#include <rply/rply.h>
 #include <Core/Utility/Console.h>
 
 namespace three{

@@ -29,10 +29,11 @@
 #include <vector>
 #include <tuple>
 #include <Eigen/Core>
+#include <IO/IJsonConvertible.h>
 
 namespace three {
 
-class ViewTrajectory
+class ViewTrajectory : IJsonConvertible
 {
 public:
 	typedef Eigen::Matrix<double, 11, 4, Eigen::RowMajor> Matrix11x4d;
@@ -55,6 +56,10 @@ public:
 	static const int INTERVAL_MIN;
 	static const int INTERVAL_STEP;
 	static const int INTERVAL_DEFAULT;
+
+public:
+	ViewTrajectory() {}
+	virtual ~ViewTrajectory() {}
 
 public:
 	/// Function to compute a Cubic Spline Interpolation
@@ -91,6 +96,9 @@ public:
 	}
 
 	std::tuple<bool, ViewStatus> GetInterpolatedFrame(size_t k);
+
+	virtual bool ConvertToJsonValue(Json::Value &value) const override;
+	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
 	std::vector<ViewStatus> view_status_;

@@ -27,6 +27,8 @@
 #include "ViewTrajectory.h"
 
 #include <Eigen/Dense>
+#include <jsoncpp/include/json/json.h>
+#include <Core/Utility/Console.h>
 
 namespace three{
 
@@ -161,6 +163,78 @@ std::tuple<bool, ViewTrajectory::ViewStatus>
 	Vector11d status_in_vector = coeff_[segment_index] * s;
 	status.ConvertFromVector11d(status_in_vector);
 	return std::make_tuple(true, status);
+}
+
+bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const
+{
+	Json::Value trajectory_array;
+	for (const auto &status : view_status_) {
+		Json::Value status_object;
+		status_object["field_of_view"] = status.field_of_view;
+		status_object["zoom"] = status.zoom;
+		if (EigenVector3dToJsonArray(status.lookat, 
+				status_object["lookat"]) == false ) {
+			return false;
+		}
+		if (EigenVector3dToJsonArray(status.up, 
+				status_object["up"]) == false ) {
+			return false;
+		}
+		if (EigenVector3dToJsonArray(status.front, 
+				status_object["front"]) == false ) {
+			return false;
+		}
+		trajectory_array.append(status_object);
+	}
+	value["class_name"] = "ViewTrajectory";
+	value["version_major"] = 1;
+	value["version_minor"] = 0;
+	value["is_loop"] = is_loop_;
+	value["interval"] = interval_;
+	value["trajectory"] = trajectory_array;
+	return true;
+}
+
+bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value)
+{
+	if (value.get("class_name", "").asString() != "ViewTrajectory" ||
+			value.get("version_major", 1).asInt() != 1 ||
+			value.get("version_minor", 0).asInt() != 0) {
+		PrintWarning("ViewTrajectory read JSON failed: unsupported json format.\n");
+		return false;
+	}
+	is_loop_ = value.get("is_loop", false).asBool();
+	interval_ = value.get("interval", 29).asInt();
+	const Json::Value &trajectory_array = value["trajectory"];
+	if (trajectory_array.size() == 0) {
+		PrintWarning("ViewTrajectory read JSON failed: empty trajectory.\n");
+		return false;
+	}
+	view_status_.resize(trajectory_array.size());
+	for (int i = 0; i < (int)trajectory_array.size(); i++) {
+		const Json::Value &status_object = trajectory_array[i];
+		ViewTrajectory::ViewStatus status;
+		status.field_of_view = 
+				status_object.get("field_of_view", 60.0).asDouble();
+		status.zoom = status_object.get("zoom", 0.7).asDouble();
+		if (EigenVector3dFromJsonArray(status.lookat, 
+				status_object["lookat"]) == false) {
+			PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
+			return false;
+		}
+		if (EigenVector3dFromJsonArray(status.up, 
+				status_object["up"]) == false) {
+			PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
+			return false;
+		}
+		if (EigenVector3dFromJsonArray(status.front, 
+				status_object["front"]) == false) {
+			PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
+			return false;
+		}
+		view_status_[i] = status;
+	}
+	return true;
 }
 
 }	// namespace three

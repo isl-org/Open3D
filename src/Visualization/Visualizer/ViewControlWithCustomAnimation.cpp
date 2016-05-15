@@ -242,8 +242,8 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
 	if (json_filename.empty()) {
 		json_filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
 	}
-	PrintDebug("[Visualizer] Trejactory capture to %s\n", filename.c_str());
-	return WriteViewTrajectory(filename, view_trajectory_);
+	PrintDebug("[Visualizer] Trejactory capture to %s\n", json_filename.c_str());
+	return WriteViewTrajectory(json_filename, view_trajectory_);
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromFile(
