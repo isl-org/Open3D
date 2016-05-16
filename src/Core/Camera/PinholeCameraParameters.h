@@ -27,14 +27,35 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <IO/IJsonConvertible.h>
 
 namespace three {
 
-class PinholeCameraParameters
+class PinholeCameraParameters : public IJsonConvertible
 {
 public:
 	PinholeCameraParameters();
 	virtual ~PinholeCameraParameters();
+
+public:
+	std::pair<double, double> GetFocalLength() const {
+		return std::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
+	}
+
+	std::pair<double, double> GetPrincipalPoint() const {
+		return std::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
+	}
+
+	double GetSkew() const { return intrinsic_matrix_(0, 1); }
+
+	Eigen::Matrix4d GetCameraPose() const;
+
+	virtual bool ConvertToJsonValue(Json::Value &value) const override;
+	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
+
+public:
+	Eigen::Matrix3d intrinsic_matrix_;
+	Eigen::Matrix4d extrinsic_matrix_;
 };
 
 }	// namespace three

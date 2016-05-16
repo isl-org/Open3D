@@ -50,6 +50,18 @@ public:
 			const Json::Value &value);
 	static bool EigenVector3dToJsonArray(const Eigen::Vector3d &vec,
 			Json::Value &value);
+	static bool EigenVector4dFromJsonArray(Eigen::Vector4d &vec, 
+			const Json::Value &value);
+	static bool EigenVector4dToJsonArray(const Eigen::Vector4d &vec,
+			Json::Value &value);
+	static bool EigenMatrix3dFromJsonArray(Eigen::Matrix3d &vec, 
+			const Json::Value &value);
+	static bool EigenMatrix3dToJsonArray(const Eigen::Matrix3d &vec,
+			Json::Value &value);
+	static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &vec, 
+			const Json::Value &value);
+	static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &vec,
+			Json::Value &value);
 };
 
 }	// namespace three
