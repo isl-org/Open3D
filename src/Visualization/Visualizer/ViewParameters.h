@@ -26,70 +26,33 @@
 
 #pragma once
 
-#include <vector>
-#include <tuple>
 #include <Eigen/Core>
 #include <IO/IJsonConvertible.h>
-#include <Visualization/Visualizer/ViewParameters.h>
 
 namespace three {
 
-class ViewTrajectory : public IJsonConvertible
+class ViewParameters : public IJsonConvertible
 {
 public:
-	static const int INTERVAL_MAX;
-	static const int INTERVAL_MIN;
-	static const int INTERVAL_STEP;
-	static const int INTERVAL_DEFAULT;
+	typedef Eigen::Matrix<double, 11, 4, Eigen::RowMajor> Matrix11x4d;
+	typedef Eigen::Matrix<double, 11, 1> Vector11d;
 
 public:
-	ViewTrajectory() {}
-	virtual ~ViewTrajectory() {}
+	ViewParameters() {}
+	virtual ~ViewParameters() {}
 
 public:
-	/// Function to compute a Cubic Spline Interpolation
-	/// See this paper for details:
-	/// Bartels, R. H.; Beatty, J. C.; and Barsky, B. A. "Hermite and Cubic 
-	/// Spline Interpolation." Ch. 3 in An Introduction to Splines for Use in 
-	/// Computer Graphics and Geometric Modelling. San Francisco, CA: Morgan 
-	/// Kaufmann, pp. 9-17, 1998.
-	/// Also see explanation on this page:
-	/// http://mathworld.wolfram.com/CubicSpline.html
-	void ComputeInterpolationCoefficients();
-
-	void ChangeInterval(int change) {
-		int new_interval = interval_ + change * INTERVAL_STEP;
-		if (new_interval >= INTERVAL_MIN && new_interval <= INTERVAL_MAX)
-		{
-			interval_ = new_interval;
-		}
-	}
-
-	size_t NumOfFrames() {
-		if (view_status_.empty()) {
-			return 0;
-		} else {
-			return is_loop_ ? (interval_ + 1) * view_status_.size() :
-					(interval_ + 1) * (view_status_.size() - 1) + 1;
-		}
-	}
-
-	void Reset() {
-		is_loop_ = false;
-		interval_ = INTERVAL_DEFAULT;
-		view_status_.clear();
-	}
-
-	std::tuple<bool, ViewParameters> GetInterpolatedFrame(size_t k);
-
+	Vector11d ConvertToVector11d();
+	void ConvertFromVector11d(const Vector11d &v);
 	virtual bool ConvertToJsonValue(Json::Value &value) const override;
 	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	std::vector<ViewParameters> view_status_;
-	bool is_loop_ = false;
-	int interval_ = INTERVAL_DEFAULT;
-	std::vector<ViewParameters::Matrix11x4d> coeff_;
+	double field_of_view_;
+	double zoom_;
+	Eigen::Vector3d lookat_;
+	Eigen::Vector3d up_;
+	Eigen::Vector3d front_;
 };
 
 }	// namespace three

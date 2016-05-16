@@ -37,27 +37,6 @@ const int ViewTrajectory::INTERVAL_MIN = 0;
 const int ViewTrajectory::INTERVAL_STEP = 1;
 const int ViewTrajectory::INTERVAL_DEFAULT = 29;
 
-ViewTrajectory::Vector11d ViewTrajectory::ViewStatus::ConvertToVector11d()
-{
-	ViewTrajectory::Vector11d v;
-	v(0) = field_of_view;
-	v(1) = zoom;
-	v.block<3, 1>(2, 0) = lookat;
-	v.block<3, 1>(5, 0) = up;
-	v.block<3, 1>(8, 0) = front;
-	return v;
-}
-
-void ViewTrajectory::ViewStatus::ConvertFromVector11d(
-		const ViewTrajectory::Vector11d &v)
-{
-	field_of_view = v(0);
-	zoom = v(1);
-	lookat = v.block<3, 1>(2, 0);
-	up = v.block<3, 1>(5, 0);
-	front = v.block<3, 1>(8, 0);
-}
-
 void ViewTrajectory::ComputeInterpolationCoefficients()
 {
 	if (view_status_.empty()) {
@@ -147,10 +126,9 @@ void ViewTrajectory::ComputeInterpolationCoefficients()
 	}
 }
 
-std::tuple<bool, ViewTrajectory::ViewStatus> 
-		ViewTrajectory::GetInterpolatedFrame(size_t k)
+std::tuple<bool, ViewParameters> ViewTrajectory::GetInterpolatedFrame(size_t k)
 {
-	ViewStatus status;
+	ViewParameters status;
 	if (view_status_.empty() || k >= NumOfFrames()) {
 		return std::make_tuple(false, status);
 	}
@@ -160,7 +138,7 @@ std::tuple<bool, ViewTrajectory::ViewStatus>
 	Eigen::Vector4d s(1.0, segment_fraction, 
 			segment_fraction * segment_fraction,
 			segment_fraction * segment_fraction * segment_fraction);
-	Vector11d status_in_vector = coeff_[segment_index] * s;
+	ViewParameters::Vector11d status_in_vector = coeff_[segment_index] * s;
 	status.ConvertFromVector11d(status_in_vector);
 	return std::make_tuple(true, status);
 }
@@ -170,18 +148,7 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const
 	Json::Value trajectory_array;
 	for (const auto &status : view_status_) {
 		Json::Value status_object;
-		status_object["field_of_view"] = status.field_of_view;
-		status_object["zoom"] = status.zoom;
-		if (EigenVector3dToJsonArray(status.lookat, 
-				status_object["lookat"]) == false ) {
-			return false;
-		}
-		if (EigenVector3dToJsonArray(status.up, 
-				status_object["up"]) == false ) {
-			return false;
-		}
-		if (EigenVector3dToJsonArray(status.front, 
-				status_object["front"]) == false ) {
+		if (status.ConvertToJsonValue(status_object) == false) {
 			return false;
 		}
 		trajectory_array.append(status_object);
@@ -213,23 +180,8 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value)
 	view_status_.resize(trajectory_array.size());
 	for (int i = 0; i < (int)trajectory_array.size(); i++) {
 		const Json::Value &status_object = trajectory_array[i];
-		ViewTrajectory::ViewStatus status;
-		status.field_of_view = 
-				status_object.get("field_of_view", 60.0).asDouble();
-		status.zoom = status_object.get("zoom", 0.7).asDouble();
-		if (EigenVector3dFromJsonArray(status.lookat, 
-				status_object["lookat"]) == false) {
-			PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
-			return false;
-		}
-		if (EigenVector3dFromJsonArray(status.up, 
-				status_object["up"]) == false) {
-			PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
-			return false;
-		}
-		if (EigenVector3dFromJsonArray(status.front, 
-				status_object["front"]) == false) {
-			PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
+		ViewParameters status;
+		if (status.ConvertFromJsonValue(status_object) == false) {
 			return false;
 		}
 		view_status_[i] = status;

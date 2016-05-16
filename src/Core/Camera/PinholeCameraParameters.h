@@ -48,12 +48,16 @@ public:
 
 	double GetSkew() const { return intrinsic_matrix_(0, 1); }
 
+	bool IsValid() const { return (width_ > 0 && height_ > 0); }
+
 	Eigen::Matrix4d GetCameraPose() const;
 
 	virtual bool ConvertToJsonValue(Json::Value &value) const override;
 	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
+	int width_ = -1;
+	int height_ = -1;
 	Eigen::Matrix3d intrinsic_matrix_;
 	Eigen::Matrix4d extrinsic_matrix_;
 };

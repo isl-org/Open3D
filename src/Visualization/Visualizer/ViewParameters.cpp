@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PinholeCameraParameters.h"
+#include "ViewParameters.h"
 
 #include <Eigen/Dense>
 #include <jsoncpp/include/json/json.h>
@@ -32,45 +32,55 @@
 
 namespace three{
 
-PinholeCameraParameters::PinholeCameraParameters()
+ViewParameters::Vector11d ViewParameters::ConvertToVector11d()
 {
+	ViewParameters::Vector11d v;
+	v(0) = field_of_view_;
+	v(1) = zoom_;
+	v.block<3, 1>(2, 0) = lookat_;
+	v.block<3, 1>(5, 0) = up_;
+	v.block<3, 1>(8, 0) = front_;
+	return v;
 }
 
-PinholeCameraParameters::~PinholeCameraParameters()
+void ViewParameters::ConvertFromVector11d(const ViewParameters::Vector11d &v)
 {
+	field_of_view_ = v(0);
+	zoom_ = v(1);
+	lookat_ = v.block<3, 1>(2, 0);
+	up_ = v.block<3, 1>(5, 0);
+	front_ = v.block<3, 1>(8, 0);
 }
 
-Eigen::Matrix4d PinholeCameraParameters::GetCameraPose() const
+bool ViewParameters::ConvertToJsonValue(Json::Value &value) const
 {
-	return extrinsic_matrix_.inverse();
-}
-
-bool PinholeCameraParameters::ConvertToJsonValue(Json::Value &value) const
-{
-	value["width"] = width_;
-	value["height"] = height_;
-	if (EigenMatrix3dToJsonArray(intrinsic_matrix_, 
-			value["intrinsic_matrix"]) == false) {
+	value["field_of_view"] = field_of_view_;
+	value["zoom"] = zoom_;
+	if (EigenVector3dToJsonArray(lookat_, value["lookat"]) == false ) {
 		return false;
 	}
-	if (EigenMatrix4dToJsonArray(extrinsic_matrix_, 
-			value["extrinsic_matrix"]) == false) {
+	if (EigenVector3dToJsonArray(up_, value["up"]) == false ) {
+		return false;
+	}
+	if (EigenVector3dToJsonArray(front_, value["front"]) == false ) {
 		return false;
 	}
 	return true;
 }
 
-bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value)
+bool ViewParameters::ConvertFromJsonValue(const Json::Value &value)
 {
-	width_ = value.get("width", -1).asInt();
-	height_ = value.get("height", -1).asInt();
-	if (EigenMatrix3dFromJsonArray(intrinsic_matrix_, 
-			value["intrinsic_matrix"]) == false) {
+	field_of_view_ = value.get("field_of_view", 60.0).asDouble();
+	zoom_ = value.get("zoom", 0.7).asDouble();
+	if (EigenVector3dFromJsonArray(lookat_, value["lookat"]) == false) {
 		PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
 		return false;
 	}
-	if (EigenMatrix4dFromJsonArray(extrinsic_matrix_, 
-			value["extrinsic_matrix"]) == false) {
+	if (EigenVector3dFromJsonArray(up_, value["up"]) == false) {
+		PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
+		return false;
+	}
+	if (EigenVector3dFromJsonArray(front_, value["front"]) == false) {
 		PrintWarning("ViewTrajectory read JSON failed: wrong format.\n");
 		return false;
 	}

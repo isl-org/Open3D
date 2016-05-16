@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Visualization/Visualizer/ViewControl.h>
+#include <Visualization/Visualizer/ViewParameters.h>
 #include <Visualization/Visualizer/ViewTrajectory.h>
 
 namespace three {
@@ -77,18 +78,18 @@ public:
 	void GoToLast();
 	bool CaptureTrajectory(const std::string &filename = "");
 	bool LoadTrajectoryFromFile(const std::string &filename);
-	bool SaveViewStatusToString(std::string &view_status_string);
-	bool LoadViewStatusFromString(const std::string &view_status_string);
+	bool SaveViewControlToString(std::string &view_status_string);
+	bool LoadViewControlFromString(const std::string &view_status_string);
 	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
 	}
 
 protected:
-	ViewTrajectory::ViewStatus ConvertToViewStatus();
-	void ConvertFromViewStatus(const ViewTrajectory::ViewStatus status);
-	size_t CurrentFrame() { return (size_t)round(current_frame_); }
-	size_t CurrentKeyframe() { return (size_t)round(current_keyframe_); }
+	bool ConvertToViewParameters(ViewParameters &status) const;
+	bool ConvertFromViewParameters(const ViewParameters &status);
+	size_t CurrentFrame() const { return (size_t)round(current_frame_); }
+	size_t CurrentKeyframe() const { return (size_t)round(current_keyframe_); }
 	double RegularizeFrameIndex(double current_frame, size_t num_of_frames,
 			bool is_loop);
 	void SetViewControlFromTrajectory();

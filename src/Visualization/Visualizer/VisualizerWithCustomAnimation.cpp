@@ -154,14 +154,14 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 			view_control.CaptureTrajectory();
 			break;
 		case GLFW_KEY_C:
-			view_control.SaveViewStatusToString(clipboard_string);
+			view_control.SaveViewControlToString(clipboard_string);
 			glfwSetClipboardString(window_, clipboard_string.c_str());
 			break;
 		case GLFW_KEY_V:
 			clipboard_string_buffer = glfwGetClipboardString(window_);
 			if (clipboard_string_buffer != NULL) {
 				clipboard_string = std::string(clipboard_string_buffer);
-				view_control.LoadViewStatusFromString(clipboard_string);
+				view_control.LoadViewControlFromString(clipboard_string);
 			}
 			break;
 		case GLFW_KEY_LEFT:
@@ -223,12 +223,12 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 	} else if (mods & GLFW_MOD_SUPER) {
 		switch (key) {
 		case GLFW_KEY_C:
-			view_control.SaveViewStatusToString(clipboard_string);
+			view_control.SaveViewControlToString(clipboard_string);
 			glfwSetClipboardString(window_, clipboard_string.c_str());
 			break;
 		case GLFW_KEY_V:
 			clipboard_string = std::string(glfwGetClipboardString(window_));
-			view_control.LoadViewStatusFromString(clipboard_string);
+			view_control.LoadViewControlFromString(clipboard_string);
 			break;
 		default:
 			Visualizer::KeyPressCallback(window, key, scancode, action, mods);

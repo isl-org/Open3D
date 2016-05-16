@@ -103,7 +103,8 @@ void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
 void ViewControlWithCustomAnimation::AddKeyFrame()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		ViewTrajectory::ViewStatus current_status = ConvertToViewStatus();
+		ViewParameters current_status;
+		ConvertToViewParameters(current_status);
 		if (view_trajectory_.view_status_.empty()) {
 			view_trajectory_.view_status_.push_back(current_status);
 			current_keyframe_ = 0.0;
@@ -121,8 +122,8 @@ void ViewControlWithCustomAnimation::UpdateKeyFrame()
 {
 	if (animation_mode_ == ANIMATION_FREEMODE &&
 			!view_trajectory_.view_status_.empty()) {
-		view_trajectory_.view_status_[CurrentKeyframe()] = 
-				ConvertToViewStatus();
+		ConvertToViewParameters(
+				view_trajectory_.view_status_[CurrentKeyframe()]);
 	}
 }
 
@@ -259,11 +260,12 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromFile(
 	return success;
 }
 
-bool ViewControlWithCustomAnimation::SaveViewStatusToString(
+bool ViewControlWithCustomAnimation::SaveViewControlToString(
 		std::string &view_status_string)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		ViewTrajectory::ViewStatus current_status = ConvertToViewStatus();
+		ViewParameters current_status;
+		ConvertToViewParameters(current_status);
 		ViewTrajectory trajectory_with_current_status;
 		trajectory_with_current_status.view_status_.push_back(current_status);
 		return WriteViewTrajectoryToJSONString(view_status_string, 
@@ -273,7 +275,7 @@ bool ViewControlWithCustomAnimation::SaveViewStatusToString(
 	}
 }
 
-bool ViewControlWithCustomAnimation::LoadViewStatusFromString(
+bool ViewControlWithCustomAnimation::LoadViewControlFromString(
 		const std::string &view_status_string)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
@@ -285,33 +287,35 @@ bool ViewControlWithCustomAnimation::LoadViewStatusFromString(
 		if (trajectory_with_current_status.view_status_.size() != 1) {
 			return false;
 		}
-		ConvertFromViewStatus(trajectory_with_current_status.view_status_[0]);
+		ConvertFromViewParameters(
+				trajectory_with_current_status.view_status_[0]);
 		return true;
 	} else {
 		return false;
 	}
 }
 
-ViewTrajectory::ViewStatus ViewControlWithCustomAnimation::ConvertToViewStatus()
+bool ViewControlWithCustomAnimation::ConvertToViewParameters(
+		ViewParameters &status) const
 {
-	ViewTrajectory::ViewStatus status;
-	status.field_of_view = field_of_view_;
-	status.zoom = zoom_;
-	status.lookat = lookat_;
-	status.up = up_;
-	status.front = front_;
-	return status;
+	status.field_of_view_ = field_of_view_;
+	status.zoom_ = zoom_;
+	status.lookat_ = lookat_;
+	status.up_ = up_;
+	status.front_ = front_;
+	return true;
 }
 
-void ViewControlWithCustomAnimation::ConvertFromViewStatus(
-		const ViewTrajectory::ViewStatus status)
+bool ViewControlWithCustomAnimation::ConvertFromViewParameters(
+		const ViewParameters &status)
 {
-	field_of_view_ = status.field_of_view;
-	zoom_ = status.zoom;
-	lookat_ = status.lookat;
-	up_ = status.up;
-	front_ = status.front;
+	field_of_view_ = status.field_of_view_;
+	zoom_ = status.zoom_;
+	lookat_ = status.lookat_;
+	up_ = status.up_;
+	front_ = status.front_;
 	SetProjectionParameters();
+	return true;
 }
 
 double ViewControlWithCustomAnimation::RegularizeFrameIndex(double current_frame,
@@ -345,14 +349,15 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
 		return;
 	}
 	if (animation_mode_ == ANIMATION_FREEMODE) {
-		ConvertFromViewStatus(view_trajectory_.view_status_[CurrentKeyframe()]);
+		ConvertFromViewParameters(
+				view_trajectory_.view_status_[CurrentKeyframe()]);
 	} else {
 		bool success;
-		ViewTrajectory::ViewStatus status;
+		ViewParameters status;
 		std::tie(success, status) = 
 				view_trajectory_.GetInterpolatedFrame(CurrentFrame());
 		if (success) {
-			ConvertFromViewStatus(status);
+			ConvertFromViewParameters(status);
 		}
 	}
 }
