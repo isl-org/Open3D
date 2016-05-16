@@ -33,7 +33,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4081 4244 4267 4291)
+#pragma warning(disable: 4081 4244 4267 4291 4334)
 #endif
 
 #include <vector>
