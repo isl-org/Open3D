@@ -43,6 +43,64 @@ const double ViewControl::ZOOM_STEP = 0.02;
 
 const double ViewControl::ROTATION_RADIAN_PER_PIXEL = 0.003;
 
+void ViewControl::SetViewPoint()
+{
+	if (window_height_ <= 0 || window_width_ <= 0) {
+		PrintWarning("[ViewControl] SetViewPoint() failed because window height and width are not set.");
+		return;
+	}
+	glViewport(0, 0, window_width_, window_height_);
+	if (GetProjectionType() == PROJECTION_PERSPECTIVE)
+	{
+		// Perspective projection
+		projection_matrix_ = GLHelper::Perspective(field_of_view_, aspect_,
+				std::max(0.0001, distance_ - 1.0 * bounding_box_.GetSize()),
+				distance_ + 1.0 * bounding_box_.GetSize());
+	} else {
+		// Orthogonal projection
+		// We use some black magic to support distance_ in orthogonal view
+		projection_matrix_ = GLHelper::Ortho(
+				-aspect_ * view_ratio_,	aspect_ * view_ratio_,
+				-view_ratio_, view_ratio_,
+				distance_ - 3.0 * bounding_box_.GetSize(),
+				distance_ + 3.0 * bounding_box_.GetSize());
+	}
+	view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_ );
+	model_matrix_ = GLHelper::GLMatrix4f::Identity();
+	MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
+
+	// uncomment to use the deprecated functions of legacy OpenGL
+	//glMatrixMode(GL_PROJECTION);
+	//glLoadIdentity();
+	//glMatrixMode(GL_MODELVIEW);
+	//glLoadIdentity();
+	//glMultMatrixf(MVP_matrix_.data());
+}
+
+PinholeCameraParameters ViewControl::GetPinholeCameraParameters()
+{
+	PinholeCameraParameters camera;
+	if (window_height_ <= 0 || window_width_ <= 0) {
+		PrintWarning("[ViewControl] GetPinholeCameraParameters() failed because window height and width are not set.\n");
+		return camera;
+	}
+	if (GetProjectionType() == PROJECTION_ORTHOGONAL) {
+		PrintWarning("[ViewControl] GetPinholeCameraParameters() failed because orthogonal view cannot be translated to a pinhole camera.\n");
+		return camera;
+	}
+	camera.width_ = window_width_;
+	camera.height_ = window_height_;
+	camera.extrinsic_matrix_ = view_matrix_.cast<double>();
+	camera.intrinsic_matrix_.setIdentity();
+	camera.intrinsic_matrix_(0, 0) = (double)projection_matrix_(0, 0) * 
+			(double)window_width_ / 2.0;
+	camera.intrinsic_matrix_(1, 1) = (double)projection_matrix_(1, 1) * 
+			(double)window_height_ / 2.0;
+	camera.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0;
+	camera.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0;
+	return camera;
+}
+
 ViewControl::ProjectionType ViewControl::GetProjectionType()
 {
 	if (field_of_view_ > FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP / 2.0) {
@@ -130,40 +188,6 @@ void ViewControl::Translate(double x, double y)
 	eye_ += shift;
 	lookat_ += shift;
 	SetProjectionParameters();
-}
-
-void ViewControl::SetViewPoint()
-{
-	if (window_height_ <= 0 || window_width_ <= 0) {
-		PrintWarning("[ViewControl] SetViewPoint() failed because window height and width are not set.");
-		return;
-	}
-	glViewport(0, 0, window_width_, window_height_);
-	if (GetProjectionType() == PROJECTION_PERSPECTIVE)
-	{
-		// Perspective projection
-		projection_matrix_ = GLHelper::Perspective(field_of_view_, aspect_,
-				std::max(0.0001, distance_ - 1.0 * bounding_box_.GetSize()),
-				distance_ + 1.0 * bounding_box_.GetSize());
-	} else {
-		// Orthogonal projection
-		// We use some black magic to support distance_ in orthogonal view
-		projection_matrix_ = GLHelper::Ortho(
-				-aspect_ * view_ratio_,	aspect_ * view_ratio_,
-				-view_ratio_, view_ratio_,
-				distance_ - 3.0 * bounding_box_.GetSize(),
-				distance_ + 3.0 * bounding_box_.GetSize());
-	}
-	view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_ );
-	model_matrix_ = GLHelper::GLMatrix4f::Identity();
-	MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
-
-	// uncomment to use the deprecated functions of legacy OpenGL
-	//glMatrixMode(GL_PROJECTION);
-	//glLoadIdentity();
-	//glMatrixMode(GL_MODELVIEW);
-	//glLoadIdentity();
-	//glMultMatrixf(MVP_matrix_.data());
 }
 
 }	// namespace three

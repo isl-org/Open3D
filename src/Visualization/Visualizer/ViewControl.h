@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Core/Geometry/Geometry.h>
+#include <Core/Camera/PinholeCameraParameters.h>
 
 #include <Visualization/Utility/BoundingBox.h>
 #include <Visualization/Utility/GLHelper.h>
@@ -59,6 +60,9 @@ public:
 	/// the view point.
 	void SetViewPoint();
 
+	/// Function to get equivalent pinhole camera parameters
+	PinholeCameraParameters GetPinholeCameraParameters();
+
 	ProjectionType GetProjectionType();
 	void SetProjectionParameters();
 	virtual void Reset();
@@ -78,7 +82,6 @@ public:
 	}
 
 	double GetFieldOfView() const { return field_of_view_; }
-	
 	GLHelper::GLMatrix4f GetMVPMatrix() const { return MVP_matrix_; }
 	GLHelper::GLMatrix4f GetProjectionMatrix() const {
 		return projection_matrix_;

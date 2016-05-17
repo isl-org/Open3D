@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 		}
 		mesh_ptr->ComputeVertexNormals();
 		if (argc == 3) {
-			DrawGeometryWithCustomAnimation(mesh_ptr, "Animation", 1600, 900);
+			DrawGeometryWithCustomAnimation(mesh_ptr, "Animation", 1920, 1080);
 		} else {
 			DrawGeometryWithCustomAnimation(mesh_ptr, "Animation", 1600, 900, 50, 50, 
 					argv[3]);
