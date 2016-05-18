@@ -58,12 +58,15 @@ public:
 	/// Function to set view points
 	/// This function obtains OpenGL context and calls OpenGL functions to set
 	/// the view point.
-	void SetViewPoint();
+	void SetViewMatrices(
+			Eigen::Matrix4d model_matrix = Eigen::Matrix4d::Identity());
 
 	/// Function to get equivalent pinhole camera parameters
-	PinholeCameraParameters GetPinholeCameraParameters();
+	bool ConvertToPinholeCameraParameters(PinholeCameraParameters &camera);
+	bool ConvertFromPinholeCameraParameters(
+			const PinholeCameraParameters &camera);
 
-	ProjectionType GetProjectionType();
+	ProjectionType GetProjectionType() const;
 	void SetProjectionParameters();
 	virtual void Reset();
 	virtual void ChangeFieldOfView(double step);

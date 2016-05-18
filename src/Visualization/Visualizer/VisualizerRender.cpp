@@ -58,7 +58,7 @@ void Visualizer::Render()
 {
 	glfwMakeContextCurrent(window_);
 	
-	view_control_ptr_->SetViewPoint();
+	view_control_ptr_->SetViewMatrices();
 
 	Eigen::Vector3d background_color = RenderOption::DEFAULT_BACKGROUND_COLOR;
 	glClearColor((GLclampf)background_color(0), (GLclampf)background_color(1),
