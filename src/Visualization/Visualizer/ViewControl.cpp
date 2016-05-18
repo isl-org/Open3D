@@ -68,7 +68,7 @@ void ViewControl::SetViewMatrices(
 				distance_ + 3.0 * bounding_box_.GetSize());
 	}
 	view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_ );
-	model_matrix_ = model_matrix.cast<float>();
+	model_matrix_ = model_matrix.cast<GLfloat>();
 	MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
 
 	// uncomment to use the deprecated functions of legacy OpenGL

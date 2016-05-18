@@ -160,16 +160,16 @@ void PhongShader::SetBoundingBoxLight(const ViewControl &view,
 	light_position_world_data_.setOnes();
 	light_position_world_data_.block<3, 1>(0, 0) = 
 			(box.GetCenter() + Eigen::Vector3d(2, 2, 2) * box.GetSize()).
-			cast<float>();
+			cast<GLfloat>();
 	light_position_world_data_.block<3, 1>(0, 1) =
 			(box.GetCenter() + Eigen::Vector3d(2, -2, -2) * box.GetSize()).
-			cast<float>();
+			cast<GLfloat>();
 	light_position_world_data_.block<3, 1>(0, 2) =
 			(box.GetCenter() + Eigen::Vector3d(-2, 2, -2) * box.GetSize()).
-			cast<float>();
+			cast<GLfloat>();
 	light_position_world_data_.block<3, 1>(0, 3) =
 			(box.GetCenter() + Eigen::Vector3d(-2, -2, 2) * box.GetSize()).
-			cast<float>();
+			cast<GLfloat>();
 
 	light_color_data_.setOnes();
 
