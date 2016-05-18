@@ -116,12 +116,8 @@ public:
 	}
 
 	void ChangePointSize(double change) {
-		double new_point_size = point_size_ + change * POINT_SIZE_STEP;
-		if (new_point_size >= POINT_SIZE_MIN && 
-				new_point_size <= POINT_SIZE_MAX)
-		{
-			point_size_ = new_point_size;
-		}
+		point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP, 
+				POINT_SIZE_MAX), POINT_SIZE_MIN);
 	}
 
 	PointColorOption GetPointColorOption() const {

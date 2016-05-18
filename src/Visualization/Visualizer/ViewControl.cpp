@@ -32,7 +32,7 @@
 namespace three{
 
 const double ViewControl::FIELD_OF_VIEW_MAX = 90.0;
-const double ViewControl::FIELD_OF_VIEW_MIN = 0.0;
+const double ViewControl::FIELD_OF_VIEW_MIN = 5.0;
 const double ViewControl::FIELD_OF_VIEW_DEFAULT = 60.0;
 const double ViewControl::FIELD_OF_VIEW_STEP = 5.0;
 
@@ -103,10 +103,10 @@ PinholeCameraParameters ViewControl::GetPinholeCameraParameters()
 
 ViewControl::ProjectionType ViewControl::GetProjectionType()
 {
-	if (field_of_view_ > FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP / 2.0) {
-		return PROJECTION_PERSPECTIVE;
-	} else {
+	if (field_of_view_ == FIELD_OF_VIEW_MIN) {
 		return PROJECTION_ORTHOGONAL;
+	} else {
+		return PROJECTION_PERSPECTIVE;
 	}
 }
 
@@ -137,12 +137,8 @@ void ViewControl::SetProjectionParameters()
 
 void ViewControl::ChangeFieldOfView(double step)
 {
-	double field_of_view_new = field_of_view_ + step * FIELD_OF_VIEW_STEP;
-	if (field_of_view_new >= FIELD_OF_VIEW_MIN &&
-			field_of_view_new <= FIELD_OF_VIEW_MAX)
-	{
-		field_of_view_ = field_of_view_new;
-	}
+	field_of_view_ = std::max(std::min(field_of_view_ + 
+			step * FIELD_OF_VIEW_STEP, FIELD_OF_VIEW_MAX), FIELD_OF_VIEW_MIN);
 	SetProjectionParameters();
 }
 
@@ -156,10 +152,7 @@ void ViewControl::ChangeWindowSize(int width, int height)
 
 void ViewControl::Scale(double scale)
 {
-	double zoom_new = zoom_ + scale * ZOOM_STEP;
-	if (zoom_new >= ZOOM_MIN && zoom_new <= ZOOM_MAX) {
-		zoom_ = zoom_new;
-	}
+	zoom_ = std::max(std::min(zoom_ + scale * ZOOM_STEP, ZOOM_MAX), ZOOM_MIN);
 	SetProjectionParameters();
 }
 

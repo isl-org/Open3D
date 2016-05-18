@@ -45,11 +45,10 @@ void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 			// This is because ProjectionType cannot be easily switched in a
 			// smooth trajectory.
 			if (GetProjectionType() == PROJECTION_PERSPECTIVE) {
-				double new_fov = field_of_view_ + step * FIELD_OF_VIEW_STEP;
-				if (new_fov >= FIELD_OF_VIEW_MIN + FIELD_OF_VIEW_STEP &&
-						new_fov <= FIELD_OF_VIEW_MAX)
-				{
-					field_of_view_ = new_fov;
+				double old_fov = field_of_view_;
+				ViewControl::ChangeFieldOfView(step);
+				if (GetProjectionType() == PROJECTION_ORTHOGONAL) {
+					field_of_view_ = old_fov;
 				}
 			} else {
 				// do nothing, lock as PROJECTION_ORTHOGONAL
@@ -141,7 +140,8 @@ void ViewControlWithCustomAnimation::DeleteKeyFrame()
 	SetViewControlFromTrajectory();
 }
 
-void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames/* = 20*/)
+void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames
+		/* = 20*/)
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		double radian_per_step = M_PI * 2.0 / double(num_of_key_frames);
@@ -318,8 +318,8 @@ bool ViewControlWithCustomAnimation::ConvertFromViewParameters(
 	return true;
 }
 
-double ViewControlWithCustomAnimation::RegularizeFrameIndex(double current_frame,
-		size_t num_of_frames, bool is_loop)
+double ViewControlWithCustomAnimation::RegularizeFrameIndex(
+		double current_frame, size_t num_of_frames, bool is_loop)
 {
 	if (num_of_frames == 0) {
 		return 0.0;
