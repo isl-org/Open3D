@@ -42,17 +42,11 @@ GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
 	up_dir = front_dir.cross(right_dir).normalized();
 
 	Eigen::Matrix4d mat = Eigen::Matrix4d::Zero();
-	mat(0, 0) = right_dir(0);
-	mat(0, 1) = right_dir(1);
-	mat(0, 2) = right_dir(2);
+	mat.block<1, 3>(0, 0) = right_dir.transpose();
+	mat.block<1, 3>(1, 0) = up_dir.transpose();
+	mat.block<1, 3>(2, 0) = front_dir.transpose();
 	mat(0, 3) = -right_dir.dot(eye);
-	mat(1, 0) = up_dir(0);
-	mat(1, 1) = up_dir(1);
-	mat(1, 2) = up_dir(2);
 	mat(1, 3) = -up_dir.dot(eye);
-	mat(2, 0) = front_dir(0);
-	mat(2, 1) = front_dir(1);
-	mat(2, 2) = front_dir(2);
 	mat(2, 3) = -front_dir.dot(eye);
 	mat(3, 3) = 1.0;
 	return mat.cast<GLfloat>();
