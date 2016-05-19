@@ -108,6 +108,9 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 	case GLFW_KEY_PRINT_SCREEN:
 		CaptureScreen();
 		break;
+	case GLFW_KEY_D:
+		CaptureDepth();
+		break;
 	case GLFW_KEY_LEFT_BRACKET:
 		view_control_ptr_->ChangeFieldOfView(-1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",

@@ -117,7 +117,8 @@ public:
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
 	void CaptureScreen(const std::string &filename = "", bool do_render = true);
-	void CaptureDepth(const std::string &filename = "", bool do_render = true);
+	void CaptureDepth(const std::string &filename = "", bool do_render = true,
+			double scale = 1000.0);
 
 protected:
 	/// Function to initialize OpenGL

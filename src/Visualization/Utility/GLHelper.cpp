@@ -79,7 +79,36 @@ GLMatrix4f Ortho(double left, double right, double bottom, double top,
 	mat(3, 3) = 1.0;
 	return mat.cast<GLfloat>();
 }
-	
+
+Eigen::Vector3d Project(const Eigen::Vector3d &point, 
+		const GLMatrix4f &mvp_matrix, const int width, const int height)
+{
+	Eigen::Vector4d pos = mvp_matrix.cast<double>() *
+			Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+	if (pos(3) == 0.0) {
+		return Eigen::Vector3d::Zero();
+	}
+	pos /= pos(3);
+	return Eigen::Vector3d(
+			(pos(0) * 0.5 + 0.5) * (double)width,
+			(pos(1) * 0.5 + 0.5) * (double)height,
+			(1.0 + pos(2)) * 0.5);
+}
+
+Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
+		const GLMatrix4f &mvp_matrix, const int width, const int height)
+{
+	Eigen::Vector4d point = mvp_matrix.cast<double>().inverse() *
+			Eigen::Vector4d(screen_point(0) / (double)width * 2.0 - 1.0,
+			screen_point(1) / (double)height * 2.0 - 1.0,
+			screen_point(2) * 2.0 - 1.0, 1.0);
+	if (point(3) == 0.0) {
+		return Eigen::Vector3d::Zero();
+	}
+	point /= point(3);
+	return point.block<3, 1>(0, 0);
+}
+
 }	// namespace GLHelper
 
 }	// namespace three

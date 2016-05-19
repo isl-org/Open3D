@@ -97,6 +97,8 @@ public:
 	GLHelper::GLVector3f GetFront() const { return front_.cast<GLfloat>(); }
 	int GetWindowWidth() const { return window_width_; }
 	int GetWindowHeight() const { return window_height_; }
+	double GetZNear() const { return z_near_; }
+	double GetZFar() const { return z_far_; }
 
 protected:
 	int window_width_ = 0;
@@ -111,6 +113,8 @@ protected:
 	double zoom_;
 	double view_ratio_;
 	double aspect_;
+	double z_near_;
+	double z_far_;
 	GLHelper::GLMatrix4f projection_matrix_;
 	GLHelper::GLMatrix4f view_matrix_;
 	GLHelper::GLMatrix4f model_matrix_;

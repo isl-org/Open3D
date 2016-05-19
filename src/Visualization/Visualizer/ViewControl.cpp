@@ -54,18 +54,19 @@ void ViewControl::SetViewMatrices(
 	if (GetProjectionType() == PROJECTION_PERSPECTIVE)
 	{
 		// Perspective projection
+		z_near_ = std::max(0.01 * bounding_box_.GetSize(), 
+				distance_ - 3.0 * bounding_box_.GetSize());
+		z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
 		projection_matrix_ = GLHelper::Perspective(field_of_view_, aspect_,
-				std::max(0.01 * bounding_box_.GetSize(), 
-				distance_ - 3.0 * bounding_box_.GetSize()),
-				distance_ + 3.0 * bounding_box_.GetSize());
+				z_near_, z_far_);
 	} else {
 		// Orthogonal projection
 		// We use some black magic to support distance_ in orthogonal view
+		z_near_ = distance_ - 3.0 * bounding_box_.GetSize();
+		z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
 		projection_matrix_ = GLHelper::Ortho(
 				-aspect_ * view_ratio_,	aspect_ * view_ratio_,
-				-view_ratio_, view_ratio_,
-				distance_ - 3.0 * bounding_box_.GetSize(),
-				distance_ + 3.0 * bounding_box_.GetSize());
+				-view_ratio_, view_ratio_, z_near_, z_far_);
 	}
 	view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_ );
 	model_matrix_ = model_matrix.cast<GLfloat>();
@@ -111,8 +112,8 @@ bool ViewControl::ConvertToPinholeCameraParameters(
 	double tan_half_fov = std::tan(fov_rad / 2.0);
 	camera.intrinsic_matrix_(0, 0) = camera.intrinsic_matrix_(1, 1) =
 			(double)window_height_ / tan_half_fov / 2.0;
-	camera.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0;
-	camera.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0;
+	camera.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0 - 0.5;
+	camera.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0 - 0.5;
 	return true;
 }
 
@@ -122,8 +123,10 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
 	if (window_height_ <= 0 || window_width_ <= 0 || 
 			window_height_ != camera.height_ || 
 			window_width_ != camera.width_ ||
-			camera.intrinsic_matrix_(0, 2) != (double)window_width_ / 2.0 ||
-			camera.intrinsic_matrix_(1, 2) != (double)window_height_ / 2.0) {
+			camera.intrinsic_matrix_(0, 2) != 
+			(double)window_width_ / 2.0 - 0.5 ||
+			camera.intrinsic_matrix_(1, 2) != 
+			(double)window_height_ / 2.0 - 0.5) {
 		PrintWarning("[ViewControl] ConvertFromPinholeCameraParameters() failed because window height and width do not match.\n");
 		return false;
 	}

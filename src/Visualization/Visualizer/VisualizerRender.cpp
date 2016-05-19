@@ -114,7 +114,7 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 }
 
 void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
-		bool do_render/* = true*/)
+		bool do_render/* = true*/, double scale/* = 1000.0*/)
 {
 	std::string png_filename = filename;
 	if (png_filename.empty()) {
@@ -129,24 +129,36 @@ void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
 	}
 	glFinish();
 	glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(), 
-			view_control_ptr_->GetWindowHeight(), GL_RGB, GL_FLOAT,
+			view_control_ptr_->GetWindowHeight(), GL_DEPTH_COMPONENT, GL_FLOAT,
 			depth_image.data_.data());
-	/*
+
 	// glReadPixels get the screen in a vertically flipped manner
-	// Thus we should flip it back.
+	// We should flip it back, and convert it to the depth value
 	Image png_image;
+	double z_near = view_control_ptr_->GetZNear();
+	double z_far = view_control_ptr_->GetZFar();
+
 	png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
-			view_control_ptr_->GetWindowHeight(), 3, 1);
-	int bytes_per_line = screen_image.BytesPerLine();
-	for (int i = 0; i < screen_image.height_; i++) {
-		memcpy(png_image.data_.data() + bytes_per_line * i,
-				screen_image.data_.data() + bytes_per_line * 
-				(screen_image.height_ - i - 1), bytes_per_line);
+			view_control_ptr_->GetWindowHeight(), 1, 2);
+	for (int i = 0; i < depth_image.height_; i++) {
+		float *p_depth = (float *)(depth_image.data_.data() + 
+				depth_image.BytesPerLine() * (depth_image.height_ - i - 1));
+		uint16_t *p_png = (uint16_t *)(png_image.data_.data() +
+				png_image.BytesPerLine() * i);
+		for (int j = 0; j < depth_image.width_; j++) {
+			if (p_depth[j] == 1.0) {
+				continue;
+			}
+			double z_depth = 2.0 * z_near * z_far / 
+					(z_far + z_near - (2.0 * (double)p_depth[j] - 1.0) * 
+					(z_far - z_near));
+			p_png[j] = std::min((uint16_t)std::round(scale * z_depth),
+					(uint16_t)INT16_MAX);
+		}
 	}
 
-	PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
+	PrintDebug("[Visualizer] Depth capture to %s\n", png_filename.c_str());
 	WriteImage(png_filename, png_image);
-	*/
 }
 
 }	// namespace three
