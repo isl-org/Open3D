@@ -34,6 +34,9 @@
 
 namespace three {
 
+class Image;
+class PinholeCameraParameters;
+
 class PointCloud : public Geometry
 {
 public:
@@ -80,6 +83,13 @@ public:
 /// Return an empty pointcloud if fail to read the file.
 std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 		const std::string &filename);
+
+/// Factory function to create a pointcloud from a depth image and a camera
+/// model (PointCloudFactory.cpp)
+/// Return an empty pointcloud if the conversion fails.
+std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
+		const Image &depth, const PinholeCameraParameters &camera,
+		const bool use_extrinsic = true, const double depth_scale = 1000.0);
 
 /// Function to downsample input_cloud into output_cloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 

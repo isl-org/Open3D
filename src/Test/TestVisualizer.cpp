@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
-		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image] [filename]\n");
+		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth] [filename]\n");
 		PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
 		return 0;
 	}
@@ -133,6 +133,14 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		DrawGeometry(image_ptr, "Image", image_ptr->width_, image_ptr->height_);
+	} else if (option == "depth") {
+		auto image_ptr = CreateImageFromFile(argv[2]);
+		PinholeCameraParameters camera;
+		camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
+		auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr, camera,
+				false);
+		DrawGeometry(pointcloud_ptr, "PointCloud from Depth Image",
+				1920, 1080);
 	} else if (option == "animation") {
 		auto mesh_ptr = std::make_shared<TriangleMesh>();
 		if (ReadTriangleMesh(argv[2], *mesh_ptr)) {

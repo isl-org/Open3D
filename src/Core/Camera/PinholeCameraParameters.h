@@ -38,6 +38,14 @@ public:
 	virtual ~PinholeCameraParameters();
 
 public:
+	void SetIntrinsics(int width, int height, double fx, double fy, double cx,
+			double cy) {
+		width_ = width; height_ = height;
+		intrinsic_matrix_.setIdentity();
+		intrinsic_matrix_(0, 0) = fx; intrinsic_matrix_(1, 1) = fy;
+		intrinsic_matrix_(0, 2) = cx; intrinsic_matrix_(1, 2) = cy;
+	}
+
 	std::pair<double, double> GetFocalLength() const {
 		return std::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
 	}

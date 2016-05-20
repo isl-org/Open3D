@@ -114,7 +114,7 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 }
 
 void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
-		bool do_render/* = true*/, double scale/* = 1000.0*/)
+		bool do_render/* = true*/, double depth_scale/* = 1000.0*/)
 {
 	std::string png_filename = filename;
 	if (png_filename.empty()) {
@@ -152,7 +152,7 @@ void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
 			double z_depth = 2.0 * z_near * z_far / 
 					(z_far + z_near - (2.0 * (double)p_depth[j] - 1.0) * 
 					(z_far - z_near));
-			p_png[j] = std::min((uint16_t)std::round(scale * z_depth),
+			p_png[j] = std::min((uint16_t)std::round(depth_scale * z_depth),
 					(uint16_t)INT16_MAX);
 		}
 	}

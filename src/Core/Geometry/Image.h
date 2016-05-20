@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Eigen/Core>
 
 #include <Core/Geometry/Geometry.h>
@@ -76,5 +77,9 @@ public:
 	int bytes_per_channel_ = 0;
 	std::vector<unsigned char> data_;
 };
+
+/// Factory function to create an image from a file (ImageFactory.cpp)
+/// Return an empty image if fail to read the file.
+std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
 
 }	// namespace three
