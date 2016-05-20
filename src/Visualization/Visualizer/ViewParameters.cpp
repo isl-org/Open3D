@@ -32,24 +32,28 @@
 
 namespace three{
 
-ViewParameters::Vector11d ViewParameters::ConvertToVector11d()
+ViewParameters::Vector17d ViewParameters::ConvertToVector17d()
 {
-	ViewParameters::Vector11d v;
+	ViewParameters::Vector17d v;
 	v(0) = field_of_view_;
 	v(1) = zoom_;
 	v.block<3, 1>(2, 0) = lookat_;
 	v.block<3, 1>(5, 0) = up_;
 	v.block<3, 1>(8, 0) = front_;
+	v.block<3, 1>(11, 0) = boundingbox_min_;
+	v.block<3, 1>(14, 0) = boundingbox_max_;
 	return v;
 }
 
-void ViewParameters::ConvertFromVector11d(const ViewParameters::Vector11d &v)
+void ViewParameters::ConvertFromVector17d(const ViewParameters::Vector17d &v)
 {
 	field_of_view_ = v(0);
 	zoom_ = v(1);
 	lookat_ = v.block<3, 1>(2, 0);
 	up_ = v.block<3, 1>(5, 0);
 	front_ = v.block<3, 1>(8, 0);
+	boundingbox_min_ = v.block<3, 1>(11, 0);
+	boundingbox_max_ = v.block<3, 1>(14, 0);
 }
 
 bool ViewParameters::ConvertToJsonValue(Json::Value &value) const
@@ -63,6 +67,14 @@ bool ViewParameters::ConvertToJsonValue(Json::Value &value) const
 		return false;
 	}
 	if (EigenVector3dToJsonArray(front_, value["front"]) == false ) {
+		return false;
+	}
+	if (EigenVector3dToJsonArray(boundingbox_min_, value["boundingbox_min"]) == 
+			false ) {
+		return false;
+	}
+	if (EigenVector3dToJsonArray(boundingbox_max_, value["boundingbox_max"]) ==
+			false ) {
 		return false;
 	}
 	return true;
@@ -85,6 +97,16 @@ bool ViewParameters::ConvertFromJsonValue(const Json::Value &value)
 		return false;
 	}
 	if (EigenVector3dFromJsonArray(front_, value["front"]) == false) {
+		PrintWarning("ViewParameters read JSON failed: wrong format.\n");
+		return false;
+	}
+	if (EigenVector3dFromJsonArray(boundingbox_min_, 
+			value["boundingbox_min"]) == false) {
+		PrintWarning("ViewParameters read JSON failed: wrong format.\n");
+		return false;
+	}
+	if (EigenVector3dFromJsonArray(boundingbox_max_, 
+			value["boundingbox_max"]) == false) {
 		PrintWarning("ViewParameters read JSON failed: wrong format.\n");
 		return false;
 	}

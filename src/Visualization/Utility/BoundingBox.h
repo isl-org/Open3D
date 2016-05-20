@@ -43,9 +43,6 @@ public:
 	void FitInGeometry(const Geometry &geometry);
 
 public:
-	Eigen::Vector3d GetMinBound() const { return min_bound_; }
-	Eigen::Vector3d GetMaxBound() const { return max_bound_; }
-
 	Eigen::Vector3d GetCenter() const {
 		return (min_bound_ + max_bound_) * 0.5;
 	}
@@ -74,7 +71,7 @@ public:
 		return std::string(buffer);
 	}
 
-protected:
+public:
 	Eigen::Vector3d min_bound_ = Eigen::Vector3d::Zero();
 	Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
 };

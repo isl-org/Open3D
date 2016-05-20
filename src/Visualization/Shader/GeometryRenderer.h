@@ -27,7 +27,6 @@
 #pragma once
 
 #include <Core/Geometry/Geometry.h>
-#include <Core/Geometry/IGeometryOwner.h>
 
 #include <Visualization/Shader/SimpleShader.h>
 #include <Visualization/Shader/SimpleBlackShader.h>
@@ -38,7 +37,7 @@ namespace three {
 
 namespace glsl {
 	
-class GeometryRenderer : public IGeometryOwner
+class GeometryRenderer
 {
 public:
 	virtual ~GeometryRenderer() {}
@@ -46,10 +45,20 @@ public:
 public:
 	virtual bool Render(const RenderOption &option,
 			const ViewControl &view) = 0;
+
+	/// Function to add geometry to the renderer
+	/// 1. After calling the function, the renderer owns the geometry object.
+	/// 2. This function returns FALSE if the geometry type is not matched to
+	/// the renderer.
+	/// 3. If an added geometry is changed, programmer must call
+	/// UpdateGeometry() to notify the renderer.
 	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) = 0;
+
+	/// Function to upadte geometry
+	/// Programmer must call this function to notify a change of the geometry
 	virtual bool UpdateGeometry() = 0;
 
-	bool HasGeometry() const final {
+	bool HasGeometry() const {
 		return bool(geometry_ptr_);
 	}
 	Geometry::GeometryType GetGeometryType() { return type_; }

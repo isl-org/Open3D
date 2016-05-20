@@ -32,7 +32,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <Core/Geometry/Geometry.h>
-#include <Core/Geometry/IGeometryOwner.h>
 
 #include <Visualization/Utility/ColorMap.h>
 #include <Visualization/Utility/BoundingBox.h>
@@ -42,7 +41,7 @@
 
 namespace three {
 
-class Visualizer : public IGeometryOwner
+class Visualizer
 {
 public:
 	struct MouseControl {
@@ -98,19 +97,22 @@ public:
 	bool PollEvents();
 
 	/// Function to add geometry to the scene and create corresponding shaders
-	/// This function is part of IGeometryOwner.
-	/// This function MUST be called after CreateWindow().
-	/// This function returns FALSE when the geometry is of an unsupported type.
-	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	/// 1. After calling this function, the Visualizer owns the geometry object.
+	/// 2. This function MUST be called after CreateWindow().
+	/// 3. This function returns FALSE when the geometry is of an unsupported
+	/// type.
+	/// 4. If an added geometry is changed, the behavior of Visualizer is
+	/// undefined. Programmers are responsible for calling UpdateGeometry() to
+	/// notify the Visualizer that the geometry has been changed and the 
+	/// Visualizer should be updated accordingly.
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
+			const bool update_boundingbox = true);
 
 	/// Function to update geometry
-	/// This function is part of IGeometryOwner.
 	/// This function must be called when geometry has been changed. Otherwise
 	/// the behavior of Visualizer is undefined.
-	bool UpdateGeometry() override;
-
-	/// This function is part of IGeometryOwner.
-	bool HasGeometry() const override;
+	bool UpdateGeometry();
+	bool HasGeometry() const;
 
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();

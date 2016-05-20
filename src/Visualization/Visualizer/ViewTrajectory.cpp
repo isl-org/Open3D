@@ -47,20 +47,20 @@ void ViewTrajectory::ComputeInterpolationCoefficients()
 	int n = int(view_status_.size());
 	coeff_.resize(n);
 
-	// Consider ViewStatus as a point in an 11-dimensional space.
+	// Consider ViewStatus as a point in an 17-dimensional space.
 	for (int i = 0; i < n; i++) {
 		coeff_[i].setZero();
-		coeff_[i].block<11, 1>(0, 0) = view_status_[i].ConvertToVector11d();
+		coeff_[i].block<17, 1>(0, 0) = view_status_[i].ConvertToVector17d();
 	}
 
 	// Handle degenerate cases first
 	if (n == 1) {
 		return;
 	} else if (n == 2) {
-		coeff_[0].block<11, 1>(0, 1) = coeff_[1].block<11, 1>(0, 0) - 
-				coeff_[0].block<11, 1>(0, 0);
-		coeff_[1].block<11, 1>(0, 1) = coeff_[0].block<11, 1>(0, 0) - 
-				coeff_[1].block<11, 1>(0, 0);
+		coeff_[0].block<17, 1>(0, 1) = coeff_[1].block<17, 1>(0, 0) - 
+				coeff_[0].block<17, 1>(0, 0);
+		coeff_[1].block<17, 1>(0, 1) = coeff_[0].block<17, 1>(0, 0) - 
+				coeff_[1].block<17, 1>(0, 0);
 		return;
 	}
 
@@ -94,7 +94,7 @@ void ViewTrajectory::ComputeInterpolationCoefficients()
 
 	auto llt_solver = A.llt();
 
-	for (int k = 0; k < 11; k++) {
+	for (int k = 0; k < 17; k++) {
 		// Now we work for the k-th coefficient
 		b.setZero();
 
@@ -138,8 +138,8 @@ std::tuple<bool, ViewParameters> ViewTrajectory::GetInterpolatedFrame(size_t k)
 	Eigen::Vector4d s(1.0, segment_fraction, 
 			segment_fraction * segment_fraction,
 			segment_fraction * segment_fraction * segment_fraction);
-	ViewParameters::Vector11d status_in_vector = coeff_[segment_index] * s;
-	status.ConvertFromVector11d(status_in_vector);
+	ViewParameters::Vector17d status_in_vector = coeff_[segment_index] * s;
+	status.ConvertFromVector17d(status_in_vector);
 	return std::make_tuple(true, status);
 }
 

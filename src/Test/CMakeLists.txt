@@ -1,6 +1,6 @@
 add_executable(TestPointCloud TestPointCloud.cpp)
 target_link_libraries(TestPointCloud Visualization IO Core)
-set_target_properties(TestPointCloud PROPERTIES 
+set_target_properties(TestPointCloud PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
@@ -36,6 +36,12 @@ set_target_properties(TestFileSystem PROPERTIES
 add_executable(TestProgramOptions TestProgramOptions.cpp)
 target_link_libraries(TestProgramOptions Core)
 set_target_properties(TestProgramOptions PROPERTIES
+		FOLDER "Test"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+
+add_executable(TestDepthCapture TestDepthCapture.cpp)
+target_link_libraries(TestDepthCapture Core Visualization IO)
+set_target_properties(TestDepthCapture PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 

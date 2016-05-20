@@ -272,7 +272,8 @@ bool Visualizer::PollEvents()
 	return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
+bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
+		bool update_boundingbox/* = true*/)
 {
 	if (is_initialized_ == false) {
 		return false;
@@ -307,10 +308,12 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 	}
 
 	geometry_ptrs_.push_back(geometry_ptr);
-	view_control_ptr_->FitInGeometry(*geometry_ptr);
-	ResetViewPoint();
-	PrintDebug("Add geometry and update bounding box to %s\n", 
-			view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+	if (update_boundingbox) {
+		view_control_ptr_->FitInGeometry(*geometry_ptr);
+		ResetViewPoint();
+		PrintDebug("Add geometry and update bounding box to %s\n", 
+				view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+	}
 	return UpdateGeometry();
 }
 

@@ -34,16 +34,16 @@ namespace three {
 class ViewParameters : public IJsonConvertible
 {
 public:
-	typedef Eigen::Matrix<double, 11, 4, Eigen::RowMajor> Matrix11x4d;
-	typedef Eigen::Matrix<double, 11, 1> Vector11d;
+	typedef Eigen::Matrix<double, 17, 4, Eigen::RowMajor> Matrix17x4d;
+	typedef Eigen::Matrix<double, 17, 1> Vector17d;
 
 public:
 	ViewParameters() {}
 	virtual ~ViewParameters() {}
 
 public:
-	Vector11d ConvertToVector11d();
-	void ConvertFromVector11d(const Vector11d &v);
+	Vector17d ConvertToVector17d();
+	void ConvertFromVector17d(const Vector17d &v);
 	virtual bool ConvertToJsonValue(Json::Value &value) const override;
 	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
 
@@ -53,6 +53,8 @@ public:
 	Eigen::Vector3d lookat_;
 	Eigen::Vector3d up_;
 	Eigen::Vector3d front_;
+	Eigen::Vector3d boundingbox_min_;
+	Eigen::Vector3d boundingbox_max_;
 };
 
 }	// namespace three

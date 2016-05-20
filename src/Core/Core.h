@@ -34,5 +34,7 @@
 #include "Geometry/PointCloud.h"
 #include "Geometry/TriangleMesh.h"
 #include "Geometry/Image.h"
-#include "Geometry/IGeometryOwner.h"
 #include "Geometry/KDTreeFlann.h"
+
+#include "Camera/PinholeCameraParameters.h"
+#include "Camera/PinholeCameraTrajectory.h"

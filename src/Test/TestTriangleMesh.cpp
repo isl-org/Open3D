@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 			mesh->ComputeVertexNormals();
 			BoundingBox boundingbox(*mesh);
 			auto mesh_frame = CreateMeshCoordinateFrame(
-					boundingbox.GetSize() * 0.2, boundingbox.GetMinBound());
+					boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
 			std::vector<std::shared_ptr<const Geometry>> meshes =
 					{mesh, mesh_frame};
 			DrawGeometries(meshes);
