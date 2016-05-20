@@ -24,62 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudIO.h"
+#pragma once
 
-#include <cstdio>
-#include <Core/Utility/Console.h>
+#include <string>
+#include <IO/ClassIO/IJsonConvertible.h>
 
-namespace three{
+namespace three {
 
-bool ReadPointCloudFromXYZ(
-		const std::string &filename,
-		PointCloud &pointcloud)
-{
-	FILE *file = fopen(filename.c_str(), "r");
-	if (file == NULL) {
-		PrintWarning("Read XYZ failed: unable to open file.\n");
-		return false;
-	}
+/// The general entrance for reading an IJsonConvertible from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return If the read function is successful. 
+bool ReadIJsonConvertible(const std::string &filename, 
+		IJsonConvertible &object);
 
-	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-	double x, y, z;
-	pointcloud.Clear();
+/// The general entrance for writing an IJsonConvertible to a file
+/// The function calls write functions based on the extension name of filename.
+/// \return If the write function is successful.
+bool WriteIJsonConvertible(const std::string &filename, 
+		const IJsonConvertible &object);
 
-	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-		if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
-			pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
-		}
-	}
+bool ReadIJsonConvertibleFromJSON(const std::string &filename,
+		IJsonConvertible &object);
 
-	fclose(file);
-	return true;
-}
+bool WriteIJsonConvertibleToJSON(const std::string &filename,
+		const IJsonConvertible &object);
 
-bool WritePointCloudToXYZ(
-		const std::string &filename,
-		const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/,
-		const bool compressed/* = false*/)
-{
-	FILE *file = fopen(filename.c_str(), "w");
-	if (file == NULL) {
-		PrintWarning("Write XYZ failed: unable to open file.\n");
-		return false;
-	}
+bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
+		IJsonConvertible &object);
 
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		const Eigen::Vector3d &point = pointcloud.points_[i];
-		if (fprintf(file, "%.10f %.10f %.10f\n",
-				point(0), point(1), point(2)) < 0)
-		{
-			PrintWarning("Write XYZ failed: unable to write file.\n");
-			fclose(file);
-			return false;	// error happens during writting.
-		}
-	}
-
-	fclose(file);
-	return true;
-}
+bool WriteIJsonConvertibleToJSONString(std::string &json_string,
+		const IJsonConvertible &object);
 
 }	// namespace three

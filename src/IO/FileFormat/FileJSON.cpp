@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewTrajectoryIO.h"
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 
 #include <fstream>
 #include <sstream>
@@ -35,8 +35,8 @@ namespace three{
 
 namespace {
 
-bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
-		ViewTrajectory &trajectory)
+bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
+		IJsonConvertible &object)
 {
 	Json::Value root_object;
 	Json::Reader reader;
@@ -46,14 +46,14 @@ bool ReadViewTrajectoryFromJSONStream(std::istream &json_stream,
 				reader.getFormattedErrorMessages().c_str());
 		return false;
 	}
-	return trajectory.ConvertFromJsonValue(root_object);
+	return object.ConvertFromJsonValue(root_object);
 }
 
-bool WriteViewTrajectoryToJSONStream(std::ostream &json_stream,
-		const ViewTrajectory &trajectory)
+bool WriteIJsonConvertibleToJSONStream(std::ostream &json_stream,
+		const IJsonConvertible &object)
 {
 	Json::Value root_object;
-	if (trajectory.ConvertToJsonValue(root_object) == false) {
+	if (object.ConvertToJsonValue(root_object) == false) {
 		return false;
 	}
 	Json::StyledStreamWriter writer;
@@ -63,44 +63,44 @@ bool WriteViewTrajectoryToJSONStream(std::ostream &json_stream,
 
 }	// unnamed namespace
 
-bool ReadViewTrajectoryFromJSON(const std::string &filename,
-		ViewTrajectory &trajectory)
+bool ReadIJsonConvertibleFromJSON(const std::string &filename,
+		IJsonConvertible &object)
 {
 	std::ifstream file_in(filename);
 	if (file_in.is_open() == false) {
 		PrintWarning("Read JSON failed: unable to open file.\n");
 		return false;
 	}
-	bool success = ReadViewTrajectoryFromJSONStream(file_in, trajectory);
+	bool success = ReadIJsonConvertibleFromJSONStream(file_in, object);
 	file_in.close();
 	return success;
 }
 
-bool WriteViewTrajectoryToJSON(const std::string &filename,
-		const ViewTrajectory &trajectory)
+bool WriteIJsonConvertibleToJSON(const std::string &filename,
+		const IJsonConvertible &object)
 {
 	std::ofstream file_out(filename);
 	if (file_out.is_open() == false) {
 		PrintWarning("Write JSON failed: unable to open file.\n");
 		return false;
 	}
-	bool success = WriteViewTrajectoryToJSONStream(file_out, trajectory);
+	bool success = WriteIJsonConvertibleToJSONStream(file_out, object);
 	file_out.close();
 	return success;
 }
 
-bool ReadViewTrajectoryFromJSONString(const std::string &json_string,
-		ViewTrajectory &trajectory)
+bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
+		IJsonConvertible &object)
 {
 	std::istringstream iss(json_string);
-	return ReadViewTrajectoryFromJSONStream(iss, trajectory);
+	return ReadIJsonConvertibleFromJSONStream(iss, object);
 }
 
-bool WriteViewTrajectoryToJSONString(std::string &json_string,
-		const ViewTrajectory &trajectory)
+bool WriteIJsonConvertibleToJSONString(std::string &json_string,
+		const IJsonConvertible &object)
 {
 	std::ostringstream oss;
-	bool success = WriteViewTrajectoryToJSONStream(oss, trajectory);
+	bool success = WriteIJsonConvertibleToJSONStream(oss, object);
 	json_string = oss.str();
 	return success;
 }

@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
+#include <IO/ClassIO/PointCloudIO.h>
+#include <IO/ClassIO/TriangleMeshIO.h>
 
 #include <rply/rply.h>
 #include <Core/Utility/Console.h>

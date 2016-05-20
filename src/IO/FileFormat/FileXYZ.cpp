@@ -24,33 +24,30 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudIO.h"
+#include <IO/ClassIO/PointCloudIO.h>
 
 #include <cstdio>
 #include <Core/Utility/Console.h>
 
 namespace three{
 
-bool ReadPointCloudFromXYZN(
+bool ReadPointCloudFromXYZ(
 		const std::string &filename,
 		PointCloud &pointcloud)
 {
 	FILE *file = fopen(filename.c_str(), "r");
 	if (file == NULL) {
-		PrintWarning("Read XYZN failed: unable to open file.\n");
+		PrintWarning("Read XYZ failed: unable to open file.\n");
 		return false;
 	}
 
 	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-	double x, y, z, nx, ny, nz;
+	double x, y, z;
 	pointcloud.Clear();
 
 	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-		if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf",
-				&x, &y, &z, &nx, &ny, &nz) == 6) 
-		{
+		if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
 			pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
-			pointcloud.normals_.push_back(Eigen::Vector3d(nx, ny, nz));
 		}
 	}
 
@@ -58,30 +55,24 @@ bool ReadPointCloudFromXYZN(
 	return true;
 }
 
-bool WritePointCloudToXYZN(
+bool WritePointCloudToXYZ(
 		const std::string &filename,
 		const PointCloud &pointcloud,
 		const bool write_ascii/* = false*/,
 		const bool compressed/* = false*/)
 {
-	if (pointcloud.HasNormals() == false) {
-		return false;
-	}
-
 	FILE *file = fopen(filename.c_str(), "w");
 	if (file == NULL) {
-		PrintWarning("Write XYZN failed: unable to open file.\n");
+		PrintWarning("Write XYZ failed: unable to open file.\n");
 		return false;
 	}
 
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		const Eigen::Vector3d &point = pointcloud.points_[i];
-		const Eigen::Vector3d &normal = pointcloud.normals_[i];
-		if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n",
-				point(0), point(1), point(2), 
-				normal(0), normal(1), normal(2)) < 0)
+		if (fprintf(file, "%.10f %.10f %.10f\n",
+				point(0), point(1), point(2)) < 0)
 		{
-			PrintWarning("Write XYZN failed: unable to write file.\n");
+			PrintWarning("Write XYZ failed: unable to write file.\n");
 			fclose(file);
 			return false;	// error happens during writting.
 		}

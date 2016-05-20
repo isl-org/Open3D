@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewTrajectoryIO.h"
+#include "IJsonConvertibleIO.h"
 
 #include <unordered_map>
 #include <Core/Utility/Console.h>
@@ -35,53 +35,54 @@ namespace three{
 namespace {
 	
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, ViewTrajectory &)>>
-		file_extension_to_viewtrajectory_read_function
-		{{"json", ReadViewTrajectoryFromJSON},
+		std::function<bool(const std::string &, IJsonConvertible &)>>
+		file_extension_to_ijsonconvertible_read_function
+		{{"json", ReadIJsonConvertibleFromJSON},
 		};
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, const ViewTrajectory &)>>
-		file_extension_to_viewtrajectory_write_function
-		{{"json", WriteViewTrajectoryToJSON},
+		std::function<bool(const std::string &, const IJsonConvertible &)>>
+		file_extension_to_ijsonconvertible_write_function
+		{{"json", WriteIJsonConvertibleToJSON},
 		};
 
 }	// unnamed namespace
 
-bool ReadViewTrajectory(const std::string &filename, 
-		ViewTrajectory &trajectory)
+bool ReadIJsonConvertible(const std::string &filename, 
+		IJsonConvertible &object)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintWarning("Read ViewTrajectory failed: unknown file extension.\n");
+		PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr = 
-			file_extension_to_viewtrajectory_read_function.find(filename_ext);
-	if (map_itr == file_extension_to_viewtrajectory_read_function.end()) {
-		PrintWarning("Read ViewTrajectory failed: unknown file extension.\n");
+			file_extension_to_ijsonconvertible_read_function.find(filename_ext);
+	if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
+		PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, trajectory);
+	return map_itr->second(filename, object);
 }
 
-bool WriteViewTrajectory(const std::string &filename, 
-		const ViewTrajectory &trajectory)
+bool WriteIJsonConvertible(const std::string &filename, 
+		const IJsonConvertible &object)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintWarning("Write ViewTrajectory failed: unknown file extension.\n");
+		PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr = 
-			file_extension_to_viewtrajectory_write_function.find(filename_ext);
-	if (map_itr == file_extension_to_viewtrajectory_write_function.end()) {
-		PrintWarning("Write ViewTrajectory failed: unknown file extension.\n");
+			file_extension_to_ijsonconvertible_write_function.find(
+			filename_ext);
+	if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
+		PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, trajectory);
+	return map_itr->second(filename, object);
 }
 
 }	// namespace three

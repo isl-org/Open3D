@@ -27,7 +27,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <IO/IJsonConvertible.h>
+#include <IO/ClassIO/IJsonConvertible.h>
 
 namespace three {
 

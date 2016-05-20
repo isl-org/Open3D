@@ -29,7 +29,7 @@
 #include <vector>
 #include <tuple>
 #include <Eigen/Core>
-#include <IO/IJsonConvertible.h>
+#include <IO/ClassIO/IJsonConvertible.h>
 #include <Visualization/Visualizer/ViewParameters.h>
 
 namespace three {

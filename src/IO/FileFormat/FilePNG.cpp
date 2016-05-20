@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ImageIO.h"
+#include <IO/ClassIO/ImageIO.h>
 
 #include <libpng/png.h>
 #include <zlib/zlib.h>

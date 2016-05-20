@@ -24,59 +24,70 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PointCloudIO.h"
+#include <IO/ClassIO/PointCloudIO.h>
 
 #include <cstdio>
 #include <Core/Utility/Console.h>
 
 namespace three{
 
-namespace {
-
-enum PCDDataType {
-	PCD_DATA_ASCII = 0,
-	PCD_DATA_BINARY = 1,
-	PCD_DATA_BINARY_COMPRESSED = 2
-};
-
-bool ReadPCDHeader(FILE *file, PointCloud &pointcloud, PCDDataType &data_type)
-{
-	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-
-	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-		if (line_buffer[0] == 0 || line_buffer[0] == '#') {
-			continue;
-		}
-		const std::string line_str(line_buffer);
-		if (size_t pos = line_str.find_first_of(" \t\r") != std::string::npos) {
-			std::string line_type = line_str.substr(0, pos);
-			if (line_type == "VERSION") {
-				continue;
-			}
-			if (line_type == "FIELDS" || line_type == "COLUMNS") {
-				continue;
-			}
-		}
-	}
-
-	return PCD_DATA_ASCII;
-}
-
-}	// unnamed namespace
-
-bool ReadPointCloudFromPCD(
+bool ReadPointCloudFromXYZN(
 		const std::string &filename,
 		PointCloud &pointcloud)
 {
+	FILE *file = fopen(filename.c_str(), "r");
+	if (file == NULL) {
+		PrintWarning("Read XYZN failed: unable to open file.\n");
+		return false;
+	}
+
+	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
+	double x, y, z, nx, ny, nz;
+	pointcloud.Clear();
+
+	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
+		if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf",
+				&x, &y, &z, &nx, &ny, &nz) == 6) 
+		{
+			pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
+			pointcloud.normals_.push_back(Eigen::Vector3d(nx, ny, nz));
+		}
+	}
+
+	fclose(file);
 	return true;
 }
 
-bool WritePointCloudToPCD(
+bool WritePointCloudToXYZN(
 		const std::string &filename,
 		const PointCloud &pointcloud,
 		const bool write_ascii/* = false*/,
 		const bool compressed/* = false*/)
 {
+	if (pointcloud.HasNormals() == false) {
+		return false;
+	}
+
+	FILE *file = fopen(filename.c_str(), "w");
+	if (file == NULL) {
+		PrintWarning("Write XYZN failed: unable to open file.\n");
+		return false;
+	}
+
+	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+		const Eigen::Vector3d &point = pointcloud.points_[i];
+		const Eigen::Vector3d &normal = pointcloud.normals_[i];
+		if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n",
+				point(0), point(1), point(2), 
+				normal(0), normal(1), normal(2)) < 0)
+		{
+			PrintWarning("Write XYZN failed: unable to write file.\n");
+			fclose(file);
+			return false;	// error happens during writting.
+		}
+	}
+
+	fclose(file);
 	return true;
 }
 

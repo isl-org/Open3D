@@ -29,7 +29,7 @@
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
 #include <Core/Camera/PinholeCameraParameters.h>
-#include <IO/PointCloudIO.h>
+#include <IO/ClassIO/PointCloudIO.h>
 
 namespace three{
 
@@ -54,16 +54,18 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 	if (use_extrinsic) {
 		camera_pose = camera.extrinsic_matrix_.inverse();
 	}
+	auto focal_length = camera.GetFocalLength();
+	auto principal_point = camera.GetPrincipalPoint();
 	for (int i = 0; i < depth.height_; i++) {
 		uint16_t *p = (uint16_t *)(depth.data_.data() + 
 				i * depth.BytesPerLine());
 		for (int j = 0; j < depth.width_; j++, p++) {
 			if (*p > 0) {
 				double z = (double)(*p) / depth_scale;
-				double x = (j - camera.GetPrincipalPoint().first) * z /
-						camera.GetFocalLength().first;
-				double y = (i - camera.GetPrincipalPoint().second) * z /
-						camera.GetFocalLength().second;
+				double x = (j - principal_point.first) * z /
+						focal_length.first;
+				double y = (i - principal_point.second) * z /
+						focal_length.second;
 				if (use_extrinsic) {
 					Eigen::Vector4d point = camera_pose * 
 							Eigen::Vector4d(x, y, z, 1.0);

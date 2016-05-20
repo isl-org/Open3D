@@ -26,7 +26,7 @@
 
 #include "ViewControlWithCustomAnimation.h"
 
-#include <IO/ViewTrajectoryIO.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three{
 
@@ -244,13 +244,13 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
 		json_filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
 	}
 	PrintDebug("[Visualizer] Trejactory capture to %s\n", json_filename.c_str());
-	return WriteViewTrajectory(json_filename, view_trajectory_);
+	return WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromFile(
 		const std::string &filename)
 {
-	bool success = ReadViewTrajectory(filename, view_trajectory_);
+	bool success = ReadIJsonConvertible(filename, view_trajectory_);
 	if (success == false) {
 		view_trajectory_.Reset();
 	}
@@ -268,7 +268,7 @@ bool ViewControlWithCustomAnimation::SaveViewControlToString(
 		ConvertToViewParameters(current_status);
 		ViewTrajectory trajectory_with_current_status;
 		trajectory_with_current_status.view_status_.push_back(current_status);
-		return WriteViewTrajectoryToJSONString(view_status_string, 
+		return WriteIJsonConvertibleToJSONString(view_status_string, 
 				trajectory_with_current_status);
 	} else {
 		return false;
@@ -280,7 +280,7 @@ bool ViewControlWithCustomAnimation::LoadViewControlFromString(
 {
 	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewTrajectory trajectory_with_current_status;
-		if (ReadViewTrajectoryFromJSONString(view_status_string, 
+		if (ReadIJsonConvertibleFromJSONString(view_status_string, 
 				trajectory_with_current_status) == false) {
 			return false;
 		}

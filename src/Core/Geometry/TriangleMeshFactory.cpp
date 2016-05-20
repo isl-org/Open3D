@@ -26,7 +26,7 @@
 
 #include "TriangleMesh.h"
 
-#include <IO/TriangleMeshIO.h>
+#include <IO/ClassIO/TriangleMeshIO.h>
 
 namespace three{
 

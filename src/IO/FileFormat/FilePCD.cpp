@@ -24,35 +24,60 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <IO/ClassIO/PointCloudIO.h>
 
-#include <string>
-#include <Visualization/Visualizer/ViewTrajectory.h>
+#include <cstdio>
+#include <Core/Utility/Console.h>
 
-namespace three {
+namespace three{
 
-/// The general entrance for reading a ViewTrajectory from a file
-/// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful. 
-bool ReadViewTrajectory(const std::string &filename, 
-		ViewTrajectory &trajectory);
+namespace {
 
-/// The general entrance for writing a ViewTrajectory to a file
-/// The function calls write functions based on the extension name of filename.
-/// \return If the write function is successful.
-bool WriteViewTrajectory(const std::string &filename, 
-		const ViewTrajectory &trajectory);
+enum PCDDataType {
+	PCD_DATA_ASCII = 0,
+	PCD_DATA_BINARY = 1,
+	PCD_DATA_BINARY_COMPRESSED = 2
+};
 
-bool ReadViewTrajectoryFromJSON(const std::string &filename,
-		ViewTrajectory &trajectory);
+bool ReadPCDHeader(FILE *file, PointCloud &pointcloud, PCDDataType &data_type)
+{
+	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
 
-bool WriteViewTrajectoryToJSON(const std::string &filename,
-		const ViewTrajectory &trajectory);
+	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
+		if (line_buffer[0] == 0 || line_buffer[0] == '#') {
+			continue;
+		}
+		const std::string line_str(line_buffer);
+		if (size_t pos = line_str.find_first_of(" \t\r") != std::string::npos) {
+			std::string line_type = line_str.substr(0, pos);
+			if (line_type == "VERSION") {
+				continue;
+			}
+			if (line_type == "FIELDS" || line_type == "COLUMNS") {
+				continue;
+			}
+		}
+	}
 
-bool ReadViewTrajectoryFromJSONString(const std::string &json_string,
-		ViewTrajectory &trajectory);
+	return PCD_DATA_ASCII;
+}
 
-bool WriteViewTrajectoryToJSONString(std::string &json_string,
-		const ViewTrajectory &trajectory);
+}	// unnamed namespace
+
+bool ReadPointCloudFromPCD(
+		const std::string &filename,
+		PointCloud &pointcloud)
+{
+	return true;
+}
+
+bool WritePointCloudToPCD(
+		const std::string &filename,
+		const PointCloud &pointcloud,
+		const bool write_ascii/* = false*/,
+		const bool compressed/* = false*/)
+{
+	return true;
+}
 
 }	// namespace three

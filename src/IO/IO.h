@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "PointCloudIO.h"
-#include "TriangleMeshIO.h"
-#include "ImageIO.h"
-#include "ViewTrajectoryIO.h"
+#include "ClassIO/PointCloudIO.h"
+#include "ClassIO/TriangleMeshIO.h"
+#include "ClassIO/ImageIO.h"
+#include "ClassIO/IJsonConvertibleIO.h"
