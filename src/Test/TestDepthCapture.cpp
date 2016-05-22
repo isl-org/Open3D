@@ -57,7 +57,7 @@ protected:
 						*image_ptr, camera, true);
 				AddGeometry(pointcloud_ptr, true);
 			}
-		} else if (key == GLFW_KEY_W) {
+		} else if (key == GLFW_KEY_P) {
 			if (filesystem::FileExists("depth.png") && 
 					filesystem::FileExists("camera.json")) {
 				PinholeCameraParameters camera;

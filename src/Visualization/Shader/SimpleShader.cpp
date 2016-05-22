@@ -207,8 +207,12 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 	}
 	glDepthFunc(GL_LESS);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1.0, 1.0);
+	if (option.IsMeshWireframeShown()) {
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(1.0, 1.0);
+	} else {
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
 	return true;
 }
 
