@@ -27,7 +27,11 @@
 #include "VisualizerWithCustomAnimation.h"
 
 #include <thread>
+
+#include <Core/Utility/FileSystem.h>
+#include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three{
 
@@ -89,6 +93,10 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
 	is_redraw_required_ = true;
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
+	auto trajectory_ptr = std::make_shared<PinholeCameraTrajectory>();
+	if (recording) {
+		filesystem::MakeDirectoryHierarchy(recording_image_basedir_);
+	}
 	RegisterAnimationCallback(
 			[=](Visualizer &vis) {
 				// The lambda function captures no references to avoid dangling
@@ -98,16 +106,25 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				recording_file_index_++;
 				if (recording) {
+					PinholeCameraParameters camera_pose;
+					view_control.ConvertToPinholeCameraParameters(camera_pose);
+					trajectory_ptr->camera_poses_.push_back(camera_pose);
 					char buffer[DEFAULT_IO_BUFFER_SIZE];
-					sprintf(buffer, recording_filename_format_.c_str(),
+					sprintf(buffer, recording_image_filename_format_.c_str(),
 							recording_file_index_);
-					CaptureScreen(std::string(buffer), false);
+					CaptureScreenImage(recording_image_basedir_ + 
+							std::string(buffer), false);
 				}
 				view_control.Step(1.0);
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
 					view_control.SetAnimationMode(
 							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(nullptr);
+					if (recording) {
+						WriteIJsonConvertible(recording_image_basedir_ + 
+								recording_image_trajectory_filename_,
+								*trajectory_ptr);
+					}
 				}
 				UpdateWindowTitle();
 				return false;

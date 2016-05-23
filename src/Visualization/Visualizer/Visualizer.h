@@ -118,9 +118,10 @@ public:
 	virtual void UpdateWindowTitle();
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
-	void CaptureScreen(const std::string &filename = "", bool do_render = true);
-	void CaptureDepth(const std::string &filename = "", bool do_render = true,
-			double depth_scale = 1000.0);
+	void CaptureScreenImage(const std::string &filename = "",
+			bool do_render = true);
+	void CaptureDepthImage(const std::string &filename = "",
+			bool do_render = true, double depth_scale = 1000.0);
 
 protected:
 	/// Function to initialize OpenGL

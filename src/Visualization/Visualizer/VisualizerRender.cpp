@@ -78,7 +78,7 @@ void Visualizer::ResetViewPoint()
 	is_redraw_required_ = true;
 }
 
-void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
+void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
 		bool do_render/* = true*/)
 {
 	std::string png_filename = filename;
@@ -113,7 +113,7 @@ void Visualizer::CaptureScreen(const std::string &filename/* = ""*/,
 	WriteImage(png_filename, png_image);
 }
 
-void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
+void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 		bool do_render/* = true*/, double depth_scale/* = 1000.0*/)
 {
 	std::string png_filename = filename;

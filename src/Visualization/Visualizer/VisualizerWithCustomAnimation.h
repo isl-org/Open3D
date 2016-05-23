@@ -45,7 +45,7 @@ public:
 	void UpdateWindowTitle() override;
 	void Play(bool recording = false);
 	void RegisterRecordingFilenameFormat(std::string format) {
-		recording_filename_format_ = format;
+		recording_image_filename_format_ = format;
 	}
 
 protected:
@@ -58,7 +58,9 @@ protected:
 			int key, int scancode, int action, int mods) override;
 
 protected:
-	std::string recording_filename_format_ = "Animation_%06d.png";
+	std::string recording_image_basedir_ = "image/";
+	std::string recording_image_filename_format_ = "image_%06d.png";
+	std::string recording_image_trajectory_filename_ = "image_trajectory.json";
 	size_t recording_file_index_ = 0;
 };
 

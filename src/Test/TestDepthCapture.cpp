@@ -43,7 +43,7 @@ protected:
 			return;
 		}
 		if (key == GLFW_KEY_S) {
-			CaptureDepth("depth.png");
+			CaptureDepthImage("depth.png");
 			PinholeCameraParameters camera;
 			view_control_ptr_->ConvertToPinholeCameraParameters(camera);
 			WriteIJsonConvertible("camera.json", camera);

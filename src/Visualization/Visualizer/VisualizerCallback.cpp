@@ -106,10 +106,10 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_P:
 	case GLFW_KEY_PRINT_SCREEN:
-		CaptureScreen();
+		CaptureScreenImage();
 		break;
 	case GLFW_KEY_D:
-		CaptureDepth();
+		CaptureDepthImage();
 		break;
 	case GLFW_KEY_LEFT_BRACKET:
 		view_control_ptr_->ChangeFieldOfView(-1.0);
