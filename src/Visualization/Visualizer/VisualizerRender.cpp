@@ -123,17 +123,41 @@ void Visualizer::CaptureDepth(const std::string &filename/* = ""*/,
 	Image depth_image;
 	depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
 			view_control_ptr_->GetWindowHeight(), 1, 4);
+	
 	if (do_render) {
 		Render();
 		is_redraw_required_ = false;
 	}
 	glFinish();
-	glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(), 
-			view_control_ptr_->GetWindowHeight(), GL_DEPTH_COMPONENT, GL_FLOAT,
-			depth_image.data_.data());
 
+#if __APPLE__
+	// On OSX with Retina display and glfw3, there is a bug with glReadPixels().
+	// When using glReadPixels() to read a block of depth data. The data is
+	// horizontally streched (vertically it is fine). This issue is related
+	// to GLFW_SAMPLES hint. When it is set to 0 (anti-aliasing disabled),
+	// glReadPixels() works fine. See this post for details:
+	// http://stackoverflow.com/questions/30608121/glreadpixel-one-pass-vs-looping-through-points
+	// The reason of this bug is unknown. The current workaround is to read
+	// depth buffer column by column. This is 15~30 times slower than one block
+	// reading glReadPixels().
+	std::vector<float> float_buffer(depth_image.height_);
+	float *p = (float *)depth_image.data_.data();
+	for (int j = 0; j < depth_image.width_; j++) {
+		glReadPixels(j, 0, 1, depth_image.width_,
+				GL_DEPTH_COMPONENT, GL_FLOAT,
+				float_buffer.data());
+		for (int i = 0; i < depth_image.height_; i++) {
+			p[i * depth_image.width_ + j] = float_buffer[i];
+		}
+	}
+#else //__APPLE__
+	// By default, glReadPixels read a block of depth buffer.
+	glReadPixels(0, 0, depth_image.width_, depth_image.height_,
+			GL_DEPTH_COMPONENT, GL_FLOAT, depth_image.data_.data());
+#endif //__APPLE__
+	
 	// glReadPixels get the screen in a vertically flipped manner
-	// We should flip it back, and convert it to the depth value
+	// We should flip it back, and convert it to the correct depth value
 	Image png_image;
 	double z_near = view_control_ptr_->GetZNear();
 	double z_far = view_control_ptr_->GetZFar();

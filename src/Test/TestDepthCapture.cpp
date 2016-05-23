@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
 	visualizer1.DestroyWindow();
 
 	PrintWarning("Press L to validate the depth image.\n");
+	PrintWarning("Press P to load the capturing camera pose.\n");
 	VisualizerWithDepthCapture visualizer2;
 	visualizer2.CreateWindow("Depth Validation", 640, 480, 200, 200);
 	visualizer2.AddGeometry(mesh_ptr);
