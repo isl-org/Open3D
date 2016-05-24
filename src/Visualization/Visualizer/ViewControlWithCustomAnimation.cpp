@@ -295,6 +295,23 @@ bool ViewControlWithCustomAnimation::LoadViewControlFromString(
 	}
 }
 
+bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory()
+{
+	if (view_trajectory_.view_status_.empty()) {
+		return false;
+	}
+	if (view_trajectory_.view_status_[0].field_of_view_ == FIELD_OF_VIEW_MIN) {
+		return false;
+	}
+	for (const auto &status : view_trajectory_.view_status_) {
+		if (status.field_of_view_ != 
+				view_trajectory_.view_status_[0].field_of_view_) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool ViewControlWithCustomAnimation::ConvertToViewParameters(
 		ViewParameters &status) const
 {

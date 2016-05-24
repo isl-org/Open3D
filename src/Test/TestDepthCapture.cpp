@@ -44,25 +44,28 @@ protected:
 		}
 		if (key == GLFW_KEY_S) {
 			CaptureDepthImage("depth.png");
-			PinholeCameraParameters camera;
-			view_control_ptr_->ConvertToPinholeCameraParameters(camera);
+			PinholeCameraTrajectory camera;
+			camera.extrinsic_.resize(1);
+			view_control_ptr_->ConvertToPinholeCameraParameters(
+					camera.intrinsic_, camera.extrinsic_[0]);
 			WriteIJsonConvertible("camera.json", camera);
 		} else if (key == GLFW_KEY_L) {
 			if (filesystem::FileExists("depth.png") && 
 					filesystem::FileExists("camera.json")) {
-				PinholeCameraParameters camera;
+				PinholeCameraTrajectory camera;
 				ReadIJsonConvertible("camera.json", camera);
 				auto image_ptr = CreateImageFromFile("depth.png");
 				auto pointcloud_ptr = CreatePointCloudFromDepthImage(
-						*image_ptr, camera, true);
+						*image_ptr, camera.intrinsic_, camera.extrinsic_[0]);
 				AddGeometry(pointcloud_ptr, true);
 			}
 		} else if (key == GLFW_KEY_P) {
 			if (filesystem::FileExists("depth.png") && 
 					filesystem::FileExists("camera.json")) {
-				PinholeCameraParameters camera;
+				PinholeCameraTrajectory camera;
 				ReadIJsonConvertible("camera.json", camera);
-				view_control_ptr_->ConvertFromPinholeCameraParameters(camera);
+				view_control_ptr_->ConvertFromPinholeCameraParameters(
+						camera.intrinsic_, camera.extrinsic_[0]);
 			}
 		} else {
 			VisualizerWithCustomAnimation::KeyPressCallback(
@@ -99,10 +102,10 @@ int main(int argc, char *argv[])
 	auto image_ptr = CreateImageFromFile("depth.png");
 	DrawGeometry(image_ptr);
 
-	PinholeCameraParameters camera;
+	PinholeCameraTrajectory camera;
 	ReadIJsonConvertible("camera.json", camera);
-	auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr, camera,
-			true);
+	auto pointcloud_ptr = CreatePointCloudFromDepthImage(
+			*image_ptr, camera.intrinsic_, camera.extrinsic_[0]);
 	VisualizerWithDepthCapture visualizer1;
 	visualizer1.CreateWindow("Depth Validation", 640, 480, 200, 200);
 	visualizer1.AddGeometry(pointcloud_ptr);

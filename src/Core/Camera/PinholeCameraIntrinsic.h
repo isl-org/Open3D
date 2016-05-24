@@ -24,61 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PinholeCameraParameters.h"
+#pragma once
 
-#include <Eigen/Dense>
-#include <jsoncpp/include/json/json.h>
-#include <Core/Utility/Console.h>
+#include <Eigen/Core>
+#include <IO/ClassIO/IJsonConvertible.h>
 
-namespace three{
+namespace three {
 
-PinholeCameraParameters::PinholeCameraParameters()
+class PinholeCameraIntrinsic : public IJsonConvertible
 {
-}
+public:
+	PinholeCameraIntrinsic();
+	virtual ~PinholeCameraIntrinsic();
 
-PinholeCameraParameters::~PinholeCameraParameters()
-{
-}
+public:
+	void SetIntrinsics(int width, int height, double fx, double fy, double cx,
+			double cy) {
+		width_ = width; height_ = height;
+		intrinsic_matrix_.setIdentity();
+		intrinsic_matrix_(0, 0) = fx; intrinsic_matrix_(1, 1) = fy;
+		intrinsic_matrix_(0, 2) = cx; intrinsic_matrix_(1, 2) = cy;
+	}
 
-Eigen::Matrix4d PinholeCameraParameters::GetCameraPose() const
-{
-	return extrinsic_matrix_.inverse();
-}
+	std::pair<double, double> GetFocalLength() const {
+		return std::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
+	}
 
-bool PinholeCameraParameters::ConvertToJsonValue(Json::Value &value) const
-{
-	value["width"] = width_;
-	value["height"] = height_;
-	if (EigenMatrix3dToJsonArray(intrinsic_matrix_, 
-			value["intrinsic_matrix"]) == false) {
-		return false;
+	std::pair<double, double> GetPrincipalPoint() const {
+		return std::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
 	}
-	if (EigenMatrix4dToJsonArray(extrinsic_matrix_, 
-			value["extrinsic_matrix"]) == false) {
-		return false;
-	}
-	return true;
-}
 
-bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value)
-{
-	if (value.isObject() == false) {
-		PrintWarning("PinholeCameraParameters read JSON failed: unsupported json format.\n");
-		return false;		
-	}
-	width_ = value.get("width", -1).asInt();
-	height_ = value.get("height", -1).asInt();
-	if (EigenMatrix3dFromJsonArray(intrinsic_matrix_, 
-			value["intrinsic_matrix"]) == false) {
-		PrintWarning("PinholeCameraParameters read JSON failed: wrong format.\n");
-		return false;
-	}
-	if (EigenMatrix4dFromJsonArray(extrinsic_matrix_, 
-			value["extrinsic_matrix"]) == false) {
-		PrintWarning("PinholeCameraParameters read JSON failed: wrong format.\n");
-		return false;
-	}
-	return true;
-}
+	double GetSkew() const { return intrinsic_matrix_(0, 1); }
+
+	bool IsValid() const { return (width_ > 0 && height_ > 0); }
+
+	virtual bool ConvertToJsonValue(Json::Value &value) const override;
+	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
+
+public:
+	int width_ = -1;
+	int height_ = -1;
+	Eigen::Matrix3d intrinsic_matrix_;
+};
 
 }	// namespace three

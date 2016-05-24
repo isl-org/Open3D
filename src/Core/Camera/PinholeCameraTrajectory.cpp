@@ -42,9 +42,9 @@ PinholeCameraTrajectory::~PinholeCameraTrajectory()
 bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
 {
 	Json::Value trajectory_array;
-	for (const auto &status : camera_poses_) {
+	for (const auto &status : extrinsic_) {
 		Json::Value status_object;
-		if (status.ConvertToJsonValue(status_object) == false) {
+		if (EigenMatrix4dToJsonArray(status, status_object) == false) {
 			return false;
 		}
 		trajectory_array.append(status_object);
@@ -52,8 +52,10 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
 	value["class_name"] = "PinholeCameraTrajectory";
 	value["version_major"] = 1;
 	value["version_minor"] = 0;
-	value["constant_intrinsic"] = constant_intrinsic_;
-	value["trajectory"] = trajectory_array;
+	value["extrinsic"] = trajectory_array;
+	if (intrinsic_.ConvertToJsonValue(value["intrinsic"]) == false) {
+		return false;
+	}
 	return true;
 }
 
@@ -69,20 +71,20 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
 		PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
 		return false;
 	}
-	constant_intrinsic_ = value.get("constant_intrinsic", false).asBool();
-	const Json::Value &trajectory_array = value["trajectory"];
+	if (intrinsic_.ConvertFromJsonValue(value["intrinsic"]) == false) {
+		return false;
+	}
+	const Json::Value &trajectory_array = value["extrinsic"];
 	if (trajectory_array.size() == 0) {
 		PrintWarning("PinholeCameraTrajectory read JSON failed: empty trajectory.\n");
 		return false;
 	}
-	camera_poses_.resize(trajectory_array.size());
+	extrinsic_.resize(trajectory_array.size());
 	for (int i = 0; i < (int)trajectory_array.size(); i++) {
 		const Json::Value &status_object = trajectory_array[i];
-		PinholeCameraParameters status;
-		if (status.ConvertFromJsonValue(status_object) == false) {
+		if (EigenMatrix4dFromJsonArray(extrinsic_[i], status_object) == false) {
 			return false;
 		}
-		camera_poses_[i] = status;
 	}
 	return true;
 }

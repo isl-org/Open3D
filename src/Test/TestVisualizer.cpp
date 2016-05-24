@@ -135,10 +135,10 @@ int main(int argc, char *argv[])
 		DrawGeometry(image_ptr, "Image", image_ptr->width_, image_ptr->height_);
 	} else if (option == "depth") {
 		auto image_ptr = CreateImageFromFile(argv[2]);
-		PinholeCameraParameters camera;
+		PinholeCameraIntrinsic camera;
 		camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
-		auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr, camera,
-				false);
+		auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr, 
+				camera);
 		DrawGeometry(pointcloud_ptr, "PointCloud from Depth Image",
 				1920, 1080);
 	} else if (option == "animation") {

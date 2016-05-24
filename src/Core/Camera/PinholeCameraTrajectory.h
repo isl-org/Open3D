@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include <Core/Camera/PinholeCameraParameters.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace three {
 
@@ -43,8 +43,8 @@ public:
 	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	bool constant_intrinsic_ = false;
-	std::vector<PinholeCameraParameters> camera_poses_;
+	PinholeCameraIntrinsic intrinsic_;
+	std::vector<Eigen::Matrix4d> extrinsic_;
 };
 
 }	// namespace three

@@ -36,5 +36,5 @@
 #include "Geometry/Image.h"
 #include "Geometry/KDTreeFlann.h"
 
-#include "Camera/PinholeCameraParameters.h"
+#include "Camera/PinholeCameraIntrinsic.h"
 #include "Camera/PinholeCameraTrajectory.h"

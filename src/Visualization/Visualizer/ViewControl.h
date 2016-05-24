@@ -27,7 +27,7 @@
 #pragma once
 
 #include <Core/Geometry/Geometry.h>
-#include <Core/Camera/PinholeCameraParameters.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 
 #include <Visualization/Utility/BoundingBox.h>
 #include <Visualization/Utility/GLHelper.h>
@@ -62,9 +62,11 @@ public:
 			Eigen::Matrix4d model_matrix = Eigen::Matrix4d::Identity());
 
 	/// Function to get equivalent pinhole camera parameters
-	bool ConvertToPinholeCameraParameters(PinholeCameraParameters &camera);
+	bool ConvertToPinholeCameraParameters(PinholeCameraIntrinsic &intrinsic,
+			Eigen::Matrix4d &extrinsic);
 	bool ConvertFromPinholeCameraParameters(
-			const PinholeCameraParameters &camera);
+			const PinholeCameraIntrinsic &intrinsic,
+			const Eigen::Matrix4d &extrinsic);
 
 	ProjectionType GetProjectionType() const;
 	void SetProjectionParameters();

@@ -28,7 +28,7 @@
 
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
-#include <Core/Camera/PinholeCameraParameters.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/ClassIO/PointCloudIO.h>
 
 namespace three{
@@ -42,20 +42,17 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 }
 
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
-		const Image &depth, const PinholeCameraParameters &camera,
-		const bool use_extrinsic/* = true*/,
+		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
+		const Eigen::Matrix4d &extrinsic/* = Eigen::Matrix4d::Identity()*/, 
 		const double depth_scale/* = 1000.0*/)
 {
 	auto pointcloud = std::make_shared<PointCloud>();
 	if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 2) {
 		return pointcloud;
 	}
-	Eigen::Matrix4d camera_pose;
-	if (use_extrinsic) {
-		camera_pose = camera.extrinsic_matrix_.inverse();
-	}
-	auto focal_length = camera.GetFocalLength();
-	auto principal_point = camera.GetPrincipalPoint();
+	Eigen::Matrix4d camera_pose = extrinsic.inverse();
+	auto focal_length = intrinsic.GetFocalLength();
+	auto principal_point = intrinsic.GetPrincipalPoint();
 	for (int i = 0; i < depth.height_; i++) {
 		uint16_t *p = (uint16_t *)(depth.data_.data() + 
 				i * depth.BytesPerLine());
@@ -66,11 +63,9 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 						focal_length.first;
 				double y = (i - principal_point.second) * z /
 						focal_length.second;
-				if (use_extrinsic) {
-					Eigen::Vector4d point = camera_pose * 
-							Eigen::Vector4d(x, y, z, 1.0);
-					x = point(0); y = point(1); z = point(2);
-				}
+				Eigen::Vector4d point = camera_pose * 
+						Eigen::Vector4d(x, y, z, 1.0);
+				x = point(0); y = point(1); z = point(2);
 				pointcloud->points_.push_back(Eigen::Vector3d(x, y, z));
 			}
 		}

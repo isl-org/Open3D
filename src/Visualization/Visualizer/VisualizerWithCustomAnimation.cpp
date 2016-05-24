@@ -96,6 +96,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
 	auto trajectory_ptr = std::make_shared<PinholeCameraTrajectory>();
+	bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
 	if (recording) {
 		if (recording_depth) {
 			filesystem::MakeDirectoryHierarchy(recording_depth_basedir_);
@@ -112,9 +113,12 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				recording_file_index_++;
 				if (recording) {
-					PinholeCameraParameters camera_pose;
-					view_control.ConvertToPinholeCameraParameters(camera_pose);
-					trajectory_ptr->camera_poses_.push_back(camera_pose);
+					if (recording_trajectory) {
+						Eigen::Matrix4d extrinsic;
+						view_control.ConvertToPinholeCameraParameters(
+								trajectory_ptr->intrinsic_, extrinsic);
+						trajectory_ptr->extrinsic_.push_back(extrinsic);
+					}
 					char buffer[DEFAULT_IO_BUFFER_SIZE];
 					if (recording_depth) {
 						sprintf(buffer, 
@@ -135,7 +139,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 					view_control.SetAnimationMode(
 							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(nullptr);
-					if (recording) {
+					if (recording && recording_trajectory) {
 						if (recording_depth) {
 							WriteIJsonConvertible(recording_depth_basedir_ + 
 									recording_depth_trajectory_filename_,

@@ -84,6 +84,7 @@ public:
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
 	}
+	bool IsValidPinholeCameraTrajectory();
 
 protected:
 	bool ConvertToViewParameters(ViewParameters &status) const;

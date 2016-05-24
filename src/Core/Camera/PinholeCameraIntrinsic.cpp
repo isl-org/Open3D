@@ -24,50 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PinholeCameraIntrinsic.h"
 
-#include <Eigen/Core>
-#include <IO/ClassIO/IJsonConvertible.h>
+#include <Eigen/Dense>
+#include <jsoncpp/include/json/json.h>
+#include <Core/Utility/Console.h>
 
-namespace three {
+namespace three{
 
-class PinholeCameraParameters : public IJsonConvertible
+PinholeCameraIntrinsic::PinholeCameraIntrinsic()
 {
-public:
-	PinholeCameraParameters();
-	virtual ~PinholeCameraParameters();
+}
 
-public:
-	void SetIntrinsics(int width, int height, double fx, double fy, double cx,
-			double cy) {
-		width_ = width; height_ = height;
-		intrinsic_matrix_.setIdentity();
-		intrinsic_matrix_(0, 0) = fx; intrinsic_matrix_(1, 1) = fy;
-		intrinsic_matrix_(0, 2) = cx; intrinsic_matrix_(1, 2) = cy;
+PinholeCameraIntrinsic::~PinholeCameraIntrinsic()
+{
+}
+
+bool PinholeCameraIntrinsic::ConvertToJsonValue(Json::Value &value) const
+{
+	value["width"] = width_;
+	value["height"] = height_;
+	if (EigenMatrix3dToJsonArray(intrinsic_matrix_, 
+			value["intrinsic_matrix"]) == false) {
+		return false;
 	}
+	return true;
+}
 
-	std::pair<double, double> GetFocalLength() const {
-		return std::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
+bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value)
+{
+	if (value.isObject() == false) {
+		PrintWarning("PinholeCameraParameters read JSON failed: unsupported json format.\n");
+		return false;		
 	}
-
-	std::pair<double, double> GetPrincipalPoint() const {
-		return std::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
+	width_ = value.get("width", -1).asInt();
+	height_ = value.get("height", -1).asInt();
+	if (EigenMatrix3dFromJsonArray(intrinsic_matrix_, 
+			value["intrinsic_matrix"]) == false) {
+		PrintWarning("PinholeCameraParameters read JSON failed: wrong format.\n");
+		return false;
 	}
-
-	double GetSkew() const { return intrinsic_matrix_(0, 1); }
-
-	bool IsValid() const { return (width_ > 0 && height_ > 0); }
-
-	Eigen::Matrix4d GetCameraPose() const;
-
-	virtual bool ConvertToJsonValue(Json::Value &value) const override;
-	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
-
-public:
-	int width_ = -1;
-	int height_ = -1;
-	Eigen::Matrix3d intrinsic_matrix_;
-	Eigen::Matrix4d extrinsic_matrix_;
-};
+	return true;
+}
 
 }	// namespace three

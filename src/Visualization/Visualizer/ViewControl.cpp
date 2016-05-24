@@ -81,7 +81,7 @@ void ViewControl::SetViewMatrices(
 }
 
 bool ViewControl::ConvertToPinholeCameraParameters(
-		PinholeCameraParameters &camera)
+		PinholeCameraIntrinsic &intrinsic, Eigen::Matrix4d &extrinsic)
 {
 	if (window_height_ <= 0 || window_width_ <= 0) {
 		PrintWarning("[ViewControl] ConvertToPinholeCameraParameters() failed because window height and width are not set.\n");
@@ -92,46 +92,45 @@ bool ViewControl::ConvertToPinholeCameraParameters(
 		return false;
 	}
 	SetProjectionParameters();
-	camera.width_ = window_width_;
-	camera.height_ = window_height_;
-
-	camera.extrinsic_matrix_.setZero();
+	intrinsic.width_ = window_width_;
+	intrinsic.height_ = window_height_;
+	intrinsic.intrinsic_matrix_.setIdentity();
+	double fov_rad = field_of_view_ / 180.0 * M_PI;
+	double tan_half_fov = std::tan(fov_rad / 2.0);
+	intrinsic.intrinsic_matrix_(0, 0) = intrinsic.intrinsic_matrix_(1, 1) =
+			(double)window_height_ / tan_half_fov / 2.0;
+	intrinsic.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0 - 0.5;
+	intrinsic.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0 - 0.5;
+	extrinsic.setZero();
 	Eigen::Vector3d front_dir = front_.normalized();
 	Eigen::Vector3d up_dir = up_.normalized();
 	Eigen::Vector3d right_dir = up_dir.cross(front_dir).normalized();
-	camera.extrinsic_matrix_.block<1, 3>(0, 0) = right_dir.transpose();
-	camera.extrinsic_matrix_.block<1, 3>(1, 0) = -up_dir.transpose();
-	camera.extrinsic_matrix_.block<1, 3>(2, 0) = -front_dir.transpose();
-	camera.extrinsic_matrix_(0, 3) = -right_dir.dot(eye_);
-	camera.extrinsic_matrix_(1, 3) = up_dir.dot(eye_);
-	camera.extrinsic_matrix_(2, 3) = front_dir.dot(eye_);
-	camera.extrinsic_matrix_(3, 3) = 1.0;
-
-	camera.intrinsic_matrix_.setIdentity();
-	double fov_rad = field_of_view_ / 180.0 * M_PI;
-	double tan_half_fov = std::tan(fov_rad / 2.0);
-	camera.intrinsic_matrix_(0, 0) = camera.intrinsic_matrix_(1, 1) =
-			(double)window_height_ / tan_half_fov / 2.0;
-	camera.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0 - 0.5;
-	camera.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0 - 0.5;
+	extrinsic.block<1, 3>(0, 0) = right_dir.transpose();
+	extrinsic.block<1, 3>(1, 0) = -up_dir.transpose();
+	extrinsic.block<1, 3>(2, 0) = -front_dir.transpose();
+	extrinsic(0, 3) = -right_dir.dot(eye_);
+	extrinsic(1, 3) = up_dir.dot(eye_);
+	extrinsic(2, 3) = front_dir.dot(eye_);
+	extrinsic(3, 3) = 1.0;
 	return true;
 }
 
 bool ViewControl::ConvertFromPinholeCameraParameters(
-		const PinholeCameraParameters &camera)
+		const PinholeCameraIntrinsic &intrinsic,
+		const Eigen::Matrix4d &extrinsic)
 {
 	if (window_height_ <= 0 || window_width_ <= 0 || 
-			window_height_ != camera.height_ || 
-			window_width_ != camera.width_ ||
-			camera.intrinsic_matrix_(0, 2) != 
+			window_height_ != intrinsic.height_ || 
+			window_width_ != intrinsic.width_ ||
+			intrinsic.intrinsic_matrix_(0, 2) != 
 			(double)window_width_ / 2.0 - 0.5 ||
-			camera.intrinsic_matrix_(1, 2) != 
+			intrinsic.intrinsic_matrix_(1, 2) != 
 			(double)window_height_ / 2.0 - 0.5) {
 		PrintWarning("[ViewControl] ConvertFromPinholeCameraParameters() failed because window height and width do not match.\n");
 		return false;
 	}
 	double tan_half_fov = 
-			(double)window_height_ / (camera.intrinsic_matrix_(1, 1) * 2.0);
+			(double)window_height_ / (intrinsic.intrinsic_matrix_(1, 1) * 2.0);
 	double fov_rad = std::atan(tan_half_fov) * 2.0;
 	double old_fov = field_of_view_;
 	field_of_view_ = std::max(std::min(fov_rad * 180.0 / M_PI, 
@@ -141,10 +140,10 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
 		PrintWarning("[ViewControl] ConvertFromPinholeCameraParameters() failed because field of view is impossible.\n");
 		return false;
 	}
-	up_ = -camera.extrinsic_matrix_.block<1, 3>(1, 0).transpose();
-	front_ = -camera.extrinsic_matrix_.block<1, 3>(2, 0).transpose();
-	eye_ = camera.extrinsic_matrix_.block<3, 3>(0, 0).inverse() * 
-			(camera.extrinsic_matrix_.block<3, 1>(0, 3) * -1.0);
+	up_ = -extrinsic.block<1, 3>(1, 0).transpose();
+	front_ = -extrinsic.block<1, 3>(2, 0).transpose();
+	eye_ = extrinsic.block<3, 3>(0, 0).inverse() * 
+			(extrinsic.block<3, 1>(0, 3) * -1.0);
 	double ideal_distance = (eye_ - bounding_box_.GetCenter()).dot(front_);
 	double ideal_zoom = ideal_distance * 
 			std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) / 

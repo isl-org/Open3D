@@ -30,7 +30,7 @@
 void PrintHelp()
 {
 	printf("Usage:\n");
-	printf("    > MergeMesh directory_path merged_filename\n");
+	printf("    > MergeMesh [directory_path] [merged_filename]\n");
 	printf("      Merge mesh files under <directory_path>.\n");
 }
 
