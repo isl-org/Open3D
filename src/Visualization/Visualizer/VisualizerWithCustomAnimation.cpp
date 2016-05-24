@@ -51,6 +51,7 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp()
 	PrintInfo("    Ctrl + W     : Enter preview mode.\n");
 	PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
 	PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
+	PrintInfo("    Ctrl + G     : Enter animation mode, play animation, and record depth images.\n");
 	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
@@ -85,7 +86,8 @@ void VisualizerWithCustomAnimation::UpdateWindowTitle()
 	}
 }
 
-void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
+void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
+		bool recording_depth/* = false*/)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	view_control.SetAnimationMode(
@@ -95,7 +97,11 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
 	recording_file_index_ = 0;
 	auto trajectory_ptr = std::make_shared<PinholeCameraTrajectory>();
 	if (recording) {
-		filesystem::MakeDirectoryHierarchy(recording_image_basedir_);
+		if (recording_depth) {
+			filesystem::MakeDirectoryHierarchy(recording_depth_basedir_);
+		} else {
+			filesystem::MakeDirectoryHierarchy(recording_image_basedir_);
+		}
 	}
 	RegisterAnimationCallback(
 			[=](Visualizer &vis) {
@@ -110,10 +116,19 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
 					view_control.ConvertToPinholeCameraParameters(camera_pose);
 					trajectory_ptr->camera_poses_.push_back(camera_pose);
 					char buffer[DEFAULT_IO_BUFFER_SIZE];
-					sprintf(buffer, recording_image_filename_format_.c_str(),
-							recording_file_index_);
-					CaptureScreenImage(recording_image_basedir_ + 
-							std::string(buffer), false);
+					if (recording_depth) {
+						sprintf(buffer, 
+								recording_depth_filename_format_.c_str(),
+								recording_file_index_);
+						CaptureDepthImage(recording_depth_basedir_ + 
+								std::string(buffer), false);
+					} else {
+						sprintf(buffer, 
+								recording_image_filename_format_.c_str(),
+								recording_file_index_);
+						CaptureScreenImage(recording_image_basedir_ + 
+								std::string(buffer), false);
+					}
 				}
 				view_control.Step(1.0);
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
@@ -121,9 +136,15 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/)
 							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
 					RegisterAnimationCallback(nullptr);
 					if (recording) {
-						WriteIJsonConvertible(recording_image_basedir_ + 
-								recording_image_trajectory_filename_,
-								*trajectory_ptr);
+						if (recording_depth) {
+							WriteIJsonConvertible(recording_depth_basedir_ + 
+									recording_depth_trajectory_filename_,
+									*trajectory_ptr);
+						} else {
+							WriteIJsonConvertible(recording_image_basedir_ + 
+									recording_image_trajectory_filename_,
+									*trajectory_ptr);
+						}
 					}
 				}
 				UpdateWindowTitle();
@@ -165,7 +186,10 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 			Play(false);
 			break;
 		case GLFW_KEY_R:
-			Play(true);
+			Play(true, false);
+			break;
+		case GLFW_KEY_G:
+			Play(true, true);
 			break;
 		case GLFW_KEY_S:
 			view_control.CaptureTrajectory();
