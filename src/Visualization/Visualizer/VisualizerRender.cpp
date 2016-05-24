@@ -26,7 +26,9 @@
 
 #include "Visualizer.h"
 
+#include <Core/Camera/PinholeCameraTrajectory.h>
 #include <IO/ClassIO/ImageIO.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three{
 
@@ -82,8 +84,11 @@ void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
 		bool do_render/* = true*/)
 {
 	std::string png_filename = filename;
+	std::string camera_filename;
 	if (png_filename.empty()) {
-		png_filename = "ScreenCapture_" + GetCurrentTimeStamp() + ".png";
+		std::string timestamp = GetCurrentTimeStamp();
+		png_filename = "ScreenCapture_" + timestamp + ".png";
+		camera_filename = "ScreenCamera_" + timestamp + ".json";
 	}
 	Image screen_image;
 	screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
@@ -111,14 +116,25 @@ void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
 
 	PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
 	WriteImage(png_filename, png_image);
+	if (!camera_filename.empty()) {
+		PrintDebug("[Visualizer] Screen camera capture to %s\n", camera_filename.c_str());
+		PinholeCameraTrajectory trajectory;
+		trajectory.extrinsic_.resize(1);
+		view_control_ptr_->ConvertToPinholeCameraParameters(
+				trajectory.intrinsic_, trajectory.extrinsic_[0]);
+		WriteIJsonConvertible(camera_filename, trajectory);
+	}
 }
 
 void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 		bool do_render/* = true*/, double depth_scale/* = 1000.0*/)
 {
 	std::string png_filename = filename;
+	std::string camera_filename;
 	if (png_filename.empty()) {
-		png_filename = "DepthCapture_" + GetCurrentTimeStamp() + ".png";
+		std::string timestamp = GetCurrentTimeStamp();
+		png_filename = "DepthCapture_" + timestamp + ".png";
+		camera_filename = "DepthCamera_" + timestamp + ".json";
 	}
 	Image depth_image;
 	depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
@@ -183,6 +199,14 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 
 	PrintDebug("[Visualizer] Depth capture to %s\n", png_filename.c_str());
 	WriteImage(png_filename, png_image);
+	if (!camera_filename.empty()) {
+		PrintDebug("[Visualizer] Depth camera capture to %s\n", camera_filename.c_str());
+		PinholeCameraTrajectory trajectory;
+		trajectory.extrinsic_.resize(1);
+		view_control_ptr_->ConvertToPinholeCameraParameters(
+				trajectory.intrinsic_, trajectory.extrinsic_[0]);
+		WriteIJsonConvertible(camera_filename, trajectory);
+	}
 }
 
 }	// namespace three
