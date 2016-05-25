@@ -147,11 +147,21 @@ int main(int argc, char **argv)
 	if (!view_filename.empty()) {
 		auto &view_control = 
 				(ViewControlWithCustomAnimation &)visualizer.GetViewControl();
-		if (view_control.LoadTrajectoryFromFile(view_filename) == false) {
+		if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
 			PrintWarning("Failed loading view trajectory.\n");
 		}
 	} else if (!camera_filename.empty()) {
-		// TODO
+		PinholeCameraTrajectory camera_trajectory;
+		if (ReadIJsonConvertible(camera_filename, camera_trajectory) == false) {
+			PrintWarning("Failed loading camera trajectory.\n");
+		} else {
+			auto &view_control = (ViewControlWithCustomAnimation &)
+					visualizer.GetViewControl();
+			if (view_control.LoadTrajectoryFromCameraTrajectory(
+					camera_trajectory) == false) {
+				PrintWarning("Failed converting camera trajectory to view trajectory.\n");
+			}
+		}
 	}
 	visualizer.UpdateWindowTitle();
 	visualizer.Run();

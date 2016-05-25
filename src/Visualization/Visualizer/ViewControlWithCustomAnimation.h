@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Visualization/Visualizer/ViewControl.h>
 #include <Visualization/Visualizer/ViewParameters.h>
 #include <Visualization/Visualizer/ViewTrajectory.h>
@@ -77,7 +78,9 @@ public:
 	void GoToFirst();
 	void GoToLast();
 	bool CaptureTrajectory(const std::string &filename = "");
-	bool LoadTrajectoryFromFile(const std::string &filename);
+	bool LoadTrajectoryFromJsonFile(const std::string &filename);
+	bool LoadTrajectoryFromCameraTrajectory(
+			const PinholeCameraTrajectory &camera_trajectory);
 	bool SaveViewControlToString(std::string &view_status_string);
 	bool LoadViewControlFromString(const std::string &view_status_string);
 	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }

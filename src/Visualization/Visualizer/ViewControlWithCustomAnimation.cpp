@@ -247,7 +247,7 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
 	return WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 
-bool ViewControlWithCustomAnimation::LoadTrajectoryFromFile(
+bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
 		const std::string &filename)
 {
 	bool success = ReadIJsonConvertible(filename, view_trajectory_);
@@ -258,6 +258,36 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromFile(
 	current_frame_ = 0.0;
 	SetViewControlFromTrajectory();
 	return success;
+}
+
+bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
+		const PinholeCameraTrajectory &camera_trajectory)
+{
+	current_keyframe_ = 0.0;
+	current_frame_ = 0.0;
+	view_trajectory_.Reset();
+	if (camera_trajectory.extrinsic_.empty()) {
+		return false;
+	}
+	view_trajectory_.interval_ = ViewTrajectory::INTERVAL_MIN;
+	view_trajectory_.is_loop_ = false;
+	view_trajectory_.view_status_.resize(camera_trajectory.extrinsic_.size());
+	for (size_t i = 0; i < camera_trajectory.extrinsic_.size(); i++) {
+		ViewControlWithCustomAnimation view_control = *this;
+		if (view_control.ConvertFromPinholeCameraParameters(
+				camera_trajectory.intrinsic_, 
+				camera_trajectory.extrinsic_[i]) == false) {
+			view_trajectory_.Reset();
+			return false;
+		}
+		if (view_control.ConvertToViewParameters(
+				view_trajectory_.view_status_[i]) == false) {
+			view_trajectory_.Reset();
+			return false;
+		}
+	}
+	SetViewControlFromTrajectory();
+	return true;
 }
 
 bool ViewControlWithCustomAnimation::SaveViewControlToString(

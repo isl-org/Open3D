@@ -129,7 +129,7 @@ bool DrawGeometriesWithCustomAnimation(
 	auto &view_control = 
 			(ViewControlWithCustomAnimation &)visualizer.GetViewControl();
 	if (json_filename.empty() == false) {
-		if (view_control.LoadTrajectoryFromFile(json_filename) == false) {
+		if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
 			PrintWarning("[DrawGeometry] Failed loading json file.\n");
 			PrintWarning("[DrawGeometry] Possibly due to bad file or file does not contain trajectory.\n");
 			return false;
