@@ -127,7 +127,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 			render_image.height_, 0, GL_RGB, GL_UNSIGNED_BYTE,
 			render_image.data_.data());
 
-	if (option.GetInterpolationOption() ==
+	if (option.interpolation_option_ ==
 			RenderOption::TEXTURE_INTERPOLATION_NEAREST) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
@@ -189,7 +189,7 @@ bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 	}
 	const Image &image = (const Image &)geometry;
 	GLfloat ratio_x, ratio_y;
-	switch (option.GetImageStretchOption()) {
+	switch (option.image_stretch_option_) {
 		case RenderOption::IMAGE_STRETCH_KEEP_RATIO:
 			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
 			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
@@ -273,7 +273,7 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 				image.bytes_per_channel_ == 2) {
 			// depth image, one channel of 16-bit integer
 			const ColorMap &global_color_map = *GetGlobalColorMap();
-			const int max_depth = option.GetImageMaxDepth();
+			const int max_depth = option.image_max_depth_;
 			for (int i = 0; i < image.height_ * image.width_; i++) {
 				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
 				double depth = std::min(double(*p) / double(max_depth), 1.0);

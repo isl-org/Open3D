@@ -118,10 +118,12 @@ public:
 	virtual void UpdateWindowTitle();
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
+	RenderOption &GetRenderOption() { return *render_option_ptr_; }
 	void CaptureScreenImage(const std::string &filename = "",
 			bool do_render = true);
 	void CaptureDepthImage(const std::string &filename = "",
 			bool do_render = true, double depth_scale = 1000.0);
+	void CaptureRenderOption(const std::string &filename = "");
 
 protected:
 	/// Function to initialize OpenGL

@@ -61,7 +61,7 @@ protected:
 			std::vector<Eigen::Vector3f> &colors) = 0;
 	
 protected:
-	void SetBoundingBoxLight(const ViewControl &view, bool light_on = true);
+	void SetLighting(const ViewControl &view, const RenderOption &option);
 
 protected:
 	GLuint vertex_position_;
@@ -75,13 +75,15 @@ protected:
 	GLuint M_;
 	GLuint light_position_world_;
 	GLuint light_color_;
-	GLuint light_power_;
+	GLuint light_diffuse_power_;
+	GLuint light_specular_power_;
 	GLuint light_ambient_;
 
 	// At most support 4 lights
 	GLHelper::GLMatrix4f light_position_world_data_;
 	GLHelper::GLMatrix4f light_color_data_;
-	GLHelper::GLVector4f light_power_data_;
+	GLHelper::GLVector4f light_diffuse_power_data_;
+	GLHelper::GLVector4f light_specular_power_data_;
 	GLHelper::GLVector4f light_ambient_data_;
 };
 

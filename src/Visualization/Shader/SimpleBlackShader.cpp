@@ -143,7 +143,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 		return false;
 	}
 	points.resize(pointcloud.points_.size() * 2);
-	double line_length = option.GetPointSize() *
+	double line_length = option.point_size_ *
 			0.01 * view.GetBoundingBox().GetSize();
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 		const auto &point = pointcloud.points_[i];

@@ -111,6 +111,9 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 	case GLFW_KEY_D:
 		CaptureDepthImage();
 		break;
+	case GLFW_KEY_O:
+		CaptureRenderOption();
+		break;
 	case GLFW_KEY_LEFT_BRACKET:
 		view_control_ptr_->ChangeFieldOfView(-1.0);
 		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
@@ -124,67 +127,67 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 	case GLFW_KEY_L:
 		render_option_ptr_->ToggleLightOn();
 		PrintDebug("[Visualizer] Lighting %s.\n",
-				render_option_ptr_->IsLightOn() ? "ON" : "OFF");
+				render_option_ptr_->light_on_ ? "ON" : "OFF");
 		break;
 	case GLFW_KEY_EQUAL:
 		render_option_ptr_->ChangePointSize(1.0);
-		if (render_option_ptr_->IsPointNormalShown()) {
+		if (render_option_ptr_->point_show_normal_) {
 			UpdateGeometry();
 		}
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				render_option_ptr_->GetPointSize());
+				render_option_ptr_->point_size_);
 		break;
 	case GLFW_KEY_MINUS:
 		render_option_ptr_->ChangePointSize(-1.0);
-		if (render_option_ptr_->IsPointNormalShown()) {
+		if (render_option_ptr_->point_show_normal_) {
 			UpdateGeometry();
 		}
 		PrintDebug("[Visualizer] Point size set to %.2f.\n",
-				render_option_ptr_->GetPointSize());
+				render_option_ptr_->point_size_);
 		break;
 	case GLFW_KEY_N:
 		render_option_ptr_->TogglePointShowNormal();
-		if (render_option_ptr_->IsPointNormalShown()) {
+		if (render_option_ptr_->point_show_normal_) {
 			UpdateGeometry();
 		}
 		PrintDebug("[Visualizer] Point normal rendering %s.\n",
-				render_option_ptr_->IsPointNormalShown() ? "ON" : "OFF");
+				render_option_ptr_->point_show_normal_ ? "ON" : "OFF");
 		break;
 	case GLFW_KEY_S:
 		render_option_ptr_->ToggleShadingOption();
 		UpdateGeometry();
 		PrintDebug("[Visualizer] Mesh shading mode is %s.\n",
-				render_option_ptr_->GetMeshShadeOption() ==
+				render_option_ptr_->mesh_shade_option_ ==
 				RenderOption::MESHSHADE_FLATSHADE ?
 				"FLAT" : "SMOOTH");
 		break;
 	case GLFW_KEY_W:
 		render_option_ptr_->ToggleMeshShowWireframe();
 		PrintDebug("[Visualizer] Mesh wireframe rendering %s.\n",
-				render_option_ptr_->IsMeshWireframeShown() ? "ON" : "OFF");
+				render_option_ptr_->mesh_show_wireframe_ ? "ON" : "OFF");
 		break;
 	case GLFW_KEY_B:
 		render_option_ptr_->ToggleMeshShowBackFace();
 		PrintDebug("[Visualizer] Mesh back face rendering %s.\n",
-				render_option_ptr_->IsMeshBackFaceShown() ? "ON" : "OFF");
+				render_option_ptr_->mesh_show_back_face_ ? "ON" : "OFF");
 		break;
 	case GLFW_KEY_I:
 		render_option_ptr_->ToggleInterpolationOption();
 		UpdateGeometry();
 		PrintDebug("[Visualizer] Image interpolation mode is %s.\n",
-				render_option_ptr_->GetInterpolationOption() ==
+				render_option_ptr_->interpolation_option_ ==
 				RenderOption::TEXTURE_INTERPOLATION_NEAREST ?
 				"NEARST" : "LINEAR");
 		break;
 	case GLFW_KEY_T:
 		render_option_ptr_->ToggleImageStretchOption();
 		PrintDebug("[Visualizer] Image stretch mode is #%d.\n",
-				int(render_option_ptr_->GetImageStretchOption()));
+				int(render_option_ptr_->image_stretch_option_));
 		break;
 	case GLFW_KEY_0:
 		if (mods & GLFW_MOD_CONTROL) {
-			render_option_ptr_->SetMeshColorOption(
-					RenderOption::TRIANGLEMESH_DEFAULT);
+			render_option_ptr_->mesh_color_option_ =
+					RenderOption::TRIANGLEMESH_DEFAULT;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Mesh color set to DEFAULT.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
@@ -192,16 +195,16 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to GRAY.\n");
 		} else {
-			render_option_ptr_->SetPointColorOption(
-					RenderOption::POINTCOLOR_DEFAULT);
+			render_option_ptr_->point_color_option_ = 
+					RenderOption::POINTCOLOR_DEFAULT;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
 		}
 		break;
 	case GLFW_KEY_1:
 		if (mods & GLFW_MOD_CONTROL) {
-			render_option_ptr_->SetMeshColorOption(
-					RenderOption::TRIANGLEMESH_COLOR);
+			render_option_ptr_->mesh_color_option_ = 
+					RenderOption::TRIANGLEMESH_COLOR;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Mesh color set to COLOR.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
@@ -209,16 +212,16 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to JET.\n");
 		} else {
-			render_option_ptr_->SetPointColorOption(
-					RenderOption::POINTCOLOR_COLOR);
+			render_option_ptr_->point_color_option_ =
+					RenderOption::POINTCOLOR_COLOR;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to COLOR.\n");
 		}
 		break;
 	case GLFW_KEY_2:
 		if (mods & GLFW_MOD_CONTROL) {
-			render_option_ptr_->SetMeshColorOption(
-					RenderOption::TRIANGLEMESH_X);
+			render_option_ptr_->mesh_color_option_ =
+					RenderOption::TRIANGLEMESH_X;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Mesh color set to X.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
@@ -226,16 +229,16 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to SUMMER.\n");
 		} else {
-			render_option_ptr_->SetPointColorOption(
-					RenderOption::POINTCOLOR_X);
+			render_option_ptr_->point_color_option_ =
+					RenderOption::POINTCOLOR_X;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to X.\n");
 		}
 		break;
 	case GLFW_KEY_3:
 		if (mods & GLFW_MOD_CONTROL) {
-			render_option_ptr_->SetMeshColorOption(
-					RenderOption::TRIANGLEMESH_Y);
+			render_option_ptr_->mesh_color_option_ =
+					RenderOption::TRIANGLEMESH_Y;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Mesh color set to Y.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
@@ -243,22 +246,22 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Color map set to WINTER.\n");
 		} else {
-			render_option_ptr_->SetPointColorOption(
-					RenderOption::POINTCOLOR_Y);
+			render_option_ptr_->point_color_option_ =
+					RenderOption::POINTCOLOR_Y;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to Y.\n");
 		}
 		break;
 	case GLFW_KEY_4:
 		if (mods & GLFW_MOD_CONTROL) {
-			render_option_ptr_->SetMeshColorOption(
-					RenderOption::TRIANGLEMESH_Z);
+			render_option_ptr_->mesh_color_option_ =
+					RenderOption::TRIANGLEMESH_Z;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Mesh color set to Z.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
 		} else {
-			render_option_ptr_->SetPointColorOption(
-					RenderOption::POINTCOLOR_Z);
+			render_option_ptr_->point_color_option_ =
+					RenderOption::POINTCOLOR_Z;
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Point color set to Z.\n");
 		}

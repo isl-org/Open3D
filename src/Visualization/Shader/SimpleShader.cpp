@@ -133,7 +133,7 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
-	glPointSize(GLfloat(option.GetPointSize()));
+	glPointSize(GLfloat(option.point_size_));
 	glDepthFunc(GL_LESS);
 	return true;
 }
@@ -161,7 +161,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		const auto &point = pointcloud.points_[i];
 		points[i] = point.cast<float>();
 		Eigen::Vector3d color;
-		switch (option.GetPointColorOption()) {
+		switch (option.point_color_option_) {
 		case RenderOption::POINTCOLOR_X:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetXPercentage(point(0)));
@@ -200,14 +200,14 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
-	if (option.IsMeshBackFaceShown()) {
+	if (option.mesh_show_back_face_) {
 		glDisable(GL_CULL_FACE);
 	} else {
 		glEnable(GL_CULL_FACE);
 	}
 	glDepthFunc(GL_LESS);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if (option.IsMeshWireframeShown()) {
+	if (option.mesh_show_wireframe_) {
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		glPolygonOffset(1.0, 1.0);
 	} else {
@@ -245,7 +245,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			points[idx] = vertex.cast<float>();
 
 			Eigen::Vector3d color;
-			switch (option.GetMeshColorOption()) {
+			switch (option.mesh_color_option_) {
 			case RenderOption::TRIANGLEMESH_X:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetXPercentage(vertex(0)));
@@ -265,7 +265,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 				}
 			case RenderOption::TRIANGLEMESH_DEFAULT:
 			default:
-				color = RenderOption::DEFAULT_MESH_COLOR;
+				color = option.default_mesh_color_;
 				break;
 			}
 			colors[idx] = color.cast<float>();

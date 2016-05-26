@@ -42,7 +42,7 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 	
 	if (pointcloud.HasNormals()) {
 		success &= phong_point_shader_.Render(pointcloud, option, view);
-		if (option.IsPointNormalShown()) {
+		if (option.point_show_normal_) {
 			success &= simpleblack_normal_shader_.Render(pointcloud, option,
 					view);
 		}
@@ -86,7 +86,7 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 		success &= simple_mesh_shader_.Render(mesh, option, view);
 	}
 	
-	if (option.IsMeshWireframeShown()) {
+	if (option.mesh_show_wireframe_) {
 		success &= simpleblack_wireframe_shader_.Render(mesh, option, view);
 	}
 	return success;

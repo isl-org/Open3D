@@ -41,6 +41,7 @@ void PrintHelp()
 	printf("    --show_frame              : Add a coordinate frame.\n");
 	printf("\n");
 	printf("Animation options:\n");
+	printf("    --render_option [file]    : Read a json file of rendering settings.\n");
 	printf("    --view_trajectory [file]  : Read a json file of view trajectory.\n");
 	printf("    --camera_trajectory [file]: Read a json file of camera trajectory.\n");
 	printf("\n");
@@ -81,6 +82,8 @@ int main(int argc, char **argv)
 			"--depth");
 	std::string depth_parameter_filename = GetProgramOptionAsString(argc, argv,
 			"--depth_camera");
+	std::string render_filename = GetProgramOptionAsString(argc, argv,
+			"--render_option");
 	std::string view_filename = GetProgramOptionAsString(argc, argv,
 			"--view_trajectory");
 	std::string camera_filename = GetProgramOptionAsString(argc, argv,
@@ -144,6 +147,14 @@ int main(int argc, char **argv)
 				boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
 		visualizer.AddGeometry(mesh_frame, false);
 	}
+
+	if (!render_filename.empty()) {
+		if (ReadIJsonConvertible(render_filename,
+				visualizer.GetRenderOption()) == false) {
+			PrintWarning("Failed loading rendering settings.\n");
+		}
+	}
+
 	if (!view_filename.empty()) {
 		auto &view_control = 
 				(ViewControlWithCustomAnimation &)visualizer.GetViewControl();

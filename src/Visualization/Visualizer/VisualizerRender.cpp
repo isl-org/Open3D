@@ -62,7 +62,7 @@ void Visualizer::Render()
 	
 	view_control_ptr_->SetViewMatrices();
 
-	Eigen::Vector3d background_color = RenderOption::DEFAULT_BACKGROUND_COLOR;
+	auto &background_color = render_option_ptr_->background_color_;
 	glClearColor((GLclampf)background_color(0), (GLclampf)background_color(1),
 			(GLclampf)background_color(2), 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -207,6 +207,17 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 				trajectory.intrinsic_, trajectory.extrinsic_[0]);
 		WriteIJsonConvertible(camera_filename, trajectory);
 	}
+}
+
+void Visualizer::CaptureRenderOption(const std::string &filename/* = ""*/)
+{
+	std::string json_filename = filename;
+	if (json_filename.empty()) {
+		std::string timestamp = GetCurrentTimeStamp();
+		json_filename = "RenderOption_" + timestamp + ".json";
+	}
+	PrintDebug("[Visualizer] Render option capture to %s\n", json_filename.c_str());
+	WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 
 }	// namespace three
