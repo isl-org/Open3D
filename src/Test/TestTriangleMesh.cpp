@@ -125,6 +125,21 @@ int main(int argc, char *argv[])
 		trans(0, 0) = trans(1, 1) = trans(2, 2) = scale;
 		mesh->Transform(trans);
 		WriteTriangleMesh(argv[3], *mesh);
+	} else if (option == "unify") {
+		// unify into (0, 0, 0) - (scale, scale, scale) box
+		auto mesh = CreateMeshFromFile(argv[2]);
+		BoundingBox bbox;
+		bbox.FitInGeometry(*mesh);
+		double scale1 = std::stod(argv[4]);
+		double scale2 = std::stod(argv[5]);
+		Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
+		trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetSize();
+		mesh->Transform(trans);
+		trans.setIdentity();
+		trans.block<3, 1>(0, 3) = Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, 
+				scale2 / 2.0) - bbox.GetCenter() * scale1 / bbox.GetSize();
+		mesh->Transform(trans);
+		WriteTriangleMesh(argv[3], *mesh);
 	} else if (option == "distance") {
 		auto mesh1 = CreateMeshFromFile(argv[2]);
 		auto mesh2 = CreateMeshFromFile(argv[3]);
