@@ -35,7 +35,7 @@ class PinholeCameraIntrinsic : public IJsonConvertible
 {
 public:
 	PinholeCameraIntrinsic();
-	virtual ~PinholeCameraIntrinsic();
+	~PinholeCameraIntrinsic() override;
 
 public:
 	void SetIntrinsics(int width, int height, double fx, double fy, double cx,
@@ -58,8 +58,8 @@ public:
 
 	bool IsValid() const { return (width_ > 0 && height_ > 0); }
 
-	virtual bool ConvertToJsonValue(Json::Value &value) const override;
-	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
 	int width_ = -1;

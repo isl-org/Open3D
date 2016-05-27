@@ -26,61 +26,35 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
-#include <Eigen/Core>
-
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Image.h>
 
 namespace three {
 
-class Image : public Geometry
+class FloatImage : public Image
 {
 public:
-	Image();
-	~Image() override;
+	FloatImage() {}
+	~FloatImage() override {}
 
 public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
-	void Clear() override;
-	bool IsEmpty() const override;
-	void Transform(const Eigen::Matrix4d &transformation) override;
+	bool HasData() const override {
+		return num_of_channels_ == 1 && bytes_per_channel_ == 4 && 
+				Image::HasData();
+	}
 
 public:
-	virtual bool HasData() const {
-		return width_ > 0 && height_ > 0 && 
-				data_.size() == height_ * BytesPerLine();
+	void PrepareImage(int width, int height) {
+		Image::PrepareImage(width, height, 1, 4);
 	}
+	std::pair<bool, double> ValueAt(double u, double v);
 
-	void PrepareImage(int width, int height, int num_of_channels, 
-			int bytes_per_channel) {
-		width_ = width;
-		height_ = height;
-		num_of_channels_ = num_of_channels;
-		bytes_per_channel_ = bytes_per_channel;
-		AllocateDataBuffer();
-	}
-
-	int BytesPerLine() const {
-		return width_ * num_of_channels_ * bytes_per_channel_;
-	}
-	
 protected:
-	void AllocateDataBuffer() {
-		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
+	float ValueAtUnsafe(int u, int v) {
+		return *((float *)(data_.data() + (u + v * width_) * 4));
 	}
-	
-public:
-	int width_ = 0;
-	int height_ = 0;
-	int num_of_channels_ = 0;
-	int bytes_per_channel_ = 0;
-	std::vector<unsigned char> data_;
 };
 
-/// Factory function to create an image from a file (ImageFactory.cpp)
-/// Return an empty image if fail to read the file.
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
+/// Factory function to create a FloatImage from an image (ImageFactory.cpp)
+std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image);
 
 }	// namespace three

@@ -37,7 +37,7 @@ namespace glsl {
 class PhongShader : public ShaderWrapper
 {
 public:
-	virtual ~PhongShader() { Release(); }
+	~PhongShader() override { Release(); }
 	
 protected:
 	PhongShader(std::string name) : ShaderWrapper(name) { Compile(); }

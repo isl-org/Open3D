@@ -36,7 +36,7 @@ namespace glsl {
 class ImageShader : public ShaderWrapper
 {
 public:
-	virtual ~ImageShader() { Release(); }
+	~ImageShader() override { Release(); }
 
 protected:
 	ImageShader(std::string name) : ShaderWrapper(name) { Compile(); }

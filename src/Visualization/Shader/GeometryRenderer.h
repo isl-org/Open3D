@@ -73,7 +73,7 @@ private:
 class PointCloudRenderer : public GeometryRenderer
 {
 public:
-	virtual ~PointCloudRenderer() {}
+	~PointCloudRenderer() override {}
 	
 public:
 	bool Render(const RenderOption &option, const ViewControl &view) override;
@@ -89,7 +89,7 @@ protected:
 class TriangleMeshRenderer : public GeometryRenderer
 {
 public:
-	virtual ~TriangleMeshRenderer() {}
+	~TriangleMeshRenderer() override {}
 	
 public:
 	bool Render(const RenderOption &option, const ViewControl &view) override;
@@ -105,7 +105,7 @@ protected:
 class ImageRenderer : public GeometryRenderer
 {
 public:
-	virtual ~ImageRenderer() {}
+	~ImageRenderer() override {}
 	
 public:
 	bool Render(const RenderOption &option, const ViewControl &view) override;

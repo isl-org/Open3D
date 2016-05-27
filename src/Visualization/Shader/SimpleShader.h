@@ -37,7 +37,7 @@ namespace glsl {
 class SimpleShader : public ShaderWrapper
 {
 public:
-	virtual ~SimpleShader() { Release(); }
+	~SimpleShader() override { Release(); }
 
 protected:
 	SimpleShader(std::string name) : ShaderWrapper(name) { Compile(); }

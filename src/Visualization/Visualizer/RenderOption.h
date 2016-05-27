@@ -78,11 +78,11 @@ public:
 
 public:
 	RenderOption() {}
-	virtual ~RenderOption() {}
+	~RenderOption() override {}
 
 public:
-	virtual bool ConvertToJsonValue(Json::Value &value) const override;
-	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
 	void ToggleLightOn() {

@@ -37,7 +37,7 @@ public:
 
 public:
 	VisualizerWithKeyCallback();
-	virtual ~VisualizerWithKeyCallback();
+	~VisualizerWithKeyCallback() override;
 	VisualizerWithKeyCallback(const VisualizerWithKeyCallback &) = delete;
 	VisualizerWithKeyCallback &operator=(const VisualizerWithKeyCallback &) = 
 			delete;

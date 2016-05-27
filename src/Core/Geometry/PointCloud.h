@@ -41,7 +41,7 @@ class PointCloud : public Geometry
 {
 public:
 	PointCloud();
-	virtual ~PointCloud();
+	~PointCloud() override;
 
 public:
 	Eigen::Vector3d GetMinBound() const override;

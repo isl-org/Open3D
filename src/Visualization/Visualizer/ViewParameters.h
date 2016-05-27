@@ -39,13 +39,13 @@ public:
 
 public:
 	ViewParameters() {}
-	virtual ~ViewParameters() {}
+	~ViewParameters() override {}
 
 public:
 	Vector17d ConvertToVector17d();
 	void ConvertFromVector17d(const Vector17d &v);
-	virtual bool ConvertToJsonValue(Json::Value &value) const override;
-	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
 	double field_of_view_;

@@ -37,7 +37,7 @@ using namespace three;
 class VisualizerWithDepthCapture : public VisualizerWithCustomAnimation
 {
 protected:
-	virtual void KeyPressCallback(GLFWwindow *window,
+	void KeyPressCallback(GLFWwindow *window,
 			int key, int scancode, int action, int mods) override {
 		if (action == GLFW_RELEASE) {
 			return;

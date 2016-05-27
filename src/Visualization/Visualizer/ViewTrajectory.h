@@ -44,7 +44,7 @@ public:
 
 public:
 	ViewTrajectory() {}
-	virtual ~ViewTrajectory() {}
+	~ViewTrajectory() override {}
 
 public:
 	/// Function to compute a Cubic Spline Interpolation
@@ -82,8 +82,8 @@ public:
 
 	std::tuple<bool, ViewParameters> GetInterpolatedFrame(size_t k);
 
-	virtual bool ConvertToJsonValue(Json::Value &value) const override;
-	virtual bool ConvertFromJsonValue(const Json::Value &value) override;
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
 	std::vector<ViewParameters> view_status_;

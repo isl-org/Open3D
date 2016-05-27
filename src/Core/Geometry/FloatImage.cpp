@@ -24,63 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "FloatImage.h"
 
-#include <vector>
-#include <memory>
-#include <Eigen/Core>
+namespace three{
 
-#include <Core/Geometry/Geometry.h>
-
-namespace three {
-
-class Image : public Geometry
+std::pair<bool, double> FloatImage::ValueAt(double u, double v)
 {
-public:
-	Image();
-	~Image() override;
-
-public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
-	void Clear() override;
-	bool IsEmpty() const override;
-	void Transform(const Eigen::Matrix4d &transformation) override;
-
-public:
-	virtual bool HasData() const {
-		return width_ > 0 && height_ > 0 && 
-				data_.size() == height_ * BytesPerLine();
+	if (u < 0.0 || u > (double)(width_ - 1) || 
+			v < 0.0 || v > (double)(height_ - 1)) {
+		return std::make_pair(false, 0.0);
 	}
-
-	void PrepareImage(int width, int height, int num_of_channels, 
-			int bytes_per_channel) {
-		width_ = width;
-		height_ = height;
-		num_of_channels_ = num_of_channels;
-		bytes_per_channel_ = bytes_per_channel;
-		AllocateDataBuffer();
-	}
-
-	int BytesPerLine() const {
-		return width_ * num_of_channels_ * bytes_per_channel_;
-	}
-	
-protected:
-	void AllocateDataBuffer() {
-		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
-	}
-	
-public:
-	int width_ = 0;
-	int height_ = 0;
-	int num_of_channels_ = 0;
-	int bytes_per_channel_ = 0;
-	std::vector<unsigned char> data_;
-};
-
-/// Factory function to create an image from a file (ImageFactory.cpp)
-/// Return an empty image if fail to read the file.
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
+	int ui = std::max(std::min((int)u, width_ - 2), 0);
+	int vi = std::max(std::min((int)v, height_ - 2), 0);
+	double pu = u - ui;
+	double pv = v - vi;
+	float value[4] = {
+		ValueAtUnsafe(ui, vi),
+		ValueAtUnsafe(ui, vi + 1),
+		ValueAtUnsafe(ui + 1, vi),
+		ValueAtUnsafe(ui + 1, vi + 1)
+	};
+	return std::make_pair(true,
+			(value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
+			(value[2] * (1 - pv) + value[3] * pv) * pu);
+}
 
 }	// namespace three

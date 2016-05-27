@@ -34,7 +34,7 @@ class VisualizerWithCustomAnimation : public Visualizer
 {
 public:
 	VisualizerWithCustomAnimation();
-	virtual ~VisualizerWithCustomAnimation();
+	~VisualizerWithCustomAnimation() override;
 	VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) = 
 			delete;
 	VisualizerWithCustomAnimation &operator=(

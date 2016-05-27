@@ -38,7 +38,7 @@ class TriangleMesh : public Geometry
 {
 public:
 	TriangleMesh();
-	virtual ~TriangleMesh();
+	~TriangleMesh() override;
 
 public:
 	Eigen::Vector3d GetMinBound() const override;

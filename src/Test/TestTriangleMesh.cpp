@@ -172,5 +172,47 @@ int main(int argc, char *argv[])
 		meshes.push_back(mesh1);
 		meshes.push_back(mesh2);
 		DrawGeometries(meshes);
+	} else if (option == "colormapping") {
+		auto mesh = CreateMeshFromFile(argv[2]);
+		mesh->ComputeVertexNormals();
+		PinholeCameraTrajectory trajectory;
+		ReadIJsonConvertible(argv[3], trajectory);
+		if (filesystem::DirectoryExists("image") == false) {
+			PrintWarning("No image!\n");
+			return 0;
+		}
+		int idx = 3000;
+		std::vector<std::shared_ptr<const Geometry>> ptrs;
+		ptrs.push_back(mesh);
+		auto mesh_sphere = CreateMeshSphere(0.05);
+		Eigen::Matrix4d trans;
+		trans.setIdentity();
+		trans.block<3, 1>(0, 3) = mesh->vertices_[idx];
+		mesh_sphere->Transform(trans);
+		mesh_sphere->ComputeVertexNormals();
+		ptrs.push_back(mesh_sphere);
+		DrawGeometries(ptrs);
+
+		for (size_t i = 0; i < trajectory.extrinsic_.size(); i += 10) {
+			char buffer[1024];
+			sprintf(buffer, "image/image_%06d.png", (int)i + 1);
+			auto image = CreateImageFromFile(buffer);
+			auto fimage = CreateFloatImageFromImage(*image);
+			Eigen::Vector4d pt_in_camera = trajectory.extrinsic_[i] * 
+					Eigen::Vector4d(mesh->vertices_[idx](0), 
+					mesh->vertices_[idx](1), mesh->vertices_[idx](2), 1.0);
+			Eigen::Vector3d pt_in_plane = 
+					trajectory.intrinsic_.intrinsic_matrix_ * 
+					pt_in_camera.block<3, 1>(0, 0);
+			Eigen::Vector3d uv = pt_in_plane / pt_in_plane(2);
+			std::cout << pt_in_camera << std::endl;
+			std::cout << pt_in_plane << std::endl;
+			std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
+			auto result = fimage->ValueAt(uv(0), uv(1));
+			if (result.first) {
+				PrintWarning("%.6f\n", result.second);
+			}
+			DrawGeometry(fimage, "Test", 1920, 1080);
+		}
 	}
 }
