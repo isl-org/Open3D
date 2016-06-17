@@ -87,13 +87,13 @@ public:
 	void NormalizeNormals() {
 		for (size_t i = 0; i < vertex_normals_.size(); i++) {
 			vertex_normals_[i].normalize();
-			if (isnan(vertex_normals_[i](0))) {
+			if (std::isnan(vertex_normals_[i](0))) {
 				vertex_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
 			}
 		}
 		for (size_t i = 0; i < triangle_normals_.size(); i++) {
 			triangle_normals_[i].normalize();
-			if (isnan(triangle_normals_[i](0))) {
+			if (std::isnan(triangle_normals_[i](0))) {
 				triangle_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
 			}
 		}

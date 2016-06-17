@@ -40,7 +40,7 @@ namespace {
 
 unsigned char ConvertColorFromFloatToUnsignedChar(float color)
 {
-	if (isnan(color)) {
+	if (std::isnan(color)) {
 		return 0;
 	} else {
 		float unified_color = std::min(1.0f, std::max(0.0f, color));
