@@ -110,6 +110,7 @@ protected:
 	Eigen::Vector3d lookat_;
 	Eigen::Vector3d up_;
 	Eigen::Vector3d front_;
+	Eigen::Vector3d right_;
 	double distance_;
 	double field_of_view_;
 	double zoom_;

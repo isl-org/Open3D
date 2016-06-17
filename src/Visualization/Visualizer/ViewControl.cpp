@@ -104,7 +104,7 @@ bool ViewControl::ConvertToPinholeCameraParameters(
 	extrinsic.setZero();
 	Eigen::Vector3d front_dir = front_.normalized();
 	Eigen::Vector3d up_dir = up_.normalized();
-	Eigen::Vector3d right_dir = up_dir.cross(front_dir).normalized();
+	Eigen::Vector3d right_dir = right_.normalized();
 	extrinsic.block<1, 3>(0, 0) = right_dir.transpose();
 	extrinsic.block<1, 3>(1, 0) = -up_dir.transpose();
 	extrinsic.block<1, 3>(2, 0) = -front_dir.transpose();
@@ -140,6 +140,7 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
 		PrintWarning("[ViewControl] ConvertFromPinholeCameraParameters() failed because field of view is impossible.\n");
 		return false;
 	}
+	right_ = extrinsic.block<1, 3>(0, 0).transpose();
 	up_ = -extrinsic.block<1, 3>(1, 0).transpose();
 	front_ = -extrinsic.block<1, 3>(2, 0).transpose();
 	eye_ = extrinsic.block<3, 3>(0, 0).inverse() * 
@@ -177,6 +178,9 @@ void ViewControl::Reset()
 
 void ViewControl::SetProjectionParameters()
 {
+	front_ = front_.normalized();
+	right_ = up_.cross(front_).normalized();
+	up_ = front_.cross(right_).normalized();
 	if (GetProjectionType() == PROJECTION_PERSPECTIVE) {
 		view_ratio_ = zoom_ * bounding_box_.GetSize();
 		distance_ = view_ratio_ / 
@@ -214,24 +218,19 @@ void ViewControl::Scale(double scale)
 void ViewControl::Rotate(double x, double y)
 {
 	// some black magic to do rotation
-	Eigen::Vector3d right = up_.cross(front_);
 	double alpha = x * ROTATION_RADIAN_PER_PIXEL;
 	double beta = y * ROTATION_RADIAN_PER_PIXEL;
-	front_ = front_ * std::cos(alpha) + right * std::sin(alpha);
-	right = up_.cross(front_);
-	right.normalize();
-	front_ = front_ * std::cos(beta) + up_ * std::sin(beta);
-	front_.normalize();
-	up_ = front_.cross(right);
-	up_.normalize();
+	front_ = (front_ * std::cos(alpha) + right_ * std::sin(alpha)).normalized();
+	right_ = up_.cross(front_).normalized();
+	front_ = (front_ * std::cos(beta) + up_ * std::sin(beta)).normalized();
+	up_ = front_.cross(right_).normalized();
 	SetProjectionParameters();
 }
 
 void ViewControl::Translate(double x, double y)
 {
-	Eigen::Vector3d right = up_.cross(front_);
-	Eigen::Vector3d shift = 
-			right * x / window_height_ * view_ratio_ * 2.0 +
+	Eigen::Vector3d shift =
+			right_ * x / window_height_ * view_ratio_ * 2.0 +
 			up_ * y / window_height_ * view_ratio_ * 2.0;
 	eye_ += shift;
 	lookat_ += shift;
