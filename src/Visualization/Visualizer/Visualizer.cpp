@@ -290,6 +290,13 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
 		}
 		renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_LINESET) {
+		auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
+		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+			return false;
+		}
+		renderer_ptrs_.push_back(renderer_ptr);
+	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_TRIANGLEMESH) {
 		auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {

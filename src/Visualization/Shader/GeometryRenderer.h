@@ -86,6 +86,20 @@ protected:
 	SimpleBlackShaderForPointCloudNormal simpleblack_normal_shader_;
 };
 
+class LineSetRenderer : public GeometryRenderer
+{
+public:
+	~LineSetRenderer() override {}
+	
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	bool UpdateGeometry() override;
+	
+protected:
+	SimpleShaderForLineSet simple_lineset_shader_;
+};
+
 class TriangleMeshRenderer : public GeometryRenderer
 {
 public:

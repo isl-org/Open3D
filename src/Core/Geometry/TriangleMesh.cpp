@@ -84,24 +84,21 @@ bool TriangleMesh::IsEmpty() const
 
 void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 {
-	for (size_t i = 0; i < vertices_.size(); i++) {
+	for (auto &vertex : vertices_) {
 		Eigen::Vector4d new_point = transformation * Eigen::Vector4d(
-				vertices_[i](0), vertices_[i](1), vertices_[i](2), 1.0);
-		vertices_[i] = new_point.block<3, 1>(0, 0);
+				vertex(0), vertex(1), vertex(2), 1.0);
+		vertex = new_point.block<3, 1>(0, 0);
 	}
-	
-	for (size_t i = 0; i < vertex_normals_.size(); i++) {
+	for (auto &vertex_normal : vertex_normals_) {
 		Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
-				vertex_normals_[i](0), vertex_normals_[i](1),
-				vertex_normals_[i](2), 0.0);
-		vertex_normals_[i] = new_normal.block<3, 1>(0, 0);
+				vertex_normal(0), vertex_normal(1), vertex_normal(2), 0.0);
+		vertex_normal = new_normal.block<3, 1>(0, 0);
 	}
-
-	for (size_t i = 0; i < triangle_normals_.size(); i++) {
+	for (auto &triangle_normal : triangle_normals_) {
 		Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
-				triangle_normals_[i](0), triangle_normals_[i](1),
-				triangle_normals_[i](2), 0.0);
-		triangle_normals_[i] = new_normal.block<3, 1>(0, 0);
+				triangle_normal(0), triangle_normal(1), 
+				triangle_normal(2), 0.0);
+		triangle_normal = new_normal.block<3, 1>(0, 0);
 	}
 }
 

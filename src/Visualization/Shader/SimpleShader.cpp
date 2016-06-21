@@ -27,6 +27,7 @@
 #include "SimpleShader.h"
 
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/LineSet.h>
 #include <Core/Geometry/TriangleMesh.h>
 #include <Visualization/Shader/Shader.h>
 #include <Visualization/Utility/ColorMap.h>
@@ -188,6 +189,55 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		colors[i] = color.cast<float>();
 	}
 	draw_arrays_mode_ = GL_POINTS;
+	draw_arrays_size_ = GLsizei(points.size());
+	return true;
+}
+
+bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
+		const RenderOption &option, const ViewControl &view)
+{
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_LINESET) {
+		PrintWarning("[%s] Rendering type is not LineSet.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	glLineWidth(1.0f);
+	glDepthFunc(GL_LESS);
+	return true;
+}
+
+bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
+		const RenderOption &option, const ViewControl &view,
+		std::vector<Eigen::Vector3f> &points,
+		std::vector<Eigen::Vector3f> &colors)
+{
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_LINESET) {
+		PrintWarning("[%s] Binding type is not LineSet.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	const LineSet &lineset = (const LineSet &)geometry;
+	if (lineset.HasLines() == false) {
+		PrintWarning("[%s] Binding failed with empty LineSet.\n",
+				GetShaderName().c_str());
+		return false;
+	}
+	const ColorMap &global_color_map = *GetGlobalColorMap();
+	points.resize(lineset.lines_.size() * 2);
+	colors.resize(lineset.lines_.size() * 2);
+	for (size_t i = 0; i < lineset.lines_.size(); i++) {
+		const auto point_pair = lineset.GetLineCoordinate(i);
+		points[i * 2] = point_pair.first.cast<float>();
+		points[i * 2 + 1] = point_pair.second.cast<float>();
+		Eigen::Vector3d color;
+		if (lineset.HasColors()) {
+			color = lineset.colors_[i];
+		} else {
+			color = Eigen::Vector3d::Zero();
+		}
+		colors[i * 2] = colors[i * 2 + 1] = color.cast<float>();
+	}
+	draw_arrays_mode_ = GL_LINES;
 	draw_arrays_size_ = GLsizei(points.size());
 	return true;
 }

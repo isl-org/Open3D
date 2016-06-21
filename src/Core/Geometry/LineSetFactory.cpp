@@ -24,40 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "LineSet.h"
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Core/Geometry/PointCloud.h>
 
-namespace three {
+namespace three{
 
-class Geometry
+std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
+		const PointCloud &cloud0, const PointCloud &cloud1,
+		const std::vector<std::pair<int, int>> &correspondences)
 {
-public:
-	enum GeometryType {
-		GEOMETRY_UNKNOWN = 0,
-		GEOMETRY_POINTCLOUD = 1,
-		GEOMETRY_LINESET = 2,
-		GEOMETRY_TRIANGLEMESH = 3,
-		GEOMETRY_IMAGE = 4,
-	};
-	
-public:
-	virtual ~Geometry() {}
-	
-protected:
-	Geometry(GeometryType type) : geometry_type_(type) {}
-
-public:
-	virtual Eigen::Vector3d GetMinBound() const = 0;
-	virtual Eigen::Vector3d GetMaxBound() const = 0;
-	virtual void Clear() = 0;
-	virtual bool IsEmpty() const = 0;
-	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
-	
-	GeometryType GetGeometryType() const { return geometry_type_; }
-	
-private:
-	GeometryType geometry_type_ = GEOMETRY_UNKNOWN;
-};
+	auto lineset_ptr = std::make_shared<LineSet>();
+	lineset_ptr->point_set_[0] = cloud0.points_;
+	lineset_ptr->point_set_[1] = cloud1.points_;
+	lineset_ptr->lines_ = correspondences;
+	return lineset_ptr;
+}
 
 }	// namespace three

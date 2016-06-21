@@ -4,6 +4,12 @@ set_target_properties(TestPointCloud PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
+add_executable(TestLineSet TestLineSet.cpp)
+target_link_libraries(TestLineSet Visualization IO Core)
+set_target_properties(TestLineSet PROPERTIES
+		FOLDER "Test"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+
 add_executable(TestTriangleMesh TestTriangleMesh.cpp)
 target_link_libraries(TestTriangleMesh Visualization IO Core)
 set_target_properties(TestTriangleMesh PROPERTIES

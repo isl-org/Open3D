@@ -27,6 +27,7 @@
 #include "GeometryRenderer.h"
 
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/LineSet.h>
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Geometry/Image.h>
 
@@ -71,6 +72,31 @@ bool PointCloudRenderer::UpdateGeometry()
 	simple_point_shader_.InvalidateGeometry();
 	phong_point_shader_.InvalidateGeometry();
 	simpleblack_normal_shader_.InvalidateGeometry();
+	return true;
+}
+
+bool LineSetRenderer::Render(const RenderOption &option,
+		const ViewControl &view)
+{
+	return simple_lineset_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool LineSetRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
+{
+	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_LINESET) {
+		return false;
+	}
+	const auto &lineset = (const LineSet &)(*geometry_ptr);
+	if (lineset.HasLines() == false) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
+bool LineSetRenderer::UpdateGeometry()
+{
+	simple_lineset_shader_.InvalidateGeometry();
 	return true;
 }
 

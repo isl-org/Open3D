@@ -81,6 +81,20 @@ protected:
 			std::vector<Eigen::Vector3f> &colors) final;
 };
 
+class SimpleShaderForLineSet : public SimpleShader
+{
+public:
+	SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
+	
+protected:
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &colors) final;
+};
+
 class SimpleShaderForTriangleMesh : public SimpleShader
 {
 public:

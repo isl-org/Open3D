@@ -26,38 +26,64 @@
 
 #pragma once
 
+#include <vector>
+#include <memory>
 #include <Eigen/Core>
+#include <Core/Geometry/Geometry.h>
 
 namespace three {
 
-class Geometry
+class PointCloud;
+
+class LineSet : public Geometry
 {
 public:
-	enum GeometryType {
-		GEOMETRY_UNKNOWN = 0,
-		GEOMETRY_POINTCLOUD = 1,
-		GEOMETRY_LINESET = 2,
-		GEOMETRY_TRIANGLEMESH = 3,
-		GEOMETRY_IMAGE = 4,
-	};
-	
-public:
-	virtual ~Geometry() {}
-	
-protected:
-	Geometry(GeometryType type) : geometry_type_(type) {}
+	typedef std::pair<int, int> LineSegment;
 
 public:
-	virtual Eigen::Vector3d GetMinBound() const = 0;
-	virtual Eigen::Vector3d GetMaxBound() const = 0;
-	virtual void Clear() = 0;
-	virtual bool IsEmpty() const = 0;
-	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
+	LineSet();
+	~LineSet() override;
+
+public:
+	Eigen::Vector3d GetMinBound() const override;
+	Eigen::Vector3d GetMaxBound() const override;
+	void Clear() override;
+	bool IsEmpty() const override;
+	void Transform(const Eigen::Matrix4d &transformation) override;
+
+public:
+	virtual LineSet &operator+=(const LineSet &lineset);
+	virtual const LineSet operator+(const LineSet &lineset);
+
+public:
+	bool HasPoints() const {
+		return point_set_[0].size() > 0 && point_set_[1].size() > 0;
+	}
+
+	bool HasLines() const {
+		return HasPoints() && lines_.size() > 0;
+	}
+
+	bool HasColors() const {
+		return HasLines() && colors_.size() == lines_.size();
+	}
+
+	std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
+			size_t i) const {
+		return std::make_pair(point_set_[0][lines_[i].first],
+				point_set_[1][lines_[i].second]);
+	}
 	
-	GeometryType GetGeometryType() const { return geometry_type_; }
-	
-private:
-	GeometryType geometry_type_ = GEOMETRY_UNKNOWN;
+public:
+	std::vector<Eigen::Vector3d> point_set_[2];
+	std::vector<LineSegment> lines_;
+	std::vector<Eigen::Vector3d> colors_;
 };
+
+/// Factory function to create a lineset from two pointclouds and a
+/// correspondence set (LineSetFactory.cpp)
+std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
+		const PointCloud &cloud0, const PointCloud &cloud1,
+		const std::vector<std::pair<int, int>> &correspondences);
 
 }	// namespace three
