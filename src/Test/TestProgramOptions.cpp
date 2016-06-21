@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <Core/Core.h>
+#include <Core/Utility/CoreHelper.h>
 
 void PrintHelp()
 {
@@ -48,5 +49,11 @@ int main(int argc, char *argv[])
 			GetProgramOptionAsDouble(argc, argv, "--double"));
 	PrintInfo("String is %s\n", 
 			GetProgramOptionAsString(argc, argv, "--string").c_str());
+	std::vector<std::string> strs;
+	SplitString(strs, GetProgramOptionAsString(argc, argv, "--string"), ",.",
+			true);
+	for (auto &str : strs) {
+		PrintInfo("\tSubstring : %s\n", str.c_str());
+	}
 	return 1;
 }
