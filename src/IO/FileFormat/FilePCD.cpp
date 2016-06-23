@@ -27,7 +27,14 @@
 #include <IO/ClassIO/PointCloudIO.h>
 
 #include <cstdio>
+#include <sstream>
 #include <Core/Utility/Console.h>
+#include <Core/Utility/Helper.h>
+
+// References for PCD file IO
+// http://pointclouds.org/documentation/tutorials/pcd_file_format.php
+// https://github.com/PointCloudLibrary/pcl/blob/master/io/src/pcd_io.cpp
+// https://www.mathworks.com/matlabcentral/fileexchange/40382-matlab-to-point-cloud-library
 
 namespace three{
 
@@ -42,20 +49,32 @@ enum PCDDataType {
 bool ReadPCDHeader(FILE *file, PointCloud &pointcloud, PCDDataType &data_type)
 {
 	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
+	int specified_channel_count = 0;
+	bool has_points = false, has_normals = false, has_colors = false;
 
 	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-		if (line_buffer[0] == 0 || line_buffer[0] == '#') {
+		std::string line(line_buffer);
+		if (line == "") {
 			continue;
 		}
-		const std::string line_str(line_buffer);
-		if (size_t pos = line_str.find_first_of(" \t\r") != std::string::npos) {
-			std::string line_type = line_str.substr(0, pos);
-			if (line_type == "VERSION") {
-				continue;
-			}
-			if (line_type == "FIELDS" || line_type == "COLUMNS") {
-				continue;
-			}
+		std::vector<std::string> st;
+		SplitString(st, line, "\t\r ");
+		std::stringstream sstream(line);
+		sstream.imbue(std::locale::classic());
+		std::string line_type;
+		sstream >> line_type;
+		if (line_type.substr(0, 1) == "#") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 6) == "FIELDS" || 
+				line_type.substr(0, 7) == "COLUMNS") {
+			specified_channel_count = (int)st.size() - 1;
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
+		} else if (line_type.substr(0, 7) == "VERSION") {
 		}
 	}
 

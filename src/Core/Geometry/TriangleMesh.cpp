@@ -30,7 +30,7 @@
 #include <tuple>
 
 #include <Eigen/Dense>
-#include <Core/Utility/CoreHelper.h>
+#include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
 
 namespace three{

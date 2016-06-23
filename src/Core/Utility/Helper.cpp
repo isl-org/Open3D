@@ -24,80 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Helper.h"
 
-#include <tuple>
-#include <functional>
-#include <vector>
-#include <string>
+namespace three{
 
-namespace three {
-
-/// The namespace hash_tuple defines a general hash function for std::tuple
-/// See this post for details:
-///   http://stackoverflow.com/questions/7110301
-/// The hash_combine code is from boost
-/// Reciprocal of the golden ratio helps spread entropy and handles duplicates.
-/// See Mike Seymour in magic-numbers-in-boosthash-combine:
-///   http://stackoverflow.com/questions/4948780
-
-namespace hash_tuple {
-
-template <typename TT>
-struct hash
-{
-	size_t operator()(TT const& tt) const
-	{
-		return std::hash<TT>()(tt);
-	}
-};
-
-namespace {
-
-template <class T>
-inline void hash_combine(std::size_t& seed, T const& v)
-{
-	seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-}
-
-template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
-struct HashValueImpl
-{
-	static void apply(size_t& seed, Tuple const& tuple)
-	{
-		HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
-		hash_combine(seed, std::get<Index>(tuple));
-	}
-};
-
-template <class Tuple>
-struct HashValueImpl<Tuple, 0>
-{
-	static void apply(size_t& seed, Tuple const& tuple)
-	{
-		hash_combine(seed, std::get<0>(tuple));
-	}
-};
-
-}	// unnamed namespace
-
-template <typename ... TT>
-struct hash<std::tuple<TT...>>
-{
-	size_t operator()(std::tuple<TT...> const& tt) const
-	{
-		size_t seed = 0;
-		HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
-		return seed;
-	}
-};
-
-}	// namespace hash_tuple
-
-/// Function to split a string, mimics boost::split
-/// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void SplitString(std::vector<std::string> &tokens, const std::string &str,
-		const std::string &delimiters = " ", bool trim_empty_str = true)
+		const std::string &delimiters/* = " "*/, bool trim_empty_str/* = true*/)
 {
 	std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
 	while (pos != std::string::npos) {

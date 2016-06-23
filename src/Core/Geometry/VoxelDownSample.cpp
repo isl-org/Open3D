@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <tuple>
 
-#include <Core/Utility/CoreHelper.h>
+#include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
 
 namespace three{

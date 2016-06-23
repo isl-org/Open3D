@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <Core/Core.h>
-#include <Core/Utility/CoreHelper.h>
+#include <Core/Utility/Helper.h>
 
 void PrintHelp()
 {
