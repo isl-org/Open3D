@@ -7,26 +7,6 @@ namespace three {
 
 namespace glsl {
 
-const char * const ImageFragmentShader = 
-"#version 120\n"
-"\n"
-"varying vec2 UV;\n"
-"uniform sampler2D image_texture;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	gl_FragColor = texture2D(image_texture, UV);\n"
-"}\n"
-;
-
-}  // namespace three::glsl
-
-}  // namespace three
-
-namespace three {
-
-namespace glsl {
-
 const char * const ImageVertexShader = 
 "#version 120\n"
 "\n"
@@ -41,6 +21,73 @@ const char * const ImageVertexShader =
 "{\n"
 "	gl_Position = vec4(vertex_position * vertex_scale, 1);\n"
 "	UV = vertex_UV;\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
+const char * const SimpleVertexShader = 
+"#version 120\n"
+"\n"
+"attribute vec3 vertex_position;\n"
+"attribute vec3 vertex_color;\n"
+"uniform mat4 MVP;\n"
+"\n"
+"varying vec3 fragment_color;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_Position = MVP * vec4(vertex_position, 1);\n"
+"	fragment_color = vertex_color;\n"
+"}\n"
+;
+
+}  // namespace three::glsl
+
+}  // namespace three
+
+namespace three {
+
+namespace glsl {
+
+const char * const PhongVertexShader = 
+"#version 120\n"
+"\n"
+"attribute vec3 vertex_position;\n"
+"attribute vec3 vertex_normal;\n"
+"attribute vec3 vertex_color;\n"
+"\n"
+"varying vec3 vertex_position_world;\n"
+"varying vec3 vertex_normal_camera;\n"
+"varying vec3 eye_dir_camera;\n"
+"varying vec3 fragment_color;\n"
+"varying mat4 light_dir_camera_4;\n"
+"\n"
+"uniform mat4 MVP;\n"
+"uniform mat4 V;\n"
+"uniform mat4 M;\n"
+"uniform mat4 light_position_world_4;\n"
+"\n"
+"void main()\n"
+"{\n"
+"	gl_Position = MVP * vec4(vertex_position, 1);\n"
+"	vertex_position_world = (M * vec4(vertex_position, 1)).xyz;\n"
+"\n"
+"	vec3 vertex_position_camera = (V * M * vec4(vertex_position, 1)).xyz;\n"
+"	eye_dir_camera = vec3(0, 0, 0) - vertex_position_camera;\n"
+"\n"
+"	vec4 v = vec4(vertex_position_camera, 1);\n"
+"	light_dir_camera_4 = V * light_position_world_4 - mat4(v, v, v, v);\n"
+"\n"
+"	vertex_normal_camera = (V * M * vec4(vertex_normal, 0)).xyz;\n"
+"\n"
+"	fragment_color = vertex_color;\n"
 "}\n"
 ;
 
@@ -117,38 +164,15 @@ namespace three {
 
 namespace glsl {
 
-const char * const PhongVertexShader = 
+const char * const ImageFragmentShader = 
 "#version 120\n"
 "\n"
-"attribute vec3 vertex_position;\n"
-"attribute vec3 vertex_normal;\n"
-"attribute vec3 vertex_color;\n"
-"\n"
-"varying vec3 vertex_position_world;\n"
-"varying vec3 vertex_normal_camera;\n"
-"varying vec3 eye_dir_camera;\n"
-"varying vec3 fragment_color;\n"
-"varying mat4 light_dir_camera_4;\n"
-"\n"
-"uniform mat4 MVP;\n"
-"uniform mat4 V;\n"
-"uniform mat4 M;\n"
-"uniform mat4 light_position_world_4;\n"
+"varying vec2 UV;\n"
+"uniform sampler2D image_texture;\n"
 "\n"
 "void main()\n"
 "{\n"
-"	gl_Position = MVP * vec4(vertex_position, 1);\n"
-"	vertex_position_world = (M * vec4(vertex_position, 1)).xyz;\n"
-"\n"
-"	vec3 vertex_position_camera = (V * M * vec4(vertex_position, 1)).xyz;\n"
-"	eye_dir_camera = vec3(0, 0, 0) - vertex_position_camera;\n"
-"\n"
-"	vec4 v = vec4(vertex_position_camera, 1);\n"
-"	light_dir_camera_4 = V * light_position_world_4 - mat4(v, v, v, v);\n"
-"\n"
-"	vertex_normal_camera = (V * M * vec4(vertex_normal, 0)).xyz;\n"
-"\n"
-"	fragment_color = vertex_color;\n"
+"	gl_FragColor = texture2D(image_texture, UV);\n"
 "}\n"
 ;
 
@@ -160,12 +184,14 @@ namespace three {
 
 namespace glsl {
 
-const char * const SimpleBlackFragmentShader = 
+const char * const SimpleFragmentShader = 
 "#version 120\n"
+"\n"
+"varying vec3 fragment_color;\n"
 "\n"
 "void main()\n"
 "{\n"
-"	gl_FragColor = vec4(0.1, 0.1, 0.1, 1);\n"
+"	gl_FragColor = vec4(fragment_color, 1);\n"
 "}\n"
 ;
 
@@ -197,38 +223,12 @@ namespace three {
 
 namespace glsl {
 
-const char * const SimpleFragmentShader = 
+const char * const SimpleBlackFragmentShader = 
 "#version 120\n"
-"\n"
-"varying vec3 fragment_color;\n"
 "\n"
 "void main()\n"
 "{\n"
-"	gl_FragColor = vec4(fragment_color, 1);\n"
-"}\n"
-;
-
-}  // namespace three::glsl
-
-}  // namespace three
-
-namespace three {
-
-namespace glsl {
-
-const char * const SimpleVertexShader = 
-"#version 120\n"
-"\n"
-"attribute vec3 vertex_position;\n"
-"attribute vec3 vertex_color;\n"
-"uniform mat4 MVP;\n"
-"\n"
-"varying vec3 fragment_color;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	gl_Position = MVP * vec4(vertex_position, 1);\n"
-"	fragment_color = vertex_color;\n"
+"	gl_FragColor = vec4(0.1, 0.1, 0.1, 1);\n"
 "}\n"
 ;
 

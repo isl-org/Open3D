@@ -146,7 +146,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header)
 			if (st.size() >= 2) {
 				header.version = st[1];
 			}
-		} else if (line_type.substr(0, 6) == "FIELDS" || 
+		} else if (line_type.substr(0, 6) == "FIELDS" ||
 				line_type.substr(0, 7) == "COLUMNS") {
 			specified_channel_count = st.size() - 1;
 			if (specified_channel_count == 0) {
@@ -392,7 +392,11 @@ bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud)
 	} else if (header.datatype == PCD_DATA_BINARY) {
 		std::unique_ptr<char []> buffer(new char[header.pointsize]);
 		for (int i = 0; i < header.points; i++) {
-			fread(buffer.get(), header.pointsize, 1, file);
+			if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
+				PrintDebug("[ReadPCDData] Failed to read data record.\n");
+				pointcloud.Clear();
+				return false;
+			}
 			for (const auto &field : header.fields) {
 				if (field.name == "x") {
 					pointcloud.points_[i](0) = UnpackBinaryPCDElement(
@@ -428,12 +432,25 @@ bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud)
 	} else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
 		std::uint32_t compressed_size;
 		std::uint32_t uncompressed_size;
-		fread(&compressed_size, sizeof(compressed_size), 1, file);
-		fread(&uncompressed_size, sizeof(uncompressed_size), 1, file);
+		if (fread(&compressed_size, sizeof(compressed_size), 1, file) != 1) {
+			PrintDebug("[ReadPCDData] Failed to read data record.\n");
+			pointcloud.Clear();
+			return false;
+		}
+		if (fread(&uncompressed_size, sizeof(uncompressed_size), 1, file) != 1) {
+			PrintDebug("[ReadPCDData] Failed to read data record.\n");
+			pointcloud.Clear();
+			return false;
+		}
 		PrintDebug("PCD data with %d compressed size, and %d uncompressed size.\n",
 				compressed_size, uncompressed_size);
 		std::unique_ptr<char []> buffer_compressed(new char[compressed_size]);
-		fread(buffer_compressed.get(), 1, compressed_size, file);
+		if (fread(buffer_compressed.get(), 1, compressed_size, file) !=
+				compressed_size) {
+			PrintDebug("[ReadPCDData] Failed to read data record.\n");
+			pointcloud.Clear();
+			return false;
+		}
 		std::unique_ptr<char []> buffer(new char[uncompressed_size]);
 		if (lzf_decompress(buffer_compressed.get(),
 				(unsigned int)compressed_size, buffer.get(),
@@ -594,7 +611,7 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header)
 	fprintf(file, "HEIGHT %d\n", header.height);
 	fprintf(file, "VIEWPOINT 0 0 0 1 0 0 0\n");
 	fprintf(file, "POINTS %d\n", header.points);
-	
+
 	switch (header.datatype) {
 	case PCD_DATA_BINARY:
 		fprintf(file, "DATA binary\n");
