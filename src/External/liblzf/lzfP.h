@@ -37,7 +37,7 @@
 #ifndef LZFP_h
 #define LZFP_h
 
-#define STANDALONE 1 /* at the moment, this is ok. */
+//#define STANDALONE 1 /* at the moment, this is ok. */
 
 #ifndef STANDALONE
 # include "lzf.h"
