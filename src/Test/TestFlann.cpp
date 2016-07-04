@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 
 #include <flann/flann.hpp>

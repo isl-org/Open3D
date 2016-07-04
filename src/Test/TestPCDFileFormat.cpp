@@ -24,67 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cstdio>
-#include <cmath>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
-#define NUM_THREADS 4
-#define NUM_START 1
-#define NUM_END 10
-
-int main()
+int main(int argc, char **argv)
 {
-	int i = 0, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
-	int nThreads = 1, nTmp = nStart + nEnd;
-	unsigned uTmp = (unsigned(nEnd - nStart + 1) *
-			unsigned(nTmp)) / 2;
-	int nSumCalc = uTmp;
+	using namespace three;
+	using namespace flann;
 
-	if (nTmp < 0) {
-		nSumCalc = -nSumCalc;
+	SetVerbosityLevel(three::VERBOSE_ALWAYS);
+	
+	if (argc < 2) {
+		PrintInfo("Usage:\n");
+		PrintInfo("    > TestFlann [filename] [ascii|binary|compressed]\n");
+		PrintInfo("    The program will :\n");
+		PrintInfo("    1. load the pointcloud in [filename].\n");
+		PrintInfo("    2. visualize the point cloud.\n");
+		PrintInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
+		return 0;
 	}
 
-#ifdef _OPENMP
-	printf("OpenMP is supported.\n");
-#else
-	printf("OpenMP is not supported.\n");
-#endif
+	auto cloud_ptr = CreatePointCloudFromFile(argv[1]);
+	DrawGeometry(cloud_ptr, "TestPCDFileFormat", 1920, 1080);
 
-#ifdef _OPENMP
-	omp_set_num_threads(NUM_THREADS);
-#endif
-
-#pragma omp parallel default(none) private(i) shared(nSum, nThreads, nStart, nEnd)
-	{
-#ifdef _OPENMP
-#pragma omp master
-		nThreads = omp_get_num_threads();
-#endif
-
-#pragma omp for
-		for (i = nStart; i <= nEnd; ++i) {
-#pragma omp atomic
-			nSum += i;
+	if (argc >= 3) {
+		std::string method(argv[2]);
+		if (method == "ascii") {
+			WritePointCloud("data.pcd", *cloud_ptr, true);
+		} else if (method == "binary") {
+			WritePointCloud("data.pcd", *cloud_ptr, false, false);
+		} else if (method == "compressed") {
+			WritePointCloud("data.pcd", *cloud_ptr, false, true);
 		}
 	}
 
-	if (nThreads == NUM_THREADS) {
-		printf("%d OpenMP threads were used.\n", NUM_THREADS);
-		nRet = 0;
-	} else {
-		printf("Expected %d OpenMP threads, but %d were used.\n",
-				NUM_THREADS, nThreads);
-		nRet = 1;
-	}
-
-	if (nSum != nSumCalc) {
-		printf("The sum of %d through %d should be %d, "
-				"but %d was reported!\n",
-				NUM_START, NUM_END, nSumCalc, nSum);
-		nRet = 1;
-	} else
-		printf("The sum of %d through %d is %d\n",
-				NUM_START, NUM_END, nSum);
+	return 0;
 }

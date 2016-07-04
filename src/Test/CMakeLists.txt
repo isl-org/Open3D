@@ -51,6 +51,12 @@ set_target_properties(TestDepthCapture PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
+add_executable(TestPCDFileFormat TestPCDFileFormat.cpp)
+target_link_libraries(TestPCDFileFormat Core Visualization IO)
+set_target_properties(TestPCDFileFormat PROPERTIES
+		FOLDER "Test"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+
 if(Open3D_BUILD_LIBREALSENSE)
     add_executable(TestRealSense TestRealSense.cpp)
     target_link_libraries(TestRealSense Visualization realsense)

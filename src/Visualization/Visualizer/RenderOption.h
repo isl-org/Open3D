@@ -77,7 +77,26 @@ public:
 	};
 
 public:
-	RenderOption() {}
+	RenderOption() {
+		// VS2013 does not fully support C++11
+		// Array initialization has to be done in contructors.
+		light_position_relative_[0] = Eigen::Vector3d(2, 2, 2);
+		light_position_relative_[1] = Eigen::Vector3d(2, -2, -2);
+		light_position_relative_[2] = Eigen::Vector3d(-2, 2, -2);
+		light_position_relative_[3] = Eigen::Vector3d(-2, -2, 2);
+		light_color_[0] = Eigen::Vector3d::Ones();
+		light_color_[1] = Eigen::Vector3d::Ones();
+		light_color_[2] = Eigen::Vector3d::Ones();
+		light_color_[3] = Eigen::Vector3d::Ones();
+		light_diffuse_power_[0] = 0.7;
+		light_diffuse_power_[1] = 0.7;
+		light_diffuse_power_[2] = 0.7;
+		light_diffuse_power_[3] = 0.7;
+		light_specular_power_[0] = 0.4;
+		light_specular_power_[1] = 0.4;
+		light_specular_power_[2] = 0.4;
+		light_specular_power_[3] = 0.4;
+	}
 	~RenderOption() override {}
 
 public:
@@ -133,21 +152,11 @@ public:
 
 	// Phong lighting options
 	bool light_on_ = true;
-	Eigen::Vector3d light_position_relative_[4] = {
-		Eigen::Vector3d(2, 2, 2),
-		Eigen::Vector3d(2, -2, -2),
-		Eigen::Vector3d(-2, 2, -2),
-		Eigen::Vector3d(-2, -2, 2)
-	};
-	Eigen::Vector3d light_color_[4] = {
-		Eigen::Vector3d::Ones(),
-		Eigen::Vector3d::Ones(),
-		Eigen::Vector3d::Ones(),
-		Eigen::Vector3d::Ones()
-	};
+	Eigen::Vector3d light_position_relative_[4];
+	Eigen::Vector3d light_color_[4];
 	Eigen::Vector3d light_ambient_color_ = Eigen::Vector3d::Zero();
-	double light_diffuse_power_[4] = {0.7, 0.7, 0.7, 0.7};
-	double light_specular_power_[4] = {0.4, 0.4, 0.4, 0.4};
+	double light_diffuse_power_[4];
+	double light_specular_power_[4];
 
 	// PointCloud options
 	double point_size_ = POINT_SIZE_DEFAULT;
