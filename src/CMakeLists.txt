@@ -49,6 +49,7 @@ if(WIN32)
 		add_definitions(-DNOMINMAX)
 		add_definitions(-D_USE_MATH_DEFINES)
 		add_definitions(/wd4273)		# suppress GLEW warnings
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 	endif(MSVC)
 elseif(CYGWIN)
 	message(STATUS "Compiling on Cygwin")

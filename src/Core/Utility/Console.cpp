@@ -36,7 +36,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cerrno>
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -64,7 +64,7 @@ static VerbosityLevel global_verbosity_level = VERBOSE_INFO;
 /// \param emphasis_text is 0 or 1
 void ChangeConsoleColor(int text_color, int highlight_text)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	const WORD EMPHASIS_MASK[2] = { 0, FOREGROUND_INTENSITY };
 	const WORD COLOR_MASK[8] = {
 		0,
@@ -86,7 +86,7 @@ void ChangeConsoleColor(int text_color, int highlight_text)
 
 void ResetConsoleColor()
 {
-#ifdef WIN32
+#ifdef _WIN32
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(h,
 			FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
