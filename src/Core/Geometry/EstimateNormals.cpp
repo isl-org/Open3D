@@ -160,9 +160,11 @@ bool EstimateNormals(PointCloud &cloud,
 	kdtree.SetGeometry(cloud);
 	std::vector<int> indices;
 	std::vector<double> distance2;
+	int nn;
 	Eigen::Vector3d normal;
 	for (size_t i = 0; i < cloud.points_.size(); i++) {
-		kdtree.Search(cloud.points_[i], search_param, indices, distance2);
+		nn = kdtree.Search(cloud.points_[i], search_param, indices, distance2);
+		indices.resize(nn);
 		normal = ComputeNormal(cloud, indices);
 		if (normal.norm() == 0.0) {
 			normal = orientation_reference;

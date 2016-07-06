@@ -11,7 +11,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # config options
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
-option(USE_OPENMP "Use OpenMP multi-threading" ON)
+option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
@@ -65,7 +65,7 @@ elseif(APPLE)
 	# disable OpenMP since it is not currently supported on OSX
 	message(STATUS "Compiling on OSX")
 	message(STATUS "Disable OpenMP since it is not supported on OSX.")
-	set(USE_OPENMP OFF)
+	set(Open3D_USE_OPENMP OFF)
 elseif(UNIX)
 	add_definitions(-DUNIX)
 	# enable c++11
@@ -78,8 +78,8 @@ elseif(UNIX)
 endif(WIN32)
 
 # Set OpenMP
-message(STATUS "USE_OPENMP=${USE_OPENMP}")
-if (USE_OPENMP)
+message(STATUS "Open3D_USE_OPENMP=${Open3D_USE_OPENMP}")
+if (Open3D_USE_OPENMP)
 	find_package(OpenMP)
 	if(OPENMP_FOUND)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
