@@ -44,6 +44,7 @@ protected:
 		}
 		if (key == GLFW_KEY_S) {
 			CaptureDepthImage("depth.png");
+			CaptureDepthPointCloud("depth.ply");
 			PinholeCameraTrajectory camera;
 			camera.extrinsic_.resize(1);
 			view_control_ptr_->ConvertToPinholeCameraParameters(
@@ -57,6 +58,11 @@ protected:
 				auto image_ptr = CreateImageFromFile("depth.png");
 				auto pointcloud_ptr = CreatePointCloudFromDepthImage(
 						*image_ptr, camera.intrinsic_, camera.extrinsic_[0]);
+				AddGeometry(pointcloud_ptr, true);
+			}
+		} else if (key == GLFW_KEY_K) {
+			if (filesystem::FileExists("depth.ply")) {
+				auto pointcloud_ptr = CreatePointCloudFromFile("depth.ply");
 				AddGeometry(pointcloud_ptr, true);
 			}
 		} else if (key == GLFW_KEY_P) {

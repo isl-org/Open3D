@@ -123,6 +123,8 @@ public:
 			bool do_render = true);
 	void CaptureDepthImage(const std::string &filename = "",
 			bool do_render = true, double depth_scale = 1000.0);
+	void CaptureDepthPointCloud(const std::string &filename = "",
+			bool do_render = true);
 	void CaptureRenderOption(const std::string &filename = "");
 
 protected:
