@@ -27,6 +27,8 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
+#include <limits>
+
 void PrintHelp()
 {
 	printf("Usage:\n");
@@ -35,6 +37,12 @@ void PrintHelp()
 	printf("\n");
 	printf("Options:\n");
 	printf("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
+	printf("    --clip_x_min x0           : Clip points with x coordinate less than x0.\n");
+	printf("    --clip_x_max x1           : Clip points with x coordinate larger than x1.\n");
+	printf("    --clip_y_min y0           : Clip points with y coordinate less than y0.\n");
+	printf("    --clip_y_max y1           : Clip points with y coordinate larger than y1.\n");
+	printf("    --clip_z_min z0           : Clip points with z coordinate less than z0.\n");
+	printf("    --clip_z_max z1           : Clip points with z coordinate larger than z1.\n");
 	printf("    --help, -h                : Print help information.\n");
 	printf("    --verbose n               : Set verbose level (0-4).\n");
 }
@@ -52,9 +60,32 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	
+	auto pointcloud_ptr = CreatePointCloudFromFile(argv[1]);
+	
+	// clip
+	if (ProgramOptionExistsAny(argc, argv, {"--clip_x_min", "--clip_x_max",
+			"--clip_y_min", "--clip_y_max", "--clip_z_min", "--clip_z_max"})) {
+		Eigen::Vector3d min_bound, max_bound;
+		min_bound(0) = GetProgramOptionAsDouble(argc, argv, "--clip_x_min",
+				std::numeric_limits<double>::lowest());
+		min_bound(1) = GetProgramOptionAsDouble(argc, argv, "--clip_y_min",
+				std::numeric_limits<double>::lowest());
+		min_bound(2) = GetProgramOptionAsDouble(argc, argv, "--clip_z_min",
+				std::numeric_limits<double>::lowest());
+		max_bound(0) = GetProgramOptionAsDouble(argc, argv, "--clip_x_max",
+				std::numeric_limits<double>::max());
+		max_bound(1) = GetProgramOptionAsDouble(argc, argv, "--clip_y_max",
+				std::numeric_limits<double>::max());
+		max_bound(2) = GetProgramOptionAsDouble(argc, argv, "--clip_z_max",
+				std::numeric_limits<double>::max());
+		auto clip_ptr = std::make_shared<PointCloud>();
+		ClipPointCloud(*pointcloud_ptr, min_bound, max_bound, *clip_ptr);
+		pointcloud_ptr = clip_ptr;
+	}
+	
+	// voxel_downsample
 	double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_sample",
 			0.0);
-	auto pointcloud_ptr = CreatePointCloudFromFile(argv[1]);
 	if (voxel_size > 0.0) {
 		auto downsample_ptr = std::make_shared<PointCloud>();
 		VoxelDownSample(*pointcloud_ptr, voxel_size, *downsample_ptr);

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <vector>
 #include <string>
 
 namespace three {
@@ -71,5 +72,8 @@ double GetProgramOptionAsDouble(int argc, char **argv,
 		const std::string &option, const double default_value = 0.0);
 
 bool ProgramOptionExists(int argc, char **argv, const std::string &option);
+
+bool ProgramOptionExistsAny(int argc, char **argv,
+		const std::vector<std::string> &options);
 
 }	// namespace three

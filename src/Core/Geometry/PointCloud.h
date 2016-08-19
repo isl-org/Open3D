@@ -104,6 +104,13 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 		PointCloud &output_cloud);
 
+/// Function to clip input_cloud into output_cloud
+/// All points with coordinates less than \param min_bound or larger than
+/// \param max_bound are clipped.
+bool ClipPointCloud(const PointCloud &input_cloud,
+		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
+		PointCloud &output_cloud);
+
 /// Function to compute the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with respect to the input point cloud is normals exist

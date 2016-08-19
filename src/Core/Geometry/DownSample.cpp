@@ -89,6 +89,7 @@ private:
 bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PointCloud &output_cloud)
 {
+	output_cloud.Clear();
 	if (input_cloud.HasPoints() == false) {
 		PrintDebug("[VoxelDownSample] Input point cloud has no points.\n");
 		return false;
@@ -97,7 +98,6 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
 		return false;
 	}
-
 	Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
 	Eigen::Vector3d voxel_min_bound = input_cloud.GetMinBound() - 
 			voxel_size3 * 0.5;
@@ -108,7 +108,6 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
 		return false;
 	}
-
 	std::unordered_map<VoxelIndex3, AccumulatedPoint, 
 			hash_tuple::hash<VoxelIndex3>> voxelindex_to_accpoint;
 	for (size_t i = 0; i < input_cloud.points_.size(); i++) {
@@ -121,8 +120,6 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 				);
 		voxelindex_to_accpoint[voxel_index].AddPoint(input_cloud, i);
 	}
-
-	output_cloud.Clear();
 	bool has_normals = input_cloud.HasNormals();
 	bool has_colors = input_cloud.HasColors();
 	for (auto accpoint : voxelindex_to_accpoint) {
@@ -143,6 +140,7 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 		PointCloud &output_cloud)
 {
+	output_cloud.Clear();
 	if (input_cloud.HasPoints() == false) {
 		PrintDebug("[UniformDownSample] Input point cloud has no points.\n");
 		return false;
@@ -151,7 +149,6 @@ bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 		PrintDebug("[UniformDownSample] Illegal sample rate.\n");
 		return false;
 	}
-	output_cloud.Clear();
 	bool has_normals = input_cloud.HasNormals();
 	bool has_colors = input_cloud.HasColors();
 	for (int i = 0; i < static_cast<int>(input_cloud.points_.size());
@@ -165,6 +162,42 @@ bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 		}
 	}
 	PrintAlways("[UniformDownSample] Down sampled from %d points to %d points.\n",
+			input_cloud.points_.size(), output_cloud.points_.size());
+	return true;
+}
+
+bool ClipPointCloud(const PointCloud &input_cloud,
+		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
+		PointCloud &output_cloud)
+{
+	output_cloud.Clear();
+	if (input_cloud.HasPoints() == false) {
+		PrintDebug("[ClipPointCloud] Input point cloud has no points.\n");
+		return false;
+	}
+	if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
+			min_bound(2) > max_bound(2)) {
+		PrintDebug("[ClipPointCloud] Illegal boundary clipped all points.\n");
+		return false;
+	}
+	bool has_normals = input_cloud.HasNormals();
+	bool has_colors = input_cloud.HasColors();
+	for (size_t i = 0; i < input_cloud.points_.size(); i++) {
+		const auto &point = input_cloud.points_[i];
+		if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
+				point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
+				point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
+			output_cloud.points_.push_back(input_cloud.points_[i]);
+			if (has_normals) {
+				output_cloud.normals_.push_back(input_cloud.normals_[i]);
+			}
+			if (has_colors) {
+				output_cloud.colors_.push_back(input_cloud.colors_[i]);
+			}
+		}
+	}
+	PrintAlways("[ClipPointCloud] Clipped %d points from %d points, %d points remaining.\n",
+			input_cloud.points_.size() - output_cloud.points_.size(),
 			input_cloud.points_.size(), output_cloud.points_.size());
 	return true;
 }
