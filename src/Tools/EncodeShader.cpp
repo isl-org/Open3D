@@ -31,11 +31,11 @@
 void PrintHelp()
 {
 	printf("Usage:\n");
-	printf("    > EncodeShader [header_file]\n");
+	printf("    > EncodeShader target_file\n");
 	printf("      Generate a header file with license information.\n");
 	printf("\n");
-	printf("    > EncodeShader [header_file] [shader_file]\n");
-	printf("      For each shader file, append it to a header file.\n");
+	printf("    > EncodeShader target_file source_shader_file\n");
+	printf("      Append the shader file to the target header file.\n");
 }
 
 void WriteFileHeader(FILE *file)

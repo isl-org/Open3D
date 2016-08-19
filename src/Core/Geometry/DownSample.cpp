@@ -140,4 +140,33 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 	return true;
 }
 
+bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
+		PointCloud &output_cloud)
+{
+	if (input_cloud.HasPoints() == false) {
+		PrintDebug("[UniformDownSample] Input point cloud has no points.\n");
+		return false;
+	}
+	if (every_k_points <= 0) {
+		PrintDebug("[UniformDownSample] Illegal sample rate.\n");
+		return false;
+	}
+	output_cloud.Clear();
+	bool has_normals = input_cloud.HasNormals();
+	bool has_colors = input_cloud.HasColors();
+	for (int i = 0; i < static_cast<int>(input_cloud.points_.size());
+			i += every_k_points) {
+		output_cloud.points_.push_back(input_cloud.points_[i]);
+		if (has_normals) {
+			output_cloud.normals_.push_back(input_cloud.normals_[i]);
+		}
+		if (has_colors) {
+			output_cloud.colors_.push_back(input_cloud.colors_[i]);
+		}
+	}
+	PrintAlways("[UniformDownSample] Down sampled from %d points to %d points.\n",
+			input_cloud.points_.size(), output_cloud.points_.size());
+	return true;
+}
+
 }	// namespace three

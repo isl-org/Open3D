@@ -84,4 +84,14 @@ bool WritePointCloudToPCD(
 		const bool write_ascii = false,
 		const bool compressed = false);
 
+bool ReadPointCloudFromPTS(
+		const std::string &filename,
+		PointCloud &pointcloud);
+
+bool WritePointCloudToPTS(
+		const std::string &filename,
+		const PointCloud &pointcloud,
+		const bool write_ascii = false,
+		const bool compressed = false);
+
 }	// namespace three

@@ -99,6 +99,11 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PointCloud &output_cloud);
 
+/// Function to downsample input_cloud into output_cloud uniformly
+/// \param every_k_points indicates the sample rate.
+bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
+		PointCloud &output_cloud);
+
 /// Function to compute the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with respect to the input point cloud is normals exist

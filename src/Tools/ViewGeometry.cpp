@@ -30,27 +30,31 @@
 
 void PrintHelp()
 {
+	printf("Usage:\n");
+	printf("    > ViewGeometry [options]\n");
+	printf("      Open a window to view geometry.\n");
 	printf("\n");
 	printf("Basic options:\n");
-	printf("    --help [-h]               : Print help information.\n");
-	printf("    --mesh [file]             : Add a triangle mesh.\n");
-	printf("    --pointcloud [file]       : Add a point cloud.\n");
-	printf("    --image [file]            : Add an image.\n");
-	printf("    --depth [file]            : Add a point cloud converted from a depth image.\n");
-	printf("    --depth_camera [file]     : Use with --depth, read a json file that stores the camera parameters.\n");
+	printf("    --help, -h                : Print help information.\n");
+	printf("    --mesh file               : Add a triangle mesh from file.\n");
+	printf("    --pointcloud file         : Add a point cloud from file.\n");
+	printf("    --image file              : Add an image from file.\n");
+	printf("    --depth file              : Add a point cloud converted from a depth image.\n");
+	printf("    --depth_camera file       : Use with --depth, read a json file that stores the camera parameters.\n");
 	printf("    --show_frame              : Add a coordinate frame.\n");
+	printf("    --verbose n               : Set verbose level (0-4).\n");
 	printf("\n");
 	printf("Animation options:\n");
-	printf("    --render_option [file]    : Read a json file of rendering settings.\n");
-	printf("    --view_trajectory [file]  : Read a json file of view trajectory.\n");
-	printf("    --camera_trajectory [file]: Read a json file of camera trajectory.\n");
+	printf("    --render_option file      : Read a json file of rendering settings.\n");
+	printf("    --view_trajectory file    : Read a json file of view trajectory.\n");
+	printf("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
 	printf("\n");
 	printf("Window options:\n");
-	printf("    --window_name [name]      : Set window name.\n");
-	printf("    --height [n]              : Set window height.\n");
-	printf("    --width [n]               : Set window width.\n");
-	printf("    --top [n]                 : Set window top edge.\n");
-	printf("    --left [n]                : Set window left edge.\n");
+	printf("    --window_name name        : Set window name.\n");
+	printf("    --height n                : Set window height.\n");
+	printf("    --width n                 : Set window width.\n");
+	printf("    --top n                   : Set window top edge.\n");
+	printf("    --left n                  : Set window left edge.\n");
 }
 
 int main(int argc, char **argv)

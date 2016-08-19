@@ -30,34 +30,36 @@
 void PrintHelp()
 {
 	printf("Usage:\n");
-	printf("    > MergeMesh source_directory target_file\n");
-	printf("      Merge mesh files under <source_directory>.\n");
+	printf("    > ConvertPointCloud source_file target_file [options]\n");
+	printf("      Read point cloud from source file and convert it to target file.\n");
+	printf("\n");
+	printf("Options:\n");
+	printf("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
+	printf("    --help, -h                : Print help information.\n");
+	printf("    --verbose n               : Set verbose level (0-4).\n");
 }
 
-int main(int argc, char **args)
+int main(int argc, char **argv)
 {
 	using namespace three;
 	using namespace three::filesystem;
 
-	SetVerbosityLevel(VERBOSE_ALWAYS);
-	if (argc <= 2) {
+	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+	SetVerbosityLevel((VerbosityLevel)verbose);
+	if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
+			ProgramOptionExists(argc, argv, "-h")) {
 		PrintHelp();
 		return 0;
 	}
-
-	std::string directory(args[1]);
-	std::vector<std::string> filenames;
-	ListFilesInDirectory(directory, filenames);
-
-	auto merged_mesh_ptr = std::make_shared<TriangleMesh>();
-	for (const auto &filename : filenames) {
-		auto mesh_ptr = std::make_shared<TriangleMesh>();
-		if (ReadTriangleMesh(filename, *mesh_ptr)) {
-			*merged_mesh_ptr += *mesh_ptr;
-		}
+	
+	double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_sample",
+			0.0);
+	auto pointcloud_ptr = CreatePointCloudFromFile(argv[1]);
+	if (voxel_size > 0.0) {
+		auto downsample_ptr = std::make_shared<PointCloud>();
+		VoxelDownSample(*pointcloud_ptr, voxel_size, *downsample_ptr);
+		pointcloud_ptr = downsample_ptr;
 	}
-	merged_mesh_ptr->Purge();
-	WriteTriangleMesh(args[2], *merged_mesh_ptr);
-
+	WritePointCloud(argv[2], *pointcloud_ptr, false, true);
 	return 1;
 }

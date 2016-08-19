@@ -41,6 +41,7 @@ static const std::unordered_map<std::string,
 		{"xyzn", ReadPointCloudFromXYZN},
 		{"ply", ReadPointCloudFromPLY},
 		{"pcd", ReadPointCloudFromPCD},
+		{"pts", ReadPointCloudFromPTS},
 		};
 
 static const std::unordered_map<std::string,
@@ -51,6 +52,7 @@ static const std::unordered_map<std::string,
 		{"xyzn", WritePointCloudToXYZN},
 		{"ply", WritePointCloudToPLY},
 		{"pcd", WritePointCloudToPCD},
+		{"pts", WritePointCloudToPTS},
 		};
 }	// unnamed namespace
 
@@ -68,7 +70,9 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 		PrintWarning("Read PointCloud failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, pointcloud);
+	bool success = map_itr->second(filename, pointcloud);
+	PrintDebug("Read PointCloud: %lu vertices.\n", pointcloud.points_.size());
+	return success;
 }
 
 bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
@@ -86,7 +90,10 @@ bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
 		PrintWarning("Write PointCloud failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, pointcloud, write_ascii, compressed);
+	bool success = map_itr->second(filename, pointcloud, write_ascii,
+			compressed);
+	PrintDebug("Write PointCloud: %lu vertices.\n", pointcloud.points_.size());
+	return success;
 }
 
 }	// namespace three
