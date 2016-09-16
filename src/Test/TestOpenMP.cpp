@@ -28,7 +28,9 @@
 #include <cmath>
 #ifdef _OPENMP
 #include <omp.h>
-#endif
+#endif 
+#include <Core/Core.h>
+#include <External/Eigen/Eigen/SVD>
 
 #define NUM_THREADS 4
 #define NUM_START 1
@@ -84,7 +86,79 @@ int main()
 				"but %d was reported!\n",
 				NUM_START, NUM_END, nSumCalc, nSum);
 		nRet = 1;
-	} else
+	} else {
 		printf("The sum of %d through %d is %d\n",
 				NUM_START, NUM_END, nSum);
+	}
+
+	for (int i = 1; i < 512; i *= 2) {
+		char buff[1024];
+		sprintf(buff, "simple task, %d tasks, %d threads", i, i);
+		three::ScopeTimer t(buff);
+#ifdef _OPENMP
+		omp_set_num_threads(i);
+#endif
+#pragma omp parallel default(none) shared(nThreads)
+		{
+#ifdef _OPENMP
+#pragma omp master
+			nThreads = omp_get_num_threads();
+#endif
+			int n_a_rows = 2000;
+			int n_a_cols = 2000;
+			int n_b_rows = 2000;
+			int n_b_cols = 2000;
+
+			Eigen::MatrixXd a(n_a_rows, n_a_cols);
+			for (int i = 0; i < n_a_rows; ++i)
+				for (int j = 0; j < n_a_cols; ++j)
+					a(i, j) = n_a_cols * i + j;
+
+			Eigen::MatrixXd b(n_b_rows, n_b_cols);
+			for (int i = 0; i < n_b_rows; ++i)
+				for (int j = 0; j < n_b_cols; ++j)
+					b(i, j) = n_b_cols * i + j;
+
+			Eigen::MatrixXd d(n_a_rows, n_b_cols);
+			d = a * b;
+#ifdef _OPENMP
+#pragma omp master
+			three::PrintInfo("Output %f\n", d(0, 0));
+#endif
+		}
+		three::PrintInfo("%d threads are used.\n", nThreads);
+	}
+
+
+	for (int i = 1; i < 512; i *= 2) {
+		char buff[1024];
+		sprintf(buff, "svd, %d tasks, %d threads", i, i);
+		three::ScopeTimer t(buff);
+#ifdef _OPENMP
+		omp_set_num_threads(i);
+#endif
+#pragma omp parallel default(none) shared(nThreads)
+		{
+#ifdef _OPENMP
+#pragma omp master
+			nThreads = omp_get_num_threads();
+#endif
+			int n_a_rows = 10000;
+			int n_a_cols = 200;
+			Eigen::MatrixXd a(n_a_rows, n_a_cols);
+			for (int i = 0; i < n_a_rows; ++i)
+				for (int j = 0; j < n_a_cols; ++j)
+					a(i, j) = n_a_cols * i + j;
+			Eigen::JacobiSVD<Eigen::MatrixXd> svd(a, 
+					Eigen::ComputeThinU | Eigen::ComputeThinV);
+			Eigen::MatrixXd pca = svd.matrixU().block<10000, 10>(0, 0
+					).transpose() * a;
+
+#ifdef _OPENMP
+#pragma omp master
+			three::PrintInfo("Output %f\n", pca(0, 0));
+#endif
+		}
+		three::PrintInfo("%d threads are used.\n", nThreads);
+	}
 }

@@ -23,6 +23,7 @@ set_target_properties(TestVisualizer PROPERTIES
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
 add_executable(TestOpenMP TestOpenMP.cpp)
+target_link_libraries(TestOpenMP Core)
 set_target_properties(TestOpenMP PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")

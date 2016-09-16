@@ -141,7 +141,7 @@ static void run(Index rows, Index cols, Index depth,
       // i.e., we simply decrement the number of users by 1
       for(Index j=0; j<threads; ++j)
         #pragma omp atomic
-        --(info[j].users);
+          (info[j].users) -= 1;
     }
   }
   else
