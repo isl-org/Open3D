@@ -4,6 +4,12 @@ set_target_properties(TestPointCloud PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
+add_executable(TestCameraPoseTrajectory TestCameraPoseTrajectory)
+target_link_libraries(TestCameraPoseTrajectory Visualization IO Core)
+set_target_properties(TestCameraPoseTrajectory PROPERTIES
+		FOLDER "Test"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+
 add_executable(TestLineSet TestLineSet.cpp)
 target_link_libraries(TestLineSet Visualization IO Core)
 set_target_properties(TestLineSet PROPERTIES

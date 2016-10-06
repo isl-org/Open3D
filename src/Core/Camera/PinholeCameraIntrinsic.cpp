@@ -32,8 +32,17 @@
 
 namespace three{
 
+const PinholeCameraIntrinsic PinholeCameraIntrinsic::PrimeSenseDefault =
+		PinholeCameraIntrinsic(640, 480, 525.0, 525.0, 319.5, 239.5);
+
 PinholeCameraIntrinsic::PinholeCameraIntrinsic()
 {
+}
+
+PinholeCameraIntrinsic::PinholeCameraIntrinsic(int width, int height,
+		double fx, double fy, double cx, double cy)
+{
+	SetIntrinsics(width, height, fx, fy, cx, cy);
 }
 
 PinholeCameraIntrinsic::~PinholeCameraIntrinsic()

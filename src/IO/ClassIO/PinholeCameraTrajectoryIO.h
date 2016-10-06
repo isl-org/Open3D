@@ -26,8 +26,27 @@
 
 #pragma once
 
-#include "ClassIO/PointCloudIO.h"
-#include "ClassIO/TriangleMeshIO.h"
-#include "ClassIO/ImageIO.h"
-#include "ClassIO/PinholeCameraTrajectoryIO.h"
-#include "ClassIO/IJsonConvertibleIO.h"
+#include <string>
+#include <Core/Camera/PinholeCameraTrajectory.h>
+
+namespace three {
+
+/// The general entrance for reading a PinholeCameraTrajectory from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return If the read function is successful. 
+bool ReadPinholeCameraTrajectory(const std::string &filename,
+		PinholeCameraTrajectory &trajectory);
+
+/// The general entrance for writing a PinholeCameraTrajectory to a file
+/// The function calls write functions based on the extension name of filename.
+/// \return If the write function is successful.
+bool WritePinholeCameraTrajectory(const std::string &filename,
+		const PinholeCameraTrajectory &trajectory);
+
+bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
+		PinholeCameraTrajectory &trajectory);
+
+bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
+		const PinholeCameraTrajectory &trajectory);
+
+}	// namespace three

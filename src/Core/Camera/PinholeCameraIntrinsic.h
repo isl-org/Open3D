@@ -34,7 +34,12 @@ namespace three {
 class PinholeCameraIntrinsic : public IJsonConvertible
 {
 public:
+	static const PinholeCameraIntrinsic PrimeSenseDefault;
+
+public:
 	PinholeCameraIntrinsic();
+	PinholeCameraIntrinsic(int width, int height, double fx, double fy,
+			double cx, double cy);
 	~PinholeCameraIntrinsic() override;
 
 public:

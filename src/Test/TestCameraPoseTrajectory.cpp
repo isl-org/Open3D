@@ -24,10 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <iostream>
+#include <memory>
+#include <Eigen/Dense>
 
-#include "ClassIO/PointCloudIO.h"
-#include "ClassIO/TriangleMeshIO.h"
-#include "ClassIO/ImageIO.h"
-#include "ClassIO/PinholeCameraTrajectoryIO.h"
-#include "ClassIO/IJsonConvertibleIO.h"
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
+
+int main(int argc, char *argv[])
+{
+	using namespace three;
+	SetVerbosityLevel(VERBOSE_ALWAYS);
+
+	if (argc != 3) {
+		PrintInfo("> TestCameraPoseTrajectory trajectory_file pcds_dir\n");
+		return 0;
+	}
+	
+	PinholeCameraTrajectory trajectory;
+	ReadPinholeCameraTrajectory(argv[1], trajectory);
+	std::vector<std::shared_ptr<const Geometry>> pcds;
+	for (size_t i = 0; i < trajectory.extrinsic_.size(); i++) {
+		char buff[DEFAULT_IO_BUFFER_SIZE];
+		sprintf(buff, "%scloud_bin_%lu.pcd", argv[2], i);
+		if (filesystem::FileExists(buff)) {
+			auto pcd = CreatePointCloudFromFile(buff);
+			pcd->Transform(trajectory.extrinsic_[i]);
+			pcd->colors_.clear();
+			pcd->colors_.resize(pcd->points_.size(),
+					(Eigen::Vector3d::Random() +
+					Eigen::Vector3d::Constant(1.0)) * 0.5);
+			pcds.push_back(pcd);
+		}
+	}
+	DrawGeometries(pcds);
+	
+	return 1;
+}
