@@ -87,7 +87,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 		}
 		trajectory.extrinsic_.push_back(trans);
 	}
-	fclose( f );
+	fclose(f);
 	return true;
 }
 

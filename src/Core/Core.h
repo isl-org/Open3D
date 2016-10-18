@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "Utility/Helper.h"
 #include "Utility/Console.h"
 #include "Utility/Timer.h"
 #include "Utility/FileSystem.h"

@@ -101,3 +101,8 @@ message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")
 if(Open3D_BUILD_TESTS)
 	add_subdirectory(Test)
 endif(Open3D_BUILD_TESTS)
+
+if(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
+	message(STATUS "Build projects in Sandbox")
+	add_subdirectory(Sandbox)
+endif(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
