@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 
 	for (int i = 1; i <= test_thread; i *= 2) {
 		char buff[1024];
-		sprintf(buff, "simple task, %d tasks, %d threads", i, i);
+		sprintf(buff, "svd task, %d tasks, %d threads", i, i);
 		three::ScopeTimer t(buff);
 		std::vector<std::thread> threads(i);
 		for (int k = 0; k < i; k++) {
