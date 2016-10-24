@@ -39,10 +39,6 @@
 
 void simple_task()
 {
-#ifdef _OPENMP
-#pragma omp master
-	nThreads = omp_get_num_threads();
-#endif
 	int n_a_rows = 2000;
 	int n_a_cols = 2000;
 	int n_b_rows = 2000;
@@ -60,18 +56,10 @@ void simple_task()
 
 	Eigen::MatrixXd d(n_a_rows, n_b_cols);
 	d = a * b;
-#ifdef _OPENMP
-#pragma omp master
-	three::PrintInfo("Output %f\n", d(0, 0));
-#endif
 }
 
 void svd_task()
 {
-#ifdef _OPENMP
-#pragma omp master
-	nThreads = omp_get_num_threads();
-#endif
 	int n_a_rows = 10000;
 	int n_a_cols = 200;
 	Eigen::MatrixXd a(n_a_rows, n_a_cols);
@@ -82,11 +70,6 @@ void svd_task()
 			Eigen::ComputeThinU | Eigen::ComputeThinV);
 	Eigen::MatrixXd pca = svd.matrixU().block<10000, 10>(0, 0
 			).transpose() * a;
-
-#ifdef _OPENMP
-#pragma omp master
-	three::PrintInfo("Output %f\n", pca(0, 0));
-#endif
 }
 
 int main(int argc, char **argv)
