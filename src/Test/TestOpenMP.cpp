@@ -26,6 +26,7 @@
 
 #include <cstdio>
 #include <cmath>
+#include <thread>
 #ifdef _OPENMP
 #include <omp.h>
 #endif 
@@ -36,7 +37,59 @@
 #define NUM_START 1
 #define NUM_END 10
 
-int main()
+void simple_task()
+{
+#ifdef _OPENMP
+#pragma omp master
+	nThreads = omp_get_num_threads();
+#endif
+	int n_a_rows = 2000;
+	int n_a_cols = 2000;
+	int n_b_rows = 2000;
+	int n_b_cols = 2000;
+
+	Eigen::MatrixXd a(n_a_rows, n_a_cols);
+	for (int i = 0; i < n_a_rows; ++i)
+		for (int j = 0; j < n_a_cols; ++j)
+			a(i, j) = n_a_cols * i + j;
+
+	Eigen::MatrixXd b(n_b_rows, n_b_cols);
+	for (int i = 0; i < n_b_rows; ++i)
+		for (int j = 0; j < n_b_cols; ++j)
+			b(i, j) = n_b_cols * i + j;
+
+	Eigen::MatrixXd d(n_a_rows, n_b_cols);
+	d = a * b;
+#ifdef _OPENMP
+#pragma omp master
+	three::PrintInfo("Output %f\n", d(0, 0));
+#endif
+}
+
+void svd_task()
+{
+#ifdef _OPENMP
+#pragma omp master
+	nThreads = omp_get_num_threads();
+#endif
+	int n_a_rows = 10000;
+	int n_a_cols = 200;
+	Eigen::MatrixXd a(n_a_rows, n_a_cols);
+	for (int i = 0; i < n_a_rows; ++i)
+		for (int j = 0; j < n_a_cols; ++j)
+			a(i, j) = n_a_cols * i + j;
+	Eigen::JacobiSVD<Eigen::MatrixXd> svd(a, 
+			Eigen::ComputeThinU | Eigen::ComputeThinV);
+	Eigen::MatrixXd pca = svd.matrixU().block<10000, 10>(0, 0
+			).transpose() * a;
+
+#ifdef _OPENMP
+#pragma omp master
+	three::PrintInfo("Output %f\n", pca(0, 0));
+#endif
+}
+
+int main(int argc, char **argv)
 {
 	int i = 0, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
 	int nThreads = 1, nTmp = nStart + nEnd;
@@ -90,8 +143,15 @@ int main()
 		printf("The sum of %d through %d is %d\n",
 				NUM_START, NUM_END, nSum);
 	}
+	
+	int test_thread = 256;
+	if (argc > 1) {
+		test_thread = std::stoi(argv[1]);
+	}
+	three::PrintInfo("Benchmark multithreading up to %d threads.\n",
+			test_thread);
 
-	for (int i = 1; i < 512; i *= 2) {
+	for (int i = 1; i <= test_thread; i *= 2) {
 		char buff[1024];
 		sprintf(buff, "simple task, %d tasks, %d threads", i, i);
 		three::ScopeTimer t(buff);
@@ -100,37 +160,24 @@ int main()
 #endif
 #pragma omp parallel default(none) shared(nThreads)
 		{
-#ifdef _OPENMP
-#pragma omp master
-			nThreads = omp_get_num_threads();
-#endif
-			int n_a_rows = 2000;
-			int n_a_cols = 2000;
-			int n_b_rows = 2000;
-			int n_b_cols = 2000;
-
-			Eigen::MatrixXd a(n_a_rows, n_a_cols);
-			for (int i = 0; i < n_a_rows; ++i)
-				for (int j = 0; j < n_a_cols; ++j)
-					a(i, j) = n_a_cols * i + j;
-
-			Eigen::MatrixXd b(n_b_rows, n_b_cols);
-			for (int i = 0; i < n_b_rows; ++i)
-				for (int j = 0; j < n_b_cols; ++j)
-					b(i, j) = n_b_cols * i + j;
-
-			Eigen::MatrixXd d(n_a_rows, n_b_cols);
-			d = a * b;
-#ifdef _OPENMP
-#pragma omp master
-			three::PrintInfo("Output %f\n", d(0, 0));
-#endif
+			simple_task();
 		}
-		three::PrintInfo("%d threads are used.\n", nThreads);
 	}
 
+	for (int i = 1; i <= test_thread; i *= 2) {
+		char buff[1024];
+		sprintf(buff, "simple task, %d tasks, %d threads", i, i);
+		three::ScopeTimer t(buff);
+		std::vector<std::thread> threads(i);
+		for (int k = 0; k < i; k++) {
+			threads[k] = std::thread(simple_task);
+		}
+		for (int k = 0; k < i; k++) {
+			threads[k].join();
+		}
+	}
 
-	for (int i = 1; i < 512; i *= 2) {
+	for (int i = 1; i <= test_thread; i *= 2) {
 		char buff[1024];
 		sprintf(buff, "svd, %d tasks, %d threads", i, i);
 		three::ScopeTimer t(buff);
@@ -139,26 +186,20 @@ int main()
 #endif
 #pragma omp parallel default(none) shared(nThreads)
 		{
-#ifdef _OPENMP
-#pragma omp master
-			nThreads = omp_get_num_threads();
-#endif
-			int n_a_rows = 10000;
-			int n_a_cols = 200;
-			Eigen::MatrixXd a(n_a_rows, n_a_cols);
-			for (int i = 0; i < n_a_rows; ++i)
-				for (int j = 0; j < n_a_cols; ++j)
-					a(i, j) = n_a_cols * i + j;
-			Eigen::JacobiSVD<Eigen::MatrixXd> svd(a, 
-					Eigen::ComputeThinU | Eigen::ComputeThinV);
-			Eigen::MatrixXd pca = svd.matrixU().block<10000, 10>(0, 0
-					).transpose() * a;
-
-#ifdef _OPENMP
-#pragma omp master
-			three::PrintInfo("Output %f\n", pca(0, 0));
-#endif
+			svd_task();
 		}
-		three::PrintInfo("%d threads are used.\n", nThreads);
+	}
+
+	for (int i = 1; i <= test_thread; i *= 2) {
+		char buff[1024];
+		sprintf(buff, "simple task, %d tasks, %d threads", i, i);
+		three::ScopeTimer t(buff);
+		std::vector<std::thread> threads(i);
+		for (int k = 0; k < i; k++) {
+			threads[k] = std::thread(svd_task);
+		}
+		for (int k = 0; k < i; k++) {
+			threads[k].join();
+		}
 	}
 }
