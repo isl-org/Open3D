@@ -56,6 +56,16 @@ std::string GetFileExtensionInLowerCase(const std::string &filename)
 	return filename_ext;
 }
 
+std::string GetFileParentDirectory(const std::string &filename)
+{
+	size_t slash_pos = filename.find_last_of("/\\");
+	if (slash_pos == std::string::npos) {
+		return "";
+	} else {
+		return filename.substr(0, slash_pos + 1);
+	}
+}
+
 bool DirectoryExists(const std::string &directory)
 {
 	struct stat info;

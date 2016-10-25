@@ -90,7 +90,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
-		const double depth_scale = 1000.0);
+		double depth_scale = 1000.0);
 
 /// Function to downsample input_cloud into output_cloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 

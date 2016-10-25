@@ -24,62 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PinholeCameraTrajectory.h"
 
-#include <string>
+#include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
-namespace three {
+namespace three{
 
-class Timer
+std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
+		const std::string &filename)
 {
-public:
-	Timer();
-	~Timer();
-
-public:
-	static double GetSystemTimeInMilliseconds();
-
-public:
-	void Start();
-	void Stop();
-	void Print(const std::string &timer_info);
-	
-protected:
-	double GetDuration();
-
-private:
-	double start_time_in_milliseconds_;
-	double end_time_in_milliseconds_;
-};
-
-class ScopeTimer : public Timer
-{
-public:
-	ScopeTimer(const std::string &scope_timer_info = "");
-	~ScopeTimer();
-
-private:
-	std::string scope_timer_info_;
-};
-
-class FPSTimer : public Timer
-{
-public:
-	FPSTimer(const std::string &fps_timer_info = "", int expectation = -1,
-			double time_to_print = 3000.0, int events_to_print = 100);
-	
-	/// Function to signal an event
-	/// It automatically prints FPS information when duration is more than
-	/// time_to_print_, or event has been signaled events_to_print_ times.
-	void Signal();
-
-private:
-	std::string fps_timer_info_;
-	int expectation_;
-	double time_to_print_;
-	int events_to_print_;
-	int event_fragment_count_;
-	int event_total_count_;
-};
+	auto trajectory = std::make_shared<PinholeCameraTrajectory>();
+	ReadPinholeCameraTrajectory(filename, *trajectory);
+	return trajectory;
+}
 
 }	// namespace three

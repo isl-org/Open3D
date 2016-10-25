@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Core/Geometry/Image.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace three {
 
@@ -46,15 +47,19 @@ public:
 	void PrepareImage(int width, int height) {
 		Image::PrepareImage(width, height, 1, 4);
 	}
-	std::pair<bool, double> ValueAt(double u, double v);
-
-protected:
 	float ValueAtUnsafe(int u, int v) {
 		return *((float *)(data_.data() + (u + v * width_) * 4));
 	}
+	std::pair<bool, double> ValueAt(double u, double v);
 };
 
 /// Factory function to create a FloatImage from an image (ImageFactory.cpp)
 std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image);
+
+/// Factory function to create a FloatImage of camera distance from a depth
+/// image (ImageFactory.cpp)
+std::shared_ptr<FloatImage> CreateCameraDistanceFloatImageFromDepthImage(
+		const Image &depth, const PinholeCameraIntrinsic &intrinsic =
+		PinholeCameraIntrinsic::PrimeSenseDefault, double depth_scale = 1000.0);
 
 }	// namespace three

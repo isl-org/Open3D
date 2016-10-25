@@ -82,27 +82,34 @@ ScopeTimer::~ScopeTimer()
 }
 
 FPSTimer::FPSTimer(const std::string &fps_timer_info/* = ""*/,
-			double time_to_print/* = 3000.0*/, int events_to_print/* = 100*/) :
-			fps_timer_info_(fps_timer_info), time_to_print_(time_to_print),
-			events_to_print_(events_to_print), event_count_(0)
+		int expectation/* = -1*/, double time_to_print/* = 3000.0*/,
+		int events_to_print/* = 100*/) : fps_timer_info_(fps_timer_info),
+		expectation_(expectation), time_to_print_(time_to_print),
+		events_to_print_(events_to_print), event_fragment_count_(0),
+		event_total_count_(0)
 {
+	Start();
 }
 
 void FPSTimer::Signal()
 {
-	if (event_count_ == 0) {
-		Start(); Stop();
-		event_count_ = 1;
-	} else if (GetDuration() >= time_to_print_ ||
-			event_count_ >= events_to_print_) {
+	event_fragment_count_++;
+	event_total_count_++;
+	Stop();
+	if (GetDuration() >= time_to_print_ ||
+			event_fragment_count_ >= events_to_print_) {
 		// print and reset
-		PrintInfo("%s at %.2f fps.\n", fps_timer_info_.c_str(),
-				double(event_count_ + 1) / GetDuration() * 1000.0);
-		Start(); Stop();
-		event_count_ = 1;
-	} else {
-		Stop();
-		event_count_++;
+		if (expectation_ == -1) {
+			PrintInfo("%s at %.2f fps.\n", fps_timer_info_.c_str(),
+					double(event_fragment_count_ + 1) / GetDuration() * 1000.0);
+		} else {
+			PrintInfo("%s at %.2f fps (progress %.2f%%).\n",
+					fps_timer_info_.c_str(), double(event_fragment_count_ + 1) /
+					GetDuration() * 1000.0, (double)event_total_count_ * 100.0 /
+					(double)expectation_);
+		}
+		Start();
+		event_fragment_count_ = 0;
 	}
 }
 

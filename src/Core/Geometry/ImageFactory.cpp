@@ -77,4 +77,50 @@ std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image)
 	return fimage;
 }
 
+std::shared_ptr<FloatImage> CreateCameraDistanceFloatImageFromDepthImage(
+		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
+		double depth_scale/* = 1000.0*/)
+{
+	auto fimage = std::make_shared<FloatImage>();
+	if (depth.IsEmpty() || depth.num_of_channels_ != 1 ||
+			depth.bytes_per_channel_ != 2) {
+		return fimage;
+	}
+	fimage->PrepareImage(depth.width_, depth.height_);
+	// Compute camera_distance = sqrt(x * x + y * y + z * z)
+	// The following code has been optimized for speed
+	float ffl_inv[2] = {
+			1.0f / (float)intrinsic.GetFocalLength().first,
+			1.0f / (float)intrinsic.GetFocalLength().second,
+	};
+	float fpp[2] = {
+			(float)intrinsic.GetPrincipalPoint().first,
+			(float)intrinsic.GetPrincipalPoint().second,
+	};
+	float fd_inv = 1.0f / (float)depth_scale;
+	std::vector<float> xx(depth.width_);
+	std::vector<float> yy(depth.height_);
+	for (int i = 0; i < depth.height_; i++) {
+		yy[i] = (i - fpp[1]) * ffl_inv[1];
+	}
+	for (int j = 0; j < depth.width_; j++) {
+		xx[j] = (j - fpp[0]) * ffl_inv[0];
+	}
+	for (int i = 0; i < depth.height_; i++) {
+		uint16_t *p = (uint16_t *)(depth.data_.data() + 
+				i * depth.BytesPerLine());
+		float *fp = (float *)(fimage->data_.data() +
+				i * fimage->BytesPerLine());
+		for (int j = 0; j < depth.width_; j++, p++, fp++) {
+			if (*p == 0) {
+				*fp = 0.0f;
+			} else {
+				*fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f) * (*p) *
+						fd_inv;
+			}
+		}
+	}
+	return fimage;
+}
+
 }	// namespace three

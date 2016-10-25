@@ -35,6 +35,8 @@ namespace filesystem {
 
 std::string GetFileExtensionInLowerCase(const std::string &filename);
 
+std::string GetFileParentDirectory(const std::string &filename);
+
 bool DirectoryExists(const std::string &directory);
 
 bool MakeDirectory(const std::string &directory);

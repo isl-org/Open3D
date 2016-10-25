@@ -44,7 +44,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic/* = Eigen::Matrix4d::Identity()*/, 
-		const double depth_scale/* = 1000.0*/)
+		double depth_scale/* = 1000.0*/)
 {
 	auto pointcloud = std::make_shared<PointCloud>();
 	if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 2) {
