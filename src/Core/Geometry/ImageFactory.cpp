@@ -87,6 +87,7 @@ std::shared_ptr<FloatImage> CreateCameraDistanceFloatImageFromDepthImage(
 		return fimage;
 	}
 	fimage->PrepareImage(depth.width_, depth.height_);
+	
 	// Compute camera_distance = sqrt(x * x + y * y + z * z)
 	// The following code has been optimized for speed
 	float ffl_inv[2] = {

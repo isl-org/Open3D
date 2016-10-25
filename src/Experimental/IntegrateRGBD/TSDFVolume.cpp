@@ -28,4 +28,40 @@
 
 namespace three{
 
+TSDFVolume::TSDFVolume(double length, int resolution, double sdf_trunc,
+		bool has_color) : length_(length), resolution_(resolution),
+		voxel_length_(length / (double)resolution),
+		voxel_num_(resolution_ * resolution_ * resolution_),
+		sdf_trunc_(sdf_trunc), has_color_(has_color), sdf_(voxel_num_),
+		color_(has_color ? voxel_num_ * 3 : 0), weight_(voxel_num_)
+{
+	Reset();
+}
+
+TSDFVolume::~TSDFVolume()
+{
+}
+
+void TSDFVolume::Reset()
+{
+	std::fill(sdf_.begin(), sdf_.end(), 0.0f);
+	std::fill(weight_.begin(), weight_.end(), 0.0f);
+	if (has_color_) {
+		std::fill(color_.begin(), color_.end(), 0);
+	}
+}
+
+void TSDFVolume::Integrate(const Image &depth, const Image &color,
+		const Eigen::Matrix4d &extrinsic)
+{
+}
+
+void TSDFVolume::ExtractPointCloud(PointCloud &pointcloud)
+{
+}
+
+void TSDFVolume::ExtractTriangleMesh(TriangleMesh &mesh)
+{
+}
+
 }	// namespace three

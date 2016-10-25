@@ -50,11 +50,18 @@ public:
 protected:
 	double length_;
 	int resolution_;
+	double voxel_length_;
+	int voxel_num_;
 	double sdf_trunc_;
 	bool has_color_;
 	std::vector<float> sdf_;
 	std::vector<unsigned char> color_;
 	std::vector<float> weight_;
+	
+private:
+	int index(int x, int y, int z) {
+		return x * resolution_ * resolution_ + y * resolution_ + z;
+	}
 };
 
 }	// namespace three

@@ -61,7 +61,7 @@ elseif(APPLE)
 	# enable c++11
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	# compile speed optimization for clang
-	add_definitions(-Os)
+	add_definitions(-O3)
 	# disable OpenMP since it is not currently supported on OSX
 	message(STATUS "Compiling on OSX")
 	message(STATUS "Disable OpenMP since it is not supported on OSX.")
@@ -71,6 +71,7 @@ elseif(UNIX)
 	# enable c++11
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	add_compile_options(-Wno-deprecated-declarations)
+	add_definitions(-O3)
 	# disable BUILD_LIBREALSENSE since it is not fully supported on Linux
 	message(STATUS "Compiling on Unix")
 	message(STATUS "Disable BUILD_LIBREALSENSE since it is not fully supported on Linux.")
