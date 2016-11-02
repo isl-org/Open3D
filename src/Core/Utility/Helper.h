@@ -94,6 +94,23 @@ struct hash<std::tuple<TT...>>
 
 }	// namespace hash_tuple
 
+namespace hash_eigen {
+
+template <typename T>
+struct hash : std::unary_function<T, size_t> {
+	std::size_t operator()(T const& matrix) const {
+		size_t seed = 0;
+		for (size_t i = 0; i < matrix.size(); i++) {
+			auto elem = *(matrix.data() + i);
+			seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
+					(seed << 6) + (seed >> 2);
+		}
+		return seed;
+	}
+};
+
+}	// namespace hash_eigen
+
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void SplitString(std::vector<std::string> &tokens, const std::string &str,

@@ -24,55 +24,55 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <vector>
-#include <Eigen/Core>
-#include <memory>
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/FloatImage.h>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Core/Camera/PinholeCameraIntrinsic.h>
 #include "Helper.h"
 
-namespace three {
+namespace three{
 
-class TSDFVolume {
-public:
-	TSDFVolume(double length, int resolution, double sdf_trunc, bool has_color);
-	~TSDFVolume();
-
-public:
-	void Reset();
-	void Integrate(const Image &depth_f, const Image &color,
-			const Image &depth2cameradistance,
-			const PinholeCameraIntrinsic &intrinsic,
-			const Eigen::Matrix4d &extrinsic);
-	void ExtractVoxelPointCloud(PointCloud &voxel);
-	void ExtractPointCloud(PointCloud &pointcloud);
-	void ExtractTriangleMesh(TriangleMesh &mesh);
-
-protected:
-	double length_;
-	int resolution_;
-	double voxel_length_;
-	int voxel_num_;
-	double sdf_trunc_;
-	bool has_color_;
-	std::vector<float> tsdf_;
-	std::vector<Eigen::Vector3f> color_;
-	std::vector<float> weight_;
-	
-private:
-	int index(int x, int y, int z) {
-		return x * resolution_ * resolution_ + y * resolution_ + z;
+std::shared_ptr<Image> CreateDepthToCameraDistanceConversionImage(
+		const PinholeCameraIntrinsic &intrinsic)
+{
+	auto fimage = std::make_shared<Image>();
+	fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
+	float ffl_inv[2] = {
+			1.0f / (float)intrinsic.GetFocalLength().first,
+			1.0f / (float)intrinsic.GetFocalLength().second,
+	};
+	float fpp[2] = {
+			(float)intrinsic.GetPrincipalPoint().first,
+			(float)intrinsic.GetPrincipalPoint().second,
+	};
+	std::vector<float> xx(intrinsic.width_);
+	std::vector<float> yy(intrinsic.height_);
+	for (int j = 0; j < intrinsic.width_; j++) {
+		xx[j] = (j - fpp[0]) * ffl_inv[0];
 	}
-	int index(const Eigen::Vector3i xyz) {
-		return index(xyz(0), xyz(1), xyz(2));
+	for (int i = 0; i < intrinsic.height_; i++) {
+		yy[i] = (i - fpp[1]) * ffl_inv[1];
 	}
-	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
-	float GetTSDFAt(const Eigen::Vector3d &p);
-};
+	for (int i = 0; i < intrinsic.height_; i++) {
+		float *fp = (float *)(fimage->data_.data() +
+				i * fimage->BytesPerLine());
+		for (int j = 0; j < intrinsic.width_; j++, fp++) {
+			*fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
+		}
+	}
+	return fimage;
+}
+
+void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
+		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/)
+{
+	if (depth_f.IsEmpty()) {
+		depth_f.PrepareImage(depth.width_, depth.height_, 1, 4);
+	}
+	float *p = (float *)depth_f.data_.data();
+	const uint16_t *pi = (const uint16_t *)depth.data_.data();
+	for (int i = 0; i < depth.height_ * depth.width_; i++, p++, pi++) {
+		*p = (float)(*pi) / (float)depth_scale;
+		if (*p >= depth_trunc) {
+			*p = 0.0f;
+		}
+	}
+}
 
 }	// namespace three

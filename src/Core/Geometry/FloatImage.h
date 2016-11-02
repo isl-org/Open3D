@@ -56,10 +56,4 @@ public:
 /// Factory function to create a FloatImage from an image (ImageFactory.cpp)
 std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image);
 
-/// Factory function to create a FloatImage of camera distance from a depth
-/// image (ImageFactory.cpp)
-std::shared_ptr<FloatImage> CreateCameraDistanceFloatImageFromDepthImage(
-		const Image &depth, const PinholeCameraIntrinsic &intrinsic =
-		PinholeCameraIntrinsic::PrimeSenseDefault, double depth_scale = 1000.0);
-
 }	// namespace three

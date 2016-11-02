@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 
+/*
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{
 		ScopeTimer timer("Normal estimation");
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
 	}
 
 	return 1;
-
+*/
 
 
 	// 1. test basic pointcloud functions.

@@ -30,38 +30,115 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
+#include "TSDFVolume.h"
+
+void PrintHelp()
+{
+	printf("Usage:\n");
+	printf("    > IntegrateRGBD [options]\n");
+	printf("      Integrate RGBD stream and extract geometry.\n");
+	printf("\n");
+	printf("Basic options:\n");
+	printf("    --help, -h                : Print help information.\n");
+	printf("    --match file              : The match file of an RGBD stream. Must have.\n");
+	printf("    --log file                : The log trajectory file. Must have.\n");
+	printf("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
+	printf("    --save_mesh               : Save a mesh created by marching cubes.\n");
+	printf("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
+	printf("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
+	printf("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
+	printf("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
+	printf("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
+	printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	using namespace three;
-	SetVerbosityLevel(VERBOSE_ALWAYS);
-	
-	if (argc < 3) {
-		PrintInfo("Usage:\n");
-		PrintInfo("    > IntegrateRGBD <match_file> <log_file>\n");
+
+	if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
+			ProgramOptionExists(argc, argv, "-h")) {
+		PrintHelp();
 		return 0;
 	}
 	
-	auto camera_trajectory = CreatePinholeCameraTrajectoryFromFile(argv[2]);
-	std::string dir_name = filesystem::GetFileParentDirectory(argv[1]).c_str();
-	FILE *file = fopen(argv[1], "r");
+	std::string match_filename = GetProgramOptionAsString(argc, argv,
+			"--match");
+	std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
+	bool save_pointcloud = ProgramOptionExists(argc, argv, "--save_pointcloud");
+	bool save_mesh = ProgramOptionExists(argc, argv, "--save_mesh");
+	bool save_voxel = ProgramOptionExists(argc, argv, "--save_voxel");
+	int every_k_frames = GetProgramOptionAsInt(argc, argv, "--every_k_frames",
+			0);
+	double length = GetProgramOptionAsDouble(argc, argv, "--length", 4.0);
+	int resolution = GetProgramOptionAsInt(argc, argv, "--resolution", 512);
+	double sdf_trunc_percentage = GetProgramOptionAsDouble(argc, argv,
+			"--sdf_trunc_percentage", 0.01);
+	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+	SetVerbosityLevel((VerbosityLevel)verbose);
+	
+	auto camera_trajectory = CreatePinholeCameraTrajectoryFromFile(
+			log_filename);
+	std::string dir_name = filesystem::GetFileParentDirectory(
+			match_filename).c_str();
+	FILE *file = fopen(match_filename.c_str(), "r");
 	if (file == NULL) {
-		PrintError("Unable to open file %s\n", argv[1]);
+		PrintError("Unable to open file %s\n", match_filename.c_str());
 		fclose(file);
 		return 0;
 	}
 	char buffer[DEFAULT_IO_BUFFER_SIZE];
 	int index = 0;
+	int save_index = 0;
+	TSDFVolume volume(length, resolution, length * sdf_trunc_percentage, true);
 	FPSTimer timer("Process RGBD stream",
 			(int)camera_trajectory->extrinsic_.size());
+	Image depth, depth_f, color;
+	auto depth2cameradistance = CreateDepthToCameraDistanceConversionImage(
+			camera_trajectory->intrinsic_);
 	while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
 		std::vector<std::string> st;
 		SplitString(st, buffer, "\t\r\n ");
 		if (st.size() >= 2) {
-			auto depth = CreateImageFromFile(dir_name + st[0]);
-			auto image = CreateImageFromFile(dir_name + st[1]);
-			auto camera_distance =
-					CreateCameraDistanceFloatImageFromDepthImage(*depth,
-					camera_trajectory->intrinsic_);
+			PrintDebug("Processing frame %d ...\n", index);
+			ReadImage(dir_name + st[0], depth);
+			ReadImage(dir_name + st[1], color);
+			ConvertDepthToFloatImage(depth, depth_f);
+			if (index == 0 ||
+					(every_k_frames > 0 && index % every_k_frames == 0)) {
+				volume.Reset();
+			}
+			volume.Integrate(depth_f, color, *depth2cameradistance,
+					camera_trajectory->intrinsic_,
+					camera_trajectory->extrinsic_[index]);
+			index++;
+			if (index == (int)camera_trajectory->extrinsic_.size() ||
+					(every_k_frames > 0 && index % every_k_frames == 0)) {
+				PrintDebug("Saving fragment %d ...\n", save_index);
+				std::string save_index_str = std::to_string(save_index);
+				if (save_pointcloud) {
+					PrintDebug("Saving pointcloud %d ...\n", save_index);
+					PointCloud pcd;
+					volume.ExtractPointCloud(pcd);
+					WritePointCloud("pointcloud_" + save_index_str + ".ply",
+							pcd);
+				}
+				if (save_mesh) {
+					PrintDebug("Saving mesh %d ...\n", save_index);
+					TriangleMesh mesh;
+					volume.ExtractTriangleMesh(mesh);
+					WriteTriangleMesh("mesh_" + save_index_str + ".ply",
+							mesh);
+				}
+				if (save_voxel) {
+					PrintDebug("Saving voxel %d ...\n", save_index);
+					PointCloud voxel;
+					volume.ExtractVoxelPointCloud(voxel);
+					WritePointCloud("voxel_" + save_index_str + ".ply",
+							voxel);
+				}
+				save_index++;
+			}
 			timer.Signal();
 		}
 	}

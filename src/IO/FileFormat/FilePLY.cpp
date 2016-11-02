@@ -316,9 +316,12 @@ bool WritePointCloudToPLY(
 		}
 		if (pointcloud.HasColors()) {
 			const Eigen::Vector3d &color = pointcloud.colors_[i];
-			ply_write(ply_file, color(0) * 255.0);
-			ply_write(ply_file, color(1) * 255.0);
-			ply_write(ply_file, color(2) * 255.0);
+			ply_write(ply_file, std::min(255.0, std::max(0.0,
+					color(0) * 255.0)));
+			ply_write(ply_file, std::min(255.0, std::max(0.0,
+					color(1) * 255.0)));
+			ply_write(ply_file, std::min(255.0, std::max(0.0,
+					color(2) * 255.0)));
 		}
 		AdvanceConsoleProgress();
 	}

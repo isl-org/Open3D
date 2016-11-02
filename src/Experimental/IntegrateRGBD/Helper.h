@@ -26,53 +26,30 @@
 
 #pragma once
 
-#include <vector>
-#include <Eigen/Core>
 #include <memory>
 #include <Core/Geometry/Image.h>
-#include <Core/Geometry/FloatImage.h>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/TriangleMesh.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
-#include "Helper.h"
 
 namespace three {
 
-class TSDFVolume {
-public:
-	TSDFVolume(double length, int resolution, double sdf_trunc, bool has_color);
-	~TSDFVolume();
-
-public:
-	void Reset();
-	void Integrate(const Image &depth_f, const Image &color,
-			const Image &depth2cameradistance,
-			const PinholeCameraIntrinsic &intrinsic,
-			const Eigen::Matrix4d &extrinsic);
-	void ExtractVoxelPointCloud(PointCloud &voxel);
-	void ExtractPointCloud(PointCloud &pointcloud);
-	void ExtractTriangleMesh(TriangleMesh &mesh);
-
-protected:
-	double length_;
-	int resolution_;
-	double voxel_length_;
-	int voxel_num_;
-	double sdf_trunc_;
-	bool has_color_;
-	std::vector<float> tsdf_;
-	std::vector<Eigen::Vector3f> color_;
-	std::vector<float> weight_;
-	
-private:
-	int index(int x, int y, int z) {
-		return x * resolution_ * resolution_ + y * resolution_ + z;
-	}
-	int index(const Eigen::Vector3i xyz) {
-		return index(xyz(0), xyz(1), xyz(2));
-	}
-	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
-	float GetTSDFAt(const Eigen::Vector3d &p);
+struct RGB {
+	uint8_t rgb[3];
 };
+
+std::shared_ptr<Image> CreateDepthToCameraDistanceConversionImage(
+		const PinholeCameraIntrinsic &intrinsic);
+	
+void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
+		double depth_scale = 1000.0, double depth_trunc = 3.0);
+
+template<typename T>
+T *PointerAt(Image &image, int u, int v) {
+	return (T *)(image.data_.data() + (u + v * image.width_) * sizeof(T));
+}
+
+template<typename T>
+const T *PointerAt(const Image &image, int u, int v) {
+	return (const T *)(image.data_.data() + (u + v * image.width_) * sizeof(T));
+}
 
 }	// namespace three

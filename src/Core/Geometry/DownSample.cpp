@@ -27,7 +27,6 @@
 #include "PointCloud.h"
 
 #include <unordered_map>
-#include <tuple>
 
 #include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
@@ -35,8 +34,6 @@
 namespace three{
 
 namespace {
-
-typedef std::tuple<int, int, int> VoxelIndex3;
 
 class AccumulatedPoint
 {
@@ -108,16 +105,13 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
 		return false;
 	}
-	std::unordered_map<VoxelIndex3, AccumulatedPoint, 
-			hash_tuple::hash<VoxelIndex3>> voxelindex_to_accpoint;
+	std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
+			hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
 	for (size_t i = 0; i < input_cloud.points_.size(); i++) {
 		Eigen::Vector3d ref_coord = (input_cloud.points_[i] - voxel_min_bound) /
 				voxel_size;
-		VoxelIndex3 voxel_index = std::make_tuple(
-				int(floor(ref_coord(0))),
-				int(floor(ref_coord(1))),
-				int(floor(ref_coord(2)))
-				);
+		Eigen::Vector3i voxel_index(int(floor(ref_coord(0))),
+				int(floor(ref_coord(1))), int(floor(ref_coord(2))));
 		voxelindex_to_accpoint[voxel_index].AddPoint(input_cloud, i);
 	}
 	bool has_normals = input_cloud.HasNormals();

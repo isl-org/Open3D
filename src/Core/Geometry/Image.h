@@ -65,7 +65,7 @@ public:
 	int BytesPerLine() const {
 		return width_ * num_of_channels_ * bytes_per_channel_;
 	}
-	
+		
 protected:
 	void AllocateDataBuffer() {
 		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
