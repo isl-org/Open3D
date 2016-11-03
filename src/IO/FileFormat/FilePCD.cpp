@@ -682,7 +682,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 		}
 	} else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
 		int strip_size = header.points;
-		std::uint32_t buffer_size = (std::uint32_t)(header.pointsize *
+		std::uint32_t buffer_size = (std::uint32_t)(header.elementnum *
 				header.points);
 		std::unique_ptr<float []> buffer(new float[buffer_size]);
 		std::unique_ptr<float []> buffer_compressed(new float[buffer_size]);
