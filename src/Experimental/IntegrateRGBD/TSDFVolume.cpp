@@ -79,6 +79,9 @@ void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 	const float safe_width_f = intrinsic.width_ - 0.0001f;
 	const float safe_height_f = intrinsic.height_ - 0.0001f;
 	
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
 	for (int x = 0; x < resolution_; x++) {
 		for (int y = 0; y < resolution_; y++) {
 			int idx_shift = x * resolution_ * resolution_ + y * resolution_;
