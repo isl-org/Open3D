@@ -65,22 +65,26 @@ void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 	// This function goes through the voxels, and scan convert the relative
 	// depth/color value into the voxel.
 	// The following implementation is a highly optimized version.
-	float fx = static_cast<float>(intrinsic.GetFocalLength().first);
-	float fy = static_cast<float>(intrinsic.GetFocalLength().second);
-	float cx = static_cast<float>(intrinsic.GetPrincipalPoint().first);
-	float cy = static_cast<float>(intrinsic.GetPrincipalPoint().second);
-	Eigen::Matrix4f extrinsic_inv_f = extrinsic.inverse().cast<float>();
-	float voxel_length_f = static_cast<float>(voxel_length_);
-	float half_voxel_length_f = voxel_length_f * 0.5f;
-	float sdf_trunc_f = static_cast<float>(sdf_trunc_);
-	float sdf_trunc_inv_f = 1.0f / sdf_trunc_f;
-	Eigen::Matrix4f extrinsic_inv_scaled_f = extrinsic_inv_f * voxel_length_f;
-	float *p_tsdf = (float *)tsdf_.data();
-	float *p_weight = (float *)weight_.data();
-	float *p_color = (float *)color_.data();
+	const float fx = static_cast<float>(intrinsic.GetFocalLength().first);
+	const float fy = static_cast<float>(intrinsic.GetFocalLength().second);
+	const float cx = static_cast<float>(intrinsic.GetPrincipalPoint().first);
+	const float cy = static_cast<float>(intrinsic.GetPrincipalPoint().second);
+	const Eigen::Matrix4f extrinsic_inv_f = extrinsic.inverse().cast<float>();
+	const float voxel_length_f = static_cast<float>(voxel_length_);
+	const float half_voxel_length_f = voxel_length_f * 0.5f;
+	const float sdf_trunc_f = static_cast<float>(sdf_trunc_);
+	const float sdf_trunc_inv_f = 1.0f / sdf_trunc_f;
+	const Eigen::Matrix4f extrinsic_inv_scaled_f = extrinsic_inv_f *
+			voxel_length_f;
+	const float safe_width_f = intrinsic.width_ - 0.0001f;
+	const float safe_height_f = intrinsic.height_ - 0.0001f;
 	
 	for (int x = 0; x < resolution_; x++) {
 		for (int y = 0; y < resolution_; y++) {
+			int idx_shift = x * resolution_ * resolution_ + y * resolution_;
+			float *p_tsdf = (float *)tsdf_.data() + idx_shift;
+			float *p_weight = (float *)weight_.data() + idx_shift;
+			float *p_color = (float *)color_.data() + idx_shift * 3;
 			Eigen::Vector4f voxel_pt_camera = extrinsic_inv_f * Eigen::Vector4f(
 					half_voxel_length_f + voxel_length_f * x,
 					half_voxel_length_f + voxel_length_f * y,
@@ -92,12 +96,14 @@ void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 					voxel_pt_camera(2) += extrinsic_inv_scaled_f(2, 2),
 					p_tsdf++, p_weight++, p_color += 3) {
 				if (voxel_pt_camera(2) > 0) {
-					int u = static_cast<int>(round(voxel_pt_camera(0) * fx /
-							voxel_pt_camera(2) + cx));
-					int v = static_cast<int>(round(voxel_pt_camera(1) * fy /
-							voxel_pt_camera(2) + cy));
-					if (u >= 0 && u < intrinsic.width_ &&
-							v >= 0 && v < intrinsic.height_) {
+					float u_f = voxel_pt_camera(0) * fx /
+							voxel_pt_camera(2) + cx + 0.5f;
+					float v_f = voxel_pt_camera(1) * fy /
+							voxel_pt_camera(2) + cy + 0.5f;
+					if (u_f >= 0.0001f && u_f < safe_width_f &&
+							v_f >= 0.0001f && v_f < safe_height_f) {
+						int u = (int)u_f;
+						int v = (int)v_f;
 						float d = *PointerAt<float>(depth_f, u, v);
 						if (d > 0.0f) {
 							float sdf = (d - voxel_pt_camera(2)) * (
