@@ -631,7 +631,7 @@ Eigen::Vector3d TSDFVolume::GetNormalAt(const Eigen::Vector3d &p)
 	return n.normalized();
 }
 
-float TSDFVolume::GetTSDFAt(const Eigen::Vector3d &p)
+double TSDFVolume::GetTSDFAt(const Eigen::Vector3d &p)
 {
 	Eigen::Vector3i idx;
 	Eigen::Vector3d p_grid = p / voxel_length_ - Eigen::Vector3d(0.5, 0.5, 0.5);

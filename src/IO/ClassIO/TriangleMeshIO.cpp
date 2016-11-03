@@ -64,8 +64,8 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 		return false;
 	}
 	bool success = map_itr->second(filename, mesh);
-	PrintDebug("Read TriangleMesh: %lu triangles and %lu vertices.\n", 
-			mesh.triangles_.size(), mesh.vertices_.size());
+	PrintDebug("Read TriangleMesh: %d triangles and %d vertices.\n", 
+			(int)mesh.triangles_.size(), (int)mesh.vertices_.size());
 	return success;
 }
 
@@ -85,8 +85,8 @@ bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 		return false;
 	}
 	bool success = map_itr->second(filename, mesh, write_ascii, compressed);
-	PrintDebug("Write TriangleMesh: %lu triangles and %lu vertices.\n", 
-			mesh.triangles_.size(), mesh.vertices_.size());
+	PrintDebug("Write TriangleMesh: %d triangles and %d vertices.\n", 
+			(int)mesh.triangles_.size(), (int)mesh.vertices_.size());
 	return success;
 }
 

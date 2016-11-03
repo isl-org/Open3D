@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	index.knnSearch(query, indices, dists, nn, SearchParams(-1, 0.0));
 	
 	for (size_t i = 0; i < indices_vec.size(); i++) {
-		PrintInfo("%lu, %f\n", indices_vec[i], sqrt(dists_vec[i]));
+		PrintInfo("%d, %f\n", (int)indices_vec[i], sqrt(dists_vec[i]));
 		cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(1.0, 0.0, 0.0);
 	}
 
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
 	PrintInfo("======== %d, %f ========\n", k, r);
 	for (int i = 0; i < k; i++) {
-		PrintInfo("%lu, %f\n", indices_vec[i], sqrt(dists_vec[i]));
+		PrintInfo("%d, %f\n", (int)indices_vec[i], sqrt(dists_vec[i]));
 		cloud_ptr->colors_[indices_vec[i]] = Eigen::Vector3d(0.0, 0.0, 1.0);
 	}
 	cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 			new_indices_vec, new_dists_vec);
 	
 	for (size_t i = 0; i < new_indices_vec.size(); i++) {
-		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
+		PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
 		new_cloud_ptr->colors_[new_indices_vec[i]] = 
 				Eigen::Vector3d(1.0, 0.0, 0.0);
 	}
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
 
 	PrintInfo("======== %d, %f ========\n", k, r);
 	for (int i = 0; i < k; i++) {
-		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
+		PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
 		new_cloud_ptr->colors_[new_indices_vec[i]] = 
 				Eigen::Vector3d(0.0, 0.0, 1.0);
 	}
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 
 	PrintInfo("======== %d, %f ========\n", k, r);
 	for (int i = 0; i < k; i++) {
-		PrintInfo("%lu, %f\n", new_indices_vec[i], sqrt(new_dists_vec[i]));
+		PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
 		new_cloud_ptr->colors_[new_indices_vec[i]] = 
 				Eigen::Vector3d(0.0, 0.0, 1.0);
 	}

@@ -101,7 +101,7 @@ bool WritePointCloudToPTS(
 		PrintWarning("Write PTS failed: unable to open file.\n");
 		return false;
 	}
-	fprintf(file, "%lu\r\n", pointcloud.points_.size());
+	fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
 	ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
 			"Writinging PTS: ");
 	for (size_t i = 0; i < pointcloud.points_.size(); i++) {

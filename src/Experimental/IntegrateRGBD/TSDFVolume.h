@@ -72,7 +72,7 @@ private:
 		return index(xyz(0), xyz(1), xyz(2));
 	}
 	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
-	float GetTSDFAt(const Eigen::Vector3d &p);
+	double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
 }	// namespace three

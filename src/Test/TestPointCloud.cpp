@@ -37,8 +37,8 @@ void PrintPointCloud(const three::PointCloud &pointcloud)
 	using namespace three;
 	
 	bool pointcloud_has_normal = pointcloud.HasNormals();
-	PrintInfo("Pointcloud has %lu points.\n",
-			pointcloud.points_.size());
+	PrintInfo("Pointcloud has %d points.\n",
+			(int)pointcloud.points_.size());
 
 	Eigen::Vector3d min_bound = pointcloud.GetMinBound();
 	Eigen::Vector3d max_bound = pointcloud.GetMaxBound();
