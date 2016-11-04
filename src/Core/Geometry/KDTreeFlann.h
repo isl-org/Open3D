@@ -26,19 +26,25 @@
 
 #pragma once
 
+#include <vector>
 #include <memory>
-#include <flann/flann.hpp>
 
 #include <Core/Geometry/Geometry.h>
 #include <Core/Geometry/KDTreeSearchParam.h>
+
+namespace flann {
+template <typename T> class Matrix;
+template <typename T> class L2;
+template <typename T> class Index;
+}	// namespace flann
 
 namespace three {
 
 class KDTreeFlann
 {
 public:
-	KDTreeFlann() {}
-	virtual ~KDTreeFlann() {}
+	KDTreeFlann();
+	virtual ~KDTreeFlann();
 	KDTreeFlann(const KDTreeFlann &) = delete;
 	KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 	
@@ -64,64 +70,5 @@ protected:
 	int dimension_ = 0;
 	size_t dataset_size_ = 0;
 };
-
-template<typename T>
-int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param, 
-			std::vector<int> &indices, std::vector<double> &distance2)
-{
-	switch (param.GetSearchType()) {
-	case KDTreeSearchParam::SEARCH_KNN:
-		return SearchKNN(query, ((const KDTreeSearchParamKNN &)param).knn_, 
-				indices, distance2);
-	case KDTreeSearchParam::SEARCH_RADIUS:
-		return SearchRadius(query, 
-				((const KDTreeSearchParamRadius &)param).radius_, indices, 
-				distance2, ((const KDTreeSearchParamRadius &)param).max_nn_);
-	default:
-		return -1;
-	}
-	return -1;
-}
-
-template<typename T>
-int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
-		std::vector<double> &distance2)
-{
-	if (data_.empty() || dataset_size_ <= 0 || 
-			query.rows() != dimension_ || knn < 0)
-	{
-		return -1;
-	}
-	flann::Matrix<double> query_flann((double *)query.data(), 1, 3);
-	indices.resize(knn);
-	distance2.resize(knn);
-	flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, knn);
-	flann::Matrix<double> dists_flann(distance2.data(), query_flann.rows, knn);
-	return flann_index_->knnSearch(query_flann, indices_flann, dists_flann, knn,
-			flann::SearchParams(-1, 0.0));
-}
-
-template<typename T>
-int KDTreeFlann::SearchRadius(const T &query, double radius,
-		std::vector<int> &indices, std::vector<double> &distance2,
-		int max_nn/* = -1*/)
-{
-	if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_) {
-		return -1;
-	}
-	if (max_nn < 0) {
-		max_nn = (int)dataset_size_;
-	}
-	flann::Matrix<double> query_flann((double *)query.data(), 1, 3);
-	flann::SearchParams param(-1, 0.0);
-	param.max_neighbors = max_nn;
-	indices.resize(max_nn);
-	distance2.resize(max_nn);
-	flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, max_nn);
-	flann::Matrix<double> dists_flann(distance2.data(), query_flann.rows,
-			max_nn);
-	return flann_index_->radiusSearch(query_flann, indices_flann, dists_flann,
-			float(radius * radius), param);
-}
 
 }	// namespace three
