@@ -113,19 +113,16 @@ int KDTreeFlann::SearchRadius(const T &query, double radius,
 	if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_) {
 		return -1;
 	}
-	if (max_nn < 0) {
-		max_nn = (int)dataset_size_;
-	}
 	flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
 	flann::SearchParams param(-1, 0.0);
 	param.max_neighbors = max_nn;
-	indices.resize(max_nn);
-	distance2.resize(max_nn);
-	flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, max_nn);
-	flann::Matrix<double> dists_flann(distance2.data(), query_flann.rows,
-			max_nn);
-	return flann_index_->radiusSearch(query_flann, indices_flann, dists_flann,
+	std::vector<std::vector<int>> indices_vec(1);
+	std::vector<std::vector<double>> dists_vec(1);
+	int k = flann_index_->radiusSearch(query_flann, indices_vec, dists_vec,
 			float(radius * radius), param);
+	indices = indices_vec[0];
+	distance2 = dists_vec[0];
+	return k;
 }
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(const Eigen::Vector3d &query,

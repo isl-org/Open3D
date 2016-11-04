@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	VoxelDownSample(*pcd, 0.05, *downpcd);
 	{
 		ScopeTimer timer("Normal estimation");
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 20; i++) {
 			EstimateNormals(*pcd,
 					three::KDTreeSearchParamRadius(0.01666));
 		}
