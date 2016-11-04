@@ -67,18 +67,26 @@ int main(int argc, char *argv[])
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 
-/*
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{
 		ScopeTimer timer("Normal estimation");
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 20; i++) {
 			EstimateNormals(*pcd, 
 					three::KDTreeSearchParamKNN(20));
 		}
 	}
 
+	auto downpcd = std::make_shared<PointCloud>();
+	VoxelDownSample(*pcd, 0.05, *downpcd);
+	{
+		ScopeTimer timer("Normal estimation");
+		for (int i = 0; i < 1; i++) {
+			EstimateNormals(*pcd,
+					three::KDTreeSearchParamRadius(0.01666));
+		}
+	}
+
 	return 1;
-*/
 
 
 	// 1. test basic pointcloud functions.

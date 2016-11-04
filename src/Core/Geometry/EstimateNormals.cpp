@@ -78,15 +78,15 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
 }
 
 Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
-		const std::vector<int> &indices)
+		const std::vector<int> &indices, int num)
 {
-	if (indices.size() == 0) {
+	if (indices.size() == 0 || num == 0 || num > (int)indices.size()) {
 		return Eigen::Vector3d::Zero();
 	}
 	Eigen::Matrix3d covariance;
 	Eigen::Matrix<double, 9, 1> cumulants;
 	cumulants.setZero();
-	for (size_t i = 0; i < indices.size(); i++) {
+	for (int i = 0; i < num; i++) {
 		const Eigen::Vector3d &point = cloud.points_[indices[i]];
 		cumulants(0) += point(0);
 		cumulants(1) += point(1);
@@ -98,7 +98,7 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 		cumulants(7) += point(1) * point(2);
 		cumulants(8) += point(2) * point(2);
 	}
-	cumulants /= (double)indices.size();
+	cumulants /= (double)num;
 	covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
 	covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
 	covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
@@ -132,8 +132,7 @@ bool EstimateNormals(PointCloud &cloud,
 	Eigen::Vector3d normal;
 	for (size_t i = 0; i < cloud.points_.size(); i++) {
 		nn = kdtree.Search(cloud.points_[i], search_param, indices, distance2);
-		indices.resize(nn);
-		normal = ComputeNormal(cloud, indices);
+		normal = ComputeNormal(cloud, indices, nn);
 		if (normal.norm() == 0.0) {
 			if (has_normal) {
 				normal = cloud.normals_[i];
@@ -164,8 +163,7 @@ bool EstimateNormals(PointCloud &cloud,
 	Eigen::Vector3d normal;
 	for (size_t i = 0; i < cloud.points_.size(); i++) {
 		nn = kdtree.Search(cloud.points_[i], search_param, indices, distance2);
-		indices.resize(nn);
-		normal = ComputeNormal(cloud, indices);
+		normal = ComputeNormal(cloud, indices, nn);
 		if (normal.norm() == 0.0) {
 			normal = orientation_reference;
 		} else if (normal.dot(orientation_reference) < 0.0) {
