@@ -136,6 +136,6 @@ template int KDTreeFlann::SearchKNN<Eigen::Vector3d>(
 		std::vector<double> &distance2);
 template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
 		const Eigen::Vector3d &query, double radius, std::vector<int> &indices,
-		std::vector<double> &distance2, int max_nn = -1);
+		std::vector<double> &distance2, int max_nn);
 
 }	// namespace three

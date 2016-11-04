@@ -34,7 +34,7 @@
 
 namespace flann {
 template <typename T> class Matrix;
-template <typename T> class L2;
+template <typename T> struct L2;
 template <typename T> class Index;
 }	// namespace flann
 
