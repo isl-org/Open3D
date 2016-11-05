@@ -86,9 +86,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	return 1;
-
-
 	// 1. test basic pointcloud functions.
 	
 	PointCloud pointcloud;
@@ -165,35 +162,10 @@ int main(int argc, char *argv[])
 	// 6. test normal estimation
 	DrawGeometryWithKeyCallback(pointcloud_ptr, GLFW_KEY_SPACE,
 			[&](Visualizer &vis) {
-				{
-				ScopeTimer timer("Normal estimation");
-				/*
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				EstimateNormals(*downsampled, 
-						three::KDTreeSearchParamRadius(0.1));
-				*/
-				for (int i = 0; i < 10; i++) {
-					EstimateNormals(*pointcloud_ptr, 
-							three::KDTreeSearchParamKNN(20));
-					}
-				}
+				//EstimateNormals(*pointcloud_ptr, 
+				//		three::KDTreeSearchParamKNN(20));
+				EstimateNormals(*pointcloud_ptr,
+						three::KDTreeSearchParamRadius(0.05));
 				PrintInfo("Done.\n");
 				return true;
 			}, "Press Space to Estimate Normal", 1600, 900);

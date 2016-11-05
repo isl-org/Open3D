@@ -45,6 +45,10 @@ public:
 
 public:
 	void Reset();
+	void Integrate_thread(const Image &depth_f, const Image &color,
+			const Image &depth2cameradistance,
+			const PinholeCameraIntrinsic &intrinsic,
+			const Eigen::Matrix4d &extrinsic, int x_begin, int x_end);
 	void Integrate(const Image &depth_f, const Image &color,
 			const Image &depth2cameradistance,
 			const PinholeCameraIntrinsic &intrinsic,

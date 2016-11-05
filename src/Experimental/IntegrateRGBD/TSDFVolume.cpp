@@ -27,6 +27,7 @@
 #include "TSDFVolume.h"
 
 #include <unordered_map>
+#include <thread>
 
 #include <Eigen/Dense>
 #include <Core/Utility/Helper.h>
@@ -57,6 +58,7 @@ void TSDFVolume::Reset()
 	}
 }
 
+/*
 void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 		const Image &depth2cameradistance,
 		const PinholeCameraIntrinsic &intrinsic,
@@ -80,7 +82,7 @@ void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 	const float safe_height_f = intrinsic.height_ - 0.0001f;
 	
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) num_threads(16)
 #endif
 	for (int x = 0; x < resolution_; x++) {
 		for (int y = 0; y < resolution_; y++) {
@@ -138,6 +140,106 @@ void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 				}
 			}
 		}
+	}
+}
+*/
+
+void TSDFVolume::Integrate_thread(const Image &depth_f, const Image &color,
+		const Image &depth2cameradistance,
+		const PinholeCameraIntrinsic &intrinsic,
+		const Eigen::Matrix4d &extrinsic, int x_begin, int x_end)
+{
+	// This function goes through the voxels, and scan convert the relative
+	// depth/color value into the voxel.
+	// The following implementation is a highly optimized version.
+	const float fx = static_cast<float>(intrinsic.GetFocalLength().first);
+	const float fy = static_cast<float>(intrinsic.GetFocalLength().second);
+	const float cx = static_cast<float>(intrinsic.GetPrincipalPoint().first);
+	const float cy = static_cast<float>(intrinsic.GetPrincipalPoint().second);
+	const Eigen::Matrix4f extrinsic_inv_f = extrinsic.inverse().cast<float>();
+	const float voxel_length_f = static_cast<float>(voxel_length_);
+	const float half_voxel_length_f = voxel_length_f * 0.5f;
+	const float sdf_trunc_f = static_cast<float>(sdf_trunc_);
+	const float sdf_trunc_inv_f = 1.0f / sdf_trunc_f;
+	const Eigen::Matrix4f extrinsic_inv_scaled_f = extrinsic_inv_f *
+			voxel_length_f;
+	const float safe_width_f = intrinsic.width_ - 0.0001f;
+	const float safe_height_f = intrinsic.height_ - 0.0001f;
+	
+	for (int x = x_begin; x < x_end; x++) {
+		for (int y = 0; y < resolution_; y++) {
+			int idx_shift = x * resolution_ * resolution_ + y * resolution_;
+			float *p_tsdf = (float *)tsdf_.data() + idx_shift;
+			float *p_weight = (float *)weight_.data() + idx_shift;
+			float *p_color = (float *)color_.data() + idx_shift * 3;
+			Eigen::Vector4f voxel_pt_camera = extrinsic_inv_f * Eigen::Vector4f(
+					half_voxel_length_f + voxel_length_f * x,
+					half_voxel_length_f + voxel_length_f * y,
+					half_voxel_length_f,
+					1.0f);
+			for (int z = 0; z < resolution_; z++,
+					voxel_pt_camera(0) += extrinsic_inv_scaled_f(0, 2),
+					voxel_pt_camera(1) += extrinsic_inv_scaled_f(1, 2),
+					voxel_pt_camera(2) += extrinsic_inv_scaled_f(2, 2),
+					p_tsdf++, p_weight++, p_color += 3) {
+				if (voxel_pt_camera(2) > 0) {
+					float u_f = voxel_pt_camera(0) * fx /
+							voxel_pt_camera(2) + cx + 0.5f;
+					float v_f = voxel_pt_camera(1) * fy /
+							voxel_pt_camera(2) + cy + 0.5f;
+					if (u_f >= 0.0001f && u_f < safe_width_f &&
+							v_f >= 0.0001f && v_f < safe_height_f) {
+						int u = (int)u_f;
+						int v = (int)v_f;
+						float d = *PointerAt<float>(depth_f, u, v);
+						if (d > 0.0f) {
+							float sdf = (d - voxel_pt_camera(2)) * (
+									*PointerAt<float>(depth2cameradistance, u,
+									v));
+							if (sdf > -sdf_trunc_f) {
+								// integrate
+								float tsdf = std::min(1.0f,
+										sdf * sdf_trunc_inv_f);
+								*p_tsdf = ((*p_tsdf) * (*p_weight) + tsdf) /
+										(*p_weight + 1.0f);
+								if (has_color_) {
+									const RGB *rgb = PointerAt<RGB>(color, u,
+											v);
+									p_color[0] = (p_color[0] *
+											(*p_weight) + rgb->rgb[0]) /
+											(*p_weight + 1.0f);
+									p_color[1] = (p_color[1] *
+											(*p_weight) + rgb->rgb[1]) /
+											(*p_weight + 1.0f);
+									p_color[2] = (p_color[2] *
+											(*p_weight) + rgb->rgb[2]) /
+											(*p_weight + 1.0f);
+								}
+								*p_weight += 1.0f;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
+		const Image &depth2cameradistance,
+		const PinholeCameraIntrinsic &intrinsic,
+		const Eigen::Matrix4d &extrinsic)
+{
+	const int num_threads = 16;
+	const int res = resolution_ / num_threads;
+	std::vector<std::thread> thread_pool;
+	for (int i = 0; i < num_threads; i++) {
+		thread_pool.push_back(std::thread(&TSDFVolume::Integrate_thread, this,
+			depth_f, color, depth2cameradistance, intrinsic, extrinsic,
+			i * res, (i+1) * res));
+	}
+	for (int i = 0; i < num_threads; i++) {
+		thread_pool[i].join();
 	}
 }
 
