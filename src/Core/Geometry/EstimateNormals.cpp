@@ -126,24 +126,28 @@ bool EstimateNormals(PointCloud &cloud,
 	}
 	KDTreeFlann kdtree;
 	kdtree.SetGeometry(cloud);
-	std::vector<int> indices;
-	std::vector<double> distance2;
-	int nn;
-	Eigen::Vector3d normal;
-	for (size_t i = 0; i < cloud.points_.size(); i++) {
-		nn = kdtree.Search(cloud.points_[i], search_param, indices, distance2);
-		normal = ComputeNormal(cloud, indices);
-		if (normal.norm() == 0.0) {
-			if (has_normal) {
-				normal = cloud.normals_[i];
-			} else {
-				normal = Eigen::Vector3d(0.0, 0.0, 1.0);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)cloud.points_.size(); i++) {
+		std::vector<int> indices;
+		std::vector<double> distance2;
+		Eigen::Vector3d normal;
+		if (kdtree.Search(cloud.points_[i], search_param, indices,
+				distance2) >= 3) {
+			normal = ComputeNormal(cloud, indices);
+			if (normal.norm() == 0.0) {
+				if (has_normal) {
+					normal = cloud.normals_[i];
+				} else {
+					normal = Eigen::Vector3d(0.0, 0.0, 1.0);
+				}
 			}
+			if (has_normal && normal.dot(cloud.normals_[i]) < 0.0) {
+				normal *= -1.0;
+			}
+			cloud.normals_[i] = normal;
 		}
-		if (has_normal && normal.dot(cloud.normals_[i]) < 0.0) {
-			normal *= -1.0;
-		}
-		cloud.normals_[i] = normal;
 	}
 	return true;
 }
@@ -157,19 +161,23 @@ bool EstimateNormals(PointCloud &cloud,
 	}
 	KDTreeFlann kdtree;
 	kdtree.SetGeometry(cloud);
-	std::vector<int> indices;
-	std::vector<double> distance2;
-	int nn;
-	Eigen::Vector3d normal;
-	for (size_t i = 0; i < cloud.points_.size(); i++) {
-		nn = kdtree.Search(cloud.points_[i], search_param, indices, distance2);
-		normal = ComputeNormal(cloud, indices);
-		if (normal.norm() == 0.0) {
-			normal = orientation_reference;
-		} else if (normal.dot(orientation_reference) < 0.0) {
-			normal *= -1.0;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)cloud.points_.size(); i++) {
+		std::vector<int> indices;
+		std::vector<double> distance2;
+		Eigen::Vector3d normal;
+		if (kdtree.Search(cloud.points_[i], search_param, indices,
+				distance2) >= 3) {
+			normal = ComputeNormal(cloud, indices);
+			if (normal.norm() == 0.0) {
+				normal = orientation_reference;
+			} else if (normal.dot(orientation_reference) < 0.0) {
+				normal *= -1.0;
+			}
+			cloud.normals_[i] = normal;
 		}
-		cloud.normals_[i] = normal;
 	}
 	return true;
 }
