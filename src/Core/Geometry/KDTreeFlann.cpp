@@ -91,6 +91,9 @@ template<typename T>
 int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
 		std::vector<double> &distance2)
 {
+	// This is optimized code for heavily repeated search
+	// Other flann::Index::knnSearch() implementations lose performance due to
+	// memory allocation/deallocation
 	if (data_.empty() || dataset_size_ <= 0 || 
 			query.rows() != dimension_ || knn < 0)
 	{
@@ -110,6 +113,9 @@ int KDTreeFlann::SearchRadius(const T &query, double radius,
 		std::vector<int> &indices, std::vector<double> &distance2,
 		int max_nn/* = -1*/)
 {
+	// This is optimized code for heavily repeated search
+	// Other flann::Index::radiusSearch() implementations lose performance due
+	// to memory management and CPU caching
 	if (data_.empty() || dataset_size_ <= 0 || query.rows() != dimension_) {
 		return -1;
 	}
