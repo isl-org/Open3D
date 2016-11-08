@@ -64,7 +64,7 @@ public:
 			std::vector<double> &distance2, int max_nn = -1);
 
 protected:
-	std::vector<Eigen::Vector3d> data_;
+	std::vector<double> data_;
 	std::unique_ptr<flann::Matrix<double>> flann_dataset_;
 	std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
 	int dimension_ = 0;

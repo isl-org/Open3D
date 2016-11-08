@@ -44,11 +44,17 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 {
 	switch (geometry.GetGeometryType()) {
 	case Geometry::GEOMETRY_POINTCLOUD:
-		data_ = ((const PointCloud &)geometry).points_;
+		dataset_size_ = ((const PointCloud &)geometry).points_.size();
+		data_.resize(dataset_size_ * 3);
+		memcpy(data_.data(), ((const PointCloud &)geometry).points_.data(),
+				dataset_size_ * 3 * sizeof(double));
 		dimension_ = 3;
 		break;
 	case Geometry::GEOMETRY_TRIANGLEMESH:
-		data_ = ((const TriangleMesh &)geometry).vertices_;
+		dataset_size_ = ((const TriangleMesh &)geometry).vertices_.size();
+		data_.resize(dataset_size_ * 3);
+		memcpy(data_.data(), ((const TriangleMesh &)geometry).vertices_.data(),
+				dataset_size_ * 3 * sizeof(double));
 		dimension_ = 3;
 		break;
 	case Geometry::GEOMETRY_IMAGE:
@@ -57,12 +63,11 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 		return false;
 		break;
 	}
-	if (data_.size() == 0) {
+	if (dataset_size_ == 0) {
 		return false;
 	}
 	flann_dataset_.reset(new flann::Matrix<double>((double *)data_.data(),
-			data_.size(), dimension_));
-	dataset_size_ = data_.size();
+			dataset_size_, dimension_));
 	flann_index_.reset(new flann::Index<flann::L2<double>>(*flann_dataset_,
 		flann::KDTreeSingleIndexParams(15)));
 	flann_index_->buildIndex();
