@@ -12,7 +12,9 @@ file(GLOB CORE_CAMERA_HEADER_FILES "Camera/*.h")
 source_group("Header Files\\Camera" FILES ${CORE_CAMERA_HEADER_FILES})
 file(GLOB CORE_CAMERA_SOURCE_FILES "Camera/*.cpp")
 source_group("Source Files\\Camera" FILES ${CORE_CAMERA_SOURCE_FILES})
+file(GLOB CORE_REGISTRATION_HEADER_FILES "Registration/*.h")
 source_group("Header Files\\Registration" FILES ${CORE_REGISTRATION_HEADER_FILES})
+file(GLOB CORE_REGISTRATION_SOURCE_FILES "Registration/*.cpp")
 source_group("Source Files\\Registration" FILES ${CORE_REGISTRATION_SOURCE_FILES})
 add_library(Core ${Open3D_LIB_TYPE}
 	${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES}
