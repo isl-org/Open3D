@@ -38,7 +38,7 @@ bool FPFHFeature::ComputeFPFHFeature(const PointCloud &cloud,
 	if (cloud.HasPoints() == false || cloud.HasNormals() == false) {
 		return false;
 	}
-
+	return true;
 }
 
 void FPFHFeature::CreateKeySPFHPoints(const std::vector<int> key_fpfh_points,

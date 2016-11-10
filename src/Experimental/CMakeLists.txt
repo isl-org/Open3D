@@ -1,1 +1,2 @@
 add_subdirectory(IntegrateRGBD)
+add_subdirectory(ViewPCDMatch)

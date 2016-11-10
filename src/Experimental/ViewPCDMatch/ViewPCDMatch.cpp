@@ -24,25 +24,54 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
+#include <iostream>
+#include <memory>
 
-#include <Core/Utility/Console.h>
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
-// The log file is the redwood-data format for camera trajectories
-// See these pages for details:
-// http://redwood-data.org/indoor/fileformat.html
-// https://github.com/qianyizh/ElasticReconstruction/blob/f986e81a46201e28c0408a5f6303b4d3cdac7423/GraphOptimizer/helper.h
-
-namespace three{
-
-bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
-		PinholeCameraTrajectory &trajectory)
+void PrintHelp()
 {
-	if (trajectory.intrinsic_.IsValid() == false) {
-		trajectory.intrinsic_ = PinholeCameraIntrinsic::PrimeSenseDefault;
+	printf("Usage:\n");
+	printf("    > ViewPCDMatch [options]\n");
+	printf("      View pairwise matching result of point clouds.\n");
+	printf("\n");
+	printf("Basic options:\n");
+	printf("    --help, -h                : Print help information.\n");
+	printf("    --log file                : A log file of the pairwise matching results. Must have.\n");
+	printf("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
+	printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+}
+
+int main(int argc, char *argv[])
+{
+	using namespace three;
+
+	if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
+			ProgramOptionExists(argc, argv, "-h")) {
+		PrintHelp();
+		return 0;
 	}
-	trajectory.extrinsic_.clear();
-	FILE * f = fopen(filename.c_str(), "r");
+	const int NUM_OF_COLOR_PALETTE = 5;
+	Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
+		Eigen::Vector3d(255, 180, 0) / 255.0,
+		Eigen::Vector3d(0, 166, 237) / 255.0,
+		Eigen::Vector3d(246, 81, 29) / 255.0,
+		Eigen::Vector3d(127, 184, 0) / 255.0,
+		Eigen::Vector3d(13, 44, 84) / 255.0,
+	};
+	
+	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+	SetVerbosityLevel((VerbosityLevel)verbose);
+	std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
+	std::string pcd_dirname = GetProgramOptionAsString(argc, argv, "--dir");
+	if (pcd_dirname.empty()) {
+		pcd_dirname = filesystem::GetFileParentDirectory(log_filename) +
+				"pcds/";
+	}
+
+	FILE * f = fopen(log_filename.c_str(), "r");
 	if (f == NULL) {
 		PrintWarning("Read LOG failed: unable to open file.\n");
 		return false;
@@ -84,35 +113,23 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
 						&trans(3,2), &trans(3,3));
 			}
-			trajectory.extrinsic_.push_back(trans);
+			PrintInfo("Showing matched point cloud #%d and #%d.\n",
+					i, j);
+			auto pcd_target = CreatePointCloudFromFile(pcd_dirname +
+					"cloud_bin_" + std::to_string(i) + ".pcd");
+			pcd_target->colors_.clear();
+			pcd_target->colors_.resize(pcd_target->points_.size(),
+					color_palette[0]);
+			auto pcd_source = CreatePointCloudFromFile(pcd_dirname +
+					"cloud_bin_" + std::to_string(j) + ".pcd");
+			pcd_source->colors_.clear();
+			pcd_source->colors_.resize(pcd_source->points_.size(),
+					color_palette[1]);
+			pcd_source->Transform(trans);
+			DrawGeometriesWithCustomAnimation({pcd_target, pcd_source},
+					"ViewPCDMatch", 1600, 900);
 		}
 	}
 	fclose(f);
-	return true;
+	return 1;
 }
-
-bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
-		const PinholeCameraTrajectory &trajectory)
-{
-	FILE * f = fopen( filename.c_str(), "w" );
-	if (f == NULL) {
-		PrintWarning("Write LOG failed: unable to open file.\n");
-		return false;
-	}
-	for (size_t i = 0; i < trajectory.extrinsic_.size(); i++ ) {
-		const auto &trans = trajectory.extrinsic_[i];
-		fprintf(f, "%d %d %d\n", (int)i, (int)i, (int)i + 1);
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0,0), trans(0,1), trans(0,2),
-				trans(0,3) );
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(1,0), trans(1,1), trans(1,2),
-				trans(1,3) );
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(2,0), trans(2,1), trans(2,2),
-				trans(2,3) );
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(3,0), trans(3,1), trans(3,2),
-				trans(3,3) );
-	}
-	fclose( f );
-	return true;
-}
-
-}	// namespace three
