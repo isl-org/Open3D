@@ -685,7 +685,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 		std::uint32_t buffer_size = (std::uint32_t)(header.elementnum *
 				header.points);
 		std::unique_ptr<float []> buffer(new float[buffer_size]);
-		std::unique_ptr<float []> buffer_compressed(new float[buffer_size]);
+		std::unique_ptr<float []> buffer_compressed(new float[buffer_size * 2]);
 		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 			const auto &point = pointcloud.points_[i];
 			buffer[0 * strip_size + i] = (float)point(0);
@@ -707,7 +707,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 		std::uint32_t buffer_size_in_bytes = buffer_size * sizeof(float);
 		std::uint32_t size_compressed = lzf_compress(buffer.get(),
 				buffer_size_in_bytes, buffer_compressed.get(),
-				buffer_size_in_bytes);
+				buffer_size_in_bytes * 2);
 		if (size_compressed == 0) {
 			PrintDebug("[WritePCDData] Failed to compress data.\n");
 			return false;

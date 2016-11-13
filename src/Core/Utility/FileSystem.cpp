@@ -56,6 +56,16 @@ std::string GetFileExtensionInLowerCase(const std::string &filename)
 	return filename_ext;
 }
 
+std::string GetFileNameWithoutDirectory(const std::string &filename)
+{
+	size_t slash_pos = filename.find_last_of("/\\");
+	if (slash_pos == std::string::npos) {
+		return filename;
+	} else {
+		return filename.substr(slash_pos + 1);
+	}
+}
+
 std::string GetFileParentDirectory(const std::string &filename)
 {
 	size_t slash_pos = filename.find_last_of("/\\");
@@ -63,6 +73,15 @@ std::string GetFileParentDirectory(const std::string &filename)
 		return "";
 	} else {
 		return filename.substr(0, slash_pos + 1);
+	}
+}
+
+std::string GetRegularizedDirectoryName(const std::string &directory)
+{
+	if (directory.back() != '/' && directory.back() != '\\') {
+		return directory + "/";
+	} else {
+		return directory;
 	}
 }
 
@@ -85,12 +104,7 @@ bool MakeDirectory(const std::string &directory)
 
 bool MakeDirectoryHierarchy(const std::string &directory)
 {
-	std::string full_path;
-	if (directory.back() != '/' && directory.back() != '\\') {
-		full_path = directory + "/";
-	} else {
-		full_path = directory;
-	}
+	std::string full_path = GetRegularizedDirectoryName(directory);
 	size_t curr_pos = full_path.find_first_of("/\\", 1);
 	while (curr_pos != std::string::npos) {
 		std::string subdir = full_path.substr(0, curr_pos + 1);
@@ -139,22 +153,38 @@ bool ListFilesInDirectory(const std::string &directory,
 	if (!dir) {
 		return false;
 	}
+	filenames.clear();
 	while ((ent = readdir(dir)) != NULL) {
 		const std::string file_name = ent->d_name;
 		if (file_name[0] == '.')
 			continue;
-		std::string full_file_name;
-		if (directory.back() == '/' || directory.back() == '\\') {
-			full_file_name = directory + file_name;
-		} else {
-			full_file_name = directory + "/" + file_name;
-		}
+		std::string full_file_name = GetRegularizedDirectoryName(directory) + 
+				file_name;
 		if (stat(full_file_name.c_str(), &st) == -1)
 			continue;
 		if (S_ISREG(st.st_mode))
 			filenames.push_back(full_file_name);
 	}
 	closedir(dir);
+	return true;
+}
+
+bool ListFilesInDirectoryWithExtension(const std::string &directory,
+		const std::string &extname, std::vector<std::string> &filenames)
+{
+	std::vector<std::string> all_files;
+	if (ListFilesInDirectory(directory, all_files) == false) {
+		return false;
+	}
+	std::string ext_in_lower = extname;
+	std::transform(ext_in_lower.begin(), ext_in_lower.end(), 
+			ext_in_lower.begin(), ::tolower);
+	filenames.clear();
+	for (const auto &fn : all_files) {
+		if (GetFileExtensionInLowerCase(fn) == ext_in_lower) {
+			filenames.push_back(fn);
+		}
+	}
 	return true;
 }
 

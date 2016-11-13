@@ -31,7 +31,7 @@ void PrintHelp()
 {
 	using namespace three;
 	PrintInfo("Usage :\n");
-	PrintInfo("    > TestTriangleMesh [--help] [--switch] [--int i] [--double d] [--string str]\n");
+	PrintInfo("    > TestProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
 }
 
 int main(int argc, char *argv[])
@@ -55,5 +55,16 @@ int main(int argc, char *argv[])
 	for (auto &str : strs) {
 		PrintInfo("\tSubstring : %s\n", str.c_str());
 	}
+	Eigen::VectorXd vec = GetProgramOptionAsEigenVectorXd(argc, argv,
+			"--vector");
+	PrintInfo("Vector is (");
+	for (auto i = 0; i < vec.size(); i++) {
+		if (i == 0) {
+			PrintInfo("%.2f", vec(i));
+		} else {
+			PrintInfo(",%.2f", vec(i));
+		}
+	}
+	PrintInfo(")\n");
 	return 1;
 }

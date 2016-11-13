@@ -40,6 +40,8 @@
 #include <windows.h>
 #endif
 
+#include <Core/Utility/Helper.h>
+
 namespace three{
 
 namespace {
@@ -275,6 +277,33 @@ double GetProgramOptionAsDouble(int argc, char **argv,
 		return default_value;
 	}
 	return l;
+}
+
+Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv,
+		const std::string &option, const Eigen::VectorXd default_value/* = 
+		Eigen::VectorXd::Zero()*/)
+{
+	std::string str = GetProgramOptionAsString(argc, argv, option, "");
+	if (str.length() == 0 || (!(str.front() == '(' && str.back() == ')') &&
+			!(str.front() == '[' && str.back() == ']') &&
+			!(str.front() == '<' && str.back() == '>'))) {
+		return default_value;
+	}
+	std::vector<std::string> tokens;
+	SplitString(tokens, str.substr(1, str.length() - 2), ",");
+	Eigen::VectorXd vec(tokens.size());
+	for (auto i = 0; i < tokens.size(); i++) {
+		char *end;
+		errno = 0;
+		double l = std::strtod(tokens[i].c_str(), &end);
+		if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
+			return default_value;
+		} else if (*end != '\0') {
+			return default_value;
+		}
+		vec(i) = l;
+	}
+	return vec;
 }
 
 bool ProgramOptionExists(int argc, char **argv, const std::string &option)

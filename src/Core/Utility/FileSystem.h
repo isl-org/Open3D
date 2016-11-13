@@ -35,7 +35,11 @@ namespace filesystem {
 
 std::string GetFileExtensionInLowerCase(const std::string &filename);
 
+std::string GetFileNameWithoutDirectory(const std::string &filename);
+
 std::string GetFileParentDirectory(const std::string &filename);
+
+std::string GetRegularizedDirectoryName(const std::string &directory);
 
 bool DirectoryExists(const std::string &directory);
 
@@ -51,6 +55,9 @@ bool RemoveFile(const std::string &filename);
 
 bool ListFilesInDirectory(const std::string &directory, 
 		std::vector<std::string> &filenames);
+
+bool ListFilesInDirectoryWithExtension(const std::string &directory,
+		const std::string &extname, std::vector<std::string> &filenames);
 
 }	// namespace three::filesystem
 

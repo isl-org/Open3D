@@ -51,7 +51,11 @@ public:
 	{
 		point += cloud.points_[index];
 		if (cloud.HasNormals()) {
-			normal += cloud.normals_[index];
+			if (!std::isnan(cloud.normals_[index](0)) && 
+					!std::isnan(cloud.normals_[index](1)) &&
+					!std::isnan(cloud.normals_[index](2))) {
+				normal += cloud.normals_[index];
+			}
 		}
 		if (cloud.HasColors()) {
 			color += cloud.colors_[index];

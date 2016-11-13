@@ -61,6 +61,10 @@ int main(int argc, char **args)
 
 		for (const auto &filename : filenames) {
 			std::cout << filename << std::endl;
+			std::cout << "parent dir name is : " << 
+					GetFileParentDirectory(filename) << std::endl;
+			std::cout << "file name only is : " << 
+					GetFileNameWithoutDirectory(filename) << std::endl;
 			std::cout << "extension name is : " << 
 					GetFileExtensionInLowerCase(filename) << std::endl;
 			std::cout << std::endl;

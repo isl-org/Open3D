@@ -29,6 +29,8 @@
 #include <vector>
 #include <string>
 
+#include <Eigen/Core>
+
 namespace three {
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
@@ -70,6 +72,10 @@ int GetProgramOptionAsInt(int argc, char **argv,
 
 double GetProgramOptionAsDouble(int argc, char **argv, 
 		const std::string &option, const double default_value = 0.0);
+
+Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv,
+		const std::string &option, const Eigen::VectorXd default_value = 
+		Eigen::VectorXd::Zero(0));
 
 bool ProgramOptionExists(int argc, char **argv, const std::string &option);
 
