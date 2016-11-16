@@ -38,6 +38,7 @@ public:
 		COLORMAP_JET = 1,
 		COLORMAP_SUMMER = 2,
 		COLORMAP_WINTER = 3,
+		COLORMAP_HOT = 4,
 	};
 
 public:
@@ -50,8 +51,15 @@ public:
 
 protected:
 	double Interpolate(double value, 
-			double y0, double x0, double y1, double x1) const
-	{
+			double y0, double x0, double y1, double x1) const {
+		if (value < x0) return y0;
+		if (value > x1) return y1;
+		return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
+	}
+	Eigen::Vector3d Interpolate(double value, const Eigen::Vector3d &y0,
+			double x0, const Eigen::Vector3d &y1, double x1) const {
+		if (value < x0) return y0;
+		if (value > x1) return y1;
 		return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
 	}
 };
@@ -93,6 +101,12 @@ public:
 
 /// See Matlab's Winter colormap
 class ColorMapWinter final : public ColorMap
+{
+public:
+	Eigen::Vector3d GetColor(double value) const final;
+};
+
+class ColorMapHot final : public ColorMap
 {
 public:
 	Eigen::Vector3d GetColor(double value) const final;

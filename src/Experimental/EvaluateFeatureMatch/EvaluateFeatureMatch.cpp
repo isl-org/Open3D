@@ -181,7 +181,9 @@ int main(int argc, char *argv[])
 	double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold",
 			0.075);
 	double threshold2 = threshold * threshold;
-	std::vector<std::string> features = {"usc"}; //{"fpfh", "pfh", "shot", "spin", "usc"};
+	//std::vector<std::string> features = {"fpfh", "r17", "pfh", "shot", "spin", "usc"};
+	//std::vector<std::string> features = {"r17", "pcar17"};
+	std::vector<std::string> features = {"r17"};
 
 	std::vector<std::string> pcd_names;
 	filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
@@ -241,10 +243,22 @@ int main(int argc, char *argv[])
 			std::vector<float> fdistance2(1);
 			int positive = 0;
 			int correspondence_num = 0;
+			std::vector<bool> has_correspondence(
+					pcds[pair_ids[k].second].points_.size());
 			for (auto i = 0; i < source.points_.size(); i++) {
 				const auto &pt = source.points_[i];
 				kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices, distance2);
 				if (distance2[0] < threshold2) {
+					has_correspondence[i] = true;
+				} else {
+					has_correspondence[i] = false;
+				}
+			}
+			{
+			ScopeTimer t(feature);
+			for (auto i = 0; i < source.points_.size(); i++) {
+				const auto &pt = source.points_[i];
+				if (has_correspondence[i]) {
 					correspondence_num++;
 					feature_trees[pair_ids[k].first].SearchKNN(
 							feature_trees[pair_ids[k].second].data_, i, 1,
@@ -256,7 +270,10 @@ int main(int argc, char *argv[])
 					if (new_dis < threshold) {
 						positive++;
 					}
+				} else {
+					true_dis.push_back(-1.0);
 				}
+			}
 			}
 			total_correspondence_num += correspondence_num;
 			total_positive += positive;

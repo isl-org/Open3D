@@ -259,6 +259,9 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			UpdateGeometry();
 			PrintDebug("[Visualizer] Mesh color set to Z.\n");
 		} else if (mods & GLFW_MOD_SHIFT) {
+			SetGlobalColorMap(ColorMap::COLORMAP_HOT);
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Color map set to WINTER.\n");
 		} else {
 			render_option_ptr_->point_color_option_ =
 					RenderOption::POINTCOLOR_Z;

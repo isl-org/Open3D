@@ -1,3 +1,4 @@
 add_subdirectory(IntegrateRGBD)
 add_subdirectory(ViewPCDMatch)
 add_subdirectory(EvaluateFeatureMatch)
+add_subdirectory(EvaluatePCDMatch)

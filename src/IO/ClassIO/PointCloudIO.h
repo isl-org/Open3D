@@ -64,6 +64,16 @@ bool WritePointCloudToXYZN(
 		const bool write_ascii = false,
 		const bool compressed = false);
 
+bool ReadPointCloudFromXYZRGB(
+		const std::string &filename,
+		PointCloud &pointcloud);
+
+bool WritePointCloudToXYZRGB(
+		const std::string &filename,
+		const PointCloud &pointcloud,
+		const bool write_ascii = false,
+		const bool compressed = false);
+
 bool ReadPointCloudFromPLY(
 		const std::string &filename,
 		PointCloud &pointcloud);

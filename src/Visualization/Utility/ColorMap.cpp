@@ -87,6 +87,27 @@ Eigen::Vector3d ColorMapWinter::GetColor(double value) const
 			Interpolate(value, 1.0, 0.0, 0.5, 1.0));
 }
 
+Eigen::Vector3d ColorMapHot::GetColor(double value) const
+{
+	Eigen::Vector3d edges[4] = {
+		Eigen::Vector3d(1.0, 1.0, 0.875),
+		Eigen::Vector3d(1.0, 1.0, 0.0),
+		Eigen::Vector3d(1.0, 0.0, 0.0),
+		Eigen::Vector3d(0.125, 0.0, 0.0),
+	};
+	if (value < 0.0) {
+		return edges[0];
+	} else if (value < 1.0 / 3.0) {
+		return Interpolate(value, edges[0], 0.0, edges[1], 1.0 / 3.0);
+	} else if (value < 2.0 / 3.0) {
+		return Interpolate(value, edges[1], 1.0 / 3.0, edges[2], 2.0 / 3.0);
+	} else if (value < 1.0) {
+		return Interpolate(value, edges[2], 2.0 / 3.0, edges[3], 1.0);
+	} else {
+		return edges[3];
+	}
+}
+
 const std::shared_ptr<const ColorMap> GetGlobalColorMap()
 {
 	return GlobalColorMapSingleton::GetInstance().color_map_;
@@ -106,6 +127,10 @@ void SetGlobalColorMap(ColorMap::ColorMapOption option)
 	case ColorMap::COLORMAP_WINTER:
 		GlobalColorMapSingleton::GetInstance().color_map_.reset(
 				new ColorMapWinter);
+		break;
+	case ColorMap::COLORMAP_HOT:
+		GlobalColorMapSingleton::GetInstance().color_map_.reset(
+				new ColorMapHot);
 		break;
 	case ColorMap::COLORMAP_JET:
 	default:
