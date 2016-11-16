@@ -32,70 +32,64 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-using namespace three;
-
-class CustomVisualizer : public VisualizerWithCustomAnimation
+bool ReadLogFile(const std::string &filename,
+		std::vector<std::tuple<int, int, int>> &metadata,
+		std::vector<Eigen::Matrix4d> &transformations)
 {
-protected:
-	void KeyPressCallback(GLFWwindow *window,
-			int key, int scancode, int action, int mods) override {
-		if (action == GLFW_PRESS && key == GLFW_KEY_SPACE) {
-			// save to pov
-			FILE *f = fopen("render.pov", "w");
-
-			fprintf(f, "#include \"colors.inc\"\n\n");
-			fprintf(f, "#declare WhiteSphere = rgb <0.9, 0.9, 0.9>;\n");
-			fprintf(f, "#declare PointRadius = 5;\n");
-			fprintf(f, "\nbackground\n{\n\tcolor <1, 1, 1>\n}\n");
-
-			auto view = GetViewControl();
-			Eigen::Vector3f up = view.GetUp();
-			Eigen::Vector3f eye = view.GetEye();
-			Eigen::Vector3f gaze = view.GetLookat();
-			Eigen::Vector3f front = view.GetFront();
-			Eigen::Vector3f right = up.cross(front).normalized();
-			fprintf(f, "camera {\n\tangle %8.6f\n\tup <%8.6f, %8.6f, %8.6f>\n\tright <%8.6f, %8.6f, %8.6f>\n\tlocation <%8.6f, %8.6f, %8.6f>\n\tlook_at <%8.6f, %8.6f, %8.6f>\n\tsky <%8.6f, %8.6f, %8.6f>\n}\n\n",
-					view.GetFieldOfView(), up(0), up(1), up(2),
-					right(0), right(1), right(2),
-					eye(0), eye(1), eye(2),
-					gaze(0), gaze(1), gaze(2),
-					up(0), up(1), up(2));
-
-			fprintf_s(f, "light_source {<%8.6f, %8.6f, %8.6f> rgb <1.0, 1.0, 1.0> * 2.5\n\tarea_light <10, 0, 0>, <0, 10, 0>, 15, 15 adaptive 1 circular\n}\n",
-					right(0), right(1), right(2));
-			fprintf_s(f, "light_source {<%8.6f, %8.6f, %8.6f> rgb <1.0, 1.0, 1.0> * 0.8 shadowless}\n\n",
-					-right(0), -right(1), right(2));
-
-			//const auto &pointcloud = (const PointCloud &)(*geometry_ptrs_[0]);
-			//for (auto i = 0; i < pointcloud.points_.size(); i++) {
-			//	const auto &pt = pointcloud.points_[i];
-			//	const auto &c = pointcloud.colors_[i];
-			//	fprintf(f, "sphere {<%8.6f, %8.6f, %8.6f>, PointRadius pigment  { rgb<%.4f, %.4f, %.4f> } finish{ phong 0.1 reflection 0.2 }}\n",
-			//		pt(0), pt(1), pt(2), 0.9, 0.9, 0.9);
-			//}
-
-			const auto &pointcloud = (const PointCloud &)(*geometry_ptrs_[0]);
-			for (auto i = 0; i < pointcloud.points_.size(); i++) {
-				const auto &pt = pointcloud.points_[i];
-				const auto &c = pointcloud.colors_[i];
-				fprintf(f, "sphere {<%8.6f, %8.6f, %8.6f>, PointRadius pigment  { rgb<%.4f, %.4f, %.4f> } finish{ phong 0.1 reflection 0.2 }}\n",
-					pt(0), pt(1), pt(2), c(0), c(1), c(2));
+	using namespace three;
+	metadata.clear();
+	transformations.clear();
+	FILE * f = fopen(filename.c_str(), "r");
+	if (f == NULL) {
+		PrintWarning("Read LOG failed: unable to open file.\n");
+		return false;
+	}
+	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
+	int i, j, k;
+	Eigen::Matrix4d trans;
+	int total_point_num = 0;
+	int total_correspondence_num = 0;
+	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
+		if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
+			if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
+				PrintWarning("Read LOG failed: unrecognized format.\n");
+				return false;
 			}
-
-			const auto &pointcloud1 = (const PointCloud &)(*geometry_ptrs_[1]);
-			for (auto i = 0; i < pointcloud1.points_.size(); i++) {
-				const auto &pt = pointcloud1.points_[i];
-				const auto &c = pointcloud1.colors_[i];
-				fprintf(f, "sphere {<%8.6f, %8.6f, %8.6f>, PointRadius pigment  { rgb<%.4f, %.4f, %.4f> } finish{ phong 0.1 reflection 0.2 }}\n",
-					pt(0), pt(1), pt(2), c(0), c(1), c(2));
+			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+				PrintWarning("Read LOG failed: unrecognized format.\n");
+				return false;
+			} else {
+				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0,0), &trans(0,1),
+						&trans(0,2), &trans(0,3));
 			}
-			fclose(f);
-		} else {
-			VisualizerWithCustomAnimation::KeyPressCallback(window, key, scancode,
-					action, mods);
+			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+				PrintWarning("Read LOG failed: unrecognized format.\n");
+				return false;
+			} else {
+				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1,0), &trans(1,1),
+						&trans(1,2), &trans(1,3));
+			}
+			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+				PrintWarning("Read LOG failed: unrecognized format.\n");
+				return false;
+			} else {
+				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2,0), &trans(2,1),
+						&trans(2,2), &trans(2,3));
+			}
+			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+				PrintWarning("Read LOG failed: unrecognized format.\n");
+				return false;
+			} else {
+				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
+						&trans(3,2), &trans(3,3));
+			}
+			metadata.push_back(std::make_tuple(i, j, k));
+			transformations.push_back(trans);
 		}
 	}
-};
+	fclose(f);
+	return true;
+}
 
 void PrintHelp()
 {
@@ -139,100 +133,26 @@ int main(int argc, char *argv[])
 	}
 	double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold");
 
-	FILE * f = fopen(log_filename.c_str(), "r");
-	if (f == NULL) {
-		PrintWarning("Read LOG failed: unable to open file.\n");
-		return false;
+	std::vector<std::tuple<int, int, int>> metadata;
+	std::vector<Eigen::Matrix4d> transformations;
+	ReadLogFile(log_filename, metadata, transformations);
+	
+	for (auto k = 0; k < metadata.size(); k++) {
+		auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
+		PrintInfo("Showing matched point cloud #%d and #%d.\n", i, j);
+		auto pcd_target = CreatePointCloudFromFile(pcd_dirname + "cloud_bin_" +
+				std::to_string(i) + ".pcd");
+		pcd_target->colors_.clear();
+		pcd_target->colors_.resize(pcd_target->points_.size(),
+				color_palette[0]);
+		auto pcd_source = CreatePointCloudFromFile(pcd_dirname + "cloud_bin_" +
+				std::to_string(j) + ".pcd");
+		pcd_source->colors_.clear();
+		pcd_source->colors_.resize(pcd_source->points_.size(),
+				color_palette[1]);
+		pcd_source->Transform(transformations[k]);
+		DrawGeometriesWithCustomAnimation({pcd_target, pcd_source},
+				"ViewPCDMatch", 1600, 900);
 	}
-	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-	int i, j, k;
-	Eigen::Matrix4d trans;
-	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
-		if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
-			if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
-				return false;
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0,0), &trans(0,1),
-						&trans(0,2), &trans(0,3));
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1,0), &trans(1,1),
-						&trans(1,2), &trans(1,3));
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2,0), &trans(2,1),
-						&trans(2,2), &trans(2,3));
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
-						&trans(3,2), &trans(3,3));
-			}
-			PrintInfo("Showing matched point cloud #%d and #%d.\n",
-					i, j);
-			auto pcd_target = CreatePointCloudFromFile(pcd_dirname +
-					"cloud_bin_" + std::to_string(i) + ".pcd");
-			pcd_target->colors_.clear();
-			pcd_target->colors_.resize(pcd_target->points_.size(),
-					color_palette[0]);
-			auto pcd_source = CreatePointCloudFromFile(pcd_dirname +
-					"cloud_bin_" + std::to_string(j) + ".pcd");
-			pcd_source->colors_.clear();
-			pcd_source->colors_.resize(pcd_source->points_.size(),
-					color_palette[1]);
-			PointCloud source = *pcd_source;
-			pcd_source->Transform(trans);
-
-			if (threshold > 0.0) {
-				ColorMapSummer cm;
-				pcd_target->colors_.clear();
-				pcd_target->colors_.resize(pcd_target->points_.size(),
-						Eigen::Vector3d(0.9, 0.9, 0.9));
-				pcd_source->colors_.clear();
-				pcd_source->colors_.resize(pcd_source->points_.size(),
-						Eigen::Vector3d(0.9, 0.9, 0.9));
-				KDTreeFlann tree;
-				std::vector<int> indices(1);
-				std::vector<double> distance2(1);
-				tree.SetGeometry(*pcd_target);
-				for (auto l = 0; l < pcd_source->points_.size(); l++) {
-					tree.SearchKNN(source.points_[l], 1, indices, distance2);
-					if (distance2[0] < 17.22) {
-						//double new_dis = (pcd_source->points_[l] - 
-						//		pcd_target->points_[indices[0]]).norm();
-						//pcd_source->colors_[l] = cm.GetColor(
-						//		new_dis / threshold);
-						tree.SearchKNN(pcd_source->points_[l], 1, indices,
-								distance2);
-						pcd_source->colors_[l] = cm.GetColor(
-								1.0 - std::sqrt(distance2[0]) / threshold);
-					}
-				}
-			}
-
-			//DrawGeometriesWithCustomAnimation({pcd_target, pcd_source},
-			//		"ViewPCDMatch", 1600, 900);
-			CustomVisualizer vis;
-			vis.CreateWindow("Render", 1600, 1200);
-			vis.AddGeometry(pcd_target);
-			vis.AddGeometry(pcd_source);
-			vis.Run();
-			vis.DestroyWindow();
-		}
-	}
-	fclose(f);
 	return 1;
 }

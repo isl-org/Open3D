@@ -7,5 +7,5 @@ build14/
 build15/
 build-xcode/
 build-gcc/
-*.cpp~
 build14-rdp/
+src/Sandbox/
