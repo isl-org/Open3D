@@ -101,7 +101,6 @@ void PrintHelp()
 	printf("    --help, -h                : Print help information.\n");
 	printf("    --log file                : A log file of the pairwise matching results. Must have.\n");
 	printf("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
-	printf("    --threshold t             : If specified, the source point cloud is rendered with color coding.\n");
 	printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
 }
 
@@ -131,7 +130,6 @@ int main(int argc, char *argv[])
 		pcd_dirname = filesystem::GetFileParentDirectory(log_filename) +
 				"pcds/";
 	}
-	double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold");
 
 	std::vector<std::tuple<int, int, int>> metadata;
 	std::vector<Eigen::Matrix4d> transformations;

@@ -254,8 +254,6 @@ int main(int argc, char *argv[])
 					has_correspondence[i] = false;
 				}
 			}
-			{
-			ScopeTimer t(feature);
 			for (auto i = 0; i < source.points_.size(); i++) {
 				const auto &pt = source.points_[i];
 				if (has_correspondence[i]) {
@@ -273,7 +271,6 @@ int main(int argc, char *argv[])
 				} else {
 					true_dis.push_back(-1.0);
 				}
-			}
 			}
 			total_correspondence_num += correspondence_num;
 			total_positive += positive;
