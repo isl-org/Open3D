@@ -33,7 +33,11 @@
  * provisions above, a recipient may use your version of this file under
  * either the BSD or the GPL.
  */
+
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable : 4244)
+#endif
 
 #include "lzfP.h"
 
@@ -290,3 +294,6 @@ lzf_compress (const void *const in_data, unsigned int in_len,
   return op - (u8 *)out_data;
 }
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

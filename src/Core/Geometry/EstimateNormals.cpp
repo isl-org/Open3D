@@ -26,7 +26,6 @@
 
 #include "PointCloud.h"
 
-#pragma warning(disable : 4522)
 #include <Eigen/Eigenvalues>
 #include <Core/Geometry/KDTreeFlann.h>
 

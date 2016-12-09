@@ -24,6 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4267)
+#endif
+
 #include "KDTreeFlann.h"
 
 #include <flann/flann.hpp>
@@ -147,3 +152,7 @@ template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
 		std::vector<double> &distance2, int max_nn);
 
 }	// namespace three
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
