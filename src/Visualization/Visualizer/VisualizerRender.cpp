@@ -120,7 +120,8 @@ void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
 	PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
 	WriteImage(png_filename, png_image);
 	if (!camera_filename.empty()) {
-		PrintDebug("[Visualizer] Screen camera capture to %s\n", camera_filename.c_str());
+		PrintDebug("[Visualizer] Screen camera capture to %s\n",
+				camera_filename.c_str());
 		PinholeCameraTrajectory trajectory;
 		trajectory.extrinsic_.resize(1);
 		view_control_ptr_->ConvertToPinholeCameraParameters(
@@ -203,7 +204,8 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 	PrintDebug("[Visualizer] Depth capture to %s\n", png_filename.c_str());
 	WriteImage(png_filename, png_image);
 	if (!camera_filename.empty()) {
-		PrintDebug("[Visualizer] Depth camera capture to %s\n", camera_filename.c_str());
+		PrintDebug("[Visualizer] Depth camera capture to %s\n",
+				camera_filename.c_str());
 		PinholeCameraTrajectory trajectory;
 		trajectory.extrinsic_.resize(1);
 		view_control_ptr_->ConvertToPinholeCameraParameters(
@@ -279,10 +281,12 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
 		}
 	}
 
-	PrintDebug("[Visualizer] Depth point cloud capture to %s\n", ply_filename.c_str());
+	PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
+			ply_filename.c_str());
 	WritePointCloud(ply_filename, depth_pointcloud);
 	if (!camera_filename.empty()) {
-		PrintDebug("[Visualizer] Depth camera capture to %s\n", camera_filename.c_str());
+		PrintDebug("[Visualizer] Depth camera capture to %s\n",
+				camera_filename.c_str());
 		PinholeCameraTrajectory trajectory;
 		trajectory.extrinsic_.resize(1);
 		view_control_ptr_->ConvertToPinholeCameraParameters(
@@ -298,7 +302,8 @@ void Visualizer::CaptureRenderOption(const std::string &filename/* = ""*/)
 		std::string timestamp = GetCurrentTimeStamp();
 		json_filename = "RenderOption_" + timestamp + ".json";
 	}
-	PrintDebug("[Visualizer] Render option capture to %s\n", json_filename.c_str());
+	PrintDebug("[Visualizer] Render option capture to %s\n",
+			json_filename.c_str());
 	WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 
