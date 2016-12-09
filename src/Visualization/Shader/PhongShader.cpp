@@ -60,6 +60,8 @@ bool PhongShader::Compile()
 			"light_diffuse_power_4");
 	light_specular_power_ = glGetUniformLocation(program_, 
 			"light_specular_power_4");
+	light_specular_shininess_ = glGetUniformLocation(program_, 
+			"light_specular_shininess_4");
 	light_ambient_ = glGetUniformLocation(program_, "light_ambient");
 
 	return true;
@@ -128,6 +130,8 @@ bool PhongShader::RenderGeometry(const Geometry &geometry,
 	glUniformMatrix4fv(light_color_, 1, GL_FALSE, light_color_data_.data());
 	glUniform4fv(light_diffuse_power_, 1, light_diffuse_power_data_.data());
 	glUniform4fv(light_specular_power_, 1, light_specular_power_data_.data());
+	glUniform4fv(light_specular_shininess_, 1,
+			light_specular_shininess_data_.data());
 	glUniform4fv(light_ambient_, 1, light_ambient_data_.data());
 	glEnableVertexAttribArray(vertex_position_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -162,9 +166,11 @@ void PhongShader::SetLighting(const ViewControl &view,
 	light_position_world_data_.setOnes();
 	light_color_data_.setOnes();
 	for (int i = 0; i < 4; i++) {
-		light_position_world_data_.block<3, 1>(0, i) = (box.GetCenter() + 
-				option.light_position_relative_[i] * 
-				box.GetSize()).cast<GLfloat>();
+		light_position_world_data_.block<3, 1>(0, i) = 
+				box.GetCenter().cast<GLfloat>() + (float)box.GetSize() * (
+				(float)option.light_position_relative_[i](0) * view.GetRight() +
+				(float)option.light_position_relative_[i](1) * view.GetUp() +
+				(float)option.light_position_relative_[i](2) * view.GetFront());
 		light_color_data_.block<3, 1>(0, i) = 
 				option.light_color_[i].cast<GLfloat>();
 	}
@@ -173,12 +179,15 @@ void PhongShader::SetLighting(const ViewControl &view,
 				option.light_diffuse_power_).cast<GLfloat>();
 		light_specular_power_data_ = Eigen::Vector4d(
 				option.light_specular_power_).cast<GLfloat>();
+		light_specular_shininess_data_ = Eigen::Vector4d(
+				option.light_specular_shininess_).cast<GLfloat>();
 		light_ambient_data_.block<3, 1>(0, 0) = 
 				option.light_ambient_color_.cast<GLfloat>();
 		light_ambient_data_(3) = 1.0f;
 	} else {
 		light_diffuse_power_data_ = GLHelper::GLVector4f::Zero();
 		light_specular_power_data_ = GLHelper::GLVector4f::Zero();
+		light_specular_shininess_data_ = GLHelper::GLVector4f::Ones();
 		light_ambient_data_ = GLHelper::GLVector4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 }
