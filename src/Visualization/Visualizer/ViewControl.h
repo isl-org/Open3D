@@ -97,6 +97,7 @@ public:
 	GLHelper::GLVector3f GetLookat() const { return lookat_.cast<GLfloat>(); }
 	GLHelper::GLVector3f GetUp() const { return up_.cast<GLfloat>(); }
 	GLHelper::GLVector3f GetFront() const { return front_.cast<GLfloat>(); }
+	GLHelper::GLVector3f GetRight() const { return right_.cast<GLfloat>(); }
 	int GetWindowWidth() const { return window_width_; }
 	int GetWindowHeight() const { return window_height_; }
 	double GetZNear() const { return z_near_; }

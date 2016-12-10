@@ -80,22 +80,26 @@ public:
 	RenderOption() {
 		// VS2013 does not fully support C++11
 		// Array initialization has to be done in contructors.
-		light_position_relative_[0] = Eigen::Vector3d(2, 2, 2);
-		light_position_relative_[1] = Eigen::Vector3d(2, -2, -2);
-		light_position_relative_[2] = Eigen::Vector3d(-2, 2, -2);
-		light_position_relative_[3] = Eigen::Vector3d(-2, -2, 2);
+		light_position_relative_[0] = Eigen::Vector3d(0, 0, 2);
+		light_position_relative_[1] = Eigen::Vector3d(0, 0, 2);
+		light_position_relative_[2] = Eigen::Vector3d(0, 0, -2);
+		light_position_relative_[3] = Eigen::Vector3d(0, 0, -2);
 		light_color_[0] = Eigen::Vector3d::Ones();
 		light_color_[1] = Eigen::Vector3d::Ones();
 		light_color_[2] = Eigen::Vector3d::Ones();
 		light_color_[3] = Eigen::Vector3d::Ones();
-		light_diffuse_power_[0] = 0.7;
-		light_diffuse_power_[1] = 0.7;
-		light_diffuse_power_[2] = 0.7;
-		light_diffuse_power_[3] = 0.7;
-		light_specular_power_[0] = 0.4;
-		light_specular_power_[1] = 0.4;
-		light_specular_power_[2] = 0.4;
-		light_specular_power_[3] = 0.4;
+		light_diffuse_power_[0] = 0.66;
+		light_diffuse_power_[1] = 0.66;
+		light_diffuse_power_[2] = 0.66;
+		light_diffuse_power_[3] = 0.66;
+		light_specular_power_[0] = 0.2;
+		light_specular_power_[1] = 0.2;
+		light_specular_power_[2] = 0.2;
+		light_specular_power_[3] = 0.2;
+		light_specular_shininess_[0] = 100.0;
+		light_specular_shininess_[1] = 100.0;
+		light_specular_shininess_[2] = 100.0;
+		light_specular_shininess_[3] = 100.0;
 	}
 	~RenderOption() override {}
 
@@ -157,6 +161,7 @@ public:
 	Eigen::Vector3d light_ambient_color_ = Eigen::Vector3d::Zero();
 	double light_diffuse_power_[4];
 	double light_specular_power_[4];
+	double light_specular_shininess_[4];
 
 	// PointCloud options
 	double point_size_ = POINT_SIZE_DEFAULT;
@@ -169,7 +174,7 @@ public:
 	bool mesh_show_back_face_ = false;
 	bool mesh_show_wireframe_ = false;
 	Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(
-			0.439216, 0.858824, 0.858824);
+			0.7, 0.7, 0.7);
 	
 	// Image options
 	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;

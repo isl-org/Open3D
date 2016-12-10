@@ -77,6 +77,7 @@ protected:
 	GLuint light_color_;
 	GLuint light_diffuse_power_;
 	GLuint light_specular_power_;
+	GLuint light_specular_shininess_;
 	GLuint light_ambient_;
 
 	// At most support 4 lights
@@ -84,6 +85,7 @@ protected:
 	GLHelper::GLMatrix4f light_color_data_;
 	GLHelper::GLVector4f light_diffuse_power_data_;
 	GLHelper::GLVector4f light_specular_power_data_;
+	GLHelper::GLVector4f light_specular_shininess_data_;
 	GLHelper::GLVector4f light_ambient_data_;
 };
 

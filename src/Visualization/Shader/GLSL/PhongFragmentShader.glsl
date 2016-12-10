@@ -9,6 +9,7 @@ varying vec3 fragment_color;
 uniform mat4 light_color_4;
 uniform vec4 light_diffuse_power_4;
 uniform vec4 light_specular_power_4;
+uniform vec4 light_specular_shininess_4;
 uniform vec4 light_ambient;
 
 void main()
@@ -44,11 +45,11 @@ void main()
 
 	gl_FragColor.rgb = ambient_color + 
 			diffuse_color * light_color_4[0].xyz * light_diffuse_power_4[0] * cos_theta[0] +
-			specular_color * light_color_4[0].xyz * light_specular_power_4[0] * pow(cos_alpha[0], 5) +
+			specular_color * light_color_4[0].xyz * light_specular_power_4[0] * pow(cos_alpha[0], light_specular_shininess_4[0]) +
 			diffuse_color * light_color_4[1].xyz * light_diffuse_power_4[1] * cos_theta[1] +
-			specular_color * light_color_4[1].xyz * light_specular_power_4[1] * pow(cos_alpha[1], 5) +
+			specular_color * light_color_4[1].xyz * light_specular_power_4[1] * pow(cos_alpha[1], light_specular_shininess_4[1]) +
 			diffuse_color * light_color_4[2].xyz * light_diffuse_power_4[2] * cos_theta[2] +
-			specular_color * light_color_4[2].xyz * light_specular_power_4[2] * pow(cos_alpha[2], 5) +
+			specular_color * light_color_4[2].xyz * light_specular_power_4[2] * pow(cos_alpha[2], light_specular_shininess_4[2]) +
 			diffuse_color * light_color_4[3].xyz * light_diffuse_power_4[3] * cos_theta[3] +
-			specular_color * light_color_4[3].xyz * light_specular_power_4[3] * pow(cos_alpha[3], 5);
+			specular_color * light_color_4[3].xyz * light_specular_power_4[3] * pow(cos_alpha[3], light_specular_shininess_4[3]);
 }
