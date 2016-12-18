@@ -114,6 +114,9 @@ int main(int argc, char **argv)
 		if (visualizer.AddGeometry(pointcloud_ptr) == false) {
 			PrintWarning("Failed adding point cloud.\n");
 		}
+		if (pointcloud_ptr->points_.size() > 5000000) {
+			visualizer.GetRenderOption().point_size_ = 1.0;
+		}
 	}
 	if (!image_filename.empty()) {
 		auto image_ptr = CreateImageFromFile(image_filename);
