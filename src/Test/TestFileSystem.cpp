@@ -36,6 +36,8 @@ void PrintHelp()
 	PrintInfo("    > TestFileSystem ls [dir]\n");
 	PrintInfo("    > TestFileSystem mkdir [dir]\n");
 	PrintInfo("    > TestFileSystem rmdir [dir]\n");
+	PrintInfo("    > TestFileSystem rmfile [file]\n");
+	PrintInfo("    > TestFileSystem fileexists [file]\n");
 }
 
 int main(int argc, char **args)
@@ -81,6 +83,9 @@ int main(int argc, char **args)
 		bool success = RemoveFile(directory);
 		std::cout << "rmfile " << (success ? "succeeded" : "failed") 
 				<< std::endl;
+	} else if (function == "fileexists") {
+		bool success = FileExists(directory);
+		std::cout << "fileexists " << (success ? "yes" : "no") << std::endl;
 	}
 	return 1;
 }
