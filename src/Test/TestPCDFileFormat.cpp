@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	}
 
 	auto cloud_ptr = CreatePointCloudFromFile(argv[1]);
-	DrawGeometry(cloud_ptr, "TestPCDFileFormat", 1920, 1080);
+	DrawGeometries({cloud_ptr}, "TestPCDFileFormat", 1920, 1080);
 
 	if (argc >= 3) {
 		std::string method(argv[2]);

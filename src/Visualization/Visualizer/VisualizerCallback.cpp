@@ -92,6 +92,30 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 	}
 
 	switch (key) {
+	case GLFW_KEY_LEFT_BRACKET:
+		view_control_ptr_->ChangeFieldOfView(-1.0);
+		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
+				view_control_ptr_->GetFieldOfView());
+		break;
+	case GLFW_KEY_RIGHT_BRACKET:
+		view_control_ptr_->ChangeFieldOfView(1.0);
+		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
+				view_control_ptr_->GetFieldOfView());
+		break;
+	case GLFW_KEY_R:
+		ResetViewPoint();
+		PrintDebug("[Visualizer] Reset view point.\n");
+		break;
+	case GLFW_KEY_C:
+		if (mods & GLFW_MOD_CONTROL || mods & GLFW_MOD_SUPER) {
+			CopyViewStatusToClipboard();
+		}
+		break;
+	case GLFW_KEY_V:
+		if (mods & GLFW_MOD_CONTROL || mods & GLFW_MOD_SUPER) {
+			CopyViewStatusFromClipboard();
+		}
+		break;
 	case GLFW_KEY_ESCAPE:
 	case GLFW_KEY_Q:
 		glfwSetWindowShouldClose(window_, GL_TRUE);
@@ -99,10 +123,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_H:
 		PrintVisualizerHelp();
-		break;
-	case GLFW_KEY_R:
-		ResetViewPoint();
-		PrintDebug("[Visualizer] Reset view point.\n");
 		break;
 	case GLFW_KEY_P:
 	case GLFW_KEY_PRINT_SCREEN:
@@ -113,16 +133,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_O:
 		CaptureRenderOption();
-		break;
-	case GLFW_KEY_LEFT_BRACKET:
-		view_control_ptr_->ChangeFieldOfView(-1.0);
-		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_ptr_->GetFieldOfView());
-		break;
-	case GLFW_KEY_RIGHT_BRACKET:
-		view_control_ptr_->ChangeFieldOfView(1.0);
-		PrintDebug("[Visualizer] Field of view set to %.2f.\n",
-				view_control_ptr_->GetFieldOfView());
 		break;
 	case GLFW_KEY_L:
 		render_option_ptr_->ToggleLightOn();

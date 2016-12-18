@@ -80,6 +80,33 @@ void ViewControl::SetViewMatrices(
 	//glMultMatrixf(MVP_matrix_.data());
 }
 
+bool ViewControl::ConvertToViewParameters(
+		ViewParameters &status) const
+{
+	status.field_of_view_ = field_of_view_;
+	status.zoom_ = zoom_;
+	status.lookat_ = lookat_;
+	status.up_ = up_;
+	status.front_ = front_;
+	status.boundingbox_min_ = bounding_box_.min_bound_;
+	status.boundingbox_max_ = bounding_box_.max_bound_;
+	return true;
+}
+
+bool ViewControl::ConvertFromViewParameters(
+		const ViewParameters &status)
+{
+	field_of_view_ = status.field_of_view_;
+	zoom_ = status.zoom_;
+	lookat_ = status.lookat_;
+	up_ = status.up_;
+	front_ = status.front_;
+	bounding_box_.min_bound_ = status.boundingbox_min_;
+	bounding_box_.max_bound_ = status.boundingbox_max_;	
+	SetProjectionParameters();
+	return true;
+}
+
 bool ViewControl::ConvertToPinholeCameraParameters(
 		PinholeCameraIntrinsic &intrinsic, Eigen::Matrix4d &extrinsic)
 {

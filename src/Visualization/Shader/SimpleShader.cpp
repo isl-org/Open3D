@@ -222,7 +222,6 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 				GetShaderName().c_str());
 		return false;
 	}
-	const ColorMap &global_color_map = *GetGlobalColorMap();
 	points.resize(lineset.lines_.size() * 2);
 	colors.resize(lineset.lines_.size() * 2);
 	for (size_t i = 0; i < lineset.lines_.size(); i++) {

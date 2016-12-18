@@ -32,56 +32,6 @@
 
 namespace three{
 
-bool DrawGeometry(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string &window_name/* = "Open3D"*/, 
-		const int width/* = 640*/, const int height/* = 480*/,
-		const int left/* = 50*/, const int top/* = 50*/)
-{
-	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
-	geometry_ptrs.push_back(geometry_ptr);
-	return DrawGeometries(geometry_ptrs, window_name, width, height, left, top);
-}
-
-bool DrawGeometryWithCustomAnimation(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string &window_name/* = "Open3D"*/, 
-		const int width/* = 640*/, const int height/* = 480*/,
-		const int left/* = 50*/, const int top/* = 50*/,
-		const std::string &json_filename/* = ""*/)
-{
-	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
-	geometry_ptrs.push_back(geometry_ptr);
-	return DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name, width, 
-			height, left, top, json_filename);
-}
-
-bool DrawGeometryWithAnimationCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		std::function<bool(Visualizer &)> callback_func,
-		const std::string &window_name/* = "Open3D"*/, 
-		const int width/* = 640*/, const int height/* = 480*/,
-		const int left/* = 50*/, const int top/* = 50*/)
-{
-	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
-	geometry_ptrs.push_back(geometry_ptr);
-	return DrawGeometriesWithAnimationCallback(geometry_ptrs, callback_func,
-			window_name, width, height, left, top);
-}
-
-bool DrawGeometryWithKeyCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const int key, std::function<bool(Visualizer &)> callback_func,
-		const std::string &window_name/* = "Open3D"*/, 
-		const int width/* = 640*/, const int height/* = 480*/,
-		const int left/* = 50*/, const int top/* = 50*/)
-{
-	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs;
-	geometry_ptrs.push_back(geometry_ptr);
-	return DrawGeometriesWithKeyCallback(geometry_ptrs, key, callback_func,
-			window_name, width, height, left, top);
-}
-
 bool DrawGeometries(
 		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 		const std::string &window_name/* = "Open3D"*/, 

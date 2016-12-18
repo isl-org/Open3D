@@ -152,15 +152,15 @@ int main(int argc, char *argv[])
 
 	// 4. test operations
 	*pointcloud_transformed_ptr += *pointcloud_ptr;
-	DrawGeometry(pointcloud_transformed_ptr, "Combined Pointcloud");
+	DrawGeometries({pointcloud_transformed_ptr}, "Combined Pointcloud");
 
 	// 5. test downsample
 	auto downsampled = std::make_shared<PointCloud>();
 	VoxelDownSample(*pointcloud_ptr, 0.05, *downsampled);
-	DrawGeometry(downsampled, "Down Sampled Pointcloud");
+	DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
 	// 6. test normal estimation
-	DrawGeometryWithKeyCallback(pointcloud_ptr, GLFW_KEY_SPACE,
+	DrawGeometriesWithKeyCallback({pointcloud_ptr}, GLFW_KEY_SPACE,
 			[&](Visualizer &vis) {
 				//EstimateNormals(*pointcloud_ptr, 
 				//		three::KDTreeSearchParamKNN(20));

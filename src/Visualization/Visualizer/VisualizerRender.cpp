@@ -26,6 +26,8 @@
 
 #include "Visualizer.h"
 
+#include <Visualization/Visualizer/ViewParameters.h>
+#include <Visualization/Visualizer/ViewTrajectory.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <IO/ClassIO/ImageIO.h>
 #include <IO/ClassIO/PointCloudIO.h>
@@ -81,6 +83,46 @@ void Visualizer::ResetViewPoint()
 {
 	view_control_ptr_->Reset();
 	is_redraw_required_ = true;
+}
+
+void Visualizer::CopyViewStatusToClipboard()
+{
+	ViewParameters current_status;
+	if (view_control_ptr_->ConvertToViewParameters(current_status) ==
+			false) {
+		PrintInfo("Something is wrong copying view status.\n");
+		return;
+	}
+	ViewTrajectory trajectory;
+	trajectory.view_status_.push_back(current_status);
+	std::string clipboard_string;
+	if (WriteIJsonConvertibleToJSONString(clipboard_string,
+			trajectory) == false) {
+		PrintInfo("Something is wrong copying view status.\n");
+		return;
+	}
+	glfwSetClipboardString(window_, clipboard_string.c_str());
+}
+
+void Visualizer::CopyViewStatusFromClipboard()
+{
+	const char *clipboard_string_buffer = glfwGetClipboardString(
+			window_);
+	if (clipboard_string_buffer != NULL) {
+		std::string clipboard_string(clipboard_string_buffer);
+		ViewTrajectory trajectory;
+		if (ReadIJsonConvertibleFromJSONString(clipboard_string,
+				trajectory) == false) {
+			PrintInfo("Something is wrong copying view status.\n");
+			return;
+		}
+		if (trajectory.view_status_.size() != 1) {
+			PrintInfo("Something is wrong copying view status.\n");
+			return;
+		}
+		view_control_ptr_->ConvertFromViewParameters(
+				trajectory.view_status_[0]);
+	}
 }
 
 void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
@@ -263,9 +305,6 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
 	// glReadPixels get the screen in a vertically flipped manner
 	// We should flip it back, and convert it to the correct depth value
 	PointCloud depth_pointcloud;
-	double z_near = view_control_ptr_->GetZNear();
-	double z_far = view_control_ptr_->GetZFar();
-
 	for (int i = 0; i < depth_image.height_; i++) {
 		float *p_depth = (float *)(depth_image.data_.data() + 
 				depth_image.BytesPerLine() * i);

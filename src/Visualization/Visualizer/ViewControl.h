@@ -28,7 +28,7 @@
 
 #include <Core/Geometry/Geometry.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
-
+#include <Visualization/Visualizer/ViewParameters.h>
 #include <Visualization/Utility/BoundingBox.h>
 #include <Visualization/Utility/GLHelper.h>
 
@@ -61,8 +61,14 @@ public:
 	void SetViewMatrices(
 			Eigen::Matrix4d model_matrix = Eigen::Matrix4d::Identity());
 
-	/// Function to get equivalent pinhole camera parameters
-	bool ConvertToPinholeCameraParameters(PinholeCameraIntrinsic &intrinsic,
+	/// Function to get equivalent view parameters (support orthogonal)
+	bool ConvertToViewParameters(ViewParameters &status) const;
+	bool ConvertFromViewParameters(const ViewParameters &status);
+
+	/// Function to get equivalent pinhole camera parameters (does not support
+	/// orthogonal since it is not a real camera view)
+	bool ConvertToPinholeCameraParameters(
+			PinholeCameraIntrinsic &intrinsic,
 			Eigen::Matrix4d &extrinsic);
 	bool ConvertFromPinholeCameraParameters(
 			const PinholeCameraIntrinsic &intrinsic,

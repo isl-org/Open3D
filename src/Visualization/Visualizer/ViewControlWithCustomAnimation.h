@@ -28,7 +28,6 @@
 
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Visualization/Visualizer/ViewControl.h>
-#include <Visualization/Visualizer/ViewParameters.h>
 #include <Visualization/Visualizer/ViewTrajectory.h>
 
 namespace three {
@@ -60,6 +59,9 @@ public:
 	size_t NumOfKeyFrames() const {
 		return view_trajectory_.view_status_.size();
 	}
+	size_t NumOfFrames() const {
+		return view_trajectory_.NumOfFrames();
+	}
 	void ToggleTrajectoryLoop() {
 		if (animation_mode_ == ANIMATION_FREEMODE) {
 			view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
@@ -81,8 +83,7 @@ public:
 	bool LoadTrajectoryFromJsonFile(const std::string &filename);
 	bool LoadTrajectoryFromCameraTrajectory(
 			const PinholeCameraTrajectory &camera_trajectory);
-	bool SaveViewControlToString(std::string &view_status_string);
-	bool LoadViewControlFromString(const std::string &view_status_string);
+	bool IsPreviewing() { return animation_mode_ == ANIMATION_PREVIEWMODE; }
 	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
@@ -90,8 +91,6 @@ public:
 	bool IsValidPinholeCameraTrajectory();
 
 protected:
-	bool ConvertToViewParameters(ViewParameters &status) const;
-	bool ConvertFromViewParameters(const ViewParameters &status);
 	size_t CurrentFrame() const { return (size_t)round(current_frame_); }
 	size_t CurrentKeyframe() const { return (size_t)round(current_keyframe_); }
 	double RegularizeFrameIndex(double current_frame, size_t num_of_frames,

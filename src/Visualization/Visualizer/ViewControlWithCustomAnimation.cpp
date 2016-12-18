@@ -290,41 +290,6 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
 	return true;
 }
 
-bool ViewControlWithCustomAnimation::SaveViewControlToString(
-		std::string &view_status_string)
-{
-	if (animation_mode_ == ANIMATION_FREEMODE) {
-		ViewParameters current_status;
-		ConvertToViewParameters(current_status);
-		ViewTrajectory trajectory_with_current_status;
-		trajectory_with_current_status.view_status_.push_back(current_status);
-		return WriteIJsonConvertibleToJSONString(view_status_string, 
-				trajectory_with_current_status);
-	} else {
-		return false;
-	}
-}
-
-bool ViewControlWithCustomAnimation::LoadViewControlFromString(
-		const std::string &view_status_string)
-{
-	if (animation_mode_ == ANIMATION_FREEMODE) {
-		ViewTrajectory trajectory_with_current_status;
-		if (ReadIJsonConvertibleFromJSONString(view_status_string, 
-				trajectory_with_current_status) == false) {
-			return false;
-		}
-		if (trajectory_with_current_status.view_status_.size() != 1) {
-			return false;
-		}
-		ConvertFromViewParameters(
-				trajectory_with_current_status.view_status_[0]);
-		return true;
-	} else {
-		return false;
-	}
-}
-
 bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory()
 {
 	if (view_trajectory_.view_status_.empty()) {
@@ -339,33 +304,6 @@ bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory()
 			return false;
 		}
 	}
-	return true;
-}
-
-bool ViewControlWithCustomAnimation::ConvertToViewParameters(
-		ViewParameters &status) const
-{
-	status.field_of_view_ = field_of_view_;
-	status.zoom_ = zoom_;
-	status.lookat_ = lookat_;
-	status.up_ = up_;
-	status.front_ = front_;
-	status.boundingbox_min_ = bounding_box_.min_bound_;
-	status.boundingbox_max_ = bounding_box_.max_bound_;
-	return true;
-}
-
-bool ViewControlWithCustomAnimation::ConvertFromViewParameters(
-		const ViewParameters &status)
-{
-	field_of_view_ = status.field_of_view_;
-	zoom_ = status.zoom_;
-	lookat_ = status.lookat_;
-	up_ = status.up_;
-	front_ = status.front_;
-	bounding_box_.min_bound_ = status.boundingbox_min_;
-	bounding_box_.max_bound_ = status.boundingbox_max_;	
-	SetProjectionParameters();
 	return true;
 }
 

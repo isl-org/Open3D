@@ -39,32 +39,6 @@ namespace three {
 /// This function is a wrapper that calls the core functions of Visualizer.
 /// This function MUST be called from the main thread. It blocks the main thread
 /// until the window is closed.
-bool DrawGeometry(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string &window_name = "Open3D", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
-
-bool DrawGeometryWithCustomAnimation(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const std::string &window_name = "Open3D", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50,
-		const std::string &json_filename = "");
-
-bool DrawGeometryWithAnimationCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		std::function<bool(Visualizer &)> callback_func,
-		const std::string &window_name = "Open3D", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
-
-bool DrawGeometryWithKeyCallback(
-		std::shared_ptr<const Geometry> geometry_ptr,
-		const int key, std::function<bool(Visualizer &)> callback_func,
-		const std::string &window_name = "Open3D", 
-		const int width = 640, const int height = 480,
-		const int left = 50, const int top = 50);
 
 bool DrawGeometries(
 		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,

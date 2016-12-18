@@ -65,7 +65,7 @@ public:
 		}
 	}
 
-	size_t NumOfFrames() {
+	size_t NumOfFrames() const {
 		if (view_status_.empty()) {
 			return 0;
 		} else {

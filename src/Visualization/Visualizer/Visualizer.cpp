@@ -28,7 +28,7 @@
 
 namespace three{
 
-namespace {
+namespace {	
 
 class GLFWEnvironmentSingleton
 {
@@ -346,13 +346,16 @@ bool Visualizer::HasGeometry() const
 
 void Visualizer::PrintVisualizerHelp()
 {
-	PrintInfo("Mouse options:\n");
-	PrintInfo("\n");
+	PrintInfo("  -- Mouse view control --\n");
 	PrintInfo("    Left btn + drag        : Rotate.\n");
 	PrintInfo("    Ctrl + left btn + drag : Translate.\n");
 	PrintInfo("    Wheel                  : Zoom in/out.\n");
 	PrintInfo("\n");
-	PrintInfo("Keyboard options:\n");
+	PrintInfo("  -- Keyboard view control --\n");
+	PrintInfo("    [/]          : Increase/decrease field of view.\n");
+	PrintInfo("    R            : Reset view point.\n");
+	PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
+	PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
 	PrintInfo("\n");
 	PrintInfo("  -- General control --\n");
 	PrintInfo("    Q, Esc       : Exit window.\n");
@@ -360,8 +363,6 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("    P, PrtScn    : Take a screen capture.\n");
 	PrintInfo("    D            : Take a depth capture.\n");
 	PrintInfo("    O            : Take a capture of current rendering settings.\n");
-	PrintInfo("    R            : Reset view point.\n");
-	PrintInfo("    [/]          : Increase/decrease field of view.\n");
 	PrintInfo("\n");
 	PrintInfo("  -- Render mode control --\n");
 	PrintInfo("    L            : Turn on/off lighting.\n");

@@ -29,6 +29,7 @@
 #include <thread>
 
 #include <Core/Utility/FileSystem.h>
+#include <Core/Utility/Console.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
@@ -55,8 +56,6 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp()
 	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");
-	PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
-	PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
 	PrintInfo("    Ctrl + <-/-> : Go backward/forward a keyframe.\n");
 	PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
 	PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
@@ -95,6 +94,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 	is_redraw_required_ = true;
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
+	ResetConsoleProgress(view_control.NumOfFrames(), "Play animation: ");
 	auto trajectory_ptr = std::make_shared<PinholeCameraTrajectory>();
 	bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
 	if (recording) {
@@ -135,6 +135,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 					}
 				}
 				view_control.Step(1.0);
+				AdvanceConsoleProgress();
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
 					view_control.SetAnimationMode(
 							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
@@ -167,8 +168,6 @@ bool VisualizerWithCustomAnimation::InitViewControl()
 void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
-	const char *clipboard_string_buffer;
-	std::string clipboard_string;
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	if (action == GLFW_RELEASE || view_control.IsPlaying()) {
 		return;
@@ -197,17 +196,6 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 			break;
 		case GLFW_KEY_S:
 			view_control.CaptureTrajectory();
-			break;
-		case GLFW_KEY_C:
-			view_control.SaveViewControlToString(clipboard_string);
-			glfwSetClipboardString(window_, clipboard_string.c_str());
-			break;
-		case GLFW_KEY_V:
-			clipboard_string_buffer = glfwGetClipboardString(window_);
-			if (clipboard_string_buffer != NULL) {
-				clipboard_string = std::string(clipboard_string_buffer);
-				view_control.LoadViewControlFromString(clipboard_string);
-			}
 			break;
 		case GLFW_KEY_LEFT:
 			view_control.Step(-1.0);
@@ -265,22 +253,6 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 		}
 		is_redraw_required_ = true;
 		UpdateWindowTitle();
-	} else if (mods & GLFW_MOD_SUPER) {
-		switch (key) {
-		case GLFW_KEY_C:
-			view_control.SaveViewControlToString(clipboard_string);
-			glfwSetClipboardString(window_, clipboard_string.c_str());
-			break;
-		case GLFW_KEY_V:
-			clipboard_string = std::string(glfwGetClipboardString(window_));
-			view_control.LoadViewControlFromString(clipboard_string);
-			break;
-		default:
-			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
-			break;
-		}
-		is_redraw_required_ = true;
-		UpdateWindowTitle();
 	} else {
 		Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 	}
@@ -290,24 +262,25 @@ void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window,
 		double x, double y)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
-	if (view_control.IsPlaying()) {
-		return;
+	if (view_control.IsPreviewing()) {
+	} else if (view_control.IsPlaying()) {
+	} else {
+		Visualizer::MouseMoveCallback(window, x, y);
 	}
-	Visualizer::MouseMoveCallback(window, x, y);
 }
 
 void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow* window, 
 		double x, double y)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
-	if (view_control.IsPlaying()) {
-		return;
-	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-			glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
-		view_control.Step(y);
-		is_redraw_required_ = true;
-		UpdateWindowTitle();
+	if (view_control.IsPreviewing()) {
+		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+				glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+			view_control.Step(y);
+			is_redraw_required_ = true;
+			UpdateWindowTitle();
+		}
+	} else if (view_control.IsPlaying()) {
 	} else {
 		Visualizer::MouseScrollCallback(window, x, y);
 	}
@@ -317,10 +290,11 @@ void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow* window,
 		int button, int action, int mods)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
-	if (view_control.IsPlaying()) {
-		return;
+	if (view_control.IsPreviewing()) {
+	} else if (view_control.IsPlaying()) {
+	} else {
+		Visualizer::MouseButtonCallback(window, button, action, mods);
 	}
-	Visualizer::MouseButtonCallback(window, button, action, mods);
 }
 
 }	// namespace three

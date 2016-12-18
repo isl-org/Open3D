@@ -62,27 +62,27 @@ int main(int argc, char *argv[])
 	if (option == "sphere") {
 		auto mesh = CreateMeshSphere(0.05);
 		mesh->ComputeVertexNormals();
-		DrawGeometry(mesh);
+		DrawGeometries({mesh});
 		WriteTriangleMesh("sphere.ply", *mesh, true, true);
 	} else if (option == "cylinder") {
 		auto mesh = CreateMeshCylinder(0.5, 2.0);
 		mesh->ComputeVertexNormals();
-		DrawGeometry(mesh);
+		DrawGeometries({mesh});
 		WriteTriangleMesh("cylinder.ply", *mesh, true, true);
 	} else if (option == "cone") {
 		auto mesh = CreateMeshCone(0.5, 2.0, 20, 3);
 		mesh->ComputeVertexNormals();
-		DrawGeometry(mesh);
+		DrawGeometries({mesh});
 		WriteTriangleMesh("cone.ply", *mesh, true, true);
 	} else if (option == "arrow") {
 		auto mesh = CreateMeshArrow();
 		mesh->ComputeVertexNormals();
-		DrawGeometry(mesh);
+		DrawGeometries({mesh});
 		WriteTriangleMesh("arrow.ply", *mesh, true, true);
 	} else if (option == "frame") {
 		if (argc < 3) {
 			auto mesh = CreateMeshCoordinateFrame();
-			DrawGeometry(mesh);
+			DrawGeometries({mesh});
 			WriteTriangleMesh("frame.ply", *mesh, true, true);
 		} else {
 			auto mesh = CreateMeshFromFile(argv[2]);
@@ -90,29 +90,22 @@ int main(int argc, char *argv[])
 			BoundingBox boundingbox(*mesh);
 			auto mesh_frame = CreateMeshCoordinateFrame(
 					boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
-			std::vector<std::shared_ptr<const Geometry>> meshes =
-					{mesh, mesh_frame};
-			DrawGeometries(meshes);
+			DrawGeometries({mesh, mesh_frame});
 		}
 	} else if (option == "merge") {
 		auto mesh1 = CreateMeshFromFile(argv[2]);
 		auto mesh2 = CreateMeshFromFile(argv[3]);
-
-		PrintInfo("Mesh1 has %d vertices, %d triangles.\n", mesh1->vertices_.size(),
-				mesh1->triangles_.size());
-		PrintInfo("Mesh2 has %d vertices, %d triangles.\n", mesh2->vertices_.size(),
-				mesh2->triangles_.size());
-
+		PrintInfo("Mesh1 has %d vertices, %d triangles.\n",
+				mesh1->vertices_.size(), mesh1->triangles_.size());
+		PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
+				mesh2->vertices_.size(), mesh2->triangles_.size());
 		*mesh1 += *mesh2;
 		PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n", 
 				mesh1->vertices_.size(), mesh1->triangles_.size());
-
 		mesh1->Purge();
 		PrintInfo("After purge vertices, Mesh1 has %d vertices, %d triangles.\n", 
 				mesh1->vertices_.size(), mesh1->triangles_.size());
-
-		DrawGeometry(mesh1);
-
+		DrawGeometries({mesh1});
 		WriteTriangleMesh("temp.ply", *mesh1, true, true);
 	} else if (option == "normal") {
 		auto mesh = CreateMeshFromFile(argv[2]);
@@ -143,7 +136,6 @@ int main(int argc, char *argv[])
 	} else if (option == "distance") {
 		auto mesh1 = CreateMeshFromFile(argv[2]);
 		auto mesh2 = CreateMeshFromFile(argv[3]);
-
 		double scale = std::stod(argv[4]);
 		mesh1->vertex_colors_.resize(mesh1->vertices_.size());
 		KDTreeFlann kdtree;
@@ -162,7 +154,7 @@ int main(int argc, char *argv[])
 		if (argc > 5) {
 			WriteTriangleMesh(argv[5], *mesh1);
 		}
-		DrawGeometry(mesh1);
+		DrawGeometries({mesh1});
 	} else if (option == "showboth") {
 		auto mesh1 = CreateMeshFromFile(argv[2]);
 		PaintMesh(*mesh1, Eigen::Vector3d(1.0, 0.75, 0.0));
@@ -212,7 +204,7 @@ int main(int argc, char *argv[])
 			if (result.first) {
 				PrintWarning("%.6f\n", result.second);
 			}
-			DrawGeometry(fimage, "Test", 1920, 1080);
+			DrawGeometries({fimage}, "Test", 1920, 1080);
 		}
 	}
 }

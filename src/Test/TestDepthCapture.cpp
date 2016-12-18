@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 	}
 
 	auto image_ptr = CreateImageFromFile("depth.png");
-	DrawGeometry(image_ptr);
+	DrawGeometries({image_ptr});
 
 	PinholeCameraTrajectory camera;
 	ReadIJsonConvertible("camera.json", camera);

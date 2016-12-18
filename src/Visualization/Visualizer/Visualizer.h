@@ -146,6 +146,10 @@ protected:
 	void UpdateRender();
 
 	void ResetViewPoint();
+	
+	void CopyViewStatusToClipboard();
+	
+	void CopyViewStatusFromClipboard();
 
 	// callback functions
 	virtual void WindowRefreshCallback(GLFWwindow *window);
