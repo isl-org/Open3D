@@ -129,10 +129,17 @@ bool DeleteDirectory(const std::string &directory)
 
 bool FileExists(const std::string &filename)
 {
+#ifdef WINDOWS
+	struct _stat64 info;
+	if (_stat64(filename.c_str(), &info) == -1)
+		return false;
+	return S_ISREG(info.st_mode);
+#else
 	struct stat info;
 	if (stat(filename.c_str(), &info) == -1)
 		return false;
 	return S_ISREG(info.st_mode);
+#endif
 }
 
 bool RemoveFile(const std::string &filename)
