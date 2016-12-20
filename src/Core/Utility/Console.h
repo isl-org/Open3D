@@ -57,7 +57,7 @@ void PrintDebug(const char *format, ...);
 
 void PrintAlways(const char *format, ...);
 	
-void ResetConsoleProgress(const int expected_count,
+void ResetConsoleProgress(const int64_t expected_count,
 		const std::string &progress_info = "");
 
 void AdvanceConsoleProgress();

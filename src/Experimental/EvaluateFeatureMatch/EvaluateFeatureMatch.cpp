@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 	double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold",
 			0.075);
 	double threshold2 = threshold * threshold;
-	//std::vector<std::string> features = {"fpfh", "r17", "pfh", "shot", "spin", "usc"};
+	//std::vector<std::string> features = {"fpfh", "pfh", "shot", "spin", "usc", "r17", "pcar17"};
 	//std::vector<std::string> features = {"r17", "pcar17"};
 	std::vector<std::string> features = {"r17"};
 
