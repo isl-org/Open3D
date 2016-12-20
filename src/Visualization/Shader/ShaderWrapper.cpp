@@ -144,7 +144,7 @@ bool ShaderWrapper::ValidateShader(GLuint shader_index)
 		if (info_log_length > 0) {
 			std::vector<char> error_message(info_log_length + 1);
 			glGetShaderInfoLog(shader_index, info_log_length, NULL,
-							   &error_message[0]);
+					&error_message[0]);
 			PrintError("Shader error: %s\n", &error_message[0]);
 		}
 		return false;
@@ -162,7 +162,7 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index)
 		if (info_log_length > 0) {
 			std::vector<char> error_message(info_log_length + 1);
 			glGetShaderInfoLog(program_index, info_log_length, NULL,
-							   &error_message[0]);
+					&error_message[0]);
 			PrintError("Shader error: %s\n", &error_message[0]);
 		}
 		return false;
