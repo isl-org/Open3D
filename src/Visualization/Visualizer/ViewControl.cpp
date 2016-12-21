@@ -242,22 +242,24 @@ void ViewControl::Scale(double scale)
 	SetProjectionParameters();
 }
 
-void ViewControl::Rotate(double x, double y)
+void ViewControl::Rotate(double x, double y,
+		double xo/* = 0.0*/, double yo/* = 0.0*/)
 {
 	// some black magic to do rotation
 	double alpha = x * ROTATION_RADIAN_PER_PIXEL;
 	double beta = y * ROTATION_RADIAN_PER_PIXEL;
-	front_ = (front_ * std::cos(alpha) + right_ * std::sin(alpha)).normalized();
+	front_ = (front_ * std::cos(alpha) - right_ * std::sin(alpha)).normalized();
 	right_ = up_.cross(front_).normalized();
 	front_ = (front_ * std::cos(beta) + up_ * std::sin(beta)).normalized();
 	up_ = front_.cross(right_).normalized();
 	SetProjectionParameters();
 }
 
-void ViewControl::Translate(double x, double y)
+void ViewControl::Translate(double x, double y,
+		double xo/* = 0.0*/, double yo/* = 0.0*/)
 {
 	Eigen::Vector3d shift =
-			right_ * x / window_height_ * view_ratio_ * 2.0 +
+			right_ * (-x) / window_height_ * view_ratio_ * 2.0 +
 			up_ * y / window_height_ * view_ratio_ * 2.0;
 	eye_ += shift;
 	lookat_ += shift;

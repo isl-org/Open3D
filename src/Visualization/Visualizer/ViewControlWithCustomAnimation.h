@@ -45,8 +45,8 @@ public:
 	void Reset() override;
 	void ChangeFieldOfView(double step) override;
 	void Scale(double scale) override;
-	void Rotate(double x, double y) override;
-	void Translate(double x, double y) override;
+	void Rotate(double x, double y, double xo, double yo) override;
+	void Translate(double x, double y, double xo, double yo) override;
 
 	void SetAnimationMode(AnimationMode mode);
 	void AddKeyFrame();

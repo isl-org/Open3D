@@ -47,12 +47,16 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 	if (mouse_control_.is_mouse_left_button_down) {
 		if (mouse_control_.is_control_key_down) {
 			view_control_ptr_->Translate(
-					mouse_control_.mouse_position_x - x,
-					y - mouse_control_.mouse_position_y);
+					x - mouse_control_.mouse_position_x,
+					y - mouse_control_.mouse_position_y,
+					mouse_control_.mouse_position_x,
+					mouse_control_.mouse_position_y);
 		} else {
 			view_control_ptr_->Rotate(
-					mouse_control_.mouse_position_x - x,
-					y - mouse_control_.mouse_position_y);
+					x - mouse_control_.mouse_position_x,
+					y - mouse_control_.mouse_position_y,
+					mouse_control_.mouse_position_x,
+					mouse_control_.mouse_position_y);
 		}
 	}
 	mouse_control_.mouse_position_x = x;

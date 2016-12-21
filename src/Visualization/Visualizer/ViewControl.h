@@ -79,9 +79,26 @@ public:
 	virtual void Reset();
 	virtual void ChangeFieldOfView(double step);
 	virtual void ChangeWindowSize(int width, int height);
+
+	// Function to process scaling
+	/// \param scale is the relative distance mouse has scrolled.
 	virtual void Scale(double scale);
-	virtual void Rotate(double x, double y);
-	virtual void Translate(double x, double y);
+
+	// Function to process rotation
+	/// \param x and \param y are the distances the mouse cursor has moved.
+	/// \param xo and \param yo are the original point coordinate the mouse
+	/// cursor started to move from.
+	/// Coordinates are measured in screen coordinates relative to the top-left
+	/// corner of the window client area.
+	virtual void Rotate(double x, double y, double xo = 0.0, double yo = 0.0);
+
+	// Function to process translation
+	/// \param x and \param y are the distances the mouse cursor has moved.
+	/// \param xo and \param yo are the original point coordinate the mouse
+	/// cursor started to move from.
+	/// Coordinates are measured in screen coordinates relative to the top-left
+	/// corner of the window client area.
+	virtual void Translate(double x, double y, double xo = 0.0, double yo = 0.0);
 
 	const BoundingBox &GetBoundingBox() const {
 		return bounding_box_;
