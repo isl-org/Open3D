@@ -26,9 +26,12 @@
 
 #include "DrawGeometry.h"
 
+#include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/VisualizerWithCustomAnimation.h>
 #include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
+#include <Visualization/Visualizer/VisualizerWithEditing.h>
 #include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
+#include <Visualization/Visualizer/ViewControlWithEditing.h>
 
 namespace three{
 
@@ -138,6 +141,30 @@ bool DrawGeometriesWithKeyCallback(
 		}
 	}
 	visualizer.RegisterKeyCallback(key, callback_func);
+	visualizer.Run();
+	visualizer.DestroyWindow();
+	return true;
+}
+
+bool DrawGeometriesWithEditing(
+		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+		const std::string &window_name/* = "Open3D"*/,
+		const int width/* = 640*/, const int height/* = 480*/,
+		const int left/* = 50*/, const int top/* = 50*/)
+{
+	VisualizerWithEditing visualizer;
+	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+			false) {
+		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		return false;
+	}
+	for (const auto &geometry_ptr : geometry_ptrs) {
+		if (visualizer.AddGeometry(geometry_ptr) == false) {
+			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
+			return false;
+		}
+	}
 	visualizer.Run();
 	visualizer.DestroyWindow();
 	return true;

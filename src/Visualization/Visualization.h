@@ -31,6 +31,9 @@
 
 #include "Visualizer/Visualizer.h"
 #include "Visualizer/VisualizerWithCustomAnimation.h"
+#include "Visualizer/VisualizerWithEditing.h"
 #include "Visualizer/VisualizerWithKeyCallback.h"
+
 #include "Visualizer/ViewControl.h"
 #include "Visualizer/ViewControlWithCustomAnimation.h"
+#include "Visualizer/ViewControlWithEditing.h"

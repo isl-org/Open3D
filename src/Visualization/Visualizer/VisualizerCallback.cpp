@@ -44,6 +44,10 @@ void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h)
 
 void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 {
+#ifdef __APPLE__
+	x /= pixel_to_screen_coordinate_;
+	y /= pixel_to_screen_coordinate_;
+#endif
 	if (mouse_control_.is_mouse_left_button_down) {
 		if (mouse_control_.is_control_key_down) {
 			view_control_ptr_->Translate(

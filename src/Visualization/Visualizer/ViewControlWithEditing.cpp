@@ -61,6 +61,8 @@ void ViewControlWithEditing::Reset()
 			up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
 			front_ = Eigen::Vector3d(0.0, 0.0, -1.0);
 			break;
+		default:
+			break;
 		}
 		SetProjectionParameters();
 	}
@@ -94,11 +96,11 @@ void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
 		double y0 = window_height_ / 2.0 - 0.5 - yo;
 		double x1 = xo + x - (window_width_ / 2.0 - 0.5);
 		double y1 = window_height_ / 2.0 - 0.5 - yo - y;
-		if ((x0 < 0.5 && y0 < 0.5) || (x1 < 0.5 && y1 < 0.5)) {
+		if ((std::abs(x0 * y0) < 0.5) || (std::abs(x1 * y1) < 0.5)) {
 			// Too close to screen center, skip the rotation
 		} else {
 			double theta = std::atan2(y1, x1) - std::atan2(y0, x0);
-			up_ = up_ * std::cos(theta) - right_ * std::sin(theta);
+			up_ = up_ * std::cos(theta) + right_ * std::sin(theta);
 		}
 		SetProjectionParameters();
 	}

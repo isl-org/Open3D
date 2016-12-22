@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
-		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth] [filename]\n");
+		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
 		PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
 		return 0;
 	}
@@ -142,6 +142,9 @@ int main(int argc, char *argv[])
 				camera);
 		DrawGeometries({pointcloud_ptr}, "PointCloud from Depth Image",
 				1920, 1080);
+	} else if (option == "editing") {
+		auto pcd = CreatePointCloudFromFile(argv[2]);
+		DrawGeometriesWithEditing({pcd}, "Editing", 1920, 1080);
 	} else if (option == "animation") {
 		auto mesh_ptr = std::make_shared<TriangleMesh>();
 		if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
