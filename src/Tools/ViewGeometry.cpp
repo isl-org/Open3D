@@ -148,13 +148,6 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	if (show_coordinate_frame) {
-		const auto &boundingbox = visualizer.GetViewControl().GetBoundingBox();
-		auto mesh_frame = CreateMeshCoordinateFrame(
-				boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
-		visualizer.AddGeometry(mesh_frame, false);
-	}
-
 	if (!render_filename.empty()) {
 		if (ReadIJsonConvertible(render_filename,
 				visualizer.GetRenderOption()) == false) {
@@ -181,7 +174,9 @@ int main(int argc, char **argv)
 			}
 		}
 	}
-	visualizer.UpdateWindowTitle();
+
+	visualizer.GetRenderOption().show_coordinate_frame_ = show_coordinate_frame;
+
 	visualizer.Run();
 	visualizer.DestroyWindow();
 

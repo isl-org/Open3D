@@ -61,13 +61,9 @@ public:
 	bool HasGeometry() const {
 		return bool(geometry_ptr_);
 	}
-	Geometry::GeometryType GetGeometryType() { return type_; }
 	
 protected:
 	std::shared_ptr<const Geometry> geometry_ptr_;
-	
-private:
-	Geometry::GeometryType type_;
 };
 
 class PointCloudRenderer : public GeometryRenderer
@@ -128,6 +124,20 @@ public:
 	
 protected:
 	ImageShaderForImage image_shader_;
+};
+
+class CoordinateFrameRenderer : public GeometryRenderer
+{
+public:
+	~CoordinateFrameRenderer() override {}
+	
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	bool UpdateGeometry() override;
+	
+protected:
+	PhongShaderForTriangleMesh phong_shader_;
 };
 
 }	// namespace three::glsl

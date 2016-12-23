@@ -164,6 +164,36 @@ bool ImageRenderer::UpdateGeometry()
 	return true;
 }
 
+bool CoordinateFrameRenderer::Render(const RenderOption &option,
+		const ViewControl &view)
+{
+	if (option.show_coordinate_frame_ == false) {
+		return true;
+	}
+	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
+	return phong_shader_.Render(mesh, option, view);
+}
+
+bool CoordinateFrameRenderer::AddGeometry(
+		std::shared_ptr<const Geometry> geometry_ptr)
+{
+	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+		return false;
+	}
+	const auto &mesh = (const TriangleMesh &)(*geometry_ptr);
+	if (mesh.HasTriangles() == false) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
+bool CoordinateFrameRenderer::UpdateGeometry()
+{
+	phong_shader_.InvalidateGeometry();
+	return true;
+}
+
 }	// namespace three::glsl
 
 }	// namespace three

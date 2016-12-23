@@ -26,6 +26,8 @@
 
 #include "Visualizer.h"
 
+#include <Core/Geometry/TriangleMesh.h>
+
 namespace three{
 
 namespace {	
@@ -229,8 +231,24 @@ void Visualizer::UpdateWindowTitle()
 	}
 }
 
+void Visualizer::BuildUtilities()
+{
+	// 0. Build coordinate frame
+	const auto boundingbox = GetViewControl().GetBoundingBox();
+	auto mesh_frame = CreateMeshCoordinateFrame(
+			boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+	utility_ptrs_.push_back(mesh_frame);
+	auto renderer_ptr = std::make_shared<glsl::CoordinateFrameRenderer>();
+	if (renderer_ptr->AddGeometry(mesh_frame) == false) {
+		return;
+	}
+	utility_renderer_ptrs_.push_back(renderer_ptr);
+}
+
 void Visualizer::Run()
 {
+	UpdateWindowTitle();
+	BuildUtilities();
 	while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
 		if (bool(animation_callback_func_in_loop_)) {
 			if (animation_callback_func_in_loop_(*this)) {
@@ -272,8 +290,7 @@ bool Visualizer::PollEvents()
 	return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
-		bool update_boundingbox/* = true*/)
+bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (is_initialized_ == false) {
 		return false;
@@ -288,46 +305,44 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		renderer_ptrs_.push_back(renderer_ptr);
+		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_LINESET) {
 		auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		renderer_ptrs_.push_back(renderer_ptr);
+		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_TRIANGLEMESH) {
 		auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		renderer_ptrs_.push_back(renderer_ptr);
+		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_IMAGE) {
 		auto renderer_ptr = std::make_shared<glsl::ImageRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
-		renderer_ptrs_.push_back(renderer_ptr);
+		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else {
 		return false;
 	}
 
 	geometry_ptrs_.push_back(geometry_ptr);
-	if (update_boundingbox) {
-		view_control_ptr_->FitInGeometry(*geometry_ptr);
-		ResetViewPoint();
-		PrintDebug("Add geometry and update bounding box to %s\n", 
-				view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
-	}
+	view_control_ptr_->FitInGeometry(*geometry_ptr);
+	ResetViewPoint();
+	PrintDebug("Add geometry and update bounding box to %s\n", 
+			view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
 	return UpdateGeometry();
 }
 
 bool Visualizer::UpdateGeometry()
 {
 	bool success = true;
-	for (const auto &renderer_ptr : renderer_ptrs_) {
+	for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
 		success = (success && renderer_ptr->UpdateGeometry());
 	}
 	UpdateRender();

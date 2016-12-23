@@ -179,6 +179,9 @@ public:
 	// Image options
 	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
 	int image_max_depth_ = 3000;
+
+	// Coordinate frame
+	bool show_coordinate_frame_ = false;
 };
 
 }	// namespace three

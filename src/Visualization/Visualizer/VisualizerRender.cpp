@@ -72,7 +72,10 @@ void Visualizer::Render()
 			(GLclampf)background_color(2), 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for (const auto &renderer_ptr : renderer_ptrs_) {
+	for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
+		renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
+	}
+	for (const auto &renderer_ptr : utility_renderer_ptrs_) {
 		renderer_ptr->Render(*render_option_ptr_, *view_control_ptr_);
 	}
 

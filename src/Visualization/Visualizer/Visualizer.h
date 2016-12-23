@@ -105,8 +105,7 @@ public:
 	/// undefined. Programmers are responsible for calling UpdateGeometry() to
 	/// notify the Visualizer that the geometry has been changed and the 
 	/// Visualizer should be updated accordingly.
-	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
-			const bool update_boundingbox = true);
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 
 	/// Function to update geometry
 	/// This function must be called when geometry has been changed. Otherwise
@@ -116,6 +115,7 @@ public:
 
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();
+	virtual void BuildUtilities();
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
 	RenderOption &GetRenderOption() { return *render_option_ptr_; }
@@ -184,8 +184,15 @@ protected:
 	// geometry to be rendered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
 	
-	// renderers
-	std::vector<std::shared_ptr<glsl::GeometryRenderer>> renderer_ptrs_;
+	// geometry renderers
+	std::vector<std::shared_ptr<glsl::GeometryRenderer>>
+			geometry_renderer_ptrs_;
+
+	// utilities owned by the Visualizer
+	std::vector<std::shared_ptr<Geometry>> utility_ptrs_;
+
+	// utility renderers
+	std::vector<std::shared_ptr<glsl::GeometryRenderer>> utility_renderer_ptrs_;
 	
 #ifdef __APPLE__
 	// MacBook with Retina display does not have a 1:1 mapping from screen
