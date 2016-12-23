@@ -105,7 +105,9 @@ public:
 	}
 
 	void FitInGeometry(const Geometry &geometry) {
-		bounding_box_.FitInGeometry(geometry);
+		if (geometry.Dimension() == 3) {
+			bounding_box_.FitInGeometry((const Geometry3D &)geometry);
+		}
 		SetProjectionParameters();
 	}
 

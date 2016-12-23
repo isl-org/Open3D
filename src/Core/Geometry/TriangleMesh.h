@@ -30,21 +30,21 @@
 #include <memory>
 #include <Eigen/Core>
 
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Geometry3D.h>
 
 namespace three {
 
-class TriangleMesh : public Geometry
+class TriangleMesh : public Geometry3D
 {
 public:
-	TriangleMesh();
-	~TriangleMesh() override;
+	TriangleMesh() : Geometry3D(GEOMETRY_TRIANGLEMESH) {};
+	~TriangleMesh() override {};
 
 public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;
 	bool IsEmpty() const override;
+	Eigen::Vector3d GetMinBound() const override;
+	Eigen::Vector3d GetMaxBound() const override;
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:

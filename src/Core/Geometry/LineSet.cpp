@@ -28,12 +28,17 @@
 
 namespace three{
 
-LineSet::LineSet() : Geometry(GEOMETRY_LINESET)
+void LineSet::Clear()
 {
+	point_set_[0].clear();
+	point_set_[1].clear();
+	lines_.clear();
+	colors_.clear();
 }
 
-LineSet::~LineSet()
+bool LineSet::IsEmpty() const
 {
+	return !HasPoints();
 }
 
 Eigen::Vector3d LineSet::GetMinBound() const
@@ -80,19 +85,6 @@ Eigen::Vector3d LineSet::GetMaxBound() const
 			std::max((*itr_x0)(0), (*itr_x1)(0)), 
 			std::max((*itr_y0)(1), (*itr_y1)(1)), 
 			std::max((*itr_z0)(2), (*itr_z1)(2)));
-}
-	
-void LineSet::Clear()
-{
-	point_set_[0].clear();
-	point_set_[1].clear();
-	lines_.clear();
-	colors_.clear();
-}
-	
-bool LineSet::IsEmpty() const
-{
-	return !HasPoints();
 }
 	
 void LineSet::Transform(const Eigen::Matrix4d &transformation)

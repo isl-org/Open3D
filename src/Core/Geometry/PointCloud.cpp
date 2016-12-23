@@ -28,12 +28,16 @@
 
 namespace three{
 
-PointCloud::PointCloud() : Geometry(GEOMETRY_POINTCLOUD)
+void PointCloud::Clear()
 {
+	points_.clear();
+	normals_.clear();
+	colors_.clear();
 }
-
-PointCloud::~PointCloud()
+	
+bool PointCloud::IsEmpty() const
 {
+	return !HasPoints();
 }
 
 Eigen::Vector3d PointCloud::GetMinBound() const
@@ -64,18 +68,6 @@ Eigen::Vector3d PointCloud::GetMaxBound() const
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 	
-void PointCloud::Clear()
-{
-	points_.clear();
-	normals_.clear();
-	colors_.clear();
-}
-	
-bool PointCloud::IsEmpty() const
-{
-	return !HasPoints();
-}
-	
 void PointCloud::Transform(const Eigen::Matrix4d &transformation)
 {
 	for (auto &point : points_) {
@@ -94,7 +86,6 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 {
 	// We do not use std::vector::insert to combine std::vector because it will
 	// crash if the pointcloud is added to itself.
-
 	size_t old_vert_num = points_.size();
 	size_t add_vert_num = cloud.points_.size();
 	size_t new_vert_num = old_vert_num + add_vert_num;

@@ -26,21 +26,23 @@
 
 #pragma once
 
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Geometry3D.h>
 #include <Core/Utility/Console.h>
 
 namespace three {
 
+/// A 3D bounding box class
+/// It is an utility class for Visualization
 class BoundingBox
 {
 public:
 	BoundingBox();
-	BoundingBox(const Geometry &geometry);
+	BoundingBox(const Geometry3D &geometry);
 	~BoundingBox();
 
 public:
 	void Reset();
-	void FitInGeometry(const Geometry &geometry);
+	void FitInGeometry(const Geometry3D &geometry);
 
 public:
 	Eigen::Vector3d GetCenter() const {

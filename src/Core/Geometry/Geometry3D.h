@@ -26,35 +26,25 @@
 
 #pragma once
 
-#include <Core/Geometry/Image.h>
+#include <Eigen/Core>
+#include <Core/Geometry/Geometry.h>
 
 namespace three {
 
-class FloatImage : public Image
+class Geometry3D : public Geometry
 {
 public:
-	FloatImage() {}
-	~FloatImage() override {}
+	~Geometry3D() override {}
+	
+protected:
+	Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
 public:
-	bool HasData() const override {
-		return num_of_channels_ == 1 && bytes_per_channel_ == 4 && 
-				Image::HasData();
-	}
-
-public:
-	void PrepareImage(int width, int height) {
-		Image::PrepareImage(width, height, 1, 4);
-	}
-
-	float ValueAtUnsafe(int u, int v) {
-		return *((float *)(data_.data() + (u + v * width_) * 4));
-	}
-
-	std::pair<bool, double> ValueAt(double u, double v);
+	void Clear() override = 0;
+	bool IsEmpty() const override = 0;
+	virtual Eigen::Vector3d GetMinBound() const = 0;
+	virtual Eigen::Vector3d GetMaxBound() const = 0;
+	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
 };
-
-/// Factory function to create a FloatImage from an image (ImageFactory.cpp)
-std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image);
 
 }	// namespace three

@@ -26,15 +26,13 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
 namespace three {
 
 class Geometry
 {
 public:
 	enum GeometryType {
-		GEOMETRY_UNKNOWN = 0,
+		GEOMETRY_UNSPECIFIED = 0,
 		GEOMETRY_POINTCLOUD = 1,
 		GEOMETRY_LINESET = 2,
 		GEOMETRY_TRIANGLEMESH = 3,
@@ -45,19 +43,18 @@ public:
 	virtual ~Geometry() {}
 	
 protected:
-	Geometry(GeometryType type) : geometry_type_(type) {}
+	Geometry(GeometryType type, int dimension) : geometry_type_(type),
+			dimension_(dimension) {}
 
 public:
-	virtual Eigen::Vector3d GetMinBound() const = 0;
-	virtual Eigen::Vector3d GetMaxBound() const = 0;
 	virtual void Clear() = 0;
-	virtual bool IsEmpty() const = 0;
-	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
-	
+	virtual bool IsEmpty() const = 0;	
 	GeometryType GetGeometryType() const { return geometry_type_; }
+	int Dimension() const { return dimension_; }
 	
 private:
-	GeometryType geometry_type_ = GEOMETRY_UNKNOWN;
+	GeometryType geometry_type_ = GEOMETRY_UNSPECIFIED;
+	int dimension_ = 3;
 };
 
 }	// namespace three

@@ -35,12 +35,15 @@
 
 namespace three{
 
-TriangleMesh::TriangleMesh() : Geometry(GEOMETRY_TRIANGLEMESH)
+void TriangleMesh::Clear()
 {
+	vertices_.clear();
+	triangles_.clear();
 }
 
-TriangleMesh::~TriangleMesh()
+bool TriangleMesh::IsEmpty() const
 {
+	return !HasVertices();
 }
 
 Eigen::Vector3d TriangleMesh::GetMinBound() const
@@ -71,17 +74,6 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 	
-void TriangleMesh::Clear()
-{
-	vertices_.clear();
-	triangles_.clear();
-}
-
-bool TriangleMesh::IsEmpty() const
-{
-	return !HasVertices();
-}
-
 void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 {
 	for (auto &vertex : vertices_) {
