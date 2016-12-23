@@ -28,24 +28,6 @@
 
 namespace three{
 
-Image::Image() : Geometry(GEOMETRY_IMAGE)
-{
-}
-
-Image::~Image()
-{
-}
-
-Eigen::Vector3d Image::GetMinBound() const
-{
-	return Eigen::Vector3d(0.0, 0.0, 0.0);
-}
-
-Eigen::Vector3d Image::GetMaxBound() const
-{
-	return Eigen::Vector3d(0.0, 0.0, 0.0);
-}
-	
 void Image::Clear()
 {
 	width_ = 0;
@@ -56,11 +38,6 @@ void Image::Clear()
 bool Image::IsEmpty() const
 {
 	return !HasData();
-}
-	
-void Image::Transform(const Eigen::Matrix4d &transformation)
-{
-	// Transform function does not perform on Image.
 }
 
 }	// namespace three

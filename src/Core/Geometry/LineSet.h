@@ -29,26 +29,26 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Core>
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Geometry3D.h>
 
 namespace three {
 
 class PointCloud;
 
-class LineSet : public Geometry
+class LineSet : public Geometry3D
 {
 public:
 	typedef std::pair<int, int> LineSegment;
 
 public:
-	LineSet();
-	~LineSet() override;
+	LineSet() : Geometry3D(GEOMETRY_LINESET) {}
+	~LineSet() override {}
 
 public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;
 	bool IsEmpty() const override;
+	Eigen::Vector3d GetMinBound() const override;
+	Eigen::Vector3d GetMaxBound() const override;
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:

@@ -30,22 +30,19 @@
 #include <memory>
 #include <Eigen/Core>
 
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Geometry2D.h>
 
 namespace three {
 
-class Image : public Geometry
+class Image : public Geometry2D
 {
 public:
-	Image();
-	~Image() override;
+	Image() : Geometry2D(GEOMETRY_IMAGE) {};
+	~Image() override {};
 
 public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;
 	bool IsEmpty() const override;
-	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
 	virtual bool HasData() const {

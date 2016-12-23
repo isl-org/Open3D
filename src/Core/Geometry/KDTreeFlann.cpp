@@ -63,7 +63,7 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 		dimension_ = 3;
 		break;
 	case Geometry::GEOMETRY_IMAGE:
-	case Geometry::GEOMETRY_UNKNOWN:
+	case Geometry::GEOMETRY_UNSPECIFIED:
 	default:
 		return false;
 		break;

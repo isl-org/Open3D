@@ -32,7 +32,7 @@ BoundingBox::BoundingBox()
 {
 }
 
-BoundingBox::BoundingBox(const Geometry &geometry)
+BoundingBox::BoundingBox(const Geometry3D &geometry)
 {
 	FitInGeometry(geometry);
 }
@@ -47,7 +47,7 @@ void BoundingBox::Reset()
 	max_bound_.setZero();
 }
 
-void BoundingBox::FitInGeometry(const Geometry &geometry)
+void BoundingBox::FitInGeometry(const Geometry3D &geometry)
 {
 	if (GetSize() == 0.0) {	// empty box
 		min_bound_ = geometry.GetMinBound();

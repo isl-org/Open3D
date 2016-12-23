@@ -280,7 +280,7 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr,
 	}
 
 	if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_UNKNOWN) {
+			Geometry::GEOMETRY_UNSPECIFIED) {
 		return false;
 	} else if (geometry_ptr->GetGeometryType() == 
 			Geometry::GEOMETRY_POINTCLOUD) {

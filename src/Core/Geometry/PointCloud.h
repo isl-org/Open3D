@@ -29,7 +29,7 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Core>
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Geometry3D.h>
 #include <Core/Geometry/KDTreeSearchParam.h>
 
 namespace three {
@@ -37,17 +37,17 @@ namespace three {
 class Image;
 class PinholeCameraIntrinsic;
 
-class PointCloud : public Geometry
+class PointCloud : public Geometry3D
 {
 public:
-	PointCloud();
-	~PointCloud() override;
+	PointCloud() : Geometry3D(GEOMETRY_POINTCLOUD) {};
+	~PointCloud() override {};
 
 public:
-	Eigen::Vector3d GetMinBound() const override;
-	Eigen::Vector3d GetMaxBound() const override;
 	void Clear() override;
 	bool IsEmpty() const override;
+	Eigen::Vector3d GetMinBound() const override;
+	Eigen::Vector3d GetMaxBound() const override;
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
