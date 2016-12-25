@@ -24,52 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ImageShader.h"
+#include "ImageMaskShader.h"
 
 #include <algorithm>
 
 #include <Core/Geometry/Image.h>
 #include <Visualization/Shader/Shader.h>
-#include <Visualization/Utility/ColorMap.h>
 
 namespace three{
 
 namespace glsl {
 
-namespace {
-
-uint8_t ConvertColorFromFloatToUnsignedChar(float color)
+bool ImageMaskShader::Compile()
 {
-	if (std::isnan(color)) {
-		return 0;
-	} else {
-		float unified_color = std::min(1.0f, std::max(0.0f, color));
-		return (uint8_t)(unified_color * 255.0f);
-	}
-}
-
-}	// unnamed namespace
-
-bool ImageShader::Compile()
-{
-	if (CompileShaders(ImageVertexShader, NULL, ImageFragmentShader) == false) {
+	if (CompileShaders(ImageMaskVertexShader, NULL,
+			ImageMaskFragmentShader) == false) {
 		PrintShaderWarning("Compiling shaders failed.");
 		return false;
 	}
 	vertex_position_ = glGetAttribLocation(program_, "vertex_position");
 	vertex_UV_ = glGetAttribLocation(program_, "vertex_UV");
 	image_texture_ = glGetUniformLocation(program_, "image_texture");
-	vertex_scale_ = glGetUniformLocation(program_, "vertex_scale");
+	mask_color_ = glGetUniformLocation(program_, "mask_color");
+	mask_alpha_ = glGetUniformLocation(program_, "mask_alpha");
 	return true;
 }
 
-void ImageShader::Release()
+void ImageMaskShader::Release()
 {
 	UnbindGeometry();
 	ReleaseProgram();
 }
 
-bool ImageShader::BindGeometry(const Geometry &geometry,
+bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	// If there is already geometry, we first unbind it.
@@ -97,12 +84,12 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 		-1.0f, 1.0f, 0.0f,
 	};
 	const GLfloat vertex_UV_buffer_data[12] = {
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		0.0f, 1.0f,
-		1.0f, 0.0f,
 		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
 	};
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -115,8 +102,8 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 
 	glGenTextures(1, &image_texture_buffer_);
 	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, render_image.width_,
-			render_image.height_, 0, GL_RGB, GL_UNSIGNED_BYTE,
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, render_image.width_,
+			render_image.height_, 0, GL_RED, GL_UNSIGNED_BYTE,
 			render_image.data_.data());
 
 	if (option.interpolation_option_ ==
@@ -134,7 +121,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 	return true;
 }
 
-bool ImageShader::RenderGeometry(const Geometry &geometry,
+bool ImageMaskShader::RenderGeometry(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (PrepareRendering(geometry, option, view) == false) {
@@ -143,7 +130,8 @@ bool ImageShader::RenderGeometry(const Geometry &geometry,
 	}
 
 	glUseProgram(program_);
-	glUniform3fv(vertex_scale_, 1, vertex_scale_data_.data());
+	glUniform3fv(mask_color_, 1, mask_color_data_.data());
+	glUniform1fv(mask_alpha_, 1, &mask_alpha_data_);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
 	glUniform1i(image_texture_, 0);
@@ -160,7 +148,7 @@ bool ImageShader::RenderGeometry(const Geometry &geometry,
 	return true;
 }
 
-void ImageShader::UnbindGeometry()
+void ImageMaskShader::UnbindGeometry()
 {
 	if (bound_) {
 		glDeleteBuffers(1, &vertex_position_buffer_);
@@ -170,7 +158,7 @@ void ImageShader::UnbindGeometry()
 	}
 }
 
-bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
+bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
@@ -178,37 +166,20 @@ bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 		return false;
 	}
 	const Image &image = (const Image &)geometry;
-	GLfloat ratio_x, ratio_y;
-	switch (option.image_stretch_option_) {
-		case RenderOption::IMAGE_STRETCH_KEEP_RATIO:
-			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
-			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
-			if (ratio_x < ratio_y) {
-				ratio_x /= ratio_y;
-				ratio_y = 1.0f;
-			} else {
-				ratio_y /= ratio_x;
-				ratio_x = 1.0f;
-			}
-			break;
-		case RenderOption::IMAGE_STRETCH_WITH_WINDOW:
-			ratio_x = 1.0f;
-			ratio_y = 1.0f;
-			break;
-		case RenderOption::IMAGE_ORIGINAL_SIZE:
-		default:
-			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
-			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
-			break;
+	if (image.width_ != view.GetWindowWidth() ||
+			image.height_ != view.GetWindowHeight()) {
+		PrintShaderWarning("Mask image does not match framebuffer size.");
+		return false;
 	}
-	vertex_scale_data_(0) = ratio_x;
-	vertex_scale_data_(1) = ratio_y;
-	vertex_scale_data_(2) = 1.0f;
+	mask_color_data_ = option.selection_polygon_mask_color_.cast<float>();
+	mask_alpha_data_ = (float)option.selection_polygon_mask_alpha_;
 	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	return true;
 }
 
-bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
+bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view,
 		Image &render_image)
 {
@@ -221,59 +192,15 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 		PrintShaderWarning("Binding failed with empty image.");
 		return false;
 	}
-
-	if (image.num_of_channels_ == 3 && image.bytes_per_channel_ == 1) {
-		render_image = image;
-	} else {
-		render_image.PrepareImage(image.width_, image.height_, 3, 1);
-		if (image.num_of_channels_ == 1 && 
-				image.bytes_per_channel_ == 1) {
-			// grayscale image
-			for (int i = 0; i < image.height_ * image.width_; i++) {
-				render_image.data_[i * 3] = image.data_[i];
-				render_image.data_[i * 3 + 1] = image.data_[i];
-				render_image.data_[i * 3 + 2] = image.data_[i];
-			}
-		} else if (image.num_of_channels_ == 1 &&
-				image.bytes_per_channel_ == 4) {
-			// grayscale image with floating point per channel
-			for (int i = 0; i < image.height_ * image.width_; i++) {
-				float *p = (float*)(image.data_.data() + i * 4);
-				uint8_t color = ConvertColorFromFloatToUnsignedChar(*p);
-				render_image.data_[i * 3] = color;
-				render_image.data_[i * 3 + 1] = color;
-				render_image.data_[i * 3 + 2] = color;
-			}
-		} else if (image.num_of_channels_ == 3 &&
-				image.bytes_per_channel_ == 4) {
-			// RGB image with floating point per channel
-			for (int i = 0; i < image.height_ * image.width_ * 3; i++) {
-				float *p = (float*)(image.data_.data() + i * 4);
-				render_image.data_[i] = ConvertColorFromFloatToUnsignedChar(*p);
-			}
-		} else if (image.num_of_channels_ == 3 && 
-				image.bytes_per_channel_ == 2) {
-			// image with RGB channels, each channel is a 16-bit integer
-			for (int i = 0; i < image.height_ * image.width_ * 3; i++) {
-				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
-				render_image.data_[i] = (uint8_t)((*p) & 0xff);
-			}
-		} else if (image.num_of_channels_ == 1 && 
-				image.bytes_per_channel_ == 2) {
-			// depth image, one channel of 16-bit integer
-			const ColorMap &global_color_map = *GetGlobalColorMap();
-			const int max_depth = option.image_max_depth_;
-			for (int i = 0; i < image.height_ * image.width_; i++) {
-				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
-				double depth = std::min(double(*p) / double(max_depth), 1.0);
-				Eigen::Vector3d color = global_color_map.GetColor(depth);
-				render_image.data_[i * 3] = (uint8_t)(color(0) * 255);
-				render_image.data_[i * 3 + 1] = (uint8_t)(color(1) * 255);
-				render_image.data_[i * 3 + 2] = (uint8_t)(color(2) * 255);
-			}
-		}
+	if (image.width_ != view.GetWindowWidth() ||
+			image.height_ != view.GetWindowHeight()) {
+		PrintShaderWarning("Mask image does not match framebuffer size.");
+		return false;
 	}
-
+	render_image.PrepareImage(image.width_, image.height_, 1, 1);
+	for (int i = 0; i < image.height_ * image.width_; i++) {
+		render_image.data_[i] = (image.data_[i] != 0) * 255;
+	}
 	draw_arrays_mode_ = GL_TRIANGLES;
 	draw_arrays_size_ = 6;
 	return true;

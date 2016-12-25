@@ -182,6 +182,13 @@ public:
 
 	// Coordinate frame
 	bool show_coordinate_frame_ = false;
+	
+	// Selection polygon
+	Eigen::Vector3d selection_polygon_boundary_color_ =
+			Eigen::Vector3d(0.3, 0.3, 0.3);
+	Eigen::Vector3d selection_polygon_mask_color_ =
+			Eigen::Vector3d(0.3, 0.3, 0.3);
+	double selection_polygon_mask_alpha_ = 0.3;
 };
 
 }	// namespace three

@@ -26,7 +26,8 @@
 
 #include "ShaderWrapper.h"
 
-#include <Core/Core.h>
+#include <Core/Geometry/Geometry.h>
+#include <Core/Utility/Console.h>
 
 namespace three{
 
@@ -42,8 +43,7 @@ bool ShaderWrapper::Render(const Geometry &geometry, const RenderOption &option,
 		BindGeometry(geometry, option, view);
 	}
 	if (compiled_ == false || bound_ == false) {
-		PrintWarning("[%s] Something is wrong in compiling or binding.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Something is wrong in compiling or binding.");
 		return false;
 	}
 	return RenderGeometry(geometry, option, view);
@@ -54,6 +54,11 @@ void ShaderWrapper::InvalidateGeometry()
 	if (bound_) {
 		UnbindGeometry();
 	}
+}
+
+void ShaderWrapper::PrintShaderWarning(const std::string &message) const
+{
+	PrintWarning("[%s] %s\n", GetShaderName().c_str(), message.c_str());
 }
 
 bool ShaderWrapper::CompileShaders(

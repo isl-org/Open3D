@@ -32,6 +32,8 @@
 #include <Visualization/Shader/SimpleBlackShader.h>
 #include <Visualization/Shader/PhongShader.h>
 #include <Visualization/Shader/ImageShader.h>
+#include <Visualization/Shader/Simple2DShader.h>
+#include <Visualization/Shader/ImageMaskShader.h>
 
 namespace three {
 
@@ -138,6 +140,21 @@ public:
 	
 protected:
 	PhongShaderForTriangleMesh phong_shader_;
+};
+
+class SelectionPolygonRenderer : public GeometryRenderer
+{
+public:
+	~SelectionPolygonRenderer() override {}
+	
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	bool UpdateGeometry() override;
+	
+protected:
+	Simple2DShaderForSelectionPolygon simple2d_shader_;
+	ImageMaskShaderForImage image_mask_shader_;
 };
 
 }	// namespace three::glsl

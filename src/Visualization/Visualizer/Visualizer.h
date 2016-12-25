@@ -46,17 +46,13 @@ class Visualizer
 public:
 	struct MouseControl {
 	public:
-		bool is_mouse_left_button_down;
-		bool is_control_key_down;
-		double mouse_position_x;
-		double mouse_position_y;
-
-		MouseControl() :
-				is_mouse_left_button_down(false),
-				is_control_key_down(false),///
-				mouse_position_x(0.0),
-				mouse_position_y(0.0)
-		{}
+		bool is_mouse_left_button_down = false;
+		bool is_control_key_down = false;
+		bool is_shift_key_down = false;
+		bool is_alt_key_down = false;
+		bool is_super_key_down = false;
+		double mouse_position_x = 0.0;
+		double mouse_position_y = 0.0;
 	};
 	
 public:

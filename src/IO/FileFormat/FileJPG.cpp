@@ -77,7 +77,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 	int row_stride = cinfo.output_width * cinfo.output_components;
 	buffer = (*cinfo.mem->alloc_sarray)
 			((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-	unsigned char *pdata = image.data_.data();
+	uint8_t *pdata = image.data_.data();
 	while (cinfo.output_scanline < cinfo.output_height) {
 		jpeg_read_scanlines(&cinfo, buffer, 1);
 		memcpy(pdata, buffer[0], row_stride);
@@ -123,8 +123,8 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
 	jpeg_set_quality(&cinfo, quality, TRUE);
 	jpeg_start_compress(&cinfo, TRUE);
 	int row_stride = image.width_ * image.num_of_channels_;
-	const unsigned char *pdata = image.data_.data();
-	std::vector<unsigned char> buffer(row_stride);
+	const uint8_t *pdata = image.data_.data();
+	std::vector<uint8_t> buffer(row_stride);
 	while (cinfo.next_scanline < cinfo.image_height) {
 		memcpy(buffer.data(), pdata, row_stride);
 		row_pointer[0] = buffer.data();

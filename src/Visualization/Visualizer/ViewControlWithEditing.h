@@ -76,10 +76,15 @@ public:
 			SetEditingMode(EDITING_ORTHO_POSITIVE_Z);
 		}
 	}
+	
+	void ToggleLocking() { is_view_locked_ = !is_view_locked_; }
+	
+	bool IsLocked() const { return is_view_locked_; }
 
 protected:
 	EditingMode editing_mode_ = EDITING_FREEMODE;
 	ViewParameters view_status_backup_;
+	bool is_view_locked_ = false;
 };
 
 }	// namespace three

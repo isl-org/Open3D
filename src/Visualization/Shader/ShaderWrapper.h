@@ -58,7 +58,9 @@ public:
 	/// geometry resource)
 	void InvalidateGeometry();
 	
-	std::string GetShaderName() { return shader_name_; }
+	std::string GetShaderName() const { return shader_name_; }
+	
+	void PrintShaderWarning(const std::string &message) const;
 	
 protected:
 	/// Function to compile shader
@@ -102,7 +104,6 @@ protected:
 	
 private:
 	std::string shader_name_ = "ShaderWrapper";
-
 };
 
 }	// namespace three::glsl

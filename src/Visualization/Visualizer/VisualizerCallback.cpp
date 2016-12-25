@@ -62,10 +62,10 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
 					mouse_control_.mouse_position_x,
 					mouse_control_.mouse_position_y);
 		}
+		is_redraw_required_ = true;
 	}
 	mouse_control_.mouse_position_x = x;
 	mouse_control_.mouse_position_y = y;
-	is_redraw_required_ = true;
 }
 
 void Visualizer::MouseScrollCallback(GLFWwindow* window, double x, double y)
@@ -77,17 +77,28 @@ void Visualizer::MouseScrollCallback(GLFWwindow* window, double x, double y)
 void Visualizer::MouseButtonCallback(GLFWwindow* window,
 		int button, int action, int mods)
 {
+	double x, y;
+	glfwGetCursorPos(window, &x, &y);
+#ifdef __APPLE__
+	x /= pixel_to_screen_coordinate_;
+	y /= pixel_to_screen_coordinate_;
+#endif
+	mouse_control_.mouse_position_x = x;
+	mouse_control_.mouse_position_y = y;
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		if (action == GLFW_PRESS) {
 			mouse_control_.is_mouse_left_button_down = true;
-			if (mods & GLFW_MOD_CONTROL) {
-				mouse_control_.is_control_key_down = true;
-			} else {
-				mouse_control_.is_control_key_down = false;
-			}
+			mouse_control_.is_control_key_down =
+				(mods & GLFW_MOD_CONTROL) != 0;
+			mouse_control_.is_shift_key_down = (mods & GLFW_MOD_SHIFT) != 0;
+			mouse_control_.is_alt_key_down = (mods & GLFW_MOD_ALT) != 0;
+			mouse_control_.is_super_key_down = (mods & GLFW_MOD_SUPER) != 0;
 		} else {
 			mouse_control_.is_mouse_left_button_down = false;
 			mouse_control_.is_control_key_down = false;
+			mouse_control_.is_shift_key_down = false;
+			mouse_control_.is_alt_key_down = false;
+			mouse_control_.is_super_key_down = false;
 		}
 	}
 }

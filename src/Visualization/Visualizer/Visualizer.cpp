@@ -362,9 +362,9 @@ bool Visualizer::HasGeometry() const
 void Visualizer::PrintVisualizerHelp()
 {
 	PrintInfo("  -- Mouse view control --\n");
-	PrintInfo("    Left btn + drag        : Rotate.\n");
-	PrintInfo("    Ctrl + left btn + drag : Translate.\n");
-	PrintInfo("    Wheel                  : Zoom in/out.\n");
+	PrintInfo("    Left button + drag        : Rotate.\n");
+	PrintInfo("    Ctrl + left button + drag : Translate.\n");
+	PrintInfo("    Wheel                     : Zoom in/out.\n");
 	PrintInfo("\n");
 	PrintInfo("  -- Keyboard view control --\n");
 	PrintInfo("    [/]          : Increase/decrease field of view.\n");
@@ -387,7 +387,8 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("    W            : Turn on/off mesh wireframe.\n");
 	PrintInfo("    B            : Turn on/off back face rendering.\n");
 	PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
-	PrintInfo("    T            : Toggle among image render: no stretch / keep ratio / freely stretch.\n");
+	PrintInfo("    T            : Toggle among image render:\n");
+	PrintInfo("                   no stretch / keep ratio / freely stretch.\n");
 	PrintInfo("\n");
 	PrintInfo("  -- Color control --\n");
 	PrintInfo("    0..4         : Set point cloud color option.\n");
@@ -397,7 +398,7 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("                   3 - y coordinate as color.\n");
 	PrintInfo("                   4 - z coordinate as color.\n");
 	PrintInfo("    Ctrl + 0..4  : Set mesh color option.\n");
-	PrintInfo("                   0 - Default behavior, render uniform turquoise color.\n");
+	PrintInfo("                   0 - Default behavior, render uniform gray color.\n");
 	PrintInfo("                   1 - Render point color.\n");
 	PrintInfo("                   2 - x coordinate as color.\n");
 	PrintInfo("                   3 - y coordinate as color.\n");

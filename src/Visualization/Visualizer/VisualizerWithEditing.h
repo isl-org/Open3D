@@ -30,8 +30,17 @@
 
 namespace three {
 
+class SelectionPolygon;
+
 class VisualizerWithEditing : public Visualizer
 {
+public:
+	enum SelectionMode {
+		SELECTION_NONE = 0,
+		SELECTION_RECTANGLE = 1,
+		SELECTION_POLYGON = 2,
+	};
+	
 public:
 	VisualizerWithEditing();
 	~VisualizerWithEditing() override;
@@ -41,18 +50,24 @@ public:
 public:
 	void PrintVisualizerHelp() override;
 	void UpdateWindowTitle() override;
+	void BuildUtilities() override;
 
 protected:
 	bool InitViewControl() override;
+	void WindowResizeCallback(GLFWwindow *window, int w, int h) override;
 	void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
 	void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
 	void MouseButtonCallback(GLFWwindow* window,
 			int button, int action, int mods) override;
 	void KeyPressCallback(GLFWwindow *window,
 			int key, int scancode, int action, int mods) override;
+	void InvalidateSelectionPolygon();
 
 protected:
-
+	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
+	std::shared_ptr<glsl::SelectionPolygonRenderer>
+			selection_polygon_renderer_ptr_;
+	SelectionMode selection_mode_ = SELECTION_NONE;
 };
 
 }	// namespace three

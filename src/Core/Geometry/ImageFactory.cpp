@@ -47,7 +47,7 @@ std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image)
 	fimage->PrepareImage(image.width_, image.height_);
 	for (int i = 0; i < image.height_ * image.width_; i++) {
 		float *p = (float *)(fimage->data_.data() + i * 4);
-		const unsigned char *pi = image.data_.data() + 
+		const uint8_t *pi = image.data_.data() + 
 				i * image.num_of_channels_ * image.bytes_per_channel_;
 		if (image.num_of_channels_ == 1) {
 			// grayscale image

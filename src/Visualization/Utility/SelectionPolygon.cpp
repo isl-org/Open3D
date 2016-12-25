@@ -24,60 +24,61 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "SelectionPolygon.h"
 
-#include <vector>
-#include <memory>
-#include <Eigen/Core>
+namespace three{
 
-#include <Core/Geometry/Geometry2D.h>
-
-namespace three {
-
-class Image : public Geometry2D
+void SelectionPolygon::Clear()
 {
-public:
-	Image() : Geometry2D(GEOMETRY_IMAGE) {};
-	~Image() override {};
+	polygon_.clear();
+	is_closed_ = false;
+	polygon_interior_mask_.Clear();
+}
 
-public:
-	void Clear() override;
-	bool IsEmpty() const override;
+bool SelectionPolygon::IsEmpty() const
+{
+	// A valid polygon, either close or open, should have at least 2 vertices.
+	return polygon_.size() <= 1;
+}
 
-public:
-	virtual bool HasData() const {
-		return width_ > 0 && height_ > 0 && 
-				data_.size() == height_ * BytesPerLine();
-	}
-
-	void PrepareImage(int width, int height, int num_of_channels, 
-			int bytes_per_channel) {
-		width_ = width;
-		height_ = height;
-		num_of_channels_ = num_of_channels;
-		bytes_per_channel_ = bytes_per_channel;
-		AllocateDataBuffer();
-	}
-
-	int BytesPerLine() const {
-		return width_ * num_of_channels_ * bytes_per_channel_;
-	}
-		
-protected:
-	void AllocateDataBuffer() {
-		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
-	}
+void SelectionPolygon::FillPolygon(int width, int height)
+{
+	// Standard scan conversion code. See reference:
+	// http://alienryderflex.com/polygon_fill/
 	
-public:
-	int width_ = 0;
-	int height_ = 0;
-	int num_of_channels_ = 0;
-	int bytes_per_channel_ = 0;
-	std::vector<uint8_t> data_;
-};
-
-/// Factory function to create an image from a file (ImageFactory.cpp)
-/// Return an empty image if fail to read the file.
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
+	if (IsEmpty()) {
+		return;
+	}
+	is_closed_ = true;
+	polygon_interior_mask_.PrepareImage(width, height, 1, 1);
+	std::fill(polygon_interior_mask_.data_.begin(),
+			polygon_interior_mask_.data_.end(), 0);
+	std::vector<int> nodes;
+	for (int y = 0; y < height; y++) {
+		nodes.clear();
+		for (size_t i = 0; i < polygon_.size(); i++) {
+			size_t j = (i + 1) % polygon_.size();
+			if ((polygon_[i](1) < y && polygon_[j](1) >= y) ||
+					(polygon_[j](1) < y && polygon_[i](1) >= y)) {
+				nodes.push_back((int)(polygon_[i](0) + (y - polygon_[i](1)) /
+						(polygon_[j](1) - polygon_[i](1)) * (polygon_[j](0) -
+						polygon_[i](0)) + 0.5));
+			}
+		}
+		std::sort(nodes.begin(), nodes.end());
+		for (size_t i = 0; i < nodes.size(); i+= 2) {
+			if (nodes[i] >= width) {
+				break;
+			}
+			if (nodes[i + 1] > 0) {
+				if (nodes[i] < 0) nodes[i] = 0;
+				if (nodes[i + 1] > width) nodes[i + 1] = width;
+				for (int x = nodes[i]; x < nodes[i + 1]; x++) {
+					polygon_interior_mask_.data_[x + y * width] = 1;
+				}
+			}
+		}
+	}
+}
 
 }	// namespace three

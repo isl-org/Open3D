@@ -52,7 +52,7 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp()
 	PrintInfo("    Ctrl + W     : Enter preview mode.\n");
 	PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
 	PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
-	PrintInfo("    Ctrl + G     : Enter animation mode, play animation, and record depth images.\n");
+	PrintInfo("    Ctrl + G     : Enter animation mode, play animation, and record depth.\n");
 	PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- In free view mode --\n");

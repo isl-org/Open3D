@@ -27,57 +27,33 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 #include <Eigen/Core>
-
 #include <Core/Geometry/Geometry2D.h>
+#include <Core/Geometry/Image.h>
 
 namespace three {
 
-class Image : public Geometry2D
+class Image;
+
+/// A 2D polygon used for selection on screen
+/// It is an utility class for Visualization
+/// The coordinates in SelectionPolygon are lower-left corner based (the OpenGL
+/// convention).
+class SelectionPolygon : public Geometry2D
 {
 public:
-	Image() : Geometry2D(GEOMETRY_IMAGE) {};
-	~Image() override {};
+	SelectionPolygon() : Geometry2D(GEOMETRY_UNSPECIFIED) {}
+	~SelectionPolygon() override {}
 
 public:
 	void Clear() override;
 	bool IsEmpty() const override;
+	void FillPolygon(int width, int height);
 
 public:
-	virtual bool HasData() const {
-		return width_ > 0 && height_ > 0 && 
-				data_.size() == height_ * BytesPerLine();
-	}
-
-	void PrepareImage(int width, int height, int num_of_channels, 
-			int bytes_per_channel) {
-		width_ = width;
-		height_ = height;
-		num_of_channels_ = num_of_channels;
-		bytes_per_channel_ = bytes_per_channel;
-		AllocateDataBuffer();
-	}
-
-	int BytesPerLine() const {
-		return width_ * num_of_channels_ * bytes_per_channel_;
-	}
-		
-protected:
-	void AllocateDataBuffer() {
-		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
-	}
-	
-public:
-	int width_ = 0;
-	int height_ = 0;
-	int num_of_channels_ = 0;
-	int bytes_per_channel_ = 0;
-	std::vector<uint8_t> data_;
+	std::vector<Eigen::Vector2d> polygon_;
+	bool is_closed_ = false;
+	Image polygon_interior_mask_;
 };
-
-/// Factory function to create an image from a file (ImageFactory.cpp)
-/// Return an empty image if fail to read the file.
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
 
 }	// namespace three

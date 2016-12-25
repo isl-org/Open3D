@@ -30,6 +30,7 @@
 #include <Core/Geometry/LineSet.h>
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Geometry/Image.h>
+#include <Visualization/Utility/SelectionPolygon.h>
 
 namespace three{
 
@@ -191,6 +192,40 @@ bool CoordinateFrameRenderer::AddGeometry(
 bool CoordinateFrameRenderer::UpdateGeometry()
 {
 	phong_shader_.InvalidateGeometry();
+	return true;
+}
+
+bool SelectionPolygonRenderer::Render(const RenderOption &option,
+		const ViewControl &view)
+{
+	const auto &polygon = (const SelectionPolygon &)(*geometry_ptr_);
+	if (polygon.IsEmpty()) {
+		return true;
+	}
+	if (simple2d_shader_.Render(polygon, option, view) == false) {
+		return false;
+	}
+	if (polygon.polygon_interior_mask_.IsEmpty()) {
+		return true;
+	}
+	return image_mask_shader_.Render(polygon.polygon_interior_mask_, option,
+			view);
+}
+
+bool SelectionPolygonRenderer::AddGeometry(
+		std::shared_ptr<const Geometry> geometry_ptr)
+{
+	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_UNSPECIFIED) {
+		return false;
+	}
+	geometry_ptr_ = geometry_ptr;
+	return UpdateGeometry();
+}
+
+bool SelectionPolygonRenderer::UpdateGeometry()
+{
+	simple2d_shader_.InvalidateGeometry();
+	image_mask_shader_.InvalidateGeometry();
 	return true;
 }
 

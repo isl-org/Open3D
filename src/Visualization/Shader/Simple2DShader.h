@@ -27,57 +27,60 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 #include <Eigen/Core>
-
-#include <Core/Geometry/Geometry2D.h>
+#include <Visualization/Shader/ShaderWrapper.h>
 
 namespace three {
 
-class Image : public Geometry2D
+namespace glsl {
+	
+class Simple2DShader : public ShaderWrapper
 {
 public:
-	Image() : Geometry2D(GEOMETRY_IMAGE) {};
-	~Image() override {};
+	~Simple2DShader() override { Release(); }
 
-public:
-	void Clear() override;
-	bool IsEmpty() const override;
-
-public:
-	virtual bool HasData() const {
-		return width_ > 0 && height_ > 0 && 
-				data_.size() == height_ * BytesPerLine();
-	}
-
-	void PrepareImage(int width, int height, int num_of_channels, 
-			int bytes_per_channel) {
-		width_ = width;
-		height_ = height;
-		num_of_channels_ = num_of_channels;
-		bytes_per_channel_ = bytes_per_channel;
-		AllocateDataBuffer();
-	}
-
-	int BytesPerLine() const {
-		return width_ * num_of_channels_ * bytes_per_channel_;
-	}
-		
 protected:
-	void AllocateDataBuffer() {
-		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
-	}
+	Simple2DShader(std::string name) : ShaderWrapper(name) { Compile(); }
 	
-public:
-	int width_ = 0;
-	int height_ = 0;
-	int num_of_channels_ = 0;
-	int bytes_per_channel_ = 0;
-	std::vector<uint8_t> data_;
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
+
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &colors) = 0;
+
+protected:
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_color_;
+	GLuint vertex_color_buffer_;
 };
 
-/// Factory function to create an image from a file (ImageFactory.cpp)
-/// Return an empty image if fail to read the file.
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
+class Simple2DShaderForSelectionPolygon : public Simple2DShader
+{
+public:
+	Simple2DShaderForSelectionPolygon() :
+			Simple2DShader("Simple2DShaderForSelectionPolygon") {}
+	
+protected:
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<Eigen::Vector3f> &colors) final;
+};
+
+}	// namespace three::glsl
 
 }	// namespace three

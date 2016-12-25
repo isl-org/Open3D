@@ -98,8 +98,8 @@ protected:
 class SimpleShaderForTriangleMesh : public SimpleShader
 {
 public:
-	SimpleShaderForTriangleMesh() : SimpleShader("SimpleShaderForTriangleMesh")
-	{}
+	SimpleShaderForTriangleMesh() :
+			SimpleShader("SimpleShaderForTriangleMesh") {}
 	
 protected:
 	bool PrepareRendering(const Geometry &geometry,
@@ -109,7 +109,7 @@ protected:
 			std::vector<Eigen::Vector3f> &points,
 			std::vector<Eigen::Vector3f> &colors) final;
 };
-	
+
 }	// namespace three::glsl
 
 }	// namespace three

@@ -30,6 +30,7 @@ namespace three{
 
 void ViewControlWithEditing::Reset()
 {
+	if (IsLocked()) return;
 	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Reset();
 	} else {
@@ -70,6 +71,7 @@ void ViewControlWithEditing::Reset()
 
 void ViewControlWithEditing::ChangeFieldOfView(double step)
 {
+	if (IsLocked()) return;
 	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::ChangeFieldOfView(step);
 	} else {
@@ -79,6 +81,7 @@ void ViewControlWithEditing::ChangeFieldOfView(double step)
 
 void ViewControlWithEditing::Scale(double scale)
 {
+	if (IsLocked()) return;
 	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Scale(scale);
 	} else {
@@ -88,6 +91,7 @@ void ViewControlWithEditing::Scale(double scale)
 
 void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
 {
+	if (IsLocked()) return;
 	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Rotate(x, y);
 	} else {
@@ -108,6 +112,7 @@ void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
 
 void ViewControlWithEditing::Translate(double x, double y, double xo, double yo)
 {
+	if (IsLocked()) return;
 	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Translate(x, y, xo, yo);
 	} else {
@@ -117,6 +122,7 @@ void ViewControlWithEditing::Translate(double x, double y, double xo, double yo)
 
 void ViewControlWithEditing::SetEditingMode(EditingMode mode)
 {
+	if (IsLocked()) return;
 	if (editing_mode_ == EDITING_FREEMODE) {
 		ConvertToViewParameters(view_status_backup_);
 	}
@@ -148,7 +154,7 @@ std::string ViewControlWithEditing::GetStatusString()
 		prefix = "orthogonal Z asix";
 		break;
 	}
-	return prefix;
+	return prefix + (IsLocked() ? ", lock camera for editing" : "");
 }
 
 }	// namespace three

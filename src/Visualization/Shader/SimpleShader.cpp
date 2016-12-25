@@ -38,20 +38,14 @@ namespace glsl {
 
 bool SimpleShader::Compile()
 {
-	if (CompileShaders(
-			SimpleVertexShader,
-			NULL,
-			SimpleFragmentShader) == false)
-	{
-		PrintWarning("[%s] Compiling shaders failed.\n",
-				GetShaderName().c_str());
+	if (CompileShaders(SimpleVertexShader, NULL,
+			SimpleFragmentShader) == false) {
+		PrintShaderWarning("Compiling shaders failed.");
 		return false;
 	}
-	
 	vertex_position_ = glGetAttribLocation(program_, "vertex_position");
 	vertex_color_ = glGetAttribLocation(program_, "vertex_color");
 	MVP_ = glGetUniformLocation(program_, "MVP");
-
 	return true;
 }
 
@@ -76,8 +70,7 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
 	std::vector<Eigen::Vector3f> points;
 	std::vector<Eigen::Vector3f> colors;
 	if (PrepareBinding(geometry, option, view, points, colors) == false) {
-		PrintWarning("[%s] Binding failed when preparing data.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
 	
@@ -99,8 +92,7 @@ bool SimpleShader::RenderGeometry(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (PrepareRendering(geometry, option, view) == false) {
-		PrintWarning("[%s] Rendering failed during preparation.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering failed during preparation.");
 		return false;
 	}
 	glUseProgram(program_);
@@ -130,11 +122,11 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
-		PrintWarning("[%s] Rendering type is not PointCloud.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
 	glPointSize(GLfloat(option.point_size_));
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	return true;
 }
@@ -145,14 +137,12 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
-		PrintWarning("[%s] Binding type is not PointCloud.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
 	const PointCloud &pointcloud = (const PointCloud &)geometry;
 	if (pointcloud.HasPoints() == false) {
-		PrintWarning("[%s] Binding failed with empty pointcloud.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Binding failed with empty pointcloud.");
 		return false;
 	}
 	const ColorMap &global_color_map = *GetGlobalColorMap();
@@ -197,11 +187,11 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_LINESET) {
-		PrintWarning("[%s] Rendering type is not LineSet.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
 	glLineWidth(1.0f);
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	return true;
 }
@@ -212,14 +202,12 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_LINESET) {
-		PrintWarning("[%s] Binding type is not LineSet.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
 	const LineSet &lineset = (const LineSet &)geometry;
 	if (lineset.HasLines() == false) {
-		PrintWarning("[%s] Binding failed with empty LineSet.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Binding failed with empty LineSet.");
 		return false;
 	}
 	points.resize(lineset.lines_.size() * 2);
@@ -245,8 +233,7 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
-		PrintWarning("[%s] Rendering type is not TriangleMesh.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
 	if (option.mesh_show_back_face_) {
@@ -254,6 +241,7 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 	} else {
 		glEnable(GL_CULL_FACE);
 	}
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	if (option.mesh_show_wireframe_) {
@@ -271,14 +259,12 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
-		PrintWarning("[%s] Binding type is not TriangleMesh.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
 	const TriangleMesh &mesh = (const TriangleMesh &)geometry;
 	if (mesh.HasTriangles() == false) {
-		PrintWarning("[%s] Binding failed with empty triangle mesh.\n",
-				GetShaderName().c_str());
+		PrintShaderWarning("Binding failed with empty triangle mesh.");
 		return false;
 	}
 	const ColorMap &global_color_map = *GetGlobalColorMap();
