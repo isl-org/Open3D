@@ -97,7 +97,8 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 	auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
 	if (action == GLFW_RELEASE) {
 		if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
-			if (view_control.IsLocked()) {
+			if (view_control.IsLocked() &&
+					selection_mode_ == SELECTION_POLYGON) {
 				selection_mode_ = SELECTION_NONE;
 				selection_polygon_ptr_->polygon_.pop_back();
 				if (selection_polygon_ptr_->IsEmpty()) {
