@@ -63,9 +63,13 @@ public:
 	bool HasGeometry() const {
 		return bool(geometry_ptr_);
 	}
+
+	bool IsVisible() const { return is_visible_; }
+	void SetVisible(bool visible) { is_visible_ = visible; };
 	
 protected:
 	std::shared_ptr<const Geometry> geometry_ptr_;
+	bool is_visible_ = true;
 };
 
 class PointCloudRenderer : public GeometryRenderer

@@ -39,9 +39,9 @@ namespace glsl {
 bool PointCloudRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
+	if (is_visible_ == false) return true;
 	const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
-	bool success = true;
-	
+	bool success = true;	
 	if (pointcloud.HasNormals()) {
 		success &= phong_point_shader_.Render(pointcloud, option, view);
 		if (option.point_show_normal_) {
@@ -79,6 +79,7 @@ bool PointCloudRenderer::UpdateGeometry()
 bool LineSetRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
+	if (is_visible_ == false) return true;
 	return simple_lineset_shader_.Render(*geometry_ptr_, option, view);
 }
 
@@ -104,15 +105,14 @@ bool LineSetRenderer::UpdateGeometry()
 bool TriangleMeshRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
+	if (is_visible_ == false) return true;
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
-	bool success = true;
-	
+	bool success = true;	
 	if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
 		success &= phong_mesh_shader_.Render(mesh, option, view);
 	} else {
 		success &= simple_mesh_shader_.Render(mesh, option, view);
 	}
-	
 	if (option.mesh_show_wireframe_) {
 		success &= simpleblack_wireframe_shader_.Render(mesh, option, view);
 	}
@@ -143,6 +143,7 @@ bool TriangleMeshRenderer::UpdateGeometry()
 
 bool ImageRenderer::Render(const RenderOption &option, const ViewControl &view)
 {
+	if (is_visible_ == false) return true;
 	return image_shader_.Render(*geometry_ptr_, option, view);
 }
 
@@ -168,9 +169,8 @@ bool ImageRenderer::UpdateGeometry()
 bool CoordinateFrameRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
-	if (option.show_coordinate_frame_ == false) {
-		return true;
-	}
+	if (is_visible_ == false) return true;
+	if (option.show_coordinate_frame_ == false) return true;
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
 	return phong_shader_.Render(mesh, option, view);
 }
@@ -198,16 +198,11 @@ bool CoordinateFrameRenderer::UpdateGeometry()
 bool SelectionPolygonRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
+	if (is_visible_ == false) return true;
 	const auto &polygon = (const SelectionPolygon &)(*geometry_ptr_);
-	if (polygon.IsEmpty()) {
-		return true;
-	}
-	if (simple2d_shader_.Render(polygon, option, view) == false) {
-		return false;
-	}
-	if (polygon.polygon_interior_mask_.IsEmpty()) {
-		return true;
-	}
+	if (polygon.IsEmpty()) return true;
+	if (simple2d_shader_.Render(polygon, option, view) == false) return false;
+	if (polygon.polygon_interior_mask_.IsEmpty()) return true;
 	return image_mask_shader_.Render(polygon.polygon_interior_mask_, option,
 			view);
 }

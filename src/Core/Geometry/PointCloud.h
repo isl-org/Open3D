@@ -96,17 +96,20 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 
 /// leads to denser output point cloud.
 /// Normals and colors are averaged if they exist.
+/// Input and output cannot be the same pointcloud.
 bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 		PointCloud &output_cloud);
 
 /// Function to downsample input_cloud into output_cloud uniformly
 /// \param every_k_points indicates the sample rate.
+/// Input and output cannot be the same pointcloud.
 bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 		PointCloud &output_cloud);
 
 /// Function to clip input_cloud into output_cloud
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
+/// Input and output cannot be the same pointcloud.
 bool ClipPointCloud(const PointCloud &input_cloud,
 		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
 		PointCloud &output_cloud);

@@ -42,18 +42,28 @@ class Image;
 class SelectionPolygon : public Geometry2D
 {
 public:
+	enum SectionPolygonType {
+		POLYGON_UNFILLED = 0,
+		POLYGON_RECTANGLE = 1,
+		POLYGON_POLYGON = 2,
+	};
+
+public:
 	SelectionPolygon() : Geometry2D(GEOMETRY_UNSPECIFIED) {}
 	~SelectionPolygon() override {}
 
 public:
 	void Clear() override;
 	bool IsEmpty() const override;
+	Eigen::Vector2d GetMinBound() const final;
+	Eigen::Vector2d GetMaxBound() const final;
 	void FillPolygon(int width, int height);
 
 public:
 	std::vector<Eigen::Vector2d> polygon_;
 	bool is_closed_ = false;
 	Image polygon_interior_mask_;
+	SectionPolygonType polygon_type_ = POLYGON_UNFILLED;
 };
 
 }	// namespace three

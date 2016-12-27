@@ -40,4 +40,15 @@ bool Image::IsEmpty() const
 	return !HasData();
 }
 
+Eigen::Vector2d Image::GetMinBound() const
+{
+	return Eigen::Vector2d(0.0, 0.0);
+}
+
+Eigen::Vector2d Image::GetMaxBound() const
+{
+	return Eigen::Vector2d(width_, height_);
+}
+
+
 }	// namespace three

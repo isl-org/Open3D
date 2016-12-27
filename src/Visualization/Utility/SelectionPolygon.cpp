@@ -33,6 +33,7 @@ void SelectionPolygon::Clear()
 	polygon_.clear();
 	is_closed_ = false;
 	polygon_interior_mask_.Clear();
+	polygon_type_ = POLYGON_UNFILLED;
 }
 
 bool SelectionPolygon::IsEmpty() const
@@ -41,11 +42,34 @@ bool SelectionPolygon::IsEmpty() const
 	return polygon_.size() <= 1;
 }
 
+Eigen::Vector2d SelectionPolygon::GetMinBound() const
+{
+	if (polygon_.empty()) {
+		return Eigen::Vector2d(0.0, 0.0);
+	}
+	auto itr_x = std::min_element(polygon_.begin(), polygon_.end(),
+		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(0) < b(0); });
+	auto itr_y = std::min_element(polygon_.begin(), polygon_.end(),
+		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(1) < b(1); });
+	return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
+}
+
+Eigen::Vector2d SelectionPolygon::GetMaxBound() const
+{
+	if (polygon_.empty()) {
+		return Eigen::Vector2d(0.0, 0.0);
+	}
+	auto itr_x = std::max_element(polygon_.begin(), polygon_.end(),
+		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(0) < b(0); });
+	auto itr_y = std::max_element(polygon_.begin(), polygon_.end(),
+		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(1) < b(1); });
+	return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
+}
+
 void SelectionPolygon::FillPolygon(int width, int height)
 {
 	// Standard scan conversion code. See reference:
 	// http://alienryderflex.com/polygon_fill/
-	
 	if (IsEmpty()) {
 		return;
 	}
