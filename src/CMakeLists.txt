@@ -11,6 +11,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # config options
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
+option(Open3D_BUILD_FILEDIALOG "Build support for file dialogs" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 
 # default built type

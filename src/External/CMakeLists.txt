@@ -8,3 +8,7 @@ add_subdirectory(jsoncpp)
 if(Open3D_BUILD_LIBREALSENSE)
 	add_subdirectory(librealsense)
 endif(Open3D_BUILD_LIBREALSENSE)
+
+if (Open3D_BUILD_FILEDIALOG)
+	add_subdirectory(tinyfiledialogs)
+endif(Open3D_BUILD_FILEDIALOG)

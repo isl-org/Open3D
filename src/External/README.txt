@@ -56,3 +56,7 @@ librealsense                0.9.1                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200, SR300
 and R200 cameras
 https://github.com/IntelRealSense/librealsense
+--------------------------------------------------------------------------------
+tinyfiledialogs             2.7.2                                   zlib license
+A lightweight cross-platform file dialog library
+https://sourceforge.net/projects/tinyfiledialogs/

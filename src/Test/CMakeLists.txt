@@ -72,5 +72,13 @@ if(Open3D_BUILD_LIBREALSENSE)
 			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 endif(Open3D_BUILD_LIBREALSENSE)
 
+if (Open3D_BUILD_FILEDIALOG)
+	add_executable(TestFileDialog TestFileDialog.cpp)
+	target_link_libraries(TestFileDialog Core IO tinyfiledialogs)
+	set_target_properties(TestFileDialog PROPERTIES
+			FOLDER "Test"
+			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+endif(Open3D_BUILD_FILEDIALOG)
+
 #file(GLOB TEST_DATA_FILES "TestData/*.*")
 #file(COPY ${TEST_DATA_FILES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestData)
