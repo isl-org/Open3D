@@ -89,7 +89,7 @@ void Visualizer::MouseButtonCallback(GLFWwindow* window,
 		if (action == GLFW_PRESS) {
 			mouse_control_.is_mouse_left_button_down = true;
 			mouse_control_.is_control_key_down =
-				(mods & GLFW_MOD_CONTROL) != 0;
+					(mods & GLFW_MOD_CONTROL) != 0;
 			mouse_control_.is_shift_key_down = (mods & GLFW_MOD_SHIFT) != 0;
 			mouse_control_.is_alt_key_down = (mods & GLFW_MOD_ALT) != 0;
 			mouse_control_.is_super_key_down = (mods & GLFW_MOD_SUPER) != 0;

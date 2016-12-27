@@ -108,7 +108,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 							view_control.GetWindowWidth(),
 							view_control.GetWindowHeight());
 					selection_polygon_ptr_->polygon_type_ =
-								SelectionPolygon::POLYGON_POLYGON;
+							SelectionPolygon::POLYGON_POLYGON;
 				}
 				selection_polygon_renderer_ptr_->UpdateGeometry();
 				is_redraw_required_ = true;
@@ -246,7 +246,7 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 							view_control.GetWindowWidth(),
 							view_control.GetWindowHeight());
 					selection_polygon_ptr_->polygon_type_ =
-								SelectionPolygon::POLYGON_RECTANGLE;
+							SelectionPolygon::POLYGON_RECTANGLE;
 					selection_polygon_renderer_ptr_->UpdateGeometry();
 				} else if (selection_mode_ == SELECTION_POLYGON) {
 				}
