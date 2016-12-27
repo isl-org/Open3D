@@ -106,11 +106,11 @@ bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
 bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 		PointCloud &output_cloud);
 
-/// Function to clip input_cloud into output_cloud
+/// Function to crop input_cloud into output_cloud
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
 /// Input and output cannot be the same pointcloud.
-bool ClipPointCloud(const PointCloud &input_cloud,
+bool CropPointCloud(const PointCloud &input_cloud,
 		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
 		PointCloud &output_cloud);
 

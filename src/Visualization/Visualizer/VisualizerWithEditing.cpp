@@ -26,6 +26,7 @@
 
 #include "VisualizerWithEditing.h"
 
+#include <Core/Geometry/PointCloud.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
 #include <Visualization/Utility/SelectionPolygon.h>
@@ -54,6 +55,7 @@ void VisualizerWithEditing::PrintVisualizerHelp()
 	PrintInfo("    Mouse left button + drag        : Create a selection rectangle.\n");
 	PrintInfo("    Ctrl + mouse left button + drag : Hold Ctrl key to draw a selection polygon.\n");
 	PrintInfo("                                      Release Ctrl key to close the polygon.\n");
+	PrintInfo("    C                               : Crop the geometry with selection region.\n");
 	PrintInfo("\n");
 }
 
@@ -140,6 +142,25 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 		PrintDebug("[Visualizer] Camera %s.\n",
 				view_control.IsLocked() ? "Lock" : "Unlock");
 		break;
+	case GLFW_KEY_C:
+		if (view_control.IsLocked()) {
+			size_t num_of_geometries = geometry_ptrs_.size();
+			for (size_t i = 0; i < num_of_geometries; i++) {
+				if (geometry_ptrs_[i]->GetGeometryType() ==
+						Geometry::GEOMETRY_POINTCLOUD) {
+					auto cropped = std::make_shared<PointCloud>();
+					selection_polygon_ptr_->CropGeometry(*geometry_ptrs_[i],
+							view_control, *cropped);
+					geometry_ptrs_[i] = cropped;
+					geometry_renderer_ptrs_[i]->AddGeometry(cropped);
+					view_control.ToggleLocking();
+					InvalidateSelectionPolygon();
+				}
+			}
+		} else {
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+		}
+		break;
 	default:
 		Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 		break;
@@ -148,8 +169,8 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 	UpdateWindowTitle();
 }
 
-void VisualizerWithEditing::WindowResizeCallback(GLFWwindow *window, int w,
-		int h)
+void VisualizerWithEditing::WindowResizeCallback(GLFWwindow *window,
+		int w, int h)
 {
 	InvalidateSelectionPolygon();
 	Visualizer::WindowResizeCallback(window, w, h);

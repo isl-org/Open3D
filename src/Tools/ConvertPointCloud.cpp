@@ -80,7 +80,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 		max_bound(2) = GetProgramOptionAsDouble(argc, argv, "--clip_z_max",
 				std::numeric_limits<double>::max());
 		auto clip_ptr = std::make_shared<PointCloud>();
-		ClipPointCloud(*pointcloud_ptr, min_bound, max_bound, *clip_ptr);
+		CropPointCloud(*pointcloud_ptr, min_bound, max_bound, *clip_ptr);
 		pointcloud_ptr = clip_ptr;
 		processed = true;
 	}

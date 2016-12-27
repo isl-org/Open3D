@@ -33,7 +33,8 @@
 
 namespace three {
 
-class Image;
+class PointCloud;
+class ViewControl;
 
 /// A 2D polygon used for selection on screen
 /// It is an utility class for Visualization
@@ -58,6 +59,14 @@ public:
 	Eigen::Vector2d GetMinBound() const final;
 	Eigen::Vector2d GetMaxBound() const final;
 	void FillPolygon(int width, int height);
+	void CropGeometry(const Geometry &input, const ViewControl &view,
+			Geometry &output);
+
+private:
+	void CropPointCloudInRectangle(const PointCloud &input,
+			const ViewControl &view, PointCloud &output);
+	void CropPointCloudInPolygon(const PointCloud &input,
+			const ViewControl &view, PointCloud &output);
 
 public:
 	std::vector<Eigen::Vector2d> polygon_;

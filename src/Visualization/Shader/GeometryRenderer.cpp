@@ -39,9 +39,9 @@ namespace glsl {
 bool PointCloudRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
-	if (is_visible_ == false) return true;
+	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
-	bool success = true;	
+	bool success = true;
 	if (pointcloud.HasNormals()) {
 		success &= phong_point_shader_.Render(pointcloud, option, view);
 		if (option.point_show_normal_) {
@@ -60,10 +60,6 @@ bool PointCloudRenderer::AddGeometry(
 	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		return false;
 	}
-	const auto &pointcloud = (const PointCloud &)(*geometry_ptr);
-	if (pointcloud.HasPoints() == false) {
-		return false;
-	}
 	geometry_ptr_ = geometry_ptr;
 	return UpdateGeometry();
 }
@@ -79,17 +75,13 @@ bool PointCloudRenderer::UpdateGeometry()
 bool LineSetRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
-	if (is_visible_ == false) return true;
+	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	return simple_lineset_shader_.Render(*geometry_ptr_, option, view);
 }
 
 bool LineSetRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_LINESET) {
-		return false;
-	}
-	const auto &lineset = (const LineSet &)(*geometry_ptr);
-	if (lineset.HasLines() == false) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -105,7 +97,7 @@ bool LineSetRenderer::UpdateGeometry()
 bool TriangleMeshRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
-	if (is_visible_ == false) return true;
+	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
 	bool success = true;	
 	if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
@@ -125,10 +117,6 @@ bool TriangleMeshRenderer::AddGeometry(
 	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		return false;
 	}
-	const auto &mesh = (const TriangleMesh &)(*geometry_ptr);
-	if (mesh.HasTriangles() == false) {
-		return false;
-	}
 	geometry_ptr_ = geometry_ptr;
 	return UpdateGeometry();
 }
@@ -143,17 +131,13 @@ bool TriangleMeshRenderer::UpdateGeometry()
 
 bool ImageRenderer::Render(const RenderOption &option, const ViewControl &view)
 {
-	if (is_visible_ == false) return true;
+	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	return image_shader_.Render(*geometry_ptr_, option, view);
 }
 
 bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
-		return false;
-	}
-	const auto &image = (const Image &)(*geometry_ptr);
-	if (image.HasData() == false) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -169,7 +153,7 @@ bool ImageRenderer::UpdateGeometry()
 bool CoordinateFrameRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
-	if (is_visible_ == false) return true;
+	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	if (option.show_coordinate_frame_ == false) return true;
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
 	return phong_shader_.Render(mesh, option, view);
@@ -179,10 +163,6 @@ bool CoordinateFrameRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
-		return false;
-	}
-	const auto &mesh = (const TriangleMesh &)(*geometry_ptr);
-	if (mesh.HasTriangles() == false) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -198,7 +178,7 @@ bool CoordinateFrameRenderer::UpdateGeometry()
 bool SelectionPolygonRenderer::Render(const RenderOption &option,
 		const ViewControl &view)
 {
-	if (is_visible_ == false) return true;
+	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	const auto &polygon = (const SelectionPolygon &)(*geometry_ptr_);
 	if (polygon.IsEmpty()) return true;
 	if (simple2d_shader_.Render(polygon, option, view) == false) return false;

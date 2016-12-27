@@ -164,18 +164,18 @@ bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
 	return true;
 }
 
-bool ClipPointCloud(const PointCloud &input_cloud,
+bool CropPointCloud(const PointCloud &input_cloud,
 		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
 		PointCloud &output_cloud)
 {
 	output_cloud.Clear();
 	if (input_cloud.HasPoints() == false) {
-		PrintDebug("[ClipPointCloud] Input point cloud has no points.\n");
+		PrintDebug("[CropPointCloud] Input point cloud has no points.\n");
 		return false;
 	}
 	if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
 			min_bound(2) > max_bound(2)) {
-		PrintDebug("[ClipPointCloud] Illegal boundary clipped all points.\n");
+		PrintDebug("[CropPointCloud] Illegal boundary clipped all points.\n");
 		return false;
 	}
 	bool has_normals = input_cloud.HasNormals();
@@ -194,7 +194,7 @@ bool ClipPointCloud(const PointCloud &input_cloud,
 			}
 		}
 	}
-	PrintAlways("[ClipPointCloud] Clipped %d points from %d points, %d points remaining.\n",
+	PrintAlways("[CropPointCloud] Clipped %d points from %d points, %d points remaining.\n",
 			input_cloud.points_.size() - output_cloud.points_.size(),
 			input_cloud.points_.size(), output_cloud.points_.size());
 	return true;
