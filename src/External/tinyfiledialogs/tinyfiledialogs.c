@@ -174,9 +174,11 @@ static char gMessageUnix[] = "tiny file dialogs on UNIX needs:\n\tapplescript\
 #endif
 
 #ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable:4996) /* allows usage of strncpy, strcpy, strcat, sprintf, fopen */
 #pragma warning(disable:4100) /* allows usage of strncpy, strcpy, strcat, sprintf, fopen */
 #pragma warning(disable:4706) /* allows usage of strncpy, strcpy, strcat, sprintf, fopen */
+#pragma warning(disable:4244 4267)
 #endif
 
 static char * getPathWithoutFinalSlash(
@@ -5652,4 +5654,5 @@ tinyfd_messageBox("The selected hexcolor is",
 #pragma warning(default:4996)
 #pragma warning(default:4100)
 #pragma warning(default:4706)
+#pragma warning(pop)
 #endif
