@@ -122,7 +122,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 		return false;
 	}
 	glLineWidth(1.0f);
-	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	return true;
 }

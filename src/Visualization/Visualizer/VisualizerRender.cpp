@@ -67,9 +67,11 @@ void Visualizer::Render()
 	
 	view_control_ptr_->SetViewMatrices();
 
+	glDisable(GL_BLEND);
 	auto &background_color = render_option_ptr_->background_color_;
 	glClearColor((GLclampf)background_color(0), (GLclampf)background_color(1),
 			(GLclampf)background_color(2), 1.0f);
+	glClearDepth(1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
