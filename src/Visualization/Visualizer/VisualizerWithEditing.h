@@ -62,6 +62,8 @@ protected:
 	void KeyPressCallback(GLFWwindow *window,
 			int key, int scancode, int action, int mods) override;
 	void InvalidateSelectionPolygon();
+	void SaveCroppingResult(const std::string &filename = "",
+			int geometry_index = 0);
 
 protected:
 	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;

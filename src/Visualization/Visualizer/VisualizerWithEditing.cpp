@@ -28,8 +28,10 @@
 
 #include <Core/Geometry/PointCloud.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <IO/ClassIO/PointCloudIO.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
 #include <Visualization/Utility/SelectionPolygon.h>
+#include <Visualization/Utility/SelectionPolygonVolume.h>
 
 namespace three{
 
@@ -153,6 +155,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 							view_control, *cropped);
 					geometry_ptrs_[i] = cropped;
 					geometry_renderer_ptrs_[i]->AddGeometry(cropped);
+					SaveCroppingResult();
 					view_control.ToggleLocking();
 					InvalidateSelectionPolygon();
 				}
@@ -286,6 +289,23 @@ void VisualizerWithEditing::InvalidateSelectionPolygon()
 		selection_polygon_renderer_ptr_->UpdateGeometry();
 	}
 	selection_mode_ = SELECTION_NONE;
+}
+
+void VisualizerWithEditing::SaveCroppingResult(
+		const std::string &filename/* = ""*/, int geometry_index/* = 0*/)
+{
+	std::string ply_filename = filename;
+	std::string volume_filename;
+	if (ply_filename.empty()) {
+		std::string timestamp = GetCurrentTimeStamp();
+		ply_filename = "CroppedGeometry_" + timestamp + ".ply";
+		volume_filename = "CroppedVolume_" + timestamp + ".json";
+	}
+	WritePointCloud(ply_filename,
+			(const PointCloud &)(*geometry_ptrs_[geometry_index]));
+	WriteIJsonConvertible(volume_filename,
+			*selection_polygon_ptr_->CreateSelectionPolygonVolume(
+			GetViewControl()));
 }
 
 }	// namespace three

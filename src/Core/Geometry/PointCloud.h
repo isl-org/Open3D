@@ -92,27 +92,32 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
 		double depth_scale = 1000.0);
 
-/// Function to downsample input_cloud into output_cloud with a voxel
+/// Function to select points from input pointcloud into output pointcloud
+/// Points with indices in \param indices are selected.
+/// Input and output cannot be the same pointcloud.
+bool SelectDownSample(const PointCloud &input,
+		const std::vector<size_t> &indices, PointCloud &output);
+
+/// Function to downsample input pointcloud into output pointcloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 
 /// leads to denser output point cloud.
 /// Normals and colors are averaged if they exist.
 /// Input and output cannot be the same pointcloud.
-bool VoxelDownSample(const PointCloud &input_cloud, double voxel_size,
-		PointCloud &output_cloud);
+bool VoxelDownSample(const PointCloud &input, double voxel_size,
+		PointCloud &output);
 
-/// Function to downsample input_cloud into output_cloud uniformly
+/// Function to downsample input pointcloud into output pointcloud uniformly
 /// \param every_k_points indicates the sample rate.
 /// Input and output cannot be the same pointcloud.
-bool UniformDownSample(const PointCloud &input_cloud, int every_k_points,
+bool UniformDownSample(const PointCloud &input, size_t every_k_points,
 		PointCloud &output_cloud);
 
-/// Function to crop input_cloud into output_cloud
+/// Function to crop input pointcloud into output pointcloud
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
 /// Input and output cannot be the same pointcloud.
-bool CropPointCloud(const PointCloud &input_cloud,
-		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
-		PointCloud &output_cloud);
+bool CropPointCloud(const PointCloud &input, const Eigen::Vector3d &min_bound,
+		const Eigen::Vector3d &max_bound, PointCloud &output);
 
 /// Function to compute the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.

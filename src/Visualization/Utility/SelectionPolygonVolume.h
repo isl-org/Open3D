@@ -26,65 +26,25 @@
 
 #pragma once
 
-#include <Visualization/Visualizer/ViewControl.h>
+#include <vector>
+#include <string>
+#include <Eigen/Core>
+#include <IO/ClassIO/IJsonConvertible.h>
 
 namespace three {
 
-class ViewControlWithEditing : public ViewControl
+class SelectionPolygonVolume : public IJsonConvertible
 {
 public:
-	enum EditingMode {
-		EDITING_FREEMODE = 0,
-		EDITING_ORTHO_POSITIVE_X = 1,
-		EDITING_ORTHO_NEGATIVE_X = 2,
-		EDITING_ORTHO_POSITIVE_Y = 3,
-		EDITING_ORTHO_NEGATIVE_Y = 4,
-		EDITING_ORTHO_POSITIVE_Z = 5,
-		EDITING_ORTHO_NEGATIVE_Z = 6,
-	};
+	~SelectionPolygonVolume() override {}
+	
+public:
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	void Reset() override;
-	void ChangeFieldOfView(double step) override;
-	void Scale(double scale) override;
-	void Rotate(double x, double y, double xo, double yo) override;
-	void Translate(double x, double y, double xo, double yo) override;
-
-	void SetEditingMode(EditingMode mode);
-	std::string GetStatusString();
-
-	EditingMode GetEditingMode() const { return editing_mode_; };
-	void ToggleEditingX() {
-		if (editing_mode_ == EDITING_ORTHO_POSITIVE_X) {
-			SetEditingMode(EDITING_ORTHO_NEGATIVE_X);
-		} else {
-			SetEditingMode(EDITING_ORTHO_POSITIVE_X);
-		}
-	}
-
-	void ToggleEditingY() {
-		if (editing_mode_ == EDITING_ORTHO_POSITIVE_Y) {
-			SetEditingMode(EDITING_ORTHO_NEGATIVE_Y);
-		} else {
-			SetEditingMode(EDITING_ORTHO_POSITIVE_Y);
-		}
-	}
-
-	void ToggleEditingZ() {
-		if (editing_mode_ == EDITING_ORTHO_POSITIVE_Z) {
-			SetEditingMode(EDITING_ORTHO_NEGATIVE_Z);
-		} else {
-			SetEditingMode(EDITING_ORTHO_POSITIVE_Z);
-		}
-	}
-	
-	void ToggleLocking() { is_view_locked_ = !is_view_locked_; }
-	bool IsLocked() const { return is_view_locked_; }
-
-protected:
-	EditingMode editing_mode_ = EDITING_FREEMODE;
-	ViewParameters view_status_backup_;
-	bool is_view_locked_ = false;
+	std::string orthogonal_axis_ = "";
+	std::vector<Eigen::Vector3d> bounding_polygon_;
 };
 
 }	// namespace three

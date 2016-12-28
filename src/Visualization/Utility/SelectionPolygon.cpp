@@ -27,7 +27,11 @@
 #include "SelectionPolygon.h"
 
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Utility/Console.h>
 #include <Visualization/Visualizer/ViewControl.h>
+#include <Visualization/Visualizer/ViewControlWithEditing.h>
+#include <Visualization/Utility/SelectionPolygonVolume.h>
+#include <Visualization/Utility/GLHelper.h>
 
 namespace three{
 
@@ -120,25 +124,78 @@ void SelectionPolygon::CropGeometry(const Geometry &input,
 		} else if (polygon_type_ == POLYGON_POLYGON) {
 			CropPointCloudInPolygon(input_pointcloud, view, output_pointcloud);
 		}
-		PrintDebug("[CropGeometry] PointCloud size reduced from %d to %d.\n",
-				(int)input_pointcloud.points_.size(),
-				(int)output_pointcloud.points_.size());
 	}
+}
+
+std::shared_ptr<SelectionPolygonVolume> SelectionPolygon::
+		CreateSelectionPolygonVolume(const ViewControl &view)
+{
+	auto volume = std::make_shared<SelectionPolygonVolume>();
+	const auto &editing_view = (const ViewControlWithEditing &)view;
+	if (editing_view.IsLocked() == false || editing_view.GetEditingMode() ==
+			ViewControlWithEditing::EDITING_FREEMODE) {
+		return volume;
+	}
+	int idx = 0;
+	switch (editing_view.GetEditingMode()) {
+	case ViewControlWithEditing::EDITING_ORTHO_NEGATIVE_X:
+	case ViewControlWithEditing::EDITING_ORTHO_POSITIVE_X:
+		volume->orthogonal_axis_ = "X";
+		idx = 0;
+		break;
+	case ViewControlWithEditing::EDITING_ORTHO_NEGATIVE_Y:
+	case ViewControlWithEditing::EDITING_ORTHO_POSITIVE_Y:
+		volume->orthogonal_axis_ = "Y";
+		idx = 1;
+		break;
+	case ViewControlWithEditing::EDITING_ORTHO_NEGATIVE_Z:
+	case ViewControlWithEditing::EDITING_ORTHO_POSITIVE_Z:
+		volume->orthogonal_axis_ = "Z";
+		idx = 2;
+		break;
+	default:
+		break;
+	}
+	for (const auto &point : polygon_) {
+		auto point3d = GLHelper::Unproject(Eigen::Vector3d(point(0), point(1),
+				1.0), view.GetMVPMatrix(), view.GetWindowWidth(),
+				view.GetWindowHeight());
+		point3d(idx) = 0.0;
+		volume->bounding_polygon_.push_back(point3d);
+	}
+	return volume;
 }
 
 void SelectionPolygon::CropPointCloudInRectangle(const PointCloud &input,
 		const ViewControl &view, PointCloud &output)
 {
-	output.Clear();
-	bool has_normals = input.HasNormals();
-	bool has_colors = input.HasColors();
+	std::vector<size_t> indices;
+	CropInRectangle(input.points_, view, indices);
+	SelectDownSample(input, indices, output);
+}
+
+void SelectionPolygon::CropPointCloudInPolygon(const PointCloud &input,
+		const ViewControl &view, PointCloud &output)
+{
+	std::vector<size_t> indices;
+	CropInPolygon(input.points_, view, indices);
+	SelectDownSample(input, indices, output);
+}
+
+void SelectionPolygon::CropInRectangle(
+		const std::vector<Eigen::Vector3d> &input,
+		const ViewControl &view, std::vector<size_t> &output_index)
+{
+	output_index.clear();
 	Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
 	double half_width = (double)view.GetWindowWidth() * 0.5;
 	double half_height = (double)view.GetWindowHeight() * 0.5;
 	auto min_bound = GetMinBound();
 	auto max_bound = GetMaxBound();
-	for (size_t i = 0; i < input.points_.size(); i++) {
-		const auto &point = input.points_[i];
+	ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+	for (size_t i = 0; i < input.size(); i++) {
+		AdvanceConsoleProgress();
+		const auto &point = input[i];
 		Eigen::Vector4d pos = mvp_matrix * Eigen::Vector4d(point(0), point(1),
 				point(2), 1.0);
 		if (pos(3) == 0.0) break;
@@ -147,25 +204,23 @@ void SelectionPolygon::CropPointCloudInRectangle(const PointCloud &input,
 		double y = (pos(1) + 1.0) * half_height;
 		if (x >= min_bound(0) && x <= max_bound(0) &&
 				y >= min_bound(1) && y <= max_bound(1)) {
-			output.points_.push_back(point);
-			if (has_normals) output.normals_.push_back(input.normals_[i]);
-			if (has_colors) output.colors_.push_back(input.colors_[i]);
+			output_index.push_back(i);
 		}
 	}
 }
 
-void SelectionPolygon::CropPointCloudInPolygon(const PointCloud &input,
-		const ViewControl &view, PointCloud &output)
+void SelectionPolygon::CropInPolygon(const std::vector<Eigen::Vector3d> &input,
+		const ViewControl &view, std::vector<size_t> &output_index)
 {
-	output.Clear();
-	bool has_normals = input.HasNormals();
-	bool has_colors = input.HasColors();
+	output_index.clear();
 	Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
 	double half_width = (double)view.GetWindowWidth() * 0.5;
 	double half_height = (double)view.GetWindowHeight() * 0.5;
 	std::vector<int> nodes;
-	for (size_t i = 0; i < input.points_.size(); i++) {
-		const auto &point = input.points_[i];
+	ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+	for (size_t k = 0; k < input.size(); k++) {
+		AdvanceConsoleProgress();
+		const auto &point = input[k];
 		Eigen::Vector4d pos = mvp_matrix * Eigen::Vector4d(point(0), point(1),
 				point(2), 1.0);
 		if (pos(3) == 0.0) break;
@@ -185,9 +240,7 @@ void SelectionPolygon::CropPointCloudInPolygon(const PointCloud &input,
 		std::sort(nodes.begin(), nodes.end());
 		auto loc = std::lower_bound(nodes.begin(), nodes.end(), x);
 		if (std::distance(nodes.begin(), loc) % 2 == 1) {
-			output.points_.push_back(point);
-			if (has_normals) output.normals_.push_back(input.normals_[i]);
-			if (has_colors) output.colors_.push_back(input.colors_[i]);
+			output_index.push_back(k);
 		}
 	}
 }

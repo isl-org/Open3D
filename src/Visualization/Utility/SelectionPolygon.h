@@ -35,6 +35,7 @@ namespace three {
 
 class PointCloud;
 class ViewControl;
+class SelectionPolygonVolume;
 
 /// A 2D polygon used for selection on screen
 /// It is an utility class for Visualization
@@ -61,12 +62,18 @@ public:
 	void FillPolygon(int width, int height);
 	void CropGeometry(const Geometry &input, const ViewControl &view,
 			Geometry &output);
+	std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
+			const ViewControl &view);
 
 private:
 	void CropPointCloudInRectangle(const PointCloud &input,
 			const ViewControl &view, PointCloud &output);
 	void CropPointCloudInPolygon(const PointCloud &input,
 			const ViewControl &view, PointCloud &output);
+	void CropInRectangle(const std::vector<Eigen::Vector3d> &input,
+			const ViewControl &view, std::vector<size_t> &output_index);
+	void CropInPolygon(const std::vector<Eigen::Vector3d> &input,
+			const ViewControl &view, std::vector<size_t> &output_index);
 
 public:
 	std::vector<Eigen::Vector2d> polygon_;
