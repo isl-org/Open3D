@@ -28,6 +28,7 @@
 
 #include <Visualization/Shader/Shader.h>
 #include <Visualization/Utility/SelectionPolygon.h>
+#include <Visualization/Visualizer/RenderOptionWithEditing.h>
 
 namespace three{
 
@@ -158,6 +159,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
 	}
 	double width = (double)view.GetWindowWidth();
 	double height = (double)view.GetWindowHeight();
+	const auto &_option = (RenderOptionWithEditing &)option;
 	for (size_t i = 0; i < segment_num; i++) {
 		size_t j = (i + 1) % polygon.polygon_.size();
 		const auto &vi = polygon.polygon_[i];
@@ -167,7 +169,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
 		points[i * 2 + 1] = Eigen::Vector3f((float)(vj(0) / width * 2.0 - 1.0),
 				(float)(vj(1) / height * 2.0 - 1.0), 0.0f);
 		colors[i * 2] = colors[i * 2 + 1] =
-				option.selection_polygon_boundary_color_.cast<float>();
+				_option.selection_polygon_boundary_color_.cast<float>();
 	}
 	draw_arrays_mode_ = GL_LINES;
 	draw_arrays_size_ = GLsizei(points.size());

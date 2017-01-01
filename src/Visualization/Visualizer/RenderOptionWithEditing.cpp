@@ -24,53 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "RenderOptionWithEditing.h"
 
-#include <Visualization/Visualizer/Visualizer.h>
+#include <Core/Utility/Console.h>
+#include <jsoncpp/include/json/json.h>
 
-namespace three {
+namespace three{
 
-class SelectionPolygon;
-
-class VisualizerWithEditing : public Visualizer
+bool RenderOptionWithEditing::ConvertToJsonValue(Json::Value &value) const
 {
-public:
-	enum SelectionMode {
-		SELECTION_NONE = 0,
-		SELECTION_RECTANGLE = 1,
-		SELECTION_POLYGON = 2,
-	};
-	
-public:
-	VisualizerWithEditing();
-	~VisualizerWithEditing() override;
-	VisualizerWithEditing(const VisualizerWithEditing &) = delete;
-	VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
+	if (RenderOption::ConvertToJsonValue(value) == false) {
+		return false;
+	}
+	if (EigenVector3dToJsonArray(selection_polygon_boundary_color_,
+			value["selection_polygon_boundary_color"]) == false) {
+		return false;
+	}
+	if (EigenVector3dToJsonArray(selection_polygon_mask_color_,
+			value["selection_polygon_mask_color"]) == false) {
+		return false;
+	}
+	value["selection_polygon_mask_alpha"] = selection_polygon_mask_alpha_;
+	return true;
+}
 
-public:
-	void PrintVisualizerHelp() override;
-	void UpdateWindowTitle() override;
-	void BuildUtilities() override;
-
-protected:
-	bool InitViewControl() override;
-	bool InitRenderOption() override;
-	void WindowResizeCallback(GLFWwindow *window, int w, int h) override;
-	void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
-	void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
-	void MouseButtonCallback(GLFWwindow* window,
-			int button, int action, int mods) override;
-	void KeyPressCallback(GLFWwindow *window,
-			int key, int scancode, int action, int mods) override;
-	void InvalidateSelectionPolygon();
-	void SaveCroppingResult(const std::string &filename = "",
-			int geometry_index = 0);
-
-protected:
-	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
-	std::shared_ptr<glsl::SelectionPolygonRenderer>
-			selection_polygon_renderer_ptr_;
-	SelectionMode selection_mode_ = SELECTION_NONE;
-};
+bool RenderOptionWithEditing::ConvertFromJsonValue(const Json::Value &value)
+{
+	if (RenderOption::ConvertFromJsonValue(value) == false) {
+		return false;
+	}
+	if (EigenVector3dFromJsonArray(selection_polygon_boundary_color_,
+			value["selection_polygon_boundary_color"]) == false) {
+		return false;
+	}
+	if (EigenVector3dFromJsonArray(selection_polygon_mask_color_,
+			value["selection_polygon_mask_color"]) == false) {
+		return false;
+	}
+	selection_polygon_mask_alpha_ = value.get("selection_polygon_mask_alpha",
+			selection_polygon_mask_alpha_).asDouble();
+	return true;
+}
 
 }	// namespace three

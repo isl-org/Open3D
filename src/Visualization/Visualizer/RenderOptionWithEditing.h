@@ -26,51 +26,29 @@
 
 #pragma once
 
-#include <Visualization/Visualizer/Visualizer.h>
+#include <Eigen/Core>
+
+#include <Visualization/Visualizer/RenderOption.h>
 
 namespace three {
 
-class SelectionPolygon;
-
-class VisualizerWithEditing : public Visualizer
+class RenderOptionWithEditing : public RenderOption
 {
 public:
-	enum SelectionMode {
-		SELECTION_NONE = 0,
-		SELECTION_RECTANGLE = 1,
-		SELECTION_POLYGON = 2,
-	};
-	
-public:
-	VisualizerWithEditing();
-	~VisualizerWithEditing() override;
-	VisualizerWithEditing(const VisualizerWithEditing &) = delete;
-	VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
+	RenderOptionWithEditing() {}
+	~RenderOptionWithEditing() override {}
 
 public:
-	void PrintVisualizerHelp() override;
-	void UpdateWindowTitle() override;
-	void BuildUtilities() override;
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
 
-protected:
-	bool InitViewControl() override;
-	bool InitRenderOption() override;
-	void WindowResizeCallback(GLFWwindow *window, int w, int h) override;
-	void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
-	void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
-	void MouseButtonCallback(GLFWwindow* window,
-			int button, int action, int mods) override;
-	void KeyPressCallback(GLFWwindow *window,
-			int key, int scancode, int action, int mods) override;
-	void InvalidateSelectionPolygon();
-	void SaveCroppingResult(const std::string &filename = "",
-			int geometry_index = 0);
-
-protected:
-	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
-	std::shared_ptr<glsl::SelectionPolygonRenderer>
-			selection_polygon_renderer_ptr_;
-	SelectionMode selection_mode_ = SELECTION_NONE;
+public:
+	// Selection polygon
+	Eigen::Vector3d selection_polygon_boundary_color_ =
+			Eigen::Vector3d(0.3, 0.3, 0.3);
+	Eigen::Vector3d selection_polygon_mask_color_ =
+			Eigen::Vector3d(0.3, 0.3, 0.3);
+	double selection_polygon_mask_alpha_ = 0.5;
 };
 
 }	// namespace three

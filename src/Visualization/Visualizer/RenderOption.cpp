@@ -114,6 +114,7 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const
 	value["image_stretch_option"] = (int)image_stretch_option_;
 	value["image_max_depth"] = image_max_depth_;
 
+	value["show_coordinate_frame"] = show_coordinate_frame_;
 	return true;
 }
 
@@ -221,6 +222,9 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value)
 	image_stretch_option_ = (ImageStretchOption)value.get(
 			"image_stretch_option", (int)image_stretch_option_).asInt();
 	image_max_depth_ = value.get("image_max_depth", image_max_depth_).asInt();
+
+	show_coordinate_frame_ = value.get("show_coordinate_frame",
+			show_coordinate_frame_).asBool();
 	return true;
 }
 

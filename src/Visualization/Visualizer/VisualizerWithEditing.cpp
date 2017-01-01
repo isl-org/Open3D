@@ -30,6 +30,7 @@
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 #include <IO/ClassIO/PointCloudIO.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
+#include <Visualization/Visualizer/RenderOptionWithEditing.h>
 #include <Visualization/Utility/SelectionPolygon.h>
 #include <Visualization/Utility/SelectionPolygonVolume.h>
 
@@ -92,6 +93,13 @@ bool VisualizerWithEditing::InitViewControl()
 	view_control_ptr_ = std::unique_ptr<ViewControlWithEditing>(
 			new ViewControlWithEditing);
 	ResetViewPoint();
+	return true;
+}
+
+bool VisualizerWithEditing::InitRenderOption()
+{
+	render_option_ptr_ = std::unique_ptr<RenderOptionWithEditing>(
+			new RenderOptionWithEditing);
 	return true;
 }
 

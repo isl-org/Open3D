@@ -30,6 +30,7 @@
 
 #include <Core/Geometry/Image.h>
 #include <Visualization/Shader/Shader.h>
+#include <Visualization/Visualizer/RenderOptionWithEditing.h>
 
 namespace three{
 
@@ -171,8 +172,9 @@ bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
 		PrintShaderWarning("Mask image does not match framebuffer size.");
 		return false;
 	}
-	mask_color_data_ = option.selection_polygon_mask_color_.cast<float>();
-	mask_alpha_data_ = (float)option.selection_polygon_mask_alpha_;
+	const auto &_option = (RenderOptionWithEditing &)option;
+	mask_color_data_ = _option.selection_polygon_mask_color_.cast<float>();
+	mask_alpha_data_ = (float)_option.selection_polygon_mask_alpha_;
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
