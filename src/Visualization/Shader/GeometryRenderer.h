@@ -34,6 +34,7 @@
 #include <Visualization/Shader/ImageShader.h>
 #include <Visualization/Shader/Simple2DShader.h>
 #include <Visualization/Shader/ImageMaskShader.h>
+#include <Visualization/Shader/PickingShader.h>
 
 namespace three {
 
@@ -86,6 +87,20 @@ protected:
 	SimpleShaderForPointCloud simple_point_shader_;
 	PhongShaderForPointCloud phong_point_shader_;
 	SimpleBlackShaderForPointCloudNormal simpleblack_normal_shader_;
+};
+
+class PointCloudPickingRenderer : public GeometryRenderer
+{
+public:
+	~PointCloudPickingRenderer() override {}
+
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	bool UpdateGeometry() override;
+	
+protected:
+	PickingShaderForPointCloud picking_shader_;
 };
 
 class LineSetRenderer : public GeometryRenderer
@@ -159,6 +174,20 @@ public:
 protected:
 	Simple2DShaderForSelectionPolygon simple2d_shader_;
 	ImageMaskShaderForImage image_mask_shader_;
+};
+
+class PointCloudPickerRenderer : public GeometryRenderer
+{
+public:
+	~PointCloudPickerRenderer() override {}
+	
+public:
+	bool Render(const RenderOption &option, const ViewControl &view) override;
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+	bool UpdateGeometry() override;
+	
+protected:
+	PhongShaderForTriangleMesh phong_shader_;
 };
 
 }	// namespace three::glsl

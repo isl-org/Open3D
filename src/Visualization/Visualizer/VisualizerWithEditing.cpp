@@ -33,6 +33,8 @@
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 #include <Visualization/Utility/SelectionPolygon.h>
 #include <Visualization/Utility/SelectionPolygonVolume.h>
+#include <Visualization/Utility/PointCloudPicker.h>
+#include <Visualization/Utility/GLHelper.h>
 
 namespace three{
 
@@ -75,17 +77,104 @@ void VisualizerWithEditing::UpdateWindowTitle()
 void VisualizerWithEditing::BuildUtilities()
 {
 	Visualizer::BuildUtilities();
+	bool success;
 	
 	// 1. Build selection polygon
+	success = true;
 	selection_polygon_ptr_ = std::make_shared<SelectionPolygon>();
-	utility_ptrs_.push_back(selection_polygon_ptr_);
 	selection_polygon_renderer_ptr_ =
 			std::make_shared<glsl::SelectionPolygonRenderer>();
 	if (selection_polygon_renderer_ptr_->AddGeometry(selection_polygon_ptr_) ==
 			false) {
-		return;
+		success = false;
 	}
-	utility_renderer_ptrs_.push_back(selection_polygon_renderer_ptr_);
+	if (success) {
+		utility_ptrs_.push_back(selection_polygon_ptr_);
+		utility_renderer_ptrs_.push_back(selection_polygon_renderer_ptr_);
+	}
+	
+	// 2. Build pointcloud picker
+	success = true;
+	pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
+	if (pointcloud_picker_ptr_->SetPointCloud(geometry_ptrs_[0]) == false) {
+		success = false;
+	}
+	pointcloud_picker_renderer_ptr_ =
+			std::make_shared<glsl::PointCloudPickerRenderer>();
+	if (pointcloud_picker_renderer_ptr_->AddGeometry(
+			pointcloud_picker_ptr_) == false) {
+		success = false;
+	}
+	if (success) {
+		utility_ptrs_.push_back(pointcloud_picker_ptr_);
+		utility_renderer_ptrs_.push_back(pointcloud_picker_renderer_ptr_);
+	}
+}
+
+int VisualizerWithEditing::PickPoint(double x, double y,
+		size_t geometry_index/* = 0*/)
+{
+	auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
+	if (renderer_ptr->AddGeometry(geometry_ptrs_[geometry_index]) == false) {
+		return -1;
+	}
+	const auto &view = GetViewControl();
+	// Render to FBO and disable anti-aliasing
+	glDisable(GL_MULTISAMPLE);
+	GLuint frame_buffer_name = 0;
+	glGenFramebuffers(1, &frame_buffer_name);
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
+	GLuint fbo_texture;
+	glGenTextures(1, &fbo_texture);
+	glBindTexture(GL_TEXTURE_2D, fbo_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, view.GetWindowWidth(),
+			view.GetWindowHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	if (!GLEW_ARB_framebuffer_object){
+		// OpenGL 2.1 doesn't require this, 3.1+ does
+		printf("[PickPoint] Your GPU does not provide framebuffer objects. Use a texture instead.");
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glEnable(GL_MULTISAMPLE);
+		return -1;
+	}
+	GLuint depth_render_buffer;
+	glGenRenderbuffers(1, &depth_render_buffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depth_render_buffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+			view.GetWindowWidth(), view.GetWindowHeight());
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, depth_render_buffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+			fbo_texture, 0);
+	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		printf("[PickPoint] Something is wrong with FBO.");
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glEnable(GL_MULTISAMPLE);
+		return -1;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_name);
+	view_control_ptr_->SetViewMatrices();
+	glDisable(GL_BLEND);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	glClearDepth(1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	renderer_ptr->Render(GetRenderOption(), GetViewControl());
+	glFinish();
+	uint8_t rgba[4];
+	glReadPixels((int)(x + 0.5), (int)(view.GetWindowHeight() - y + 0.5), 1, 1,
+			GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+	int index = GLHelper::ColorCodeToPickIndex(Eigen::Vector4i(rgba[0],
+			rgba[1], rgba[2], rgba[3]));	
+	// Recover rendering state
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_MULTISAMPLE);
+	return index;
 }
 
 bool VisualizerWithEditing::InitViewControl()
@@ -286,6 +375,24 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 			is_redraw_required_ = true;
 		}
 	} else {
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE &&
+				(mods & GLFW_MOD_SHIFT)) {
+			double x, y;
+			glfwGetCursorPos(window, &x, &y);
+#ifdef __APPLE__
+			x /= pixel_to_screen_coordinate_;
+			y /= pixel_to_screen_coordinate_;
+#endif
+			int index = PickPoint(x, y);
+			if (index == -1) {
+				PrintInfo("No point has been picked.\n");
+			} else {
+				PrintInfo("Picked point #%d.\n", index);
+				pointcloud_picker_ptr_->picked_indices_.push_back(
+						(size_t)index);
+				is_redraw_required_ = true;
+			}
+		}
 		Visualizer::MouseButtonCallback(window, button, action, mods);
 	}
 }

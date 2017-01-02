@@ -26,36 +26,62 @@
 
 #pragma once
 
-#include <string>
-
+#include <vector>
 #include <Eigen/Core>
-#include <GLFW/glfw3.h>
+#include <Visualization/Shader/ShaderWrapper.h>
 
 namespace three {
 
-namespace GLHelper {
-
-typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
-typedef Eigen::Matrix<GLfloat, 4, 1, Eigen::ColMajor> GLVector4f;
-typedef Eigen::Matrix<GLfloat, 4, 4, Eigen::ColMajor> GLMatrix4f;
-
-GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
-		const Eigen::Vector3d &up);
+namespace glsl {
 	
-GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near, 
-		double z_far);
+class PickingShader : public ShaderWrapper
+{
+public:
+	~PickingShader() override { Release(); }
 
-GLMatrix4f Ortho(double left, double right, double bottom, double top,
-		double z_near, double z_far);
+protected:
+	PickingShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	
+protected:
+	bool Compile() final;
+	void Release() final;
+	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+			const ViewControl &view) final;
+	void UnbindGeometry() final;
 
-Eigen::Vector3d Project(const Eigen::Vector3d &point, 
-		const GLMatrix4f &mvp_matrix, const int width, const int height);
+protected:
+	virtual bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) = 0;
+	virtual bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<float> &indices) = 0;
 
-Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
-		const GLMatrix4f &mvp_matrix, const int width, const int height);
+protected:
+	GLuint vertex_position_;
+	GLuint vertex_position_buffer_;
+	GLuint vertex_index_;
+	GLuint vertex_index_buffer_;
+	GLuint MVP_;
+};
 
-int ColorCodeToPickIndex(const Eigen::Vector4i &color);
+class PickingShaderForPointCloud : public PickingShader
+{
+public:
+	PickingShaderForPointCloud() :
+			PickingShader("PickingShaderForPointCloud") {}
+	
+protected:
+	bool PrepareRendering(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view) final;
+	bool PrepareBinding(const Geometry &geometry,
+			const RenderOption &option, const ViewControl &view,
+			std::vector<Eigen::Vector3f> &points,
+			std::vector<float> &indices) final;
+};
 
-}	// namespace GLHelper
+}	// namespace three::glsl
 
 }	// namespace three

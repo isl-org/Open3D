@@ -26,36 +26,32 @@
 
 #pragma once
 
-#include <string>
-
+#include <vector>
 #include <Eigen/Core>
-#include <GLFW/glfw3.h>
+#include <Core/Geometry/Geometry3D.h>
 
 namespace three {
 
-namespace GLHelper {
+class PointCloud;
 
-typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
-typedef Eigen::Matrix<GLfloat, 4, 1, Eigen::ColMajor> GLVector4f;
-typedef Eigen::Matrix<GLfloat, 4, 4, Eigen::ColMajor> GLMatrix4f;
+/// A utility class to store picked points of a pointcloud
+class PointCloudPicker : public Geometry3D
+{
+public:
+	PointCloudPicker() : Geometry3D(GEOMETRY_UNSPECIFIED) {}
+	~PointCloudPicker() override {}
 
-GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
-		const Eigen::Vector3d &up);
-	
-GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near, 
-		double z_far);
+public:
+	void Clear() override;
+	bool IsEmpty() const override;
+	Eigen::Vector3d GetMinBound() const final;
+	Eigen::Vector3d GetMaxBound() const final;
+	void Transform(const Eigen::Matrix4d & transformation) override;
+	bool SetPointCloud(std::shared_ptr<const Geometry> ptr);
 
-GLMatrix4f Ortho(double left, double right, double bottom, double top,
-		double z_near, double z_far);
-
-Eigen::Vector3d Project(const Eigen::Vector3d &point, 
-		const GLMatrix4f &mvp_matrix, const int width, const int height);
-
-Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
-		const GLMatrix4f &mvp_matrix, const int width, const int height);
-
-int ColorCodeToPickIndex(const Eigen::Vector4i &color);
-
-}	// namespace GLHelper
+public:
+	std::shared_ptr<const Geometry> pointcloud_ptr_;
+	std::vector<size_t> picked_indices_;
+};
 
 }	// namespace three

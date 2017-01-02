@@ -24,38 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PointCloudPicker.h"
 
-#include <string>
+#include <Core/Geometry/PointCloud.h>
+#include <Core/Utility/Console.h>
 
-#include <Eigen/Core>
-#include <GLFW/glfw3.h>
+namespace three{
 
-namespace three {
+void PointCloudPicker::Clear()
+{
+	picked_indices_.clear();
+}
 
-namespace GLHelper {
+bool PointCloudPicker::IsEmpty() const
+{
+	return (!pointcloud_ptr_ || picked_indices_.empty());
+}
 
-typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
-typedef Eigen::Matrix<GLfloat, 4, 1, Eigen::ColMajor> GLVector4f;
-typedef Eigen::Matrix<GLfloat, 4, 4, Eigen::ColMajor> GLMatrix4f;
+Eigen::Vector3d PointCloudPicker::GetMinBound() const
+{
+	if (pointcloud_ptr_) {
+		return ((const PointCloud &)(*pointcloud_ptr_)).GetMinBound();
+	} else {
+		return Eigen::Vector3d(0.0, 0.0, 0.0);
+	}
+}
 
-GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
-		const Eigen::Vector3d &up);
-	
-GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near, 
-		double z_far);
+Eigen::Vector3d PointCloudPicker::GetMaxBound() const
+{
+	if (pointcloud_ptr_) {
+		return ((const PointCloud &)(*pointcloud_ptr_)).GetMaxBound();
+	} else {
+		return Eigen::Vector3d(0.0, 0.0, 0.0);
+	}
+}
 
-GLMatrix4f Ortho(double left, double right, double bottom, double top,
-		double z_near, double z_far);
+void PointCloudPicker::Transform(const Eigen::Matrix4d &transformation)
+{
+	// Do nothing
+}
 
-Eigen::Vector3d Project(const Eigen::Vector3d &point, 
-		const GLMatrix4f &mvp_matrix, const int width, const int height);
-
-Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
-		const GLMatrix4f &mvp_matrix, const int width, const int height);
-
-int ColorCodeToPickIndex(const Eigen::Vector4i &color);
-
-}	// namespace GLHelper
+bool PointCloudPicker::SetPointCloud(std::shared_ptr<const Geometry> ptr)
+{
+	if (!ptr || ptr->GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+		return false;
+	}
+	pointcloud_ptr_ = ptr;
+	return true;
+}
 
 }	// namespace three

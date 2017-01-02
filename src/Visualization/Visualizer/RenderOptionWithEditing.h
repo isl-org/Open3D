@@ -49,6 +49,9 @@ public:
 	Eigen::Vector3d selection_polygon_mask_color_ =
 			Eigen::Vector3d(0.3, 0.3, 0.3);
 	double selection_polygon_mask_alpha_ = 0.5;
+	
+	// PointCloud Picker
+	double pointcloud_picker_sphere_size_ = 0.01;
 };
 
 }	// namespace three

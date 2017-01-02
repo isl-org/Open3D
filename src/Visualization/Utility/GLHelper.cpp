@@ -109,6 +109,15 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
 	return point.block<3, 1>(0, 0);
 }
 
+int ColorCodeToPickIndex(const Eigen::Vector4i &color)
+{
+	if (color(0) == 255) {
+		return -1;
+	} else {
+		return ((color(0) * 256 + color(1)) * 256 + color(2)) * 256 + color(3);
+	}
+}
+
 }	// namespace GLHelper
 
 }	// namespace three

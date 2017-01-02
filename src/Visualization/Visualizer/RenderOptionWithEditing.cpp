@@ -45,6 +45,7 @@ bool RenderOptionWithEditing::ConvertToJsonValue(Json::Value &value) const
 		return false;
 	}
 	value["selection_polygon_mask_alpha"] = selection_polygon_mask_alpha_;
+	value["pointcloud_picker_sphere_size"] = pointcloud_picker_sphere_size_;
 	return true;
 }
 
@@ -62,6 +63,8 @@ bool RenderOptionWithEditing::ConvertFromJsonValue(const Json::Value &value)
 		return false;
 	}
 	selection_polygon_mask_alpha_ = value.get("selection_polygon_mask_alpha",
+			selection_polygon_mask_alpha_).asDouble();
+	pointcloud_picker_sphere_size_ = value.get("pointcloud_picker_sphere_size",
 			selection_polygon_mask_alpha_).asDouble();
 	return true;
 }

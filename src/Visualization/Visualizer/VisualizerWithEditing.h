@@ -31,6 +31,7 @@
 namespace three {
 
 class SelectionPolygon;
+class PointCloudPicker;
 
 class VisualizerWithEditing : public Visualizer
 {
@@ -51,6 +52,7 @@ public:
 	void PrintVisualizerHelp() override;
 	void UpdateWindowTitle() override;
 	void BuildUtilities() override;
+	int PickPoint(double x, double y, size_t geometry_index = 0);
 
 protected:
 	bool InitViewControl() override;
@@ -71,6 +73,10 @@ protected:
 	std::shared_ptr<glsl::SelectionPolygonRenderer>
 			selection_polygon_renderer_ptr_;
 	SelectionMode selection_mode_ = SELECTION_NONE;
+	
+	std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
+	std::shared_ptr<glsl::PointCloudPickerRenderer>
+			pointcloud_picker_renderer_ptr_;
 };
 
 }	// namespace three

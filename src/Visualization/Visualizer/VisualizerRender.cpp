@@ -67,6 +67,7 @@ void Visualizer::Render()
 	
 	view_control_ptr_->SetViewMatrices();
 
+	glEnable(GL_MULTISAMPLE);
 	glDisable(GL_BLEND);
 	auto &background_color = render_option_ptr_->background_color_;
 	glClearColor((GLclampf)background_color(0), (GLclampf)background_color(1),
