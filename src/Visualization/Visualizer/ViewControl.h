@@ -104,6 +104,10 @@ public:
 		return bounding_box_;
 	}
 
+	void ResetBoundingBox() {
+		bounding_box_.Reset();
+	}
+
 	void FitInGeometry(const Geometry &geometry) {
 		if (geometry.Dimension() == 3) {
 			bounding_box_.FitInGeometry((const Geometry3D &)geometry);

@@ -26,20 +26,51 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
+#include <vector>
+#include <memory>
+#include <string>
+#include <Eigen/Core>
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/FloatImage.h"
-#include "Geometry/KDTreeFlann.h"
+namespace three {
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraTrajectory.h"
+class PointCloud;
 
-#include "Registration/TransformationEstimation.h"
+/// Base class that estimates a transformation between two point clouds
+/// The virtual function ComputeTransformation() must be implemented in
+/// subclasses.
+class TransformationEstimation
+{
+public:
+	typedef std::pair<int, int> Correspondence;
+	typedef std::vector<Correspondence> CorrespondenceSet;
+
+public:
+	TransformationEstimation() {}
+	virtual ~TransformationEstimation() {}
+
+public:
+	virtual double ComputeError(const PointCloud &source,
+			const PointCloud &target, const CorrespondenceSet &corres) = 0;
+	virtual Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
+			const PointCloud &target, const CorrespondenceSet &corres) = 0;
+};
+
+/// Estimate a transformation for point to point distance
+class TransformationEstimationPointToPoint : public TransformationEstimation
+{
+public:
+	TransformationEstimationPointToPoint(bool with_scaling = false) :
+		with_scaling_(with_scaling) {}
+	~TransformationEstimationPointToPoint() override {}
+
+public:
+	double ComputeError(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres) final;
+	Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
+			const PointCloud &target, const CorrespondenceSet &corres) final;
+
+private:
+	bool with_scaling_ = false;
+};
+
+}	// namespace three

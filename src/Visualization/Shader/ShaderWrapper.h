@@ -44,7 +44,7 @@ public:
 	ShaderWrapper &operator=(const ShaderWrapper &) = delete;
 
 protected:
-	ShaderWrapper(std::string name) : shader_name_(name) {}
+	ShaderWrapper(const std::string &name) : shader_name_(name) {}
 
 public:
 	/// Function to render geometry under condition of mode and view
@@ -58,7 +58,7 @@ public:
 	/// geometry resource)
 	void InvalidateGeometry();
 	
-	std::string GetShaderName() const { return shader_name_; }
+	const std::string &GetShaderName() const { return shader_name_; }
 	
 	void PrintShaderWarning(const std::string &message) const;
 	
@@ -98,7 +98,7 @@ protected:
 	bool compiled_ = false;
 	bool bound_ = false;
 	
-	void SetShaderName(std::string shader_name) {
+	void SetShaderName(const std::string &shader_name) {
 		shader_name_ = shader_name;
 	}
 	

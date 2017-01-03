@@ -195,6 +195,7 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 	WindowResizeCallback(window_, window_width, window_height);
 
 	UpdateWindowTitle();
+
 	is_initialized_ = true;
 	return true;
 }
@@ -247,7 +248,6 @@ void Visualizer::BuildUtilities()
 
 void Visualizer::Run()
 {
-	UpdateWindowTitle();
 	BuildUtilities();
 	while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
 		if (bool(animation_callback_func_in_loop_)) {

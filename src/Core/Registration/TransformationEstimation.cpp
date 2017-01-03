@@ -24,22 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "TransformationEstimation.h"
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
+#include <Eigen/Geometry>
+#include <Core/Geometry/PointCloud.h>
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/FloatImage.h"
-#include "Geometry/KDTreeFlann.h"
+namespace three{
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraTrajectory.h"
+double TransformationEstimationPointToPoint::ComputeError(
+		const PointCloud &source, const PointCloud &target,
+		const CorrespondenceSet &corres)
+{
+	double err = 0.0;
+	for (const auto &c : corres) {
+		err += (source.points_[c.first] - target.points_[c.second]).
+				squaredNorm();
+	}
+	return err;
+}
 
-#include "Registration/TransformationEstimation.h"
+Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
+		const PointCloud &source, const PointCloud &target,
+		const CorrespondenceSet &corres)
+{
+	Eigen::MatrixXd source_mat(3, corres.size());
+	Eigen::MatrixXd target_mat(3, corres.size());
+	for (size_t i = 0; i < corres.size(); i++) {
+		source_mat.block<3, 1>(0, i) = source.points_[corres[i].first];
+		target_mat.block<3, 1>(0, i) = target.points_[corres[i].second];
+	}
+	return Eigen::umeyama(source_mat, target_mat, with_scaling_);
+}
+
+}	// namespace three

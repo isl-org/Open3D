@@ -9,6 +9,14 @@ add_executable(ConvertPointCloud ConvertPointCloud.cpp)
 target_link_libraries(ConvertPointCloud IO Core)
 set_target_properties(ConvertPointCloud PROPERTIES FOLDER "Tools")
 
+add_executable(ManuallyAlignPointCloud ManuallyAlignPointCloud.cpp)
+target_link_libraries(ManuallyAlignPointCloud Visualization IO Core)
+set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
+
+add_executable(ManuallyCropPointCloud ManuallyCropPointCloud.cpp)
+target_link_libraries(ManuallyCropPointCloud Visualization IO Core)
+set_target_properties(ManuallyCropPointCloud PROPERTIES FOLDER "Tools")
+
 add_executable(ViewGeometry ViewGeometry.cpp)
 target_link_libraries(ViewGeometry Visualization IO Core)
 set_target_properties(ViewGeometry PROPERTIES FOLDER "Tools")

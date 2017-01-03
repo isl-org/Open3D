@@ -85,8 +85,14 @@ void Visualizer::Render()
 	glfwSwapBuffers(window_);
 }
 
-void Visualizer::ResetViewPoint()
+void Visualizer::ResetViewPoint(bool reset_bounding_box/* = false*/)
 {
+	if (reset_bounding_box) {
+		view_control_ptr_->ResetBoundingBox();
+		for (const auto &geometry_ptr : geometry_ptrs_) {
+			view_control_ptr_->FitInGeometry(*geometry_ptr);
+		}
+	}
 	view_control_ptr_->Reset();
 	is_redraw_required_ = true;
 }

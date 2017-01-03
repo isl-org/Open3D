@@ -53,6 +53,7 @@ public:
 	void UpdateWindowTitle() override;
 	void BuildUtilities() override;
 	int PickPoint(double x, double y, size_t geometry_index = 0);
+	const std::vector<size_t> &GetPickedPoints();
 
 protected:
 	bool InitViewControl() override;

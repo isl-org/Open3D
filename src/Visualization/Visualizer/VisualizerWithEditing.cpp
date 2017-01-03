@@ -55,6 +55,9 @@ void VisualizerWithEditing::PrintVisualizerHelp()
 	PrintInfo("    Y            : Enter orthogonal view along Y axis, press again to flip.\n");
 	PrintInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.\n");
 	PrintInfo("    K            : Lock / unlock camera.\n");
+	PrintInfo("    Shift + +/-  : Increase/decrease picked point size..\n");
+	PrintInfo("    Shift + mouse left button       : Pick a point and add in queue.\n");
+	PrintInfo("    Shift + mouse right button      : Remove last picked point from queue.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- When camera is locked --\n");
 	PrintInfo("    Mouse left button + drag        : Create a selection rectangle.\n");
@@ -96,7 +99,8 @@ void VisualizerWithEditing::BuildUtilities()
 	// 2. Build pointcloud picker
 	success = true;
 	pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
-	if (pointcloud_picker_ptr_->SetPointCloud(geometry_ptrs_[0]) == false) {
+	if (geometry_ptrs_.empty() || pointcloud_picker_ptr_->SetPointCloud(
+			geometry_ptrs_[0]) == false) {
 		success = false;
 	}
 	pointcloud_picker_renderer_ptr_ =
@@ -177,6 +181,11 @@ int VisualizerWithEditing::PickPoint(double x, double y,
 	return index;
 }
 
+const std::vector<size_t> &VisualizerWithEditing::GetPickedPoints()
+{
+	return pointcloud_picker_ptr_->picked_indices_;
+}
+
 bool VisualizerWithEditing::InitViewControl()
 {
 	view_control_ptr_ = std::unique_ptr<ViewControlWithEditing>(
@@ -196,6 +205,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 		int key, int scancode, int action, int mods)
 {
 	auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
+	auto &option = (RenderOptionWithEditing &)(*render_option_ptr_);
 	if (action == GLFW_RELEASE) {
 		if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
 			if (view_control.IsLocked() &&
@@ -257,6 +267,20 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 					InvalidateSelectionPolygon();
 				}
 			}
+		} else {
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+		}
+		break;
+	case GLFW_KEY_MINUS:
+		if (mods & GLFW_MOD_SHIFT) {
+			option.DecreaseSphereSize();
+		} else {
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+		}
+		break;
+	case GLFW_KEY_EQUAL:
+		if (mods & GLFW_MOD_SHIFT) {
+			option.IncreaseSphereSize();
 		} else {
 			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 		}
@@ -387,9 +411,17 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 			if (index == -1) {
 				PrintInfo("No point has been picked.\n");
 			} else {
-				PrintInfo("Picked point #%d.\n", index);
+				PrintInfo("Picked point #%d to add in queue.\n", index);
 				pointcloud_picker_ptr_->picked_indices_.push_back(
 						(size_t)index);
+				is_redraw_required_ = true;
+			}
+		} else if (button == GLFW_MOUSE_BUTTON_RIGHT &&
+				action == GLFW_RELEASE && (mods & GLFW_MOD_SHIFT)) {
+			if (pointcloud_picker_ptr_->picked_indices_.empty() == false) {
+				PrintInfo("Remove picked point #%d from pick queue.\n",
+						pointcloud_picker_ptr_->picked_indices_.back());
+				pointcloud_picker_ptr_->picked_indices_.pop_back();
 				is_redraw_required_ = true;
 			}
 		}

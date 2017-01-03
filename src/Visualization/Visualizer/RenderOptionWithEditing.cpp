@@ -31,6 +31,10 @@
 
 namespace three{
 
+const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_MIN = 0.000625;
+const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_MAX = 0.08;
+const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_DEFAULT = 0.01;
+
 bool RenderOptionWithEditing::ConvertToJsonValue(Json::Value &value) const
 {
 	if (RenderOption::ConvertToJsonValue(value) == false) {

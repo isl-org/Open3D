@@ -122,6 +122,7 @@ public:
 	void CaptureDepthPointCloud(const std::string &filename = "",
 			bool do_render = true);
 	void CaptureRenderOption(const std::string &filename = "");
+	void ResetViewPoint(bool reset_bounding_box = false);
 
 protected:
 	/// Function to initialize OpenGL
@@ -140,8 +141,6 @@ protected:
 
 	/// Function to set the redraw flag as dirty
 	void UpdateRender();
-
-	void ResetViewPoint();
 	
 	void CopyViewStatusToClipboard();
 	

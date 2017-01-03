@@ -24,22 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
+void PrintHelp()
+{
+	printf("Usage:\n");
+	printf("    > ManuallyCropPointCloud pointcloud_file [options]\n");
+	printf("      Manually crop point clouds in pointcloud_file.\n");
+	printf("\n");
+	printf("Options:\n");
+	printf("    --help, -h                : Print help information.\n");
+	printf("    --verbose n               : Set verbose level (0-4).\n");
+}
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/FloatImage.h"
-#include "Geometry/KDTreeFlann.h"
+int main(int argc, char **argv)
+{
+	using namespace three;
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraTrajectory.h"
+	if (argc < 2 || ProgramOptionExists(argc, argv, "--help") ||
+			ProgramOptionExists(argc, argv, "-h")) {
+		PrintHelp();
+		return 0;
+	}
+	
+	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+	SetVerbosityLevel((VerbosityLevel)verbose);
 
-#include "Registration/TransformationEstimation.h"
+	auto pcd_ptr = CreatePointCloudFromFile(argv[1]);
+	if (pcd_ptr->IsEmpty()) {
+		PrintWarning("Failed to read the point cloud.\n");
+		return 0;
+	}
+	VisualizerWithEditing vis;
+	vis.CreateWindow("Crop Point Cloud", 1920, 1080, 100, 100);
+	vis.AddGeometry(pcd_ptr);
+	if (pcd_ptr->points_.size() > 5000000) {
+		vis.GetRenderOption().point_size_ = 1.0;
+	}
+	vis.Run();
+	vis.DestroyWindow();
+	return 1;
+}
