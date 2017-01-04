@@ -290,7 +290,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		} else if (mods & GLFW_MOD_SHIFT) {
 			SetGlobalColorMap(ColorMap::COLORMAP_HOT);
 			UpdateGeometry();
-			PrintDebug("[Visualizer] Color map set to WINTER.\n");
+			PrintDebug("[Visualizer] Color map set to HOT.\n");
 		} else {
 			render_option_ptr_->point_color_option_ =
 					RenderOption::POINTCOLOR_Z;

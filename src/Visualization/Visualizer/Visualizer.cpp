@@ -403,11 +403,12 @@ void Visualizer::PrintVisualizerHelp()
 	PrintInfo("                   2 - x coordinate as color.\n");
 	PrintInfo("                   3 - y coordinate as color.\n");
 	PrintInfo("                   4 - z coordinate as color.\n");
-	PrintInfo("    Shift + 0..3 : Color map options.\n");
+	PrintInfo("    Shift + 0..4 : Color map options.\n");
 	PrintInfo("                   0 - Gray scale color.\n");
 	PrintInfo("                   1 - JET color map.\n");
 	PrintInfo("                   2 - SUMMER color map.\n");
 	PrintInfo("                   3 - WINTER color map.\n");
+	PrintInfo("                   4 - HOT color map.\n");
 	PrintInfo("\n");
 }
 
