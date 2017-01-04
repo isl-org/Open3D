@@ -43,9 +43,9 @@ int main(int argc, char *argv[])
 	}
 	std::string option(argv[1]);
 	char const *pattern = "*.*";
-	if (option == "open") {
+	if (option == "load") {
 		char const *str = tinyfd_openFileDialog(
-				"Find a file to open", "", 0, NULL, NULL, 1);
+				"Find a file to load", "", 0, NULL, NULL, 1);
 		PrintInfo("%s\n", str);
 	} else if (option == "save") {
 		char const *str = tinyfd_saveFileDialog("Find a file to save", "", 1,
