@@ -4642,11 +4642,17 @@ char const * tinyfd_openFileDialog (
 		if ( aNumOfFilterPatterns > 0 )
 		{
 			strcat(lDialogString , "of type {\"" );
+#ifdef __APPLE__
+			strcat(lDialogString, "public.");
+#endif
 			strcat ( lDialogString , aFilterPatterns [0] + 2 ) ;
 			strcat ( lDialogString , "\"" ) ;
 			for ( i = 1 ; i < aNumOfFilterPatterns ; i ++ )
 			{
 				strcat ( lDialogString , ",\"" ) ;
+#ifdef __APPLE__
+				strcat(lDialogString, "public.");
+#endif
 				strcat ( lDialogString , aFilterPatterns [i] + 2) ;
 				strcat ( lDialogString , "\"" ) ;
 			}
