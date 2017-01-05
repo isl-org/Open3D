@@ -62,6 +62,8 @@ int main(int argc, char **argv)
 			-1.0);
 	bool with_scaling = !ProgramOptionExists(argc, argv, "--without_scaling");
 	bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
+	std::string default_polygon_filename =
+			filesystem::GetFileNameWithoutExtension(argv[2]) + ".json";
 
 	auto source_ptr = CreatePointCloudFromFile(argv[1]);
 	auto target_ptr = CreatePointCloudFromFile(argv[2]);
@@ -71,7 +73,7 @@ int main(int argc, char **argv)
 	}
 	VisualizerWithEditing vis_source, vis_target;
 	VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
-			with_scaling, with_dialog);
+			with_scaling, with_dialog, default_polygon_filename);
 	
 	vis_source.CreateWindow("Source Point Cloud", 1280, 720, 10, 100);
 	vis_source.AddGeometry(source_ptr);

@@ -216,7 +216,7 @@ void SelectionPolygon::CropInPolygon(const std::vector<Eigen::Vector3d> &input,
 	Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
 	double half_width = (double)view.GetWindowWidth() * 0.5;
 	double half_height = (double)view.GetWindowHeight() * 0.5;
-	std::vector<int> nodes;
+	std::vector<double> nodes;
 	ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
 	for (size_t k = 0; k < input.size(); k++) {
 		AdvanceConsoleProgress();
@@ -232,9 +232,9 @@ void SelectionPolygon::CropInPolygon(const std::vector<Eigen::Vector3d> &input,
 			size_t j = (i + 1) % polygon_.size();
 			if ((polygon_[i](1) < y && polygon_[j](1) >= y) ||
 					(polygon_[j](1) < y && polygon_[i](1) >= y)) {
-				nodes.push_back((int)(polygon_[i](0) + (y - polygon_[i](1)) /
+				nodes.push_back(polygon_[i](0) + (y - polygon_[i](1)) /
 						(polygon_[j](1) - polygon_[i](1)) * (polygon_[j](0) -
-						polygon_[i](0)) + 0.5));
+						polygon_[i](0)));
 			}
 		}
 		std::sort(nodes.begin(), nodes.end());

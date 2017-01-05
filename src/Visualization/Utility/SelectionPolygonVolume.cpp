@@ -28,6 +28,7 @@
 
 #include <jsoncpp/include/json/json.h>
 #include <Core/Utility/Console.h>
+#include <Core/Geometry/PointCloud.h>
 
 namespace three{
 
@@ -76,6 +77,65 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value)
 		}
 	}
 	return true;
+}
+
+void SelectionPolygonVolume::CropGeometry(const Geometry &input,
+		Geometry &output)
+{
+	if (orthogonal_axis_ == "" || bounding_polygon_.empty()) return;
+	if (input.GetGeometryType() != output.GetGeometryType()) return;
+	if (input.GetGeometryType() == Geometry::GEOMETRY_POINTCLOUD) {
+		const auto &input_pointcloud = (const PointCloud &)input;
+		auto &output_pointcloud = (PointCloud &)output;
+		CropPointCloudInPolygon(input_pointcloud, output_pointcloud);
+	}
+}
+
+void SelectionPolygonVolume::CropPointCloudInPolygon(const PointCloud &input,
+		PointCloud &output)
+{
+	std::vector<size_t> indices;
+	CropInPolygon(input.points_, indices);
+	SelectDownSample(input, indices, output);
+}
+
+void SelectionPolygonVolume::CropInPolygon(
+		const std::vector<Eigen::Vector3d> &input,
+		std::vector<size_t> &output_index)
+{
+	output_index.clear();
+	int u, v;
+	if (orthogonal_axis_ == "x" || orthogonal_axis_ == "X") {
+		u = 1; v = 2;
+	} else if (orthogonal_axis_ == "y" || orthogonal_axis_ == "Y") {
+		u = 0; v = 2;
+	} else {
+		u = 0; v = 1;
+	}
+	std::vector<double> nodes;
+	ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+	for (size_t k = 0; k < input.size(); k++) {
+		AdvanceConsoleProgress();
+		const auto &point = input[k];
+		nodes.clear();
+		for (size_t i = 0; i < bounding_polygon_.size(); i++) {
+			size_t j = (i + 1) % bounding_polygon_.size();
+			if ((bounding_polygon_[i](v) < point(v) &&
+					bounding_polygon_[j](v) >= point(v)) ||
+					(bounding_polygon_[j](v) < point(v) &&
+					bounding_polygon_[i](v) >= point(v))) {
+				nodes.push_back(bounding_polygon_[i](u) +
+						(point(v) - bounding_polygon_[i](v)) /
+						(bounding_polygon_[j](v) - bounding_polygon_[i](v)) *
+						(bounding_polygon_[j](u) - bounding_polygon_[i](u)));
+			}
+		}
+		std::sort(nodes.begin(), nodes.end());
+		auto loc = std::lower_bound(nodes.begin(), nodes.end(), point(u));
+		if (std::distance(nodes.begin(), loc) % 2 == 1) {
+			output_index.push_back(k);
+		}
+	}
 }
 
 }	// namespace three

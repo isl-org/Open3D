@@ -412,7 +412,10 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 			if (index == -1) {
 				PrintInfo("No point has been picked.\n");
 			} else {
-				PrintInfo("Picked point #%d to add in queue.\n", index);
+				const auto &point = ((const PointCloud &)(*geometry_ptrs_[0])).
+						points_[index];
+				PrintInfo("Picked point #%d (%.2f, %.2f, %.2f) to add in queue.\n",
+						index, point(0), point(1), point(2));
 				pointcloud_picker_ptr_->picked_indices_.push_back(
 						(size_t)index);
 				is_redraw_required_ = true;
@@ -447,7 +450,7 @@ void VisualizerWithEditing::SaveCroppingResult(
 	if (ply_filename.empty()) {
 		std::string timestamp = GetCurrentTimeStamp();
 		ply_filename = "CroppedGeometry_" + timestamp + ".ply";
-		volume_filename = "CroppedVolume_" + timestamp + ".json";
+		volume_filename = "CroppedGeometry_" + timestamp + ".json";
 	}
 	WritePointCloud(ply_filename,
 			(const PointCloud &)(*geometry_ptrs_[geometry_index]));

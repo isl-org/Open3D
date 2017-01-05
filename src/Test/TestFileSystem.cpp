@@ -69,6 +69,8 @@ int main(int argc, char **args)
 					GetFileNameWithoutDirectory(filename) << std::endl;
 			std::cout << "extension name is : " << 
 					GetFileExtensionInLowerCase(filename) << std::endl;
+			std::cout << "file name without extension is : " <<
+					GetFileNameWithoutExtension(filename) << std::endl;
 			std::cout << std::endl;
 		}
 	} else if (function == "mkdir") {

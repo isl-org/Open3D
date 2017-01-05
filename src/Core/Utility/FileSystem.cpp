@@ -56,6 +56,16 @@ std::string GetFileExtensionInLowerCase(const std::string &filename)
 	return filename_ext;
 }
 
+std::string GetFileNameWithoutExtension(const std::string &filename)
+{
+	std::string ext = GetFileExtensionInLowerCase(filename);
+	if (ext.length() >= filename.length() - 1) {
+		return "";
+	} else {
+		return filename.substr(0, filename.length() - ext.length() - 1);
+	}
+}
+
 std::string GetFileNameWithoutDirectory(const std::string &filename)
 {
 	size_t slash_pos = filename.find_last_of("/\\");

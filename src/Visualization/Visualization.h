@@ -27,6 +27,8 @@
 #pragma once
 
 #include "Utility/BoundingBox.h"
+#include "Utility/SelectionPolygon.h"
+#include "Utility/SelectionPolygonVolume.h"
 #include "Utility/DrawGeometry.h"
 
 #include "Visualizer/Visualizer.h"

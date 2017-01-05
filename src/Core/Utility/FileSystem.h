@@ -35,6 +35,8 @@ namespace filesystem {
 
 std::string GetFileExtensionInLowerCase(const std::string &filename);
 
+std::string GetFileNameWithoutExtension(const std::string &filename);
+
 std::string GetFileNameWithoutDirectory(const std::string &filename);
 
 std::string GetFileParentDirectory(const std::string &filename);

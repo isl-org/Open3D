@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <thread>
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
@@ -38,10 +37,11 @@ class VisualizerForAlignment : public Visualizer
 public:
 	VisualizerForAlignment(VisualizerWithEditing &source,
 			VisualizerWithEditing &target, double voxel_size = -1.0,
-			bool with_scaling = true, bool use_dialog = true) :
+			bool with_scaling = true, bool use_dialog = true,
+			std::string polygon_filename = "") :
 			source_visualizer_(source), target_visualizer_(target),
 			voxel_size_(voxel_size), with_scaling_(with_scaling),
-			use_dialog_(use_dialog) {}
+			use_dialog_(use_dialog), polygon_filename_(polygon_filename) {}
 	~VisualizerForAlignment() override {}
 
 public:
@@ -54,6 +54,7 @@ protected:
 			int mods) override;
 	bool SaveSessionToFile(const std::string &filename);
 	bool LoadSessionFromFile(const std::string &filename);
+	bool AlignWithManualAnnotation();
 
 protected:
 	VisualizerWithEditing &source_visualizer_;
@@ -62,6 +63,7 @@ protected:
 	bool with_scaling_ = true;
 	bool use_dialog_ = true;
 	Eigen::Matrix4d transformation_ = Eigen::Matrix4d::Identity();
+	std::string polygon_filename_ = "";
 	std::shared_ptr<PointCloud> source_copy_ptr_;
 	std::shared_ptr<PointCloud> target_copy_ptr_;
 	AlignmentSession alignment_session_;
