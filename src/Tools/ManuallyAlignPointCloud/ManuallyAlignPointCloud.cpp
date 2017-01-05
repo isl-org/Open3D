@@ -25,9 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include <thread>
+
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
+
+#include "VisualizerForAlignment.h"
 
 void PrintHelp()
 {
@@ -96,8 +99,8 @@ int main(int argc, char **argv)
 				TransformationEstimationPointToPoint p2p(with_scaling);
 				TransformationEstimation::CorrespondenceSet corres;
 				for (size_t i = 0; i < source_idx.size(); i++) {
-					corres.push_back(
-							std::make_pair(source_idx[i], target_idx[i]));
+					corres.push_back(std::make_pair((int)source_idx[i],
+							(int)target_idx[i]));
 				}
 				PrintInfo("Error is %.4f before alignment.\n",
 						p2p.ComputeError(*source_ptr, *target_ptr, corres));

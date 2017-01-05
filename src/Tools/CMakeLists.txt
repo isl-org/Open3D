@@ -1,3 +1,5 @@
+add_subdirectory(ManuallyAlignPointCloud)
+
 add_executable(EncodeShader EncodeShader.cpp)
 set_target_properties(EncodeShader PROPERTIES FOLDER "Tools")
 
@@ -8,10 +10,6 @@ set_target_properties(MergeMesh PROPERTIES FOLDER "Tools")
 add_executable(ConvertPointCloud ConvertPointCloud.cpp)
 target_link_libraries(ConvertPointCloud IO Core)
 set_target_properties(ConvertPointCloud PROPERTIES FOLDER "Tools")
-
-add_executable(ManuallyAlignPointCloud ManuallyAlignPointCloud.cpp)
-target_link_libraries(ManuallyAlignPointCloud Visualization IO Core)
-set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
 
 add_executable(ManuallyCropPointCloud ManuallyCropPointCloud.cpp)
 target_link_libraries(ManuallyCropPointCloud Visualization IO Core)

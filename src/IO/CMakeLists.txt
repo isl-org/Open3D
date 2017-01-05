@@ -21,7 +21,7 @@ add_library(IO ${Open3D_LIB_TYPE}
 	${IO_CLASSIO_HEADER_FILES} ${IO_CLASSIO_SOURCE_FILES}
 	${IO_FILEFORMAT_HEADER_FILES} ${IO_FILEFORMAT_SOURCE_FILES}
 )
-target_link_libraries(IO Core png zlib jpeg jsoncpp)
+target_link_libraries(IO Core png zlib jpeg jsoncpp tinyfiledialogs)
 
 install(TARGETS IO
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

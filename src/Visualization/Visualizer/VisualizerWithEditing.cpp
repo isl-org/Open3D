@@ -181,7 +181,7 @@ int VisualizerWithEditing::PickPoint(double x, double y,
 	return index;
 }
 
-const std::vector<size_t> &VisualizerWithEditing::GetPickedPoints()
+std::vector<size_t> &VisualizerWithEditing::GetPickedPoints()
 {
 	return pointcloud_picker_ptr_->picked_indices_;
 }

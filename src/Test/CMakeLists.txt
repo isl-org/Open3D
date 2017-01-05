@@ -64,6 +64,12 @@ set_target_properties(TestPCDFileFormat PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
+add_executable(TestFileDialog TestFileDialog.cpp)
+target_link_libraries(TestFileDialog Core IO tinyfiledialogs)
+set_target_properties(TestFileDialog PROPERTIES
+		FOLDER "Test"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+
 if(Open3D_BUILD_LIBREALSENSE)
     add_executable(TestRealSense TestRealSense.cpp)
     target_link_libraries(TestRealSense Visualization realsense)
@@ -71,14 +77,6 @@ if(Open3D_BUILD_LIBREALSENSE)
 			FOLDER "Test"
 			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 endif(Open3D_BUILD_LIBREALSENSE)
-
-if (Open3D_BUILD_FILEDIALOG)
-	add_executable(TestFileDialog TestFileDialog.cpp)
-	target_link_libraries(TestFileDialog Core IO tinyfiledialogs)
-	set_target_properties(TestFileDialog PROPERTIES
-			FOLDER "Test"
-			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
-endif(Open3D_BUILD_FILEDIALOG)
 
 #file(GLOB TEST_DATA_FILES "TestData/*.*")
 #file(COPY ${TEST_DATA_FILES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestData)
