@@ -61,11 +61,12 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 {
 	if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL)) {
 		const char *filename;
+		const char *pattern[1] = {"*.json"};
 		switch (key) {
 		case GLFW_KEY_S: {
 			if (use_dialog_) {
 				filename = tinyfd_saveFileDialog("Alignment session",
-		const char *pattern[1] = {"*.json"};
+						"./alignment.json", 1, pattern, "JSON file (*.json)");
 			} else {
 				filename = "alignment.json";
 			}
