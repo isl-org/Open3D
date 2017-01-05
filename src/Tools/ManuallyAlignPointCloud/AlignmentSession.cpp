@@ -68,12 +68,12 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value)
 	}
 	const auto &source_array = value["source_indices"];
 	source_indices_.resize(source_array.size());
-	for (auto i = 0; i < source_array.size(); i++) {
+	for (int i = 0; i < (int)source_array.size(); i++) {
 		source_indices_[i] = (size_t)source_array[i].asInt();
 	}
 	const auto &target_array = value["target_indices"];
 	target_indices_.resize(target_array.size());
-	for (auto i = 0; i < target_array.size(); i++) {
+	for (int i = 0; i < (int)target_array.size(); i++) {
 		target_indices_[i] = (size_t)target_array[i].asInt();
 	}
 	if (EigenMatrix4dFromJsonArray(transformation_, value["transformation"]) ==

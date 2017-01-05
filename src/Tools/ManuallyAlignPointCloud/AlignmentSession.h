@@ -44,7 +44,7 @@ public:
 	std::vector<size_t> target_indices_;	// Manually annotated point indices
 	Eigen::Matrix4d transformation_;	// Current alignment result
 	double voxel_size_ = -1.0;
-	double with_scaling_ = true;
+	bool with_scaling_ = true;
 };
 
 }		// namespace three

@@ -65,7 +65,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 		case GLFW_KEY_S: {
 			if (use_dialog_) {
 				filename = tinyfd_saveFileDialog("Alignment session",
-						"alignment.json", 0, NULL, NULL);
+		const char *pattern[1] = {"*.json"};
 			} else {
 				filename = "alignment.json";
 			}
@@ -77,7 +77,8 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 		case GLFW_KEY_O: {
 			if (use_dialog_) {
 				filename = tinyfd_openFileDialog("Alignment session",
-						"alignment.json", 0, NULL, NULL, 0);
+						"./alignment.json", 1, pattern, "JSON file (*.json)",
+						0);
 			} else {
 				filename = "alignment.json";
 			}
