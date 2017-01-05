@@ -109,6 +109,9 @@ public:
 	bool UpdateGeometry();
 	bool HasGeometry() const;
 
+	/// Function to set the redraw flag as dirty
+	void UpdateRender();
+
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();
 	virtual void BuildUtilities();
@@ -138,9 +141,6 @@ protected:
 	/// The function first sets view point, then draw geometry (pointclouds and
 	/// meshes individually).
 	virtual void Render();
-
-	/// Function to set the redraw flag as dirty
-	void UpdateRender();
 	
 	void CopyViewStatusToClipboard();
 	

@@ -83,7 +83,7 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
 			colors.data(), GL_STATIC_DRAW);
-	bound_ = true;	
+	bound_ = true;
 	return true;
 }
 

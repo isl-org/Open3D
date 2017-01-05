@@ -39,13 +39,127 @@ void VisualizerForAlignment::PrintVisualizerHelp()
 	PrintInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
 	PrintInfo("    Ctrl + R     : Run ICP refinement.\n");
 	PrintInfo("    Ctrl + V     : Run voxel downsample for both source and target.");
+	PrintInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.");
 	PrintInfo("    Ctrl + E     : Evaluate error and save to files.");
+}
+
+bool VisualizerForAlignment::AddSourceAndTarget(
+		std::shared_ptr<PointCloud> source, std::shared_ptr<PointCloud> target)
+{
+	GetRenderOption().point_size_ = 1.0;
+	alignment_session_.source_ptr_ = source;
+	alignment_session_.target_ptr_ = target;
+	source_copy_ptr_ = std::make_shared<PointCloud>();
+	target_copy_ptr_ = std::make_shared<PointCloud>();
+	*source_copy_ptr_ = *source;
+	*target_copy_ptr_ = *target;
+	return AddGeometry(source_copy_ptr_) && AddGeometry(target_copy_ptr_);
 }
 
 void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 		int scancode, int action, int mods)
 {
-	
+	if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL)) {
+		const char *filename;
+		switch (key) {
+		case GLFW_KEY_S: {
+			if (use_dialog_) {
+				filename = tinyfd_saveFileDialog("Alignment session",
+						"alignment.json", 0, NULL, NULL);
+			} else {
+				filename = "alignment.json";
+			}
+			if (filename != NULL) {
+				SaveSessionToFile(filename);
+			}
+			return;
+		}
+		case GLFW_KEY_O: {
+			if (use_dialog_) {
+				filename = tinyfd_openFileDialog("Alignment session",
+						"alignment.json", 0, NULL, NULL, 0);
+			} else {
+				filename = "alignment.json";
+			}
+			if (filename != NULL) {
+				LoadSessionFromFile(filename);
+			}
+			return;
+		}
+		case GLFW_KEY_A: {
+			const auto &source_idx = source_visualizer_.GetPickedPoints();
+			const auto &target_idx = target_visualizer_.GetPickedPoints();
+			if (source_idx.empty() || target_idx.empty() ||
+					source_idx.size() != target_idx.size()) {
+				PrintWarning("# of picked points mismatch: %d in source, %d in target.\n",
+						(int)source_idx.size(), (int)target_idx.size());
+				return;
+			}
+			TransformationEstimationPointToPoint p2p(with_scaling_);
+			TransformationEstimation::CorrespondenceSet corres;
+			for (size_t i = 0; i < source_idx.size(); i++) {
+				corres.push_back(std::make_pair((int)source_idx[i],
+						(int)target_idx[i]));
+			}
+			PrintInfo("Error is %.4f before alignment.\n",
+					p2p.ComputeError(*alignment_session_.source_ptr_,
+					*alignment_session_.target_ptr_, corres));
+			transformation_ = p2p.ComputeTransformation(
+					*alignment_session_.source_ptr_,
+					*alignment_session_.target_ptr_, corres);
+			PrintInfo("Transformation is:\n");
+			PrintInfo("%.6f %.6f %.6f %.6f\n",
+					transformation_(0, 0), transformation_(0, 1),
+					transformation_(0, 2), transformation_(0, 3));
+			PrintInfo("%.6f %.6f %.6f %.6f\n",
+					transformation_(1, 0), transformation_(1, 1),
+					transformation_(1, 2), transformation_(1, 3));
+			PrintInfo("%.6f %.6f %.6f %.6f\n",
+					transformation_(2, 0), transformation_(2, 1),
+					transformation_(2, 2), transformation_(2, 3));
+			PrintInfo("%.6f %.6f %.6f %.6f\n",
+					transformation_(3, 0), transformation_(3, 1),
+					transformation_(3, 2), transformation_(3, 3));
+			*source_copy_ptr_ = *alignment_session_.source_ptr_;
+			source_copy_ptr_->Transform(transformation_);
+			PrintInfo("Error is %.4f before alignment.\n",
+					p2p.ComputeError(*source_copy_ptr_,
+					*alignment_session_.target_ptr_, corres));
+			ResetViewPoint(true);
+			UpdateGeometry();
+			return;
+		}
+		}
+	}
+	Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+}
+
+bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename)
+{
+	alignment_session_.source_indices_ = source_visualizer_.GetPickedPoints();
+	alignment_session_.target_indices_ = target_visualizer_.GetPickedPoints();
+	alignment_session_.voxel_size_ = voxel_size_;
+	alignment_session_.with_scaling_ = with_scaling_;
+	alignment_session_.transformation_ = transformation_;
+	return WriteIJsonConvertible(filename, alignment_session_);
+}
+
+bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename)
+{
+	if (ReadIJsonConvertible(filename, alignment_session_) == false) {
+		return false;
+	}
+	source_visualizer_.GetPickedPoints() = alignment_session_.source_indices_;
+	target_visualizer_.GetPickedPoints() = alignment_session_.target_indices_;
+	voxel_size_ = alignment_session_.voxel_size_;
+	with_scaling_ = alignment_session_.with_scaling_;
+	transformation_ = alignment_session_.transformation_;
+	*source_copy_ptr_ = *alignment_session_.source_ptr_;
+	source_copy_ptr_->Transform(transformation_);
+	source_visualizer_.UpdateRender();
+	target_visualizer_.UpdateRender();
+	ResetViewPoint(true);
+	return UpdateGeometry();
 }
 
 }	// namespace three

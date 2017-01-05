@@ -234,6 +234,8 @@ void Visualizer::UpdateWindowTitle()
 
 void Visualizer::BuildUtilities()
 {
+	glfwMakeContextCurrent(window_);
+	
 	// 0. Build coordinate frame
 	const auto boundingbox = GetViewControl().GetBoundingBox();
 	auto mesh_frame = CreateMeshCoordinateFrame(
@@ -296,7 +298,8 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 		return false;
 	}
 
-	if (geometry_ptr->GetGeometryType() == 
+	glfwMakeContextCurrent(window_);
+	if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_UNSPECIFIED) {
 		return false;
 	} else if (geometry_ptr->GetGeometryType() == 
@@ -341,6 +344,7 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 
 bool Visualizer::UpdateGeometry()
 {
+	glfwMakeContextCurrent(window_);
 	bool success = true;
 	for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
 		success = (success && renderer_ptr->UpdateGeometry());

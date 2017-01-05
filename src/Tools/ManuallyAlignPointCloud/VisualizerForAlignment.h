@@ -29,32 +29,42 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
+#include "AlignmentSession.h"
+
 namespace three {
 
 class VisualizerForAlignment : public Visualizer
 {
 public:
-	VisualizerForAlignment(const VisualizerWithEditing &source,
-			const VisualizerWithEditing &target, double voxel_size = -1.0,
+	VisualizerForAlignment(VisualizerWithEditing &source,
+			VisualizerWithEditing &target, double voxel_size = -1.0,
 			bool with_scaling = true, bool use_dialog = true) :
-			source_visualizer_(source), target_visualizer_(target) :
+			source_visualizer_(source), target_visualizer_(target),
 			voxel_size_(voxel_size), with_scaling_(with_scaling),
 			use_dialog_(use_dialog) {}
 	~VisualizerForAlignment() override {}
 
 public:
 	void PrintVisualizerHelp() override;
+	bool AddSourceAndTarget(std::shared_ptr<PointCloud> source,
+			std::shared_ptr<PointCloud> target);
 
 protected:
 	void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
 			int mods) override;
+	bool SaveSessionToFile(const std::string &filename);
+	bool LoadSessionFromFile(const std::string &filename);
 
-private:
-	const VisualizerWithEditing &source_visualizer_;
-	const VisualizerWithEditing &target_visualizer_;
+protected:
+	VisualizerWithEditing &source_visualizer_;
+	VisualizerWithEditing &target_visualizer_;
 	double voxel_size_ = -1.0;
 	bool with_scaling_ = true;
 	bool use_dialog_ = true;
+	Eigen::Matrix4d transformation_ = Eigen::Matrix4d::Identity();
+	std::shared_ptr<PointCloud> source_copy_ptr_;
+	std::shared_ptr<PointCloud> target_copy_ptr_;
+	AlignmentSession alignment_session_;
 };
 
 }		// namespace three

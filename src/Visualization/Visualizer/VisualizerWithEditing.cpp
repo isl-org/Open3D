@@ -257,6 +257,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 			for (size_t i = 0; i < num_of_geometries; i++) {
 				if (geometry_ptrs_[i]->GetGeometryType() ==
 						Geometry::GEOMETRY_POINTCLOUD) {
+					glfwMakeContextCurrent(window_);
 					auto cropped = std::make_shared<PointCloud>();
 					selection_polygon_ptr_->CropGeometry(*geometry_ptrs_[i],
 							view_control, *cropped);
