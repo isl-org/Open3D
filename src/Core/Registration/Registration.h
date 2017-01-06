@@ -27,52 +27,30 @@
 #pragma once
 
 #include <vector>
-#include <memory>
-#include <string>
+#include <tuple>
 #include <Eigen/Core>
+
+#include <Core/Registration/ConvergenceCriteria.h>
+#include <Core/Registration/TransformationEstimation.h>
 
 namespace three {
 
 class PointCloud;
 
-typedef std::pair<int, int> Correspondence;
-typedef std::vector<Correspondence> CorrespondenceSet;
-
-/// Base class that estimates a transformation between two point clouds
-/// The virtual function ComputeTransformation() must be implemented in
-/// subclasses.
-class TransformationEstimation
+struct RegistrationResult
 {
 public:
-	TransformationEstimation() {}
-	virtual ~TransformationEstimation() {}
-
-public:
-	virtual double ComputeRMSE(const PointCloud &source,
-			const PointCloud &target,
-			const CorrespondenceSet &corres) const = 0;
-	virtual Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
-			const PointCloud &target,
-			const CorrespondenceSet &corres) const = 0;
+	Eigen::Matrix4d transformation;
+	double rmse;
+	double fitness;
 };
 
-/// Estimate a transformation for point to point distance
-class TransformationEstimationPointToPoint : public TransformationEstimation
-{
-public:
-	TransformationEstimationPointToPoint(bool with_scaling = false) :
-		with_scaling_(with_scaling) {}
-	~TransformationEstimationPointToPoint() override {}
-
-public:
-	double ComputeRMSE(const PointCloud &source, const PointCloud &target,
-			const CorrespondenceSet &corres) const final;
-	Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
-			const PointCloud &target,
-			const CorrespondenceSet &corres) const final;
-
-private:
-	bool with_scaling_ = false;
-};
+/// Functions for registration
+RegistrationResult RegistrationICP(const PointCloud &source,
+		const PointCloud &target, double max_correspondence_distance,
+		const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
+		const TransformationEstimation &estimation =
+		TransformationEstimationPointToPoint(false),
+		const ConvergenceCriteria &criteria = ConvergenceCriteria());
 
 }	// namespace three

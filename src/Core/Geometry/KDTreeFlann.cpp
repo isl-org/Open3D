@@ -81,7 +81,7 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 
 template<typename T>
 int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param, 
-			std::vector<int> &indices, std::vector<double> &distance2)
+			std::vector<int> &indices, std::vector<double> &distance2) const
 {
 	switch (param.GetSearchType()) {
 	case KDTreeSearchParam::SEARCH_KNN:
@@ -99,7 +99,7 @@ int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param,
 
 template<typename T>
 int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
-		std::vector<double> &distance2)
+		std::vector<double> &distance2) const
 {
 	// This is optimized code for heavily repeated search
 	// Other flann::Index::knnSearch() implementations lose performance due to
@@ -121,7 +121,7 @@ int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
 template<typename T>
 int KDTreeFlann::SearchRadius(const T &query, double radius,
 		std::vector<int> &indices, std::vector<double> &distance2,
-		int max_nn/* = -1*/)
+		int max_nn/* = -1*/) const
 {
 	// This is optimized code for heavily repeated search
 	// Other flann::Index::radiusSearch() implementations lose performance due
@@ -143,13 +143,13 @@ int KDTreeFlann::SearchRadius(const T &query, double radius,
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(const Eigen::Vector3d &query,
 		const three::KDTreeSearchParam &param, std::vector<int> &indices,
-		std::vector<double> &distance2);
+		std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::Vector3d>(
 		const Eigen::Vector3d &query, int knn, std::vector<int> &indices,
-		std::vector<double> &distance2);
+		std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
 		const Eigen::Vector3d &query, double radius, std::vector<int> &indices,
-		std::vector<double> &distance2, int max_nn);
+		std::vector<double> &distance2, int max_nn) const;
 
 }	// namespace three
 

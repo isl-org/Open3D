@@ -37,11 +37,14 @@ class VisualizerForAlignment : public Visualizer
 public:
 	VisualizerForAlignment(VisualizerWithEditing &source,
 			VisualizerWithEditing &target, double voxel_size = -1.0,
+			double max_correspondence_distance = -1.0,
 			bool with_scaling = true, bool use_dialog = true,
 			std::string polygon_filename = "") :
 			source_visualizer_(source), target_visualizer_(target),
-			voxel_size_(voxel_size), with_scaling_(with_scaling),
-			use_dialog_(use_dialog), polygon_filename_(polygon_filename) {}
+			voxel_size_(voxel_size),
+			max_correspondence_distance_(max_correspondence_distance),
+			with_scaling_(with_scaling), use_dialog_(use_dialog),
+			polygon_filename_(polygon_filename) {}
 	~VisualizerForAlignment() override {}
 
 public:
@@ -55,11 +58,16 @@ protected:
 	bool SaveSessionToFile(const std::string &filename);
 	bool LoadSessionFromFile(const std::string &filename);
 	bool AlignWithManualAnnotation();
+	void PrintTransformation();
+	void EvaluateAlignmentAndSave(const std::string &filename);
+	void GetDistance(const PointCloud &from, const PointCloud &to,
+			std::vector<double> &distances);
 
 protected:
 	VisualizerWithEditing &source_visualizer_;
 	VisualizerWithEditing &target_visualizer_;
 	double voxel_size_ = -1.0;
+	double max_correspondence_distance_ = -1.0;
 	bool with_scaling_ = true;
 	bool use_dialog_ = true;
 	Eigen::Matrix4d transformation_ = Eigen::Matrix4d::Identity();

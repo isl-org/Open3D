@@ -26,53 +26,18 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
-#include <string>
-#include <Eigen/Core>
-
 namespace three {
 
-class PointCloud;
-
-typedef std::pair<int, int> Correspondence;
-typedef std::vector<Correspondence> CorrespondenceSet;
-
-/// Base class that estimates a transformation between two point clouds
-/// The virtual function ComputeTransformation() must be implemented in
-/// subclasses.
-class TransformationEstimation
+class ConvergenceCriteria
 {
 public:
-	TransformationEstimation() {}
-	virtual ~TransformationEstimation() {}
-
+	ConvergenceCriteria(double relative_rmse = 1e-6, int max_iteration = 30) :
+			relative_rmse_(relative_rmse), max_iteration_(max_iteration) {}
+	~ConvergenceCriteria() {}
+	
 public:
-	virtual double ComputeRMSE(const PointCloud &source,
-			const PointCloud &target,
-			const CorrespondenceSet &corres) const = 0;
-	virtual Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
-			const PointCloud &target,
-			const CorrespondenceSet &corres) const = 0;
-};
-
-/// Estimate a transformation for point to point distance
-class TransformationEstimationPointToPoint : public TransformationEstimation
-{
-public:
-	TransformationEstimationPointToPoint(bool with_scaling = false) :
-		with_scaling_(with_scaling) {}
-	~TransformationEstimationPointToPoint() override {}
-
-public:
-	double ComputeRMSE(const PointCloud &source, const PointCloud &target,
-			const CorrespondenceSet &corres) const final;
-	Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
-			const PointCloud &target,
-			const CorrespondenceSet &corres) const final;
-
-private:
-	bool with_scaling_ = false;
+	double relative_rmse_;
+	int max_iteration_;
 };
 
 }	// namespace three

@@ -42,6 +42,7 @@ void PrintHelp()
 	printf("    --help, -h                : Print help information.\n");
 	printf("    --verbose n               : Set verbose level (0-4).\n");
 	printf("    --voxel_size d            : Set downsample voxel size.\n");
+	printf("    --max_corres_distance d   : Set max correspondence distance.\n");
 	printf("    --without_scaling         : Disable scaling in transformations.\n");
 	printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
 }
@@ -60,6 +61,8 @@ int main(int argc, char **argv)
 	SetVerbosityLevel((VerbosityLevel)verbose);
 	double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
 			-1.0);
+	double max_corres_distance = GetProgramOptionAsDouble(argc, argv,
+			"--max_corres_distance", -1.0);
 	bool with_scaling = !ProgramOptionExists(argc, argv, "--without_scaling");
 	bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
 	std::string default_polygon_filename =
@@ -73,7 +76,8 @@ int main(int argc, char **argv)
 	}
 	VisualizerWithEditing vis_source, vis_target;
 	VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
-			with_scaling, with_dialog, default_polygon_filename);
+			max_corres_distance, with_scaling, with_dialog,
+			default_polygon_filename);
 	
 	vis_source.CreateWindow("Source Point Cloud", 1280, 720, 10, 100);
 	vis_source.AddGeometry(source_ptr);

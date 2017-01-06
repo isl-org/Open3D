@@ -50,6 +50,7 @@ bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const
 		return false;
 	}
 	value["voxel_size"] = voxel_size_;
+	value["max_correspondence_distance"] = max_correspondence_distance_;
 	value["with_scaling"] = with_scaling_;
 	return true;
 }
@@ -81,6 +82,8 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value)
 		return false;
 	}
 	voxel_size_ = value["voxel_size"].asDouble();
+	max_correspondence_distance_ =
+			value["max_correspondence_distance"].asDouble();
 	with_scaling_ = value["with_scaling"].asBool();
 	return true;
 }

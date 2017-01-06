@@ -31,21 +31,22 @@
 
 namespace three{
 
-double TransformationEstimationPointToPoint::ComputeError(
+double TransformationEstimationPointToPoint::ComputeRMSE(
 		const PointCloud &source, const PointCloud &target,
-		const CorrespondenceSet &corres)
+		const CorrespondenceSet &corres) const
 {
+	if (corres.empty()) return 0.0;
 	double err = 0.0;
 	for (const auto &c : corres) {
 		err += (source.points_[c.first] - target.points_[c.second]).
 				squaredNorm();
 	}
-	return err;
+	return std::sqrt(err / (double)corres.size());
 }
 
 Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
 		const PointCloud &source, const PointCloud &target,
-		const CorrespondenceSet &corres)
+		const CorrespondenceSet &corres) const
 {
 	Eigen::MatrixXd source_mat(3, corres.size());
 	Eigen::MatrixXd target_mat(3, corres.size());

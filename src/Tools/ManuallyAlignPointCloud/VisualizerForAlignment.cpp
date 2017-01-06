@@ -103,15 +103,58 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			}
 			return;
 		}
+		case GLFW_KEY_I: {
+			if (use_dialog_) {
+				char buff[DEFAULT_IO_BUFFER_SIZE];
+				sprintf(buff, "%.4f", max_correspondence_distance_);
+				const char *str = tinyfd_inputBox("Set voxel size",
+						"Set max correspondence distance for ICP (ignored if it is non-positive)",
+						buff);
+				if (str == NULL) {
+					PrintDebug("Dialog closed.\n");
+					return;
+				} else {
+					char *end;
+					errno = 0;
+					double l = std::strtod(str, &end);
+					if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
+						PrintDebug("Illegal input, use default max correspondence distance.\n");
+					} else {
+						max_correspondence_distance_ = l;
+					}
+				}
+			}
+			if (max_correspondence_distance_ > 0.0) {
+				PrintInfo("ICP with max correspondence distance %.4f.\n",
+						max_correspondence_distance_);
+				auto result = RegistrationICP(*source_copy_ptr_,
+						*target_copy_ptr_, max_correspondence_distance_,
+						Eigen::Matrix4d::Identity(),
+						TransformationEstimationPointToPoint(true),
+						ConvergenceCriteria(1e-6, 30));
+				PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
+						result.fitness, result.rmse);
+				if (result.fitness > 0.0) {
+					transformation_ = result.transformation * transformation_;
+					PrintTransformation();
+					source_copy_ptr_->Transform(result.transformation);
+					UpdateGeometry();
+				}
+			} else {
+				PrintInfo("No ICP performed due to illegal max correspondence distance.\n");
+			}
+			return;
+		}
 		case GLFW_KEY_D: {
 			if (use_dialog_) {
 				char buff[DEFAULT_IO_BUFFER_SIZE];
 				sprintf(buff, "%.4f", voxel_size_);
 				const char *str = tinyfd_inputBox("Set voxel size",
-						"Set voxel size (it is ignored if it is non-positive)",
+						"Set voxel size (ignored if it is non-positive)",
 						buff);
 				if (str == NULL) {
-					PrintDebug("Illegal input, use default voxel size.\n");
+					PrintDebug("Dialog closed.\n");
+					return;
 				} else {
 					char *end;
 					errno = 0;
@@ -126,9 +169,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			if (voxel_size_ > 0.0) {
 				PrintInfo("Voxel downsample with voxel size %.4f.\n",
 						voxel_size_);
-				PointCloud target_backup = *target_copy_ptr_;
 				PointCloud source_backup = *source_copy_ptr_;
-				VoxelDownSample(target_backup, voxel_size_, *target_copy_ptr_);
 				VoxelDownSample(source_backup, voxel_size_, *source_copy_ptr_);
 				UpdateGeometry();
 			} else {
@@ -156,6 +197,20 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			}
 			return;
 		}
+		case GLFW_KEY_E: {
+			if (use_dialog_) {
+				const char *ply_pattern[1] = {"*.ply"};
+				filename = tinyfd_saveFileDialog("Processed source file",
+						"./source.ply", 1, ply_pattern,
+						"Polygon File Format (*.ply)");
+			} else {
+				filename = "./source.ply";
+			}
+			if (filename != NULL) {
+				EvaluateAlignmentAndSave(filename);
+			}
+			return;
+		}
 		}
 	}
 	Visualizer::KeyPressCallback(window, key, scancode, action, mods);
@@ -166,6 +221,8 @@ bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename)
 	alignment_session_.source_indices_ = source_visualizer_.GetPickedPoints();
 	alignment_session_.target_indices_ = target_visualizer_.GetPickedPoints();
 	alignment_session_.voxel_size_ = voxel_size_;
+	alignment_session_.max_correspondence_distance_ =
+			max_correspondence_distance_;
 	alignment_session_.with_scaling_ = with_scaling_;
 	alignment_session_.transformation_ = transformation_;
 	return WriteIJsonConvertible(filename, alignment_session_);
@@ -179,6 +236,8 @@ bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename)
 	source_visualizer_.GetPickedPoints() = alignment_session_.source_indices_;
 	target_visualizer_.GetPickedPoints() = alignment_session_.target_indices_;
 	voxel_size_ = alignment_session_.voxel_size_;
+	max_correspondence_distance_ =
+			alignment_session_.max_correspondence_distance_;
 	with_scaling_ = alignment_session_.with_scaling_;
 	transformation_ = alignment_session_.transformation_;
 	*source_copy_ptr_ = *alignment_session_.source_ptr_;
@@ -200,36 +259,81 @@ bool VisualizerForAlignment::AlignWithManualAnnotation()
 		return false;
 	}
 	TransformationEstimationPointToPoint p2p(with_scaling_);
-	TransformationEstimation::CorrespondenceSet corres;
+	CorrespondenceSet corres;
 	for (size_t i = 0; i < source_idx.size(); i++) {
 		corres.push_back(std::make_pair((int)source_idx[i],
 				(int)target_idx[i]));
 	}
 	PrintInfo("Error is %.4f before alignment.\n",
-			p2p.ComputeError(*alignment_session_.source_ptr_,
+			p2p.ComputeRMSE(*alignment_session_.source_ptr_,
 			*alignment_session_.target_ptr_, corres));
 	transformation_ = p2p.ComputeTransformation(
 			*alignment_session_.source_ptr_,
 			*alignment_session_.target_ptr_, corres);
-	PrintInfo("Transformation is:\n");
-	PrintInfo("%.6f %.6f %.6f %.6f\n",
-			transformation_(0, 0), transformation_(0, 1),
-			transformation_(0, 2), transformation_(0, 3));
-	PrintInfo("%.6f %.6f %.6f %.6f\n",
-			transformation_(1, 0), transformation_(1, 1),
-			transformation_(1, 2), transformation_(1, 3));
-	PrintInfo("%.6f %.6f %.6f %.6f\n",
-			transformation_(2, 0), transformation_(2, 1),
-			transformation_(2, 2), transformation_(2, 3));
-	PrintInfo("%.6f %.6f %.6f %.6f\n",
-			transformation_(3, 0), transformation_(3, 1),
-			transformation_(3, 2), transformation_(3, 3));
+	PrintTransformation();
 	*source_copy_ptr_ = *alignment_session_.source_ptr_;
 	source_copy_ptr_->Transform(transformation_);
 	PrintInfo("Error is %.4f before alignment.\n",
-			p2p.ComputeError(*source_copy_ptr_,
+			p2p.ComputeRMSE(*source_copy_ptr_,
 			*alignment_session_.target_ptr_, corres));
 	return true;
+}
+
+void VisualizerForAlignment::PrintTransformation()
+{
+	PrintInfo("Current transformation is:\n");
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation_(0, 0), transformation_(0, 1),
+			transformation_(0, 2), transformation_(0, 3));
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation_(1, 0), transformation_(1, 1),
+			transformation_(1, 2), transformation_(1, 3));
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation_(2, 0), transformation_(2, 1),
+			transformation_(2, 2), transformation_(2, 3));
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation_(3, 0), transformation_(3, 1),
+			transformation_(3, 2), transformation_(3, 3));
+}
+
+void VisualizerForAlignment::EvaluateAlignmentAndSave(
+		const std::string &filename)
+{
+	// Evaluate source_copy_ptr_ and target_copy_ptr_
+	std::string source_filename = filename;
+	std::string target_filename = filesystem::GetFileNameWithoutExtension(
+			filename) + "_target.ply";
+	std::string source_binname = filesystem::GetFileNameWithoutExtension(
+			filename) + ".bin";
+	std::string target_binname = filesystem::GetFileNameWithoutExtension(
+			filename) + "_target.bin";
+	std::vector<double> distances;
+	FILE * f;
+
+	WritePointCloud(source_filename, *source_copy_ptr_);
+	GetDistance(*source_copy_ptr_, *target_copy_ptr_, distances);
+	f = fopen(source_binname.c_str(), "wb");
+	fwrite(distances.data(), sizeof(double), distances.size(), f);
+	fclose(f);
+	WritePointCloud(target_filename, *target_copy_ptr_);
+	GetDistance(*target_copy_ptr_, *source_copy_ptr_, distances);
+	f = fopen(target_binname.c_str(), "wb");
+	fwrite(distances.data(), sizeof(double), distances.size(), f);
+	fclose(f);
+}
+
+void VisualizerForAlignment::GetDistance(const PointCloud &from,
+		const PointCloud &to, std::vector<double> &distances)
+{
+	distances.resize(from.points_.size());
+	KDTreeFlann kdtree;
+	kdtree.SetGeometry(to);
+	std::vector<int> indices(1);
+	std::vector<double> dists(1);
+	for (size_t i = 0; i < from.points_.size(); i++) {
+		kdtree.SearchKNN(from.points_[i], 1, indices, dists);
+		distances[i] = std::sqrt(dists[0]);
+	}
 }
 
 }	// namespace three

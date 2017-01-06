@@ -332,7 +332,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 				char buff[DEFAULT_IO_BUFFER_SIZE];
 				sprintf(buff, "%.4f", voxel_size_);
 				const char *str = tinyfd_inputBox("Set voxel size",
-						"Set voxel size (it is ignored if it is non-positive)",
+						"Set voxel size (ignored if it is non-positive)",
 						buff);
 				if (str == NULL) {
 					PrintDebug("Illegal input, use default voxel size.\n");
@@ -527,8 +527,13 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 			if (action == GLFW_PRESS && selection_mode_ == SELECTION_POLYGON &&
 					(mods & GLFW_MOD_CONTROL)) {
 				if (selection_polygon_ptr_->polygon_.size() > 2) {
+					selection_polygon_ptr_->polygon_[selection_polygon_ptr_->
+							polygon_.size() - 2] = selection_polygon_ptr_->
+							polygon_[selection_polygon_ptr_->
+							polygon_.size() - 1];
 					selection_polygon_ptr_->polygon_.pop_back();
 					selection_polygon_renderer_ptr_->UpdateGeometry();
+					is_redraw_required_ = true;
 				}
 			}
 		}
