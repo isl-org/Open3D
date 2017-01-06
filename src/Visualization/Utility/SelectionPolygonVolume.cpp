@@ -47,6 +47,8 @@ bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const
 	value["version_minor"] = 0;
 	value["bounding_polygon"] = polygon_array;
 	value["orthogonal_axis"] = orthogonal_axis_;
+	value["axis_min"] = axis_min_;
+	value["axis_max"] = axis_max_;
 	return true;
 }
 
@@ -63,6 +65,8 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value)
 		return false;
 	}
 	orthogonal_axis_ = value.get("orthogonal_axis", "").asString();
+	axis_min_ = value.get("axis_min", 0.0).asDouble();
+	axis_max_ = value.get("axis_max", 0.0).asDouble();
 	const Json::Value &polygon_array = value["bounding_polygon"];
 	if (polygon_array.size() == 0) {
 		PrintWarning("SelectionPolygonVolume read JSON failed: empty trajectory.\n");
@@ -104,19 +108,20 @@ void SelectionPolygonVolume::CropInPolygon(
 		std::vector<size_t> &output_index)
 {
 	output_index.clear();
-	int u, v;
+	int u, v, w;
 	if (orthogonal_axis_ == "x" || orthogonal_axis_ == "X") {
-		u = 1; v = 2;
+		u = 1; v = 2; w = 0;
 	} else if (orthogonal_axis_ == "y" || orthogonal_axis_ == "Y") {
-		u = 0; v = 2;
+		u = 0; v = 2; w = 1;
 	} else {
-		u = 0; v = 1;
+		u = 0; v = 1; w = 2;
 	}
 	std::vector<double> nodes;
 	ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
 	for (size_t k = 0; k < input.size(); k++) {
 		AdvanceConsoleProgress();
 		const auto &point = input[k];
+		if (point(w) < axis_min_ || point(w) > axis_max_) continue;
 		nodes.clear();
 		for (size_t i = 0; i < bounding_polygon_.size(); i++) {
 			size_t j = (i + 1) % bounding_polygon_.size();

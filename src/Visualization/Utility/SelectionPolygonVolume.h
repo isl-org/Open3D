@@ -54,6 +54,8 @@ private:
 public:
 	std::string orthogonal_axis_ = "";
 	std::vector<Eigen::Vector3d> bounding_polygon_;
+	double axis_min_ = 0.0;
+	double axis_max_ = 0.0;
 };
 
 }	// namespace three

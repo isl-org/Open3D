@@ -163,6 +163,10 @@ std::shared_ptr<SelectionPolygonVolume> SelectionPolygon::
 		point3d(idx) = 0.0;
 		volume->bounding_polygon_.push_back(point3d);
 	}
+	const auto &boundingbox = view.GetBoundingBox();
+	double axis_len = boundingbox.max_bound_(idx) - boundingbox.min_bound_(idx);
+	volume->axis_min_ = boundingbox.min_bound_(idx) - axis_len;
+	volume->axis_max_ = boundingbox.max_bound_(idx) + axis_len;
 	return volume;
 }
 

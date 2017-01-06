@@ -238,14 +238,16 @@ void Visualizer::BuildUtilities()
 	
 	// 0. Build coordinate frame
 	const auto boundingbox = GetViewControl().GetBoundingBox();
-	auto mesh_frame = CreateMeshCoordinateFrame(
+	coordinate_frame_mesh_ptr_ = CreateMeshCoordinateFrame(
 			boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
-	utility_ptrs_.push_back(mesh_frame);
-	auto renderer_ptr = std::make_shared<glsl::CoordinateFrameRenderer>();
-	if (renderer_ptr->AddGeometry(mesh_frame) == false) {
+	coordinate_frame_mesh_renderer_ptr_ =
+			std::make_shared<glsl::CoordinateFrameRenderer>();
+	if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
+			coordinate_frame_mesh_ptr_) == false) {
 		return;
 	}
-	utility_renderer_ptrs_.push_back(renderer_ptr);
+	utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);
+	utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
 }
 
 void Visualizer::Run()

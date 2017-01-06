@@ -34,11 +34,12 @@ void VisualizerForAlignment::PrintVisualizerHelp()
 {
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Alignment control --\n");
+	PrintInfo("    Ctrl + R     : Reset source and target to initial state.\n");
 	PrintInfo("    Ctrl + S     : Save current alignment session into a JSON file.\n");
 	PrintInfo("    Ctrl + O     : Load current alignment session from a JSON file.\n");
 	PrintInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
-	PrintInfo("    Ctrl + R     : Run ICP refinement.\n");
-	PrintInfo("    Ctrl + V     : Run voxel downsample for both source and target.\n");
+	PrintInfo("    Ctrl + I     : Run ICP refinement.\n");
+	PrintInfo("    Ctrl + D     : Run voxel downsample for both source and target.\n");
 	PrintInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.\n");
 	PrintInfo("    Ctrl + E     : Evaluate error and save to files.\n");
 }
@@ -63,6 +64,13 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 		const char *filename;
 		const char *pattern[1] = {"*.json"};
 		switch (key) {
+		case GLFW_KEY_R: {
+			*source_copy_ptr_ = *alignment_session_.source_ptr_;
+			*target_copy_ptr_ = *alignment_session_.target_ptr_;
+			ResetViewPoint(true);
+			UpdateGeometry();
+			return;
+		}
 		case GLFW_KEY_S: {
 			if (use_dialog_) {
 				filename = tinyfd_saveFileDialog("Alignment session",
@@ -92,6 +100,39 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			if (AlignWithManualAnnotation()) {
 				ResetViewPoint(true);
 				UpdateGeometry();
+			}
+			return;
+		}
+		case GLFW_KEY_D: {
+			if (use_dialog_) {
+				char buff[DEFAULT_IO_BUFFER_SIZE];
+				sprintf(buff, "%.4f", voxel_size_);
+				const char *str = tinyfd_inputBox("Set voxel size",
+						"Set voxel size (it is ignored if it is non-positive)",
+						buff);
+				if (str == NULL) {
+					PrintDebug("Illegal input, use default voxel size.\n");
+				} else {
+					char *end;
+					errno = 0;
+					double l = std::strtod(str, &end);
+					if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
+						PrintDebug("Illegal input, use default voxel size.\n");
+					} else {
+						voxel_size_ = l;
+					}
+				}
+			}
+			if (voxel_size_ > 0.0) {
+				PrintInfo("Voxel downsample with voxel size %.4f.\n",
+						voxel_size_);
+				PointCloud target_backup = *target_copy_ptr_;
+				PointCloud source_backup = *source_copy_ptr_;
+				VoxelDownSample(target_backup, voxel_size_, *target_copy_ptr_);
+				VoxelDownSample(source_backup, voxel_size_, *source_copy_ptr_);
+				UpdateGeometry();
+			} else {
+				PrintInfo("No voxel downsample performed due to illegal voxel size.\n");
 			}
 			return;
 		}

@@ -43,16 +43,18 @@ public:
 	};
 	
 public:
-	VisualizerWithEditing();
-	~VisualizerWithEditing() override;
+	VisualizerWithEditing(double voxel_size = -1.0, bool use_dialog = true) :
+		voxel_size_(voxel_size), use_dialog_(use_dialog) {}
+	~VisualizerWithEditing() override {}
 	VisualizerWithEditing(const VisualizerWithEditing &) = delete;
 	VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
 public:
+	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
 	void PrintVisualizerHelp() override;
 	void UpdateWindowTitle() override;
 	void BuildUtilities() override;
-	int PickPoint(double x, double y, size_t geometry_index = 0);
+	int PickPoint(double x, double y);
 	std::vector<size_t> &GetPickedPoints();
 
 protected:
@@ -66,8 +68,8 @@ protected:
 	void KeyPressCallback(GLFWwindow *window,
 			int key, int scancode, int action, int mods) override;
 	void InvalidateSelectionPolygon();
-	void SaveCroppingResult(const std::string &filename = "",
-			int geometry_index = 0);
+	void InvalidatePicking();
+	void SaveCroppingResult(const std::string &filename = "");
 
 protected:
 	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
@@ -78,6 +80,13 @@ protected:
 	std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
 	std::shared_ptr<glsl::PointCloudPickerRenderer>
 			pointcloud_picker_renderer_ptr_;
+
+	std::shared_ptr<const Geometry> original_geometry_ptr_;
+	std::shared_ptr<Geometry> editing_geometry_ptr_;
+	std::shared_ptr<glsl::GeometryRenderer> editing_geometry_renderer_ptr_;
+
+	double voxel_size_ = -1.0;
+	bool use_dialog_ = true;
 };
 
 }	// namespace three

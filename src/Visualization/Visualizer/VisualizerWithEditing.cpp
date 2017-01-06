@@ -26,7 +26,12 @@
 
 #include "VisualizerWithEditing.h"
 
+#include <External/tinyfiledialogs/tinyfiledialogs.h>
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/LineSet.h>
+#include <Core/Geometry/TriangleMesh.h>
+#include <Core/Geometry/Image.h>
+#include <Core/Utility/FileSystem.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 #include <IO/ClassIO/PointCloudIO.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
@@ -38,12 +43,70 @@
 
 namespace three{
 
-VisualizerWithEditing::VisualizerWithEditing()
+bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
+		geometry_ptr)
 {
-}
-
-VisualizerWithEditing::~VisualizerWithEditing()
-{
+	if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
+		return false;
+	}
+	glfwMakeContextCurrent(window_);
+	original_geometry_ptr_ = geometry_ptr;
+	if (geometry_ptr->GetGeometryType() ==
+			Geometry::GEOMETRY_UNSPECIFIED) {
+		return false;
+	} else if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_POINTCLOUD) {
+		auto ptr = std::make_shared<PointCloud>();
+		*ptr = (const PointCloud &)*original_geometry_ptr_;
+		editing_geometry_ptr_ = ptr;
+		editing_geometry_renderer_ptr_ =
+				std::make_shared<glsl::PointCloudRenderer>();
+		if (editing_geometry_renderer_ptr_->AddGeometry(
+				editing_geometry_ptr_) == false) {
+			return false;
+		}
+	} else if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_LINESET) {
+		auto ptr = std::make_shared<LineSet>();
+		*ptr = (const LineSet &)*original_geometry_ptr_;
+		editing_geometry_ptr_ = ptr;
+		editing_geometry_renderer_ptr_ =
+				std::make_shared<glsl::LineSetRenderer>();
+		if (editing_geometry_renderer_ptr_->AddGeometry(
+				editing_geometry_ptr_) == false) {
+			return false;
+		}
+	} else if (geometry_ptr->GetGeometryType() == 
+			Geometry::GEOMETRY_TRIANGLEMESH) {
+		auto ptr = std::make_shared<TriangleMesh>();
+		*ptr = (const TriangleMesh &)*original_geometry_ptr_;
+		editing_geometry_ptr_ = ptr;
+		editing_geometry_renderer_ptr_ =
+				std::make_shared<glsl::TriangleMeshRenderer>();
+		if (editing_geometry_renderer_ptr_->AddGeometry(
+				editing_geometry_ptr_) == false) {
+			return false;
+		}
+	} else if (geometry_ptr->GetGeometryType() ==
+			Geometry::GEOMETRY_IMAGE) {
+		auto ptr = std::make_shared<Image>();
+		*ptr = (const Image &)*original_geometry_ptr_;
+		editing_geometry_ptr_ = ptr;
+		editing_geometry_renderer_ptr_ =
+				std::make_shared<glsl::ImageRenderer>();
+		if (editing_geometry_renderer_ptr_->AddGeometry(
+				editing_geometry_ptr_) == false) {
+			return false;
+		}
+	} else {
+		return false;
+	}
+	geometry_ptrs_.push_back(editing_geometry_ptr_);
+	geometry_renderer_ptrs_.push_back(editing_geometry_renderer_ptr_);
+	ResetViewPoint(true);
+	PrintDebug("Add geometry and update bounding box to %s\n", 
+			view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+	return UpdateGeometry();
 }
 
 void VisualizerWithEditing::PrintVisualizerHelp()
@@ -55,15 +118,19 @@ void VisualizerWithEditing::PrintVisualizerHelp()
 	PrintInfo("    Y            : Enter orthogonal view along Y axis, press again to flip.\n");
 	PrintInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.\n");
 	PrintInfo("    K            : Lock / unlock camera.\n");
+	PrintInfo("    Ctrl + D     : Downsample point cloud with a voxel grid.\n");
+	PrintInfo("    Ctrl + R     : Reset geometry to its initial state.\n");
 	PrintInfo("    Shift + +/-  : Increase/decrease picked point size..\n");
-	PrintInfo("    Shift + mouse left button       : Pick a point and add in queue.\n");
-	PrintInfo("    Shift + mouse right button      : Remove last picked point from queue.\n");
+	PrintInfo("    Shift + mouse left button   : Pick a point and add in queue.\n");
+	PrintInfo("    Shift + mouse right button  : Remove last picked point from queue.\n");
 	PrintInfo("\n");
 	PrintInfo("    -- When camera is locked --\n");
-	PrintInfo("    Mouse left button + drag        : Create a selection rectangle.\n");
-	PrintInfo("    Ctrl + mouse left button + drag : Hold Ctrl key to draw a selection polygon.\n");
-	PrintInfo("                                      Release Ctrl key to close the polygon.\n");
-	PrintInfo("    C                               : Crop the geometry with selection region.\n");
+	PrintInfo("    Mouse left button + drag    : Create a selection rectangle.\n");
+	PrintInfo("    Ctrl + mouse buttons + drag : Hold Ctrl key to draw a selection polygon.\n");
+	PrintInfo("                                  Left mouse button to add point. Right mouse\n");
+	PrintInfo("                                  button to remove point. Release Ctrl key to\n");
+	PrintInfo("                                  close the polygon.\n");
+	PrintInfo("    C                           : Crop the geometry with selection region.\n");
 	PrintInfo("\n");
 }
 
@@ -115,11 +182,10 @@ void VisualizerWithEditing::BuildUtilities()
 	}
 }
 
-int VisualizerWithEditing::PickPoint(double x, double y,
-		size_t geometry_index/* = 0*/)
+int VisualizerWithEditing::PickPoint(double x, double y)
 {
 	auto renderer_ptr = std::make_shared<glsl::PointCloudPickingRenderer>();
-	if (renderer_ptr->AddGeometry(geometry_ptrs_[geometry_index]) == false) {
+	if (renderer_ptr->AddGeometry(geometry_ptrs_[0]) == false) {
 		return -1;
 	}
 	const auto &view = GetViewControl();
@@ -251,22 +317,80 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 		PrintDebug("[Visualizer] Camera %s.\n",
 				view_control.IsLocked() ? "Lock" : "Unlock");
 		break;
-	case GLFW_KEY_C:
-		if (view_control.IsLocked()) {
-			size_t num_of_geometries = geometry_ptrs_.size();
-			for (size_t i = 0; i < num_of_geometries; i++) {
-				if (geometry_ptrs_[i]->GetGeometryType() ==
-						Geometry::GEOMETRY_POINTCLOUD) {
-					glfwMakeContextCurrent(window_);
-					auto cropped = std::make_shared<PointCloud>();
-					selection_polygon_ptr_->CropGeometry(*geometry_ptrs_[i],
-							view_control, *cropped);
-					geometry_ptrs_[i] = cropped;
-					geometry_renderer_ptrs_[i]->AddGeometry(cropped);
-					SaveCroppingResult();
-					view_control.ToggleLocking();
-					InvalidateSelectionPolygon();
+	case GLFW_KEY_R:
+		if (mods & GLFW_MOD_CONTROL) {
+			(PointCloud &)*editing_geometry_ptr_ =
+					(const PointCloud &)*original_geometry_ptr_;
+			editing_geometry_renderer_ptr_->UpdateGeometry();
+		} else {
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+		}
+		break;
+	case GLFW_KEY_D:
+		if (mods & GLFW_MOD_CONTROL) {
+			if (use_dialog_) {
+				char buff[DEFAULT_IO_BUFFER_SIZE];
+				sprintf(buff, "%.4f", voxel_size_);
+				const char *str = tinyfd_inputBox("Set voxel size",
+						"Set voxel size (it is ignored if it is non-positive)",
+						buff);
+				if (str == NULL) {
+					PrintDebug("Illegal input, use default voxel size.\n");
+				} else {
+					char *end;
+					errno = 0;
+					double l = std::strtod(str, &end);
+					if (errno == ERANGE && (l == HUGE_VAL || l == -HUGE_VAL)) {
+						PrintDebug("Illegal input, use default voxel size.\n");
+					} else {
+						voxel_size_ = l;
+					}
 				}
+			}
+			if (voxel_size_ > 0.0 && editing_geometry_ptr_ &&
+					editing_geometry_ptr_->GetGeometryType() == 
+					Geometry::GEOMETRY_POINTCLOUD) {
+				PrintInfo("Voxel downsample with voxel size %.4f.\n",
+						voxel_size_);
+				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
+				PointCloud backup = pcd;
+				VoxelDownSample(backup, voxel_size_, pcd);
+				UpdateGeometry();
+			} else {
+				PrintInfo("No voxel downsample performed due to illegal voxel size.\n");
+			}
+		} else {
+			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+		}
+		break;
+	case GLFW_KEY_C:
+		if (view_control.IsLocked() && selection_polygon_ptr_) {
+			if (editing_geometry_ptr_ && 
+					editing_geometry_ptr_->GetGeometryType() ==
+					Geometry::GEOMETRY_POINTCLOUD) {
+				glfwMakeContextCurrent(window_);
+				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
+				PointCloud backup = pcd;
+				selection_polygon_ptr_->CropGeometry(backup, view_control,
+						pcd);
+				editing_geometry_renderer_ptr_->UpdateGeometry();
+				const char *filename;
+				const char *pattern[1] = {"*.ply"};
+				if (use_dialog_) {
+					filename = tinyfd_saveFileDialog("PointCloud file",
+							"./CroppedGeometry.ply", 1, pattern,
+							"Polygon File Format (*.ply)");
+				} else {
+					filename = "./CroppedGeometry.ply";
+				}
+				if (filename == NULL) {
+					PrintInfo("No filename is given. Abort saving.\n");
+				} else {
+					SaveCroppingResult(filename);
+				}
+				view_control.ToggleLocking();
+				InvalidateSelectionPolygon();
+				InvalidatePicking();
 			}
 		} else {
 			Visualizer::KeyPressCallback(window, key, scancode, action, mods);
@@ -343,7 +467,8 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 		int button, int action, int mods)
 {
 	auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
-	if (view_control.IsLocked()) {
+	if (view_control.IsLocked() && selection_polygon_ptr_ &&
+			selection_polygon_renderer_ptr_) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			double x, y;
 			glfwGetCursorPos(window, &x, &y);
@@ -398,6 +523,14 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 				}
 			}
 			is_redraw_required_ = true;
+		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+			if (action == GLFW_PRESS && selection_mode_ == SELECTION_POLYGON &&
+					(mods & GLFW_MOD_CONTROL)) {
+				if (selection_polygon_ptr_->polygon_.size() > 2) {
+					selection_polygon_ptr_->polygon_.pop_back();
+					selection_polygon_renderer_ptr_->UpdateGeometry();
+				}
+			}
 		}
 	} else {
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE &&
@@ -442,18 +575,25 @@ void VisualizerWithEditing::InvalidateSelectionPolygon()
 	selection_mode_ = SELECTION_NONE;
 }
 
+void VisualizerWithEditing::InvalidatePicking()
+{
+	if (pointcloud_picker_ptr_) pointcloud_picker_ptr_->Clear();
+	if (pointcloud_picker_renderer_ptr_) {
+		pointcloud_picker_renderer_ptr_->UpdateGeometry();
+	}
+}
+
 void VisualizerWithEditing::SaveCroppingResult(
-		const std::string &filename/* = ""*/, int geometry_index/* = 0*/)
+		const std::string &filename/* = ""*/)
 {
 	std::string ply_filename = filename;
-	std::string volume_filename;
 	if (ply_filename.empty()) {
-		std::string timestamp = GetCurrentTimeStamp();
-		ply_filename = "CroppedGeometry_" + timestamp + ".ply";
-		volume_filename = "CroppedGeometry_" + timestamp + ".json";
+		ply_filename = "CroppedGeometry.ply";
 	}
+	std::string volume_filename = filesystem::GetFileNameWithoutExtension(
+			filename) + ".json";
 	WritePointCloud(ply_filename,
-			(const PointCloud &)(*geometry_ptrs_[geometry_index]));
+			(const PointCloud &)(*geometry_ptrs_[0]));
 	WriteIJsonConvertible(volume_filename,
 			*selection_polygon_ptr_->CreateSelectionPolygonVolume(
 			GetViewControl()));

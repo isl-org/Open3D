@@ -41,6 +41,8 @@
 
 namespace three {
 
+class TriangleMesh;
+
 class Visualizer
 {
 public:
@@ -101,16 +103,16 @@ public:
 	/// undefined. Programmers are responsible for calling UpdateGeometry() to
 	/// notify the Visualizer that the geometry has been changed and the 
 	/// Visualizer should be updated accordingly.
-	bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
+	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 
 	/// Function to update geometry
 	/// This function must be called when geometry has been changed. Otherwise
 	/// the behavior of Visualizer is undefined.
-	bool UpdateGeometry();
-	bool HasGeometry() const;
+	virtual bool UpdateGeometry();
+	virtual bool HasGeometry() const;
 
 	/// Function to set the redraw flag as dirty
-	void UpdateRender();
+	virtual void UpdateRender();
 
 	virtual void PrintVisualizerHelp();
 	virtual void UpdateWindowTitle();
@@ -184,11 +186,16 @@ protected:
 			geometry_renderer_ptrs_;
 
 	// utilities owned by the Visualizer
-	std::vector<std::shared_ptr<Geometry>> utility_ptrs_;
+	std::vector<std::shared_ptr<const Geometry>> utility_ptrs_;
 
 	// utility renderers
 	std::vector<std::shared_ptr<glsl::GeometryRenderer>> utility_renderer_ptrs_;
 	
+	// coordinate frame
+	std::shared_ptr<TriangleMesh> coordinate_frame_mesh_ptr_;
+	std::shared_ptr<glsl::CoordinateFrameRenderer>
+			coordinate_frame_mesh_renderer_ptr_;
+
 #ifdef __APPLE__
 	// MacBook with Retina display does not have a 1:1 mapping from screen
 	// coordinates to pixels. Thus we hack it back.

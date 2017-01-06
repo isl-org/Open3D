@@ -29,6 +29,7 @@
 #include <Visualization/Visualizer/ViewParameters.h>
 #include <Visualization/Visualizer/ViewTrajectory.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
+#include <Core/Geometry/TriangleMesh.h>
 #include <IO/ClassIO/ImageIO.h>
 #include <IO/ClassIO/PointCloudIO.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
@@ -91,6 +92,12 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box/* = false*/)
 		view_control_ptr_->ResetBoundingBox();
 		for (const auto &geometry_ptr : geometry_ptrs_) {
 			view_control_ptr_->FitInGeometry(*geometry_ptr);
+		}
+		if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
+			const auto &boundingbox = view_control_ptr_->GetBoundingBox();
+			*coordinate_frame_mesh_ptr_ = *CreateMeshCoordinateFrame(
+					boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+			coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
 		}
 	}
 	view_control_ptr_->Reset();
