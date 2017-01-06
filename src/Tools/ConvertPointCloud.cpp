@@ -45,6 +45,8 @@ void PrintHelp()
 	printf("    --clip_y_max y1           : Clip points with y coordinate > y1.\n");
 	printf("    --clip_z_min z0           : Clip points with z coordinate < z0.\n");
 	printf("    --clip_z_max z1           : Clip points with z coordinate > z1.\n");
+	printf("    --uniform_sample_every K  : Downsample the point cloud uniformly. Keep only\n");
+	printf("                              : one point for every K points.\n");
 	printf("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
 	printf("    --estimate_normals radius : Estimate normals using a search neighborhood of\n");
 	printf("                                radius. The normals are oriented w.r.t. the\n");
@@ -82,6 +84,18 @@ void convert(int argc, char **argv, const std::string &file_in,
 		auto clip_ptr = std::make_shared<PointCloud>();
 		CropPointCloud(*pointcloud_ptr, min_bound, max_bound, *clip_ptr);
 		pointcloud_ptr = clip_ptr;
+		processed = true;
+	}
+	
+	// uniform_downsample
+	int every_k = GetProgramOptionAsInt(argc, argv, "--uniform_sample_every",
+			0);
+	if (every_k > 1) {
+		PrintDebug("Downsample point cloud uniformly every %d points.\n",
+				every_k);
+		auto downsample_ptr = std::make_shared<PointCloud>();
+		UniformDownSample(*pointcloud_ptr, every_k, *downsample_ptr);
+		pointcloud_ptr = downsample_ptr;
 		processed = true;
 	}
 	
