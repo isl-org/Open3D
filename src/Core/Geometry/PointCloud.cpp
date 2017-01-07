@@ -118,9 +118,12 @@ void ComputePointCloudToPointCloudDistance(const PointCloud &source,
 	distances.resize(source.points_.size());
 	KDTreeFlann kdtree;
 	kdtree.SetGeometry(target);
-	std::vector<int> indices(1);
-	std::vector<double> dists(1);
-	for (size_t i = 0; i < source.points_.size(); i++) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)source.points_.size(); i++) {
+		std::vector<int> indices(1);
+		std::vector<double> dists(1);
 		kdtree.SearchKNN(source.points_[i], 1, indices, dists);
 		distances[i] = std::sqrt(dists[0]);
 	}

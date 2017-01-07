@@ -27,7 +27,6 @@
 #include "Registration.h"
 
 #include <Core/Utility/Console.h>
-#include <Core/Utility/Timer.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
@@ -41,15 +40,24 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 {
 	corres.clear();
 	double error2 = 0.0;
-	std::vector<int> indices;
-	std::vector<double> dists;
-	for (size_t i = 0; i < source.points_.size(); i++) {
+	double max_dist2 = max_correspondence_distance * 
+			max_correspondence_distance;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)source.points_.size(); i++) {
+		std::vector<int> indices(1);
+		std::vector<double> dists(1);
 		const auto &point = source.points_[i];
-		int k = target_kdtree.SearchRadius(point, max_correspondence_distance,
-				indices, dists);
-		if (k > 0) {
-			corres.push_back(std::make_pair((int)i, indices[0]));
-			error2 += dists[0];
+		target_kdtree.SearchKNN(point, 1, indices, dists);
+		if (dists[0] < max_dist2) {
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+			{
+				corres.push_back(std::make_pair((int)i, indices[0]));
+				error2 += dists[0];
+			}
 		}
 	}
 	if (corres.empty()) {
