@@ -97,6 +97,7 @@ int main(int argc, char **argv)
 			"--without_gui_icp", "");
 	std::string eval_filename = GetProgramOptionAsString(argc, argv,
 			"--without_gui_eval", "");
+	std::string default_directory = filesystem::GetFileParentDirectory(argv[1]);
 
 	auto source_ptr = CreatePointCloudFromFile(argv[1]);
 	auto target_ptr = CreatePointCloudFromFile(argv[2]);
@@ -194,7 +195,7 @@ int main(int argc, char **argv)
 	VisualizerWithEditing vis_source, vis_target;
 	VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
 			max_corres_distance, with_scaling, with_dialog,
-			default_polygon_filename);
+			default_polygon_filename, default_directory);
 	
 	vis_source.CreateWindow("Source Point Cloud", 1280, 720, 10, 100);
 	vis_source.AddGeometry(source_ptr);
