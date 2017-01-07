@@ -376,12 +376,14 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 				editing_geometry_renderer_ptr_->UpdateGeometry();
 				const char *filename;
 				const char *pattern[1] = {"*.ply"};
+				std::string default_filename = default_directory_ +
+						"cropped.ply";
 				if (use_dialog_) {
 					filename = tinyfd_saveFileDialog("PointCloud file",
-							"./CroppedGeometry.ply", 1, pattern,
+							default_filename.c_str(), 1, pattern,
 							"Polygon File Format (*.ply)");
 				} else {
-					filename = "./CroppedGeometry.ply";
+					filename = default_filename.c_str();
 				}
 				if (filename == NULL) {
 					PrintInfo("No filename is given. Abort saving.\n");

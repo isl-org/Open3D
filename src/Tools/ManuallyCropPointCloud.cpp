@@ -62,7 +62,8 @@ int main(int argc, char **argv)
 		PrintWarning("Failed to read the point cloud.\n");
 		return 0;
 	}
-	VisualizerWithEditing vis(voxel_size, with_dialog);
+	VisualizerWithEditing vis(voxel_size, with_dialog,
+			filesystem::GetFileParentDirectory(argv[1]));
 	vis.CreateWindow("Crop Point Cloud", 1920, 1080, 100, 100);
 	vis.AddGeometry(pcd_ptr);
 	if (pcd_ptr->points_.size() > 5000000) {

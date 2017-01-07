@@ -43,8 +43,9 @@ public:
 	};
 	
 public:
-	VisualizerWithEditing(double voxel_size = -1.0, bool use_dialog = true) :
-		voxel_size_(voxel_size), use_dialog_(use_dialog) {}
+	VisualizerWithEditing(double voxel_size = -1.0, bool use_dialog = true,
+			const std::string &directory = "") : voxel_size_(voxel_size),
+			use_dialog_(use_dialog), default_directory_(directory) {}
 	~VisualizerWithEditing() override {}
 	VisualizerWithEditing(const VisualizerWithEditing &) = delete;
 	VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
@@ -87,6 +88,7 @@ protected:
 
 	double voxel_size_ = -1.0;
 	bool use_dialog_ = true;
+	std::string default_directory_;
 };
 
 }	// namespace three
