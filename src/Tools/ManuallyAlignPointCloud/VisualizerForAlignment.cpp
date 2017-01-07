@@ -203,11 +203,14 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			return;
 		}
 		case GLFW_KEY_E: {
+			std::string default_alignment = default_directory_ +
+					"alignment.json";
 			if (use_dialog_) {
 				filename = tinyfd_saveFileDialog("Alignment session",
-						"./alignment.json", 1, pattern, "JSON file (*.json)");
+						default_alignment.c_str(), 1, pattern,
+						"JSON file (*.json)");
 			} else {
-				filename = "./alignment.json";
+				filename = default_alignment.c_str();
 			}
 			if (filename != NULL) {
 				SaveSessionToFile(filename);
