@@ -26,6 +26,8 @@
 
 #include "PointCloud.h"
 
+#include <Core/Geometry/KDTreeFlann.h>
+
 namespace three{
 
 void PointCloud::Clear()
@@ -108,6 +110,20 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 const PointCloud PointCloud::operator+(const PointCloud &cloud)
 {
 	return (PointCloud(*this) += cloud);
+}
+
+void ComputePointCloudToPointCloudDistance(const PointCloud &source,
+		const PointCloud &target, std::vector<double> &distances)
+{
+	distances.resize(source.points_.size());
+	KDTreeFlann kdtree;
+	kdtree.SetGeometry(target);
+	std::vector<int> indices(1);
+	std::vector<double> dists(1);
+	for (size_t i = 0; i < source.points_.size(); i++) {
+		kdtree.SearchKNN(source.points_[i], 1, indices, dists);
+		distances[i] = std::sqrt(dists[0]);
+	}
 }
 
 }	// namespace three

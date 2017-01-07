@@ -76,7 +76,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 				filename = tinyfd_saveFileDialog("Alignment session",
 						"./alignment.json", 1, pattern, "JSON file (*.json)");
 			} else {
-				filename = "alignment.json";
+				filename = "./alignment.json";
 			}
 			if (filename != NULL) {
 				SaveSessionToFile(filename);
@@ -89,7 +89,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 						"./alignment.json", 1, pattern, "JSON file (*.json)",
 						0);
 			} else {
-				filename = "alignment.json";
+				filename = "./alignment.json";
 			}
 			if (filename != NULL) {
 				LoadSessionFromFile(filename);
@@ -199,14 +199,13 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 		}
 		case GLFW_KEY_E: {
 			if (use_dialog_) {
-				const char *ply_pattern[1] = {"*.ply"};
-				filename = tinyfd_saveFileDialog("Processed source file",
-						"./source.ply", 1, ply_pattern,
-						"Polygon File Format (*.ply)");
+				filename = tinyfd_saveFileDialog("Alignment session",
+						"./alignment.json", 1, pattern, "JSON file (*.json)");
 			} else {
-				filename = "./source.ply";
+				filename = "./alignment.json";
 			}
 			if (filename != NULL) {
+				SaveSessionToFile(filename);
 				EvaluateAlignmentAndSave(filename);
 			}
 			return;
@@ -300,40 +299,29 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
 		const std::string &filename)
 {
 	// Evaluate source_copy_ptr_ and target_copy_ptr_
-	std::string source_filename = filename;
+	std::string source_filename = filesystem::GetFileNameWithoutExtension(
+			filename) + ".source.ply";
 	std::string target_filename = filesystem::GetFileNameWithoutExtension(
-			filename) + "_target.ply";
+			filename) + ".target.ply";
 	std::string source_binname = filesystem::GetFileNameWithoutExtension(
-			filename) + ".bin";
+			filename) + ".source.bin";
 	std::string target_binname = filesystem::GetFileNameWithoutExtension(
-			filename) + "_target.bin";
+			filename) + ".target.bin";
 	std::vector<double> distances;
 	FILE * f;
 
 	WritePointCloud(source_filename, *source_copy_ptr_);
-	GetDistance(*source_copy_ptr_, *target_copy_ptr_, distances);
+	ComputePointCloudToPointCloudDistance(*source_copy_ptr_, *target_copy_ptr_,
+			distances);
 	f = fopen(source_binname.c_str(), "wb");
 	fwrite(distances.data(), sizeof(double), distances.size(), f);
 	fclose(f);
 	WritePointCloud(target_filename, *target_copy_ptr_);
-	GetDistance(*target_copy_ptr_, *source_copy_ptr_, distances);
+	ComputePointCloudToPointCloudDistance(*target_copy_ptr_, *source_copy_ptr_,
+			distances);
 	f = fopen(target_binname.c_str(), "wb");
 	fwrite(distances.data(), sizeof(double), distances.size(), f);
 	fclose(f);
-}
-
-void VisualizerForAlignment::GetDistance(const PointCloud &from,
-		const PointCloud &to, std::vector<double> &distances)
-{
-	distances.resize(from.points_.size());
-	KDTreeFlann kdtree;
-	kdtree.SetGeometry(to);
-	std::vector<int> indices(1);
-	std::vector<double> dists(1);
-	for (size_t i = 0; i < from.points_.size(); i++) {
-		kdtree.SearchKNN(from.points_[i], 1, indices, dists);
-		distances[i] = std::sqrt(dists[0]);
-	}
 }
 
 }	// namespace three

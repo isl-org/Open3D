@@ -32,6 +32,24 @@
 
 #include "VisualizerForAlignment.h"
 
+void PrintTransformation(const Eigen::Matrix4d &transformation)
+{
+	using namespace three;
+	PrintInfo("Current transformation is:\n");
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation(0, 0), transformation(0, 1),
+			transformation(0, 2), transformation(0, 3));
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation(1, 0), transformation(1, 1),
+			transformation(1, 2), transformation(1, 3));
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation(2, 0), transformation(2, 1),
+			transformation(2, 2), transformation(2, 3));
+	PrintInfo("\t%.6f %.6f %.6f %.6f\n",
+			transformation(3, 0), transformation(3, 1),
+			transformation(3, 2), transformation(3, 3));
+}
+
 void PrintHelp()
 {
 	printf("Usage:\n");
@@ -45,6 +63,14 @@ void PrintHelp()
 	printf("    --max_corres_distance d   : Set max correspondence distance.\n");
 	printf("    --without_scaling         : Disable scaling in transformations.\n");
 	printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+	printf("    --without_gui_icp file    : The program runs as a console command. No window\n");
+	printf("                                will be created. The program reads an alignment\n");
+	printf("                                from file. It does cropping, downsample, ICP,\n");
+	printf("                                then saves the alignment session into file.\n");
+	printf("    --without_gui_eval file   : The program runs as a console command. No window\n");
+	printf("                                will be created. The program reads an alignment\n");
+	printf("                                from file. It does cropping, downsample,\n");
+	printf("                                evaluation, then saves everything.\n");
 }
 
 int main(int argc, char **argv)
@@ -67,6 +93,10 @@ int main(int argc, char **argv)
 	bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
 	std::string default_polygon_filename =
 			filesystem::GetFileNameWithoutExtension(argv[2]) + ".json";
+	std::string alignment_filename = GetProgramOptionAsString(argc, argv,
+			"--without_gui_icp", "");
+	std::string eval_filename = GetProgramOptionAsString(argc, argv,
+			"--without_gui_eval", "");
 
 	auto source_ptr = CreatePointCloudFromFile(argv[1]);
 	auto target_ptr = CreatePointCloudFromFile(argv[2]);
@@ -74,6 +104,93 @@ int main(int argc, char **argv)
 		PrintWarning("Failed to read one of the point clouds.\n");
 		return 0;
 	}
+	
+	if (!alignment_filename.empty()) {
+		AlignmentSession session;
+		if (ReadIJsonConvertible(alignment_filename, session) == false) {
+			return 0;
+		}
+		session.voxel_size_ = voxel_size;
+		session.max_correspondence_distance_ = max_corres_distance;
+		source_ptr->Transform(session.transformation_);
+		auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
+		if (ReadIJsonConvertible(default_polygon_filename, *polygon_volume)) {
+			PrintInfo("Crop point cloud.\n");
+			auto cropped = std::make_shared<PointCloud>();
+			polygon_volume->CropGeometry(*source_ptr, *cropped);
+			source_ptr = cropped;
+		}
+		if (voxel_size > 0.0) {
+			PrintInfo("Downsample point cloud with voxel size %.4f.\n",
+					voxel_size);
+			PointCloud source_backup = *source_ptr;
+			VoxelDownSample(source_backup, voxel_size, *source_ptr);
+		}
+		if (max_corres_distance > 0.0) {
+			PrintInfo("ICP with max correspondence distance %.4f.\n",
+					max_corres_distance);
+			auto result = RegistrationICP(*source_ptr, *target_ptr,
+					max_corres_distance, Eigen::Matrix4d::Identity(),
+					TransformationEstimationPointToPoint(true),
+					ConvergenceCriteria(1e-6, 30));
+			PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
+					result.fitness, result.rmse);
+			if (result.fitness > 0.0) {
+				session.transformation_ = result.transformation *
+						session.transformation_;
+				PrintTransformation(session.transformation_);
+				source_ptr->Transform(result.transformation);
+			}
+		}
+		WriteIJsonConvertible(alignment_filename, session);
+		return 1;
+	}
+
+	if (!eval_filename.empty()) {
+		AlignmentSession session;
+		if (ReadIJsonConvertible(eval_filename, session) == false) {
+			return 0;
+		}
+		source_ptr->Transform(session.transformation_);
+		auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
+		if (ReadIJsonConvertible(default_polygon_filename, *polygon_volume)) {
+			PrintInfo("Crop point cloud.\n");
+			auto cropped = std::make_shared<PointCloud>();
+			polygon_volume->CropGeometry(*source_ptr, *cropped);
+			source_ptr = cropped;
+		}
+		if (voxel_size > 0.0) {
+			PrintInfo("Downsample point cloud with voxel size %.4f.\n",
+					voxel_size);
+			PointCloud source_backup = *source_ptr;
+			VoxelDownSample(source_backup, voxel_size, *source_ptr);
+		}
+		std::string source_filename = filesystem::GetFileNameWithoutExtension(
+				eval_filename) + ".source.ply";
+		std::string target_filename = filesystem::GetFileNameWithoutExtension(
+				eval_filename) + ".target.ply";
+		std::string source_binname = filesystem::GetFileNameWithoutExtension(
+				eval_filename) + ".source.bin";
+		std::string target_binname = filesystem::GetFileNameWithoutExtension(
+				eval_filename) + ".target.bin";
+		std::vector<double> distances;
+		FILE * f;
+
+		WritePointCloud(source_filename, *source_ptr);
+		ComputePointCloudToPointCloudDistance(*source_ptr, *target_ptr,
+				distances);
+		f = fopen(source_binname.c_str(), "wb");
+		fwrite(distances.data(), sizeof(double), distances.size(), f);
+		fclose(f);
+		WritePointCloud(target_filename, *target_ptr);
+		ComputePointCloudToPointCloudDistance(*target_ptr, *source_ptr,
+				distances);
+		f = fopen(target_binname.c_str(), "wb");
+		fwrite(distances.data(), sizeof(double), distances.size(), f);
+		fclose(f);
+		return 1;
+	}
+	
 	VisualizerWithEditing vis_source, vis_target;
 	VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
 			max_corres_distance, with_scaling, with_dialog,

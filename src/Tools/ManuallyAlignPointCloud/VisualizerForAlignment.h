@@ -60,8 +60,6 @@ protected:
 	bool AlignWithManualAnnotation();
 	void PrintTransformation();
 	void EvaluateAlignmentAndSave(const std::string &filename);
-	void GetDistance(const PointCloud &from, const PointCloud &to,
-			std::vector<double> &distances);
 
 protected:
 	VisualizerWithEditing &source_visualizer_;

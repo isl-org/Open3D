@@ -133,4 +133,10 @@ bool EstimateNormals(PointCloud &cloud,
 		const Eigen::Vector3d &orientation_reference,
 		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
+/// Function to compute the ponit to point distances between point clouds
+/// \param distances is the output distance. It has the same size as the number
+/// of point in \param source.
+void ComputePointCloudToPointCloudDistance(const PointCloud &source,
+		const PointCloud &target, std::vector<double> &distances);
+
 }	// namespace three
