@@ -139,4 +139,13 @@ bool EstimateNormals(PointCloud &cloud,
 void ComputePointCloudToPointCloudDistance(const PointCloud &source,
 		const PointCloud &target, std::vector<double> &distances);
 
+/// Function to compute the mean and covariance matrix of a point cloud
+void ComputePointCloudMeanAndCovariance(const PointCloud &input,
+		Eigen::Vector3d &mean, Eigen::Matrix3d &covariance);
+
+/// Function to compute the Mahalanobis distance for points in a point cloud
+/// https://en.wikipedia.org/wiki/Mahalanobis_distance
+void ComputePointCloudMahalanobisDistance(const PointCloud &input,
+		std::vector<double> &mahalanobis);
+
 }	// namespace three

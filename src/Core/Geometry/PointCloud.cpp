@@ -26,6 +26,7 @@
 
 #include "PointCloud.h"
 
+#include <Eigen/Dense>
 #include <Core/Geometry/KDTreeFlann.h>
 
 namespace three{
@@ -126,6 +127,55 @@ void ComputePointCloudToPointCloudDistance(const PointCloud &source,
 		std::vector<double> dists(1);
 		kdtree.SearchKNN(source.points_[i], 1, indices, dists);
 		distances[i] = std::sqrt(dists[0]);
+	}
+}
+
+void ComputePointCloudMeanAndCovariance(const PointCloud &input,
+		Eigen::Vector3d &mean, Eigen::Matrix3d &covariance)
+{
+	Eigen::Matrix<double, 9, 1> cumulants;
+	cumulants.setZero();
+	for (const auto &point : input.points_) {
+		cumulants(0) += point(0);
+		cumulants(1) += point(1);
+		cumulants(2) += point(2);
+		cumulants(3) += point(0) * point(0);
+		cumulants(4) += point(0) * point(1);
+		cumulants(5) += point(0) * point(2);
+		cumulants(6) += point(1) * point(1);
+		cumulants(7) += point(1) * point(2);
+		cumulants(8) += point(2) * point(2);
+	}
+	cumulants /= (double)input.points_.size();
+	mean(0) = cumulants(0);
+	mean(1) = cumulants(1);
+	mean(2) = cumulants(2);
+	covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+	covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+	covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+	covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+	covariance(1, 0) = covariance(0, 1);
+	covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+	covariance(2, 0) = covariance(0, 2);
+	covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+	covariance(2, 1) = covariance(1, 2);
+}
+
+void ComputePointCloudMahalanobisDistance(const PointCloud &input,
+		std::vector<double> &mahalanobis)
+{
+	mahalanobis.resize(input.points_.size());
+	if (input.IsEmpty()) return;
+	Eigen::Vector3d mean;
+	Eigen::Matrix3d covariance;
+	ComputePointCloudMeanAndCovariance(input, mean, covariance);
+	Eigen::Matrix3d cov_inv = covariance.inverse();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)input.points_.size(); i++) {
+		Eigen::Vector3d p = input.points_[i] - mean;
+		mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
 	}
 }
 

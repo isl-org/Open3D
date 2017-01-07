@@ -45,6 +45,7 @@ void PrintHelp()
 	printf("    --clip_y_max y1           : Clip points with y coordinate > y1.\n");
 	printf("    --clip_z_min z0           : Clip points with z coordinate < z0.\n");
 	printf("    --clip_z_max z1           : Clip points with z coordinate > z1.\n");
+	printf("    --filter_mahalanobis d    : Filter out points with Mahalanobis distance > d.\n");
 	printf("    --uniform_sample_every K  : Downsample the point cloud uniformly. Keep only\n");
 	printf("                              : one point for every K points.\n");
 	printf("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
@@ -87,6 +88,25 @@ void convert(int argc, char **argv, const std::string &file_in,
 		processed = true;
 	}
 	
+	// filter_mahalanobis
+	double mahalanobis_threshold = GetProgramOptionAsDouble(argc, argv,
+			"--filter_mahalanobis", 0.0);
+	if (mahalanobis_threshold > 0.0) {
+		std::vector<double> mahalanobis;
+		ComputePointCloudMahalanobisDistance(*pointcloud_ptr, mahalanobis);
+		std::vector<size_t> indices;
+		for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
+			if (mahalanobis[i] < mahalanobis_threshold) {
+				indices.push_back(i);
+			}
+		}
+		auto pcd = std::make_shared<PointCloud>();
+		SelectDownSample(*pointcloud_ptr, indices, *pcd);
+		PrintDebug("Based on Mahalanobis distance, %d points were filtered.\n",
+				(int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
+		pointcloud_ptr = pcd;
+	}
+	
 	// uniform_downsample
 	int every_k = GetProgramOptionAsInt(argc, argv, "--uniform_sample_every",
 			0);
@@ -103,7 +123,8 @@ void convert(int argc, char **argv, const std::string &file_in,
 	double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_sample",
 			0.0);
 	if (voxel_size > 0.0) {
-		PrintDebug("Downsample point cloud with voxel size %.4f.\n", voxel_size);
+		PrintDebug("Downsample point cloud with voxel size %.4f.\n",
+				voxel_size);
 		auto downsample_ptr = std::make_shared<PointCloud>();
 		VoxelDownSample(*pointcloud_ptr, voxel_size, *downsample_ptr);
 		pointcloud_ptr = downsample_ptr;
