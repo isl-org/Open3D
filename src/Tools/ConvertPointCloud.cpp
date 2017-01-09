@@ -55,6 +55,7 @@ void PrintHelp()
 	printf("                                exist. Otherwise, they are oriented towards -Z\n");
 	printf("                                direction.\n");
 	printf("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
+	printf("    --camera_location [x,y,z] : Orient the normals w.r.t camera loation [x,y,z].\n");
 }
 
 void convert(int argc, char **argv, const std::string &file_in,
@@ -136,12 +137,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 			0.0);
 	if (radius > 0.0) {
 		PrintDebug("Estimate normals with search radius %.4f.\n", radius);
-		if (pointcloud_ptr->HasNormals()) {
-			EstimateNormals(*pointcloud_ptr, KDTreeSearchParamRadius(radius));
-		} else {
-			EstimateNormals(*pointcloud_ptr, Eigen::Vector3d(0, 0, -1),
-					KDTreeSearchParamRadius(radius));
-		}
+		EstimateNormals(*pointcloud_ptr, KDTreeSearchParamRadius(radius));
 		processed = true;
 	}
 
@@ -152,11 +148,17 @@ void convert(int argc, char **argv, const std::string &file_in,
 		PrintDebug("Orient normals to [%.2f, %.2f, %.2f].\n", direction(0),
 				direction(1), direction(2));
 		Eigen::Vector3d dir(direction);
-		for (auto &normal : pointcloud_ptr->normals_) {
-			if (normal.dot(dir) < 0.0) {
-				normal *= -1.0;
-			}
-		}
+		OrientNormalsToAlignWithDirection(*pointcloud_ptr, dir);
+		processed = true;
+	}
+	Eigen::VectorXd camera_loc = GetProgramOptionAsEigenVectorXd(argc, argv,
+			"--camera_location");
+	if (camera_loc.size() == 3 && pointcloud_ptr->HasNormals()) {
+		PrintDebug("Orient normals towards [%.2f, %.2f, %.2f].\n",
+				camera_loc(0), camera_loc(1), camera_loc(2));
+		Eigen::Vector3d loc(camera_loc);
+		OrientNormalsTowardsCameraLocation(*pointcloud_ptr, loc);
+		processed = true;
 	}
 
 	size_t point_num_out = pointcloud_ptr->points_.size();
