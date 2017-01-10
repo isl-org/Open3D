@@ -92,15 +92,19 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 	size_t old_vert_num = points_.size();
 	size_t add_vert_num = cloud.points_.size();
 	size_t new_vert_num = old_vert_num + add_vert_num;
-	if (HasNormals() && cloud.HasNormals()) {
+	if ((!HasPoints() || HasNormals()) && cloud.HasNormals()) {
 		normals_.resize(new_vert_num);
 		for (size_t i = 0; i < add_vert_num; i++)
 			normals_[old_vert_num + i] = cloud.normals_[i];
+	} else {
+		normals_.clear();
 	}
-	if (HasColors() && cloud.HasColors()) {
+	if ((!HasPoints() || HasColors()) && cloud.HasColors()) {
 		colors_.resize(new_vert_num);
 		for (size_t i = 0; i < add_vert_num; i++)
 			colors_[old_vert_num + i] = cloud.colors_[i];
+	} else {
+		colors_.clear();
 	}
 	points_.resize(new_vert_num);
 	for (size_t i = 0; i < add_vert_num; i++)

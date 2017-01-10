@@ -112,11 +112,13 @@ LineSet &LineSet::operator+=(const LineSet &lineset)
 	size_t add_line_num = lineset.lines_.size();
 	size_t new_line_num = old_line_num + add_line_num;
 
-	if (HasColors() && lineset.HasColors()) {
+	if ((!HasLines() || HasColors()) && lineset.HasColors()) {
 		colors_.resize(new_line_num);
 		for (size_t i = 0; i < add_line_num; i++) {
 			colors_[old_line_num + i] = lineset.colors_[i];
 		}
+	} else {
+		colors_.clear();
 	}
 	point_set_[0].resize(new_point_num[0]);
 	for (size_t i = 0; i < add_point_num[0]; i++) {

@@ -102,24 +102,31 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
 	size_t old_tri_num = triangles_.size();
 	size_t add_tri_num = mesh.triangles_.size();
 	size_t new_tri_num = old_tri_num + add_tri_num;
-	if (HasVertexNormals() && mesh.HasVertexNormals()) {
+	if ((!HasVertices() || HasVertexNormals()) && mesh.HasVertexNormals()) {
 		vertex_normals_.resize(new_vert_num);
 		for (size_t i = 0; i < add_vert_num; i++)
 			vertex_normals_[old_vert_num + i] = mesh.vertex_normals_[i];
+	} else {
+		vertex_normals_.clear();
 	}
-	if (HasVertexColors() && mesh.HasVertexColors()) {
+	if ((!HasVertices() || HasVertexColors()) && mesh.HasVertexColors()) {
 		vertex_colors_.resize(new_vert_num);
 		for (size_t i = 0; i < add_vert_num; i++)
 			vertex_colors_[old_vert_num + i] = mesh.vertex_colors_[i];
+	} else {
+		vertex_colors_.clear();
 	}
 	vertices_.resize(new_vert_num);
 	for (size_t i = 0; i < add_vert_num; i++)
 		vertices_[old_vert_num + i] = mesh.vertices_[i];
 
-	if (HasTriangleNormals() && mesh.HasTriangleNormals()) {
+	if ((!HasTriangles() || HasTriangleNormals()) &&
+			mesh.HasTriangleNormals()) {
 		triangle_normals_.resize(new_tri_num);
 		for (size_t i = 0; i < add_tri_num; i++)
 			triangle_normals_[old_tri_num + i] = mesh.triangle_normals_[i];
+	} else {
+		triangle_normals_.clear();
 	}
 	triangles_.resize(triangles_.size() + mesh.triangles_.size());
 	Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num, 
