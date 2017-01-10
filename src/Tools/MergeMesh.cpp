@@ -30,22 +30,30 @@
 void PrintHelp()
 {
 	printf("Usage:\n");
-	printf("    > MergeMesh source_directory target_file\n");
+	printf("    > MergeMesh source_directory target_file [option]\n");
 	printf("      Merge mesh files under <source_directory>.\n");
-}
+	printf("\n");
+	printf("Options (listed in the order of execution priority):\n");
+	printf("    --help, -h                : Print help information.\n");
+	printf("    --verbose n               : Set verbose level (0-4).\n");
+	printf("    --purge                   : Clear duplicated and non-manifold vertices and\n");
+	printf("                                triangles.\n");
+ }
 
-int main(int argc, char **args)
+int main(int argc, char **argv)
 {
 	using namespace three;
 	using namespace three::filesystem;
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
-	if (argc <= 2) {
+	if (argc <= 2 || ProgramOptionExists(argc, argv, "--help")) {
 		PrintHelp();
 		return 0;
 	}
+	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+	SetVerbosityLevel((VerbosityLevel)verbose);
 
-	std::string directory(args[1]);
+	std::string directory(argv[1]);
 	std::vector<std::string> filenames;
 	ListFilesInDirectory(directory, filenames);
 
@@ -56,8 +64,11 @@ int main(int argc, char **args)
 			*merged_mesh_ptr += *mesh_ptr;
 		}
 	}
-	merged_mesh_ptr->Purge();
-	WriteTriangleMesh(args[2], *merged_mesh_ptr);
+	
+	if (ProgramOptionExists(argc, argv, "--purge")) {
+		merged_mesh_ptr->Purge();
+	}
+	WriteTriangleMesh(argv[2], *merged_mesh_ptr);
 
 	return 1;
 }
