@@ -40,6 +40,8 @@ void PrintHelp()
 	printf("    --max_distance d          : Set max distance. Must be positive.\n");
 	printf("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
 	printf("    --nn_distance             : Compute the NN distance.\n");
+	printf("    --write_color_back        : Write color back to source_file.\n");
+	printf("    --without_gui             : Without GUI.\n");
 }
 
 int main(int argc, char *argv[])
@@ -94,6 +96,11 @@ int main(int argc, char *argv[])
 	for (size_t i = 0; i < pcd->points_.size(); i++) {
 		pcd->colors_[i] = colormap.GetColor(distances[i] / max_distance);
 	}
-	DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
+	if (ProgramOptionExists(argc, argv, "--write_color_back")) {
+		WritePointCloud(argv[1], *pcd);
+	}
+	if (!ProgramOptionExists(argc, argv, "--without_gui")) {
+		DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
+	}
 	return 1;
 }

@@ -250,9 +250,10 @@ void Visualizer::BuildUtilities()
 	utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
 }
 
-void Visualizer::Run()
+void Visualizer::Run(bool exit_when_idle/* = false*/)
 {
 	BuildUtilities();
+	UpdateWindowTitle();
 	while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
 		if (bool(animation_callback_func_in_loop_)) {
 			if (animation_callback_func_in_loop_(*this)) {
@@ -262,6 +263,9 @@ void Visualizer::Run()
 			// functions, we assume something has been changed in the callback
 			// and the redraw event should be triggered.
 			UpdateRender();
+		}
+		if (bool(animation_callback_func_) == false && exit_when_idle) {
+			return;
 		}
 	}
 }

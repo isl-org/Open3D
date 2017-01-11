@@ -89,6 +89,10 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 		bool recording_depth/* = false*/)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+	if (view_control.NumOfFrames() == 0) {
+		PrintInfo("Abort playing due to empty trajectory.\n");
+		return;
+	}
 	view_control.SetAnimationMode(
 			ViewControlWithCustomAnimation::ANIMATION_PLAYMODE);
 	is_redraw_required_ = true;

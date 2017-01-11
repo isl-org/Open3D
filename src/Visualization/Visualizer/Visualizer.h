@@ -81,8 +81,8 @@ public:
 	
 	/// Function to activate the window
 	/// This function will block the current thread until the window is closed.
-	void Run();
-
+	void Run(bool exit_when_idle = false);
+	
 	/// Function to process the event queue and return if the window is closed
 	/// Use this function if you want to manage the while loop yourself. This
 	/// function will block the thread.

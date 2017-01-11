@@ -48,6 +48,8 @@ void PrintHelp()
 	printf("    --render_option file      : Read a json file of rendering settings.\n");
 	printf("    --view_trajectory file    : Read a json file of view trajectory.\n");
 	printf("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
+	printf("    --auto_recording          : Automatically plays the animation, record\n");
+	printf("                                images, and exits when animation ends.\n");
 	printf("\n");
 	printf("Window options:\n");
 	printf("    --window_name name        : Set window name.\n");
@@ -177,7 +179,12 @@ int main(int argc, char **argv)
 
 	visualizer.GetRenderOption().show_coordinate_frame_ = show_coordinate_frame;
 
-	visualizer.Run();
+	if (ProgramOptionExists(argc, argv, "--auto_recording")) {
+		visualizer.Play(true, false);
+		visualizer.Run(true);
+	} else {
+		visualizer.Run();
+	}
 	visualizer.DestroyWindow();
 
 	return 1;
