@@ -154,4 +154,9 @@ void ComputePointCloudMeanAndCovariance(const PointCloud &input,
 void ComputePointCloudMahalanobisDistance(const PointCloud &input,
 		std::vector<double> &mahalanobis);
 
+/// Function to compute the distance from a point to its nearest neighbor in the
+/// point cloud
+void ComputePointCloudNearestNeighborDistance(const PointCloud &input,
+		std::vector<double> &nn_dis);
+
 }	// namespace three

@@ -38,6 +38,8 @@ void PrintHelp()
 	printf("    --help, -h                : Print help information.\n");
 	printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
 	printf("    --max_distance d          : Set max distance. Must be positive.\n");
+	printf("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
+	printf("    --nn_distance             : Compute the NN distance.\n");
 }
 
 int main(int argc, char *argv[])
@@ -53,10 +55,6 @@ int main(int argc, char *argv[])
 	SetVerbosityLevel((VerbosityLevel)verbose);
 	double max_distance = GetProgramOptionAsDouble(argc, argv, "--max_distance",
 			0.0);
-	if (max_distance <= 0.0) {
-		PrintInfo("Max distance must be a positive value.\n");
-		return 0;
-	}
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	if (pcd->IsEmpty()) {
 		PrintInfo("Empty point cloud.\n");
@@ -64,15 +62,31 @@ int main(int argc, char *argv[])
 	}
 	std::string binname = filesystem::GetFileNameWithoutExtension(argv[1]) +
 			".bin";
-	FILE *f = fopen(binname.c_str(), "rb");
-	if (f == NULL) {
-		PrintInfo("Cannot open bin file.\n");
-		return 0;
-	}
 	std::vector<double> distances(pcd->points_.size());
-	if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
-			pcd->points_.size()) {
-		PrintInfo("Cannot open bin file.\n");
+	if (ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
+		ComputePointCloudMahalanobisDistance(*pcd, distances);
+		FILE *f = fopen(binname.c_str(), "wb");
+		fwrite(distances.data(), sizeof(double), distances.size(), f);
+		fclose(f);
+	} else if (ProgramOptionExists(argc, argv, "--nn_distance")) {
+		ComputePointCloudNearestNeighborDistance(*pcd, distances);
+		FILE *f = fopen(binname.c_str(), "wb");
+		fwrite(distances.data(), sizeof(double), distances.size(), f);
+		fclose(f);
+	} else {
+		FILE *f = fopen(binname.c_str(), "rb");
+		if (f == NULL) {
+			PrintInfo("Cannot open bin file.\n");
+			return 0;
+		}
+		if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
+				pcd->points_.size()) {
+			PrintInfo("Cannot open bin file.\n");
+			return 0;
+		}
+	}
+	if (max_distance <= 0.0) {
+		PrintInfo("Max distance must be a positive value.\n");
 		return 0;
 	}
 	pcd->colors_.resize(pcd->points_.size());

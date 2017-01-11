@@ -183,4 +183,22 @@ void ComputePointCloudMahalanobisDistance(const PointCloud &input,
 	}
 }
 
+void ComputePointCloudNearestNeighborDistance(const PointCloud &input,
+		std::vector<double> &nn_dis)
+{
+	nn_dis.resize(input.points_.size());
+	if (input.IsEmpty()) return;
+	KDTreeFlann kdtree;
+	kdtree.SetGeometry(input);
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)input.points_.size(); i++) {
+		std::vector<int> indices(2);
+		std::vector<double> dists(2);
+		kdtree.SearchKNN(input.points_[i], 2, indices, dists);
+		nn_dis[i] = std::sqrt(dists[1]);
+	}
+}
+
 }	// namespace three
