@@ -54,6 +54,11 @@ void PrintHelp()
 	printf("                                original normals of the pointcloud if they\n");
 	printf("                                exist. Otherwise, they are oriented towards -Z\n");
 	printf("                                direction.\n");
+	printf("    --estimate_normals_knn k  : Estimate normals using a search with k nearest\n");
+	printf("                                neighbors. The normals are oriented w.r.t. the\n");
+	printf("                                original normals of the pointcloud if they\n");
+	printf("                                exist. Otherwise, they are oriented towards -Z\n");
+	printf("                                direction.\n");
 	printf("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
 	printf("    --camera_location [x,y,z] : Orient the normals w.r.t camera loation [x,y,z].\n");
 }
@@ -138,6 +143,13 @@ void convert(int argc, char **argv, const std::string &file_in,
 	if (radius > 0.0) {
 		PrintDebug("Estimate normals with search radius %.4f.\n", radius);
 		EstimateNormals(*pointcloud_ptr, KDTreeSearchParamRadius(radius));
+		processed = true;
+	}
+
+	int k = GetProgramOptionAsInt(argc, argv, "--estimate_normals_knn", 0);
+	if (k > 0) {
+		PrintDebug("Estimate normals with search knn %d.\n", k);
+		EstimateNormals(*pointcloud_ptr, KDTreeSearchParamKNN(k));
 		processed = true;
 	}
 
