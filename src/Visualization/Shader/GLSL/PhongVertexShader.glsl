@@ -27,6 +27,8 @@ void main()
 	light_dir_camera_4 = V * light_position_world_4 - mat4(v, v, v, v);
 
 	vertex_normal_camera = (V * M * vec4(vertex_normal, 0)).xyz;
+	if (dot(eye_dir_camera, vertex_normal_camera) < 0.0)
+		vertex_normal_camera = vertex_normal_camera * -1.0;
 
 	fragment_color = vertex_color;
 }
