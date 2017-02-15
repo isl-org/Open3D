@@ -60,3 +60,7 @@ https://github.com/IntelRealSense/librealsense
 tinyfiledialogs             2.7.2                                   zlib license
 A lightweight cross-platform file dialog library
 https://sourceforge.net/projects/tinyfiledialogs/
+--------------------------------------------------------------------------------
+pybind11                    2.1                                      BSD license
+Python binding for C++11
+https://github.com/pybind/pybind11
