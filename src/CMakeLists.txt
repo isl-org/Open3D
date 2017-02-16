@@ -12,6 +12,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
+option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
@@ -92,6 +93,7 @@ if (Open3D_USE_OPENMP)
 endif()
 
 message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
+message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
 add_subdirectory(External)
 add_subdirectory(Core)
 add_subdirectory(Tools)
@@ -112,3 +114,8 @@ if(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
 	message(STATUS "Build projects in Sandbox")
 	add_subdirectory(Sandbox)
 endif(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
+
+# Python binding
+if (Open3D_BUILD_PYTHON_BINDING)
+	add_subdirectory(Python)
+endif(Open3D_BUILD_PYTHON_BINDING)

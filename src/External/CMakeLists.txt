@@ -5,8 +5,11 @@ add_subdirectory(libpng)
 add_subdirectory(libjpeg)
 add_subdirectory(jsoncpp)
 add_subdirectory(tinyfiledialogs)
-add_subdirectory(pybind11)
 
 if(Open3D_BUILD_LIBREALSENSE)
 	add_subdirectory(librealsense)
 endif(Open3D_BUILD_LIBREALSENSE)
+
+if (Open3D_BUILD_PYTHON_BINDING)
+	add_subdirectory(pybind11)
+endif(Open3D_BUILD_PYTHON_BINDING)
