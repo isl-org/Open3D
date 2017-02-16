@@ -25,8 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl_bind.h>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
 namespace py = pybind11;
 
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
+
+void pybind_eigen(py::module &m);
 void pybind_core(py::module &m);
 void pybind_io(py::module &m);
 void pybind_visualization(py::module &m);

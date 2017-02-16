@@ -29,6 +29,7 @@
 PYBIND11_PLUGIN(py3d) {
 	py::module m("py3d", "Python binding of Open3D");
 
+	pybind_eigen(m);
 	pybind_core(m);
 	pybind_io(m);
 	pybind_visualization(m);

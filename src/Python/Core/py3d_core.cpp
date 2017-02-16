@@ -29,4 +29,5 @@
 void pybind_core(py::module &m)
 {
 	pybind_console(m);
+	pybind_geometry(m);
 }

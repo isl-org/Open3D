@@ -27,3 +27,4 @@
 #include <Python/py3d.h>
 
 void pybind_console(py::module &m);
+void pybind_geometry(py::module &m);
