@@ -29,6 +29,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 namespace py = pybind11;
+using namespace py::literals;
 
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 

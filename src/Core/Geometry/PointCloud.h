@@ -110,7 +110,7 @@ bool VoxelDownSample(const PointCloud &input, double voxel_size,
 /// \param every_k_points indicates the sample rate.
 /// Input and output cannot be the same pointcloud.
 bool UniformDownSample(const PointCloud &input, size_t every_k_points,
-		PointCloud &output_cloud);
+		PointCloud &output);
 
 /// Function to crop input pointcloud into output pointcloud
 /// All points with coordinates less than \param min_bound or larger than

@@ -101,5 +101,8 @@ void pybind_geometry(py::module &m)
 
 	m.def("CreatePointCloudFromFile", &CreatePointCloudFromFile,
 			"Factory function to create a pointcloud from a file",
-			py::arg("filename"));
+			"filename"_a);
+	m.def("VoxelDownSample", &VoxelDownSample,
+			"Function to downsample input pointcloud into output pointcloud with a voxel",
+			"input"_a, "voxel_size"_a, "output"_a);
 }
