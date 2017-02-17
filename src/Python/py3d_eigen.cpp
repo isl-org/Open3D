@@ -53,6 +53,44 @@ pybind11::class_<Vector, holder_type> bind_vector_without_repr(pybind11::module 
 
 void pybind_eigen(py::module &m)
 {
+	auto int_vector = py::bind_vector<std::vector<int>>(m, "IntVector",
+			py::buffer_protocol());
+	int_vector
+		.def("__init__", [](std::vector<int> &v,
+				py::array_t<int, py::array::c_style> b) {
+			py::buffer_info info = b.request();
+			if (info.format != py::format_descriptor<int>::format() || 
+					info.ndim != 1)
+				throw std::runtime_error("Incompatible buffer format!");
+			v.resize(info.shape[0]);
+			memcpy(v.data(), info.ptr, sizeof(int) * v.size());
+		})
+		.def_buffer([](std::vector<int> &v) -> py::buffer_info {
+			return py::buffer_info(
+					v.data(), sizeof(int), py::format_descriptor<int>::format(),
+					1, {v.size()}, {sizeof(int)});
+		});
+
+	auto double_vector = 
+			py::bind_vector<std::vector<double>>(m, "DoubleVector",
+			py::buffer_protocol());
+	double_vector
+		.def("__init__", [](std::vector<double> &v,
+				py::array_t<int, py::array::c_style> b) {
+			py::buffer_info info = b.request();
+			if (info.format != py::format_descriptor<double>::format() || 
+					info.ndim != 1)
+				throw std::runtime_error("Incompatible buffer format!");
+			v.resize(info.shape[0]);
+			memcpy(v.data(), info.ptr, sizeof(double) * v.size());
+		})
+		.def_buffer([](std::vector<double> &v) -> py::buffer_info {
+			return py::buffer_info(
+					v.data(), sizeof(double),
+					py::format_descriptor<double>::format(),
+					1, {v.size()}, {sizeof(double)});
+		});
+
 	auto vector3d_vector =
 			py::bind_vector_without_repr<std::vector<Eigen::Vector3d>>(
 			m, "Vector3dVector", py::buffer_protocol());

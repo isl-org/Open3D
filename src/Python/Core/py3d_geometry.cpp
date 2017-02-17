@@ -26,10 +26,7 @@
 
 #include "py3d_core.h"
 
-#include <Core/Geometry/Geometry.h>
-#include <Core/Geometry/Geometry2D.h>
-#include <Core/Geometry/Geometry3D.h>
-#include <Core/Geometry/PointCloud.h>
+#include <Core/Core.h>
 using namespace three;
 
 
@@ -87,7 +84,7 @@ void pybind_geometry(py::module &m)
 			std::shared_ptr<PointCloud>> pointcloud(m, "PointCloud",
 			geometry3d);
 	pointcloud.def(py::init<>())
-		.def("__repr__", [](PointCloud &pcd) {
+		.def("__repr__", [](const PointCloud &pcd) {
 			return std::string("PointCloud with ") + 
 					std::to_string(pcd.points_.size()) + " points.";
 		})
@@ -99,10 +96,75 @@ void pybind_geometry(py::module &m)
 		.def_readwrite("normals", &PointCloud::normals_)
 		.def_readwrite("colors", &PointCloud::colors_);
 
+	py::class_<KDTreeSearchParam> kdtreesearchparam(m, "KDTreeSearchParam");
+	kdtreesearchparam
+		.def("GetSearchType", &KDTreeSearchParam::GetSearchType);
+	py::enum_<KDTreeSearchParam::SearchType>(kdtreesearchparam, "Type",
+			py::arithmetic())
+		.value("KNNSearch", KDTreeSearchParam::SEARCH_KNN)
+		.value("RadiusSearch", KDTreeSearchParam::SEARCH_RADIUS)
+		.value("HybridSearch", KDTreeSearchParam::SEARCH_HYBRID)
+		.export_values();
+
+	py::class_<KDTreeSearchParamKNN> kdtreesearchparam_knn(m,
+			"KDTreeSearchParamKNN", kdtreesearchparam);
+	kdtreesearchparam_knn
+		.def(py::init<int>(), "knn"_a = 30)
+		.def("__repr__", [](const KDTreeSearchParamKNN &param){
+			return std::string("KDTreeSearchParamKNN with knn = ") +
+					std::to_string(param.knn_);
+		})
+		.def_readwrite("knn", &KDTreeSearchParamKNN::knn_);
+
+	py::class_<KDTreeSearchParamRadius> kdtreesearchparam_radius(m,
+			"KDTreeSearchParamRadius", kdtreesearchparam);
+	kdtreesearchparam_radius
+		.def(py::init<double>(), "radius"_a)
+		.def("__repr__", [](const KDTreeSearchParamRadius &param){
+			return std::string("KDTreeSearchParamRadius with radius = ") +
+					std::to_string(param.radius_);
+		})
+		.def_readwrite("radius", &KDTreeSearchParamRadius::radius_);
+
+	py::class_<KDTreeSearchParamHybrid> kdtreesearchparam_hybrid(m,
+			"KDTreeSearchParamHybrid", kdtreesearchparam);
+	kdtreesearchparam_hybrid
+		.def(py::init<double, int>(), "radius"_a, "max_nn"_a)
+		.def("__repr__", [](const KDTreeSearchParamHybrid &param){
+			return std::string("KDTreeSearchParamHybrid with radius = ") +
+					std::to_string(param.radius_) + " and max_nn = " +
+					std::to_string(param.max_nn_);
+		})
+		.def_readwrite("radius", &KDTreeSearchParamHybrid::radius_)
+		.def_readwrite("max_nn", &KDTreeSearchParamHybrid::max_nn_);
+
+	py::class_<KDTreeFlann> kdtreeflann(m, "KDTreeFlann");
+	kdtreeflann.def(py::init<>())
+		.def(py::init<const Geometry &>(), "geometry"_a)
+		.def("SetGeometry", &KDTreeFlann::SetGeometry, "geometry"_a)
+		.def("SearchVector3D", &KDTreeFlann::Search<Eigen::Vector3d>,
+				"query"_a, "search_param"_a, "indices"_a, "distance2"_a)
+		.def("SearchKNNVector3D", &KDTreeFlann::SearchKNN<Eigen::Vector3d>,
+				"query"_a, "knn"_a, "indices"_a, "distance2"_a)
+		.def("SearchRadiusVector3D",
+				&KDTreeFlann::SearchRadius<Eigen::Vector3d>, "query"_a,
+				"radius"_a, "indices"_a, "distance2"_a)
+		.def("SearchHybridVector3D",
+				&KDTreeFlann::SearchHybrid<Eigen::Vector3d>, "query"_a,
+				"radius"_a, "max_nn"_a, "indices"_a, "distance2"_a);
+
 	m.def("CreatePointCloudFromFile", &CreatePointCloudFromFile,
 			"Factory function to create a pointcloud from a file",
 			"filename"_a);
+	m.def("SelectDownSample", &SelectDownSample,
+			"Function to select points from input pointcloud into output pointcloud",
+			"input"_a, "indices"_a, "output"_a);
 	m.def("VoxelDownSample", &VoxelDownSample,
 			"Function to downsample input pointcloud into output pointcloud with a voxel",
 			"input"_a, "voxel_size"_a, "output"_a);
+	m.def("UniformDownSample", &UniformDownSample,
+			"Function to downsample input pointcloud into output pointcloud uniformly",
+			"input"_a, "every_k_points"_a, "output"_a);
+	m.def("CropPointCloud", &CropPointCloud,
+			"input"_a, "min_bound"_a, "max_bound"_a, "output"_a);
 }
