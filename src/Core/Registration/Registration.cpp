@@ -49,8 +49,8 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 		std::vector<int> indices(1);
 		std::vector<double> dists(1);
 		const auto &point = source.points_[i];
-		target_kdtree.SearchKNN(point, 1, indices, dists);
-		if (dists[0] < max_dist2) {
+		if (target_kdtree.SearchHybrid(point, max_correspondence_distance, 1,
+				indices, dists) > 0) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
