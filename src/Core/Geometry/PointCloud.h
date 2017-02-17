@@ -133,7 +133,7 @@ bool OrientNormalsToAlignWithDirection(PointCloud &cloud,
 		const Eigen::Vector3d &orientation_reference =
 		Eigen::Vector3d(0.0, 0.0, 1.0));
 
-/// Function to compute the normals of a point cloud
+/// Function to orient the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with towards \param camera_location.
 bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,

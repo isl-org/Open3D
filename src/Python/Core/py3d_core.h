@@ -24,7 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
 #include <Python/py3d.h>
 
 void pybind_console(py::module &m);
 void pybind_geometry(py::module &m);
+void pybind_pointcloud(py::module &m);
+void pybind_kdtreeflann(py::module &m);
+
+void pybind_pointcloud_methods(py::module &m);

@@ -30,4 +30,8 @@ void pybind_core(py::module &m)
 {
 	pybind_console(m);
 	pybind_geometry(m);
+	pybind_pointcloud(m);
+	pybind_kdtreeflann(m);
+
+	pybind_pointcloud_methods(m);
 }

@@ -24,33 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
-#include "py3d_core_trampoline.h"
+#pragma once
 
-#include <Core/Core.h>
-using namespace three;
+#include <Python/py3d.h>
 
-void pybind_geometry(py::module &m)
+template <class GeometryBase = Geometry> class PyGeometry : public GeometryBase
 {
-	py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
-			geometry(m, "Geometry");
-	geometry
-		.def("Clear", &Geometry::Clear)
-		.def("IsEmpty", &Geometry::IsEmpty)
-		.def("GetGeometryType", &Geometry::GetGeometryType)
-		.def("Dimension", &Geometry::Dimension);
-	py::enum_<Geometry::GeometryType>(geometry, "Type", py::arithmetic())
-		.value("Unspecified", Geometry::GEOMETRY_UNSPECIFIED)
-		.value("PointCloud", Geometry::GEOMETRY_POINTCLOUD)
-		.value("LineSet", Geometry::GEOMETRY_LINESET)
-		.value("TriangleMesh", Geometry::GEOMETRY_TRIANGLEMESH)
-		.value("Image", Geometry::GEOMETRY_IMAGE)
-		.export_values();
+public:
+	using GeometryBase::GeometryBase;
+	void Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
+	bool IsEmpty() const override {
+		PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
+	}
+};
 
-	py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
-			std::shared_ptr<Geometry3D>, Geometry> geometry3d(m, "Geometry3D");
-	geometry3d
-		.def("GetMinBound", &Geometry3D::GetMinBound)
-		.def("GetMaxBound", &Geometry3D::GetMaxBound)
-		.def("Transform", &Geometry3D::Transform);
-}
+template <class Geometry3DBase = Geometry3D> class PyGeometry3D :
+		public PyGeometry<Geometry3DBase>
+{
+public:
+	using PyGeometry<Geometry3DBase>::PyGeometry;
+	Eigen::Vector3d GetMinBound() const override {
+		PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
+	}
+	Eigen::Vector3d GetMaxBound() const override {
+		PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
+	}
+	void Transform(const Eigen::Matrix4d &transformation) override {
+		PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
+	}
+};
