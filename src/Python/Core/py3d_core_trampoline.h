@@ -27,6 +27,8 @@
 #pragma once
 
 #include <Python/py3d.h>
+#include <Core/Core.h>
+using namespace three;
 
 template <class GeometryBase = Geometry> class PyGeometry : public GeometryBase
 {
