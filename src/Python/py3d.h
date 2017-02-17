@@ -39,6 +39,11 @@ PYBIND11_MAKE_OPAQUE(std::vector<double>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 
 void pybind_eigen(py::module &m);
-void pybind_core(py::module &m);
-void pybind_io(py::module &m);
-void pybind_visualization(py::module &m);
+
+void pybind_core_classes(py::module &m);
+void pybind_io_classes(py::module &m);
+void pybind_visualization_classes(py::module &m);
+
+void pybind_core_methods(py::module &m);
+void pybind_io_methods(py::module &m);
+void pybind_visualization_methods(py::module &m);

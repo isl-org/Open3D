@@ -27,3 +27,5 @@
 #pragma once
 
 #include <Python/py3d.h>
+
+void pybind_utility_methods(py::module &m);

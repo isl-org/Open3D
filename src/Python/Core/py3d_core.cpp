@@ -26,12 +26,15 @@
 
 #include "py3d_core.h"
 
-void pybind_core(py::module &m)
+void pybind_core_classes(py::module &m)
 {
 	pybind_console(m);
 	pybind_geometry(m);
 	pybind_pointcloud(m);
 	pybind_kdtreeflann(m);
+}
 
+void pybind_core_methods(py::module &m)
+{
 	pybind_pointcloud_methods(m);
 }

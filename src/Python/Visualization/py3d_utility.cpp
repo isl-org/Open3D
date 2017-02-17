@@ -24,20 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d.h"
+#include "py3d_visualization.h"
 
-PYBIND11_PLUGIN(py3d) {
-	py::module m("py3d", "Python binding of Open3D");
+#include <Visualization/Visualization.h>
+using namespace three;
 
-	pybind_eigen(m);
-
-	pybind_core_classes(m);
-	pybind_io_classes(m);
-	pybind_visualization_classes(m);
-
-	pybind_core_methods(m);
-	pybind_io_methods(m);
-	pybind_visualization_methods(m);
-
-    return m.ptr();
+void pybind_utility_methods(py::module &m)
+{
+	m.def("DrawGeometries", &DrawGeometries,
+			"Function to draw a list of Geometry objects",
+			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+			"height"_a = 1080, "left"_a = 50, "top"_a = 50);
+	m.def("DrawGeometriesWithCustomAnimation",
+			&DrawGeometriesWithCustomAnimation,
+			"Function to draw a list of Geometry objects",
+			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
+			"optional_view_trajectory_json_file"_a = "");	
 }

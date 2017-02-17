@@ -26,6 +26,11 @@
 
 #include "py3d_visualization.h"
 
-void pybind_visualization(py::module &m)
+void pybind_visualization_classes(py::module &m)
 {
+}
+
+void pybind_visualization_methods(py::module &m)
+{
+	pybind_utility_methods(m);
 }
