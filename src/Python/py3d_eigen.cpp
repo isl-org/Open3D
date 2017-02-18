@@ -62,7 +62,7 @@ void pybind_eigen(py::module &m)
 			if (info.format != py::format_descriptor<int>::format() || 
 					info.ndim != 1)
 				throw std::runtime_error("Incompatible buffer format!");
-			v.resize(info.shape[0]);
+			new (&v) std::vector<int>(info.shape[0]);
 			memcpy(v.data(), info.ptr, sizeof(int) * v.size());
 		})
 		.def_buffer([](std::vector<int> &v) -> py::buffer_info {
@@ -81,7 +81,7 @@ void pybind_eigen(py::module &m)
 			if (info.format != py::format_descriptor<double>::format() || 
 					info.ndim != 1)
 				throw std::runtime_error("Incompatible buffer format!");
-			v.resize(info.shape[0]);
+			new (&v) std::vector<double>(info.shape[0]);
 			memcpy(v.data(), info.ptr, sizeof(double) * v.size());
 		})
 		.def_buffer([](std::vector<double> &v) -> py::buffer_info {
@@ -101,7 +101,7 @@ void pybind_eigen(py::module &m)
 			if (info.format != py::format_descriptor<double>::format() || 
 					info.ndim != 2 || info.shape[1] != 3)
 				throw std::runtime_error("Incompatible buffer format!");
-			v.resize(info.shape[0]);
+			new (&v) std::vector<Eigen::Vector3d>(info.shape[0]);
 			memcpy(v.data(), info.ptr, sizeof(double) * 3 * v.size());
 		})
 		// Bare bones interface
@@ -141,7 +141,7 @@ void pybind_eigen(py::module &m)
 			if (info.format != py::format_descriptor<int>::format() || 
 					info.ndim != 2 || info.shape[1] != 3)
 				throw std::runtime_error("Incompatible buffer format!");
-			v.resize(info.shape[0]);
+			new (&v) std::vector<Eigen::Vector3i>(info.shape[0]);
 			memcpy(v.data(), info.ptr, sizeof(int) * 3 * v.size());
 		})
 		// Bare bones interface

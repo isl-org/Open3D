@@ -57,9 +57,10 @@ void pybind_image(py::module &m)
 			if (info.ndim == 2) {
 				num_of_channels = 1;
 			} else if (info.ndim == 3) {
-				num_of_channels = info.shape[2];
+				num_of_channels = (int)info.shape[2];
 			}
-			height = info.shape[0]; width = info.shape[1];
+			height = (int)info.shape[0]; width = (int)info.shape[1];
+			new (&img) Image();
 			img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 			memcpy(img.data_.data(), info.ptr, img.data_.size());
 		})
@@ -94,7 +95,7 @@ void pybind_image(py::module &m)
 			return std::string("Image of size ") + std::to_string(img.width_) +
 					std::string("x") + std::to_string(img.height_) + ", with " +
 					std::to_string(img.num_of_channels_) +
-					std::string(" channels.\nUse numpy.asarray to access buffer data");
+					std::string(" channels.\nUse numpy.asarray to access buffer data.");
 		});
 }
 
