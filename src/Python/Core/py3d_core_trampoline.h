@@ -55,3 +55,16 @@ public:
 		PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
 	}
 };
+
+template <class Geometry2DBase = Geometry2D> class PyGeometry2D :
+		public PyGeometry<Geometry2DBase>
+{
+public:
+	using PyGeometry<Geometry2DBase>::PyGeometry;
+	Eigen::Vector2d GetMinBound() const override {
+		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
+	}
+	Eigen::Vector2d GetMaxBound() const override {
+		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
+	}
+};

@@ -53,4 +53,10 @@ void pybind_geometry(py::module &m)
 		.def("GetMinBound", &Geometry3D::GetMinBound)
 		.def("GetMaxBound", &Geometry3D::GetMaxBound)
 		.def("Transform", &Geometry3D::Transform);
+	
+	py::class_<Geometry2D, PyGeometry2D<Geometry2D>,
+			std::shared_ptr<Geometry2D>, Geometry> geometry2d(m, "Geometry2D");
+	geometry2d
+		.def("GetMinBound", &Geometry2D::GetMinBound)
+		.def("GetMaxBound", &Geometry2D::GetMaxBound);
 }
