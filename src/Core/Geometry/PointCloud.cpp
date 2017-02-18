@@ -112,7 +112,7 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 	return (*this);
 }
 
-const PointCloud PointCloud::operator+(const PointCloud &cloud)
+PointCloud PointCloud::operator+(const PointCloud &cloud) const
 {
 	return (PointCloud(*this) += cloud);
 }

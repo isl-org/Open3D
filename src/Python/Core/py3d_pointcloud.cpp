@@ -40,10 +40,13 @@ void pybind_pointcloud(py::module &m)
 			return std::string("PointCloud with ") + 
 					std::to_string(pcd.points_.size()) + " points.";
 		})
+		.def(py::self + py::self)
+		.def(py::self += py::self)
 		.def("HasPoints", &PointCloud::HasPoints)
 		.def("HasNormals", &PointCloud::HasNormals)
 		.def("HasColors", &PointCloud::HasColors)
 		.def("NormalizeNormals", &PointCloud::NormalizeNormals)
+		.def("PaintUniformColor", &TriangleMesh::PaintUniformColor)
 		.def_readwrite("points", &PointCloud::points_)
 		.def_readwrite("normals", &PointCloud::normals_)
 		.def_readwrite("colors", &PointCloud::colors_);

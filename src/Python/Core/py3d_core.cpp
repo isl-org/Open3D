@@ -31,10 +31,14 @@ void pybind_core_classes(py::module &m)
 	pybind_console(m);
 	pybind_geometry(m);
 	pybind_pointcloud(m);
+	pybind_trianglemesh(m);
+	pybind_image(m);
 	pybind_kdtreeflann(m);
 }
 
 void pybind_core_methods(py::module &m)
 {
 	pybind_pointcloud_methods(m);
+	pybind_trianglemesh_methods(m);
+	pybind_image_methods(m);
 }

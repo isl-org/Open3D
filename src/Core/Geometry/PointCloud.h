@@ -51,8 +51,8 @@ public:
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
-	virtual PointCloud &operator+=(const PointCloud &cloud);
-	virtual const PointCloud operator+(const PointCloud &cloud);
+	PointCloud &operator+=(const PointCloud &cloud);
+	PointCloud operator+(const PointCloud &cloud) const;
 
 public:
 	bool HasPoints() const {
@@ -70,6 +70,13 @@ public:
 	void NormalizeNormals() {
 		for (size_t i = 0; i < normals_.size(); i++) {
 			normals_[i].normalize();
+		}
+	}
+
+	void PaintUniformColor(const Eigen::Vector3d &color) {
+		colors_.resize(points_.size());
+		for (size_t i = 0; i < points_.size(); i++) {
+			colors_[i] = color;
 		}
 	}
 	

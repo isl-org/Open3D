@@ -48,17 +48,23 @@ public:
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
-	virtual TriangleMesh &operator+=(const TriangleMesh &mesh);
-	virtual const TriangleMesh operator+(const TriangleMesh &mesh);
-	virtual void ComputeTriangleNormals(bool normalized = true);
-	virtual void ComputeVertexNormals(bool normalized = true);
-	virtual void Purge();
+	TriangleMesh &operator+=(const TriangleMesh &mesh);
+	TriangleMesh operator+(const TriangleMesh &mesh) const;
+
+	/// Function to compute triangle normals, usually called before rendering
+	void ComputeTriangleNormals(bool normalized = true);
+
+	/// Function to compute vertex normals, usually called before rendering
+	void ComputeVertexNormals(bool normalized = true);
+
+	/// Function to remove duplicated and non-manifold vertices/triangles
+	void Purge();
 
 protected:
-	virtual void RemoveDuplicatedVertices();
-	virtual void RemoveDuplicatedTriangles();
-	virtual void RemoveNonManifoldVertices();
-	virtual void RemoveNonManifoldTriangles();
+	void RemoveDuplicatedVertices();
+	void RemoveDuplicatedTriangles();
+	void RemoveNonManifoldVertices();
+	void RemoveNonManifoldTriangles();
 	
 public:
 	bool HasVertices() const {
@@ -96,6 +102,13 @@ public:
 			if (std::isnan(triangle_normals_[i](0))) {
 				triangle_normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
 			}
+		}
+	}
+
+	void PaintUniformColor(const Eigen::Vector3d &color) {
+		vertex_colors_.resize(vertices_.size());
+		for (size_t i = 0; i < vertices_.size(); i++) {
+			vertex_colors_[i] = color;
 		}
 	}
 

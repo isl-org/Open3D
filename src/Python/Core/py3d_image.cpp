@@ -24,29 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "py3d_core.h"
+#include "py3d_core_trampoline.h"
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
+#include <Core/Core.h>
+using namespace three;
 
-namespace py = pybind11;
-using namespace py::literals;
+void pybind_image(py::module &m)
+{
+	/*
+	py::class_<PointCloud, PyGeometry3D<PointCloud>,
+			std::shared_ptr<PointCloud>, Geometry3D> pointcloud(m,
+			"PointCloud");
+	pointcloud.def(py::init<>())
+		.def("__repr__", [](const PointCloud &pcd) {
+			return std::string("PointCloud with ") + 
+					std::to_string(pcd.points_.size()) + " points.";
+		})
+		.def("HasPoints", &PointCloud::HasPoints)
+		.def("HasNormals", &PointCloud::HasNormals)
+		.def("HasColors", &PointCloud::HasColors)
+		.def("NormalizeNormals", &PointCloud::NormalizeNormals)
+		.def_readwrite("points", &PointCloud::points_)
+		.def_readwrite("normals", &PointCloud::normals_)
+		.def_readwrite("colors", &PointCloud::colors_);
+	*/
+}
 
-PYBIND11_MAKE_OPAQUE(std::vector<int>);
-PYBIND11_MAKE_OPAQUE(std::vector<double>);
-PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
-PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
-
-void pybind_eigen(py::module &m);
-
-void pybind_core_classes(py::module &m);
-void pybind_io_classes(py::module &m);
-void pybind_visualization_classes(py::module &m);
-
-void pybind_core_methods(py::module &m);
-void pybind_io_methods(py::module &m);
-void pybind_visualization_methods(py::module &m);
+void pybind_image_methods(py::module &m)
+{
+	/*
+	m.def("CreatePointCloudFromFile", &CreatePointCloudFromFile,
+			"Factory function to create a pointcloud from a file",
+			"filename"_a);
+	m.def("SelectDownSample", [](const PointCloud &input,
+			const std::vector<size_t> &indices) {
+			PointCloud output;
+			if (SelectDownSample(input, indices, output) == false)
+				throw std::runtime_error("SelectDownSample() error!");
+			return output;
+		}, "Function to select points from input pointcloud into output pointcloud",
+			"input"_a, "indices"_a);
+	*/
+}
