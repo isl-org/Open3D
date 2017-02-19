@@ -39,7 +39,7 @@ void pybind_trianglemesh(py::module &m)
 		.def("__repr__", [](const TriangleMesh &mesh) {
 			return std::string("TriangleMesh with ") + 
 					std::to_string(mesh.vertices_.size()) + " points and " +
-					std::to_string(mesh.triangles_.size()) + "triangles.";
+					std::to_string(mesh.triangles_.size()) + " triangles.";
 		})
 		.def(py::self + py::self)
 		.def(py::self += py::self)
