@@ -13,6 +13,7 @@ option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
+option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy Test files for Open3D Python binding" ON)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
@@ -95,6 +96,7 @@ endif()
 
 message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
 message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
+message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_TESTS}")
 add_subdirectory(External)
 add_subdirectory(Core)
 add_subdirectory(Tools)
