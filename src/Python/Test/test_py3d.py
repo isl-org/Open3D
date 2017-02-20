@@ -87,6 +87,26 @@ def test_py3d_mesh():
 
 def test_py3d_image():
     print("Testing image in py3d ...")
+    print("Convert an image to numpy and draw it with matplotlib.")
+    x = CreateImageFromFile("TestData/image.PNG")
+    print x
+    plt.imshow(np.asarray(x))
+    plt.show()
+
+    print("Convet a numpy image to Image and show it with DrawGeomtries().")
+    y = mpimg.imread("TestData/lena_color.jpg")
+    print y.shape
+    yy = Image(y)
+    print yy
+    DrawGeometries([yy])
+
+    print("Render a channel of the previous image.")
+    z = np.array(y[:,:,1])
+    print z.shape
+    print z.strides
+    zz = Image(z)
+    print zz
+    DrawGeometries([zz])
     print("")
 
 def test_py3d_kdtree():
