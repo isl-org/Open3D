@@ -35,7 +35,19 @@ void pybind_trianglemesh(py::module &m)
 	py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
 			std::shared_ptr<TriangleMesh>, Geometry3D> trianglemesh(m,
 			"TriangleMesh");
-	trianglemesh.def(py::init<>())
+	trianglemesh
+		.def("__init__", [](TriangleMesh &mesh) {
+			new (&mesh)TriangleMesh();
+		}, "Default constructor")
+		.def("__init__", [](TriangleMesh &mesh, const TriangleMesh &m) {
+			new (&mesh)TriangleMesh(m);
+		}, "Copy constructor")
+		.def("__copy__", [](TriangleMesh &mesh) {
+			return TriangleMesh(mesh);
+		})
+		.def("__deepcopy__", [](TriangleMesh &mesh, py::dict &memo) {
+			return TriangleMesh(mesh);
+		})
 		.def("__repr__", [](const TriangleMesh &mesh) {
 			return std::string("TriangleMesh with ") + 
 					std::to_string(mesh.vertices_.size()) + " points and " +

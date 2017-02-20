@@ -35,7 +35,19 @@ void pybind_pointcloud(py::module &m)
 	py::class_<PointCloud, PyGeometry3D<PointCloud>,
 			std::shared_ptr<PointCloud>, Geometry3D> pointcloud(m,
 			"PointCloud");
-	pointcloud.def(py::init<>())
+	pointcloud
+		.def("__init__", [](PointCloud &pcd) {
+			new (&pcd)PointCloud();
+		}, "Default constructor")
+		.def("__init__", [](PointCloud &pcd, const PointCloud &p) {
+			new (&pcd)PointCloud(p);
+		}, "Copy constructor")
+		.def("__copy__", [](PointCloud &pcd) {
+			return PointCloud(pcd);
+		})
+		.def("__deepcopy__", [](PointCloud &pcd, py::dict &memo) {
+			return PointCloud(pcd);
+		})
 		.def("__repr__", [](const PointCloud &pcd) {
 			return std::string("PointCloud with ") + 
 					std::to_string(pcd.points_.size()) + " points.";

@@ -35,7 +35,12 @@ void pybind_image(py::module &m)
 	py::class_<Image, PyGeometry2D<Image>, std::shared_ptr<Image>, Geometry2D>
 			image(m, "Image", py::buffer_protocol());
 	image
-		.def(py::init<>())
+		.def("__init__", [](Image &img) {
+			new (&img)Image();
+		}, "Default constructor")
+		.def("__init__", [](Image &img, const Image &i) {
+			new (&img)Image(i);
+		}, "Copy constructor")
 		.def("__init__", [](Image &img, py::buffer b) {
 			py::buffer_info info = b.request();
 			int width, height, num_of_channels, bytes_per_channel;
@@ -63,6 +68,12 @@ void pybind_image(py::module &m)
 			new (&img) Image();
 			img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 			memcpy(img.data_.data(), info.ptr, img.data_.size());
+		})
+		.def("__copy__", [](Image &img) {
+			return Image(img);
+		})
+		.def("__deepcopy__", [](Image &img, py::dict &memo) {
+			return Image(img);
 		})
 		.def_buffer([](Image &img) -> py::buffer_info {
 			std::string format;

@@ -69,6 +69,12 @@ void pybind_eigen(py::module &m)
 			return py::buffer_info(
 					v.data(), sizeof(int), py::format_descriptor<int>::format(),
 					1, {v.size()}, {sizeof(int)});
+		})
+		.def("__copy__", [](std::vector<int> &v) {
+			return std::vector<int>(v);
+		})
+		.def("__deepcopy__", [](std::vector<int> &v, py::dict &memo) {
+			return std::vector<int>(v);
 		});
 
 	auto double_vector = 
@@ -89,6 +95,12 @@ void pybind_eigen(py::module &m)
 					v.data(), sizeof(double),
 					py::format_descriptor<double>::format(),
 					1, {v.size()}, {sizeof(double)});
+		})
+		.def("__copy__", [](std::vector<double> &v) {
+			return std::vector<double>(v);
+		})
+		.def("__deepcopy__", [](std::vector<double> &v, py::dict &memo) {
+			return std::vector<double>(v);
 		});
 
 	auto vector3d_vector =
@@ -105,8 +117,9 @@ void pybind_eigen(py::module &m)
 			memcpy(v.data(), info.ptr, sizeof(double) * 3 * v.size());
 		})
 		// Bare bones interface
-		// We choose to disable them because they do not support ranged indices
-		// such as [:,:].
+		// We choose to disable them because they do not support slice indices
+		// such as [:,:]. It is recommanded to convert it to numpy.asarray()
+		// to access raw data.
 		//.def("__getitem__", [](const std::vector<Eigen::Vector3d> &v,
 		//		std::pair<size_t, size_t> i) {
 		//	if (i.first >= v.size() || i.second >= 3)
@@ -126,10 +139,17 @@ void pybind_eigen(py::module &m)
 					2, {v.size(), 3}, {sizeof(double) * 3, sizeof(double)});
 			})
 		.def("__repr__", [](std::vector<Eigen::Vector3d> &v) {
-			return std::string("std::vector of Eigen::Vector3d with ") +
+			return std::string("std::vector<Eigen::Vector3d> with ") +
 					std::to_string(v.size()) + std::string(" elements.\n") +
 					std::string("Use numpy.asarray() to access data.");
-			});
+			})
+		.def("__copy__", [](std::vector<Eigen::Vector3d> &v) {
+			return std::vector<Eigen::Vector3d>(v);
+		})
+		.def("__deepcopy__", [](std::vector<Eigen::Vector3d> &v,
+				py::dict &memo) {
+			return std::vector<Eigen::Vector3d>(v);
+		});
 
 	auto vector3i_vector =
 			py::bind_vector_without_repr<std::vector<Eigen::Vector3i>>(
@@ -145,7 +165,7 @@ void pybind_eigen(py::module &m)
 			memcpy(v.data(), info.ptr, sizeof(int) * 3 * v.size());
 		})
 		// Bare bones interface
-		// We choose to disable them because they do not support ranged indices
+		// We choose to disable them because they do not support slice indices
 		// such as [:,:], see vector3d_vector for details.
 		.def_buffer([](std::vector<Eigen::Vector3i> &v) -> py::buffer_info {
 			return py::buffer_info(
@@ -154,8 +174,15 @@ void pybind_eigen(py::module &m)
 					2, {v.size(), 3}, {sizeof(int) * 3, sizeof(int)});
 			})
 		.def("__repr__", [](std::vector<Eigen::Vector3i> &v) {
-			return std::string("std::vector of Eigen::Vector3i with ") +
+			return std::string("std::vector<Eigen::Vector3i> with ") +
 					std::to_string(v.size()) + std::string(" elements.\n") +
 					std::string("Use numpy.asarray() to access data.");
-			});
+			})
+		.def("__copy__", [](std::vector<Eigen::Vector3i> &v) {
+			return std::vector<Eigen::Vector3i>(v);
+		})
+		.def("__deepcopy__", [](std::vector<Eigen::Vector3i> &v,
+				py::dict &memo) {
+			return std::vector<Eigen::Vector3i>(v);
+		});
 }
