@@ -107,11 +107,11 @@ inline numpy_internals& get_numpy_internals() {
 
 struct npy_api {
     enum constants {
-        NPY_C_CONTIGUOUS_ = 0x0001,
-        NPY_F_CONTIGUOUS_ = 0x0002,
+        NPY_ARRAY_C_CONTIGUOUS_ = 0x0001,
+        NPY_ARRAY_F_CONTIGUOUS_ = 0x0002,
         NPY_ARRAY_OWNDATA_ = 0x0004,
         NPY_ARRAY_FORCECAST_ = 0x0010,
-        NPY_ENSURE_ARRAY_ = 0x0040,
+        NPY_ARRAY_ENSUREARRAY_ = 0x0040,
         NPY_ARRAY_ALIGNED_ = 0x0100,
         NPY_ARRAY_WRITEABLE_ = 0x0400,
         NPY_BOOL_ = 0,
@@ -154,6 +154,7 @@ struct npy_api {
     int (*PyArray_GetArrayParamsFromObject_)(PyObject *, PyObject *, char, PyObject **, int *,
                                              Py_ssize_t *, PyObject **, PyObject *);
     PyObject *(*PyArray_Squeeze_)(PyObject *);
+    int (*PyArray_SetBaseObject_)(PyObject *, PyObject *);
 private:
     enum functions {
         API_PyArray_Type = 2,
@@ -168,7 +169,8 @@ private:
         API_PyArray_DescrConverter = 174,
         API_PyArray_EquivTypes = 182,
         API_PyArray_GetArrayParamsFromObject = 278,
-        API_PyArray_Squeeze = 136
+        API_PyArray_Squeeze = 136,
+        API_PyArray_SetBaseObject = 282
     };
 
     static npy_api lookup() {
@@ -194,6 +196,7 @@ private:
         DECL_NPY_API(PyArray_EquivTypes);
         DECL_NPY_API(PyArray_GetArrayParamsFromObject);
         DECL_NPY_API(PyArray_Squeeze);
+        DECL_NPY_API(PyArray_SetBaseObject);
 #undef DECL_NPY_API
         return api;
     }
@@ -330,8 +333,8 @@ public:
     PYBIND11_OBJECT_CVT(array, buffer, detail::npy_api::get().PyArray_Check_, raw_array)
 
     enum {
-        c_style = detail::npy_api::NPY_C_CONTIGUOUS_,
-        f_style = detail::npy_api::NPY_F_CONTIGUOUS_,
+        c_style = detail::npy_api::NPY_ARRAY_C_CONTIGUOUS_,
+        f_style = detail::npy_api::NPY_ARRAY_F_CONTIGUOUS_,
         forcecast = detail::npy_api::NPY_ARRAY_FORCECAST_
     };
 
@@ -365,7 +368,7 @@ public:
             pybind11_fail("NumPy: unable to create array!");
         if (ptr) {
             if (base) {
-                detail::array_proxy(tmp.ptr())->base = base.inc_ref().ptr();
+                api.PyArray_SetBaseObject_(tmp.ptr(), base.inc_ref().ptr());
             } else {
                 tmp = reinterpret_steal<object>(api.PyArray_NewCopy_(tmp.ptr(), -1 /* any order */));
             }
@@ -533,7 +536,7 @@ protected:
 
     void check_writeable() const {
         if (!writeable())
-            throw std::runtime_error("array is not writeable");
+            throw std::domain_error("array is not writeable");
     }
 
     static std::vector<size_t> default_strides(const std::vector<size_t>& shape, size_t itemsize) {
@@ -568,7 +571,7 @@ protected:
         if (ptr == nullptr)
             return nullptr;
         return detail::npy_api::get().PyArray_FromAny_(
-            ptr, nullptr, 0, 0, detail::npy_api::NPY_ENSURE_ARRAY_ | ExtraFlags, nullptr);
+            ptr, nullptr, 0, 0, detail::npy_api::NPY_ARRAY_ENSUREARRAY_ | ExtraFlags, nullptr);
     }
 };
 
@@ -632,8 +635,8 @@ public:
         return *(static_cast<T*>(array::mutable_data()) + byte_offset(size_t(index)...) / itemsize());
     }
 
-    /// Ensure that the argument is a NumPy array of the correct dtype.
-    /// In case of an error, nullptr is returned and the Python error is cleared.
+    /// Ensure that the argument is a NumPy array of the correct dtype (and if not, try to convert
+    /// it).  In case of an error, nullptr is returned and the Python error is cleared.
     static array_t ensure(handle h) {
         auto result = reinterpret_steal<array_t>(raw_array_t(h.ptr()));
         if (!result)
@@ -654,7 +657,7 @@ protected:
             return nullptr;
         return detail::npy_api::get().PyArray_FromAny_(
             ptr, dtype::of<T>().release().ptr(), 0, 0,
-            detail::npy_api::NPY_ENSURE_ARRAY_ | ExtraFlags, nullptr);
+            detail::npy_api::NPY_ARRAY_ENSUREARRAY_ | ExtraFlags, nullptr);
     }
 };
 

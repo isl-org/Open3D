@@ -50,7 +50,7 @@ def test_py3d_eigen():
     vv3d3 = copy.deepcopy(vv3d)
     print(vv3d)
     print(np.asarray(vv3d))
-    vv3d[0] = Vector3d([4, 5, 6])
+    vv3d[0] = [4, 5, 6]
     print(np.asarray(vv3d))
     # bad practice, the second [] will not support slice
     vv3d[0][0] = -1
@@ -60,7 +60,7 @@ def test_py3d_eigen():
     print(np.asarray(vv3d))
     np.asarray(vv3d1)[:2, :2] = [[10, 11], [12, 13]]
     print(np.asarray(vv3d1))
-    vv3d2.append(Vector3d([30, 31, 32]))
+    vv3d2.append([30, 31, 32])
     print(np.asarray(vv3d2))
     vv3d3.extend(vv3d)
     print(np.asarray(vv3d3))
@@ -100,7 +100,7 @@ def test_py3d_visualization():
     DrawGeometries([mesh])
     print("A mesh with no normals and no colors does not seem good.")
     mesh.ComputeVertexNormals()
-    mesh.PaintUniformColor(Vector3d([0.1, 0.1, 0.7]))
+    mesh.PaintUniformColor([0.1, 0.1, 0.7])
     print(np.asarray(mesh.triangle_normals))
     print("We paint the mesh and render it.")
     DrawGeometries([mesh])
@@ -115,11 +115,11 @@ def test_py3d_visualization():
     # let's draw some primitives
     mesh_sphere = CreateMeshSphere(radius = 1.0)
     mesh_sphere.ComputeVertexNormals()
-    mesh_sphere.PaintUniformColor(Vector3d([0.1, 0.1, 0.7]))
+    mesh_sphere.PaintUniformColor([0.1, 0.1, 0.7])
     mesh_cylinder = CreateMeshCylinder(radius = 0.3, height = 4.0)
     mesh_cylinder.ComputeVertexNormals()
-    mesh_cylinder.PaintUniformColor(Vector3d([0.1, 0.9, 0.1]))
-    mesh_frame = CreateMeshCoordinateFrame(size = 0.6, origin = Vector3d([-2, -2, -2]))
+    mesh_cylinder.PaintUniformColor([0.1, 0.9, 0.1])
+    mesh_frame = CreateMeshCoordinateFrame(size = 0.6, origin = [-2, -2, -2])
     print("We draw a few primitives using collection.")
     DrawGeometries([mesh_sphere, mesh_cylinder, mesh_frame])
     print("We draw a few primitives using + operator of mesh.")

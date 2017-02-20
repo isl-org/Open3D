@@ -31,8 +31,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
-
-#include <Eigen/Core>
+#include <pybind11/eigen.h>
 
 namespace py = pybind11;
 using namespace py::literals;
