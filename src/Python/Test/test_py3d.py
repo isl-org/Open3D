@@ -117,6 +117,7 @@ def test_py3d_image():
     print("Final test: load an RGB-D image pair and convert to pointcloud.")
     im1 = ReadImage('TestData/depth_00000.png')
     im2 = ReadImage('TestData/color_00000.jpg')
+    plt.figure(figsize=(12,8))
     plt.subplot(1, 2, 1)
     plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
     plt.subplot(1, 2, 2)
