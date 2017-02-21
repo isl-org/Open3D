@@ -128,6 +128,10 @@ def test_py3d_camera():
     x = PinholeCameraIntrinsic(640, 480, 525, 525, 320, 240)
     print(x)
     print(x.intrinsic_matrix)
+    WritePinholeCameraIntrinsic("test.json", x)
+    y = ReadPinholeCameraIntrinsic("test.json")
+    print(y)
+    print(np.asarray(y.intrinsic_matrix))
     print("")
 
 def test_py3d_visualization():

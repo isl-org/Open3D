@@ -27,7 +27,9 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
-#include <Core/Core.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Core/Camera/PinholeCameraTrajectory.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace three;
 
 void pybind_camera(py::module &m)
@@ -63,4 +65,14 @@ void pybind_camera(py::module &m)
 
 void pybind_camera_methods(py::module &m)
 {
+	m.def("ReadPinholeCameraIntrinsic", [](const std::string &filename) {
+		PinholeCameraIntrinsic intrinsic;
+		ReadIJsonConvertible(filename, intrinsic);
+		return intrinsic;
+	}, "Function to read PinholeCameraIntrinsic from file", "filename"_a);
+	m.def("WritePinholeCameraIntrinsic", [](const std::string &filename,
+			const PinholeCameraIntrinsic &intrinsic) {
+		return WriteIJsonConvertible(filename, intrinsic);
+	}, "Function to write PinholeCameraIntrinsic to file", "filename"_a,
+			"intrinsic"_a);
 }
