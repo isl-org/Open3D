@@ -113,6 +113,19 @@ def test_py3d_image():
     zzz = mpimg.imread("test.jpg")
     plt.imshow(zzz)
     plt.show()
+
+    print("Final test: load an RGB-D image pair and convert to pointcloud.")
+    im1 = ReadImage('TestData/depth_00000.png')
+    im2 = ReadImage('TestData/color_00000.jpg')
+    plt.subplot(1, 2, 1)
+    plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
+    plt.subplot(1, 2, 2)
+    plt.imshow(im2)
+    plt.show()
+    pcd = CreatePointCloudFromRGBDImage(im1, im2, PinholeCameraIntrinsic.PrimeSenseDefault)
+    # Flip it, otherwise the pointcloud will be upside down
+    pcd.Transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    DrawGeometries([pcd])
     
     print("")
 

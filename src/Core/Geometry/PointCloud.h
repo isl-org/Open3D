@@ -99,6 +99,15 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
 		double depth_scale = 1000.0);
 
+/// Factory function to create a pointcloud from a pair of RGB-D image and
+/// a camera model (PointCloudFactory.cpp)
+/// Return an empty pointcloud if the conversion fails.
+std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
+		const Image &depth, const Image &color,
+		const PinholeCameraIntrinsic &intrinsic,
+		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
+		double depth_scale = 1000.0);
+
 /// Function to select points from input pointcloud into output pointcloud
 /// Points with indices in \param indices are selected.
 /// Input and output cannot be the same pointcloud.

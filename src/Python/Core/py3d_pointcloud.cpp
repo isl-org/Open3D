@@ -67,6 +67,24 @@ void pybind_pointcloud_methods(py::module &m)
 		return WritePointCloud(filename, pointcloud, write_ascii, compressed);
 	}, "Function to write PointCloud to file", "filename"_a, "pointcloud"_a,
 			"write_ascii"_a = false, "compressed"_a = false);
+	m.def("CreatePointCloudFromDepthImage", &CreatePointCloudFromDepthImage,
+			"Factory function to create a pointcloud from a depth image and a camera.\n"
+			"Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
+			"    z = d / depth_scale\n"
+			"    x = (u - cx) * z / fx\n"
+			"    y = (v - cy) * z / fy",
+			"depth"_a, "intrinsic"_a,
+			"extrinsic"_a = Eigen::Matrix4d::Identity(),
+			"depth_scale"_a = 1000.0);
+	m.def("CreatePointCloudFromRGBDImage", &CreatePointCloudFromRGBDImage,
+			"Factory function to create a pointcloud from an RGB-D image and a camera.\n"
+			"Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
+			"    z = d / depth_scale\n"
+			"    x = (u - cx) * z / fx\n"
+			"    y = (v - cy) * z / fy",
+			"depth"_a, "color"_a, "intrinsic"_a,
+			"extrinsic"_a = Eigen::Matrix4d::Identity(),
+			"depth_scale"_a = 1000.0);
 	m.def("SelectDownSample", [](const PointCloud &input,
 			const std::vector<size_t> &indices) {
 			PointCloud output;

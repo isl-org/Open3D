@@ -82,16 +82,27 @@ void pybind_image(py::module &m)
 				throw std::runtime_error("Image has unrecognized bytes_per_channel.");
 				break;
 			}
-			return py::buffer_info(
-					img.data_.data(), img.bytes_per_channel_, format,
-					3, {static_cast<unsigned long>(img.height_),
-					static_cast<unsigned long>(img.width_),
-					static_cast<unsigned long>(img.num_of_channels_)},
-					{static_cast<unsigned long>(img.bytes_per_channel_ *
-					img.num_of_channels_ * img.width_),
-					static_cast<unsigned long>(img.bytes_per_channel_ *
-					img.num_of_channels_),
-					static_cast<unsigned long>(img.bytes_per_channel_)});
+			if (img.num_of_channels_ == 1) {
+				return py::buffer_info(
+						img.data_.data(), img.bytes_per_channel_, format,
+						2, {static_cast<unsigned long>(img.height_),
+						static_cast<unsigned long>(img.width_)},
+						{static_cast<unsigned long>(img.bytes_per_channel_ *
+						img.num_of_channels_ * img.width_),
+						static_cast<unsigned long>(img.bytes_per_channel_ *
+						img.num_of_channels_)});
+			} else {
+				return py::buffer_info(
+						img.data_.data(), img.bytes_per_channel_, format,
+						3, {static_cast<unsigned long>(img.height_),
+						static_cast<unsigned long>(img.width_),
+						static_cast<unsigned long>(img.num_of_channels_)},
+						{static_cast<unsigned long>(img.bytes_per_channel_ *
+						img.num_of_channels_ * img.width_),
+						static_cast<unsigned long>(img.bytes_per_channel_ *
+						img.num_of_channels_),
+						static_cast<unsigned long>(img.bytes_per_channel_)});
+			}
 		})
 		.def("__repr__", [](const Image &img) {
 			return std::string("Image of size ") + std::to_string(img.width_) +
