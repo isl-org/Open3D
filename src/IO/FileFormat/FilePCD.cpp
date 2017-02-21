@@ -723,9 +723,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 
 }	// unnamed namespace
 
-bool ReadPointCloudFromPCD(
-		const std::string &filename,
-		PointCloud &pointcloud)
+bool ReadPointCloudFromPCD(const std::string &filename, PointCloud &pointcloud)
 {
 	PCDHeader header;
 	FILE *file = fopen(filename.c_str(), "rb");
@@ -760,11 +758,9 @@ bool ReadPointCloudFromPCD(
 	return true;
 }
 
-bool WritePointCloudToPCD(
-		const std::string &filename,
-		const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/,
-		const bool compressed/* = false*/)
+bool WritePointCloudToPCD(const std::string &filename,
+		const PointCloud &pointcloud, bool write_ascii/* = false*/,
+		bool compressed/* = false*/)
 {
 	PCDHeader header;
 	if (GenerateHeader(pointcloud, write_ascii, compressed, header) == false){

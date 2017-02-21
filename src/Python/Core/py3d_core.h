@@ -34,7 +34,9 @@ void pybind_pointcloud(py::module &m);
 void pybind_trianglemesh(py::module &m);
 void pybind_image(py::module &m);
 void pybind_kdtreeflann(py::module &m);
+void pybind_camera(py::module &m);
 
 void pybind_pointcloud_methods(py::module &m);
 void pybind_trianglemesh_methods(py::module &m);
 void pybind_image_methods(py::module &m);
+void pybind_camera_methods(py::module &m);

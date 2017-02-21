@@ -79,7 +79,7 @@ def test_py3d_pointcloud():
 
 def test_py3d_mesh():
     print("Testing mesh in py3d ...")
-    mesh = CreateMeshFromFile("TestData/knot.ply")
+    mesh = ReadTriangleMesh("TestData/knot.ply")
     print(mesh)
     print(np.asarray(mesh.vertices))
     print(np.asarray(mesh.triangles))
@@ -88,34 +88,51 @@ def test_py3d_mesh():
 def test_py3d_image():
     print("Testing image in py3d ...")
     print("Convert an image to numpy and draw it with matplotlib.")
-    x = CreateImageFromFile("TestData/image.PNG")
-    print x
+    x = ReadImage("TestData/image.PNG")
+    print(x)
     plt.imshow(np.asarray(x))
     plt.show()
 
     print("Convet a numpy image to Image and show it with DrawGeomtries().")
     y = mpimg.imread("TestData/lena_color.jpg")
-    print y.shape
+    print(y.shape)
     yy = Image(y)
-    print yy
+    print(yy)
     DrawGeometries([yy])
 
     print("Render a channel of the previous image.")
     z = np.array(y[:,:,1])
-    print z.shape
-    print z.strides
+    print(z.shape)
+    print(z.strides)
     zz = Image(z)
-    print zz
+    print(zz)
     DrawGeometries([zz])
+
+    print("Write the previous image to file then load it with matplotlib.")
+    WriteImage("test.jpg", zz, quality = 100)
+    zzz = mpimg.imread("test.jpg")
+    plt.imshow(zzz)
+    plt.show()
+    
     print("")
 
 def test_py3d_kdtree():
     print("Testing kdtree in py3d ...")
     print("")
 
+def test_py3d_camera():
+    print("Testing camera in py3d ...")
+    print(PinholeCameraIntrinsic.PrimeSenseDefault)
+    print(PinholeCameraIntrinsic.PrimeSenseDefault.intrinsic_matrix)
+    print(PinholeCameraIntrinsic())
+    x = PinholeCameraIntrinsic(640, 480, 525, 525, 320, 240)
+    print(x)
+    print(x.intrinsic_matrix)
+    print("")
+
 def test_py3d_visualization():
     print("Testing visualization in py3d ...")
-    mesh = CreateMeshFromFile("TestData/knot.ply")
+    mesh = ReadTriangleMesh("TestData/knot.ply")
     print("Try to render a mesh with normals " + str(mesh.HasVertexNormals()) + " and colors " + str(mesh.HasVertexColors()))
     DrawGeometries([mesh])
     print("A mesh with no normals and no colors does not seem good.")
@@ -158,5 +175,7 @@ if __name__ == "__main__":
         test_py3d_image()
     if len(sys.argv) == 1 or "kdtree" in sys.argv:
         test_py3d_kdtree()
+    if len(sys.argv) == 1 or "camera" in sys.argv:
+        test_py3d_camera()
     if len(sys.argv) == 1 or "visualization" in sys.argv:
         test_py3d_visualization()

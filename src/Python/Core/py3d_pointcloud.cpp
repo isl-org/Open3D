@@ -27,7 +27,8 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
-#include <Core/Core.h>
+#include <Core/Geometry/PointCloud.h>
+#include <IO/ClassIO/PointCloudIO.h>
 using namespace three;
 
 void pybind_pointcloud(py::module &m)
@@ -35,19 +36,9 @@ void pybind_pointcloud(py::module &m)
 	py::class_<PointCloud, PyGeometry3D<PointCloud>,
 			std::shared_ptr<PointCloud>, Geometry3D> pointcloud(m,
 			"PointCloud");
+	py::detail::bind_default_constructor<PointCloud>(pointcloud);
+	py::detail::bind_copy_functions<PointCloud>(pointcloud);
 	pointcloud
-		.def("__init__", [](PointCloud &pcd) {
-			new (&pcd)PointCloud();
-		}, "Default constructor")
-		.def("__init__", [](PointCloud &pcd, const PointCloud &p) {
-			new (&pcd)PointCloud(p);
-		}, "Copy constructor")
-		.def("__copy__", [](PointCloud &pcd) {
-			return PointCloud(pcd);
-		})
-		.def("__deepcopy__", [](PointCloud &pcd, py::dict &memo) {
-			return PointCloud(pcd);
-		})
 		.def("__repr__", [](const PointCloud &pcd) {
 			return std::string("PointCloud with ") + 
 					std::to_string(pcd.points_.size()) + " points.";
@@ -66,9 +57,16 @@ void pybind_pointcloud(py::module &m)
 
 void pybind_pointcloud_methods(py::module &m)
 {
-	m.def("CreatePointCloudFromFile", &CreatePointCloudFromFile,
-			"Factory function to create a pointcloud from a file",
-			"filename"_a);
+	m.def("ReadPointCloud", [](const std::string &filename) {
+		PointCloud pcd;
+		ReadPointCloud(filename, pcd);
+		return pcd;
+	}, "Function to read PointCloud from file", "filename"_a);
+	m.def("WritePointCloud", [](const std::string &filename,
+			const PointCloud &pointcloud, bool write_ascii, bool compressed) {
+		return WritePointCloud(filename, pointcloud, write_ascii, compressed);
+	}, "Function to write PointCloud to file", "filename"_a, "pointcloud"_a,
+			"write_ascii"_a = false, "compressed"_a = false);
 	m.def("SelectDownSample", [](const PointCloud &input,
 			const std::vector<size_t> &indices) {
 			PointCloud output;

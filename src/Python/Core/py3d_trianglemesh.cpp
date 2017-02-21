@@ -27,7 +27,8 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
-#include <Core/Core.h>
+#include <Core/Geometry/TriangleMesh.h>
+#include <IO/ClassIO/TriangleMeshIO.h>
 using namespace three;
 
 void pybind_trianglemesh(py::module &m)
@@ -35,19 +36,9 @@ void pybind_trianglemesh(py::module &m)
 	py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
 			std::shared_ptr<TriangleMesh>, Geometry3D> trianglemesh(m,
 			"TriangleMesh");
+	py::detail::bind_default_constructor<TriangleMesh>(trianglemesh);
+	py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
 	trianglemesh
-		.def("__init__", [](TriangleMesh &mesh) {
-			new (&mesh)TriangleMesh();
-		}, "Default constructor")
-		.def("__init__", [](TriangleMesh &mesh, const TriangleMesh &m) {
-			new (&mesh)TriangleMesh(m);
-		}, "Copy constructor")
-		.def("__copy__", [](TriangleMesh &mesh) {
-			return TriangleMesh(mesh);
-		})
-		.def("__deepcopy__", [](TriangleMesh &mesh, py::dict &memo) {
-			return TriangleMesh(mesh);
-		})
 		.def("__repr__", [](const TriangleMesh &mesh) {
 			return std::string("TriangleMesh with ") + 
 					std::to_string(mesh.vertices_.size()) + " points and " +
@@ -79,9 +70,16 @@ void pybind_trianglemesh(py::module &m)
 
 void pybind_trianglemesh_methods(py::module &m)
 {
-	m.def("CreateMeshFromFile", &CreateMeshFromFile,
-			"Factory function to create a mesh from a file",
-			"filename"_a);
+	m.def("ReadTriangleMesh", [](const std::string &filename) {
+		TriangleMesh mesh;
+		ReadTriangleMesh(filename, mesh);
+		return mesh;
+	}, "Function to read TriangleMesh from file", "filename"_a);
+	m.def("WriteTriangleMesh", [](const std::string &filename,
+			const TriangleMesh &mesh, bool write_ascii, bool compressed) {
+		return WriteTriangleMesh(filename, mesh, write_ascii, compressed);
+	}, "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+			"write_ascii"_a = false, "compressed"_a = false);
 	m.def("CreateMeshSphere", &CreateMeshSphere,
 			"Factory function to create a sphere mesh",
 			"radius"_a = 1.0, "resolution"_a = 20);

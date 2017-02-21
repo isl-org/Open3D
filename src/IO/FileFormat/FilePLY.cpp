@@ -203,9 +203,7 @@ int ReadFaceCallBack(p_ply_argument argument)
 
 }	// unnamed namespace
 
-bool ReadPointCloudFromPLY(
-		const std::string &filename,
-		PointCloud &pointcloud)
+bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 {
 	using namespace ply_poincloud_reader;
 	
@@ -262,11 +260,9 @@ bool ReadPointCloudFromPLY(
 	return true;
 }
 
-bool WritePointCloudToPLY(
-		const std::string &filename,
-		const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/,
-		const bool compressed/* = false*/)
+bool WritePointCloudToPLY(const std::string &filename,
+		const PointCloud &pointcloud, bool write_ascii/* = false*/,
+		bool compressed/* = false*/)
 {
 	if (pointcloud.IsEmpty()) {
 		PrintWarning("Write PLY failed: point cloud has 0 points.\n");
@@ -330,9 +326,7 @@ bool WritePointCloudToPLY(
 	return true;
 }
 
-bool ReadTriangleMeshFromPLY(
-		const std::string &filename,
-		TriangleMesh &mesh)
+bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh)
 {
 	using namespace ply_trianglemesh_reader;
 	
@@ -398,11 +392,9 @@ bool ReadTriangleMeshFromPLY(
 	return true;
 }
 
-bool WriteTriangleMeshToPLY(
-		const std::string &filename,
-		const TriangleMesh &mesh,
-		const bool write_ascii/* = false*/,
-		const bool compressed/* = false*/)
+bool WriteTriangleMeshToPLY(const std::string &filename,
+		const TriangleMesh &mesh, bool write_ascii/* = false*/,
+		bool compressed/* = false*/)
 {
 	if (mesh.IsEmpty()) {
 		PrintWarning("Write PLY failed: mesh has 0 vertices.\n");

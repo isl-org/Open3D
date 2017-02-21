@@ -93,7 +93,7 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
 				2, {v.size(), EigenVector::RowsAtCompileTime},
 				{sizeof(EigenVector), sizeof(Scalar)});
 	});
-	vec.def("__repr__", [repr_name](std::vector<EigenVector> &v) {
+	vec.def("__repr__", [repr_name](const std::vector<EigenVector> &v) {
 		return repr_name + std::string(" with ") +
 				std::to_string(v.size()) + std::string(" elements.\n") +
 				std::string("Use numpy.asarray() to access data.");

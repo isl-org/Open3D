@@ -27,20 +27,17 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
-#include <Core/Core.h>
+#include <Core/Geometry/Image.h>
+#include <IO/ClassIO/ImageIO.h>
 using namespace three;
 
 void pybind_image(py::module &m)
 {
 	py::class_<Image, PyGeometry2D<Image>, std::shared_ptr<Image>, Geometry2D>
 			image(m, "Image", py::buffer_protocol());
+	py::detail::bind_default_constructor<Image>(image);
+	py::detail::bind_copy_functions<Image>(image);
 	image
-		.def("__init__", [](Image &img) {
-			new (&img)Image();
-		}, "Default constructor")
-		.def("__init__", [](Image &img, const Image &i) {
-			new (&img)Image(i);
-		}, "Copy constructor")
 		.def("__init__", [](Image &img, py::buffer b) {
 			py::buffer_info info = b.request();
 			int width, height, num_of_channels, bytes_per_channel;
@@ -69,12 +66,6 @@ void pybind_image(py::module &m)
 			img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 			memcpy(img.data_.data(), info.ptr, img.data_.size());
 		})
-		.def("__copy__", [](Image &img) {
-			return Image(img);
-		})
-		.def("__deepcopy__", [](Image &img, py::dict &memo) {
-			return Image(img);
-		})
 		.def_buffer([](Image &img) -> py::buffer_info {
 			std::string format;
 			switch (img.bytes_per_channel_) {
@@ -102,7 +93,7 @@ void pybind_image(py::module &m)
 					img.num_of_channels_),
 					static_cast<unsigned long>(img.bytes_per_channel_)});
 		})
-		.def("__repr__", [](Image &img) {
+		.def("__repr__", [](const Image &img) {
 			return std::string("Image of size ") + std::to_string(img.width_) +
 					std::string("x") + std::to_string(img.height_) + ", with " +
 					std::to_string(img.num_of_channels_) +
@@ -112,7 +103,14 @@ void pybind_image(py::module &m)
 
 void pybind_image_methods(py::module &m)
 {
-	m.def("CreateImageFromFile", &CreateImageFromFile,
-			"Factory function to create an image from a file",
-			"filename"_a);
+	m.def("ReadImage", [](const std::string &filename) {
+		Image image;
+		ReadImage(filename, image);
+		return image;
+	}, "Function to read Image from file", "filename"_a);
+	m.def("WriteImage", [](const std::string &filename,
+			const Image &image, int quality) {
+		return WriteImage(filename, image, quality);
+	}, "Function to write Image to file", "filename"_a, "image"_a,
+			"quality"_a = 90);
 }

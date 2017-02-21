@@ -42,16 +42,12 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh);
 /// two parameter will be used. Otherwise they will be ignored.
 /// \return If the write function is successful.
 bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
-		const bool write_ascii = false, const bool compressed = false);
+		bool write_ascii = false, bool compressed = false);
 
-bool ReadTriangleMeshFromPLY(
-		const std::string &filename,
-		TriangleMesh &mesh);
+bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh);
 
-bool WriteTriangleMeshToPLY(
-		const std::string &filename,
-		const TriangleMesh &mesh,
-		const bool write_ascii = false,
-		const bool compressed = false);
+bool WriteTriangleMeshToPLY(const std::string &filename,
+		const TriangleMesh &mesh, bool write_ascii = false,
+		bool compressed = false);
 
 }	// namespace three

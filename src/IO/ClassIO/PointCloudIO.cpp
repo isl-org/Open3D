@@ -79,7 +79,7 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 }
 
 bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
+		bool write_ascii/* = false*/, bool compressed/* = false*/)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);

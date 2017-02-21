@@ -70,7 +70,7 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 }
 
 bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
-		const bool write_ascii/* = false*/, const bool compressed/* = false*/)
+		bool write_ascii/* = false*/, bool compressed/* = false*/)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
