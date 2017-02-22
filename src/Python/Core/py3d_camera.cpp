@@ -30,6 +30,7 @@
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
 using namespace three;
 
 void pybind_camera(py::module &m)
@@ -61,6 +62,18 @@ void pybind_camera(py::module &m)
 					std::to_string(c.height_) + 
 					std::string(".\nAccess intrinsics with intrinsic_matrix.");
 		});
+
+	py::class_<PinholeCameraTrajectory> pinhole_traj(m,
+			"PinholeCameraTrajectory");
+	py::detail::bind_default_constructor<PinholeCameraTrajectory>(pinhole_traj);
+	py::detail::bind_copy_functions<PinholeCameraTrajectory>(pinhole_traj);
+	pinhole_traj
+		.def_readwrite("intrinsic", &PinholeCameraTrajectory::intrinsic_)
+		.def_readwrite("extrinsic", &PinholeCameraTrajectory::extrinsic_)
+		.def("__repr__", [](const PinholeCameraTrajectory &c) {
+			return std::string("PinholeCameraTrajectory class.\n") + 
+					std::string("Access its data via intrinsic and extrinsic.");
+		});
 }
 
 void pybind_camera_methods(py::module &m)
@@ -75,4 +88,14 @@ void pybind_camera_methods(py::module &m)
 		return WriteIJsonConvertible(filename, intrinsic);
 	}, "Function to write PinholeCameraIntrinsic to file", "filename"_a,
 			"intrinsic"_a);
+	m.def("ReadPinholeCameraTrajectory", [](const std::string &filename) {
+		PinholeCameraTrajectory trajectory;
+		ReadPinholeCameraTrajectory(filename, trajectory);
+		return trajectory;
+	}, "Function to read PinholeCameraTrajectory from file", "filename"_a);
+	m.def("WritePinholeCameraTrajectory", [](const std::string &filename,
+			const PinholeCameraTrajectory &trajectory) {
+		return WritePinholeCameraTrajectory(filename, trajectory);
+	}, "Function to write PinholeCameraTrajectory to file", "filename"_a,
+			"trajectory"_a);
 }

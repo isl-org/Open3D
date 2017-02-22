@@ -115,8 +115,8 @@ def test_py3d_image():
     plt.show()
 
     print("Final test: load an RGB-D image pair and convert to pointcloud.")
-    im1 = ReadImage('TestData/depth_00000.png')
-    im2 = ReadImage('TestData/color_00000.jpg')
+    im1 = ReadImage('TestData/RGBD/depth/00000.png')
+    im2 = ReadImage('TestData/RGBD/color/00000.jpg')
     plt.figure(figsize=(12,8))
     plt.subplot(1, 2, 1)
     plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
@@ -146,6 +146,21 @@ def test_py3d_camera():
     y = ReadPinholeCameraIntrinsic("test.json")
     print(y)
     print(np.asarray(y.intrinsic_matrix))
+
+    print("Final test, read a trajectory and combine all the RGB-D images.")
+    pcds = [];
+    trajectory = ReadPinholeCameraTrajectory("TestData/RGBD/trajectory.log")
+    WritePinholeCameraTrajectory("test.json", trajectory)
+    print(trajectory)
+    print(trajectory.extrinsic)
+    print(np.asarray(trajectory.extrinsic))
+    for i in range(5):
+        im1 = ReadImage('TestData/RGBD/depth/{:05d}.png'.format(i))
+        im2 = ReadImage('TestData/RGBD/color/{:05d}.jpg'.format(i))
+        pcd = CreatePointCloudFromRGBDImage(im1, im2, trajectory.intrinsic)
+        pcd.Transform(trajectory.extrinsic[i])
+        pcds.append(pcd)
+    DrawGeometries(pcds)
     print("")
 
 def test_py3d_visualization():

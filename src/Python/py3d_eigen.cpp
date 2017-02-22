@@ -135,6 +135,38 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
 	//});
 }
 
+template <typename EigenMatrix>
+void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
+		const std::string &repr_name)
+{
+    typedef typename EigenMatrix::Scalar Scalar;
+	auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix>>(
+			m, bind_name, py::buffer_protocol());
+	vec.def_buffer([](std::vector<EigenMatrix> &v) -> py::buffer_info {
+		// We use this function to bind Eigen default matrix.
+		// Thus they are all column major.
+		return py::buffer_info(
+				v.data(), sizeof(Scalar),
+				py::format_descriptor<Scalar>::format(),
+				3, {v.size(), EigenMatrix::RowsAtCompileTime,
+				EigenMatrix::ColsAtCompileTime},
+				{sizeof(EigenMatrix), sizeof(Scalar),
+				sizeof(Scalar) * EigenMatrix::RowsAtCompileTime});
+	});
+	vec.def("__repr__", [repr_name](const std::vector<EigenMatrix> &v) {
+		return repr_name + std::string(" with ") +
+				std::to_string(v.size()) + std::string(" elements.\n") +
+				std::string("Use numpy.asarray() to access data.");
+	});
+	vec.def("__copy__", [](std::vector<EigenMatrix> &v) {
+		return std::vector<EigenMatrix>(v);
+	});
+	vec.def("__deepcopy__", [](std::vector<EigenMatrix> &v,
+			py::dict &memo) {
+		return std::vector<EigenMatrix>(v);
+	});
+}
+
 }	// unnamed namespace
 
 void pybind_eigen(py::module &m)
@@ -145,4 +177,6 @@ void pybind_eigen(py::module &m)
 			"std::vector<Eigen::Vector3d>");
 	pybind_eigen_vector_of_vector<Eigen::Vector3i>(m, "Vector3iVector",
 			"std::vector<Eigen::Vector3i>");
+	pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(m, "Matrix4dVector",
+			"std::vector<Eigen::Matrix4d>");
 }
