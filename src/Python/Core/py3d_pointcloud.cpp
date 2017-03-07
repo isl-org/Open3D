@@ -49,7 +49,7 @@ void pybind_pointcloud(py::module &m)
 		.def("HasNormals", &PointCloud::HasNormals)
 		.def("HasColors", &PointCloud::HasColors)
 		.def("NormalizeNormals", &PointCloud::NormalizeNormals)
-		.def("PaintUniformColor", &TriangleMesh::PaintUniformColor)
+		.def("PaintUniformColor", &PointCloud::PaintUniformColor)
 		.def_readwrite("points", &PointCloud::points_)
 		.def_readwrite("normals", &PointCloud::normals_)
 		.def_readwrite("colors", &PointCloud::colors_);
