@@ -177,9 +177,9 @@ int main(int argc, char *argv[])
 			positive_rmse += rmse;
 		}
 	}
-	PrintInfo("Average rmse %.4f (%.4f / %d)\n", total_rmse / 
+	PrintInfo("Average rmse %.8f (%.8f / %d)\n", total_rmse / 
 			(double)pair_ids.size(), total_rmse, (int)pair_ids.size());
-	PrintInfo("Average rmse of positives %.4f (%.4f / %d)\n", positive_rmse / 
+	PrintInfo("Average rmse of positives %.8f (%.8f / %d)\n", positive_rmse / 
 			(double)positive, positive_rmse, positive);
 	PrintInfo("Accuracy %.2f%% (%d / %d)\n", (double)positive * 100.0 / 
 			(double)pair_ids.size(), positive, (int)pair_ids.size());
