@@ -28,6 +28,7 @@
 
 void pybind_visualization_classes(py::module &m)
 {
+	pybind_utility(m);
 }
 
 void pybind_visualization_methods(py::module &m)

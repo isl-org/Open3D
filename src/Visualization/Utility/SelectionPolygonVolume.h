@@ -44,12 +44,13 @@ public:
 public:
 	bool ConvertToJsonValue(Json::Value &value) const override;
 	bool ConvertFromJsonValue(const Json::Value &value) override;
-	void CropGeometry(const Geometry &input, Geometry &output);
+	void CropGeometry(const Geometry &input, Geometry &output) const;
 
 private:
-	void CropPointCloudInPolygon(const PointCloud &input, PointCloud &output);
+	void CropPointCloudInPolygon(const PointCloud &input,
+			PointCloud &output) const;
 	void CropInPolygon(const std::vector<Eigen::Vector3d> &input,
-			std::vector<size_t> &output_index);
+			std::vector<size_t> &output_index) const;
 
 public:
 	std::string orthogonal_axis_ = "";

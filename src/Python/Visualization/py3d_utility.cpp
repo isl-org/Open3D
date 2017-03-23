@@ -26,8 +26,36 @@
 
 #include "py3d_visualization.h"
 
+#include <Core/Core.h>
 #include <Visualization/Visualization.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace three;
+
+void pybind_utility(py::module &m)
+{
+	py::class_<SelectionPolygonVolume> selection_volume(m,
+			"SelectionPolygonVolume");
+	py::detail::bind_default_constructor<SelectionPolygonVolume>(
+			selection_volume);
+	py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
+	selection_volume
+		.def("CropPointCloud", [](const SelectionPolygonVolume &s,
+				const PointCloud &input) {
+			PointCloud output;
+			s.CropGeometry(input, output);
+			return output;
+		}, "input"_a)
+		.def("__repr__", [](const SelectionPolygonVolume &s) {
+			return std::string("SelectionPolygonVolume, access its members:\n"
+					"orthogonal_axis, bounding_polygon, axis_min, axis_max");
+		})
+		.def_readwrite("orthogonal_axis",
+				&SelectionPolygonVolume::orthogonal_axis_)
+		.def_readwrite("bounding_polygon",
+				&SelectionPolygonVolume::bounding_polygon_)
+		.def_readwrite("axis_min", &SelectionPolygonVolume::axis_min_)
+		.def_readwrite("axis_max", &SelectionPolygonVolume::axis_max_);
+}
 
 void pybind_utility_methods(py::module &m)
 {
@@ -40,5 +68,10 @@ void pybind_utility_methods(py::module &m)
 			"Function to draw a list of Geometry objects",
 			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
-			"optional_view_trajectory_json_file"_a = "");	
+			"optional_view_trajectory_json_file"_a = "");
+	m.def("ReadSelectionPolygonVolume", [](const std::string &filename) {
+		SelectionPolygonVolume vol;
+		ReadIJsonConvertible(filename, vol);
+		return vol;
+	}, "Function to read SelectionPolygonVolume from file", "filename"_a);
 }

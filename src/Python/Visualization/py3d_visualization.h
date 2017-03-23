@@ -28,4 +28,6 @@
 
 #include <Python/py3d.h>
 
+void pybind_utility(py::module &m);
+
 void pybind_utility_methods(py::module &m);
