@@ -268,8 +268,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation()
 	TransformationEstimationPointToPoint p2p(with_scaling_);
 	CorrespondenceSet corres;
 	for (size_t i = 0; i < source_idx.size(); i++) {
-		corres.push_back(std::make_pair((int)source_idx[i],
-				(int)target_idx[i]));
+		corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
 	}
 	PrintInfo("Error is %.4f before alignment.\n",
 			p2p.ComputeRMSE(*alignment_session_.source_ptr_,

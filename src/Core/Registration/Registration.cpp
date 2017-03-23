@@ -43,8 +43,6 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 {
 	corres.clear();
 	double error2 = 0.0;
-	double max_dist2 = max_correspondence_distance * 
-			max_correspondence_distance;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -58,7 +56,7 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 #pragma omp critical
 #endif
 			{
-				corres.push_back(std::make_pair((int)i, indices[0]));
+				corres.push_back(Eigen::Vector2i(i, indices[i]));
 				error2 += dists[0];
 			}
 		}
@@ -69,6 +67,30 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 	} else {
 		result.fitness = (double)corres.size() / (double)source.points_.size();
 		result.inlier_rmse = std::sqrt(error2 / (double)corres.size());
+	}
+}
+
+void EvaluateRANSAC(const PointCloud &source, const PointCloud &target,
+		const CorrespondenceSet &corres, double max_correspondence_distance,
+		RegistrationResult &result)
+{
+	double error2 = 0.0;
+	int good = 0;
+	double max_dis2 = max_correspondence_distance * max_correspondence_distance;
+	for (const auto &c : corres) {
+		double dis2 =
+				(source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
+		if (dis2 < max_dis2) {
+			good++;
+			error2 += dis2;
+		}
+	}
+	if (good == 0) {
+		result.fitness = 0.0;
+		result.inlier_rmse = 0.0;
+	} else {
+		result.fitness = (double)good / (double)corres.size();
+		result.inlier_rmse = std::sqrt(error2 / (double)good);
 	}
 }
 
@@ -130,8 +152,6 @@ RegistrationResult RegistrationRANSAC(const PointCloud &source,
 			max_correspondence_distance <= 0.0) {
 		return result;
 	}
-	KDTreeFlann kdtree;
-	kdtree.SetGeometry(target);
 	std::srand((unsigned int)std::time(0));
 	CorrespondenceSet ransac_corres(ransac_n);
 	CorrespondenceSet icp_corres;
@@ -144,8 +164,8 @@ RegistrationResult RegistrationRANSAC(const PointCloud &source,
 				target, ransac_corres);
 		PointCloud pcd = source;
 		pcd.Transform(this_result.transformation);
-		GetICPCorrespondence(pcd, target, kdtree, max_correspondence_distance,
-				icp_corres, this_result);
+		EvaluateRANSAC(pcd, target, corres, max_correspondence_distance,
+				this_result);
 		if (this_result.fitness > result.fitness) {
 			result = this_result;
 		}

@@ -37,7 +37,7 @@ namespace three {
 
 class PointCloud;
 
-struct RegistrationResult
+class RegistrationResult
 {
 public:
 	Eigen::Matrix4d transformation;

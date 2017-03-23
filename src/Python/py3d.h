@@ -40,6 +40,7 @@ PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Matrix4d>);
 
 // some helper functions

@@ -177,6 +177,8 @@ void pybind_eigen(py::module &m)
 			"std::vector<Eigen::Vector3d>");
 	pybind_eigen_vector_of_vector<Eigen::Vector3i>(m, "Vector3iVector",
 			"std::vector<Eigen::Vector3i>");
+	pybind_eigen_vector_of_vector<Eigen::Vector2i>(m, "Vector2iVector",
+			"std::vector<Eigen::Vector2i>");
 	pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(m, "Matrix4dVector",
 			"std::vector<Eigen::Matrix4d>");
 }

@@ -38,8 +38,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 	if (corres.empty()) return 0.0;
 	double err = 0.0;
 	for (const auto &c : corres) {
-		err += (source.points_[c.first] - target.points_[c.second]).
-				squaredNorm();
+		err += (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
 	}
 	return std::sqrt(err / (double)corres.size());
 }
@@ -51,8 +50,8 @@ Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
 	Eigen::MatrixXd source_mat(3, corres.size());
 	Eigen::MatrixXd target_mat(3, corres.size());
 	for (size_t i = 0; i < corres.size(); i++) {
-		source_mat.block<3, 1>(0, i) = source.points_[corres[i].first];
-		target_mat.block<3, 1>(0, i) = target.points_[corres[i].second];
+		source_mat.block<3, 1>(0, i) = source.points_[corres[i][0]];
+		target_mat.block<3, 1>(0, i) = target.points_[corres[i][1]];
 	}
 	return Eigen::umeyama(source_mat, target_mat, with_scaling_);
 }
