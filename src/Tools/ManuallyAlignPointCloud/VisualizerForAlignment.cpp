@@ -138,7 +138,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 						TransformationEstimationPointToPoint(true),
 						ConvergenceCriteria(1e-6, 30));
 				PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
-						result.fitness, result.rmse);
+						result.fitness, result.inlier_rmse);
 				if (result.fitness > 0.0) {
 					transformation_ = result.transformation * transformation_;
 					PrintTransformation();

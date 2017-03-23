@@ -41,7 +41,7 @@ struct RegistrationResult
 {
 public:
 	Eigen::Matrix4d transformation;
-	double rmse;
+	double inlier_rmse;
 	double fitness;
 };
 
@@ -52,5 +52,12 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 		const TransformationEstimation &estimation =
 		TransformationEstimationPointToPoint(false),
 		const ConvergenceCriteria &criteria = ConvergenceCriteria());
+
+RegistrationResult RegistrationRANSAC(const PointCloud &source,
+		const PointCloud &target, const CorrespondenceSet &corres,
+		double max_correspondence_distance,
+		const TransformationEstimation &estimation =
+		TransformationEstimationPointToPoint(false),
+		int ransac_n = 6, int max_ransac_iteration = 1000);
 
 }	// namespace three
