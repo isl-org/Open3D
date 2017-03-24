@@ -1,3 +1,5 @@
+include_directories(${JPEG_INCLUDE_DIR} ${PNG_INCLUDE_DIRS})
+
 file(GLOB IO_ALL_HEADER_FILES "*.h")
 file(GLOB IO_ALL_SOURCE_FILES "*.cpp")
 file(GLOB IO_RPLY_FILES "../External/rply/*.h" "../External/rply/*.c")
@@ -21,7 +23,7 @@ add_library(IO ${Open3D_LIB_TYPE}
 	${IO_CLASSIO_HEADER_FILES} ${IO_CLASSIO_SOURCE_FILES}
 	${IO_FILEFORMAT_HEADER_FILES} ${IO_FILEFORMAT_SOURCE_FILES}
 )
-target_link_libraries(IO Core png zlib jpeg jsoncpp tinyfiledialogs)
+target_link_libraries(IO Core jsoncpp tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES})
 
 install(TARGETS IO
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

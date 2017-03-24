@@ -97,3 +97,5 @@ set_target_properties(${ZLIB_LIBRARY} PROPERTIES
         OUTPUT_NAME ${ZLIB_LIBRARY}
         FOLDER "External"
     )
+
+set(ZLIB_LIBRARY ${ZLIB_LIBRARY} PARENT_SCOPE)

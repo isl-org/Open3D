@@ -1,3 +1,5 @@
+include_directories(${GLEW_INCLUDE_DIRS})
+
 # some black magic to automatically create a header file from shader files
 file(GLOB SHADER_FILES "Shader/GLSL/*.glsl")
 add_custom_command(

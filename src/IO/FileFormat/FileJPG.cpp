@@ -26,7 +26,7 @@
 
 #include <IO/ClassIO/ImageIO.h>
 
-#include <libjpeg/jpeglib.h>
+#include <jpeglib.h>
 #include <Core/Utility/Console.h>
 
 namespace three{

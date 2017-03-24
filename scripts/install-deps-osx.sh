@@ -11,10 +11,10 @@ if [[ $? != 0 ]] ; then
 else
     echo "Homebrew Detected."
     echo "Performing update ..."
-    sudo brew update
+    brew update
 fi
 
-for pkg in cmake libusb; do
+for pkg in cmake libusb glew libpng jpeg; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         echo "Package '$pkg' has already been installed."
     else
