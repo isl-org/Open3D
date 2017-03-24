@@ -7,6 +7,7 @@ build14/
 build15/
 build-xcode/
 build-gcc/
+build-dep/
 build14-rdp/
 src/Sandbox/
 src/Visualization/Shader/Shader.h

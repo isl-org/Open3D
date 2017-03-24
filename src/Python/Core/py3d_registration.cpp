@@ -104,7 +104,14 @@ void pybind_registration(py::module &m)
 	registration_result
 		.def_readwrite("transformation", &RegistrationResult::transformation)
 		.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse)
-		.def_readwrite("fitness", &RegistrationResult::fitness);
+		.def_readwrite("fitness", &RegistrationResult::fitness)
+		.def("__repr__", [](const RegistrationResult &rr) {
+			return std::string("RegistrationResult with fitness = ") +
+					std::to_string(rr.fitness) +
+					std::string(", and inlier_rmse = ") +
+					std::to_string(rr.inlier_rmse) +
+					std::string("\nAccess transformation to get result.");
+		});
 }
 
 void pybind_registration_methods(py::module &m)
