@@ -56,7 +56,7 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 #pragma omp critical
 #endif
 			{
-				corres.push_back(Eigen::Vector2i(i, indices[i]));
+				corres.push_back(Eigen::Vector2i(i, indices[0]));
 				error2 += dists[0];
 			}
 		}
