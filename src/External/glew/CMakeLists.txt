@@ -3,6 +3,8 @@ project(glew C)
 cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
+include_directories("${Open3D_SOURCE_DIR}/External/glew/include")
+
 # SET LIBNAME
 set(GLEW_LIBRARY glew)
 
