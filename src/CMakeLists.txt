@@ -86,7 +86,7 @@ if (Open3D_USE_OPENMP)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 	else()
-		message(WARNING "OpenMP NOT found")
+		message(STATUS "OpenMP NOT found")
 	endif()
 endif()
 
@@ -96,7 +96,6 @@ message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_
 
 # Handling dependencies
 add_subdirectory(External)
-include_directories(${GLEW_INCLUDE_DIRS})
 
 # Open3D libraries
 add_subdirectory(Core)

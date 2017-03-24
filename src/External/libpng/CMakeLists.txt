@@ -76,3 +76,8 @@ set_target_properties(${PNG_LIBRARY} PROPERTIES
         OUTPUT_NAME ${PNG_LIBRARY}
         FOLDER "External"
     )
+
+set(PNG_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/libpng")
+set(PNG_LIBRARIES "png")
+set(PNG_INCLUDE_DIRS ${PNG_INCLUDE_DIRS} PARENT_SCOPE)
+set(PNG_LIBRARIES ${PNG_LIBRARIES} PARENT_SCOPE)

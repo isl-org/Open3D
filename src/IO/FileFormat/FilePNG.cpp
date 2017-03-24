@@ -26,8 +26,7 @@
 
 #include <IO/ClassIO/ImageIO.h>
 
-#include <libpng/png.h>
-#include <zlib/zlib.h>
+#include <png.h>
 #include <Core/Utility/Console.h>
 
 namespace three{
