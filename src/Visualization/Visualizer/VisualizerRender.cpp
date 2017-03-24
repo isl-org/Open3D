@@ -44,7 +44,7 @@ bool Visualizer::InitOpenGL()
 		PrintError("Failed to initialize GLEW.\n");
 		return false;
 	}
-		
+
 	// depth test
 	glEnable(GL_DEPTH_TEST);
 	glClearDepth(1.0f);
@@ -65,7 +65,7 @@ bool Visualizer::InitOpenGL()
 void Visualizer::Render()
 {
 	glfwMakeContextCurrent(window_);
-	
+
 	view_control_ptr_->SetViewMatrices();
 
 	glEnable(GL_MULTISAMPLE);
@@ -162,7 +162,7 @@ void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
 		is_redraw_required_ = false;
 	}
 	glFinish();
-	glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(), 
+	glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),
 			view_control_ptr_->GetWindowHeight(), GL_RGB, GL_UNSIGNED_BYTE,
 			screen_image.data_.data());
 
@@ -174,7 +174,7 @@ void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
 	int bytes_per_line = screen_image.BytesPerLine();
 	for (int i = 0; i < screen_image.height_; i++) {
 		memcpy(png_image.data_.data() + bytes_per_line * i,
-				screen_image.data_.data() + bytes_per_line * 
+				screen_image.data_.data() + bytes_per_line *
 				(screen_image.height_ - i - 1), bytes_per_line);
 	}
 
@@ -204,7 +204,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 	Image depth_image;
 	depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
 			view_control_ptr_->GetWindowHeight(), 1, 4);
-	
+
 	if (do_render) {
 		Render();
 		is_redraw_required_ = false;
@@ -236,7 +236,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 	glReadPixels(0, 0, depth_image.width_, depth_image.height_,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depth_image.data_.data());
 #endif //__APPLE__
-	
+
 	// glReadPixels get the screen in a vertically flipped manner
 	// We should flip it back, and convert it to the correct depth value
 	Image png_image;
@@ -246,7 +246,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 	png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
 			view_control_ptr_->GetWindowHeight(), 1, 2);
 	for (int i = 0; i < depth_image.height_; i++) {
-		float *p_depth = (float *)(depth_image.data_.data() + 
+		float *p_depth = (float *)(depth_image.data_.data() +
 				depth_image.BytesPerLine() * (depth_image.height_ - i - 1));
 		uint16_t *p_png = (uint16_t *)(png_image.data_.data() +
 				png_image.BytesPerLine() * i);
@@ -254,8 +254,8 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 			if (p_depth[j] == 1.0) {
 				continue;
 			}
-			double z_depth = 2.0 * z_near * z_far / 
-					(z_far + z_near - (2.0 * (double)p_depth[j] - 1.0) * 
+			double z_depth = 2.0 * z_near * z_far /
+					(z_far + z_near - (2.0 * (double)p_depth[j] - 1.0) *
 					(z_far - z_near));
 			p_png[j] = (uint16_t)std::min(std::round(depth_scale * z_depth),
 					(double)INT16_MAX);
@@ -288,7 +288,7 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
 	Image depth_image;
 	depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
 			view_control_ptr_->GetWindowHeight(), 1, 4);
-	
+
 	if (do_render) {
 		Render();
 		is_redraw_required_ = false;
@@ -320,19 +320,19 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
 	glReadPixels(0, 0, depth_image.width_, depth_image.height_,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depth_image.data_.data());
 #endif //__APPLE__
-	
+
 	// glReadPixels get the screen in a vertically flipped manner
 	// We should flip it back, and convert it to the correct depth value
 	PointCloud depth_pointcloud;
 	for (int i = 0; i < depth_image.height_; i++) {
-		float *p_depth = (float *)(depth_image.data_.data() + 
+		float *p_depth = (float *)(depth_image.data_.data() +
 				depth_image.BytesPerLine() * i);
 		for (int j = 0; j < depth_image.width_; j++) {
 			if (p_depth[j] == 1.0) {
 				continue;
 			}
 			depth_pointcloud.points_.push_back(GLHelper::Unproject(
-					Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]), 
+					Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]),
 					view_control_ptr_->GetMVPMatrix(),
 					view_control_ptr_->GetWindowWidth(),
 					view_control_ptr_->GetWindowHeight()));

@@ -30,14 +30,14 @@
 
 namespace three{
 
-namespace {	
+namespace {
 
 class GLFWEnvironmentSingleton
 {
 private:
 	GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n");}
 	GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
-	GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) = 
+	GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
 			delete;
 public:
 	~GLFWEnvironmentSingleton() {
@@ -48,7 +48,7 @@ public:
 public:
 	static GLFWEnvironmentSingleton &GetInstance() {
 		static GLFWEnvironmentSingleton singleton;
-		return singleton;		
+		return singleton;
 	}
 
 	static int InitGLFW() {
@@ -72,7 +72,7 @@ Visualizer::~Visualizer()
 	glfwTerminate();	// to be safe
 }
 
-bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/, 
+bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 		const int width/* = 640*/, const int height/* = 480*/,
 		const int left/* = 50*/, const int top/* = 50*/)
 {
@@ -97,7 +97,7 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 		PrintError("Failed to initialize GLFW\n");
 		return false;
 	}
-	
+
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -109,7 +109,7 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 	}
 	glfwSetWindowPos(window_, left, top);
 	glfwSetWindowUserPointer(window_, this);
-	
+
 #ifdef __APPLE__
 	// Some hacks to get pixel_to_screen_coordinate_
 	glfwSetWindowSize(window_, 100, 100);
@@ -128,7 +128,7 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 			std::round(left * pixel_to_screen_coordinate_),
 			std::round(top * pixel_to_screen_coordinate_));
 #endif //__APPLE__
-	
+
 	auto window_refresh_callback = [](GLFWwindow *window) {
 		static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
 				WindowRefreshCallback(window);
@@ -174,7 +174,7 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
 				WindowCloseCallback(window);
 	};
 	glfwSetWindowCloseCallback(window_, window_close_callback);
-	
+
 	glfwMakeContextCurrent(window_);
 	glfwSwapInterval(1);
 
@@ -235,7 +235,7 @@ void Visualizer::UpdateWindowTitle()
 void Visualizer::BuildUtilities()
 {
 	glfwMakeContextCurrent(window_);
-	
+
 	// 0. Build coordinate frame
 	const auto boundingbox = GetViewControl().GetBoundingBox();
 	coordinate_frame_mesh_ptr_ = CreateMeshCoordinateFrame(
@@ -308,21 +308,21 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 	if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_UNSPECIFIED) {
 		return false;
-	} else if (geometry_ptr->GetGeometryType() == 
+	} else if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_POINTCLOUD) {
 		auto renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
 		geometry_renderer_ptrs_.push_back(renderer_ptr);
-	} else if (geometry_ptr->GetGeometryType() == 
+	} else if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_LINESET) {
 		auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
 		geometry_renderer_ptrs_.push_back(renderer_ptr);
-	} else if (geometry_ptr->GetGeometryType() == 
+	} else if (geometry_ptr->GetGeometryType() ==
 			Geometry::GEOMETRY_TRIANGLEMESH) {
 		auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
@@ -343,7 +343,7 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 	geometry_ptrs_.push_back(geometry_ptr);
 	view_control_ptr_->FitInGeometry(*geometry_ptr);
 	ResetViewPoint();
-	PrintDebug("Add geometry and update bounding box to %s\n", 
+	PrintDebug("Add geometry and update bounding box to %s\n",
 			view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
 	return UpdateGeometry();
 }

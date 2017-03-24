@@ -56,7 +56,7 @@ public:
 		double mouse_position_x = 0.0;
 		double mouse_position_y = 0.0;
 	};
-	
+
 public:
 	Visualizer();
 	virtual ~Visualizer();
@@ -66,28 +66,28 @@ public:
 public:
 	/// Function to create a window and initialize GLFW
 	/// This function MUST be called from the main thread.
-	bool CreateWindow(const std::string &window_name = "Open3D", 
+	bool CreateWindow(const std::string &window_name = "Open3D",
 			const int width = 640, const int height = 480,
 			const int left = 50, const int top = 50);
 
 	/// Function to destroy a window
 	/// This function MUST be called from the main thread.
 	void DestroyWindow();
-	
+
 	/// Function to register a callback function for animation
 	/// The callback function returns if UpdateGeometry() needs to be run
 	void RegisterAnimationCallback(
 			std::function<bool(Visualizer &)> callback_func);
-	
+
 	/// Function to activate the window
 	/// This function will block the current thread until the window is closed.
 	void Run(bool exit_when_idle = false);
-	
+
 	/// Function to process the event queue and return if the window is closed
 	/// Use this function if you want to manage the while loop yourself. This
 	/// function will block the thread.
 	bool WaitEvents();
-	
+
 	/// Function to process the event queue and return if the window is closed
 	/// Use this function if you want to manage the while loop yourself. This
 	/// function will NOT block the thread. Thus it is suitable for computation
@@ -101,7 +101,7 @@ public:
 	/// type.
 	/// 4. If an added geometry is changed, the behavior of Visualizer is
 	/// undefined. Programmers are responsible for calling UpdateGeometry() to
-	/// notify the Visualizer that the geometry has been changed and the 
+	/// notify the Visualizer that the geometry has been changed and the
 	/// Visualizer should be updated accordingly.
 	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
 
@@ -143,9 +143,9 @@ protected:
 	/// The function first sets view point, then draw geometry (pointclouds and
 	/// meshes individually).
 	virtual void Render();
-	
+
 	void CopyViewStatusToClipboard();
-	
+
 	void CopyViewStatusFromClipboard();
 
 	// callback functions
@@ -163,7 +163,7 @@ protected:
 	// window
 	GLFWwindow* window_ = NULL;
 	std::string window_name_ = "Open3D";
-	std::function<bool(Visualizer &)> animation_callback_func_in_loop_ 
+	std::function<bool(Visualizer &)> animation_callback_func_in_loop_
 			= nullptr;
 	std::function<bool(Visualizer &)> animation_callback_func_ = nullptr;
 
@@ -180,7 +180,7 @@ protected:
 
 	// geometry to be rendered
 	std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
-	
+
 	// geometry renderers
 	std::vector<std::shared_ptr<glsl::GeometryRenderer>>
 			geometry_renderer_ptrs_;
@@ -190,7 +190,7 @@ protected:
 
 	// utility renderers
 	std::vector<std::shared_ptr<glsl::GeometryRenderer>> utility_renderer_ptrs_;
-	
+
 	// coordinate frame
 	std::shared_ptr<TriangleMesh> coordinate_frame_mesh_ptr_;
 	std::shared_ptr<glsl::CoordinateFrameRenderer>
