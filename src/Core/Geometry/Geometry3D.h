@@ -44,7 +44,7 @@ public:
 	bool IsEmpty() const override = 0;
 	virtual Eigen::Vector3d GetMinBound() const = 0;
 	virtual Eigen::Vector3d GetMaxBound() const = 0;
-	virtual void Transform(const Eigen::Matrix4d & transformation) = 0;
+	virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
 };
 
 }	// namespace three

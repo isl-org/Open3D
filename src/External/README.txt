@@ -9,7 +9,7 @@ libusb. Run corresponding script file under "script" directory to automatically
 config them.
 
 --------------------------------------------------------------------------------
-Eigen                       3.2.5                            Mainly MPL2 license
+Eigen                       3.3.2                            Mainly MPL2 license
 A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 http://eigen.tuxfamily.org/
@@ -60,3 +60,7 @@ https://github.com/IntelRealSense/librealsense
 tinyfiledialogs             2.7.2                                   zlib license
 A lightweight cross-platform file dialog library
 https://sourceforge.net/projects/tinyfiledialogs/
+--------------------------------------------------------------------------------
+pybind11                    2.1                                      BSD license
+Python binding for C++11
+https://github.com/pybind/pybind11

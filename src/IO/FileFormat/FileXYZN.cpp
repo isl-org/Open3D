@@ -31,9 +31,7 @@
 
 namespace three{
 
-bool ReadPointCloudFromXYZN(
-		const std::string &filename,
-		PointCloud &pointcloud)
+bool ReadPointCloudFromXYZN(const std::string &filename, PointCloud &pointcloud)
 {
 	FILE *file = fopen(filename.c_str(), "r");
 	if (file == NULL) {
@@ -58,11 +56,9 @@ bool ReadPointCloudFromXYZN(
 	return true;
 }
 
-bool WritePointCloudToXYZN(
-		const std::string &filename,
-		const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/,
-		const bool compressed/* = false*/)
+bool WritePointCloudToXYZN(const std::string &filename,
+		const PointCloud &pointcloud, bool write_ascii/* = false*/,
+		bool compressed/* = false*/)
 {
 	if (pointcloud.HasNormals() == false) {
 		return false;

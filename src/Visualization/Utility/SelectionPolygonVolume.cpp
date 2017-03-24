@@ -84,7 +84,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value)
 }
 
 void SelectionPolygonVolume::CropGeometry(const Geometry &input,
-		Geometry &output)
+		Geometry &output) const
 {
 	if (orthogonal_axis_ == "" || bounding_polygon_.empty()) return;
 	if (input.GetGeometryType() != output.GetGeometryType()) return;
@@ -96,7 +96,7 @@ void SelectionPolygonVolume::CropGeometry(const Geometry &input,
 }
 
 void SelectionPolygonVolume::CropPointCloudInPolygon(const PointCloud &input,
-		PointCloud &output)
+		PointCloud &output) const
 {
 	std::vector<size_t> indices;
 	CropInPolygon(input.points_, indices);
@@ -105,7 +105,7 @@ void SelectionPolygonVolume::CropPointCloudInPolygon(const PointCloud &input,
 
 void SelectionPolygonVolume::CropInPolygon(
 		const std::vector<Eigen::Vector3d> &input,
-		std::vector<size_t> &output_index)
+		std::vector<size_t> &output_index) const
 {
 	output_index.clear();
 	int u, v, w;

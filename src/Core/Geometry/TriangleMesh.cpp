@@ -137,7 +137,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
 	return (*this);
 }
 
-const TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh)
+TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh) const
 {
 	return (TriangleMesh(*this) += mesh);
 }

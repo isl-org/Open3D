@@ -49,8 +49,9 @@ namespace internal {
  *         > 0 - number of bytes allocated when run out of space
  * 
  */
-template <typename Scalar, typename Index>
-Index SparseLUImpl<Scalar,Index>::column_bmod(const Index jcol, const Index nseg, BlockScalarVector dense, ScalarVector& tempv, BlockIndexVector segrep, BlockIndexVector repfnz, Index fpanelc, GlobalLU_t& glu)
+template <typename Scalar, typename StorageIndex>
+Index SparseLUImpl<Scalar,StorageIndex>::column_bmod(const Index jcol, const Index nseg, BlockScalarVector dense, ScalarVector& tempv,
+                                                     BlockIndexVector segrep, BlockIndexVector repfnz, Index fpanelc, GlobalLU_t& glu)
 {
   Index  jsupno, k, ksub, krep, ksupno; 
   Index lptr, nrow, isub, irow, nextlu, new_next, ufirst; 
@@ -137,7 +138,7 @@ Index SparseLUImpl<Scalar,Index>::column_bmod(const Index jcol, const Index nseg
     glu.lusup.segment(nextlu,offset).setZero();
     nextlu += offset;
   }
-  glu.xlusup(jcol + 1) = nextlu;  // close L\U(*,jcol); 
+  glu.xlusup(jcol + 1) = StorageIndex(nextlu);  // close L\U(*,jcol); 
   
   /* For more updates within the panel (also within the current supernode),
    * should start from the first column of the panel, or the first column
@@ -162,11 +163,11 @@ Index SparseLUImpl<Scalar,Index>::column_bmod(const Index jcol, const Index nseg
     // points to the beginning of jcol in snode L\U(jsupno) 
     ufirst = glu.xlusup(jcol) + d_fsupc; 
     Index lda = glu.xlusup(jcol+1) - glu.xlusup(jcol);
-    Map<Matrix<Scalar,Dynamic,Dynamic>, 0,  OuterStride<> > A( &(glu.lusup.data()[luptr]), nsupc, nsupc, OuterStride<>(lda) ); 
+    MappedMatrixBlock A( &(glu.lusup.data()[luptr]), nsupc, nsupc, OuterStride<>(lda) );
     VectorBlock<ScalarVector> u(glu.lusup, ufirst, nsupc); 
     u = A.template triangularView<UnitLower>().solve(u); 
     
-    new (&A) Map<Matrix<Scalar,Dynamic,Dynamic>, 0, OuterStride<> > ( &(glu.lusup.data()[luptr+nsupc]), nrow, nsupc, OuterStride<>(lda) ); 
+    new (&A) MappedMatrixBlock ( &(glu.lusup.data()[luptr+nsupc]), nrow, nsupc, OuterStride<>(lda) );
     VectorBlock<ScalarVector> l(glu.lusup, ufirst+nsupc, nrow); 
     l.noalias() -= A * u;
     

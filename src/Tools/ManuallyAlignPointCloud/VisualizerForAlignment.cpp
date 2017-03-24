@@ -138,7 +138,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 						TransformationEstimationPointToPoint(true),
 						ConvergenceCriteria(1e-6, 30));
 				PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
-						result.fitness, result.rmse);
+						result.fitness, result.inlier_rmse);
 				if (result.fitness > 0.0) {
 					transformation_ = result.transformation * transformation_;
 					PrintTransformation();
@@ -268,8 +268,7 @@ bool VisualizerForAlignment::AlignWithManualAnnotation()
 	TransformationEstimationPointToPoint p2p(with_scaling_);
 	CorrespondenceSet corres;
 	for (size_t i = 0; i < source_idx.size(); i++) {
-		corres.push_back(std::make_pair((int)source_idx[i],
-				(int)target_idx[i]));
+		corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
 	}
 	PrintInfo("Error is %.4f before alignment.\n",
 			p2p.ComputeRMSE(*alignment_session_.source_ptr_,

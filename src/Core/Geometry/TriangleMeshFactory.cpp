@@ -30,18 +30,6 @@
 
 namespace three{
 
-namespace {
-
-void PaintMeshWithUniformColor(TriangleMesh &mesh, const Eigen::Vector3d &color)
-{
-	mesh.vertex_colors_.resize(mesh.vertices_.size());
-	for (size_t i = 0; i < mesh.vertices_.size(); i++) {
-		mesh.vertex_colors_[i] = color;
-	}
-}
-
-}	// unnamed namespace
-
 std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename)
 {
 	auto mesh = std::make_shared<TriangleMesh>();
@@ -197,7 +185,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 {
 	auto mesh_frame = CreateMeshSphere(0.06 * size);
 	mesh_frame->ComputeVertexNormals();
-	PaintMeshWithUniformColor(*mesh_frame, Eigen::Vector3d(0.5, 0.5, 0.5));
+	mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
 
 	std::shared_ptr<TriangleMesh> mesh_arrow;
 	Eigen::Matrix4d transformation;
@@ -205,7 +193,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
 			0.2 * size);
 	mesh_arrow->ComputeVertexNormals();
-	PaintMeshWithUniformColor(*mesh_arrow, Eigen::Vector3d(1.0, 0.0, 0.0));
+	mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
 	transformation <<
 			0, 0, 1, 0,
 			1, 0, 0, 0,
@@ -217,7 +205,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
 			0.2 * size);
 	mesh_arrow->ComputeVertexNormals();
-	PaintMeshWithUniformColor(*mesh_arrow, Eigen::Vector3d(0.0, 1.0, 0.0));
+	mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
 	transformation <<
 			0, 1, 0, 0,
 			0, 0, 1, 0,
@@ -229,7 +217,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
 			0.2 * size);
 	mesh_arrow->ComputeVertexNormals();
-	PaintMeshWithUniformColor(*mesh_arrow, Eigen::Vector3d(0.0, 0.0, 1.0));
+	mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
 	transformation <<
 			1, 0, 0, 0,
 			0, 1, 0, 0,

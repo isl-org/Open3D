@@ -181,9 +181,9 @@ int main(int argc, char *argv[])
 	double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold",
 			0.075);
 	double threshold2 = threshold * threshold;
-	//std::vector<std::string> features = {"fpfh", "pfh", "shot", "spin", "usc", "r17", "pcar17"};
+	std::vector<std::string> features = {"fpfh", "pfh", "shot", "spin", "usc", "d32_norelu"};
 	//std::vector<std::string> features = {"r17", "pcar17"};
-	std::vector<std::string> features = {"r17"};
+	//std::vector<std::string> features = {"fpfh", "usc"};
 
 	std::vector<std::string> pcd_names;
 	filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
@@ -227,14 +227,25 @@ int main(int argc, char *argv[])
 	for (const auto feature : features) {
 		PrintWarning("Evaluate feature %s.\n", feature.c_str());
 		std::vector<KDTreeFlannFeature> feature_trees(pcd_names.size());
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) num_threads(16)
+#endif
 		for (auto i = 0; i < pcd_names.size(); i++) {
 			feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" + 
 					std::to_string(i) + "." + feature);
 		}
-		std::vector<double> true_dis;
+		PrintInfo("All KDTrees built.\n");
 		int total_point_num = 0;
 		int total_correspondence_num = 0;
 		int total_positive = 0;
+
+		for (auto k = 0; k < pair_ids.size(); k++) {
+			PointCloud source = pcds[pair_ids[k].second];
+			total_point_num += (int)source.points_.size();
+		}
+		std::vector<double> true_dis(total_point_num, -1.0);
+		total_point_num = 0;
+
 		for (auto k = 0; k < pair_ids.size(); k++) {
 			PointCloud source = pcds[pair_ids[k].second];
 			source.Transform(transformations[k]);
@@ -250,26 +261,30 @@ int main(int argc, char *argv[])
 				kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices, distance2);
 				if (distance2[0] < threshold2) {
 					has_correspondence[i] = true;
+					correspondence_num++;
 				} else {
 					has_correspondence[i] = false;
 				}
 			}
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) num_threads(16) private(indices, fdistance2)
+#endif
 			for (auto i = 0; i < source.points_.size(); i++) {
 				const auto &pt = source.points_[i];
 				if (has_correspondence[i]) {
-					correspondence_num++;
 					feature_trees[pair_ids[k].first].SearchKNN(
 							feature_trees[pair_ids[k].second].data_, i, 1,
 							indices, fdistance2);
 					double new_dis = (source.points_[i] - 
 							pcds[pair_ids[k].first].points_[indices[0]]
 							).norm();
-					true_dis.push_back(new_dis);
+					true_dis[total_point_num + i] = new_dis;
 					if (new_dis < threshold) {
+#ifdef _OPENMP
+#pragma omp atomic
+#endif
 						positive++;
 					}
-				} else {
-					true_dis.push_back(-1.0);
 				}
 			}
 			total_correspondence_num += correspondence_num;

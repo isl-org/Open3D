@@ -35,8 +35,7 @@ namespace three {
 
 class PointCloud;
 
-typedef std::pair<int, int> Correspondence;
-typedef std::vector<Correspondence> CorrespondenceSet;
+typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
 /// Base class that estimates a transformation between two point clouds
 /// The virtual function ComputeTransformation() must be implemented in
@@ -66,12 +65,12 @@ public:
 
 public:
 	double ComputeRMSE(const PointCloud &source, const PointCloud &target,
-			const CorrespondenceSet &corres) const final;
+			const CorrespondenceSet &corres) const override;
 	Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
 			const PointCloud &target,
-			const CorrespondenceSet &corres) const final;
+			const CorrespondenceSet &corres) const override;
 
-private:
+public:
 	bool with_scaling_ = false;
 };
 

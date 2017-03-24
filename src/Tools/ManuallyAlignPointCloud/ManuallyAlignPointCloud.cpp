@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 					TransformationEstimationPointToPoint(true),
 					ConvergenceCriteria(1e-6, 30));
 			PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
-					result.fitness, result.rmse);
+					result.fitness, result.inlier_rmse);
 			if (result.fitness > 0.0) {
 				session.transformation_ = result.transformation *
 						session.transformation_;

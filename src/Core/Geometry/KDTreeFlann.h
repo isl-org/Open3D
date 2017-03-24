@@ -44,7 +44,8 @@ class KDTreeFlann
 {
 public:
 	KDTreeFlann();
-	virtual ~KDTreeFlann();
+	KDTreeFlann(const Geometry &geometry);
+	~KDTreeFlann();
 	KDTreeFlann(const KDTreeFlann &) = delete;
 	KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 	
@@ -61,7 +62,11 @@ public:
 
 	template<typename T>
 	int SearchRadius(const T &query, double radius, std::vector<int> &indices,
-			std::vector<double> &distance2, int max_nn = -1) const;
+			std::vector<double> &distance2) const;
+
+	template<typename T>
+	int SearchHybrid(const T &query, double radius, int max_nn,
+			std::vector<int> &indices, std::vector<double> &distance2) const;
 
 protected:
 	std::vector<double> data_;

@@ -26,6 +26,9 @@
 
 #include "Registration.h"
 
+#include <cstdlib>
+#include <ctime>
+
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
@@ -40,8 +43,6 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 {
 	corres.clear();
 	double error2 = 0.0;
-	double max_dist2 = max_correspondence_distance * 
-			max_correspondence_distance;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -49,23 +50,47 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 		std::vector<int> indices(1);
 		std::vector<double> dists(1);
 		const auto &point = source.points_[i];
-		target_kdtree.SearchKNN(point, 1, indices, dists);
-		if (dists[0] < max_dist2) {
+		if (target_kdtree.SearchHybrid(point, max_correspondence_distance, 1,
+				indices, dists) > 0) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
 			{
-				corres.push_back(std::make_pair((int)i, indices[0]));
+				corres.push_back(Eigen::Vector2i(i, indices[0]));
 				error2 += dists[0];
 			}
 		}
 	}
 	if (corres.empty()) {
 		result.fitness = 0.0;
-		result.rmse = 0.0;
+		result.inlier_rmse = 0.0;
 	} else {
 		result.fitness = (double)corres.size() / (double)source.points_.size();
-		result.rmse = std::sqrt(error2 / (double)corres.size());
+		result.inlier_rmse = std::sqrt(error2 / (double)corres.size());
+	}
+}
+
+void EvaluateRANSAC(const PointCloud &source, const PointCloud &target,
+		const CorrespondenceSet &corres, double max_correspondence_distance,
+		RegistrationResult &result)
+{
+	double error2 = 0.0;
+	int good = 0;
+	double max_dis2 = max_correspondence_distance * max_correspondence_distance;
+	for (const auto &c : corres) {
+		double dis2 =
+				(source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
+		if (dis2 < max_dis2) {
+			good++;
+			error2 += dis2;
+		}
+	}
+	if (good == 0) {
+		result.fitness = 0.0;
+		result.inlier_rmse = 0.0;
+	} else {
+		result.fitness = (double)good / (double)corres.size();
+		result.inlier_rmse = std::sqrt(error2 / (double)good);
 	}
 }
 
@@ -80,7 +105,7 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 {
 	RegistrationResult result;
 	result.transformation = init;
-	result.rmse = 0.0;
+	result.inlier_rmse = 0.0;
 	result.fitness = 0.0;
 	if (max_correspondence_distance <= 0.0) {
 		return result;
@@ -96,7 +121,7 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 			corres, result);
 	for (int i = 0; i < criteria.max_iteration_; i++) {
 		PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
-				result.fitness, result.rmse);
+				result.fitness, result.inlier_rmse);
 		Eigen::Matrix4d update = estimation.ComputeTransformation(
 				pcd, target, corres);
 		RegistrationResult backup = result;
@@ -104,10 +129,49 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 		pcd.Transform(update);
 		GetICPCorrespondence(pcd, target, kdtree, max_correspondence_distance,
 				corres, result);
-		if (std::abs(backup.rmse - result.rmse) < criteria.relative_rmse_) {
+		if (std::abs(backup.inlier_rmse - result.inlier_rmse) < 
+				criteria.relative_rmse_) {
 			break;
 		}
 	}
+	return result;
+}
+
+RegistrationResult RegistrationRANSAC(const PointCloud &source,
+		const PointCloud &target, const CorrespondenceSet &corres,
+		double max_correspondence_distance,
+		const TransformationEstimation &estimation
+		/* = TransformationEstimationPointToPoint(false)*/,
+		int ransac_n/* = 6*/, int max_ransac_iteration/* = 1000*/)
+{
+	RegistrationResult result;
+	result.transformation = Eigen::Matrix4d::Identity();
+	result.inlier_rmse = 0.0;
+	result.fitness = 0.0;
+	if (ransac_n < 3 || (int)corres.size() < ransac_n ||
+			max_correspondence_distance <= 0.0) {
+		return result;
+	}
+	std::srand((unsigned int)std::time(0));
+	CorrespondenceSet ransac_corres(ransac_n);
+	CorrespondenceSet icp_corres;
+	for (int i = 0; i < max_ransac_iteration; i++) {
+		RegistrationResult this_result;
+		for (int j = 0; j < ransac_n; j++) {
+			ransac_corres[j] = corres[std::rand() % (int)corres.size()];
+		}
+		this_result.transformation = estimation.ComputeTransformation(source,
+				target, ransac_corres);
+		PointCloud pcd = source;
+		pcd.Transform(this_result.transformation);
+		EvaluateRANSAC(pcd, target, corres, max_correspondence_distance,
+				this_result);
+		if (this_result.fitness > result.fitness) {
+			result = this_result;
+		}
+	}
+	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness,
+			result.inlier_rmse);
 	return result;
 }
 

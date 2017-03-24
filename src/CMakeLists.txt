@@ -12,6 +12,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
+option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
+option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy Test files for Open3D Python binding" ON)
+option(Open3D_USE_NATIVE_DEPENDENCY_BUILD "Prioritize using native dependency build" ON)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
@@ -26,7 +29,6 @@ include_directories(
 	${Open3D_SOURCE_DIR}/External
 	${Open3D_SOURCE_DIR}/External/Eigen
 	${Open3D_SOURCE_DIR}/External/GLFW/include
-	${Open3D_SOURCE_DIR}/External/glew/include
 	${Open3D_SOURCE_DIR}/External/librealsense/include
 	)
 
@@ -58,17 +60,14 @@ elseif(CYGWIN)
 elseif(APPLE)
 	add_definitions(-DUNIX)
 	# enable c++11
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fvisibility=hidden")
 	# compile speed optimization for clang
 	add_definitions(-O3)
-	# disable OpenMP since it is not currently supported on OSX
-	message(STATUS "Compiling on OSX")
-	message(STATUS "Disable OpenMP since it is not supported on OSX.")
-	set(Open3D_USE_OPENMP OFF)
 elseif(UNIX)
 	add_definitions(-DUNIX)
 	# enable c++11
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 	add_compile_options(-Wno-deprecated-declarations)
 	add_compile_options(-Wno-unused-result)
 	add_definitions(-O3)
@@ -92,7 +91,14 @@ if (Open3D_USE_OPENMP)
 endif()
 
 message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
+message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
+message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_TESTS}")
+
+# Handling dependencies
 add_subdirectory(External)
+include_directories(${GLEW_INCLUDE_DIRS})
+
+# Open3D libraries
 add_subdirectory(Core)
 add_subdirectory(Tools)
 add_subdirectory(IO)
@@ -112,3 +118,8 @@ if(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
 	message(STATUS "Build projects in Sandbox")
 	add_subdirectory(Sandbox)
 endif(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
+
+# Python binding
+if (Open3D_BUILD_PYTHON_BINDING)
+	add_subdirectory(Python)
+endif(Open3D_BUILD_PYTHON_BINDING)

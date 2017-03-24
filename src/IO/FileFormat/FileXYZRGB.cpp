@@ -31,8 +31,7 @@
 
 namespace three{
 
-bool ReadPointCloudFromXYZRGB(
-		const std::string &filename,
+bool ReadPointCloudFromXYZRGB(const std::string &filename,
 		PointCloud &pointcloud)
 {
 	FILE *file = fopen(filename.c_str(), "r");
@@ -57,11 +56,9 @@ bool ReadPointCloudFromXYZRGB(
 	return true;
 }
 
-bool WritePointCloudToXYZRGB(
-		const std::string &filename,
-		const PointCloud &pointcloud,
-		const bool write_ascii/* = false*/,
-		const bool compressed/* = false*/)
+bool WritePointCloudToXYZRGB(const std::string &filename,
+		const PointCloud &pointcloud, bool write_ascii/* = false*/,
+		bool compressed/* = false*/)
 {
 	if (pointcloud.HasColors() == false) {
 		return false;

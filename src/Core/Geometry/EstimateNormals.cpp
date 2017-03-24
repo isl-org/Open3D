@@ -149,6 +149,7 @@ bool EstimateNormals(PointCloud &cloud,
 			cloud.normals_[i] = normal;
 		}
 	}
+	
 	return true;
 }
 

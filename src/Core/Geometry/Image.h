@@ -43,8 +43,8 @@ public:
 public:
 	void Clear() override;
 	bool IsEmpty() const override;
-	Eigen::Vector2d GetMinBound() const final;
-	Eigen::Vector2d GetMaxBound() const final;
+	Eigen::Vector2d GetMinBound() const override;
+	Eigen::Vector2d GetMaxBound() const override;
 
 public:
 	virtual bool HasData() const {

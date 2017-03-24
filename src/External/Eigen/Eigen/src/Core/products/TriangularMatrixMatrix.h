@@ -108,7 +108,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
     Index _rows, Index _cols, Index _depth,
     const Scalar* _lhs, Index lhsStride,
     const Scalar* _rhs, Index rhsStride,
-    Scalar* res,        Index resStride,
+    Scalar* _res,        Index resStride,
     const Scalar& alpha, level3_blocking<Scalar,Scalar>& blocking)
   {
     // strip zeros
@@ -117,19 +117,25 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
     Index depth     = IsLower ? diagSize : _depth;
     Index cols      = _cols;
     
-    const_blas_data_mapper<Scalar, Index, LhsStorageOrder> lhs(_lhs,lhsStride);
-    const_blas_data_mapper<Scalar, Index, RhsStorageOrder> rhs(_rhs,rhsStride);
+    typedef const_blas_data_mapper<Scalar, Index, LhsStorageOrder> LhsMapper;
+    typedef const_blas_data_mapper<Scalar, Index, RhsStorageOrder> RhsMapper;
+    typedef blas_data_mapper<typename Traits::ResScalar, Index, ColMajor> ResMapper;
+    LhsMapper lhs(_lhs,lhsStride);
+    RhsMapper rhs(_rhs,rhsStride);
+    ResMapper res(_res, resStride);
 
     Index kc = blocking.kc();                   // cache block size along the K direction
     Index mc = (std::min)(rows,blocking.mc());  // cache block size along the M direction
+    // The small panel size must not be larger than blocking size.
+    // Usually this should never be the case because SmallPanelWidth^2 is very small
+    // compared to L2 cache size, but let's be safe:
+    Index panelWidth = (std::min)(Index(SmallPanelWidth),(std::min)(kc,mc));
 
     std::size_t sizeA = kc*mc;
     std::size_t sizeB = kc*cols;
-    std::size_t sizeW = kc*Traits::WorkSpaceFactor;
 
     ei_declare_aligned_stack_constructed_variable(Scalar, blockA, sizeA, blocking.blockA());
     ei_declare_aligned_stack_constructed_variable(Scalar, blockB, sizeB, blocking.blockB());
-    ei_declare_aligned_stack_constructed_variable(Scalar, blockW, sizeW, blocking.blockW());
 
     Matrix<Scalar,SmallPanelWidth,SmallPanelWidth,LhsStorageOrder> triangularBuffer;
     triangularBuffer.setZero();
@@ -138,9 +144,9 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
     else
       triangularBuffer.diagonal().setOnes();
 
-    gebp_kernel<Scalar, Scalar, Index, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp_kernel;
-    gemm_pack_lhs<Scalar, Index, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
-    gemm_pack_rhs<Scalar, Index, Traits::nr,RhsStorageOrder> pack_rhs;
+    gebp_kernel<Scalar, Scalar, Index, ResMapper, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp_kernel;
+    gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
+    gemm_pack_rhs<Scalar, Index, RhsMapper, Traits::nr,RhsStorageOrder> pack_rhs;
 
     for(Index k2=IsLower ? depth : 0;
         IsLower ? k2>0 : k2<depth;
@@ -156,7 +162,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
         k2 = k2+actual_kc-kc;
       }
 
-      pack_rhs(blockB, &rhs(actual_k2,0), rhsStride, actual_kc, cols);
+      pack_rhs(blockB, rhs.getSubMapper(actual_k2,0), actual_kc, cols);
 
       // the selected lhs's panel has to be split in three different parts:
       //  1 - the part which is zero => skip it
@@ -167,9 +173,9 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
       if(IsLower || actual_k2<rows)
       {
         // for each small vertical panels of lhs
-        for (Index k1=0; k1<actual_kc; k1+=SmallPanelWidth)
+        for (Index k1=0; k1<actual_kc; k1+=panelWidth)
         {
-          Index actualPanelWidth = std::min<Index>(actual_kc-k1, SmallPanelWidth);
+          Index actualPanelWidth = std::min<Index>(actual_kc-k1, panelWidth);
           Index lengthTarget = IsLower ? actual_kc-k1-actualPanelWidth : k1;
           Index startBlock   = actual_k2+k1;
           Index blockBOffset = k1;
@@ -184,20 +190,22 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
             for (Index i=IsLower ? k+1 : 0; IsLower ? i<actualPanelWidth : i<k; ++i)
               triangularBuffer.coeffRef(i,k) = lhs(startBlock+i,startBlock+k);
           }
-          pack_lhs(blockA, triangularBuffer.data(), triangularBuffer.outerStride(), actualPanelWidth, actualPanelWidth);
+          pack_lhs(blockA, LhsMapper(triangularBuffer.data(), triangularBuffer.outerStride()), actualPanelWidth, actualPanelWidth);
 
-          gebp_kernel(res+startBlock, resStride, blockA, blockB, actualPanelWidth, actualPanelWidth, cols, alpha,
-                      actualPanelWidth, actual_kc, 0, blockBOffset, blockW);
+          gebp_kernel(res.getSubMapper(startBlock, 0), blockA, blockB,
+                      actualPanelWidth, actualPanelWidth, cols, alpha,
+                      actualPanelWidth, actual_kc, 0, blockBOffset);
 
           // GEBP with remaining micro panel
           if (lengthTarget>0)
           {
             Index startTarget  = IsLower ? actual_k2+k1+actualPanelWidth : actual_k2;
 
-            pack_lhs(blockA, &lhs(startTarget,startBlock), lhsStride, actualPanelWidth, lengthTarget);
+            pack_lhs(blockA, lhs.getSubMapper(startTarget,startBlock), actualPanelWidth, lengthTarget);
 
-            gebp_kernel(res+startTarget, resStride, blockA, blockB, lengthTarget, actualPanelWidth, cols, alpha,
-                        actualPanelWidth, actual_kc, 0, blockBOffset, blockW);
+            gebp_kernel(res.getSubMapper(startTarget, 0), blockA, blockB,
+                        lengthTarget, actualPanelWidth, cols, alpha,
+                        actualPanelWidth, actual_kc, 0, blockBOffset);
           }
         }
       }
@@ -208,10 +216,11 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
         for(Index i2=start; i2<end; i2+=mc)
         {
           const Index actual_mc = (std::min)(i2+mc,end)-i2;
-          gemm_pack_lhs<Scalar, Index, Traits::mr,Traits::LhsProgress, LhsStorageOrder,false>()
-            (blockA, &lhs(i2, actual_k2), lhsStride, actual_kc, actual_mc);
+          gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr,Traits::LhsProgress, LhsStorageOrder,false>()
+            (blockA, lhs.getSubMapper(i2, actual_k2), actual_kc, actual_mc);
 
-          gebp_kernel(res+i2, resStride, blockA, blockB, actual_mc, actual_kc, cols, alpha, -1, -1, 0, 0, blockW);
+          gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc,
+                      actual_kc, cols, alpha, -1, -1, 0, 0);
         }
       }
     }
@@ -249,28 +258,31 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
     Index _rows, Index _cols, Index _depth,
     const Scalar* _lhs, Index lhsStride,
     const Scalar* _rhs, Index rhsStride,
-    Scalar* res,        Index resStride,
+    Scalar* _res,        Index resStride,
     const Scalar& alpha, level3_blocking<Scalar,Scalar>& blocking)
   {
+    const Index PacketBytes = packet_traits<Scalar>::size*sizeof(Scalar);
     // strip zeros
     Index diagSize  = (std::min)(_cols,_depth);
     Index rows      = _rows;
     Index depth     = IsLower ? _depth : diagSize;
     Index cols      = IsLower ? diagSize : _cols;
     
-    const_blas_data_mapper<Scalar, Index, LhsStorageOrder> lhs(_lhs,lhsStride);
-    const_blas_data_mapper<Scalar, Index, RhsStorageOrder> rhs(_rhs,rhsStride);
+    typedef const_blas_data_mapper<Scalar, Index, LhsStorageOrder> LhsMapper;
+    typedef const_blas_data_mapper<Scalar, Index, RhsStorageOrder> RhsMapper;
+    typedef blas_data_mapper<typename Traits::ResScalar, Index, ColMajor> ResMapper;
+    LhsMapper lhs(_lhs,lhsStride);
+    RhsMapper rhs(_rhs,rhsStride);
+    ResMapper res(_res, resStride);
 
     Index kc = blocking.kc();                   // cache block size along the K direction
     Index mc = (std::min)(rows,blocking.mc());  // cache block size along the M direction
 
     std::size_t sizeA = kc*mc;
-    std::size_t sizeB = kc*cols;
-    std::size_t sizeW = kc*Traits::WorkSpaceFactor;
+    std::size_t sizeB = kc*cols+EIGEN_MAX_ALIGN_BYTES/sizeof(Scalar);
 
     ei_declare_aligned_stack_constructed_variable(Scalar, blockA, sizeA, blocking.blockA());
     ei_declare_aligned_stack_constructed_variable(Scalar, blockB, sizeB, blocking.blockB());
-    ei_declare_aligned_stack_constructed_variable(Scalar, blockW, sizeW, blocking.blockW());
 
     Matrix<Scalar,SmallPanelWidth,SmallPanelWidth,RhsStorageOrder> triangularBuffer;
     triangularBuffer.setZero();
@@ -279,10 +291,10 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
     else
       triangularBuffer.diagonal().setOnes();
 
-    gebp_kernel<Scalar, Scalar, Index, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp_kernel;
-    gemm_pack_lhs<Scalar, Index, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
-    gemm_pack_rhs<Scalar, Index, Traits::nr,RhsStorageOrder> pack_rhs;
-    gemm_pack_rhs<Scalar, Index, Traits::nr,RhsStorageOrder,false,true> pack_rhs_panel;
+    gebp_kernel<Scalar, Scalar, Index, ResMapper, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp_kernel;
+    gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
+    gemm_pack_rhs<Scalar, Index, RhsMapper, Traits::nr,RhsStorageOrder> pack_rhs;
+    gemm_pack_rhs<Scalar, Index, RhsMapper, Traits::nr,RhsStorageOrder,false,true> pack_rhs_panel;
 
     for(Index k2=IsLower ? 0 : depth;
         IsLower ? k2<depth  : k2>0;
@@ -304,8 +316,9 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
       Index ts = (IsLower && actual_k2>=cols) ? 0 : actual_kc;
 
       Scalar* geb = blockB+ts*ts;
+      geb = geb + internal::first_aligned<PacketBytes>(geb,PacketBytes/sizeof(Scalar));
 
-      pack_rhs(geb, &rhs(actual_k2,IsLower ? 0 : k2), rhsStride, actual_kc, rs);
+      pack_rhs(geb, rhs.getSubMapper(actual_k2,IsLower ? 0 : k2), actual_kc, rs);
 
       // pack the triangular part of the rhs padding the unrolled blocks with zeros
       if(ts>0)
@@ -318,7 +331,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
           Index panelLength = IsLower ? actual_kc-j2-actualPanelWidth : j2;
           // general part
           pack_rhs_panel(blockB+j2*actual_kc,
-                         &rhs(actual_k2+panelOffset, actual_j2), rhsStride,
+                         rhs.getSubMapper(actual_k2+panelOffset, actual_j2),
                          panelLength, actualPanelWidth,
                          actual_kc, panelOffset);
 
@@ -332,7 +345,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
           }
 
           pack_rhs_panel(blockB+j2*actual_kc,
-                         triangularBuffer.data(), triangularBuffer.outerStride(),
+                         RhsMapper(triangularBuffer.data(), triangularBuffer.outerStride()),
                          actualPanelWidth, actualPanelWidth,
                          actual_kc, j2);
         }
@@ -341,7 +354,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
       for (Index i2=0; i2<rows; i2+=mc)
       {
         const Index actual_mc = (std::min)(mc,rows-i2);
-        pack_lhs(blockA, &lhs(i2, actual_k2), lhsStride, actual_kc, actual_mc);
+        pack_lhs(blockA, lhs.getSubMapper(i2, actual_k2), actual_kc, actual_mc);
 
         // triangular kernel
         if(ts>0)
@@ -352,19 +365,18 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
             Index panelLength = IsLower ? actual_kc-j2 : j2+actualPanelWidth;
             Index blockOffset = IsLower ? j2 : 0;
 
-            gebp_kernel(res+i2+(actual_k2+j2)*resStride, resStride,
+            gebp_kernel(res.getSubMapper(i2, actual_k2 + j2),
                         blockA, blockB+j2*actual_kc,
                         actual_mc, panelLength, actualPanelWidth,
                         alpha,
                         actual_kc, actual_kc,  // strides
-                        blockOffset, blockOffset,// offsets
-                        blockW); // workspace
+                        blockOffset, blockOffset);// offsets
           }
         }
-        gebp_kernel(res+i2+(IsLower ? 0 : k2)*resStride, resStride,
+        gebp_kernel(res.getSubMapper(i2, IsLower ? 0 : k2),
                     blockA, geb, actual_mc, actual_kc, rs,
                     alpha,
-                    -1, -1, 0, 0, blockW);
+                    -1, -1, 0, 0);
       }
     }
   }
@@ -373,28 +385,28 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
 * Wrapper to product_triangular_matrix_matrix
 ***************************************************************************/
 
-template<int Mode, bool LhsIsTriangular, typename Lhs, typename Rhs>
-struct traits<TriangularProduct<Mode,LhsIsTriangular,Lhs,false,Rhs,false> >
-  : traits<ProductBase<TriangularProduct<Mode,LhsIsTriangular,Lhs,false,Rhs,false>, Lhs, Rhs> >
-{};
-
 } // end namespace internal
 
+namespace internal {
 template<int Mode, bool LhsIsTriangular, typename Lhs, typename Rhs>
-struct TriangularProduct<Mode,LhsIsTriangular,Lhs,false,Rhs,false>
-  : public ProductBase<TriangularProduct<Mode,LhsIsTriangular,Lhs,false,Rhs,false>, Lhs, Rhs >
+struct triangular_product_impl<Mode,LhsIsTriangular,Lhs,false,Rhs,false>
 {
-  EIGEN_PRODUCT_PUBLIC_INTERFACE(TriangularProduct)
-
-  TriangularProduct(const Lhs& lhs, const Rhs& rhs) : Base(lhs,rhs) {}
-
-  template<typename Dest> void scaleAndAddTo(Dest& dst, const Scalar& alpha) const
+  template<typename Dest> static void run(Dest& dst, const Lhs &a_lhs, const Rhs &a_rhs, const typename Dest::Scalar& alpha)
   {
-    typename internal::add_const_on_value_type<ActualLhsType>::type lhs = LhsBlasTraits::extract(m_lhs);
-    typename internal::add_const_on_value_type<ActualRhsType>::type rhs = RhsBlasTraits::extract(m_rhs);
+    typedef typename Dest::Scalar     Scalar;
+    
+    typedef internal::blas_traits<Lhs> LhsBlasTraits;
+    typedef typename LhsBlasTraits::DirectLinearAccessType ActualLhsType;
+    typedef typename internal::remove_all<ActualLhsType>::type ActualLhsTypeCleaned;
+    typedef internal::blas_traits<Rhs> RhsBlasTraits;
+    typedef typename RhsBlasTraits::DirectLinearAccessType ActualRhsType;
+    typedef typename internal::remove_all<ActualRhsType>::type ActualRhsTypeCleaned;
+    
+    typename internal::add_const_on_value_type<ActualLhsType>::type lhs = LhsBlasTraits::extract(a_lhs);
+    typename internal::add_const_on_value_type<ActualRhsType>::type rhs = RhsBlasTraits::extract(a_rhs);
 
-    Scalar actualAlpha = alpha * LhsBlasTraits::extractScalarFactor(m_lhs)
-                               * RhsBlasTraits::extractScalarFactor(m_rhs);
+    Scalar actualAlpha = alpha * LhsBlasTraits::extractScalarFactor(a_lhs)
+                               * RhsBlasTraits::extractScalarFactor(a_rhs);
 
     typedef internal::gemm_blocking_space<(Dest::Flags&RowMajorBit) ? RowMajor : ColMajor,Scalar,Scalar,
               Lhs::MaxRowsAtCompileTime, Rhs::MaxColsAtCompileTime, Lhs::MaxColsAtCompileTime,4> BlockingType;
@@ -405,22 +417,24 @@ struct TriangularProduct<Mode,LhsIsTriangular,Lhs,false,Rhs,false>
     Index stripedDepth = LhsIsTriangular ? ((!IsLower) ? lhs.cols() : (std::min)(lhs.cols(),lhs.rows()))
                                          : ((IsLower)  ? rhs.rows() : (std::min)(rhs.rows(),rhs.cols()));
 
-    BlockingType blocking(stripedRows, stripedCols, stripedDepth);
+    BlockingType blocking(stripedRows, stripedCols, stripedDepth, 1, false);
 
     internal::product_triangular_matrix_matrix<Scalar, Index,
       Mode, LhsIsTriangular,
-      (internal::traits<_ActualLhsType>::Flags&RowMajorBit) ? RowMajor : ColMajor, LhsBlasTraits::NeedToConjugate,
-      (internal::traits<_ActualRhsType>::Flags&RowMajorBit) ? RowMajor : ColMajor, RhsBlasTraits::NeedToConjugate,
+      (internal::traits<ActualLhsTypeCleaned>::Flags&RowMajorBit) ? RowMajor : ColMajor, LhsBlasTraits::NeedToConjugate,
+      (internal::traits<ActualRhsTypeCleaned>::Flags&RowMajorBit) ? RowMajor : ColMajor, RhsBlasTraits::NeedToConjugate,
       (internal::traits<Dest          >::Flags&RowMajorBit) ? RowMajor : ColMajor>
       ::run(
         stripedRows, stripedCols, stripedDepth,   // sizes
-        &lhs.coeffRef(0,0),    lhs.outerStride(), // lhs info
-        &rhs.coeffRef(0,0),    rhs.outerStride(), // rhs info
+        &lhs.coeffRef(0,0), lhs.outerStride(),    // lhs info
+        &rhs.coeffRef(0,0), rhs.outerStride(),    // rhs info
         &dst.coeffRef(0,0), dst.outerStride(),    // result info
         actualAlpha, blocking
       );
   }
 };
+
+} // end namespace internal
 
 } // end namespace Eigen
 

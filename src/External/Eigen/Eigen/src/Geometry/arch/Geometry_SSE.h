@@ -16,26 +16,38 @@ namespace Eigen {
 namespace internal {
 
 template<class Derived, class OtherDerived>
-struct quat_product<Architecture::SSE, Derived, OtherDerived, float, Aligned>
+struct quat_product<Architecture::SSE, Derived, OtherDerived, float, Aligned16>
 {
   static inline Quaternion<float> run(const QuaternionBase<Derived>& _a, const QuaternionBase<OtherDerived>& _b)
   {
-    const __m128 mask = _mm_castsi128_ps(_mm_setr_epi32(0,0,0,0x80000000));
     Quaternion<float> res;
-    __m128 a = _a.coeffs().template packet<Aligned>(0);
-    __m128 b = _b.coeffs().template packet<Aligned>(0);
-    __m128 flip1 = _mm_xor_ps(_mm_mul_ps(vec4f_swizzle1(a,1,2,0,2),
-                                         vec4f_swizzle1(b,2,0,1,2)),mask);
-    __m128 flip2 = _mm_xor_ps(_mm_mul_ps(vec4f_swizzle1(a,3,3,3,1),
-                                         vec4f_swizzle1(b,0,1,2,1)),mask);
+    const __m128 mask = _mm_setr_ps(0.f,0.f,0.f,-0.f);
+    __m128 a = _a.coeffs().template packet<Aligned16>(0);
+    __m128 b = _b.coeffs().template packet<Aligned16>(0);
+    __m128 s1 = _mm_mul_ps(vec4f_swizzle1(a,1,2,0,2),vec4f_swizzle1(b,2,0,1,2));
+    __m128 s2 = _mm_mul_ps(vec4f_swizzle1(a,3,3,3,1),vec4f_swizzle1(b,0,1,2,1));
     pstore(&res.x(),
               _mm_add_ps(_mm_sub_ps(_mm_mul_ps(a,vec4f_swizzle1(b,3,3,3,3)),
                                     _mm_mul_ps(vec4f_swizzle1(a,2,0,1,0),
                                                vec4f_swizzle1(b,1,2,0,0))),
-                         _mm_add_ps(flip1,flip2)));
+                         _mm_xor_ps(mask,_mm_add_ps(s1,s2))));
+    
     return res;
   }
 };
+
+template<class Derived, int Alignment>
+struct quat_conj<Architecture::SSE, Derived, float, Alignment>
+{
+  static inline Quaternion<float> run(const QuaternionBase<Derived>& q)
+  {
+    Quaternion<float> res;
+    const __m128 mask = _mm_setr_ps(-0.f,-0.f,-0.f,0.f);
+    pstore(&res.x(), _mm_xor_ps(mask, q.coeffs().template packet<Alignment>(0)));
+    return res;
+  }
+};
+
 
 template<typename VectorLhs,typename VectorRhs>
 struct cross3_impl<Architecture::SSE,VectorLhs,VectorRhs,float,true>
@@ -43,8 +55,8 @@ struct cross3_impl<Architecture::SSE,VectorLhs,VectorRhs,float,true>
   static inline typename plain_matrix_type<VectorLhs>::type
   run(const VectorLhs& lhs, const VectorRhs& rhs)
   {
-    __m128 a = lhs.template packet<VectorLhs::Flags&AlignedBit ? Aligned : Unaligned>(0);
-    __m128 b = rhs.template packet<VectorRhs::Flags&AlignedBit ? Aligned : Unaligned>(0);
+    __m128 a = lhs.template packet<traits<VectorLhs>::Alignment>(0);
+    __m128 b = rhs.template packet<traits<VectorRhs>::Alignment>(0);
     __m128 mul1=_mm_mul_ps(vec4f_swizzle1(a,1,2,0,3),vec4f_swizzle1(b,2,0,1,3));
     __m128 mul2=_mm_mul_ps(vec4f_swizzle1(a,2,0,1,3),vec4f_swizzle1(b,1,2,0,3));
     typename plain_matrix_type<VectorLhs>::type res;
@@ -56,8 +68,8 @@ struct cross3_impl<Architecture::SSE,VectorLhs,VectorRhs,float,true>
 
 
 
-template<class Derived, class OtherDerived>
-struct quat_product<Architecture::SSE, Derived, OtherDerived, double, Aligned>
+template<class Derived, class OtherDerived, int Alignment>
+struct quat_product<Architecture::SSE, Derived, OtherDerived, double, Alignment>
 {
   static inline Quaternion<double> run(const QuaternionBase<Derived>& _a, const QuaternionBase<OtherDerived>& _b)
   {
@@ -66,8 +78,8 @@ struct quat_product<Architecture::SSE, Derived, OtherDerived, double, Aligned>
   Quaternion<double> res;
 
   const double* a = _a.coeffs().data();
-  Packet2d b_xy = _b.coeffs().template packet<Aligned>(0);
-  Packet2d b_zw = _b.coeffs().template packet<Aligned>(2);
+  Packet2d b_xy = _b.coeffs().template packet<Alignment>(0);
+  Packet2d b_zw = _b.coeffs().template packet<Alignment>(2);
   Packet2d a_xx = pset1<Packet2d>(a[0]);
   Packet2d a_yy = pset1<Packet2d>(a[1]);
   Packet2d a_zz = pset1<Packet2d>(a[2]);
@@ -106,6 +118,20 @@ struct quat_product<Architecture::SSE, Derived, OtherDerived, double, Aligned>
 
   return res;
 }
+};
+
+template<class Derived, int Alignment>
+struct quat_conj<Architecture::SSE, Derived, double, Alignment>
+{
+  static inline Quaternion<double> run(const QuaternionBase<Derived>& q)
+  {
+    Quaternion<double> res;
+    const __m128d mask0 = _mm_setr_pd(-0.,-0.);
+    const __m128d mask2 = _mm_setr_pd(-0.,0.);
+    pstore(&res.x(), _mm_xor_pd(mask0, q.coeffs().template packet<Alignment>(0)));
+    pstore(&res.z(), _mm_xor_pd(mask2, q.coeffs().template packet<Alignment>(2)));
+    return res;
+  }
 };
 
 } // end namespace internal

@@ -69,22 +69,37 @@ int main(int argc, char *argv[])
 
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{
-		ScopeTimer timer("Normal estimation");
+		ScopeTimer timer("Normal estimation with KNN20");
 		for (int i = 0; i < 20; i++) {
 			EstimateNormals(*pcd, 
 					three::KDTreeSearchParamKNN(20));
 		}
 	}
+	std::cout << pcd->normals_[0] << std::endl;
+	std::cout << pcd->normals_[10] << std::endl;
 
-	auto downpcd = std::make_shared<PointCloud>();
-	VoxelDownSample(*pcd, 0.05, *downpcd);
 	{
-		ScopeTimer timer("Normal estimation");
+		ScopeTimer timer("Normal estimation with Radius 0.01666");
 		for (int i = 0; i < 20; i++) {
 			EstimateNormals(*pcd,
 					three::KDTreeSearchParamRadius(0.01666));
 		}
 	}
+	std::cout << pcd->normals_[0] << std::endl;
+	std::cout << pcd->normals_[10] << std::endl;
+
+	{
+		ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
+		for (int i = 0; i < 20; i++) {
+			EstimateNormals(*pcd,
+					three::KDTreeSearchParamHybrid(0.01666, 60));
+		}
+	}
+	std::cout << pcd->normals_[0] << std::endl;
+	std::cout << pcd->normals_[10] << std::endl;
+
+	auto downpcd = std::make_shared<PointCloud>();
+	VoxelDownSample(*pcd, 0.05, *downpcd);
 
 	// 1. test basic pointcloud functions.
 	

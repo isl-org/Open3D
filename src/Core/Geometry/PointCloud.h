@@ -51,8 +51,8 @@ public:
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
-	virtual PointCloud &operator+=(const PointCloud &cloud);
-	virtual const PointCloud operator+(const PointCloud &cloud);
+	PointCloud &operator+=(const PointCloud &cloud);
+	PointCloud operator+(const PointCloud &cloud) const;
 
 public:
 	bool HasPoints() const {
@@ -70,6 +70,13 @@ public:
 	void NormalizeNormals() {
 		for (size_t i = 0; i < normals_.size(); i++) {
 			normals_[i].normalize();
+		}
+	}
+
+	void PaintUniformColor(const Eigen::Vector3d &color) {
+		colors_.resize(points_.size());
+		for (size_t i = 0; i < points_.size(); i++) {
+			colors_[i] = color;
 		}
 	}
 	
@@ -92,6 +99,15 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
 		double depth_scale = 1000.0);
 
+/// Factory function to create a pointcloud from a pair of RGB-D image and
+/// a camera model (PointCloudFactory.cpp)
+/// Return an empty pointcloud if the conversion fails.
+std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
+		const Image &depth, const Image &color,
+		const PinholeCameraIntrinsic &intrinsic,
+		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
+		double depth_scale = 1000.0);
+
 /// Function to select points from input pointcloud into output pointcloud
 /// Points with indices in \param indices are selected.
 /// Input and output cannot be the same pointcloud.
@@ -110,7 +126,7 @@ bool VoxelDownSample(const PointCloud &input, double voxel_size,
 /// \param every_k_points indicates the sample rate.
 /// Input and output cannot be the same pointcloud.
 bool UniformDownSample(const PointCloud &input, size_t every_k_points,
-		PointCloud &output_cloud);
+		PointCloud &output);
 
 /// Function to crop input pointcloud into output pointcloud
 /// All points with coordinates less than \param min_bound or larger than
@@ -133,7 +149,7 @@ bool OrientNormalsToAlignWithDirection(PointCloud &cloud,
 		const Eigen::Vector3d &orientation_reference =
 		Eigen::Vector3d(0.0, 0.0, 1.0));
 
-/// Function to compute the normals of a point cloud
+/// Function to orient the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with towards \param camera_location.
 bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
