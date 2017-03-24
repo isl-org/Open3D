@@ -151,7 +151,7 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
 				3, {v.size(), EigenMatrix::RowsAtCompileTime,
 				EigenMatrix::ColsAtCompileTime},
 				{sizeof(EigenMatrix), sizeof(Scalar),
-				sizeof(Scalar) * EigenMatrix::RowsAtCompileTime});
+				sizeof(Scalar) * (size_t)EigenMatrix::RowsAtCompileTime});
 	});
 	vec.def("__repr__", [repr_name](const std::vector<EigenMatrix> &v) {
 		return repr_name + std::string(" with ") +
