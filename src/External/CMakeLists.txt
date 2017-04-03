@@ -63,6 +63,7 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 	add_subdirectory(tinyfiledialogs)
 
 	if(Open3D_BUILD_LIBREALSENSE)
+		message(STATUS "Build librealsense from source")
 		add_subdirectory(librealsense)
 	endif(Open3D_BUILD_LIBREALSENSE)
 
@@ -77,11 +78,13 @@ else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 	message(STATUS "Build libpng from source")
 	add_subdirectory(zlib)
 	add_subdirectory(libpng)
+	message(STATUS "Build glfw from source")
 	add_subdirectory(GLFW)
 	add_subdirectory(jsoncpp)
 	add_subdirectory(tinyfiledialogs)
 
 	if(Open3D_BUILD_LIBREALSENSE)
+		message(STATUS "Build librealsense from source")
 		add_subdirectory(librealsense)
 	endif(Open3D_BUILD_LIBREALSENSE)
 
