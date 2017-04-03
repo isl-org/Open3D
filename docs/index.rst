@@ -3,18 +3,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Open3D's documentation!
-==================================
+
+Open3D --- A modern library for 3d modeling and geometry processing
+===================================================================
+
+.. only: not latex
+
+   Contents:
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+  :maxdepth: 1
 
+  introduction
 
+.. toctree::
+  :maxdepth: 2
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+  getting_started
