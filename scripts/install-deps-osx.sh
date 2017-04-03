@@ -14,7 +14,7 @@ else
     brew update
 fi
 
-for pkg in cmake libusb glew libpng jpeg; do
+for pkg in cmake libusb glew libpng jpeg pkg-config; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         echo "Package '$pkg' has already been installed."
     else

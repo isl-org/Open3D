@@ -449,7 +449,7 @@ configure_package_config_file("${GLFW_SOURCE_DIR}/src/glfw3Config.cmake.in"
                               PATH_VARS CMAKE_INSTALL_PREFIX
                               NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
-write_basic_package_version_file("${GLFW_BINARY_DIR}/src/glfw3ConfigVersion.cmake" 
+write_basic_package_version_file("${GLFW_BINARY_DIR}/src/glfw3ConfigVersion.cmake"
                                  VERSION ${GLFW_VERSION_FULL}
                                  COMPATIBILITY SameMajorVersion)
 
@@ -468,6 +468,11 @@ configure_file("${GLFW_SOURCE_DIR}/src/glfw3.pc.in"
 # Add subdirectories
 #--------------------------------------------------------------------
 add_subdirectory(src)
+
+set(GLFW_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/GLFW/include")
+set(GLFW_LIBRARIES "glfw")
+set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
+set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 
 #--------------------------------------------------------------------
 # Install files other than the library

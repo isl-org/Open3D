@@ -26,7 +26,39 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 		add_subdirectory(libpng)
 	endif (PNG_FOUND)
 
-	add_subdirectory(GLFW)
+	find_package(PkgConfig)
+	if (PKGCONFIG_FOUND)
+		pkg_search_module(GLFW glfw3)
+		find_package(OpenGL)
+		if (GLFW_FOUND AND OPENGL_FOUND)
+			message(STATUS "Use native build of glfw")
+			if (APPLE)
+				find_library(COCOA_FRAMEWORK Cocoa)
+			    find_library(IOKIT_FRAMEWORK IOKit)
+			    find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+			    find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
+			    mark_as_advanced(COCOA_FRAMEWORK
+			                     IOKIT_FRAMEWORK
+			                     CORE_FOUNDATION_FRAMEWORK
+			                     CORE_VIDEO_FRAMEWORK)
+			    list(APPEND GLFW_LIBRARIES "${COCOA_FRAMEWORK}"
+			                               "${OPENGL_gl_LIBRARY}"
+			                               "${IOKIT_FRAMEWORK}"
+			                               "${CORE_FOUNDATION_FRAMEWORK}"
+			                               "${CORE_VIDEO_FRAMEWORK}")
+			else (APPLE)
+				set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
+				set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
+			endif (APPLE)
+		elseif (GLFW_FOUND AND OPENGL_FOUND)
+			message(STATUS "Build glfw from source")
+			add_subdirectory(GLFW)
+		endif (GLFW_FOUND AND OPENGL_FOUND)
+	elseif (PKGCONFIG_FOUND)
+		message(STATUS "Build glfw from source")
+		add_subdirectory(GLFW)
+	endif (PKGCONFIG_FOUND)
+
 	add_subdirectory(jsoncpp)
 	add_subdirectory(tinyfiledialogs)
 
@@ -61,6 +93,8 @@ endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 # pop everything to root
 set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLEW_LIBRARIES ${GLEW_LIBRARIES} PARENT_SCOPE)
+set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
+set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 set(JPEG_INCLUDE_DIR ${JPEG_INCLUDE_DIR} PARENT_SCOPE)
 set(JPEG_LIBRARIES ${JPEG_LIBRARIES} PARENT_SCOPE)
 set(PNG_INCLUDE_DIRS ${PNG_INCLUDE_DIRS} PARENT_SCOPE)

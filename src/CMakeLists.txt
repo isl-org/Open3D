@@ -28,7 +28,6 @@ include_directories(
 	${Open3D_SOURCE_DIR}
 	${Open3D_SOURCE_DIR}/External
 	${Open3D_SOURCE_DIR}/External/Eigen
-	${Open3D_SOURCE_DIR}/External/GLFW/include
 	${Open3D_SOURCE_DIR}/External/librealsense/include
 	)
 
@@ -97,6 +96,7 @@ message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_
 # Handling dependencies
 add_subdirectory(External)
 include_directories(${GLEW_INCLUDE_DIRS})
+include_directories(${GLFW_INCLUDE_DIRS})
 
 # Open3D libraries
 add_subdirectory(Core)

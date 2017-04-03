@@ -69,4 +69,3 @@ set_target_properties(glfw PROPERTIES
                       FOLDER "External")
 
 install(TARGETS glfw EXPORT glfwTargets DESTINATION lib)
-

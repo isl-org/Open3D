@@ -166,7 +166,9 @@ RegistrationResult RegistrationRANSAC(const PointCloud &source,
 		pcd.Transform(this_result.transformation);
 		EvaluateRANSAC(pcd, target, corres, max_correspondence_distance,
 				this_result);
-		if (this_result.fitness > result.fitness) {
+		if (this_result.fitness > result.fitness ||
+				(this_result.fitness == result.fitness &&
+				this_result.inlier_rmse < result.inlier_rmse)) {
 			result = this_result;
 		}
 	}
