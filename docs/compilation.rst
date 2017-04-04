@@ -49,7 +49,7 @@ Documentation is written in `reStructuredText <http://www.sphinx-doc.org/en/stab
 
 .. code-block:: bash
 
-    pip install sphinx sphinx-autobuild
+    pip install sphinx sphinx-autobuild sphinx-rtd-theme
     make html
 
 Miscellaneous
