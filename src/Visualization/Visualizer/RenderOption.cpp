@@ -27,7 +27,7 @@
 #include "RenderOption.h"
 
 #include <Core/Utility/Console.h>
-#include <jsoncpp/include/json/json.h>
+#include <json/json.h>
 
 namespace three{
 

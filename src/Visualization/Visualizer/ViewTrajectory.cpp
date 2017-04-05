@@ -27,7 +27,7 @@
 #include "ViewTrajectory.h"
 
 #include <Eigen/Dense>
-#include <jsoncpp/include/json/json.h>
+#include <json/json.h>
 #include <Core/Utility/Console.h>
 
 namespace three{

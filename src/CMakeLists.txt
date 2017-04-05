@@ -97,6 +97,9 @@ message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_
 add_subdirectory(External)
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${GLFW_INCLUDE_DIRS})
+include_directories(${JSONCPP_INCLUDE_DIRS})
+link_directories(${GLFW_LIBRARY_DIRS})
+link_directories(${JSONCPP_LIBRARY_DIRS})
 
 # Open3D libraries
 add_subdirectory(Core)

@@ -26,7 +26,7 @@
 
 #include "SelectionPolygonVolume.h"
 
-#include <jsoncpp/include/json/json.h>
+#include <json/json.h>
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
 
