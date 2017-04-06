@@ -26,6 +26,14 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 		add_subdirectory(libpng)
 	endif (PNG_FOUND)
 
+	find_package(EIGEN3)
+	if (EIGEN3_FOUND)
+		message(STATUS "Use native eigen3")
+	else (EIGEN3_FOUND)
+		message(STATUS "Use eigen3 included in Open3D")
+		set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
+	endif (EIGEN3_FOUND)
+
 	find_package(PkgConfig)
 	if (PKGCONFIG_FOUND)
 		if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
@@ -115,6 +123,7 @@ else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 # pop everything to root
+set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLEW_LIBRARIES ${GLEW_LIBRARIES} PARENT_SCOPE)
 set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
