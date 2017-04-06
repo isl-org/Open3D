@@ -28,13 +28,22 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 	find_package(PkgConfig)
 	if (PKGCONFIG_FOUND)
-		pkg_search_module(JSONCPP jsoncpp)
-		if (JSONCPP_FOUND)
-	    	message(STATUS "Use native build of jsoncpp")
-		else (JSONCPP_FOUND)
+		if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+			# It is a known bug that g++ on OSX only supports libstdc++
+			# The jsoncpp installed by brew by default is compiled with libc++
+			# If the two libraries are linked together, they break the build
+			# https://github.com/open-source-parsers/jsoncpp/issues/597
 			message(STATUS "Build jsoncpp from source")
 			add_subdirectory(jsoncpp)
-		endif (JSONCPP_FOUND)
+		else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+			pkg_search_module(JSONCPP jsoncpp)
+			if (JSONCPP_FOUND)
+		    	message(STATUS "Use native build of jsoncpp")
+			else (JSONCPP_FOUND)
+				message(STATUS "Build jsoncpp from source")
+				add_subdirectory(jsoncpp)
+			endif (JSONCPP_FOUND)
+		endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
 
 		pkg_search_module(GLFW glfw3)
 		find_package(OpenGL)

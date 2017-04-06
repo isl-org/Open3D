@@ -93,7 +93,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 		pointcloud_ptr = clip_ptr;
 		processed = true;
 	}
-	
+
 	// filter_mahalanobis
 	double mahalanobis_threshold = GetProgramOptionAsDouble(argc, argv,
 			"--filter_mahalanobis", 0.0);
@@ -112,7 +112,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 				(int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
 		pointcloud_ptr = pcd;
 	}
-	
+
 	// uniform_downsample
 	int every_k = GetProgramOptionAsInt(argc, argv, "--uniform_sample_every",
 			0);
@@ -124,7 +124,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 		pointcloud_ptr = downsample_ptr;
 		processed = true;
 	}
-	
+
 	// voxel_downsample
 	double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_sample",
 			0.0);
@@ -175,7 +175,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 
 	size_t point_num_out = pointcloud_ptr->points_.size();
 	if (processed) {
-		PrintInfo("Processed point cloud from %d points to %d points.\n", 
+		PrintInfo("Processed point cloud from %d points to %d points.\n",
 				(int)point_num_in, (int)point_num_out);
 	}
 	WritePointCloud(file_out.c_str(), *pointcloud_ptr, false, true);
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 		PrintHelp();
 		return 0;
 	}
-	
+
 	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
 	SetVerbosityLevel((VerbosityLevel)verbose);
 
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 		std::vector<std::string> filenames;
 		ListFilesInDirectory(argv[1], filenames);
 		for (const auto &fn : filenames) {
-			convert(argc, argv, fn, GetRegularizedDirectoryName(argv[2]) + 
+			convert(argc, argv, fn, GetRegularizedDirectoryName(argv[2]) +
 					GetFileNameWithoutDirectory(fn));
 		}
 	} else {
