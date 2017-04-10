@@ -31,7 +31,7 @@
 #include <omp.h>
 #endif 
 #include <Core/Core.h>
-#include <External/Eigen/Eigen/SVD>
+#include <Eigen/SVD>
 
 #define NUM_THREADS 4
 #define NUM_START 1
