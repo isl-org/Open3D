@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+if (NOT CMAKE_VERSION VERSION_LESS "3.0")
+    cmake_policy(SET CMP0054 OLD)
+endif()
+
 project(Open3D)
 
 set(Open3D_VERSION_MAJOR "1")
