@@ -25,3 +25,8 @@ Open3D --- A modern library for 3d modeling and geometry processing
   :maxdepth: 2
 
   compilation
+
+.. toctree::
+  :maxdepth: 2
+
+  contribute

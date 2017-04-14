@@ -68,6 +68,7 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 			# The jsoncpp installed by brew by default is compiled with libc++
 			# If the two libraries are linked together, they break the build
 			# https://github.com/open-source-parsers/jsoncpp/issues/597
+			# https://github.com/IntelVCL/Open3D/issues/9
 			message(STATUS "Build jsoncpp from source")
 			add_subdirectory(jsoncpp)
 		else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
