@@ -15,7 +15,7 @@
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -34,11 +34,13 @@ void pybind_pointcloud(py::module &m);
 void pybind_trianglemesh(py::module &m);
 void pybind_image(py::module &m);
 void pybind_kdtreeflann(py::module &m);
+void pybind_feature(py::module &m);
 void pybind_camera(py::module &m);
 void pybind_registration(py::module &m);
 
 void pybind_pointcloud_methods(py::module &m);
 void pybind_trianglemesh_methods(py::module &m);
 void pybind_image_methods(py::module &m);
+void pybind_feature_methods(py::module &m);
 void pybind_camera_methods(py::module &m);
 void pybind_registration_methods(py::module &m);

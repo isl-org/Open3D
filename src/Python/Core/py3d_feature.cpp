@@ -24,41 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "py3d_core.h"
+#include "py3d_core_trampoline.h"
 
-#include <vector>
-#include <memory>
-#include <Eigen/Core>
+#include <Core/Registration/Feature.h>
+#include <IO/ClassIO/FeatureIO.h>
+using namespace three;
 
-namespace Eigen {
-typedef Matrix<double, 33, 1> Vector33d;
-}	// namespace Eigen
-
-namespace three {
-
-class PointCloud;
-
-class FPFHFeature
+void pybind_feature(py::module &m)
 {
-public:
-	bool ComputeFPFHFeature(const PointCloud &cloud,
-			const std::vector<int> &key_fpfh_points = {});
+	py::class_<Feature> feature(m, "Feature");
+	py::detail::bind_default_constructor<Feature>(feature);
+	py::detail::bind_copy_functions<Feature>(feature);
+	feature
+		.def("Resize", &Feature::Resize, "dim"_a, "n"_a)
+		.def("Dimension", &Feature::Dimension)
+		.def("Num", &Feature::Num)
+		.def_readwrite("data", &Feature::data_)
+		.def("__repr__", [](const Feature &f) {
+			return std::string("Feature class with dimension = ") +
+					std::to_string(f.Dimension()) + std::string(" and num = ") +
+					std::to_string(f.Num()) +
+					std::string("\nAccess its data via data member.");
+		});
+}
 
-private:
-	void CreateKeySPFHPoints(const std::vector<int> key_fpfh_points,
-			std::vector<int> &key_spfh_points);
-
-	void ComputeSPFHFeature(const PointCloud &cloud,
-			const std::vector<int> &key_spfh_points,
-			std::vector<Eigen::Vector33d> & spfh);
-
-public:
-	std::vector<Eigen::Vector33d> features_;
-};
-
-/// Factory function to create dense FPFH feature for a point cloud
-/// This function is a wrapper of FPFHFeature::ComputeFPFHFeature()
-std::shared_ptr<FPFHFeature> CreateFPFHFeatureFromPointCloud(
-		const PointCloud &cloud);
-
-}	// namespace three
+void pybind_feature_methods(py::module &m)
+{
+	m.def("ReadFeature", [](const std::string &filename) {
+		Feature feature;
+		ReadFeature(filename, feature);
+		return feature;
+	}, "Function to read Feature from file", "filename"_a);
+	m.def("WriteFeature", [](const std::string &filename,
+			const Feature &feature) {
+		return WriteFeature(filename, feature);
+	}, "Function to write Feature to file", "filename"_a, "feature"_a);
+}
