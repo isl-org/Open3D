@@ -74,4 +74,20 @@ public:
 	bool with_scaling_ = false;
 };
 
+/// Estimate a transformation for point to plane distance
+class TransformationEstimationPointToPlane : public TransformationEstimation
+{
+public:
+	TransformationEstimationPointToPlane() {}
+	~TransformationEstimationPointToPlane() override {}
+
+public:
+	double ComputeRMSE(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres) const override;
+	Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
+			const PointCloud &target,
+			const CorrespondenceSet &corres) const override;
+};
+
+
 }	// namespace three

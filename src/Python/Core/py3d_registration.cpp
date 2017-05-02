@@ -96,6 +96,19 @@ void pybind_registration(py::module &m)
 		})
 		.def_readwrite("with_scaling",
 				&TransformationEstimationPointToPoint::with_scaling_);
+
+	py::class_<TransformationEstimationPointToPlane,
+			PyTransformationEstimation<TransformationEstimationPointToPlane>,
+			TransformationEstimation> te_p2l(m,
+			"TransformationEstimationPointToPlane");
+	py::detail::bind_default_constructor<TransformationEstimationPointToPlane>(
+			te_p2l);
+	py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
+			te_p2l);
+	te_p2p
+		.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
+			return std::string("TransformationEstimationPointToPlane");
+		});
 	
 	py::class_<RegistrationResult> registration_result(m, "RegistrationResult");
 	py::detail::bind_default_constructor<RegistrationResult>(
