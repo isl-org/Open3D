@@ -90,10 +90,10 @@ Eigen::Vector3d ColorMapWinter::GetColor(double value) const
 Eigen::Vector3d ColorMapHot::GetColor(double value) const
 {
 	Eigen::Vector3d edges[4] = {
-		Eigen::Vector3d(1.0, 1.0, 0.875),
+		Eigen::Vector3d(1.0, 1.0, 1.0),
 		Eigen::Vector3d(1.0, 1.0, 0.0),
 		Eigen::Vector3d(1.0, 0.0, 0.0),
-		Eigen::Vector3d(0.125, 0.0, 0.0),
+		Eigen::Vector3d(0.0, 0.0, 0.0),
 	};
 	if (value < 0.0) {
 		return edges[0];
