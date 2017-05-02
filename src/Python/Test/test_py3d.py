@@ -116,8 +116,8 @@ def test_py3d_image():
     plt.show()
 
     print("Final test: load an RGB-D image pair and convert to pointcloud.")
-    im1 = ReadImage('TestData/RGBD/depth/00000.png')
-    im2 = ReadImage('TestData/RGBD/color/00000.jpg')
+    im1 = ReadImage("TestData/RGBD/depth/00000.png")
+    im2 = ReadImage("TestData/RGBD/color/00000.jpg")
     plt.figure(figsize=(12,8))
     plt.subplot(1, 2, 1)
     plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
@@ -156,8 +156,8 @@ def test_py3d_camera():
     print(trajectory.extrinsic)
     print(np.asarray(trajectory.extrinsic))
     for i in range(5):
-        im1 = ReadImage('TestData/RGBD/depth/{:05d}.png'.format(i))
-        im2 = ReadImage('TestData/RGBD/color/{:05d}.jpg'.format(i))
+        im1 = ReadImage("TestData/RGBD/depth/{:05d}.png".format(i))
+        im2 = ReadImage("TestData/RGBD/color/{:05d}.jpg".format(i))
         pcd = CreatePointCloudFromRGBDImage(im1, im2, trajectory.intrinsic)
         pcd.Transform(trajectory.extrinsic[i])
         pcds.append(pcd)
@@ -199,11 +199,11 @@ def test_py3d_visualization():
     print("")
 
 def test_py3d_icp():
-    traj = read_trajectory('TestData/ICP/init.log')
+    traj = read_trajectory("TestData/ICP/init.log")
     pcds = []
-    threshold = 0.03
+    threshold = 0.02
     for i in range(3):
-        pcds.append(ReadPointCloud('TestData/ICP/cloud_bin_{:d}.pcd'.format(i)))
+        pcds.append(ReadPointCloud("TestData/ICP/cloud_bin_{:d}.pcd".format(i)))
 
     for reg in traj:
         target = pcds[reg.metadata[0]]
@@ -211,9 +211,19 @@ def test_py3d_icp():
         trans = reg.pose
         evaluation_init = EvaluateRegistration(source, target, threshold, trans)
         print(evaluation_init)
-        print('Apply point-to-point ICP')
-        reg_p2p = RegistrationICP(source, target, threshold, trans, TransformationEstimationPointToPoint(True))
+
+        print("Apply point-to-point ICP")
+        reg_p2p = RegistrationICP(source, target, threshold, trans, TransformationEstimationPointToPoint())
         print(reg_p2p)
+        print("Transformation is:")
+        print(reg_p2p.transformation)
+
+        print("Apply point-to-plane ICP")
+        reg_p2l = RegistrationICP(source, target, threshold, trans, TransformationEstimationPointToPlane())
+        print(reg_p2l)
+        print("Transformation is:")
+        print(reg_p2l.transformation)
+        print("")
 
     print("")
 
