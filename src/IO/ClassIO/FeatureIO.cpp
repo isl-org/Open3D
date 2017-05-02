@@ -24,44 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FPFHFeature.h"
+#include "FeatureIO.h"
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/KDTreeFlann.h>
+#include <Core/Utility/Console.h>
+#include <Core/Utility/FileSystem.h>
 
 namespace three{
 
-bool FPFHFeature::ComputeFPFHFeature(const PointCloud &cloud,
-		const std::vector<int> &key_fpfh_points/* = {}*/)
+bool ReadFeature(const std::string &filename, Feature &feature)
 {
-	features_.clear();
-	if (cloud.HasPoints() == false || cloud.HasNormals() == false) {
-		return false;
-	}
-	return true;
+	return ReadFeatureFromBIN(filename, feature);
 }
 
-void FPFHFeature::CreateKeySPFHPoints(const std::vector<int> key_fpfh_points,
-		std::vector<int> &key_spfh_points)
+bool WriteFeature(const std::string &filename, const Feature &feature)
 {
-	if (key_fpfh_points.empty()) {
-		key_spfh_points.clear();
-
-	}
-}
-
-void FPFHFeature::ComputeSPFHFeature(const PointCloud &cloud,
-		const std::vector<int> &key_spfh_points,
-		std::vector<Eigen::Vector33d> &spfh)
-{
-}
-
-std::shared_ptr<FPFHFeature> CreateFPFHFeatureFromPointCloud(
-		const PointCloud &cloud)
-{
-	auto fpfh = std::make_shared<FPFHFeature>();
-	fpfh->ComputeFPFHFeature(cloud);
-	return fpfh;
+	return WriteFeatureToBIN(filename, feature);
 }
 
 }	// namespace three

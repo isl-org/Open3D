@@ -24,27 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#pragma once
 
-void pybind_core_classes(py::module &m)
-{
-	pybind_console(m);
-	pybind_geometry(m);
-	pybind_pointcloud(m);
-	pybind_trianglemesh(m);
-	pybind_image(m);
-	pybind_kdtreeflann(m);
-	pybind_feature(m);
-	pybind_camera(m);
-	pybind_registration(m);
-}
+#include <string>
+#include <Core/Registration/Feature.h>
 
-void pybind_core_methods(py::module &m)
-{
-	pybind_pointcloud_methods(m);
-	pybind_trianglemesh_methods(m);
-	pybind_image_methods(m);
-	pybind_feature_methods(m);
-	pybind_camera_methods(m);
-	pybind_registration_methods(m);
-}
+namespace three {
+
+/// The general entrance for reading a Feature from a file
+/// \return If the read function is successful.
+bool ReadFeature(const std::string &filename, Feature &feature);
+
+/// The general entrance for writing a Feature to a file
+/// \return If the write function is successful.
+bool WriteFeature(const std::string &filename, const Feature &feature);
+
+bool ReadFeatureFromBIN(const std::string &filename, Feature &feature);
+
+bool WriteFeatureToBIN(const std::string &filename, const Feature &feature);
+
+}	// namespace three

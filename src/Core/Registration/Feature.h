@@ -24,27 +24,25 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#pragma once
 
-void pybind_core_classes(py::module &m)
-{
-	pybind_console(m);
-	pybind_geometry(m);
-	pybind_pointcloud(m);
-	pybind_trianglemesh(m);
-	pybind_image(m);
-	pybind_kdtreeflann(m);
-	pybind_feature(m);
-	pybind_camera(m);
-	pybind_registration(m);
-}
+#include <vector>
+#include <memory>
+#include <Eigen/Core>
 
-void pybind_core_methods(py::module &m)
+namespace three {
+
+class PointCloud;
+
+class Feature
 {
-	pybind_pointcloud_methods(m);
-	pybind_trianglemesh_methods(m);
-	pybind_image_methods(m);
-	pybind_feature_methods(m);
-	pybind_camera_methods(m);
-	pybind_registration_methods(m);
-}
+public:
+	void Resize(int dim, int n) { data_.resize(dim, n); }
+	size_t Dimension() const { return data_.rows(); }
+	size_t Num() const { return data_.cols(); }
+
+public:
+	Eigen::MatrixXd data_;
+};
+
+}	// namespace three
