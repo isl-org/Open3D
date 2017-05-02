@@ -6,6 +6,7 @@ import numpy as np
 import sys, copy
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from trajectory_io import *
 
 def test_py3d_eigen():
     print("Testing eigen in py3d ...")
@@ -127,7 +128,7 @@ def test_py3d_image():
     # Flip it, otherwise the pointcloud will be upside down
     pcd.Transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     DrawGeometries([pcd])
-    
+
     print("")
 
 def test_py3d_kdtree():
@@ -197,6 +198,25 @@ def test_py3d_visualization():
 
     print("")
 
+def test_py3d_icp():
+    traj = read_trajectory('TestData/ICP/init.log')
+    pcds = []
+    threshold = 0.03
+    for i in range(3):
+        pcds.append(ReadPointCloud('TestData/ICP/cloud_bin_{:d}.pcd'.format(i)))
+
+    for reg in traj:
+        target = pcds[reg.metadata[0]]
+        source = pcds[reg.metadata[1]]
+        trans = reg.pose
+        evaluation_init = EvaluateRegistration(source, target, threshold, trans)
+        print(evaluation_init)
+        print('Apply point-to-point ICP')
+        reg_p2p = RegistrationICP(source, target, threshold, trans, TransformationEstimationPointToPoint(True))
+        print(reg_p2p)
+
+    print("")
+
 if __name__ == "__main__":
     if len(sys.argv) == 1 or "eigen" in sys.argv:
         test_py3d_eigen()
@@ -212,3 +232,5 @@ if __name__ == "__main__":
         test_py3d_camera()
     if len(sys.argv) == 1 or "visualization" in sys.argv:
         test_py3d_visualization()
+    if len(sys.argv) == 1 or "icp" in sys.argv:
+        test_py3d_icp()

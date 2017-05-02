@@ -116,6 +116,10 @@ void pybind_registration(py::module &m)
 
 void pybind_registration_methods(py::module &m)
 {
+	m.def("EvaluateRegistration", &EvaluateRegistration,
+			"Function for evaluating registration between point clouds",
+			"source"_a, "target"_a, "max_correspondence_distance"_a,
+			"transformation"_a = Eigen::Matrix4d::Identity());
 	m.def("RegistrationICP", &RegistrationICP,
 			"Function for ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
