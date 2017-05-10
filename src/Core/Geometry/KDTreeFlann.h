@@ -28,9 +28,11 @@
 
 #include <vector>
 #include <memory>
+#include <Eigen/Core>
 
 #include <Core/Geometry/Geometry.h>
 #include <Core/Geometry/KDTreeSearchParam.h>
+#include <Core/Registration/Feature.h>
 
 namespace flann {
 template <typename T> class Matrix;
@@ -44,13 +46,17 @@ class KDTreeFlann
 {
 public:
 	KDTreeFlann();
+	KDTreeFlann(const Eigen::MatrixXd &data);
 	KDTreeFlann(const Geometry &geometry);
+	KDTreeFlann(const Feature &feature);
 	~KDTreeFlann();
 	KDTreeFlann(const KDTreeFlann &) = delete;
 	KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 	
 public:
+	bool SetMatrixData(const Eigen::MatrixXd &data);
 	bool SetGeometry(const Geometry &geometry);
+	bool SetFeature(const Feature &feature);
 
 	template<typename T>
 	int Search(const T &query, const KDTreeSearchParam &param, 
@@ -67,6 +73,9 @@ public:
 	template<typename T>
 	int SearchHybrid(const T &query, double radius, int max_nn,
 			std::vector<int> &indices, std::vector<double> &distance2) const;
+
+private:
+	bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
 protected:
 	std::vector<double> data_;
