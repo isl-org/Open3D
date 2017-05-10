@@ -33,7 +33,7 @@ using namespace three;
 
 void pybind_feature(py::module &m)
 {
-	py::class_<Feature> feature(m, "Feature");
+	py::class_<Feature, std::shared_ptr<Feature>> feature(m, "Feature");
 	py::detail::bind_default_constructor<Feature>(feature);
 	py::detail::bind_copy_functions<Feature>(feature);
 	feature

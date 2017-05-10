@@ -181,9 +181,10 @@ int main(int argc, char *argv[])
 	double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold",
 			0.075);
 	double threshold2 = threshold * threshold;
-	std::vector<std::string> features = {"fpfh", "pfh", "shot", "spin", "usc", "d32_norelu"};
+	//std::vector<std::string> features = {"fpfh", "pfh", "shot", "spin", "usc", "d32_norelu"};
 	//std::vector<std::string> features = {"r17", "pcar17"};
 	//std::vector<std::string> features = {"fpfh", "usc"};
+	std::vector<std::string> features = {"fpfh", "d32"};
 
 	std::vector<std::string> pcd_names;
 	filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",

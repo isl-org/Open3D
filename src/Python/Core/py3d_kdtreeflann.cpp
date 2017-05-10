@@ -74,7 +74,8 @@ void pybind_kdtreeflann(py::module &m)
 		.def_readwrite("radius", &KDTreeSearchParamHybrid::radius_)
 		.def_readwrite("max_nn", &KDTreeSearchParamHybrid::max_nn_);
 
-	py::class_<KDTreeFlann> kdtreeflann(m, "KDTreeFlann");
+	py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>> kdtreeflann(m,
+			"KDTreeFlann");
 	kdtreeflann.def(py::init<>())
 		.def(py::init<const Eigen::MatrixXd &>(), "data"_a)
 		.def("SetMatrixData", &KDTreeFlann::SetMatrixData, "data"_a)
