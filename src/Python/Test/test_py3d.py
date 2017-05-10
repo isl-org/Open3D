@@ -133,6 +133,54 @@ def test_py3d_image():
 
 def test_py3d_kdtree():
     print("Testing kdtree in py3d ...")
+    print("Load a point cloud and paint it black.")
+    pcd = ReadPointCloud('TestData/Feature/cloud_bin_0.pcd')
+    pcd.PaintUniformColor([0, 0, 0])
+    pcd_tree = KDTreeFlann(pcd)
+    print("Paint the 1500th point red.")
+    pcd.colors[1500] = [1, 0, 0]
+    print("Find its 200 nearest neighbors, paint blue.")
+    [k, idx, _] = pcd_tree.SearchKNNVector3D(pcd.points[1500], 200)
+    np.asarray(pcd.colors)[idx[1:], :] = [0, 0, 1]
+    print("Find its neighbors with distance less than 0.2, paint green.")
+    [k, idx, _] = pcd_tree.SearchRadiusVector3D(pcd.points[1500], 0.2)
+    np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
+    print("Visualize the point cloud.")
+    DrawGeometries([pcd])
+    print("")
+
+    print("Load two aligned point clouds.")
+    pcd0 = ReadPointCloud('TestData/Feature/cloud_bin_0.pcd')
+    pcd1 = ReadPointCloud('TestData/Feature/cloud_bin_1.pcd')
+    pcd0.PaintUniformColor([1, 0.706, 0])
+    pcd1.PaintUniformColor([0, 0.651, 0.929])
+    DrawGeometries([pcd0, pcd1])
+    print("Load their FPFH feature and evaluate.")
+    print("Black : matching distance > 0.2")
+    print("White : matching distance = 0")
+    feature0 = ReadFeature('TestData/Feature/cloud_bin_0.fpfh.bin')
+    feature1 = ReadFeature('TestData/Feature/cloud_bin_1.fpfh.bin')
+    fpfh_tree = KDTreeFlann(feature1)
+    for i in range(len(pcd0.points)):
+        [_, idx, _] = fpfh_tree.SearchKNNVectorXD(feature0.data[:, i], 1)
+        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        c = (0.2 - np.fmin(dis, 0.2)) / 0.2
+        pcd0.colors[i] = [c, c, c]
+    DrawGeometries([pcd0])
+    print("")
+
+    print("Load their L32D feature and evaluate.")
+    print("Black : matching distance > 0.2")
+    print("White : matching distance = 0")
+    feature0 = ReadFeature('TestData/Feature/cloud_bin_0.d32.bin')
+    feature1 = ReadFeature('TestData/Feature/cloud_bin_1.d32.bin')
+    fpfh_tree = KDTreeFlann(feature1)
+    for i in range(len(pcd0.points)):
+        [_, idx, _] = fpfh_tree.SearchKNNVectorXD(feature0.data[:, i], 1)
+        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        c = (0.2 - np.fmin(dis, 0.2)) / 0.2
+        pcd0.colors[i] = [c, c, c]
+    DrawGeometries([pcd0])
     print("")
 
 def test_py3d_camera():
