@@ -74,10 +74,15 @@ void pybind_kdtreeflann(py::module &m)
 		.def_readwrite("radius", &KDTreeSearchParamHybrid::radius_)
 		.def_readwrite("max_nn", &KDTreeSearchParamHybrid::max_nn_);
 
-	py::class_<KDTreeFlann> kdtreeflann(m, "KDTreeFlann");
+	py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>> kdtreeflann(m,
+			"KDTreeFlann");
 	kdtreeflann.def(py::init<>())
+		.def(py::init<const Eigen::MatrixXd &>(), "data"_a)
+		.def("SetMatrixData", &KDTreeFlann::SetMatrixData, "data"_a)
 		.def(py::init<const Geometry &>(), "geometry"_a)
 		.def("SetGeometry", &KDTreeFlann::SetGeometry, "geometry"_a)
+		.def(py::init<const Feature &>(), "feature"_a)
+		.def("SetFeature", &KDTreeFlann::SetFeature, "feature"_a)
 		// Although these C++ style functions are fast by orders of magnitudes
 		// when similar queries are performed for a large number of times and
 		// memory management is involved, we prefer not to expose them in
@@ -125,6 +130,39 @@ void pybind_kdtreeflann(py::module &m)
 						distance2);
 				if (k < 0)
 					throw std::runtime_error("SearchHybridVector3D() error!");
+				return std::make_tuple(k, indices, distance2);
+			}, "query"_a, "radius"_a, "max_nn"_a)
+		.def("SearchVectorXD", [](const KDTreeFlann &tree,
+				const Eigen::VectorXd &query, const KDTreeSearchParam &param) {
+				std::vector<int> indices; std::vector<double> distance2;
+				int k = tree.Search(query, param, indices, distance2);
+				if (k < 0)
+					throw std::runtime_error("SearchVectorXD() error!");
+				return std::make_tuple(k, indices, distance2);
+			}, "query"_a, "search_param"_a)
+		.def("SearchKNNVectorXD", [](const KDTreeFlann &tree,
+				const Eigen::VectorXd &query, int knn) {
+				std::vector<int> indices; std::vector<double> distance2;
+				int k = tree.SearchKNN(query, knn, indices, distance2);
+				if (k < 0)
+					throw std::runtime_error("SearchKNNVectorXD() error!");
+				return std::make_tuple(k, indices, distance2);
+			}, "query"_a, "knn"_a)
+		.def("SearchRadiusVectorXD", [](const KDTreeFlann &tree,
+				const Eigen::VectorXd &query, double radius) {
+				std::vector<int> indices; std::vector<double> distance2;
+				int k = tree.SearchRadius(query, radius, indices, distance2);
+				if (k < 0)
+					throw std::runtime_error("SearchRadiusVectorXD() error!");
+				return std::make_tuple(k, indices, distance2);
+			}, "query"_a, "radius"_a)
+		.def("SearchHybridVectorXD", [](const KDTreeFlann &tree,
+				const Eigen::VectorXd &query, double radius, int max_nn) {
+				std::vector<int> indices; std::vector<double> distance2;
+				int k = tree.SearchHybrid(query, radius, max_nn, indices,
+						distance2);
+				if (k < 0)
+					throw std::runtime_error("SearchHybridVectorXD() error!");
 				return std::make_tuple(k, indices, distance2);
 			}, "query"_a, "radius"_a, "max_nn"_a);
 }

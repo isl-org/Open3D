@@ -45,6 +45,11 @@ public:
 	double fitness;
 };
 
+/// Function for evaluation
+RegistrationResult EvaluateRegistration(const PointCloud &source,
+		const PointCloud &target, double max_correspondence_distance,
+		const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
+
 /// Functions for registration
 RegistrationResult RegistrationICP(const PointCloud &source,
 		const PointCloud &target, double max_correspondence_distance,

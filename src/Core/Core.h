@@ -42,5 +42,6 @@
 #include "Camera/PinholeCameraIntrinsic.h"
 #include "Camera/PinholeCameraTrajectory.h"
 
+#include "Registration/Feature.h"
 #include "Registration/Registration.h"
 #include "Registration/TransformationEstimation.h"
