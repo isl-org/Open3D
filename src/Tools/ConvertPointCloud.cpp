@@ -88,9 +88,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 				std::numeric_limits<double>::max());
 		max_bound(2) = GetProgramOptionAsDouble(argc, argv, "--clip_z_max",
 				std::numeric_limits<double>::max());
-		auto clip_ptr = std::make_shared<PointCloud>();
-		CropPointCloud(*pointcloud_ptr, min_bound, max_bound, *clip_ptr);
-		pointcloud_ptr = clip_ptr;
+		pointcloud_ptr = CropPointCloud(*pointcloud_ptr, min_bound, max_bound);
 		processed = true;
 	}
 
@@ -98,16 +96,15 @@ void convert(int argc, char **argv, const std::string &file_in,
 	double mahalanobis_threshold = GetProgramOptionAsDouble(argc, argv,
 			"--filter_mahalanobis", 0.0);
 	if (mahalanobis_threshold > 0.0) {
-		std::vector<double> mahalanobis;
-		ComputePointCloudMahalanobisDistance(*pointcloud_ptr, mahalanobis);
+		auto mahalanobis = ComputePointCloudMahalanobisDistance(
+				*pointcloud_ptr);
 		std::vector<size_t> indices;
 		for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
 			if (mahalanobis[i] < mahalanobis_threshold) {
 				indices.push_back(i);
 			}
 		}
-		auto pcd = std::make_shared<PointCloud>();
-		SelectDownSample(*pointcloud_ptr, indices, *pcd);
+		auto pcd = SelectDownSample(*pointcloud_ptr, indices);
 		PrintDebug("Based on Mahalanobis distance, %d points were filtered.\n",
 				(int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
 		pointcloud_ptr = pcd;
@@ -119,9 +116,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 	if (every_k > 1) {
 		PrintDebug("Downsample point cloud uniformly every %d points.\n",
 				every_k);
-		auto downsample_ptr = std::make_shared<PointCloud>();
-		UniformDownSample(*pointcloud_ptr, every_k, *downsample_ptr);
-		pointcloud_ptr = downsample_ptr;
+		pointcloud_ptr = UniformDownSample(*pointcloud_ptr, every_k);
 		processed = true;
 	}
 
@@ -131,9 +126,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 	if (voxel_size > 0.0) {
 		PrintDebug("Downsample point cloud with voxel size %.4f.\n",
 				voxel_size);
-		auto downsample_ptr = std::make_shared<PointCloud>();
-		VoxelDownSample(*pointcloud_ptr, voxel_size, *downsample_ptr);
-		pointcloud_ptr = downsample_ptr;
+		pointcloud_ptr = VoxelDownSample(*pointcloud_ptr, voxel_size);
 		processed = true;
 	}
 

@@ -110,20 +110,20 @@ void SelectionPolygon::FillPolygon(int width, int height)
 	}
 }
 
-void SelectionPolygon::CropGeometry(const Geometry &input,
-		const ViewControl &view, Geometry &output)
+std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
+		const PointCloud &input, const ViewControl &view)
 {
-	if (IsEmpty() || polygon_type_ == POLYGON_UNFILLED) return;
-	if (input.GetGeometryType() != output.GetGeometryType()) return;
-	if (input.GetGeometryType() == Geometry::GEOMETRY_POINTCLOUD) {
-		const auto &input_pointcloud = (const PointCloud &)input;
-		auto &output_pointcloud = (PointCloud &)output;
-		if (polygon_type_ == POLYGON_RECTANGLE) {
-			CropPointCloudInRectangle(input_pointcloud, view,
-					output_pointcloud);
-		} else if (polygon_type_ == POLYGON_POLYGON) {
-			CropPointCloudInPolygon(input_pointcloud, view, output_pointcloud);
-		}
+	if (IsEmpty()) {
+		return std::make_shared<PointCloud>();
+	}
+	switch (polygon_type_) {
+	case POLYGON_RECTANGLE:
+		return CropPointCloudInRectangle(input, view);
+	case POLYGON_POLYGON:
+		return CropPointCloudInPolygon(input, view);
+	case POLYGON_UNFILLED:
+	default:
+		return std::shared_ptr<PointCloud>();
 	}
 }
 
@@ -170,27 +170,22 @@ std::shared_ptr<SelectionPolygonVolume> SelectionPolygon::
 	return volume;
 }
 
-void SelectionPolygon::CropPointCloudInRectangle(const PointCloud &input,
-		const ViewControl &view, PointCloud &output)
+std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInRectangle(
+		const PointCloud &input, const ViewControl &view)
 {
-	std::vector<size_t> indices;
-	CropInRectangle(input.points_, view, indices);
-	SelectDownSample(input, indices, output);
+	return SelectDownSample(input, CropInRectangle(input.points_, view));
 }
 
-void SelectionPolygon::CropPointCloudInPolygon(const PointCloud &input,
-		const ViewControl &view, PointCloud &output)
+std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInPolygon(
+		const PointCloud &input, const ViewControl &view)
 {
-	std::vector<size_t> indices;
-	CropInPolygon(input.points_, view, indices);
-	SelectDownSample(input, indices, output);
+	return SelectDownSample(input, CropInPolygon(input.points_, view));
 }
 
-void SelectionPolygon::CropInRectangle(
-		const std::vector<Eigen::Vector3d> &input,
-		const ViewControl &view, std::vector<size_t> &output_index)
+std::vector<size_t> SelectionPolygon::CropInRectangle(
+		const std::vector<Eigen::Vector3d> &input, const ViewControl &view)
 {
-	output_index.clear();
+	std::vector<size_t> output_index;
 	Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
 	double half_width = (double)view.GetWindowWidth() * 0.5;
 	double half_height = (double)view.GetWindowHeight() * 0.5;
@@ -211,12 +206,13 @@ void SelectionPolygon::CropInRectangle(
 			output_index.push_back(i);
 		}
 	}
+	return output_index;
 }
 
-void SelectionPolygon::CropInPolygon(const std::vector<Eigen::Vector3d> &input,
-		const ViewControl &view, std::vector<size_t> &output_index)
+std::vector<size_t> SelectionPolygon::CropInPolygon(
+		const std::vector<Eigen::Vector3d> &input, const ViewControl &view)
 {
-	output_index.clear();
+	std::vector<size_t> output_index;
 	Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
 	double half_width = (double)view.GetWindowWidth() * 0.5;
 	double half_height = (double)view.GetWindowHeight() * 0.5;
@@ -247,6 +243,7 @@ void SelectionPolygon::CropInPolygon(const std::vector<Eigen::Vector3d> &input,
 			output_index.push_back(k);
 		}
 	}
+	return output_index;
 }
 
 }	// namespace three

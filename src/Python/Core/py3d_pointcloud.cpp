@@ -85,37 +85,17 @@ void pybind_pointcloud_methods(py::module &m)
 			"depth"_a, "color"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity(),
 			"depth_scale"_a = 1000.0);
-	m.def("SelectDownSample", [](const PointCloud &input,
-			const std::vector<size_t> &indices) {
-			PointCloud output;
-			if (SelectDownSample(input, indices, output) == false)
-				throw std::runtime_error("SelectDownSample() error!");
-			return output;
-		}, "Function to select points from input pointcloud into output pointcloud",
+	m.def("SelectDownSample", &SelectDownSample,
+			"Function to select points from input pointcloud into output pointcloud",
 			"input"_a, "indices"_a);
-	m.def("VoxelDownSample", [](const PointCloud &input, double voxel_size) {
-			PointCloud output;
-			if (VoxelDownSample(input, voxel_size, output) == false)
-				throw std::runtime_error("VoxelDownSample() error!");
-			return output;
-		}, "Function to downsample input pointcloud into output pointcloud with a voxel",
+	m.def("VoxelDownSample", &VoxelDownSample,
+			"Function to downsample input pointcloud into output pointcloud with a voxel",
 			"input"_a, "voxel_size"_a);
-	m.def("UniformDownSample", [](const PointCloud &input,
-			size_t every_k_points) {
-			PointCloud output;
-			if (UniformDownSample(input, every_k_points, output) == false)
-				throw std::runtime_error("UniformDownSample() error!");
-			return output;
-		}, "Function to downsample input pointcloud into output pointcloud uniformly",
+	m.def("UniformDownSample", &UniformDownSample,
+			"Function to downsample input pointcloud into output pointcloud uniformly",
 			"input"_a, "every_k_points"_a);
-	m.def("CropPointCloud", [](const PointCloud &input,
-			const Eigen::Vector3d &min_bound,
-			const Eigen::Vector3d &max_bound) {
-			PointCloud output;
-			if (CropPointCloud(input, min_bound, max_bound, output) == false)
-				throw std::runtime_error("CropPointCloud() error!");
-			return output;
-		}, "Function to crop input pointcloud into output pointcloud",
+	m.def("CropPointCloud", &CropPointCloud,
+			"Function to crop input pointcloud into output pointcloud",
 			"input"_a, "min_bound"_a, "max_bound"_a);
 	m.def("EstimateNormals", &EstimateNormals,
 			"Function to compute the normals of a point cloud",
@@ -129,30 +109,20 @@ void pybind_pointcloud_methods(py::module &m)
 			&OrientNormalsTowardsCameraLocation,
 			"Function to orient the normals of a point cloud",
 			"cloud"_a, "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-	m.def("ComputePointCloudToPointCloudDistance", [](const PointCloud &source,
-			const PointCloud &target) {
-			std::vector<double> distances;
-			ComputePointCloudToPointCloudDistance(source, target, distances);
-			return distances;
-		}, "Function to compute the ponit to point distances between point clouds",
+	m.def("ComputePointCloudToPointCloudDistance",
+			&ComputePointCloudToPointCloudDistance,
+			"Function to compute the ponit to point distances between point clouds",
 			"source"_a, "target"_a);
-	m.def("ComputePointCloudMeanAndCovariance", [](const PointCloud &input) {
-			Eigen::Vector3d mean; Eigen::Matrix3d covariance;
-			ComputePointCloudMeanAndCovariance(input, mean, covariance);
-			return std::make_tuple(mean, covariance);
-		}, "Function to compute the mean and covariance matrix of a point cloud",
+	m.def("ComputePointCloudMeanAndCovariance",
+			&ComputePointCloudMeanAndCovariance,
+			"Function to compute the mean and covariance matrix of a point cloud",
 			"input"_a);
-	m.def("ComputePointCloudMahalanobisDistance", [](const PointCloud &input) {
-			std::vector<double> distance;
-			ComputePointCloudMahalanobisDistance(input, distance);
-			return distance;
-		}, "Function to compute the Mahalanobis distance for points in a point cloud",
+	m.def("ComputePointCloudMahalanobisDistance",
+			&ComputePointCloudMahalanobisDistance,
+			"Function to compute the Mahalanobis distance for points in a point cloud",
 			"input"_a);
-	m.def("ComputePointCloudNearestNeighborDistance", [](
-			const PointCloud &input) {
-			std::vector<double> distance;
-			ComputePointCloudNearestNeighborDistance(input, distance);
-			return distance;
-		}, "Function to compute the distance from a point to its nearest neighbor in the point cloud",
+	m.def("ComputePointCloudNearestNeighborDistance",
+			&ComputePointCloudNearestNeighborDistance,
+			"Function to compute the distance from a point to its nearest neighbor in the point cloud",
 			"input"_a);
 }

@@ -66,12 +66,12 @@ int main(int argc, char *argv[])
 			".bin";
 	std::vector<double> distances(pcd->points_.size());
 	if (ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
-		ComputePointCloudMahalanobisDistance(*pcd, distances);
+		distances = ComputePointCloudMahalanobisDistance(*pcd);
 		FILE *f = fopen(binname.c_str(), "wb");
 		fwrite(distances.data(), sizeof(double), distances.size(), f);
 		fclose(f);
 	} else if (ProgramOptionExists(argc, argv, "--nn_distance")) {
-		ComputePointCloudNearestNeighborDistance(*pcd, distances);
+		distances = ComputePointCloudNearestNeighborDistance(*pcd);
 		FILE *f = fopen(binname.c_str(), "wb");
 		fwrite(distances.data(), sizeof(double), distances.size(), f);
 		fclose(f);
