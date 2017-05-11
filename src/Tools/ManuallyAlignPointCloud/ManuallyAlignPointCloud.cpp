@@ -117,15 +117,12 @@ int main(int argc, char **argv)
 		auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
 		if (ReadIJsonConvertible(default_polygon_filename, *polygon_volume)) {
 			PrintInfo("Crop point cloud.\n");
-			auto cropped = std::make_shared<PointCloud>();
-			polygon_volume->CropGeometry(*source_ptr, *cropped);
-			source_ptr = cropped;
+			source_ptr = polygon_volume->CropPointCloud(*source_ptr);
 		}
 		if (voxel_size > 0.0) {
 			PrintInfo("Downsample point cloud with voxel size %.4f.\n",
 					voxel_size);
-			PointCloud source_backup = *source_ptr;
-			VoxelDownSample(source_backup, voxel_size, *source_ptr);
+			source_ptr = VoxelDownSample(*source_ptr, voxel_size);
 		}
 		if (max_corres_distance > 0.0) {
 			PrintInfo("ICP with max correspondence distance %.4f.\n",
@@ -156,15 +153,12 @@ int main(int argc, char **argv)
 		auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
 		if (ReadIJsonConvertible(default_polygon_filename, *polygon_volume)) {
 			PrintInfo("Crop point cloud.\n");
-			auto cropped = std::make_shared<PointCloud>();
-			polygon_volume->CropGeometry(*source_ptr, *cropped);
-			source_ptr = cropped;
+			source_ptr = polygon_volume->CropPointCloud(*source_ptr);
 		}
 		if (voxel_size > 0.0) {
 			PrintInfo("Downsample point cloud with voxel size %.4f.\n",
 					voxel_size);
-			PointCloud source_backup = *source_ptr;
-			VoxelDownSample(source_backup, voxel_size, *source_ptr);
+			source_ptr = VoxelDownSample(*source_ptr, voxel_size);
 		}
 		std::string source_filename = filesystem::GetFileNameWithoutExtension(
 				eval_filename) + ".source.ply";

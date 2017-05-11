@@ -83,31 +83,24 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value)
 	return true;
 }
 
-void SelectionPolygonVolume::CropGeometry(const Geometry &input,
-		Geometry &output) const
+std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloud(
+		const PointCloud &input) const
 {
-	if (orthogonal_axis_ == "" || bounding_polygon_.empty()) return;
-	if (input.GetGeometryType() != output.GetGeometryType()) return;
-	if (input.GetGeometryType() == Geometry::GEOMETRY_POINTCLOUD) {
-		const auto &input_pointcloud = (const PointCloud &)input;
-		auto &output_pointcloud = (PointCloud &)output;
-		CropPointCloudInPolygon(input_pointcloud, output_pointcloud);
-	}
+	if (orthogonal_axis_ == "" || bounding_polygon_.empty())
+		return std::make_shared<PointCloud>();
+	return CropPointCloudInPolygon(input);
 }
 
-void SelectionPolygonVolume::CropPointCloudInPolygon(const PointCloud &input,
-		PointCloud &output) const
+std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
+		const PointCloud &input) const
 {
-	std::vector<size_t> indices;
-	CropInPolygon(input.points_, indices);
-	SelectDownSample(input, indices, output);
+	return SelectDownSample(input, CropInPolygon(input.points_));
 }
 
-void SelectionPolygonVolume::CropInPolygon(
-		const std::vector<Eigen::Vector3d> &input,
-		std::vector<size_t> &output_index) const
+std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
+		const std::vector<Eigen::Vector3d> &input) const
 {
-	output_index.clear();
+	std::vector<size_t> output_index;
 	int u, v, w;
 	if (orthogonal_axis_ == "x" || orthogonal_axis_ == "X") {
 		u = 1; v = 2; w = 0;
@@ -141,6 +134,7 @@ void SelectionPolygonVolume::CropInPolygon(
 			output_index.push_back(k);
 		}
 	}
+	return output_index;
 }
 
 }	// namespace three

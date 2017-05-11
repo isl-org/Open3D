@@ -174,8 +174,8 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			if (voxel_size_ > 0.0) {
 				PrintInfo("Voxel downsample with voxel size %.4f.\n",
 						voxel_size_);
-				PointCloud source_backup = *source_copy_ptr_;
-				VoxelDownSample(source_backup, voxel_size_, *source_copy_ptr_);
+				*source_copy_ptr_ = *VoxelDownSample(*source_copy_ptr_,
+						voxel_size_);
 				UpdateGeometry();
 			} else {
 				PrintInfo("No voxel downsample performed due to illegal voxel size.\n");
@@ -194,9 +194,8 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 			}
 			auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
 			if (ReadIJsonConvertible(polygon_filename_, *polygon_volume)) {
-				auto cropped = std::make_shared<PointCloud>();
-				polygon_volume->CropGeometry(*source_copy_ptr_, *cropped);
-				*source_copy_ptr_ = *cropped;
+				*source_copy_ptr_ = *polygon_volume->CropPointCloud(
+						*source_copy_ptr_);
 				ResetViewPoint(true);
 				UpdateGeometry();
 			}
