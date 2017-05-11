@@ -74,7 +74,23 @@ def test_py3d_eigen():
     print("")
 
 def test_py3d_pointcloud():
-    print("Testing pointcloud in py3d ...")
+    print("Testing point cloud in py3d ...")
+    print("Load a point cloud, print it, and render it")
+    pcd = ReadPointCloud("TestData/fragment.ply")
+    print(pcd)
+    print(np.asarray(pcd.points))
+    DrawGeometries([pcd])
+    print("Downsample the point cloud with a voxel of 0.05")
+    downpcd = VoxelDownSample(pcd, voxel_size = 0.05)
+    DrawGeometries([downpcd])
+    print("Recompute the normal of the downsampled point cloud")
+    EstimateNormals(downpcd, search_param = KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
+    DrawGeometries([downpcd])
+    print("")
+    print("We load a polygon volume and use it to crop the original point cloud")
+    vol = ReadSelectionPolygonVolume("TestData/Crop/cropped.json")
+    chair = vol.CropPointCloud(pcd)
+    DrawGeometries([chair])
     print("")
 
 def test_py3d_mesh():
@@ -127,7 +143,7 @@ def test_py3d_image():
     # Flip it, otherwise the pointcloud will be upside down
     pcd.Transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     DrawGeometries([pcd])
-    
+
     print("")
 
 def test_py3d_kdtree():
