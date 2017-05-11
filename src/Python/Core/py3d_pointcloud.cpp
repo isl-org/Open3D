@@ -109,30 +109,20 @@ void pybind_pointcloud_methods(py::module &m)
 			&OrientNormalsTowardsCameraLocation,
 			"Function to orient the normals of a point cloud",
 			"cloud"_a, "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-	m.def("ComputePointCloudToPointCloudDistance", [](const PointCloud &source,
-			const PointCloud &target) {
-			std::vector<double> distances;
-			ComputePointCloudToPointCloudDistance(source, target, distances);
-			return distances;
-		}, "Function to compute the ponit to point distances between point clouds",
+	m.def("ComputePointCloudToPointCloudDistance",
+			&ComputePointCloudToPointCloudDistance,
+			"Function to compute the ponit to point distances between point clouds",
 			"source"_a, "target"_a);
-	m.def("ComputePointCloudMeanAndCovariance", [](const PointCloud &input) {
-			Eigen::Vector3d mean; Eigen::Matrix3d covariance;
-			ComputePointCloudMeanAndCovariance(input, mean, covariance);
-			return std::make_tuple(mean, covariance);
-		}, "Function to compute the mean and covariance matrix of a point cloud",
+	m.def("ComputePointCloudMeanAndCovariance",
+			&ComputePointCloudMeanAndCovariance,
+			"Function to compute the mean and covariance matrix of a point cloud",
 			"input"_a);
-	m.def("ComputePointCloudMahalanobisDistance", [](const PointCloud &input) {
-			std::vector<double> distance;
-			ComputePointCloudMahalanobisDistance(input, distance);
-			return distance;
-		}, "Function to compute the Mahalanobis distance for points in a point cloud",
+	m.def("ComputePointCloudMahalanobisDistance",
+			&ComputePointCloudMahalanobisDistance,
+			"Function to compute the Mahalanobis distance for points in a point cloud",
 			"input"_a);
-	m.def("ComputePointCloudNearestNeighborDistance", [](
-			const PointCloud &input) {
-			std::vector<double> distance;
-			ComputePointCloudNearestNeighborDistance(input, distance);
-			return distance;
-		}, "Function to compute the distance from a point to its nearest neighbor in the point cloud",
+	m.def("ComputePointCloudNearestNeighborDistance",
+			&ComputePointCloudNearestNeighborDistance,
+			"Function to compute the distance from a point to its nearest neighbor in the point cloud",
 			"input"_a);
 }

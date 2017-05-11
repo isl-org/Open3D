@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <vector>
 #include <memory>
 #include <Eigen/Core>
@@ -154,21 +155,21 @@ bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
 /// Function to compute the ponit to point distances between point clouds
 /// \param distances is the output distance. It has the same size as the number
 /// of point in \param source.
-void ComputePointCloudToPointCloudDistance(const PointCloud &source,
-		const PointCloud &target, std::vector<double> &distances);
+std::vector<double> ComputePointCloudToPointCloudDistance(
+		const PointCloud &source, const PointCloud &target);
 
 /// Function to compute the mean and covariance matrix of a point cloud
-void ComputePointCloudMeanAndCovariance(const PointCloud &input,
-		Eigen::Vector3d &mean, Eigen::Matrix3d &covariance);
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
+		const PointCloud &input);
 
 /// Function to compute the Mahalanobis distance for points in a point cloud
 /// https://en.wikipedia.org/wiki/Mahalanobis_distance
-void ComputePointCloudMahalanobisDistance(const PointCloud &input,
-		std::vector<double> &mahalanobis);
+std::vector<double> ComputePointCloudMahalanobisDistance(
+		const PointCloud &input);
 
 /// Function to compute the distance from a point to its nearest neighbor in the
 /// point cloud
-void ComputePointCloudNearestNeighborDistance(const PointCloud &input,
-		std::vector<double> &nn_dis);
+std::vector<double> ComputePointCloudNearestNeighborDistance(
+		const PointCloud &input);
 
 }	// namespace three

@@ -313,20 +313,19 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
 			filename) + ".source.bin";
 	std::string target_binname = filesystem::GetFileNameWithoutExtension(
 			filename) + ".target.bin";
-	std::vector<double> distances;
 	FILE * f;
 
 	WritePointCloud(source_filename, *source_copy_ptr_);
-	ComputePointCloudToPointCloudDistance(*source_copy_ptr_, *target_copy_ptr_,
-			distances);
+	auto source_dis = ComputePointCloudToPointCloudDistance(
+			*source_copy_ptr_, *target_copy_ptr_);
 	f = fopen(source_binname.c_str(), "wb");
-	fwrite(distances.data(), sizeof(double), distances.size(), f);
+	fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
 	fclose(f);
 	WritePointCloud(target_filename, *target_copy_ptr_);
-	ComputePointCloudToPointCloudDistance(*target_copy_ptr_, *source_copy_ptr_,
-			distances);
+	auto target_dis = ComputePointCloudToPointCloudDistance(
+			*target_copy_ptr_, *source_copy_ptr_);
 	f = fopen(target_binname.c_str(), "wb");
-	fwrite(distances.data(), sizeof(double), distances.size(), f);
+	fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
 	fclose(f);
 }
 

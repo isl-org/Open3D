@@ -96,8 +96,8 @@ void convert(int argc, char **argv, const std::string &file_in,
 	double mahalanobis_threshold = GetProgramOptionAsDouble(argc, argv,
 			"--filter_mahalanobis", 0.0);
 	if (mahalanobis_threshold > 0.0) {
-		std::vector<double> mahalanobis;
-		ComputePointCloudMahalanobisDistance(*pointcloud_ptr, mahalanobis);
+		auto mahalanobis = ComputePointCloudMahalanobisDistance(
+				*pointcloud_ptr);
 		std::vector<size_t> indices;
 		for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
 			if (mahalanobis[i] < mahalanobis_threshold) {
