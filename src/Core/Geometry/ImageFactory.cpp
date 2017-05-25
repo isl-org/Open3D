@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "Image.h"
-#include "FloatImage.h"
 
 #include <IO/ClassIO/ImageIO.h>
 
@@ -38,13 +37,13 @@ std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
 	return image;
 }
 
-std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image)
+std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image)
 {
-	auto fimage = std::make_shared<FloatImage>();
+	auto fimage = std::make_shared<Image>();
 	if (image.IsEmpty()) {
 		return fimage;
 	}
-	fimage->PrepareImage(image.width_, image.height_);
+	fimage->PrepareImage(image.width_, image.height_, 1, 4);
 	for (int i = 0; i < image.height_ * image.width_; i++) {
 		float *p = (float *)(fimage->data_.data() + i * 4);
 		const uint8_t *pi = image.data_.data() + 
