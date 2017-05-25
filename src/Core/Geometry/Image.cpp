@@ -50,10 +50,12 @@ Eigen::Vector2d Image::GetMaxBound() const
 	return Eigen::Vector2d(width_, height_);
 }
 
-std::pair<bool, double> Image::ValueAt(double u, double v)
+std::pair<bool, double> Image::FloatValueAt(double u, double v)
 {
-	if (u < 0.0 || u >(double)(width_ - 1) ||
-		v < 0.0 || v >(double)(height_ - 1)) {
+	if ((num_of_channels_ != 1) ||
+		(bytes_per_channel_ != 4) ||
+		(u < 0.0 || u >(double)(width_ - 1) ||
+		v < 0.0 || v >(double)(height_ - 1))) {
 		return std::make_pair(false, 0.0);
 	}
 	int ui = std::max(std::min((int)u, width_ - 2), 0);
@@ -61,10 +63,10 @@ std::pair<bool, double> Image::ValueAt(double u, double v)
 	double pu = u - ui;
 	double pv = v - vi;
 	float value[4] = {
-		ValueAtUnsafe(ui, vi),
-		ValueAtUnsafe(ui, vi + 1),
-		ValueAtUnsafe(ui + 1, vi),
-		ValueAtUnsafe(ui + 1, vi + 1)
+		FloatValueAtUnsafe(ui, vi),
+		FloatValueAtUnsafe(ui, vi + 1),
+		FloatValueAtUnsafe(ui + 1, vi),
+		FloatValueAtUnsafe(ui + 1, vi + 1)
 	};
 	return std::make_pair(true,
 		(value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +

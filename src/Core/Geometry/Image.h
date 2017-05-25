@@ -65,11 +65,11 @@ public:
 		return width_ * num_of_channels_ * bytes_per_channel_;
 	}
 
-	float ValueAtUnsafe(int u, int v) {
+	float FloatValueAtUnsafe(int u, int v) {
 		return *((float *)(data_.data() + (u + v * width_) * bytes_per_channel_));
 	}
 
-	std::pair<bool, double> ValueAt(double u, double v);
+	std::pair<bool, double> FloatValueAt(double u, double v);
 		
 protected:
 	void AllocateDataBuffer() {

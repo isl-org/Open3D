@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 			std::cout << pt_in_camera << std::endl;
 			std::cout << pt_in_plane << std::endl;
 			std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
-			auto result = fimage->ValueAt(uv(0), uv(1));
+			auto result = fimage->FloatValueAt(uv(0), uv(1));
 			if (result.first) {
 				PrintWarning("%.6f\n", result.second);
 			}
