@@ -30,7 +30,6 @@
 #include <Eigen/Core>
 #include <memory>
 #include <Core/Geometry/Image.h>
-#include <Core/Geometry/FloatImage.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
