@@ -69,6 +69,12 @@ target_link_libraries(TestFileDialog Core IO tinyfiledialogs)
 set_target_properties(TestFileDialog PROPERTIES
 		FOLDER "Test"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
+		
+add_executable(TestImage TestImage.cpp)
+target_link_libraries(TestImage Core IO)
+set_target_properties(TestImage PROPERTIES
+		FOLDER "Test"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
 
 if(Open3D_BUILD_LIBREALSENSE)
     add_executable(TestRealSense TestRealSense.cpp)

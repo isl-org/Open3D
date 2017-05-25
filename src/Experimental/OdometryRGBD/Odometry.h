@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2015 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@
 // ?? not sure which modules need to be included.
 #include <vector>
 #include <Eigen/Core>
+#include <Eigen/Dense>
 #include <memory>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/FloatImage.h>
@@ -39,10 +40,28 @@
 
 namespace three {
 
-
 	class Odometry {
-
 	public:
+		// how to define constructor and descructor
+		//Odometry();
+		//~Odometry();		
+		bool ComputeOdometry(const Image &color0, const Image &depth0,
+			const Image &color1, const Image &depth1, 
+			const Eigen::Matrix4d &InitPose,
+			Eigen::Matrix4d &Rt);
+		//void cvtDepth2Cloud(const Image& depth, Image& cloud,
+		//	const Eigen::Matrix4d& cameraMatrix);
+
+		bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
+			const Image& image1, const Image& dI_dx1, const Image& dI_dy1,
+			const Image& depth0, const Image& depth1,
+			const Image& dD_dx1, const Image& dD_dy1,
+			const Eigen::Matrix4d& Rt,
+			const Image& corresps, int correspsCount,
+			const double& fx, const double& fy, const double& determinantThreshold,
+			Eigen::VectorXd& ksi,
+			double& res1, double& res2,
+			int iter, int level);
 
 	protected:
 		bool verbose_;

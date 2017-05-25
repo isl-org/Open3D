@@ -54,7 +54,13 @@ public:
 	std::pair<bool, double> ValueAt(double u, double v);
 };
 
+enum AverageType {
+	EQUAL,
+	WEIGHTED // weights used for rgb2ntsc function to compute the Y component
+};
+
 /// Factory function to create a FloatImage from an image (ImageFactory.cpp)
-std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image);
+std::shared_ptr<FloatImage> CreateFloatImageFromImage(const Image &image, 
+	AverageType average_type = WEIGHTED);
 
 }	// namespace three

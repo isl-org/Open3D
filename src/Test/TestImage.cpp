@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,39 +24,52 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Helper.h"
+#include <cstdio>
 
-namespace three{
+#include <Core/Core.h>
+#include <IO/IO.h>
 
-std::shared_ptr<Image> CreateDepthToCameraDistanceConversionImage(
-		const PinholeCameraIntrinsic &intrinsic)
+int main(int argc, char **argv)
 {
-	auto fimage = std::make_shared<Image>();
-	fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
-	float ffl_inv[2] = {
-			1.0f / (float)intrinsic.GetFocalLength().first,
-			1.0f / (float)intrinsic.GetFocalLength().second,
-	};
-	float fpp[2] = {
-			(float)intrinsic.GetPrincipalPoint().first,
-			(float)intrinsic.GetPrincipalPoint().second,
-	};
-	std::vector<float> xx(intrinsic.width_);
-	std::vector<float> yy(intrinsic.height_);
-	for (int j = 0; j < intrinsic.width_; j++) {
-		xx[j] = (j - fpp[0]) * ffl_inv[0];
-	}
-	for (int i = 0; i < intrinsic.height_; i++) {
-		yy[i] = (i - fpp[1]) * ffl_inv[1];
-	}
-	for (int i = 0; i < intrinsic.height_; i++) {
-		float *fp = (float *)(fimage->data_.data() +
-				i * fimage->BytesPerLine());
-		for (int j = 0; j < intrinsic.width_; j++, fp++) {
-			*fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
-		}
-	}
-	return fimage;
-}
+	using namespace three;
 
-}	// namespace three
+	SetVerbosityLevel(three::VERBOSE_ALWAYS);
+	
+	if (argc < 2) {
+		PrintInfo("Usage:\n");
+		PrintInfo("    > TestImageProcess [image filename]\n");
+		PrintInfo("    The program will :\n");
+		PrintInfo("    1) Read 8bit color or 16bit depth image\n");
+		PrintInfo("    2) Convert image to single channel float image\n");
+		PrintInfo("    3) Making image pyramid that includes Gaussian blur and downsampling\n");
+		PrintInfo("    4) Will save all the layers in the image pyramid\n");
+		return 0;
+	}
+
+	const std::string filename_color("lena_color.jpg");
+	const std::string filename_depth("depth.png");
+
+	Image color; // check the name
+	if (ReadImage(filename_color, color)) {
+		auto color_f = CreateFloatImageFromImage(color);
+		auto color_pyramid = CreateImagePyramid(*color_f, 4);
+		for (int i = 0; i < 4; i++) {
+			auto layer = color_pyramid[i];
+
+		}
+	} else {
+		PrintError("Failed to read %s\n\n", filename_color);
+	}
+
+	Image depth; // check the name
+	if (ReadImage(filename_depth, depth)) {
+		Image depth_f;
+		ConvertDepthToFloatImage(depth, depth_f);	
+		auto depth_pyramid = CreateImagePyramid(depth_f, 4);
+	}
+	else {
+		PrintError("Failed to read %s\n\n", filename_color);
+	}
+
+	return 0;
+}

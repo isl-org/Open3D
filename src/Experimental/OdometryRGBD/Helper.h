@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2015 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,45 +31,74 @@
 #include <Core/Geometry/Image.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
+
+namespace {
+
+//	enum FILTER_TYPE {
+//		FILTER_GAUSSIAN_3,
+//		FILTER_GAUSSIAN_5,
+//		FILTER_GAUSSIAN_7,
+//		FILTER_SOBEL_3
+//	};
+//
+//const std::vector<double> Gaussian = 
+//	{ 0.0113, 0.0838, 0.0113,
+//	0.0838, 0.6193, 0.0838,
+//	0.0113, 0.0838, 0.0113 };
+////// Gaussian filter coefficients
+////// same as how the gaussian kernel is obtained 
+////const std::vector<double> Gaussian3 =
+////{ 0.0571    0.1248    0.0571
+////	0.1248    0.2725    0.1248
+////	0.0571    0.1248    0.0571 };
+////const std::vector<double> Gaussian5 =
+////{ 0.0050    0.0173    0.0262    0.0173    0.0050
+////	0.0173    0.0598    0.0903    0.0598    0.0173
+////	0.0262    0.0903    0.1366    0.0903    0.0262
+////	0.0173    0.0598    0.0903    0.0598    0.0173
+////	0.0050    0.0173    0.0262    0.0173    0.0050 };
+////const std::vector<double> Gaussian7 =
+////{ 0.0008    0.0030    0.0065    0.0084    0.0065    0.0030    0.0008
+////	0.0030    0.0108    0.0232    0.0299    0.0232    0.0108    0.0030
+////	0.0065    0.0232    0.0498    0.0643    0.0498    0.0232    0.0065
+////	0.0084    0.0299    0.0643    0.0830    0.0643    0.0299    0.0084
+////	0.0065    0.0232    0.0498    0.0643    0.0498    0.0232    0.0065
+////	0.0030    0.0108    0.0232    0.0299    0.0232    0.0108    0.0030
+////	0.0008    0.0030    0.0065    0.0084    0.0065    0.0030    0.0008 };
+//
+//// Sobel filter coefficients
+//const double divfac = 8.0f; // damping factor
+//const std::vector<double> Sobel_dx =
+//{ -1.0f / divfac, 0.0f / divfac, 1.0f / divfac,
+//	-2.0f / divfac, 0.0f / divfac, 2.0f / divfac,
+//	-1.0f / divfac, 0.0f / divfac, 1.0f / divfac };
+//const std::vector<double> Sobel_dy =
+//{ -1.0f / divfac, -2.0f / divfac, -1.0f / divfac,
+//	0.0f / divfac, 0.0f / divfac, 0.0f / divfac,
+//	1.0f / divfac, 2.0f / divfac, 1.0f / divfac };
+
+
+} // unnamed namespace
+
 namespace three {
 
-const float Gaussian[9] = { 0.0113, 0.0838, 0.0113,
-		0.0838, 0.6193, 0.0838,
-		0.0113, 0.0838, 0.0113 };
-const float divfac = 8.0f; // damping factor
-const float Sobel_dx[9] = { -1.0f / divfac, 0.0f / divfac, 1.0f / divfac,
-		-2.0f / divfac, 0.0f / divfac, 2.0f / divfac,
-		-1.0f / divfac, 0.0f / divfac, 1.0f / divfac };
-const float Sobel_dy[9] = { -1.0f / divfac, -2.0f / divfac, -1.0f / divfac,
-		0.0f / divfac, 0.0f / divfac, 0.0f / divfac,
-		1.0f / divfac, 2.0f / divfac, 1.0f / divfac };
 
-void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
-  double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/);
 
-void PreprocessDepth(const Image &depth);
 
-// 3x3 filtering
-// assumes single channel float type image
-std::shared_ptr<Image> FilteringImage(const Image &input, const float *kernel);
 
-// 2x image downsampling
-// assumes float type image
-// simple 2x2 averaging
-// assumes 2x powered image width and height
-// need to double check how we are going to handle invalid depth
-std::shared_ptr<Image> DownsamplingImage(const Image &input);
 
-void BuildingPyramidImage(const Image& image,
-  std::vector<std::shared_ptr<const Image>>& pyramidImage,
-  size_t levelCount);
+//// some helper functions
+//void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
+//	double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/);
 
-void BuildingPyramidImage(
-  const Image &image,
-  std::vector<std::shared_ptr<const Image>> &pyramidImage,
-  std::vector<std::shared_ptr<const Image>> &pyramidImageGradx,
-  std::vector<std::shared_ptr<const Image>> &pyramidImageGrady,
-  size_t levelCount);
 
+
+
+//void BuildingPyramidImage(
+//	const Image &image,
+//	std::vector<std::shared_ptr<const Image>> &pyramidImage,
+//	std::vector<std::shared_ptr<const Image>> &pyramidImageGradx,
+//	std::vector<std::shared_ptr<const Image>> &pyramidImageGrady,
+//	size_t levelCount);
 
 }	// namespace three
