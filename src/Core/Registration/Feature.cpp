@@ -107,7 +107,6 @@ std::shared_ptr<Feature> ComputeSPFHFeature(const PointCloud &input,
 	return feature;
 }
 
-
 }	// unnamed namespace
 
 std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
