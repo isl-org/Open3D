@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <vector>
 #include <memory>
 #include <Eigen/Core>
@@ -110,30 +111,26 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
 
 /// Function to select points from input pointcloud into output pointcloud
 /// Points with indices in \param indices are selected.
-/// Input and output cannot be the same pointcloud.
-bool SelectDownSample(const PointCloud &input,
-		const std::vector<size_t> &indices, PointCloud &output);
+std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
+		const std::vector<size_t> &indices);
 
 /// Function to downsample input pointcloud into output pointcloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value 
 /// leads to denser output point cloud.
 /// Normals and colors are averaged if they exist.
-/// Input and output cannot be the same pointcloud.
-bool VoxelDownSample(const PointCloud &input, double voxel_size,
-		PointCloud &output);
+std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
+		double voxel_size);
 
 /// Function to downsample input pointcloud into output pointcloud uniformly
 /// \param every_k_points indicates the sample rate.
-/// Input and output cannot be the same pointcloud.
-bool UniformDownSample(const PointCloud &input, size_t every_k_points,
-		PointCloud &output);
+std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
+		size_t every_k_points);
 
 /// Function to crop input pointcloud into output pointcloud
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
-/// Input and output cannot be the same pointcloud.
-bool CropPointCloud(const PointCloud &input, const Eigen::Vector3d &min_bound,
-		const Eigen::Vector3d &max_bound, PointCloud &output);
+std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
+		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound);
 
 /// Function to compute the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
@@ -158,21 +155,21 @@ bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
 /// Function to compute the ponit to point distances between point clouds
 /// \param distances is the output distance. It has the same size as the number
 /// of point in \param source.
-void ComputePointCloudToPointCloudDistance(const PointCloud &source,
-		const PointCloud &target, std::vector<double> &distances);
+std::vector<double> ComputePointCloudToPointCloudDistance(
+		const PointCloud &source, const PointCloud &target);
 
 /// Function to compute the mean and covariance matrix of a point cloud
-void ComputePointCloudMeanAndCovariance(const PointCloud &input,
-		Eigen::Vector3d &mean, Eigen::Matrix3d &covariance);
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
+		const PointCloud &input);
 
 /// Function to compute the Mahalanobis distance for points in a point cloud
 /// https://en.wikipedia.org/wiki/Mahalanobis_distance
-void ComputePointCloudMahalanobisDistance(const PointCloud &input,
-		std::vector<double> &mahalanobis);
+std::vector<double> ComputePointCloudMahalanobisDistance(
+		const PointCloud &input);
 
 /// Function to compute the distance from a point to its nearest neighbor in the
 /// point cloud
-void ComputePointCloudNearestNeighborDistance(const PointCloud &input,
-		std::vector<double> &nn_dis);
+std::vector<double> ComputePointCloudNearestNeighborDistance(
+		const PointCloud &input);
 
 }	// namespace three

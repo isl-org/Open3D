@@ -353,8 +353,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 				PrintInfo("Voxel downsample with voxel size %.4f.\n",
 						voxel_size_);
 				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
-				PointCloud backup = pcd;
-				VoxelDownSample(backup, voxel_size_, pcd);
+				pcd = *VoxelDownSample(pcd, voxel_size_);
 				UpdateGeometry();
 			} else {
 				PrintInfo("No voxel downsample performed due to illegal voxel size.\n");
@@ -370,9 +369,8 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 					Geometry::GEOMETRY_POINTCLOUD) {
 				glfwMakeContextCurrent(window_);
 				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
-				PointCloud backup = pcd;
-				selection_polygon_ptr_->CropGeometry(backup, view_control,
-						pcd);
+				pcd = *selection_polygon_ptr_->CropPointCloud(pcd,
+						view_control);
 				editing_geometry_renderer_ptr_->UpdateGeometry();
 				const char *filename;
 				const char *pattern[1] = {"*.ply"};

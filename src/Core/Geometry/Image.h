@@ -64,6 +64,12 @@ public:
 	int BytesPerLine() const {
 		return width_ * num_of_channels_ * bytes_per_channel_;
 	}
+
+	float FloatValueAtUnsafe(int u, int v) {
+		return *((float *)(data_.data() + (u + v * width_) * bytes_per_channel_));
+	}
+
+	std::pair<bool, double> FloatValueAt(double u, double v);
 		
 protected:
 	void AllocateDataBuffer() {
@@ -81,5 +87,9 @@ public:
 /// Factory function to create an image from a file (ImageFactory.cpp)
 /// Return an empty image if fail to read the file.
 std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
+
+/// Return an gray scaled float type image.
+std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image);
+
 
 }	// namespace three

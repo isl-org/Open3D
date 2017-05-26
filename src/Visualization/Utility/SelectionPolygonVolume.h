@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include <Eigen/Core>
 #include <IO/ClassIO/IJsonConvertible.h>
 
@@ -44,13 +45,13 @@ public:
 public:
 	bool ConvertToJsonValue(Json::Value &value) const override;
 	bool ConvertFromJsonValue(const Json::Value &value) override;
-	void CropGeometry(const Geometry &input, Geometry &output) const;
+	std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input) const;
 
 private:
-	void CropPointCloudInPolygon(const PointCloud &input,
-			PointCloud &output) const;
-	void CropInPolygon(const std::vector<Eigen::Vector3d> &input,
-			std::vector<size_t> &output_index) const;
+	std::shared_ptr<PointCloud> CropPointCloudInPolygon(
+			const PointCloud &input) const;
+	std::vector<size_t> CropInPolygon(
+			const std::vector<Eigen::Vector3d> &input) const;
 
 public:
 	std::string orthogonal_axis_ = "";

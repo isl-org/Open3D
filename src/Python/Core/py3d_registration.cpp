@@ -96,6 +96,19 @@ void pybind_registration(py::module &m)
 		})
 		.def_readwrite("with_scaling",
 				&TransformationEstimationPointToPoint::with_scaling_);
+
+	py::class_<TransformationEstimationPointToPlane,
+			PyTransformationEstimation<TransformationEstimationPointToPlane>,
+			TransformationEstimation> te_p2l(m,
+			"TransformationEstimationPointToPlane");
+	py::detail::bind_default_constructor<TransformationEstimationPointToPlane>(
+			te_p2l);
+	py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
+			te_p2l);
+	te_p2p
+		.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
+			return std::string("TransformationEstimationPointToPlane");
+		});
 	
 	py::class_<RegistrationResult> registration_result(m, "RegistrationResult");
 	py::detail::bind_default_constructor<RegistrationResult>(
@@ -116,6 +129,10 @@ void pybind_registration(py::module &m)
 
 void pybind_registration_methods(py::module &m)
 {
+	m.def("EvaluateRegistration", &EvaluateRegistration,
+			"Function for evaluating registration between point clouds",
+			"source"_a, "target"_a, "max_correspondence_distance"_a,
+			"transformation"_a = Eigen::Matrix4d::Identity());
 	m.def("RegistrationICP", &RegistrationICP,
 			"Function for ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,

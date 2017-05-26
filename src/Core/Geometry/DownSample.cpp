@@ -87,29 +87,29 @@ private:
 
 }	// unnamed namespace
 
-bool SelectDownSample(const PointCloud &input,
-		const std::vector<size_t> &indices, PointCloud &output)
+std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
+		const std::vector<size_t> &indices)
 {
-	output.Clear();
+	auto output = std::make_shared<PointCloud>();
 	bool has_normals = input.HasNormals();
 	bool has_colors = input.HasColors();
 	for (size_t i : indices) {
-		output.points_.push_back(input.points_[i]);
-		if (has_normals) output.normals_.push_back(input.normals_[i]);
-		if (has_colors) output.colors_.push_back(input.colors_[i]);
+		output->points_.push_back(input.points_[i]);
+		if (has_normals) output->normals_.push_back(input.normals_[i]);
+		if (has_colors) output->colors_.push_back(input.colors_[i]);
 	}
 	PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
-			(int)input.points_.size(), (int)output.points_.size());
-	return true;
+			(int)input.points_.size(), (int)output->points_.size());
+	return output;
 }
 
-bool VoxelDownSample(const PointCloud &input, double voxel_size,
-		PointCloud &output)
+std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
+		double voxel_size)
 {
-	output.Clear();
+	auto output = std::make_shared<PointCloud>();
 	if (voxel_size <= 0.0) {
 		PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
-		return false;
+		return output;
 	}
 	auto voxel_size3 = Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
 	auto voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
@@ -117,7 +117,7 @@ bool VoxelDownSample(const PointCloud &input, double voxel_size,
 	if (voxel_size * std::numeric_limits<int>::max() < 
 			(voxel_max_bound - voxel_min_bound).maxCoeff()) {
 		PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
-		return false;
+		return output;
 	}
 	std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
 			hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
@@ -130,42 +130,40 @@ bool VoxelDownSample(const PointCloud &input, double voxel_size,
 	bool has_normals = input.HasNormals();
 	bool has_colors = input.HasColors();
 	for (auto accpoint : voxelindex_to_accpoint) {
-		output.points_.push_back(accpoint.second.GetAveragePoint());
+		output->points_.push_back(accpoint.second.GetAveragePoint());
 		if (has_normals) {
-			output.normals_.push_back(accpoint.second.GetAverageNormal());
+			output->normals_.push_back(accpoint.second.GetAverageNormal());
 		}
 		if (has_colors) {
-			output.colors_.push_back(accpoint.second.GetAverageColor());
+			output->colors_.push_back(accpoint.second.GetAverageColor());
 		}
 	}
 	PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
-			(int)input.points_.size(), (int)output.points_.size());
-	return true;
+			(int)input.points_.size(), (int)output->points_.size());
+	return output;
 }
 
-bool UniformDownSample(const PointCloud &input, size_t every_k_points,
-		PointCloud &output)
+std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
+		size_t every_k_points)
 {
-	output.Clear();
 	if (every_k_points == 0) {
 		PrintDebug("[UniformDownSample] Illegal sample rate.\n");
-		return false;
+		return std::make_shared<PointCloud>();
 	}
 	std::vector<size_t> indices;
 	for (size_t i = 0; i < input.points_.size(); i += every_k_points) {
 		indices.push_back(i);
 	}
-	return SelectDownSample(input, indices, output);
+	return SelectDownSample(input, indices);
 }
 
-bool CropPointCloud(const PointCloud &input, const Eigen::Vector3d &min_bound,
-		const Eigen::Vector3d &max_bound, PointCloud &output)
+std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
+		const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound)
 {
-	output.Clear();
 	if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
 			min_bound(2) > max_bound(2)) {
 		PrintDebug("[CropPointCloud] Illegal boundary clipped all points.\n");
-		return false;
+		return std::make_shared<PointCloud>();
 	}
 	std::vector<size_t> indices;
 	for (size_t i = 0; i < input.points_.size(); i++) {
@@ -176,7 +174,7 @@ bool CropPointCloud(const PointCloud &input, const Eigen::Vector3d &min_bound,
 			indices.push_back(i);
 		}
 	}
-	return SelectDownSample(input, indices, output);
+	return SelectDownSample(input, indices);
 }
 
 }	// namespace three

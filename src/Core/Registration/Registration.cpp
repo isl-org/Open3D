@@ -96,6 +96,29 @@ void EvaluateRANSAC(const PointCloud &source, const PointCloud &target,
 
 }	// unnamed namespace
 
+RegistrationResult EvaluateRegistration(const PointCloud &source,
+		const PointCloud &target, double max_correspondence_distance,
+		const Eigen::Matrix4d &transformation/* = Eigen::Matrix4d::Identity()*/)
+{
+	RegistrationResult result;
+	result.transformation = transformation;
+	result.inlier_rmse = 0.0;
+	result.fitness = 0.0;
+	if (max_correspondence_distance <= 0.0) {
+		return result;
+	}
+	KDTreeFlann kdtree;
+	kdtree.SetGeometry(target);
+	PointCloud pcd = source;
+	if (transformation.isIdentity() == false) {
+		pcd.Transform(transformation);
+	}
+	CorrespondenceSet corres;
+	GetICPCorrespondence(pcd, target, kdtree, max_correspondence_distance,
+			corres, result);
+	return result;
+}
+
 RegistrationResult RegistrationICP(const PointCloud &source,
 		const PointCloud &target, double max_correspondence_distance,
 		const Eigen::Matrix4d &init/* = Eigen::Matrix4d::Identity()*/,

@@ -34,6 +34,7 @@
 #include <flann/flann.hpp>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/TriangleMesh.h>
+#include <Core/Utility/Console.h>
 
 namespace three{
 
@@ -41,47 +42,53 @@ KDTreeFlann::KDTreeFlann()
 {
 }
 
+KDTreeFlann::KDTreeFlann(const Eigen::MatrixXd &data)
+{
+	SetMatrixData(data);
+}
+
 KDTreeFlann::KDTreeFlann(const Geometry &geometry)
 {
 	SetGeometry(geometry);
+}
+
+KDTreeFlann::KDTreeFlann(const Feature &feature)
+{
+	SetFeature(feature);
 }
 
 KDTreeFlann::~KDTreeFlann()
 {
 }
 
+bool KDTreeFlann::SetMatrixData(const Eigen::MatrixXd &data)
+{
+	return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
+			data.data(), data.rows(), data.cols()));
+}
+
 bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 {
 	switch (geometry.GetGeometryType()) {
 	case Geometry::GEOMETRY_POINTCLOUD:
-		dataset_size_ = ((const PointCloud &)geometry).points_.size();
-		data_.resize(dataset_size_ * 3);
-		memcpy(data_.data(), ((const PointCloud &)geometry).points_.data(),
-				dataset_size_ * 3 * sizeof(double));
-		dimension_ = 3;
-		break;
+		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
+				(const double *)((const PointCloud &)geometry).points_.data(),
+				3, ((const PointCloud &)geometry).points_.size()));
 	case Geometry::GEOMETRY_TRIANGLEMESH:
-		dataset_size_ = ((const TriangleMesh &)geometry).vertices_.size();
-		data_.resize(dataset_size_ * 3);
-		memcpy(data_.data(), ((const TriangleMesh &)geometry).vertices_.data(),
-				dataset_size_ * 3 * sizeof(double));
-		dimension_ = 3;
-		break;
+		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
+				(const double *)((const TriangleMesh &)geometry).vertices_.
+				data(), 3, ((const TriangleMesh &)geometry).vertices_.size()));
 	case Geometry::GEOMETRY_IMAGE:
 	case Geometry::GEOMETRY_UNSPECIFIED:
 	default:
-		return false;
-		break;
-	}
-	if (dataset_size_ == 0) {
+		PrintDebug("[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
 		return false;
 	}
-	flann_dataset_.reset(new flann::Matrix<double>((double *)data_.data(),
-			dataset_size_, dimension_));
-	flann_index_.reset(new flann::Index<flann::L2<double>>(*flann_dataset_,
-		flann::KDTreeSingleIndexParams(15)));
-	flann_index_->buildIndex();
-	return true;
+}
+
+bool KDTreeFlann::SetFeature(const Feature &feature)
+{
+	return SetMatrixData(feature.data_);
 }
 
 template<typename T>
@@ -181,6 +188,25 @@ int KDTreeFlann::SearchHybrid(const T &query, double radius, int max_nn,
 	return k;
 }
 
+bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data)
+{
+	dimension_ = data.rows();
+	dataset_size_ = data.cols();
+	if (dimension_ == 0 || dataset_size_ == 0) {
+		PrintDebug("[KDTreeFlann::SetRawData] Failed due to no data.\n");
+		return false;
+	}
+	data_.resize(dataset_size_ * dimension_);
+	memcpy(data_.data(), data.data(),
+			dataset_size_ * dimension_ * sizeof(double));
+	flann_dataset_.reset(new flann::Matrix<double>((double *)data_.data(),
+			dataset_size_, dimension_));
+	flann_index_.reset(new flann::Index<flann::L2<double>>(*flann_dataset_,
+		flann::KDTreeSingleIndexParams(15)));
+	flann_index_->buildIndex();
+	return true;
+}
+
 template int KDTreeFlann::Search<Eigen::Vector3d>(const Eigen::Vector3d &query,
 		const three::KDTreeSearchParam &param, std::vector<int> &indices,
 		std::vector<double> &distance2) const;
@@ -192,6 +218,19 @@ template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
 		std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchHybrid<Eigen::Vector3d>(
 		const Eigen::Vector3d &query, double radius, int max_nn,
+		std::vector<int> &indices, std::vector<double> &distance2) const;
+
+template int KDTreeFlann::Search<Eigen::VectorXd>(const Eigen::VectorXd &query,
+		const three::KDTreeSearchParam &param, std::vector<int> &indices,
+		std::vector<double> &distance2) const;
+template int KDTreeFlann::SearchKNN<Eigen::VectorXd>(
+		const Eigen::VectorXd &query, int knn, std::vector<int> &indices,
+		std::vector<double> &distance2) const;
+template int KDTreeFlann::SearchRadius<Eigen::VectorXd>(
+		const Eigen::VectorXd &query, double radius, std::vector<int> &indices,
+		std::vector<double> &distance2) const;
+template int KDTreeFlann::SearchHybrid<Eigen::VectorXd>(
+		const Eigen::VectorXd &query, double radius, int max_nn,
 		std::vector<int> &indices, std::vector<double> &distance2) const;
 
 }	// namespace three

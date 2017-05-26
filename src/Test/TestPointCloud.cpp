@@ -98,8 +98,7 @@ int main(int argc, char *argv[])
 	std::cout << pcd->normals_[0] << std::endl;
 	std::cout << pcd->normals_[10] << std::endl;
 
-	auto downpcd = std::make_shared<PointCloud>();
-	VoxelDownSample(*pcd, 0.05, *downpcd);
+	auto downpcd = VoxelDownSample(*pcd, 0.05);
 
 	// 1. test basic pointcloud functions.
 	
@@ -170,8 +169,7 @@ int main(int argc, char *argv[])
 	DrawGeometries({pointcloud_transformed_ptr}, "Combined Pointcloud");
 
 	// 5. test downsample
-	auto downsampled = std::make_shared<PointCloud>();
-	VoxelDownSample(*pointcloud_ptr, 0.05, *downsampled);
+	auto downsampled = VoxelDownSample(*pointcloud_ptr, 0.05);
 	DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
 	// 6. test normal estimation

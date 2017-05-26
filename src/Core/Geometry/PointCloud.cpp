@@ -27,6 +27,7 @@
 #include "PointCloud.h"
 
 #include <Eigen/Dense>
+#include <Core/Utility/Console.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
 namespace three{
@@ -117,10 +118,10 @@ PointCloud PointCloud::operator+(const PointCloud &cloud) const
 	return (PointCloud(*this) += cloud);
 }
 
-void ComputePointCloudToPointCloudDistance(const PointCloud &source,
-		const PointCloud &target, std::vector<double> &distances)
+std::vector<double> ComputePointCloudToPointCloudDistance(
+		const PointCloud &source, const PointCloud &target)
 {
-	distances.resize(source.points_.size());
+	std::vector<double> distances(source.points_.size());
 	KDTreeFlann kdtree;
 	kdtree.SetGeometry(target);
 #ifdef _OPENMP
@@ -129,14 +130,23 @@ void ComputePointCloudToPointCloudDistance(const PointCloud &source,
 	for (int i = 0; i < (int)source.points_.size(); i++) {
 		std::vector<int> indices(1);
 		std::vector<double> dists(1);
-		kdtree.SearchKNN(source.points_[i], 1, indices, dists);
-		distances[i] = std::sqrt(dists[0]);
+		if (kdtree.SearchKNN(source.points_[i], 1, indices, dists) == 0) {
+			PrintDebug("[ComputePointCloudToPointCloudDistance] Found a point without neighbors.\n");
+			distances[i] = 0.0;
+		} else {
+			distances[i] = std::sqrt(dists[0]);
+		}
 	}
+	return distances;
 }
 
-void ComputePointCloudMeanAndCovariance(const PointCloud &input,
-		Eigen::Vector3d &mean, Eigen::Matrix3d &covariance)
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
+		const PointCloud &input)
 {
+	if (input.IsEmpty()) {
+		return std::make_tuple(Eigen::Vector3d::Zero(),
+				Eigen::Matrix3d::Identity());
+	}
 	Eigen::Matrix<double, 9, 1> cumulants;
 	cumulants.setZero();
 	for (const auto &point : input.points_) {
@@ -151,6 +161,8 @@ void ComputePointCloudMeanAndCovariance(const PointCloud &input,
 		cumulants(8) += point(2) * point(2);
 	}
 	cumulants /= (double)input.points_.size();
+	Eigen::Vector3d mean;
+	Eigen::Matrix3d covariance;
 	mean(0) = cumulants(0);
 	mean(1) = cumulants(1);
 	mean(2) = cumulants(2);
@@ -163,16 +175,16 @@ void ComputePointCloudMeanAndCovariance(const PointCloud &input,
 	covariance(2, 0) = covariance(0, 2);
 	covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
 	covariance(2, 1) = covariance(1, 2);
+	return std::make_tuple(mean, covariance);
 }
 
-void ComputePointCloudMahalanobisDistance(const PointCloud &input,
-		std::vector<double> &mahalanobis)
+std::vector<double> ComputePointCloudMahalanobisDistance(
+		const PointCloud &input)
 {
-	mahalanobis.resize(input.points_.size());
-	if (input.IsEmpty()) return;
+	std::vector<double> mahalanobis(input.points_.size());
 	Eigen::Vector3d mean;
 	Eigen::Matrix3d covariance;
-	ComputePointCloudMeanAndCovariance(input, mean, covariance);
+	std::tie(mean, covariance) = ComputePointCloudMeanAndCovariance(input);
 	Eigen::Matrix3d cov_inv = covariance.inverse();
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -181,24 +193,28 @@ void ComputePointCloudMahalanobisDistance(const PointCloud &input,
 		Eigen::Vector3d p = input.points_[i] - mean;
 		mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
 	}
+	return mahalanobis;
 }
 
-void ComputePointCloudNearestNeighborDistance(const PointCloud &input,
-		std::vector<double> &nn_dis)
+std::vector<double> ComputePointCloudNearestNeighborDistance(
+		const PointCloud &input)
 {
-	nn_dis.resize(input.points_.size());
-	if (input.IsEmpty()) return;
-	KDTreeFlann kdtree;
-	kdtree.SetGeometry(input);
+	std::vector<double> nn_dis(input.points_.size());
+	KDTreeFlann kdtree(input);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
 	for (int i = 0; i < (int)input.points_.size(); i++) {
 		std::vector<int> indices(2);
 		std::vector<double> dists(2);
-		kdtree.SearchKNN(input.points_[i], 2, indices, dists);
-		nn_dis[i] = std::sqrt(dists[1]);
+		if (kdtree.SearchKNN(input.points_[i], 2, indices, dists) <= 1) {
+			PrintDebug("[ComputePointCloudNearestNeighborDistance] Found a point without neighbors.\n");
+			nn_dis[i] = 0.0;
+		} else {
+			nn_dis[i] = std::sqrt(dists[1]);
+		}
 	}
+	return nn_dis;
 }
 
 }	// namespace three

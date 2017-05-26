@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Eigen/Core>
 #include <Core/Geometry/Geometry2D.h>
 #include <Core/Geometry/Image.h>
@@ -60,20 +61,20 @@ public:
 	Eigen::Vector2d GetMinBound() const final;
 	Eigen::Vector2d GetMaxBound() const final;
 	void FillPolygon(int width, int height);
-	void CropGeometry(const Geometry &input, const ViewControl &view,
-			Geometry &output);
+	std::shared_ptr<PointCloud> CropPointCloud(
+			const PointCloud &input, const ViewControl &view);
 	std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
 			const ViewControl &view);
 
 private:
-	void CropPointCloudInRectangle(const PointCloud &input,
-			const ViewControl &view, PointCloud &output);
-	void CropPointCloudInPolygon(const PointCloud &input,
-			const ViewControl &view, PointCloud &output);
-	void CropInRectangle(const std::vector<Eigen::Vector3d> &input,
-			const ViewControl &view, std::vector<size_t> &output_index);
-	void CropInPolygon(const std::vector<Eigen::Vector3d> &input,
-			const ViewControl &view, std::vector<size_t> &output_index);
+	std::shared_ptr<PointCloud> CropPointCloudInRectangle(
+			const PointCloud &input, const ViewControl &view);
+	std::shared_ptr<PointCloud> CropPointCloudInPolygon(
+			const PointCloud &input, const ViewControl &view);
+	std::vector<size_t> CropInRectangle(
+			const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
+	std::vector<size_t> CropInPolygon(
+			const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
 
 public:
 	std::vector<Eigen::Vector2d> polygon_;

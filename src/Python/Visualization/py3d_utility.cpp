@@ -41,9 +41,7 @@ void pybind_utility(py::module &m)
 	selection_volume
 		.def("CropPointCloud", [](const SelectionPolygonVolume &s,
 				const PointCloud &input) {
-			PointCloud output;
-			s.CropGeometry(input, output);
-			return output;
+			return s.CropPointCloud(input);
 		}, "input"_a)
 		.def("__repr__", [](const SelectionPolygonVolume &s) {
 			return std::string("SelectionPolygonVolume, access its members:\n"
