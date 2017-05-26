@@ -209,9 +209,11 @@ int main(int argc, char *argv[])
 		std::vector<double> distance2(1);
 		int correspondence_num = 0;
 		for (const auto &pt : source.points_) {
-			kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices, distance2);
-			if (distance2[0] < threshold2) {
-				correspondence_num++;
+			if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
+					distance2) > 0) {
+				if (distance2[0] < threshold2) {
+					correspondence_num++;
+				}
 			}
 		}
 		total_correspondence_num += correspondence_num;
@@ -256,15 +258,15 @@ int main(int argc, char *argv[])
 			int positive = 0;
 			int correspondence_num = 0;
 			std::vector<bool> has_correspondence(
-					pcds[pair_ids[k].second].points_.size());
+					pcds[pair_ids[k].second].points_.size(), false);
 			for (auto i = 0; i < source.points_.size(); i++) {
 				const auto &pt = source.points_[i];
-				kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices, distance2);
-				if (distance2[0] < threshold2) {
-					has_correspondence[i] = true;
-					correspondence_num++;
-				} else {
-					has_correspondence[i] = false;
+				if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
+						distance2) > 0) {
+					if (distance2[0] < threshold2) {
+						has_correspondence[i] = true;
+						correspondence_num++;
+					}
 				}
 			}
 #ifdef _OPENMP
@@ -273,18 +275,19 @@ int main(int argc, char *argv[])
 			for (auto i = 0; i < source.points_.size(); i++) {
 				const auto &pt = source.points_[i];
 				if (has_correspondence[i]) {
-					feature_trees[pair_ids[k].first].SearchKNN(
+					if (feature_trees[pair_ids[k].first].SearchKNN(
 							feature_trees[pair_ids[k].second].data_, i, 1,
-							indices, fdistance2);
-					double new_dis = (source.points_[i] - 
-							pcds[pair_ids[k].first].points_[indices[0]]
-							).norm();
-					true_dis[total_point_num + i] = new_dis;
-					if (new_dis < threshold) {
+							indices, fdistance2) > 0) {
+						double new_dis = (source.points_[i] -
+								pcds[pair_ids[k].first].points_[indices[0]]
+								).norm();
+						true_dis[total_point_num + i] = new_dis;
+						if (new_dis < threshold) {
 #ifdef _OPENMP
 #pragma omp atomic
 #endif
-						positive++;
+							positive++;
+						}
 					}
 				}
 			}

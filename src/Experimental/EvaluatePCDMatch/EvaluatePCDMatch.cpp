@@ -158,14 +158,15 @@ int main(int argc, char *argv[])
 		int correspondence_num = 0;
 		double rmse = 0.0;
 		for (auto i = 0; i < source.points_.size(); i++) {
-			kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_[i], 1, 
-					indices, distance2);
-			if (distance2[0] < threshold2) {
-				correspondence_num++;
-				double new_dis = (source.points_[i] - 
-						pcds[pair_ids[k].first].points_[indices[0]]
-						).norm();
-				rmse += new_dis * new_dis;
+			if (kdtrees[pair_ids[k].first].SearchKNN(gtsource.points_[i], 1,
+					indices, distance2) > 0) {
+				if (distance2[0] < threshold2) {
+					correspondence_num++;
+					double new_dis = (source.points_[i] - 
+							pcds[pair_ids[k].first].points_[indices[0]]
+							).norm();
+					rmse += new_dis * new_dis;
+				}
 			}
 		}
 		rmse = std::sqrt(rmse / (double)correspondence_num);
