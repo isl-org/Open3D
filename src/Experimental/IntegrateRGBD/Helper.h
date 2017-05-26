@@ -39,17 +39,4 @@ struct RGB {
 std::shared_ptr<Image> CreateDepthToCameraDistanceConversionImage(
 		const PinholeCameraIntrinsic &intrinsic);
 	
-void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
-		double depth_scale = 1000.0, double depth_trunc = 3.0);
-
-template<typename T>
-T *PointerAt(Image &image, int u, int v) {
-	return (T *)(image.data_.data() + (u + v * image.width_) * sizeof(T));
-}
-
-template<typename T>
-const T *PointerAt(const Image &image, int u, int v) {
-	return (const T *)(image.data_.data() + (u + v * image.width_) * sizeof(T));
-}
-
 }	// namespace three

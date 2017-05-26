@@ -59,20 +59,20 @@ std::shared_ptr<Image> CreateDepthToCameraDistanceConversionImage(
 	return fimage;
 }
 
-void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
-		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/)
-{
-	if (depth_f.IsEmpty()) {
-		depth_f.PrepareImage(depth.width_, depth.height_, 1, 4);
-	}
-	float *p = (float *)depth_f.data_.data();
-	const uint16_t *pi = (const uint16_t *)depth.data_.data();
-	for (int i = 0; i < depth.height_ * depth.width_; i++, p++, pi++) {
-		*p = (float)(*pi) / (float)depth_scale;
-		if (*p >= depth_trunc) {
-			*p = 0.0f;
-		}
-	}
-}
+//void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
+//		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/)
+//{
+//	if (depth_f.IsEmpty()) {
+//		depth_f.PrepareImage(depth.width_, depth.height_, 1, 4);
+//	}
+//	float *p = (float *)depth_f.data_.data();
+//	const uint16_t *pi = (const uint16_t *)depth.data_.data();
+//	for (int i = 0; i < depth.height_ * depth.width_; i++, p++, pi++) {
+//		*p = (float)(*pi) / (float)depth_scale;
+//		if (*p >= depth_trunc) {
+//			*p = 0.0f;
+//		}
+//	}
+//}
 
 }	// namespace three
