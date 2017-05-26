@@ -3,7 +3,8 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+//                    Jaesik Park <syncel@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -89,9 +90,13 @@ public:
 /// Return an empty image if fail to read the file.
 std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
 
-/// Return an gray scaled float type image.
-std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image);
+enum AverageType {
+	EQUAL,
+	WEIGHTED,
+};
 
+/// Return an gray scaled float type image.
+std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image, AverageType average_type = WEIGHTED);
 
 enum FilterType {
 	FILTER_GAUSSIAN_3,
@@ -105,26 +110,20 @@ const std::vector<double> Gaussian =
 { 0.0113, 0.0838, 0.0113,
 0.0838, 0.6193, 0.0838,
 0.0113, 0.0838, 0.0113 };
-//// Gaussian filter coefficients
-//// same as how the gaussian kernel is obtained 
-//const std::vector<double> Gaussian3 =
-//{ 0.0571    0.1248    0.0571
-//	0.1248    0.2725    0.1248
-//	0.0571    0.1248    0.0571 };
-//const std::vector<double> Gaussian5 =
-//{ 0.0050    0.0173    0.0262    0.0173    0.0050
-//	0.0173    0.0598    0.0903    0.0598    0.0173
-//	0.0262    0.0903    0.1366    0.0903    0.0262
-//	0.0173    0.0598    0.0903    0.0598    0.0173
-//	0.0050    0.0173    0.0262    0.0173    0.0050 };
-//const std::vector<double> Gaussian7 =
-//{ 0.0008    0.0030    0.0065    0.0084    0.0065    0.0030    0.0008
-//	0.0030    0.0108    0.0232    0.0299    0.0232    0.0108    0.0030
-//	0.0065    0.0232    0.0498    0.0643    0.0498    0.0232    0.0065
-//	0.0084    0.0299    0.0643    0.0830    0.0643    0.0299    0.0084
-//	0.0065    0.0232    0.0498    0.0643    0.0498    0.0232    0.0065
-//	0.0030    0.0108    0.0232    0.0299    0.0232    0.0108    0.0030
-//	0.0008    0.0030    0.0065    0.0084    0.0065    0.0030    0.0008 };
+
+// Gaussian filter coefficients
+// 2D kernels are seperable as filtering 1D kernel twice.
+const std::vector<double> Gaussian3 =
+	{ 0.25, 0.5, 0.25 };
+const std::vector<double> Gaussian5 =
+	{ 0.0625, 0.25, 0.375, 0.25, 0.0625 };
+const std::vector<double> Gaussian7 =
+	{ 0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125 };
+
+const std::vector<double> Sobel31 =
+	{ -1.0, 0.0, 1.0 };
+const std::vector<double> Sobel32 =
+	{ 1.0, 2.0, 1.0 };
 
 // Sobel filter coefficients
 const double divfac = 8.0f; // damping factor
@@ -171,7 +170,8 @@ std::shared_ptr<Image> FilpImage(const Image &input);
 
 // 3x3 filtering
 // assumes single channel float type image
-std::shared_ptr<Image> FilterImage(const Image &input, const std::vector<double> &kernel);
+//std::shared_ptr<Image> FilterImage(const Image &input, const std::vector<double> &kernel);
+std::shared_ptr<Image> FilterImage(const Image &input, FilterType type);
 std::shared_ptr<Image> FilterHorizontalImage(const Image &input, const std::vector<double> &kernel);
 
 // 2x image downsampling
@@ -187,6 +187,21 @@ std::vector<std::shared_ptr<const Image>> CreateImagePyramid(
 
 // assumes float type image as an input
 template <typename T>
-std::shared_ptr<Image> TypecastImage(const Image &input);
+std::shared_ptr<Image> TypecastImage(const Image &input)
+{
+	// todo: add sanity check.
+	
+	auto output = std::make_shared<Image>();
+	output->PrepareImage(input.height_, input.width_, input.num_of_channels_, sizeof(T));
+	const float *pi = (const float *)input.data_.data();
+	T *p = output->data_.data();
+	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
+		if (sizeof(T) == 1)
+			*p = static_cast<T>(*pi * 255.0f);
+		if (sizeof(T) == 2)
+			*p = static_cast<T>(*pi * 65535.0f);
+	}
+	return output;
+}
 
 }	// namespace three
