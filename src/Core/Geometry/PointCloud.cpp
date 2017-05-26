@@ -27,6 +27,7 @@
 #include "PointCloud.h"
 
 #include <Eigen/Dense>
+#include <Core/Utility/Console.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
 namespace three{
@@ -129,8 +130,12 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
 	for (int i = 0; i < (int)source.points_.size(); i++) {
 		std::vector<int> indices(1);
 		std::vector<double> dists(1);
-		kdtree.SearchKNN(source.points_[i], 1, indices, dists);
-		distances[i] = std::sqrt(dists[0]);
+		if (kdtree.SearchKNN(source.points_[i], 1, indices, dists) == 0) {
+			PrintDebug("[ComputePointCloudToPointCloudDistance] Found a point without neighbors.\n");
+			distances[i] = 0.0;
+		} else {
+			distances[i] = std::sqrt(dists[0]);
+		}
 	}
 	return distances;
 }
@@ -202,8 +207,12 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 	for (int i = 0; i < (int)input.points_.size(); i++) {
 		std::vector<int> indices(2);
 		std::vector<double> dists(2);
-		kdtree.SearchKNN(input.points_[i], 2, indices, dists);
-		nn_dis[i] = std::sqrt(dists[1]);
+		if (kdtree.SearchKNN(input.points_[i], 2, indices, dists) <= 1) {
+			PrintDebug("[ComputePointCloudNearestNeighborDistance] Found a point without neighbors.\n");
+			nn_dis[i] = 0.0;
+		} else {
+			nn_dis[i] = std::sqrt(dists[1]);
+		}
 	}
 	return nn_dis;
 }

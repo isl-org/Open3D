@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < (int)mesh->vertices_.size(); i++) {
 		std::vector<int> indices(1);
 		std::vector<double> dists(1);
-		kdtree.SearchKNN(mesh->vertices_[i], 1, indices, dists);
-		if (dists[0] > distance * distance) {
+		int k = kdtree.SearchKNN(mesh->vertices_[i], 1, indices, dists);
+		if (k == 0 || dists[0] > distance * distance) {
 			remove_vertex_mask[i] = true;
 		}
 #ifdef _OPENMP
