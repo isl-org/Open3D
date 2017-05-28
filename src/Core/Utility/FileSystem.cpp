@@ -28,13 +28,18 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #ifdef WINDOWS
 #include <dirent/dirent.h>
 #include <direct.h>
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
 #else
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <limits.h>
 #endif
 
 namespace three{
@@ -93,6 +98,13 @@ std::string GetRegularizedDirectoryName(const std::string &directory)
 	} else {
 		return directory;
 	}
+}
+
+std::string GetCurrentDirectory()
+{
+	char buff[PATH_MAX + 1];
+	realpath(".", buff);
+	return std::string(buff);
 }
 
 bool DirectoryExists(const std::string &directory)
