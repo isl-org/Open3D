@@ -13,7 +13,7 @@ def read_trajectory(filename):
 	with open(filename, 'r') as f:
 		metastr = f.readline();
 		while metastr:
-			metadata = map(int, metastr.split())
+			metadata = list(map(int, metastr.split()))
 			mat = np.zeros(shape = (4, 4))
 			for i in range(4):
 				matstr = f.readline();
