@@ -28,7 +28,6 @@
 #include "py3d_core_trampoline.h"
 
 #include <Core/Geometry/Image.h>
-#include <Core/Utility/FileSystem.h>
 #include <IO/ClassIO/ImageIO.h>
 using namespace three;
 
@@ -116,7 +115,6 @@ void pybind_image(py::module &m)
 void pybind_image_methods(py::module &m)
 {
 	m.def("ReadImage", [](const std::string &filename) {
-		std::cout << filesystem::GetCurrentDirectory() << std::endl;
 		Image image;
 		ReadImage(filename, image);
 		return image;

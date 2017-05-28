@@ -23,7 +23,7 @@ target_link_libraries(py3d PRIVATE Core IO Visualization)
 if (Open3D_BUILD_PYTHON_BINDING_TESTS)
 	file(GLOB PY_TEST_FILES "Test/*.py")
 	add_custom_target(PythonTest ALL SOURCES ${PY_TEST_FILES})
-	set_target_properties(PythonTest PROPERTIES FOLDER "py3d")
+	set_target_properties(PythonTest PROPERTIES FOLDER "py3d_custom")
 	add_custom_command(TARGET PythonTest POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Python/Test/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
 	add_custom_command(TARGET PythonTest POST_BUILD

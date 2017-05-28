@@ -100,11 +100,16 @@ std::string GetRegularizedDirectoryName(const std::string &directory)
 	}
 }
 
-std::string GetCurrentDirectory()
+std::string GetWorkingDirectory()
 {
 	char buff[PATH_MAX + 1];
-	realpath(".", buff);
+	getcwd(buff, PATH_MAX + 1);
 	return std::string(buff);
+}
+
+bool ChangeWorkingDirectory(const std::string &directory)
+{
+	return (chdir(directory.c_str()) == 0);
 }
 
 bool DirectoryExists(const std::string &directory)
