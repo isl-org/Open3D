@@ -26,6 +26,7 @@
 
 #include "Feature.h"
 
+#include <Eigen/Dense>
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
@@ -39,7 +40,7 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
 		const Eigen::Vector3d &n2)
 {
 	Eigen::Vector4d result;
-	auto dp2p1 = p2 - p1;
+	Eigen::Vector3d dp2p1 = p2 - p1;
 	result(3) = dp2p1.norm();
 	if (result(3) == 0.0) {
 		return Eigen::Vector4d::Zero();
@@ -56,13 +57,13 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
 	} else {
 		result(2) = angle1;
 	}
-	auto v = dp2p1.cross3(n1_copy);
+	auto v = dp2p1.cross(n1_copy);
 	double v_norm = v.norm();
 	if (v_norm == 0.0) {
 		return Eigen::Vector4d::Zero();
 	}
 	v /= v_norm;
-	auto w = n1_copy.cross3(v);
+	auto w = n1_copy.cross(v);
 	result(1) = v.dot(n2_copy);
 	result(0) = atan2(w.dot(n2_copy), n1_copy.dot(n2_copy));
 	return result;
@@ -81,8 +82,7 @@ std::shared_ptr<Feature> ComputeSPFHFeature(const PointCloud &input,
 		const auto &normal = input.normals_[i];
 		std::vector<int> indices;
 		std::vector<double> distance2;
-		kdtree.Search(point, search_param, indices, distance2);
-		if (indices.size() > 1) {
+		if (kdtree.Search(point, search_param, indices, distance2) > 1) {
 			// only compute SPFH feature when a point has neighbors
 			double hist_incr = 100.0 / (double)(indices.size() - 1);
 			for (size_t k = 1; k < indices.size(); k++) {
@@ -120,7 +120,33 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
 	}
 	KDTreeFlann kdtree(input);
 	auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
-	
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+	for (int i = 0; i < (int)input.points_.size(); i++) {
+		const auto &point = input.points_[i];
+		std::vector<int> indices;
+		std::vector<double> distance2;
+		if (kdtree.Search(point, search_param, indices, distance2) > 1) {
+			double sum[3] = {0.0, 0.0, 0.0};
+			for (size_t k = 1; k < indices.size(); k++) {
+				// skip the point itself
+				double dist = distance2[k];
+				if (dist == 0.0)
+					continue;
+				for (int j = 0; j < 33; j++) {
+					double val = spfh->data_(j, indices[k]) / dist;
+					sum[j / 11] += val;
+					feature->data_(j, i) += val;
+				}
+			}
+			for (int j = 0; j < 3; j++)
+				if (sum[j] != 0.0) sum[j] = 100.0 / sum[j];
+			for (int j = 0; j < 33; j++) {
+				feature->data_(j, i) *= sum[j / 11];
+			}
+		}
+	}
 	return feature;
 }
 

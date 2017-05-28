@@ -60,4 +60,7 @@ void pybind_feature_methods(py::module &m)
 			const Feature &feature) {
 		return WriteFeature(filename, feature);
 	}, "Function to write Feature to file", "filename"_a, "feature"_a);
+	m.def("ComputeFPFHFeature", &ComputeFPFHFeature,
+			"Function to compute FPFH feature for a point cloud",
+			"input"_a, "search_param"_a);
 }
