@@ -1,5 +1,7 @@
 # enable this magic when you are using Jupyter (IPython) notebook
 # %matplotlib inline
+import sys
+sys.path.append("..")
 
 from py3d import *
 import numpy as np
@@ -77,7 +79,7 @@ def test_py3d_eigen():
 def test_py3d_pointcloud():
 	print("Testing point cloud in py3d ...")
 	print("Load a point cloud, print it, and render it")
-	pcd = ReadPointCloud("TestData/fragment.ply")
+	pcd = ReadPointCloud("../TestData/fragment.ply")
 	print(pcd)
 	print(np.asarray(pcd.points))
 	DrawGeometries([pcd])
@@ -89,14 +91,14 @@ def test_py3d_pointcloud():
 	DrawGeometries([downpcd])
 	print("")
 	print("We load a polygon volume and use it to crop the original point cloud")
-	vol = ReadSelectionPolygonVolume("TestData/Crop/cropped.json")
+	vol = ReadSelectionPolygonVolume("../TestData/Crop/cropped.json")
 	chair = vol.CropPointCloud(pcd)
 	DrawGeometries([chair])
 	print("")
 
 def test_py3d_mesh():
 	print("Testing mesh in py3d ...")
-	mesh = ReadTriangleMesh("TestData/knot.ply")
+	mesh = ReadTriangleMesh("../TestData/knot.ply")
 	print(mesh)
 	print(np.asarray(mesh.vertices))
 	print(np.asarray(mesh.triangles))
@@ -105,13 +107,13 @@ def test_py3d_mesh():
 def test_py3d_image():
 	print("Testing image in py3d ...")
 	print("Convert an image to numpy and draw it with matplotlib.")
-	x = ReadImage("TestData/image.PNG")
+	x = ReadImage("../TestData/image.PNG")
 	print(x)
 	plt.imshow(np.asarray(x))
 	plt.show()
 
 	print("Convet a numpy image to Image and show it with DrawGeomtries().")
-	y = mpimg.imread("TestData/lena_color.jpg")
+	y = mpimg.imread("../TestData/lena_color.jpg")
 	print(y.shape)
 	yy = Image(y)
 	print(yy)
@@ -132,8 +134,8 @@ def test_py3d_image():
 	plt.show()
 
 	print("Final test: load an RGB-D image pair and convert to pointcloud.")
-	im1 = ReadImage("TestData/RGBD/depth/00000.png")
-	im2 = ReadImage("TestData/RGBD/color/00000.jpg")
+	im1 = ReadImage("../TestData/RGBD/depth/00000.png")
+	im2 = ReadImage("../TestData/RGBD/color/00000.jpg")
 	plt.figure(figsize=(12,8))
 	plt.subplot(1, 2, 1)
 	plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
@@ -150,7 +152,7 @@ def test_py3d_image():
 def test_py3d_kdtree():
 	print("Testing kdtree in py3d ...")
 	print("Load a point cloud and paint it black.")
-	pcd = ReadPointCloud("TestData/Feature/cloud_bin_0.pcd")
+	pcd = ReadPointCloud("../TestData/Feature/cloud_bin_0.pcd")
 	pcd.PaintUniformColor([0, 0, 0])
 	pcd_tree = KDTreeFlann(pcd)
 	print("Paint the 1500th point red.")
@@ -166,16 +168,16 @@ def test_py3d_kdtree():
 	print("")
 
 	print("Load two aligned point clouds.")
-	pcd0 = ReadPointCloud("TestData/Feature/cloud_bin_0.pcd")
-	pcd1 = ReadPointCloud("TestData/Feature/cloud_bin_1.pcd")
+	pcd0 = ReadPointCloud("../TestData/Feature/cloud_bin_0.pcd")
+	pcd1 = ReadPointCloud("../TestData/Feature/cloud_bin_1.pcd")
 	pcd0.PaintUniformColor([1, 0.706, 0])
 	pcd1.PaintUniformColor([0, 0.651, 0.929])
 	DrawGeometries([pcd0, pcd1])
 	print("Load their FPFH feature and evaluate.")
 	print("Black : matching distance > 0.2")
 	print("White : matching distance = 0")
-	feature0 = ReadFeature("TestData/Feature/cloud_bin_0.fpfh.bin")
-	feature1 = ReadFeature("TestData/Feature/cloud_bin_1.fpfh.bin")
+	feature0 = ReadFeature("../TestData/Feature/cloud_bin_0.fpfh.bin")
+	feature1 = ReadFeature("../TestData/Feature/cloud_bin_1.fpfh.bin")
 	fpfh_tree = KDTreeFlann(feature1)
 	for i in range(len(pcd0.points)):
 		[_, idx, _] = fpfh_tree.SearchKNNVectorXD(feature0.data[:, i], 1)
@@ -188,8 +190,8 @@ def test_py3d_kdtree():
 	print("Load their L32D feature and evaluate.")
 	print("Black : matching distance > 0.2")
 	print("White : matching distance = 0")
-	feature0 = ReadFeature("TestData/Feature/cloud_bin_0.d32.bin")
-	feature1 = ReadFeature("TestData/Feature/cloud_bin_1.d32.bin")
+	feature0 = ReadFeature("../TestData/Feature/cloud_bin_0.d32.bin")
+	feature1 = ReadFeature("../TestData/Feature/cloud_bin_1.d32.bin")
 	fpfh_tree = KDTreeFlann(feature1)
 	for i in range(len(pcd0.points)):
 		[_, idx, _] = fpfh_tree.SearchKNNVectorXD(feature0.data[:, i], 1)
@@ -214,14 +216,14 @@ def test_py3d_camera():
 
 	print("Final test, read a trajectory and combine all the RGB-D images.")
 	pcds = [];
-	trajectory = ReadPinholeCameraTrajectory("TestData/RGBD/trajectory.log")
+	trajectory = ReadPinholeCameraTrajectory("../TestData/RGBD/trajectory.log")
 	WritePinholeCameraTrajectory("test.json", trajectory)
 	print(trajectory)
 	print(trajectory.extrinsic)
 	print(np.asarray(trajectory.extrinsic))
 	for i in range(5):
-		im1 = ReadImage("TestData/RGBD/depth/{:05d}.png".format(i))
-		im2 = ReadImage("TestData/RGBD/color/{:05d}.jpg".format(i))
+		im1 = ReadImage("../TestData/RGBD/depth/{:05d}.png".format(i))
+		im2 = ReadImage("../TestData/RGBD/color/{:05d}.jpg".format(i))
 		pcd = CreatePointCloudFromRGBDImage(im1, im2, trajectory.intrinsic)
 		pcd.Transform(trajectory.extrinsic[i])
 		pcds.append(pcd)
@@ -230,7 +232,7 @@ def test_py3d_camera():
 
 def test_py3d_visualization():
 	print("Testing visualization in py3d ...")
-	mesh = ReadTriangleMesh("TestData/knot.ply")
+	mesh = ReadTriangleMesh("../TestData/knot.ply")
 	print("Try to render a mesh with normals " + str(mesh.HasVertexNormals()) + " and colors " + str(mesh.HasVertexColors()))
 	DrawGeometries([mesh])
 	print("A mesh with no normals and no colors does not seem good.")
@@ -263,11 +265,11 @@ def test_py3d_visualization():
 	print("")
 
 def test_py3d_icp():
-	traj = read_trajectory("TestData/ICP/init.log")
+	traj = read_trajectory("../TestData/ICP/init.log")
 	pcds = []
 	threshold = 0.02
 	for i in range(3):
-		pcds.append(ReadPointCloud("TestData/ICP/cloud_bin_{:d}.pcd".format(i)))
+		pcds.append(ReadPointCloud("../TestData/ICP/cloud_bin_{:d}.pcd".format(i)))
 
 	for reg in traj:
 		target = pcds[reg.metadata[0]]
