@@ -69,6 +69,14 @@ int main(int argc, char *argv[])
 
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{
+		ScopeTimer timer("FPFH estimation with Radius 0.25");
+		//for (int i = 0; i < 20; i++) {
+			ComputeFPFHFeature(*pcd,
+					three::KDTreeSearchParamRadius(0.25));
+		//}
+	}
+
+	{
 		ScopeTimer timer("Normal estimation with KNN20");
 		for (int i = 0; i < 20; i++) {
 			EstimateNormals(*pcd, 
