@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 			WriteImage(outputname, *layer8);
 		}
 	} else {
-		PrintError("Failed to read %s\n\n", filename_rgb);
+		PrintError("Failed to read %s\n\n", filename_rgb.c_str());
 	}
 
 	Image depth_image_16bit; 
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
-		PrintError("Failed to read %s\n\n", filename_depth);
+		PrintError("Failed to read %s\n\n", filename_depth.c_str());
 	}
 
 	return 0;
