@@ -39,57 +39,92 @@ int main(int argc, char **argv)
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestImage [image filename] [depth filename]\n");
 		PrintInfo("    The program will :\n");
-		PrintInfo("    1) Read 8bit color or 16bit depth image\n");
-		PrintInfo("    2) Convert image to single channel float image\n");
-		PrintInfo("    3) Making image pyramid that includes Gaussian blur and downsampling\n");
-		PrintInfo("    4) Will save all the layers in the image pyramid\n");
+		PrintInfo("    1) Read 8bit RGB and 16bit depth image\n");
+		PrintInfo("    2) Convert RGB image to single channel float image\n");
+		PrintInfo("    3) 3x3, 5x5, 7x7 Gaussian filters are applied\n");
+		PrintInfo("    4) 3x3 Sobel filter for x-and-y-directions are applied\n");
+		PrintInfo("    5) Make image pyramid that includes Gaussian blur and downsampling\n");
+		PrintInfo("    6) Will save all the layers in the image pyramid\n");
 		return 0;
 	}
 
-	const std::string filename_color(argv[1]);
+	const std::string filename_rgb(argv[1]);
 	const std::string filename_depth(argv[2]);
 
-	Image color; // check the name
-	if (ReadImage(filename_color, color)) {
-		PrintDebug("Color image size : %d x %d\n", color.width_, color.height_);
-		auto color_f = CreateFloatImageFromImage(color);
-		auto color_fo = TypecastImage<uint8_t>(*color_f);
-		WriteImage("test.png", *color_fo);
+	Image color_image_8bit; 
+	if (ReadImage(filename_rgb, color_image_8bit)) {
 
-		auto color_fb3 = FilterImage(*color_f, FILTER_GAUSSIAN_3);
-		auto color_fb3o = TypecastImage<uint8_t>(*color_fb3);
-		WriteImage("test_blur3.png", *color_fb3o);
+		PrintDebug("RGB image size : %d x %d\n", color_image_8bit.width_, color_image_8bit.height_);
+		auto gray_image = CreateFloatImageFromImage(color_image_8bit);
+		WriteImage("gray.png", *TypecastImage<uint8_t>(*gray_image));
 
-		auto color_fb5 = FilterImage(*color_f, FILTER_GAUSSIAN_5);
-		auto color_fb5o = TypecastImage<uint8_t>(*color_fb5);
-		WriteImage("test_blur5.png", *color_fb5o);
+		PrintDebug("Gaussian Filtering\n");
+		auto gray_image_b3 = FilterImage(*gray_image, FILTER_GAUSSIAN_3);
+		WriteImage("gray_blur3.png", *TypecastImage<uint8_t>(*gray_image_b3));
+		auto gray_image_b5 = FilterImage(*gray_image, FILTER_GAUSSIAN_5);
+		WriteImage("gray_blur5.png", *TypecastImage<uint8_t>(*gray_image_b5));
+		auto gray_image_b7 = FilterImage(*gray_image, FILTER_GAUSSIAN_7);
+		WriteImage("gray_blur7.png", *TypecastImage<uint8_t>(*gray_image_b7));
 
-		auto color_fb7 = FilterImage(*color_f, FILTER_GAUSSIAN_7);
-		auto color_fb7o = TypecastImage<uint8_t>(*color_fb7);
-		WriteImage("test_blur7.png", *color_fb7o);
+		PrintDebug("Sobel Filtering\n");
+		auto gray_image_dx = FilterImage(*gray_image, FILTER_SOBEL_3_DX);
+		LinearTransformImage(*gray_image_dx, 0.5f, 0.5f);	// make [-1,1] to [0,1].
+		WriteImage("gray_sobel_dx.png", *TypecastImage<uint8_t>(*gray_image_dx));
+		auto gray_image_dy = FilterImage(*gray_image, FILTER_SOBEL_3_DY);
+		LinearTransformImage(*gray_image_dy, 0.5f, 0.5f);
+		WriteImage("gray_sobel_dy.png", *TypecastImage<uint8_t>(*gray_image_dy));
 
-		auto color_pyramid = CreateImagePyramid(*color_f, 4);
+		PrintDebug("Build Pyramid\n");
+		auto pyramid = CreateImagePyramid(*gray_image, 4);
 		for (int i = 0; i < 4; i++) {
-			auto layer = color_pyramid[i];
+			auto layer = pyramid[i];
 			auto layer8 = TypecastImage<uint8_t>(*layer);
 			std::string outputname = 
-				"test_" + std::to_string(i) + ".png";
+				"gray_" + std::to_string(i) + ".png";
 			WriteImage(outputname, *layer8);
 		}
 	} else {
-		PrintError("Failed to read %s\n\n", filename_color);
+		PrintError("Failed to read %s\n\n", filename_rgb);
 	}
 
-	//Image depth; // check the name
-	//if (ReadImage(filename_depth, depth)) {
-	//	PrintDebug("Depth image size : %d x %d\n", depth.width_, depth.height_);
-	//	Image depth_f;
-	//	ConvertDepthToFloatImage(depth, depth_f);	
-	//	auto depth_pyramid = CreateImagePyramid(depth_f, 4);
-	//}
-	//else {
-	//	PrintError("Failed to read %s\n\n", filename_color);
-	//}
+	Image depth_image_16bit; 
+	if (ReadImage(filename_depth, depth_image_16bit)) {
+		
+		PrintDebug("Depth image size : %d x %d\n", 
+			depth_image_16bit.width_, depth_image_16bit.height_);
+		auto depth_image = CreateFloatImageFromImage(depth_image_16bit);
+		//LinearTransformImage(*depth_image, (1.0f / 1000.0f), 0.0, 0.0, 3.0);
+		WriteImage("depth.png", *TypecastImage<uint16_t>(*depth_image));
+
+		PrintDebug("Gaussian Filtering\n");
+		auto depth_image_b3 = FilterImage(*depth_image, FILTER_GAUSSIAN_3);
+		WriteImage("depth_blur3.png", *TypecastImage<uint8_t>(*depth_image_b3));
+		auto depth_image_b5 = FilterImage(*depth_image, FILTER_GAUSSIAN_5);
+		WriteImage("depth_blur5.png", *TypecastImage<uint8_t>(*depth_image_b5));
+		auto depth_image_b7 = FilterImage(*depth_image, FILTER_GAUSSIAN_7);
+		WriteImage("depth_blur7.png", *TypecastImage<uint8_t>(*depth_image_b7));
+
+		PrintDebug("Sobel Filtering\n");
+		auto depth_image_dx = FilterImage(*depth_image, FILTER_SOBEL_3_DX);
+		LinearTransformImage(*depth_image_dx, 1.0f, 0.0f, 0.0f, 32768.0f);	// make [-1,1] to [0,1].
+		WriteImage("depth_sobel_dx.png", *TypecastImage<uint8_t>(*depth_image_dx));
+		auto depth_image_dy = FilterImage(*depth_image, FILTER_SOBEL_3_DY);
+		LinearTransformImage(*depth_image_dy, 1.0f, 0.0f, 0.0f, 32768.0f);
+		WriteImage("depth_sobel_dy.png", *TypecastImage<uint8_t>(*depth_image_dy));
+
+		PrintDebug("Build Pyramid\n");
+		auto pyramid = CreateImagePyramid(*depth_image, 4);
+		for (int i = 0; i < 4; i++) {
+			auto layer = pyramid[i];
+			auto layer8 = TypecastImage<uint16_t>(*layer);
+			std::string outputname =
+				"depth_" + std::to_string(i) + ".png";
+			WriteImage(outputname, *layer8);
+		}
+	}
+	else {
+		PrintError("Failed to read %s\n\n", filename_depth);
+	}
 
 	return 0;
 }

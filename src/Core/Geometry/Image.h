@@ -102,60 +102,28 @@ enum FilterType {
 	FILTER_GAUSSIAN_3,
 	FILTER_GAUSSIAN_5,
 	FILTER_GAUSSIAN_7,
-	FILTER_SOBEL_HORIZONTAL_3,
-	FILTER_SOBEL_VERTICAL_3
+	FILTER_SOBEL_3_DX,
+	FILTER_SOBEL_3_DY
 };
 
-const std::vector<double> Gaussian =
-{ 0.0113, 0.0838, 0.0113,
-0.0838, 0.6193, 0.0838,
-0.0113, 0.0838, 0.0113 };
-
-// Gaussian filter coefficients
-// 2D kernels are seperable as filtering 1D kernel twice.
+// 2D kernels are seperable: 
+// two 1D kernels are applied in x and y direction.
 const std::vector<double> Gaussian3 =
 	{ 0.25, 0.5, 0.25 };
 const std::vector<double> Gaussian5 =
 	{ 0.0625, 0.25, 0.375, 0.25, 0.0625 };
 const std::vector<double> Gaussian7 =
 	{ 0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125 };
-
 const std::vector<double> Sobel31 =
 	{ -1.0, 0.0, 1.0 };
 const std::vector<double> Sobel32 =
 	{ 1.0, 2.0, 1.0 };
-
-// Sobel filter coefficients
-const double divfac = 8.0f; // damping factor
-const std::vector<double> Sobel_dx =
-{ -1.0f / divfac, 0.0f / divfac, 1.0f / divfac,
--2.0f / divfac, 0.0f / divfac, 2.0f / divfac,
--1.0f / divfac, 0.0f / divfac, 1.0f / divfac };
-const std::vector<double> Sobel_dy =
-{ -1.0f / divfac, -2.0f / divfac, -1.0f / divfac,
-0.0f / divfac, 0.0f / divfac, 0.0f / divfac,
-1.0f / divfac, 2.0f / divfac, 1.0f / divfac };
-
-//template<typename T>
-//T *PointerAt(const Image &image, int u, int v);
-//
-////template<typename T>
-////const T *PointerAt(const Image &image, int u, int v);
-//
-//template<typename T>
-//T *PointerAt(const Image &image, int u, int v, int ch);
 
 template<typename T>
 T *PointerAt(const Image &image, int u, int v) {
 	return (T *)(image.data_.data() +
 		(v * image.width_ + u) * sizeof(T));
 }
-
-//template<typename T>
-//const T *PointerAt(const Image &image, int u, int v) {
-//	return (const T *)(image.data_.data() +
-//		(u + v * image.width_) * sizeof(T));
-//}
 
 template<typename T>
 T *PointerAt(const Image &image, int u, int v, int ch) {
@@ -168,37 +136,45 @@ void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
 
 std::shared_ptr<Image> FilpImage(const Image &input);
 
-// 3x3 filtering
-// assumes single channel float type image
-//std::shared_ptr<Image> FilterImage(const Image &input, const std::vector<double> &kernel);
+// image filtering with pre-defined filtering types
 std::shared_ptr<Image> FilterImage(const Image &input, FilterType type);
+
+// image filtering with arbitrary dx, dy separable filters
+std::shared_ptr<Image> FilterImage(const Image &input,
+	const std::vector<double> dx, const std::vector<double> dy);
+
 std::shared_ptr<Image> FilterHorizontalImage(const Image &input, const std::vector<double> &kernel);
 
-// 2x image downsampling
-// assumes float type image
-// simple 2x2 averaging
-// assumes 2x powered image width and height
-// need to double check how we are going to handle invalid depth
+// 2x image downsampling using simple 2x2 averaging
 std::shared_ptr<Image> DownsampleImage(const Image &input);
+
+// image_new = scale * image + offset
+// min is lower bound of image_new
+// max is upper bound of image_new
+void LinearTransformImage(const Image &input, double scale, 
+	double offset, double min = 0.0f, double max = 1.0f);
 
 std::vector<std::shared_ptr<const Image>> CreateImagePyramid(
 	const Image& image,
 	size_t num_of_levels);
 
-// assumes float type image as an input
 template <typename T>
 std::shared_ptr<Image> TypecastImage(const Image &input)
 {
-	// todo: add sanity check.
-	
 	auto output = std::make_shared<Image>();
-	output->PrepareImage(input.height_, input.width_, input.num_of_channels_, sizeof(T));
+	if (input.num_of_channels_ != 1 ||
+		input.bytes_per_channel_ != 4) {
+		PrintDebug("[TypecastImage] Unsupported image format.\n");
+		return output;
+	}
+
+	output->PrepareImage(input.width_, input.height_, input.num_of_channels_, sizeof(T));
 	const float *pi = (const float *)input.data_.data();
-	T *p = output->data_.data();
+	T *p = (T*)output->data_.data();
 	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
 		if (sizeof(T) == 1)
 			*p = static_cast<T>(*pi * 255.0f);
-		if (sizeof(T) == 2)
+		if (sizeof(T) == 2) 
 			*p = static_cast<T>(*pi * 65535.0f);
 	}
 	return output;
