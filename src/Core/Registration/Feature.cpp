@@ -144,6 +144,12 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
 				if (sum[j] != 0.0) sum[j] = 100.0 / sum[j];
 			for (int j = 0; j < 33; j++) {
 				feature->data_(j, i) *= sum[j / 11];
+				// The commented line is the fpfh function in the paper.
+				// But according to PCL implementation, it is skipped.
+				// Our initial test shows that the full fpfh function in the
+				// paper seems to be better than PCL implementation. Further
+				// test required.
+				//feature->data_(j, i) += spfh->data_(j, i);
 			}
 		}
 	}
