@@ -78,10 +78,10 @@ int main(int argc, char **argv)
 		auto pyramid = CreateImagePyramid(*gray_image, 4);
 		for (int i = 0; i < 4; i++) {
 			auto layer = pyramid[i];
-			auto layer8 = TypecastImage<uint8_t>(*layer);
+			auto layer_8bit = TypecastImage<uint8_t>(*layer);
 			std::string outputname = 
 				"gray_" + std::to_string(i) + ".png";
-			WriteImage(outputname, *layer8);
+			WriteImage(outputname, *layer_8bit);
 		}
 	} else {
 		PrintError("Failed to read %s\n\n", filename_rgb.c_str());
@@ -116,10 +116,10 @@ int main(int argc, char **argv)
 		auto pyramid = CreateImagePyramid(*depth_image, 4);
 		for (int i = 0; i < 4; i++) {
 			auto layer = pyramid[i];
-			auto layer8 = TypecastImage<uint16_t>(*layer);
+			auto layer_16bit = TypecastImage<uint16_t>(*layer);
 			std::string outputname =
 				"depth_" + std::to_string(i) + ".png";
-			WriteImage(outputname, *layer8);
+			WriteImage(outputname, *layer_16bit);
 		}
 	}
 	else {
