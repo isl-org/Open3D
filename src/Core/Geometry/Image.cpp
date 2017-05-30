@@ -120,9 +120,9 @@ std::vector<std::shared_ptr<const Image>> CreateImagePyramid(const Image& input,
 			*input_copy_ptr = input;
 			pyramidImage.push_back(input_copy_ptr);
 		} else {
-			auto layer_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
-			auto layer_bd = DownsampleImage(*layer_b);
-			pyramidImage.push_back(layer_bd);
+			auto level_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
+			auto level_bd = DownsampleImage(*level_b);
+			pyramidImage.push_back(level_bd);
 		}
 	}
 	return pyramidImage;
