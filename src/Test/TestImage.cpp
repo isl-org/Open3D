@@ -98,19 +98,19 @@ int main(int argc, char **argv)
 
 		PrintDebug("Gaussian Filtering\n");
 		auto depth_image_b3 = FilterImage(*depth_image, FILTER_GAUSSIAN_3);
-		WriteImage("depth_blur3.png", *TypecastImage<uint8_t>(*depth_image_b3));
+		WriteImage("depth_blur3.png", *TypecastImage<uint16_t>(*depth_image_b3));
 		auto depth_image_b5 = FilterImage(*depth_image, FILTER_GAUSSIAN_5);
-		WriteImage("depth_blur5.png", *TypecastImage<uint8_t>(*depth_image_b5));
+		WriteImage("depth_blur5.png", *TypecastImage<uint16_t>(*depth_image_b5));
 		auto depth_image_b7 = FilterImage(*depth_image, FILTER_GAUSSIAN_7);
-		WriteImage("depth_blur7.png", *TypecastImage<uint8_t>(*depth_image_b7));
+		WriteImage("depth_blur7.png", *TypecastImage<uint16_t>(*depth_image_b7));
 
 		PrintDebug("Sobel Filtering\n");
 		auto depth_image_dx = FilterImage(*depth_image, FILTER_SOBEL_3_DX);
 		LinearTransformImage(*depth_image_dx, 1.0f, 0.0f, 0.0f, 32768.0f);	// make [-1,1] to [0,1].
-		WriteImage("depth_sobel_dx.png", *TypecastImage<uint8_t>(*depth_image_dx));
+		WriteImage("depth_sobel_dx.png", *TypecastImage<uint16_t>(*depth_image_dx));
 		auto depth_image_dy = FilterImage(*depth_image, FILTER_SOBEL_3_DY);
 		LinearTransformImage(*depth_image_dy, 1.0f, 0.0f, 0.0f, 32768.0f);
-		WriteImage("depth_sobel_dy.png", *TypecastImage<uint8_t>(*depth_image_dy));
+		WriteImage("depth_sobel_dy.png", *TypecastImage<uint16_t>(*depth_image_dy));
 
 		PrintDebug("Build Pyramid\n");
 		auto pyramid = CreateImagePyramid(*depth_image, 4);
