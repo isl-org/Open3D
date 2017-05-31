@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 	TSDFVolume volume(length, resolution, length * sdf_trunc_percentage, true);
 	FPSTimer timer("Process RGBD stream",
 			(int)camera_trajectory->extrinsic_.size());
-	Image depth, depth_f, color;
+	Image depth, color;
 	auto depth2cameradistance = CreateDepthToCameraDistanceConversionImage(
 			camera_trajectory->intrinsic_);
 	while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
@@ -103,12 +103,12 @@ int main(int argc, char *argv[])
 			PrintDebug("Processing frame %d ...\n", index);
 			ReadImage(dir_name + st[0], depth);
 			ReadImage(dir_name + st[1], color);
-			ConvertDepthToFloatImage(depth, depth_f);
+			auto depth_f = ConvertDepthToFloatImage(depth);
 			if (index == 0 ||
 					(every_k_frames > 0 && index % every_k_frames == 0)) {
 				volume.Reset();
 			}
-			volume.Integrate(depth_f, color, *depth2cameradistance,
+			volume.Integrate(*depth_f, color, *depth2cameradistance,
 					camera_trajectory->intrinsic_,
 					camera_trajectory->extrinsic_[index]);
 			index++;

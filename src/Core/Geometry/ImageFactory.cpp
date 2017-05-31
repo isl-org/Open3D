@@ -37,7 +37,8 @@ std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
 	return image;
 }
 
-std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image, AverageType average_type/* = WEIGHTED*/)
+std::shared_ptr<Image> CreateFloatImageFromImage(
+		const Image &image, AverageType average_type/* = WEIGHTED*/)
 {
 	auto fimage = std::make_shared<Image>();
 	if (image.IsEmpty() || 
@@ -66,17 +67,20 @@ std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image, AverageType
 					*p = ((float)(pi[0]) + (float)(pi[1]) + (float)(pi[2])) /
 						3.0f / 255.0f;
 				} else if (average_type == WEIGHTED) {
-					*p = (0.2990f * (float)(pi[0]) + 0.5870f * (float)(pi[1]) + 0.1140f * (float)(pi[2]))
-						/ 255.0f;
+					*p = (0.2990f * (float)(pi[0]) + 
+							0.5870f * (float)(pi[1]) +
+							0.1140f * (float)(pi[2])) / 255.0f;
 				}				
 			} else if (image.bytes_per_channel_ == 2) {
 				const uint16_t *pi16 = (const uint16_t *)pi;
 				if (average_type == EQUAL) {
-					*p = ((float)(pi16[0]) + (float)(pi16[1]) + (float)(pi16[2])) /
-						3.0f / 65535.0f;
+					*p = ((float)(pi16[0]) + 
+							(float)(pi16[1]) + 
+							(float)(pi16[2])) / 3.0f / 65535.0f;
 				} else if (average_type == WEIGHTED) {
-					*p = (0.2990f * (float)(pi16[0]) + 0.5870f * (float)(pi16[1]) + 0.1140f * (float)(pi16[2]))
-						/ 65535.0f;
+					*p = (0.2990f * (float)(pi16[0]) + 
+							0.5870f * (float)(pi16[1]) + 
+							0.1140f * (float)(pi16[2])) / 65535.0f;
 				}
 			} else if (image.bytes_per_channel_ == 4) {
 				const float *pf = (const float *)pi;

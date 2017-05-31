@@ -73,24 +73,23 @@ std::pair<bool, double> Image::FloatValueAt(double u, double v)
 		(value[2] * (1 - pv) + value[3] * pv) * pu);
 }
 
-void ConvertDepthToFloatImage(const Image &depth, Image &depth_f,
-	double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/)
+std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
+		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
 {
-	if (depth_f.IsEmpty()) {
-		depth_f.PrepareImage(depth.width_, depth.height_, 1, 4);
+	if (depth.num_of_channels_ != 1 ||
+		depth.bytes_per_channel_ != 2) {
+		PrintDebug("[ConvertDepthToFloatImage] Unsupported image format.\n");
+		return std::make_shared<Image>();
 	}
-	float *p = (float *)depth_f.data_.data();
-	const uint16_t *pi = (const uint16_t *)depth.data_.data();
-	for (int i = 0; i < depth.height_ * depth.width_; i++, p++, pi++) {
-		*p = (float)(*pi) / (float)depth_scale;
-		if (*p >= depth_trunc) {
-			*p = 0.0f;
-		}
-	}
+	auto output = CreateFloatImageFromImage(depth);
+	LinearTransformImage(*output, 
+			65535.0f * depth_scale, 0.0, 0.0, depth_trunc);
+	return output;
 }
 
-void LinearTransformImage(const Image &input, double scale, 
-	double offset, double min, double max) {
+void LinearTransformImage(Image &input, double scale, 
+		double offset, double min, double max) 
+{
 	for (int y = 0; y < input.height_; y++) {
 		for (int x = 0; x < input.width_; x++) {
 			float *p = PointerAt<float>(input, x, y);
@@ -103,10 +102,10 @@ void LinearTransformImage(const Image &input, double scale,
 	}
 }
 
-std::vector<std::shared_ptr<const Image>> CreateImagePyramid(const Image& input,
-	size_t num_of_levels)
+std::vector<std::shared_ptr<Image>> CreateImagePyramid(
+		const Image& input, size_t num_of_levels)
 {
-	std::vector<std::shared_ptr<const Image>> pyramidImage;
+	std::vector<std::shared_ptr<Image>> pyramidImage;
 	pyramidImage.clear(); 
 	if ((input.num_of_channels_ != 1) ||
 		(input.bytes_per_channel_ != 4)) {
@@ -116,10 +115,12 @@ std::vector<std::shared_ptr<const Image>> CreateImagePyramid(const Image& input,
 
 	for (int i = 0; i < num_of_levels; i++) {
 		if (i == 0) {
-			std::shared_ptr<Image> input_copy_ptr(new Image);
+			std::shared_ptr<Image> input_copy_ptr = 
+					std::make_shared<Image>();
 			*input_copy_ptr = input;
 			pyramidImage.push_back(input_copy_ptr);
 		} else {
+			// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
 			auto level_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
 			auto level_bd = DownsampleImage(*level_b);
 			pyramidImage.push_back(level_bd);
@@ -136,8 +137,8 @@ std::shared_ptr<Image> DownsampleImage(const Image &input)
 		PrintDebug("[DownsampleImage] Unsupported image format.\n");
 		return output;
 	}
-	int half_width = (int)floor((double)input.width_ / 2.0f);
-	int half_height = (int)floor((double)input.height_ / 2.0f);
+	int half_width = (int)floor((double)input.width_ / 2.0);
+	int half_height = (int)floor((double)input.height_ / 2.0);
 	output->PrepareImage(half_width, half_height, 1, 4);
 
 #ifdef _OPENMP
@@ -156,17 +157,19 @@ std::shared_ptr<Image> DownsampleImage(const Image &input)
 	return output;
 }
 
-std::shared_ptr<Image> FilterHorizontalImage(const Image &input, const std::vector<double> &kernel)
+std::shared_ptr<Image> FilterHorizontalImage(
+			const Image &input, const std::vector<double> &kernel)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 || 
-		input.bytes_per_channel_ != 4) {
-		PrintDebug("[FilterHorizontalImage] Unsupported image format.\n");
+		input.bytes_per_channel_ != 4 ||
+		kernel.size() % 2 != 1) {
+		PrintDebug("[FilterHorizontalImage] Unsupported image format or kernel size.\n");
 		return output;
 	}
 	output->PrepareImage(input.width_, input.height_, 1, 4);
 
-	const int half_kernel_size = (int)(floor((double)kernel.size() / 2.0f));
+	const int half_kernel_size = (int)(floor((double)kernel.size() / 2.0));
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -215,13 +218,14 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 			output = FilterImage(input, Sobel32, Sobel31);
 			break;
 		default:
+			PrintDebug("[FilterImage] Unsupported filter type.\n");
 			break;
 	}
 	return output;
 }
 
 std::shared_ptr<Image> FilterImage(const Image &input, 
-	const std::vector<double> dx, const std::vector<double> dy)
+		const std::vector<double> dx, const std::vector<double> dy)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 ||
@@ -231,13 +235,13 @@ std::shared_ptr<Image> FilterImage(const Image &input,
 	}
 
 	auto temp1 = FilterHorizontalImage(input, dx);
-	auto temp2 = FilpImage(*temp1);
+	auto temp2 = FlipImage(*temp1);
 	auto temp3 = FilterHorizontalImage(*temp2, dy);
-	auto temp4 = FilpImage(*temp3);
+	auto temp4 = FlipImage(*temp3);
 	return temp4;
 }
 
-std::shared_ptr<Image> FilpImage(const Image &input)
+std::shared_ptr<Image> FlipImage(const Image &input)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 || 

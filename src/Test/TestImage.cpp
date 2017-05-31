@@ -54,7 +54,8 @@ int main(int argc, char **argv)
 	Image color_image_8bit; 
 	if (ReadImage(filename_rgb, color_image_8bit)) {
 
-		PrintDebug("RGB image size : %d x %d\n", color_image_8bit.width_, color_image_8bit.height_);
+		PrintDebug("RGB image size : %d x %d\n", 
+				color_image_8bit.width_, color_image_8bit.height_);
 		auto gray_image = CreateFloatImageFromImage(color_image_8bit);
 		WriteImage("gray.png", *TypecastImage<uint8_t>(*gray_image));
 
