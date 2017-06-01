@@ -20,6 +20,7 @@ script:
 
   # Run your build commands next
   #- ./scripts/install-deps-ubuntu.sh # this shell script does not have -y
+  - set -ev
   - sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
   - mkdir build
   - cd build
