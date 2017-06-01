@@ -17,7 +17,7 @@ script:
   - gcc -v && g++ -v && cmake --version
 
   # Run your build commands next
-  - scripts/install-deps-ubuntu.sh
+  - ./scripts/install-deps-ubuntu.sh
   - mkdir build
   - cd build
   - cmake ../src/
