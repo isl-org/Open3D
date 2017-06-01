@@ -1,9 +1,13 @@
+matrix:
 
-language: cpp
+dist: trusty
+sudo: required
+
+language:
+  - cpp
 
 compiler:
   - gcc
-  - clang
 
 notifications:
   email: false # turn off notifications
