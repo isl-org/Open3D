@@ -11,17 +11,18 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-    #  - gcc-6
-    #  - g++-6
+      - gcc-4.8
+      - g++-4.8
       - cmake
+before_install:
+  - set -ev
+  - sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
 script:
   # Check versions of gcc, g++ and cmake
   - gcc -v && g++ -v && cmake --version
 
   # Run your build commands next
   #- ./scripts/install-deps-ubuntu.sh # this shell script does not have -y
-  - set -ev
-  - sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
   - mkdir build
   - cd build
   - cmake ../src/
