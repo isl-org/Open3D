@@ -4,6 +4,7 @@ language:
   - cpp
 compiler:
   - gcc
+  - clang
 notifications:
   email: false # turn off notifications
 addons:
@@ -26,4 +27,4 @@ script:
   - mkdir build
   - cd build
   - cmake ../src/
-  - make -j
+  - make
