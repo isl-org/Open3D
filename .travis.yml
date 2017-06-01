@@ -6,7 +6,7 @@ compiler:
   - gcc
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y xrandr-dev
+  - sudo apt-get install -y xorg-dev libglu1-mesa-dev
 addons:
   apt:
     sources:
