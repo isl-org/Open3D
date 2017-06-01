@@ -4,22 +4,20 @@ language:
   - cpp
 compiler:
   - gcc
-before_install:
-  # install OpenGL, for GLFW
-  #- sudo apt-get -qq update
-  - sudo apt-get install -y xorg-dev libglu1-mesa-dev #libglew-dev libglfw3 libglfw3-dev libjsoncpp-dev libeigen3-dev
 addons:
   apt:
-    #sources:
-    #  - ubuntu-toolchain-r-test
-    #packages:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
     #  - gcc-6
     #  - g++-6
-    #  - cmake
+      - cmake
 script:
   # Check versions of gcc, g++ and cmake
   - gcc -v && g++ -v && cmake --version
+
   # Run your build commands next
+  - scripts/install-deps-ubuntu.sh
   - mkdir build
   - cd build
   - cmake ../src/
