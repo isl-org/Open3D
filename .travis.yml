@@ -7,6 +7,11 @@ matrix:
     - cpp
     - python
 
+  # pybind supports any python versions.
+  # We are using 2.7
+  python:
+    - "2.7"
+
   include:
 
     # Default environment of Ubuntu 14.04
@@ -18,9 +23,8 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.8
             - g++-4.8
-            - cmake-data
+            - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env:
          - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
@@ -35,19 +39,18 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-6
             - g++-6
-            - cmake-data
+            - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env:
-         - MATRIX_EVAL="CC=gcc-5.4 && CXX=g++-5.4"
+         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
-    # Default environment of OS X El Capitan
+    # Default environment of MacOS El Capitan
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
 
-    # Default environment of OS X Sierra
+    # Default environment of MacOS Sierra
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8.3
@@ -66,9 +69,13 @@ before_install:
       scripts/install-deps-osx.sh;
     fi
 
+# command to install python dependencies
+install:
+  "pip install -r requirements.txt"
+
 script:
   # Build commands
-  - mkdir build;
-    cd build;
-    cmake ../src/;
-    make -j;
+  - mkdir build
+  - cd build
+  - cmake ../src/
+  - make -j
