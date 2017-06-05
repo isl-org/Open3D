@@ -19,15 +19,16 @@ matrix:
       env:
          - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
 
-    # Default environment of Ubuntu 16.04
+    # Default environment of Ubuntu 16.04 (gcc 5.4)
+    # travis ci supports gcc-5 and 6 only
     - os: linux
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-5.4
-            - g++-5.4
+            - gcc-6
+            - g++-6
             - cmake-data
             - cmake
       env:
@@ -45,12 +46,14 @@ matrix:
       env:
         - MATRIX_EVAL=""
 
-
-install:
+before_install:
   - eval "${MATRIX_EVAL}"
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scripts/install-deps-ubuntu.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; scripts/install-deps-osx.sh; fi
-  # we may use '/scripts/install-deps-ubuntu.sh' but this shell script does not have -y
+  # we may want to use '/scripts/install-deps-ubuntu.sh'
+  # but this shell script does not have -y, ubuntu 14.04 of travis-ci
+  #  does not recognize libglfw3-dev
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; scripts/install-deps-osx.sh; fi
+
   # - set -ev
   # - sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
 
@@ -59,4 +62,4 @@ script:
   - mkdir build;
     cd build;
     cmake ../src/;
-    make -j; 
+    make -j;
