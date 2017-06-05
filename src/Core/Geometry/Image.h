@@ -97,14 +97,14 @@ enum AverageType {
 
 /// Return an gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(
-	const Image &image, AverageType average_type = WEIGHTED);
+		const Image &image, AverageType average_type = WEIGHTED);
 
 enum FilterType {
-		FILTER_GAUSSIAN_3,
-		FILTER_GAUSSIAN_5,
-		FILTER_GAUSSIAN_7,
-		FILTER_SOBEL_3_DX,
-		FILTER_SOBEL_3_DY
+	FILTER_GAUSSIAN_3,
+	FILTER_GAUSSIAN_5,
+	FILTER_GAUSSIAN_7,
+	FILTER_SOBEL_3_DX,
+	FILTER_SOBEL_3_DY
 };
 
 // 2D kernels are seperable: 
@@ -133,7 +133,7 @@ T *PointerAt(const Image &image, int u, int v, int ch) {
 }
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth, 
-	double depth_scale = 1000.0, double depth_trunc = 3.0);
+		double depth_scale = 1000.0, double depth_trunc = 3.0);
 
 std::shared_ptr<Image> FlipImage(const Image &input);
 
@@ -155,10 +155,10 @@ std::shared_ptr<Image> DownsampleImage(const Image &input);
 /// min is lower bound of image_new
 /// max is upper bound of image_new
 void LinearTransformImage(Image &input, double scale, 
-		double offset, double min = 0.0f, double max = 1.0);
+		double offset, double min = 0.0, double max = 1.0);
 
 std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& image,	size_t num_of_levels);
+		const Image& image, size_t num_of_levels);
 
 /// Function to change data types of image
 /// crafted for specific usage such as
@@ -188,30 +188,30 @@ std::shared_ptr<Image> TypecastImage(const Image &input)
 }
 
 
-template <typename T>
-std::shared_ptr<Image> TypecastImage(const Image &input)
-{
-	auto output = std::make_shared<Image>();
-	if ((input.num_of_channels_ != 1 &&
-			input.num_of_channels_ != 3) ||
-			(input.bytes_per_channel_ != 1 && 
-			input.bytes_per_channel_ != 2 &&
-			input.bytes_per_channel_ != 4)) {
-		PrintDebug("[TypecastImage] Unsupported image format.\n");
-		return output;
-	}
-
-	output->PrepareImage(
-			input.width_, input.height_, input.num_of_channels_, sizeof(T));
-	const float *pi = (const float *)input.data_.data();
-	T *p = (T*)output->data_.data();
-	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
-		if (sizeof(T) == 1)
-			*p = static_cast<T>(*pi * 255.0f);
-		if (sizeof(T) == 2)
-			*p = static_cast<T>(*pi * 65535.0f);
-	}
-	return output;
-}
+//template <typename T>
+//std::shared_ptr<Image> TypecastImage(const Image &input)
+//{
+//	auto output = std::make_shared<Image>();
+//	if ((input.num_of_channels_ != 1 &&
+//			input.num_of_channels_ != 3) ||
+//			(input.bytes_per_channel_ != 1 && 
+//			input.bytes_per_channel_ != 2 &&
+//			input.bytes_per_channel_ != 4)) {
+//		PrintDebug("[TypecastImage] Unsupported image format.\n");
+//		return output;
+//	}
+//
+//	output->PrepareImage(
+//			input.width_, input.height_, input.num_of_channels_, sizeof(T));
+//	const float *pi = (const float *)input.data_.data();
+//	T *p = (T*)output->data_.data();
+//	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
+//		if (sizeof(T) == 1)
+//			*p = static_cast<T>(*pi * 255.0f);
+//		if (sizeof(T) == 2)W
+//			*p = static_cast<T>(*pi * 65535.0f);
+//	}
+//	return output;
+//}
 
 }	// namespace three
