@@ -1,39 +1,62 @@
 matrix:
+  language:
+    - cpp
+    - python
 
-dist: trusty
-sudo: required
+  include:
 
-language:
-  - cpp
+    # Default environment of Ubuntu 14.04
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.8
+            - g++-4.8
+            - cmake-data
+            - cmake
+      env:
+         - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
 
-compiler:
-  - gcc
+    # Default environment of Ubuntu 16.04
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5.4
+            - g++-5.4
+            - cmake-data
+            - cmake
+      env:
+         - MATRIX_EVAL="CC=gcc-5.4 && CXX=g++-5.4"
 
-notifications:
-  email: false # turn off notifications
+    # Default environment of OS X El Capitan
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL=""
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-4.8
-      - g++-4.8
-      - cmake-data
-      - cmake
+    # Default environment of OS X Sierra
+    - os: osx
+      osx_image: xcode8.3
+      env:
+        - MATRIX_EVAL=""
 
-before_install:
+
+install:
+  - eval "${MATRIX_EVAL}"
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scripts/install-deps-ubuntu.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; scripts/install-deps-osx.sh; fi
   # we may use '/scripts/install-deps-ubuntu.sh' but this shell script does not have -y
-  - set -ev
-  - sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
-
-before_script:
-  # Check versions of gcc, g++ and cmake
-  - gcc -v && g++ -v && cmake --version
-  - mkdir build
-  - cd build
-  - cmake ../src/
+  # - set -ev
+  # - sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
 
 script:
   # Run your build commands next
-  - make -j
+  - mkdir build;
+    cd build;
+    cmake ../src/;
+    make -j; 
