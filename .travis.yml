@@ -1,4 +1,8 @@
 matrix:
+
+  notifications:
+    email: false # turn off email notifications for build failure
+
   language:
     - cpp
     - python
@@ -7,6 +11,8 @@ matrix:
 
     # Default environment of Ubuntu 14.04
     - os: linux
+      dist: trusty
+      sudo: required
       addons:
         apt:
           sources:
@@ -19,9 +25,11 @@ matrix:
       env:
          - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
 
-    # Default environment of Ubuntu 16.04 (gcc 5.4)
-    # travis ci supports gcc-5 and 6 only
+    # Similar environment of Ubuntu 16.04 (gcc 5.4)
+    # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
     - os: linux
+      dist: trusty
+      sudo: required
       addons:
         apt:
           sources:
@@ -35,30 +43,31 @@ matrix:
          - MATRIX_EVAL="CC=gcc-5.4 && CXX=g++-5.4"
 
     # Default environment of OS X El Capitan
+    # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
-      env:
-        - MATRIX_EVAL=""
 
     # Default environment of OS X Sierra
+    # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8.3
-      env:
-        - MATRIX_EVAL=""
 
 before_install:
-  - eval "${MATRIX_EVAL}"
-  # we may want to use '/scripts/install-deps-ubuntu.sh'
-  # but this shell script does not have -y, ubuntu 14.04 of travis-ci
-  #  does not recognize libglfw3-dev
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; scripts/install-deps-osx.sh; fi
-
-  # - set -ev
-  # - sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev
+  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh'
+  # but this shell script does not have -y, and
+  # ubuntu 14.04 of travis-ci does not recognize sudo apt-get install libglfw3-dev
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      eval "${MATRIX_EVAL}";
+      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
+    fi
+  # scripts/install-deps-osx.sh works well
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      scripts/install-deps-osx.sh;
+    fi
 
 script:
-  # Run your build commands next
+  # Build commands
   - mkdir build;
     cd build;
     cmake ../src/;
