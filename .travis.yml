@@ -23,6 +23,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - gcc-4.8
             - g++-4.8
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
@@ -39,6 +40,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - gcc-6
             - g++-6
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
@@ -69,11 +71,9 @@ before_install:
       scripts/install-deps-osx.sh;
     fi
 
-# command to install python dependencies
-install:
-  "pip install -r requirements.txt"
-
 script:
+  - pytest
+  - python -V
   # Build commands
   - mkdir build
   - cd build
