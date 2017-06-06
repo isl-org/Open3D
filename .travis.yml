@@ -70,11 +70,14 @@ before_install:
       brew update;
       scripts/install-deps-osx.sh;
     fi
+  # for reference, display cmake and python version
+  - python -V
+  - cmake --version
 
 script:
-  - python -V
   # Build commands
   - mkdir build
   - cd build
   - cmake ../src/
-  - make -j
+  # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
+  - make
