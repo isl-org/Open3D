@@ -72,7 +72,6 @@ before_install:
     fi
 
 script:
-  - pytest
   - python -V
   # Build commands
   - mkdir build
