@@ -53,7 +53,7 @@ matrix:
       osx_image: xcode8
 
     # Default environment of MacOS Sierra
-    # compiled using clang shipped with xcode8
+    # compiled using clang shipped with xcode8.3
     - os: osx
       osx_image: xcode8.3
 
@@ -80,4 +80,5 @@ script:
   - cd build
   - cmake ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
+  # this is presumably due to limited memory space of travis-ci
   - make
