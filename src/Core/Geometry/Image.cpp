@@ -82,8 +82,7 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 		return std::make_shared<Image>();
 	}
 	auto output = CreateFloatImageFromImage(depth);
-	LinearTransformImage(*output, 
-			65535.0f * depth_scale, 0.0, 0.0, depth_trunc);
+	LinearTransformImage(*output, 1 / depth_scale, 0.0, 0.0, depth_trunc);
 	return output;
 }
 

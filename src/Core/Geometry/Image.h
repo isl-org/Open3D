@@ -107,8 +107,8 @@ enum FilterType {
 	FILTER_SOBEL_3_DY
 };
 
-// 2D kernels are seperable: 
-// two 1D kernels are applied in x and y direction.
+/// Isotropic 2D kernels are seperable: 
+/// two 1D kernels are applied in x and y direction.
 const std::vector<double> Gaussian3 =
 		{ 0.25, 0.5, 0.25 };
 const std::vector<double> Gaussian5 =
@@ -162,10 +162,9 @@ std::vector<std::shared_ptr<Image>> CreateImagePyramid(
 
 /// Function to change data types of image
 /// crafted for specific usage such as
-/// 8-bit RGB or 16-bit Depth -> single channel float image
-/// float image -> 8-bit RGB or 16-bit Depth
+/// single channel float image -> 8-bit RGB or 16-bit depth image
 template <typename T>
-std::shared_ptr<Image> TypecastImage(const Image &input)
+std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 ||
@@ -182,36 +181,9 @@ std::shared_ptr<Image> TypecastImage(const Image &input)
 		if (sizeof(T) == 1)
 			*p = static_cast<T>(*pi * 255.0f);
 		if (sizeof(T) == 2) 
-			*p = static_cast<T>(*pi * 65535.0f);
+			*p = static_cast<T>(*pi);
 	}
 	return output;
 }
-
-
-//template <typename T>
-//std::shared_ptr<Image> TypecastImage(const Image &input)
-//{
-//	auto output = std::make_shared<Image>();
-//	if ((input.num_of_channels_ != 1 &&
-//			input.num_of_channels_ != 3) ||
-//			(input.bytes_per_channel_ != 1 && 
-//			input.bytes_per_channel_ != 2 &&
-//			input.bytes_per_channel_ != 4)) {
-//		PrintDebug("[TypecastImage] Unsupported image format.\n");
-//		return output;
-//	}
-//
-//	output->PrepareImage(
-//			input.width_, input.height_, input.num_of_channels_, sizeof(T));
-//	const float *pi = (const float *)input.data_.data();
-//	T *p = (T*)output->data_.data();
-//	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
-//		if (sizeof(T) == 1)
-//			*p = static_cast<T>(*pi * 255.0f);
-//		if (sizeof(T) == 2)W
-//			*p = static_cast<T>(*pi * 65535.0f);
-//	}
-//	return output;
-//}
 
 }	// namespace three

@@ -57,29 +57,35 @@ int main(int argc, char **argv)
 		PrintDebug("RGB image size : %d x %d\n", 
 				color_image_8bit.width_, color_image_8bit.height_);
 		auto gray_image = CreateFloatImageFromImage(color_image_8bit);
-		WriteImage("gray.png", *TypecastImage<uint8_t>(*gray_image));
+		WriteImage("gray.png", 
+				*CreateImageFromFloatImage<uint8_t>(*gray_image));
 
 		PrintDebug("Gaussian Filtering\n");
 		auto gray_image_b3 = FilterImage(*gray_image, FILTER_GAUSSIAN_3);
-		WriteImage("gray_blur3.png", *TypecastImage<uint8_t>(*gray_image_b3));
+		WriteImage("gray_blur3.png", 
+				*CreateImageFromFloatImage<uint8_t>(*gray_image_b3));
 		auto gray_image_b5 = FilterImage(*gray_image, FILTER_GAUSSIAN_5);
-		WriteImage("gray_blur5.png", *TypecastImage<uint8_t>(*gray_image_b5));
+		WriteImage("gray_blur5.png", 
+				*CreateImageFromFloatImage<uint8_t>(*gray_image_b5));
 		auto gray_image_b7 = FilterImage(*gray_image, FILTER_GAUSSIAN_7);
-		WriteImage("gray_blur7.png", *TypecastImage<uint8_t>(*gray_image_b7));
+		WriteImage("gray_blur7.png", 
+				*CreateImageFromFloatImage<uint8_t>(*gray_image_b7));
 
 		PrintDebug("Sobel Filtering\n");
 		auto gray_image_dx = FilterImage(*gray_image, FILTER_SOBEL_3_DX);
 		LinearTransformImage(*gray_image_dx, 0.5f, 0.5f);	// make [-1,1] to [0,1].
-		WriteImage("gray_sobel_dx.png", *TypecastImage<uint8_t>(*gray_image_dx));
+		WriteImage("gray_sobel_dx.png", 
+				*CreateImageFromFloatImage<uint8_t>(*gray_image_dx));
 		auto gray_image_dy = FilterImage(*gray_image, FILTER_SOBEL_3_DY);
 		LinearTransformImage(*gray_image_dy, 0.5f, 0.5f);
-		WriteImage("gray_sobel_dy.png", *TypecastImage<uint8_t>(*gray_image_dy));
+		WriteImage("gray_sobel_dy.png", 
+				*CreateImageFromFloatImage<uint8_t>(*gray_image_dy));
 
 		PrintDebug("Build Pyramid\n");
 		auto pyramid = CreateImagePyramid(*gray_image, 4);
 		for (int i = 0; i < 4; i++) {
 			auto level = pyramid[i];
-			auto level_8bit = TypecastImage<uint8_t>(*level);
+			auto level_8bit = CreateImageFromFloatImage<uint8_t>(*level);
 			std::string outputname = 
 				"gray_pyramid_level" + std::to_string(i) + ".png";
 			WriteImage(outputname, *level_8bit);
@@ -94,32 +100,37 @@ int main(int argc, char **argv)
 		PrintDebug("Depth image size : %d x %d\n", 
 			depth_image_16bit.width_, depth_image_16bit.height_);
 		auto depth_image = CreateFloatImageFromImage(depth_image_16bit);
-		//LinearTransformImage(*depth_image, (1.0f / 1000.0f), 0.0, 0.0, 3.0);
-		WriteImage("depth.png", *TypecastImage<uint16_t>(*depth_image));
+		WriteImage("depth.png", 
+				*CreateImageFromFloatImage<uint16_t>(*depth_image));
 
 		PrintDebug("Gaussian Filtering\n");
 		auto depth_image_b3 = FilterImage(*depth_image, FILTER_GAUSSIAN_3);
-		WriteImage("depth_blur3.png", *TypecastImage<uint16_t>(*depth_image_b3));
+		WriteImage("depth_blur3.png", 
+				*CreateImageFromFloatImage<uint16_t>(*depth_image_b3));
 		auto depth_image_b5 = FilterImage(*depth_image, FILTER_GAUSSIAN_5);
-		WriteImage("depth_blur5.png", *TypecastImage<uint16_t>(*depth_image_b5));
+		WriteImage("depth_blur5.png", 
+				*CreateImageFromFloatImage<uint16_t>(*depth_image_b5));
 		auto depth_image_b7 = FilterImage(*depth_image, FILTER_GAUSSIAN_7);
-		WriteImage("depth_blur7.png", *TypecastImage<uint16_t>(*depth_image_b7));
+		WriteImage("depth_blur7.png", 
+				*CreateImageFromFloatImage<uint16_t>(*depth_image_b7));
 
 		PrintDebug("Sobel Filtering\n");
 		auto depth_image_dx = FilterImage(*depth_image, FILTER_SOBEL_3_DX);
 		LinearTransformImage(*depth_image_dx, 1.0f, 0.0f, 0.0f, 32768.0f);	// make [-1,1] to [0,1].
-		WriteImage("depth_sobel_dx.png", *TypecastImage<uint16_t>(*depth_image_dx));
+		WriteImage("depth_sobel_dx.png", 
+				*CreateImageFromFloatImage<uint16_t>(*depth_image_dx));
 		auto depth_image_dy = FilterImage(*depth_image, FILTER_SOBEL_3_DY);
 		LinearTransformImage(*depth_image_dy, 1.0f, 0.0f, 0.0f, 32768.0f);
-		WriteImage("depth_sobel_dy.png", *TypecastImage<uint16_t>(*depth_image_dy));
+		WriteImage("depth_sobel_dy.png", 
+				*CreateImageFromFloatImage<uint16_t>(*depth_image_dy));
 
 		PrintDebug("Build Pyramid\n");
 		auto pyramid = CreateImagePyramid(*depth_image, 4);
 		for (int i = 0; i < 4; i++) {
 			auto level = pyramid[i];
-			auto level_16bit = TypecastImage<uint16_t>(*level);
+			auto level_16bit = CreateImageFromFloatImage<uint16_t>(*level);
 			std::string outputname =
-				"depth_pyramid_level" + std::to_string(i) + ".png";
+					"depth_pyramid_level" + std::to_string(i) + ".png";
 			WriteImage(outputname, *level_16bit);
 		}
 	}

@@ -56,7 +56,7 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
 				*p = (float)(*pi) / 255.0f;
 			} else if (image.bytes_per_channel_ == 2) {
 				const uint16_t *pi16 = (const uint16_t *)pi;
-				*p = (float)(*pi16) / 65535.0f;
+				*p = (float)(*pi16);
 			} else if (image.bytes_per_channel_ == 4) {
 				const float *pf = (const float *)pi;
 				*p = *pf;
@@ -76,11 +76,11 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
 				if (average_type == EQUAL) {
 					*p = ((float)(pi16[0]) + 
 							(float)(pi16[1]) + 
-							(float)(pi16[2])) / 3.0f / 65535.0f;
+							(float)(pi16[2])) / 3.0f;
 				} else if (average_type == WEIGHTED) {
 					*p = (0.2990f * (float)(pi16[0]) + 
 							0.5870f * (float)(pi16[1]) + 
-							0.1140f * (float)(pi16[2])) / 65535.0f;
+							0.1140f * (float)(pi16[2]));
 				}
 			} else if (image.bytes_per_channel_ == 4) {
 				const float *pf = (const float *)pi;
