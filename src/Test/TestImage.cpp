@@ -73,11 +73,11 @@ int main(int argc, char **argv)
 
 		PrintDebug("Sobel Filtering\n");
 		auto gray_image_dx = FilterImage(*gray_image, FILTER_SOBEL_3_DX);
-		LinearTransformImage(*gray_image_dx, 0.5f, 0.5f);	// make [-1,1] to [0,1].
+		LinearTransformImage(*gray_image_dx, 0.5, 0.5);	// make [-1,1] to [0,1].
 		WriteImage("gray_sobel_dx.png", 
 				*CreateImageFromFloatImage<uint8_t>(*gray_image_dx));
 		auto gray_image_dy = FilterImage(*gray_image, FILTER_SOBEL_3_DY);
-		LinearTransformImage(*gray_image_dy, 0.5f, 0.5f);
+		LinearTransformImage(*gray_image_dy, 0.5, 0.5);
 		WriteImage("gray_sobel_dy.png", 
 				*CreateImageFromFloatImage<uint8_t>(*gray_image_dy));
 
@@ -116,11 +116,11 @@ int main(int argc, char **argv)
 
 		PrintDebug("Sobel Filtering\n");
 		auto depth_image_dx = FilterImage(*depth_image, FILTER_SOBEL_3_DX);
-		LinearTransformImage(*depth_image_dx, 1.0f, 0.0f, 0.0f, 32768.0f);	// make [-1,1] to [0,1].
+		LinearTransformImage(*depth_image_dx, 1.0, 0.0, 0.0, 32768.0);	// make [-1,1] to [0,1].
 		WriteImage("depth_sobel_dx.png", 
 				*CreateImageFromFloatImage<uint16_t>(*depth_image_dx));
 		auto depth_image_dy = FilterImage(*depth_image, FILTER_SOBEL_3_DY);
-		LinearTransformImage(*depth_image_dy, 1.0f, 0.0f, 0.0f, 32768.0f);
+		LinearTransformImage(*depth_image_dy, 1.0, 0.0, 0.0, 32768.0);
 		WriteImage("depth_sobel_dy.png", 
 				*CreateImageFromFloatImage<uint16_t>(*depth_image_dy));
 

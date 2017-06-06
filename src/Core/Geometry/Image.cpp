@@ -157,7 +157,7 @@ std::shared_ptr<Image> DownsampleImage(const Image &input)
 }
 
 std::shared_ptr<Image> FilterHorizontalImage(
-			const Image &input, const std::vector<double> &kernel)
+		const Image &input, const std::vector<double> &kernel)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 || 
