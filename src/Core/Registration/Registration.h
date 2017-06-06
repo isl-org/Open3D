@@ -30,19 +30,39 @@
 #include <tuple>
 #include <Eigen/Core>
 
-#include <Core/Registration/ConvergenceCriteria.h>
 #include <Core/Registration/TransformationEstimation.h>
 
 namespace three {
 
 class PointCloud;
 
+class ICPConvergenceCriteria
+{
+public:
+	ICPConvergenceCriteria(double relative_fitness = 1e-6,
+			double relative_rmse = 1e-6, int max_iteration = 30) :
+			relative_fitness_(relative_fitness), relative_rmse_(relative_rmse),
+			max_iteration_(max_iteration) {}
+	~ICPConvergenceCriteria() {}
+	
+public:
+	double relative_fitness_;
+	double relative_rmse_;
+	int max_iteration_;
+};
+
 class RegistrationResult
 {
 public:
-	Eigen::Matrix4d transformation;
-	double inlier_rmse;
-	double fitness;
+	RegistrationResult(const Eigen::Matrix4d &transformation =
+			Eigen::Matrix4d::Identity()) : transformation_(transformation),
+			inlier_rmse_(0.0), fitness_(0.0) {}
+	~RegistrationResult() {}
+
+public:
+	Eigen::Matrix4d transformation_;
+	double inlier_rmse_;
+	double fitness_;
 };
 
 /// Function for evaluation
@@ -50,17 +70,17 @@ RegistrationResult EvaluateRegistration(const PointCloud &source,
 		const PointCloud &target, double max_correspondence_distance,
 		const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
 
-/// Functions for registration
+/// Functions for ICP registration
 RegistrationResult RegistrationICP(const PointCloud &source,
 		const PointCloud &target, double max_correspondence_distance,
 		const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
 		const TransformationEstimation &estimation =
 		TransformationEstimationPointToPoint(false),
-		const ConvergenceCriteria &criteria = ConvergenceCriteria());
+		const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
-RegistrationResult RegistrationRANSAC(const PointCloud &source,
-		const PointCloud &target, const CorrespondenceSet &corres,
-		double max_correspondence_distance,
+RegistrationResult RegistrationRANSACBasedOnCorrespondence(
+		const PointCloud &source, const PointCloud &target,
+		const CorrespondenceSet &corres, double max_correspondence_distance,
 		const TransformationEstimation &estimation =
 		TransformationEstimationPointToPoint(false),
 		int ransac_n = 6, int max_ransac_iteration = 1000);

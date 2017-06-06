@@ -27,7 +27,6 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
-#include <Core/Registration/ConvergenceCriteria.h>
 #include <Core/Registration/TransformationEstimation.h>
 #include <Core/Registration/Registration.h>
 using namespace three;
@@ -52,18 +51,24 @@ public:
 
 void pybind_registration(py::module &m)
 {
-	py::class_<ConvergenceCriteria> convergence_criteria(m,
-			"ConvergenceCriteria");
-	py::detail::bind_copy_functions<ConvergenceCriteria>(convergence_criteria);
-	convergence_criteria.def("__init__", [](ConvergenceCriteria &c,
-			double rmse, int itr) {
-		new (&c)ConvergenceCriteria(rmse, itr);
-	}, "relative_rmse"_a = 1e-6, "max_iteration"_a = 30);
+	py::class_<ICPConvergenceCriteria> convergence_criteria(m,
+			"ICPConvergenceCriteria");
+	py::detail::bind_copy_functions<ICPConvergenceCriteria>(
+			convergence_criteria);
+	convergence_criteria.def("__init__", [](ICPConvergenceCriteria &c,
+			double fitness, double rmse, int itr) {
+		new (&c)ICPConvergenceCriteria(fitness, rmse, itr);
+	}, "relative_fitness"_a = 1e-6, "relative_rmse"_a = 1e-6,
+			"max_iteration"_a = 30);
 	convergence_criteria
-		.def_readwrite("relative_rmse", &ConvergenceCriteria::relative_rmse_)
-		.def_readwrite("max_iteration", &ConvergenceCriteria::max_iteration_)
-		.def("__repr__", [](const ConvergenceCriteria &c) {
-			return std::string("ConvergenceCriteria class.\n") +
+		.def_readwrite("relative_fitness",
+				&ICPConvergenceCriteria::relative_fitness_)
+		.def_readwrite("relative_rmse", &ICPConvergenceCriteria::relative_rmse_)
+		.def_readwrite("max_iteration", &ICPConvergenceCriteria::max_iteration_)
+		.def("__repr__", [](const ICPConvergenceCriteria &c) {
+			return std::string("ICPConvergenceCriteria class.\n") +
+					std::string("relative_fitness = ") +
+					std::to_string(c.relative_fitness_) +
 					std::string("relative_rmse = ") +
 					std::to_string(c.relative_rmse_) +
 					std::string(", max_iteration = " +
@@ -115,14 +120,14 @@ void pybind_registration(py::module &m)
 			registration_result);
 	py::detail::bind_copy_functions<RegistrationResult>(registration_result);
 	registration_result
-		.def_readwrite("transformation", &RegistrationResult::transformation)
-		.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse)
-		.def_readwrite("fitness", &RegistrationResult::fitness)
+		.def_readwrite("transformation", &RegistrationResult::transformation_)
+		.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_)
+		.def_readwrite("fitness", &RegistrationResult::fitness_)
 		.def("__repr__", [](const RegistrationResult &rr) {
 			return std::string("RegistrationResult with fitness = ") +
-					std::to_string(rr.fitness) +
+					std::to_string(rr.fitness_) +
 					std::string(", and inlier_rmse = ") +
-					std::to_string(rr.inlier_rmse) +
+					std::to_string(rr.inlier_rmse_) +
 					std::string("\nAccess transformation to get result.");
 		});
 }
@@ -138,8 +143,9 @@ void pybind_registration_methods(py::module &m)
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
 			"init"_a = Eigen::Matrix4d::Identity(), "estimation"_a =
 			TransformationEstimationPointToPoint(false), "criteria"_a =
-			ConvergenceCriteria());
-	m.def("RegistrationRANSAC", &RegistrationRANSAC,
+			ICPConvergenceCriteria());
+	m.def("RegistrationRANSACBasedOnCorrespondence",
+			&RegistrationRANSACBasedOnCorrespondence,
 			"Function for RANSAC registration based on a set of correspondences",
 			"source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
 			"estimation"_a = TransformationEstimationPointToPoint(false),
