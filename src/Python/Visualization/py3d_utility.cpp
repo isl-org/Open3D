@@ -57,13 +57,25 @@ void pybind_utility(py::module &m)
 
 void pybind_utility_methods(py::module &m)
 {
-	m.def("DrawGeometries", &DrawGeometries,
-			"Function to draw a list of Geometry objects",
+	m.def("DrawGeometries", 
+	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+			const std::string &window_name, int width, int height,
+			int left, int top) {
+		std::string current_dir = filesystem::GetWorkingDirectory();
+		DrawGeometries(geometry_ptrs, window_name, width, height, left, top);
+		filesystem::ChangeWorkingDirectory(current_dir);
+	}, "Function to draw a list of Geometry objects",
 			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50);
 	m.def("DrawGeometriesWithCustomAnimation",
-			&DrawGeometriesWithCustomAnimation,
-			"Function to draw a list of Geometry objects",
+	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+			const std::string &window_name, int width, int height,
+			int left, int top, const std::string &json_filename) {
+		std::string current_dir = filesystem::GetWorkingDirectory();
+		DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name, width,
+				height, left, top, json_filename);
+		filesystem::ChangeWorkingDirectory(current_dir);
+	}, "Function to draw a list of Geometry objects",
 			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
 			"optional_view_trajectory_json_file"_a = "");

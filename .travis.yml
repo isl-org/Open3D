@@ -73,7 +73,7 @@ before_install:
   # for reference, display cmake and python version
   - python -V
   - cmake --version
-
+  
 script:
   # Build commands
   - mkdir build
