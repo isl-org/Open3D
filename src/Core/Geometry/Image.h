@@ -155,7 +155,7 @@ std::shared_ptr<Image> DownsampleImage(const Image &input);
 /// min is lower bound of image_new
 /// max is upper bound of image_new
 void LinearTransformImage(Image &input, double scale, 
-		double offset, double min = 0.0, double max = 1.0);
+		double offset = 0.0, double min = 0.0, double max = 1.0);
 
 std::vector<std::shared_ptr<Image>> CreateImagePyramid(
 		const Image& image, size_t num_of_levels);

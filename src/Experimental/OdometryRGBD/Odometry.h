@@ -39,36 +39,54 @@
 
 namespace three {
 
-	class Odometry {
-	public:
-		// how to define constructor and descructor
-		//Odometry();
-		//~Odometry();		
-		bool ComputeOdometry(const Image &color0, const Image &depth0,
-			const Image &color1, const Image &depth1, 
-			const Eigen::Matrix4d &InitPose,
-			Eigen::Matrix4d &Rt);
-		//void cvtDepth2Cloud(const Image& depth, Image& cloud,
-		//	const Eigen::Matrix4d& cameraMatrix);
+class Odometry {
+public:
+	// how to define constructor and descructor
+	//Odometry();
+	//~Odometry();		
+	bool ComputeOdometry(
+		Eigen::Matrix4d& Rt, const Eigen::Matrix4d& initRt,
+		const Image &color0, const Image &depth0,
+		const Image &color1, const Image &depth1,
+		Eigen::Matrix3d& cameraMatrix,
+		const std::vector<int>& iterCounts);
+	//void cvtDepth2Cloud(const Image& depth, Image& cloud,
+	//	const Eigen::Matrix4d& cameraMatrix);
 
-		bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
-			const Image& image1, const Image& dI_dx1, const Image& dI_dy1,
-			const Image& depth0, const Image& depth1,
-			const Image& dD_dx1, const Image& dD_dy1,
-			const Eigen::Matrix4d& Rt,
-			const Image& corresps, int correspsCount,
-			const double& fx, const double& fy, const double& determinantThreshold,
-			Eigen::VectorXd& ksi,
-			double& res1, double& res2,
-			int iter, int level);
+	bool computeKsi(const Image& image0, const Image& cloud0,
+		const Image& image1, const Image& dI_dx1, const Image& dI_dy1,
+		const Image& depth0, const Image& depth1,
+		const Image& dD_dx1, const Image& dD_dy1,
+		const Eigen::Matrix4d& Rt,
+		const Image& corresps, int correspsCount,
+		const double& fx, const double& fy, const double& determinantThreshold,
+		Eigen::VectorXd& ksi,
+		double& res1, double& res2,
+		int iter, int level);
 
-	protected:
-		bool verbose_;
+	void intensity_normalization(Image& image0, Image& image1, Image& corresps);
 
-	private:
+	bool Run(
+		const Image& color1, const Image& depth1,
+		const Image& color2, const Image& depth2,
+		Eigen::Matrix4d& init_pose, Eigen::Matrix4d& trans_output, Eigen::MatrixXd& info_output,
+		const char* filename,
+		const double lambda_dep,
+		bool verbose,
+		bool fast_reject);
 
-	};
+	void LoadCameraFile(const char* filename,
+		int& width, int& height, Eigen::Matrix3d& K);
 
+	void PreprocessDepth(const three::Image &depth);
 
+protected:
+	bool verbose_;
+	double LAMBDA_DEP;
+	double LAMBDA_IMG;
+
+private:
+		
+};
 
 }	// namespace three

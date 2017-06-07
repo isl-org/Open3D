@@ -87,7 +87,7 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 }
 
 void LinearTransformImage(Image &input, double scale, 
-		double offset, double min, double max) 
+		double offset/* = 0.0*/, double min/* = 0.0*/, double max/* = 1.0*/)
 {
 	for (int y = 0; y < input.height_; y++) {
 		for (int x = 0; x < input.width_; x++) {
