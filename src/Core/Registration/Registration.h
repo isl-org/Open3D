@@ -36,6 +36,10 @@ namespace three {
 
 class PointCloud;
 
+/// Class that defines the convergence criteria of ICP
+/// ICP algorithm stops if the relative change of fitness and rmse hit
+/// relative_fitness_ and relative_rmse_ individually, or the iteration number
+/// exceeds max_iteration_.
 class ICPConvergenceCriteria
 {
 public:
@@ -49,6 +53,25 @@ public:
 	double relative_fitness_;
 	double relative_rmse_;
 	int max_iteration_;
+};
+
+/// Class that defines the convergence criteria of RANSAC
+/// RANSAC algorithm stops if the iteration number hits max_iteration_, or the
+/// validation has been run for max_validation_ times.
+/// Note that the validation is the most computational expensive operator in an
+/// iteration. Most iterations do not do full validation. It is crucial to
+/// control max_validation_ so that the computation time is acceptable.
+class RANSACConvergenceCriteria
+{
+public:
+	RANSACConvergenceCriteria(int max_iteration = 1000,
+			int max_validation = 1000) :
+			max_iteration_(max_iteration), max_validation_(max_validation) {}
+	~RANSACConvergenceCriteria() {}
+	
+public:
+	int max_iteration_;
+	int max_validation_;
 };
 
 class RegistrationResult
@@ -78,6 +101,8 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 		TransformationEstimationPointToPoint(false),
 		const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
+/// Function for global RANSAC registration based on a given set of
+/// correspondences
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 		const PointCloud &source, const PointCloud &target,
 		const CorrespondenceSet &corres, double max_correspondence_distance,
