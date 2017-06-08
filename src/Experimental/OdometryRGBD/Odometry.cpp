@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 
+#include <iostream> // this is just for debugging
 #include "Odometry.h"
 
 namespace {
@@ -48,19 +49,22 @@ namespace three {
 // needs discussion
 void Odometry::PreprocessDepth(const three::Image &depth)
 {
-	float *p = (float *)depth.data_.data();
-	for (int i = 0; i < depth.height_ * depth.width_; i++, p++) {
-		if ((*p > maxDepth || *p < minDepth || *p <= 0)) {
-			*p = std::numeric_limits<float>::quiet_NaN();
+	//float *p = (float *)depth.data_.data();
+	for (int y = 0; y < depth.height_; y++) {
+		for (int x = 0; x < depth.width_; x++) {
+			float *p = PointerAt<float>(depth, x, y);
+			if ((*p > maxDepth || *p < minDepth || *p <= 0)) 
+				*p = std::numeric_limits<float>::quiet_NaN();
 		}
 	}
 }
 
 // lets modify open3d built-in
+// todo: input does not use & operator?
 std::shared_ptr<Image> cvtDepth2Cloud(const Image& depth, const Eigen::Matrix3d& cameraMatrix)
 {
 	auto cloud = std::make_shared<Image>();
-	if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 2) {
+	if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
 		PrintDebug("[cvtDepth2Cloud] Unsupported image format.\n");
 		return cloud;
 	}
@@ -68,20 +72,22 @@ std::shared_ptr<Image> cvtDepth2Cloud(const Image& depth, const Eigen::Matrix3d&
 	const double inv_fy = 1.f / cameraMatrix(1, 1);
 	const double ox = cameraMatrix(0, 2);
 	const double oy = cameraMatrix(1, 2);
-	cloud->PrepareImage(depth.width_, depth.height_, 3, 4);
+	cloud->PrepareImage(depth.width_, depth.height_, 3, 4); // xyz float type
 
 	// is this slow?
 	// not sure how the data should be allocated
-	int bpl = cloud->BytesPerLine();
-	for (int y = 0; y < depth.height_; y++) {
-		float *p = (float *)(depth.data_.data() + y * depth.BytesPerLine());
-		for (int x = 0; x < cloud->width_; x++, p += 3) {
-			float z = depth.data_[y * depth.width_ + x];
-			*(p + 0) = (float)((x - ox) * z * inv_fx);
-			*(p + 1) = (float)((y - oy) * z * inv_fy);
-			*(p + 2) = z;
+	for (int y = 0; y < depth.height_; y++) {		
+		for (int x = 0; x < cloud->width_; x++) {
+			float *px = PointerAt<float>(*cloud, x, y, 0);
+			float *py = PointerAt<float>(*cloud, x, y, 1);
+			float *pz = PointerAt<float>(*cloud, x, y, 2);
+			float z = *PointerAt<float>(depth, x, y);
+			*px = (float)((x - ox) * z * inv_fx);
+			*py = (float)((y - oy) * z * inv_fy);
+			*pz = z;
 		}
 	}
+	return cloud;
 }
 
 // should not in namespace three.
@@ -105,15 +111,16 @@ inline void get2shorts(int src, int& short_v1, int& short_v2)
 // template?
 // int 32bit
 void setconst(const Image& image, const int value) {
-	int *p = (int *)image.data_.data();
-	for (int i = 0; i < image.height_ * image.width_; i++, p++) {
-		*p = value;
+	for (int v = 0; v < image.height_; v++) {
+		for (int u = 0; u < image.width_; u++) {
+			*PointerAt<int>(image, u, v) = value;
+		}
 	}
 }
 
 // 1->0
 int computeCorresp(const Eigen::Matrix3d& K,
-	const Eigen::Matrix3d& K_inv,
+	const Eigen::Matrix3d& K_inv, /* don't need K_inv */
 	const Eigen::Matrix4d& Rt,
 	const Image& depth0, const Image& depth1, Image& corresps)
 {
@@ -121,7 +128,14 @@ int computeCorresp(const Eigen::Matrix3d& K,
 
 	Eigen::Matrix3d R = Rt.block<3, 3>(0, 0);
 	Eigen::Matrix3d KRK_inv = K * R * K_inv;
-	const double* KRK_inv_ptr = reinterpret_cast<const double *>(KRK_inv.data());
+	//std::cout << R << std::endl;
+	//std::cout << KRK_inv << std::endl;
+
+	//const double* KRK_inv_ptr = reinterpret_cast<const double *>(KRK_inv.data());
+	const double KRK_inv_ptr[9] = 
+			{ KRK_inv(0,0), KRK_inv(0,1), KRK_inv(0,2),
+			KRK_inv(1,0), KRK_inv(1,1), KRK_inv(1,2),
+			KRK_inv(2,0), KRK_inv(2,1), KRK_inv(2,2) };
 
 	Eigen::Vector3d Kt = Rt.block<3, 1>(0, 3);
 	Kt = K * Kt;
@@ -132,23 +146,27 @@ int computeCorresp(const Eigen::Matrix3d& K,
 	int correspCount = 0;
 	for (int v1 = 0; v1 < depth1.height_; v1++) {
 		for (int u1 = 0; u1 < depth1.width_; u1++) {
-			float d1 = depth1.data_[v1 * depth1.width_ + u1];
+			
+			float d1 = *PointerAt<float>(depth1, u1, v1);
 			if (!std::isnan(d1)) {
 				float transformed_d1 = (float)(d1 * (KRK_inv_ptr[6] * u1 + KRK_inv_ptr[7] * v1 + KRK_inv_ptr[8]) + Kt_ptr[2]);
-				int u0 = (int)((d1 * (KRK_inv_ptr[0] * u1 + KRK_inv_ptr[1] * v1 + KRK_inv_ptr[2]) + Kt_ptr[0]) / transformed_d1 + 0.5f);
-				int v0 = (int)((d1 * (KRK_inv_ptr[3] * u1 + KRK_inv_ptr[4] * v1 + KRK_inv_ptr[5]) + Kt_ptr[1]) / transformed_d1 + 0.5f);
+				int u0 = (int)((d1 * (KRK_inv_ptr[0] * u1 + KRK_inv_ptr[1] * v1 + KRK_inv_ptr[2]) + Kt_ptr[0]) / transformed_d1 + 0.5);
+				int v0 = (int)((d1 * (KRK_inv_ptr[3] * u1 + KRK_inv_ptr[4] * v1 + KRK_inv_ptr[5]) + Kt_ptr[1]) / transformed_d1 + 0.5);
 
 				if (u0 >= 0 && u0 < depth1.width_ &&
 					v0 >= 0 && v0 < depth1.height_) {
-					float d0 = depth0.data_[v0 * depth1.width_ + u0];
+
+					// todo: this if else loop is not intuitive.
+					float d0 = *PointerAt<float>(depth0, u0, v0);
 					if (!std::isnan(d0) && std::abs(transformed_d1 - d0) <= maxDepthDiff) {
-						int c = corresps.data_[v0 * depth1.width_ + u0];
+						int c = *PointerAt<int>(corresps, u0, v0);
 						if (c != -1) {
 							int exist_u1, exist_v1;
 							get2shorts(c, exist_u1, exist_v1);
 
-							float exist_d1 = (float)(depth1.data_[exist_v1 * depth1.width_ + exist_u1]
-								* (KRK_inv_ptr[6] * exist_u1 + KRK_inv_ptr[7] * exist_v1 + KRK_inv_ptr[8]) + Kt_ptr[2]);
+							//depth1.data_[exist_v1 * depth1.width_ + exist_u1]
+							double exist_d1 = double{ *PointerAt<float>(depth1, exist_u1, exist_v1) }
+								* (KRK_inv_ptr[6] * exist_u1 + KRK_inv_ptr[7] * exist_v1 + KRK_inv_ptr[8]) + Kt_ptr[2];
 
 							if (transformed_d1 > exist_d1)
 								continue;
@@ -158,8 +176,9 @@ int computeCorresp(const Eigen::Matrix3d& K,
 
 						// can we make something like
 						// image.at<type>(u,v)?
-						int *p = (int *)(corresps.data_.data()) + (v0 * depth1.width_ + u0);
+						int* p = PointerAt<int>(corresps, u0, v0);
 						set2shorts(*p, u1, v1);
+						//printf("(%d,%d)->(%d,%d)\n", u0, v0, u1, v1);
 					}
 				}
 			}
@@ -200,12 +219,21 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 	SQRT_LAMBDA_DEP = sqrt(LAMBDA_DEP_DEFAULT);
 	SQRT_LAMBDA_IMG = sqrt(1.0f-LAMBDA_DEP_DEFAULT);
 
+	const double R_raw[9] =
+			{ R(0,0), R(0,1), R(0,2),
+			R(1,0), R(1,1), R(1,2),
+			R(2,0), R(2,1), R(2,2) };
+	const double t_raw[3] =
+			{ t(0), t(1), t(1) };
+
+	Eigen::Vector3d temp, p3d_mat, p3d_trans;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
-			if (*PointerAt<int>(corresps, v0, u0) != -1) {
+			int c = *PointerAt<int>(corresps, u0, v0);
+			if (c != -1) {
 
 				int u1, v1;
-				get2shorts(*PointerAt<int>(corresps, u0, v0), u1, v1);
+				get2shorts(c, u1, v1);
 
 				double diff = static_cast<double>(*PointerAt<float>(image1, u1, v1)) -
 						static_cast<double>(*PointerAt<float>(image0, u0, v0));
@@ -218,12 +246,18 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 				if (std::isnan(dDdx)) dDdx = 0; // todoisnan used in other open3d function?
 				if (std::isnan(dDdy)) dDdy = 0;
 
-				Eigen::Vector3d p3d_mat;
 				p3d_mat(0) = double{ *PointerAt<float>(cloud0, u0, v0, 0) };
 				p3d_mat(1) = double{ *PointerAt<float>(cloud0, u0, v0, 1) };
 				p3d_mat(2) = double{ *PointerAt<float>(cloud0, u0, v0, 2) };
 
-				Eigen::Vector3d p3d_trans = R * p3d_mat + t;
+				//temp = R * p3d_mat;
+				//p3d_trans = temp + t;
+				p3d_trans(0) = R_raw[0] * p3d_mat(0) + R_raw[1] * p3d_mat(1) + 
+						R_raw[2] * p3d_mat(2) + t_raw[0];
+				p3d_trans(1) = R_raw[3] * p3d_mat(0) + R_raw[4] * p3d_mat(1) +
+						R_raw[5] * p3d_mat(2) + t_raw[1];
+				p3d_trans(2) = R_raw[6] * p3d_mat(0) + R_raw[7] * p3d_mat(1) +
+						R_raw[8] * p3d_mat(2) + t_raw[2];
 
 				double diff2 = double{ (*PointerAt<float>(depth1, u1, v1)) } -
 						double{ (p3d_trans(2)) };
@@ -244,7 +278,7 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 				J(row1, 3) = SQRT_LAMBDA_IMG * (c0);
 				J(row1, 4) = SQRT_LAMBDA_IMG * (c1);
 				J(row1, 5) = SQRT_LAMBDA_IMG * (c2);
-				r(row1, 6) = SQRT_LAMBDA_IMG * diff;
+				r(row1, 0) = SQRT_LAMBDA_IMG * diff;
 				res1 += abs(diff); // diff^2 is mathmatically correct. but used abs here for easier understand when doing rejection
 
 				J(row2, 0) = SQRT_LAMBDA_DEP * ((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
@@ -253,7 +287,7 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 				J(row2, 3) = SQRT_LAMBDA_DEP * (d0);
 				J(row2, 4) = SQRT_LAMBDA_DEP * (d1);
 				J(row2, 5) = SQRT_LAMBDA_DEP * (d2 - 1.0f);
-				r(row2, 6) = SQRT_LAMBDA_DEP * diff2;
+				r(row2, 0) = SQRT_LAMBDA_DEP * diff2;
 				res2 += abs(diff2);
 
 				pointCount++;
@@ -268,8 +302,9 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 	}
 
 	// solve system
-	Eigen::MatrixXd JtJ = J.transpose() * J;
-	Eigen::MatrixXd Jtr = J.transpose() * r;
+	Eigen::MatrixXd Jt = J.transpose();
+	Eigen::MatrixXd JtJ = Jt * J;
+	Eigen::MatrixXd Jtr = Jt * r;
 
 	double det = JtJ.determinant();
 	//printf("det : %f\n", det);
@@ -296,7 +331,9 @@ void Odometry::LoadCameraFile(const char* filename,
 {
 	if (strcmp(filename, "") == 0) {
 		PrintDebug("Using default camera intrinsic");
-
+		K << 525.0, 0, 319.5,
+				0, 525.0, 239.5,
+				0, 0, 1;
 	}
 	else {
 		float fx_, fy_, cx_, cy_;
@@ -363,8 +400,8 @@ bool Odometry::Run(
 		LAMBDA_DEP = lambda_dep;
 	LAMBDA_IMG = 1.0f - LAMBDA_DEP;
 
-	//printf("LAMBDA_DEP : %f\n", LAMBDA_DEP);
-	//printf("LAMBDA_IMG : %f\n", LAMBDA_IMG);
+	printf("LAMBDA_DEP : %f\n", LAMBDA_DEP);
+	printf("LAMBDA_IMG : %f\n", LAMBDA_IMG);
 
 
 	Eigen::Matrix3d cameraMatrix;
@@ -379,10 +416,17 @@ bool Odometry::Run(
 	auto grayImage1 = FilterImage(*grayImage1_temp, FILTER_GAUSSIAN_3);
 
 	// depth preprocessing 
-	//preprocessDepth(depth1);
-	//preprocessDepth(depth2);
+	PreprocessDepth(depth1);
+	PreprocessDepth(depth2);
 	auto depthFlt0_filtered = FilterImage(depth1, FILTER_GAUSSIAN_3);
 	auto depthFlt1_filtered = FilterImage(depth2, FILTER_GAUSSIAN_3);
+
+	PrintInfo("grayImage0_temp(100,100) : %f\n", *PointerAt<float>(*grayImage0_temp, 100, 100));
+	PrintInfo("grayImage0(100,100) : %f\n", *PointerAt<float>(*grayImage0, 100, 100));
+	PrintInfo("depthFlt0(100,100) : %f\n", *PointerAt<float>(depth1, 100, 100));
+	PrintInfo("depthFlt0_filtered(100,100) : %f\n", *PointerAt<float>(*depthFlt0_filtered, 100, 100));
+	PrintInfo("depthFlt0(200,200) : %f\n", *PointerAt<float>(depth1, 200, 200));
+	PrintInfo("depthFlt0_filtered(200,200) : %f\n", *PointerAt<float>(*depthFlt0_filtered, 200, 200));
 	
 	Eigen::Matrix4d Rt_init = Eigen::Matrix4d::Identity();
 	//init_pose.copyTo(Rt_init);
@@ -391,6 +435,8 @@ bool Odometry::Run(
 	//if (verbose_) {
 	//	std::cout << "Initial camera pose " << init_pose << endl;
 	//}
+
+	//std::cout << cameraMatrix << std::endl;
 
 	// if initial camera pose is given, we use it ONLY IF it provides good number of correspondences
 	// test input matrix and use identity matrix if it is bad
@@ -410,14 +456,14 @@ bool Odometry::Run(
 			return false;
 	}
 
-
 	std::vector<int> iterCounts;
 	for (int i = 0; i < NUM_PYRAMID; i++)
 		iterCounts.push_back(NUM_ITER); 
 
 	//// added by jspark
 	//// overlapping region based intensity normalization
-	intensity_normalization(*grayImage0, *grayImage1, temp_corresps);
+	// todo: does not like additional correspondence search
+	intensity_normalization(*grayImage0, *grayImage1, temp_corresps); 
 
 	Eigen::Matrix4d Rt;
 	bool isFound = ComputeOdometry(
@@ -440,7 +486,7 @@ bool Odometry::Run(
 	// output result that can be used for FragmentOptimizer.
 	//WriteResult(Rt, cameraMatrix, depthFlt0_filtered, depthFlt1_filtered, trans_log, trans_info);
 	Eigen::Matrix4d Rt_inv = Rt.inverse();
-	//Rt_inv.copyTo(trans_output);
+	trans_output = Rt_inv;
 	//GetInfo(Rt, cameraMatrix, depthFlt0_filtered, depthFlt1_filtered, info_output);
 
 	//if (verbose_)
@@ -463,18 +509,20 @@ void Odometry::intensity_normalization(
 	}
 
 	size_t pointCount = 0;
-	double mean0 = 0;
-	double mean1 = 0;
+	double mean0 = 0.0;
+	double mean1 = 0.0;
 	// todo: uncomment
 	// do smart iteration
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
 			int c = *PointerAt<int>(corresps, u0, v0);
-			int u1, v1;
-			get2shorts(c, u1, v1);
-			mean0 += *PointerAt<float>(image0, u0, v0);
-			mean1 += *PointerAt<float>(image1, u1, v1);
-			pointCount++;
+			if (c != -1) {
+				int u1, v1;
+				get2shorts(c, u1, v1);
+				mean0 += *PointerAt<float>(image0, u0, v0);
+				mean1 += *PointerAt<float>(image1, u1, v1);
+				pointCount++;
+			}			
 		}
 	}
 	mean0 /= (double)pointCount;
@@ -483,6 +531,19 @@ void Odometry::intensity_normalization(
 	LinearTransformImage(image1, 0.5 / mean1, 0.0);
 }
 
+std::vector<Eigen::Matrix3d> 
+		Odometry::BuildCameraMatrixPyramid(Eigen::Matrix3d& K, int levels)
+{
+	std::vector<Eigen::Matrix3d> pyramidCameraMatrix;
+	pyramidCameraMatrix.reserve(levels);
+	for (int i = 0; i < levels; i++) {
+		Eigen::Matrix3d levelCameraMatrix = i == 0 ? K : 0.5f * pyramidCameraMatrix[i - 1];
+		//Mat levelCameraMatrix = cameraMatrix_dbl;
+		levelCameraMatrix(2, 2) = 1.;
+		pyramidCameraMatrix.push_back(levelCameraMatrix);
+	}
+	return pyramidCameraMatrix; // todo: is this good?
+}
 
 // don't like the names. Need to be beautified.
 bool Odometry::ComputeOdometry(
@@ -498,9 +559,6 @@ bool Odometry::ComputeOdometry(
 	assert(((depth0.width_ == depth1.width_) && (depth0.height_ == depth1.height_)));
 	assert(((color0.width_ == depth0.width_) && (color0.height_ == depth0.height_)));
 	assert(((color1.width_ == depth1.width_) && (color1.height_ == depth1.height_)));
-
-	PreprocessDepth(depth0);
-	PreprocessDepth(depth1);
 
 	auto pyramidImage0 = CreateImagePyramid(color0, NUM_PYRAMID);
 	auto pyramidDepth0 = CreateImagePyramid(depth0, NUM_PYRAMID);
@@ -523,9 +581,12 @@ bool Odometry::ComputeOdometry(
 	int correspsCount;
 	double res1, res2;
 
+	std::vector<Eigen::Matrix3d> pyramidCameraMatrix =
+			BuildCameraMatrixPyramid(cameraMatrix, (int)iterCounts.size());
+
 	for (int level = (int)iterCounts.size() - 1; level >= 0; level--)
 	{
-		const Eigen::Matrix3d levelCameraMatrix;// = pyramidCameraMatrix[level];
+		const Eigen::Matrix3d levelCameraMatrix = pyramidCameraMatrix[level];
 
 		auto levelCloud0 = cvtDepth2Cloud(*pyramidDepth0[level], levelCameraMatrix);
 		const double fx = levelCameraMatrix(0, 0);
@@ -578,9 +639,14 @@ bool Odometry::ComputeOdometry(
 				* Eigen::AngleAxisd(ksi(0), Eigen::Vector3d::UnitX());
 			aff_mat.translation() = Eigen::Vector3d(ksi(3), ksi(4), ksi(5));
 			currRt = aff_mat.matrix();
-			//cout << currRt_eigen;
-
+			
 			resultRt = currRt * resultRt;
+
+			//std::cout << "currRt" << std::endl;
+			//std::cout << currRt << std::endl;
+			//std::cout << "resultRt" << std::endl;
+			//std::cout << resultRt << std::endl;
+
 				
 		}
 	}

@@ -53,6 +53,9 @@ public:
 	//void cvtDepth2Cloud(const Image& depth, Image& cloud,
 	//	const Eigen::Matrix4d& cameraMatrix);
 
+	std::vector<Eigen::Matrix3d> 
+			BuildCameraMatrixPyramid(Eigen::Matrix3d& K, int levels);
+
 	bool computeKsi(const Image& image0, const Image& cloud0,
 		const Image& image1, const Image& dI_dx1, const Image& dI_dy1,
 		const Image& depth0, const Image& depth1,
@@ -78,7 +81,7 @@ public:
 	void LoadCameraFile(const char* filename,
 		int& width, int& height, Eigen::Matrix3d& K);
 
-	void PreprocessDepth(const three::Image &depth);
+	void PreprocessDepth(const Image &depth);
 
 protected:
 	bool verbose_;

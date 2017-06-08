@@ -31,30 +31,47 @@
 #include <IO/IO.h>
 #include "Odometry.h"
 
-void PrintHelp()
+void PrintHelp(char* argv[])
 {
 	printf("Usage:\n");
-	printf("    > RGBDOdometry [color1] [depth1] [color2] [depth2] [options]\n");
+	printf("    > %s [color1] [depth1] [color2] [depth2] [options]\n", argv[0]);
 	printf("      Given RGBD image pair, estimate 6D odometry.\n");
 	printf("      --camera_intrinsic [intrinsic_path]");
+	printf("      --TUM : indicate this if depth map is TUM dataset");
+	printf("      --verbose : shows more details");
 	printf("\n");
 }
 
 int main(int argc, char *argv[])
 {
+	//// for debugging
+	//argc = 9;
+	//argv = new char*[9];
+	//for (int i = 0; i < argc; i++)
+	//	argv[i] = new char[256];
+	//strcpy(argv[0], "OdometryRGBD.exe");
+	//strcpy(argv[1], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/rgb/1341847980.722988.png");
+	//strcpy(argv[2], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/depth/1341847980.723020.png");
+	//strcpy(argv[3], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/rgb/1341847980.754743.png");
+	//strcpy(argv[4], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/depth/1341847980.754755.png");
+	//strcpy(argv[5], "--camera_intrinsic");
+	//strcpy(argv[6], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/camera.param");
+	//strcpy(argv[7], "--verbose");
+	//strcpy(argv[8], "--TUM");
+
 	using namespace three;
 
 	if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
 			ProgramOptionExists(argc, argv, "-h")) {
-		PrintHelp();
-		return 0;
+		PrintHelp(argv);
+		return 1;
 	}
 
 	std::string camera_path;
 	if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) { 
 		camera_path = GetProgramOptionAsString(
 				argc, argv, "--camera_intrinsic").c_str();
-		PrintInfo("Camera intrinsic path %s\n", camera_path);
+		PrintInfo("Camera intrinsic path %s\n", camera_path.c_str());
 	} else {
 		PrintInfo("Camera intrinsic path is not given\n", camera_path);
 	}
@@ -63,16 +80,15 @@ int main(int argc, char *argv[])
 	
 	// one-based
 	auto color1 = CreateImageFromFile(argv[1]);
-	auto color2 = CreateImageFromFile(argv[2]);
-	auto depth1_16bit = CreateImageFromFile(argv[3]);
-	auto depth2_16bit = CreateImageFromFile(argv[4]);
-	auto depth1 = ConvertDepthToFloatImage(*depth1_16bit);
-	auto depth2 = ConvertDepthToFloatImage(*depth2_16bit);
-	if (is_tum) {
-		LinearTransformImage(*depth1, 0.2, 0.0);
-		LinearTransformImage(*depth2, 0.2, 0.0);
-	}
+	auto depth1_16bit = CreateImageFromFile(argv[2]);
+	auto color2 = CreateImageFromFile(argv[3]);	
+	auto depth2_16bit = CreateImageFromFile(argv[4]);	
 	
+	double depth_scale = is_tum ? 5000.0 : 1000.0;
+	auto depth1 = ConvertDepthToFloatImage(*depth1_16bit, depth_scale);
+	auto depth2 = ConvertDepthToFloatImage(*depth2_16bit, depth_scale);
+	PrintInfo("depth1(100,100) : %f\n", *PointerAt<float>(*depth1, 100, 100));
+
 	Eigen::Matrix4d trans_initial, trans_output, info_output;
 	// default output - identity matrix and zero information matrix
 	// todo: maybe these are in default arguement inside run 
@@ -89,12 +105,14 @@ int main(int argc, char *argv[])
 
 	odo.Run(*color1, *depth1, *color2, *depth2, 
 			trans_init, trans_odo, info_odo, 
-			argv[5], lambda_dep, verbose, false);
+			camera_path.c_str(), lambda_dep, verbose, false);
+	std::cout << trans_odo << std::endl;
+	std::cout << info_odo << std::endl;
 	//printf("odo_success : %d\n", odo_success);
 	// these two are output.
 	//trans_odo.copyTo(trans_output);
 	//info_odo.copyTo(info_output);
 
 
-	return 1;
+	return 0;
 }
