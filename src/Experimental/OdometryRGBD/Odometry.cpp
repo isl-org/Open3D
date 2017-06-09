@@ -30,7 +30,7 @@
 
 namespace {
 
-	// some parameters
+	// some parameters - should be in headers?
 	const static double LAMBDA_DEP_DEFAULT = 0.5f;
 	const static double MINIMUM_CORR = 30000;
 	const static int	NUM_PYRAMID = 4;		// 4
@@ -434,7 +434,7 @@ bool Odometry::Run(
 	int width, height;
 	LoadCameraFile(filename, width, height, cameraMatrix);
 
-	// doto: don't like 0,1 or 1,2
+	// todo: don't like 0,1 or 1,2
 	auto grayImage0_temp = CreateFloatImageFromImage(color1);
 	auto grayImage1_temp = CreateFloatImageFromImage(color2);
 	// applying blur - filter sizes would be applied to the image the pyramid are [5 9 17]
@@ -447,12 +447,12 @@ bool Odometry::Run(
 	auto depthFlt0_filtered = FilterImage(depth1, FILTER_GAUSSIAN_3);
 	auto depthFlt1_filtered = FilterImage(depth2, FILTER_GAUSSIAN_3);
 
-	PrintInfo("grayImage0_temp(100,100) : %f\n", *PointerAt<float>(*grayImage0_temp, 100, 100));
-	PrintInfo("grayImage0(100,100) : %f\n", *PointerAt<float>(*grayImage0, 100, 100));
-	PrintInfo("depthFlt0(100,100) : %f\n", *PointerAt<float>(depth1, 100, 100));
-	PrintInfo("depthFlt0_filtered(100,100) : %f\n", *PointerAt<float>(*depthFlt0_filtered, 100, 100));
-	PrintInfo("depthFlt0(200,200) : %f\n", *PointerAt<float>(depth1, 200, 200));
-	PrintInfo("depthFlt0_filtered(200,200) : %f\n", *PointerAt<float>(*depthFlt0_filtered, 200, 200));
+	//PrintInfo("grayImage0_temp(100,100) : %f\n", *PointerAt<float>(*grayImage0_temp, 100, 100));
+	//PrintInfo("grayImage0(100,100) : %f\n", *PointerAt<float>(*grayImage0, 100, 100));
+	//PrintInfo("depthFlt0(100,100) : %f\n", *PointerAt<float>(depth1, 100, 100));
+	//PrintInfo("depthFlt0_filtered(100,100) : %f\n", *PointerAt<float>(*depthFlt0_filtered, 100, 100));
+	//PrintInfo("depthFlt0(200,200) : %f\n", *PointerAt<float>(depth1, 200, 200));
+	//PrintInfo("depthFlt0_filtered(200,200) : %f\n", *PointerAt<float>(*depthFlt0_filtered, 200, 200));
 	
 	Eigen::Matrix4d Rt_init = Eigen::Matrix4d::Identity();
 	//init_pose.copyTo(Rt_init);
@@ -572,6 +572,24 @@ std::vector<Eigen::Matrix3d>
 	return pyramidCameraMatrix; // todo: is this good?
 }
 
+void save_mat(char* filename, const Image& data)
+{
+	FILE* fid = fopen(filename, "wb");
+	int width = data.width_;
+	int height = data.height_;
+	fwrite(&width, sizeof(int), 1, fid);
+	fwrite(&height, sizeof(int), 1, fid);
+	for (int i = 0; i < width; i++){
+		for (int j = 0; j < height; j++) {
+			float k = *PointerAt<float>(data, i, j);
+			if (isnan(k))
+				k = -1.0f;
+			fwrite(&k, sizeof(float), 1, fid);
+		}
+	}
+	fclose(fid);
+}
+
 // don't like the names. Need to be beautified.
 bool Odometry::ComputeOdometry(
 		Eigen::Matrix4d& Rt, const Eigen::Matrix4d& initRt,
@@ -598,15 +616,26 @@ bool Odometry::ComputeOdometry(
 	//auto test_image_temp_16bit = CreateImageFromFloatImage<uint16_t>(*test_image_temp);
 	//WriteImage("test.png", *test_image_temp_16bit);
 
-	auto color1_dx = FilterImage(color1, FILTER_SOBEL_3_DX);
-	auto color1_dy = FilterImage(color1, FILTER_SOBEL_3_DY);
-	auto pyramid_dI_dx1 = CreateImagePyramid(*color1_dx, NUM_PYRAMID);
-	auto pyramid_dI_dy1 = CreateImagePyramid(*color1_dy, NUM_PYRAMID);
+	/////////////
+	// original implementation
+	/////////////
+	//auto color1_dx = FilterImage(color1, FILTER_SOBEL_3_DX);
+	//auto color1_dy = FilterImage(color1, FILTER_SOBEL_3_DY);
+	//auto pyramid_dI_dx1 = CreateImagePyramid(*color1_dx, NUM_PYRAMID);
+	//auto pyramid_dI_dy1 = CreateImagePyramid(*color1_dy, NUM_PYRAMID);
 
-	auto depth1_dx = FilterImage(depth1, FILTER_SOBEL_3_DX);
-	auto depth1_dy = FilterImage(depth1, FILTER_SOBEL_3_DY);
-	auto pyramid_dD_dx1 = CreateImagePyramid(*depth1_dx, NUM_PYRAMID, false);
-	auto pyramid_dD_dy1 = CreateImagePyramid(*depth1_dy, NUM_PYRAMID, false);
+	//auto depth1_dx = FilterImage(depth1, FILTER_SOBEL_3_DX);
+	//auto depth1_dy = FilterImage(depth1, FILTER_SOBEL_3_DY);
+	//auto pyramid_dD_dx1 = CreateImagePyramid(*depth1_dx, NUM_PYRAMID, false);
+	//auto pyramid_dD_dy1 = CreateImagePyramid(*depth1_dy, NUM_PYRAMID, false);
+	/////////////
+	// original implementation
+	/////////////
+
+	auto pyramid_dI_dx1 = FilterPyramidImage(pyramidImage1, FILTER_SOBEL_3_DX);
+	auto pyramid_dI_dy1 = FilterPyramidImage(pyramidImage1, FILTER_SOBEL_3_DY);
+	auto pyramid_dD_dx1 = FilterPyramidImage(pyramidDepth1, FILTER_SOBEL_3_DX);
+	auto pyramid_dD_dy1 = FilterPyramidImage(pyramidDepth1, FILTER_SOBEL_3_DY);
 
 
 	///// read data from OpenCV generated images
@@ -636,6 +665,35 @@ bool Odometry::ComputeOdometry(
 	//}
 
 	///// read data from OpenCV generated images
+
+	/// save data for debugging
+	save_mat("data_image0.bin", color0);
+	save_mat("data_image1.bin", color1);
+	save_mat("data_depth0.bin", depth0);
+	save_mat("data_depth1.bin", depth1);
+	for (int level = 0; level < 4; level++)
+	{
+		char temp[256];
+		sprintf(temp, "data_image0_level_%d.bin", level);
+		save_mat(temp, *pyramidImage0[level]);
+		sprintf(temp, "data_image1_level_%d.bin", level);
+		save_mat(temp, *pyramidImage1[level]);
+		sprintf(temp, "data_depth0_level_%d.bin", level);
+		save_mat(temp, *pyramidDepth0[level]);
+		sprintf(temp, "data_depth1_level_%d.bin", level);
+		save_mat(temp, *pyramidDepth1[level]);
+		sprintf(temp, "data_dI_dx1_level_%d.bin", level);
+		save_mat(temp, *pyramid_dI_dx1[level]);
+		sprintf(temp, "data_dI_dy1_level_%d.bin", level);
+		save_mat(temp, *pyramid_dI_dy1[level]);
+		sprintf(temp, "data_dD_dx1_level_%d.bin", level);
+		save_mat(temp, *pyramid_dD_dx1[level]);
+		sprintf(temp, "data_dD_dy1_level_%d.bin", level);
+		save_mat(temp, *pyramid_dD_dy1[level]);
+	}
+
+	/// save data for debugging
+
 
 	Eigen::Matrix4d resultRt = initRt.isZero() ? Eigen::Matrix4d::Identity() : initRt;
 	Eigen::Matrix4d currRt;

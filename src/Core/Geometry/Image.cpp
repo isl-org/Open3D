@@ -82,21 +82,36 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 		return std::make_shared<Image>();
 	}
 	auto output = CreateFloatImageFromImage(depth);
-	LinearTransformImage(*output, 1 / depth_scale, 0.0, 0.0, depth_trunc);
+	for (int y = 0; y < output->height_; y++) {
+		for (int x = 0; x < output->width_; x++) {
+			float *p = PointerAt<float>(*output, x, y);
+			*p /= (float)depth_scale;
+			if (*p >= depth_trunc)
+				*p = 0.0f;
+		}
+	}
 	return output;
 }
 
-void LinearTransformImage(Image &input, double scale, 
-		double offset/* = 0.0*/, double min/* = 0.0*/, double max/* = 1.0*/)
+void ClipIntensityImage(Image &input, double min/* = 0.0*/, double max/* = 1.0*/)
+{
+	for (int y = 0; y < input.height_; y++) {
+		for (int x = 0; x < input.width_; x++) {
+			float *p = PointerAt<float>(input, x, y);
+			if (*p > max)
+				*p = (float)max;
+			if (*p < min)
+				*p = (float)min;
+		}
+	}
+}
+
+void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 {
 	for (int y = 0; y < input.height_; y++) {
 		for (int x = 0; x < input.width_; x++) {
 			float *p = PointerAt<float>(input, x, y);
 			(*p) = (float)(scale * (*p) + offset);
-			if (*p > max)
-				*p = (float)max;
-			if (*p < min)
-				*p = (float)min;
 		}
 	}
 }
@@ -188,7 +203,7 @@ std::shared_ptr<Image> FilterHorizontalImage(
 				if (x_shift > input.width_ - 1)
 					x_shift = input.width_ - 1;
 				float* pi = PointerAt<float>(input, x_shift, y, 0);
-				temp += (*pi * kernel[i + half_kernel_size]);
+				temp += (*pi * (float)kernel[i + half_kernel_size]);
 			}
 			*po = (float)temp;
 		}
@@ -224,6 +239,17 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 		default:
 			PrintDebug("[FilterImage] Unsupported filter type.\n");
 			break;
+	}
+	return output;
+}
+
+const std::vector<std::shared_ptr<Image>> FilterPyramidImage(
+		const std::vector<std::shared_ptr<Image>> &input, FilterType type)
+{
+	std::vector<std::shared_ptr<Image>> output;
+	for (size_t i = 0; i < input.size(); i++) {
+		auto layer_filtered = FilterImage(*input[i], type);
+		output.push_back(layer_filtered);
 	}
 	return output;
 }

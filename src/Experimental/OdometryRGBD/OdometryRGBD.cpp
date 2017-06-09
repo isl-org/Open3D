@@ -85,8 +85,9 @@ int main(int argc, char *argv[])
 	auto depth2_16bit = CreateImageFromFile(argv[4]);	
 	
 	double depth_scale = is_tum ? 5000.0 : 1000.0;
-	auto depth1 = ConvertDepthToFloatImage(*depth1_16bit, depth_scale);
-	auto depth2 = ConvertDepthToFloatImage(*depth2_16bit, depth_scale);
+	double max_depth = 4.0;
+	auto depth1 = ConvertDepthToFloatImage(*depth1_16bit, depth_scale, max_depth);
+	auto depth2 = ConvertDepthToFloatImage(*depth2_16bit, depth_scale, max_depth);
 	PrintInfo("depth1(100,100) : %f\n", *PointerAt<float>(*depth1, 100, 100));
 
 	Eigen::Matrix4d trans_initial, trans_output, info_output;
