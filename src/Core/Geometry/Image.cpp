@@ -102,7 +102,7 @@ void LinearTransformImage(Image &input, double scale,
 }
 
 std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& input, size_t num_of_levels)
+		const Image& input, size_t num_of_levels, bool blur_image /*= true*/)
 {
 	std::vector<std::shared_ptr<Image>> pyramidImage;
 	pyramidImage.clear(); 
@@ -119,10 +119,15 @@ std::vector<std::shared_ptr<Image>> CreateImagePyramid(
 			*input_copy_ptr = input;
 			pyramidImage.push_back(input_copy_ptr);
 		} else {
-			// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
-			auto level_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
-			auto level_bd = DownsampleImage(*level_b);
-			pyramidImage.push_back(level_bd);
+			if (blur_image) {
+				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
+				auto level_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
+				auto level_bd = DownsampleImage(*level_b);
+				pyramidImage.push_back(level_bd);
+			} else {
+				auto level_d = DownsampleImage(*pyramidImage[i - 1]);
+				pyramidImage.push_back(level_d);
+			}
 		}
 	}
 	return pyramidImage;

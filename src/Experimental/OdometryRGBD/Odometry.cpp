@@ -41,6 +41,8 @@ namespace {
 	const static int	depthedgedilation = 1;
 	const static double minDepth = 0.f;			//in meters (0.0)
 	const static double maxDepth = 4.f; 		//in meters (4.0)	
+	const static double sobelScale_i = 1. / 8;
+	const static double sobelScale_d = 1. / 8;
 
 } // unnamed namespace
 
@@ -139,7 +141,7 @@ int computeCorresp(const Eigen::Matrix3d& K,
 
 	Eigen::Vector3d Kt = Rt.block<3, 1>(0, 3);
 	Kt = K * Kt;
-	const double * Kt_ptr = reinterpret_cast<const double *>(Kt.data());
+	const double Kt_ptr[3] = { Kt(0), Kt(1), Kt(2) };
 
 	//Rect r(0, 0, depth1.cols, depth1.rows);
 	setconst(corresps, -1);
@@ -147,9 +149,9 @@ int computeCorresp(const Eigen::Matrix3d& K,
 	for (int v1 = 0; v1 < depth1.height_; v1++) {
 		for (int u1 = 0; u1 < depth1.width_; u1++) {
 			
-			float d1 = *PointerAt<float>(depth1, u1, v1);
+			double d1 = double{ *PointerAt<float>(depth1, u1, v1) };
 			if (!std::isnan(d1)) {
-				float transformed_d1 = (float)(d1 * (KRK_inv_ptr[6] * u1 + KRK_inv_ptr[7] * v1 + KRK_inv_ptr[8]) + Kt_ptr[2]);
+				double transformed_d1 = double{ (d1 * (KRK_inv_ptr[6] * u1 + KRK_inv_ptr[7] * v1 + KRK_inv_ptr[8]) + Kt_ptr[2]) };
 				int u0 = (int)((d1 * (KRK_inv_ptr[0] * u1 + KRK_inv_ptr[1] * v1 + KRK_inv_ptr[2]) + Kt_ptr[0]) / transformed_d1 + 0.5);
 				int v0 = (int)((d1 * (KRK_inv_ptr[3] * u1 + KRK_inv_ptr[4] * v1 + KRK_inv_ptr[5]) + Kt_ptr[1]) / transformed_d1 + 0.5);
 
@@ -157,12 +159,12 @@ int computeCorresp(const Eigen::Matrix3d& K,
 					v0 >= 0 && v0 < depth1.height_) {
 
 					// todo: this if else loop is not intuitive.
-					float d0 = *PointerAt<float>(depth0, u0, v0);
+					double d0 = double{ *PointerAt<float>(depth0, u0, v0) };
 					if (!std::isnan(d0) && std::abs(transformed_d1 - d0) <= maxDepthDiff) {
-						int c = *PointerAt<int>(corresps, u0, v0);
-						if (c != -1) {
+						int* c = PointerAt<int>(corresps, u0, v0);
+						if (*c != -1) {
 							int exist_u1, exist_v1;
-							get2shorts(c, exist_u1, exist_v1);
+							get2shorts(*c, exist_u1, exist_v1);
 
 							//depth1.data_[exist_v1 * depth1.width_ + exist_u1]
 							double exist_d1 = double{ *PointerAt<float>(depth1, exist_u1, exist_v1) }
@@ -176,9 +178,13 @@ int computeCorresp(const Eigen::Matrix3d& K,
 
 						// can we make something like
 						// image.at<type>(u,v)?
-						int* p = PointerAt<int>(corresps, u0, v0);
-						set2shorts(*p, u1, v1);
-						//printf("(%d,%d)->(%d,%d)\n", u0, v0, u1, v1);
+						set2shorts(*c, u1, v1);
+
+						////// for debugging. working fine.
+						//int u1_test, v1_test;
+						//get2shorts(*c, u1_test, v1_test);
+						//if (u0 > 40 && u0 < 50 && v0 > 40 && v0 < 50)
+						//	printf("(%d,%d)->(%d,%d)\n", u0, v0, u1_test, v1_test);
 					}
 				}
 			}
@@ -224,7 +230,7 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 			R(1,0), R(1,1), R(1,2),
 			R(2,0), R(2,1), R(2,2) };
 	const double t_raw[3] =
-			{ t(0), t(1), t(1) };
+			{ t(0), t(1), t(2) };
 
 	Eigen::Vector3d temp, p3d_mat, p3d_trans;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
@@ -238,11 +244,11 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 				double diff = static_cast<double>(*PointerAt<float>(image1, u1, v1)) -
 						static_cast<double>(*PointerAt<float>(image0, u0, v0));
 
-				double dIdx = double{ *PointerAt<float>(dI_dx1, u1, v1) };
-				double dIdy = double{ *PointerAt<float>(dI_dy1, u1, v1) };
+				double dIdx = sobelScale_i * double{ *PointerAt<float>(dI_dx1, u1, v1) };
+				double dIdy = sobelScale_i * double{ *PointerAt<float>(dI_dy1, u1, v1) };
 
-				double dDdx = double{ *PointerAt<float>(dD_dx1, u1, v1) };
-				double dDdy = double{ *PointerAt<float>(dD_dy1, u1, v1) };
+				double dDdx = sobelScale_d * double{ *PointerAt<float>(dD_dx1, u1, v1) };
+				double dDdy = sobelScale_d * double{ *PointerAt<float>(dD_dy1, u1, v1) };
 				if (std::isnan(dDdx)) dDdx = 0; // todoisnan used in other open3d function?
 				if (std::isnan(dDdy)) dDdy = 0;
 
@@ -317,8 +323,10 @@ bool Odometry::computeKsi(const Image& image0, const Image& cloud0,
 
 	if (solutionExist)
 	{
+		// Standard Cholesky decomposition of a matrix with pivoting.
+		//ksi = -JtJ.llt().solve(Jtr); 
 		// Robust Cholesky decomposition of a matrix with pivoting.
-		ksi = JtJ.ldlt().solve(Jtr); 
+		ksi = -JtJ.ldlt().solve(Jtr); 
 	}	
 
 	return solutionExist;
@@ -379,6 +387,24 @@ void Odometry::LoadCameraFile(const char* filename,
 		K(2, 2) = 1.0f;
 	}
 	//cout << K << endl;
+}
+
+void load_mat(char* filename, const Image& data)
+{
+	FILE* fid = fopen(filename, "rb");
+	int width, height;
+	fread(&width, sizeof(int), 1, fid);
+	fread(&height, sizeof(int), 1, fid);
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
+			float k;
+			fread(&k, sizeof(float), 1, fid);
+			if (k == -1.0f)
+				k = std::numeric_limits<float>::quiet_NaN();
+			*PointerAt<float>(data, i, j) = k;
+		}
+	}
+	fclose(fid);
 }
 
 
@@ -445,9 +471,9 @@ bool Odometry::Run(
 	int correspsCount = computeCorresp(cameraMatrix, cameraMatrix.inverse(), Rt_init.inverse(),
 		*depthFlt0_filtered, *depthFlt1_filtered, temp_corresps);
 
-	//if (verbose_) {
-	//	cout << "Number of correspondence is " << correspsCount << endl;
-	//}
+	if (verbose_) {
+		std::cout << "Number of correspondence is " << correspsCount << std::endl;
+	}
 
 	// if there is not enough correspondences,
 	// output zero transformation matrix and information matrix
@@ -459,6 +485,7 @@ bool Odometry::Run(
 	std::vector<int> iterCounts;
 	for (int i = 0; i < NUM_PYRAMID; i++)
 		iterCounts.push_back(NUM_ITER); 
+	//iterCounts.push_back(NUM_ITER);
 
 	//// added by jspark
 	//// overlapping region based intensity normalization
@@ -561,9 +588,15 @@ bool Odometry::ComputeOdometry(
 	assert(((color1.width_ == depth1.width_) && (color1.height_ == depth1.height_)));
 
 	auto pyramidImage0 = CreateImagePyramid(color0, NUM_PYRAMID);
-	auto pyramidDepth0 = CreateImagePyramid(depth0, NUM_PYRAMID);
 	auto pyramidImage1 = CreateImagePyramid(color1, NUM_PYRAMID);
-	auto pyramidDepth1 = CreateImagePyramid(depth1, NUM_PYRAMID);
+	auto pyramidDepth0 = CreateImagePyramid(depth0, NUM_PYRAMID, false);	
+	auto pyramidDepth1 = CreateImagePyramid(depth1, NUM_PYRAMID, false);
+
+	//std::shared_ptr<Image> test_image_temp = std::make_shared<Image>();
+	//*test_image_temp = *pyramidDepth0[3];
+	//LinearTransformImage(*test_image_temp, 1000.0, 0.0, 0.0, 3000.0);
+	//auto test_image_temp_16bit = CreateImageFromFloatImage<uint16_t>(*test_image_temp);
+	//WriteImage("test.png", *test_image_temp_16bit);
 
 	auto color1_dx = FilterImage(color1, FILTER_SOBEL_3_DX);
 	auto color1_dy = FilterImage(color1, FILTER_SOBEL_3_DY);
@@ -572,8 +605,37 @@ bool Odometry::ComputeOdometry(
 
 	auto depth1_dx = FilterImage(depth1, FILTER_SOBEL_3_DX);
 	auto depth1_dy = FilterImage(depth1, FILTER_SOBEL_3_DY);
-	auto pyramid_dD_dx1 = CreateImagePyramid(*depth1_dx, NUM_PYRAMID);
-	auto pyramid_dD_dy1 = CreateImagePyramid(*depth1_dy, NUM_PYRAMID);
+	auto pyramid_dD_dx1 = CreateImagePyramid(*depth1_dx, NUM_PYRAMID, false);
+	auto pyramid_dD_dy1 = CreateImagePyramid(*depth1_dy, NUM_PYRAMID, false);
+
+
+	///// read data from OpenCV generated images
+	//load_mat("data_image0.bin", color0);
+	//load_mat("data_image1.bin", color1);
+	//load_mat("data_depth0.bin", depth0);
+	//load_mat("data_depth1.bin", depth1);
+	//for (int level = 0; level < 4; level++)
+	//{
+	//	char temp[256];
+	//	sprintf(temp, "data_image0_level_%d.bin", level);
+	//	load_mat(temp, *pyramidImage0[level]);
+	//	sprintf(temp, "data_image1_level_%d.bin", level);
+	//	load_mat(temp, *pyramidImage1[level]);
+	//	sprintf(temp, "data_depth0_level_%d.bin", level);
+	//	load_mat(temp, *pyramidDepth0[level]);
+	//	sprintf(temp, "data_depth1_level_%d.bin", level);
+	//	load_mat(temp, *pyramidDepth1[level]);
+	//	sprintf(temp, "data_dI_dx1_level_%d.bin", level);
+	//	load_mat(temp, *pyramid_dI_dx1[level]);
+	//	sprintf(temp, "data_dI_dy1_level_%d.bin", level);
+	//	load_mat(temp, *pyramid_dI_dy1[level]);
+	//	sprintf(temp, "data_dD_dx1_level_%d.bin", level);
+	//	load_mat(temp, *pyramid_dD_dx1[level]);
+	//	sprintf(temp, "data_dD_dy1_level_%d.bin", level);
+	//	load_mat(temp, *pyramid_dD_dy1[level]);
+	//}
+
+	///// read data from OpenCV generated images
 
 	Eigen::Matrix4d resultRt = initRt.isZero() ? Eigen::Matrix4d::Identity() : initRt;
 	Eigen::Matrix4d currRt;
@@ -593,6 +655,8 @@ bool Odometry::ComputeOdometry(
 		const double fy = levelCameraMatrix(1, 1);
 		const double determinantThreshold = 1e-6;
 
+		//PrintInfo("pyramidDepth0[%d](50,50) : %f\n", level, *PointerAt<float>(*pyramidDepth0[level], 50, 50));		
+
 		// Run transformation search on current level iteratively.
 		for (int iter = 0; iter < iterCounts[level]; iter++) {
 			if (verbose_) {
@@ -603,6 +667,11 @@ bool Odometry::ComputeOdometry(
 			// it was resultRt.inv(DECOMP_SVD)
 			correspsCount = computeCorresp(levelCameraMatrix, levelCameraMatrix.inverse(), resultRt.inverse(),
 				*pyramidDepth0[level], *pyramidDepth1[level], corresps);
+
+			//std::cout << "levelCameraMatrix.inverse()" << std::endl;
+			//std::cout << levelCameraMatrix.inverse() << std::endl;
+			//std::cout << "resultRt.inverse()" << std::endl;
+			//std::cout << resultRt.inverse() << std::endl;
 
 			if (correspsCount == 0)
 			{
@@ -631,6 +700,9 @@ bool Odometry::ComputeOdometry(
 				}
 				break;
 			}
+
+			//std::cout << "ksi" << std::endl;
+			//std::cout << ksi << std::endl;
 
 			// maybe in the other function
 			Eigen::Affine3d aff_mat;

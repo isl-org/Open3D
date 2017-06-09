@@ -158,7 +158,7 @@ void LinearTransformImage(Image &input, double scale,
 		double offset = 0.0, double min = 0.0, double max = 1.0);
 
 std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& image, size_t num_of_levels);
+		const Image& image, size_t num_of_levels, bool blur_image = true);
 
 /// Function to change data types of image
 /// crafted for specific usage such as

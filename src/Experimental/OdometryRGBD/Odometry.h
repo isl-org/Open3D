@@ -36,6 +36,7 @@
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Utility/Console.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <IO/IO.h>
 
 namespace three {
 
