@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 				argc, argv, "--camera_intrinsic").c_str();
 		PrintInfo("Camera intrinsic path %s\n", camera_path.c_str());
 	} else {
-		PrintInfo("Camera intrinsic path is not given\n", camera_path);
+		PrintInfo("Camera intrinsic path is not given\n");
 	}
 	bool verbose = ProgramOptionExists(argc, argv, "--verbose");
 	if (verbose)
