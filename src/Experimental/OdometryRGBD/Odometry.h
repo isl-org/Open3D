@@ -65,6 +65,18 @@ public:
 		const Eigen::Matrix4d& Rt,
 		const Image& depth0, const Image& depth1, Image& corresps);
 
+	bool ComputeKsi(
+		const Image& image0, const Image& cloud0, const Image& image1,
+		const Image& dI_dx1, const Image& dI_dy1,
+		const Image& depth0, const Image& depth1,
+		const Image& dD_dx1, const Image& dD_dy1,
+		const Eigen::Matrix4d& Rt,
+		const Image& corresps, int correspsCount,
+		const double& fx, const double& fy,
+		const double& determinant_threshold,
+		Eigen::VectorXd& ksi,
+		int iter, int level);
+
 	bool ComputeOdometry(
 			Eigen::Matrix4d& Rt, const Eigen::Matrix4d& initRt,
 			const Image &gray0, const Image &depth0,
@@ -78,19 +90,16 @@ public:
 	std::vector<Eigen::Matrix3d> 
 			CreateCameraMatrixPyramid(Eigen::Matrix3d& K, int levels);
 
-	bool ComputeKsi(
-			const Image& image0, const Image& cloud0, const Image& image1, 
-			const Image& dI_dx1, const Image& dI_dy1,
-			const Image& depth0, const Image& depth1,
-			const Image& dD_dx1, const Image& dD_dy1,
-			const Eigen::Matrix4d& Rt,
-			const Image& corresps, int correspsCount,
-			const double& fx, const double& fy, 
-			const double& determinant_threshold,
-			Eigen::VectorXd& ksi,
-			int iter, int level);
+	Eigen::MatrixXd CreateInfomationMatrix(const Eigen::Matrix4d& Rt,
+		const Eigen::Matrix3d& cameraMatrix,
+		const Image& depth0, const Image& depth1);
+
+	void LoadCameraFile(const char* filename, Eigen::Matrix3d& K);
 
 	void NormalizeIntensity(Image& image0, Image& image1, Image& corresps);
+
+	/// Function to mask invalid depth (0 depth or larger than maximum distance)
+	void PreprocessDepth(const Image &depth);
 
 	bool Run(
 			const Image& color0_8bit, const Image& depth0_16bit,
@@ -101,15 +110,6 @@ public:
 			const double lambda_dep,
 			bool fast_reject,
 			bool is_tum);
-
-	void LoadCameraFile(const char* filename, Eigen::Matrix3d& K);
-
-	/// Function to mask invalid depth (0 depth or larger than maximum distance)
-	void PreprocessDepth(const Image &depth);
-
-	Eigen::MatrixXd CreateInfomationMatrix(const Eigen::Matrix4d& Rt,
-		const Eigen::Matrix3d& cameraMatrix,
-		const Image& depth0, const Image& depth1);
 
 protected:
 	double lambda_dep_;
