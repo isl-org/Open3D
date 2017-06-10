@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 
-#include <iostream> // this is just for debugging
+#include <iostream> 
 #include "Odometry.h"
 
 namespace three {
@@ -33,7 +33,6 @@ namespace three {
 // needs discussion
 void Odometry::PreprocessDepth(const three::Image &depth)
 {
-	//float *p = (float *)depth.data_.data();
 	for (int y = 0; y < depth.height_; y++) {
 		for (int x = 0; x < depth.width_; x++) {
 			float *p = PointerAt<float>(depth, x, y);
@@ -44,7 +43,7 @@ void Odometry::PreprocessDepth(const three::Image &depth)
 }
 
 std::shared_ptr<Image> Odometry::ConvertDepth2Cloud(
-		const Image& depth, const Eigen::Matrix3d& camera_matrix)
+	const Image& depth, const Eigen::Matrix3d& camera_matrix)
 {
 	auto cloud = std::make_shared<Image>();
 	if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
@@ -55,9 +54,9 @@ std::shared_ptr<Image> Odometry::ConvertDepth2Cloud(
 	const double inv_fy = 1.f / camera_matrix(1, 1);
 	const double ox = camera_matrix(0, 2);
 	const double oy = camera_matrix(1, 2);
-	cloud->PrepareImage(depth.width_, depth.height_, 3, 4); // xyz float type
+	cloud->PrepareImage(depth.width_, depth.height_, 3, 4);
 
-	for (int y = 0; y < depth.height_; y++) {		
+	for (int y = 0; y < depth.height_; y++) {
 		for (int x = 0; x < cloud->width_; x++) {
 			float *px = PointerAt<float>(*cloud, x, y, 0);
 			float *py = PointerAt<float>(*cloud, x, y, 1);
@@ -71,35 +70,10 @@ std::shared_ptr<Image> Odometry::ConvertDepth2Cloud(
 	return cloud;
 }
 
-inline void Odometry::set2shorts(int& dst, int short_v1, int short_v2)
-{
-	unsigned short* ptr = reinterpret_cast<unsigned short*>(&dst);
-	ptr[0] = static_cast<unsigned short>(short_v1);
-	ptr[1] = static_cast<unsigned short>(short_v2);
-}
-
-inline void Odometry::get2shorts(int src, int& short_v1, int& short_v2)
-{
-	typedef union { int vint32; unsigned short vuint16[2]; } s32tou16;
-	const unsigned short* ptr = (reinterpret_cast<s32tou16*>(&src))->vuint16;
-	short_v1 = ptr[0];
-	short_v2 = ptr[1];
-}
-
-void Odometry::setconst(const Image& image, const int value) {
-	for (int v = 0; v < image.height_; v++) {
-		for (int u = 0; u < image.width_; u++) {
-			*PointerAt<int>(image, u, v) = value;
-		}
-	}
-}
-
 int Odometry::ComputeCorrespondence(const Eigen::Matrix3d& K,
 	const Eigen::Matrix4d& Rt,
 	const Image& depth0, const Image& depth1, Image& corresps)
 {
-	corresps.PrepareImage(depth1.width_, depth1.height_, 1, 4);
-
 	const Eigen::Matrix3d& K_inv = K.inverse();
 	const Eigen::Matrix3d R = Rt.block<3, 3>(0, 0);
 	const Eigen::Matrix3d KRK_inv = K * R * K_inv;
@@ -111,7 +85,15 @@ int Odometry::ComputeCorrespondence(const Eigen::Matrix3d& K,
 	Eigen::Vector3d Kt = K * Rt.block<3, 1>(0, 3);
 	const double Kt_ptr[3] = { Kt(0), Kt(1), Kt(2) };
 
-	setconst(corresps, -1);
+	// initialization: filling with any (u,v) to (-1,-1)
+	corresps.PrepareImage(depth1.width_, depth1.height_, 2, 4);
+	for (int v = 0; v < corresps.height_; v++) {
+		for (int u = 0; u < corresps.width_; u++) {
+			*PointerAt<long int>(corresps, u, v, 0) = -1;
+			*PointerAt<long int>(corresps, u, v, 1) = -1;
+		}
+	}
+
 	int correspCount = 0;
 	for (int v1 = 0; v1 < depth1.height_; v1++) {
 		for (int u1 = 0; u1 < depth1.width_; u1++) {
@@ -133,10 +115,10 @@ int Odometry::ComputeCorrespondence(const Eigen::Matrix3d& K,
 					double d0 = double{ *PointerAt<float>(depth0, u0, v0) };
 					if (!std::isnan(d0) && 
 						std::abs(transformed_d1 - d0) <= maxDepthDiff) {
-						int* c = PointerAt<int>(corresps, u0, v0);
-						if (*c != -1) {
-							int exist_u1, exist_v1;
-							get2shorts(*c, exist_u1, exist_v1);
+						int exist_u1, exist_v1;
+						exist_u1 = *PointerAt<int>(corresps, u0, v0, 0);
+						exist_v1 = *PointerAt<int>(corresps, u0, v0, 1);
+						if(exist_u1 != -1 && exist_v1 != -1) {
 							double exist_d1 = double{ 
 									*PointerAt<float>(depth1, exist_u1, exist_v1) }
 									* (KRK_inv_ptr[6] * exist_u1 + KRK_inv_ptr[7] 
@@ -146,7 +128,8 @@ int Odometry::ComputeCorrespondence(const Eigen::Matrix3d& K,
 						} else {
 							correspCount++;
 						}
-						set2shorts(*c, u1, v1);
+						*PointerAt<int>(corresps, u0, v0, 0) = u1;
+						*PointerAt<int>(corresps, u0, v0, 1) = v1;
 					}
 				}
 			}
@@ -193,11 +176,9 @@ bool Odometry::ComputeKsi(const Image& image0, const Image& cloud0,
 	Eigen::Vector3d temp, p3d_mat, p3d_trans;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
-			int c = *PointerAt<int>(corresps, u0, v0);
-			if (c != -1) {
-
-				int u1, v1;
-				get2shorts(c, u1, v1);
+			int u1 = *PointerAt<int>(corresps, u0, v0, 0);
+			int v1 = *PointerAt<int>(corresps, u0, v0, 1);
+			if (u1 != -1 && v1 != -1){
 
 				double diff = static_cast<double>(*PointerAt<float>(image1, u1, v1)) -
 						static_cast<double>(*PointerAt<float>(image0, u0, v0));
@@ -264,11 +245,8 @@ bool Odometry::ComputeKsi(const Image& image0, const Image& cloud0,
 	res1 /= point_count;
 	res2 /= point_count;
 
-	if (verbose_) {
-		PrintDebug("Res : %.2e + %.2e (Npts : %d)\n", res1, res2, point_count);
-	}
-
-	// solve system
+	PrintDebug("Res : %.2e + %.2e (Npts : %d)\n", res1, res2, point_count);
+	
 	Eigen::MatrixXd Jt = J.transpose();
 	Eigen::MatrixXd JtJ = Jt * J;
 	Eigen::MatrixXd Jtr = Jt * r;
@@ -333,22 +311,17 @@ bool Odometry::Run(
 	Eigen::Matrix4d& trans_output, Eigen::MatrixXd& info_output,
 	const char* camera_filename,
 	const double lambda_dep,
-	bool verbose,
 	bool fast_reject,
 	bool is_tum)
 {
-	verbose_ = verbose;
-
 	if (lambda_dep < 0.0f || lambda_dep > 1.0f)
 		lambda_dep_ = LAMBDA_DEP_DEFAULT;
 	else
 		lambda_dep_ = lambda_dep;
 	lambda_img_ = 1.0f - lambda_dep_;
 
-	if (verbose) {
-		PrintInfo("lambda_dep : %f\n", lambda_dep_);
-		PrintInfo("lambda_img : %f\n", lambda_img_);
-	}
+	PrintDebug("lambda_dep : %f\n", lambda_dep_);
+	PrintDebug("lambda_img : %f\n", lambda_img_);
 
 	Eigen::Matrix3d camera_matrix;
 	LoadCameraFile(camera_filename, camera_matrix);
@@ -427,10 +400,9 @@ Eigen::MatrixXd Odometry::CreateInfomationMatrix(
 	int cnt = 0;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
-			int c = *PointerAt<int>(corresps, u0, v0);
-			if (c != -1) {
-				int u1, v1;
-				get2shorts(c, u1, v1);	
+			int u1 = *PointerAt<int>(corresps, u0, v0, 0);
+			int v1 = *PointerAt<int>(corresps, u0, v0, 1);
+			if (u1 != -1 && v1 != -1) {
 				double x = double{ *PointerAt<float>(*point_cloud1, u1, v1, 0) };
 				double y = double{ *PointerAt<float>(*point_cloud1, u1, v1, 1) };
 				double z = double{ *PointerAt<float>(*point_cloud1, u1, v1, 2) };
@@ -463,10 +435,13 @@ void Odometry::NormalizeIntensity(
 	double point_count = 0.0, mean0 = 0.0, mean1 = 0.0;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
-			int c = *PointerAt<int>(corresps, u0, v0);
-			if (c != -1) {
-				int u1, v1;
-				get2shorts(c, u1, v1);
+			//int c = *PointerAt<int>(corresps, u0, v0);
+			//if (c != -1) {
+			int u1 = *PointerAt<int>(corresps, u0, v0, 0);
+			int v1 = *PointerAt<int>(corresps, u0, v0, 1);
+			if (u1 != -1 && v1 != -1) {
+				//int u1, v1;
+				//get2shorts(c, u1, v1);
 				mean0 += *PointerAt<float>(image0, u0, v0);
 				mean1 += *PointerAt<float>(image1, u1, v1);
 				point_count++;
@@ -538,10 +513,8 @@ bool Odometry::ComputeOdometry(
 		const double determinant_threshold = 1e-6;
 
 		for (int iter = 0; iter < iterCounts[level]; iter++) {
-			if (verbose_) {
-				PrintInfo("Iter : %d, Level : %d, ", iter, level);
-			}
-
+			PrintDebug("Iter : %d, Level : %d, ", iter, level);
+			
 			Image corresps;
 			corresps_count = ComputeCorrespondence(
 					level_camera_matrix, resultRt.inverse(),
@@ -549,9 +522,7 @@ bool Odometry::ComputeOdometry(
 
 			if (corresps_count == 0)
 			{
-				if (verbose_) {
-					PrintError("[ComputeOdometry] Num of corres is 0!\n");
-				}
+				PrintError("[ComputeOdometry] Num of corres is 0!\n");
 				break;
 			}
 
@@ -567,9 +538,7 @@ bool Odometry::ComputeOdometry(
 
 			if (!solutionExist)
 			{
-				if (verbose_) {
-					PrintError("[ComputeOdometry] no solution!\n");
-				}
+				PrintError("[ComputeOdometry] no solution!\n");
 				break;
 			}
 

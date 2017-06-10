@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,8 +46,6 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(three::VERBOSE_ALWAYS);
-
 	if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
 			ProgramOptionExists(argc, argv, "-h")) {
 		PrintHelp(argv);
@@ -63,6 +61,8 @@ int main(int argc, char *argv[])
 		PrintInfo("Camera intrinsic path is not given\n", camera_path);
 	}
 	bool verbose = ProgramOptionExists(argc, argv, "--verbose");
+	if (verbose)
+		SetVerbosityLevel(three::VERBOSE_ALWAYS);
 	bool is_tum = ProgramOptionExists(argc, argv, "--TUM");	
 	
 	auto color1_8bit = CreateImageFromFile(argv[1]);
@@ -81,7 +81,8 @@ int main(int argc, char *argv[])
 
 	odo.Run(*color1_8bit, *depth1_16bit, *color2_8bit, *depth2_16bit,
 			trans_init, trans_odo, info_odo, 
-			camera_path.c_str(), lambda_dep, verbose, false, is_tum);
+			camera_path.c_str(), lambda_dep, false, is_tum);
+	// todo: how we print out eigen matrix using PrintXXX function?
 	std::cout << trans_odo << std::endl;
 	std::cout << info_odo << std::endl;
 

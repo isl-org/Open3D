@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -99,7 +99,6 @@ public:
 			Eigen::Matrix4d& trans_output, Eigen::MatrixXd& info_output,
 			const char* filename,
 			const double lambda_dep,
-			bool verbose,
 			bool fast_reject,
 			bool is_tum);
 
@@ -112,12 +111,7 @@ public:
 		const Eigen::Matrix3d& cameraMatrix,
 		const Image& depth0, const Image& depth1);
 
-	inline void set2shorts(int& dst, int short_v1, int short_v2);
-	inline void get2shorts(int src, int& short_v1, int& short_v2);
-	void setconst(const Image& image, const int value);
-
 protected:
-	bool verbose_;
 	double lambda_dep_;
 	double lambda_img_;
 
