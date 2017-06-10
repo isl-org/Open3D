@@ -44,22 +44,9 @@ void PrintHelp(char* argv[])
 
 int main(int argc, char *argv[])
 {
-	//// for debugging
-	//argc = 9;
-	//argv = new char*[9];
-	//for (int i = 0; i < argc; i++)
-	//	argv[i] = new char[256];
-	//strcpy(argv[0], "OdometryRGBD.exe");
-	//strcpy(argv[1], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/rgb/1341847980.722988.png");
-	//strcpy(argv[2], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/depth/1341847980.723020.png");
-	//strcpy(argv[3], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/rgb/1341847980.754743.png");
-	//strcpy(argv[4], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/depth/1341847980.754755.png");
-	//strcpy(argv[5], "--camera_intrinsic");
-	//strcpy(argv[6], "D:/dataset/TUM_RGBD/rgbd_dataset_freiburg3_long_office_household/camera.param");
-	//strcpy(argv[7], "--verbose");
-	//strcpy(argv[8], "--TUM");
-
 	using namespace three;
+
+	SetVerbosityLevel(three::VERBOSE_ALWAYS);
 
 	if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
 			ProgramOptionExists(argc, argv, "-h")) {
@@ -78,42 +65,25 @@ int main(int argc, char *argv[])
 	bool verbose = ProgramOptionExists(argc, argv, "--verbose");
 	bool is_tum = ProgramOptionExists(argc, argv, "--TUM");	
 	
-	// one-based
-	auto color1 = CreateImageFromFile(argv[1]);
+	auto color1_8bit = CreateImageFromFile(argv[1]);
 	auto depth1_16bit = CreateImageFromFile(argv[2]);
-	auto color2 = CreateImageFromFile(argv[3]);	
+	auto color2_8bit = CreateImageFromFile(argv[3]);
 	auto depth2_16bit = CreateImageFromFile(argv[4]);	
 	
-	double depth_scale = is_tum ? 5000.0 : 1000.0;
-	double max_depth = 4.0;
-	auto depth1 = ConvertDepthToFloatImage(*depth1_16bit, depth_scale, max_depth);
-	auto depth2 = ConvertDepthToFloatImage(*depth2_16bit, depth_scale, max_depth);
-	PrintInfo("depth1(100,100) : %f\n", *PointerAt<float>(*depth1, 100, 100));
-
 	Eigen::Matrix4d trans_initial, trans_output, info_output;
-	// default output - identity matrix and zero information matrix
-	// todo: maybe these are in default arguement inside run 
 	Eigen::Matrix4d trans_init_odo = Eigen::Matrix4d::Identity();
 	Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
 	Eigen::MatrixXd info_odo = Eigen::MatrixXd::Zero(6, 6);
 	
-	// odometry case
 	Odometry odo;
 	Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity(4, 4);
-	// no fast reject. odometry should always successful.
-	// these should be input arguement
 	double lambda_dep = 0.95;
 
-	odo.Run(*color1, *depth1, *color2, *depth2, 
+	odo.Run(*color1_8bit, *depth1_16bit, *color2_8bit, *depth2_16bit,
 			trans_init, trans_odo, info_odo, 
-			camera_path.c_str(), lambda_dep, verbose, false);
+			camera_path.c_str(), lambda_dep, verbose, false, is_tum);
 	std::cout << trans_odo << std::endl;
 	std::cout << info_odo << std::endl;
-	//printf("odo_success : %d\n", odo_success);
-	// these two are output.
-	//trans_odo.copyTo(trans_output);
-	//info_odo.copyTo(info_output);
-
 
 	return 0;
 }
