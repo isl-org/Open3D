@@ -145,7 +145,7 @@ std::shared_ptr<Image> FilterImage(const Image &input,
 		const std::vector<double> dx, const std::vector<double> dy);
 
 /// Function to filter pyramid image with pre-defined filtering type
-const std::vector<std::shared_ptr<Image>> FilterPyramidImage(
+const std::vector<std::shared_ptr<Image>> FilterImagePyramid(
 	const std::vector<std::shared_ptr<Image>> &input, FilterType type);
 
 std::shared_ptr<Image> FilterHorizontalImage(
@@ -164,7 +164,7 @@ void LinearTransformImage(Image &input, double scale = 1.0, double offset = 0.0)
 void ClipIntensityImage(Image &input, double min = 0.0, double max = 1.0);
 
 std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& image, size_t num_of_levels, bool blur_image = true);
+		const Image& image, size_t num_of_levels, bool with_gaussian_filter = true);
 
 /// Function to change data types of image
 /// crafted for specific usage such as

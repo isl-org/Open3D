@@ -117,14 +117,14 @@ void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 }
 
 std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& input, size_t num_of_levels, bool blur_image /*= true*/)
+		const Image& input, size_t num_of_levels, bool with_gaussian_filter /*= true*/)
 {
-	std::vector<std::shared_ptr<Image>> pyramidImage;
-	pyramidImage.clear(); 
+	std::vector<std::shared_ptr<Image>> pyramid_image;
+	pyramid_image.clear(); 
 	if ((input.num_of_channels_ != 1) ||
 		(input.bytes_per_channel_ != 4)) {
 		PrintDebug("[CreateImagePyramid] Unsupported image format.\n");
-		return pyramidImage;
+		return pyramid_image;
 	}
 
 	for (int i = 0; i < num_of_levels; i++) {
@@ -132,20 +132,20 @@ std::vector<std::shared_ptr<Image>> CreateImagePyramid(
 			std::shared_ptr<Image> input_copy_ptr = 
 					std::make_shared<Image>();
 			*input_copy_ptr = input;
-			pyramidImage.push_back(input_copy_ptr);
+			pyramid_image.push_back(input_copy_ptr);
 		} else {
-			if (blur_image) {
+			if (with_gaussian_filter) {
 				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
-				auto level_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
+				auto level_b = FilterImage(*pyramid_image[i - 1], FILTER_GAUSSIAN_3);
 				auto level_bd = DownsampleImage(*level_b);
-				pyramidImage.push_back(level_bd);
+				pyramid_image.push_back(level_bd);
 			} else {
-				auto level_d = DownsampleImage(*pyramidImage[i - 1]);
-				pyramidImage.push_back(level_d);
+				auto level_d = DownsampleImage(*pyramid_image[i - 1]);
+				pyramid_image.push_back(level_d);
 			}
 		}
 	}
-	return pyramidImage;
+	return pyramid_image;
 }
 
 std::shared_ptr<Image> DownsampleImage(const Image &input)
@@ -243,7 +243,7 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 	return output;
 }
 
-const std::vector<std::shared_ptr<Image>> FilterPyramidImage(
+const std::vector<std::shared_ptr<Image>> FilterImagePyramid(
 		const std::vector<std::shared_ptr<Image>> &input, FilterType type)
 {
 	std::vector<std::shared_ptr<Image>> output;

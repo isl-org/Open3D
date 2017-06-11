@@ -26,11 +26,10 @@
 
 #pragma once
 
-// ?? not sure which modules need to be included.
 #include <vector>
+#include <memory>
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <memory>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/TriangleMesh.h>
@@ -38,85 +37,17 @@
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/IO.h>
 
-namespace {
-
-	// some parameters - should be in headers?
-	const static double LAMBDA_DEP_DEFAULT = 0.5f;
-	const static double MINIMUM_CORR = 30000;
-	const static int	NUM_PYRAMID = 4;		// 4
-	const static int	NUM_ITER = 10;			// 7
-	const static double maxDepthDiff = 0.07f;	//in meters	(0.07)
-	const static int	ADJ_FRAMES = 1;
-	const static double depthedge = 0.3f;
-	const static int	depthedgedilation = 1;
-	const static double minDepth = 0.f;			//in meters (0.0)
-	const static double maxDepth = 4.f; 		//in meters (4.0)	
-	const static double sobelScale_i = 1. / 8;
-	const static double sobelScale_d = 1. / 8;
-
-} // unnamed namespace
-
 namespace three {
 
-class Odometry {
-public:
-	
-	int ComputeCorrespondence(const Eigen::Matrix3d& K,
-		const Eigen::Matrix4d& Rt,
-		const Image& depth0, const Image& depth1, Image& corresps);
-
-	bool ComputeKsi(
-		const Image& image0, const Image& cloud0, const Image& image1,
-		const Image& dI_dx1, const Image& dI_dy1,
-		const Image& depth0, const Image& depth1,
-		const Image& dD_dx1, const Image& dD_dy1,
-		const Eigen::Matrix4d& Rt,
-		const Image& corresps, int correspsCount,
-		const double& fx, const double& fy,
-		const double& determinant_threshold,
-		Eigen::VectorXd& ksi,
-		int iter, int level);
-
-	bool ComputeOdometry(
-			Eigen::Matrix4d& Rt, const Eigen::Matrix4d& initRt,
-			const Image &gray0, const Image &depth0,
-			const Image &gray1, const Image &depth1,
-			Eigen::Matrix3d& cameraMatrix,
-			const std::vector<int>& iterCounts);
-	
-	std::shared_ptr<Image> ConvertDepth2Cloud(
-			const Image& depth, const Eigen::Matrix3d& cameraMatrix);
-
-	std::vector<Eigen::Matrix3d> 
-			CreateCameraMatrixPyramid(Eigen::Matrix3d& K, int levels);
-
-	Eigen::MatrixXd CreateInfomationMatrix(const Eigen::Matrix4d& Rt,
-		const Eigen::Matrix3d& cameraMatrix,
-		const Image& depth0, const Image& depth1);
-
-	void LoadCameraFile(const char* filename, Eigen::Matrix3d& K);
-
-	void NormalizeIntensity(Image& image0, Image& image1, Image& corresps);
-
-	/// Function to mask invalid depth (0 depth or larger than maximum distance)
-	void PreprocessDepth(const Image &depth);
-
-	bool Run(
-			const Image& color0_8bit, const Image& depth0_16bit,
-			const Image& color1_8bit, const Image& depth1_16bit,
-			Eigen::Matrix4d& init_pose, 
-			Eigen::Matrix4d& trans_output, Eigen::MatrixXd& info_output,
-			const char* filename,
-			const double lambda_dep,
-			bool fast_reject,
-			bool is_tum);
-
-protected:
-	double lambda_dep_;
-	double lambda_img_;
-
-private:
-		
-};
+/// Function to estimate 6D odometry between two RGBD image pairs
+/// output: is_success, 4x4 motion matrix, 6x6 information matrix
+std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd> ComputeRGBDOdometry(
+		const Image& color0_8bit, const Image& depth0_16bit,
+		const Image& color1_8bit, const Image& depth1_16bit,
+		const Eigen::Matrix4d& init_pose,
+		const char* camera_filename,
+		const double lambda_dep,
+		bool fast_reject,
+		bool is_tum);
 
 }	// namespace three

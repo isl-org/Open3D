@@ -72,16 +72,15 @@ int main(int argc, char *argv[])
 	
 	Eigen::Matrix4d trans_initial, trans_output, info_output;
 	Eigen::Matrix4d trans_init_odo = Eigen::Matrix4d::Identity();
-	Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
-	Eigen::MatrixXd info_odo = Eigen::MatrixXd::Zero(6, 6);
-	
-	Odometry odo;
 	Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity(4, 4);
 	double lambda_dep = 0.95;
 
-	odo.Run(*color1_8bit, *depth1_16bit, *color2_8bit, *depth2_16bit,
-			trans_init, trans_odo, info_odo, 
-			camera_path.c_str(), lambda_dep, false, is_tum);
+	Eigen::Matrix4d trans_odo;
+	Eigen::MatrixXd info_odo;
+	bool is_success;
+	std::tie(is_success, trans_odo, info_odo) = 
+			ComputeRGBDOdometry(*color1_8bit, *depth1_16bit, *color2_8bit, *depth2_16bit,
+			trans_init, camera_path.c_str(), lambda_dep, false, is_tum);
 	// todo: how we print out eigen matrix using PrintXXX function?
 	std::cout << trans_odo << std::endl;
 	std::cout << info_odo << std::endl;
