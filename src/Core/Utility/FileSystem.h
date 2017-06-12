@@ -43,6 +43,10 @@ std::string GetFileParentDirectory(const std::string &filename);
 
 std::string GetRegularizedDirectoryName(const std::string &directory);
 
+std::string GetWorkingDirectory();
+
+bool ChangeWorkingDirectory(const std::string &directory);
+
 bool DirectoryExists(const std::string &directory);
 
 bool MakeDirectory(const std::string &directory);

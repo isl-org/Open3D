@@ -1,0 +1,84 @@
+matrix:
+
+  notifications:
+    email: false # turn off email notifications for build failure
+
+  language:
+    - cpp
+    - python
+
+  # pybind supports any python versions.
+  # We are using 2.7
+  python:
+    - "2.7"
+
+  include:
+
+    # Default environment of Ubuntu 14.04
+    - os: linux
+      dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.8
+            - g++-4.8
+            - cmake-data # to use cmake 3.0 or more recent
+            - cmake
+      env:
+         - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
+
+    # Similar environment of Ubuntu 16.04 (gcc 5.4)
+    # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
+    - os: linux
+      dist: trusty
+      sudo: required
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - cmake-data # to use cmake 3.0 or more recent
+            - cmake
+      env:
+         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+
+    # Default environment of MacOS El Capitan
+    # compiled using clang shipped with xcode8
+    - os: osx
+      osx_image: xcode8
+
+    # Default environment of MacOS Sierra
+    # compiled using clang shipped with xcode8.3
+    - os: osx
+      osx_image: xcode8.3
+
+before_install:
+  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh'
+  # but this shell script does not have -y, and
+  # ubuntu 14.04 of travis-ci does not recognize sudo apt-get install libglfw3-dev
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      eval "${MATRIX_EVAL}";
+      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
+    fi
+  # scripts/install-deps-osx.sh works well
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      scripts/install-deps-osx.sh;
+    fi
+  # for reference, display cmake and python version
+  - python -V
+  - cmake --version
+  
+script:
+  # Build commands
+  - mkdir build
+  - cd build
+  - cmake ../src/
+  # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
+  # this is presumably due to limited memory space of travis-ci
+  - make

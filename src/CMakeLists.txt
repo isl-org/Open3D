@@ -17,7 +17,8 @@ option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
-option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy Test files for Open3D Python binding" ON)
+option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy test files for Open3D Python binding" ON)
+option(Open3D_BUILD_PYTHON_BINDING_TUTORIALS "Copy tutorial files for Open3D Python binding" ON)
 option(Open3D_USE_NATIVE_DEPENDENCY_BUILD "Prioritize using native dependency build" ON)
 
 # default built type
@@ -91,6 +92,15 @@ if (Open3D_USE_OPENMP)
 		message(STATUS "OpenMP NOT found")
 	endif()
 endif()
+
+# Check Python
+find_package (PythonLibs)
+find_package (PythonInterp)
+if (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
+  message(STATUS "Disable Open3D Python binding since Python is not installed.")
+  set(Open3D_BUILD_PYTHON_BINDING OFF)
+  set(Open3D_BUILD_PYTHON_BINDING_TESTS OFF)
+endif (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
 
 message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
 message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
