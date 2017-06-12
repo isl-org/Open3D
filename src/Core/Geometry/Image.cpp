@@ -116,7 +116,7 @@ void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 	}
 }
 
-std::vector<std::shared_ptr<Image>> CreateImagePyramid(
+ImagePyramid CreateImagePyramid(
 		const Image& input, size_t num_of_levels, bool with_gaussian_filter /*= true*/)
 {
 	std::vector<std::shared_ptr<Image>> pyramid_image;
@@ -243,8 +243,7 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 	return output;
 }
 
-const std::vector<std::shared_ptr<Image>> FilterImagePyramid(
-		const std::vector<std::shared_ptr<Image>> &input, FilterType type)
+ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type)
 {
 	std::vector<std::shared_ptr<Image>> output;
 	for (size_t i = 0; i < input.size(); i++) {

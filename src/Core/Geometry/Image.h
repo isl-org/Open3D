@@ -144,10 +144,6 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type);
 std::shared_ptr<Image> FilterImage(const Image &input,
 		const std::vector<double> dx, const std::vector<double> dy);
 
-/// Function to filter pyramid image with pre-defined filtering type
-const std::vector<std::shared_ptr<Image>> FilterImagePyramid(
-	const std::vector<std::shared_ptr<Image>> &input, FilterType type);
-
 std::shared_ptr<Image> FilterHorizontalImage(
 		const Image &input, const std::vector<double> &kernel);
 
@@ -162,9 +158,6 @@ void LinearTransformImage(Image &input, double scale = 1.0, double offset = 0.0)
 /// min is lower bound
 /// max is upper bound
 void ClipIntensityImage(Image &input, double min = 0.0, double max = 1.0);
-
-std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& image, size_t num_of_levels, bool with_gaussian_filter = true);
 
 /// Function to change data types of image
 /// crafted for specific usage such as
@@ -191,5 +184,13 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
 	}
 	return output;
 }
+
+typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
+
+/// Function to filter pyramid image with pre-defined filtering type
+ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type);
+
+ImagePyramid CreateImagePyramid(const Image& image, 
+		size_t num_of_levels, bool with_gaussian_filter = true);
 
 }	// namespace three
