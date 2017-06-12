@@ -157,13 +157,13 @@ void pybind_image_methods(py::module &m)
 				input, num_of_levels, with_gaussian_filter);
 			return output;
 		}
-	}, "Function to create image pyramid", "image"_a, 
+	}, "Function to create ImagePyramid", "image"_a, 
 			"num_of_levels"_a, "with_gaussian_filter"_a);
 	typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 	m.def("FilterImagePyramid", [](const ImagePyramid &input,
 		size_t num_of_levels, FilterType filter_type) {
 		auto output = FilterImagePyramid(input, filter_type);
 		return output;
-	}, "Function to create image pyramid", "image"_a,
+	}, "Function to filter ImagePyramid", "image"_a,
 			"num_of_levels"_a, "filter_type"_a);
 }
