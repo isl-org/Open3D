@@ -133,7 +133,6 @@ def test_py3d_image():
 	plt.imshow(zzz)
 	plt.show()
 
-
 	print("Testing basic image processing module.")
 	im_raw = mpimg.imread("TestData/lena_color.jpg")
 	im = Image(im_raw)
@@ -144,37 +143,37 @@ def test_py3d_image():
 	pyramid_levels = 4
 	pyramid_with_gaussian_filter = True
 	im_pyramid = CreateImagePyramid(im, pyramid_levels,
-                                  pyramid_with_gaussian_filter)
-  im_dx = FilterImage(im, Sobel3dx)
-  im_dx_pyramid = FilterImagePyramid(im_pyramid, 
-                                     pyramid_levels, Sobel3dx)
-  im_dy = FilterImage(im, Sobel3dy)
-  im_dy_pyramid = FilterImagePyramid(im_pyramid, pyramid_levels, Sobel3dy)
-  switcher = {
-    0: im_gaussian,
-    1: im_pyramid,
-    2: im_dx_pyramid,
-    3: im_dy_pyramid,
-  }
-  for i in range(4):
-    for j in range(4):
-      plt.subplot(4, 4, i*4+j+1)
-      plt.imshow(switcher.get(i)[j])
-  plt.show()
+            pyramid_with_gaussian_filter)
+	im_dx = FilterImage(im, Sobel3dx)
+	im_dx_pyramid = FilterImagePyramid(im_pyramid,
+            pyramid_levels, Sobel3dx)
+	im_dy = FilterImage(im, Sobel3dy)
+	im_dy_pyramid = FilterImagePyramid(im_pyramid, pyramid_levels, Sobel3dy)
+	switcher = {
+		0: im_gaussian,
+		1: im_pyramid,
+		2: im_dx_pyramid,
+		3: im_dy_pyramid,
+	}
+	for i in range(4):
+		for j in range(4):
+			plt.subplot(4, 4, i*4+j+1)
+			plt.imshow(switcher.get(i)[j])
+	plt.show()
 
-  print("Final test: load an RGB-D image pair and convert to pointcloud.")
-  im1 = ReadImage("TestData/RGBD/depth/00000.png")
-  im2 = ReadImage("TestData/RGBD/color/00000.jpg")
-  plt.figure(figsize=(12,8))
-  plt.subplot(1, 2, 1)
-  plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
-  plt.subplot(1, 2, 2)
-  plt.imshow(im2)
-  plt.show()
-  pcd = CreatePointCloudFromRGBDImage(im1, im2, PinholeCameraIntrinsic.PrimeSenseDefault)
-  # Flip it, otherwise the pointcloud will be upside down
-  pcd.Transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-  DrawGeometries([pcd])
+	print("Final test: load an RGB-D image pair and convert to pointcloud.")
+	im1 = ReadImage("TestData/RGBD/depth/00000.png")
+	im2 = ReadImage("TestData/RGBD/color/00000.jpg")
+	plt.figure(figsize=(12,8))
+	plt.subplot(1, 2, 1)
+	plt.imshow(np.asarray(im1, dtype=np.float64) / 1000.0)
+	plt.subplot(1, 2, 2)
+	plt.imshow(im2)
+	plt.show()
+	pcd = CreatePointCloudFromRGBDImage(im1, im2, PinholeCameraIntrinsic.PrimeSenseDefault)
+	# Flip it, otherwise the pointcloud will be upside down
+	pcd.Transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+	DrawGeometries([pcd])
 
 	print("Final test: load an RGB-D image pair and convert to pointcloud.")
 	im1 = ReadImage("../TestData/RGBD/depth/00000.png")
