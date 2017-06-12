@@ -175,7 +175,6 @@ def test_py3d_image():
 	pcd.Transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 	DrawGeometries([pcd])
 
-
 	print("")
 
 def test_py3d_kdtree():
