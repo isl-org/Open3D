@@ -131,6 +131,10 @@ def test_py3d_image():
     plt.imshow(zzz)
     plt.show()
 
+    print("Testing image processing module.")
+    yy_filter = FilterImage(yy, Gaussian3)
+    DrawGeometries([yy_filter])
+
     print("Final test: load an RGB-D image pair and convert to pointcloud.")
     im1 = ReadImage("TestData/RGBD/depth/00000.png")
     im2 = ReadImage("TestData/RGBD/color/00000.jpg")

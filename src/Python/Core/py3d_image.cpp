@@ -124,4 +124,16 @@ void pybind_image_methods(py::module &m)
 		return WriteImage(filename, image, quality);
 	}, "Function to write Image to file", "filename"_a, "image"_a,
 			"quality"_a = 90);
+	py::enum_<FilterType>(m, "Type")
+		.value("Gaussian3", FILTER_GAUSSIAN_3)
+		.value("Gaussian5", FILTER_GAUSSIAN_5)
+		.value("Gaussian7", FILTER_GAUSSIAN_7)
+		.value("Sobel3dx", FILTER_SOBEL_3_DX)
+		.value("Sobel3dy", FILTER_SOBEL_3_DY)
+		.export_values();
+	m.def("FilterImage", [](const Image &input_image,
+			FilterType type) {
+		auto output_image = FilterImage(input_image, type);
+		return *output_image;
+	}, "Function to filter Image", "image"_a, "filter_type"_a);
 }
