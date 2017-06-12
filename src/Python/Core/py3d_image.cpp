@@ -162,5 +162,5 @@ void pybind_image_methods(py::module &m)
 			FilterType filter_type) {
 		auto output = FilterImagePyramid(input, filter_type);
 		return output;
-	}, "Function to filter ImagePyramid", "image"_a, "filter_type"_a);
+	}, "Function to filter ImagePyramid", "image_pyramid"_a, "filter_type"_a);
 }
