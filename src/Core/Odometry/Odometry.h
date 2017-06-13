@@ -26,8 +26,9 @@
 
 #pragma once
 
-#include <vector>
+#include <iostream> 
 #include <memory>
+#include <vector>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>

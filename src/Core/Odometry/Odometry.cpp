@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
-#include <iostream> 
 #include "Odometry.h"
 
 namespace three {

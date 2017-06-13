@@ -44,3 +44,5 @@
 #include "Registration/Feature.h"
 #include "Registration/Registration.h"
 #include "Registration/TransformationEstimation.h"
+
+#include "Odometry/Odometry.h"

@@ -26,10 +26,8 @@
 
 #include <iostream>
 #include <memory>
-// space here?
 #include <Core/Core.h>
 #include <IO/IO.h>
-#include "Odometry.h"
 
 void PrintHelp(char* argv[])
 {
@@ -81,7 +79,6 @@ int main(int argc, char *argv[])
 	std::tie(is_success, trans_odo, info_odo) = 
 			ComputeRGBDOdometry(*color1_8bit, *depth1_16bit, *color2_8bit, *depth2_16bit,
 			trans_init, camera_path.c_str(), lambda_dep, false, is_tum);
-	// todo: how we print out eigen matrix using PrintXXX function?
 	std::cout << trans_odo << std::endl;
 	std::cout << info_odo << std::endl;
 
