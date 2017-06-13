@@ -133,6 +133,33 @@ def test_py3d_image():
 	plt.imshow(zzz)
 	plt.show()
 
+	print("Testing basic image processing module.")
+	im_raw = mpimg.imread("../TestData/lena_color.jpg")
+	im = Image(im_raw)
+	im_g3 = FilterImage(im, FilterType.Gaussian3)
+	im_g5 = FilterImage(im, FilterType.Gaussian5)
+	im_g7 = FilterImage(im, FilterType.Gaussian7)
+	im_gaussian = [im, im_g3, im_g5, im_g7]
+	pyramid_levels = 4
+	pyramid_with_gaussian_filter = True
+	im_pyramid = CreateImagePyramid(im, pyramid_levels,
+            pyramid_with_gaussian_filter)
+	im_dx = FilterImage(im, FilterType.Sobel3dx)
+	im_dx_pyramid = FilterImagePyramid(im_pyramid, FilterType.Sobel3dx)
+	im_dy = FilterImage(im, FilterType.Sobel3dy)
+	im_dy_pyramid = FilterImagePyramid(im_pyramid, FilterType.Sobel3dy)
+	switcher = {
+		0: im_gaussian,
+		1: im_pyramid,
+		2: im_dx_pyramid,
+		3: im_dy_pyramid,
+	}
+	for i in range(4):
+		for j in range(pyramid_levels):
+			plt.subplot(4, pyramid_levels, i*4+j+1)
+			plt.imshow(switcher.get(i)[j])
+	plt.show()
+
 	print("Final test: load an RGB-D image pair and convert to pointcloud.")
 	im1 = ReadImage("../TestData/RGBD/depth/00000.png")
 	im2 = ReadImage("../TestData/RGBD/color/00000.jpg")

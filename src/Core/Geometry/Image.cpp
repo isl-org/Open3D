@@ -82,17 +82,22 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 		return std::make_shared<Image>();
 	}
 	auto output = CreateFloatImageFromImage(depth);
-	LinearTransformImage(*output, 1 / depth_scale, 0.0, 0.0, depth_trunc);
+	for (int y = 0; y < output->height_; y++) {
+		for (int x = 0; x < output->width_; x++) {
+			float *p = PointerAt<float>(*output, x, y);
+			*p /= (float)depth_scale;
+			if (*p >= depth_trunc)
+				*p = 0.0f;
+		}
+	}
 	return output;
 }
 
-void LinearTransformImage(Image &input, double scale, 
-		double offset, double min, double max) 
+void ClipIntensityImage(Image &input, double min/* = 0.0*/, double max/* = 1.0*/)
 {
 	for (int y = 0; y < input.height_; y++) {
 		for (int x = 0; x < input.width_; x++) {
 			float *p = PointerAt<float>(input, x, y);
-			(*p) = (float)(scale * (*p) + offset);
 			if (*p > max)
 				*p = (float)max;
 			if (*p < min)
@@ -101,15 +106,25 @@ void LinearTransformImage(Image &input, double scale,
 	}
 }
 
-std::vector<std::shared_ptr<Image>> CreateImagePyramid(
-		const Image& input, size_t num_of_levels)
+void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 {
-	std::vector<std::shared_ptr<Image>> pyramidImage;
-	pyramidImage.clear(); 
+	for (int y = 0; y < input.height_; y++) {
+		for (int x = 0; x < input.width_; x++) {
+			float *p = PointerAt<float>(input, x, y);
+			(*p) = (float)(scale * (*p) + offset);
+		}
+	}
+}
+
+ImagePyramid CreateImagePyramid(
+		const Image& input, size_t num_of_levels, bool with_gaussian_filter /*= true*/)
+{
+	std::vector<std::shared_ptr<Image>> pyramid_image;
+	pyramid_image.clear(); 
 	if ((input.num_of_channels_ != 1) ||
 		(input.bytes_per_channel_ != 4)) {
 		PrintDebug("[CreateImagePyramid] Unsupported image format.\n");
-		return pyramidImage;
+		return pyramid_image;
 	}
 
 	for (int i = 0; i < num_of_levels; i++) {
@@ -117,15 +132,20 @@ std::vector<std::shared_ptr<Image>> CreateImagePyramid(
 			std::shared_ptr<Image> input_copy_ptr = 
 					std::make_shared<Image>();
 			*input_copy_ptr = input;
-			pyramidImage.push_back(input_copy_ptr);
+			pyramid_image.push_back(input_copy_ptr);
 		} else {
-			// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
-			auto level_b = FilterImage(*pyramidImage[i - 1], FILTER_GAUSSIAN_3);
-			auto level_bd = DownsampleImage(*level_b);
-			pyramidImage.push_back(level_bd);
+			if (with_gaussian_filter) {
+				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
+				auto level_b = FilterImage(*pyramid_image[i - 1], FILTER_GAUSSIAN_3);
+				auto level_bd = DownsampleImage(*level_b);
+				pyramid_image.push_back(level_bd);
+			} else {
+				auto level_d = DownsampleImage(*pyramid_image[i - 1]);
+				pyramid_image.push_back(level_d);
+			}
 		}
 	}
-	return pyramidImage;
+	return pyramid_image;
 }
 
 std::shared_ptr<Image> DownsampleImage(const Image &input)
@@ -183,7 +203,7 @@ std::shared_ptr<Image> FilterHorizontalImage(
 				if (x_shift > input.width_ - 1)
 					x_shift = input.width_ - 1;
 				float* pi = PointerAt<float>(input, x_shift, y, 0);
-				temp += (*pi * kernel[i + half_kernel_size]);
+				temp += (*pi * (float)kernel[i + half_kernel_size]);
 			}
 			*po = (float)temp;
 		}
@@ -219,6 +239,16 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 		default:
 			PrintDebug("[FilterImage] Unsupported filter type.\n");
 			break;
+	}
+	return output;
+}
+
+ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type)
+{
+	std::vector<std::shared_ptr<Image>> output;
+	for (size_t i = 0; i < input.size(); i++) {
+		auto layer_filtered = FilterImage(*input[i], type);
+		output.push_back(layer_filtered);
 	}
 	return output;
 }
