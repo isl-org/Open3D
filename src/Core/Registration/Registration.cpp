@@ -169,7 +169,6 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 	}
 	std::srand((unsigned int)std::time(0));
 	CorrespondenceSet ransac_corres(ransac_n);
-	CorrespondenceSet icp_corres;
 	for (int i = 0; i < max_ransac_iteration; i++) {
 		RegistrationResult this_result;
 		for (int j = 0; j < ransac_n; j++) {
