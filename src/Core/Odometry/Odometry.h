@@ -42,8 +42,7 @@ namespace three {
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd> ComputeRGBDOdometry(
 		const Image& color0_8bit, const Image& depth0_16bit,
-		const Image& color1_8bit, const Image& depth1_16bit,
-		const Eigen::Matrix4d& init_pose,
+		const Image& color1_8bit, const Image& depth1_16bit, 
 		const OdometryOption& odometry_option = OdometryOption());
 
 }	// namespace three

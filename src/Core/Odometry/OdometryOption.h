@@ -35,7 +35,9 @@ class OdometryOption
 
 public:
 
-	OdometryOption(double lambda_dep = 0.95, 
+	OdometryOption(
+			Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity(),
+			double lambda_dep = 0.95, 
 			int minimum_corr = 30000,
 			int num_pyramid = 4, 
 			int num_iter = 10, 
@@ -43,19 +45,19 @@ public:
 			double min_depth = 0.0,	
 			double max_depth = 4.0,
 			double sobel_scale = 0.125, 
-			double det_threshold = 1e-6,
 			bool is_tum = false,
 			bool fast_reject = true,
 			std::string intrinsic_path = "") :
-			lambda_dep_(lambda_dep), minimum_corr_(minimum_corr),
+			odo_init_(odo_init), lambda_dep_(lambda_dep), minimum_corr_(minimum_corr),
 			num_pyramid_(num_pyramid), num_iter_(num_iter),
 			max_depth_diff_(max_depth_diff), min_depth_(min_depth), 
 			max_depth_(max_depth), sobel_scale_(sobel_scale), 
-			det_threshold_(det_threshold), is_tum_(is_tum), 
-			fast_reject_(fast_reject), intrinsic_path_(intrinsic_path) {}
+			is_tum_(is_tum), fast_reject_(fast_reject), 
+			intrinsic_path_(intrinsic_path) {}
 	~OdometryOption() {}
 
 public:
+	Eigen::Matrix4d odo_init_;
 	double lambda_dep_;
 	double minimum_corr_;
 	int num_pyramid_;
@@ -64,7 +66,6 @@ public:
 	double min_depth_;
 	double max_depth_;
 	double sobel_scale_;
-	double det_threshold_;
 	bool is_tum_;
 	bool fast_reject_;
 	std::string intrinsic_path_;

@@ -141,22 +141,23 @@ std::tuple<bool, Eigen::VectorXd>
 	{ t(0), t(1), t(2) };
 
 	Eigen::Vector3d temp, p3d_mat, p3d_trans;
+	double sobel_scale = opt.sobel_scale_;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
 			int u1 = *PointerAt<int>(corresps, u0, v0, 0);
 			int v1 = *PointerAt<int>(corresps, u0, v0, 1);
 			if (u1 != -1 && v1 != -1) {
 
-				double diff = static_cast<double>(*PointerAt<float>(image1, u1, v1)) -
-					static_cast<double>(*PointerAt<float>(image0, u0, v0));
+				double diff = double{ *PointerAt<float>(image1, u1, v1) -
+					*PointerAt<float>(image0, u0, v0) };
 
-				double dIdx = opt.sobel_scale_ * 
+				double dIdx = sobel_scale *
 							double{ *PointerAt<float>(dI_dx1, u1, v1) };
-				double dIdy = opt.sobel_scale_ *
+				double dIdy = sobel_scale *
 							double{ *PointerAt<float>(dI_dy1, u1, v1) };
-				double dDdx = opt.sobel_scale_ *
+				double dDdx = sobel_scale *
 							double{ *PointerAt<float>(dD_dx1, u1, v1) };
-				double dDdy = opt.sobel_scale_ *
+				double dDdy = sobel_scale *
 							double{ *PointerAt<float>(dD_dy1, u1, v1) };
 				if (std::isnan(dDdx)) dDdx = 0;
 				if (std::isnan(dDdy)) dDdy = 0;
@@ -535,8 +536,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 					*pyramid_depth0[level], *pyramid_depth1[level],
 					*pyramid_dD_dx1[level], *pyramid_dD_dy1[level],
 					result_odo, *corresps, corresps_count,
-					lambda_dep,
-					fx, fy);
+					opt, fx, fy);
 
 			if (!solutionExist) {
 				PrintError("[ComputeOdometry] no solution!\n");
@@ -560,7 +560,6 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd>
 		ComputeRGBDOdometry(
 		const Image& color0_8bit, const Image& depth0_16bit,
 		const Image& color1_8bit, const Image& depth1_16bit,
-		const Eigen::Matrix4d& init_pose,
 		const OdometryOption& opt)
 {
 	if (!CheckImagePair(color0_8bit, depth0_16bit, color1_8bit, depth1_16bit)) {
@@ -570,12 +569,9 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd>
 				Eigen::Matrix4d::Identity(), Eigen::MatrixXd::Zero(6,6));
 	}
 
-	//Eigen::Matrix3d camera_matrix;
-	//LoadCameraFile(opt.intrinsic_path_.c_str(), camera_matrix);
-
 	PinholeCameraIntrinsic camera_intrinsic = 
 			ReadCameraIntrinsic(opt.intrinsic_path_);
-	
+
 	double lambda_dep = opt.lambda_dep_;
 	if (lambda_dep < 0.0f || lambda_dep > 1.0f)
 		lambda_dep = 0.95;

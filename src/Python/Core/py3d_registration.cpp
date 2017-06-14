@@ -105,7 +105,7 @@ void pybind_registration(py::module &m)
 			te_p2l);
 	py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
 			te_p2l);
-	te_p2p
+	te_p2l
 		.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
 			return std::string("TransformationEstimationPointToPlane");
 		});

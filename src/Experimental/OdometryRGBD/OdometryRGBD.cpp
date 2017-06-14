@@ -70,7 +70,6 @@ int main(int argc, char *argv[])
 	
 	Eigen::Matrix4d trans_initial, trans_output, info_output;
 	Eigen::Matrix4d trans_init_odo = Eigen::Matrix4d::Identity();
-	Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity(4, 4);
 	double lambda_dep = 0.95;
 
 	Eigen::Matrix4d trans_odo;
@@ -79,10 +78,10 @@ int main(int argc, char *argv[])
 	OdometryOption opt;
 	opt.intrinsic_path_ = camera_path;
 	opt.is_tum_ = is_tum;
+	opt.odo_init_ = Eigen::Matrix4d::Identity(4, 4);
 	std::tie(is_success, trans_odo, info_odo) = 
 			ComputeRGBDOdometry(*color1_8bit, *depth1_16bit, 
-					*color2_8bit, *depth2_16bit,
-					trans_init, opt);
+					*color2_8bit, *depth2_16bit, opt);
 	std::cout << trans_odo << std::endl;
 	std::cout << info_odo << std::endl;
 
