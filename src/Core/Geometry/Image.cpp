@@ -3,7 +3,8 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+//                    Jaesik Park <syncel@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,8 +53,7 @@ Eigen::Vector2d Image::GetMaxBound() const
 
 std::pair<bool, double> Image::FloatValueAt(double u, double v)
 {
-	if ((num_of_channels_ != 1) ||
-		(bytes_per_channel_ != 4) ||
+	if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4) ||
 		(u < 0.0 || u >(double)(width_ - 1) ||
 		v < 0.0 || v >(double)(height_ - 1))) {
 		return std::make_pair(false, 0.0);
@@ -76,11 +76,8 @@ std::pair<bool, double> Image::FloatValueAt(double u, double v)
 std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
 {
-	if (depth.num_of_channels_ != 1 ||
-		depth.bytes_per_channel_ != 2) {
-		PrintDebug("[ConvertDepthToFloatImage] Unsupported image format.\n");
-		return std::make_shared<Image>();
-	}
+	// don't need warning message about image type 
+	// as we call CreateFloatImageFromImage
 	auto output = CreateFloatImageFromImage(depth);
 	for (int y = 0; y < output->height_; y++) {
 		for (int x = 0; x < output->width_; x++) {
@@ -95,6 +92,10 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 
 void ClipIntensityImage(Image &input, double min/* = 0.0*/, double max/* = 1.0*/)
 {
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 2) {
+		PrintWarning("[ClipIntensityImage] Unsupported image format.\n");
+		return;
+	}
 	for (int y = 0; y < input.height_; y++) {
 		for (int x = 0; x < input.width_; x++) {
 			float *p = PointerAt<float>(input, x, y);
@@ -108,6 +109,10 @@ void ClipIntensityImage(Image &input, double min/* = 0.0*/, double max/* = 1.0*/
 
 void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 {
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 2) {
+		PrintWarning("[LinearTransformImage] Unsupported image format.\n");
+		return;
+	}
 	for (int y = 0; y < input.height_; y++) {
 		for (int x = 0; x < input.width_; x++) {
 			float *p = PointerAt<float>(input, x, y);
@@ -116,44 +121,11 @@ void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 	}
 }
 
-ImagePyramid CreateImagePyramid(
-		const Image& input, size_t num_of_levels, bool with_gaussian_filter /*= true*/)
-{
-	std::vector<std::shared_ptr<Image>> pyramid_image;
-	pyramid_image.clear(); 
-	if ((input.num_of_channels_ != 1) ||
-		(input.bytes_per_channel_ != 4)) {
-		PrintDebug("[CreateImagePyramid] Unsupported image format.\n");
-		return pyramid_image;
-	}
-
-	for (int i = 0; i < num_of_levels; i++) {
-		if (i == 0) {
-			std::shared_ptr<Image> input_copy_ptr = 
-					std::make_shared<Image>();
-			*input_copy_ptr = input;
-			pyramid_image.push_back(input_copy_ptr);
-		} else {
-			if (with_gaussian_filter) {
-				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
-				auto level_b = FilterImage(*pyramid_image[i - 1], FILTER_GAUSSIAN_3);
-				auto level_bd = DownsampleImage(*level_b);
-				pyramid_image.push_back(level_bd);
-			} else {
-				auto level_d = DownsampleImage(*pyramid_image[i - 1]);
-				pyramid_image.push_back(level_d);
-			}
-		}
-	}
-	return pyramid_image;
-}
-
 std::shared_ptr<Image> DownsampleImage(const Image &input)
 {
 	auto output = std::make_shared<Image>();
-	if (input.num_of_channels_ != 1 ||
-		input.bytes_per_channel_ != 4) {
-		PrintDebug("[DownsampleImage] Unsupported image format.\n");
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
+		PrintWarning("[DownsampleImage] Unsupported image format.\n");
 		return output;
 	}
 	int half_width = (int)floor((double)input.width_ / 2.0);
@@ -180,10 +152,9 @@ std::shared_ptr<Image> FilterHorizontalImage(
 		const Image &input, const std::vector<double> &kernel)
 {
 	auto output = std::make_shared<Image>();
-	if (input.num_of_channels_ != 1 || 
-		input.bytes_per_channel_ != 4 ||
-		kernel.size() % 2 != 1) {
-		PrintDebug("[FilterHorizontalImage] Unsupported image format or kernel size.\n");
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4 ||
+			kernel.size() % 2 != 1) {
+		PrintWarning("[FilterHorizontalImage] Unsupported image format or kernel size.\n");
 		return output;
 	}
 	output->PrepareImage(input.width_, input.height_, 1, 4);
@@ -214,9 +185,8 @@ std::shared_ptr<Image> FilterHorizontalImage(
 std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 {
 	auto output = std::make_shared<Image>();
-	if (input.num_of_channels_ != 1 ||
-		input.bytes_per_channel_ != 4) {
-		PrintDebug("[FilterImage] Unsupported image format.\n");
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
+		PrintWarning("[FilterImage] Unsupported image format.\n");
 		return output;
 	}
 
@@ -257,9 +227,8 @@ std::shared_ptr<Image> FilterImage(const Image &input,
 		const std::vector<double> dx, const std::vector<double> dy)
 {
 	auto output = std::make_shared<Image>();
-	if (input.num_of_channels_ != 1 ||
-		input.bytes_per_channel_ != 4) {
-		PrintDebug("[FilterImage] Unsupported image format.\n");
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
+		PrintWarning("[FilterImage] Unsupported image format.\n");
 		return output;
 	}
 
@@ -273,9 +242,8 @@ std::shared_ptr<Image> FilterImage(const Image &input,
 std::shared_ptr<Image> FlipImage(const Image &input)
 {
 	auto output = std::make_shared<Image>();
-	if (input.num_of_channels_ != 1 || 
-		input.bytes_per_channel_ != 4) {
-		PrintDebug("[FilpImage] Unsupported image format.\n");
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
+		PrintWarning("[FilpImage] Unsupported image format.\n");
 		return output;
 	}
 	output->PrepareImage(input.height_, input.width_, 1, 4);
