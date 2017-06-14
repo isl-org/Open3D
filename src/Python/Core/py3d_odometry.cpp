@@ -40,9 +40,9 @@ void pybind_odometry(py::module &m)
 		double min_depth_, double max_depth_, double sobel_scale_,
 		bool is_tum_, bool fast_reject_, std::string intrinsic_path_) {
 		new (&c)OdometryOption(odo_init_, lambda_dep_, minimum_corr_,
-			num_pyramid_, num_iter_, max_depth_diff_,
-			min_depth_, max_depth_, sobel_scale_,
-			is_tum_, fast_reject_, intrinsic_path_);
+				num_pyramid_, num_iter_, max_depth_diff_,
+				min_depth_, max_depth_, sobel_scale_,
+				is_tum_, fast_reject_, intrinsic_path_);
 	}, "odo_init"_a = Eigen::Matrix4d::Identity(), "lambda_dep"_a = 0.95,
 		"minimum_corr"_a = 30000, "num_pyramid"_a = 4, "num_iter"_a = 10, 
 		"max_depth_diff"_a = 0.07, "min_depth"_a = 0.0, "max_depth"_a = 4.0,
@@ -52,18 +52,18 @@ void pybind_odometry(py::module &m)
 		.def_readwrite("intrinsic_path", &OdometryOption::intrinsic_path_)
 		.def("__repr__", [](const OdometryOption &c) {
 		return std::string("OdometryOption class.") +
-			/*std::string("\nodo_init = ") + std::to_string(c.odo_init_) +*/
-			std::string("\nlambda_dep = ") + std::to_string(c.lambda_dep_) +
-			std::string("\nminimum_corr = ") + std::to_string(c.minimum_corr_) +
-			std::string("\nnum_pyramid = ") + std::to_string(c.num_pyramid_) +
-			std::string("\nnum_iter = ") + std::to_string(c.num_iter_) +
-			std::string("\nmax_depth_diff = ") + std::to_string(c.max_depth_diff_) +
-			std::string("\nmin_depth = ") + std::to_string(c.min_depth_) +
-			std::string("\nmax_depth = ") + std::to_string(c.max_depth_) +
-			std::string("\nsobel_scale = ") + std::to_string(c.sobel_scale_) +
-			std::string("\nis_tum = ") + std::to_string(c.is_tum_) +
-			std::string("\nfast_reject = ") + std::to_string(c.fast_reject_) +
-			std::string("\nintrinsic_path = ") + c.intrinsic_path_;
+				/*std::string("\nodo_init = ") + std::to_string(c.odo_init_) +*/
+				std::string("\nlambda_dep = ") + std::to_string(c.lambda_dep_) +
+				std::string("\nminimum_corr = ") + std::to_string(c.minimum_corr_) +
+				std::string("\nnum_pyramid = ") + std::to_string(c.num_pyramid_) +
+				std::string("\nnum_iter = ") + std::to_string(c.num_iter_) +
+				std::string("\nmax_depth_diff = ") + std::to_string(c.max_depth_diff_) +
+				std::string("\nmin_depth = ") + std::to_string(c.min_depth_) +
+				std::string("\nmax_depth = ") + std::to_string(c.max_depth_) +
+				std::string("\nsobel_scale = ") + std::to_string(c.sobel_scale_) +
+				std::string("\nis_tum = ") + std::to_string(c.is_tum_) +
+				std::string("\nfast_reject = ") + std::to_string(c.fast_reject_) +
+				std::string("\nintrinsic_path = ") + c.intrinsic_path_;
 		});
 }
 

@@ -43,9 +43,9 @@ std::tuple<std::shared_ptr<Image>, int>
 	const Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
 	const Eigen::Matrix3d KRK_inv = K * R * K_inv;
 	const double KRK_inv_ptr[9] =
-	{ KRK_inv(0,0), KRK_inv(0,1), KRK_inv(0,2),
-		KRK_inv(1,0), KRK_inv(1,1), KRK_inv(1,2),
-		KRK_inv(2,0), KRK_inv(2,1), KRK_inv(2,2) };
+			{ KRK_inv(0,0), KRK_inv(0,1), KRK_inv(0,2),
+			KRK_inv(1,0), KRK_inv(1,1), KRK_inv(1,2),
+			KRK_inv(2,0), KRK_inv(2,1), KRK_inv(2,2) };
 
 	Eigen::Vector3d Kt = K * odo.block<3, 1>(0, 3);
 	const double Kt_ptr[3] = { Kt(0), Kt(1), Kt(2) };
@@ -133,12 +133,12 @@ std::tuple<bool, Eigen::VectorXd>
 	sqrt_lamba_dep = sqrt(opt.lambda_dep_);
 	sqrt_lambda_img = sqrt(1.0 - opt.lambda_dep_);
 
-	const double R_raw[9] =
-	{ R(0,0), R(0,1), R(0,2),
-		R(1,0), R(1,1), R(1,2),
-		R(2,0), R(2,1), R(2,2) };
-	const double t_raw[3] =
-	{ t(0), t(1), t(2) };
+	const double R_raw[9] = 
+			{ R(0,0), R(0,1), R(0,2),
+			R(1,0), R(1,1), R(1,2),
+			R(2,0), R(2,1), R(2,2) };
+	const double t_raw[3] = 
+			{ t(0), t(1), t(2) };
 
 	Eigen::Vector3d temp, p3d_mat, p3d_trans;
 	double sobel_scale = opt.sobel_scale_;
@@ -225,8 +225,7 @@ std::tuple<bool, Eigen::VectorXd>
 
 	bool solutionExist = true;
 	double det = JtJ.determinant();
-	if (fabs(det) < 1e-6 ||
-				std::isnan(det) || std::isinf(det))
+	if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
 		solutionExist = false;
 
 	if (solutionExist) {
@@ -381,11 +380,11 @@ void PreprocessDepth(const three::Image &depth, const OdometryOption& opt)
 bool CheckImagePair(const three::Image &color0, const three::Image &depth0,
 		const three::Image &color1, const three::Image &depth1) {
 	return (color0.width_ == color1.width_ && color0.height_ == color1.height_
-		&& depth0.width_ == depth1.width_ && depth0.height_ == depth1.height_
-		&& color0.width_ == depth0.width_ && color0.height_ == depth0.height_
-		&& color1.width_ == depth1.width_ && color1.height_ == depth1.height_
-		&& color0.bytes_per_channel_ == 1 && color1.bytes_per_channel_ == 1
-		&& depth0.bytes_per_channel_ == 2 && depth1.bytes_per_channel_ == 2);
+			&& depth0.width_ == depth1.width_ && depth0.height_ == depth1.height_
+			&& color0.width_ == depth0.width_ && color0.height_ == depth0.height_
+			&& color1.width_ == depth1.width_ && color1.height_ == depth1.height_
+			&& color0.bytes_per_channel_ == 1 && color1.bytes_per_channel_ == 1
+			&& depth0.bytes_per_channel_ == 2 && depth1.bytes_per_channel_ == 2);
 }
 
 Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input) {
