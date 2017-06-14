@@ -51,7 +51,7 @@ public:
 /// Factory function to create an RGBD Image from color and depth Images
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 		const Image& color, const Image& depth, 
-		const double& depth_scale = 1000.0);
+		const double& depth_scale = 1000.0, double depth_trunc = 3.0);
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
 		const Image& color, const Image& depth);

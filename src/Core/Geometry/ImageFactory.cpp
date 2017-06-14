@@ -130,14 +130,14 @@ ImagePyramid CreateImagePyramid(
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 		const Image& color, const Image& depth, 
-		const double& depth_scale/* = 1000.0*/) {
+		const double& depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) {
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
 		PrintWarning("[CreateRGBDImageFromColorAndDepth] Unsupported image format.\n");
 		return rgbd_image;
 	}
 	auto color_f = CreateFloatImageFromImage(color);
-	auto depth_f = ConvertDepthToFloatImage(depth, depth_scale);
+	auto depth_f = ConvertDepthToFloatImage(depth, depth_scale, depth_trunc);
 	rgbd_image->color = *color_f;
 	rgbd_image->depth = *depth_f;	
 	return rgbd_image;
