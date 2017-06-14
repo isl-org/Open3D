@@ -28,17 +28,17 @@
 
 #include <iostream> 
 #include <vector>
+#include <tuple>
 #include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Core/Geometry/Image.h>
 #include <Core/Utility/Console.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <Core/Odometry/OdometryOption.h>
-#include <IO/IO.h>
 
 namespace three {
 
-/// Function to estimate 6D odometry between two RGBD image pairs
+class Image;
+
+/// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd> ComputeRGBDOdometry(
 		const Image& color0_8bit, const Image& depth0_16bit,

@@ -25,7 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "Odometry.h"
-#include <json/json.h>
+
+#include <Eigen/Dense>
+#include <Core/Geometry/Image.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three {
 
@@ -33,10 +36,10 @@ namespace {
 
 std::tuple<std::shared_ptr<Image>, int> 
 		ComputeCorrespondence(
-				const Eigen::Matrix3d intrinsic_matrix,
-				const Eigen::Matrix4d& odo,
-				const Image& depth0, const Image& depth1,
-				const OdometryOption& opt)
+		const Eigen::Matrix3d intrinsic_matrix,
+		const Eigen::Matrix4d& odo,
+		const Image& depth0, const Image& depth1,
+		const OdometryOption& opt)
 {
 	const Eigen::Matrix3d K = intrinsic_matrix;
 	const Eigen::Matrix3d K_inv = K.inverse();
@@ -70,10 +73,10 @@ std::tuple<std::shared_ptr<Image>, int>
 					(d1 * (KRK_inv_ptr[6] * u1 + KRK_inv_ptr[7] *
 					v1 + KRK_inv_ptr[8]) + Kt_ptr[2]) };
 				int u0 = (int)(
-					(d1 * (KRK_inv_ptr[0] * u1 + KRK_inv_ptr[1] *
+						(d1 * (KRK_inv_ptr[0] * u1 + KRK_inv_ptr[1] *
 						v1 + KRK_inv_ptr[2]) + Kt_ptr[0]) / transformed_d1 + 0.5);
 				int v0 = (int)(
-					(d1 * (KRK_inv_ptr[3] * u1 + KRK_inv_ptr[4] *
+						(d1 * (KRK_inv_ptr[3] * u1 + KRK_inv_ptr[4] *
 						v1 + KRK_inv_ptr[5]) + Kt_ptr[1]) / transformed_d1 + 0.5);
 
 				if (u0 >= 0 && u0 < depth1.width_ &&
@@ -85,9 +88,9 @@ std::tuple<std::shared_ptr<Image>, int>
 						exist_u1 = *PointerAt<int>(*corresps, u0, v0, 0);
 						exist_v1 = *PointerAt<int>(*corresps, u0, v0, 1);
 						if (exist_u1 != -1 && exist_v1 != -1) {
-							double exist_d1 = double{
-								*PointerAt<float>(depth1, exist_u1, exist_v1) }
-								*(KRK_inv_ptr[6] * exist_u1 + KRK_inv_ptr[7]
+							double exist_d1 = double{ *PointerAt<float>
+									(depth1, exist_u1, exist_v1) } * 
+									(KRK_inv_ptr[6] * exist_u1 + KRK_inv_ptr[7]
 									* exist_v1 + KRK_inv_ptr[8]) + Kt_ptr[2];
 							if (transformed_d1 > exist_d1)
 								continue;
@@ -134,9 +137,9 @@ std::tuple<bool, Eigen::VectorXd>
 	sqrt_lambda_img = sqrt(1.0 - opt.lambda_dep_);
 
 	const double R_raw[9] = 
-			{ R(0,0), R(0,1), R(0,2),
-			R(1,0), R(1,1), R(1,2),
-			R(2,0), R(2,1), R(2,2) };
+			{ R(0, 0), R(0, 1), R(0, 2),
+			R(1, 0), R(1, 1), R(1, 2),
+			R(2, 0), R(2, 1), R(2, 2) };
 	const double t_raw[3] = 
 			{ t(0), t(1), t(2) };
 
@@ -149,16 +152,16 @@ std::tuple<bool, Eigen::VectorXd>
 			if (u1 != -1 && v1 != -1) {
 
 				double diff = double{ *PointerAt<float>(image1, u1, v1) -
-					*PointerAt<float>(image0, u0, v0) };
+						*PointerAt<float>(image0, u0, v0) };
 
 				double dIdx = sobel_scale *
-							double{ *PointerAt<float>(dI_dx1, u1, v1) };
+						double{ *PointerAt<float>(dI_dx1, u1, v1) };
 				double dIdy = sobel_scale *
-							double{ *PointerAt<float>(dI_dy1, u1, v1) };
+						double{ *PointerAt<float>(dI_dy1, u1, v1) };
 				double dDdx = sobel_scale *
-							double{ *PointerAt<float>(dD_dx1, u1, v1) };
+						double{ *PointerAt<float>(dD_dx1, u1, v1) };
 				double dDdy = sobel_scale *
-							double{ *PointerAt<float>(dD_dy1, u1, v1) };
+						double{ *PointerAt<float>(dD_dy1, u1, v1) };
 				if (std::isnan(dDdx)) dDdx = 0;
 				if (std::isnan(dDdy)) dDdy = 0;
 
@@ -167,11 +170,11 @@ std::tuple<bool, Eigen::VectorXd>
 				p3d_mat(2) = double{ *PointerAt<float>(cloud0, u0, v0, 2) };
 
 				p3d_trans(0) = R_raw[0] * p3d_mat(0) + R_raw[1] * p3d_mat(1) +
-					R_raw[2] * p3d_mat(2) + t_raw[0];
+						R_raw[2] * p3d_mat(2) + t_raw[0];
 				p3d_trans(1) = R_raw[3] * p3d_mat(0) + R_raw[4] * p3d_mat(1) +
-					R_raw[5] * p3d_mat(2) + t_raw[1];
+						R_raw[5] * p3d_mat(2) + t_raw[1];
 				p3d_trans(2) = R_raw[6] * p3d_mat(0) + R_raw[7] * p3d_mat(1) +
-					R_raw[8] * p3d_mat(2) + t_raw[2];
+						R_raw[8] * p3d_mat(2) + t_raw[2];
 
 				double diff2 = double{ (*PointerAt<float>(depth1, u1, v1)) } -
 					double{ (p3d_trans(2)) };
@@ -187,11 +190,11 @@ std::tuple<bool, Eigen::VectorXd>
 				int row1 = point_count * 2 + 0;
 				int row2 = point_count * 2 + 1;
 				J(row1, 0) = sqrt_lambda_img *
-					(-p3d_trans(2) * c1 + p3d_trans(1) * c2);
+						(-p3d_trans(2) * c1 + p3d_trans(1) * c2);
 				J(row1, 1) = sqrt_lambda_img *
-					(p3d_trans(2) * c0 - p3d_trans(0) * c2);
+						(p3d_trans(2) * c0 - p3d_trans(0) * c2);
 				J(row1, 2) = sqrt_lambda_img *
-					(-p3d_trans(1) * c0 + p3d_trans(0) * c1);
+						(-p3d_trans(1) * c0 + p3d_trans(0) * c1);
 				J(row1, 3) = sqrt_lambda_img * (c0);
 				J(row1, 4) = sqrt_lambda_img * (c1);
 				J(row1, 5) = sqrt_lambda_img * (c2);
@@ -199,11 +202,11 @@ std::tuple<bool, Eigen::VectorXd>
 				res1 += diff * diff;
 
 				J(row2, 0) = sqrt_lamba_dep *
-					((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
+						((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
 				J(row2, 1) = sqrt_lamba_dep *
-					((p3d_trans(2) * d0 - p3d_trans(0) * d2) + p3d_trans(0));
+						((p3d_trans(2) * d0 - p3d_trans(0) * d2) + p3d_trans(0));
 				J(row2, 2) = sqrt_lamba_dep *
-					((-p3d_trans(1) * d0 + p3d_trans(0) * d1));
+						((-p3d_trans(1) * d0 + p3d_trans(0) * d1));
 				J(row2, 3) = sqrt_lamba_dep * (d0);
 				J(row2, 4) = sqrt_lamba_dep * (d1);
 				J(row2, 5) = sqrt_lamba_dep * (d2 - 1.0f);
@@ -267,14 +270,14 @@ std::shared_ptr<Image> ConvertDepth2Cloud(
 
 std::vector<Eigen::Matrix3d>
 		CreateCameraMatrixPyramid(
-				const PinholeCameraIntrinsic& camera_intrinsic, int levels)
+		const PinholeCameraIntrinsic& camera_intrinsic, int levels)
 {
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
 	pyramid_camera_matrix.reserve(levels);
 	for (int i = 0; i < levels; i++) {
 		Eigen::Matrix3d level_camera_matrix = i == 0 ?
-			camera_intrinsic.intrinsic_matrix_ : 
-			0.5f * pyramid_camera_matrix[i - 1];
+				camera_intrinsic.intrinsic_matrix_ : 
+				0.5f * pyramid_camera_matrix[i - 1];
 		level_camera_matrix(2, 2) = 1.;
 		pyramid_camera_matrix.push_back(level_camera_matrix);
 	}
@@ -341,8 +344,7 @@ PinholeCameraIntrinsic ReadCameraIntrinsic(const std::string& intrinsic_path) {
 	return intrinsic;
 }
 
-void NormalizeIntensity(Image& image0, Image& image1, Image& corresps)
-{
+void NormalizeIntensity(Image& image0, Image& image1, Image& corresps) {
 	if (image0.width_ != image1.width_ ||
 		image0.height_ != image1.height_) {
 		PrintError("[NormalizeIntensity] Size of two input images should be same\n");
@@ -366,8 +368,7 @@ void NormalizeIntensity(Image& image0, Image& image1, Image& corresps)
 	LinearTransformImage(image1, 0.5 / mean1, 0.0);
 }
 
-void PreprocessDepth(const three::Image &depth, const OdometryOption& opt)
-{
+void PreprocessDepth(const three::Image &depth, const OdometryOption& opt) {
 	for (int y = 0; y < depth.height_; y++) {
 		for (int x = 0; x < depth.width_; x++) {
 			float *p = PointerAt<float>(depth, x, y);
@@ -390,20 +391,20 @@ bool CheckImagePair(const three::Image &color0, const three::Image &depth0,
 Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input) {
 	Eigen::Affine3d aff_mat;
 	aff_mat.linear() = (Eigen::Matrix3d)
-		Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ())
-		* Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY())
-		* Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX());
+			Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ())
+			* Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY())
+			* Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX());
 	aff_mat.translation() = Eigen::Vector3d(input(3), input(4), input(5));
 	return aff_mat.matrix();
 }
 
 std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>, 
 		std::shared_ptr<Image>, std::shared_ptr<Image>> InitializeRGBDPair(
-				const Image& color0_8bit, const Image& depth0_16bit,
-				const Image& color1_8bit, const Image& depth1_16bit,
-				PinholeCameraIntrinsic& camera_intrinsic,
-				Eigen::Matrix4d& odo_init,
-				const OdometryOption& opt) 
+		const Image& color0_8bit, const Image& depth0_16bit,
+		const Image& color1_8bit, const Image& depth1_16bit,
+		PinholeCameraIntrinsic& camera_intrinsic,
+		Eigen::Matrix4d& odo_init,
+		const OdometryOption& opt) 
 {
 	auto gray_temp0 = CreateFloatImageFromImage(color0_8bit);
 	auto gray_temp1 = CreateFloatImageFromImage(color1_8bit);
@@ -468,7 +469,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 		const Eigen::Matrix3d level_camera_matrix = pyramid_camera_matrix[level];
 
 		auto level_cloud0 = ConvertDepth2Cloud(
-			*pyramid_depth0[level], level_camera_matrix);
+				*pyramid_depth0[level], level_camera_matrix);
 		const double fx = level_camera_matrix(0, 0);
 		const double fy = level_camera_matrix(1, 1);
 
@@ -540,8 +541,8 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd>
 	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
 	std::tie(gray0, depth0, gray1, depth1) = 
 			InitializeRGBDPair(color0_8bit, depth0_16bit, 
-					color1_8bit, depth1_16bit,
-					camera_intrinsic, odo_init, opt);
+			color1_8bit, depth1_16bit,
+			camera_intrinsic, odo_init, opt);
 
 	Eigen::Matrix4d odo;
 	bool is_found;
