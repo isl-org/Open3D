@@ -207,7 +207,7 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 			output = FilterImage(input, Sobel32, Sobel31);
 			break;
 		default:
-			PrintDebug("[FilterImage] Unsupported filter type.\n");
+			PrintWarning("[FilterImage] Unsupported filter type.\n");
 			break;
 	}
 	return output;
