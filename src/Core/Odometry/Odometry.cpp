@@ -512,7 +512,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 	return std::make_tuple(is_success, result_odo);
 }
 
-} // unnamed namespace
+}	// unnamed namespace
 
 std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd> 
 		ComputeRGBDOdometry(
