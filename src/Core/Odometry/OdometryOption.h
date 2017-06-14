@@ -26,24 +26,48 @@
 
 #pragma once
 
-#include <iostream> 
-#include <vector>
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Core/Geometry/Image.h>
-#include <Core/Utility/Console.h>
-#include <Core/Camera/PinholeCameraIntrinsic.h>
-#include <Core/Odometry/OdometryOption.h>
-#include <IO/IO.h>
+#include <string>
 
 namespace three {
 
-/// Function to estimate 6D odometry between two RGBD image pairs
-/// output: is_success, 4x4 motion matrix, 6x6 information matrix
-std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd> ComputeRGBDOdometry(
-		const Image& color0_8bit, const Image& depth0_16bit,
-		const Image& color1_8bit, const Image& depth1_16bit,
-		const Eigen::Matrix4d& init_pose,
-		const OdometryOption& odometry_option = OdometryOption());
+class OdometryOption
+{
 
-}	// namespace three
+public:
+
+	OdometryOption(double lambda_dep = 0.95, 
+			int minimum_corr = 30000,
+			int num_pyramid = 4, 
+			int num_iter = 10, 
+			double max_depth_diff = 0.07, 
+			double min_depth = 0.0,	
+			double max_depth = 4.0,
+			double sobel_scale = 0.125, 
+			double det_threshold = 1e-6,
+			bool is_tum = false,
+			bool fast_reject = true,
+			std::string intrinsic_path = "") :
+			lambda_dep_(lambda_dep), minimum_corr_(minimum_corr),
+			num_pyramid_(num_pyramid), num_iter_(num_iter),
+			max_depth_diff_(max_depth_diff), min_depth_(min_depth), 
+			max_depth_(max_depth), sobel_scale_(sobel_scale), 
+			det_threshold_(det_threshold), is_tum_(is_tum), 
+			fast_reject_(fast_reject), intrinsic_path_(intrinsic_path) {}
+	~OdometryOption() {}
+
+public:
+	double lambda_dep_;
+	double minimum_corr_;
+	int num_pyramid_;
+	int num_iter_;
+	double max_depth_diff_;
+	double min_depth_;
+	double max_depth_;
+	double sobel_scale_;
+	double det_threshold_;
+	bool is_tum_;
+	bool fast_reject_;
+	std::string intrinsic_path_;
+};
+
+}

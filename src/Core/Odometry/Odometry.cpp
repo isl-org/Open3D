@@ -25,29 +25,21 @@
 // ----------------------------------------------------------------------------
 
 #include "Odometry.h"
+#include <json/json.h>
 
 namespace three {
 
 namespace {
 
-const static double LAMBDA_DEP_DEFAULT = 0.95;
-const static double MINIMUM_CORR = 30000;
-const static int    NUM_PYRAMID = 4;
-const static int    NUM_ITER = 10;
-const static double MAX_DEPTH_DIFF = 0.07;
-const static int    ADJ_FRAMES = 1;
-const static double MIN_DEPTH = 0.0;
-const static double MAX_DEPTH = 4.0;
-const static double SOBEL_SCALE_I = 1.0 / 8.0;
-const static double SOBEL_SCALE_d = 1.0 / 8.0;
-const static double DET_THRESHOLD = 1e-6;
-
 std::tuple<std::shared_ptr<Image>, int> 
-		ComputeCorrespondence(const Eigen::Matrix3d& K,
-		const Eigen::Matrix4d& odo,
-		const Image& depth0, const Image& depth1)
+		ComputeCorrespondence(
+				const Eigen::Matrix3d intrinsic_matrix,
+				const Eigen::Matrix4d& odo,
+				const Image& depth0, const Image& depth1,
+				const OdometryOption& opt)
 {
-	const Eigen::Matrix3d& K_inv = K.inverse();
+	const Eigen::Matrix3d K = intrinsic_matrix;
+	const Eigen::Matrix3d K_inv = K.inverse();
 	const Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
 	const Eigen::Matrix3d KRK_inv = K * R * K_inv;
 	const double KRK_inv_ptr[9] =
@@ -88,7 +80,7 @@ std::tuple<std::shared_ptr<Image>, int>
 					v0 >= 0 && v0 < depth1.height_) {
 					double d0 = double{ *PointerAt<float>(depth0, u0, v0) };
 					if (!std::isnan(d0) &&
-						std::abs(transformed_d1 - d0) <= MAX_DEPTH_DIFF) {
+						std::abs(transformed_d1 - d0) <= opt.max_depth_diff_) {
 						int exist_u1, exist_v1;
 						exist_u1 = *PointerAt<int>(*corresps, u0, v0, 0);
 						exist_v1 = *PointerAt<int>(*corresps, u0, v0, 1);
@@ -120,7 +112,7 @@ std::tuple<bool, Eigen::VectorXd>
 		const Image& dD_dx1, const Image& dD_dy1,
 		const Eigen::Matrix4d& odo,
 		const Image& corresps, int corresps_count,
-		const double& lambda_dep,
+		const OdometryOption& opt,
 		const double& fx, const double& fy)
 {
 	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
@@ -138,8 +130,8 @@ std::tuple<bool, Eigen::VectorXd>
 	int point_count = 0;
 
 	double sqrt_lamba_dep, sqrt_lambda_img;
-	sqrt_lamba_dep = sqrt(lambda_dep);
-	sqrt_lambda_img = sqrt(1.0 - lambda_dep);
+	sqrt_lamba_dep = sqrt(opt.lambda_dep_);
+	sqrt_lambda_img = sqrt(1.0 - opt.lambda_dep_);
 
 	const double R_raw[9] =
 	{ R(0,0), R(0,1), R(0,2),
@@ -158,10 +150,14 @@ std::tuple<bool, Eigen::VectorXd>
 				double diff = static_cast<double>(*PointerAt<float>(image1, u1, v1)) -
 					static_cast<double>(*PointerAt<float>(image0, u0, v0));
 
-				double dIdx = SOBEL_SCALE_I * double{ *PointerAt<float>(dI_dx1, u1, v1) };
-				double dIdy = SOBEL_SCALE_I * double{ *PointerAt<float>(dI_dy1, u1, v1) };
-				double dDdx = SOBEL_SCALE_d * double{ *PointerAt<float>(dD_dx1, u1, v1) };
-				double dDdy = SOBEL_SCALE_d * double{ *PointerAt<float>(dD_dy1, u1, v1) };
+				double dIdx = opt.sobel_scale_ * 
+							double{ *PointerAt<float>(dI_dx1, u1, v1) };
+				double dIdy = opt.sobel_scale_ *
+							double{ *PointerAt<float>(dI_dy1, u1, v1) };
+				double dDdx = opt.sobel_scale_ *
+							double{ *PointerAt<float>(dD_dx1, u1, v1) };
+				double dDdy = opt.sobel_scale_ *
+							double{ *PointerAt<float>(dD_dy1, u1, v1) };
 				if (std::isnan(dDdx)) dDdx = 0;
 				if (std::isnan(dDdy)) dDdy = 0;
 
@@ -228,7 +224,8 @@ std::tuple<bool, Eigen::VectorXd>
 
 	bool solutionExist = true;
 	double det = JtJ.determinant();
-	if (fabs(det) < DET_THRESHOLD || std::isnan(det) || std::isinf(det))
+	if (fabs(det) < 1e-6 ||
+				std::isnan(det) || std::isinf(det))
 		solutionExist = false;
 
 	if (solutionExist) {
@@ -241,17 +238,17 @@ std::tuple<bool, Eigen::VectorXd>
 }
 
 std::shared_ptr<Image> ConvertDepth2Cloud(
-		const Image& depth, const Eigen::Matrix3d& camera_matrix)
+		const Image& depth, const Eigen::Matrix3d& intrinsic_matrix)
 {
 	auto cloud = std::make_shared<Image>();
 	if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
 		PrintDebug("[ConvertDepth2Cloud] Unsupported image format.\n");
 		return cloud;
 	}
-	const double inv_fx = 1.f / camera_matrix(0, 0);
-	const double inv_fy = 1.f / camera_matrix(1, 1);
-	const double ox = camera_matrix(0, 2);
-	const double oy = camera_matrix(1, 2);
+	const double inv_fx = 1.f / intrinsic_matrix(0, 0);
+	const double inv_fy = 1.f / intrinsic_matrix(1, 1);
+	const double ox = intrinsic_matrix(0, 2);
+	const double oy = intrinsic_matrix(1, 2);
 	cloud->PrepareImage(depth.width_, depth.height_, 3, 4);
 
 	for (int y = 0; y < depth.height_; y++) {
@@ -269,13 +266,15 @@ std::shared_ptr<Image> ConvertDepth2Cloud(
 }
 
 std::vector<Eigen::Matrix3d>
-		CreateCameraMatrixPyramid(const Eigen::Matrix3d& K, int levels)
+		CreateCameraMatrixPyramid(
+				const PinholeCameraIntrinsic& camera_intrinsic, int levels)
 {
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
 	pyramid_camera_matrix.reserve(levels);
 	for (int i = 0; i < levels; i++) {
 		Eigen::Matrix3d level_camera_matrix = i == 0 ?
-			K : 0.5f * pyramid_camera_matrix[i - 1];
+			camera_intrinsic.intrinsic_matrix_ : 
+			0.5f * pyramid_camera_matrix[i - 1];
 		level_camera_matrix(2, 2) = 1.;
 		pyramid_camera_matrix.push_back(level_camera_matrix);
 	}
@@ -284,17 +283,19 @@ std::vector<Eigen::Matrix3d>
 
 Eigen::MatrixXd CreateInfomationMatrix(
 		const Eigen::Matrix4d& odo,
-		const Eigen::Matrix3d& camera_matrix,
-		const Image& depth0, const Image& depth1)
+		const PinholeCameraIntrinsic& camera_intrinsic,
+		const Image& depth0, const Image& depth1,
+		const OdometryOption& opt)
 {
 	Eigen::Matrix4d odo_inv = odo.inverse();
 
 	std::shared_ptr<Image> corresps; 
 	int corresps_count;
-	std::tie(corresps, corresps_count) = ComputeCorrespondence(camera_matrix, odo_inv,
-		depth0, depth1);
+	std::tie(corresps, corresps_count) = ComputeCorrespondence(
+			camera_intrinsic.intrinsic_matrix_, odo_inv, depth0, depth1, opt);
 
-	auto point_cloud1 = ConvertDepth2Cloud(depth1, camera_matrix);
+	auto point_cloud1 = ConvertDepth2Cloud(
+			depth1, camera_intrinsic.intrinsic_matrix_);
 
 	// write q^*
 	// see http://redwood-data.org/indoor/registration.html
@@ -370,8 +371,18 @@ void LoadCameraFile(const char* filename, Eigen::Matrix3d& K)
 	}
 }
 
-void NormalizeIntensity(
-	Image& image0, Image& image1, Image& corresps)
+PinholeCameraIntrinsic ReadCameraIntrinsic(const std::string& intrinsic_path) {
+	PinholeCameraIntrinsic intrinsic;
+	if (intrinsic_path.empty() || 
+			!ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+		PrintWarning("Failed to read intrinsic parameters for depth image.\n");
+		PrintWarning("Use default value for Primesense camera.\n");
+		intrinsic.SetIntrinsics(640, 480, 525.0, 525.0, 319.5, 239.5);
+	}
+	return intrinsic;
+}
+
+void NormalizeIntensity(Image& image0, Image& image1, Image& corresps)
 {
 	if (image0.width_ != image1.width_ ||
 		image0.height_ != image1.height_) {
@@ -396,12 +407,12 @@ void NormalizeIntensity(
 	LinearTransformImage(image1, 0.5 / mean1, 0.0);
 }
 
-void PreprocessDepth(const three::Image &depth)
+void PreprocessDepth(const three::Image &depth, const OdometryOption& opt)
 {
 	for (int y = 0; y < depth.height_; y++) {
 		for (int x = 0; x < depth.width_; x++) {
 			float *p = PointerAt<float>(depth, x, y);
-			if ((*p > MAX_DEPTH || *p < MIN_DEPTH || *p <= 0)) 
+			if ((*p > opt.max_depth_ || *p < opt.min_depth_ || *p <= 0))
 				*p = std::numeric_limits<float>::quiet_NaN();
 		}
 	}
@@ -431,32 +442,32 @@ std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>,
 		std::shared_ptr<Image>, std::shared_ptr<Image>> InitializeRGBDPair(
 				const Image& color0_8bit, const Image& depth0_16bit,
 				const Image& color1_8bit, const Image& depth1_16bit,
-				Eigen::Matrix3d& camera_matrix,
+				PinholeCameraIntrinsic& camera_intrinsic,
 				Eigen::Matrix4d& odo_init,
-				const bool is_tum, const bool fast_reject) 
+				const OdometryOption& opt) 
 {
 	auto gray_temp0 = CreateFloatImageFromImage(color0_8bit);
 	auto gray_temp1 = CreateFloatImageFromImage(color1_8bit);
 	auto gray0 = FilterImage(*gray_temp0, FILTER_GAUSSIAN_3);
 	auto gray1 = FilterImage(*gray_temp1, FILTER_GAUSSIAN_3);
 
-	double depth_scale = is_tum ? 5000.0 : 1000.0;
-	double max_depth = 4.0;
+	double depth_scale = opt.is_tum_ ? 5000.0 : 1000.0;
+	double max_depth = opt.max_depth_;
 	auto depth_temp0 = ConvertDepthToFloatImage(depth0_16bit, depth_scale, max_depth);
 	auto depth_temp1 = ConvertDepthToFloatImage(depth1_16bit, depth_scale, max_depth);
-	PreprocessDepth(*depth_temp0);
-	PreprocessDepth(*depth_temp1);
+	PreprocessDepth(*depth_temp0, opt);
+	PreprocessDepth(*depth_temp1, opt);
 	auto depth0 = FilterImage(*depth_temp0, FILTER_GAUSSIAN_3);
 	auto depth1 = FilterImage(*depth_temp1, FILTER_GAUSSIAN_3);
 
 	std::shared_ptr<Image> temp_corresps;
 	int corresps_count;
 	std::tie(temp_corresps, corresps_count) = ComputeCorrespondence(
-		camera_matrix, odo_init.inverse(),
-		*depth0, *depth1);
+			camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
+			*depth0, *depth1, opt);
 	PrintDebug("Number of correspondence is %d\n", corresps_count);
 
-	if (fast_reject && corresps_count < MINIMUM_CORR) {
+	if (opt.fast_reject_ && corresps_count < opt.minimum_corr_) {
 		PrintWarning("[InitializeRGBDPair] Bad initial pose\n");
 	}
 	NormalizeIntensity(*gray0, *gray1, *temp_corresps);
@@ -467,22 +478,18 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 		const Eigen::Matrix4d& init_odo,
 		const Image &gray0, const Image &depth0,
 		const Image &gray1, const Image &depth1,
-		const double lambda_dep_input,
-		const Eigen::Matrix3d& camera_matrix,
-		const std::vector<int>& iter_counts) {
+		const double lambda_dep,
+		const PinholeCameraIntrinsic& camera_intrinsic,
+		const OdometryOption& opt) {
 
-	double lambda_dep;
-	if (lambda_dep_input < 0.0f || lambda_dep_input > 1.0f)
-		lambda_dep = LAMBDA_DEP_DEFAULT;
-	else
-		lambda_dep = lambda_dep_input;
-	PrintDebug("lambda_dep : %f\n", lambda_dep);
-	PrintDebug("lambda_img : %f\n", 1.0f - lambda_dep);
+	std::vector<int> iter_counts;
+	for (int i = 0; i < opt.num_pyramid_; i++)
+		iter_counts.push_back(opt.num_iter_);
 
-	auto pyramid_gray0 = CreateImagePyramid(gray0, NUM_PYRAMID);
-	auto pyramid_gray1 = CreateImagePyramid(gray1, NUM_PYRAMID);
-	auto pyramid_depth0 = CreateImagePyramid(depth0, NUM_PYRAMID, false);
-	auto pyramid_depth1 = CreateImagePyramid(depth1, NUM_PYRAMID, false);
+	auto pyramid_gray0 = CreateImagePyramid(gray0, opt.num_pyramid_);
+	auto pyramid_gray1 = CreateImagePyramid(gray1, opt.num_pyramid_);
+	auto pyramid_depth0 = CreateImagePyramid(depth0, opt.num_pyramid_, false);
+	auto pyramid_depth1 = CreateImagePyramid(depth1, opt.num_pyramid_, false);
 	auto pyramid_dI_dx1 = FilterImagePyramid(pyramid_gray1, FILTER_SOBEL_3_DX);
 	auto pyramid_dI_dy1 = FilterImagePyramid(pyramid_gray1, FILTER_SOBEL_3_DY);
 	auto pyramid_dD_dx1 = FilterImagePyramid(pyramid_depth1, FILTER_SOBEL_3_DX);
@@ -495,7 +502,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 	int corresps_count;
 
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix =
-			CreateCameraMatrixPyramid(camera_matrix, (int)iter_counts.size());
+			CreateCameraMatrixPyramid(camera_intrinsic, (int)iter_counts.size());
 
 	bool is_success = true;
 	for (int level = (int)iter_counts.size() - 1; level >= 0; level--) {
@@ -513,7 +520,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 			int corresps_count;
 			std::tie(corresps, corresps_count) = ComputeCorrespondence(
 					level_camera_matrix, result_odo.inverse(),
-					*pyramid_depth0[level], *pyramid_depth1[level]);
+					*pyramid_depth0[level], *pyramid_depth1[level], opt);
 
 			if (corresps_count == 0) {
 				PrintError("[ComputeOdometry] Num of corres is 0!\n");
@@ -541,7 +548,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 		}
 	}
 	
-	if (corresps_count < MINIMUM_CORR)
+	if (corresps_count < opt.minimum_corr_)
 		is_success = false;
 
 	return std::make_tuple(is_success, result_odo);
@@ -554,10 +561,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd>
 		const Image& color0_8bit, const Image& depth0_16bit,
 		const Image& color1_8bit, const Image& depth1_16bit,
 		const Eigen::Matrix4d& init_pose,
-		const char* camera_filename,
-		const double lambda_dep,
-		bool fast_reject,
-		bool is_tum)
+		const OdometryOption& opt)
 {
 	if (!CheckImagePair(color0_8bit, depth0_16bit, color1_8bit, depth1_16bit)) {
 		PrintError("[ComputeRGBDOdometry] Two RGBD pairs should be same in size.\n");
@@ -566,28 +570,34 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd>
 				Eigen::Matrix4d::Identity(), Eigen::MatrixXd::Zero(6,6));
 	}
 
-	Eigen::Matrix3d camera_matrix;
-	LoadCameraFile(camera_filename, camera_matrix);
+	//Eigen::Matrix3d camera_matrix;
+	//LoadCameraFile(opt.intrinsic_path_.c_str(), camera_matrix);
+
+	PinholeCameraIntrinsic camera_intrinsic = 
+			ReadCameraIntrinsic(opt.intrinsic_path_);
+	
+	double lambda_dep = opt.lambda_dep_;
+	if (lambda_dep < 0.0f || lambda_dep > 1.0f)
+		lambda_dep = 0.95;
+	PrintDebug("lambda_dep : %f\n", lambda_dep);
+	PrintDebug("lambda_img : %f\n", 1.0f - lambda_dep);
 
 	std::shared_ptr<Image> gray0, depth0, gray1, depth1;
 	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
 	std::tie(gray0, depth0, gray1, depth1) = 
-			InitializeRGBDPair(color0_8bit, depth0_16bit, color1_8bit, depth1_16bit,
-			camera_matrix, odo_init, is_tum, fast_reject);
-
-	std::vector<int> iter_counts;
-	for (int i = 0; i < NUM_PYRAMID; i++)
-		iter_counts.push_back(NUM_ITER);
+			InitializeRGBDPair(color0_8bit, depth0_16bit, 
+					color1_8bit, depth1_16bit,
+					camera_intrinsic, odo_init, opt);
 
 	Eigen::Matrix4d odo;
 	bool is_found;
 	std::tie(is_found, odo) = ComputeOdometryMultiscale(odo_init,
 			*gray0, *depth0, *gray1, *depth1,
-			lambda_dep, camera_matrix, iter_counts);
+			lambda_dep, camera_intrinsic, opt);
 
 	Eigen::Matrix4d trans_output = odo.inverse();
 	Eigen::MatrixXd info_output = CreateInfomationMatrix(
-			odo, camera_matrix, *depth0, *depth1);
+			odo, camera_intrinsic, *depth0, *depth1, opt);
 
 	return std::make_tuple(true, trans_output, info_output);
 }
