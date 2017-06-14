@@ -331,47 +331,6 @@ Eigen::MatrixXd CreateInfomationMatrix(
 	return GtG;
 }
 
-void LoadCameraFile(const char* filename, Eigen::Matrix3d& K)
-{
-	if (strcmp(filename, "") == 0) {
-		PrintDebug("[LoadCameraFile] Using default camera intrinsic");
-		K << 525.0, 0, 319.5,
-			0, 525.0, 239.5,
-			0, 0, 1;
-	}
-	else {
-		float fx_, fy_, cx_, cy_;
-		float ICP_trunc_, integration_trunc_;
-
-		FILE * f = fopen(filename, "r");
-		if (f != NULL) {
-			char buffer[1024];
-			char* temp;
-			// todo: fancy c++ style file read.
-			while (fgets(buffer, 1024, f) != NULL) {
-				if (strlen(buffer) > 0 && buffer[0] != '#') {
-					sscanf(buffer, "%f", &fx_);
-					temp = fgets(buffer, 1024, f);
-					sscanf(buffer, "%f", &fy_);
-					temp = fgets(buffer, 1024, f);
-					sscanf(buffer, "%f", &cx_);
-					temp = fgets(buffer, 1024, f);
-					sscanf(buffer, "%f", &cy_);
-					temp = fgets(buffer, 1024, f);
-					sscanf(buffer, "%f", &ICP_trunc_);
-					temp = fgets(buffer, 1024, f);
-					sscanf(buffer, "%f", &integration_trunc_);
-					temp = fgets(buffer, 1024, f);
-				}
-			}
-			fclose(f);
-		}
-		K << fx_, 0.0, cx_,
-			0.0, fy_, cy_,
-			0.0, 0.0, 1.0;
-	}
-}
-
 PinholeCameraIntrinsic ReadCameraIntrinsic(const std::string& intrinsic_path) {
 	PinholeCameraIntrinsic intrinsic;
 	if (intrinsic_path.empty() || 
