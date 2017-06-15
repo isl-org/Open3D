@@ -31,6 +31,9 @@
 
 namespace three {
 
+/// RGBDImage is for a pair of registered color and depth images, 
+/// viewed from the same view, of the same resolution. 
+/// If you have other format, convert it first.
 class RGBDImage
 {
 public:
@@ -48,17 +51,14 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 		const double& depth_scale = 1000.0, double depth_trunc = 3.0);
 
 /// Factory function to create an RGBD Image from TUM dataset
-/// Reference: http://vision.in.tum.de/data/datasets/rgbd-dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
 		const Image& color, const Image& depth);
 
-/// Factory function to create an RGBD Image from MIT dataset
-/// Reference: http://sun3d.cs.princeton.edu/
+/// Factory function to create an RGBD Image from SUN3D dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
 	const Image& color, const Image& depth);
 
 /// Factory function to create an RGBD Image from NYU dataset
-/// Reference: http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
 std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
 	const Image& color, const Image& depth);
 

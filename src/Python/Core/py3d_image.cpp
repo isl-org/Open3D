@@ -112,8 +112,7 @@ void pybind_image(py::module &m)
 					std::string(" channels.\nUse numpy.asarray to access buffer data.");
 		});
 
-	py::class_<RGBDImage, std::shared_ptr<RGBDImage>>
-			rgbd_image(m, "RGBDImage", py::buffer_protocol());
+	py::class_<RGBDImage, std::shared_ptr<RGBDImage>> rgbd_image(m, "RGBDImage");
 	py::detail::bind_default_constructor<RGBDImage>(rgbd_image);
 	rgbd_image
 		.def_readwrite("color", &RGBDImage::color_)

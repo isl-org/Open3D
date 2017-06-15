@@ -130,7 +130,8 @@ ImagePyramid CreateImagePyramid(
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 		const Image& color, const Image& depth, 
-		const double& depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) {
+		const double& depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
+{
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
 		PrintWarning("[CreateRGBDImageFromColorAndDepth] Unsupported image format.\n");
@@ -143,13 +144,19 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 	return rgbd_image;
 }
 
+/// Reference: http://vision.in.tum.de/data/datasets/rgbd-dataset
+/// File format: http://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
-		const Image& color, const Image& depth) {
+		const Image& color, const Image& depth) 
+{
 	return CreateRGBDImageFromColorAndDepth(color, depth, 5000.0);
 }
 
+/// Reference: http://sun3d.cs.princeton.edu/
+/// File format: https://github.com/PrincetonVision/SUN3DCppReader
 std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
-		const Image& color, const Image& depth) {
+		const Image& color, const Image& depth) 
+{
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
 		PrintWarning("[CreateRGBDImageFromSUNFormat] Unsupported image format.\n");
@@ -169,8 +176,10 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
 	return rgbd_image;
 }
 
+/// Reference: http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
 std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
-		const Image& color, const Image& depth) {
+		const Image& color, const Image& depth) 
+{
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
 		PrintWarning("[CreateRGBDImageFromNYUFormat] Unsupported image format.\n");
