@@ -37,11 +37,17 @@ namespace three {
 
 namespace {
 
-void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
+std::tuple<RegistrationResult, CorrespondenceSet>
+		GetRegistrationResultAndCorrespondences(
+		const PointCloud &source, const PointCloud &target,
 		const KDTreeFlann &target_kdtree, double max_correspondence_distance,
-		CorrespondenceSet &corres, RegistrationResult &result)
+		const Eigen::Matrix4d &transformation)
 {
-	corres.clear();
+	RegistrationResult result(transformation);
+	CorrespondenceSet corres;
+	if (max_correspondence_distance <= 0.0) {
+		return std::make_tuple(std::move(result), std::move(corres));
+	}
 	double error2 = 0.0;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -68,10 +74,12 @@ void GetICPCorrespondence(const PointCloud &source, const PointCloud &target,
 		result.fitness_ = (double)corres.size() / (double)source.points_.size();
 		result.inlier_rmse_ = std::sqrt(error2 / (double)corres.size());
 	}
+	return std::make_tuple(std::move(result), std::move(corres));
 }
 
-void EvaluateRANSAC(const PointCloud &source, const PointCloud &target,
-		const CorrespondenceSet &corres, double max_correspondence_distance,
+void EvaluateRANSACBasedOnCorrespondence(const PointCloud &source,
+		const PointCloud &target, const CorrespondenceSet &corres,
+		double max_correspondence_distance,
 		RegistrationResult &result)
 {
 	double error2 = 0.0;
@@ -100,20 +108,14 @@ RegistrationResult EvaluateRegistration(const PointCloud &source,
 		const PointCloud &target, double max_correspondence_distance,
 		const Eigen::Matrix4d &transformation/* = Eigen::Matrix4d::Identity()*/)
 {
-	RegistrationResult result(transformation);
-	if (max_correspondence_distance <= 0.0) {
-		return result;
-	}
 	KDTreeFlann kdtree;
 	kdtree.SetGeometry(target);
 	PointCloud pcd = source;
 	if (transformation.isIdentity() == false) {
 		pcd.Transform(transformation);
 	}
-	CorrespondenceSet corres;
-	GetICPCorrespondence(pcd, target, kdtree, max_correspondence_distance,
-			corres, result);
-	return result;
+	return std::get<0>(GetRegistrationResultAndCorrespondences(pcd, target,
+			kdtree, max_correspondence_distance, transformation));
 }
 
 RegistrationResult RegistrationICP(const PointCloud &source,
@@ -123,29 +125,30 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 		/* = TransformationEstimationPointToPoint(false)*/,
 		const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/)
 {
-	RegistrationResult result(init);
 	if (max_correspondence_distance <= 0.0) {
-		return result;
+		return RegistrationResult(init);
 	}
+	Eigen::Matrix4d transformation = init;
 	KDTreeFlann kdtree;
 	kdtree.SetGeometry(target);
 	PointCloud pcd = source;
 	if (init.isIdentity() == false) {
 		pcd.Transform(init);
 	}
+	RegistrationResult result;
 	CorrespondenceSet corres;
-	GetICPCorrespondence(pcd, target, kdtree, max_correspondence_distance,
-			corres, result);
+	std::tie(result, corres) = GetRegistrationResultAndCorrespondences(
+			pcd, target, kdtree, max_correspondence_distance, transformation);
 	for (int i = 0; i < criteria.max_iteration_; i++) {
 		PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
 				result.fitness_, result.inlier_rmse_);
 		Eigen::Matrix4d update = estimation.ComputeTransformation(
 				pcd, target, corres);
-		RegistrationResult backup = result;
-		result.transformation_ = update * result.transformation_;
+		transformation = update * transformation;
 		pcd.Transform(update);
-		GetICPCorrespondence(pcd, target, kdtree, max_correspondence_distance,
-				corres, result);
+		RegistrationResult backup = result;
+		std::tie(result, corres) = GetRegistrationResultAndCorrespondences(pcd,
+				target, kdtree, max_correspondence_distance, transformation);
 		if (std::abs(backup.fitness_ - result.fitness_) <
 				criteria.relative_fitness_ && std::abs(backup.inlier_rmse_ -
 				result.inlier_rmse_) < criteria.relative_rmse_) {
@@ -160,16 +163,17 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 		const CorrespondenceSet &corres, double max_correspondence_distance,
 		const TransformationEstimation &estimation
 		/* = TransformationEstimationPointToPoint(false)*/,
-		int ransac_n/* = 6*/, int max_ransac_iteration/* = 1000*/)
+		int ransac_n/* = 6*/, const RANSACConvergenceCriteria &criteria
+		/* = RANSACConvergenceCriteria()*/)
 {
-	RegistrationResult result;
 	if (ransac_n < 3 || (int)corres.size() < ransac_n ||
 			max_correspondence_distance <= 0.0) {
-		return result;
+		return RegistrationResult();
 	}
 	std::srand((unsigned int)std::time(0));
+	RegistrationResult result;
 	CorrespondenceSet ransac_corres(ransac_n);
-	for (int i = 0; i < max_ransac_iteration; i++) {
+	for (int i = 0; i < criteria.max_iteration_; i++) {
 		RegistrationResult this_result;
 		for (int j = 0; j < ransac_n; j++) {
 			ransac_corres[j] = corres[std::rand() % (int)corres.size()];
@@ -178,8 +182,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 				target, ransac_corres);
 		PointCloud pcd = source;
 		pcd.Transform(this_result.transformation_);
-		EvaluateRANSAC(pcd, target, corres, max_correspondence_distance,
-				this_result);
+		EvaluateRANSACBasedOnCorrespondence(pcd, target, corres,
+				max_correspondence_distance, this_result);
 		if (this_result.fitness_ > result.fitness_ ||
 				(this_result.fitness_ == result.fitness_ &&
 				this_result.inlier_rmse_ < result.inlier_rmse_)) {

@@ -109,6 +109,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 		const CorrespondenceSet &corres, double max_correspondence_distance,
 		const TransformationEstimation &estimation =
 		TransformationEstimationPointToPoint(false),
-		int ransac_n = 6, int max_ransac_iteration = 1000);
+		int ransac_n = 6, const RANSACConvergenceCriteria &criteria =
+		RANSACConvergenceCriteria());
 
 }	// namespace three

@@ -69,10 +69,31 @@ void pybind_registration(py::module &m)
 			return std::string("ICPConvergenceCriteria class.\n") +
 					std::string("relative_fitness = ") +
 					std::to_string(c.relative_fitness_) +
-					std::string("relative_rmse = ") +
+					std::string(", relative_rmse = ") +
 					std::to_string(c.relative_rmse_) +
 					std::string(", max_iteration = " +
 					std::to_string(c.max_iteration_));
+		});
+
+	py::class_<RANSACConvergenceCriteria> ransac_criteria(m,
+			"RANSACConvergenceCriteria");
+	py::detail::bind_copy_functions<RANSACConvergenceCriteria>(
+			ransac_criteria);
+	ransac_criteria.def("__init__", [](RANSACConvergenceCriteria &c,
+			int max_iteration, int max_validation) {
+		new (&c)RANSACConvergenceCriteria(max_iteration, max_validation);
+	}, "max_iteration"_a = 1000, "max_validation"_a = 1000);
+	ransac_criteria
+		.def_readwrite("max_iteration",
+				&RANSACConvergenceCriteria::max_iteration_)
+		.def_readwrite("max_validation",
+				&RANSACConvergenceCriteria::max_validation_)
+		.def("__repr__", [](const RANSACConvergenceCriteria &c) {
+			return std::string("RANSACConvergenceCriteria class.\n") +
+					std::string("max_iteration = ") +
+					std::to_string(c.max_iteration_) +
+					std::string(", max_validation = " +
+					std::to_string(c.max_validation_));
 		});
 
 	py::class_<TransformationEstimation,
@@ -149,5 +170,5 @@ void pybind_registration_methods(py::module &m)
 			"Function for RANSAC registration based on a set of correspondences",
 			"source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
 			"estimation"_a = TransformationEstimationPointToPoint(false),
-			"ransac_n"_a = 6, "max_ransac_iteration"_a = 1000);
+			"ransac_n"_a = 6, "criteria"_a = RANSACConvergenceCriteria());
 }
