@@ -32,6 +32,7 @@
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
+#include <Core/Registration/Feature.h>
 
 namespace three {
 
@@ -173,7 +174,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 	std::srand((unsigned int)std::time(0));
 	RegistrationResult result;
 	CorrespondenceSet ransac_corres(ransac_n);
-	for (int i = 0; i < criteria.max_iteration_; i++) {
+	for (int itr = 0; itr < criteria.max_iteration_ &&
+			itr < criteria.max_validation_; itr++) {
 		RegistrationResult this_result;
 		for (int j = 0; j < ransac_n; j++) {
 			ransac_corres[j] = corres[std::rand() % (int)corres.size()];
@@ -189,6 +191,73 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 				this_result.inlier_rmse_ < result.inlier_rmse_)) {
 			result = this_result;
 		}
+	}
+	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
+			result.inlier_rmse_);
+	return result;
+}
+
+RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
+		const PointCloud &source, const PointCloud &target,
+		const Feature &source_feature, const Feature &target_feature,
+		double max_correspondence_distance,
+		const TransformationEstimation &estimation
+		/* = TransformationEstimationPointToPoint(false)*/,
+		int ransac_n/* = 4*/, const std::vector<CorrespondenceChecker> &checkers
+		/* = {}*/, const RANSACConvergenceCriteria &criteria
+		/* = RANSACConvergenceCriteria()*/)
+{
+	if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
+		return RegistrationResult();
+	}
+	std::srand((unsigned int)std::time(0));
+	RegistrationResult result;
+	CorrespondenceSet ransac_corres(ransac_n);
+	KDTreeFlann kdtree(target);
+	KDTreeFlann kdtree_feature(target_feature);
+	std::vector<int> indices(1);
+	std::vector<double> dists(1);
+	for (int itr = 0, val = 0; itr < criteria.max_iteration_ &&
+			val < criteria.max_validation_; itr++) {
+		Eigen::Matrix4d transformation;
+		for (int j = 0; j < ransac_n; j++) {
+			ransac_corres[j](0) = std::rand() % (int)source.points_.size();
+			if (kdtree_feature.SearchKNN(Eigen::VectorXd(
+					source_feature.data_.col(ransac_corres[j](0))), 1, indices,
+					dists) == 0) {
+				PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
+				ransac_corres[j](1) = 0;
+			} else {
+				ransac_corres[j](1) = indices[0];
+			}
+		}
+		for (const auto &checker : checkers) {
+			if (checker.require_pointcloud_alignment_ == false &&
+					checker.Check(source, target, ransac_corres,
+					transformation) == false) {
+				continue;
+			}
+		}
+		transformation = estimation.ComputeTransformation(source, target,
+				ransac_corres);
+		for (const auto &checker : checkers) {
+			if (checker.require_pointcloud_alignment_ == true &&
+					checker.Check(source, target, ransac_corres,
+					transformation) == false) {
+				continue;
+			}
+		}
+		PointCloud pcd = source;
+		pcd.Transform(transformation);
+		auto this_result = std::get<0>(GetRegistrationResultAndCorrespondences(
+				source, target, kdtree, max_correspondence_distance,
+				transformation));
+		if (this_result.fitness_ > result.fitness_ ||
+				(this_result.fitness_ == result.fitness_ &&
+				this_result.inlier_rmse_ < result.inlier_rmse_)) {
+			result = this_result;
+		}
+		val++;
 	}
 	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
 			result.inlier_rmse_);

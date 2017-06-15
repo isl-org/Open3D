@@ -30,11 +30,13 @@
 #include <tuple>
 #include <Eigen/Core>
 
+#include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
 
 namespace three {
 
 class PointCloud;
+class Feature;
 
 /// Class that defines the convergence criteria of ICP
 /// ICP algorithm stops if the relative change of fitness and rmse hit
@@ -110,6 +112,18 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 		const TransformationEstimation &estimation =
 		TransformationEstimationPointToPoint(false),
 		int ransac_n = 6, const RANSACConvergenceCriteria &criteria =
+		RANSACConvergenceCriteria());
+
+/// Function for global RANSAC registration based on feature matching
+RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
+		const PointCloud &source, const PointCloud &target,
+		const Feature &source_feature, const Feature &target_feature,
+		double max_correspondence_distance,
+		const TransformationEstimation &estimation =
+		TransformationEstimationPointToPoint(false),
+		int ransac_n = 4,
+		const std::vector<CorrespondenceChecker> &checkers = {},
+		const RANSACConvergenceCriteria &criteria =
 		RANSACConvergenceCriteria());
 
 }	// namespace three

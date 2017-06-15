@@ -31,6 +31,8 @@
 #include <string>
 #include <Eigen/Core>
 
+#include <Core/Registration/TransformationEstimation.h>
+
 namespace three {
 
 class PointCloud;
@@ -49,8 +51,9 @@ public:
 public:
 	/// Function to check if two points can be aligned. The two input point
 	/// clouds must have exact the same number of points.
-	virtual bool Check(const PointCloud &source, const PointCloud &target)
-			const = 0;
+	virtual bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const = 0;
 
 public:
 	/// Some checkers do not require point clouds to be aligned, e.g., the edge
@@ -70,8 +73,9 @@ public:
 	~CorrespondenceCheckerBasedOnEdgeLength() override {}
 	
 public:
-	bool Check(const PointCloud &source, const PointCloud &target) const
-			override;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override;
 	
 public:
 	double similarity_threshold_;
@@ -87,8 +91,9 @@ public:
 	~CorrespondenceCheckerBasedOnDistance() override {}
 	
 public:
-	bool Check(const PointCloud &source, const PointCloud &target) const
-			override;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override;
 	
 public:
 	double distance_threshold_;
@@ -104,8 +109,9 @@ public:
 	~CorrespondenceCheckerBasedOnNormal() override {}
 	
 public:
-	bool Check(const PointCloud &source, const PointCloud &target) const
-			override;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override;
 	
 public:
 	double normal_angle_threshold_;
