@@ -28,25 +28,4 @@
 
 namespace three{
 
-void RGBDImage::Clear()
-{
-	depth.Clear();
-	color.Clear();
-}
-	
-bool RGBDImage::IsEmpty() const
-{
-	return (!depth.HasData() || !color.HasData());
-}
-
-Eigen::Vector2d RGBDImage::GetMinBound() const
-{
-	return Eigen::Vector2d(0.0, 0.0);
-}
-
-Eigen::Vector2d RGBDImage::GetMaxBound() const
-{
-	return Eigen::Vector2d(color.width_, color.height_);
-}
-
 }	// namespace three

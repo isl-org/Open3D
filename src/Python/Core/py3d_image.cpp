@@ -28,6 +28,7 @@
 #include "py3d_core_trampoline.h"
 
 #include <Core/Geometry/Image.h>
+#include <Core/Geometry/RGBDImage.h>
 #include <IO/ClassIO/ImageIO.h>
 using namespace three;
 
@@ -110,6 +111,27 @@ void pybind_image(py::module &m)
 					std::to_string(img.num_of_channels_) +
 					std::string(" channels.\nUse numpy.asarray to access buffer data.");
 		});
+
+	py::class_<RGBDImage, std::shared_ptr<RGBDImage>>
+			rgbd_image(m, "RGBDImage", py::buffer_protocol());
+	py::detail::bind_default_constructor<RGBDImage>(rgbd_image);
+	rgbd_image
+		.def_readwrite("color", &RGBDImage::color_)
+		.def_readwrite("depth", &RGBDImage::depth_)
+		.def("__repr__", [](const RGBDImage &rgbd_image) {
+			return std::string("RGBDImage of size \n") + 
+			std::string("Color image : ") +
+			std::to_string(rgbd_image.color_.width_) + std::string("x") + 
+			std::to_string(rgbd_image.color_.height_) + ", with " +
+			std::to_string(rgbd_image.color_.num_of_channels_) +
+			std::string(" channels.\n") +
+			std::string("Depth image : ") +
+			std::to_string(rgbd_image.depth_.width_) + std::string("x") +
+			std::to_string(rgbd_image.depth_.height_) + ", with " +
+			std::to_string(rgbd_image.depth_.num_of_channels_) +
+			std::string(" channels.\n") + 
+			std::string("Use numpy.asarray to access buffer data.");
+		});
 }
 
 void pybind_image_methods(py::module &m)
@@ -163,4 +185,13 @@ void pybind_image_methods(py::module &m)
 		auto output = FilterImagePyramid(input, filter_type);
 		return output;
 	}, "Function to filter ImagePyramid", "image_pyramid"_a, "filter_type"_a);
+	m.def("CreateRGBDImageFromColorAndDepth", &CreateRGBDImageFromColorAndDepth,
+			"Function to make RGBDImage", "color"_a, "depth"_a, 
+			"depth_scale"_a = 1000.0, "depth_trunc"_a = 3.0);
+	m.def("CreateRGBDImageFromTUMFormat", &CreateRGBDImageFromTUMFormat,
+			"Function to make RGBDImage (for TUM format)", "color"_a, "depth"_a);
+	m.def("CreateRGBDImageFromSUNFormat", &CreateRGBDImageFromSUNFormat,
+			"Function to make RGBDImage (for SUN format)", "color"_a, "depth"_a);
+	m.def("CreateRGBDImageFromNYUFormat", &CreateRGBDImageFromNYUFormat,
+			"Function to make RGBDImage (for NYU format)", "color"_a, "depth"_a);
 }

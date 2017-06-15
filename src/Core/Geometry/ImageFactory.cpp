@@ -138,14 +138,65 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 	}
 	auto color_f = CreateFloatImageFromImage(color);
 	auto depth_f = ConvertDepthToFloatImage(depth, depth_scale, depth_trunc);
-	rgbd_image->color = *color_f;
-	rgbd_image->depth = *depth_f;	
+	rgbd_image->color_ = *color_f;
+	rgbd_image->depth_ = *depth_f;
 	return rgbd_image;
 }
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
 		const Image& color, const Image& depth) {
 	return CreateRGBDImageFromColorAndDepth(color, depth, 5000.0);
+}
+
+std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
+		const Image& color, const Image& depth) {
+	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
+	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
+		PrintWarning("[CreateRGBDImageFromSUNFormat] Unsupported image format.\n");
+		return rgbd_image;
+	}
+	for (int v = 0; v < depth.height_; v += 1) {
+		for (int u = 0; u < depth.width_; u += 1) {
+			unsigned short & d = *PointerAt<unsigned short>(depth, u, v);
+			d = (d >> 3) | (d << 13);
+		}
+	}
+	auto color_f = CreateFloatImageFromImage(color);
+	// SUN depth map has long range depth. We set depth_trunc as 7.0
+	auto depth_f = ConvertDepthToFloatImage(depth, 1000, 7.0);
+	rgbd_image->color_ = *color_f;
+	rgbd_image->depth_ = *depth_f;
+	return rgbd_image;
+}
+
+std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
+		const Image& color, const Image& depth) {
+	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
+	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
+		PrintWarning("[CreateRGBDImageFromNYUFormat] Unsupported image format.\n");
+		return rgbd_image;
+	}
+	for (int v = 0; v < depth.height_; v += 1) {
+		for (int u = 0; u < depth.width_; u += 1) {
+			unsigned short * d = PointerAt<unsigned short>(depth, u, v);
+			unsigned char * p = (unsigned char *)d;
+			unsigned char x = *p;
+			*p = *(p + 1);
+			*(p + 1) = x;
+			double xx = 351.3 / (1092.5 - *d);
+			if (xx <= 0.0) {
+				*d = 0;
+			} else {
+				*d = (unsigned short)(floor(xx * 1000 + 0.5));
+			}
+		}
+	}
+	auto color_f = CreateFloatImageFromImage(color);
+	// NYU depth map has long range depth. We set depth_trunc as 7.0
+	auto depth_f = ConvertDepthToFloatImage(depth, 1000, 7.0);
+	rgbd_image->color_ = *color_f;
+	rgbd_image->depth_ = *depth_f;
+	return rgbd_image;
 }
 
 }	// namespace three

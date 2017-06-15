@@ -31,21 +31,15 @@
 
 namespace three {
 
-class RGBDImage : public Geometry2D
+class RGBDImage
 {
 public:
-	RGBDImage() : Geometry2D(GEOMETRY_IMAGE) {};
-	~RGBDImage() override {};
+	RGBDImage() {};
+	~RGBDImage() {};
 
 public:
-	void Clear() override;
-	bool IsEmpty() const override;
-	Eigen::Vector2d GetMinBound() const override;
-	Eigen::Vector2d GetMaxBound() const override;
-
-public:
-	Image depth;
-	Image color;
+	Image depth_;
+	Image color_;
 };
 
 /// Factory function to create an RGBD Image from color and depth Images
@@ -53,7 +47,19 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 		const Image& color, const Image& depth, 
 		const double& depth_scale = 1000.0, double depth_trunc = 3.0);
 
+/// Factory function to create an RGBD Image from TUM dataset
+/// Reference: http://vision.in.tum.de/data/datasets/rgbd-dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
 		const Image& color, const Image& depth);
+
+/// Factory function to create an RGBD Image from MIT dataset
+/// Reference: http://sun3d.cs.princeton.edu/
+std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
+	const Image& color, const Image& depth);
+
+/// Factory function to create an RGBD Image from NYU dataset
+/// Reference: http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
+std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
+	const Image& color, const Image& depth);
 
 }	// namespace three
