@@ -78,11 +78,12 @@ std::tuple<RegistrationResult, CorrespondenceSet>
 	return std::make_tuple(std::move(result), std::move(corres));
 }
 
-void EvaluateRANSACBasedOnCorrespondence(const PointCloud &source,
+RegistrationResult EvaluateRANSACBasedOnCorrespondence(const PointCloud &source,
 		const PointCloud &target, const CorrespondenceSet &corres,
 		double max_correspondence_distance,
-		RegistrationResult &result)
+		const Eigen::Matrix4d &transformation)
 {
+	RegistrationResult result(transformation);
 	double error2 = 0.0;
 	int good = 0;
 	double max_dis2 = max_correspondence_distance * max_correspondence_distance;
@@ -101,6 +102,7 @@ void EvaluateRANSACBasedOnCorrespondence(const PointCloud &source,
 		result.fitness_ = (double)good / (double)corres.size();
 		result.inlier_rmse_ = std::sqrt(error2 / (double)good);
 	}
+	return result;
 }
 
 }	// unnamed namespace
@@ -172,20 +174,20 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 		return RegistrationResult();
 	}
 	std::srand((unsigned int)std::time(0));
-	RegistrationResult result;
+	Eigen::Matrix4d transformation;
 	CorrespondenceSet ransac_corres(ransac_n);
+	RegistrationResult result;
 	for (int itr = 0; itr < criteria.max_iteration_ &&
 			itr < criteria.max_validation_; itr++) {
-		RegistrationResult this_result;
 		for (int j = 0; j < ransac_n; j++) {
 			ransac_corres[j] = corres[std::rand() % (int)corres.size()];
 		}
-		this_result.transformation_ = estimation.ComputeTransformation(source,
+		transformation = estimation.ComputeTransformation(source,
 				target, ransac_corres);
 		PointCloud pcd = source;
-		pcd.Transform(this_result.transformation_);
-		EvaluateRANSACBasedOnCorrespondence(pcd, target, corres,
-				max_correspondence_distance, this_result);
+		pcd.Transform(transformation);
+		auto this_result = EvaluateRANSACBasedOnCorrespondence(pcd, target,
+				corres, max_correspondence_distance, transformation);
 		if (this_result.fitness_ > result.fitness_ ||
 				(this_result.fitness_ == result.fitness_ &&
 				this_result.inlier_rmse_ < result.inlier_rmse_)) {
