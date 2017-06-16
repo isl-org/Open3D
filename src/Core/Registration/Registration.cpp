@@ -234,22 +234,28 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 				ransac_corres[j](1) = indices[0];
 			}
 		}
+		bool check = true;
 		for (const auto &checker : checkers) {
 			if (checker.get().require_pointcloud_alignment_ == false &&
 					checker.get().Check(source, target, ransac_corres,
 					transformation) == false) {
-				continue;
+				check = false;
+				break;
 			}
 		}
+		if (check == false) continue;
 		transformation = estimation.ComputeTransformation(source, target,
 				ransac_corres);
+		check = true;
 		for (const auto &checker : checkers) {
 			if (checker.get().require_pointcloud_alignment_ == true &&
 					checker.get().Check(source, target, ransac_corres,
 					transformation) == false) {
-				continue;
+				check = false;
+				break;
 			}
 		}
+		if (check == false) continue;
 		PointCloud pcd = source;
 		pcd.Transform(transformation);
 		auto this_result = std::get<0>(GetRegistrationResultAndCorrespondences(

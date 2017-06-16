@@ -37,7 +37,7 @@ bool CorrespondenceCheckerBasedOnEdgeLength::Check(const PointCloud &source,
 		const Eigen::Matrix4d &transformation) const
 {
 	for (auto i = 0; i < corres.size(); i++) {
-		for (auto j = 1; j < corres.size(); j++) {
+		for (auto j = i + 1; j < corres.size(); j++) {
 			// check edge ij
 			double dis_source = (source.points_[corres[i](0)] -
 					source.points_[corres[j](0)]).norm();
