@@ -36,38 +36,33 @@ class OdometryOption
 public:
 
 	OdometryOption(
-			Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity(),
 			double lambda_dep = 0.95, 
-			int minimum_corr = 30000,
-			int num_pyramid = 4, 
-			int num_iter = 10, 
+			int minimum_correspondence_num = 30000,
+			std::vector<int> iteration_number_per_pyramid_level =
+			{ 10, 10, 10, 5 } /* {smaller image size to original image size} */,
 			double max_depth_diff = 0.07, 
 			double min_depth = 0.0,	
 			double max_depth = 4.0,
-			double sobel_scale = 0.125, 
-			bool is_tum = false,
-			bool fast_reject = true,
+			bool check_initialization = true,
 			std::string intrinsic_path = "") :
-			odo_init_(odo_init), lambda_dep_(lambda_dep), minimum_corr_(minimum_corr),
-			num_pyramid_(num_pyramid), num_iter_(num_iter),
+			lambda_dep_(lambda_dep), 
+			minimum_correspondence_num_(minimum_correspondence_num),
+			iteration_number_per_pyramid_level_
+			(iteration_number_per_pyramid_level),
 			max_depth_diff_(max_depth_diff), min_depth_(min_depth), 
-			max_depth_(max_depth), sobel_scale_(sobel_scale), 
-			is_tum_(is_tum), fast_reject_(fast_reject), 
+			max_depth_(max_depth), 
+			check_initialization_(check_initialization),
 			intrinsic_path_(intrinsic_path) {}
 	~OdometryOption() {}
 
 public:
-	Eigen::Matrix4d odo_init_;
 	double lambda_dep_;
-	double minimum_corr_;
-	int num_pyramid_;
-	int num_iter_;
+	double minimum_correspondence_num_;
+	std::vector<int> iteration_number_per_pyramid_level_;
 	double max_depth_diff_;
 	double min_depth_;
 	double max_depth_;
-	double sobel_scale_;
-	bool is_tum_;
-	bool fast_reject_;
+	bool check_initialization_;
 	std::string intrinsic_path_;
 };
 

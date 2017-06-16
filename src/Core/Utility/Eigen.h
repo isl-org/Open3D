@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,11 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <Eigen/Core>
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+namespace Eigen {
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraTrajectory.h"
+/// Extending Eigen namespace by adding frequently used matrix type
+typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
-
-#include "Odometry/Odometry.h"
+}	// namespace Eigen

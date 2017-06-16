@@ -28,16 +28,24 @@
 #include <memory>
 #include <Core/Core.h>
 #include <IO/IO.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Core/Utility/Console.h>
+#include <Core/Utility/Eigen.h>
+
 
 void PrintHelp(char* argv[])
 {
-	printf("Usage:\n");
-	printf("    > %s [color1] [depth1] [color2] [depth2] [options]\n", argv[0]);
-	printf("      Given RGBD image pair, estimate 6D odometry.\n");
-	printf("      --camera_intrinsic [intrinsic_path]");
-	printf("      --TUM : indicate this if depth map is TUM dataset");
-	printf("      --verbose : shows more details");
-	printf("\n");
+	using namespace three;
+
+	PrintInfo("Usage:\n");
+	PrintInfo("> %s [color_source] [source_target] [color_target] [depth_target] [options]\n", argv[0]);
+	PrintInfo("   Given RGBD image pair, estimate 6D odometry.\n");
+	PrintInfo("   [options]\n");
+	PrintInfo("      --camera_intrinsic [intrinsic_path]");
+	PrintInfo("      --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
+	PrintInfo("      --verbose : indicate this to display detailed information");
+	PrintInfo("\n");
 }
 
 int main(int argc, char *argv[])
@@ -50,40 +58,54 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	std::string camera_path;
+	std::string intrinsic_path;
 	if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) { 
-		camera_path = GetProgramOptionAsString(
+		intrinsic_path = GetProgramOptionAsString(
 				argc, argv, "--camera_intrinsic").c_str();
-		PrintInfo("Camera intrinsic path %s\n", camera_path.c_str());
+		PrintInfo("Camera intrinsic path %s\n", intrinsic_path.c_str());
 	} else {
 		PrintInfo("Camera intrinsic path is not given\n");
 	}
-	bool verbose = ProgramOptionExists(argc, argv, "--verbose");
-	if (verbose)
+	PinholeCameraIntrinsic intrinsic;
+	if (intrinsic_path.empty() ||
+			!ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+		PrintWarning("Failed to read intrinsic parameters for depth image.\n");
+		PrintWarning("Use default value for Primesense camera.\n");
+		intrinsic = PinholeCameraIntrinsic::PrimeSenseDefault;
+	}
+		
+	if (ProgramOptionExists(argc, argv, "--verbose"))
 		SetVerbosityLevel(three::VERBOSE_ALWAYS);
-	bool is_tum = ProgramOptionExists(argc, argv, "--TUM");	
 	
-	auto color1_8bit = CreateImageFromFile(argv[1]);
-	auto depth1_16bit = CreateImageFromFile(argv[2]);
-	auto color2_8bit = CreateImageFromFile(argv[3]);
-	auto depth2_16bit = CreateImageFromFile(argv[4]);	
+	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type");
+	auto color_source = CreateImageFromFile(argv[1]);
+	auto depth_source = CreateImageFromFile(argv[2]);	
+	auto color_target = CreateImageFromFile(argv[3]);
+	auto depth_target = CreateImageFromFile(argv[4]);
+	std::shared_ptr<RGBDImage> (*CreateRGBDImage) 
+			(const Image& color, const Image& depth);
+	if (rgbd_type == 0) 
+		CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
+	else if (rgbd_type == 1) 
+		CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
+	else if (rgbd_type == 2) 
+		CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
+	else if (rgbd_type == 3) 
+		CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
+	auto source = CreateRGBDImage(*color_source, *depth_source);
+	auto target = CreateRGBDImage(*color_target, *depth_target);
 	
-	Eigen::Matrix4d trans_initial, trans_output, info_output;
-	Eigen::Matrix4d trans_init_odo = Eigen::Matrix4d::Identity();
-	double lambda_dep = 0.95;
-
-	Eigen::Matrix4d trans_odo;
-	Eigen::MatrixXd info_odo;
-	bool is_success;
 	OdometryOption opt;
-	opt.intrinsic_path_ = camera_path;
-	opt.is_tum_ = is_tum;
-	opt.odo_init_ = Eigen::Matrix4d::Identity(4, 4);
+	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
+	Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
+	Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
+	bool is_success;	
 	std::tie(is_success, trans_odo, info_odo) = 
-			ComputeRGBDOdometry(*color1_8bit, *depth1_16bit, 
-			*color2_8bit, *depth2_16bit, opt);
+			ComputeRGBDOdometry(*source, *target, intrinsic, odo_init, opt);
+	std::cout << "Estimated 4x4 motion matrix : " << std::endl;
 	std::cout << trans_odo << std::endl;
+	std::cout << "Estimated 6x6 information matrix : " << std::endl;
 	std::cout << info_odo << std::endl;
 
-	return 0;
+	return !is_success;
 }

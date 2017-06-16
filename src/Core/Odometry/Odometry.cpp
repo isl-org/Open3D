@@ -28,11 +28,13 @@
 
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <Core/Geometry/RGBDImage.h>
 
 namespace three {
 
 namespace {
+
+const double SOBEL_SCALE = 0.125;
 
 std::tuple<std::shared_ptr<Image>, int> 
 		ComputeCorrespondence(
@@ -144,7 +146,6 @@ std::tuple<bool, Eigen::VectorXd>
 			{ t(0), t(1), t(2) };
 
 	Eigen::Vector3d temp, p3d_mat, p3d_trans;
-	double sobel_scale = opt.sobel_scale_;
 	for (int v0 = 0; v0 < corresps.height_; v0++) {
 		for (int u0 = 0; u0 < corresps.width_; u0++) {
 			int u1 = *PointerAt<int>(corresps, u0, v0, 0);
@@ -154,13 +155,13 @@ std::tuple<bool, Eigen::VectorXd>
 				double diff = double{ *PointerAt<float>(image1, u1, v1) -
 						*PointerAt<float>(image0, u0, v0) };
 
-				double dIdx = sobel_scale *
+				double dIdx = SOBEL_SCALE *
 						double{ *PointerAt<float>(dI_dx1, u1, v1) };
-				double dIdy = sobel_scale *
+				double dIdy = SOBEL_SCALE *
 						double{ *PointerAt<float>(dI_dy1, u1, v1) };
-				double dDdx = sobel_scale *
+				double dDdx = SOBEL_SCALE *
 						double{ *PointerAt<float>(dD_dx1, u1, v1) };
-				double dDdy = sobel_scale *
+				double dDdy = SOBEL_SCALE *
 						double{ *PointerAt<float>(dD_dy1, u1, v1) };
 				if (std::isnan(dDdx)) dDdx = 0;
 				if (std::isnan(dDdy)) dDdy = 0;
@@ -333,18 +334,8 @@ Eigen::MatrixXd CreateInfomationMatrix(
 	return GtG;
 }
 
-PinholeCameraIntrinsic ReadCameraIntrinsic(const std::string& intrinsic_path) {
-	PinholeCameraIntrinsic intrinsic;
-	if (intrinsic_path.empty() || 
-			!ReadIJsonConvertible(intrinsic_path, intrinsic)) {
-		PrintWarning("Failed to read intrinsic parameters for depth image.\n");
-		PrintWarning("Use default value for Primesense camera.\n");
-		intrinsic.SetIntrinsics(640, 480, 525.0, 525.0, 319.5, 239.5);
-	}
-	return intrinsic;
-}
-
-void NormalizeIntensity(Image& image0, Image& image1, Image& corresps) {
+void NormalizeIntensity(Image& image0, Image& image1, Image& corresps) 
+{
 	if (image0.width_ != image1.width_ ||
 		image0.height_ != image1.height_) {
 		PrintError("[NormalizeIntensity] Size of two input images should be same\n");
@@ -368,27 +359,41 @@ void NormalizeIntensity(Image& image0, Image& image1, Image& corresps) {
 	LinearTransformImage(image1, 0.5 / mean1, 0.0);
 }
 
-void PreprocessDepth(const three::Image &depth, const OdometryOption& opt) {
-	for (int y = 0; y < depth.height_; y++) {
-		for (int x = 0; x < depth.width_; x++) {
-			float *p = PointerAt<float>(depth, x, y);
-			if ((*p > opt.max_depth_ || *p < opt.min_depth_ || *p <= 0))
-				*p = std::numeric_limits<float>::quiet_NaN();
+std::shared_ptr<Image> PreprocessDepth(
+		const Image &depth_orig, const OdometryOption& opt) 
+{
+	std::shared_ptr<Image> depth_processed = std::make_shared<Image>();
+	*depth_processed = depth_orig;
+	for (int y = 0; y < depth_processed->height_; y++) {
+		for (int x = 0; x < depth_processed->width_; x++) {
+			float *p = PointerAt<float>(*depth_processed, x, y);
+			if ((*p < opt.min_depth_ || *p > opt.max_depth_ || *p <= 0))
+				*p = std::numeric_limits<float>::quiet_NaN();			
 		}
 	}
+	return depth_processed;
 }
 
-bool CheckImagePair(const three::Image &color0, const three::Image &depth0,
-		const three::Image &color1, const three::Image &depth1) {
-	return (color0.width_ == color1.width_ && color0.height_ == color1.height_
-			&& depth0.width_ == depth1.width_ && depth0.height_ == depth1.height_
-			&& color0.width_ == depth0.width_ && color0.height_ == depth0.height_
-			&& color1.width_ == depth1.width_ && color1.height_ == depth1.height_
-			&& color0.bytes_per_channel_ == 1 && color1.bytes_per_channel_ == 1
-			&& depth0.bytes_per_channel_ == 2 && depth1.bytes_per_channel_ == 2);
+bool CheckImagePair(const Image& img1, const Image& img2) 
+{
+	return (img1.width_ == img2.width_ && img1.height_ == img2.height_);
 }
 
-Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input) {
+bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target) 
+{
+	return (CheckImagePair(source.color_, target.color_) &&
+			CheckImagePair(source.depth_, target.depth_) &&
+			CheckImagePair(source.color_, source.depth_) &&
+			CheckImagePair(target.color_, target.depth_) &&
+			CheckImagePair(source.color_, target.color_) &&
+			source.color_.bytes_per_channel_ == 4 && 
+			target.color_.bytes_per_channel_ == 4 && 
+			source.depth_.bytes_per_channel_ == 4 && 
+			target.depth_.bytes_per_channel_ == 4);
+}
+
+Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input) 
+{
 	Eigen::Affine3d aff_mat;
 	aff_mat.linear() = (Eigen::Matrix3d)
 			Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ())
@@ -398,58 +403,96 @@ Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input) {
 	return aff_mat.matrix();
 }
 
-std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>, 
-		std::shared_ptr<Image>, std::shared_ptr<Image>> InitializeRGBDPair(
-		const Image& color0_8bit, const Image& depth0_16bit,
-		const Image& color1_8bit, const Image& depth1_16bit,
-		PinholeCameraIntrinsic& camera_intrinsic,
-		Eigen::Matrix4d& odo_init,
+std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
+		InitializeRGBDPair( 
+		const RGBDImage& source_orig, const RGBDImage& target_orig,
+		const PinholeCameraIntrinsic& camera_intrinsic,
+		const Eigen::Matrix4d& odo_init,
 		const OdometryOption& opt) 
 {
-	auto gray_temp0 = CreateFloatImageFromImage(color0_8bit);
-	auto gray_temp1 = CreateFloatImageFromImage(color1_8bit);
-	auto gray0 = FilterImage(*gray_temp0, FILTER_GAUSSIAN_3);
-	auto gray1 = FilterImage(*gray_temp1, FILTER_GAUSSIAN_3);
-
-	double depth_scale = opt.is_tum_ ? 5000.0 : 1000.0;
-	double max_depth = opt.max_depth_;
-	auto depth_temp0 = ConvertDepthToFloatImage(depth0_16bit, depth_scale, max_depth);
-	auto depth_temp1 = ConvertDepthToFloatImage(depth1_16bit, depth_scale, max_depth);
-	PreprocessDepth(*depth_temp0, opt);
-	PreprocessDepth(*depth_temp1, opt);
-	auto depth0 = FilterImage(*depth_temp0, FILTER_GAUSSIAN_3);
-	auto depth1 = FilterImage(*depth_temp1, FILTER_GAUSSIAN_3);
+	auto source_gray = FilterImage(source_orig.color_, FILTER_GAUSSIAN_3);
+	auto target_gray = FilterImage(target_orig.color_, FILTER_GAUSSIAN_3);
+	auto source_depth_preprocessed = PreprocessDepth(source_orig.depth_, opt);
+	auto target_depth_preprocessed = PreprocessDepth(target_orig.depth_, opt);
+	auto source_depth = FilterImage(*source_depth_preprocessed, FILTER_GAUSSIAN_3);
+	auto target_depth = FilterImage(*target_depth_preprocessed, FILTER_GAUSSIAN_3);
 
 	std::shared_ptr<Image> temp_corresps;
 	int corresps_count;
 	std::tie(temp_corresps, corresps_count) = ComputeCorrespondence(
 			camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
-			*depth0, *depth1, opt);
+			*source_depth, *target_depth, opt);
 	PrintDebug("Number of correspondence is %d\n", corresps_count);
 
-	if (opt.fast_reject_ && corresps_count < opt.minimum_corr_) {
+	if (opt.check_initialization_ && 
+			corresps_count < opt.minimum_correspondence_num_) {
 		PrintWarning("[InitializeRGBDPair] Bad initial pose\n");
 	}
-	NormalizeIntensity(*gray0, *gray1, *temp_corresps);
-	return std::make_tuple(gray0, depth0, gray1, depth1);
+	NormalizeIntensity(*source_gray, *target_gray, *temp_corresps);
+
+	auto source = std::make_shared<RGBDImage>
+			(RGBDImage(*source_gray, *source_depth));
+	auto target = std::make_shared<RGBDImage>
+			(RGBDImage(*target_gray, *target_depth));
+	return std::make_tuple(source, target);
 }
 
-std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
-		const Eigen::Matrix4d& init_odo,
-		const Image &gray0, const Image &depth0,
-		const Image &gray1, const Image &depth1,
-		const double lambda_dep,
+//std::tuple<bool, Eigen::Matrix4d> ComputeSingleIteration(
+//	const RGBDImage &source, const Image& source_cloud,
+//	const RGBDImage &target, const RGBDImage &target_grad,
+//	const Eigen::Matrix3d camera_matrix,
+//	const Eigen::Matrix4d& init_odo,
+//	const OdometryOption& opt)
+//{
+//	std::shared_ptr<Image> corresps;
+//	int corresps_count;
+//	std::tie(corresps, corresps_count) = ComputeCorrespondence(
+//		camera_matrix, init_odo.inverse(),
+//		source.depth_, target.depth_, opt);
+//
+//	bool is_success;
+//	if (corresps_count == 0) {
+//		PrintError("[ComputeOdometry] Num of corres is 0!\n");
+//		is_success = false;
+//	}
+//
+//	bool solutionExist;
+//	Eigen::VectorXd ksi;
+//	std::tie(solutionExist, ksi) = ComputeKsi(
+//		source.depth_, source_cloud, *pyramid_gray1[level],
+//		*pyramid_dI_dx1[level], *pyramid_dI_dy1[level],
+//		*pyramid_depth0[level], *pyramid_depth1[level],
+//		*pyramid_dD_dx1[level], *pyramid_dD_dy1[level],
+//		result_odo, *corresps, corresps_count,
+//		opt, fx, fy);
+//
+//	if (!solutionExist) {
+//		PrintError("[ComputeOdometry] no solution!\n");
+//		is_success = false;
+//	}
+//
+//	result_odo = std::make_tuple(is_success, Transform6DVecorto4x4Matrix(ksi));
+//}
+
+std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
+		const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic& camera_intrinsic,
-		const OdometryOption& opt) {
+		const Eigen::Matrix4d& init_odo,
+		const OdometryOption& opt)
+{
+	double lambda_dep = opt.lambda_dep_;
+	if (lambda_dep < 0.0f || lambda_dep > 1.0f)
+		lambda_dep = 0.95;
+	PrintDebug("lambda_dep : %f\n", lambda_dep);
+	PrintDebug("lambda_img : %f\n", 1.0f - lambda_dep);
 
-	std::vector<int> iter_counts;
-	for (int i = 0; i < opt.num_pyramid_; i++)
-		iter_counts.push_back(opt.num_iter_);
+	std::vector<int> iter_counts = opt.iteration_number_per_pyramid_level_;
+	int num_levels = (int)iter_counts.size();
 
-	auto pyramid_gray0 = CreateImagePyramid(gray0, opt.num_pyramid_);
-	auto pyramid_gray1 = CreateImagePyramid(gray1, opt.num_pyramid_);
-	auto pyramid_depth0 = CreateImagePyramid(depth0, opt.num_pyramid_, false);
-	auto pyramid_depth1 = CreateImagePyramid(depth1, opt.num_pyramid_, false);
+	auto pyramid_gray0 = CreateImagePyramid(source.color_, num_levels);
+	auto pyramid_gray1 = CreateImagePyramid(target.color_, num_levels);
+	auto pyramid_depth0 = CreateImagePyramid(source.depth_, num_levels, 0);
+	auto pyramid_depth1 = CreateImagePyramid(target.depth_, num_levels, 0);
 	auto pyramid_dI_dx1 = FilterImagePyramid(pyramid_gray1, FILTER_SOBEL_3_DX);
 	auto pyramid_dI_dy1 = FilterImagePyramid(pyramid_gray1, FILTER_SOBEL_3_DY);
 	auto pyramid_dD_dx1 = FilterImagePyramid(pyramid_depth1, FILTER_SOBEL_3_DX);
@@ -465,7 +508,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 			CreateCameraMatrixPyramid(camera_intrinsic, (int)iter_counts.size());
 
 	bool is_success = true;
-	for (int level = (int)iter_counts.size() - 1; level >= 0; level--) {
+	for (int level = num_levels - 1; level >= 0; level--) {
 		const Eigen::Matrix3d level_camera_matrix = pyramid_camera_matrix[level];
 
 		auto level_cloud0 = ConvertDepth2Cloud(
@@ -473,7 +516,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 		const double fx = level_camera_matrix(0, 0);
 		const double fy = level_camera_matrix(1, 1);
 
-		for (int iter = 0; iter < iter_counts[level]; iter++) {
+		for (int iter = 0; iter < iter_counts[num_levels - level - 1]; iter++) {
 			PrintDebug("Iter : %d, Level : %d, ", iter, level);
 
 			std::shared_ptr<Image> corresps;
@@ -507,7 +550,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 		}
 	}
 	
-	if (corresps_count < opt.minimum_corr_)
+	if (corresps_count < opt.minimum_correspondence_num_)
 		is_success = false;
 
 	return std::make_tuple(is_success, result_odo);
@@ -515,46 +558,37 @@ std::tuple<bool, Eigen::Matrix4d> ComputeOdometryMultiscale(
 
 }	// unnamed namespace
 
-std::tuple<bool, Eigen::Matrix4d, Eigen::MatrixXd> 
-		ComputeRGBDOdometry(
-		const Image& color0_8bit, const Image& depth0_16bit,
-		const Image& color1_8bit, const Image& depth1_16bit,
-		const OdometryOption& opt)
+std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> 
+		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
+		const PinholeCameraIntrinsic &camera_intrinsic /*=PinholeCameraIntrinsic()*/, 
+		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
+		const OdometryOption &opt /*= OdometryOption()*/)
 {
-	if (!CheckImagePair(color0_8bit, depth0_16bit, color1_8bit, depth1_16bit)) {
+	if (!CheckRGBDImagePair(source, target)) {
 		PrintError("[ComputeRGBDOdometry] Two RGBD pairs should be same in size.\n");
-		PrintError("Color image should be 8bit and depth image should be 16bit\n");
 		return std::make_tuple(false, 
-				Eigen::Matrix4d::Identity(), Eigen::MatrixXd::Zero(6,6));
+			Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
 	}
 
-	PinholeCameraIntrinsic camera_intrinsic = 
-			ReadCameraIntrinsic(opt.intrinsic_path_);
-
-	double lambda_dep = opt.lambda_dep_;
-	if (lambda_dep < 0.0f || lambda_dep > 1.0f)
-		lambda_dep = 0.95;
-	PrintDebug("lambda_dep : %f\n", lambda_dep);
-	PrintDebug("lambda_img : %f\n", 1.0f - lambda_dep);
-
-	std::shared_ptr<Image> gray0, depth0, gray1, depth1;
-	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
-	std::tie(gray0, depth0, gray1, depth1) = 
-			InitializeRGBDPair(color0_8bit, depth0_16bit, 
-			color1_8bit, depth1_16bit,
-			camera_intrinsic, odo_init, opt);
+	std::shared_ptr<RGBDImage> source_processed, target_processed;
+	std::tie(source_processed, target_processed) =
+			InitializeRGBDPair(source, target, camera_intrinsic, odo_init, opt);
 
 	Eigen::Matrix4d odo;
-	bool is_found;
-	std::tie(is_found, odo) = ComputeOdometryMultiscale(odo_init,
-			*gray0, *depth0, *gray1, *depth1,
-			lambda_dep, camera_intrinsic, opt);
+	bool is_success;
+	std::tie(is_success, odo) = ComputeMultiscale(
+			*source_processed, *target_processed, 
+			camera_intrinsic, odo_init, opt);
 
-	Eigen::Matrix4d trans_output = odo.inverse();
-	Eigen::MatrixXd info_output = CreateInfomationMatrix(
-			odo, camera_intrinsic, *depth0, *depth1, opt);
-
-	return std::make_tuple(true, trans_output, info_output);
+	if (is_success) {
+		Eigen::Matrix4d trans_output = odo.inverse();
+		Eigen::MatrixXd info_output = CreateInfomationMatrix(odo, camera_intrinsic,
+			source_processed->depth_, target_processed->depth_, opt);
+		return std::make_tuple(true, trans_output, info_output);
+	} else {
+		return std::make_tuple(false, 
+				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
+	}
 }
 
 }	// namespace three

@@ -109,7 +109,7 @@ void ClipIntensityImage(Image &input, double min/* = 0.0*/, double max/* = 1.0*/
 
 void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
 {
-	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 2) {
+	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
 		PrintWarning("[LinearTransformImage] Unsupported image format.\n");
 		return;
 	}

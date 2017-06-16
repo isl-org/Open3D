@@ -144,12 +144,20 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 	return rgbd_image;
 }
 
+/// Reference: http://redwood-data.org/indoor/
+/// File format: http://redwood-data.org/indoor/dataset.html
+std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
+	const Image& color, const Image& depth)
+{
+	return CreateRGBDImageFromColorAndDepth(color, depth, 1000.0, 4.0);
+}
+
 /// Reference: http://vision.in.tum.de/data/datasets/rgbd-dataset
 /// File format: http://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
 		const Image& color, const Image& depth) 
 {
-	return CreateRGBDImageFromColorAndDepth(color, depth, 5000.0);
+	return CreateRGBDImageFromColorAndDepth(color, depth, 5000.0, 4.0);
 }
 
 /// Reference: http://sun3d.cs.princeton.edu/
