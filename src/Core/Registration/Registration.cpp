@@ -253,7 +253,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		PointCloud pcd = source;
 		pcd.Transform(transformation);
 		auto this_result = std::get<0>(GetRegistrationResultAndCorrespondences(
-				source, target, kdtree, max_correspondence_distance,
+				pcd, target, kdtree, max_correspondence_distance,
 				transformation));
 		if (this_result.fitness_ > result.fitness_ ||
 				(this_result.fitness_ == result.fitness_ &&
