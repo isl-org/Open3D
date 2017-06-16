@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 # enable this magic when you are using Jupyter (IPython) notebook
 # %matplotlib inline
 import sys

@@ -136,13 +136,13 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
 						*target_copy_ptr_, max_correspondence_distance_,
 						Eigen::Matrix4d::Identity(),
 						TransformationEstimationPointToPoint(true),
-						ConvergenceCriteria(1e-6, 30));
+						ICPConvergenceCriteria(1e-6, 1e-6, 30));
 				PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
-						result.fitness, result.inlier_rmse);
-				if (result.fitness > 0.0) {
-					transformation_ = result.transformation * transformation_;
+						result.fitness_, result.inlier_rmse_);
+				if (result.fitness_ > 0.0) {
+					transformation_ = result.transformation_ * transformation_;
 					PrintTransformation();
-					source_copy_ptr_->Transform(result.transformation);
+					source_copy_ptr_->Transform(result.transformation_);
 					UpdateGeometry();
 				}
 			} else {

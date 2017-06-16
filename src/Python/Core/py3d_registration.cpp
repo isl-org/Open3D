@@ -27,7 +27,7 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
-#include <Core/Registration/ConvergenceCriteria.h>
+#include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
 #include <Core/Registration/Registration.h>
 using namespace three;
@@ -50,24 +50,64 @@ public:
 	}
 };
 
+template <class CorrespondenceCheckerBase = CorrespondenceChecker>
+class PyCorrespondenceChecker : public CorrespondenceCheckerBase
+{
+public:
+	using CorrespondenceCheckerBase::CorrespondenceCheckerBase;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override {
+		PYBIND11_OVERLOAD_PURE(bool, CorrespondenceCheckerBase,
+				source, target, corres, transformation);
+	}
+};
+
 void pybind_registration(py::module &m)
 {
-	py::class_<ConvergenceCriteria> convergence_criteria(m,
-			"ConvergenceCriteria");
-	py::detail::bind_copy_functions<ConvergenceCriteria>(convergence_criteria);
-	convergence_criteria.def("__init__", [](ConvergenceCriteria &c,
-			double rmse, int itr) {
-		new (&c)ConvergenceCriteria(rmse, itr);
-	}, "relative_rmse"_a = 1e-6, "max_iteration"_a = 30);
+	py::class_<ICPConvergenceCriteria> convergence_criteria(m,
+			"ICPConvergenceCriteria");
+	py::detail::bind_copy_functions<ICPConvergenceCriteria>(
+			convergence_criteria);
+	convergence_criteria.def("__init__", [](ICPConvergenceCriteria &c,
+			double fitness, double rmse, int itr) {
+		new (&c)ICPConvergenceCriteria(fitness, rmse, itr);
+	}, "relative_fitness"_a = 1e-6, "relative_rmse"_a = 1e-6,
+			"max_iteration"_a = 30);
 	convergence_criteria
-		.def_readwrite("relative_rmse", &ConvergenceCriteria::relative_rmse_)
-		.def_readwrite("max_iteration", &ConvergenceCriteria::max_iteration_)
-		.def("__repr__", [](const ConvergenceCriteria &c) {
-			return std::string("ConvergenceCriteria class.\n") +
-					std::string("relative_rmse = ") +
+		.def_readwrite("relative_fitness",
+				&ICPConvergenceCriteria::relative_fitness_)
+		.def_readwrite("relative_rmse", &ICPConvergenceCriteria::relative_rmse_)
+		.def_readwrite("max_iteration", &ICPConvergenceCriteria::max_iteration_)
+		.def("__repr__", [](const ICPConvergenceCriteria &c) {
+			return std::string("ICPConvergenceCriteria class with ") +
+					std::string("relative_fitness = ") +
+					std::to_string(c.relative_fitness_) +
+					std::string(", relative_rmse = ") +
 					std::to_string(c.relative_rmse_) +
-					std::string(", max_iteration = " +
+					std::string(", and max_iteration = " +
 					std::to_string(c.max_iteration_));
+		});
+
+	py::class_<RANSACConvergenceCriteria> ransac_criteria(m,
+			"RANSACConvergenceCriteria");
+	py::detail::bind_copy_functions<RANSACConvergenceCriteria>(
+			ransac_criteria);
+	ransac_criteria.def("__init__", [](RANSACConvergenceCriteria &c,
+			int max_iteration, int max_validation) {
+		new (&c)RANSACConvergenceCriteria(max_iteration, max_validation);
+	}, "max_iteration"_a = 1000, "max_validation"_a = 1000);
+	ransac_criteria
+		.def_readwrite("max_iteration",
+				&RANSACConvergenceCriteria::max_iteration_)
+		.def_readwrite("max_validation",
+				&RANSACConvergenceCriteria::max_validation_)
+		.def("__repr__", [](const RANSACConvergenceCriteria &c) {
+			return std::string("RANSACConvergenceCriteria class with ") +
+					std::string("max_iteration = ") +
+					std::to_string(c.max_iteration_) +
+					std::string(", and max_validation = " +
+					std::to_string(c.max_validation_));
 		});
 
 	py::class_<TransformationEstimation,
@@ -105,24 +145,84 @@ void pybind_registration(py::module &m)
 			te_p2l);
 	py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
 			te_p2l);
-	te_p2p
+	te_p2l
 		.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
 			return std::string("TransformationEstimationPointToPlane");
 		});
+	
+	py::class_<CorrespondenceChecker,
+			PyCorrespondenceChecker<CorrespondenceChecker>>
+			cc(m, "CorrespondenceChecker");
+	cc
+			.def("Check", &CorrespondenceChecker::Check);
+	
+	py::class_<CorrespondenceCheckerBasedOnEdgeLength,
+			PyCorrespondenceChecker<CorrespondenceCheckerBasedOnEdgeLength>,
+			CorrespondenceChecker> cc_el(m,
+			"CorrespondenceCheckerBasedOnEdgeLength");
+	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnEdgeLength>(
+			cc_el);
+	cc_el.def("__init__", [](CorrespondenceCheckerBasedOnEdgeLength &c,
+			double similarity_threshold) {
+		new (&c)CorrespondenceCheckerBasedOnEdgeLength(similarity_threshold);
+	}, "similarity_threshold"_a = 0.9);
+	cc_el
+		.def("__repr__", [](const CorrespondenceCheckerBasedOnEdgeLength &c) {
+			return std::string("CorrespondenceCheckerBasedOnEdgeLength with similarity threshold ") +
+					std::to_string(c.similarity_threshold_);
+		})
+		.def_readwrite("similarity_threshold",
+				&CorrespondenceCheckerBasedOnEdgeLength::similarity_threshold_);
+
+	py::class_<CorrespondenceCheckerBasedOnDistance,
+			PyCorrespondenceChecker<CorrespondenceCheckerBasedOnDistance>,
+			CorrespondenceChecker> cc_d(m,
+			"CorrespondenceCheckerBasedOnDistance");
+	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnDistance>(
+			cc_d);
+	cc_d.def("__init__", [](CorrespondenceCheckerBasedOnDistance &c,
+			double distance_threshold) {
+		new (&c)CorrespondenceCheckerBasedOnDistance(distance_threshold);
+	}, "distance_threshold"_a);
+	cc_d
+		.def("__repr__", [](const CorrespondenceCheckerBasedOnDistance &c) {
+			return std::string("CorrespondenceCheckerBasedOnDistance with distance threshold ") +
+					std::to_string(c.distance_threshold_);
+		})
+		.def_readwrite("distance_threshold",
+				&CorrespondenceCheckerBasedOnDistance::distance_threshold_);
+
+	py::class_<CorrespondenceCheckerBasedOnNormal,
+			PyCorrespondenceChecker<CorrespondenceCheckerBasedOnNormal>,
+			CorrespondenceChecker> cc_n(m,
+			"CorrespondenceCheckerBasedOnNormal");
+	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnNormal>(
+			cc_n);
+	cc_n.def("__init__", [](CorrespondenceCheckerBasedOnNormal &c,
+			double normal_angle_threshold) {
+		new (&c)CorrespondenceCheckerBasedOnNormal(normal_angle_threshold);
+	}, "normal_angle_threshold"_a);
+	cc_n
+		.def("__repr__", [](const CorrespondenceCheckerBasedOnNormal &c) {
+			return std::string("CorrespondenceCheckerBasedOnNormal with normal threshold ") +
+					std::to_string(c.normal_angle_threshold_);
+		})
+		.def_readwrite("normal_angle_threshold",
+				&CorrespondenceCheckerBasedOnNormal::normal_angle_threshold_);
 	
 	py::class_<RegistrationResult> registration_result(m, "RegistrationResult");
 	py::detail::bind_default_constructor<RegistrationResult>(
 			registration_result);
 	py::detail::bind_copy_functions<RegistrationResult>(registration_result);
 	registration_result
-		.def_readwrite("transformation", &RegistrationResult::transformation)
-		.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse)
-		.def_readwrite("fitness", &RegistrationResult::fitness)
+		.def_readwrite("transformation", &RegistrationResult::transformation_)
+		.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_)
+		.def_readwrite("fitness", &RegistrationResult::fitness_)
 		.def("__repr__", [](const RegistrationResult &rr) {
 			return std::string("RegistrationResult with fitness = ") +
-					std::to_string(rr.fitness) +
+					std::to_string(rr.fitness_) +
 					std::string(", and inlier_rmse = ") +
-					std::to_string(rr.inlier_rmse) +
+					std::to_string(rr.inlier_rmse_) +
 					std::string("\nAccess transformation to get result.");
 		});
 }
@@ -136,12 +236,22 @@ void pybind_registration_methods(py::module &m)
 	m.def("RegistrationICP", &RegistrationICP,
 			"Function for ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
-			"init"_a = Eigen::Matrix4d::Identity(), "estimation"_a =
+			"init"_a = Eigen::Matrix4d::Identity(), "estimation_method"_a =
 			TransformationEstimationPointToPoint(false), "criteria"_a =
-			ConvergenceCriteria());
-	m.def("RegistrationRANSAC", &RegistrationRANSAC,
-			"Function for RANSAC registration based on a set of correspondences",
+			ICPConvergenceCriteria());
+	m.def("RegistrationRANSACBasedOnCorrespondence",
+			&RegistrationRANSACBasedOnCorrespondence,
+			"Function for global RANSAC registration based on a set of correspondences",
 			"source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
-			"estimation"_a = TransformationEstimationPointToPoint(false),
-			"ransac_n"_a = 6, "max_ransac_iteration"_a = 1000);
+			"estimation_method"_a = TransformationEstimationPointToPoint(false),
+			"ransac_n"_a = 6, "criteria"_a = RANSACConvergenceCriteria());
+	m.def("RegistrationRANSACBasedOnFeatureMatching",
+			&RegistrationRANSACBasedOnFeatureMatching,
+			"Function for global RANSAC registration based on feature matching",
+			"source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
+			"max_correspondence_distance"_a, "estimation_method"_a =
+			TransformationEstimationPointToPoint(false), "ransac_n"_a = 4,
+			"checkers"_a = std::vector<std::reference_wrapper<const
+			CorrespondenceChecker>>(), "criteria"_a =
+			RANSACConvergenceCriteria(100000, 100));
 }
