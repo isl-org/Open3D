@@ -205,8 +205,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		double max_correspondence_distance,
 		const TransformationEstimation &estimation
 		/* = TransformationEstimationPointToPoint(false)*/,
-		int ransac_n/* = 4*/, const std::vector<CorrespondenceChecker> &checkers
-		/* = {}*/, const RANSACConvergenceCriteria &criteria
+		int ransac_n/* = 4*/, const std::vector<std::reference_wrapper<const
+		CorrespondenceChecker>> &checkers/* = {}*/,
+		const RANSACConvergenceCriteria &criteria
 		/* = RANSACConvergenceCriteria()*/)
 {
 	if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
@@ -234,8 +235,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 			}
 		}
 		for (const auto &checker : checkers) {
-			if (checker.require_pointcloud_alignment_ == false &&
-					checker.Check(source, target, ransac_corres,
+			if (checker.get().require_pointcloud_alignment_ == false &&
+					checker.get().Check(source, target, ransac_corres,
 					transformation) == false) {
 				continue;
 			}
@@ -243,8 +244,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		transformation = estimation.ComputeTransformation(source, target,
 				ransac_corres);
 		for (const auto &checker : checkers) {
-			if (checker.require_pointcloud_alignment_ == true &&
-					checker.Check(source, target, ransac_corres,
+			if (checker.get().require_pointcloud_alignment_ == true &&
+					checker.get().Check(source, target, ransac_corres,
 					transformation) == false) {
 				continue;
 			}

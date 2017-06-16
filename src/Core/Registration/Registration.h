@@ -122,8 +122,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		const TransformationEstimation &estimation =
 		TransformationEstimationPointToPoint(false),
 		int ransac_n = 4,
-		const std::vector<CorrespondenceChecker> &checkers = {},
-		const RANSACConvergenceCriteria &criteria =
+		const std::vector<std::reference_wrapper<const CorrespondenceChecker>> &
+		checkers = {}, const RANSACConvergenceCriteria &criteria =
 		RANSACConvergenceCriteria());
 
 }	// namespace three
