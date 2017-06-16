@@ -84,14 +84,10 @@ int main(int argc, char *argv[])
 	auto depth_target = CreateImageFromFile(argv[4]);
 	std::shared_ptr<RGBDImage> (*CreateRGBDImage) 
 			(const Image& color, const Image& depth);
-	if (rgbd_type == 0) 
-		CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
-	else if (rgbd_type == 1) 
-		CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
-	else if (rgbd_type == 2) 
-		CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
-	else if (rgbd_type == 3) 
-		CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
+	if (rgbd_type == 0) CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
+	else if (rgbd_type == 1) CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
+	else if (rgbd_type == 2) CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
+	else if (rgbd_type == 3) CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
 	auto source = CreateRGBDImage(*color_source, *depth_source);
 	auto target = CreateRGBDImage(*color_target, *depth_target);
 	

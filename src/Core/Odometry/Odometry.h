@@ -45,6 +45,6 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage& source, const RGBDImage& target,
 		const PinholeCameraIntrinsic &camera_intrinsic = PinholeCameraIntrinsic(), 
 		const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
-		const OdometryOption& odometry_option = OdometryOption());
+		OdometryOption& odometry_option = OdometryOption());
 
 }	// namespace three

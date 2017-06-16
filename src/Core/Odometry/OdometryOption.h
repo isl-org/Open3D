@@ -37,7 +37,7 @@ public:
 
 	OdometryOption(
 			double lambda_dep = 0.95, 
-			int minimum_correspondence_num = 30000,
+			double minimum_correspondence_ratio = 0.1,
 			std::vector<int> iteration_number_per_pyramid_level =
 			{ 10, 10, 10, 5 } /* {smaller image size to original image size} */,
 			double max_depth_diff = 0.07, 
@@ -46,7 +46,7 @@ public:
 			bool check_initialization = true,
 			std::string intrinsic_path = "") :
 			lambda_dep_(lambda_dep), 
-			minimum_correspondence_num_(minimum_correspondence_num),
+			minimum_correspondence_ratio_(minimum_correspondence_ratio),
 			iteration_number_per_pyramid_level_
 			(iteration_number_per_pyramid_level),
 			max_depth_diff_(max_depth_diff), min_depth_(min_depth), 
@@ -57,7 +57,7 @@ public:
 
 public:
 	double lambda_dep_;
-	double minimum_correspondence_num_;
+	double minimum_correspondence_ratio_;
 	std::vector<int> iteration_number_per_pyramid_level_;
 	double max_depth_diff_;
 	double min_depth_;

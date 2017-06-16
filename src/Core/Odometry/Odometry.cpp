@@ -35,6 +35,7 @@ namespace three {
 namespace {
 
 const double SOBEL_SCALE = 0.125;
+const double LAMBDA_HYBRID_DEPTH = 0.968;
 
 std::tuple<std::shared_ptr<Image>, int> 
 		ComputeCorrespondence(
@@ -117,12 +118,9 @@ std::tuple<bool, Eigen::VectorXd>
 		const Image& dD_dx1, const Image& dD_dy1,
 		const Eigen::Matrix4d& odo,
 		const Image& corresps, int corresps_count,
-		const OdometryOption& opt,
-		const double& fx, const double& fy)
+		const Eigen::Matrix3d& camera_matrix,
+		const OdometryOption& opt)
 {
-	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
-	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
-
 	int DoF = 6;
 	Eigen::MatrixXd J(corresps_count * 2, DoF);
 	Eigen::MatrixXd r(corresps_count * 2, 1);
@@ -138,6 +136,11 @@ std::tuple<bool, Eigen::VectorXd>
 	sqrt_lamba_dep = sqrt(opt.lambda_dep_);
 	sqrt_lambda_img = sqrt(1.0 - opt.lambda_dep_);
 
+	const double fx = camera_matrix(0, 0);
+	const double fy = camera_matrix(1, 1);
+
+	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
+	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
 	const double R_raw[9] = 
 			{ R(0, 0), R(0, 1), R(0, 2),
 			R(1, 0), R(1, 1), R(1, 2),
@@ -359,6 +362,11 @@ void NormalizeIntensity(Image& image0, Image& image1, Image& corresps)
 	LinearTransformImage(image1, 0.5 / mean1, 0.0);
 }
 
+inline std::shared_ptr<RGBDImage> PackRGBDImage(
+	const Image &color, const Image &depth) {
+	return std::make_shared<RGBDImage>(RGBDImage(color, depth));
+}
+
 std::shared_ptr<Image> PreprocessDepth(
 		const Image &depth_orig, const OdometryOption& opt) 
 {
@@ -374,12 +382,12 @@ std::shared_ptr<Image> PreprocessDepth(
 	return depth_processed;
 }
 
-bool CheckImagePair(const Image& img1, const Image& img2) 
+inline bool CheckImagePair(const Image& img1, const Image& img2) 
 {
 	return (img1.width_ == img2.width_ && img1.height_ == img2.height_);
 }
 
-bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target) 
+inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target) 
 {
 	return (CheckImagePair(source.color_, target.color_) &&
 			CheckImagePair(source.depth_, target.depth_) &&
@@ -404,12 +412,17 @@ Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input)
 }
 
 std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
-		InitializeRGBDPair( 
+		Initialization( 
 		const RGBDImage& source_orig, const RGBDImage& target_orig,
 		const PinholeCameraIntrinsic& camera_intrinsic,
 		const Eigen::Matrix4d& odo_init,
-		const OdometryOption& opt) 
+		OdometryOption& opt) 
 {
+	if (opt.lambda_dep_ < 0.0f || opt.lambda_dep_ > 1.0f)
+		opt.lambda_dep_ = LAMBDA_HYBRID_DEPTH;
+	PrintDebug("lambda_dep : %f\n", opt.lambda_dep_);
+	PrintDebug("lambda_img : %f\n", 1.0f - opt.lambda_dep_);
+
 	auto source_gray = FilterImage(source_orig.color_, FILTER_GAUSSIAN_3);
 	auto target_gray = FilterImage(target_orig.color_, FILTER_GAUSSIAN_3);
 	auto source_depth_preprocessed = PreprocessDepth(source_orig.depth_, opt);
@@ -424,55 +437,56 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 			*source_depth, *target_depth, opt);
 	PrintDebug("Number of correspondence is %d\n", corresps_count);
 
-	if (opt.check_initialization_ && 
-			corresps_count < opt.minimum_correspondence_num_) {
+	int corresps_count_required = (int)(source_gray->height_ *
+			source_gray->width_ * opt.minimum_correspondence_ratio_ + 0.5);
+	if (opt.check_initialization_ && corresps_count < corresps_count_required) {
 		PrintWarning("[InitializeRGBDPair] Bad initial pose\n");
 	}
 	NormalizeIntensity(*source_gray, *target_gray, *temp_corresps);
 
-	auto source = std::make_shared<RGBDImage>
-			(RGBDImage(*source_gray, *source_depth));
-	auto target = std::make_shared<RGBDImage>
-			(RGBDImage(*target_gray, *target_depth));
+	auto source = PackRGBDImage(*source_gray, *source_depth);
+	auto target = PackRGBDImage(*target_gray, *target_depth);
 	return std::make_tuple(source, target);
 }
 
-//std::tuple<bool, Eigen::Matrix4d> ComputeSingleIteration(
-//	const RGBDImage &source, const Image& source_cloud,
-//	const RGBDImage &target, const RGBDImage &target_grad,
-//	const Eigen::Matrix3d camera_matrix,
-//	const Eigen::Matrix4d& init_odo,
-//	const OdometryOption& opt)
-//{
-//	std::shared_ptr<Image> corresps;
-//	int corresps_count;
-//	std::tie(corresps, corresps_count) = ComputeCorrespondence(
-//		camera_matrix, init_odo.inverse(),
-//		source.depth_, target.depth_, opt);
-//
-//	bool is_success;
-//	if (corresps_count == 0) {
-//		PrintError("[ComputeOdometry] Num of corres is 0!\n");
-//		is_success = false;
-//	}
-//
-//	bool solutionExist;
-//	Eigen::VectorXd ksi;
-//	std::tie(solutionExist, ksi) = ComputeKsi(
-//		source.depth_, source_cloud, *pyramid_gray1[level],
-//		*pyramid_dI_dx1[level], *pyramid_dI_dy1[level],
-//		*pyramid_depth0[level], *pyramid_depth1[level],
-//		*pyramid_dD_dx1[level], *pyramid_dD_dy1[level],
-//		result_odo, *corresps, corresps_count,
-//		opt, fx, fy);
-//
-//	if (!solutionExist) {
-//		PrintError("[ComputeOdometry] no solution!\n");
-//		is_success = false;
-//	}
-//
-//	result_odo = std::make_tuple(is_success, Transform6DVecorto4x4Matrix(ksi));
-//}
+std::tuple<bool, Eigen::Matrix4d> ComputeSingleIteration(
+	const RGBDImage &source, const Image& source_cloud,
+	const RGBDImage &target, 
+	const RGBDImage &target_dx, const RGBDImage &target_dy,
+	const Eigen::Matrix3d camera_matrix,
+	const Eigen::Matrix4d& init_odo,
+	const OdometryOption& opt)
+{
+	std::shared_ptr<Image> corresps;
+	int corresps_count;
+	std::tie(corresps, corresps_count) = ComputeCorrespondence(
+			camera_matrix, init_odo.inverse(),
+			source.depth_, target.depth_, opt);
+	int corresps_count_required = (int)(source.color_.height_ * 
+			source.color_.width_ * opt.minimum_correspondence_ratio_ + 0.5);
+	if (corresps_count < corresps_count_required) {
+		PrintError("[ComputeOdometry] %d is too fewer than mininum requirement %d\n",
+				corresps_count, corresps_count_required);
+		return std::make_tuple(false, Eigen::Matrix4d::Identity());
+	}
+
+	bool is_success;
+	Eigen::VectorXd ksi;
+	std::tie(is_success, ksi) = ComputeKsi(
+			source.color_, source_cloud, target.color_,
+			target_dx.color_, target_dy.color_,
+			source.depth_, target.depth_,
+			target_dx.depth_, target_dy.depth_,		
+			init_odo, *corresps, corresps_count,
+			camera_matrix, opt);
+
+	if (!is_success) {
+		PrintError("[ComputeOdometry] no solution!\n");
+		return std::make_tuple(false, Eigen::Matrix4d::Identity());
+	} else {
+		return std::make_tuple(true, Transform6DVecorto4x4Matrix(ksi));
+	}
+}
 
 std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const RGBDImage &source, const RGBDImage &target,
@@ -480,80 +494,62 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const Eigen::Matrix4d& init_odo,
 		const OdometryOption& opt)
 {
-	double lambda_dep = opt.lambda_dep_;
-	if (lambda_dep < 0.0f || lambda_dep > 1.0f)
-		lambda_dep = 0.95;
-	PrintDebug("lambda_dep : %f\n", lambda_dep);
-	PrintDebug("lambda_img : %f\n", 1.0f - lambda_dep);
-
 	std::vector<int> iter_counts = opt.iteration_number_per_pyramid_level_;
 	int num_levels = (int)iter_counts.size();
 
-	auto pyramid_gray0 = CreateImagePyramid(source.color_, num_levels);
-	auto pyramid_gray1 = CreateImagePyramid(target.color_, num_levels);
-	auto pyramid_depth0 = CreateImagePyramid(source.depth_, num_levels, 0);
-	auto pyramid_depth1 = CreateImagePyramid(target.depth_, num_levels, 0);
-	auto pyramid_dI_dx1 = FilterImagePyramid(pyramid_gray1, FILTER_SOBEL_3_DX);
-	auto pyramid_dI_dy1 = FilterImagePyramid(pyramid_gray1, FILTER_SOBEL_3_DY);
-	auto pyramid_dD_dx1 = FilterImagePyramid(pyramid_depth1, FILTER_SOBEL_3_DX);
-	auto pyramid_dD_dy1 = FilterImagePyramid(pyramid_depth1, FILTER_SOBEL_3_DY);
+	//auto source_pyramid = CreateRGBDImagePyramid(source, num_levels);
+	//auto target_pyramid = CreateRGBDImagePyramid(target, num_levels);
+
+	auto source_pyramid_gray = CreateImagePyramid(source.color_, num_levels);
+	auto target_pyramid_gray = CreateImagePyramid(target.color_, num_levels);
+	auto source_pyramid_depth = CreateImagePyramid(source.depth_, num_levels, 0);
+	auto target_pyramid_depth = CreateImagePyramid(target.depth_, num_levels, 0);
+	auto target_pyramid_gray_dx = 
+			FilterImagePyramid(target_pyramid_gray, FILTER_SOBEL_3_DX);
+	auto target_pyramid_gray_dy = 
+			FilterImagePyramid(target_pyramid_gray, FILTER_SOBEL_3_DY);
+	auto target_pyramid_depth_dx = 
+			FilterImagePyramid(target_pyramid_depth, FILTER_SOBEL_3_DX);
+	auto target_pyramid_depth_dy = 
+			FilterImagePyramid(target_pyramid_depth, FILTER_SOBEL_3_DY);
 
 	Eigen::Matrix4d result_odo = init_odo.isZero() ?
-			Eigen::Matrix4d::Identity() : init_odo;
-	Eigen::Matrix4d curr_odo;
-	Eigen::VectorXd ksi;
-	int corresps_count;
+			Eigen::Matrix4d::Identity() : init_odo;	
 
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix =
 			CreateCameraMatrixPyramid(camera_intrinsic, (int)iter_counts.size());
 
-	bool is_success = true;
 	for (int level = num_levels - 1; level >= 0; level--) {
 		const Eigen::Matrix3d level_camera_matrix = pyramid_camera_matrix[level];
 
-		auto level_cloud0 = ConvertDepth2Cloud(
-				*pyramid_depth0[level], level_camera_matrix);
-		const double fx = level_camera_matrix(0, 0);
-		const double fy = level_camera_matrix(1, 1);
-
+		auto source_cloud_level = ConvertDepth2Cloud(
+				*source_pyramid_depth[level], level_camera_matrix);
+		auto source_level = PackRGBDImage(*source_pyramid_gray[level],
+				*source_pyramid_depth[level]);
+		auto target_level = PackRGBDImage(*target_pyramid_gray[level], 
+				*target_pyramid_depth[level]);
+		auto target_dx_level = PackRGBDImage(*target_pyramid_gray_dx[level],
+				*target_pyramid_depth_dx[level]);
+		auto target_dy_level = PackRGBDImage(*target_pyramid_gray_dy[level],
+				*target_pyramid_depth_dy[level]);
+		
 		for (int iter = 0; iter < iter_counts[num_levels - level - 1]; iter++) {
 			PrintDebug("Iter : %d, Level : %d, ", iter, level);
-
-			std::shared_ptr<Image> corresps;
-			int corresps_count;
-			std::tie(corresps, corresps_count) = ComputeCorrespondence(
-					level_camera_matrix, result_odo.inverse(),
-					*pyramid_depth0[level], *pyramid_depth1[level], opt);
-
-			if (corresps_count == 0) {
-				PrintError("[ComputeOdometry] Num of corres is 0!\n");
-				is_success = false;
-			}
-
-			bool solutionExist;
-			Eigen::VectorXd ksi;
-			std::tie(solutionExist, ksi) = ComputeKsi(
-					*pyramid_gray0[level], *level_cloud0, *pyramid_gray1[level],
-					*pyramid_dI_dx1[level], *pyramid_dI_dy1[level],
-					*pyramid_depth0[level], *pyramid_depth1[level],
-					*pyramid_dD_dx1[level], *pyramid_dD_dy1[level],
-					result_odo, *corresps, corresps_count,
-					opt, fx, fy);
-
-			if (!solutionExist) {
-				PrintError("[ComputeOdometry] no solution!\n");
-				is_success = false;
-			}
-
-			curr_odo = Transform6DVecorto4x4Matrix(ksi);
+			Eigen::Matrix4d curr_odo;
+			bool is_success;
+			std::tie(is_success, curr_odo) = ComputeSingleIteration(
+				*source_level, *source_cloud_level, *target_level,
+				*target_dx_level, *target_dy_level, level_camera_matrix,
+				result_odo, opt);
 			result_odo = curr_odo * result_odo;
+
+			if (!is_success) {
+				PrintError("[ComputeOdometry] no solution!\n");
+				return std::make_tuple(false, Eigen::Matrix4d::Identity());
+			}
 		}
 	}
-	
-	if (corresps_count < opt.minimum_correspondence_num_)
-		is_success = false;
-
-	return std::make_tuple(is_success, result_odo);
+	return std::make_tuple(true, result_odo);
 }
 
 }	// unnamed namespace
@@ -562,7 +558,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic /*=PinholeCameraIntrinsic()*/, 
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		const OdometryOption &opt /*= OdometryOption()*/)
+		OdometryOption &opt /*= OdometryOption()*/)
 {
 	if (!CheckRGBDImagePair(source, target)) {
 		PrintError("[ComputeRGBDOdometry] Two RGBD pairs should be same in size.\n");
@@ -572,7 +568,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 
 	std::shared_ptr<RGBDImage> source_processed, target_processed;
 	std::tie(source_processed, target_processed) =
-			InitializeRGBDPair(source, target, camera_intrinsic, odo_init, opt);
+			Initialization(source, target, camera_intrinsic, odo_init, opt);
 
 	Eigen::Matrix4d odo;
 	bool is_success;

@@ -26,61 +26,45 @@
 
 #pragma once
 
-#include <Core/Geometry/Geometry2D.h>
-#include <Core/Geometry/Image.h>
+#include "RGBDImage.h"
 
 namespace three {
 
-/// RGBDImage is for a pair of registered color and depth images, 
-/// viewed from the same view, of the same resolution. 
-/// If you have other format, convert it first.
-class RGBDImage
-{
-public:
-	RGBDImage() {};
-	RGBDImage(const Image& color, const Image& depth) :
-			color_(color), depth_(depth) {};
-	~RGBDImage() 
-	{ 
-		color_.Clear();
-		depth_.Clear();
-	};
-
-public:
-	Image color_;
-	Image depth_;
-};
-
-/// Factory function to create an RGBD Image from color and depth Images
-std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-		const Image& color, const Image& depth, 
-		const double& depth_scale = 1000.0, double depth_trunc = 3.0);
-
-/// Factory function to create an RGBD Image from Redwood dataset
-std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
-	const Image& color, const Image& depth);
-
-/// Factory function to create an RGBD Image from TUM dataset
-std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
-		const Image& color, const Image& depth);
-
-/// Factory function to create an RGBD Image from SUN3D dataset
-std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
-	const Image& color, const Image& depth);
-
-/// Factory function to create an RGBD Image from NYU dataset
-std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
-	const Image& color, const Image& depth);
-
-/// Typedef and functions for RGBImagePyramid
-typedef std::vector<std::shared_ptr<RGBDImage>> RGBImagePyramid;
-
 RGBImagePyramid FilterRGBDImagePyramid(
-		const RGBImagePyramid &rgbd_image_pyramid, const FilterType type);
+		const RGBImagePyramid &rgbd_image_pyramid, FilterType type)
+{
+	RGBImagePyramid rgbd_image_pyramid_filtered;
+	rgbd_image_pyramid_filtered.clear();
+	int num_of_levels = (int)rgbd_image_pyramid.size();
+	for (int level = 0; level < num_of_levels; level++) {
+		auto color_level = rgbd_image_pyramid[level]->color_;
+		auto depth_level = rgbd_image_pyramid[level]->depth_;
+		auto color_level_filtered = FilterImage(color_level, type);
+		auto depth_level_filtered = FilterImage(depth_level, type);
+		auto rgbd_image_level_filtered = std::make_shared<RGBDImage>
+				(RGBDImage(*color_level_filtered, *depth_level_filtered));
+		rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
+	}
+	return rgbd_image_pyramid_filtered;
+}
 
 RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
 		const size_t num_of_levels, 
-		const bool with_gaussian_filter_for_color = true,
-		const bool with_gaussian_filter_for_depth = false);
+		bool with_gaussian_filter_for_color/* = true */,
+		bool with_gaussian_filter_for_depth/* = false */)
+{
+	ImagePyramid color_pyramid = CreateImagePyramid(rgbd_image.color_,
+			num_of_levels, with_gaussian_filter_for_color);
+	ImagePyramid depth_pyramid = CreateImagePyramid(rgbd_image.depth_,
+			num_of_levels, with_gaussian_filter_for_depth);
+	RGBImagePyramid rgbd_image_pyramid;
+	rgbd_image_pyramid.clear();
+	for (int level = 0; level < num_of_levels; level++) {
+		auto rgbd_image_level = std::make_shared<RGBDImage>
+				(RGBDImage(*color_pyramid[level], *depth_pyramid[level]));
+		rgbd_image_pyramid.push_back(rgbd_image_level);
+	}
+	return rgbd_image_pyramid;
+}
 
 }	// namespace three
