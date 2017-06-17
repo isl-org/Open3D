@@ -45,6 +45,7 @@ void PrintHelp(char* argv[])
 	PrintInfo("      --camera_intrinsic [intrinsic_path]");
 	PrintInfo("      --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
 	PrintInfo("      --verbose : indicate this to display detailed information");
+	PrintInfo("      --hybrid : compute odometry using hybrid objective");
 	PrintInfo("\n");
 }
 
@@ -82,8 +83,7 @@ int main(int argc, char *argv[])
 	auto depth_source = CreateImageFromFile(argv[2]);	
 	auto color_target = CreateImageFromFile(argv[3]);
 	auto depth_target = CreateImageFromFile(argv[4]);
-	std::shared_ptr<RGBDImage> (*CreateRGBDImage) 
-			(const Image& color, const Image& depth);
+	std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&);
 	if (rgbd_type == 0) CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
 	else if (rgbd_type == 1) CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
 	else if (rgbd_type == 2) CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
@@ -96,8 +96,13 @@ int main(int argc, char *argv[])
 	Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
 	Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
 	bool is_success;	
-	std::tie(is_success, trans_odo, info_odo) = 
+	if (ProgramOptionExists(argc, argv, "--hybrid")) {
+		std::tie(is_success, trans_odo, info_odo) =
+			ComputeRGBDHybridOdometry(*source, *target, intrinsic, odo_init, opt);
+	} else {
+		std::tie(is_success, trans_odo, info_odo) =
 			ComputeRGBDOdometry(*source, *target, intrinsic, odo_init, opt);
+	}		
 	std::cout << "Estimated 4x4 motion matrix : " << std::endl;
 	std::cout << trans_odo << std::endl;
 	std::cout << "Estimated 6x6 information matrix : " << std::endl;

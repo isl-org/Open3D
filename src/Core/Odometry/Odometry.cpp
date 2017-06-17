@@ -73,8 +73,8 @@ std::tuple<std::shared_ptr<Image>, int>
 			double d1 = double{ *PointerAt<float>(depth1, u1, v1) };
 			if (!std::isnan(d1)) {
 				double transformed_d1 = double{
-					(d1 * (KRK_inv_ptr[6] * u1 + KRK_inv_ptr[7] *
-					v1 + KRK_inv_ptr[8]) + Kt_ptr[2]) };
+						(d1 * (KRK_inv_ptr[6] * u1 + KRK_inv_ptr[7] *
+						v1 + KRK_inv_ptr[8]) + Kt_ptr[2]) };
 				int u0 = (int)(
 						(d1 * (KRK_inv_ptr[0] * u1 + KRK_inv_ptr[1] *
 						v1 + KRK_inv_ptr[2]) + Kt_ptr[0]) / transformed_d1 + 0.5);
@@ -111,8 +111,122 @@ std::tuple<std::shared_ptr<Image>, int>
 	return std::make_tuple(corresps, corresp_count);
 }
 
-std::tuple<bool, Eigen::VectorXd> 
-		ComputeKsi(const Image& image0, const Image& cloud0,
+Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input)
+{
+	Eigen::Affine3d aff_mat;
+	aff_mat.linear() = (Eigen::Matrix3d)
+			Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ())
+			* Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY())
+			* Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX());
+	aff_mat.translation() = Eigen::Vector3d(input(3), input(4), input(5));
+	return aff_mat.matrix();
+}
+
+std::tuple<bool, Eigen::Matrix4d> 
+		SolveLinearSystem(const Eigen::MatrixXd& J, const Eigen::VectorXd& r) 
+{
+	Eigen::MatrixXd Jt = J.transpose();
+	Eigen::MatrixXd JtJ = Jt * J;
+	Eigen::MatrixXd Jtr = Jt * r;
+
+	bool solutionExist = true;
+	double det = JtJ.determinant();
+	if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
+		solutionExist = false;
+
+	if (solutionExist) {
+		// Robust Cholesky decomposition of a matrix with pivoting.
+		Eigen::MatrixXd x = -JtJ.ldlt().solve(Jtr);
+		Eigen::Matrix4d M = Transform6DVecorto4x4Matrix(x);
+		return std::make_tuple(solutionExist, M);
+	} else {
+		return std::make_tuple(solutionExist, Eigen::Matrix4d::Zero());
+	}
+}
+
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
+		ComputeJacobian(const Image& image0, const Image& cloud0,
+		const Image& image1, const Image& dI_dx1, const Image& dI_dy1,
+		const Image& depth0, const Image& depth1,
+		const Image& dD_dx1, const Image& dD_dy1,
+		const Eigen::Matrix4d& odo,
+		const Image& corresps, int corresps_count,
+		const Eigen::Matrix3d& camera_matrix,
+		const OdometryOption& opt)
+{
+	int DoF = 6;
+	Eigen::MatrixXd J(corresps_count, DoF);
+	Eigen::MatrixXd r(corresps_count, 1);
+	J.setConstant(0.f);
+	r.setConstant(0.f);
+
+	double res = 0.0;
+	int point_count = 0;
+	const double fx = camera_matrix(0, 0);
+	const double fy = camera_matrix(1, 1);
+
+	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
+	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
+	const double R_raw[9] =
+			{ R(0, 0), R(0, 1), R(0, 2),
+			R(1, 0), R(1, 1), R(1, 2),
+			R(2, 0), R(2, 1), R(2, 2) };
+	const double t_raw[3] =
+			{ t(0), t(1), t(2) };
+
+	Eigen::Vector3d temp, p3d_mat, p3d_trans;
+	for (int v0 = 0; v0 < corresps.height_; v0++) {
+		for (int u0 = 0; u0 < corresps.width_; u0++) {
+			int u1 = *PointerAt<int>(corresps, u0, v0, 0);
+			int v1 = *PointerAt<int>(corresps, u0, v0, 1);
+			if (u1 != -1 && v1 != -1) {
+
+				double diff = double{ *PointerAt<float>(image1, u1, v1) -
+						*PointerAt<float>(image0, u0, v0) };
+				double dIdx = SOBEL_SCALE *
+						double{ *PointerAt<float>(dI_dx1, u1, v1) };
+				double dIdy = SOBEL_SCALE *
+						double{ *PointerAt<float>(dI_dy1, u1, v1) };
+				
+				p3d_mat(0) = double{ *PointerAt<float>(cloud0, u0, v0, 0) };
+				p3d_mat(1) = double{ *PointerAt<float>(cloud0, u0, v0, 1) };
+				p3d_mat(2) = double{ *PointerAt<float>(cloud0, u0, v0, 2) };
+
+				p3d_trans(0) = R_raw[0] * p3d_mat(0) + R_raw[1] * p3d_mat(1) +
+						R_raw[2] * p3d_mat(2) + t_raw[0];
+				p3d_trans(1) = R_raw[3] * p3d_mat(0) + R_raw[4] * p3d_mat(1) +
+						R_raw[5] * p3d_mat(2) + t_raw[1];
+				p3d_trans(2) = R_raw[6] * p3d_mat(0) + R_raw[7] * p3d_mat(1) +
+						R_raw[8] * p3d_mat(2) + t_raw[2];
+
+				double invz = 1. / p3d_trans(2);
+				double c0 = dIdx * fx * invz;
+				double c1 = dIdy * fy * invz;
+				double c2 = -(c0 * p3d_trans(0) + c1 * p3d_trans(1)) * invz;
+				
+				int row = point_count;
+				J(row, 0) = -p3d_trans(2) * c1 + p3d_trans(1) * c2;
+				J(row, 1) = p3d_trans(2) * c0 - p3d_trans(0) * c2;
+				J(row, 2) = -p3d_trans(1) * c0 + p3d_trans(0) * c1;
+				J(row, 3) = c0;
+				J(row, 4) = c1;
+				J(row, 5) = c2;
+				r(row, 0) = diff;
+				res += diff * diff;
+
+				point_count++;
+			}
+		}
+	}
+	res /= point_count;
+
+	PrintDebug("Res : %.2e (Npts : %d)\n", res, point_count);
+
+	return std::make_tuple(J, r);
+}
+
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
+		ComputeJacobianHybrid(const Image& image0, const Image& cloud0,
 		const Image& image1, const Image& dI_dx1, const Image& dI_dy1,
 		const Image& depth0, const Image& depth1,
 		const Image& dD_dx1, const Image& dD_dy1,
@@ -133,8 +247,8 @@ std::tuple<bool, Eigen::VectorXd>
 	int point_count = 0;
 
 	double sqrt_lamba_dep, sqrt_lambda_img;
-	sqrt_lamba_dep = sqrt(opt.lambda_dep_);
-	sqrt_lambda_img = sqrt(1.0 - opt.lambda_dep_);
+	sqrt_lamba_dep = sqrt(LAMBDA_HYBRID_DEPTH);
+	sqrt_lambda_img = sqrt(1.0 - LAMBDA_HYBRID_DEPTH);
 
 	const double fx = camera_matrix(0, 0);
 	const double fy = camera_matrix(1, 1);
@@ -226,22 +340,7 @@ std::tuple<bool, Eigen::VectorXd>
 
 	PrintDebug("Res : %.2e + %.2e (Npts : %d)\n", res1, res2, point_count);
 
-	Eigen::MatrixXd Jt = J.transpose();
-	Eigen::MatrixXd JtJ = Jt * J;
-	Eigen::MatrixXd Jtr = Jt * r;
-
-	bool solutionExist = true;
-	double det = JtJ.determinant();
-	if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
-		solutionExist = false;
-
-	if (solutionExist) {
-		// Robust Cholesky decomposition of a matrix with pivoting.
-		Eigen::MatrixXd ksi = -JtJ.ldlt().solve(Jtr);
-		return std::make_tuple(solutionExist, ksi);
-	} else {
-		return std::make_tuple(solutionExist, Eigen::VectorXd::Zero(6));
-	}
+	return std::make_tuple(J, r);
 }
 
 std::shared_ptr<Image> ConvertDepth2Cloud(
@@ -400,17 +499,6 @@ inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target)
 			target.depth_.bytes_per_channel_ == 4);
 }
 
-Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input) 
-{
-	Eigen::Affine3d aff_mat;
-	aff_mat.linear() = (Eigen::Matrix3d)
-			Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ())
-			* Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY())
-			* Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX());
-	aff_mat.translation() = Eigen::Vector3d(input(3), input(4), input(5));
-	return aff_mat.matrix();
-}
-
 std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 		Initialization( 
 		const RGBDImage& source_orig, const RGBDImage& target_orig,
@@ -418,11 +506,6 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 		const Eigen::Matrix4d& odo_init,
 		OdometryOption& opt) 
 {
-	if (opt.lambda_dep_ < 0.0f || opt.lambda_dep_ > 1.0f)
-		opt.lambda_dep_ = LAMBDA_HYBRID_DEPTH;
-	PrintDebug("lambda_dep : %f\n", opt.lambda_dep_);
-	PrintDebug("lambda_img : %f\n", 1.0f - opt.lambda_dep_);
-
 	auto source_gray = FilterImage(source_orig.color_, FILTER_GAUSSIAN_3);
 	auto target_gray = FilterImage(target_orig.color_, FILTER_GAUSSIAN_3);
 	auto source_depth_preprocessed = PreprocessDepth(source_orig.depth_, opt);
@@ -449,13 +532,14 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 	return std::make_tuple(source, target);
 }
 
-std::tuple<bool, Eigen::Matrix4d> ComputeSingleIteration(
+std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	const RGBDImage &source, const Image& source_cloud,
 	const RGBDImage &target, 
 	const RGBDImage &target_dx, const RGBDImage &target_dy,
 	const Eigen::Matrix3d camera_matrix,
 	const Eigen::Matrix4d& init_odo,
-	const OdometryOption& opt)
+	const OdometryOption& opt,
+	const bool is_hybrid)
 {
 	std::shared_ptr<Image> corresps;
 	int corresps_count;
@@ -470,21 +554,34 @@ std::tuple<bool, Eigen::Matrix4d> ComputeSingleIteration(
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	}
 
-	bool is_success;
-	Eigen::VectorXd ksi;
-	std::tie(is_success, ksi) = ComputeKsi(
-			source.color_, source_cloud, target.color_,
-			target_dx.color_, target_dy.color_,
-			source.depth_, target.depth_,
-			target_dx.depth_, target_dy.depth_,		
-			init_odo, *corresps, corresps_count,
-			camera_matrix, opt);
+	Eigen::MatrixXd J;
+	Eigen::VectorXd r;
+	if (is_hybrid) {
+		std::tie(J, r) = ComputeJacobianHybrid(
+				source.color_, source_cloud, target.color_,
+				target_dx.color_, target_dy.color_,
+				source.depth_, target.depth_,
+				target_dx.depth_, target_dy.depth_,
+				init_odo, *corresps, corresps_count,
+				camera_matrix, opt);
+	} else {
+		std::tie(J, r) = ComputeJacobian(
+				source.color_, source_cloud, target.color_,
+				target_dx.color_, target_dy.color_,
+				source.depth_, target.depth_,
+				target_dx.depth_, target_dy.depth_,
+				init_odo, *corresps, corresps_count,
+				camera_matrix, opt);
+	}
 
+	bool is_success;
+	Eigen::Matrix4d M;
+	std::tie(is_success, M) = SolveLinearSystem(J, r);
 	if (!is_success) {
 		PrintError("[ComputeOdometry] no solution!\n");
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	} else {
-		return std::make_tuple(true, Transform6DVecorto4x4Matrix(ksi));
+		return std::make_tuple(true, M);
 	}
 }
 
@@ -492,26 +589,18 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic& camera_intrinsic,
 		const Eigen::Matrix4d& init_odo,
-		const OdometryOption& opt)
+		const OdometryOption& opt,
+		const bool is_hybrid)
 {
 	std::vector<int> iter_counts = opt.iteration_number_per_pyramid_level_;
 	int num_levels = (int)iter_counts.size();
 
-	//auto source_pyramid = CreateRGBDImagePyramid(source, num_levels);
-	//auto target_pyramid = CreateRGBDImagePyramid(target, num_levels);
-
-	auto source_pyramid_gray = CreateImagePyramid(source.color_, num_levels);
-	auto target_pyramid_gray = CreateImagePyramid(target.color_, num_levels);
-	auto source_pyramid_depth = CreateImagePyramid(source.depth_, num_levels, 0);
-	auto target_pyramid_depth = CreateImagePyramid(target.depth_, num_levels, 0);
-	auto target_pyramid_gray_dx = 
-			FilterImagePyramid(target_pyramid_gray, FILTER_SOBEL_3_DX);
-	auto target_pyramid_gray_dy = 
-			FilterImagePyramid(target_pyramid_gray, FILTER_SOBEL_3_DY);
-	auto target_pyramid_depth_dx = 
-			FilterImagePyramid(target_pyramid_depth, FILTER_SOBEL_3_DX);
-	auto target_pyramid_depth_dy = 
-			FilterImagePyramid(target_pyramid_depth, FILTER_SOBEL_3_DY);
+	auto source_pyramid = CreateRGBDImagePyramid(source, num_levels);
+	auto target_pyramid = CreateRGBDImagePyramid(target, num_levels);
+	auto target_pyramid_dx = FilterRGBDImagePyramid
+			(target_pyramid, FILTER_SOBEL_3_DX);
+	auto target_pyramid_dy = FilterRGBDImagePyramid
+			(target_pyramid, FILTER_SOBEL_3_DY);
 
 	Eigen::Matrix4d result_odo = init_odo.isZero() ?
 			Eigen::Matrix4d::Identity() : init_odo;	
@@ -523,24 +612,24 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const Eigen::Matrix3d level_camera_matrix = pyramid_camera_matrix[level];
 
 		auto source_cloud_level = ConvertDepth2Cloud(
-				*source_pyramid_depth[level], level_camera_matrix);
-		auto source_level = PackRGBDImage(*source_pyramid_gray[level],
-				*source_pyramid_depth[level]);
-		auto target_level = PackRGBDImage(*target_pyramid_gray[level], 
-				*target_pyramid_depth[level]);
-		auto target_dx_level = PackRGBDImage(*target_pyramid_gray_dx[level],
-				*target_pyramid_depth_dx[level]);
-		auto target_dy_level = PackRGBDImage(*target_pyramid_gray_dy[level],
-				*target_pyramid_depth_dy[level]);
+				source_pyramid[level]->depth_, level_camera_matrix);
+		auto source_level = PackRGBDImage(source_pyramid[level]->color_,
+				source_pyramid[level]->depth_);
+		auto target_level = PackRGBDImage(target_pyramid[level]->color_, 
+				target_pyramid[level]->depth_);
+		auto target_dx_level = PackRGBDImage(target_pyramid_dx[level]->color_,
+				target_pyramid_dx[level]->depth_);
+		auto target_dy_level = PackRGBDImage(target_pyramid_dy[level]->color_,
+				target_pyramid_dy[level]->depth_);
 		
 		for (int iter = 0; iter < iter_counts[num_levels - level - 1]; iter++) {
 			PrintDebug("Iter : %d, Level : %d, ", iter, level);
 			Eigen::Matrix4d curr_odo;
 			bool is_success;
-			std::tie(is_success, curr_odo) = ComputeSingleIteration(
+			std::tie(is_success, curr_odo) = DoSingleIteration(
 				*source_level, *source_cloud_level, *target_level,
 				*target_dx_level, *target_dy_level, level_camera_matrix,
-				result_odo, opt);
+				result_odo, opt, is_hybrid);
 			result_odo = curr_odo * result_odo;
 
 			if (!is_success) {
@@ -552,17 +641,16 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 	return std::make_tuple(true, result_odo);
 }
 
-}	// unnamed namespace
-
-std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> 
-		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic /*=PinholeCameraIntrinsic()*/, 
+std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
+		OdometryDriver(const RGBDImage &source, const RGBDImage &target,
+		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		OdometryOption &opt /*= OdometryOption()*/)
+		OdometryOption &opt /*= OdometryOption()*/,
+		const bool is_hybrid)
 {
 	if (!CheckRGBDImagePair(source, target)) {
 		PrintError("[ComputeRGBDOdometry] Two RGBD pairs should be same in size.\n");
-		return std::make_tuple(false, 
+		return std::make_tuple(false,
 			Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
 	}
 
@@ -573,18 +661,43 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 	Eigen::Matrix4d odo;
 	bool is_success;
 	std::tie(is_success, odo) = ComputeMultiscale(
-			*source_processed, *target_processed, 
-			camera_intrinsic, odo_init, opt);
+			*source_processed, *target_processed,
+			camera_intrinsic, odo_init, opt, is_hybrid);
 
 	if (is_success) {
 		Eigen::Matrix4d trans_output = odo.inverse();
 		Eigen::MatrixXd info_output = CreateInfomationMatrix(odo, camera_intrinsic,
-			source_processed->depth_, target_processed->depth_, opt);
+				source_processed->depth_, target_processed->depth_, opt);
 		return std::make_tuple(true, trans_output, info_output);
-	} else {
-		return std::make_tuple(false, 
+	}
+	else {
+		return std::make_tuple(false,
 				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
 	}
+}
+
+}	// unnamed namespace
+
+std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
+		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
+		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
+		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
+		OdometryOption &opt /*= OdometryOption()*/)
+{
+	bool is_hybrid = false;
+	return OdometryDriver(source, target, camera_intrinsic, 
+			odo_init, opt, is_hybrid);
+}
+
+std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
+		ComputeRGBDHybridOdometry(const RGBDImage &source, const RGBDImage &target,
+		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
+		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
+		OdometryOption &opt /*= OdometryOption()*/)
+{
+	bool is_hybrid = true;
+	return OdometryDriver(source, target, camera_intrinsic, 
+			odo_init, opt, is_hybrid);
 }
 
 }	// namespace three

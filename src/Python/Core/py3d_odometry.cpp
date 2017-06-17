@@ -35,19 +35,18 @@ void pybind_odometry(py::module &m)
 {
 	py::class_<OdometryOption> odometry_option(m, "OdometryOption");
 	odometry_option.def("__init__", [](OdometryOption &c,
-		double lambda_dep, double minimum_correspondence_ratio,
+		double minimum_correspondence_ratio,
 		std::vector<int> iteration_number_per_pyramid_level, 
 		double max_depth_diff, double min_depth, double max_depth,
-		bool check_initialization, std::string intrinsic_path) {
-		new (&c)OdometryOption(lambda_dep, minimum_correspondence_ratio,
+		bool check_initialization) {
+		new (&c)OdometryOption(minimum_correspondence_ratio,
 				iteration_number_per_pyramid_level, 
 				max_depth_diff, min_depth, max_depth,
-				check_initialization, intrinsic_path);
-	}, "lambda_dep"_a = 0.95,
-		"minimum_correspondence_ratio"_a = 0.1, 
+				check_initialization);
+	}, "minimum_correspondence_ratio"_a = 0.1, 
 		"iteration_number_per_pyramid_level"_a = std::vector<int>{ 10,10,10,5 },
 		"max_depth_diff"_a = 0.07, "min_depth"_a = 0.0, "max_depth"_a = 4.0,
-		"check_initialization"_a = true, "intrinsic_path"_a = "");
+		"check_initialization"_a = true);
 	odometry_option
 		.def_readwrite("minimum_correspondence_num",
 				&OdometryOption::minimum_correspondence_ratio_)
@@ -58,30 +57,27 @@ void pybind_odometry(py::module &m)
 		.def_readwrite("max_depth", &OdometryOption::max_depth_)
 		.def_readwrite("check_initialization", 
 				&OdometryOption::check_initialization_)
-		.def_readwrite("intrinsic_path", &OdometryOption::intrinsic_path_)
 		.def("__repr__", [](const OdometryOption &c) {
 		int num_pyramid_level = c.iteration_number_per_pyramid_level_.size();
 		std::string str_iteration_number_per_pyramid_level_ = "[ ";
 		for (int i = 0; i < num_pyramid_level; i++) 
-			str_iteration_number_per_pyramid_level_ += std::to_string(i) + ", ";		
+			str_iteration_number_per_pyramid_level_ += 
+					std::to_string(c.iteration_number_per_pyramid_level_[i]) + ", ";
 		str_iteration_number_per_pyramid_level_ += "] ";
 		return std::string("OdometryOption class.") +
 				/*std::string("\nodo_init = ") + std::to_string(c.odo_init_) +*/
-				std::string("\nlambda_dep = ") + 
-				std::to_string(c.lambda_dep_) +
-				std::string("\nminimum_correspondence_num = ") + 
+				std::string("\nminimum_correspondence_ratio = ") +
 				std::to_string(c.minimum_correspondence_ratio_) +
-				std::string("\niteration_number_per_pyramid_level = ") + 
+				std::string("\niteration_number_per_pyramid_level = ") +
 				str_iteration_number_per_pyramid_level_ +
-				std::string("\nmax_depth_diff = ") + 
+				std::string("\nmax_depth_diff = ") +
 				std::to_string(c.max_depth_diff_) +
-				std::string("\nmin_depth = ") + 
+				std::string("\nmin_depth = ") +
 				std::to_string(c.min_depth_) +
-				std::string("\nmax_depth = ") + 
+				std::string("\nmax_depth = ") +
 				std::to_string(c.max_depth_) +
-				std::string("\ncheck_initialization = ") + 
-				std::to_string(c.check_initialization_) +
-				std::string("\nintrinsic_path = ") + c.intrinsic_path_;
+				std::string("\ncheck_initialization = ") +
+				std::to_string(c.check_initialization_);
 		});
 }
 
@@ -91,6 +87,12 @@ void pybind_odometry_methods(py::module &m)
 			"Function to estimate 6D rigid motion from two RGBD image pairs",
 			"rgbd_source"_a, "rgbd_target"_a, 
 			"camera_intrinsic"_a = PinholeCameraIntrinsic(), 
+			"odo_init"_a = Eigen::Matrix4d::Identity(),
+			"option"_a = OdometryOption());
+	m.def("ComputeRGBDHybridOdometry", &ComputeRGBDHybridOdometry,
+			"Function to estimate 6D rigid motion from two RGBD image pairs using hybrid energy",
+			"rgbd_source"_a, "rgbd_target"_a,
+			"camera_intrinsic"_a = PinholeCameraIntrinsic(),
 			"odo_init"_a = Eigen::Matrix4d::Identity(),
 			"option"_a = OdometryOption());
 }

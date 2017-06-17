@@ -1,16 +1,34 @@
 import sys
 sys.path.append("../..")
 from py3d import *
+import numpy as np
 
 if __name__ == "__main__":
-	image0 = ReadImage("../../TestData/RGBD/color/00000.jpg")
-	depth0 = ReadImage("../../TestData/RGBD/depth/00000.png")
-	image1 = ReadImage("../../TestData/RGBD/color/00001.jpg")
-	depth1 = ReadImage("../../TestData/RGBD/depth/00001.png")
-	option = OdometryOption();
-	option.intrinsic_path = "../../TestData/camera.json"
+	source_color = ReadImage("../../TestData/RGBD/color/00000.jpg")
+	source_depth = ReadImage("../../TestData/RGBD/depth/00000.png")
+	target_color = ReadImage("../../TestData/RGBD/color/00001.jpg")
+	target_depth = ReadImage("../../TestData/RGBD/depth/00001.png")
+	source_rgbd_image = CreateRGBDImageFromColorAndDepth(
+			source_color, source_depth);
+	target_rgbd_image = CreateRGBDImageFromColorAndDepth(
+			target_color, target_depth);
+
+	camera_intrinsic = ReadPinholeCameraIntrinsic("../../TestData/camera.json")
+	option = OdometryOption()
+	odo_init = np.identity(4)
+	print(camera_intrinsic.intrinsic_matrix)
 	print(option)
+
 	[success, trans, info] = ComputeRGBDOdometry(
-			image0, depth0, image1, depth1, option)
+			source_rgbd_image, target_rgbd_image,
+			camera_intrinsic, odo_init, option)
 	if success:
+		print("Using RGB-D Odometry")
+		print(trans)
+
+	[success, trans, info] = ComputeRGBDHybridOdometry(
+			source_rgbd_image, target_rgbd_image,
+			camera_intrinsic, odo_init, option)
+	if success:
+		print("Using Hybrid RGB-D Odometry")
 		print(trans)
