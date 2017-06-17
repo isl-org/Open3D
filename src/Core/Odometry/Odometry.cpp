@@ -504,7 +504,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 		const RGBDImage& source_orig, const RGBDImage& target_orig,
 		const PinholeCameraIntrinsic& camera_intrinsic,
 		const Eigen::Matrix4d& odo_init,
-		OdometryOption& opt) 
+		const OdometryOption& opt) 
 {
 	auto source_gray = FilterImage(source_orig.color_, FILTER_GAUSSIAN_3);
 	auto target_gray = FilterImage(target_orig.color_, FILTER_GAUSSIAN_3);
@@ -645,7 +645,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		OdometryDriver(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		OdometryOption &opt /*= OdometryOption()*/,
+		const OdometryOption &opt /*= OdometryOption()*/,
 		const bool is_hybrid)
 {
 	if (!CheckRGBDImagePair(source, target)) {
@@ -682,7 +682,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		OdometryOption &opt /*= OdometryOption()*/)
+		const OdometryOption &opt /*= OdometryOption()*/)
 {
 	bool is_hybrid = false;
 	return OdometryDriver(source, target, camera_intrinsic, 
@@ -693,7 +693,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDHybridOdometry(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		OdometryOption &opt /*= OdometryOption()*/)
+		const OdometryOption &opt /*= OdometryOption()*/)
 {
 	bool is_hybrid = true;
 	return OdometryDriver(source, target, camera_intrinsic, 
