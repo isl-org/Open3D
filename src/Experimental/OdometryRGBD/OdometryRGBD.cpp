@@ -97,11 +97,11 @@ int main(int argc, char *argv[])
 	Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
 	bool is_success;	
 	if (ProgramOptionExists(argc, argv, "--hybrid")) {
-		std::tie(is_success, trans_odo, info_odo) =
-			ComputeRGBDHybridOdometry(*source, *target, intrinsic, odo_init, opt);
+		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDHybridOdometry
+				(*source, *target, intrinsic, odo_init, opt);
 	} else {
-		std::tie(is_success, trans_odo, info_odo) =
-			ComputeRGBDOdometry(*source, *target, intrinsic, odo_init, opt);
+		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
+				(*source, *target, intrinsic, odo_init, opt);
 	}		
 	std::cout << "Estimated 4x4 motion matrix : " << std::endl;
 	std::cout << trans_odo << std::endl;
