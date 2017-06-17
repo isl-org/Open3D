@@ -42,8 +42,7 @@ public:
 			double max_depth_diff = 0.07, 
 			double min_depth = 0.0,	
 			double max_depth = 4.0,
-			bool check_initialization = true,
-			std::string intrinsic_path = "") :
+			bool check_initialization = true) :
 			minimum_correspondence_ratio_(minimum_correspondence_ratio),
 			iteration_number_per_pyramid_level_
 			(iteration_number_per_pyramid_level),
