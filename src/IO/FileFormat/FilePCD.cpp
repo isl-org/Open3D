@@ -286,8 +286,8 @@ Eigen::Vector3d UnpackBinaryPCDColor(const char *data_ptr, const char type,
 	if (size == 4) {
 		std::uint8_t data[4];
 		memcpy(data, data_ptr, 4);
-		return Eigen::Vector3d((double)data[0] / 255.0, (double)data[1] / 255.0,
-				(double)data[2] / 255.0);
+		return Eigen::Vector3d((double)data[2] / 255.0, (double)data[1] / 255.0,
+				(double)data[0] / 255.0);
 	} else {
 		return Eigen::Vector3d::Zero();
 	}
