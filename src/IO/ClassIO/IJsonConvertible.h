@@ -3,7 +3,8 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+//                    Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +28,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Core/Utility/Eigen.h>
 
 namespace Json {
 class Value;
@@ -54,13 +56,17 @@ public:
 			const Json::Value &value);
 	static bool EigenVector4dToJsonArray(const Eigen::Vector4d &vec,
 			Json::Value &value);
-	static bool EigenMatrix3dFromJsonArray(Eigen::Matrix3d &vec, 
+	static bool EigenMatrix3dFromJsonArray(Eigen::Matrix3d &mat, 
 			const Json::Value &value);
-	static bool EigenMatrix3dToJsonArray(const Eigen::Matrix3d &vec,
+	static bool EigenMatrix3dToJsonArray(const Eigen::Matrix3d &mat,
 			Json::Value &value);
-	static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &vec, 
+	static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &mat,
 			const Json::Value &value);
-	static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &vec,
+	static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
+			Json::Value &value);
+	static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
+			const Json::Value &value);
+	static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
 			Json::Value &value);
 };
 

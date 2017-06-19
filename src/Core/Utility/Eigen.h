@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PairwiseRegistration.h"
+#pragma once
 
-#include <IO/ClassIO/PairwiseRegistrationIO.h>
+#include <Eigen/Core>
 
-namespace three{
+namespace Eigen {
 
-std::shared_ptr<PairwiseRegistration> CreatePairwiseRegistrationFromFile(
-		const std::string &filename)
-{
-	auto trajectory = std::make_shared<PairwiseRegistration>();
-	ReadPairwiseRegistration(filename, *trajectory);
-	return trajectory;
-}
+/// Extending Eigen namespace by adding frequently used matrix type
+typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 
-}	// namespace three
+}	// namespace Eigen

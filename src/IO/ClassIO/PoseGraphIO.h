@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,26 +27,23 @@
 #pragma once
 
 #include <string>
-#include <Core/Registration/PairwiseRegistration.h>
+#include <Core/Geometry/PoseGraph.h>
 
 namespace three {
 
-/// The general entrance for reading a PinholeCameraTrajectory from a file
+/// The general entrance for reading a PoseGraph from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return If the read function is successful. 
-bool ReadPairwiseRegistration(const std::string &filename,
-		PairwiseRegistration &trajectory);
+bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 
 /// The general entrance for writing a PinholeCameraTrajectory to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return If the write function is successful.
-bool WritePairwiseRegistration(const std::string &filename,
-		const PairwiseRegistration &trajectory);
+bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
 
-bool ReadPairwiseRegistrationFromLOG(const std::string &filename,
-		PairwiseRegistration &trajectory);
+bool ReadPoseGraphFromPOSE(const std::string &filename, PoseGraph &pose_graph);
 
-bool WritePairwiseRegistrationToLOG(const std::string &filename,
-		const PairwiseRegistration &trajectory);
+bool WritePoseGraphToPOSE(const std::string &filename, 
+		const PoseGraph &pose_graph);
 
 }	// namespace three

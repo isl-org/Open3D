@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,36 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PoseGraph.h"
 
-#include <vector>
-#include <memory>
+#include <IO/ClassIO/PoseGraphIO.h>
 
-#include <IO/ClassIO/IJsonConvertible.h>
-#include <IO/ClassIO/PinholeCameraTrajectoryIO.h> // should be deleted
+namespace three{
 
-namespace three {
-
-class PairwiseRegistration : public IJsonConvertible
+std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
+		const std::string &filename)
 {
-public:
-	PairwiseRegistration();
-	~PairwiseRegistration() override;
-
-public:
-	bool ConvertToJsonValue(Json::Value &value) const override;
-	bool ConvertFromJsonValue(const Json::Value &value) override;
-
-public:
-	PinholeCameraIntrinsic intrinsic_; // should be deleted
-	std::vector<Eigen::Matrix4d> extrinsic_;
-	std::vector<Eigen::Matrix6d> extrinsic_;
-};
-
-/// Factory function to create a PinholeCameraTrajectory from a file
-/// (PinholeCameraTrajectoryFactory.cpp)
-/// Return an empty PinholeCameraTrajectory if fail to read the file.
-std::shared_ptr<PairwiseRegistration> CreatePairwiseRegistrationFromFile(
-		const std::string &filename);
+	auto pose_graph = std::make_shared<PoseGraph>();
+	ReadPoseGraph(filename, *pose_graph);
+	return pose_graph;
+}
 
 }	// namespace three

@@ -4,6 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+//                    Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -119,6 +120,30 @@ bool IJsonConvertible::EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
 {
 	value.clear();
 	for (int i = 0; i < 16; i++) {
+		value.append(mat.coeffRef(i));
+	}
+	return true;
+}
+
+bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
+	const Json::Value &value)
+{
+	if (value.size() != 36) {
+		return false;
+	}
+	else {
+		for (int i = 0; i < 36; i++) {
+			mat.coeffRef(i) = value[i].asDouble();
+		}
+		return true;
+	}
+}
+
+bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
+	Json::Value &value)
+{
+	value.clear();
+	for (int i = 0; i < 36; i++) {
 		value.append(mat.coeffRef(i));
 	}
 	return true;

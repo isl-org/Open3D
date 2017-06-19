@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PairwiseRegistrationIO.h"
+#include "PoseGraphIO.h"
 
 #include <unordered_map>
 #include <Core/Utility/Console.h>
@@ -35,37 +35,37 @@ namespace three{
 	
 namespace {
 
-bool ReadPairwiseRegistrationFromJSON(const std::string &filename,
-		PairwiseRegistration &trajectory)
+bool ReadPoseGraphFromJSON(const std::string &filename,
+		PoseGraph &trajectory)
 {
 	return ReadIJsonConvertible(filename, trajectory);
 }
 
-bool WritePairwiseRegistrationToJSON(const std::string &filename,
-		const PairwiseRegistration &trajectory)
+bool WritePoseGraphToJSON(const std::string &filename,
+		const PoseGraph &trajectory)
 {
 	return WriteIJsonConvertibleToJSON(filename, trajectory);
 }
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, PairwiseRegistration &)>>
+		std::function<bool(const std::string &, PoseGraph &)>>
 		file_extension_to_pairsiwe_registration_read_function
-		{{"log", ReadPairwiseRegistrationFromLOG},
-		{"json", ReadPairwiseRegistrationFromJSON},
+		{{"pose", ReadPoseGraphFromPOSE},
+		{"json", ReadPoseGraphFromJSON},
 		};
 
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &,
-		const PairwiseRegistration &)>>
+		const PoseGraph &)>>
 		file_extension_to_pairwise_registration_write_function
-		{{"log", WritePairwiseRegistrationToLOG},
-		{"json", WritePairwiseRegistrationToJSON},
+		{{"pose", WritePoseGraphToPOSE},
+		{"json", WritePoseGraphToJSON},
 		};
 
 }	// unnamed namespace
 
 bool ReadPairwiseRegistration(const std::string &filename,
-		PairwiseRegistration &trajectory)
+		PoseGraph &trajectory)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
@@ -83,7 +83,7 @@ bool ReadPairwiseRegistration(const std::string &filename,
 }
 
 bool WritePairwiseRegistration(const std::string &filename,
-		const PairwiseRegistration &trajectory)
+		const PoseGraph &trajectory)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
