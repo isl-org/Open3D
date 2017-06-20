@@ -126,7 +126,7 @@ bool IJsonConvertible::EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
 }
 
 bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
-	const Json::Value &value)
+		const Json::Value &value)
 {
 	if (value.size() != 36) {
 		return false;
@@ -140,7 +140,7 @@ bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
 }
 
 bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
-	Json::Value &value)
+		Json::Value &value)
 {
 	value.clear();
 	for (int i = 0; i < 36; i++) {

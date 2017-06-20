@@ -48,15 +48,15 @@ class PoseGraphEdge
 {
 public:
 	PoseGraphEdge(
-		int target_node_id, int source_node_id,
-		Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity(),
-		Eigen::Matrix6d information = Eigen::Matrix6d::Zero(),
-		bool uncertain = false) :
-		target_node_id_(target_node_id),
-		source_node_id_(source_node_id),
-		transformation_(transformation),
-		information_(information),
-		uncertain_(uncertain) {};
+			int target_node_id = -1, int source_node_id = -1,
+			Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity(),
+			Eigen::Matrix6d information = Eigen::Matrix6d::Zero(),
+			bool uncertain = false) :
+			target_node_id_(target_node_id),
+			source_node_id_(source_node_id),
+			transformation_(transformation),
+			information_(information),
+			uncertain_(uncertain) {};
 	~PoseGraphEdge() {};
 public:
 	int target_node_id_;
@@ -83,7 +83,7 @@ public:
 	std::vector<PoseGraphEdge> edges_;
 };
 
-/// Factory function to create a PinholeCameraTrajectory from a file
+/// Factory function to create a PoseGraph from a file
 /// (PinholeCameraTrajectoryFactory.cpp)
 /// Return an empty PinholeCameraTrajectory if fail to read the file.
 std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(

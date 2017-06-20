@@ -49,55 +49,53 @@ bool WritePoseGraphToJSON(const std::string &filename,
 
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, PoseGraph &)>>
-		file_extension_to_pairsiwe_registration_read_function
-		{{"pose", ReadPoseGraphFromPOSE},
-		{"json", ReadPoseGraphFromJSON},
+		file_extension_to_pose_graph_read_function
+		{{"json", ReadPoseGraphFromJSON},
 		};
 
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &,
 		const PoseGraph &)>>
-		file_extension_to_pairwise_registration_write_function
-		{{"pose", WritePoseGraphToPOSE},
-		{"json", WritePoseGraphToJSON},
+		file_extension_to_pose_graph_write_function
+		{{"json", WritePoseGraphToJSON},
 		};
 
 }	// unnamed namespace
 
-bool ReadPairwiseRegistration(const std::string &filename,
-		PoseGraph &trajectory)
+bool ReadPoseGraph(const std::string &filename,
+		PoseGraph &pose_graph)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintWarning("Read PairwiseRegistration failed: unknown file extension.\n");
+		PrintWarning("Read PoseGraph failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr =
-			file_extension_to_pairsiwe_registration_read_function.find(filename_ext);
-	if (map_itr == file_extension_to_pairsiwe_registration_read_function.end()) {
-		PrintWarning("Read PairwiseRegistration failed: unknown file extension.\n");
+			file_extension_to_pose_graph_read_function.find(filename_ext);
+	if (map_itr == file_extension_to_pose_graph_read_function.end()) {
+		PrintWarning("Read PoseGraph failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, trajectory);
+	return map_itr->second(filename, pose_graph);
 }
 
-bool WritePairwiseRegistration(const std::string &filename,
-		const PoseGraph &trajectory)
+bool WritePoseGraph(const std::string &filename,
+		const PoseGraph &pose_graph)
 {
 	std::string filename_ext = 
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
-		PrintWarning("Write PairwiseRegistration failed: unknown file extension.\n");
+		PrintWarning("Write PoseGraph failed: unknown file extension.\n");
 		return false;
 	}
 	auto map_itr =
-			file_extension_to_pairwise_registration_write_function.find(filename_ext);
-	if (map_itr == file_extension_to_pairwise_registration_write_function.end()) {
-		PrintWarning("Write PairwiseRegistration failed: unknown file extension.\n");
+			file_extension_to_pose_graph_write_function.find(filename_ext);
+	if (map_itr == file_extension_to_pose_graph_write_function.end()) {
+		PrintWarning("Write PoseGraph failed: unknown file extension.\n");
 		return false;
 	}
-	return map_itr->second(filename, trajectory);
+	return map_itr->second(filename, pose_graph);
 }
 
 }	// namespace three

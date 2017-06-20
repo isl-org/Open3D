@@ -29,8 +29,24 @@
 
 #include <Core/Core.h>
 #include <IO/IO.h>
+#include <IO/ClassIO/PoseGraphIO.h>
+#include <Core/Registration/PoseGraph.h>
 
 #include "Helper.h"
+
+void PrintTest(three::PoseGraph& input) {
+	std::cout << "Node" << std::endl;	
+	for (size_t i = 0; i < input.nodes_.size(); i++) {
+		std::cout << input.nodes_[i].pose_ << std::endl;
+	}
+	std::cout << "Edge" << std::endl;
+	for (size_t i = 0; i < input.edges_.size(); i++) {
+		std::cout << input.edges_[i].target_node_id_ << " " <<
+				input.edges_[i].source_node_id_ << std::endl;
+		std::cout << input.edges_[i].transformation_ << std::endl;
+		std::cout << input.edges_[i].information_ << std::endl;
+	}
+}
 
 void PrintHelp()
 {
@@ -61,11 +77,19 @@ int main(int argc, char *argv[])
 		PrintHelp();
 		return 0;
 	}
-	auto matching = CreatePinholeCameraTrajectoryFromFile(argv[1]);
-	std::cout << "matching->extrinsic_.size() " << matching->extrinsic_.size() << std::endl;
-	for (int i = 0; i < matching->extrinsic_.size(); i++) {
-		std::cout << matching->extrinsic_[i] << std::endl;
-	}
+	// randomly generate PoseGraph
+	PoseGraph test;
+	test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	test.edges_.push_back(PoseGraphEdge(1, 2,Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random()));
+	test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	test.edges_.push_back(PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random()));
+	WritePoseGraph("test_pose_graph.json", test);
+	PrintTest(test);
+
+	// reads PoseGrapy and display
+	PoseGraph test_new;
+	ReadPoseGraph("test_pose_graph.json", test_new);
+	PrintTest(test_new);
 
 	return 1;
 }

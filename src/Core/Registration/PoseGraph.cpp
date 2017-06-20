@@ -56,20 +56,21 @@ bool PoseGraph::ConvertToJsonValue(Json::Value &value) const
 	value["nodes"] = node_array;	
 
 	Json::Value edge_array;
-	for (const auto &status : edges_) {
-		Json::Value status_object;
-		value.append((double)status.target_node_id_);
-		value.append((double)status.source_node_id_);
+	for (const auto &status : edges_) {		
+		edge_array.append((double)status.target_node_id_);
+		edge_array.append((double)status.source_node_id_);
+		Json::Value transformation_object;
 		if (EigenMatrix4dToJsonArray(
-				status.transformation_, status_object) == false) {
+				status.transformation_, transformation_object) == false) {
 			return false;
 		}
-		edge_array.append(status_object);
+		edge_array.append(transformation_object);
+		Json::Value information_object;		
 		if (EigenMatrix6dToJsonArray(
-				status.information_, status_object) == false) {
+				status.information_, information_object) == false) {
 			return false;
 		}
-		edge_array.append(status_object);
+		edge_array.append(information_object);
 	}
 	value["edges"] = edge_array;
 	return true;
@@ -93,12 +94,14 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
 		PrintWarning("PoseGraph read JSON failed: empty nodes.\n");
 		return false;
 	}
-	nodes_.resize(node_array.size());
+	nodes_.clear();
 	for (int i = 0; i < (int)node_array.size(); i++) {
 		const Json::Value &status_object = node_array[i];
-		if (EigenMatrix4dFromJsonArray(nodes_[i].pose_, status_object) == false) {
+		Eigen::Matrix4d transformation;
+		if (EigenMatrix4dFromJsonArray(transformation, status_object) == false) {
 			return false;
 		}
+		nodes_.push_back(PoseGraphNode(transformation));
 	}
 
 	const Json::Value &edge_array = value["edges"];
@@ -106,17 +109,30 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
 		PrintWarning("PoseGraph read JSON failed: empty edges.\n");
 		return false;
 	}
-	edges_.resize(edge_array.size());
-	for (int i = 0; i < (int)edge_array.size(); i++) {
-		const Json::Value &status_object = edge_array[i];
-		edges_[i].target_node_id_ = (int)status_object[0].asDouble();
-		edges_[i].source_node_id_ = (int)status_object[1].asDouble();
-		if (EigenMatrix4dFromJsonArray(edges_[i].transformation_, status_object[2]) == false) {
+	edges_.clear();
+	for (int i = 0; i < (int)edge_array.size(); i+=4) {
+		const Json::Value &target_node_id_object = edge_array[i];
+		const Json::Value &source_node_id_object = edge_array[i + 1];
+		const Json::Value &transformation_object = edge_array[i + 2];
+		const Json::Value &information_object = edge_array[i + 3];		
+		int target_node_id, source_node_id;
+		target_node_id = (int)(target_node_id_object.asDouble());
+		source_node_id = (int)(source_node_id_object.asDouble());
+		Eigen::Matrix4d transformation;
+		if (EigenMatrix4dFromJsonArray(transformation, 
+				transformation_object) == false) {
 			return false;
 		}
-		if (EigenMatrix6dFromJsonArray(edges_[i].information_, status_object[18]) == false) {
+		Eigen::Matrix6d information;
+		if (EigenMatrix6dFromJsonArray(information, 
+				information_object) == false) {
 			return false;
 		}
+		bool is_odometry_edge = abs(target_node_id - source_node_id) == 1 ? 
+				true : false;
+		bool uncertain = !is_odometry_edge;		
+		edges_.push_back(PoseGraphEdge(target_node_id, source_node_id, 
+				transformation, information, uncertain));		
 	}
 	
 	return true;

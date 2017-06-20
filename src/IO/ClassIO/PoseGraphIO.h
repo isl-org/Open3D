@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Core/Geometry/PoseGraph.h>
+#include <Core/Registration/PoseGraph.h>
 
 namespace three {
 
@@ -40,10 +40,5 @@ bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 /// The function calls write functions based on the extension name of filename.
 /// \return If the write function is successful.
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
-
-bool ReadPoseGraphFromPOSE(const std::string &filename, PoseGraph &pose_graph);
-
-bool WritePoseGraphToPOSE(const std::string &filename, 
-		const PoseGraph &pose_graph);
 
 }	// namespace three
