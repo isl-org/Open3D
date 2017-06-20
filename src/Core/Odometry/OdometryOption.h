@@ -32,23 +32,19 @@ namespace three {
 
 class OdometryOption
 {
-
 public:
-
 	OdometryOption(
 			double minimum_correspondence_ratio = 0.1,
 			std::vector<int> iteration_number_per_pyramid_level =
 			{ 10, 10, 10, 5 } /* {smaller image size to original image size} */,
 			double max_depth_diff = 0.07, 
 			double min_depth = 0.0,	
-			double max_depth = 4.0,
-			bool check_initialization = true) :
+			double max_depth = 4.0) :
 			minimum_correspondence_ratio_(minimum_correspondence_ratio),
 			iteration_number_per_pyramid_level_
 			(iteration_number_per_pyramid_level),
 			max_depth_diff_(max_depth_diff), min_depth_(min_depth), 
-			max_depth_(max_depth), 
-			check_initialization_(check_initialization) {}
+			max_depth_(max_depth) {}
 	~OdometryOption() {}
 
 public:
@@ -57,7 +53,6 @@ public:
 	double max_depth_diff_;
 	double min_depth_;
 	double max_depth_;
-	bool check_initialization_;
 };
 
 }

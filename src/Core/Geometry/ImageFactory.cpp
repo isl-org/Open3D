@@ -96,7 +96,7 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
 }
 
 ImagePyramid CreateImagePyramid(
-		const Image& input, size_t num_of_levels,
+		const Image &input, size_t num_of_levels,
 		bool with_gaussian_filter /*= true*/)
 {
 	std::vector<std::shared_ptr<Image>> pyramid_image;
@@ -129,8 +129,8 @@ ImagePyramid CreateImagePyramid(
 }
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-		const Image& color, const Image& depth, 
-		const double& depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
+		const Image &color, const Image &depth, 
+		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
 {
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
@@ -147,7 +147,7 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
 /// Reference: http://redwood-data.org/indoor/
 /// File format: http://redwood-data.org/indoor/dataset.html
 std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
-	const Image& color, const Image& depth)
+	const Image &color, const Image &depth)
 {
 	return CreateRGBDImageFromColorAndDepth(color, depth, 1000.0, 4.0);
 }
@@ -155,7 +155,7 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
 /// Reference: http://vision.in.tum.de/data/datasets/rgbd-dataset
 /// File format: http://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
-		const Image& color, const Image& depth) 
+		const Image &color, const Image &depth) 
 {
 	return CreateRGBDImageFromColorAndDepth(color, depth, 5000.0, 4.0);
 }
@@ -163,7 +163,7 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
 /// Reference: http://sun3d.cs.princeton.edu/
 /// File format: https://github.com/PrincetonVision/SUN3DCppReader
 std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
-		const Image& color, const Image& depth) 
+		const Image &color, const Image &depth) 
 {
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
@@ -172,7 +172,7 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
 	}
 	for (int v = 0; v < depth.height_; v += 1) {
 		for (int u = 0; u < depth.width_; u += 1) {
-			unsigned short & d = *PointerAt<unsigned short>(depth, u, v);
+			unsigned short  &d = *PointerAt<unsigned short>(depth, u, v);
 			d = (d >> 3) | (d << 13);
 		}
 	}
@@ -186,7 +186,7 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
 
 /// Reference: http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
 std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
-		const Image& color, const Image& depth) 
+		const Image &color, const Image &depth) 
 {
 	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
 	if (color.height_ != depth.height_ || color.width_ != depth.width_) {

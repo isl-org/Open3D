@@ -188,10 +188,10 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
 /// Typedef and functions for ImagePyramid
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
-ImagePyramid FilterImagePyramid(const ImagePyramid &input, const FilterType type);
+ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type);
 
 ImagePyramid CreateImagePyramid(const Image& image, 
-		const size_t num_of_levels, const bool with_gaussian_filter = true);
+		size_t num_of_levels, bool with_gaussian_filter = true);
 
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 

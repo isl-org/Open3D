@@ -38,7 +38,7 @@ class RGBDImage
 {
 public:
 	RGBDImage() {};
-	RGBDImage(const Image& color, const Image& depth) :
+	RGBDImage(const Image &color, const Image &depth) :
 			color_(color), depth_(depth) {};
 	~RGBDImage() 
 	{ 
@@ -53,34 +53,34 @@ public:
 
 /// Factory function to create an RGBD Image from color and depth Images
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-		const Image& color, const Image& depth, 
-		const double& depth_scale = 1000.0, double depth_trunc = 3.0);
+		const Image &color, const Image &depth, 
+		double depth_scale = 1000.0, double depth_trunc = 3.0);
 
 /// Factory function to create an RGBD Image from Redwood dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
-	const Image& color, const Image& depth);
+		const Image &color, const Image &depth);
 
 /// Factory function to create an RGBD Image from TUM dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
-		const Image& color, const Image& depth);
+		const Image &color, const Image &depth);
 
 /// Factory function to create an RGBD Image from SUN3D dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
-	const Image& color, const Image& depth);
+		const Image &color, const Image &depth);
 
 /// Factory function to create an RGBD Image from NYU dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
-	const Image& color, const Image& depth);
+		const Image &color, const Image &depth);
 
 /// Typedef and functions for RGBImagePyramid
 typedef std::vector<std::shared_ptr<RGBDImage>> RGBImagePyramid;
 
 RGBImagePyramid FilterRGBDImagePyramid(
-		const RGBImagePyramid &rgbd_image_pyramid, const FilterType type);
+		const RGBImagePyramid &rgbd_image_pyramid, FilterType type);
 
-RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
-		const size_t num_of_levels, 
-		const bool with_gaussian_filter_for_color = true,
-		const bool with_gaussian_filter_for_depth = false);
+RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage &rgbd_image,
+		size_t num_of_levels, 
+		bool with_gaussian_filter_for_color = true,
+		bool with_gaussian_filter_for_depth = false);
 
 }	// namespace three

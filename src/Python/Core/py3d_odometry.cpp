@@ -37,16 +37,13 @@ void pybind_odometry(py::module &m)
 	odometry_option.def("__init__", [](OdometryOption &c,
 		double minimum_correspondence_ratio,
 		std::vector<int> iteration_number_per_pyramid_level, 
-		double max_depth_diff, double min_depth, double max_depth,
-		bool check_initialization) {
+		double max_depth_diff, double min_depth, double max_depth) {
 		new (&c)OdometryOption(minimum_correspondence_ratio,
 				iteration_number_per_pyramid_level, 
-				max_depth_diff, min_depth, max_depth,
-				check_initialization);
+				max_depth_diff, min_depth, max_depth);
 	}, "minimum_correspondence_ratio"_a = 0.1, 
 		"iteration_number_per_pyramid_level"_a = std::vector<int>{ 10,10,10,5 },
-		"max_depth_diff"_a = 0.07, "min_depth"_a = 0.0, "max_depth"_a = 4.0,
-		"check_initialization"_a = true);
+		"max_depth_diff"_a = 0.07, "min_depth"_a = 0.0, "max_depth"_a = 4.0);
 	odometry_option
 		.def_readwrite("minimum_correspondence_num",
 				&OdometryOption::minimum_correspondence_ratio_)
@@ -55,8 +52,6 @@ void pybind_odometry(py::module &m)
 		.def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_)
 		.def_readwrite("min_depth", &OdometryOption::min_depth_)
 		.def_readwrite("max_depth", &OdometryOption::max_depth_)
-		.def_readwrite("check_initialization", 
-				&OdometryOption::check_initialization_)
 		.def("__repr__", [](const OdometryOption &c) {
 		int num_pyramid_level = c.iteration_number_per_pyramid_level_.size();
 		std::string str_iteration_number_per_pyramid_level_ = "[ ";
@@ -75,9 +70,7 @@ void pybind_odometry(py::module &m)
 				std::string("\nmin_depth = ") +
 				std::to_string(c.min_depth_) +
 				std::string("\nmax_depth = ") +
-				std::to_string(c.max_depth_) +
-				std::string("\ncheck_initialization = ") +
-				std::to_string(c.check_initialization_);
+				std::to_string(c.max_depth_);
 		});
 }
 

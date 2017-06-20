@@ -49,17 +49,17 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
 	const PinholeCameraIntrinsic &camera_intrinsic = PinholeCameraIntrinsic(),
 	const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
-	const OdometryOption &opt = OdometryOption());
+	const OdometryOption &option = OdometryOption());
 
 /// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 /// reference: 
-/// J. Park, Q.-Y. Zhou, and V. Kolun
+/// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 ComputeRGBDHybridOdometry(const RGBDImage &source, const RGBDImage &target,
 	const PinholeCameraIntrinsic &camera_intrinsic = PinholeCameraIntrinsic(),
 	const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
-	const OdometryOption &opt = OdometryOption());
+	const OdometryOption &option = OdometryOption());
 
 }	// namespace three
