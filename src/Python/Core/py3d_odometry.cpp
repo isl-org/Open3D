@@ -32,6 +32,8 @@
 #include <Core/Odometry/RGBDOdometryJacobian.h>
 using namespace three;
 
+typedef std::tuple<Eigen::MatrixXd, Eigen::VectorXd> JacobianResidual;
+
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase
 {
@@ -44,7 +46,13 @@ public:
 			const Eigen::Matrix4d &odo,
 			const CorrespondenceSetPixelWise &corresps,
 			const Eigen::Matrix3d &camera_matrix,
-			const OdometryOption &option) const override {}
+			const OdometryOption &option) const override {
+			PYBIND11_OVERLOAD_PURE(
+			JacobianResidual,
+			RGBDOdometryJacobianBase,
+			source, target, source_xyz, target_dx, target_dy,
+			odo, corresps, camera_matrix, option);
+	}
 };
 
 void pybind_odometry(py::module &m)
