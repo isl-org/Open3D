@@ -56,7 +56,7 @@ public:
 			int target_node_id = -1, int source_node_id = -1,
 			Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity(),
 			Eigen::Matrix6d information = Eigen::Matrix6d::Identity(),
-			bool uncertain = true) :
+			bool uncertain = false) :
 			target_node_id_(target_node_id),
 			source_node_id_(source_node_id),
 			transformation_(transformation),

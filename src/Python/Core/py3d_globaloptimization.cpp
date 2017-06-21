@@ -32,7 +32,7 @@
 
 using namespace three;
 
-void pybind_posegraph(py::module &m)
+void pybind_globaloptimization(py::module &m)
 {
 	py::class_<PoseGraphNode> pose_graph_node(m, "PoseGraphNode");
 	py::detail::bind_default_constructor<PoseGraphNode>(pose_graph_node);
@@ -85,7 +85,7 @@ void pybind_posegraph(py::module &m)
 	});
 }
 
-void pybind_posegraph_methods(py::module &m)
+void pybind_globaloptimization_methods(py::module &m)
 {
 	m.def("ReadPoseGraph", [](const std::string &filename) {
 			PoseGraph pose_graph;

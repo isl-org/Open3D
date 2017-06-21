@@ -82,6 +82,7 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
 
 	value["target_node_id"] = target_node_id_;
 	value["source_node_id"] = source_node_id_;
+	value["uncertain"] = uncertain_;
 	Json::Value transformation_object;
 	if (EigenMatrix4dToJsonArray(transformation_, transformation_object) == false) {
 		return false;
@@ -110,6 +111,7 @@ bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value)
 
 	target_node_id_ = value.get("target_node_id", -1).asInt();
 	source_node_id_ = value.get("source_node_id", -1).asInt();
+	uncertain_ = value.get("uncertain", false).asBool();
 	const Json::Value &transformation_object = value["transformation"];
 	if (EigenMatrix4dFromJsonArray(transformation_, 
 			transformation_object) == false) {

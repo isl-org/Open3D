@@ -64,6 +64,7 @@
 				0.47001556443983272,
 				0.21793267616809597
 			],
+			"uncertain" : false,
 			"version_major" : 1,
 			"version_minor" : 0
 		},
@@ -129,6 +130,7 @@
 				-0.14755699331644645,
 				-0.79064302499465922
 			],
+			"uncertain" : false,
 			"version_major" : 1,
 			"version_minor" : 0
 		}

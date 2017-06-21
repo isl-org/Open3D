@@ -51,9 +51,9 @@ int main(int argc, char **argv)
 	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
 	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
 	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 1, 
-			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), true));
+			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
 	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 2,
-			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), true));
+			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
 	WritePoseGraph("test_pose_graph.json", new_pose_graph);
 	PoseGraph pose_graph;
 	ReadPoseGraph("test_pose_graph.json", pose_graph);
