@@ -32,6 +32,7 @@
 #include <Eigen/Core>
 #include <Core/Utility/Console.h>
 #include <Core/Odometry/OdometryOption.h>
+#include <Core/Odometry/RGBDOdometryJacobian.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <Core/Utility/Eigen.h>
 
@@ -41,25 +42,12 @@ class RGBDImage;
 
 /// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
-/// reference: 
-/// F. Steinbrucker, J. Sturm, and D. Cremers. 
-/// Real-time visual odometry from dense RGB-D images.
-/// In ICCV Workshops, 2011.
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
+		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic = PinholeCameraIntrinsic(),
 		const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
-		const OdometryOption &option = OdometryOption());
-
-/// Function to estimate 6D odometry between two RGB-D images
-/// output: is_success, 4x4 motion matrix, 6x6 information matrix
-/// reference: 
-/// J. Park, Q.-Y. Zhou, and V. Koltun
-/// anonymous submission
-std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-ComputeRGBDHybridOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic = PinholeCameraIntrinsic(),
-		const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
+		const RGBDOdometryJacobian &jacobian_method = 
+		RGBDOdometryJacobianfromHybridTerm(),
 		const OdometryOption &option = OdometryOption());
 
 }	// namespace three

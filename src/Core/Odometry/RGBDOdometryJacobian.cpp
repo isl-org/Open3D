@@ -26,7 +26,6 @@
 
 #include "Odometry.h"
 
-#include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Odometry/RGBDOdometryJacobian.h>

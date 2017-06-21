@@ -30,6 +30,8 @@
 #include <IO/IO.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Core/Odometry/OdometryOption.h>
+#include <Core/Odometry/RGBDOdometryJacobian.h>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Eigen.h>
 
@@ -97,11 +99,13 @@ int main(int argc, char *argv[])
 	Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
 	bool is_success;	
 	if (ProgramOptionExists(argc, argv, "--hybrid")) {
-		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDHybridOdometry
-				(*source, *target, intrinsic, odo_init, opt);
-	} else {
+		RGBDOdometryJacobianfromHybridTerm jacobian_method;
 		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
-				(*source, *target, intrinsic, odo_init, opt);
+				(*source, *target, intrinsic, odo_init, jacobian_method, opt);
+	} else {
+		RGBDOdometryJacobianfromColorTerm jacobian_method;
+		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
+				(*source, *target, intrinsic, odo_init, jacobian_method, opt);
 	}		
 	std::cout << "Estimated 4x4 motion matrix : " << std::endl;
 	std::cout << trans_odo << std::endl;

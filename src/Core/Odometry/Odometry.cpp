@@ -425,18 +425,20 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 	return std::make_tuple(true, result_odo);
 }
 
+}	// unnamed namespace
+
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-		RGBDOdometry(const RGBDImage &source, const RGBDImage &target,
+		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		const RGBDOdometryJacobian &jacobian_method 
+		const RGBDOdometryJacobian &jacobian_method
 		/*=RGBDOdometryJacobianfromHybridTerm*/,
 		const OdometryOption &option /*= OdometryOption()*/)
 {
 	if (!CheckRGBDImagePair(source, target)) {
 		PrintError("[RGBDOdometry] Two RGBD pairs should be same in size.\n");
 		return std::make_tuple(false,
-			Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
+				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
 	}
 
 	std::shared_ptr<RGBDImage> source_processed, target_processed;
@@ -459,30 +461,6 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		return std::make_tuple(false,
 				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
 	}
-}
-
-}	// unnamed namespace
-
-std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
-		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		const OdometryOption &option /*= OdometryOption()*/)
-{
-	RGBDOdometryJacobianfromColorTerm jacobian_method;
-	return RGBDOdometry(source, target, camera_intrinsic,
-			odo_init, jacobian_method, option);
-}
-
-std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-		ComputeRGBDHybridOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
-		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		const OdometryOption &option /*= OdometryOption()*/)
-{
-	RGBDOdometryJacobianfromHybridTerm jacobian_method;
-	return RGBDOdometry(source, target, camera_intrinsic,
-			odo_init, jacobian_method, option);
 }
 
 }	// namespace three

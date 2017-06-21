@@ -58,7 +58,12 @@ public:
 			const OdometryOption &option) const = 0;
 };
 
-/// Compute Jacobian using color term (I_p-I_q)^2
+/// Function to Compute Jacobian using color term 
+/// Energy: (I_p-I_q)^2
+/// reference: 
+/// F. Steinbrucker, J. Sturm, and D. Cremers. 
+/// Real-time visual odometry from dense RGB-D images.
+/// In ICCV Workshops, 2011.
 class RGBDOdometryJacobianfromColorTerm : public RGBDOdometryJacobian
 {
 public:
@@ -76,7 +81,11 @@ public:
 			const OdometryOption &option) const override;
 };
 
-/// Compute Jacobian using hybrid term (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
+/// Function to Compute Jacobian using hybrid term 
+/// Energy: (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
+/// reference: 
+/// J. Park, Q.-Y. Zhou, and V. Koltun
+/// anonymous submission
 class RGBDOdometryJacobianfromHybridTerm : public RGBDOdometryJacobian
 {
 public:

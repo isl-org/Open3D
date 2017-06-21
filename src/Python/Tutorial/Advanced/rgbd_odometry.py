@@ -20,15 +20,15 @@ if __name__ == "__main__":
 	print(option)
 
 	[success, trans, info] = ComputeRGBDOdometry(
-			source_rgbd_image, target_rgbd_image,
-			camera_intrinsic, odo_init, option)
+			source_rgbd_image, target_rgbd_image, camera_intrinsic, odo_init,
+			RGBDOdometryJacobianfromColorTerm(), option)
 	if success:
 		print("Using RGB-D Odometry")
 		print(trans)
 
-	[success, trans, info] = ComputeRGBDHybridOdometry(
-			source_rgbd_image, target_rgbd_image,
-			camera_intrinsic, odo_init, option)
+	[success, trans, info] = ComputeRGBDOdometry(
+			source_rgbd_image, target_rgbd_image, camera_intrinsic, odo_init,
+			RGBDOdometryJacobianfromHybridTerm(), option)
 	if success:
 		print("Using Hybrid RGB-D Odometry")
 		print(trans)
