@@ -36,7 +36,7 @@ namespace three {
 /// \return If the read function is successful. 
 bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 
-/// The general entrance for writing a PinholeCameraTrajectory to a file
+/// The general entrance for writing a PoseGraph to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return If the write function is successful.
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);

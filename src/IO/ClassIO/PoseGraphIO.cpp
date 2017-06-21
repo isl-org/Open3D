@@ -36,15 +36,15 @@ namespace three{
 namespace {
 
 bool ReadPoseGraphFromJSON(const std::string &filename,
-		PoseGraph &trajectory)
+		PoseGraph &pose_graph)
 {
-	return ReadIJsonConvertible(filename, trajectory);
+	return ReadIJsonConvertible(filename, pose_graph);
 }
 
 bool WritePoseGraphToJSON(const std::string &filename,
-		const PoseGraph &trajectory)
+		const PoseGraph &pose_graph)
 {
-	return WriteIJsonConvertibleToJSON(filename, trajectory);
+	return WriteIJsonConvertibleToJSON(filename, pose_graph);
 }
 
 static const std::unordered_map<std::string,

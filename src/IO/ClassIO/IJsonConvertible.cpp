@@ -130,8 +130,7 @@ bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
 {
 	if (value.size() != 36) {
 		return false;
-	}
-	else {
+	} else {
 		for (int i = 0; i < 36; i++) {
 			mat.coeffRef(i) = value[i].asDouble();
 		}

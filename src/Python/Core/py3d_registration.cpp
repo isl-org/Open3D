@@ -30,8 +30,7 @@
 #include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
 #include <Core/Registration/Registration.h>
-#include <Core/Registration/PoseGraph.h>
-#include <IO/ClassIO/PoseGraphIO.h>
+
 using namespace three;
 
 template <class TransformationEstimationBase = TransformationEstimation>
@@ -227,56 +226,6 @@ void pybind_registration(py::module &m)
 					std::to_string(rr.inlier_rmse_) +
 					std::string("\nAccess transformation to get result.");
 		});
-
-	py::class_<PoseGraphNode> pose_graph_node(m, "PoseGraphNode");
-	py::detail::bind_default_constructor<PoseGraphNode>(pose_graph_node);
-	py::detail::bind_copy_functions<PoseGraphNode>(pose_graph_node);
-	pose_graph_node
-		.def_readwrite("pose", &PoseGraphNode::pose_)		
-		.def("__init__", [](PoseGraphNode &c,
-				Eigen::Matrix4d pose = Eigen::Matrix4d::Identity()) {
-				new (&c)PoseGraphNode(pose); }, "pose"_a)
-		.def("__repr__", [](const PoseGraphNode &rr) {
-		return std::string("PoseGraphNode with\n") +
-				//std::to_string(rr.pose_.size()) +
-				std::string(" nodes\n");
-	});
-					
-	py::class_<PoseGraphEdge> pose_graph_edge(m, "PoseGraphEdge");
-	py::detail::bind_default_constructor<PoseGraphEdge>(pose_graph_edge);
-	py::detail::bind_copy_functions<PoseGraphEdge>(pose_graph_edge);
-	pose_graph_edge
-		.def_readwrite("target_node_id", &PoseGraphEdge::target_node_id_)
-		.def_readwrite("source_node_id", &PoseGraphEdge::source_node_id_)
-		.def_readwrite("transformation", &PoseGraphEdge::transformation_)
-		.def_readwrite("information", &PoseGraphEdge::information_)
-		.def("__init__", [](PoseGraphEdge &c,
-				int target_node_id, int source_node_id,
-				Eigen::Matrix4d transformation, Eigen::Matrix6d information,
-				bool uncertain = false) {
-				new (&c)PoseGraphEdge(target_node_id, source_node_id, 
-				transformation, information, uncertain);
-				}, "target_node_id"_a, "source_node_id"_a,  
-				"transformation"_a, "information"_a, "uncertain"_a)
-		.def("__repr__", [](const PoseGraphEdge &rr) {
-		return std::string("PoseGraphEdge with ") +
-			//std::to_string(rr.pose_.size()) +
-			std::string(" nodes\n");
-	});
-
-	py::class_<PoseGraph> pose_graph(m, "PoseGraph");
-	py::detail::bind_default_constructor<PoseGraph>(pose_graph);
-	py::detail::bind_copy_functions<PoseGraph>(pose_graph);
-	pose_graph
-		.def_readwrite("nodes", &PoseGraph::nodes_)
-		.def_readwrite("edges", &PoseGraph::edges_)
-		.def("__repr__", [](const PoseGraph &rr) {
-		return std::string("PoseGraph with ") +
-			std::to_string(rr.nodes_.size()) +
-			std::string(" nodes and ") +
-			std::to_string(rr.edges_.size()) +
-			std::string(" edges\n");
-	});
 }
 
 void pybind_registration_methods(py::module &m)
@@ -306,13 +255,5 @@ void pybind_registration_methods(py::module &m)
 			"checkers"_a = std::vector<std::reference_wrapper<const
 			CorrespondenceChecker>>(), "criteria"_a =
 			RANSACConvergenceCriteria(100000, 100));
-	m.def("ReadPoseGraph", [](const std::string &filename) {
-			PoseGraph pose_graph;
-			ReadPoseGraph(filename, pose_graph);
-			return pose_graph;
-			}, "Function to read PoseGraph from file", "filename"_a);
-	m.def("WritePoseGraph", [](const std::string &filename, 
-			const PoseGraph pose_graph) {
-			WritePoseGraph(filename, pose_graph);
-			}, "Function to write PoseGraph from file", "filename"_a, "pose_graph"_a);
 }
+

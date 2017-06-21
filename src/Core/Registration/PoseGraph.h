@@ -34,30 +34,40 @@
 
 namespace three {
 
-class PoseGraphNode
+class PoseGraphNode : public IJsonConvertible
 {
 public:
 	PoseGraphNode(Eigen::Matrix4d pose = Eigen::Matrix4d::Identity()) :
 			pose_(pose) {};
-	~PoseGraphNode() {};
+	~PoseGraphNode();
+
+public:
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
+
 public:
 	Eigen::Matrix4d pose_;
 };
 
-class PoseGraphEdge
+class PoseGraphEdge : public IJsonConvertible
 {
 public:
 	PoseGraphEdge(
 			int target_node_id = -1, int source_node_id = -1,
 			Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity(),
-			Eigen::Matrix6d information = Eigen::Matrix6d::Zero(),
-			bool uncertain = false) :
+			Eigen::Matrix6d information = Eigen::Matrix6d::Identity(),
+			bool uncertain = true) :
 			target_node_id_(target_node_id),
 			source_node_id_(source_node_id),
 			transformation_(transformation),
 			information_(information),
 			uncertain_(uncertain) {};
-	~PoseGraphEdge() {};
+	~PoseGraphEdge();
+
+public:
+	bool ConvertToJsonValue(Json::Value &value) const override;
+	bool ConvertFromJsonValue(const Json::Value &value) override;
+
 public:
 	int target_node_id_;
 	int source_node_id_;

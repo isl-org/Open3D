@@ -234,7 +234,9 @@ def test_py3d_kdtree():
 
 def test_py3d_posegraph():
 	print("Testing PoseGraph in py3d ...")
-	pose_graph = ReadPoseGraph(../TestData/test_pose_graph.json)
+	pose_graph = ReadPoseGraph("../TestData/test_pose_graph.json")
+	print(pose_graph)
+	WritePoseGraph("../TestData/test_pose_graph_copy.json", pose_graph)
 	print("")
 
 def test_py3d_camera():
