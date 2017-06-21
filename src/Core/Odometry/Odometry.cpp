@@ -29,18 +29,13 @@
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
+#include <Core/Odometry/RGBDOdometryJacobian.h>
 
 namespace three {
 
 namespace {
 
-typedef std::tuple<int, int, int, int> CorrespondenceType;
-typedef std::vector<CorrespondenceType> CorrespondenceVector;
-
-const double SOBEL_SCALE = 0.125;
-const double LAMBDA_HYBRID_DEPTH = 0.968;
-
-std::shared_ptr<CorrespondenceVector> ComputeCorrespondence(
+std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 		const Eigen::Matrix3d intrinsic_matrix,
 		const Eigen::Matrix4d &odo,
 		const Image &depth_s, const Image &depth_t,
@@ -62,6 +57,9 @@ std::shared_ptr<CorrespondenceVector> ComputeCorrespondence(
 		}
 	}
 
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
 	for (int v_t = 0; v_t < depth_t.height_; v_t++) {
 		for (int u_t = 0; u_t < depth_t.width_; u_t++) {
 			double d_t = *PointerAt<float>(depth_t, u_t, v_t);
@@ -96,19 +94,19 @@ std::shared_ptr<CorrespondenceVector> ComputeCorrespondence(
 			}
 		}
 	}
-	auto correspondence = std::make_shared<CorrespondenceVector>();
+	auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
 	correspondence->clear();
 	for (int v_s = 0; v_s < correspondence_map->height_; v_s++) {
 		for (int u_s = 0; u_s < correspondence_map->width_; u_s++) {
 			int u_t = *PointerAt<int>(*correspondence_map, u_s, v_s, 0);
 			int v_t = *PointerAt<int>(*correspondence_map, u_s, v_s, 1);
 			if (u_t != -1 && v_t != -1) {
-				CorrespondenceType pixel_correspondence(u_s, v_s, u_t, v_t);
+				Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
 				correspondence->push_back(pixel_correspondence);
 			}
 		}
 	}
-	return std::move(correspondence);
+	return correspondence;
 }
 
 /// This might be worth moving to Core/Eigen.h. But we need a better name.
@@ -144,156 +142,6 @@ std::tuple<bool, Eigen::Matrix4d>
 	} else {
 		return std::make_tuple(solution_exist, Eigen::Matrix4d::Zero());
 	}
-}
-
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
-		ComputeJacobian(
-		const RGBDImage &source, const RGBDImage &target,
-		const Image &source_xyz,
-		const RGBDImage &target_dx, const RGBDImage &target_dy,
-		const Eigen::Matrix4d &odo,
-		const CorrespondenceVector &corresps,
-		const Eigen::Matrix3d &camera_matrix,
-		const OdometryOption &option)
-{
-	int DoF = 6;
-	Eigen::MatrixXd J(corresps.size(), DoF);
-	Eigen::MatrixXd r(corresps.size(), 1);
-	J.setZero();
-	r.setZero();
-
-	double res = 0.0;
-	const double fx = camera_matrix(0, 0);
-	const double fy = camera_matrix(1, 1);
-	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
-	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
-	
-	for (int row = 0; row < corresps.size(); row++) {
-		int u_s, v_s, u_t, v_t;
-		std::tie(u_s, v_s, u_t, v_t) = corresps[row];
-		double diff = *PointerAt<float>(target.color_, u_t, v_t) -
-				*PointerAt<float>(source.color_, u_s, v_s);
-		double dIdx = SOBEL_SCALE *
-				*PointerAt<float>(target_dx.color_, u_t, v_t);
-		double dIdy = SOBEL_SCALE *
-				*PointerAt<float>(target_dy.color_, u_t, v_t);
-		Eigen::Vector3d p3d_mat(
-			*PointerAt<float>(source_xyz, u_s, v_s, 0),
-			*PointerAt<float>(source_xyz, u_s, v_s, 1),
-			*PointerAt<float>(source_xyz, u_s, v_s, 2));
-		Eigen::Vector3d p3d_trans = R * p3d_mat + t;
-		double invz = 1. / p3d_trans(2);
-		double c0 = dIdx * fx * invz;
-		double c1 = dIdy * fy * invz;
-		double c2 = -(c0 * p3d_trans(0) + c1 * p3d_trans(1)) * invz;				
-		J(row, 0) = -p3d_trans(2) * c1 + p3d_trans(1) * c2;
-		J(row, 1) = p3d_trans(2) * c0 - p3d_trans(0) * c2;
-		J(row, 2) = -p3d_trans(1) * c0 + p3d_trans(0) * c1;
-		J(row, 3) = c0;
-		J(row, 4) = c1;
-		J(row, 5) = c2;
-		r(row, 0) = diff;
-		res += diff * diff;
-	}
-	res /= (double)corresps.size();
-
-	PrintDebug("Res : %.2e (# of points : %d)\n", res, corresps.size());
-
-	return std::make_tuple(std::move(J), std::move(r));
-}
-
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
-		ComputeJacobianHybrid(
-		const RGBDImage &source, const RGBDImage &target,
-		const Image &source_xyz,
-		const RGBDImage &target_dx, const RGBDImage &target_dy,
-		const Eigen::Matrix4d &odo,
-		const CorrespondenceVector &corresps,
-		const Eigen::Matrix3d &camera_matrix,
-		const OdometryOption &option)
-{
-	int DoF = 6;
-	Eigen::MatrixXd J(corresps.size() * 2, DoF);
-	Eigen::MatrixXd r(corresps.size() * 2, 1);
-	J.setZero();
-	r.setZero();
-
-	double res_photo = 0.0;
-	double res_geo = 0.0;
-
-	double sqrt_lamba_dep, sqrt_lambda_img;
-	sqrt_lamba_dep = sqrt(LAMBDA_HYBRID_DEPTH);
-	sqrt_lambda_img = sqrt(1.0 - LAMBDA_HYBRID_DEPTH);
-
-	const double fx = camera_matrix(0, 0);
-	const double fy = camera_matrix(1, 1);
-
-	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
-	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
-	
-	for (int row = 0; row < corresps.size(); row++) {
-		int u_s, v_s, u_t, v_t;
-		std::tie(u_s, v_s, u_t, v_t) = corresps[row];
-		double diff_photo = *PointerAt<float>(target.color_, u_t, v_t) -
-				*PointerAt<float>(source.color_, u_s, v_s);
-		double dIdx = SOBEL_SCALE *
-				*PointerAt<float>(target_dx.color_, u_t, v_t);
-		double dIdy = SOBEL_SCALE *
-				*PointerAt<float>(target_dy.color_, u_t, v_t);
-		double dDdx = SOBEL_SCALE *
-				*PointerAt<float>(target_dx.depth_, u_t, v_t);
-		double dDdy = SOBEL_SCALE *
-				*PointerAt<float>(target_dy.depth_, u_t, v_t);
-		if (std::isnan(dDdx)) dDdx = 0;
-		if (std::isnan(dDdy)) dDdy = 0;
-		Eigen::Vector3d p3d_mat(
-				*PointerAt<float>(source_xyz, u_s, v_s, 0),
-				*PointerAt<float>(source_xyz, u_s, v_s, 1),
-				*PointerAt<float>(source_xyz, u_s, v_s, 2));
-		Eigen::Vector3d p3d_trans = R * p3d_mat + t;
-
-		double diff_geo = *PointerAt<float>(target.depth_, u_t, v_t) - 
-				p3d_trans(2);
-		double invz = 1. / p3d_trans(2);
-		double c0 = dIdx * fx * invz;
-		double c1 = dIdy * fy * invz;
-		double c2 = -(c0 * p3d_trans(0) + c1 * p3d_trans(1)) * invz;
-		double d0 = dDdx * fx * invz;
-		double d1 = dDdy * fy * invz;
-		double d2 = -(d0 * p3d_trans(0) + d1 * p3d_trans(1)) * invz;
-		int row1 = row * 2 + 0;
-		int row2 = row * 2 + 1;
-		J(row1, 0) = sqrt_lambda_img *
-				(-p3d_trans(2) * c1 + p3d_trans(1) * c2);
-		J(row1, 1) = sqrt_lambda_img *
-				(p3d_trans(2) * c0 - p3d_trans(0) * c2);
-		J(row1, 2) = sqrt_lambda_img *
-				(-p3d_trans(1) * c0 + p3d_trans(0) * c1);
-		J(row1, 3) = sqrt_lambda_img * (c0);
-		J(row1, 4) = sqrt_lambda_img * (c1);
-		J(row1, 5) = sqrt_lambda_img * (c2);
-		r(row1, 0) = sqrt_lambda_img * diff_photo;
-		res_photo += diff_photo * diff_photo;
-
-		J(row2, 0) = sqrt_lamba_dep *
-				((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
-		J(row2, 1) = sqrt_lamba_dep *
-				((p3d_trans(2) * d0 - p3d_trans(0) * d2) + p3d_trans(0));
-		J(row2, 2) = sqrt_lamba_dep *
-				((-p3d_trans(1) * d0 + p3d_trans(0) * d1));
-		J(row2, 3) = sqrt_lamba_dep * (d0);
-		J(row2, 4) = sqrt_lamba_dep * (d1);
-		J(row2, 5) = sqrt_lamba_dep * (d2 - 1.0f);
-		r(row2, 0) = sqrt_lamba_dep * diff_geo;
-		res_geo += diff_geo * diff_geo;
-	}
-	res_photo /= (double)corresps.size();
-	res_geo /= (double)corresps.size();
-
-	PrintDebug("Res : %.2e + %.2e (# of points : %d)\n", 
-			res_photo, res_geo, corresps.size());
-
-	return std::make_tuple(std::move(J), std::move(r));
 }
 
 std::shared_ptr<Image> ConvertDepthImageToXYZImage(
@@ -348,7 +196,7 @@ Eigen::MatrixXd CreateInfomationMatrix(
 {
 	Eigen::Matrix4d odo_inv = odo.inverse();
 
-	std::shared_ptr<CorrespondenceVector> correspondence;
+	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
 	correspondence = ComputeCorrespondence(camera_intrinsic.intrinsic_matrix_, 
 			odo_inv, depth_s, depth_t, option);
 
@@ -362,30 +210,30 @@ Eigen::MatrixXd CreateInfomationMatrix(
 	Eigen::MatrixXd G(3 * depth_s.height_ * depth_s.width_, 6);
 	G.setConstant(0.0f);
 
-	int cnt = 0;
 	for (int row = 0; row < correspondence->size(); row++) {
-		int u_s, v_s, u_t, v_t;
-		std::tie(u_s, v_s, u_t, v_t) = (*correspondence)[row];
+		int u_s = (*correspondence)[row](0);
+		int v_s = (*correspondence)[row](1);
+		int u_t = (*correspondence)[row](2);
+		int v_t = (*correspondence)[row](3);
 		double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
 		double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
 		double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
-		G(3 * cnt + 0, 0) = 1.0;
-		G(3 * cnt + 0, 4) = 2.0 * z;
-		G(3 * cnt + 0, 5) = -2.0 * y;
-		G(3 * cnt + 1, 1) = 1.0;
-		G(3 * cnt + 1, 3) = -2.0 * z;
-		G(3 * cnt + 1, 5) = 2.0 * x;
-		G(3 * cnt + 2, 2) = 1.0;
-		G(3 * cnt + 2, 3) = 2.0 * y;
-		G(3 * cnt + 2, 4) = -2.0 * x;
-		cnt++;		
+		G(3 * row + 0, 0) = 1.0;
+		G(3 * row + 0, 4) = 2.0 * z;
+		G(3 * row + 0, 5) = -2.0 * y;
+		G(3 * row + 1, 1) = 1.0;
+		G(3 * row + 1, 3) = -2.0 * z;
+		G(3 * row + 1, 5) = 2.0 * x;
+		G(3 * row + 2, 2) = 1.0;
+		G(3 * row + 2, 3) = 2.0 * y;
+		G(3 * row + 2, 4) = -2.0 * x;
 	}
 	GtG = G.transpose() * G;
 	return GtG;
 }
 
 void NormalizeIntensity(Image &image_s, Image &image_t, 
-		CorrespondenceVector &correspondence)
+		CorrespondenceSetPixelWise &correspondence)
 {
 	if (image_s.width_ != image_t.width_ ||
 		image_s.height_ != image_t.height_) {
@@ -394,8 +242,10 @@ void NormalizeIntensity(Image &image_s, Image &image_t,
 	}
 	double mean_s = 0.0, mean_t = 0.0;
 	for (int row = 0; row < correspondence.size(); row++) {
-		int u_s, v_s, u_t, v_t;
-		std::tie(u_s, v_s, u_t, v_t) = correspondence[row];
+		int u_s = correspondence[row](0);
+		int v_s = correspondence[row](1);
+		int u_t = correspondence[row](2);
+		int v_t = correspondence[row](3);
 		mean_s += *PointerAt<float>(image_s, u_s, v_s);
 		mean_t += *PointerAt<float>(image_t, u_t, v_t);
 	}
@@ -462,7 +312,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 	auto source_depth = FilterImage(*source_depth_preprocessed, FILTER_GAUSSIAN_3);
 	auto target_depth = FilterImage(*target_depth_preprocessed, FILTER_GAUSSIAN_3);
 
-	std::shared_ptr<CorrespondenceVector> correspondence;
+	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
 	correspondence = ComputeCorrespondence(
 			camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
 			*source_depth, *target_depth, option);
@@ -486,10 +336,10 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	const RGBDImage &target_dx, const RGBDImage &target_dy,
 	const Eigen::Matrix3d camera_matrix,
 	const Eigen::Matrix4d &init_odo,
-	const OdometryOption &option,
-	const bool is_hybrid)
+	const RGBDOdometryJacobian &jacobian_method,
+	const OdometryOption &option)
 {
-	std::shared_ptr<CorrespondenceVector> correspondence;
+	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
 	correspondence = ComputeCorrespondence(
 			camera_matrix, init_odo.inverse(),
 			source.depth_, target.depth_, option);
@@ -503,18 +353,11 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 
 	Eigen::MatrixXd J;
 	Eigen::VectorXd r;
-	if (is_hybrid) {
-		std::tie(J, r) = ComputeJacobianHybrid(
-				source, target, source_xyz, target_dx, target_dy,
-				init_odo, *correspondence,
-				camera_matrix, option);
-	} else {
-		std::tie(J, r) = ComputeJacobian(
-				source, target, source_xyz, target_dx, target_dy,
-				init_odo, *correspondence,
-				camera_matrix, option);
-	}
-
+	std::tie(J, r) = jacobian_method.ComputeJacobian(
+			source, target, source_xyz, target_dx, target_dy,
+			init_odo, *correspondence,
+			camera_matrix, option);
+	
 	bool is_success;
 	Eigen::Matrix4d M;
 	std::tie(is_success, M) = SolveLinearSystem(J, r);
@@ -530,8 +373,8 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic,
 		const Eigen::Matrix4d &init_odo,
-		const OdometryOption &option,
-		const bool is_hybrid)
+		const RGBDOdometryJacobian &jacobian_method,
+		const OdometryOption &option)
 {
 	std::vector<int> iter_counts = option.iteration_number_per_pyramid_level_;
 	int num_levels = (int)iter_counts.size();
@@ -570,7 +413,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 			std::tie(is_success, curr_odo) = DoSingleIteration(
 				*source_level, *target_level, *source_xyz_level,
 				*target_dx_level, *target_dy_level, level_camera_matrix,
-				result_odo, option, is_hybrid);
+				result_odo, jacobian_method, option);
 			result_odo = curr_odo * result_odo;
 
 			if (!is_success) {
@@ -583,14 +426,15 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 }
 
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-		OdometryDriver(const RGBDImage &source, const RGBDImage &target,
+		RGBDOdometry(const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
-		const OdometryOption &option /*= OdometryOption()*/,
-		const bool is_hybrid)
+		const RGBDOdometryJacobian &jacobian_method 
+		/*=RGBDOdometryJacobianfromHybridTerm*/,
+		const OdometryOption &option /*= OdometryOption()*/)
 {
 	if (!CheckRGBDImagePair(source, target)) {
-		PrintError("[ComputeRGBDOdometry] Two RGBD pairs should be same in size.\n");
+		PrintError("[RGBDOdometry] Two RGBD pairs should be same in size.\n");
 		return std::make_tuple(false,
 			Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
 	}
@@ -603,7 +447,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 	bool is_success;
 	std::tie(is_success, odo) = ComputeMultiscale(
 			*source_processed, *target_processed,
-			camera_intrinsic, odo_init, option, is_hybrid);
+			camera_intrinsic, odo_init, jacobian_method, option);
 
 	if (is_success) {
 		Eigen::Matrix4d trans_output = odo.inverse();
@@ -625,9 +469,9 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
 		const OdometryOption &option /*= OdometryOption()*/)
 {
-	bool is_hybrid = false;
-	return OdometryDriver(source, target, camera_intrinsic, 
-			odo_init, option, is_hybrid);
+	RGBDOdometryJacobianfromColorTerm jacobian_method;
+	return RGBDOdometry(source, target, camera_intrinsic,
+			odo_init, jacobian_method, option);
 }
 
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
@@ -636,9 +480,9 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
 		const OdometryOption &option /*= OdometryOption()*/)
 {
-	bool is_hybrid = true;
-	return OdometryDriver(source, target, camera_intrinsic, 
-			odo_init, option, is_hybrid);
+	RGBDOdometryJacobianfromHybridTerm jacobian_method;
+	return RGBDOdometry(source, target, camera_intrinsic,
+			odo_init, jacobian_method, option);
 }
 
 }	// namespace three
