@@ -26,12 +26,18 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <vector>
+#include <memory>
 
-namespace Eigen {
+#include <IO/ClassIO/IJsonConvertible.h>
+#include <Core/Utility/Eigen.h>
+#include <Core/Registration/PoseGraph.h>
 
-/// Extending Eigen namespace by adding frequently used matrix type
-typedef Eigen::Matrix<double, 6, 6> Matrix6d;
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
+namespace three {
 
-}	// namespace Eigen
+/// Factory function to create a PoseGraph from a file
+/// (PinholeCameraTrajectoryFactory.cpp)
+/// Return an empty PinholeCameraTrajectory if fail to read the file.
+std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph);
+
+}	// namespace three
