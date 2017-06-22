@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#include <cstdio>
 
-void pybind_core_classes(py::module &m)
-{
-	pybind_console(m);
-	pybind_geometry(m);
-	pybind_pointcloud(m);
-	pybind_trianglemesh(m);
-	pybind_image(m);
-	pybind_kdtreeflann(m);
-	pybind_feature(m);
-	pybind_camera(m);
-	pybind_registration(m);
-	pybind_odometry(m);
-	pybind_globaloptimization(m);
-}
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Core/Registration/PoseGraph.h>
 
-void pybind_core_methods(py::module &m)
+int main(int argc, char **argv)
 {
-	pybind_pointcloud_methods(m);
-	pybind_trianglemesh_methods(m);
-	pybind_image_methods(m);
-	pybind_feature_methods(m);
-	pybind_camera_methods(m);
-	pybind_registration_methods(m);
-	pybind_odometry_methods(m);
-	pybind_globaloptimization_methods(m);
+	using namespace three;
+
+	SetVerbosityLevel(three::VERBOSE_ALWAYS);
+	
+	if (argc != 1) {
+		PrintInfo("Usage:\n");
+		PrintInfo("    > TestPoseGraph\n");
+		PrintInfo("    The program will :\n");
+		PrintInfo("    1) Generate random PoseGraph\n");
+		PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
+		PrintInfo("    3) Reads PoseGraph from test_pose_graph.json\n");
+		PrintInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json\n");
+		return 0;
+	}
+
+	PoseGraph new_pose_graph;
+	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 1, 
+			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
+	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 2,
+			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
+	WritePoseGraph("test_pose_graph.json", new_pose_graph);
+	PoseGraph pose_graph;
+	ReadPoseGraph("test_pose_graph.json", pose_graph);
+	WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+
+	return 0;
 }

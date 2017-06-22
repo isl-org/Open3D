@@ -130,14 +130,14 @@ int main(int argc, char **argv)
 			auto result = RegistrationICP(*source_ptr, *target_ptr,
 					max_corres_distance, Eigen::Matrix4d::Identity(),
 					TransformationEstimationPointToPoint(true),
-					ConvergenceCriteria(1e-6, 30));
+					ICPConvergenceCriteria(1e-6, 1e-6, 30));
 			PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
-					result.fitness, result.inlier_rmse);
-			if (result.fitness > 0.0) {
-				session.transformation_ = result.transformation *
+					result.fitness_, result.inlier_rmse_);
+			if (result.fitness_ > 0.0) {
+				session.transformation_ = result.transformation_ *
 						session.transformation_;
 				PrintTransformation(session.transformation_);
-				source_ptr->Transform(result.transformation);
+				source_ptr->Transform(result.transformation_);
 			}
 		}
 		WriteIJsonConvertible(alignment_filename, session);

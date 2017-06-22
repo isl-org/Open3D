@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#pragma once
 
-void pybind_core_classes(py::module &m)
-{
-	pybind_console(m);
-	pybind_geometry(m);
-	pybind_pointcloud(m);
-	pybind_trianglemesh(m);
-	pybind_image(m);
-	pybind_kdtreeflann(m);
-	pybind_feature(m);
-	pybind_camera(m);
-	pybind_registration(m);
-	pybind_odometry(m);
-	pybind_globaloptimization(m);
-}
+#include <string>
+#include <Core/Registration/PoseGraph.h>
 
-void pybind_core_methods(py::module &m)
-{
-	pybind_pointcloud_methods(m);
-	pybind_trianglemesh_methods(m);
-	pybind_image_methods(m);
-	pybind_feature_methods(m);
-	pybind_camera_methods(m);
-	pybind_registration_methods(m);
-	pybind_odometry_methods(m);
-	pybind_globaloptimization_methods(m);
-}
+namespace three {
+
+/// The general entrance for reading a PoseGraph from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return If the read function is successful. 
+bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
+
+/// The general entrance for writing a PoseGraph to a file
+/// The function calls write functions based on the extension name of filename.
+/// \return If the write function is successful.
+bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
+
+}	// namespace three

@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 # enable this magic when you are using Jupyter (IPython) notebook
 # %matplotlib inline
 import sys
@@ -228,6 +232,13 @@ def test_py3d_kdtree():
 	DrawGeometries([pcd0])
 	print("")
 
+def test_py3d_posegraph():
+	print("Testing PoseGraph in py3d ...")
+	pose_graph = ReadPoseGraph("../TestData/test_pose_graph.json")
+	print(pose_graph)
+	WritePoseGraph("../TestData/test_pose_graph_copy.json", pose_graph)
+	print("")
+
 def test_py3d_camera():
 	print("Testing camera in py3d ...")
 	print(PinholeCameraIntrinsic.PrimeSenseDefault)
@@ -333,6 +344,8 @@ if __name__ == "__main__":
 		test_py3d_kdtree()
 	if len(sys.argv) == 1 or "camera" in sys.argv:
 		test_py3d_camera()
+	if len(sys.argv) == 1 or "posegraph" in sys.argv:
+		test_py3d_posegraph()
 	if len(sys.argv) == 1 or "visualization" in sys.argv:
 		test_py3d_visualization()
 	if len(sys.argv) == 1 or "icp" in sys.argv:
