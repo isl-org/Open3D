@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,26 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PoseGraph.h"
 
-#include <Python/py3d.h>
+#include <IO/ClassIO/PoseGraphIO.h>
 
-void pybind_console(py::module &m);
-void pybind_geometry(py::module &m);
-void pybind_pointcloud(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_feature(py::module &m);
-void pybind_camera(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_globaloptimization(py::module &m);
+namespace three{
 
-void pybind_pointcloud_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_feature_methods(py::module &m);
-void pybind_camera_methods(py::module &m);
-void pybind_registration_methods(py::module &m);
-void pybind_globaloptimization_methods(py::module &m);
+std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
+		const std::string &filename)
+{
+	auto pose_graph = std::make_shared<PoseGraph>();
+	ReadPoseGraph(filename, *pose_graph);
+	return pose_graph;
+}
 
+}	// namespace three

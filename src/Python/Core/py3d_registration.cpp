@@ -30,6 +30,7 @@
 #include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
 #include <Core/Registration/Registration.h>
+
 using namespace three;
 
 template <class TransformationEstimationBase = TransformationEstimation>
@@ -255,3 +256,4 @@ void pybind_registration_methods(py::module &m)
 			CorrespondenceChecker>>(), "criteria"_a =
 			RANSACConvergenceCriteria(100000, 100));
 }
+

@@ -37,6 +37,7 @@ void pybind_core_classes(py::module &m)
 	pybind_feature(m);
 	pybind_camera(m);
 	pybind_registration(m);
+	pybind_globaloptimization(m);
 }
 
 void pybind_core_methods(py::module &m)
@@ -47,4 +48,5 @@ void pybind_core_methods(py::module &m)
 	pybind_feature_methods(m);
 	pybind_camera_methods(m);
 	pybind_registration_methods(m);
+	pybind_globaloptimization_methods(m);
 }
