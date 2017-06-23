@@ -26,11 +26,30 @@
 
 #pragma once
 
+#include <tuple>
+#include <vector>
 #include <Eigen/Core>
 
 namespace Eigen {
 
 /// Extending Eigen namespace by adding frequently used matrix type
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 }	// namespace Eigen
+
+namespace three {
+
+/// Function to transform 6D motion vector to 4D motion matrix
+/// Reference: 
+/// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform
+Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input);
+
+/// Function to solve linear system
+/// Input: nx6m Jacobian matrix and n-dim residual vector.
+/// Output: tuple of is_success, m 4x4 motion matrices.
+std::tuple<bool, std::vector<Eigen::Matrix4d>>
+		SolveJacobianSystemAndObtainExtrinsicArray(
+		const Eigen::Matrix6d &J, const Eigen::Vector6d &r);
+
+}	// namespace three

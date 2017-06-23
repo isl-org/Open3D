@@ -34,6 +34,11 @@
 #include <Core/Odometry/RGBDOdometryJacobian.h>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Eigen.h>
+#include <Core/Utility/Timer.h>
+
+// just for debugging / benchmarking
+#include <Eigen/Geometry>
+#include <ctime>
 
 
 void PrintHelp(char* argv[])
@@ -93,19 +98,19 @@ int main(int argc, char *argv[])
 	auto source = CreateRGBDImage(*color_source, *depth_source);
 	auto target = CreateRGBDImage(*color_target, *depth_target);
 	
-	OdometryOption opt;
+	OdometryOption option;
 	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
 	Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
 	Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
 	bool is_success;	
 	if (ProgramOptionExists(argc, argv, "--hybrid")) {
-		RGBDOdometryJacobianfromHybridTerm jacobian_method;
+		RGBDOdometryJacobianFromHybridTerm jacobian_method;
 		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
-				(*source, *target, intrinsic, odo_init, jacobian_method, opt);
+				(*source, *target, intrinsic, odo_init, jacobian_method, option);
 	} else {
-		RGBDOdometryJacobianfromColorTerm jacobian_method;
+		RGBDOdometryJacobianFromColorTerm jacobian_method;
 		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
-				(*source, *target, intrinsic, odo_init, jacobian_method, opt);
+				(*source, *target, intrinsic, odo_init, jacobian_method, option);
 	}		
 	std::cout << "Estimated 4x4 motion matrix : " << std::endl;
 	std::cout << trans_odo << std::endl;

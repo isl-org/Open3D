@@ -32,26 +32,25 @@
 #include <Core/Odometry/RGBDOdometryJacobian.h>
 using namespace three;
 
-typedef std::tuple<Eigen::MatrixXd, Eigen::VectorXd> JacobianResidual;
+typedef std::tuple<Eigen::Matrix6d, Eigen::Vector6d> JacobianResidual;
 
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase
 {
 public:
 	using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
-	std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeJacobian(
+	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
-			const Eigen::Matrix4d &odo,
-			const CorrespondenceSetPixelWise &corresps,
-			const Eigen::Matrix3d &camera_matrix,
-			const OdometryOption &option) const override {
+			const Eigen::Matrix3d &intrinsic,
+			const Eigen::Matrix4d &extrinsic,
+			const CorrespondenceSetPixelWise &corresps) const override {
 			PYBIND11_OVERLOAD_PURE(
 			JacobianResidual,
 			RGBDOdometryJacobianBase,
 			source, target, source_xyz, target_dx, target_dy,
-			odo, corresps, camera_matrix, option);
+			extrinsic, corresps, intrinsic);
 	}
 };
 
@@ -101,32 +100,33 @@ void pybind_odometry(py::module &m)
 			PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
 			jacobian(m, "RGBDOdometryJacobian");
 	jacobian
-			.def("ComputeJacobian", &RGBDOdometryJacobian::ComputeJacobian);
+			.def("ComputeJacobianAndResidual", 
+					&RGBDOdometryJacobian::ComputeJacobianAndResidual);
 
-	py::class_<RGBDOdometryJacobianfromColorTerm,
-			PyRGBDOdometryJacobian<RGBDOdometryJacobianfromColorTerm>,
+	py::class_<RGBDOdometryJacobianFromColorTerm,
+			PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
 			RGBDOdometryJacobian> jacobian_color(m,
-			"RGBDOdometryJacobianfromColorTerm");
-	py::detail::bind_default_constructor<RGBDOdometryJacobianfromColorTerm>
+			"RGBDOdometryJacobianFromColorTerm");
+	py::detail::bind_default_constructor<RGBDOdometryJacobianFromColorTerm>
 			(jacobian_color);
-	py::detail::bind_copy_functions<RGBDOdometryJacobianfromColorTerm>(
+	py::detail::bind_copy_functions<RGBDOdometryJacobianFromColorTerm>(
 			jacobian_color);	
 	jacobian_color
-		.def("__repr__", [](const RGBDOdometryJacobianfromColorTerm &te) {
-		return std::string("RGBDOdometryJacobianfromColorTerm");
+		.def("__repr__", [](const RGBDOdometryJacobianFromColorTerm &te) {
+		return std::string("RGBDOdometryJacobianFromColorTerm");
 	});
 
-	py::class_<RGBDOdometryJacobianfromHybridTerm,
-			PyRGBDOdometryJacobian<RGBDOdometryJacobianfromHybridTerm>,
+	py::class_<RGBDOdometryJacobianFromHybridTerm,
+			PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
 			RGBDOdometryJacobian> jacobian_hybrid(m,
-			"RGBDOdometryJacobianfromHybridTerm");
-	py::detail::bind_default_constructor<RGBDOdometryJacobianfromHybridTerm>
+			"RGBDOdometryJacobianFromHybridTerm");
+	py::detail::bind_default_constructor<RGBDOdometryJacobianFromHybridTerm>
 		(jacobian_hybrid);
-	py::detail::bind_copy_functions<RGBDOdometryJacobianfromHybridTerm>(
+	py::detail::bind_copy_functions<RGBDOdometryJacobianFromHybridTerm>(
 		jacobian_hybrid);
 	jacobian_hybrid
-		.def("__repr__", [](const RGBDOdometryJacobianfromHybridTerm &te) {
-		return std::string("RGBDOdometryJacobianfromHybridTerm");
+		.def("__repr__", [](const RGBDOdometryJacobianFromHybridTerm &te) {
+		return std::string("RGBDOdometryJacobianFromHybridTerm");
 	});
 }
 
@@ -135,8 +135,8 @@ void pybind_odometry_methods(py::module &m)
 	m.def("ComputeRGBDOdometry", &ComputeRGBDOdometry,
 			"Function to estimate 6D rigid motion from two RGBD image pairs",
 			"rgbd_source"_a, "rgbd_target"_a, 
-			"camera_intrinsic"_a = PinholeCameraIntrinsic(), 
+			"pinhole_camera_intrinsic"_a = PinholeCameraIntrinsic(), 
 			"odo_init"_a = Eigen::Matrix4d::Identity(),
-			"jacobian"_a = RGBDOdometryJacobianfromHybridTerm(),
+			"jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
 			"option"_a = OdometryOption());
 }

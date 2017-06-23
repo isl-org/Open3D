@@ -39,28 +39,35 @@ const double LAMBDA_HYBRID_DEPTH = 0.968;
 
 }	// unnamed namespace
 
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
-		RGBDOdometryJacobianfromColorTerm::ComputeJacobian(
+std::tuple<Eigen::Matrix6d, Eigen::Vector6d>
+		RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 		const RGBDImage &source, const RGBDImage &target,
 		const Image &source_xyz,
 		const RGBDImage &target_dx, const RGBDImage &target_dy,
-		const Eigen::Matrix4d &odo,
-		const CorrespondenceSetPixelWise &corresps,
-		const Eigen::Matrix3d &camera_matrix,
-		const OdometryOption &option) const
+		const Eigen::Matrix3d &intrinsic,
+		const Eigen::Matrix4d &extrinsic,
+		const CorrespondenceSetPixelWise &corresps) const
 {
-	int DoF = 6;
-	Eigen::MatrixXd J(corresps.size(), DoF);
-	Eigen::MatrixXd r(corresps.size(), 1);
-	J.setZero();
-	r.setZero();
+	const double fx = intrinsic(0, 0);
+	const double fy = intrinsic(1, 1);
+	Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
+	Eigen::Vector3d t = extrinsic.block<3, 1>(0, 3);
 
+	Eigen::Matrix6d JTJ;
+	Eigen::Vector6d JTr;
+	JTJ.setZero();
+	JTr.setZero();
 	double res = 0.0;
-	const double fx = camera_matrix(0, 0);
-	const double fy = camera_matrix(1, 1);
-	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
-	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
 
+#ifdef _OPENMP
+#pragma omp parallel
+{
+#endif
+	Eigen::Matrix6d JTJ_private;
+	Eigen::Vector6d JTr_private;
+	JTJ_private.setZero();
+	JTr_private.setZero();
+	double res_private = 0.0;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -82,52 +89,72 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
 		double c0 = dIdx * fx * invz;
 		double c1 = dIdy * fy * invz;
 		double c2 = -(c0 * p3d_trans(0) + c1 * p3d_trans(1)) * invz;
-		J(row, 0) = -p3d_trans(2) * c1 + p3d_trans(1) * c2;
-		J(row, 1) = p3d_trans(2) * c0 - p3d_trans(0) * c2;
-		J(row, 2) = -p3d_trans(1) * c0 + p3d_trans(0) * c1;
-		J(row, 3) = c0;
-		J(row, 4) = c1;
-		J(row, 5) = c2;
-		r(row, 0) = diff;
-		res += diff * diff;
+		Eigen::Vector6d J_r;
+		double r = diff;
+		J_r(0) = -p3d_trans(2) * c1 + p3d_trans(1) * c2;
+		J_r(1) = p3d_trans(2) * c0 - p3d_trans(0) * c2;
+		J_r(2) = -p3d_trans(1) * c0 + p3d_trans(0) * c1;
+		J_r(3) = c0;
+		J_r(4) = c1;
+		J_r(5) = c2;
+		JTJ_private += J_r * J_r.transpose();
+		JTr_private += J_r * r;
+		res_private += diff * diff;
 	}
+#ifdef _OPENMP
+#pragma omp critical
+{
+#endif
+	JTJ += JTJ_private;
+	JTr += JTr_private;
+	res += res_private;
+#ifdef _OPENMP
+}	//	omp critical
+}	//	omp parallel
+#endif		
 	res /= (double)corresps.size();
-	PrintDebug("Res : %.2e (# of points : %d)\n", res, corresps.size());
+	PrintDebug("Residual : %.2e (# of points : %d)\n", res, corresps.size());
 
-	return std::make_tuple(std::move(J), std::move(r));
+	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
 
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
-		RGBDOdometryJacobianfromHybridTerm::ComputeJacobian(
+std::tuple<Eigen::Matrix6d, Eigen::Vector6d>
+		RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
 		const RGBDImage &source, const RGBDImage &target,
 		const Image &source_xyz,
 		const RGBDImage &target_dx, const RGBDImage &target_dy,
-		const Eigen::Matrix4d &odo,
-		const CorrespondenceSetPixelWise &corresps,
-		const Eigen::Matrix3d &camera_matrix,
-		const OdometryOption &option) const
+		const Eigen::Matrix3d &intrinsic,
+		const Eigen::Matrix4d &extrinsic,
+		const CorrespondenceSetPixelWise &corresps) const
 {
-	int DoF = 6;
-	Eigen::MatrixXd J(corresps.size() * 2, DoF);
-	Eigen::MatrixXd r(corresps.size() * 2, 1);
-	J.setZero();
-	r.setZero();
-
-	double res_photo = 0.0;
-	double res_geo = 0.0;
-
 	double sqrt_lamba_dep, sqrt_lambda_img;
 	sqrt_lamba_dep = sqrt(LAMBDA_HYBRID_DEPTH);
 	sqrt_lambda_img = sqrt(1.0 - LAMBDA_HYBRID_DEPTH);
 
-	const double fx = camera_matrix(0, 0);
-	const double fy = camera_matrix(1, 1);
+	const double fx = intrinsic(0, 0);
+	const double fy = intrinsic(1, 1);
+	Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
+	Eigen::Vector3d t = extrinsic.block<3, 1>(0, 3);
 
-	Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
-	Eigen::Vector3d t = odo.block<3, 1>(0, 3);
+	Eigen::Matrix6d JTJ;
+	Eigen::Vector6d JTr;
+	JTJ.setZero();
+	JTr.setZero();
+	double res_photo = 0.0;
+	double res_geo = 0.0;
 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel
+{
+#endif	
+	Eigen::Matrix6d JTJ_private;
+	Eigen::Vector6d JTr_private;
+	JTJ_private.setZero();
+	JTr_private.setZero();
+	double res_photo_private = 0.0;
+	double res_geo_private = 0.0;
+#ifdef _OPENMP
+	#pragma omp parallel for schedule(static)
 #endif
 	for (int row = 0; row < corresps.size(); row++) {
 		int u_s = corresps[row](0);
@@ -161,35 +188,52 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd>
 		double d0 = dDdx * fx * invz;
 		double d1 = dDdy * fy * invz;
 		double d2 = -(d0 * p3d_trans(0) + d1 * p3d_trans(1)) * invz;
-		int row1 = row * 2 + 0;
-		int row2 = row * 2 + 1;
-		J(row1, 0) = sqrt_lambda_img * (-p3d_trans(2) * c1 + p3d_trans(1) * c2);
-		J(row1, 1) = sqrt_lambda_img * (p3d_trans(2) * c0 - p3d_trans(0) * c2);
-		J(row1, 2) = sqrt_lambda_img * (-p3d_trans(1) * c0 + p3d_trans(0) * c1);
-		J(row1, 3) = sqrt_lambda_img * (c0);
-		J(row1, 4) = sqrt_lambda_img * (c1);
-		J(row1, 5) = sqrt_lambda_img * (c2);
-		r(row1, 0) = sqrt_lambda_img * diff_photo;
-		res_photo += diff_photo * diff_photo;
+		
+		Eigen::Vector6d J_r_photo;
+		double r_photo = sqrt_lambda_img * diff_photo;
+		J_r_photo(0) = sqrt_lambda_img * (-p3d_trans(2) * c1 + p3d_trans(1) * c2);
+		J_r_photo(1) = sqrt_lambda_img * (p3d_trans(2) * c0 - p3d_trans(0) * c2);
+		J_r_photo(2) = sqrt_lambda_img * (-p3d_trans(1) * c0 + p3d_trans(0) * c1);
+		J_r_photo(3) = sqrt_lambda_img * (c0);
+		J_r_photo(4) = sqrt_lambda_img * (c1);
+		J_r_photo(5) = sqrt_lambda_img * (c2);
+		JTJ_private += J_r_photo * J_r_photo.transpose();
+		JTr_private += J_r_photo * r_photo;		
+		res_photo_private += diff_photo * diff_photo;
 
-		J(row2, 0) = sqrt_lamba_dep *
+		Eigen::Vector6d J_r_geo;
+		double r_geo = sqrt_lamba_dep * diff_geo;
+		J_r_geo(0) = sqrt_lamba_dep *
 				((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
-		J(row2, 1) = sqrt_lamba_dep *
+		J_r_geo(1) = sqrt_lamba_dep *
 				((p3d_trans(2) * d0 - p3d_trans(0) * d2) + p3d_trans(0));
-		J(row2, 2) = sqrt_lamba_dep *
+		J_r_geo(2) = sqrt_lamba_dep *
 				((-p3d_trans(1) * d0 + p3d_trans(0) * d1));
-		J(row2, 3) = sqrt_lamba_dep * (d0);
-		J(row2, 4) = sqrt_lamba_dep * (d1);
-		J(row2, 5) = sqrt_lamba_dep * (d2 - 1.0f);
-		r(row2, 0) = sqrt_lamba_dep * diff_geo;
-		res_geo += diff_geo * diff_geo;
+		J_r_geo(3) = sqrt_lamba_dep * (d0);
+		J_r_geo(4) = sqrt_lamba_dep * (d1);
+		J_r_geo(5) = sqrt_lamba_dep * (d2 - 1.0f);
+		JTJ_private += J_r_geo * J_r_geo.transpose();
+		JTr_private += J_r_geo * r_geo;
+		res_geo_private += diff_geo * diff_geo;
 	}
+#ifdef _OPENMP
+#pragma omp critical
+{
+#endif
+	JTJ += JTJ_private;
+	JTr += JTr_private;
+	res_photo += res_photo_private;
+	res_geo += res_geo_private;
+#ifdef _OPENMP
+}	//	omp critical
+}	//	omp parallel
+#endif		
 	res_photo /= (double)corresps.size();
 	res_geo /= (double)corresps.size();
-	PrintDebug("Res : %.2e + %.2e (# of points : %d)\n",
+	PrintDebug("Residual : %.2e (photometric) + %.2e (geometric) (# of points : %d)\n",
 			res_photo, res_geo, corresps.size());
 
-	return std::make_tuple(std::move(J), std::move(r));
+	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
 
 }	// namespace three

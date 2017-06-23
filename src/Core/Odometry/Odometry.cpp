@@ -30,6 +30,7 @@
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Odometry/RGBDOdometryJacobian.h>
+#include <Core/Utility/Eigen.h>
 
 namespace three {
 
@@ -37,15 +38,15 @@ namespace {
 
 std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 		const Eigen::Matrix3d intrinsic_matrix,
-		const Eigen::Matrix4d &odo,
+		const Eigen::Matrix4d &extrinsic,
 		const Image &depth_s, const Image &depth_t,
 		const OdometryOption &option)
 {
 	const Eigen::Matrix3d K = intrinsic_matrix;
 	const Eigen::Matrix3d K_inv = K.inverse();
-	const Eigen::Matrix3d R = odo.block<3, 3>(0, 0);
+	const Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
 	const Eigen::Matrix3d KRK_inv = K * R * K_inv;
-	Eigen::Vector3d Kt = K * odo.block<3, 1>(0, 3);
+	Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 	
 	// initialization: filling with any (u,v) to (-1,-1)
 	auto correspondence_map = std::make_shared<Image>();
@@ -109,41 +110,6 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 	return correspondence;
 }
 
-/// This might be worth moving to Core/Eigen.h. But we need a better name.
-Eigen::Matrix4d Transform6DVecorto4x4Matrix(Eigen::VectorXd input)
-{
-	Eigen::Affine3d aff_mat;
-	aff_mat.linear() = (Eigen::Matrix3d)
-			Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ())
-			* Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY())
-			* Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX());
-	aff_mat.translation() = Eigen::Vector3d(input(3), input(4), input(5));
-	return aff_mat.matrix();
-}
-
-/// This might be worth moving to Core/Eigen.h.
-std::tuple<bool, Eigen::Matrix4d> 
-		SolveLinearSystem(const Eigen::MatrixXd &J, const Eigen::VectorXd &r) 
-{
-	Eigen::MatrixXd Jt = J.transpose();
-	Eigen::MatrixXd JtJ = Jt * J;
-	Eigen::MatrixXd Jtr = Jt * r;
-
-	bool solution_exist = true;
-	double det = JtJ.determinant();
-	if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
-		solution_exist = false;
-
-	if (solution_exist) {
-		// Robust Cholesky decomposition of a matrix with pivoting.
-		Eigen::MatrixXd x = -JtJ.ldlt().solve(Jtr);
-		Eigen::Matrix4d M = Transform6DVecorto4x4Matrix(x);
-		return std::make_tuple(solution_exist, M);
-	} else {
-		return std::make_tuple(solution_exist, Eigen::Matrix4d::Zero());
-	}
-}
-
 std::shared_ptr<Image> ConvertDepthImageToXYZImage(
 		const Image &depth, const Eigen::Matrix3d &intrinsic_matrix)
 {
@@ -174,13 +140,13 @@ std::shared_ptr<Image> ConvertDepthImageToXYZImage(
 
 std::vector<Eigen::Matrix3d>
 		CreateCameraMatrixPyramid(
-		const PinholeCameraIntrinsic &camera_intrinsic, int levels)
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic, int levels)
 {
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
 	pyramid_camera_matrix.reserve(levels);
 	for (int i = 0; i < levels; i++) {
 		Eigen::Matrix3d level_camera_matrix = i == 0 ?
-				camera_intrinsic.intrinsic_matrix_ : 
+				pinhole_camera_intrinsic.intrinsic_matrix_ : 
 				0.5 * pyramid_camera_matrix[i - 1];
 		level_camera_matrix(2, 2) = 1.;
 		pyramid_camera_matrix.push_back(level_camera_matrix);
@@ -188,31 +154,29 @@ std::vector<Eigen::Matrix3d>
 	return pyramid_camera_matrix;
 }
 
-Eigen::MatrixXd CreateInfomationMatrix(
-		const Eigen::Matrix4d &odo,
-		const PinholeCameraIntrinsic &camera_intrinsic,
+Eigen::Matrix6d CreateInfomationMatrix(
+		const Eigen::Matrix4d &extrinsic,
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
 		const Image &depth_s, const Image &depth_t,
 		const OdometryOption &option)
 {
-	Eigen::Matrix4d odo_inv = odo.inverse();
+	Eigen::Matrix4d odo_inv = extrinsic.inverse();
 
 	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
-	correspondence = ComputeCorrespondence(camera_intrinsic.intrinsic_matrix_, 
+	correspondence = ComputeCorrespondence(
+			pinhole_camera_intrinsic.intrinsic_matrix_, 
 			odo_inv, depth_s, depth_t, option);
 
 	auto xyz_t = ConvertDepthImageToXYZImage(
-			depth_t, camera_intrinsic.intrinsic_matrix_);
+			depth_t, pinhole_camera_intrinsic.intrinsic_matrix_);
 
 	// write q^*
 	// see http://redwood-data.org/indoor/registration.html
 	// note: I comes first and q_skew is scaled by factor 2.
-	Eigen::MatrixXd GtG(6, 6);
 	Eigen::MatrixXd G(3 * depth_s.height_ * depth_s.width_, 6);
 	G.setConstant(0.0f);
 
 	for (int row = 0; row < correspondence->size(); row++) {
-		int u_s = (*correspondence)[row](0);
-		int v_s = (*correspondence)[row](1);
 		int u_t = (*correspondence)[row](2);
 		int v_t = (*correspondence)[row](3);
 		double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
@@ -228,6 +192,7 @@ Eigen::MatrixXd CreateInfomationMatrix(
 		G(3 * row + 2, 3) = 2.0 * y;
 		G(3 * row + 2, 4) = -2.0 * x;
 	}
+	Eigen::Matrix6d GtG;
 	GtG = G.transpose() * G;
 	return GtG;
 }
@@ -301,7 +266,7 @@ inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target)
 std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 		InitializeRGBDOdometry(
 		const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic,
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
 		const Eigen::Matrix4d &odo_init,
 		const OdometryOption &option) 
 {
@@ -314,7 +279,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 
 	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
 	correspondence = ComputeCorrespondence(
-			camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
+			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
 			*source_depth, *target_depth, option);
 	PrintDebug("Number of correspondence is %d\n", correspondence->size());
 
@@ -334,14 +299,14 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	const RGBDImage &source, const RGBDImage &target, 
 	const Image &source_xyz,
 	const RGBDImage &target_dx, const RGBDImage &target_dy,
-	const Eigen::Matrix3d camera_matrix,
-	const Eigen::Matrix4d &init_odo,
+	const Eigen::Matrix3d intrinsic,
+	const Eigen::Matrix4d &extrinsic_initial,
 	const RGBDOdometryJacobian &jacobian_method,
 	const OdometryOption &option)
 {
 	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
 	correspondence = ComputeCorrespondence(
-			camera_matrix, init_odo.inverse(),
+			intrinsic, extrinsic_initial.inverse(),
 			source.depth_, target.depth_, option);
 	int corresps_count_required = (int)(source.color_.height_ * 
 			source.color_.width_ * option.minimum_correspondence_ratio_ + 0.5);
@@ -351,28 +316,27 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	}
 
-	Eigen::MatrixXd J;
-	Eigen::VectorXd r;
-	std::tie(J, r) = jacobian_method.ComputeJacobian(
+	Eigen::Matrix6d JTJ;
+	Eigen::Vector6d JTr;
+	std::tie(JTJ, JTr) = jacobian_method.ComputeJacobianAndResidual(
 			source, target, source_xyz, target_dx, target_dy,
-			init_odo, *correspondence,
-			camera_matrix, option);
+			intrinsic, extrinsic_initial, *correspondence);
 	
 	bool is_success;
-	Eigen::Matrix4d M;
-	std::tie(is_success, M) = SolveLinearSystem(J, r);
+	std::vector<Eigen::Matrix4d> M;
+	std::tie(is_success, M) = SolveJacobianSystemAndObtainExtrinsicArray(JTJ, JTr);
 	if (!is_success) {
 		PrintError("[ComputeOdometry] no solution!\n");
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	} else {
-		return std::make_tuple(true, M);
+		return std::make_tuple(true, M[0]);
 	}
 }
 
 std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic,
-		const Eigen::Matrix4d &init_odo,
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
+		const Eigen::Matrix4d &extrinsic_initial,
 		const RGBDOdometryJacobian &jacobian_method,
 		const OdometryOption &option)
 {
@@ -386,11 +350,12 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 	auto target_pyramid_dy = FilterRGBDImagePyramid
 			(target_pyramid, FILTER_SOBEL_3_DY);
 
-	Eigen::Matrix4d result_odo = init_odo.isZero() ?
-			Eigen::Matrix4d::Identity() : init_odo;	
+	Eigen::Matrix4d result_odo = extrinsic_initial.isZero() ?
+			Eigen::Matrix4d::Identity() : extrinsic_initial;	
 
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix =
-			CreateCameraMatrixPyramid(camera_intrinsic, (int)iter_counts.size());
+			CreateCameraMatrixPyramid(pinhole_camera_intrinsic, 
+			(int)iter_counts.size());
 
 	for (int level = num_levels - 1; level >= 0; level--) {
 		const Eigen::Matrix3d level_camera_matrix = pyramid_camera_matrix[level];
@@ -429,10 +394,11 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic /*= PinholeCameraIntrinsic()*/,
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic 
+		/*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
 		const RGBDOdometryJacobian &jacobian_method
-		/*=RGBDOdometryJacobianfromHybridTerm*/,
+		/*=RGBDOdometryJacobianFromHybridTerm*/,
 		const OdometryOption &option /*= OdometryOption()*/)
 {
 	if (!CheckRGBDImagePair(source, target)) {
@@ -443,18 +409,20 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 
 	std::shared_ptr<RGBDImage> source_processed, target_processed;
 	std::tie(source_processed, target_processed) =
-			InitializeRGBDOdometry(source, target, camera_intrinsic, odo_init, option);
+			InitializeRGBDOdometry(source, target, pinhole_camera_intrinsic, 
+			odo_init, option);
 
-	Eigen::Matrix4d odo;
+	Eigen::Matrix4d extrinsic;
 	bool is_success;
-	std::tie(is_success, odo) = ComputeMultiscale(
+	std::tie(is_success, extrinsic) = ComputeMultiscale(
 			*source_processed, *target_processed,
-			camera_intrinsic, odo_init, jacobian_method, option);
+			pinhole_camera_intrinsic, odo_init, jacobian_method, option);
 
 	if (is_success) {
-		Eigen::Matrix4d trans_output = odo.inverse();
-		Eigen::MatrixXd info_output = CreateInfomationMatrix(odo, camera_intrinsic,
-				source_processed->depth_, target_processed->depth_, option);
+		Eigen::Matrix4d trans_output = extrinsic.inverse();
+		Eigen::MatrixXd info_output = CreateInfomationMatrix(extrinsic, 
+				pinhole_camera_intrinsic, source_processed->depth_,
+				target_processed->depth_, option);
 		return std::make_tuple(true, trans_output, info_output);
 	}
 	else {

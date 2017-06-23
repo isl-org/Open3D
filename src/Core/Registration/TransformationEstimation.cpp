@@ -28,6 +28,7 @@
 
 #include <Eigen/Geometry>
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Utility/Eigen.h>
 
 namespace three{
 
@@ -77,9 +78,9 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
 {
 	if (corres.empty() || target.HasNormals() == false)
 		return Eigen::Matrix4d::Identity();
-	Eigen::Matrix<double, 6, 6> ATA;
-	Eigen::Matrix<double, 6, 1> ATb;
-	Eigen::Matrix<double, 6, 1> A_r;
+	Eigen::Matrix6d ATA;
+	Eigen::Vector6d ATb;
+	Eigen::Vector6d A_r;
 	double r;
 	ATA.setZero();
 	ATb.setZero();
@@ -95,13 +96,7 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
 	}
 	auto llt_solver = ATA.llt();
 	Eigen::Matrix<double, 6, 1> x = -llt_solver.solve(ATb);
-	Eigen::Matrix4d transformation;
-	transformation.setIdentity();
-	transformation.block<3, 3>(0, 0) =
-			(Eigen::AngleAxisd(x(2), Eigen::Vector3d::UnitZ()) *
-			Eigen::AngleAxisd(x(1), Eigen::Vector3d::UnitY()) *
-			Eigen::AngleAxisd(x(0), Eigen::Vector3d::UnitX())).matrix();
-	transformation.block<3, 1>(0, 3) = x.block<3, 1>(3, 0);
+	Eigen::Matrix4d transformation = TransformVector6dToMatrix4d(x);
 	return transformation;
 }
 

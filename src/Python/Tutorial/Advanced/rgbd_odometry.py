@@ -13,22 +13,25 @@ if __name__ == "__main__":
 	target_rgbd_image = CreateRGBDImageFromColorAndDepth(
 			target_color, target_depth);
 
-	camera_intrinsic = ReadPinholeCameraIntrinsic("../../TestData/camera.json")
+	pinhole_camera_intrinsic = ReadPinholeCameraIntrinsic(
+			"../../TestData/camera.json")
 	option = OdometryOption()
 	odo_init = np.identity(4)
-	print(camera_intrinsic.intrinsic_matrix)
+	print(pinhole_camera_intrinsic.intrinsic_matrix)
 	print(option)
 
 	[success, trans, info] = ComputeRGBDOdometry(
-			source_rgbd_image, target_rgbd_image, camera_intrinsic, odo_init,
-			RGBDOdometryJacobianfromColorTerm(), option)
+			source_rgbd_image, target_rgbd_image,
+			pinhole_camera_intrinsic, odo_init,
+			RGBDOdometryJacobianFromColorTerm(), option)
 	if success:
 		print("Using RGB-D Odometry")
 		print(trans)
 
 	[success, trans, info] = ComputeRGBDOdometry(
-			source_rgbd_image, target_rgbd_image, camera_intrinsic, odo_init,
-			RGBDOdometryJacobianfromHybridTerm(), option)
+			source_rgbd_image, target_rgbd_image,
+			pinhole_camera_intrinsic, odo_init,
+			RGBDOdometryJacobianFromHybridTerm(), option)
 	if success:
 		print("Using Hybrid RGB-D Odometry")
 		print(trans)

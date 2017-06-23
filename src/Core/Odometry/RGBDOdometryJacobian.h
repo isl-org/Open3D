@@ -31,6 +31,7 @@
 #include <tuple>
 #include <Eigen/Core>
 #include <Core/Odometry/OdometryOption.h>
+#include <Core/Utility/Eigen.h>
 
 namespace three {
 
@@ -48,14 +49,15 @@ public:
 	virtual ~RGBDOdometryJacobian() {}
 
 public:
-	virtual std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeJacobian(
+	/// Function to compute JTJ and JTr
+	virtual std::tuple<Eigen::Matrix6d, Eigen::Vector6d> 
+			ComputeJacobianAndResidual(
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
-			const Eigen::Matrix4d &odo,
-			const CorrespondenceSetPixelWise &corresps,
-			const Eigen::Matrix3d &camera_matrix,
-			const OdometryOption &option) const = 0;
+			const Eigen::Matrix3d &intrinsic,
+			const Eigen::Matrix4d &extrinsic,
+			const CorrespondenceSetPixelWise &corresps) const = 0;
 };
 
 /// Function to Compute Jacobian using color term 
@@ -64,21 +66,20 @@ public:
 /// F. Steinbrucker, J. Sturm, and D. Cremers. 
 /// Real-time visual odometry from dense RGB-D images.
 /// In ICCV Workshops, 2011.
-class RGBDOdometryJacobianfromColorTerm : public RGBDOdometryJacobian
+class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian
 {
 public:
-	RGBDOdometryJacobianfromColorTerm() {}
-	~RGBDOdometryJacobianfromColorTerm() override {}
+	RGBDOdometryJacobianFromColorTerm() {}
+	~RGBDOdometryJacobianFromColorTerm() override {}
 
 public:
-	std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeJacobian(
+	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
-			const Eigen::Matrix4d &odo,
-			const CorrespondenceSetPixelWise &corresps,
-			const Eigen::Matrix3d &camera_matrix,
-			const OdometryOption &option) const override;
+			const Eigen::Matrix3d &intrinsic,
+			const Eigen::Matrix4d &extrinsic,
+			const CorrespondenceSetPixelWise &corresps) const override;
 };
 
 /// Function to Compute Jacobian using hybrid term 
@@ -86,21 +87,20 @@ public:
 /// reference: 
 /// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission
-class RGBDOdometryJacobianfromHybridTerm : public RGBDOdometryJacobian
+class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian
 {
 public:
-	RGBDOdometryJacobianfromHybridTerm() {}
-	~RGBDOdometryJacobianfromHybridTerm() override {}
+	RGBDOdometryJacobianFromHybridTerm() {}
+	~RGBDOdometryJacobianFromHybridTerm() override {}
 
 public:
-	std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeJacobian(
+	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
-			const Eigen::Matrix4d &odo,
-			const CorrespondenceSetPixelWise &corresps,
-			const Eigen::Matrix3d &camera_matrix,
-			const OdometryOption &option) const override;
+			const Eigen::Matrix3d &intrinsic,
+			const Eigen::Matrix4d &extrinsic,
+			const CorrespondenceSetPixelWise &corresps) const override;
 };
 
 }	// namespace three

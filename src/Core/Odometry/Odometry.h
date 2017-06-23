@@ -44,10 +44,11 @@ class RGBDImage;
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &camera_intrinsic = PinholeCameraIntrinsic(),
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic = 
+		PinholeCameraIntrinsic(),
 		const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
 		const RGBDOdometryJacobian &jacobian_method = 
-		RGBDOdometryJacobianfromHybridTerm(),
+		RGBDOdometryJacobianFromHybridTerm(),
 		const OdometryOption &option = OdometryOption());
 
 }	// namespace three
