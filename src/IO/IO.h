@@ -31,3 +31,6 @@
 #include "ClassIO/ImageIO.h"
 #include "ClassIO/PinholeCameraTrajectoryIO.h"
 #include "ClassIO/IJsonConvertibleIO.h"
+#include "ClassIO/FeatureIO.h"
+#include "ClassIO/PoseGraphIO.h"
+

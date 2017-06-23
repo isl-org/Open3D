@@ -38,6 +38,7 @@ void pybind_feature(py::module &m);
 void pybind_camera(py::module &m);
 void pybind_registration(py::module &m);
 void pybind_odometry(py::module &m);
+void pybind_globaloptimization(py::module &m);
 
 void pybind_pointcloud_methods(py::module &m);
 void pybind_trianglemesh_methods(py::module &m);
@@ -46,3 +47,4 @@ void pybind_feature_methods(py::module &m);
 void pybind_camera_methods(py::module &m);
 void pybind_registration_methods(py::module &m);
 void pybind_odometry_methods(py::module &m);
+void pybind_globaloptimization_methods(py::module &m);
