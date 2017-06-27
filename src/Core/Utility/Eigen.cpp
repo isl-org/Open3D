@@ -34,7 +34,7 @@
 
 namespace Eigen {
 
-/// Extending Eigen namespace by adding frequently used matrix type
+/// Frequently used matrix and vector types are added in Eigen namespace
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
@@ -77,14 +77,34 @@ Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input)
 	return output;
 }
 
-std::tuple<bool, std::vector<Eigen::Matrix4d>>
-		SolveJacobianSystemAndObtainExtrinsicArray(
+std::tuple<bool, Eigen::Matrix4d>
+		SolveJacobianSystemAndObtainExtrinsicMatrix(
 		const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr)
 {
 	std::vector<Eigen::Matrix4d> output_matrix_array;
 	output_matrix_array.clear();
+	
+	bool solution_exist;
+	Eigen::Vector6d x;
+	std::tie(solution_exist, x) = SolveLinearSystem(JTJ, JTr);
+
+	if (solution_exist) {
+		Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);
+		return std::make_tuple(solution_exist, std::move(extrinsic));
+	}
+	else {
+		return std::make_tuple(false, std::move(Eigen::Matrix4d::Identity()));
+	}
+}
+
+std::tuple<bool, std::vector<Eigen::Matrix4d>>
+		SolveJacobianSystemAndObtainExtrinsicMatrixArray(
+		const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &JTr)
+{
+	std::vector<Eigen::Matrix4d> output_matrix_array;
+	output_matrix_array.clear();
 	if (JTJ.rows() != JTr.rows() || JTJ.cols() % 6 != 0) {
-		PrintWarning("[SolveJacobianSystemAndObtainExtrinsicArray] Unsupported matrix format.\n");
+		PrintWarning("[SolveJacobianSystemAndObtainExtrinsicMatrixArray] Unsupported matrix format.\n");
 		return std::make_tuple(false, std::move(output_matrix_array));
 	}
 
@@ -95,9 +115,9 @@ std::tuple<bool, std::vector<Eigen::Matrix4d>>
 	if (solution_exist) {
 		int nposes = (int)x.rows() / 6;
 		for (int i = 0; i < nposes; i++) {
-			Eigen::Matrix4d motion = TransformVector6dToMatrix4d(
-				x.block<6, 1>(i * 6, 0));
-			output_matrix_array.push_back(motion);
+			Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(
+					x.block<6, 1>(i * 6, 0));
+			output_matrix_array.push_back(extrinsic);
 		}
 		return std::make_tuple(solution_exist, std::move(output_matrix_array));
 	}

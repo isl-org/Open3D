@@ -162,8 +162,7 @@ Eigen::Matrix6d CreateInfomationMatrix(
 {
 	Eigen::Matrix4d odo_inv = extrinsic.inverse();
 
-	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
-	correspondence = ComputeCorrespondence(
+	auto correspondence = ComputeCorrespondence(
 			pinhole_camera_intrinsic.intrinsic_matrix_, 
 			odo_inv, depth_s, depth_t, option);
 
@@ -173,28 +172,33 @@ Eigen::Matrix6d CreateInfomationMatrix(
 	// write q^*
 	// see http://redwood-data.org/indoor/registration.html
 	// note: I comes first and q_skew is scaled by factor 2.
-	Eigen::MatrixXd G(3 * depth_s.height_ * depth_s.width_, 6);
-	G.setConstant(0.0f);
+	Eigen::Matrix6d GTG;
+	GTG.setZero();
 
-	for (int row = 0; row < correspondence->size(); row++) {
+	for (auto row = 0; row < correspondence->size(); row++) {
 		int u_t = (*correspondence)[row](2);
 		int v_t = (*correspondence)[row](3);
 		double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
 		double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
 		double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
-		G(3 * row + 0, 0) = 1.0;
-		G(3 * row + 0, 4) = 2.0 * z;
-		G(3 * row + 0, 5) = -2.0 * y;
-		G(3 * row + 1, 1) = 1.0;
-		G(3 * row + 1, 3) = -2.0 * z;
-		G(3 * row + 1, 5) = 2.0 * x;
-		G(3 * row + 2, 2) = 1.0;
-		G(3 * row + 2, 3) = 2.0 * y;
-		G(3 * row + 2, 4) = -2.0 * x;
+		Eigen::Vector6d G_r;
+		G_r.setZero();
+		G_r(0) = 1.0;
+		G_r(4) = 2.0 * z;
+		G_r(5) = -2.0 * y;
+		GTG.noalias() += G_r * G_r.transpose();
+		G_r.setZero();
+		G_r(1) = 1.0;
+		G_r(3) = -2.0 * z;
+		G_r(5) = 2.0 * x;
+		GTG.noalias() += G_r * G_r.transpose();
+		G_r.setZero();
+		G_r(2) = 1.0;
+		G_r(3) = 2.0 * y;
+		G_r(4) = -2.0 * x;
+		GTG.noalias() += G_r * G_r.transpose();
 	}
-	Eigen::Matrix6d GtG;
-	GtG = G.transpose() * G;
-	return GtG;
+	return GTG;
 }
 
 void NormalizeIntensity(Image &image_s, Image &image_t, 
@@ -277,11 +281,10 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 	auto source_depth = FilterImage(*source_depth_preprocessed, FILTER_GAUSSIAN_3);
 	auto target_depth = FilterImage(*target_depth_preprocessed, FILTER_GAUSSIAN_3);
 
-	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
-	correspondence = ComputeCorrespondence(
+	auto correspondence = ComputeCorrespondence(
 			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
 			*source_depth, *target_depth, option);
-	PrintDebug("Number of correspondence is %d\n", correspondence->size());
+	PrintDebug("Number of correspondence is %d\n", (int)correspondence->size());
 
 	int corresps_count_required = (int)(source_gray->height_ *
 			source_gray->width_ * option.minimum_correspondence_ratio_ + 0.5);
@@ -304,14 +307,13 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	const RGBDOdometryJacobian &jacobian_method,
 	const OdometryOption &option)
 {
-	std::shared_ptr<CorrespondenceSetPixelWise> correspondence;
-	correspondence = ComputeCorrespondence(
+	auto correspondence = ComputeCorrespondence(
 			intrinsic, extrinsic_initial.inverse(),
 			source.depth_, target.depth_, option);
 	int corresps_count_required = (int)(source.color_.height_ * 
 			source.color_.width_ * option.minimum_correspondence_ratio_ + 0.5);
 	if (correspondence->size() < corresps_count_required) {
-		PrintError("[ComputeOdometry] %d is too fewer than mininum requirement %d\n",
+		PrintDebug("[ComputeOdometry] %d is too fewer than mininum requirement %d\n",
 				correspondence->size(), corresps_count_required);
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	}
@@ -323,13 +325,14 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 			intrinsic, extrinsic_initial, *correspondence);
 	
 	bool is_success;
-	std::vector<Eigen::Matrix4d> M;
-	std::tie(is_success, M) = SolveJacobianSystemAndObtainExtrinsicArray(JTJ, JTr);
+	Eigen::Matrix4d extrinsic;
+	std::tie(is_success, extrinsic) = 
+			SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 	if (!is_success) {
 		PrintError("[ComputeOdometry] no solution!\n");
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	} else {
-		return std::make_tuple(true, M[0]);
+		return std::make_tuple(true, extrinsic);
 	}
 }
 
