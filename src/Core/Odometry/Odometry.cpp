@@ -58,8 +58,14 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 		}
 	}
 
+	int correspondence_count = 0;
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp parallel
+	{
+#endif
+	int correspondence_count_private = 0;
+#ifdef _OPENMP
+#pragma omp for nowait
 #endif
 	for (int v_t = 0; v_t < depth_t.height_; v_t++) {
 		for (int u_t = 0; u_t < depth_t.width_; u_t++) {
@@ -85,25 +91,46 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 									(depth_t, exist_u_t, exist_v_t) * 
 									(KRK_inv(2,0) * exist_u_t + KRK_inv(2,1)
 									* exist_v_t + KRK_inv(2,2)) + Kt(2);
-							if (transformed_d_t > exist_d_t)
-								continue;
-						}
-						*PointerAt<int>(*correspondence_map, u_s, v_s, 0) = u_t;
-						*PointerAt<int>(*correspondence_map, u_s, v_s, 1) = v_t;
+							if (transformed_d_t < exist_d_t) {
+								// update correspondence to nearer one
+								*PointerAt<int>(*correspondence_map, u_s, v_s, 0)
+										= u_t;
+								*PointerAt<int>(*correspondence_map, u_s, v_s, 1)
+										= v_t;								
+							}								
+						} else {
+							// register correspondence
+							*PointerAt<int>(*correspondence_map, u_s, v_s, 0)
+									= u_t;
+							*PointerAt<int>(*correspondence_map, u_s, v_s, 1)
+									= v_t;
+							correspondence_count_private++;
+						}											
 					}
 				}
 			}
 		}
 	}
+#ifdef _OPENMP
+#pragma omp critical
+{
+#endif
+	correspondence_count += correspondence_count_private;
+#ifdef _OPENMP
+}	//	omp critical
+}	//	omp parallel
+#endif
+	
 	auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
-	correspondence->clear();
+	correspondence->resize(correspondence_count);
+	int cnt = 0;
 	for (int v_s = 0; v_s < correspondence_map->height_; v_s++) {
 		for (int u_s = 0; u_s < correspondence_map->width_; u_s++) {
 			int u_t = *PointerAt<int>(*correspondence_map, u_s, v_s, 0);
 			int v_t = *PointerAt<int>(*correspondence_map, u_s, v_s, 1);
 			if (u_t != -1 && v_t != -1) {
 				Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-				correspondence->push_back(pixel_correspondence);
+				(*correspondence)[cnt++] = pixel_correspondence;
 			}
 		}
 	}
@@ -322,7 +349,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	Eigen::Vector6d JTr;
 	std::tie(JTJ, JTr) = jacobian_method.ComputeJacobianAndResidual(
 			source, target, source_xyz, target_dx, target_dy,
-			intrinsic, extrinsic_initial, *correspondence);
+			intrinsic, extrinsic_initial, *correspondence);	
 	
 	bool is_success;
 	Eigen::Matrix4d extrinsic;
@@ -352,7 +379,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 			(target_pyramid, FILTER_SOBEL_3_DX);
 	auto target_pyramid_dy = FilterRGBDImagePyramid
 			(target_pyramid, FILTER_SOBEL_3_DY);
-
+	
 	Eigen::Matrix4d result_odo = extrinsic_initial.isZero() ?
 			Eigen::Matrix4d::Identity() : extrinsic_initial;	
 
