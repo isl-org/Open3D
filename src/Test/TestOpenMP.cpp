@@ -68,17 +68,16 @@ void svd_task()
 		for (int j = 0; j < n_a_cols; ++j)
 			a(i, j) = n_a_cols * i + j;
 	Eigen::JacobiSVD<Eigen::MatrixXd> svd(a,
-		Eigen::ComputeThinU | Eigen::ComputeThinV);
+			Eigen::ComputeThinU | Eigen::ComputeThinV);
 	Eigen::MatrixXd pca = svd.matrixU().block<10000, 10>(0, 0
-		).transpose() * a;
+			).transpose() * a;
 }
 
 void TestMatrixMultiplication(int argc, char** argv)
 {
 	int i = 0, nRet = 0, nSum = 0, nStart = NUM_START, nEnd = NUM_END;
 	int nThreads = 1, nTmp = nStart + nEnd;
-	unsigned uTmp = (unsigned(nEnd - nStart + 1) *
-		unsigned(nTmp)) / 2;
+	unsigned uTmp = (unsigned(nEnd - nStart + 1) * unsigned(nTmp)) / 2;
 	int nSumCalc = uTmp;
 
 	if (nTmp < 0) {
@@ -112,22 +111,20 @@ void TestMatrixMultiplication(int argc, char** argv)
 	if (nThreads == NUM_THREADS) {
 		printf("%d OpenMP threads were used.\n", NUM_THREADS);
 		nRet = 0;
-	}
-	else {
+	} else {
 		printf("Expected %d OpenMP threads, but %d were used.\n",
-			NUM_THREADS, nThreads);
+				NUM_THREADS, nThreads);
 		nRet = 1;
 	}
 
 	if (nSum != nSumCalc) {
 		printf("The sum of %d through %d should be %d, "
-			"but %d was reported!\n",
-			NUM_START, NUM_END, nSumCalc, nSum);
+				"but %d was reported!\n",
+				NUM_START, NUM_END, nSumCalc, nSum);
 		nRet = 1;
-	}
-	else {
+	} else {
 		printf("The sum of %d through %d is %d\n",
-			NUM_START, NUM_END, nSum);
+				NUM_START, NUM_END, nSum);
 	}
 
 	int test_thread = 256;
@@ -135,7 +132,7 @@ void TestMatrixMultiplication(int argc, char** argv)
 		test_thread = std::stoi(argv[1]);
 	}
 	three::PrintInfo("Benchmark multithreading up to %d threads.\n",
-		test_thread);
+			test_thread);
 
 	for (int i = 1; i <= test_thread; i *= 2) {
 		char buff[1024];
