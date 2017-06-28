@@ -185,12 +185,14 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
 	return output;
 }
 
+/// Typedef and functions for ImagePyramid
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
-/// Function to filter pyramid image with pre-defined filtering type
 ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type);
 
 ImagePyramid CreateImagePyramid(const Image& image, 
 		size_t num_of_levels, bool with_gaussian_filter = true);
+
+typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
 }	// namespace three

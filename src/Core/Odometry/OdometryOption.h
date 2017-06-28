@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,33 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <string>
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+namespace three {
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraTrajectory.h"
+class OdometryOption
+{
+public:
+	OdometryOption(
+			double minimum_correspondence_ratio = 0.1,
+			std::vector<int> iteration_number_per_pyramid_level =
+			{ 10, 10, 10, 5 } /* {smaller image size to original image size} */,
+			double max_depth_diff = 0.07, 
+			double min_depth = 0.0,	
+			double max_depth = 4.0) :
+			minimum_correspondence_ratio_(minimum_correspondence_ratio),
+			iteration_number_per_pyramid_level_
+			(iteration_number_per_pyramid_level),
+			max_depth_diff_(max_depth_diff), min_depth_(min_depth), 
+			max_depth_(max_depth) {}
+	~OdometryOption() {}
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+public:
+	double minimum_correspondence_ratio_;
+	std::vector<int> iteration_number_per_pyramid_level_;
+	double max_depth_diff_;
+	double min_depth_;
+	double max_depth_;
+};
 
-#include "Odometry/Odometry.h"
+}
