@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,25 +26,29 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <iostream> 
+#include <vector>
+#include <tuple>
+#include <Eigen/Core>
+#include <Core/Utility/Console.h>
+#include <Core/Odometry/OdometryOption.h>
+#include <Core/Odometry/RGBDOdometryJacobian.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Core/Utility/Eigen.h>
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+namespace three {
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraTrajectory.h"
+class RGBDImage;
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+/// Function to estimate 6D odometry between two RGB-D images
+/// output: is_success, 4x4 motion matrix, 6x6 information matrix
+std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
+		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic = 
+		PinholeCameraIntrinsic(),
+		const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
+		const RGBDOdometryJacobian &jacobian_method = 
+		RGBDOdometryJacobianFromHybridTerm(),
+		const OdometryOption &option = OdometryOption());
 
-#include "Odometry/Odometry.h"
+}	// namespace three
