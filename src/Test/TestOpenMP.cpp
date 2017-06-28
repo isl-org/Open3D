@@ -30,6 +30,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif 
+#include <Eigen/Dense>
 #include <Eigen/SVD>
 #include <Core/Core.h>
 #include <Core/Utility/Console.h>
