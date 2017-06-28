@@ -69,7 +69,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d>
 	JTr_private.setZero();
 	double res_private = 0.0;
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp for nowait
 #endif
 	for (int row = 0; row < corresps.size(); row++) {
 		int u_s = corresps[row](0);
@@ -97,8 +97,8 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d>
 		J_r(3) = c0;
 		J_r(4) = c1;
 		J_r(5) = c2;
-		JTJ_private += J_r * J_r.transpose();
-		JTr_private += J_r * r;
+		JTJ_private.noalias() += J_r * J_r.transpose();
+		JTr_private.noalias() += J_r * r;
 		res_private += diff * diff;
 	}
 #ifdef _OPENMP
@@ -154,7 +154,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d>
 	double res_photo_private = 0.0;
 	double res_geo_private = 0.0;
 #ifdef _OPENMP
-	#pragma omp parallel for schedule(static)
+	#pragma omp for nowait
 #endif
 	for (int row = 0; row < corresps.size(); row++) {
 		int u_s = corresps[row](0);
@@ -212,8 +212,8 @@ std::tuple<Eigen::Matrix6d, Eigen::Vector6d>
 		J_r_geo(3) = sqrt_lamba_dep * (d0);
 		J_r_geo(4) = sqrt_lamba_dep * (d1);
 		J_r_geo(5) = sqrt_lamba_dep * (d2 - 1.0f);
-		JTJ_private += J_r_geo * J_r_geo.transpose();
-		JTr_private += J_r_geo * r_geo;
+		JTJ_private.noalias() += J_r_geo * J_r_geo.transpose();
+		JTr_private.noalias() += J_r_geo * r_geo;
 		res_geo_private += diff_geo * diff_geo;
 	}
 #ifdef _OPENMP
