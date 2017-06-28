@@ -24,11 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
 #include "Eigen.h"
 
-#include <iostream> // just for debugging
 #include <Eigen/Geometry>
 #include <Core/Utility/Console.h>
 
