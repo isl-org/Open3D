@@ -50,8 +50,8 @@ public:
 
 public:
 	/// Function to compute i-th row of J and r
-	/// the vector form of J_r is basically 6x1 matrix, but it can be extended to 
-	/// 6xn matrix if there are multiple terms in the objective. 
+	/// the vector form of J_r is basically 6x1 matrix, but it can be 
+	/// easily extendable to 6xn matrix. 
 	/// See RGBDOdometryJacobianFromHybridTerm for this case.
 	virtual void ComputeJacobianAndResidual(
 			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
