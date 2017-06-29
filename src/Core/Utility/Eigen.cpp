@@ -143,12 +143,12 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 		double r2_sum_private;
 		JTJ_private.setZero();
 		JTr_private.setZero();
+		std::vector<double> r;
+		std::vector<VecType> J_r;
 #ifdef _OPENMP
-#pragma omp for nowait
+#pragma omp for nowait private(r, J_r)
 #endif
 		for (int i = 0; i < iteration_num; i++) {
-			std::vector<double> r;
-			std::vector<VecType> J_r;
 			f(i, J_r, r);
 			for (int j = 0; j < (int)r.size(); j++) {				
 				JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
