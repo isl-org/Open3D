@@ -76,7 +76,8 @@ void pybind_odometry(py::module &m)
 		.def_readwrite("min_depth", &OdometryOption::min_depth_)
 		.def_readwrite("max_depth", &OdometryOption::max_depth_)
 		.def("__repr__", [](const OdometryOption &c) {
-		int num_pyramid_level = c.iteration_number_per_pyramid_level_.size();
+		int num_pyramid_level = 
+				(int)c.iteration_number_per_pyramid_level_.size();
 		std::string str_iteration_number_per_pyramid_level_ = "[ ";
 		for (int i = 0; i < num_pyramid_level; i++) 
 			str_iteration_number_per_pyramid_level_ += 
