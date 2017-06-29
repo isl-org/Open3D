@@ -30,10 +30,114 @@
 #include <IO/IO.h>
 #include <Core/Registration/PoseGraph.h>
 
+using namespace three;
+
+std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
+	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
+	int id1, id2, frame;
+	Eigen::Matrix6d info;
+	FILE * f = fopen(filename.c_str(), "r");
+	if (f != NULL) {
+		char buffer[1024];
+		while (fgets(buffer, 1024, f) != NULL) {
+			if (strlen(buffer) > 0 && buffer[0] != '#') {
+				sscanf(buffer, "%d %d %d", &id1, &id2, &frame);
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(0, 0), &info(0, 1), &info(0, 2), &info(0, 3), &info(0, 4), &info(0, 5));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(1, 0), &info(1, 1), &info(1, 2), &info(1, 3), &info(1, 4), &info(1, 5));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(2, 0), &info(2, 1), &info(2, 2), &info(2, 3), &info(2, 4), &info(2, 5));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(3, 0), &info(3, 1), &info(3, 2), &info(3, 3), &info(3, 4), &info(3, 5));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(4, 0), &info(4, 1), &info(4, 2), &info(4, 3), &info(4, 4), &info(4, 5));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(5, 0), &info(5, 1), &info(5, 2), &info(5, 3), &info(5, 4), &info(5, 5));
+				PoseGraphEdge new_edge;
+				new_edge.source_node_id_ = id1;
+				new_edge.target_node_id_ = id2;
+				new_edge.information_ = info;
+				output->edges_.push_back(new_edge);
+			}
+		}
+		fclose(f);
+	}
+	return output;
+}
+
+std::shared_ptr<PoseGraph> CustomLoadFromLOG(std::string filename) {
+	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
+	int id1, id2, frame;
+	Eigen::Matrix4d trans;
+	FILE * f = fopen(filename.c_str(), "r");
+	if (f != NULL) {
+		char buffer[1024];
+		while (fgets(buffer, 1024, f) != NULL) {
+			if (strlen(buffer) > 0 && buffer[0] != '#') {
+				sscanf(buffer, "%d %d %d", &id1, &id2, &frame);
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf", &trans(0, 0), &trans(0, 1), &trans(0, 2), &trans(0, 3));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf", &trans(1, 0), &trans(1, 1), &trans(1, 2), &trans(1, 3));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf", &trans(2, 0), &trans(2, 1), &trans(2, 2), &trans(2, 3));
+				fgets(buffer, 1024, f);
+				sscanf(buffer, "%lf %lf %lf %lf", &trans(3, 0), &trans(3, 1), &trans(3, 2), &trans(3, 3));
+				PoseGraphEdge new_edge;
+				new_edge.source_node_id_ = id1;
+				new_edge.target_node_id_ = id2;
+				new_edge.transformation_ = trans;
+				output->edges_.push_back(new_edge);
+			}
+		}
+		fclose(f);
+	}
+	return output;
+}
+
+std::shared_ptr<PoseGraph> MergeGraph(
+		const PoseGraph &odo_log, const PoseGraph &odo_info,
+		const PoseGraph &loop_log, const PoseGraph &loop_info )
+{
+	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
+	for (int i = 0; i < odo_log.edges_.size(); i++)
+	{
+		PoseGraphEdge new_odo_edge;
+		new_odo_edge.source_node_id_ = odo_log.edges_[i].source_node_id_;
+		new_odo_edge.target_node_id_ = odo_log.edges_[i].target_node_id_;
+		new_odo_edge.transformation_ = odo_log.edges_[i].transformation_;
+		new_odo_edge.information_ = odo_log.edges_[i].information_;
+		output->edges_.push_back(new_odo_edge);
+	}
+	for (int i = 0; i < loop_log.edges_.size(); i++)
+	{
+		PoseGraphEdge new_loop_edge;
+		new_loop_edge.source_node_id_ = loop_log.edges_[i].source_node_id_;
+		new_loop_edge.target_node_id_ = loop_log.edges_[i].target_node_id_;
+		new_loop_edge.transformation_ = loop_log.edges_[i].transformation_;
+		new_loop_edge.information_ = loop_log.edges_[i].information_;
+		output->edges_.push_back(new_loop_edge);
+	}
+	return output;
+}
+
+std::shared_ptr<PoseGraph> LoadOldPoseGraph(
+		const std::string &odo_log, const std::string &odo_info, 
+		const std::string &loop_log, const std::string &loop_info)
+{
+	auto posegraph_odo_log = CustomLoadFromLOG(odo_log);
+	auto posegraph_odo_info = CustomLoadFromINFO(odo_info);
+	auto posegraph_loop_log = CustomLoadFromLOG(loop_log);
+	auto posegraph_loop_info = CustomLoadFromINFO(odo_info);
+	auto posegraph_merged = MergeGraph(
+			*posegraph_odo_log, *posegraph_odo_info,
+			*posegraph_loop_log, *posegraph_loop_info);
+	return posegraph_merged;
+}
+
 int main(int argc, char **argv)
 {
-	using namespace three;
-
 	SetVerbosityLevel(three::VERBOSE_ALWAYS);
 	
 	if (argc != 1) {
@@ -58,6 +162,13 @@ int main(int argc, char **argv)
 	PoseGraph pose_graph;
 	ReadPoseGraph("test_pose_graph.json", pose_graph);
 	WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+
+	auto old_pose_graph = LoadOldPoseGraph(
+			"C:/git/Open3D/src/Test/TestData/frag_000_odo.log",
+			"C:/git/Open3D/src/Test/TestData/frag_000_odo.info",
+			"C:/git/Open3D/src/Test/TestData/frag_000_loop.log",
+			"C:/git/Open3D/src/Test/TestData/frag_000_loop.info");
+	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
 
 	return 0;
 }

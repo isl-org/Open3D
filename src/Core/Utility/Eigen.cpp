@@ -39,8 +39,6 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 namespace three{
 
-namespace {
-
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 		const Eigen::MatrixXd &A, const Eigen::VectorXd &b) 
@@ -56,11 +54,9 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 		Eigen::MatrixXd x = -A.ldlt().solve(b);
 		return std::make_tuple(solution_exist, std::move(x));
 	} else {
-		return std::make_tuple(false, std::move(Eigen::Vector6d::Zero()));
+		return std::make_tuple(false, std::move(Eigen::VectorXd::Zero(b.rows())));
 	}
 }
-
-}	// unnamed namespace
 
 Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input)
 {

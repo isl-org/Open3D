@@ -45,6 +45,10 @@ namespace three {
 /// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform
 Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input);
 
+/// Function to solve Ax=b
+std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
+	const Eigen::MatrixXd &A, const Eigen::VectorXd &b);
+
 /// Function to solve Jacobian system
 /// Input: 6x6 Jacobian matrix and 6-dim residual vector.
 /// Output: tuple of is_success, 4x4 extrinsic matrices.

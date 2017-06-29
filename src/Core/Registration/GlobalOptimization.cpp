@@ -138,11 +138,11 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			break;
 	}
 
-	PoseGraph output_pose_graph;
+	std::shared_ptr<PoseGraph> output_pose_graph = std::make_shared<PoseGraph>();
 	for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
 		Eigen::Vector6d pose_vec = x.block<6, 1>(iter_node * 6, 1);
 		PoseGraphNode new_node(From6DVectorTo4x4Matrix(pose_vec));
-		output_pose_graph.nodes_.push_back(new_node);
+		output_pose_graph->nodes_.push_back(new_node);
 	}
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		int source_node_id = pose_graph.edges_[iter_edge].source_node_id_;
@@ -153,8 +153,10 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		PoseGraphEdge new_edge(source_node_id, target_node_id, 
 				From6DVectorTo4x4Matrix(diff_vec),
 				Eigen::Matrix6d::Identity(), false);
-		output_pose_graph.edges_.push_back(new_edge);
+		output_pose_graph->edges_.push_back(new_edge);
 	}
+
+	return output_pose_graph;
 }
 
 }	// namespace three

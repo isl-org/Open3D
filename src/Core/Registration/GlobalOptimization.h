@@ -35,9 +35,7 @@
 
 namespace three {
 
-/// Factory function to create a PoseGraph from a file
-/// (PinholeCameraTrajectoryFactory.cpp)
-/// Return an empty PinholeCameraTrajectory if fail to read the file.
+/// Function to optimize a PoseGraph 
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph);
 
 }	// namespace three
