@@ -31,7 +31,6 @@
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Odometry/RGBDOdometryJacobian.h>
 #include <Core/Utility/Eigen.h>
-#include <Core/Utility/Timer.h>
 
 namespace three {
 
@@ -377,8 +376,6 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 		const RGBDOdometryJacobian &jacobian_method,
 		const OdometryOption &option)
 {
-	three::ScopeTimer timer("ComputeMultiscale");
-
 	std::vector<int> iter_counts = option.iteration_number_per_pyramid_level_;
 	int num_levels = (int)iter_counts.size();
 
