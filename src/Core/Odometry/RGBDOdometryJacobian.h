@@ -49,9 +49,12 @@ public:
 	virtual ~RGBDOdometryJacobian() {}
 
 public:
-	/// Function to compute JTJ and JTr
-	virtual std::tuple<Eigen::Matrix6d, Eigen::Vector6d> 
-			ComputeJacobianAndResidual(
+	/// Function to compute i-th row of J and r
+	/// the vector form of J_r is basically 6x1 matrix, but it can be extended to 
+	/// 6xn matrix if there are multiple terms in the objective. 
+	/// See RGBDOdometryJacobianFromHybridTerm for this case.
+	virtual void ComputeJacobianAndResidual(
+			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -73,7 +76,8 @@ public:
 	~RGBDOdometryJacobianFromColorTerm() override {}
 
 public:
-	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
+	void ComputeJacobianAndResidual(
+			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -94,7 +98,8 @@ public:
 	~RGBDOdometryJacobianFromHybridTerm() override {}
 
 public:
-	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
+	void ComputeJacobianAndResidual(
+			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,

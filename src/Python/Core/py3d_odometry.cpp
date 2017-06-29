@@ -32,14 +32,13 @@
 #include <Core/Odometry/RGBDOdometryJacobian.h>
 using namespace three;
 
-typedef std::tuple<Eigen::Matrix6d, Eigen::Vector6d> JacobianResidual;
-
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase
 {
 public:
 	using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
-	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
+	void ComputeJacobianAndResidual(
+			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -47,8 +46,9 @@ public:
 			const Eigen::Matrix4d &extrinsic,
 			const CorrespondenceSetPixelWise &corresps) const override {
 			PYBIND11_OVERLOAD_PURE(
-			JacobianResidual,
+			void,
 			RGBDOdometryJacobianBase,
+			row, J_r, r,
 			source, target, source_xyz, target_dx, target_dy,
 			extrinsic, corresps, intrinsic);
 	}
