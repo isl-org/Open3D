@@ -149,15 +149,16 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 #pragma omp critical
 		{
 #endif
-			JTJ.noalias() += JTJ_private;
-			JTr.noalias() += JTr_private;
+			JTJ += JTJ_private;
+			JTr += JTr_private;
 			r2_sum += r2_sum_private;
 #ifdef _OPENMP
 		}
 	}
 #endif
 	r2_sum /= (double)iteration_num;
-	PrintDebug("Residual : %.2e (# of records : %d)\n", r2_sum, iteration_num);
+	PrintDebug("Residual : %.2e (# of iterations : %d)\n", r2_sum,
+			iteration_num);
 	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
 
@@ -197,15 +198,16 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 #pragma omp critical
 		{
 #endif
-			JTJ.noalias() += JTJ_private;
-			JTr.noalias() += JTr_private;
+			JTJ += JTJ_private;
+			JTr += JTr_private;
 			r2_sum += r2_sum_private;
 #ifdef _OPENMP
 		}
 	}
 #endif
 	r2_sum /= (double)iteration_num;
-	PrintDebug("Residual : %.2e (# of records : %d)\n", r2_sum, iteration_num);
+	PrintDebug("Residual : %.2e (# of iterations : %d)\n", r2_sum,
+			iteration_num);
 	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
 
