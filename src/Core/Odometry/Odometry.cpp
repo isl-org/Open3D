@@ -347,8 +347,8 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	}
 
 	auto f_lambda = [&]
-		(int i, std::vector<Eigen::Vector6d> &A_r, std::vector<double> &r) {
-		jacobian_method.ComputeJacobianAndResidual(i, A_r, r, 
+			(int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
+		jacobian_method.ComputeJacobianAndResidual(i, J_r, r, 
 				source, target, source_xyz, target_dx, target_dy,
 				intrinsic, extrinsic_initial, *correspondence);
 	};

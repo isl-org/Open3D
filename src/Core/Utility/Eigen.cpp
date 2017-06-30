@@ -117,6 +117,53 @@ std::tuple<bool, std::vector<Eigen::Matrix4d>>
 
 template<typename MatType, typename VecType>
 std::tuple<MatType, VecType> ComputeJTJandJTr(
+		std::function<void(int, VecType &, double &)> f,
+		int iteration_num)
+{
+	MatType JTJ;
+	VecType JTr;
+	double r2_sum;
+	JTJ.setZero();
+	JTr.setZero();
+#ifdef _OPENMP
+#pragma omp parallel
+	{
+#endif
+		MatType JTJ_private;
+		VecType JTr_private;
+		double r2_sum_private;
+		JTJ_private.setZero();
+		JTr_private.setZero();
+		VecType J_r;
+		double r;
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
+		for (int i = 0; i < iteration_num; i++) {
+			f(i, J_r, r);
+			JTJ_private.noalias() += J_r * J_r.transpose();
+			JTr_private.noalias() += J_r * r;
+			r2_sum_private += r * r;
+		}
+#ifdef _OPENMP
+#pragma omp critical
+		{
+#endif
+			JTJ += JTJ_private;
+			JTr += JTr_private;
+			r2_sum += r2_sum_private;
+#ifdef _OPENMP
+		}
+	}
+#endif
+	r2_sum /= (double)iteration_num;
+	PrintDebug("Residual : %.2e (# of iterations : %d)\n", r2_sum,
+			iteration_num);
+	return std::make_tuple(std::move(JTJ), std::move(JTr));
+}
+
+template<typename MatType, typename VecType>
+std::tuple<MatType, VecType> ComputeJTJandJTr(
 		std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
 		int iteration_num)
 {
@@ -137,7 +184,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 		std::vector<double> r;
 		std::vector<VecType> J_r;
 #ifdef _OPENMP
-#pragma omp for nowait private(r, J_r)
+#pragma omp for nowait
 #endif
 		for (int i = 0; i < iteration_num; i++) {
 			f(i, J_r, r);
@@ -151,17 +198,22 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 #pragma omp critical
 		{
 #endif
-			JTJ.noalias() += JTJ_private;
-			JTr.noalias() += JTr_private;
+			JTJ += JTJ_private;
+			JTr += JTr_private;
 			r2_sum += r2_sum_private;
 #ifdef _OPENMP
 		}
 	}
 #endif
 	r2_sum /= (double)iteration_num;
-	PrintDebug("Residual : %.2e (# of points : %d)\n", r2_sum, iteration_num);
+	PrintDebug("Residual : %.2e (# of iterations : %d)\n", r2_sum,
+			iteration_num);
 	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
+
+template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
+		std::function<void(int, Eigen::Vector6d &, double &)> f,
+		int iteration_num);
 
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
 		std::function<void(int, std::vector<Eigen::Vector6d> &, 
