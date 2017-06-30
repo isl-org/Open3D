@@ -1,5 +1,7 @@
 # Open3D
 
+[![Build Status](https://travis-ci.com/IntelVCL/Open3D.svg?token=J6RafDafqG2bAk9tQXMU&branch=master)](https://travis-ci.com/IntelVCL/Open3D)
+
 A modern cross-platform C++ library for 3d modeling and geometry processing.
 
 ## Compilation

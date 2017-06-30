@@ -32,14 +32,13 @@
 #include <Core/Odometry/RGBDOdometryJacobian.h>
 using namespace three;
 
-typedef std::tuple<Eigen::Matrix6d, Eigen::Vector6d> JacobianResidual;
-
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase
 {
 public:
 	using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
-	std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJacobianAndResidual(
+	void ComputeJacobianAndResidual(
+			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
 			const RGBDImage &source, const RGBDImage &target,
 			const Image &source_xyz,
 			const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -47,8 +46,9 @@ public:
 			const Eigen::Matrix4d &extrinsic,
 			const CorrespondenceSetPixelWise &corresps) const override {
 			PYBIND11_OVERLOAD_PURE(
-			JacobianResidual,
+			void,
 			RGBDOdometryJacobianBase,
+			row, J_r, r,
 			source, target, source_xyz, target_dx, target_dy,
 			extrinsic, corresps, intrinsic);
 	}
@@ -76,7 +76,8 @@ void pybind_odometry(py::module &m)
 		.def_readwrite("min_depth", &OdometryOption::min_depth_)
 		.def_readwrite("max_depth", &OdometryOption::max_depth_)
 		.def("__repr__", [](const OdometryOption &c) {
-		int num_pyramid_level = c.iteration_number_per_pyramid_level_.size();
+		int num_pyramid_level = 
+				(int)c.iteration_number_per_pyramid_level_.size();
 		std::string str_iteration_number_per_pyramid_level_ = "[ ";
 		for (int i = 0; i < num_pyramid_level; i++) 
 			str_iteration_number_per_pyramid_level_ += 

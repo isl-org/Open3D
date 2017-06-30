@@ -339,17 +339,23 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 			source.depth_, target.depth_, option);
 	int corresps_count_required = (int)(source.color_.height_ * 
 			source.color_.width_ * option.minimum_correspondence_ratio_ + 0.5);
-	if (correspondence->size() < corresps_count_required) {
+	int corresps_count = (int)correspondence->size();
+	if (corresps_count < corresps_count_required) {
 		PrintDebug("[ComputeOdometry] %d is too fewer than mininum requirement %d\n",
-				correspondence->size(), corresps_count_required);
+				corresps_count, corresps_count_required);
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	}
 
+	auto f_lambda = [&]
+			(int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
+		jacobian_method.ComputeJacobianAndResidual(i, J_r, r, 
+				source, target, source_xyz, target_dx, target_dy,
+				intrinsic, extrinsic_initial, *correspondence);
+	};
 	Eigen::Matrix6d JTJ;
 	Eigen::Vector6d JTr;
-	std::tie(JTJ, JTr) = jacobian_method.ComputeJacobianAndResidual(
-			source, target, source_xyz, target_dx, target_dy,
-			intrinsic, extrinsic_initial, *correspondence);	
+	std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+			f_lambda, corresps_count);
 	
 	bool is_success;
 	Eigen::Matrix4d extrinsic;

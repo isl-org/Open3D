@@ -189,7 +189,7 @@ void TestMatrixMultiplication(int argc, char** argv)
 }
 
 inline void ComputeSomething(int i, Eigen::Vector6d &A_r, double &r,
-	std::vector<Eigen::Vector3d> &data)
+		std::vector<Eigen::Vector3d> &data)
 {
 	const Eigen::Vector3d &vs = data[i];
 	const Eigen::Vector3d &vt = data[i];
@@ -205,7 +205,7 @@ inline void ComputeSomething(int i, Eigen::Vector6d &A_r, double &r,
 void TestBindedFunction()
 {
 	// data generation
-	const int NCORR = 100000000;
+	const int NCORR = 200000000;
 	std::vector<Eigen::Vector3d> data;
 	{
 		three::ScopeTimer timer1("Data generation");
@@ -227,6 +227,10 @@ void TestBindedFunction()
 	auto f = std::bind(ComputeSomething, std::placeholders::_1,
 		std::placeholders::_2, std::placeholders::_3, data);
 
+	auto f_lambda = [&](int i, Eigen::Vector6d &A_r, double &r) {
+		ComputeSomething(i, A_r, r, data);
+	};
+
 	ATA.setZero();
 	ATb.setZero();
 	{
@@ -246,6 +250,42 @@ void TestBindedFunction()
 				Eigen::Vector6d A_r;
 				double r;
 				f(i, A_r, r);
+				ATA_private.noalias() += A_r * A_r.transpose();
+				ATb_private.noalias() += A_r * r;
+			}
+#ifdef _OPENMP
+#pragma omp critical
+			{
+#endif
+				ATA += ATA_private;
+				ATb += ATb_private;
+#ifdef _OPENMP
+			}	// omp critical
+		}	// omp parallel
+#endif	
+	}
+	std::cout << ATA << std::endl;
+	std::cout << ATb << std::endl;
+
+	ATA.setZero();
+	ATb.setZero();
+	{
+		three::ScopeTimer timer("Calling lambda function");
+#ifdef _OPENMP
+#pragma omp parallel
+		{
+#endif
+			Eigen::Matrix6d ATA_private;
+			Eigen::Vector6d ATb_private;
+			ATA_private.setZero();
+			ATb_private.setZero();
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
+			for (int i = 0; i < NCORR; i++) {
+				Eigen::Vector6d A_r;
+				double r;
+				f_lambda(i, A_r, r);
 				ATA_private.noalias() += A_r * A_r.transpose();
 				ATb_private.noalias() += A_r * r;
 			}

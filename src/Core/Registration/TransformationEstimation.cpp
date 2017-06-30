@@ -78,26 +78,28 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
 {
 	if (corres.empty() || target.HasNormals() == false)
 		return Eigen::Matrix4d::Identity();
-	Eigen::Matrix6d ATA;
-	Eigen::Vector6d ATb;
-	Eigen::Vector6d A_r;
-	double r;
-	ATA.setZero();
-	ATb.setZero();
-	for (size_t i = 0; i < corres.size(); i++) {
+
+	auto compute_jacobian_and_residual = [&]
+			(int i, Eigen::Vector6d &J_r, double &r) {
 		const Eigen::Vector3d &vs = source.points_[corres[i][0]];
 		const Eigen::Vector3d &vt = target.points_[corres[i][1]];
 		const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
 		r = (vs - vt).dot(nt);
-		A_r.block<3, 1>(0, 0) = vs.cross(nt);
-		A_r.block<3, 1>(3, 0) = nt;
-		ATA += A_r * A_r.transpose();
-		ATb += A_r * r;
-	}
-	auto llt_solver = ATA.llt();
-	Eigen::Matrix<double, 6, 1> x = -llt_solver.solve(ATb);
-	Eigen::Matrix4d transformation = TransformVector6dToMatrix4d(x);
-	return transformation;
+		J_r.block<3, 1>(0, 0) = vs.cross(nt);
+		J_r.block<3, 1>(3, 0) = nt;
+	};
+
+	Eigen::Matrix6d JTJ;
+	Eigen::Vector6d JTr;
+	std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+			compute_jacobian_and_residual, (int)corres.size());
+
+	bool is_success;
+	Eigen::Matrix4d extrinsic;
+	std::tie(is_success, extrinsic) = 
+			SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+
+	return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
 }	// namespace three
