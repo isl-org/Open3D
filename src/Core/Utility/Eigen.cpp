@@ -29,15 +29,6 @@
 #include <Eigen/Geometry>
 #include <Core/Utility/Console.h>
 
-namespace Eigen {
-
-/// Frequently used matrix and vector types are added in Eigen namespace
-typedef Eigen::Matrix<double, 6, 6> Matrix6d;
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
-typedef Eigen::Matrix<double, 2, 6> Matrix2x6d;
-
-}	// namespace Eigen
-
 namespace three{
 
 namespace {
