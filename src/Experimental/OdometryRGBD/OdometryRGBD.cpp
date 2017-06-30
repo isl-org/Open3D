@@ -27,19 +27,9 @@
 #include <iostream>
 #include <memory>
 #include <Core/Core.h>
-#include <IO/IO.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
-#include <Core/Camera/PinholeCameraIntrinsic.h>
-#include <Core/Odometry/OdometryOption.h>
-#include <Core/Odometry/RGBDOdometryJacobian.h>
+#include <Core/Odometry/Odometry.h>
 #include <Core/Utility/Console.h>
-#include <Core/Utility/Eigen.h>
-#include <Core/Utility/Timer.h>
-
-// just for debugging / benchmarking
-#include <Eigen/Geometry>
-#include <ctime>
-
+#include <IO/IO.h>
 
 void PrintHelp(char* argv[])
 {

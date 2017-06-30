@@ -52,10 +52,20 @@ std::tuple<bool, Eigen::Matrix4d>
 		SolveJacobianSystemAndObtainExtrinsicMatrix(
 		const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr);
 
+/// Function to solve Jacobian system
 /// Input: 6nx6n Jacobian matrix and 6n-dim residual vector.
 /// Output: tuple of is_success, n 4x4 motion matrices.
 std::tuple<bool, std::vector<Eigen::Matrix4d>>
 		SolveJacobianSystemAndObtainExtrinsicMatrixArray(
 		const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &r);
+
+/// Function to compute JTJ and Jtr
+/// Input: function pointer f and total number of rows of Jacobian matrix
+/// Output: JTJ and JTr
+/// Note: f takes index of row, and outputs corresponding residual and row vector.
+template<typename MatType, typename VecType>
+std::tuple<MatType, VecType> ComputeJTJandJTr(
+		std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
+		int iteration_num);
 
 }	// namespace three

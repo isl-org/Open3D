@@ -29,14 +29,6 @@
 #include <Eigen/Geometry>
 #include <Core/Utility/Console.h>
 
-namespace Eigen {
-
-/// Frequently used matrix and vector types are added in Eigen namespace
-typedef Eigen::Matrix<double, 6, 6> Matrix6d;
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
-
-}	// namespace Eigen
-
 namespace three{
 
 namespace {
@@ -122,5 +114,57 @@ std::tuple<bool, std::vector<Eigen::Matrix4d>>
 		return std::make_tuple(false, std::move(output_matrix_array));
 	}
 }
+
+template<typename MatType, typename VecType>
+std::tuple<MatType, VecType> ComputeJTJandJTr(
+		std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
+		int iteration_num)
+{
+	MatType JTJ;
+	VecType JTr;
+	double r2_sum;
+	JTJ.setZero();
+	JTr.setZero();
+#ifdef _OPENMP
+#pragma omp parallel
+	{
+#endif
+		MatType JTJ_private;
+		VecType JTr_private;
+		double r2_sum_private;
+		JTJ_private.setZero();
+		JTr_private.setZero();
+		std::vector<double> r;
+		std::vector<VecType> J_r;
+#ifdef _OPENMP
+#pragma omp for nowait private(r, J_r)
+#endif
+		for (int i = 0; i < iteration_num; i++) {
+			f(i, J_r, r);
+			for (int j = 0; j < (int)r.size(); j++) {				
+				JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
+				JTr_private.noalias() += J_r[j] * r[j];
+				r2_sum_private += r[j] * r[j];
+			}			
+		}
+#ifdef _OPENMP
+#pragma omp critical
+		{
+#endif
+			JTJ.noalias() += JTJ_private;
+			JTr.noalias() += JTr_private;
+			r2_sum += r2_sum_private;
+#ifdef _OPENMP
+		}
+	}
+#endif
+	r2_sum /= (double)iteration_num;
+	PrintDebug("Residual : %.2e (# of points : %d)\n", r2_sum, iteration_num);
+	return std::make_tuple(std::move(JTJ), std::move(JTr));
+}
+
+template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
+		std::function<void(int, std::vector<Eigen::Vector6d> &, 
+		std::vector<double> &)> f, int iteration_num);
 
 }	// namespace three
