@@ -26,6 +26,7 @@
 
 #include <cstdio>
 
+#include <Eigen/Dense> // for debugging
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Core/Registration/PoseGraph.h>
@@ -56,8 +57,8 @@ std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
 				fgets(buffer, 1024, f);
 				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(5, 0), &info(5, 1), &info(5, 2), &info(5, 3), &info(5, 4), &info(5, 5));
 				PoseGraphEdge new_edge;
-				new_edge.source_node_id_ = id1;
-				new_edge.target_node_id_ = id2;
+				new_edge.source_node_id_ = id2;
+				new_edge.target_node_id_ = id1;
 				new_edge.information_ = info;
 				output->edges_.push_back(new_edge);
 			}
@@ -87,8 +88,8 @@ std::shared_ptr<PoseGraph> CustomLoadFromLOG(std::string filename) {
 				fgets(buffer, 1024, f);
 				sscanf(buffer, "%lf %lf %lf %lf", &trans(3, 0), &trans(3, 1), &trans(3, 2), &trans(3, 3));
 				PoseGraphEdge new_edge;
-				new_edge.source_node_id_ = id1;
-				new_edge.target_node_id_ = id2;
+				new_edge.source_node_id_ = id2;
+				new_edge.target_node_id_ = id1;
 				new_edge.transformation_ = trans;
 				output->edges_.push_back(new_edge);
 			}
@@ -175,12 +176,12 @@ int main(int argc, char **argv)
 	//ReadPoseGraph("test_pose_graph.json", pose_graph);
 	//WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
-	//auto old_pose_graph = LoadOldPoseGraph(
-	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.log",
-	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.info",
-	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.log",
-	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.info");
-	//WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
+	auto old_pose_graph = LoadOldPoseGraph(
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.log",
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.info",
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.log",
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.info");
+	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
 
 
 
@@ -194,6 +195,32 @@ int main(int argc, char **argv)
 	//std::cout << m << std::endl;
 	//Eigen::Matrix4d M2 = TransformVector6dToMatrix4d(m);
 	//std::cout << M2 << std::endl;
+
+	//int edge_id = 99;
+	//int want_to_see = 1;
+	//for (int id = edge_id; id < edge_id + want_to_see; id++) {
+	//	Eigen::Matrix6d TestInfo = pose_graph->edges_[id].information_;
+	//	std::cout << pose_graph->edges_[id].source_node_id_ << ", " <<
+	//		pose_graph->edges_[id].target_node_id_ << std::endl;
+	//	std::cout << TestInfo << std::endl;
+	//}
+	//int src_id = 0;
+	//int tgt_id = 2;
+	//Eigen::Matrix4d M = pose_graph->nodes_[tgt_id].pose_.inverse() * 
+	//		pose_graph->nodes_[src_id].pose_;
+	//Eigen::Vector6d m = TransformMatrix4dToVector6d(M);
+	//Eigen::Matrix6d TestInfo = pose_graph->edges_[edge_id].information_;
+	//double residual = m.transpose() * TestInfo * m;
+	//std::cout << "src : " << src_id << ", tgt : " << tgt_id <<
+	//	", residual is : " << residual << std::endl;
+
+	///// why the errors are so high?
+	//int edge_id = 140;
+	//Eigen::Matrix4d M = pose_graph->edges_[edge_id].transformation_.inverse();
+	//Eigen::Vector6d m = TransformMatrix4dToVector6d(M);
+	//Eigen::Matrix6d TestInfo = pose_graph->edges_[edge_id].information_;
+	//double residual = m.transpose() * TestInfo * m;
+	//std::cout << "residual is : " << residual << std::endl;
 
 	auto pose_graph_optimized = GlobalOptimization(*pose_graph);
 
