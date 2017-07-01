@@ -29,6 +29,7 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Core/Registration/PoseGraph.h>
+#include <Core/Registration/GlobalOptimization.h>
 
 using namespace three;
 
@@ -63,6 +64,7 @@ std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
 		}
 		fclose(f);
 	}
+	PrintDebug("%s output->edges_.size() : %d\n", filename.c_str(), output->edges_.size());
 	return output;
 }
 
@@ -101,22 +103,32 @@ std::shared_ptr<PoseGraph> MergeGraph(
 		const PoseGraph &loop_log, const PoseGraph &loop_info )
 {
 	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
+	for (int i = 0; i < odo_log.edges_.size() + 1; i++)
+	{
+		PoseGraphNode new_odo_node;
+		if (i == 0)
+			new_odo_node.pose_ = Eigen::Matrix4d::Identity();
+		else
+			new_odo_node.pose_ = output->nodes_[i - 1].pose_ * 
+				odo_log.edges_[i - 1].transformation_;
+		output->nodes_.push_back(new_odo_node);		
+	}
 	for (int i = 0; i < odo_log.edges_.size(); i++)
 	{
 		PoseGraphEdge new_odo_edge;
 		new_odo_edge.source_node_id_ = odo_log.edges_[i].source_node_id_;
 		new_odo_edge.target_node_id_ = odo_log.edges_[i].target_node_id_;
 		new_odo_edge.transformation_ = odo_log.edges_[i].transformation_;
-		new_odo_edge.information_ = odo_log.edges_[i].information_;
+		new_odo_edge.information_ = odo_info.edges_[i].information_;
 		output->edges_.push_back(new_odo_edge);
-	}
+	}	
 	for (int i = 0; i < loop_log.edges_.size(); i++)
 	{
 		PoseGraphEdge new_loop_edge;
 		new_loop_edge.source_node_id_ = loop_log.edges_[i].source_node_id_;
 		new_loop_edge.target_node_id_ = loop_log.edges_[i].target_node_id_;
 		new_loop_edge.transformation_ = loop_log.edges_[i].transformation_;
-		new_loop_edge.information_ = loop_log.edges_[i].information_;
+		new_loop_edge.information_ = loop_info.edges_[i].information_;
 		output->edges_.push_back(new_loop_edge);
 	}
 	return output;
@@ -129,7 +141,7 @@ std::shared_ptr<PoseGraph> LoadOldPoseGraph(
 	auto posegraph_odo_log = CustomLoadFromLOG(odo_log);
 	auto posegraph_odo_info = CustomLoadFromINFO(odo_info);
 	auto posegraph_loop_log = CustomLoadFromLOG(loop_log);
-	auto posegraph_loop_info = CustomLoadFromINFO(odo_info);
+	auto posegraph_loop_info = CustomLoadFromINFO(loop_info);
 	auto posegraph_merged = MergeGraph(
 			*posegraph_odo_log, *posegraph_odo_info,
 			*posegraph_loop_log, *posegraph_loop_info);
@@ -151,24 +163,39 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	PoseGraph new_pose_graph;
-	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 1, 
-			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
-	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 2,
-			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
-	WritePoseGraph("test_pose_graph.json", new_pose_graph);
-	PoseGraph pose_graph;
-	ReadPoseGraph("test_pose_graph.json", pose_graph);
-	WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+	//PoseGraph new_pose_graph;
+	//new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	//new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	//new_pose_graph.edges_.push_back(PoseGraphEdge(0, 1, 
+	//		Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
+	//new_pose_graph.edges_.push_back(PoseGraphEdge(0, 2,
+	//		Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
+	//WritePoseGraph("test_pose_graph.json", new_pose_graph);
+	//PoseGraph pose_graph;
+	//ReadPoseGraph("test_pose_graph.json", pose_graph);
+	//WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
-	auto old_pose_graph = LoadOldPoseGraph(
-			"C:/git/Open3D/src/Test/TestData/frag_000_odo.log",
-			"C:/git/Open3D/src/Test/TestData/frag_000_odo.info",
-			"C:/git/Open3D/src/Test/TestData/frag_000_loop.log",
-			"C:/git/Open3D/src/Test/TestData/frag_000_loop.info");
-	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
+	//auto old_pose_graph = LoadOldPoseGraph(
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.log",
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.info",
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.log",
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.info");
+	//WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
+
+
+
+	auto pose_graph = CreatePoseGraphFromFile(
+			"C:/git/Open3D/build/bin/Test/Release/test_pose_graph_old.json");
+
+	//// 6d to 4x4
+	//Eigen::Matrix4d M = pose_graph->nodes_[2].pose_;
+	//std::cout << M << std::endl;
+	//Eigen::Vector6d m = TransformMatrix4dToVector6d(M);
+	//std::cout << m << std::endl;
+	//Eigen::Matrix4d M2 = TransformVector6dToMatrix4d(m);
+	//std::cout << M2 << std::endl;
+
+	auto pose_graph_optimized = GlobalOptimization(*pose_graph);
 
 	return 0;
 }

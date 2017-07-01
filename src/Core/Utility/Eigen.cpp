@@ -50,7 +50,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 	}
 }
 
-Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input)
+Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 {
 	Eigen::Matrix4d output;
 	output.setIdentity();
@@ -61,6 +61,34 @@ Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input)
 	output.block<3, 1>(0, 3) = input.block<3, 1>(3, 0);
 	return output;
 }
+
+Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
+{
+	Eigen::Vector6d output;
+	Eigen::Vector4d q;
+	output.setZero();
+	q.setZero();
+	Eigen::Matrix3d R = input.block<3, 3>(0, 0);
+	q(0) = 0.5 * sqrt(1 + R(0, 0) + R(1, 1) + R(2, 2));
+	q(1) = -(R(2, 1) - R(1, 2)) / (4 * q(0));
+	q(2) = -(R(0, 2) - R(2, 0)) / (4 * q(0));
+	q(3) = -(R(1, 0) - R(0, 1)) / (4 * q(0));
+	output.block<3, 1>(0, 0) = -q.block<3, 1>(1, 0);
+	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
+	return output;
+}
+
+//// this function looks better but the convergence gets worse
+//Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
+//{
+//	double alpha = (-input(1, 2) + input(2, 1)) / 2.0;
+//	double beta = (input(0, 2) - input(2, 0)) / 2.0;
+//	double gamma = (-input(0, 1) + input(1, 0)) / 2.0;
+//	Eigen::Vector6d output;
+//	output.block<3, 1>(0, 0) << alpha, beta, gamma;
+//	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
+//	return output;
+//}
 
 std::tuple<bool, Eigen::Matrix4d>
 		SolveJacobianSystemAndObtainExtrinsicMatrix(
