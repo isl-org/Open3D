@@ -38,6 +38,7 @@ namespace three{
 namespace {
 
 const int MAX_ITER = 100;
+const double MU = 30000;
 
 bool stopping_criterion(/* what could be an input for this function? */) {
 	return false;
@@ -101,19 +102,54 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 					node_matrix_array[t.source_node_id_],
 					node_matrix_array[t.target_node_id_]);
 			double residual = sqrt(trans_vec.transpose() * t.information_ * trans_vec);
-			Eigen::Vector6d J_vec = 
+			Eigen::Vector6d J_vec =  
 					(trans_vec.transpose() * t.information_) / residual;
+			std::cout << J_vec << std::endl;
+			//std::cout << trans_vec.transpose() << std::endl;
+			//std::cout << t.information_ << std::endl;
+			//std::cout << residual << std::endl;
 			double line_process_sqrt = 1.0;
-			//if (abs(target_node_id - source_node_id) != 1) // loop edge
+			//if (abs(t.target_node_id_ - t.source_node_id_) != 1) // loop edge
 			//	line_process_sqrt = sqrt(line_process(line_process_cnt++));
 			//std::cout << iter_edge << " line_process_sqrt " << line_process_sqrt << std::endl;
+			// this is what we are doing for GetDiffVec. Can be more efficient
+			Eigen::Matrix4d temp = xinv_matrix_array[iter_edge] *
+					node_matrix_array[t.target_node_id_].inverse() * 
+					node_matrix_array[t.source_node_id_];
+			//std::cout << temp << std::endl;
+			Eigen::Matrix6d temp_mat;
+			temp_mat.setZero();
+			temp_mat(0, 0) = (temp(1, 1) + temp(2, 2)) / 2.0;
+			temp_mat(0, 1) = -temp(1, 0);
+			temp_mat(0, 2) = -temp(2, 0);
+			temp_mat(1, 0) = -temp(0, 1);
+			temp_mat(1, 1) = (temp(0, 0) + temp(2, 2)) / 2.0;
+			temp_mat(1, 2) = -temp(2, 1);
+			temp_mat(2, 0) = -temp(0, 2);
+			temp_mat(2, 1) = -temp(1, 2);
+			temp_mat(2, 2) = (temp(0, 0) + temp(1, 1)) / 2.0;
+			temp_mat(3, 3) = temp(0, 0);
+			temp_mat(3, 4) = temp(0, 1);
+			temp_mat(3, 5) = temp(0, 2);
+			temp_mat(4, 3) = temp(1, 0);
+			temp_mat(4, 4) = temp(1, 1);
+			temp_mat(4, 5) = temp(1, 2);
+			temp_mat(5, 3) = temp(2, 0);
+			temp_mat(5, 4) = temp(2, 1);
+			temp_mat(5, 5) = temp(2, 2);
+			//std::cout << temp_mat << std::endl;
 			int row_id = iter_edge;
 			J.block<1, 6>(row_id, t.source_node_id_ * 6) = 
-					line_process_sqrt * J_vec;
+					line_process_sqrt * (J_vec.transpose() * temp_mat);
 			J.block<1, 6>(row_id, t.target_node_id_ * 6) = 
-					line_process_sqrt * -J_vec; 
+					line_process_sqrt * -(J_vec.transpose() * temp_mat);
 			r(row_id) = residual;
 			total_residual2 += line_process_sqrt * line_process_sqrt * residual * residual;
+			//std::cout << trans_vec << std::endl;
+			//std::cout << J_vec.transpose() << std::endl;
+			//std::cout << J.block<1, 6>(row_id, t.source_node_id_ * 6) << std::endl;
+			//std::cout << J.block<1, 6>(row_id, t.target_node_id_ * 6) << std::endl;
+			//std::cout << r(row_id) << std::endl;
 		}
 		// solve equation
 		Eigen::MatrixXd JtJ = J.transpose() * J;
@@ -127,10 +163,12 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		//outfile << Jtr;
 		//outfile.close();
 		
-		//bool is_success;
-		//Eigen::VectorXd x_delta;
-		//std::tie(is_success, x_delta) = SolveLinearSystem(JtJ, Jtr); // determinant is always inf.
-		Eigen::VectorXd delta = -JtJ.ldlt().solve(Jtr);
+		bool is_success;
+		Eigen::VectorXd delta;
+		std::tie(is_success, delta) = SolveLinearSystem(JtJ, Jtr); // determinant is always inf.
+		//Eigen::VectorXd delta = -JtJ.ldlt().solve(Jtr);
+
+		//std::cout << delta << std::endl;
 		
 		// change 6d vector to matrix form
 		// to save time for computing matrix form multiple times.
@@ -138,8 +176,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
 			//std::cout << x_iter_node << std::endl;
 			node_matrix_array[iter_node] =
-					TransformVector6dToMatrix4d(delta_iter) *
-					node_matrix_array[iter_node];
+				TransformVector6dToMatrix4d(delta_iter) *
+				node_matrix_array[iter_node];
 		}
 		
 		// sub-iteration #2
@@ -155,7 +193,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 						node_matrix_array[t.target_node_id_]);
 				double residual_square = 
 						diff_vec.transpose() * t.information_ * diff_vec;
-				double temp = 1.0 / (1.0 + residual_square);
+				double temp = MU / (MU + residual_square);
 				line_process(line_process_cnt++) = temp * temp;
 			}
 		}
