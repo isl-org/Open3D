@@ -39,6 +39,7 @@ namespace {
 
 const int MAX_ITER = 100;
 const double MU = 30000;
+const double DELTA = 1e-4;
 
 bool stopping_criterion(/* what could be an input for this function? */) {
 	return false;
@@ -53,6 +54,55 @@ inline Eigen::Vector6d GetDiffVec(const Eigen::Matrix4d &X_inv,
 	return TransformMatrix4dToVector6d(temp);
 }
 
+inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta) {
+	Eigen::Matrix4d delta_mat;
+	delta_mat << 1, -delta(2), delta(1), delta(3),
+				delta(2), 1, -delta(0), delta(4),
+				-delta(1), delta(0), 1, delta(5),
+				0, 0, 0, 1;
+	return delta_mat;
+}
+
+inline Eigen::Matrix4d GetIncrementalForJ(const Eigen::Matrix4d &X_inv,
+		const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv, 
+		const Eigen::Vector6d delta)
+{
+	return X_inv * T_j_inv * LinearizedSmallTransform(delta).inverse() * T_i;
+}
+
+inline Eigen::Matrix4d GetIncrementalForI(const Eigen::Matrix4d &X_inv,
+	const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv,
+	const Eigen::Vector6d delta)
+{
+	return X_inv * T_j_inv * LinearizedSmallTransform(delta) * T_i;
+}
+
+inline Eigen::Matrix6d GetNumericalJacobian(const Eigen::Matrix4d &X_inv,
+		const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv, bool is_I)
+{
+	Eigen::Matrix6d output;
+	Eigen::Vector6d delta;
+	output.setZero();
+	for (int i = 0; i < 6; i++) {
+		delta.setZero();
+		delta(i) = DELTA;
+		if (is_I) {
+			Eigen::Vector6d temp_p = TransformMatrix4dToVector6d(
+				GetIncrementalForI(X_inv, T_i, T_j_inv, delta));
+			Eigen::Vector6d temp_n = TransformMatrix4dToVector6d(
+				GetIncrementalForI(X_inv, T_i, T_j_inv, -delta));
+			output.block<6, 1>(0, i) = (temp_p - temp_n) / 2.0;
+		} else {
+			Eigen::Vector6d temp_p = TransformMatrix4dToVector6d(
+				GetIncrementalForJ(X_inv, T_i, T_j_inv, delta));
+			Eigen::Vector6d temp_n = TransformMatrix4dToVector6d(
+				GetIncrementalForJ(X_inv, T_i, T_j_inv, -delta));
+			output.block<6, 1>(0, i) = (temp_p - temp_n) / 2.0;
+		}
+	}
+	return output;
+}
+
 }	// unnamed namespace
 
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
@@ -63,8 +113,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	PrintDebug("Optimizing PoseGraph having %d edges and %d nodes\n", 
 			n_nodes, n_edges);
 
-	Eigen::MatrixXd J(n_edges, n_nodes * 6);
-	Eigen::VectorXd r(n_edges);
+	Eigen::MatrixXd J(n_edges * 6, n_nodes * 6);
+	Eigen::VectorXd r(n_edges * 6);
 	std::vector<Eigen::Matrix4d> node_matrix_array;
 	std::vector<Eigen::Matrix4d> xinv_matrix_array;
 	node_matrix_array.resize(n_nodes);
@@ -102,9 +152,20 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 					node_matrix_array[t.source_node_id_],
 					node_matrix_array[t.target_node_id_]);
 			double residual = sqrt(trans_vec.transpose() * t.information_ * trans_vec);
-			Eigen::Vector6d J_vec =  
-					(trans_vec.transpose() * t.information_) / residual;
-			std::cout << J_vec << std::endl;
+
+			Eigen::Matrix6d J_vec_i = 
+					GetNumericalJacobian(xinv_matrix_array[iter_edge],
+					node_matrix_array[t.source_node_id_],
+					node_matrix_array[t.target_node_id_],
+					true);
+			Eigen::Matrix6d J_vec_j =
+					GetNumericalJacobian(xinv_matrix_array[iter_edge],
+					node_matrix_array[t.source_node_id_],
+					node_matrix_array[t.target_node_id_],
+					false);
+			
+			//std::cout << J_vec_i.transpose() << std::endl;
+			//std::cout << J_vec_j.transpose() << std::endl;
 			//std::cout << trans_vec.transpose() << std::endl;
 			//std::cout << t.information_ << std::endl;
 			//std::cout << residual << std::endl;
@@ -113,37 +174,13 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			//	line_process_sqrt = sqrt(line_process(line_process_cnt++));
 			//std::cout << iter_edge << " line_process_sqrt " << line_process_sqrt << std::endl;
 			// this is what we are doing for GetDiffVec. Can be more efficient
-			Eigen::Matrix4d temp = xinv_matrix_array[iter_edge] *
-					node_matrix_array[t.target_node_id_].inverse() * 
-					node_matrix_array[t.source_node_id_];
-			//std::cout << temp << std::endl;
-			Eigen::Matrix6d temp_mat;
-			temp_mat.setZero();
-			temp_mat(0, 0) = (temp(1, 1) + temp(2, 2)) / 2.0;
-			temp_mat(0, 1) = -temp(1, 0);
-			temp_mat(0, 2) = -temp(2, 0);
-			temp_mat(1, 0) = -temp(0, 1);
-			temp_mat(1, 1) = (temp(0, 0) + temp(2, 2)) / 2.0;
-			temp_mat(1, 2) = -temp(2, 1);
-			temp_mat(2, 0) = -temp(0, 2);
-			temp_mat(2, 1) = -temp(1, 2);
-			temp_mat(2, 2) = (temp(0, 0) + temp(1, 1)) / 2.0;
-			temp_mat(3, 3) = temp(0, 0);
-			temp_mat(3, 4) = temp(0, 1);
-			temp_mat(3, 5) = temp(0, 2);
-			temp_mat(4, 3) = temp(1, 0);
-			temp_mat(4, 4) = temp(1, 1);
-			temp_mat(4, 5) = temp(1, 2);
-			temp_mat(5, 3) = temp(2, 0);
-			temp_mat(5, 4) = temp(2, 1);
-			temp_mat(5, 5) = temp(2, 2);
-			//std::cout << temp_mat << std::endl;
-			int row_id = iter_edge;
-			J.block<1, 6>(row_id, t.source_node_id_ * 6) = 
-					line_process_sqrt * (J_vec.transpose() * temp_mat);
-			J.block<1, 6>(row_id, t.target_node_id_ * 6) = 
-					line_process_sqrt * -(J_vec.transpose() * temp_mat);
-			r(row_id) = residual;
+			int row_id = iter_edge * 6;
+			J.block<6, 6>(row_id, t.source_node_id_ * 6) = 
+					line_process_sqrt * J_vec_i.transpose() * t.information_ * J_vec_i;
+			J.block<6, 6>(row_id, t.target_node_id_ * 6) = 
+					line_process_sqrt * J_vec_j.transpose() * t.information_ * J_vec_j;
+			r.block<6, 1>(row_id, 0) = trans_vec.transpose() * t.information_ * J_vec_i
+					+ trans_vec.transpose() * t.information_ * J_vec_j;
 			total_residual2 += line_process_sqrt * line_process_sqrt * residual * residual;
 			//std::cout << trans_vec << std::endl;
 			//std::cout << J_vec.transpose() << std::endl;
@@ -164,9 +201,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		//outfile.close();
 		
 		bool is_success;
-		Eigen::VectorXd delta;
-		std::tie(is_success, delta) = SolveLinearSystem(JtJ, Jtr); // determinant is always inf.
-		//Eigen::VectorXd delta = -JtJ.ldlt().solve(Jtr);
+		//Eigen::VectorXd delta;
+		//std::tie(is_success, delta) = SolveLinearSystem(JtJ, Jtr); // determinant is always inf.
+		Eigen::VectorXd delta = JtJ.ldlt().solve(Jtr);
 
 		//std::cout << delta << std::endl;
 		
