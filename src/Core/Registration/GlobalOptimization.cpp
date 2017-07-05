@@ -39,7 +39,7 @@ namespace {
 
 const int MAX_ITER = 100;
 const double MU = 30000;
-const double DELTA = 1e-4;
+const double DELTA = 1e-9;
 
 bool stopping_criterion(/* what could be an input for this function? */) {
 	return false;
@@ -91,13 +91,13 @@ inline Eigen::Matrix6d GetNumericalJacobian(const Eigen::Matrix4d &X_inv,
 				GetIncrementalForI(X_inv, T_i, T_j_inv, delta));
 			Eigen::Vector6d temp_n = TransformMatrix4dToVector6d(
 				GetIncrementalForI(X_inv, T_i, T_j_inv, -delta));
-			output.block<6, 1>(0, i) = (temp_p - temp_n) / 2.0;
+			output.block<6, 1>(0, i) = (temp_p - temp_n) / (2 * DELTA);
 		} else {
 			Eigen::Vector6d temp_p = TransformMatrix4dToVector6d(
 				GetIncrementalForJ(X_inv, T_i, T_j_inv, delta));
 			Eigen::Vector6d temp_n = TransformMatrix4dToVector6d(
 				GetIncrementalForJ(X_inv, T_i, T_j_inv, -delta));
-			output.block<6, 1>(0, i) = (temp_p - temp_n) / 2.0;
+			output.block<6, 1>(0, i) = (temp_p - temp_n) / (2 * DELTA);
 		}
 	}
 	return output;
@@ -113,8 +113,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	PrintDebug("Optimizing PoseGraph having %d edges and %d nodes\n", 
 			n_nodes, n_edges);
 
-	Eigen::MatrixXd J(n_edges * 6, n_nodes * 6);
-	Eigen::VectorXd r(n_edges * 6);
+	Eigen::MatrixXd H(n_nodes * 6, n_nodes * 6);
+	Eigen::VectorXd b(n_nodes * 6);
 	std::vector<Eigen::Matrix4d> node_matrix_array;
 	std::vector<Eigen::Matrix4d> xinv_matrix_array;
 	node_matrix_array.resize(n_nodes);
@@ -136,8 +136,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	// main iteration
 	for (int iter = 0; iter < MAX_ITER; iter++) {
 
-		J.setZero();
-		r.setZero();		
+		H.setZero();
+		b.setZero();		
 		double total_residual2 = 0.0;
 	
 		// depends on the definition of nodes maybe need to do (n_nodes + 1)?
@@ -153,34 +153,35 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 					node_matrix_array[t.target_node_id_]);
 			double residual = sqrt(trans_vec.transpose() * t.information_ * trans_vec);
 
-			Eigen::Matrix6d J_vec_i = 
+			Eigen::Matrix6d J_i = 
 					GetNumericalJacobian(xinv_matrix_array[iter_edge],
 					node_matrix_array[t.source_node_id_],
 					node_matrix_array[t.target_node_id_],
 					true);
-			Eigen::Matrix6d J_vec_j =
+			Eigen::Matrix6d J_j =
 					GetNumericalJacobian(xinv_matrix_array[iter_edge],
 					node_matrix_array[t.source_node_id_],
 					node_matrix_array[t.target_node_id_],
 					false);
-			
-			//std::cout << J_vec_i.transpose() << std::endl;
-			//std::cout << J_vec_j.transpose() << std::endl;
-			//std::cout << trans_vec.transpose() << std::endl;
-			//std::cout << t.information_ << std::endl;
-			//std::cout << residual << std::endl;
+			//if (iter_edge == 0) {
+			//	std::cout << J_vec_i.transpose() << std::endl;
+			//	std::cout << J_vec_j.transpose() << std::endl;
+			//}
 			double line_process_sqrt = 1.0;
-			//if (abs(t.target_node_id_ - t.source_node_id_) != 1) // loop edge
-			//	line_process_sqrt = sqrt(line_process(line_process_cnt++));
+			if (abs(t.target_node_id_ - t.source_node_id_) != 1) // loop edge
+				line_process_sqrt = sqrt(line_process(line_process_cnt++));
 			//std::cout << iter_edge << " line_process_sqrt " << line_process_sqrt << std::endl;
 			// this is what we are doing for GetDiffVec. Can be more efficient
-			int row_id = iter_edge * 6;
-			J.block<6, 6>(row_id, t.source_node_id_ * 6) = 
-					line_process_sqrt * J_vec_i.transpose() * t.information_ * J_vec_i;
-			J.block<6, 6>(row_id, t.target_node_id_ * 6) = 
-					line_process_sqrt * J_vec_j.transpose() * t.information_ * J_vec_j;
-			r.block<6, 1>(row_id, 0) = trans_vec.transpose() * t.information_ * J_vec_i
-					+ trans_vec.transpose() * t.information_ * J_vec_j;
+			// can be more efficient by using block matrix multiplication
+			int id_i = t.source_node_id_ * 6;
+			int id_j = t.target_node_id_ * 6;
+			H.block<6, 6>(id_i, id_i) += line_process_sqrt * J_i.transpose() * t.information_ * J_i;
+			H.block<6, 6>(id_i, id_j) += line_process_sqrt * J_i.transpose() * t.information_ * J_j;
+			H.block<6, 6>(id_j, id_i) += line_process_sqrt * J_j.transpose() * t.information_ * J_i;
+			H.block<6, 6>(id_j, id_j) += line_process_sqrt * J_j.transpose() * t.information_ * J_j;
+			// I am not sure about r.
+			b.block<6, 1>(id_i, 0) += line_process_sqrt * trans_vec.transpose() * t.information_ * J_i;
+			b.block<6, 1>(id_j, 0) += line_process_sqrt * trans_vec.transpose() * t.information_ * J_j;
 			total_residual2 += line_process_sqrt * line_process_sqrt * residual * residual;
 			//std::cout << trans_vec << std::endl;
 			//std::cout << J_vec.transpose() << std::endl;
@@ -189,8 +190,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			//std::cout << r(row_id) << std::endl;
 		}
 		// solve equation
-		Eigen::MatrixXd JtJ = J.transpose() * J;
-		Eigen::MatrixXd Jtr = J.transpose() * r;
+		//Eigen::MatrixXd JtJ = J.transpose() * J;
+		//Eigen::MatrixXd Jtr = J.transpose() * r;
 		
 		//std::ofstream outfile;
 		//outfile.open("JtJ.txt");
@@ -203,7 +204,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		bool is_success;
 		//Eigen::VectorXd delta;
 		//std::tie(is_success, delta) = SolveLinearSystem(JtJ, Jtr); // determinant is always inf.
-		Eigen::VectorXd delta = JtJ.ldlt().solve(Jtr);
+		Eigen::VectorXd delta = -H.ldlt().solve(b);
 
 		//std::cout << delta << std::endl;
 		
@@ -231,7 +232,11 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 				double residual_square = 
 						diff_vec.transpose() * t.information_ * diff_vec;
 				double temp = MU / (MU + residual_square);
-				line_process(line_process_cnt++) = temp * temp;
+				double temp2 = temp * temp;
+				if (temp2 < 0.25)
+					line_process(line_process_cnt++) = 0.0;
+				else
+					line_process(line_process_cnt++) = temp;
 			}
 		}
 		// adding stopping criterion
