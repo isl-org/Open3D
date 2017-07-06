@@ -29,13 +29,14 @@
 #include <vector>
 #include <memory>
 
-#include <IO/ClassIO/IJsonConvertible.h>
 #include <Core/Utility/Eigen.h>
 #include <Core/Registration/PoseGraph.h>
 
 namespace three {
 
 /// Function to optimize a PoseGraph 
+/// Reference: g2o: A General Framework for Graph Optimization
+/// http://europa.informatik.uni-freiburg.de/files/kuemmerle11icra.pdf
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph);
 
 }	// namespace three

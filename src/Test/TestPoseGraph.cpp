@@ -71,7 +71,7 @@ std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
 
 std::shared_ptr<PoseGraph> CustomLoadFromLOG(std::string filename) {
 	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
-	int id1, id2, frame;
+	int id1, id2, frame;	
 	Eigen::Matrix4d trans;
 	FILE * f = fopen(filename.c_str(), "r");
 	if (f != NULL) {
@@ -132,6 +132,19 @@ std::shared_ptr<PoseGraph> MergeGraph(
 		new_loop_edge.information_ = loop_info.edges_[i].information_;
 		output->edges_.push_back(new_loop_edge);
 	}
+	// check broken edge
+	std::vector<bool> edge_check;
+	int n_edges = output->nodes_.size();
+	edge_check.resize(n_edges);
+	for (int i = 0; i < n_edges; i++)
+		edge_check[i] = false;
+	for (int i = 0; i < n_edges; i++) {
+		edge_check[output->edges_[i].source_node_id_] = true;
+		edge_check[output->edges_[i].target_node_id_] = true;
+	}		
+	for (int i = 0; i < n_edges; i++)
+		if (!edge_check[i])
+			PrintDebug("Error: edge for node %d is missing\n", i);
 	return output;
 }
 
@@ -176,11 +189,16 @@ int main(int argc, char **argv)
 	//ReadPoseGraph("test_pose_graph.json", pose_graph);
 	//WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
+	//auto old_pose_graph = LoadOldPoseGraph(
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.log",
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.info",
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.log",
+	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.info");
 	auto old_pose_graph = LoadOldPoseGraph(
-			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.log",
-			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.info",
-			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.log",
-			"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_loop.info");
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/odometry.log",
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/odometry.info",
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/result.txt",
+			"C:/git/Open3D/src/Test/TestData/GraphOptimization/result.info");
 	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
 
 
