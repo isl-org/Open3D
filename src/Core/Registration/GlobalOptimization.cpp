@@ -239,6 +239,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		//std::cout << H.block<6, 6>(96, 96) << std::endl;
 
 		// why determinant of H is inf?
+		H += 1000 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
 		Eigen::VectorXd delta = -H.ldlt().solve(b);
 
 		// update pose of nodes
