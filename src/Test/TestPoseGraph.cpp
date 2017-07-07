@@ -109,14 +109,12 @@ std::shared_ptr<PoseGraph> MergeGraph(
 		const PoseGraph &loop_log, const PoseGraph &loop_info )
 {
 	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
-	for (int i = 0; i < odo_log.edges_.size() + 1; i++)
+	output->nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Identity()));
+	for (int i = 0; i < odo_log.edges_.size(); i++)
 	{
 		PoseGraphNode new_odo_node;
-		if (i == 0)
-			new_odo_node.pose_ = Eigen::Matrix4d::Identity();
-		else
-			new_odo_node.pose_ = output->nodes_[i - 1].pose_ * 
-				odo_log.edges_[i - 1].transformation_;
+		new_odo_node.pose_ = output->nodes_[i].pose_ * 
+				odo_log.edges_[i].transformation_;
 		output->nodes_.push_back(new_odo_node);		
 	}
 	for (int i = 0; i < odo_log.edges_.size(); i++)

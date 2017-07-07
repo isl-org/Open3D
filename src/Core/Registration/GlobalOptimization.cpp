@@ -46,13 +46,24 @@ bool stopping_criterion(/* what could be an input for this function? */) {
 	return false;
 }
 
+inline Eigen::Vector6d Extract6DVector(Eigen::Matrix4d input)
+{
+	Eigen::Vector6d output;
+	output(0) = (-input(1, 2) + input(2, 1)) / 2.0;
+	output(1) = (-input(2, 0) + input(0, 2)) / 2.0;
+	output(2) = (-input(0, 1) + input(1, 0)) / 2.0;
+	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
+	return std::move(output);
+}
+
 /// todo: we may also do batch inverse for T_j
 inline Eigen::Vector6d GetDiffVec(const Eigen::Matrix4d &X_inv, 
 		const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv)
 {
 	Eigen::Matrix4d temp;
 	temp.noalias() = X_inv * T_j_inv * T_i;
-	return TransformMatrix4dToVector6d(temp);
+	//return TransformMatrix4dToVector6d(temp);
+	return Extract6DVector(temp);
 }
 
 inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta) {
@@ -97,9 +108,9 @@ inline Eigen::Matrix6d GetSingleNumericalJacobian(const Eigen::Matrix4d &X_inv,
 	for (int i = 0; i < 6; i++) {
 		delta.setZero();
 		delta(i) = DELTA;
-		Eigen::Vector6d temp_p = TransformMatrix4dToVector6d(
+		Eigen::Vector6d temp_p = Extract6DVector(
 				f(X_inv, T_i, T_j_inv, delta));
-		Eigen::Vector6d temp_n = TransformMatrix4dToVector6d(
+		Eigen::Vector6d temp_n = Extract6DVector(
 				f(X_inv, T_i, T_j_inv, -delta));
 		output.block<6, 1>(0, i) = (temp_p - temp_n) / (2.0 * DELTA);
 	}
@@ -119,6 +130,56 @@ inline std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetNumericalJacobian(
 	return std::make_tuple(std::move(J_source),std::move(J_target));
 }
 
+std::vector<Eigen::Matrix4d> diff;
+
+void InitAnalysticalJacobian()
+{
+	diff.clear();
+	Eigen::Matrix4d diff_alpha = Eigen::Matrix4d::Zero();
+	Eigen::Matrix4d diff_beta = Eigen::Matrix4d::Zero();
+	Eigen::Matrix4d diff_gamma = Eigen::Matrix4d::Zero();
+	Eigen::Matrix4d diff_a = Eigen::Matrix4d::Zero();
+	Eigen::Matrix4d diff_b = Eigen::Matrix4d::Zero();
+	Eigen::Matrix4d diff_c = Eigen::Matrix4d::Zero();
+	diff_alpha(1, 2) = -1;
+	diff_alpha(2, 1) = 1;
+	diff_beta(2, 0) = -1;
+	diff_beta(0, 2) = 1;	
+	diff_gamma(0, 1) = -1;
+	diff_gamma(1, 0) = 1;
+	diff_a(0, 3) = 1;
+	diff_b(1, 3) = 1;
+	diff_c(2, 3) = 1;
+	diff.push_back(diff_alpha);
+	diff.push_back(diff_beta);
+	diff.push_back(diff_gamma);
+	diff.push_back(diff_a);
+	diff.push_back(diff_b);
+	diff.push_back(diff_c);
+}
+
+inline Eigen::Matrix6d GetSingleAnalysticalJacobian(
+	const Eigen::Matrix4d &X_inv,
+	const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv)
+{
+	Eigen::Matrix6d output = Eigen::Matrix6d::Zero();
+	for (int i = 0; i < 6; i++) {
+		Eigen::Matrix4d temp = X_inv * T_j_inv * diff[i] * T_i;
+		output.block<6, 1>(0, i) = Extract6DVector(temp);
+	}
+	return std::move(output);
+}
+
+std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetAnalysticalJacobian(
+	const Eigen::Matrix4d &X_inv, const Eigen::Matrix4d &T_i,
+	const Eigen::Matrix4d &T_j_inv)
+{
+	Eigen::Matrix6d J_source =
+		GetSingleAnalysticalJacobian(X_inv, T_i, T_j_inv);
+	Eigen::Matrix6d J_target = -J_source;
+	return std::make_tuple(std::move(J_source), std::move(J_target));
+}
+
 }	// unnamed namespace
 
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
@@ -128,6 +189,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 
 	PrintDebug("Optimizing PoseGraph having %d nodes and %d edges\n", 
 			n_nodes, n_edges);
+
+	InitAnalysticalJacobian();
 
 	Eigen::MatrixXd H(n_nodes * 6, n_nodes * 6);
 	Eigen::VectorXd b(n_nodes * 6);
@@ -167,8 +230,15 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 					nodeinv_matrix_array[t.target_node_id_]);
 			double residual = e.transpose() * t.information_ * e;
 			
+			//if (iter_edge == 100)
+			//	std::cout << e.transpose() << std::endl;
+			
 			Eigen::Matrix6d J_source, J_target;
-			std::tie(J_source, J_target) = GetNumericalJacobian(
+			//std::tie(J_source, J_target) = GetNumericalJacobian(
+			//	xinv_matrix_array[iter_edge],
+			//	node_matrix_array[t.source_node_id_],
+			//	nodeinv_matrix_array[t.target_node_id_]);
+			std::tie(J_source, J_target) = GetAnalysticalJacobian(
 				xinv_matrix_array[iter_edge],
 				node_matrix_array[t.source_node_id_],
 				nodeinv_matrix_array[t.target_node_id_]);
@@ -179,9 +249,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			Eigen::Vector6d eT_Info = e.transpose() * t.information_;
 
 			double line_process_iter = 1.0;
-			//if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
-			//	line_process_iter = line_process(line_process_cnt++);
-			//} 
+			if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+				line_process_iter = line_process(line_process_cnt++);
+			} 
 			int id_i = t.source_node_id_ * 6;
 			int id_j = t.target_node_id_ * 6;			
 			H.block<6, 6>(id_i, id_i).noalias() += 
@@ -197,6 +267,11 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			b.block<6, 1>(id_j, 0).noalias() += 
 					line_process_iter * eT_Info.transpose() * J_target;
 			total_residual += line_process_iter * residual;
+			//if (iter_edge == 10) {
+			//	std::cout << "Numeric" << std::endl;
+			//	std::cout << J_source << std::endl;
+			//	std::cout << J_target << std::endl;
+			//}				
 		}
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
@@ -212,8 +287,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		//std::cout << H.block<6, 6>(96, 96) << std::endl;
 
 		// why determinant of H is inf?
-		H += 1000 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
+		H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
 		Eigen::VectorXd delta = -H.ldlt().solve(b);
+		//std::cout << "delta.norm()" << delta.norm() << std::endl;
 		//x += delta;
 
 		// update pose of nodes
@@ -222,6 +298,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			node_matrix_array[iter_node] = 
 					TransformVector6dToMatrix4d(delta_iter) * 
 					node_matrix_array[iter_node];
+			//Eigen::Vector6d x_iter = x.block<6, 1>(iter_node * 6, 0);
+			//node_matrix_array[iter_node] = TransformVector6dToMatrix4d(x_iter);
 			nodeinv_matrix_array[iter_node] = 
 					node_matrix_array[iter_node].inverse();
 		}
@@ -231,12 +309,12 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 			const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
 			if (abs(t.target_node_id_ - t.source_node_id_) != 1) { 
-				Eigen::Vector6d diff_vec = GetDiffVec(
+				Eigen::Vector6d e = GetDiffVec(
 						xinv_matrix_array[iter_edge],
 						node_matrix_array[t.source_node_id_],
 						nodeinv_matrix_array[t.target_node_id_]);
 				double residual_square = 
-						diff_vec.transpose() * t.information_ * diff_vec;
+						e.transpose() * t.information_ * e;
 				double temp = MU / (MU + residual_square);
 				double temp2 = temp * temp;
 				if (temp2 < PRUNE) // prunning
