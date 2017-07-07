@@ -38,7 +38,8 @@ namespace three{
 namespace {
 
 const int MAX_ITER = 100;
-const double MU = 30000;
+const double MU = 100;
+const double PRUNE = 0.25;
 const double DELTA = 1e-9;
 
 bool stopping_criterion(/* what could be an input for this function? */) {
@@ -56,11 +57,11 @@ inline Eigen::Vector6d GetDiffVec(const Eigen::Matrix4d &X_inv,
 
 inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta) {
 	Eigen::Matrix4d delta_mat;
-	delta_mat << 1, -delta(2), delta(1), delta(3),
-				delta(2), 1, -delta(0), delta(4),
-				-delta(1), delta(0), 1, delta(5),
-				0, 0, 0, 1;
-	//delta_mat = TransformVector6dToMatrix4d(delta);
+	//delta_mat << 1, -delta(2), delta(1), delta(3),
+	//			delta(2), 1, -delta(0), delta(4),
+	//			-delta(1), delta(0), 1, delta(5),
+	//			0, 0, 0, 1;
+	delta_mat = TransformVector6dToMatrix4d(delta);
 	return delta_mat;
 }
 
@@ -125,11 +126,12 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
 
-	PrintDebug("Optimizing PoseGraph having %d edges and %d nodes\n", 
+	PrintDebug("Optimizing PoseGraph having %d nodes and %d edges\n", 
 			n_nodes, n_edges);
 
 	Eigen::MatrixXd H(n_nodes * 6, n_nodes * 6);
 	Eigen::VectorXd b(n_nodes * 6);
+	Eigen::VectorXd x(n_nodes * 6);
 	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
 	line_process.setOnes();
 
@@ -143,6 +145,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		const PoseGraphNode &t = pose_graph.nodes_[iter_node];
 		node_matrix_array[iter_node] = t.pose_;
 		nodeinv_matrix_array[iter_node] = t.pose_.inverse();
+		x.block<6, 1>(iter_node * 6, 0) = TransformMatrix4dToVector6d(t.pose_);
 	}
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
@@ -176,8 +179,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			Eigen::Vector6d eT_Info = e.transpose() * t.information_;
 
 			double line_process_iter = 1.0;
-			if (abs(t.target_node_id_ - t.source_node_id_) != 1) // loop edge
-				line_process_iter = line_process(line_process_cnt++);
+			//if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+			//	line_process_iter = line_process(line_process_cnt++);
+			//} 
 			int id_i = t.source_node_id_ * 6;
 			int id_j = t.target_node_id_ * 6;			
 			H.block<6, 6>(id_i, id_i).noalias() += 
@@ -193,37 +197,6 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			b.block<6, 1>(id_j, 0).noalias() += 
 					line_process_iter * eT_Info.transpose() * J_target;
 			total_residual += line_process_iter * residual;
-			//if (id_j == 96) {
-			//	std::cout << "iter_edge : " << iter_edge << std::endl;
-			//	std::cout << H.block<6, 6>(id_j, id_j) << std::endl;
-			//}
-			//if (iter_edge == 10) {
-			//	std::cout << "xinv_matrix_array[iter_edge]" << std::endl;
-			//	std::cout << xinv_matrix_array[iter_edge] << std::endl;
-			//	std::cout << "node_matrix_array[t.source_node_id_]" << std::endl;
-			//	std::cout << node_matrix_array[t.source_node_id_] << std::endl;
-			//	std::cout << "nodeinv_matrix_array[t.target_node_id_]" << std::endl;
-			//	std::cout << nodeinv_matrix_array[t.target_node_id_] << std::endl;
-			//	std::cout << "information" << std::endl;
-			//	std::cout << t.information_ << std::endl;
-				//std::cout << "J_source" << std::endl;
-				//std::cout << J_source << std::endl;
-				//std::cout << "J_target" << std::endl;
-				//std::cout << J_target << std::endl;
-
-			//	Eigen::Matrix4d X_inv = xinv_matrix_array[iter_edge];
-			//	Eigen::Matrix4d T_i = node_matrix_array[t.source_node_id_];
-			//	Eigen::Matrix4d T_j_inv = nodeinv_matrix_array[t.target_node_id_];
-			//	Eigen::Vector6d delta;
-			//	delta.setZero();
-			//	delta(0) = DELTA;
-			//	Eigen::Matrix4d temp_p =
-			//		X_inv * T_j_inv * LinearizedSmallTransform(delta) * T_i;
-			//	std::cout << 1 + temp_p(0, 0) + temp_p(1, 1) + temp_p(2, 2) << std::endl;
-			//	std::cout << "Test" << std::endl;				
-			//	std::cout << temp_p << std::endl;
-			//	std::cout << TransformMatrix4dToVector6d(temp_p) << std::endl;
-			//}
 		}
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
@@ -235,18 +208,19 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		//file_b << b;
 		//file_b.close();
 
-		//std::cout << H.block<6, 6>(90, 90) << std::endl;		
+		//std::cout << H.block<6, 6>(90, 90) << std::endl;
 		//std::cout << H.block<6, 6>(96, 96) << std::endl;
 
 		// why determinant of H is inf?
 		H += 1000 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
 		Eigen::VectorXd delta = -H.ldlt().solve(b);
+		//x += delta;
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
 			Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
 			node_matrix_array[iter_node] = 
-					TransformVector6dToMatrix4d(delta_iter) *
+					TransformVector6dToMatrix4d(delta_iter) * 
 					node_matrix_array[iter_node];
 			nodeinv_matrix_array[iter_node] = 
 					node_matrix_array[iter_node].inverse();
@@ -265,12 +239,12 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 						diff_vec.transpose() * t.information_ * diff_vec;
 				double temp = MU / (MU + residual_square);
 				double temp2 = temp * temp;
-				if (temp2 < 0.25)
+				if (temp2 < PRUNE) // prunning
 					line_process(line_process_cnt++) = 0.0;
 				else
-					line_process(line_process_cnt++) = temp;
+					line_process(line_process_cnt++) = temp2;
 			}
-		}				
+		}
 		if (stopping_criterion()) // todo: adding stopping criterion
 			break;
 	}
