@@ -50,10 +50,41 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 	}
 }
 
+//Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
+//{
+//	Eigen::Matrix4d output;
+//	output.setIdentity();
+//	output.block<3, 3>(0, 0) =
+//		(Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ()) *
+//			Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY()) *
+//			Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX())).matrix();
+//	output.block<3, 1>(0, 3) = input.block<3, 1>(3, 0);
+//	return output;
+//}
+//
+//Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
+//{
+//	Eigen::Vector6d output;
+//	Eigen::Vector4d q;
+//	output.setZero();
+//	q.setZero();
+//	Eigen::Matrix3d R = input.block<3, 3>(0, 0);
+//	double temp = 1 + R(0, 0) + R(1, 1) + R(2, 2);
+//	if (temp > 0.0) {
+//		q(0) = 0.5 * sqrt(temp);
+//		q(1) = -(R(2, 1) - R(1, 2)) / (4 * q(0));
+//		q(2) = -(R(0, 2) - R(2, 0)) / (4 * q(0));
+//		q(3) = -(R(1, 0) - R(0, 1)) / (4 * q(0));
+//	}	
+//	output.block<3, 1>(0, 0) = -q.block<3, 1>(1, 0);
+//	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
+//	return output;
+//}
+
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 {
 	Eigen::Matrix4d output;
-	output.setIdentity();
+	output.setIdentity();	
 	output.block<3, 3>(0, 0) =
 		(Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ()) *
 			Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY()) *
@@ -65,18 +96,17 @@ Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
 {
 	Eigen::Vector6d output;
-	Eigen::Vector4d q;
-	output.setZero();
-	q.setZero();
-	Eigen::Matrix3d R = input.block<3, 3>(0, 0);
-	double temp = 1 + R(0, 0) + R(1, 1) + R(2, 2);
-	if (temp > 0.0) {
-		q(0) = 0.5 * sqrt(temp);
-		q(1) = -(R(2, 1) - R(1, 2)) / (4 * q(0));
-		q(2) = -(R(0, 2) - R(2, 0)) / (4 * q(0));
-		q(3) = -(R(1, 0) - R(0, 1)) / (4 * q(0));
+	Eigen::Matrix3d R = input.block<3, 3>(0, 0);	
+	float sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));		
+	if (!(sy < 1e-6)) {
+		output(0) = atan2(R(2, 1), R(2, 2));
+		output(1) = atan2(-R(2, 0), sy);
+		output(2) = atan2(R(1, 0), R(0, 0));
+	} else {
+		output(0) = atan2(-R(1, 2), R(1, 1));
+		output(1) = atan2(-R(2, 0), sy);
+		output(2) = 0;
 	}	
-	output.block<3, 1>(0, 0) = -q.block<3, 1>(1, 0);
 	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
 	return output;
 }

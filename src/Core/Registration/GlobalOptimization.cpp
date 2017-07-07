@@ -60,6 +60,7 @@ inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta) {
 				delta(2), 1, -delta(0), delta(4),
 				-delta(1), delta(0), 1, delta(5),
 				0, 0, 0, 1;
+	//delta_mat = TransformVector6dToMatrix4d(delta);
 	return delta_mat;
 }
 
@@ -196,7 +197,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			//	std::cout << "iter_edge : " << iter_edge << std::endl;
 			//	std::cout << H.block<6, 6>(id_j, id_j) << std::endl;
 			//}
-			//if (iter_edge == 1787) {
+			//if (iter_edge == 10) {
 			//	std::cout << "xinv_matrix_array[iter_edge]" << std::endl;
 			//	std::cout << xinv_matrix_array[iter_edge] << std::endl;
 			//	std::cout << "node_matrix_array[t.source_node_id_]" << std::endl;
@@ -205,10 +206,10 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			//	std::cout << nodeinv_matrix_array[t.target_node_id_] << std::endl;
 			//	std::cout << "information" << std::endl;
 			//	std::cout << t.information_ << std::endl;
-			//	std::cout << "J_source" << std::endl;
-			//	std::cout << J_source << std::endl;
-			//	std::cout << "J_target" << std::endl;
-			//	std::cout << J_target << std::endl;
+				//std::cout << "J_source" << std::endl;
+				//std::cout << J_source << std::endl;
+				//std::cout << "J_target" << std::endl;
+				//std::cout << J_target << std::endl;
 
 			//	Eigen::Matrix4d X_inv = xinv_matrix_array[iter_edge];
 			//	Eigen::Matrix4d T_i = node_matrix_array[t.source_node_id_];
@@ -224,6 +225,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			//	std::cout << TransformMatrix4dToVector6d(temp_p) << std::endl;
 			//}
 		}
+		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
+
 		//std::ofstream file_H("H.txt");
 		//file_H << H;
 		//file_H.close();
@@ -266,8 +269,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 				else
 					line_process(line_process_cnt++) = temp;
 			}
-		}		
-		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
+		}				
 		if (stopping_criterion()) // todo: adding stopping criterion
 			break;
 	}

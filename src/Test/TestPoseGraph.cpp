@@ -38,6 +38,7 @@ std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
 	std::shared_ptr<PoseGraph> output = std::make_shared<PoseGraph>();
 	int id1, id2, frame;
 	Eigen::Matrix6d info;
+	Eigen::Matrix6d info_new;
 	FILE * f = fopen(filename.c_str(), "r");
 	if (f != NULL) {
 		char buffer[1024];
@@ -58,8 +59,12 @@ std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
 				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(5, 0), &info(5, 1), &info(5, 2), &info(5, 3), &info(5, 4), &info(5, 5));
 				PoseGraphEdge new_edge;
 				new_edge.source_node_id_ = id2;
-				new_edge.target_node_id_ = id1;
-				new_edge.information_ = info;
+				new_edge.target_node_id_ = id1;				
+				info_new.block<3, 3>(3, 3) = info.block<3, 3>(0, 0);
+				info_new.block<3, 3>(3, 0) = info.block<3, 3>(0, 3);
+				info_new.block<3, 3>(0, 3) = info.block<3, 3>(3, 0);
+				info_new.block<3, 3>(0, 0) = info.block<3, 3>(3, 3);
+				new_edge.information_ = info_new;
 				output->edges_.push_back(new_edge);
 			}
 		}
@@ -177,6 +182,8 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
+	////////////////////////
+	//// test posegraph read and write
 	//PoseGraph new_pose_graph;
 	//new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
 	//new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
@@ -188,7 +195,10 @@ int main(int argc, char **argv)
 	//PoseGraph pose_graph;
 	//ReadPoseGraph("test_pose_graph.json", pose_graph);
 	//WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+	////////////////////////
 
+	////////////////////
+	// test posegraph optimization
 	//auto old_pose_graph = LoadOldPoseGraph(
 	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.log",
 	//		"C:/git/Open3D/src/Test/TestData/GraphOptimization/frag_000_odo.info",
@@ -200,14 +210,19 @@ int main(int argc, char **argv)
 			"C:/git/Open3D/src/Test/TestData/GraphOptimization/result.txt",
 			"C:/git/Open3D/src/Test/TestData/GraphOptimization/result.info");
 	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
-
-
-
 	auto pose_graph = CreatePoseGraphFromFile(
-			"C:/git/Open3D/build/bin/Test/Release/test_pose_graph_old.json");
+		"C:/git/Open3D/build/bin/Test/Release/test_pose_graph_old.json");
+	auto pose_graph_optimized = GlobalOptimization(*pose_graph);
+	////////////////////
+
+
 
 	//// 6d to 4x4
-	//Eigen::Matrix4d M = pose_graph->nodes_[2].pose_;
+	//Eigen::Matrix4d M;
+	//M << 0.9999888060, 0.0013563634, 0.0045330144, -0.0015367448,
+	//	-0.0013477337, 0.9999972749, -0.0019062503, 0.0015274951,
+	//	-0.0045355876, 0.0019001196, 0.9999879089, -0.0007733108,
+	//	0.0000000000, -0.0000000000, -0.0000000000, 1.0000000000;
 	//std::cout << M << std::endl;
 	//Eigen::Vector6d m = TransformMatrix4dToVector6d(M);
 	//std::cout << m << std::endl;
@@ -240,7 +255,7 @@ int main(int argc, char **argv)
 	//double residual = m.transpose() * TestInfo * m;
 	//std::cout << "residual is : " << residual << std::endl;
 
-	auto pose_graph_optimized = GlobalOptimization(*pose_graph);
+	
 
 	return 0;
 }
