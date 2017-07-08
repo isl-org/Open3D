@@ -39,4 +39,6 @@ namespace three {
 /// http://europa.informatik.uni-freiburg.de/files/kuemmerle11icra.pdf
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph);
 
+std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph);
+
 }	// namespace three

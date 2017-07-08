@@ -180,6 +180,24 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetAnalysticalJacobian(
 	return std::make_tuple(std::move(J_source), std::move(J_target));
 }
 
+Eigen::VectorXd ComputeE(const PoseGraph &pose_graph) 
+{
+	int n_edges = (int)pose_graph.edges_.size();
+	Eigen::VectorXd output(n_edges * 6);
+	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
+		std::cout << iter_edge << "/" << n_edges << std::endl;
+		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
+		const PoseGraphNode &ts = pose_graph.nodes_[te.source_node_id_];
+		const PoseGraphNode &tt = pose_graph.nodes_[te.target_node_id_];
+		Eigen::Matrix4d X_inv = te.transformation_.inverse();
+		Eigen::Matrix4d Ts = ts.pose_;
+		Eigen::Matrix4d Tt_inv = tt.pose_.inverse();
+		Eigen::Vector6d e = GetDiffVec(X_inv, Ts, Tt_inv);
+		output.block<6, 1>(iter_edge * 6, 0) = e;
+	}
+	return std::move(output);
+}
+
 }	// unnamed namespace
 
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
@@ -191,6 +209,13 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			n_nodes, n_edges);
 
 	InitAnalysticalJacobian();
+
+	PrintDebug("Test\n");
+
+	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
+	*pose_graph_refined = pose_graph;
+
+	PrintDebug("Test\n");
 
 	Eigen::MatrixXd H(n_nodes * 6, n_nodes * 6);
 	Eigen::VectorXd b(n_nodes * 6);
@@ -220,15 +245,19 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		b.setZero();		
 		double total_residual = 0.0;
 		int line_process_cnt = 0;
+
+		//Eigen::VectorXd evec = ComputeE(*pose_graph_refined);
 		
 		// build information matrix of the system
 		for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 			const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
 			Eigen::Vector6d e = GetDiffVec(
-					xinv_matrix_array[iter_edge],
-					node_matrix_array[t.source_node_id_],
-					nodeinv_matrix_array[t.target_node_id_]);
+				xinv_matrix_array[iter_edge],
+				node_matrix_array[t.source_node_id_],
+				nodeinv_matrix_array[t.target_node_id_]);
+			//Eigen::Vector6d e = evec.block<6, 1>(iter_edge*6, 0);
 			double residual = e.transpose() * t.information_ * e;
+			//std::cout << iter_edge << "/" << n_edges << std::endl;
 			
 			//if (iter_edge == 100)
 			//	std::cout << e.transpose() << std::endl;
@@ -327,7 +356,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			break;
 	}
 
-	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
+	//std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
 	for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
 		PoseGraphNode new_node(node_matrix_array[iter_node]);
 		pose_graph_refined->nodes_.push_back(new_node);
@@ -343,6 +372,70 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 				Eigen::Matrix6d::Identity(), false);
 		pose_graph_refined->edges_.push_back(new_edge);
 	}
+	return pose_graph_refined;
+}
+
+std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
+{
+	////////////////////////////////
+	////// codes working for LM
+	//Eigen::VectorXd H_diag = H.diagonal();
+	//double tau = 1.0; // not sure about tau
+	//double vu = 2.0;
+	//double lambda = tau * H_diag.maxCoeff();
+	//bool stop = false;
+	//if (b.maxCoeff() < EPS_1) // b is near zero. Bad condition.
+	//	stop = true;
+	//double rho = 1.0;
+
+	//for (int inner_iter = 0; inner_iter < MAX_ITER && !stop; inner_iter++) {
+	//	do {
+	//		Eigen::MatrixXd H_LM = H + lambda * H_I;
+	//		Eigen::VectorXd delta = -H_LM.ldlt().solve(b);
+	//		if (delta.norm() < EPS_2 * (x.norm() + EPS_2)) {
+	//			stop = true;
+	//		}
+	//		else {
+	//			for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
+	//				Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
+	//				node_matrix_array[iter_node] =
+	//					TransformVector6dToMatrix4d(delta_iter) *
+	//					node_matrix_array[iter_node];
+	//				nodeinv_matrix_array[iter_node] =
+	//					node_matrix_array[iter_node].inverse();
+	//				x.block<6, 1>(iter_node * 6, 0) =
+	//					TransformMatrix4dToVector6d(node_matrix_array[iter_node]);
+	//			}
+	//			Eigen::VectorXd e_new(n_edges * 6);
+	//			for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
+	//				const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
+	//				Eigen::Vector6d e_iter = GetDiffVec(
+	//					xinv_matrix_array[iter_edge],
+	//					node_matrix_array[t.source_node_id_],
+	//					nodeinv_matrix_array[t.target_node_id_]);
+	//				e_new.block<6, 1>(iter_edge * 6, 0) = e_iter;
+	//			}
+	//			rho = (e.norm() - e_new.norm()) /
+	//				(delta.transpose() * (lambda * delta + b));
+	//			if (rho > 0) {
+	//				if (e.norm() - e_new.norm() < EPS_4 * e.norm())
+	//					stop = true;
+	//				// todo: Update H, b, and e = e_new, 
+	//				stop = stop || (b.maxCoeff() < EPS_1);
+	//				lambda = lambda * fmax(1 / 3, 1 - pow(2 * rho - 1, 3.0));
+	//				vu = 2;
+	//			}
+	//			else {
+	//				lambda = lambda * vu;
+	//				vu = 2 * vu;
+	//			}
+	//		}
+	//	} while ((rho > 0) || stop);
+	//	stop = e.norm() < EPS_3;
+	//}	// end for
+	//	//////////////////////////////
+
+	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
 	return pose_graph_refined;
 }
 
