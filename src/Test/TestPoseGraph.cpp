@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
 	auto pose_graph = CreatePoseGraphFromFile(
 		"C:/git/Open3D/build/bin/Test/Release/test_pose_graph_old.json");
-	auto pose_graph_optimized = GlobalOptimization(*pose_graph);
+	auto pose_graph_optimized = GlobalOptimizationLM(*pose_graph);
 	////////////////////
 
 

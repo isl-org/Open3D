@@ -50,6 +50,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 	}
 }
 
+// original function
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 {
 	Eigen::Matrix4d output;
@@ -79,6 +80,7 @@ Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
 	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
 	return output;
 }
+// original function
 
 std::tuple<bool, Eigen::Matrix4d>
 		SolveJacobianSystemAndObtainExtrinsicMatrix(
