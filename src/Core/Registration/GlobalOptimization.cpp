@@ -320,7 +320,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 
 		// why determinant of H is inf?
 		H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
-		Eigen::VectorXd delta = -H.ldlt().solve(b);
+		Eigen::VectorXd delta = -H.colPivHouseholderQr().solve(b);
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -382,7 +382,7 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 		int lm_count = 0;
 		do {
 			Eigen::MatrixXd H_LM = H + lambda * H_I;
-			Eigen::VectorXd delta = -H_LM.ldlt().solve(b);
+			Eigen::VectorXd delta = -H_LM.colPivHouseholderQr().solve(b);
 			if (delta.norm() < EPS_2 * (x.norm() + EPS_2)) {
 				stop = true;
 				std::cout << "delta.norm() < EPS_2 * (x.norm() + EPS_2)" 
@@ -437,9 +437,9 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	return pose_graph_refined;
 }
 
-////////////////////////
-/// from g2o
-/// g2o testing function
+//////////////////////////
+///// from g2o
+///// g2o testing function
 Eigen::Quaterniond& normalize(Eigen::Quaterniond& q) {
 	q.normalize();
 	if (q.w()<0) {
@@ -454,9 +454,9 @@ GetRelativePosesG2O(const PoseGraph &pose_graph, int edge_id)
 	const PoseGraphEdge &te = pose_graph.edges_[edge_id];
 	const PoseGraphNode &ts = pose_graph.nodes_[te.source_node_id_];
 	const PoseGraphNode &tt = pose_graph.nodes_[te.target_node_id_];
-	Eigen::Matrix4d X = te.transformation_.inverse();
+	Eigen::Matrix4d X = te.transformation_;
 	Eigen::Matrix4d Ts = ts.pose_;
-	Eigen::Matrix4d Tt = tt.pose_.inverse();
+	Eigen::Matrix4d Tt = tt.pose_;
 	return std::make_tuple(std::move(X), std::move(Ts), std::move(Tt));
 }
 
@@ -465,6 +465,15 @@ Eigen::Vector3d toCompactQuaternion(const Eigen::Matrix3d& R) {
 	normalize(q);
 	// return (x,y,z) of the quaternion
 	return q.coeffs().head<3>();
+}
+
+Eigen::Matrix3d fromCompactQuaternion(const Eigen::Vector3d& v) {
+	double w = 1 - v.squaredNorm();
+	if (w<0)
+		return Eigen::Matrix3d::Identity();
+	else
+		w = sqrt(w);
+	return Eigen::Quaterniond(w, v[0], v[1], v[2]).toRotationMatrix();
 }
 
 inline Eigen::Isometry3d::ConstLinearPart extractRotation(const Eigen::Isometry3d &A)
@@ -477,6 +486,13 @@ Eigen::Vector6d toVectorMQT(const Eigen::Isometry3d& t) {
 	v.block<3, 1>(3, 0) = toCompactQuaternion(extractRotation(t));
 	v.block<3, 1>(0, 0) = t.translation();
 	return v;
+}
+
+Eigen::Isometry3d fromVectorMQT(const Eigen::Vector6d& v) {
+	Eigen::Isometry3d t;
+	t = fromCompactQuaternion(v.block<3, 1>(3, 0));
+	t.translation() = v.block<3, 1>(0, 0);
+	return t;
 }
 
 template <typename Derived, typename DerivedOther>
@@ -550,7 +566,6 @@ int _q2m(double& S, double& qw, const double&  r00, const double&  r10, const do
 		return 3;
 	}
 }
-
 
 void  compute_dq_dR_w(Eigen::Matrix<double, 3, 9 >&  dq_dR_w, const double&  qw, const double&  r00, const double&  r10, const double&  r20, const double&  r01, const double&  r11, const double&  r21, const double&  r02, const double&  r12, const double&  r22) {
 	(void)r00;
@@ -821,7 +836,7 @@ void computeEdgeSE3Gradient(Eigen::Isometry3d& E,
 	{
 		Eigen::Matrix3d S;
 		skewT(S, tb);
-		Ji.template block<3, 3>(0, 3) = Ra*S;
+		Ji.block<3, 3>(0, 3) = Ra*S;
 	}
 
 	// dte/dqj: this is zero
@@ -835,7 +850,7 @@ void computeEdgeSE3Gradient(Eigen::Isometry3d& E,
 		Eigen::Map<Eigen::Matrix3d> Mx(buf);    Mx.noalias() = Ra*Sxt;
 		Eigen::Map<Eigen::Matrix3d> My(buf + 9);  My.noalias() = Ra*Syt;
 		Eigen::Map<Eigen::Matrix3d> Mz(buf + 18); Mz.noalias() = Ra*Szt;
-		Ji.template block<3, 3>(3, 3) = dq_dR * M;
+		Ji.block<3, 3>(3, 3) = dq_dR * M;
 	}
 
 	// dre/dqj
@@ -863,31 +878,36 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> linearizeOplus(
 	return std::make_tuple(std::move(_jacobianOplusXi), std::move(_jacobianOplusXj));
 }
 
-inline std::tuple<Eigen::Matrix4d, Eigen::Matrix4d, Eigen::Matrix4d>
-GetRelativePosesG20(const PoseGraph &pose_graph, int edge_id)
-{
-	const PoseGraphEdge &te = pose_graph.edges_[edge_id];
-	const PoseGraphNode &ts = pose_graph.nodes_[te.source_node_id_];
-	const PoseGraphNode &tt = pose_graph.nodes_[te.target_node_id_];
-	Eigen::Matrix4d X_inv = te.transformation_.inverse();
-	Eigen::Matrix4d Ts = ts.pose_;
-	Eigen::Matrix4d Tt_inv = tt.pose_.inverse();
-	return std::make_tuple(std::move(X_inv), std::move(Ts), std::move(Tt_inv));
-}
-
 Eigen::VectorXd ComputeEG20(const PoseGraph &pose_graph)
 {
 	int n_edges = (int)pose_graph.edges_.size();
 	Eigen::VectorXd output(n_edges * 6);
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
-		Eigen::Matrix4d X_inv, Ts, Tt_inv;
-		std::tie(X_inv, Ts, Tt_inv) = GetRelativePoses(pose_graph, iter_edge);
+		Eigen::Matrix4d X, Ts, Tt;
+		std::tie(X, Ts, Tt) = GetRelativePosesG2O(pose_graph, iter_edge);
 		// VertexSE3 *from = static_cast<VertexSE3*>(_vertices[0]);
 		// VertexSE3 *to = static_cast<VertexSE3*>(_vertices[1]);
 		// Isometry3D delta=_inverseMeasurement * from->estimate().inverse() * to->estimate();
-		Eigen::Isometry3d delta = Eigen::Isometry3d(X_inv * Tt_inv * Ts); // not sure.
+		Eigen::Isometry3d delta = Eigen::Isometry3d(X.inverse() * Ts.inverse() * Tt); 
 		Eigen::Vector6d e = toVectorMQT(delta);
 		output.block<6, 1>(iter_edge * 6, 0) = e;
+		
+		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
+		//if (te.source_node_id_ == 195 && te.target_node_id_ == 209) {
+		//	std::cout << "[ComputeEG20]" << 
+		//		te.source_node_id_ << "-"  << te.target_node_id_ << std::endl;
+		//	std::cout << "X.inverse().matrix()" << std::endl;
+		//	std::cout << X.inverse().matrix() << std::endl;
+		//	std::cout << "Ts.inverse().matrix()" << std::endl;
+		//	std::cout << Ts.inverse().matrix() << std::endl;
+		//	std::cout << "Tt.matrix()" << std::endl;
+		//	std::cout << Tt.matrix() << std::endl;
+		//	std::cout << "delta.matrix()" << std::endl;
+		//	std::cout << delta.matrix() << std::endl;
+		//	std::cout << "e" << std::endl;
+		//	std::cout << e << std::endl;
+		//}	
+		
 	}
 	return std::move(output);
 }
@@ -916,7 +936,15 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeHG2O(
 		Eigen::Isometry3d E;
 		Eigen::Matrix6d J_source, J_target;
 		std::tie(J_source, J_target) = linearizeOplus(
-			Eigen::Isometry3d(X), Eigen::Isometry3d(Ts), Eigen::Isometry3d(Tt));
+			Eigen::Isometry3d(Ts), Eigen::Isometry3d(Tt), Eigen::Isometry3d(X));
+
+		//if (iter_edge == 2000) {
+		//	std::cout << "[ComputeHG2O]" << std::endl;
+		//	std::cout << "J_source" << std::endl;
+		//	std::cout << J_source << std::endl;
+		//	std::cout << "J_target" << std::endl;
+		//	std::cout << J_target << std::endl;
+		//}
 		
 		Eigen::Matrix6d J_sourceT_Info =
 			J_source.transpose() * t.information_;
@@ -947,15 +975,52 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeHG2O(
 	return std::make_tuple(std::move(H), std::move(b), total_residual);
 }
 
+void approximateNearestOrthogonalMatrix(const Eigen::Matrix3d& R)
+{
+	Eigen::Matrix3d E = R.transpose() * R;
+	E.diagonal().array() -= 1;
+	const_cast<Eigen::Matrix3d&>(R) -= 0.5 * R * E;
+}
+
+/**
+* update the position of this vertex. The update is in the form
+* (x,y,z,qx,qy,qz) whereas (x,y,z) represents the translational update
+* and (qx,qy,qz) corresponds to the respective elements. The missing
+* element qw of the quaternion is recovred by
+* || (qw,qx,qy,qz) || == 1 => qw = sqrt(1 - || (qx,qy,qz) ||
+*/
+/// this function looks okay
+void oplusImpl(const Eigen::Vector6d &update, Eigen::Isometry3d &_estimate)
+{
+	Eigen::Isometry3d increment = fromVectorMQT(update);
+
+	//std::cout << "[oplusImpl]" << std::endl;
+	//std::cout << "update" << std::endl;
+	//std::cout << update << std::endl;
+	//std::cout << "_estimate.matrix()" << std::endl;
+	//std::cout << _estimate.matrix() << std::endl;
+	//std::cout << "increment.matrix()" << std::endl;
+	//std::cout << increment.matrix() << std::endl;
+
+	_estimate = _estimate * increment;
+	
+	//orthogonalizeAfter = 1000
+	//if (++_numOplusCalls > orthogonalizeAfter) {
+	//	_numOplusCalls = 0;
+	//	internal::approximateNearestOrthogonalMatrix(_estimate.matrix().topLeftCorner<3, 3>());
+	//}
+	//approximateNearestOrthogonalMatrix(_estimate.matrix().topLeftCorner<3, 3>());
+}
+
+/// inconsistency: the loop iteration
+/// how to use x?
 std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
 
-	PrintDebug("Optimizing PoseGraph having %d nodes and %d edges\n",
+	PrintDebug("[GlobalOptimizationG2O] PoseGraph having %d nodes and %d edges\n",
 		n_nodes, n_edges);
-
-	InitAnalysticalJacobian();
 
 	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
 	*pose_graph_refined = pose_graph;
@@ -963,8 +1028,15 @@ std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
 	line_process.setOnes();
 
+	//Eigen::VectorXd x(n_nodes * 6);
+	//for (int node_iter = 0; node_iter < n_nodes; node_iter++) {
+	//	Eigen::Matrix4d eigen_mat = pose_graph.nodes_[node_iter].pose_;
+	//	x.block<6,1>(node_iter*6,0) = toVectorMQT(Eigen::Isometry3d(eigen_mat));
+	//}
+
 	Eigen::VectorXd evec = ComputeEG20(*pose_graph_refined);
 
+	//double MAX_ITER_DEBUG = 2;
 	for (int iter = 0; iter < MAX_ITER; iter++) {
 
 		int line_process_cnt = 0;
@@ -977,15 +1049,33 @@ std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
 		// why determinant of H is inf?
-		//H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
-		Eigen::VectorXd delta = -H.ldlt().solve(b);
+		H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
+		Eigen::VectorXd delta = -H.colPivHouseholderQr().solve(b);
+		Eigen::VectorXd err = H*(-delta) - b;
+		std::cout << "err norm : " << err.norm() << std::endl;
+
+		//if (iter == 0) {
+		//	//std::cout << "Saving matrix" << std::endl;
+		//	//std::ofstream file("H.txt");
+		//	//file << H;
+		//	//file.close();
+		//	//std::ofstream file2("b.txt");
+		//	//file2 << b;
+		//	//file2.close();
+		//	std::cout << "Loading matrix" << std::endl;
+		//	std::ifstream file("x.txt");
+		//	for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
+		//		file >> delta(iter_node);
+		//	}
+		//	file.close();
+		//}
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
 			Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
-			pose_graph_refined->nodes_[iter_node].pose_ =
-				TransformVector6dToMatrix4d(delta_iter) *
-				pose_graph_refined->nodes_[iter_node].pose_;
+			Eigen::Isometry3d temp = Eigen::Isometry3d(pose_graph_refined->nodes_[iter_node].pose_);
+			oplusImpl(delta_iter, temp);
+			pose_graph_refined->nodes_[iter_node].pose_ = temp.matrix();
 		}
 		evec = ComputeEG20(*pose_graph_refined);
 		//line_process = ComputeLineprocess(*pose_graph_refined, evec);
