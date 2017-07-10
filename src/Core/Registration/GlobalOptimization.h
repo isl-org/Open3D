@@ -43,4 +43,6 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph);
 
 std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph);
 
+std::shared_ptr<PoseGraph> GlobalOptimizationG2OLM(const PoseGraph &pose_graph);
+
 }	// namespace three

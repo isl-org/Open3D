@@ -45,6 +45,7 @@ const double EPS_1 = 1e-6;
 const double EPS_2 = 1e-6;
 const double EPS_3 = 1e-6;
 const double EPS_4 = 1e-6;
+const double EPS_5 = 1e-6;
 const double _goodStepUpperScale = 2./3.;
 const double _goodStepLowerScale = 1./3.;
 
@@ -221,20 +222,23 @@ Eigen::VectorXd ComputeLineprocess(
 	return std::move(line_process);
 }
 
-Eigen::VectorXd ComputeE(const PoseGraph &pose_graph) 
+std::tuple<Eigen::VectorXd, double> ComputeE(const PoseGraph &pose_graph) 
 {
 	int n_edges = (int)pose_graph.edges_.size();
+	double residual;
 	Eigen::VectorXd output(n_edges * 6);
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		Eigen::Matrix4d X_inv, Ts, Tt_inv;
 		std::tie(X_inv, Ts, Tt_inv) = GetRelativePoses(pose_graph, iter_edge);
 		Eigen::Vector6d e = GetDiffVec(X_inv, Ts, Tt_inv);
 		output.block<6, 1>(iter_edge * 6, 0) = e;
+		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
+		residual += e.transpose() * te.information_ * e;
 	}
-	return std::move(output);
+	return std::make_tuple(std::move(output), residual);
 }
 
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeH(
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
 	const PoseGraph &pose_graph, const Eigen::VectorXd &evec,
 	const Eigen::VectorXd &line_process)
 {
@@ -250,8 +254,7 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeH(
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
 		Eigen::Vector6d e = evec.block<6, 1>(iter_edge * 6, 0);
-		double residual = e.transpose() * t.information_ * e;
-
+		
 		Eigen::Matrix4d X_inv, Ts, Tt_inv;
 		std::tie(X_inv, Ts, Tt_inv) = GetRelativePoses(pose_graph, iter_edge);
 
@@ -278,13 +281,12 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeH(
 			line_process_iter * J_targetT_Info * J_source;
 		H.block<6, 6>(id_j, id_j).noalias() +=
 			line_process_iter * J_targetT_Info * J_target;
-		b.block<6, 1>(id_i, 0).noalias() +=
+		b.block<6, 1>(id_i, 0).noalias() -=
 			line_process_iter * eT_Info.transpose() * J_source;
-		b.block<6, 1>(id_j, 0).noalias() +=
+		b.block<6, 1>(id_j, 0).noalias() -=
 			line_process_iter * eT_Info.transpose() * J_target;
-		total_residual += line_process_iter * residual;
 	}
-	return std::make_tuple(std::move(H), std::move(b), total_residual);
+	return std::make_tuple(std::move(H), std::move(b));
 }
 
 }	// unnamed namespace
@@ -305,7 +307,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
 	line_process.setOnes();
 
-	Eigen::VectorXd evec = ComputeE(*pose_graph_refined);
+	Eigen::VectorXd evec;
+	double total_residual;
+	std::tie(evec, total_residual) = ComputeE(*pose_graph_refined);
 
 	for (int iter = 0; iter < MAX_ITER; iter++) {
 		
@@ -313,14 +317,13 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 
 		Eigen::MatrixXd H;
 		Eigen::VectorXd b;
-		double total_residual;
-		std::tie(H, b, total_residual) = ComputeH(
+		std::tie(H, b) = ComputeH(
 				*pose_graph_refined, evec, line_process);
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
 		// why determinant of H is inf?
 		H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
-		Eigen::VectorXd delta = -H.colPivHouseholderQr().solve(b);
+		Eigen::VectorXd delta = H.colPivHouseholderQr().solve(b);
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -329,7 +332,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 					TransformVector6dToMatrix4d(delta_iter) * 
 					pose_graph_refined->nodes_[iter_node].pose_;
 		}
-		evec = ComputeE(*pose_graph_refined);
+		std::tie(evec, total_residual) = ComputeE(*pose_graph_refined);
 		line_process = ComputeLineprocess(*pose_graph_refined, evec);
 
 		// update line process only for loop edges
@@ -354,7 +357,10 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
 	*pose_graph_refined = pose_graph;
 
-	Eigen::VectorXd evec = ComputeE(*pose_graph_refined);
+	Eigen::VectorXd evec;
+	double current_residual, new_residual;
+	std::tie(evec, new_residual) = ComputeE(*pose_graph_refined);
+	current_residual = new_residual;
 
 	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
 	line_process.setOnes();
@@ -362,33 +368,44 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	Eigen::MatrixXd H_I = Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6);
 	Eigen::MatrixXd H;
 	Eigen::VectorXd b;
-	Eigen::VectorXd x(n_nodes * 6);
-	double total_residual;
-	std::tie(H, b, total_residual) = ComputeH(
+	//Eigen::VectorXd x(n_nodes * 6);	
+	std::tie(H, b) = ComputeH(
 		*pose_graph_refined, evec, line_process);
 
 	//////////////////////////////
 	//// codes working for LM
 	Eigen::VectorXd H_diag = H.diagonal();
-	double tau = 1e-5; // not sure about tau
-	double vu = 2.0;
-	double lambda = tau * H_diag.maxCoeff();
+	double tau = 1e-5;
+	double currentLambda = tau * H_diag.maxCoeff();
+	double ni = 2.0;
+	double rho = 0.0;
+
 	bool stop = false;
 	if (b.maxCoeff() < EPS_1) // b is near zero. Bad condition.
-		stop = true;
-	double rho = 1.0;
+		stop = true;	
+
+	PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
+		current_residual, currentLambda);
 
 	for (int iter = 0; iter < MAX_ITER && !stop; iter++) {
 		int lm_count = 0;
 		do {
-			Eigen::MatrixXd H_LM = H + lambda * H_I;
-			Eigen::VectorXd delta = -H_LM.colPivHouseholderQr().solve(b);
-			if (delta.norm() < EPS_2 * (x.norm() + EPS_2)) {
+			Eigen::MatrixXd H_LM = H + currentLambda * H_I;
+			Eigen::VectorXd delta = H_LM.colPivHouseholderQr().solve(b);
+			
+			double solver_error = (H_LM*(delta)-b).norm();
+			if (solver_error > EPS_5) {
+				PrintWarning("[Job finished] error norm %e is higher than %e\n",
+					solver_error, EPS_5);
 				stop = true;
-				std::cout << "delta.norm() < EPS_2 * (x.norm() + EPS_2)" 
-					<< std::endl;
 			}
-			else {
+
+			//if (delta.norm() < EPS_2 * (x.norm() + EPS_2)) {
+			//	stop = true;
+			//	std::cout << "delta.norm() < EPS_2 * (x.norm() + EPS_2)" 
+			//		<< std::endl;
+			//}
+			//else {
 				// update pose of nodes
 				std::shared_ptr<PoseGraph> pose_graph_refined_new = 
 						std::make_shared<PoseGraph>();
@@ -400,39 +417,49 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 						pose_graph_refined_new->nodes_[iter_node].pose_;
 				}
 				// todo: update x as well
-				Eigen::VectorXd evec_new = ComputeE(*pose_graph_refined_new);
-				rho = (pow(evec.norm(),2.0) - pow(evec_new.norm(),2.0));
-				std::cout << "rho : " << rho << std::endl;
+				Eigen::VectorXd evec_new;
+				std::tie(evec_new, new_residual) = ComputeE(*pose_graph_refined_new);
+				rho = (current_residual - new_residual) / (delta.dot(currentLambda * delta + b) + 1e-3);
+				//std::cout << "rho : " << rho << std::endl;
 				if (rho > 0) {
-					if (evec.norm() - evec_new.norm() < EPS_4 * evec.norm()) {
+					if (current_residual - new_residual < EPS_4 * evec.norm()) {
 						stop = true;
-						std::cout << "evec.norm() - evec_new.norm() < EPS_4 * evec.norm()"
-							<< std::endl;
+						PrintDebug("[Job finished] current_residual - new_residual < %e * current_residual\n", EPS_4);
 					}
-					evec = evec_new;
-					*pose_graph_refined = *pose_graph_refined_new;
-					std::tie(H, b, total_residual) = ComputeH(
-						*pose_graph_refined, evec, line_process);
-					stop = stop || (b.maxCoeff() < EPS_1);
 					double alpha = 1. - pow((2 * rho - 1), 3);
 					// crop lambda between minimum and maximum factors
-					alpha = fmin(alpha, _goodStepUpperScale);
-					double scaleFactor = fmax(_goodStepLowerScale, alpha);
-					lambda *= scaleFactor;
-					vu = 2;
-					std::cout << "solution accepted" << std::endl;
+					alpha = (std::min)(alpha, _goodStepUpperScale);
+					double scaleFactor = (std::max)(_goodStepLowerScale, alpha);
+					currentLambda *= scaleFactor;
+					ni = 2;
+					current_residual = new_residual;
+					//_optimizer->discardTop();
+
+					evec = evec_new;
+					*pose_graph_refined = *pose_graph_refined_new;
+					std::tie(H, b) = ComputeH(
+						*pose_graph_refined, evec, line_process);
+					
+					if (b.maxCoeff() < EPS_1) {
+						stop = true;
+						PrintDebug("[Job finished] b.maxCoeff() < %e\n", EPS_1);
+					}					
 				}
 				else {
-					lambda *= vu;
-					vu = 2 * vu;
-					std::cout << "change lambda : " << lambda << std::endl;
+					currentLambda *= ni;
+					ni *= 2;
 				}
-			}
-			PrintDebug("[LM Loop %02d] residual : %e, lambda : %e\n", 
-				lm_count++, total_residual, lambda);
+			lm_count++;
+			//}
+			//PrintDebug("[LM Loop %02d] residual : %e, lambda : %e\n", 
+			//	lm_count++, total_residual, lambda);
 		} while (!((rho > 0) || stop));
-		PrintDebug("[Main Loop %02d] residual : %e\n", iter, total_residual);
-		stop = evec.norm() < EPS_3;
+		if (!stop) {
+			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, LM iteration : %d\n",
+				iter, current_residual, currentLambda, lm_count);
+		}
+		if (current_residual < EPS_3)
+			stop = true;
 	}	// end for
 	return pose_graph_refined;
 }
@@ -878,9 +905,10 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> linearizeOplus(
 	return std::make_tuple(std::move(_jacobianOplusXi), std::move(_jacobianOplusXj));
 }
 
-Eigen::VectorXd ComputeEG20(const PoseGraph &pose_graph)
+std::tuple<Eigen::VectorXd, double> ComputeEG20(const PoseGraph &pose_graph)
 {
 	int n_edges = (int)pose_graph.edges_.size();
+	double residual = 0.0;
 	Eigen::VectorXd output(n_edges * 6);
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		Eigen::Matrix4d X, Ts, Tt;
@@ -891,8 +919,11 @@ Eigen::VectorXd ComputeEG20(const PoseGraph &pose_graph)
 		Eigen::Isometry3d delta = Eigen::Isometry3d(X.inverse() * Ts.inverse() * Tt); 
 		Eigen::Vector6d e = toVectorMQT(delta);
 		output.block<6, 1>(iter_edge * 6, 0) = e;
-		
+
 		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
+		residual += e.transpose() * te.information_ * e;
+		
+		//const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
 		//if (te.source_node_id_ == 195 && te.target_node_id_ == 209) {
 		//	std::cout << "[ComputeEG20]" << 
 		//		te.source_node_id_ << "-"  << te.target_node_id_ << std::endl;
@@ -909,10 +940,10 @@ Eigen::VectorXd ComputeEG20(const PoseGraph &pose_graph)
 		//}	
 		
 	}
-	return std::move(output);
+	return std::make_tuple(std::move(output), residual);
 }
 
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeHG2O(
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeHG2O(
 	const PoseGraph &pose_graph, const Eigen::VectorXd &evec,
 	const Eigen::VectorXd &line_process)
 {
@@ -928,7 +959,6 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeHG2O(
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
 		Eigen::Vector6d e = evec.block<6, 1>(iter_edge * 6, 0);
-		double residual = e.transpose() * t.information_ * e;
 
 		Eigen::Matrix4d X, Ts, Tt;
 		std::tie(X, Ts, Tt) = GetRelativePosesG2O(pose_graph, iter_edge);
@@ -966,13 +996,12 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeHG2O(
 			line_process_iter * J_targetT_Info * J_source;
 		H.block<6, 6>(id_j, id_j).noalias() +=
 			line_process_iter * J_targetT_Info * J_target;
-		b.block<6, 1>(id_i, 0).noalias() +=
+		b.block<6, 1>(id_i, 0).noalias() -=
 			line_process_iter * eT_Info.transpose() * J_source;
-		b.block<6, 1>(id_j, 0).noalias() +=
+		b.block<6, 1>(id_j, 0).noalias() -=
 			line_process_iter * eT_Info.transpose() * J_target;
-		total_residual += line_process_iter * residual;
 	}
-	return std::make_tuple(std::move(H), std::move(b), total_residual);
+	return std::make_tuple(std::move(H), std::move(b));
 }
 
 void approximateNearestOrthogonalMatrix(const Eigen::Matrix3d& R)
@@ -1034,41 +1063,42 @@ std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 	//	x.block<6,1>(node_iter*6,0) = toVectorMQT(Eigen::Isometry3d(eigen_mat));
 	//}
 
-	Eigen::VectorXd evec = ComputeEG20(*pose_graph_refined);
+	Eigen::VectorXd evec;
+	double total_residual;
+	std::tie(evec, total_residual) = ComputeEG20(*pose_graph_refined);
 
-	//double MAX_ITER_DEBUG = 2;
-	for (int iter = 0; iter < MAX_ITER; iter++) {
+	double MAX_ITER_DEBUG = 2;
+	for (int iter = 0; iter < MAX_ITER_DEBUG; iter++) {
 
 		int line_process_cnt = 0;
 
 		Eigen::MatrixXd H;
 		Eigen::VectorXd b;
-		double total_residual;
-		std::tie(H, b, total_residual) = ComputeHG2O(
+		std::tie(H, b) = ComputeHG2O(
 			*pose_graph_refined, evec, line_process);
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
 		// why determinant of H is inf?
-		H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
-		Eigen::VectorXd delta = -H.colPivHouseholderQr().solve(b);
-		Eigen::VectorXd err = H*(-delta) - b;
+		H += 10.0 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
+		Eigen::VectorXd delta = H.colPivHouseholderQr().solve(b);
+		Eigen::VectorXd err = H*(delta) - b;
 		std::cout << "err norm : " << err.norm() << std::endl;
 
-		//if (iter == 0) {
-		//	//std::cout << "Saving matrix" << std::endl;
-		//	//std::ofstream file("H.txt");
-		//	//file << H;
-		//	//file.close();
-		//	//std::ofstream file2("b.txt");
-		//	//file2 << b;
-		//	//file2.close();
-		//	std::cout << "Loading matrix" << std::endl;
-		//	std::ifstream file("x.txt");
-		//	for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
-		//		file >> delta(iter_node);
-		//	}
-		//	file.close();
-		//}
+		if (iter == 0) {
+			std::cout << "Saving matrix" << std::endl;
+			std::ofstream file("H.txt");
+			file << H;
+			file.close();
+			std::ofstream file2("b.txt");
+			file2 << b;
+			file2.close();
+			//std::cout << "Loading matrix" << std::endl;
+			//std::ifstream file3("x.txt");
+			//for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
+			//	file3 >> delta(iter_node);
+			//}
+			//file3.close();
+		}
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -1077,13 +1107,151 @@ std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 			oplusImpl(delta_iter, temp);
 			pose_graph_refined->nodes_[iter_node].pose_ = temp.matrix();
 		}
-		evec = ComputeEG20(*pose_graph_refined);
+		std::tie(evec, total_residual) = ComputeEG20(*pose_graph_refined);
 		//line_process = ComputeLineprocess(*pose_graph_refined, evec);
 
 		// update line process only for loop edges
 
 		if (stopping_criterion()) // todo: adding stopping criterion
 			break;
+	}
+
+	return pose_graph_refined;
+}
+
+/// inconsistency: the loop iteration
+/// how to use x?
+std::shared_ptr<PoseGraph> GlobalOptimizationG2OLM(const PoseGraph &pose_graph)
+{
+	int n_nodes = (int)pose_graph.nodes_.size();
+	int n_edges = (int)pose_graph.edges_.size();
+
+	PrintDebug("[GlobalOptimizationG2OLM] PoseGraph having %d nodes and %d edges\n",
+		n_nodes, n_edges);
+
+	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
+	*pose_graph_refined = pose_graph;
+
+	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
+	line_process.setOnes();
+	
+	Eigen::VectorXd evec;
+	double current_residual;	
+	std::tie(evec, current_residual) = ComputeEG20(*pose_graph_refined);
+	double new_residual = current_residual;
+
+	Eigen::MatrixXd H;
+	Eigen::MatrixXd H_I = Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6);
+	Eigen::VectorXd b;
+	std::tie(H, b) = ComputeHG2O(
+		*pose_graph_refined, evec, line_process);
+
+	Eigen::VectorXd H_diag = H.diagonal();
+	double tau = 1e-5; 
+	double currentLambda = tau * H_diag.maxCoeff();	
+	double ni = 2.0;
+	double rho = 0;
+
+	bool stop = false;
+	if (b.maxCoeff() < EPS_1) // b is near zero. Bad condition.
+		stop = true;
+
+	PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
+		current_residual, currentLambda);
+
+	//double MAX_ITER_DEBUG = 2;
+	for (int iter = 0; iter < MAX_ITER && !stop; iter++) {
+		int lm_count = 0;
+		do {
+			// why determinant of H is inf?
+			Eigen::MatrixXd H_LM = H + currentLambda * H_I;
+			Eigen::VectorXd delta = H_LM.colPivHouseholderQr().solve(b);
+			
+			double solver_error = (H_LM*(delta) - b).norm();
+			if (solver_error > EPS_5) {
+				PrintWarning("[Job finished] error norm %e is higher than %e\n", 
+						solver_error, EPS_5);
+				stop = true;
+			}
+
+			// update pose of nodes
+			std::shared_ptr<PoseGraph> pose_graph_refined_new =
+				std::make_shared<PoseGraph>();
+			*pose_graph_refined_new = *pose_graph_refined;
+			for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
+				Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
+				Eigen::Isometry3d temp = Eigen::Isometry3d(pose_graph_refined_new->nodes_[iter_node].pose_);
+				oplusImpl(delta_iter, temp);
+				pose_graph_refined_new->nodes_[iter_node].pose_ = temp.matrix();
+			}
+			Eigen::VectorXd evec_new;
+			std::tie(evec_new, new_residual) = ComputeEG20(*pose_graph_refined_new);
+			//PrintDebug("Chi2 error %e -> %e\n", current_residual, new_residual);
+			//line_process = ComputeLineprocess(*pose_graph_refined, evec);
+
+			// update line process only for loop edges
+
+			//double temp_rho = (delta.dot(currentLambda * delta + b) + 1e-3);
+			//PrintDebug("temp rho : %e\n", temp_rho);
+
+			rho = (current_residual - new_residual) / (delta.dot(currentLambda * delta + b) + 1e-3);
+			//PrintDebug("rho : %e\n", rho);
+			if (rho > 0) { // last step was good
+				if (current_residual - new_residual < EPS_4 * current_residual) {
+					stop = true;
+					PrintDebug("[Job finished] current_residual - new_residual < %e * current_residual\n", EPS_4);
+				}
+				double alpha = 1. - pow((2 * rho - 1), 3);
+				// crop lambda between minimum and maximum factors
+				alpha = (std::min)(alpha, _goodStepUpperScale);
+				double scaleFactor = (std::max)(_goodStepLowerScale, alpha);
+				currentLambda *= scaleFactor;
+				ni = 2;
+				current_residual = new_residual;
+				//_optimizer->discardTop();
+
+				evec = evec_new;
+				*pose_graph_refined = *pose_graph_refined_new;
+				std::tie(H, b) = ComputeHG2O(
+					*pose_graph_refined, evec, line_process);
+
+				if (b.maxCoeff() < EPS_1) {
+					stop = true;
+					PrintDebug("[Job finished] b.maxCoeff() < %e\n", EPS_1);
+				}
+			}
+			else {
+				currentLambda *= ni;
+				ni *= 2;
+			}
+
+			//if (iter == 0) {
+			//	//std::cout << "Saving matrix" << std::endl;
+			//	//std::ofstream file("H.txt");
+			//	//file << H;
+			//	//file.close();
+			//	//std::ofstream file2("b.txt");
+			//	//file2 << b;
+			//	//file2.close();
+			//	std::cout << "Loading matrix" << std::endl;
+			//	std::ifstream file("x.txt");
+			//	for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
+			//		file >> delta(iter_node);
+			//	}
+			//	file.close();
+			//}
+
+			//PrintDebug("[LM Loop %02d] changing lambda : %e\n",
+			//	lm_count, currentLambda);
+			lm_count++;		
+
+		} while (!(rho > 0 || stop));
+		if (!stop) {
+			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, LM iteration : %d\n",
+					iter, current_residual, currentLambda, lm_count);
+		}			
+		if (current_residual < EPS_3)
+			stop = true;
 	}
 
 	return pose_graph_refined;
