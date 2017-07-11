@@ -261,6 +261,12 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
 		Eigen::Matrix6d J_source, J_target;
 		//std::tie(J_source, J_target) = GetNumericalJacobian(X_inv, Ts, Tt_inv);
 		std::tie(J_source, J_target) = GetAnalysticalJacobian(X_inv, Ts, Tt_inv);
+
+		//if (iter_edge == 100) {
+		//	std::cout << J_source << std::endl;
+		//	std::cout << J_target << std::endl;
+		//}			
+
 		Eigen::Matrix6d J_sourceT_Info =
 			J_source.transpose() * t.information_;
 		Eigen::Matrix6d J_targetT_Info =
@@ -322,8 +328,26 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
 		// why determinant of H is inf?
-		H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
+		//H += 10 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
 		Eigen::VectorXd delta = H.colPivHouseholderQr().solve(b);
+		Eigen::VectorXd err = H*(delta)-b;
+		std::cout << "err norm : " << err.norm() << std::endl;
+		
+		//if (iter == 0) {
+		//	//std::cout << "Saving matrix" << std::endl;
+		//	//std::ofstream file("H.txt");
+		//	//file << H;
+		//	//file.close();
+		//	//std::ofstream file2("b.txt");
+		//	//file2 << b;
+		//	//file2.close();
+		//	std::cout << "Loading matrix" << std::endl;
+		//	std::ifstream file3("x.txt");
+		//	for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
+		//		file3 >> delta(iter_node);
+		//	}
+		//	file3.close();
+		//}
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -331,6 +355,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 			pose_graph_refined->nodes_[iter_node].pose_ = 
 					TransformVector6dToMatrix4d(delta_iter) * 
 					pose_graph_refined->nodes_[iter_node].pose_;
+
+			//if (iter_node == 100)
+			//	std::cout << delta_iter << std::endl;
 		}
 		std::tie(evec, total_residual) = ComputeE(*pose_graph_refined);
 		line_process = ComputeLineprocess(*pose_graph_refined, evec);
@@ -1067,8 +1094,8 @@ std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 	double total_residual;
 	std::tie(evec, total_residual) = ComputeEG20(*pose_graph_refined);
 
-	double MAX_ITER_DEBUG = 2;
-	for (int iter = 0; iter < MAX_ITER_DEBUG; iter++) {
+	//double MAX_ITER_DEBUG = 2;
+	for (int iter = 0; iter < MAX_ITER; iter++) {
 
 		int line_process_cnt = 0;
 
@@ -1079,26 +1106,26 @@ std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph)
 		PrintDebug("Iter : %d, residual : %e\n", iter, total_residual);
 
 		// why determinant of H is inf?
-		H += 10.0 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
+		//H += 10.0 * Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6); // simple LM
 		Eigen::VectorXd delta = H.colPivHouseholderQr().solve(b);
 		Eigen::VectorXd err = H*(delta) - b;
 		std::cout << "err norm : " << err.norm() << std::endl;
 
-		if (iter == 0) {
-			std::cout << "Saving matrix" << std::endl;
-			std::ofstream file("H.txt");
-			file << H;
-			file.close();
-			std::ofstream file2("b.txt");
-			file2 << b;
-			file2.close();
-			//std::cout << "Loading matrix" << std::endl;
-			//std::ifstream file3("x.txt");
-			//for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
-			//	file3 >> delta(iter_node);
-			//}
-			//file3.close();
-		}
+		//if (iter == 0) {
+		//	//std::cout << "Saving matrix" << std::endl;
+		//	//std::ofstream file("H.txt");
+		//	//file << H;
+		//	//file.close();
+		//	//std::ofstream file2("b.txt");
+		//	//file2 << b;
+		//	//file2.close();
+		//	//std::cout << "Loading matrix" << std::endl;
+		//	//std::ifstream file3("x.txt");
+		//	//for (int iter_node = 0; iter_node < n_nodes * 6; iter_node++) {
+		//	//	file3 >> delta(iter_node);
+		//	//}
+		//	//file3.close();
+		//}
 
 		// update pose of nodes
 		for (int iter_node = 0; iter_node < n_nodes; iter_node++) {

@@ -58,14 +58,20 @@ std::shared_ptr<PoseGraph> CustomLoadFromINFO(std::string filename) {
 				fgets(buffer, 1024, f);
 				sscanf(buffer, "%lf %lf %lf %lf %lf %lf", &info(5, 0), &info(5, 1), &info(5, 2), &info(5, 3), &info(5, 4), &info(5, 5));
 				PoseGraphEdge new_edge;
-				new_edge.source_node_id_ = id1;
-				new_edge.target_node_id_ = id2;		
-				new_edge.information_ = info;
-				//info_new.block<3, 3>(3, 3) = info.block<3, 3>(0, 0);
-				//info_new.block<3, 3>(3, 0) = info.block<3, 3>(0, 3);
-				//info_new.block<3, 3>(0, 3) = info.block<3, 3>(3, 0);
-				//info_new.block<3, 3>(0, 0) = info.block<3, 3>(3, 3);
-				//new_edge.information_ = info_new;
+				///////
+				//new_edge.source_node_id_ = id1;
+				//new_edge.target_node_id_ = id2;		
+				//new_edge.information_ = info;
+				///////
+				///
+				new_edge.source_node_id_ = id2;
+				new_edge.target_node_id_ = id1;
+				info_new.block<3, 3>(3, 3) = info.block<3, 3>(0, 0);
+				info_new.block<3, 3>(3, 0) = info.block<3, 3>(0, 3);
+				info_new.block<3, 3>(0, 3) = info.block<3, 3>(3, 0);
+				info_new.block<3, 3>(0, 0) = info.block<3, 3>(3, 3);
+				new_edge.information_ = info_new;
+				///
 				output->edges_.push_back(new_edge);
 			}
 		}
@@ -94,8 +100,10 @@ std::shared_ptr<PoseGraph> CustomLoadFromLOG(std::string filename) {
 				fgets(buffer, 1024, f);
 				sscanf(buffer, "%lf %lf %lf %lf", &trans(3, 0), &trans(3, 1), &trans(3, 2), &trans(3, 3));
 				PoseGraphEdge new_edge;
-				new_edge.source_node_id_ = id1;
-				new_edge.target_node_id_ = id2;
+				//new_edge.source_node_id_ = id1;
+				//new_edge.target_node_id_ = id2;
+				new_edge.source_node_id_ = id2;
+				new_edge.target_node_id_ = id1;
 				new_edge.transformation_ = trans;
 				output->edges_.push_back(new_edge);
 			}
@@ -211,7 +219,7 @@ int main(int argc, char **argv)
 	WritePoseGraph("test_pose_graph_old.json", *old_pose_graph);
 	auto pose_graph = CreatePoseGraphFromFile(
 		"C:/git/Open3D/build/bin/Test/Release/test_pose_graph_old.json");
-	auto pose_graph_optimized = GlobalOptimizationG2O(*pose_graph);
+	auto pose_graph_optimized = GlobalOptimizationLM(*pose_graph);
 	////////////////////
 
 
