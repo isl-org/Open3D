@@ -61,6 +61,7 @@ inline Eigen::Vector6d Extract6DVector(Eigen::Matrix4d input)
 	output(2) = (-input(0, 1) + input(1, 0)) / 2.0;
 	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
 	return std::move(output);
+	//return TransformMatrix4dToVector6d(input);
 }
 
 /// todo: we may also do batch inverse for T_j
