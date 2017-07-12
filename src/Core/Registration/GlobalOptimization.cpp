@@ -74,9 +74,9 @@ inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta)
 {
 	Eigen::Matrix4d delta_mat;
 	delta_mat << 1, -delta(2), delta(1), delta(3),
-				delta(2), 1, -delta(0), delta(4),
-				-delta(1), delta(0), 1, delta(5),
-				0, 0, 0, 1;
+			delta(2), 1, -delta(0), delta(4),
+			-delta(1), delta(0), 1, delta(5),
+			0, 0, 0, 1;
 	return delta_mat;
 }
 
