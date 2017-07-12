@@ -37,12 +37,10 @@ namespace three {
 /// Function to optimize a PoseGraph 
 /// Reference: g2o: A General Framework for Graph Optimization
 /// http://europa.informatik.uni-freiburg.de/files/kuemmerle11icra.pdf
+/// Robust Reconstruction of Indoor Scenes, CVPR 2015
+/// SBA: A Software Package for Generic Sparse Bundle Adjustment
 std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph);
 
 std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph);
-
-std::shared_ptr<PoseGraph> GlobalOptimizationG2O(const PoseGraph &pose_graph);
-
-std::shared_ptr<PoseGraph> GlobalOptimizationG2OLM(const PoseGraph &pose_graph);
 
 }	// namespace three
