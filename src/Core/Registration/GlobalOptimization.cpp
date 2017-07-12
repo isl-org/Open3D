@@ -326,13 +326,13 @@ std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
 std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph, 
 		Eigen::VectorXd line_process)
 {
-	std::shared_ptr<PoseGraph> pose_graph_prunned =
+	std::shared_ptr<PoseGraph> pose_graph_pruned =
 		std::make_shared<PoseGraph>();
 
 	int n_nodes = (int)pose_graph.nodes_.size();
 	for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
 		const PoseGraphNode &t = pose_graph.nodes_[iter_node];
-		pose_graph_prunned->nodes_.push_back(t);
+		pose_graph_pruned->nodes_.push_back(t);
 	}
 	int n_edges = (int)pose_graph.edges_.size();
 	int line_process_cnt = 0;
@@ -340,13 +340,13 @@ std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph,
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];		
 		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
 			if (line_process(line_process_cnt++) > PRUNE) {
-				pose_graph_prunned->edges_.push_back(t);
+				pose_graph_pruned->edges_.push_back(t);
 			}
 		} else {
-			pose_graph_prunned->edges_.push_back(t);
+			pose_graph_pruned->edges_.push_back(t);
 		}
 	}
-	return pose_graph_prunned;
+	return pose_graph_pruned;
 }
 
 }	// unnamed namespace
@@ -523,9 +523,9 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 		PrintDebug("[Job finished] reached maximum number of iterations\n", EPS_3);
 	}
 
-	std::shared_ptr<PoseGraph> pose_graph_refined_prunned =
+	std::shared_ptr<PoseGraph> pose_graph_refined_pruned =
 			PruneInvalidEdges(*pose_graph_refined, line_process);
-	return pose_graph_refined_prunned;
+	return pose_graph_refined_pruned;
 }
 
 }	// namespace three
