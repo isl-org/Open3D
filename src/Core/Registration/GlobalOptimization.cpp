@@ -189,7 +189,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetAnalysticalJacobian(
 	const Eigen::Matrix4d &T_j_inv)
 {
 	Eigen::Matrix6d J_source =
-		GetSingleAnalysticalJacobian(X_inv, T_i, T_j_inv);
+			GetSingleAnalysticalJacobian(X_inv, T_i, T_j_inv);
 	Eigen::Matrix6d J_target = -J_source;
 	return std::make_tuple(std::move(J_source), std::move(J_target));
 }
@@ -268,9 +268,9 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
 		std::tie(J_source, J_target) = GetAnalysticalJacobian(X_inv, Ts, Tt_inv);		
 
 		Eigen::Matrix6d J_sourceT_Info =
-			J_source.transpose() * t.information_;
+				J_source.transpose() * t.information_;
 		Eigen::Matrix6d J_targetT_Info =
-			J_target.transpose() * t.information_;
+				J_target.transpose() * t.information_;
 		Eigen::Vector6d eT_Info = e.transpose() * t.information_;
 
 		double line_process_iter = 1.0;
@@ -280,17 +280,17 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
 		int id_i = t.source_node_id_ * 6;
 		int id_j = t.target_node_id_ * 6;
 		H.block<6, 6>(id_i, id_i).noalias() +=
-			line_process_iter * J_sourceT_Info * J_source;
+				line_process_iter * J_sourceT_Info * J_source;
 		H.block<6, 6>(id_i, id_j).noalias() +=
-			line_process_iter * J_sourceT_Info * J_target;
+				line_process_iter * J_sourceT_Info * J_target;
 		H.block<6, 6>(id_j, id_i).noalias() +=
-			line_process_iter * J_targetT_Info * J_source;
+				line_process_iter * J_targetT_Info * J_source;
 		H.block<6, 6>(id_j, id_j).noalias() +=
-			line_process_iter * J_targetT_Info * J_target;
+				line_process_iter * J_targetT_Info * J_target;
 		b.block<6, 1>(id_i, 0).noalias() -=
-			line_process_iter * eT_Info.transpose() * J_source;
+				line_process_iter * eT_Info.transpose() * J_source;
 		b.block<6, 1>(id_j, 0).noalias() -=
-			line_process_iter * eT_Info.transpose() * J_target;
+				line_process_iter * eT_Info.transpose() * J_target;
 	}
 	return std::make_tuple(std::move(H), std::move(b));
 }
@@ -470,8 +470,10 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 						UpdatePoseGraph(*pose_graph_refined, delta);
 
 				Eigen::VectorXd evec_new;
-				std::tie(evec_new, new_residual) = ComputeE(*pose_graph_refined_new, line_process);
-				rho = (current_residual - new_residual) / (delta.dot(current_lambda * delta + b) + 1e-3);
+				std::tie(evec_new, new_residual) = 
+						ComputeE(*pose_graph_refined_new, line_process);
+				rho = (current_residual - new_residual) / 
+						(delta.dot(current_lambda * delta + b) + 1e-3);
 				if (rho > 0) {
 					if (current_residual - new_residual < EPS_4 * evec.norm()) {
 						stop = true;
