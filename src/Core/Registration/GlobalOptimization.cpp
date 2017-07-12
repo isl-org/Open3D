@@ -70,7 +70,8 @@ inline Eigen::Vector6d GetDiffVec(const Eigen::Matrix4d &X_inv,
 	return GetApproximate6DVector(temp);
 }
 
-inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta) {
+inline Eigen::Matrix4d LinearizedSmallTransform(Eigen::Vector6d delta) 
+{
 	Eigen::Matrix4d delta_mat;
 	delta_mat << 1, -delta(2), delta(1), delta(3),
 				delta(2), 1, -delta(0), delta(4),
@@ -89,8 +90,8 @@ inline Eigen::Matrix4d GetIncrementForTarget(const Eigen::Matrix4d &X_inv,
 }
 
 inline Eigen::Matrix4d GetIncrementForSource(const Eigen::Matrix4d &X_inv,
-	const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv,
-	const Eigen::Vector6d &delta)
+		const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv,
+		const Eigen::Vector6d &delta)
 {
 	Eigen::Matrix4d output = 
 			X_inv * T_j_inv * LinearizedSmallTransform(delta) * T_i;
@@ -121,8 +122,8 @@ inline Eigen::Matrix6d GetSingleNumericalJacobian(const Eigen::Matrix4d &X_inv,
 }
 
 inline std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetNumericalJacobian(
-	const Eigen::Matrix4d &X_inv, const Eigen::Matrix4d &T_i, 
-	const Eigen::Matrix4d &T_j_inv)
+		const Eigen::Matrix4d &X_inv, const Eigen::Matrix4d &T_i, 
+		const Eigen::Matrix4d &T_j_inv)
 {
 	function_type function_J_source = &GetIncrementForSource;
 	function_type function_J_target = &GetIncrementForTarget;
@@ -134,7 +135,7 @@ inline std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetNumericalJacobian(
 }
 
 inline std::tuple<Eigen::Matrix4d, Eigen::Matrix4d, Eigen::Matrix4d>
-	GetRelativePoses(const PoseGraph &pose_graph, int edge_id) 
+		GetRelativePoses(const PoseGraph &pose_graph, int edge_id) 
 {
 	const PoseGraphEdge &te = pose_graph.edges_[edge_id];
 	const PoseGraphNode &ts = pose_graph.nodes_[te.source_node_id_];
@@ -173,8 +174,8 @@ void InitAnalysticalJacobianOperators()
 }
 
 inline Eigen::Matrix6d GetSingleAnalysticalJacobian(
-	const Eigen::Matrix4d &X_inv,
-	const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv)
+		const Eigen::Matrix4d &X_inv,
+		const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv)
 {
 	Eigen::Matrix6d output = Eigen::Matrix6d::Zero();
 	for (int i = 0; i < 6; i++) {
@@ -185,8 +186,8 @@ inline Eigen::Matrix6d GetSingleAnalysticalJacobian(
 }
 
 std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetAnalysticalJacobian(
-	const Eigen::Matrix4d &X_inv, const Eigen::Matrix4d &T_i,
-	const Eigen::Matrix4d &T_j_inv)
+		const Eigen::Matrix4d &X_inv, const Eigen::Matrix4d &T_i,
+		const Eigen::Matrix4d &T_j_inv)
 {
 	Eigen::Matrix6d J_source =
 			GetSingleAnalysticalJacobian(X_inv, T_i, T_j_inv);
@@ -195,7 +196,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetAnalysticalJacobian(
 }
 
 std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
-	const PoseGraph &pose_graph, const Eigen::VectorXd &evec) 
+		const PoseGraph &pose_graph, const Eigen::VectorXd &evec) 
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
@@ -225,7 +226,7 @@ std::tuple<Eigen::VectorXd, double> ComputeE(const PoseGraph &pose_graph,
 		Eigen::VectorXd line_process) 
 {
 	int n_edges = (int)pose_graph.edges_.size();
-	double residual;
+	double residual = 0.0;
 	Eigen::VectorXd output(n_edges * 6);
 	int line_process_cnt = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
@@ -244,8 +245,8 @@ std::tuple<Eigen::VectorXd, double> ComputeE(const PoseGraph &pose_graph,
 }
 
 std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
-	const PoseGraph &pose_graph, const Eigen::VectorXd &evec,
-	const Eigen::VectorXd &line_process)
+		const PoseGraph &pose_graph, const Eigen::VectorXd &evec,
+		const Eigen::VectorXd &line_process)
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
@@ -317,8 +318,8 @@ std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
 	for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
 		Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
 		pose_graph_updated->nodes_[iter_node].pose_ =
-			TransformVector6dToMatrix4d(delta_iter) *
-			pose_graph_updated->nodes_[iter_node].pose_;
+				TransformVector6dToMatrix4d(delta_iter) *
+				pose_graph_updated->nodes_[iter_node].pose_;
 	}
 	return pose_graph_updated;
 }
@@ -395,7 +396,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 		std::tie(evec, total_residual) = ComputeE(*pose_graph_refined, line_process);
 		int valid_edges;
 		std::tie(line_process, valid_edges) = 
-			ComputeLineprocess(*pose_graph_refined, evec);
+				ComputeLineprocess(*pose_graph_refined, evec);
 
 		// update line process only for loop edges
 	}
@@ -408,7 +409,7 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	int n_edges = (int)pose_graph.edges_.size();
 
 	PrintDebug("Optimizing PoseGraph having %d nodes and %d edges\n",
-		n_nodes, n_edges);
+			n_nodes, n_edges);
 
 	InitAnalysticalJacobianOperators();
 
@@ -440,7 +441,7 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	double rho = 0.0;
 
 	PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
-		current_residual, current_lambda);
+			current_residual, current_lambda);
 
 	bool stop = false;
 	if (b.maxCoeff() < EPS_1) {
@@ -458,13 +459,14 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 			double solver_error = (H_LM*(delta)-b).norm();
 			if (solver_error > EPS_5) {
 				PrintWarning("[Job finished] error norm %e is higher than %e\n",
-					solver_error, EPS_5);
+						solver_error, EPS_5);
 				stop = true;
 			}
 
 			if (delta.norm() < EPS_2 * (x.norm() + EPS_2)) {
 				stop = true;
-				PrintDebug("[Job finished] delta.norm() < %e * (x.norm() + %e)\n", EPS_2, EPS_2);
+				PrintDebug("[Job finished] delta.norm() < %e * (x.norm() + %e)\n", 
+						EPS_2, EPS_2);
 			} else {
 				std::shared_ptr<PoseGraph> pose_graph_refined_new =
 						UpdatePoseGraph(*pose_graph_refined, delta);
@@ -511,7 +513,8 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 		} while (!((rho > 0) || stop));
 		if (!stop) {
 			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, valid edges : %d/%d\n",
-				iter, current_residual, current_lambda, valid_edges, n_edges - (n_nodes - 1));
+					iter, current_residual, current_lambda, 
+					valid_edges, n_edges - (n_nodes - 1));
 		}
 		if (current_residual < EPS_3) {
 			stop = true;
