@@ -145,15 +145,15 @@ void pybind_image_methods(py::module &m)
 		return WriteImage(filename, image, quality);
 	}, "Function to write Image to file", "filename"_a, "image"_a,
 			"quality"_a = 90);
-	py::enum_<FilterType>(m, "FilterType")
-		.value("Gaussian3", FILTER_GAUSSIAN_3)
-		.value("Gaussian5", FILTER_GAUSSIAN_5)
-		.value("Gaussian7", FILTER_GAUSSIAN_7)
-		.value("Sobel3dx", FILTER_SOBEL_3_DX)
-		.value("Sobel3dy", FILTER_SOBEL_3_DY)
+	py::enum_<Image::FilterType>(m, "ImageFilterType")
+		.value("Gaussian3", Image::FILTER_GAUSSIAN_3)
+		.value("Gaussian5", Image::FILTER_GAUSSIAN_5)
+		.value("Gaussian7", Image::FILTER_GAUSSIAN_7)
+		.value("Sobel3dx", Image::FILTER_SOBEL_3_DX)
+		.value("Sobel3dy", Image::FILTER_SOBEL_3_DY)
 		.export_values();
 	m.def("FilterImage", [](const Image &input, 
-			FilterType filter_type) {
+			Image::FilterType filter_type) {
 		if (input.num_of_channels_ != 1 ||
 			input.bytes_per_channel_ != 4) {
 			auto input_f = CreateFloatImageFromImage(input);
@@ -180,7 +180,7 @@ void pybind_image_methods(py::module &m)
 	}, "Function to create ImagePyramid", "image"_a, 
 			"num_of_levels"_a, "with_gaussian_filter"_a);
 	m.def("FilterImagePyramid", [](const ImagePyramid &input, 
-			FilterType filter_type) {
+			Image::FilterType filter_type) {
 		auto output = FilterImagePyramid(input, filter_type);
 		return output;
 	}, "Function to filter ImagePyramid", "image_pyramid"_a, "filter_type"_a);

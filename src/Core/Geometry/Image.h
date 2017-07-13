@@ -36,8 +36,24 @@
 
 namespace three {
 
+class PinholeCameraIntrinsic;
+
 class Image : public Geometry2D
 {
+public:
+	enum ColorToIntensityConversionType {
+		EQUAL,
+		WEIGHTED,
+	};
+
+	enum FilterType {
+		FILTER_GAUSSIAN_3,
+		FILTER_GAUSSIAN_5,
+		FILTER_GAUSSIAN_7,
+		FILTER_SOBEL_3_DX,
+		FILTER_SOBEL_3_DY
+	};
+
 public:
 	Image() : Geometry2D(GEOMETRY_IMAGE) {};
 	~Image() override {};
@@ -67,17 +83,15 @@ public:
 		return width_ * num_of_channels_ * bytes_per_channel_;
 	}
 
-	float FloatValueAtUnsafe(int u, int v) {
-		return *((float *)(data_.data() + (u + v * width_) * bytes_per_channel_));
-	}
-
+	/// Function to access the bilinear interpolated float value of a
+	/// (single-channel) float image
 	std::pair<bool, double> FloatValueAt(double u, double v);
 		
 protected:
 	void AllocateDataBuffer() {
 		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
 	}
-	
+
 public:
 	int width_ = 0;
 	int height_ = 0;
@@ -90,47 +104,27 @@ public:
 /// Return an empty image if fail to read the file.
 std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
 
-enum AverageType {
-	EQUAL,
-	WEIGHTED,
-};
+/// Factory function to create a float image composed of multipliers that
+/// convert depth values into camera distances (ImageFactory.cpp)
+/// The multiplier function M(u,v) is defined as:
+/// M(u, v) = sqrt(1 + ((u - cx) / fx) ^ 2 + ((v - cy) / fy) ^ 2)
+/// This function is used as a convenient function for performance optimization
+/// in volumetric integration (see Core/Integration/TSDFVolume.h).
+std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
+		const PinholeCameraIntrinsic &intrinsic);
 
 /// Return an gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(
-		const Image &image, AverageType average_type = WEIGHTED);
+		const Image &image,
+		Image::ColorToIntensityConversionType type = Image::WEIGHTED);
 
-enum FilterType {
-	FILTER_GAUSSIAN_3,
-	FILTER_GAUSSIAN_5,
-	FILTER_GAUSSIAN_7,
-	FILTER_SOBEL_3_DX,
-	FILTER_SOBEL_3_DY
-};
-
-/// Isotropic 2D kernels are seperable: 
-/// two 1D kernels are applied in x and y direction.
-const std::vector<double> Gaussian3 =
-		{ 0.25, 0.5, 0.25 };
-const std::vector<double> Gaussian5 =
-		{ 0.0625, 0.25, 0.375, 0.25, 0.0625 };
-const std::vector<double> Gaussian7 =
-		{ 0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125 };
-const std::vector<double> Sobel31 =
-		{ -1.0, 0.0, 1.0 };
-const std::vector<double> Sobel32 =
-		{ 1.0, 2.0, 1.0 };
-
+/// Function to access the raw data of a single-channel Image
 template<typename T>
-T *PointerAt(const Image &image, int u, int v) {
-	return (T *)(image.data_.data() +
-			(v * image.width_ + u) * sizeof(T));
-}
+T *PointerAt(const Image &image, int u, int v);
 
+/// Function to access the raw data of a multi-channel Image
 template<typename T>
-T *PointerAt(const Image &image, int u, int v, int ch) {
-	return (T *)(image.data_.data() +
-			((v * image.width_ + u) * image.num_of_channels_ + ch) * sizeof(T));
-}
+T *PointerAt(const Image &image, int u, int v, int ch);
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth, 
 		double depth_scale = 1000.0, double depth_trunc = 3.0);
@@ -138,7 +132,7 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 std::shared_ptr<Image> FlipImage(const Image &input);
 
 /// Function to filter image with pre-defined filtering type
-std::shared_ptr<Image> FilterImage(const Image &input, FilterType type);
+std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type);
 
 /// Function to filter image with arbitrary dx, dy separable filters
 std::shared_ptr<Image> FilterImage(const Image &input,
@@ -163,32 +157,13 @@ void ClipIntensityImage(Image &input, double min = 0.0, double max = 1.0);
 /// crafted for specific usage such as
 /// single channel float image -> 8-bit RGB or 16-bit depth image
 template <typename T>
-std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
-{
-	auto output = std::make_shared<Image>();
-	if (input.num_of_channels_ != 1 ||
-			input.bytes_per_channel_ != 4) {
-		PrintDebug("[TypecastImage] Unsupported image format.\n");
-		return output;
-	}
-
-	output->PrepareImage(
-			input.width_, input.height_, input.num_of_channels_, sizeof(T));
-	const float *pi = (const float *)input.data_.data();
-	T *p = (T*)output->data_.data();
-	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
-		if (sizeof(T) == 1)
-			*p = static_cast<T>(*pi * 255.0f);
-		if (sizeof(T) == 2) 
-			*p = static_cast<T>(*pi);
-	}
-	return output;
-}
+std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input);
 
 /// Typedef and functions for ImagePyramid
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
-ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type);
+ImagePyramid FilterImagePyramid(const ImagePyramid &input,
+		Image::FilterType type);
 
 ImagePyramid CreateImagePyramid(const Image& image, 
 		size_t num_of_levels, bool with_gaussian_filter = true);

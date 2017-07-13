@@ -120,8 +120,8 @@ void TSDFVolume::Integrate(const Image &depth_f, const Image &color,
 								*p_tsdf = ((*p_tsdf) * (*p_weight) + tsdf) /
 										(*p_weight + 1.0f);
 								if (has_color_) {
-									const RGB *rgb = PointerAt<RGB>(color, u,
-											v);
+									const RGB *rgb = (const RGB *)
+											PointerAt<uint8_t>(color, u, v, 0);
 									p_color[0] = (p_color[0] *
 											(*p_weight) + rgb->rgb[0]) /
 											(*p_weight + 1.0f);

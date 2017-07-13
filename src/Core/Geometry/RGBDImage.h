@@ -76,7 +76,7 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
 typedef std::vector<std::shared_ptr<RGBDImage>> RGBImagePyramid;
 
 RGBImagePyramid FilterRGBDImagePyramid(
-		const RGBImagePyramid &rgbd_image_pyramid, FilterType type);
+		const RGBImagePyramid &rgbd_image_pyramid, Image::FilterType type);
 
 RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage &rgbd_image,
 		size_t num_of_levels, 
