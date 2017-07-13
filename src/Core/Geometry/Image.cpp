@@ -27,7 +27,18 @@
 
 #include "Image.h"
 
-namespace three{
+namespace {
+/// Isotropic 2D kernels are seperable: 
+/// two 1D kernels are applied in x and y direction.
+const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
+const std::vector<double> Gaussian5 = { 0.0625, 0.25, 0.375, 0.25, 0.0625 };
+const std::vector<double> Gaussian7 = 
+		{ 0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125 };
+const std::vector<double> Sobel31 = { -1.0, 0.0, 1.0 };
+const std::vector<double> Sobel32 = { 1.0, 2.0, 1.0 };
+}	//unnamed namespace
+
+namespace three {
 
 void Image::Clear()
 {
@@ -63,15 +74,38 @@ std::pair<bool, double> Image::FloatValueAt(double u, double v)
 	double pu = u - ui;
 	double pv = v - vi;
 	float value[4] = {
-		FloatValueAtUnsafe(ui, vi),
-		FloatValueAtUnsafe(ui, vi + 1),
-		FloatValueAtUnsafe(ui + 1, vi),
-		FloatValueAtUnsafe(ui + 1, vi + 1)
+		*PointerAt<float>(*this, ui, vi),
+		*PointerAt<float>(*this, ui, vi + 1),
+		*PointerAt<float>(*this, ui + 1, vi),
+		*PointerAt<float>(*this, ui + 1, vi + 1)
 	};
 	return std::make_pair(true,
 		(value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
 		(value[2] * (1 - pv) + value[3] * pv) * pu);
 }
+
+template<typename T>
+T *PointerAt(const Image &image, int u, int v) {
+	return (T *)(image.data_.data() +
+			(v * image.width_ + u) * sizeof(T));
+}
+
+template float * PointerAt<float>(const Image &image, int u, int v);
+template int * PointerAt<int>(const Image &image, int u, int v);
+template uint8_t * PointerAt<uint8_t>(const Image &image, int u, int v);
+template uint16_t * PointerAt<uint16_t>(const Image &image, int u, int v);
+
+template<typename T>
+T *PointerAt(const Image &image, int u, int v, int ch) {
+	return (T *)(image.data_.data() +
+			((v * image.width_ + u) * image.num_of_channels_ + ch) * sizeof(T));
+}
+
+template float * PointerAt<float>(const Image &image, int u, int v, int ch);
+template int * PointerAt<int>(const Image &image, int u, int v, int ch);
+template uint8_t * PointerAt<uint8_t>(const Image &image, int u, int v, int ch);
+template uint16_t * PointerAt<uint16_t>(const Image &image, int u, int v,
+		int ch);
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
@@ -90,7 +124,8 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 	return output;
 }
 
-void ClipIntensityImage(Image &input, double min/* = 0.0*/, double max/* = 1.0*/)
+void ClipIntensityImage(Image &input, double min/* = 0.0*/,
+		double max/* = 1.0*/)
 {
 	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 2) {
 		PrintWarning("[ClipIntensityImage] Unsupported image format.\n");
@@ -182,7 +217,7 @@ std::shared_ptr<Image> FilterHorizontalImage(
 	return output;
 }
 
-std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
+std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
@@ -191,29 +226,30 @@ std::shared_ptr<Image> FilterImage(const Image &input, FilterType type)
 	}
 
 	switch (type) {
-		case FILTER_GAUSSIAN_3:
-			output = FilterImage(input, Gaussian3, Gaussian3);
-			break;
-		case FILTER_GAUSSIAN_5:
-			output = FilterImage(input, Gaussian5, Gaussian5);
-			break;
-		case FILTER_GAUSSIAN_7:
-			output = FilterImage(input, Gaussian7, Gaussian7);
-			break;
-		case FILTER_SOBEL_3_DX:
-			output = FilterImage(input, Sobel31, Sobel32);
-			break;
-		case FILTER_SOBEL_3_DY:
-			output = FilterImage(input, Sobel32, Sobel31);
-			break;
-		default:
-			PrintWarning("[FilterImage] Unsupported filter type.\n");
-			break;
+	case Image::FILTER_GAUSSIAN_3:
+		output = FilterImage(input, Gaussian3, Gaussian3);
+		break;
+	case Image::FILTER_GAUSSIAN_5:
+		output = FilterImage(input, Gaussian5, Gaussian5);
+		break;
+	case Image::FILTER_GAUSSIAN_7:
+		output = FilterImage(input, Gaussian7, Gaussian7);
+		break;
+	case Image::FILTER_SOBEL_3_DX:
+		output = FilterImage(input, Sobel31, Sobel32);
+		break;
+	case Image::FILTER_SOBEL_3_DY:
+		output = FilterImage(input, Sobel32, Sobel31);
+		break;
+	default:
+		PrintWarning("[FilterImage] Unsupported filter type.\n");
+		break;
 	}
 	return output;
 }
 
-ImagePyramid FilterImagePyramid(const ImagePyramid &input, FilterType type)
+ImagePyramid FilterImagePyramid(const ImagePyramid &input,
+		Image::FilterType type)
 {
 	std::vector<std::shared_ptr<Image>> output;
 	for (size_t i = 0; i < input.size(); i++) {

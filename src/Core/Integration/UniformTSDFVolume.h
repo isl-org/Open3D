@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,39 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Helper.h"
+#pragma once
 
-namespace three{
+#include <Core/Integration/TSDFVolume.h>
 
-std::shared_ptr<Image> CreateDepthToCameraDistanceConversionImage(
-		const PinholeCameraIntrinsic &intrinsic)
-{
-	auto fimage = std::make_shared<Image>();
-	fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
-	float ffl_inv[2] = {
-			1.0f / (float)intrinsic.GetFocalLength().first,
-			1.0f / (float)intrinsic.GetFocalLength().second,
-	};
-	float fpp[2] = {
-			(float)intrinsic.GetPrincipalPoint().first,
-			(float)intrinsic.GetPrincipalPoint().second,
-	};
-	std::vector<float> xx(intrinsic.width_);
-	std::vector<float> yy(intrinsic.height_);
-	for (int j = 0; j < intrinsic.width_; j++) {
-		xx[j] = (j - fpp[0]) * ffl_inv[0];
+namespace three {
+
+class UniformTSDFVolume : public TSDFVolume {
+public:
+	UniformTSDFVolume(double length, int resolution, double sdf_trunc,
+			bool with_color);
+	~UniformTSDFVolume() override;
+
+public:
+	void Reset() override;
+	void Integrate(const RGBDImage &image,
+			const PinholeCameraIntrinsic &intrinsic,
+			const Eigen::Matrix4d &extrinsic) override;
+	std::shared_ptr<PointCloud> ExtractPointCloud() override;
+	std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
+
+	/// Debug function to extract the voxel data into a point cloud
+	std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
+
+public:
+	double length_;
+	int resolution_;
+	int voxel_num_;
+	std::vector<float> tsdf_;
+	std::vector<Eigen::Vector3f> color_;
+	std::vector<float> weight_;
+	
+private:
+	inline int index(int x, int y, int z) {
+		return x * resolution_ * resolution_ + y * resolution_ + z;
 	}
-	for (int i = 0; i < intrinsic.height_; i++) {
-		yy[i] = (i - fpp[1]) * ffl_inv[1];
+
+	inline int index(const Eigen::Vector3i xyz) {
+		return index(xyz(0), xyz(1), xyz(2));
 	}
-	for (int i = 0; i < intrinsic.height_; i++) {
-		float *fp = (float *)(fimage->data_.data() +
-				i * fimage->BytesPerLine());
-		for (int j = 0; j < intrinsic.width_; j++, fp++) {
-			*fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
-		}
-	}
-	return fimage;
-}
+
+	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
+
+	double GetTSDFAt(const Eigen::Vector3d &p);
+};
 
 }	// namespace three

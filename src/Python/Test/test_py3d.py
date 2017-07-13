@@ -140,18 +140,18 @@ def test_py3d_image():
 	print("Testing basic image processing module.")
 	im_raw = mpimg.imread("../TestData/lena_color.jpg")
 	im = Image(im_raw)
-	im_g3 = FilterImage(im, FilterType.Gaussian3)
-	im_g5 = FilterImage(im, FilterType.Gaussian5)
-	im_g7 = FilterImage(im, FilterType.Gaussian7)
+	im_g3 = FilterImage(im, ImageFilterType.Gaussian3)
+	im_g5 = FilterImage(im, ImageFilterType.Gaussian5)
+	im_g7 = FilterImage(im, ImageFilterType.Gaussian7)
 	im_gaussian = [im, im_g3, im_g5, im_g7]
 	pyramid_levels = 4
 	pyramid_with_gaussian_filter = True
 	im_pyramid = CreateImagePyramid(im, pyramid_levels,
             pyramid_with_gaussian_filter)
-	im_dx = FilterImage(im, FilterType.Sobel3dx)
-	im_dx_pyramid = FilterImagePyramid(im_pyramid, FilterType.Sobel3dx)
-	im_dy = FilterImage(im, FilterType.Sobel3dy)
-	im_dy_pyramid = FilterImagePyramid(im_pyramid, FilterType.Sobel3dy)
+	im_dx = FilterImage(im, ImageFilterType.Sobel3dx)
+	im_dx_pyramid = FilterImagePyramid(im_pyramid, ImageFilterType.Sobel3dx)
+	im_dy = FilterImage(im, ImageFilterType.Sobel3dy)
+	im_dy_pyramid = FilterImagePyramid(im_pyramid, ImageFilterType.Sobel3dy)
 	switcher = {
 		0: im_gaussian,
 		1: im_pyramid,

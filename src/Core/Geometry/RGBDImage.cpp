@@ -29,7 +29,7 @@
 namespace three {
 
 RGBImagePyramid FilterRGBDImagePyramid(
-		const RGBImagePyramid &rgbd_image_pyramid, FilterType type)
+		const RGBImagePyramid &rgbd_image_pyramid, Image::FilterType type)
 {
 	RGBImagePyramid rgbd_image_pyramid_filtered;
 	rgbd_image_pyramid_filtered.clear();

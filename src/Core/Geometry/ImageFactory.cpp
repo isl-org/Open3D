@@ -26,8 +26,8 @@
 // ----------------------------------------------------------------------------
 
 #include "Image.h"
-#include "RGBDImage.h"
 
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/ClassIO/ImageIO.h>
 
 namespace three{
@@ -39,12 +39,42 @@ std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
 	return image;
 }
 
-std::shared_ptr<Image> CreateFloatImageFromImage(
-		const Image &image, AverageType average_type/* = WEIGHTED*/)
+std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
+		const PinholeCameraIntrinsic &intrinsic)
 {
 	auto fimage = std::make_shared<Image>();
-	if (image.IsEmpty() || 
-		((average_type != EQUAL) && (average_type != WEIGHTED))) {
+	fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
+	float ffl_inv[2] = {
+			1.0f / (float)intrinsic.GetFocalLength().first,
+			1.0f / (float)intrinsic.GetFocalLength().second,
+	};
+	float fpp[2] = {
+			(float)intrinsic.GetPrincipalPoint().first,
+			(float)intrinsic.GetPrincipalPoint().second,
+	};
+	std::vector<float> xx(intrinsic.width_);
+	std::vector<float> yy(intrinsic.height_);
+	for (int j = 0; j < intrinsic.width_; j++) {
+		xx[j] = (j - fpp[0]) * ffl_inv[0];
+	}
+	for (int i = 0; i < intrinsic.height_; i++) {
+		yy[i] = (i - fpp[1]) * ffl_inv[1];
+	}
+	for (int i = 0; i < intrinsic.height_; i++) {
+		float *fp = (float *)(fimage->data_.data() +
+				i * fimage->BytesPerLine());
+		for (int j = 0; j < intrinsic.width_; j++, fp++) {
+			*fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
+		}
+	}
+	return fimage;
+}
+
+std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image,
+		Image::ColorToIntensityConversionType type/* = WEIGHTED*/)
+{
+	auto fimage = std::make_shared<Image>();
+	if (image.IsEmpty()) {
 		return fimage;
 	}
 	fimage->PrepareImage(image.width_, image.height_, 1, 4);
@@ -65,28 +95,28 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
 			}
 		} else if (image.num_of_channels_ == 3) {
 			if (image.bytes_per_channel_ == 1) {
-				if (average_type == EQUAL) {
+				if (type == Image::EQUAL) {
 					*p = ((float)(pi[0]) + (float)(pi[1]) + (float)(pi[2])) /
 						3.0f / 255.0f;
-				} else if (average_type == WEIGHTED) {
+				} else if (type == Image::WEIGHTED) {
 					*p = (0.2990f * (float)(pi[0]) + 0.5870f * (float)(pi[1]) +
 							0.1140f * (float)(pi[2])) / 255.0f;
 				}				
 			} else if (image.bytes_per_channel_ == 2) {
 				const uint16_t *pi16 = (const uint16_t *)pi;
-				if (average_type == EQUAL) {
+				if (type == Image::EQUAL) {
 					*p = ((float)(pi16[0]) + (float)(pi16[1]) + 
 							(float)(pi16[2])) / 3.0f;
-				} else if (average_type == WEIGHTED) {
+				} else if (type == Image::WEIGHTED) {
 					*p = (0.2990f * (float)(pi16[0]) + 
 							0.5870f * (float)(pi16[1]) + 
 							0.1140f * (float)(pi16[2]));
 				}
 			} else if (image.bytes_per_channel_ == 4) {
 				const float *pf = (const float *)pi;
-				if (average_type == EQUAL) {
+				if (type == Image::EQUAL) {
 					*p = (pf[0] + pf[1] + pf[2]) / 3.0f;
-				} else if (average_type == WEIGHTED) {
+				} else if (type == Image::WEIGHTED) {
 					*p = (0.2990f * pf[0] + 0.5870f * pf[1] + 0.1140f * pf[2]);
 				}
 			}
@@ -94,6 +124,34 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
 	}
 	return fimage;
 }
+
+template <typename T>
+std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
+{
+	auto output = std::make_shared<Image>();
+	if (input.num_of_channels_ != 1 ||
+			input.bytes_per_channel_ != 4) {
+		PrintDebug("[TypecastImage] Unsupported image format.\n");
+		return output;
+	}
+
+	output->PrepareImage(
+			input.width_, input.height_, input.num_of_channels_, sizeof(T));
+	const float *pi = (const float *)input.data_.data();
+	T *p = (T*)output->data_.data();
+	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
+		if (sizeof(T) == 1)
+			*p = static_cast<T>(*pi * 255.0f);
+		if (sizeof(T) == 2) 
+			*p = static_cast<T>(*pi);
+	}
+	return output;
+}
+
+template std::shared_ptr<Image> CreateImageFromFloatImage<uint8_t>(
+		const Image &input);
+template std::shared_ptr<Image> CreateImageFromFloatImage<uint16_t>(
+		const Image &input);
 
 ImagePyramid CreateImagePyramid(
 		const Image &input, size_t num_of_levels,
@@ -115,7 +173,8 @@ ImagePyramid CreateImagePyramid(
 		else {
 			if (with_gaussian_filter) {
 				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
-				auto level_b = FilterImage(*pyramid_image[i - 1], FILTER_GAUSSIAN_3);
+				auto level_b = FilterImage(*pyramid_image[i - 1],
+						Image::FILTER_GAUSSIAN_3);
 				auto level_bd = DownsampleImage(*level_b);
 				pyramid_image.push_back(level_bd);
 			}
@@ -126,94 +185,6 @@ ImagePyramid CreateImagePyramid(
 		}
 	}
 	return pyramid_image;
-}
-
-std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-		const Image &color, const Image &depth, 
-		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
-{
-	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
-	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
-		PrintWarning("[CreateRGBDImageFromColorAndDepth] Unsupported image format.\n");
-		return rgbd_image;
-	}
-	auto color_f = CreateFloatImageFromImage(color);
-	auto depth_f = ConvertDepthToFloatImage(depth, depth_scale, depth_trunc);
-	rgbd_image->color_ = *color_f;
-	rgbd_image->depth_ = *depth_f;
-	return rgbd_image;
-}
-
-/// Reference: http://redwood-data.org/indoor/
-/// File format: http://redwood-data.org/indoor/dataset.html
-std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
-	const Image &color, const Image &depth)
-{
-	return CreateRGBDImageFromColorAndDepth(color, depth, 1000.0, 4.0);
-}
-
-/// Reference: http://vision.in.tum.de/data/datasets/rgbd-dataset
-/// File format: http://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
-std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
-		const Image &color, const Image &depth) 
-{
-	return CreateRGBDImageFromColorAndDepth(color, depth, 5000.0, 4.0);
-}
-
-/// Reference: http://sun3d.cs.princeton.edu/
-/// File format: https://github.com/PrincetonVision/SUN3DCppReader
-std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
-		const Image &color, const Image &depth) 
-{
-	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
-	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
-		PrintWarning("[CreateRGBDImageFromSUNFormat] Unsupported image format.\n");
-		return rgbd_image;
-	}
-	for (int v = 0; v < depth.height_; v += 1) {
-		for (int u = 0; u < depth.width_; u += 1) {
-			unsigned short  &d = *PointerAt<unsigned short>(depth, u, v);
-			d = (d >> 3) | (d << 13);
-		}
-	}
-	auto color_f = CreateFloatImageFromImage(color);
-	// SUN depth map has long range depth. We set depth_trunc as 7.0
-	auto depth_f = ConvertDepthToFloatImage(depth, 1000, 7.0);
-	rgbd_image->color_ = *color_f;
-	rgbd_image->depth_ = *depth_f;
-	return rgbd_image;
-}
-
-/// Reference: http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html
-std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
-		const Image &color, const Image &depth) 
-{
-	std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
-	if (color.height_ != depth.height_ || color.width_ != depth.width_) {
-		PrintWarning("[CreateRGBDImageFromNYUFormat] Unsupported image format.\n");
-		return rgbd_image;
-	}
-	for (int v = 0; v < depth.height_; v += 1) {
-		for (int u = 0; u < depth.width_; u += 1) {
-			unsigned short * d = PointerAt<unsigned short>(depth, u, v);
-			unsigned char * p = (unsigned char *)d;
-			unsigned char x = *p;
-			*p = *(p + 1);
-			*(p + 1) = x;
-			double xx = 351.3 / (1092.5 - *d);
-			if (xx <= 0.0) {
-				*d = 0;
-			} else {
-				*d = (unsigned short)(floor(xx * 1000 + 0.5));
-			}
-		}
-	}
-	auto color_f = CreateFloatImageFromImage(color);
-	// NYU depth map has long range depth. We set depth_trunc as 7.0
-	auto depth_f = ConvertDepthToFloatImage(depth, 1000, 7.0);
-	rgbd_image->color_ = *color_f;
-	rgbd_image->depth_ = *depth_f;
-	return rgbd_image;
 }
 
 }	// namespace three

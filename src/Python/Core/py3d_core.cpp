@@ -39,6 +39,7 @@ void pybind_core_classes(py::module &m)
 	pybind_registration(m);
 	pybind_odometry(m);
 	pybind_globaloptimization(m);
+	pybind_integration(m);
 }
 
 void pybind_core_methods(py::module &m)
@@ -51,4 +52,5 @@ void pybind_core_methods(py::module &m)
 	pybind_registration_methods(m);
 	pybind_odometry_methods(m);
 	pybind_globaloptimization_methods(m);
+	pybind_integration_methods(m);
 }

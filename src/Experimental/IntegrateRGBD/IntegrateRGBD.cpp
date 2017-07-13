@@ -30,8 +30,6 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
-#include "TSDFVolume.h"
-
 void PrintHelp()
 {
 	printf("Usage:\n");
@@ -90,12 +88,11 @@ int main(int argc, char *argv[])
 	char buffer[DEFAULT_IO_BUFFER_SIZE];
 	int index = 0;
 	int save_index = 0;
-	TSDFVolume volume(length, resolution, length * sdf_trunc_percentage, true);
+	UniformTSDFVolume volume(length, resolution, length * sdf_trunc_percentage,
+			true);
 	FPSTimer timer("Process RGBD stream",
 			(int)camera_trajectory->extrinsic_.size());
 	Image depth, color;
-	auto depth2cameradistance = CreateDepthToCameraDistanceConversionImage(
-			camera_trajectory->intrinsic_);
 	while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
 		std::vector<std::string> st;
 		SplitString(st, buffer, "\t\r\n ");
@@ -103,13 +100,13 @@ int main(int argc, char *argv[])
 			PrintDebug("Processing frame %d ...\n", index);
 			ReadImage(dir_name + st[0], depth);
 			ReadImage(dir_name + st[1], color);
-			auto depth_f = ConvertDepthToFloatImage(depth);
+			auto rgbd = CreateRGBDImageFromColorAndDepth(color, depth, 1000.0,
+					4.0, false);
 			if (index == 0 ||
 					(every_k_frames > 0 && index % every_k_frames == 0)) {
 				volume.Reset();
 			}
-			volume.Integrate(*depth_f, color, *depth2cameradistance,
-					camera_trajectory->intrinsic_,
+			volume.Integrate(*rgbd, camera_trajectory->intrinsic_,
 					camera_trajectory->extrinsic_[index]);
 			index++;
 			if (index == (int)camera_trajectory->extrinsic_.size() ||
@@ -118,24 +115,21 @@ int main(int argc, char *argv[])
 				std::string save_index_str = std::to_string(save_index);
 				if (save_pointcloud) {
 					PrintDebug("Saving pointcloud %d ...\n", save_index);
-					PointCloud pcd;
-					volume.ExtractPointCloud(pcd);
+					auto pcd = volume.ExtractPointCloud();
 					WritePointCloud("pointcloud_" + save_index_str + ".ply",
-							pcd);
+							*pcd);
 				}
 				if (save_mesh) {
 					PrintDebug("Saving mesh %d ...\n", save_index);
-					TriangleMesh mesh;
-					volume.ExtractTriangleMesh(mesh);
+					auto mesh = volume.ExtractTriangleMesh();
 					WriteTriangleMesh("mesh_" + save_index_str + ".ply",
-							mesh);
+							*mesh);
 				}
 				if (save_voxel) {
 					PrintDebug("Saving voxel %d ...\n", save_index);
-					PointCloud voxel;
-					volume.ExtractVoxelPointCloud(voxel);
+					auto voxel = volume.ExtractVoxelPointCloud();
 					WritePointCloud("voxel_" + save_index_str + ".ply",
-							voxel);
+							*voxel);
 				}
 				save_index++;
 			}

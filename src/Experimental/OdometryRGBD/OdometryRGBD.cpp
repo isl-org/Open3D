@@ -80,13 +80,14 @@ int main(int argc, char *argv[])
 	auto depth_source = CreateImageFromFile(argv[2]);	
 	auto color_target = CreateImageFromFile(argv[3]);
 	auto depth_target = CreateImageFromFile(argv[4]);
-	std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&);
+	std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&,
+			bool);
 	if (rgbd_type == 0) CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
 	else if (rgbd_type == 1) CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
 	else if (rgbd_type == 2) CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
 	else if (rgbd_type == 3) CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
-	auto source = CreateRGBDImage(*color_source, *depth_source);
-	auto target = CreateRGBDImage(*color_target, *depth_target);
+	auto source = CreateRGBDImage(*color_source, *depth_source, true);
+	auto target = CreateRGBDImage(*color_target, *depth_target, true);
 	
 	OdometryOption option;
 	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
