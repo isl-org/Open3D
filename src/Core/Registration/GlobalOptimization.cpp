@@ -50,7 +50,37 @@ const double EPS_4 = 1e-6;
 const double EPS_5 = 1e-6;
 const double _goodStepUpperScale = 2./3.;
 const double _goodStepLowerScale = 1./3.;
-std::vector<Eigen::Matrix4d> diff;
+const std::vector<Eigen::Matrix4d> diff = {
+	(Eigen::Matrix4d() << /* for alpha */
+	0, 0, 0, 0,
+	0, 0, -1, 0,
+	0, 1, 0, 0,
+	0, 0, 0, 0).finished(),
+	(Eigen::Matrix4d() << /* for beta */
+	0, 0, 1, 0,
+	0, 0, 0, 0,
+	-1, 0, 0, 0,
+	0, 0, 0, 0).finished(),
+	(Eigen::Matrix4d() << /* for gamma */
+	0, -1, 0, 0,
+	1, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0, 0).finished(),
+	(Eigen::Matrix4d() << /* for a */
+	0, 0, 0, 1,
+	0, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0, 0).finished(),
+	(Eigen::Matrix4d() << /* for b */
+	0, 0, 0, 0,
+	0, 0, 0, 1,
+	0, 0, 0, 0,
+	0, 0, 0, 0).finished(),
+	(Eigen::Matrix4d() << /* for c */
+	0, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0, 1,
+	0, 0, 0, 0).finished() };
 
 inline Eigen::Vector6d GetApproximate6DVector(Eigen::Matrix4d input)
 {
@@ -147,33 +177,6 @@ inline std::tuple<Eigen::Matrix4d, Eigen::Matrix4d, Eigen::Matrix4d>
 	return std::make_tuple(std::move(X_inv), std::move(Ts), std::move(Tt_inv));
 }
 
-void InitAnalysticalJacobianOperators()
-{
-	diff.clear();
-	Eigen::Matrix4d diff_alpha, diff_beta, diff_gamma, diff_a, diff_b, diff_c;
-	diff_alpha.setZero();
-	diff_alpha(1, 2) = -1;
-	diff_alpha(2, 1) = 1;
-	diff_beta.setZero();
-	diff_beta(2, 0) = -1;
-	diff_beta(0, 2) = 1;
-	diff_gamma.setZero();
-	diff_gamma(0, 1) = -1;
-	diff_gamma(1, 0) = 1;
-	diff_a.setZero();
-	diff_a(0, 3) = 1;
-	diff_b.setZero();
-	diff_b(1, 3) = 1;
-	diff_c.setZero();
-	diff_c(2, 3) = 1;
-	diff.push_back(diff_alpha);
-	diff.push_back(diff_beta);
-	diff.push_back(diff_gamma);
-	diff.push_back(diff_a);
-	diff.push_back(diff_b);
-	diff.push_back(diff_c);
-}
-
 inline Eigen::Matrix6d GetSingleAnalysticalJacobian(
 		const Eigen::Matrix4d &X_inv,
 		const Eigen::Matrix4d &T_i, const Eigen::Matrix4d &T_j_inv)
@@ -207,7 +210,7 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 	int valid_edges = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
-		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+		if (t.uncertain_) {
 			Eigen::Vector6d e = evec.block<6, 1>(iter_edge * 6, 0);
 			double residual_square = e.transpose() * t.information_ * e;
 			double temp = MU / (MU + residual_square);
@@ -223,26 +226,36 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 	return std::make_tuple(std::move(line_process), valid_edges);
 }
 
-std::tuple<Eigen::VectorXd, double> ComputeE(const PoseGraph &pose_graph, 
-		Eigen::VectorXd line_process) 
+double ComputeResidual(const PoseGraph &pose_graph, Eigen::VectorXd evec,
+		Eigen::VectorXd line_process)
 {
-	int n_edges = (int)pose_graph.edges_.size();
+	int line_process_cnt = 0;
 	double residual = 0.0;
+	int n_edges = (int)pose_graph.edges_.size();
+	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
+		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
+		double line_process_iter = 1.0;
+		if (te.uncertain_)
+			line_process_iter = line_process(line_process_cnt++);
+		Eigen::Vector6d e = evec.block<6, 1>(iter_edge * 6, 0);
+		residual += line_process_iter * e.transpose() * te.information_ * e +
+				MU * pow(sqrt(line_process_iter) - 1, 2.0);
+	}
+	return residual;
+}
+
+Eigen::VectorXd ComputeE(const PoseGraph &pose_graph) 
+{
+	int n_edges = (int)pose_graph.edges_.size();	
 	Eigen::VectorXd output(n_edges * 6);
 	int line_process_cnt = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		Eigen::Matrix4d X_inv, Ts, Tt_inv;
 		std::tie(X_inv, Ts, Tt_inv) = GetRelativePoses(pose_graph, iter_edge);
 		Eigen::Vector6d e = GetDiffVec(X_inv, Ts, Tt_inv);
-		output.block<6, 1>(iter_edge * 6, 0) = e;
-		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
-		double line_process_iter = 1.0;
-		if (abs(te.source_node_id_ - te.target_node_id_) != 1)
-			line_process_iter = line_process(line_process_cnt++);
-		residual += line_process_iter * e.transpose() * te.information_ * e + 
-			MU * pow(sqrt(line_process_iter)-1,2.0);
+		output.block<6, 1>(iter_edge * 6, 0) = e;		
 	}
-	return std::make_tuple(std::move(output), residual);
+	return std::move(output);
 }
 
 std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
@@ -276,7 +289,7 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
 		Eigen::Vector6d eT_Info = e.transpose() * t.information_;
 
 		double line_process_iter = 1.0;
-		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+		if (t.uncertain_) {
 			line_process_iter = line_process(line_process_cnt++);
 		}
 		int id_i = t.source_node_id_ * 6;
@@ -329,7 +342,7 @@ std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph,
 		Eigen::VectorXd line_process)
 {
 	std::shared_ptr<PoseGraph> pose_graph_pruned =
-		std::make_shared<PoseGraph>();
+			std::make_shared<PoseGraph>();
 
 	int n_nodes = (int)pose_graph.nodes_.size();
 	for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
@@ -340,7 +353,7 @@ std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph,
 	int line_process_cnt = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];		
-		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+		if (t.uncertain_) {
 			if (line_process(line_process_cnt++) > PRUNE) {
 				pose_graph_pruned->edges_.push_back(t);
 			}
@@ -358,10 +371,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
 
-	PrintDebug("Optimizing PoseGraph having %d nodes and %d edges\n", 
+	PrintDebug("[GlobalOptimization] Optimizing PoseGraph having %d nodes and %d edges\n", 
 			n_nodes, n_edges);
-
-	InitAnalysticalJacobianOperators();
 
 	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
 	*pose_graph_refined = pose_graph;
@@ -369,9 +380,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
 	line_process.setOnes();
 
-	Eigen::VectorXd evec;
-	double total_residual;
-	std::tie(evec, total_residual) = ComputeE(*pose_graph_refined, line_process);
+	Eigen::VectorXd evec = ComputeE(*pose_graph_refined);
+	double total_residual = ComputeResidual(
+			*pose_graph_refined, evec, line_process);
 
 	Timer timer_overall;
 	for (int iter = 0; iter < MAX_ITER; iter++) {
@@ -395,7 +406,9 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 					TransformVector6dToMatrix4d(delta_iter) * 
 					pose_graph_refined->nodes_[iter_node].pose_;
 		}
-		std::tie(evec, total_residual) = ComputeE(*pose_graph_refined, line_process);
+		evec = ComputeE(*pose_graph_refined);
+		total_residual = ComputeResidual(
+				*pose_graph_refined, evec, line_process);
 		int valid_edges;
 		std::tie(line_process, valid_edges) = 
 				ComputeLineprocess(*pose_graph_refined, evec);
@@ -415,17 +428,15 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges\n",
 			n_nodes, n_edges);
 
-	InitAnalysticalJacobianOperators();
-
 	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
 	*pose_graph_refined = pose_graph;
 
 	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
 	line_process.setOnes();
 
-	Eigen::VectorXd evec;
+	Eigen::VectorXd evec = ComputeE(*pose_graph_refined);
 	double current_residual, new_residual;
-	std::tie(evec, new_residual) = ComputeE(*pose_graph_refined, line_process);
+	new_residual = ComputeResidual(*pose_graph_refined, evec, line_process);
 	current_residual = new_residual;
 
 	int valid_edges;
@@ -480,8 +491,9 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 						UpdatePoseGraph(*pose_graph_refined, delta);
 
 				Eigen::VectorXd evec_new;
-				std::tie(evec_new, new_residual) = 
-						ComputeE(*pose_graph_refined_new, line_process);
+				evec_new = ComputeE(*pose_graph_refined_new);
+				new_residual = ComputeResidual(
+						*pose_graph_refined, evec_new, line_process);
 				rho = (current_residual - new_residual) / 
 						(delta.dot(current_lambda * delta + b) + 1e-3);
 				if (rho > 0) {
