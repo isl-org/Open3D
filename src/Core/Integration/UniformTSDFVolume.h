@@ -33,7 +33,7 @@ namespace three {
 class UniformTSDFVolume : public TSDFVolume {
 public:
 	UniformTSDFVolume(double length, int resolution, double sdf_trunc,
-			bool with_color);
+			bool with_color, Eigen::Vector3d origin = Eigen::Vector3d::Zero());
 	~UniformTSDFVolume() override;
 
 public:
@@ -47,7 +47,15 @@ public:
 	/// Debug function to extract the voxel data into a point cloud
 	std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
 
+	/// Faster Integrate function that uses depth_to_camera_distance_multiplier
+	/// precomputed from camera intrinsic
+	void IntegrateWithDepthToCameraDistanceMultiplier(const RGBDImage &image,
+			const PinholeCameraIntrinsic &intrinsic,
+			const Eigen::Matrix4d &extrinsic,
+			const Image &depth_to_camera_distance_multiplier);
+
 public:
+	Eigen::Vector3d origin_;
 	double length_;
 	int resolution_;
 	int voxel_num_;
