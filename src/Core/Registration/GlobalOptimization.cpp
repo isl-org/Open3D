@@ -210,7 +210,7 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 	int valid_edges = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];
-		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+		if (t.uncertain_) {
 			Eigen::Vector6d e = evec.block<6, 1>(iter_edge * 6, 0);
 			double residual_square = e.transpose() * t.information_ * e;
 			double temp = MU / (MU + residual_square);
@@ -235,7 +235,7 @@ double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd &evec,
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		double line_process_iter = 1.0;
 		const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
-		if (abs(te.source_node_id_ - te.target_node_id_) != 1)
+		if (te.uncertain_)
 			line_process_iter = line_process(line_process_cnt++);
 		Eigen::Vector6d e = evec.block<6, 1>(iter_edge * 6, 0);
 		residual += line_process_iter * e.transpose() * te.information_ * e +
@@ -288,7 +288,7 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeH(
 		Eigen::Vector6d eT_Info = e.transpose() * t.information_;
 
 		double line_process_iter = 1.0;
-		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+		if (t.uncertain_) {
 			line_process_iter = line_process(line_process_cnt++);
 		}
 		int id_i = t.source_node_id_ * 6;
@@ -352,7 +352,7 @@ std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph,
 	int line_process_cnt = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];		
-		if (abs(t.target_node_id_ - t.source_node_id_) != 1) {
+		if (t.uncertain_) {
 			if (line_process(line_process_cnt++) > PRUNE) {
 				pose_graph_pruned->edges_.push_back(t);
 			}
