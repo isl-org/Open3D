@@ -43,8 +43,6 @@ public:
 	void Start();
 	void Stop();
 	void Print(const std::string &timer_info);
-	
-protected:
 	double GetDuration();
 
 private:

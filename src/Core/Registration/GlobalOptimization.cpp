@@ -32,6 +32,7 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Eigen.h>
+#include <Core/Utility/Timer.h>
 
 namespace three{
 
@@ -372,6 +373,7 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 	double total_residual;
 	std::tie(evec, total_residual) = ComputeE(*pose_graph_refined, line_process);
 
+	Timer timer_overall;
 	for (int iter = 0; iter < MAX_ITER; iter++) {
 		
 		int line_process_cnt = 0;
@@ -400,6 +402,8 @@ std::shared_ptr<PoseGraph> GlobalOptimization(const PoseGraph &pose_graph)
 
 		// update line process only for loop edges
 	}
+	PrintDebug("[GlobalOptimization] total time : %.3f sec.\n",
+			timer_overall.GetDuration() / 1000.0);
 	return pose_graph_refined;
 }
 
@@ -408,7 +412,7 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
 
-	PrintDebug("Optimizing PoseGraph having %d nodes and %d edges\n",
+	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges\n",
 			n_nodes, n_edges);
 
 	InitAnalysticalJacobianOperators();
@@ -449,8 +453,12 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 		stop = true;
 	}
 
+	Timer timer_overall;
+	timer_overall.Start();
 	int iter;
-	for (iter = 0; iter < MAX_ITER && !stop; iter++) {
+	for (iter = 0; !stop; iter++) {
+		Timer timer_iter;
+		timer_iter.Start();
 		int lm_count = 0;
 		do {
 			Eigen::MatrixXd H_LM = H + current_lambda * H_I;
@@ -512,19 +520,24 @@ std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph)
 			}
 		} while (!((rho > 0) || stop));
 		if (!stop) {
-			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, valid edges : %d/%d\n",
+			timer_iter.Stop();
+			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, valid edges : %d/%d, time : %.3f sec.\n",
 					iter, current_residual, current_lambda, 
-					valid_edges, n_edges - (n_nodes - 1));
+					valid_edges, n_edges - (n_nodes - 1), 
+					timer_iter.GetDuration() / 1000.0);
 		}
 		if (current_residual < EPS_3) {
 			stop = true;
 			PrintDebug("[Job finished] current_residual < %e\n", EPS_3);
 		}			
+		if (iter == MAX_ITER) {
+			stop = true;
+			PrintDebug("[Job finished] reached maximum number of iterations\n", EPS_3);
+		}
 	}	// end for
-	if (iter == MAX_ITER) {
-		stop = true;
-		PrintDebug("[Job finished] reached maximum number of iterations\n", EPS_3);
-	}
+	timer_overall.Stop();
+	PrintDebug("[GlobalOptimizationLM] total time : %.3f sec.\n", 
+			timer_overall.GetDuration() / 1000.0);
 
 	std::shared_ptr<PoseGraph> pose_graph_refined_pruned =
 			PruneInvalidEdges(*pose_graph_refined, line_process);
