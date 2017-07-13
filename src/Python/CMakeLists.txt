@@ -20,6 +20,13 @@ pybind11_add_module(py3d
 )
 target_link_libraries(py3d PRIVATE Core IO Visualization)
 
+file(GLOB PY_HELPER_FILES "Helper/*.py")
+add_custom_target(PythonHelper ALL SOURCES ${PY_HELPER_FILES})
+set_target_properties(PythonHelper PROPERTIES FOLDER "Python")
+add_custom_command(TARGET PythonHelper POST_BUILD
+COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
+add_dependencies(py3d PythonHelper)
+
 if (Open3D_BUILD_PYTHON_BINDING_TESTS)
 	file(GLOB PY_TEST_FILES "Test/*.py")
 	add_custom_target(PythonTest ALL SOURCES ${PY_TEST_FILES})

@@ -40,7 +40,6 @@ namespace three {
 /// B. Curless and M. Levoy
 /// A volumetric method for building complex models from range images
 /// In SIGGRAPH, 1996
-
 class TSDFVolume
 {
 public:
@@ -57,6 +56,14 @@ public:
 	virtual void Integrate(const RGBDImage &image,
 			const PinholeCameraIntrinsic &intrinsic,
 			const Eigen::Matrix4d &extrinsic) = 0;
+
+	/// Function to extract a point cloud with normals, using the marching cubes
+	/// algorithm (https://en.wikipedia.org/wiki/Marching_cubes)
+	virtual std::shared_ptr<PointCloud> ExtractPointCloud() = 0;
+
+	/// Function to extract a triangle mesh, using the marching cubes algorithm
+	/// (https://en.wikipedia.org/wiki/Marching_cubes)
+	virtual std::shared_ptr<TriangleMesh> ExtractTriangleMesh() = 0;
 
 public:
 	double voxel_length_;

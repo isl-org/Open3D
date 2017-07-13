@@ -48,3 +48,6 @@
 #include "Registration/TransformationEstimation.h"
 
 #include "Odometry/Odometry.h"
+
+#include "Integration/TSDFVolume.h"
+#include "Integration/UniformTSDFVolume.h"

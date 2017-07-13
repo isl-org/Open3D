@@ -186,11 +186,15 @@ void pybind_image_methods(py::module &m)
 	}, "Function to filter ImagePyramid", "image_pyramid"_a, "filter_type"_a);
 	m.def("CreateRGBDImageFromColorAndDepth", &CreateRGBDImageFromColorAndDepth,
 			"Function to make RGBDImage", "color"_a, "depth"_a, 
-			"depth_scale"_a = 1000.0, "depth_trunc"_a = 3.0);
+			"depth_scale"_a = 1000.0, "depth_trunc"_a = 3.0,
+			"convert_rgb_to_intensity"_a = true);
 	m.def("CreateRGBDImageFromTUMFormat", &CreateRGBDImageFromTUMFormat,
-			"Function to make RGBDImage (for TUM format)", "color"_a, "depth"_a);
+			"Function to make RGBDImage (for TUM format)", "color"_a, "depth"_a,
+			"convert_rgb_to_intensity"_a = true);
 	m.def("CreateRGBDImageFromSUNFormat", &CreateRGBDImageFromSUNFormat,
-			"Function to make RGBDImage (for SUN format)", "color"_a, "depth"_a);
+			"Function to make RGBDImage (for SUN format)", "color"_a, "depth"_a,
+			"convert_rgb_to_intensity"_a = true);
 	m.def("CreateRGBDImageFromNYUFormat", &CreateRGBDImageFromNYUFormat,
-			"Function to make RGBDImage (for NYU format)", "color"_a, "depth"_a);
+			"Function to make RGBDImage (for NYU format)", "color"_a, "depth"_a,
+			"convert_rgb_to_intensity"_a = true);
 }
