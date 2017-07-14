@@ -67,8 +67,12 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
 	// The following implementation is a highly optimized version.
 	if ((image.depth_.num_of_channels_ != 1) || 
 			(image.depth_.bytes_per_channel_ != 4) ||
+			(image.depth_.width_ != intrinsic.width_) ||
+			(image.depth_.height_ != intrinsic.height_) ||
 			(with_color_ && image.color_.num_of_channels_ != 3) ||
-			(with_color_ && image.color_.bytes_per_channel_ != 1)) {
+			(with_color_ && image.color_.bytes_per_channel_ != 1) ||
+			(with_color_ && image.color_.width_ != intrinsic.width_) ||
+			(with_color_ && image.color_.height_ != intrinsic.height_)) {
 		PrintWarning("[UniformTSDFVolume::Integrate] Unsupported image format. Please check if you have called CreateRGBDImageFromColorAndDepth() with convert_rgb_to_intensity=false.\n");
 		return;
 	}
