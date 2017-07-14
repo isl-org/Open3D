@@ -35,6 +35,33 @@ namespace three {
 
 class UniformTSDFVolume;
 
+/// Class that implements a more memory efficient data structure for volumetric
+/// integration
+/// This implementation is based on the following repository:
+/// https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
+/// The reference is:
+/// Q.-Y. Zhou and V. Koltun
+/// Dense Scene Reconstruction with Points of Interest
+/// In SIGGRAPH 2013
+/// Moreover, this implementation also utilizes observations made by the
+/// following paper:
+/// J. Chen, D. Bautembach, and S. Izadi
+/// Scalable Real-time Volumetric Surface Reconstruction
+/// In SIGGRAPH, 2013
+///
+/// An observed depth pixel gives two types of information: (a) an approximation
+/// of the nearby surface, and (b) empty space from the camera to the surface.
+/// They induce two core concepts of volumetric integration: weighted average of
+/// a truncated signed distance function (TSDF), and carving. The weighted
+/// average of TSDF is great in addressing the Gaussian noise along surface
+/// normal and producing a smooth surface output. The carving is great in
+/// removing outlier structures like floating noise pixels and bumps along
+/// structure edges.
+/// The scalable volume data structure has two layers of details. The leaf nodes
+/// build the weighted average of TSDF. They are allocated only around the
+/// surface. The interior nodes are used for carving. The carving algorithm is
+/// performed in a conservative way: do not carve when uncertain.
+
 class ScalableTSDFVolume : public TSDFVolume {
 public:
 	struct VolumeUnit {
@@ -43,8 +70,8 @@ public:
 		float weight_;
 	};
 public:
-	ScalableTSDFVolume(double voxel_length, int leaf_tsdf_resolution,
-			double sdf_trunc, bool with_color);
+	ScalableTSDFVolume(double voxel_length, double sdf_trunc, bool with_color,
+			int leaf_tsdf_resolution = 32);
 	~ScalableTSDFVolume() override;
 
 public:
