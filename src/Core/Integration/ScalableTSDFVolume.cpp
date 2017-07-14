@@ -30,8 +30,8 @@
 
 namespace three{
 
-ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length,
-		int leaf_tsdf_resolution, double sdf_trunc, bool with_color) :
+ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
+		bool with_color, int leaf_tsdf_resolution/* = 32*/) :
 		TSDFVolume(voxel_length, sdf_trunc, with_color),
 		leaf_tsdf_resolution_(leaf_tsdf_resolution)
 {
