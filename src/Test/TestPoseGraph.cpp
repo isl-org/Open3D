@@ -66,7 +66,10 @@ int main(int argc, char **argv)
 
 	// testing posegraph optimization
 	auto pose_graph_fragment = CreatePoseGraphFromFile(argv[1]);
-	auto pose_graph_fragment_optimized = GlobalOptimizationLM(*pose_graph_fragment);
+	GlobalOptimizationOption option;
+	GraphOptimizationLevenbergMethodMarquardt optimization_method;
+	auto pose_graph_fragment_optimized = GlobalOptimization(
+			*pose_graph_fragment, option, optimization_method);
 	WritePoseGraph("pose_graph_optimized.json", *pose_graph_fragment_optimized);
 
 	return 0;
