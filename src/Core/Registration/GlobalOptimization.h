@@ -27,182 +27,12 @@
 #pragma once
 
 #include <memory>
-#include <Eigen/Dense>
-#include <Core/Utility/Eigen.h>
-#include <Core/Utility/Timer.h>
-#include <Core/Utility/Console.h>
-// below is required as header has implementations
-#include <Core/Registration/PoseGraph.h>
 #include <Core/Registration/GlobalOptimizationMethod.h>
-#include <Core/Registration/GlobalOptimizationOption.h>
+#include <Core/Registration/GlobalOptimizationConvergenceCriteria.h>
 
 namespace three {
 
 class PoseGraph;
-
-class GlobalOptimizationMethod;
-
-class GlobalOptimizationOption;
-
-namespace {
-
-class OptimizationStatus
-{
-public:
-	OptimizationStatus() {};
-	virtual ~OptimizationStatus() {};
-};
-
-class OptimizationStatusGaussNewton : public OptimizationStatus
-{
-public:
-	OptimizationStatusGaussNewton() {};
-	~OptimizationStatusGaussNewton() override {};
-	void Init(const PoseGraph& pose_graph,
-			const GlobalOptimizationOption option);
-	void PrintInit() {
-		PrintDebug("[GlobalOptimization] Optimizing PoseGraph having %d nodes and %d edges\n",
-			n_nodes_, n_edges_);
-		PrintDebug("[Initial     ] residual : %e\n", current_residual_);
-	}
-	void ComputeLinearSystemInClass();
-	void SolveLinearSystemInClass();
-	void UpdatePoseGraphInClass();
-	void UpdateCurrentInClass();
-	std::shared_ptr<PoseGraph> UpdatePruneInClass();
-	void Checkb() {
-		if (b_.maxCoeff() < 1e-6) {
-			PrintWarning("[Job finished] b is near zero.\n");
-			stop_ = true;
-		}
-	};
-	bool CheckRelative() {
-		if (delta_.norm() < 1e-6 * (pose_vector_.norm() + 1e-6)) {
-			stop_ = true;
-			PrintDebug("[Job finished] delta.norm() < %e * (pose_vector.norm() + %e)\n",
-				1e-6, 1e-6);
-			return true;
-		} else return false;
-	}
-	void CheckRelativeResidual() {
-		if (current_residual_ - new_residual_ < 1e-6 * current_residual_) {
-			stop_ = true;
-			PrintDebug("[Job finished] current_residual - new_residual < %e * current_residual\n",
-				1e-6);
-		}
-	}
-	void CheckAbsoluteResidual() {
-		if (current_residual_ < 1e-6) {
-			stop_ = true;
-			PrintDebug("[Job finished] current_residual < %e\n",
-				1e-6);
-		}
-	}
-	void CheckMaxIteration() {
-		if (iter_ == option_.max_iteration_) {
-			stop_ = true;
-			PrintDebug("[Job finished] reached maximum number of iterations\n",
-				1e-6);
-		}
-	}
-	void PrintStatus() {
-		PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
-			iter_, current_residual_, valid_edges_num_, n_edges_ - (n_nodes_ - 1),
-			timer_iter_.GetDuration() / 1000.0);
-	}
-	void PrintOverallTime() {
-		PrintDebug("[GlobalOptimization] total time : %.3f sec.\n",
-			timer_overall_.GetDuration() / 1000.0);
-	}
-public:
-	int iter_;
-	Timer timer_overall_;
-	Timer timer_iter_;
-	std::shared_ptr<PoseGraph> pose_graph_current_;
-	std::shared_ptr<PoseGraph> pose_graph_new_;
-	double current_residual_;
-	double new_residual_;
-	int n_nodes_;
-	int n_edges_;
-	int valid_edges_num_;
-	Eigen::VectorXd pose_vector_;
-	Eigen::VectorXd line_process_;
-	Eigen::MatrixXd H_;
-	Eigen::VectorXd b_;
-	Eigen::VectorXd delta_;
-	Eigen::VectorXd zeta_;
-	Eigen::VectorXd zeta_new_;
-	GlobalOptimizationOption option_;
-	bool stop_;
-};
-
-class OptimizationStatusLevenbergMarquardt : 
-		public OptimizationStatusGaussNewton
-{
-public:
-	OptimizationStatusLevenbergMarquardt() {};
-	~OptimizationStatusLevenbergMarquardt() override {};
-	void InitLM();
-	void PrintInit() {
-		PrintDebug("[GlobalOptimization] Optimizing PoseGraph having %d nodes and %d edges\n",
-			n_nodes_, n_edges_);
-		PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
-			current_residual_, current_lambda_);
-	}
-	void SolveLinearSystemInClass();
-	void ComputeRho();
-	void ComputeGain();
-	void ResetGain();
-	void CheckMaxIterationInnerLoop() {
-		if (lm_count_ > option_.max_iteration_lm_) {
-			stop_ = true;
-			PrintDebug("[Job finished] lm_count > %d\n",
-				option_.max_iteration_lm_);
-		}
-	}
-	void PrintStatus() {
-		PrintDebug("[Iteration %02d] residual : %e, lambda : %e, valid edges : %d/%d, time : %.3f sec.\n",
-			iter_, current_residual_, current_lambda_,
-			valid_edges_num_, n_edges_ - (n_nodes_ - 1),
-			timer_iter_.GetDuration() / 1000.0);
-	}
-public:
-	Eigen::MatrixXd H_I_;
-	int lm_count_;
-	double tau_;
-	double current_lambda_;
-	double ni_;
-	double rho_;
-};
-
-}	// unnamed namespace
-//
-//class GraphOptimizationConvergenceCriteria
-//{
-//public:
-//	//GraphOptimizationConvergenceCriteria(double relative_increment = 1e-6,
-//	//	double relative_residual_increment = 1e-6, int max_iteration = 30) :
-//	//	relative_increment_(relative_increment), 
-//	//	relative_residual_increment_(relative_residual_increment),
-//	//	max_iteration_(max_iteration) {}
-//	//~GraphOptimizationConvergenceCriteria() {}
-//
-//public:
-//	int max_iteration = 100;
-//	int max_iteration_lm = 20;
-//	double relative_increment_;
-//	double relative_residual_increment_;
-//	double affordable_solver_error_;
-//	double min_right_term_;
-//	double min_residual_;
-//	int max_iteration_;
-//};
-
-/// Class that defines the convergence criteria of ICP
-/// ICP algorithm stops if the relative change of fitness and rmse hit
-/// relative_fitness_ and relative_rmse_ individually, or the iteration number
-/// exceeds max_iteration_.
-
 
 /// Function to optimize a PoseGraph 
 /// Reference:
@@ -218,9 +48,11 @@ public:
 ///    Transactions on Mathematical Software, 2009
 std::shared_ptr<PoseGraph> GlobalOptimization(
 		const PoseGraph &pose_graph, 
-		const GraphOptimizationMethod &method = 
-		GraphOptimizationLevenbergMethodMarquardt(),
-		const GlobalOptimizationOption &option = 
-		GlobalOptimizationOption());
+		const GlobalOptimizationMethod &method =
+		GlobalOptimizationLevenbergMethodMarquardt(),
+		const GlobalOptimizationConvergenceCriteria &option =
+		GlobalOptimizationConvergenceCriteria(),
+		const GlobalOptimizationLineProcessOption &line_process_option =
+		GlobalOptimizationLineProcessOption());
 
 }	// namespace three

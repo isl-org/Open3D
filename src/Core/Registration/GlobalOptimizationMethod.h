@@ -26,53 +26,55 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
 
 namespace three {
 
 class PoseGraph;
 
-class OptimizationStatus;
-
 class GlobalOptimizationOption;
 
-//class GraphOptimizationConvergenceCriteria;
+class GlobalOptimizationConvergenceCriteria;
 
-class GraphOptimizationMethod
+class GlobalOptimizationLineProcessOption;
+
+class GlobalOptimizationMethod
 {
 public:
-	GraphOptimizationMethod() {}
-	virtual ~GraphOptimizationMethod() {}
+	GlobalOptimizationMethod() {}
+	virtual ~GlobalOptimizationMethod() {}
 
 public:
 	virtual std::shared_ptr<PoseGraph> OptimizePoseGraph(
 			const PoseGraph &pose_graph,
-			const GlobalOptimizationOption &option) const = 0;
+			const GlobalOptimizationConvergenceCriteria &criteria,
+			const GlobalOptimizationLineProcessOption &option) const = 0;
 };
 
-class GraphOptimizationMethodGaussNewton : public GraphOptimizationMethod
+class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod
 {
 public:
-	GraphOptimizationMethodGaussNewton() {}
-	~GraphOptimizationMethodGaussNewton() override {}
+	GlobalOptimizationGaussNewton() {}
+	~GlobalOptimizationGaussNewton() override {}
 
 public:
 	std::shared_ptr<PoseGraph> OptimizePoseGraph(
 			const PoseGraph &pose_graph,
-			const GlobalOptimizationOption &option) const override;
+			const GlobalOptimizationConvergenceCriteria &criteria,
+			const GlobalOptimizationLineProcessOption &option) const override;
 };
 
-class GraphOptimizationLevenbergMethodMarquardt : public GraphOptimizationMethod
+class GlobalOptimizationLevenbergMethodMarquardt : public GlobalOptimizationMethod
 {
 public:
-	GraphOptimizationLevenbergMethodMarquardt() {}
-	~GraphOptimizationLevenbergMethodMarquardt() override {}
+	GlobalOptimizationLevenbergMethodMarquardt() {}
+	~GlobalOptimizationLevenbergMethodMarquardt() override {}
 
 public:
 	std::shared_ptr<PoseGraph> OptimizePoseGraph(
 			const PoseGraph &pose_graph,
-			const GlobalOptimizationOption &option) const override;
+			const GlobalOptimizationConvergenceCriteria &criteria,
+			const GlobalOptimizationLineProcessOption &option) const override;
 };
 
 }	// namespace three

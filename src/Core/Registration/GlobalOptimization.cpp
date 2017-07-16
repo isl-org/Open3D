@@ -31,9 +31,11 @@
 #include <vector>
 #include <tuple>
 #include <Eigen/Dense>
+#include <Core/Utility/Console.h>
+#include <Core/Utility/Timer.h>
 #include <Core/Registration/PoseGraph.h>
-#include <Core/Registration/GlobalOptimizationOption.h>
 #include <Core/Registration/GlobalOptimizationMethod.h>
+#include <Core/Registration/GlobalOptimizationConvergenceCriteria.h>
 
 namespace three{
 
@@ -115,7 +117,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetJacobian(
 /// See Eq (2). temp2 value in this function is derived from dE/dl = 0 
 std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 		const PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
-		const GlobalOptimizationOption &option)
+		const GlobalOptimizationLineProcessOption &option)
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
@@ -128,7 +130,7 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 		if (t.uncertain_) {
 			Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
 			double residual_square = e.transpose() * t.information_ * e;
-			double temp = option.line_process_weight_ / 
+			double temp = option.line_process_weight_ /
 					(option.line_process_weight_ + residual_square);
 			double temp2 = temp * temp;
 			if (temp2 < option.edge_prune_threshold_) {
@@ -143,7 +145,8 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 }
 
 double ComputeResidual(const PoseGraph &pose_graph, Eigen::VectorXd zeta,
-		Eigen::VectorXd line_process, const GlobalOptimizationOption &option)
+		Eigen::VectorXd line_process, 
+		const GlobalOptimizationLineProcessOption &option)
 {
 	int line_process_cnt = 0;
 	double residual = 0.0;
@@ -155,7 +158,7 @@ double ComputeResidual(const PoseGraph &pose_graph, Eigen::VectorXd zeta,
 			line_process_iter = line_process(line_process_cnt++);
 		Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
 		residual += line_process_iter * e.transpose() * te.information_ * e +
-				option.line_process_weight_ * 
+				option.line_process_weight_ *
 				pow(sqrt(line_process_iter) - 1, 2.0);
 	}
 	return residual;
@@ -266,7 +269,8 @@ std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
 }
 
 std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph, 
-		Eigen::VectorXd line_process, const GlobalOptimizationOption &option)
+		Eigen::VectorXd line_process, 
+		const GlobalOptimizationLineProcessOption &option)
 {
 	std::shared_ptr<PoseGraph> pose_graph_pruned = 
 			std::make_shared<PoseGraph>();
@@ -292,105 +296,285 @@ std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph,
 	return pose_graph_pruned;
 }
 
+void CheckRightTerm(bool &stop, const Eigen::VectorXd &right_term,
+		const GlobalOptimizationConvergenceCriteria &criteria)
+{
+	if (right_term.maxCoeff() < criteria.min_right_term_) {
+		PrintDebug("Maximum coefficient of right term < %e\n", 
+				criteria.min_right_term_);
+		stop = true;
+	}
+}
+
+void CheckRelativeIncrement(
+		bool &stop, const Eigen::VectorXd &delta, const Eigen::VectorXd &x,
+		const GlobalOptimizationConvergenceCriteria &criteria)
+{
+	if (delta.norm() < criteria.min_relative_increment_ *
+			(x.norm() + criteria.min_relative_increment_)) {
+		PrintDebug("Delta.norm() < %e * (x.norm() + %e)\n",
+				criteria.min_relative_increment_, 
+				criteria.min_relative_increment_);
+		stop = true;
+	}
+}
+
+void CheckRelativeResidualIncrement(
+		bool &stop, double current_residual, double new_residual,
+		const GlobalOptimizationConvergenceCriteria &criteria)
+{
+	if (current_residual - new_residual <
+		criteria.min_relative_residual_increment_ * current_residual) {
+		PrintDebug("Current_residual - new_residual < %e * current_residual\n", 
+				criteria.min_relative_residual_increment_);
+		stop = true;
+	}
+}
+
+void CheckResidual(bool &stop, double residual,
+		const GlobalOptimizationConvergenceCriteria &criteria)
+{
+	if (residual < criteria.min_residual_) {
+		PrintDebug("Current_residual < %e\n", criteria.min_residual_);
+		stop = true;
+	}
+}
+
+void CheckMaxIteration(bool &stop, int iteration,
+		const GlobalOptimizationConvergenceCriteria &criteria)
+{
+	if (iteration == criteria.max_iteration_) {
+		PrintDebug("Reached maximum number of iterations (%d)\n",
+				criteria.max_iteration_);
+		stop = true;
+	}
+}
+
+void CheckMaxIterationLM(bool &stop, int iteration,
+		const GlobalOptimizationConvergenceCriteria &criteria)
+{
+	if (iteration == criteria.max_iteration_lm_) {
+		PrintDebug("Reached maximum number of iterations (%d)\n",
+				criteria.max_iteration_lm_);
+		stop = true;
+	}
+}
+
 }	// unnamed namespace
 
-void OptimizationStatusGaussNewton::Init(
-	const PoseGraph& pose_graph,
-	const GlobalOptimizationOption option) {
+std::shared_ptr<PoseGraph> GlobalOptimizationGaussNewton::
+		OptimizePoseGraph(const PoseGraph &pose_graph,
+		const GlobalOptimizationConvergenceCriteria &criteria,
+		const GlobalOptimizationLineProcessOption &option) const
+{
+	int n_nodes = (int)pose_graph.nodes_.size();
+	int n_edges = (int)pose_graph.edges_.size();
 
-	pose_graph_current_ = std::make_shared<PoseGraph>();
-	*pose_graph_current_ = pose_graph;
-	option_ = option;
-	stop_ = false;
+	PrintDebug("[GlobalOptimization] Optimizing PoseGraph having %d nodes and %d edges\n",
+		n_nodes, n_edges);
 
-	n_nodes_ = (int)pose_graph_current_->nodes_.size();
-	n_edges_ = (int)pose_graph_current_->edges_.size();
-	line_process_.resize(n_edges_ - (n_nodes_ - 1));
-	line_process_.setOnes();
+	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
+	*pose_graph_refined = pose_graph;
 
-	zeta_ = ComputeZeta(*pose_graph_current_);
-	new_residual_ = ComputeResidual(
-			*pose_graph_current_, zeta_, line_process_, option_);
-	current_residual_ = new_residual_;
+	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
+	line_process.setOnes();
 
-	std::tie(line_process_, valid_edges_num_) = ComputeLineprocess(
-			*pose_graph_current_, zeta_, option_);
+	Eigen::VectorXd zeta = ComputeZeta(*pose_graph_refined);
+	double current_residual, new_residual;
+	new_residual = ComputeResidual(*pose_graph_refined, zeta, line_process, option);
+	current_residual = new_residual;
 
-	pose_vector_ = UpdatePoseVector(*pose_graph_current_);
+	int valid_edges_num;
+	std::tie(line_process, valid_edges_num) = ComputeLineprocess(
+			*pose_graph_refined, zeta, option);
 
-	ComputeLinearSystemInClass();
+	Eigen::MatrixXd H;
+	Eigen::VectorXd b;
+	Eigen::VectorXd x = UpdatePoseVector(*pose_graph_refined);
+
+	std::tie(H, b) = ComputeLinearSystem(*pose_graph_refined, zeta, line_process);
+
+	PrintDebug("[Initial     ] residual : %e\n", current_residual);
+
+	bool stop = false;
+	CheckRightTerm(stop, b, criteria);
+
+	Timer timer_overall;
+	timer_overall.Start();
+	int iter;
+	for (iter = 0; !stop; iter++) {
+		Timer timer_iter;
+		timer_iter.Start();
+
+		Eigen::VectorXd delta = H.ldlt().solve(b);
+
+		CheckRelativeIncrement(stop, delta, x, criteria);
+		if (!stop)
+		{
+			std::shared_ptr<PoseGraph> pose_graph_refined_new =
+				UpdatePoseGraph(*pose_graph_refined, delta);
+
+			Eigen::VectorXd zeta_new;
+			zeta_new = ComputeZeta(*pose_graph_refined_new);
+			new_residual = ComputeResidual(
+					*pose_graph_refined, zeta_new, line_process, option);
+			CheckRelativeResidualIncrement(
+					stop, current_residual, new_residual, criteria);
+			current_residual = new_residual;
+
+			zeta = zeta_new;
+			*pose_graph_refined = *pose_graph_refined_new;
+			x = UpdatePoseVector(*pose_graph_refined);
+			std::tie(line_process, valid_edges_num) = ComputeLineprocess(
+					*pose_graph_refined, zeta, option);
+			std::tie(H, b) = ComputeLinearSystem(*pose_graph_refined,
+					zeta, line_process);
+
+			CheckRightTerm(stop, b, criteria);
+		}
+		if (!stop) {
+			timer_iter.Stop();
+			PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
+					iter, current_residual,
+					valid_edges_num, n_edges - (n_nodes - 1),
+					timer_iter.GetDuration() / 1000.0);
+		}
+		CheckResidual(stop, current_residual, criteria);
+		CheckMaxIteration(stop, iter, criteria);
+	}	// end for
+	timer_overall.Stop();
+	PrintDebug("[GlobalOptimization] total time : %.3f sec.\n",
+			timer_overall.GetDuration() / 1000.0);
+
+	std::shared_ptr<PoseGraph> pose_graph_refined_pruned =
+			PruneInvalidEdges(*pose_graph_refined, line_process, option);
+	return pose_graph_refined_pruned;
 }
 
-void OptimizationStatusGaussNewton::ComputeLinearSystemInClass() {
-	std::tie(H_, b_) = ComputeLinearSystem(
-			*pose_graph_current_, zeta_, line_process_);
-}
+std::shared_ptr<PoseGraph> GlobalOptimizationLevenbergMethodMarquardt::
+		OptimizePoseGraph(const PoseGraph &pose_graph,
+		const GlobalOptimizationConvergenceCriteria &criteria,
+		const GlobalOptimizationLineProcessOption &option) const
+{
+	int n_nodes = (int)pose_graph.nodes_.size();
+	int n_edges = (int)pose_graph.edges_.size();
 
-void OptimizationStatusGaussNewton::SolveLinearSystemInClass() {
-	delta_ = H_.ldlt().solve(b_);
-}
+	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges\n",
+			n_nodes, n_edges);
 
-void OptimizationStatusGaussNewton::UpdatePoseGraphInClass() {
-	pose_graph_new_ = UpdatePoseGraph(*pose_graph_current_, delta_);
-	zeta_new_ = ComputeZeta(*pose_graph_new_);
-	new_residual_ = ComputeResidual(
-			*pose_graph_current_, zeta_new_, line_process_, option_);
-}
+	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
+	*pose_graph_refined = pose_graph;
 
-void OptimizationStatusGaussNewton::UpdateCurrentInClass() {
-	current_residual_ = new_residual_;
-	zeta_ = zeta_new_;
-	*pose_graph_current_ = *pose_graph_new_;
-	pose_vector_ = UpdatePoseVector(*pose_graph_current_);
-	std::tie(line_process_, valid_edges_num_) = ComputeLineprocess(
-			*pose_graph_current_, zeta_, option_);
-}
+	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
+	line_process.setOnes();
 
-std::shared_ptr<PoseGraph> OptimizationStatusGaussNewton::UpdatePruneInClass() {
-	return PruneInvalidEdges(*pose_graph_current_, line_process_, option_);
-}
+	Eigen::VectorXd zeta = ComputeZeta(*pose_graph_refined);
+	double current_residual, new_residual;
+	new_residual = ComputeResidual(*pose_graph_refined, zeta, line_process, option);
+	current_residual = new_residual;
 
-void OptimizationStatusLevenbergMarquardt::InitLM() {
-	ni_ = 2.0;
-	rho_ = 0.0;
-	tau_ = 1e-5;
-	H_I_ = Eigen::MatrixXd::Identity(n_nodes_ * 6, n_nodes_ * 6);
-	current_lambda_ = tau_ * H_.diagonal().maxCoeff();
-}
+	int valid_edges_num;
+	std::tie(line_process, valid_edges_num) = ComputeLineprocess(
+			*pose_graph_refined, zeta, option);
 
-void OptimizationStatusLevenbergMarquardt::SolveLinearSystemInClass() {
-	Eigen::MatrixXd H_LM = H_ + current_lambda_ * H_I_;
-	delta_ = H_LM.ldlt().solve(b_);
-}
+	Eigen::MatrixXd H_I = Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6);
+	Eigen::MatrixXd H;
+	Eigen::VectorXd b;
+	Eigen::VectorXd x = UpdatePoseVector(*pose_graph_refined);
 
-void OptimizationStatusLevenbergMarquardt::ComputeRho() {
-	rho_ = (current_residual_ - new_residual_) /
-			(delta_.dot(current_lambda_ * delta_ + b_) + 1e-3);
-}
+	std::tie(H, b) = ComputeLinearSystem(*pose_graph_refined, zeta, line_process);
 
-void OptimizationStatusLevenbergMarquardt::ComputeGain() {
-	double alpha = 1. - pow((2 * rho_ - 1), 3);
-	alpha = (std::min)(alpha, option_.upper_scale_factor_);
-	double scale_factor = (std::max)(option_.lower_scale_factor_, alpha);
-	current_lambda_ *= scale_factor;
-	ni_ = 2;
-}
+	Eigen::VectorXd H_diag = H.diagonal();
+	double tau = 1e-5;
+	double current_lambda = tau * H_diag.maxCoeff();
+	double ni = 2.0;
+	double rho = 0.0;
 
-void OptimizationStatusLevenbergMarquardt::ResetGain() {
-	current_lambda_ *= ni_;
-	ni_ *= 2;
+	PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
+			current_residual, current_lambda);
+
+	bool stop = false;
+	CheckRightTerm(stop, b, criteria);
+
+	Timer timer_overall;
+	timer_overall.Start();
+	int iter;
+	for (iter = 0; !stop; iter++) {
+		Timer timer_iter;
+		timer_iter.Start();
+		int lm_count = 0;
+		do {
+			Eigen::MatrixXd H_LM = H + current_lambda * H_I;
+			Eigen::VectorXd delta = H_LM.ldlt().solve(b);
+
+			CheckRelativeIncrement(stop, delta, x, criteria);
+			if (!stop)
+			{
+				std::shared_ptr<PoseGraph> pose_graph_refined_new =
+						UpdatePoseGraph(*pose_graph_refined, delta);
+
+				Eigen::VectorXd zeta_new;
+				zeta_new = ComputeZeta(*pose_graph_refined_new);
+				new_residual = ComputeResidual(
+						*pose_graph_refined, zeta_new, line_process, option);
+				rho = (current_residual - new_residual) /
+						(delta.dot(current_lambda * delta + b) + 1e-3);
+				if (rho > 0) {
+					CheckRelativeResidualIncrement(
+							stop, current_residual, new_residual, criteria);
+					double alpha = 1. - pow((2 * rho - 1), 3);
+					alpha = (std::min)(alpha, criteria.upper_scale_factor_);
+					double scaleFactor = (std::max)(criteria.lower_scale_factor_, alpha);
+					current_lambda *= scaleFactor;
+					ni = 2;
+					current_residual = new_residual;
+
+					zeta = zeta_new;
+					*pose_graph_refined = *pose_graph_refined_new;
+					x = UpdatePoseVector(*pose_graph_refined);
+					std::tie(line_process, valid_edges_num) = ComputeLineprocess(
+							*pose_graph_refined, zeta, option);
+					std::tie(H, b) = ComputeLinearSystem(*pose_graph_refined,
+							zeta, line_process);
+
+					CheckRightTerm(stop, b, criteria);
+				} else {
+					current_lambda *= ni;
+					ni *= 2;
+				}
+			}
+			lm_count++;
+			CheckMaxIterationLM(stop, lm_count, criteria);
+		} while (!((rho > 0) || stop));
+		if (!stop) {
+			timer_iter.Stop();
+			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, valid edges : %d/%d, time : %.3f sec.\n",
+					iter, current_residual, current_lambda,
+					valid_edges_num, n_edges - (n_nodes - 1),
+					timer_iter.GetDuration() / 1000.0);
+		}
+		CheckResidual(stop, current_residual, criteria);
+		CheckMaxIteration(stop, iter, criteria);
+	}	// end for
+	timer_overall.Stop();
+	PrintDebug("[GlobalOptimizationLM] total time : %.3f sec.\n",
+			timer_overall.GetDuration() / 1000.0);
+
+	std::shared_ptr<PoseGraph> pose_graph_refined_pruned =
+			PruneInvalidEdges(*pose_graph_refined, line_process, option);
+	return pose_graph_refined_pruned;
 }
 
 std::shared_ptr<PoseGraph> GlobalOptimization(
 		const PoseGraph &pose_graph, 
-		const GraphOptimizationMethod &method,
-		/* GraphOptimizationLevenbergMethodMarquardt() */
-		const GlobalOptimizationOption &option 
-		/* = GlobalOptimizationOption() */)
+		const GlobalOptimizationMethod &method,
+		/* GlobalOptimizationLevenbergMethodMarquardt() */
+		const GlobalOptimizationConvergenceCriteria &criteria,
+		/* GlobalOptimizationConvergenceCriteria() */
+		const GlobalOptimizationLineProcessOption &line_process_option
+		/* GlobalOptimizationLineProcessOption() */)
 {
-	return method.OptimizePoseGraph(pose_graph, option);
-	//std::shared_ptr<PoseGraph> test;
-	//return test;
+	return method.OptimizePoseGraph(pose_graph, criteria, line_process_option);
 }
 
 }	// namespace three
