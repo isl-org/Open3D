@@ -28,12 +28,12 @@
 
 #include <vector>
 #include <memory>
-#include <Core/Utility/Eigen.h>
-//#include <Core/Registration/GlobalOptimization.h>
 
 namespace three {
 
 class PoseGraph;
+
+class OptimizationStatus;
 
 class GlobalOptimizationOption;
 
@@ -49,33 +49,30 @@ public:
 	virtual std::shared_ptr<PoseGraph> OptimizePoseGraph(
 			const PoseGraph &pose_graph,
 			const GlobalOptimizationOption &option) const = 0;
-	//GraphOptimizationConvergenceCriteria criteria_;
 };
 
 class GraphOptimizationMethodGaussNewton : public GraphOptimizationMethod
 {
 public:
 	GraphOptimizationMethodGaussNewton() {}
-	virtual ~GraphOptimizationMethodGaussNewton() override {}
+	~GraphOptimizationMethodGaussNewton() override {}
 
 public:
 	std::shared_ptr<PoseGraph> OptimizePoseGraph(
 			const PoseGraph &pose_graph,
 			const GlobalOptimizationOption &option) const override;
-	//GraphOptimizationConvergenceCriteria criteria_;
 };
 
 class GraphOptimizationLevenbergMethodMarquardt : public GraphOptimizationMethod
 {
 public:
 	GraphOptimizationLevenbergMethodMarquardt() {}
-	virtual ~GraphOptimizationLevenbergMethodMarquardt() override {}
+	~GraphOptimizationLevenbergMethodMarquardt() override {}
 
 public:
 	std::shared_ptr<PoseGraph> OptimizePoseGraph(
 			const PoseGraph &pose_graph,
 			const GlobalOptimizationOption &option) const override;
-	//GraphOptimizationConvergenceCriteria criteria_;
 };
 
 }	// namespace three

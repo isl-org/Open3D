@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <string>
-
 namespace three {
 
 namespace {

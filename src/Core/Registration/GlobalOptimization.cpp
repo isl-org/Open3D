@@ -28,13 +28,12 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <tuple>
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
-#include <Eigen/SparseCholesky>
-#include <json/json.h>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Eigen.h>
-#include <Core/Utility/Timer.h>
+#include <Core/Registration/PoseGraph.h>
+#include <Core/Registration/GlobalOptimizationOption.h>
+#include <Core/Registration/GlobalOptimizationMethod.h>
 
 namespace three{
 
@@ -293,344 +292,105 @@ std::shared_ptr<PoseGraph> PruneInvalidEdges(const PoseGraph &pose_graph,
 	return pose_graph_pruned;
 }
 
-std::shared_ptr<PoseGraph> GlobalOptimizationLM(const PoseGraph &pose_graph,
-		const GlobalOptimizationOption &option)
-{
-	int n_nodes = (int)pose_graph.nodes_.size();
-	int n_edges = (int)pose_graph.edges_.size();
+}	// unnamed namespace
 
-	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges\n",
-			n_nodes, n_edges);
+void OptimizationStatusGaussNewton::Init(
+	const PoseGraph& pose_graph,
+	const GlobalOptimizationOption option) {
 
-	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
-	*pose_graph_refined = pose_graph;
+	pose_graph_current_ = std::make_shared<PoseGraph>();
+	*pose_graph_current_ = pose_graph;
+	option_ = option;
+	stop_ = false;
 
-	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
-	line_process.setOnes();
-
-	Eigen::VectorXd zeta = ComputeZeta(*pose_graph_refined);
-	double new_residual = ComputeResidual(
-			*pose_graph_refined, zeta, line_process, option);
-	double current_residual = new_residual;
-
-	int valid_edges_num;
-	std::tie(line_process, valid_edges_num) = ComputeLineprocess(
-			*pose_graph_refined, zeta, option);
-
-	Eigen::MatrixXd H_I = Eigen::MatrixXd::Identity(n_nodes * 6, n_nodes * 6);
-	Eigen::MatrixXd H;
-	Eigen::VectorXd b;
-	Eigen::VectorXd pose_vector = UpdatePoseVector(*pose_graph_refined);
-
-	std::tie(H, b) = ComputeLinearSystem(
-			*pose_graph_refined, zeta, line_process);
-
-	Eigen::VectorXd H_diag = H.diagonal();
-	double tau = 1e-5;
-	double current_lambda = tau * H_diag.maxCoeff();
-	double ni = 2.0;
-	double rho = 0.0;
-
-	PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
-			current_residual, current_lambda);
-
-	bool stop = false;
-	if (b.maxCoeff() < 1e-6) {
-		PrintWarning("[Job finished] b is near zero.\n");
-		stop = true;
-	}
-
-	Timer timer_overall;
-	timer_overall.Start();
-	int iter;
-	for (iter = 0; !stop; iter++) {
-		Timer timer_iter;
-		timer_iter.Start();
-		int lm_count = 0;
-		do {
-			Eigen::MatrixXd H_LM = H + current_lambda * H_I;
-			Eigen::VectorXd delta = H_LM.ldlt().solve(b);
-			if (delta.norm() < 1e-6 * (pose_vector.norm() + 1e-6)) {
-				stop = true;
-				PrintDebug("[Job finished] delta.norm() < %e * (pose_vector.norm() + %e)\n", 
-						1e-6, 1e-6);
-			} else {
-				std::shared_ptr<PoseGraph> pose_graph_refined_new =
-						UpdatePoseGraph(*pose_graph_refined, delta);
-
-				Eigen::VectorXd zeta_new;
-				zeta_new = ComputeZeta(*pose_graph_refined_new);
-				new_residual = ComputeResidual(
-						*pose_graph_refined, zeta_new, line_process, option);
-				rho = (current_residual - new_residual) / 
-						(delta.dot(current_lambda * delta + b) + 1e-3);
-				if (rho > 0) {
-					if (current_residual - new_residual < 
-							1e-6 * current_residual) {
-						stop = true;
-						PrintDebug("[Job finished] current_residual - new_residual < %e * current_residual\n", 1e-6);
-					}
-					double alpha = 1. - pow((2 * rho - 1), 3);
-					alpha = (std::min)(alpha, option.upper_scale_factor_);
-					double scale_factor = (std::max)
-							(option.lower_scale_factor_, alpha);
-					current_lambda *= scale_factor;
-					ni = 2;
-					current_residual = new_residual;
-
-					zeta = zeta_new;
-					*pose_graph_refined = *pose_graph_refined_new;
-					pose_vector = UpdatePoseVector(*pose_graph_refined);
-					std::tie(line_process, valid_edges_num) = ComputeLineprocess(
-							*pose_graph_refined, zeta, option);
-					std::tie(H, b) = ComputeLinearSystem(
-							*pose_graph_refined, zeta, line_process);
-					
-					if (b.maxCoeff() < 1e-6) {
-						stop = true;
-						PrintDebug("[Job finished] b.maxCoeff() < %e\n", 1e-6);
-					}
-				} else {
-					current_lambda *= ni;
-					ni *= 2;
-				}
-			}
-			lm_count++;
-			if (lm_count > option.max_iteration_lm_) {
-				stop = true;
-				PrintDebug("[Job finished] lm_count > %d\n", 
-						option.max_iteration_lm_);
-			}
-		} while (!((rho > 0) || stop));
-		if (!stop) {
-			timer_iter.Stop();
-			PrintDebug("[Iteration %02d] residual : %e, lambda : %e, valid edges : %d/%d, time : %.3f sec.\n",
-					iter, current_residual, current_lambda, 
-					valid_edges_num, n_edges - (n_nodes - 1), 
-					timer_iter.GetDuration() / 1000.0);
-		}
-		if (current_residual < 1e-6) {
-			stop = true;
-			PrintDebug("[Job finished] current_residual < %e\n", 1e-6);
-		}			
-		if (iter == option.max_iteration_) {
-			stop = true;
-			PrintDebug("[Job finished] reached maximum number of iterations\n", 1e-6);
-		}
-	}	// end for
-	timer_overall.Stop();
-	PrintDebug("[GlobalOptimizationLM] total time : %.3f sec.\n", 
-			timer_overall.GetDuration() / 1000.0);
-
-	std::shared_ptr<PoseGraph> pose_graph_refined_pruned =
-			PruneInvalidEdges(*pose_graph_refined, line_process, option);
-	return pose_graph_refined_pruned;
-}
-
-std::shared_ptr<PoseGraph> GlobalOptimizationGN(const PoseGraph &pose_graph,
-		const GlobalOptimizationOption &option)
-{
-	int n_nodes = (int)pose_graph.nodes_.size();
-	int n_edges = (int)pose_graph.edges_.size();
-
-	PrintDebug("[GlobalOptimization] Optimizing PoseGraph having %d nodes and %d edges\n",
-			n_nodes, n_edges);
-
-	std::shared_ptr<PoseGraph> pose_graph_refined = std::make_shared<PoseGraph>();
-	*pose_graph_refined = pose_graph;
-
-	Eigen::VectorXd line_process(n_edges - (n_nodes - 1));
-	line_process.setOnes();
-
-	Eigen::VectorXd zeta = ComputeZeta(*pose_graph_refined);
-	double new_residual = ComputeResidual(
-			*pose_graph_refined, zeta, line_process, option);
-	double current_residual = new_residual;
-
-	int valid_edges_num;
-	std::tie(line_process, valid_edges_num) = ComputeLineprocess(
-			*pose_graph_refined, zeta, option);
-
-	Eigen::MatrixXd H;
-	Eigen::VectorXd b;
-	Eigen::VectorXd pose_vector = UpdatePoseVector(*pose_graph_refined);
-
-	std::tie(H, b) = ComputeLinearSystem(
-			*pose_graph_refined, zeta, line_process);
-
-	PrintDebug("[Initial     ] residual : %e\n", current_residual);
-
-	bool stop = false;
-	if (b.maxCoeff() < 1e-6) {
-		PrintWarning("[Job finished] b is near zero.\n");
-		stop = true;
-	}
-
-	Timer timer_overall;
-	timer_overall.Start();
-	int iter;
-	for (iter = 0; !stop; iter++) {
-		Timer timer_iter;
-		timer_iter.Start();
-		
-		Eigen::VectorXd delta = H.ldlt().solve(b);
-		if (delta.norm() < 1e-6 * (pose_vector.norm() + 1e-6)) {
-			stop = true;
-			PrintDebug("[Job finished] delta.norm() < %e * (pose_vector.norm() + %e)\n",
-					1e-6, 1e-6);
-		} else {
-			std::shared_ptr<PoseGraph> pose_graph_refined_new =
-				UpdatePoseGraph(*pose_graph_refined, delta);
-
-			Eigen::VectorXd zeta_new;
-			zeta_new = ComputeZeta(*pose_graph_refined_new);
-			new_residual = ComputeResidual(
-					*pose_graph_refined, zeta_new, line_process, option);
-			if (current_residual - new_residual < 1e-6 * current_residual) {
-				stop = true;
-				PrintDebug("[Job finished] current_residual - new_residual < %e * current_residual\n", 
-						1e-6);
-			}
-			current_residual = new_residual;
-
-			zeta = zeta_new;
-			*pose_graph_refined = *pose_graph_refined_new;
-			pose_vector = UpdatePoseVector(*pose_graph_refined);
-			std::tie(line_process, valid_edges_num) = ComputeLineprocess(
-					*pose_graph_refined, zeta, option);
-			std::tie(H, b) = ComputeLinearSystem(
-					*pose_graph_refined, zeta, line_process);
-
-			if (b.maxCoeff() < 1e-6) {
-				stop = true;
-				PrintDebug("[Job finished] b.maxCoeff() < %e\n", 1e-6);
-			}
-		}
-		if (!stop) {
-			timer_iter.Stop();
-			PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
-				iter, current_residual, valid_edges_num, n_edges - (n_nodes - 1),
-				timer_iter.GetDuration() / 1000.0);
-		}
-		if (current_residual < 1e-6) {
-			stop = true;
-			PrintDebug("[Job finished] current_residual < %e\n", 
-					1e-6);
-		}
-		if (iter == option.max_iteration_) {
-			stop = true;
-			PrintDebug("[Job finished] reached maximum number of iterations\n", 
-					1e-6);
-		}
-	}	// end for
-	timer_overall.Stop();
-	PrintDebug("[GlobalOptimization] total time : %.3f sec.\n",
-			timer_overall.GetDuration() / 1000.0);
-
-	std::shared_ptr<PoseGraph> pose_graph_refined_pruned =
-			PruneInvalidEdges(*pose_graph_refined, line_process, option);
-	return pose_graph_refined_pruned;
-}
-
-void OptimizationStatus::Init() {
-
-	n_nodes_ = (int)pose_graph_refined_->nodes_.size();
-	n_edges_ = (int)pose_graph_refined_->edges_.size();
-	PrintDebug("[GlobalOptimization] Optimizing PoseGraph having %d nodes and %d edges\n",
-		n_nodes_, n_edges_);
-
+	n_nodes_ = (int)pose_graph_current_->nodes_.size();
+	n_edges_ = (int)pose_graph_current_->edges_.size();
 	line_process_.resize(n_edges_ - (n_nodes_ - 1));
 	line_process_.setOnes();
 
-	zeta_ = ComputeZeta(*pose_graph_refined_);
+	zeta_ = ComputeZeta(*pose_graph_current_);
 	new_residual_ = ComputeResidual(
-			*pose_graph_refined_, zeta_, line_process_, option_);
+			*pose_graph_current_, zeta_, line_process_, option_);
 	current_residual_ = new_residual_;
 
 	std::tie(line_process_, valid_edges_num_) = ComputeLineprocess(
-		*pose_graph_refined_, zeta_, option_);
+			*pose_graph_current_, zeta_, option_);
 
-	pose_vector_ = UpdatePoseVector(*pose_graph_refined_);
+	pose_vector_ = UpdatePoseVector(*pose_graph_current_);
 
 	ComputeLinearSystemInClass();
-
-	PrintDebug("[Initial     ] residual : %e\n", current_residual_);
 }
 
-void OptimizationStatus::ComputeLinearSystemInClass() {
+void OptimizationStatusGaussNewton::ComputeLinearSystemInClass() {
 	std::tie(H_, b_) = ComputeLinearSystem(
-		*pose_graph_refined_, zeta_, line_process_);
+			*pose_graph_current_, zeta_, line_process_);
 }
 
-void OptimizationStatus::SolveLinearSystemInClass() {
+void OptimizationStatusGaussNewton::SolveLinearSystemInClass() {
 	delta_ = H_.ldlt().solve(b_);
 }
 
-void OptimizationStatus::UpdatePoseGraphInClass() {
-	pose_graph_refined_new_ =
-		UpdatePoseGraph(*pose_graph_refined_, delta_);
-	zeta_new_ = ComputeZeta(*pose_graph_refined_new_);
+void OptimizationStatusGaussNewton::UpdatePoseGraphInClass() {
+	pose_graph_new_ = UpdatePoseGraph(*pose_graph_current_, delta_);
+	zeta_new_ = ComputeZeta(*pose_graph_new_);
 	new_residual_ = ComputeResidual(
-		*pose_graph_refined_, zeta_new_, line_process_, option_);
+			*pose_graph_current_, zeta_new_, line_process_, option_);
 }
 
-void OptimizationStatus::UpdateCurrentInClass() {
+void OptimizationStatusGaussNewton::UpdateCurrentInClass() {
 	current_residual_ = new_residual_;
 	zeta_ = zeta_new_;
-	*pose_graph_refined_ = *pose_graph_refined_new_;
-	pose_vector_ = UpdatePoseVector(*pose_graph_refined_);
+	*pose_graph_current_ = *pose_graph_new_;
+	pose_vector_ = UpdatePoseVector(*pose_graph_current_);
 	std::tie(line_process_, valid_edges_num_) = ComputeLineprocess(
-		*pose_graph_refined_, zeta_, option_);
+			*pose_graph_current_, zeta_, option_);
 }
 
-std::shared_ptr<PoseGraph> OptimizationStatus::UpdatePruneInClass() {
-	return PruneInvalidEdges(*pose_graph_refined_, line_process_, option_);
+std::shared_ptr<PoseGraph> OptimizationStatusGaussNewton::UpdatePruneInClass() {
+	return PruneInvalidEdges(*pose_graph_current_, line_process_, option_);
 }
 
-std::shared_ptr<PoseGraph> GlobalOptimizationGNNewType(const PoseGraph &pose_graph,
-		const GlobalOptimizationOption &option)
-{
-	OptimizationStatus status(pose_graph, option);
-
-	status.Init();
-	status.Checkb();
-
-	status.timer_overall_.Start();
-	for (status.iter_ = 0; !status.stop_; status.iter_++) {
-		status.timer_iter_.Start();
-		
-		status.SolveLinearSystemInClass();
-
-		if (!status.CheckRelative()) {
-			status.UpdatePoseGraphInClass();			
-			status.CheckRelativeResidual();
-			status.UpdateCurrentInClass(); 
-			status.ComputeLinearSystemInClass();
-			status.Checkb();
-		} 
-		if (!status.stop_) {
-			status.timer_iter_.Stop();
-			status.PrintStatus();
-		}
-		status.CheckResidual();
-		status.CheckMaxIteration();
-	}	// end for
-	status.timer_overall_.Stop();
-	status.PrintOverallTime();
-
-	std::shared_ptr<PoseGraph> pose_graph_refined_pruned = 
-			status.UpdatePruneInClass();
-	return pose_graph_refined_pruned;
+void OptimizationStatusLevenbergMarquardt::InitLM() {
+	ni_ = 2.0;
+	rho_ = 0.0;
+	tau_ = 1e-5;
+	H_I_ = Eigen::MatrixXd::Identity(n_nodes_ * 6, n_nodes_ * 6);
+	current_lambda_ = tau_ * H_.diagonal().maxCoeff();
 }
 
-}	// unnamed namespace
+void OptimizationStatusLevenbergMarquardt::SolveLinearSystemInClass() {
+	Eigen::MatrixXd H_LM = H_ + current_lambda_ * H_I_;
+	delta_ = H_LM.ldlt().solve(b_);
+}
+
+void OptimizationStatusLevenbergMarquardt::ComputeRho() {
+	rho_ = (current_residual_ - new_residual_) /
+			(delta_.dot(current_lambda_ * delta_ + b_) + 1e-3);
+}
+
+void OptimizationStatusLevenbergMarquardt::ComputeGain() {
+	double alpha = 1. - pow((2 * rho_ - 1), 3);
+	alpha = (std::min)(alpha, option_.upper_scale_factor_);
+	double scale_factor = (std::max)(option_.lower_scale_factor_, alpha);
+	current_lambda_ *= scale_factor;
+	ni_ = 2;
+}
+
+void OptimizationStatusLevenbergMarquardt::ResetGain() {
+	current_lambda_ *= ni_;
+	ni_ *= 2;
+}
 
 std::shared_ptr<PoseGraph> GlobalOptimization(
 		const PoseGraph &pose_graph, 
-		const GlobalOptimizationOption &option,
-		const GraphOptimizationMethod &method)
+		const GraphOptimizationMethod &method,
+		/* GraphOptimizationLevenbergMethodMarquardt() */
+		const GlobalOptimizationOption &option 
+		/* = GlobalOptimizationOption() */)
 {
-	return GlobalOptimizationGNNewType(pose_graph, option);
+	return method.OptimizePoseGraph(pose_graph, option);
+	//std::shared_ptr<PoseGraph> test;
+	//return test;
 }
 
 }	// namespace three

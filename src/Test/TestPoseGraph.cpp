@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 	GlobalOptimizationOption option;
 	GraphOptimizationLevenbergMethodMarquardt optimization_method;
 	auto pose_graph_fragment_optimized = GlobalOptimization(
-			*pose_graph_fragment, option, optimization_method);
+			*pose_graph_fragment, optimization_method, option);
 	WritePoseGraph("pose_graph_optimized.json", *pose_graph_fragment_optimized);
 
 	return 0;
