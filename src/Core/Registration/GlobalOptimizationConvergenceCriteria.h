@@ -34,7 +34,7 @@ double SetValueZeroToOne(double input, double default_value) {
 	return input < 0.0 || input > 1.0 ? default_value : input;
 }
 
-}
+}	// unnamed namespace
 
 class GlobalOptimizationLineProcessOption
 {
@@ -49,6 +49,7 @@ public:
 		edge_prune_threshold_ =
 				SetValueZeroToOne(edge_prune_threshold_, 0.25);
 	};
+
 public:
 	/// See reference list in GlobalOptimization.h
 	/// line_process_weight_ is equivalent to mu in [Choi et al 2015].
@@ -57,8 +58,6 @@ public:
 	/// line_process < edge_prune_threshold_ (0.25) is pruned.
 	double edge_prune_threshold_;
 };
-	
-//}	// unnamed namespace
 
 class GlobalOptimizationConvergenceCriteria
 {
@@ -87,6 +86,7 @@ public:
 				SetValueZeroToOne(lower_scale_factor_, 1. / 3.);
 	};
 	~GlobalOptimizationConvergenceCriteria() {};
+
 public:
 	/// maximum iteration number for iterative optmization module.
 	int max_iteration_;
