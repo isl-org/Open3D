@@ -64,7 +64,10 @@ const std::vector<Eigen::Matrix4d> jacobian_operator = {
 	(Eigen::Matrix4d() << /* for c */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0).finished() };
 
-inline Eigen::Vector6d GetApproximate6DVector(Eigen::Matrix4d input)
+/// This function is intended for linearized form of SE(3).
+/// For explicit representation for quaternion, refer to linearizeOplus() in
+/// https://github.com/RainerKuemmerle/g2o/blob/master/g2o/types/slam3d/edge_se3.cpp
+inline Eigen::Vector6d GetLinearized6DVector(Eigen::Matrix4d input)
 {
 	Eigen::Vector6d output;
 	output(0) = (-input(1, 2) + input(2, 1)) / 2.0;
@@ -79,7 +82,7 @@ inline Eigen::Vector6d GetMisalignmentVector(const Eigen::Matrix4d &X_inv,
 {
 	Eigen::Matrix4d temp;
 	temp.noalias() = X_inv * Tt_inv * Ts;
-	return GetApproximate6DVector(temp);
+	return GetLinearized6DVector(temp);
 }
 
 inline std::tuple<Eigen::Matrix4d, Eigen::Matrix4d, Eigen::Matrix4d>
@@ -102,13 +105,13 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetJacobian(
 	for (int i = 0; i < 6; i++) {
 		Eigen::Matrix4d temp = X_inv * Tt_inv * 
 				jacobian_operator[i] * Ts;
-		Js.block<6, 1>(0, i) = GetApproximate6DVector(temp);
+		Js.block<6, 1>(0, i) = GetLinearized6DVector(temp);
 	}
 	Eigen::Matrix6d Jt = Eigen::Matrix6d::Zero();
 	for (int i = 0; i < 6; i++) {
 		Eigen::Matrix4d temp = X_inv * Tt_inv * 
 				-jacobian_operator[i] * Ts;
-		Jt.block<6, 1>(0, i) = GetApproximate6DVector(temp);
+		Jt.block<6, 1>(0, i) = GetLinearized6DVector(temp);
 	}
 	return std::make_tuple(std::move(Js), std::move(Jt));
 }
@@ -144,6 +147,7 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 	return std::make_tuple(std::move(line_process), valid_edges_num);
 }
 
+/// Function to compute residual defined in [Choi et al 2015] See Eq (9). 
 double ComputeResidual(const PoseGraph &pose_graph, Eigen::VectorXd zeta,
 		Eigen::VectorXd line_process, 
 		const GlobalOptimizationLineProcessOption &option)
@@ -164,6 +168,7 @@ double ComputeResidual(const PoseGraph &pose_graph, Eigen::VectorXd zeta,
 	return residual;
 }
 
+/// Function to compute residual defined in [Choi et al 2015] See Eq (6). 
 Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph) 
 {
 	int n_edges = (int)pose_graph.edges_.size();	
