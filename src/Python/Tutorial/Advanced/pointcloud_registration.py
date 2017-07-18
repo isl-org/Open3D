@@ -43,7 +43,7 @@ if __name__ == "__main__":
 			TransformationEstimationPointToPoint(False), 4,
 			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
 			CorrespondenceCheckerBasedOnDistance(0.075)],
-			RANSACConvergenceCriteria(40000000, 500))
+			RANSACConvergenceCriteria(4000000, 500))
 	print(result_ransac)
 	DrawRegistrationResult(source_down, target_down,
 			result_ransac.transformation)
