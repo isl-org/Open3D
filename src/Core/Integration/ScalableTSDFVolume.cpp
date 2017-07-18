@@ -32,9 +32,10 @@ namespace three{
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
 		bool with_color, int leaf_tsdf_resolution/* = 32*/,
-		int void_confidence_threshold/* = 8*/) :
+		int carving_threshold/* = 8*/) :
 		TSDFVolume(voxel_length, sdf_trunc, with_color),
-		leaf_tsdf_resolution_(leaf_tsdf_resolution)
+		leaf_tsdf_resolution_(leaf_tsdf_resolution),
+		carving_threshold_(carving_threshold)
 {
 }
 

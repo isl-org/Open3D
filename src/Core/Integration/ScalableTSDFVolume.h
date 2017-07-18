@@ -67,11 +67,11 @@ public:
 	struct VolumeUnit {
 	public:
 		std::shared_ptr<UniformTSDFVolume> volume_;
-		int void_confidence_;
+		int num_of_carving_;
 	};
 public:
 	ScalableTSDFVolume(double voxel_length, double sdf_trunc, bool with_color,
-			int leaf_tsdf_resolution = 16, int void_confidence_threshold = 8);
+			int leaf_tsdf_resolution = 16, int carving_threshold = 8);
 	~ScalableTSDFVolume() override;
 
 public:
@@ -84,7 +84,7 @@ public:
 
 public:
 	int leaf_tsdf_resolution_;
-	int void_confidence_threshold_;
+	int carving_threshold_;
 	std::unordered_map<Eigen::Vector3i, VolumeUnit,
 			hash_eigen::hash<Eigen::Vector3i>> volume_units_;
 };
