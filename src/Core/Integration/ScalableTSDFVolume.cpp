@@ -40,7 +40,6 @@ ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
 
 ScalableTSDFVolume::~ScalableTSDFVolume()
 {
-	volume_units_.clear();
 }
 
 void ScalableTSDFVolume::Reset()
