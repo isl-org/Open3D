@@ -26,8 +26,6 @@
 
 #include "GlobalOptimization.h"
 
-#include <iostream>
-#include <fstream>
 #include <vector>
 #include <tuple>
 #include <Eigen/Dense>
@@ -65,7 +63,9 @@ const std::vector<Eigen::Matrix4d> jacobian_operator = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0).finished() };
 
 /// This function is intended for linearized form of SE(3).
-/// For explicit representation for quaternion, refer to linearizeOplus() in
+/// It is an approximate form. See [Choi et al 2015] for derivation.
+/// Alternatively, explicit representation that uses quaternion can be used
+/// here to replace this function. Refer to linearizeOplus() in
 /// https://github.com/RainerKuemmerle/g2o/blob/master/g2o/types/slam3d/edge_se3.cpp
 inline Eigen::Vector6d GetLinearized6DVector(Eigen::Matrix4d input)
 {
@@ -136,12 +136,9 @@ std::tuple<Eigen::VectorXd, int> ComputeLineprocess(
 			double temp = option.line_process_weight_ /
 					(option.line_process_weight_ + residual_square);
 			double temp2 = temp * temp;
-			if (temp2 < option.edge_prune_threshold_) {
-				line_process(line_process_cnt++) = 0; 
-			} else {
-				line_process(line_process_cnt++) = temp2;				
+			line_process(line_process_cnt++) = temp2;
+			if (temp2 > option.edge_prune_threshold_) 
 				valid_edges_num++;
-			}				
 		}
 	}
 	return std::make_tuple(std::move(line_process), valid_edges_num);
@@ -348,7 +345,7 @@ void CheckResidual(bool &stop, double residual,
 void CheckMaxIteration(bool &stop, int iteration,
 		const GlobalOptimizationConvergenceCriteria &criteria)
 {
-	if (iteration == criteria.max_iteration_) {
+	if (iteration >= criteria.max_iteration_) {
 		PrintDebug("Reached maximum number of iterations (%d)\n",
 				criteria.max_iteration_);
 		stop = true;
@@ -358,7 +355,7 @@ void CheckMaxIteration(bool &stop, int iteration,
 void CheckMaxIterationLM(bool &stop, int iteration,
 		const GlobalOptimizationConvergenceCriteria &criteria)
 {
-	if (iteration == criteria.max_iteration_lm_) {
+	if (iteration >= criteria.max_iteration_lm_) {
 		PrintDebug("Reached maximum number of iterations (%d)\n",
 				criteria.max_iteration_lm_);
 		stop = true;

@@ -28,14 +28,6 @@
 
 namespace three {
 
-namespace {
-
-double SetValueZeroToOne(double input, double default_value) {
-	return input < 0.0 || input > 1.0 ? default_value : input;
-}
-
-}	// unnamed namespace
-
 class GlobalOptimizationLineProcessOption
 {
 public:
@@ -44,11 +36,11 @@ public:
 			double edge_prune_threshold = 0.25) :
 			line_process_weight_(line_process_weight),
 			edge_prune_threshold_(edge_prune_threshold) {
-	};
-	~GlobalOptimizationLineProcessOption() {
 		edge_prune_threshold_ =
-				SetValueZeroToOne(edge_prune_threshold_, 0.25);
+				edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0 
+				? 0.25 : edge_prune_threshold;
 	};
+	~GlobalOptimizationLineProcessOption() {};
 
 public:
 	/// See reference list in GlobalOptimization.h
@@ -81,9 +73,11 @@ public:
 		lower_scale_factor_(lower_scale_factor) 
 	{
 		upper_scale_factor_ =
-				SetValueZeroToOne(upper_scale_factor_, 2. / 3.);
+				upper_scale_factor < 0.0 || upper_scale_factor > 1.0
+				? 2. / 3. : upper_scale_factor;
 		lower_scale_factor_ =
-				SetValueZeroToOne(lower_scale_factor_, 1. / 3.);
+				lower_scale_factor < 0.0 || lower_scale_factor > 1.0
+				? 1. / 3. : lower_scale_factor;
 	};
 	~GlobalOptimizationConvergenceCriteria() {};
 
