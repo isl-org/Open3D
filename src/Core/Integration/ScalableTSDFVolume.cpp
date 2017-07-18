@@ -40,17 +40,30 @@ ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
 
 ScalableTSDFVolume::~ScalableTSDFVolume()
 {
-	volume_units_.clear();
 }
 
 void ScalableTSDFVolume::Reset()
 {
+	volume_units_.clear();
 }
 
 void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 		const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic)
 {
+	if ((image.depth_.num_of_channels_ != 1) || 
+			(image.depth_.bytes_per_channel_ != 4) ||
+			(image.depth_.width_ != intrinsic.width_) ||
+			(image.depth_.height_ != intrinsic.height_) ||
+			(with_color_ && image.color_.num_of_channels_ != 3) ||
+			(with_color_ && image.color_.bytes_per_channel_ != 1) ||
+			(with_color_ && image.color_.width_ != intrinsic.width_) ||
+			(with_color_ && image.color_.height_ != intrinsic.height_)) {
+		PrintWarning("[ScalableTSDFVolume::Integrate] Unsupported image format. Please check if you have called CreateRGBDImageFromColorAndDepth() with convert_rgb_to_intensity=false.\n");
+		return;
+	}
+	auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
+			intrinsic);
 }
 
 std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
