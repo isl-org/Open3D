@@ -90,8 +90,8 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
 		for (int y = 1; y < resolution_ - 1; y++) {
 			for (int z = 1; z < resolution_ - 1; z++) {
 				Eigen::Vector3i idx0(x, y, z);
-				float w0 = weight_[index(idx0)];
-				float f0 = tsdf_[index(idx0)];
+				float w0 = weight_[IndexOf(idx0)];
+				float f0 = tsdf_[IndexOf(idx0)];
 				if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
 					Eigen::Vector3d p0(
 							half_voxel_length + voxel_length_ * x,
@@ -103,8 +103,8 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
 						Eigen::Vector3i idx1 = idx0;
 						idx1(i) += 1;
 						if (idx1(i) < resolution_ - 1) {
-							float w1 = weight_[index(idx1)];
-							float f1 = tsdf_[index(idx1)];
+							float w1 = weight_[IndexOf(idx1)];
+							float f1 = tsdf_[IndexOf(idx1)];
 							if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
 									f0 * f1 < 0) {
 								float r0 = std::fabs(f0);
@@ -114,8 +114,8 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
 								pointcloud->points_.push_back(p);
 								if (with_color_) {
 									pointcloud->colors_.push_back(
-											((color_[index(idx0)] * r1 +
-											color_[index(idx1)] * r0) /
+											((color_[IndexOf(idx0)] * r1 +
+											color_[IndexOf(idx1)] * r0) /
 											(r0 + r1) / 255.0f).cast<double>());
 								}
 								// has_normal
@@ -483,16 +483,16 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
 				Eigen::Vector3d c[8];
 				for (int i = 0; i < 8; i++ ) {
 					Eigen::Vector3i idx = Eigen::Vector3i(x, y, z) + shift[i];
-					if (weight_[index(idx)] == 0.0) {
+					if (weight_[IndexOf(idx)] == 0.0) {
 						cube_index = 0;
 						break;
 					} else {
-						f[i] = tsdf_[index(idx)];
+						f[i] = tsdf_[IndexOf(idx)];
 						if (f[i] < 0.0f) {
 							cube_index |= (1 << i);
 						}
 						if (with_color_) {
-							c[i] = color_[index(idx)].cast<double>() / 255.0;
+							c[i] = color_[IndexOf(idx)].cast<double>() / 255.0;
 						}
 					}
 				}
@@ -678,18 +678,18 @@ double UniformTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p)
 	Eigen::Vector3d r = p_grid - idx.cast<double>();
 	return (1 - r(0)) * (
 			(1 - r(1)) * (
-			(1 - r(2)) * tsdf_[index(idx + Eigen::Vector3i(0, 0, 0))] +
-			r(2) * tsdf_[index(idx + Eigen::Vector3i(0, 0, 1))]
+			(1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 0, 0))] +
+			r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 0, 1))]
 			) + r(1) * (
-			(1 - r(2)) * tsdf_[index(idx + Eigen::Vector3i(0, 1, 0))] +
-			r(2) * tsdf_[index(idx + Eigen::Vector3i(0, 1, 1))]
+			(1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 1, 0))] +
+			r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(0, 1, 1))]
 			)) + r(0) * (
 			(1 - r(1)) * (
-			(1 - r(2)) * tsdf_[index(idx + Eigen::Vector3i(1, 0, 0))] +
-			r(2) * tsdf_[index(idx + Eigen::Vector3i(1, 0, 1))]
+			(1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 0, 0))] +
+			r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 0, 1))]
 			) + r(1) * (
-			(1 - r(2)) * tsdf_[index(idx + Eigen::Vector3i(1, 1, 0))] +
-			r(2) * tsdf_[index(idx + Eigen::Vector3i(1, 1, 1))]
+			(1 - r(2)) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 1, 0))] +
+			r(2) * tsdf_[IndexOf(idx + Eigen::Vector3i(1, 1, 1))]
 			));
 }
 
