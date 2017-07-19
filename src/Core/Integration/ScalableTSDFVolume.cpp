@@ -26,15 +26,17 @@
 
 #include "ScalableTSDFVolume.h"
 
+#include <Core/Geometry/PointCloud.h>
 #include <Core/Integration/UniformTSDFVolume.h>
 
 namespace three{
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
-		bool with_color, int leaf_tsdf_resolution/* = 32*/,
+		bool with_color, int volume_unit_resolution/* = 16*/,
 		int carving_threshold/* = 8*/) :
 		TSDFVolume(voxel_length, sdf_trunc, with_color),
-		leaf_tsdf_resolution_(leaf_tsdf_resolution),
+		volume_unit_resolution_(volume_unit_resolution),
+		volume_unit_length_(voxel_length * volume_unit_resolution),
 		carving_threshold_(carving_threshold)
 {
 }
@@ -65,6 +67,11 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 	}
 	auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
 			intrinsic);
+	auto pointcloud = CreatePointCloudFromRGBDImage(image, intrinsic,
+			extrinsic);
+	for (const auto &point : pointcloud->points_) {
+
+	}
 }
 
 std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()

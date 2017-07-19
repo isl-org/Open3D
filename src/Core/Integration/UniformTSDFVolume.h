@@ -64,12 +64,12 @@ public:
 	std::vector<float> weight_;
 	
 private:
-	inline int index(int x, int y, int z) {
+	inline int IndexOf(int x, int y, int z) {
 		return x * resolution_ * resolution_ + y * resolution_ + z;
 	}
 
-	inline int index(const Eigen::Vector3i xyz) {
-		return index(xyz(0), xyz(1), xyz(2));
+	inline int IndexOf(const Eigen::Vector3i xyz) {
+		return IndexOf(xyz(0), xyz(1), xyz(2));
 	}
 
 	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
