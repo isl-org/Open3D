@@ -46,13 +46,19 @@ class PoseGraph;
 ///    M. Lourakis,
 ///    SBA: A Software Package for Generic Sparse Bundle Adjustment, 
 ///    Transactions on Mathematical Software, 2009
-std::shared_ptr<PoseGraph> GlobalOptimization(
-		const PoseGraph &pose_graph, 
+void GlobalOptimization(
+		PoseGraph &pose_graph, 
 		const GlobalOptimizationMethod &method =
 		GlobalOptimizationLevenbergMethodMarquardt(),
 		const GlobalOptimizationConvergenceCriteria &option =
 		GlobalOptimizationConvergenceCriteria(),
 		const GlobalOptimizationLineProcessOption &line_process_option =
 		GlobalOptimizationLineProcessOption());
+
+/// Function to prune out uncertain edges having 
+/// confidence_ < .edge_prune_threshold_
+std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
+		const PoseGraph &pose_graph,
+		const GlobalOptimizationLineProcessOption &option);
 
 }	// namespace three

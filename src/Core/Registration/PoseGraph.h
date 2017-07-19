@@ -56,12 +56,14 @@ public:
 			int target_node_id = -1, int source_node_id = -1,
 			Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity(),
 			Eigen::Matrix6d information = Eigen::Matrix6d::Identity(),
-			bool uncertain = false) :
+			bool uncertain = false,
+			double confidence = 1.0) :
 			target_node_id_(target_node_id),
 			source_node_id_(source_node_id),
 			transformation_(transformation),
 			information_(information),
-			uncertain_(uncertain) {};
+			uncertain_(uncertain),
+			confidence_(confidence) {};
 	~PoseGraphEdge();
 
 public:
@@ -73,9 +75,14 @@ public:
 	int source_node_id_;
 	Eigen::Matrix4d transformation_;
 	Eigen::Matrix6d information_;
-	/// odometry edge always have uncertain gets false
-	/// loop closure edges has true
+	/// odometry edge has uncertain == false
+	/// loop closure edges has uncertain == true
 	bool uncertain_;
+	/// if uncertain_ is true, it has confidence bounded in [0,1].
+	/// 1 means reliable, and 0 means unreliable edge.
+	/// This correspondence to line process value in [Choi et al 2015]
+	/// See core/registration/globaloptimization.h for more details.
+	double confidence_;
 };
 
 class PoseGraph : public IJsonConvertible

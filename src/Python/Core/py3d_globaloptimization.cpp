@@ -55,16 +55,19 @@ void pybind_globaloptimization(py::module &m)
 		.def_readwrite("transformation", &PoseGraphEdge::transformation_)
 		.def_readwrite("information", &PoseGraphEdge::information_)
 		.def_readwrite("uncertain", &PoseGraphEdge::uncertain_)
+		.def_readwrite("confidence", &PoseGraphEdge::confidence_)
 		.def("__init__", [](PoseGraphEdge &c,
 				int target_node_id, int source_node_id,
 				Eigen::Matrix4d transformation, Eigen::Matrix6d information,
-				bool uncertain) {
+				bool uncertain,
+				double confidence) {
 				new (&c)PoseGraphEdge(target_node_id, source_node_id, 
-				transformation, information, uncertain); },
+				transformation, information, uncertain, confidence); },
 				"target_node_id"_a = -1, "source_node_id"_a = -1,
 				"transformation"_a = Eigen::Matrix4d::Identity(), 
 				"information"_a = Eigen::Matrix6d::Identity(), 
-				"uncertain"_a = false)
+				"uncertain"_a = false,
+				"confidence"_a = 1.0)
 		.def("__repr__", [](const PoseGraphEdge &rr) {
 			return std::string("PoseGraphEdge from nodes %d to %d, access transformation to get relative transformation\n", 
 					rr.source_node_id_, rr.target_node_id_);

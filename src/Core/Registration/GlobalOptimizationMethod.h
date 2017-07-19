@@ -45,8 +45,8 @@ public:
 	virtual ~GlobalOptimizationMethod() {}
 
 public:
-	virtual std::shared_ptr<PoseGraph> OptimizePoseGraph(
-			const PoseGraph &pose_graph,
+	virtual void OptimizePoseGraph(
+			PoseGraph &pose_graph,
 			const GlobalOptimizationConvergenceCriteria &criteria,
 			const GlobalOptimizationLineProcessOption &option) const = 0;
 };
@@ -58,8 +58,8 @@ public:
 	~GlobalOptimizationGaussNewton() override {}
 
 public:
-	std::shared_ptr<PoseGraph> OptimizePoseGraph(
-			const PoseGraph &pose_graph,
+	void OptimizePoseGraph(
+			PoseGraph &pose_graph,
 			const GlobalOptimizationConvergenceCriteria &criteria,
 			const GlobalOptimizationLineProcessOption &option) const override;
 };
@@ -71,8 +71,8 @@ public:
 	~GlobalOptimizationLevenbergMethodMarquardt() override {}
 
 public:
-	std::shared_ptr<PoseGraph> OptimizePoseGraph(
-			const PoseGraph &pose_graph,
+	void OptimizePoseGraph(
+			PoseGraph &pose_graph,
 			const GlobalOptimizationConvergenceCriteria &criteria,
 			const GlobalOptimizationLineProcessOption &option) const override;
 };
