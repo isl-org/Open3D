@@ -49,7 +49,7 @@ class PoseGraph;
 void GlobalOptimization(
 		PoseGraph &pose_graph, 
 		const GlobalOptimizationMethod &method =
-		GlobalOptimizationLevenbergMethodMarquardt(),
+		GlobalOptimizationLevenbergMarquardt(),
 		const GlobalOptimizationConvergenceCriteria &option =
 		GlobalOptimizationConvergenceCriteria(),
 		const GlobalOptimizationLineProcessOption &line_process_option =

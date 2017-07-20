@@ -64,11 +64,11 @@ public:
 			const GlobalOptimizationLineProcessOption &option) const override;
 };
 
-class GlobalOptimizationLevenbergMethodMarquardt : public GlobalOptimizationMethod
+class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod
 {
 public:
-	GlobalOptimizationLevenbergMethodMarquardt() {}
-	~GlobalOptimizationLevenbergMethodMarquardt() override {}
+	GlobalOptimizationLevenbergMarquardt() {}
+	~GlobalOptimizationLevenbergMarquardt() override {}
 
 public:
 	void OptimizePoseGraph(

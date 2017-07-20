@@ -141,7 +141,7 @@ int UpdateConfidence(
 }
 
 /// Function to compute residual defined in [Choi et al 2015] See Eq (9). 
-double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd zeta,
+double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
 		const GlobalOptimizationLineProcessOption &option)
 {
 	int n_edges = (int)pose_graph.edges_.size();
@@ -443,7 +443,7 @@ void GlobalOptimizationGaussNewton::
 			timer_overall.GetDuration() / 1000.0);
 }
 
-void GlobalOptimizationLevenbergMethodMarquardt::
+void GlobalOptimizationLevenbergMarquardt::
 		OptimizePoseGraph(PoseGraph &pose_graph,
 		const GlobalOptimizationConvergenceCriteria &criteria,
 		const GlobalOptimizationLineProcessOption &option) const
@@ -552,7 +552,7 @@ void GlobalOptimizationLevenbergMethodMarquardt::
 void GlobalOptimization(
 		PoseGraph &pose_graph, 
 		const GlobalOptimizationMethod &method,
-		/* GlobalOptimizationLevenbergMethodMarquardt() */
+		/* GlobalOptimizationLevenbergMarquardt() */
 		const GlobalOptimizationConvergenceCriteria &criteria,
 		/* GlobalOptimizationConvergenceCriteria() */
 		const GlobalOptimizationLineProcessOption &line_process_option

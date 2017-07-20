@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 	auto pose_graph_input = CreatePoseGraphFromFile(argv[1]);
 	GlobalOptimizationConvergenceCriteria criteria;
 	GlobalOptimizationLineProcessOption line_process_option;
-	GlobalOptimizationLevenbergMethodMarquardt optimization_method;
+	GlobalOptimizationLevenbergMarquardt optimization_method;
 	GlobalOptimization(*pose_graph_input, optimization_method,
 			criteria, line_process_option);
 	auto pose_graph_input_prunned = CreatePoseGraphWithoutInvalidEdges(
