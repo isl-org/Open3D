@@ -29,35 +29,51 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Core/Registration/PoseGraph.h>
+#include <Core/Registration/GlobalOptimization.h>
+
+using namespace three;
 
 int main(int argc, char **argv)
 {
-	using namespace three;
-
 	SetVerbosityLevel(three::VERBOSE_ALWAYS);
 	
-	if (argc != 1) {
+	if (argc != 2) {
 		PrintInfo("Usage:\n");
-		PrintInfo("    > TestPoseGraph\n");
+		PrintInfo("    > TestPoseGraph [posegraph_for_optimization].json\n");
 		PrintInfo("    The program will :\n");
 		PrintInfo("    1) Generate random PoseGraph\n");
 		PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
 		PrintInfo("    3) Reads PoseGraph from test_pose_graph.json\n");
 		PrintInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json\n");
+		PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
+		PrintInfo("    6) Optimize PoseGraph\n");
+		PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
 		return 0;
 	}
 
-	PoseGraph new_pose_graph;
-	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-	new_pose_graph.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 1, 
-			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
-	new_pose_graph.edges_.push_back(PoseGraphEdge(0, 2,
-			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false));
-	WritePoseGraph("test_pose_graph.json", new_pose_graph);
+	// test posegraph read and write
+	PoseGraph pose_graph_test;
+	pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+	pose_graph_test.edges_.push_back(PoseGraphEdge(0, 1, 
+			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false, 1.0));
+	pose_graph_test.edges_.push_back(PoseGraphEdge(0, 2,
+			Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), true, 0.2));
+	WritePoseGraph("test_pose_graph.json", pose_graph_test);
 	PoseGraph pose_graph;
 	ReadPoseGraph("test_pose_graph.json", pose_graph);
 	WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+
+	// testing posegraph optimization
+	auto pose_graph_input = CreatePoseGraphFromFile(argv[1]);
+	GlobalOptimizationConvergenceCriteria criteria;
+	GlobalOptimizationLineProcessOption line_process_option;
+	GlobalOptimizationLevenbergMarquardt optimization_method;
+	GlobalOptimization(*pose_graph_input, optimization_method,
+			criteria, line_process_option);
+	auto pose_graph_input_prunned = CreatePoseGraphWithoutInvalidEdges(
+			*pose_graph_input, line_process_option);
+	WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
 
 	return 0;
 }

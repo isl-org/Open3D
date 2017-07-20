@@ -43,7 +43,17 @@ namespace three {
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference: 
 /// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform
-Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input);
+Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input);
+
+/// Function to transform 4D motion matrix to 6D motion vector
+/// this is consistent with the matlab function in
+/// the Aerospace Toolbox
+/// Reference: https://github.com/qianyizh/ElasticReconstruction/blob/master/Matlab_Toolbox/Core/mrEvaluateRegistration.m
+Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input);
+
+/// Function to solve Ax=b
+std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
+	const Eigen::MatrixXd &A, const Eigen::VectorXd &b);
 
 /// Function to solve Jacobian system
 /// Input: 6x6 Jacobian matrix and 6-dim residual vector.
@@ -57,7 +67,7 @@ std::tuple<bool, Eigen::Matrix4d>
 /// Output: tuple of is_success, n 4x4 motion matrices.
 std::tuple<bool, std::vector<Eigen::Matrix4d>>
 		SolveJacobianSystemAndObtainExtrinsicMatrixArray(
-		const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &r);
+		const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &JTr);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix

@@ -31,8 +31,6 @@
 
 namespace three{
 
-namespace {
-
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 		const Eigen::MatrixXd &A, const Eigen::VectorXd &b) 
@@ -48,21 +46,37 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 		Eigen::MatrixXd x = -A.ldlt().solve(b);
 		return std::make_tuple(solution_exist, std::move(x));
 	} else {
-		return std::make_tuple(false, std::move(Eigen::Vector6d::Zero()));
+		return std::make_tuple(false, std::move(Eigen::VectorXd::Zero(b.rows())));
 	}
 }
 
-}	// unnamed namespace
-
-Eigen::Matrix4d TransformVector6dToMatrix4d(Eigen::Vector6d input)
+Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 {
 	Eigen::Matrix4d output;
-	output.setIdentity();
+	output.setIdentity();	
 	output.block<3, 3>(0, 0) =
 		(Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ()) *
 			Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY()) *
 			Eigen::AngleAxisd(input(0), Eigen::Vector3d::UnitX())).matrix();
 	output.block<3, 1>(0, 3) = input.block<3, 1>(3, 0);
+	return output;
+}
+
+Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
+{
+	Eigen::Vector6d output;
+	Eigen::Matrix3d R = input.block<3, 3>(0, 0);	
+	float sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));		
+	if (!(sy < 1e-6)) {
+		output(0) = atan2(R(2, 1), R(2, 2));
+		output(1) = atan2(-R(2, 0), sy);
+		output(2) = atan2(R(1, 0), R(0, 0));
+	} else {
+		output(0) = atan2(-R(1, 2), R(1, 1));
+		output(1) = atan2(-R(2, 0), sy);
+		output(2) = 0;
+	}	
+	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
 	return output;
 }
 
