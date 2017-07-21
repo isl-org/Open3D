@@ -102,10 +102,8 @@ private:
 				(int)std::floor(point(2) / volume_unit_length_));
 	}
 	
-	void OpenVolumeUnit(const Eigen::Vector3i &index) {
-		if (volume_units_.find(index) == volume_units_.end()) {
-		}
-	}
+	std::shared_ptr<UniformTSDFVolume> OpenVolumeUnit(
+			const Eigen::Vector3i &index);
 };
 
 }	// namespace three

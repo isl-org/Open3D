@@ -26,6 +26,7 @@
 
 #include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
+#include <Eigen/Dense>
 #include <Core/Utility/Console.h>
 
 // The log file is the redwood-data format for camera trajectories
@@ -84,7 +85,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
 						&trans(3,2), &trans(3,3));
 			}
-			trajectory.extrinsic_.push_back(trans);
+			trajectory.extrinsic_.push_back(trans.inverse());
 		}
 	}
 	fclose(f);

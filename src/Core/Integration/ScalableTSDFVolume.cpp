@@ -26,6 +26,8 @@
 
 #include "ScalableTSDFVolume.h"
 
+#include <unordered_set>
+
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Integration/UniformTSDFVolume.h>
 
@@ -69,8 +71,30 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 			intrinsic);
 	auto pointcloud = CreatePointCloudFromRGBDImage(image, intrinsic,
 			extrinsic);
+	std::unordered_set<Eigen::Vector3i, hash_eigen::hash<Eigen::Vector3i>>
+			touched_volume_units_;
 	for (const auto &point : pointcloud->points_) {
-
+		auto min_bound = LocateVolumeUnit(point - Eigen::Vector3d(
+				sdf_trunc_, sdf_trunc_, sdf_trunc_));
+		auto max_bound = LocateVolumeUnit(point + Eigen::Vector3d(
+				sdf_trunc_, sdf_trunc_, sdf_trunc_));
+		for (auto x = min_bound(0); x <= max_bound(0); x++) {
+			for (auto y = min_bound(1); y <= max_bound(1); y++) {
+				for (auto z = min_bound(2); z <= max_bound(2); z++) {
+					auto loc = Eigen::Vector3i(x, y, z);
+					if (touched_volume_units_.find(loc) ==
+							touched_volume_units_.end()) {
+						touched_volume_units_.insert(loc);
+						auto volume = OpenVolumeUnit(Eigen::Vector3i(x, y, z));
+						if (volume) {
+							volume->IntegrateWithDepthToCameraDistanceMultiplier(
+									image, intrinsic, extrinsic,
+									*depth2cameradistance);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -83,7 +107,25 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
 std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
 {
 	auto mesh = std::make_shared<TriangleMesh>();
+	for (auto &unit : volume_units_) {
+		if (unit.second.volume_) {
+			auto m = unit.second.volume_->ExtractTriangleMesh();
+			*mesh += *m;
+		}
+	}
 	return mesh;
+}
+
+std::shared_ptr<UniformTSDFVolume> ScalableTSDFVolume::OpenVolumeUnit(
+		const Eigen::Vector3i &index)
+{
+	auto &volume = volume_units_[index];
+	if (!volume.volume_ && volume.num_of_carving_ < carving_threshold_) {
+		volume.volume_.reset(new UniformTSDFVolume(volume_unit_length_,
+				volume_unit_resolution_, sdf_trunc_, with_color_,
+				index.cast<double>() * volume_unit_length_));
+	}
+	return volume.volume_;
 }
 
 }	// namespace three

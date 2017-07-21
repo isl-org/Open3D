@@ -88,8 +88,10 @@ int main(int argc, char *argv[])
 	char buffer[DEFAULT_IO_BUFFER_SIZE];
 	int index = 0;
 	int save_index = 0;
-	UniformTSDFVolume volume(length, resolution, length * sdf_trunc_percentage,
-			true);
+	//UniformTSDFVolume volume(length, resolution, length * sdf_trunc_percentage,
+	//		true);
+	ScalableTSDFVolume volume(length / (double)resolution,
+			length * sdf_trunc_percentage, true);
 	FPSTimer timer("Process RGBD stream",
 			(int)camera_trajectory->extrinsic_.size());
 	Image depth, color;
@@ -125,12 +127,14 @@ int main(int argc, char *argv[])
 					WriteTriangleMesh("mesh_" + save_index_str + ".ply",
 							*mesh);
 				}
+				/*
 				if (save_voxel) {
 					PrintDebug("Saving voxel %d ...\n", save_index);
 					auto voxel = volume.ExtractVoxelPointCloud();
 					WritePointCloud("voxel_" + save_index_str + ".ply",
 							*voxel);
 				}
+				*/
 				save_index++;
 			}
 			timer.Signal();

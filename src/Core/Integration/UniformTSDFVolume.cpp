@@ -29,7 +29,6 @@
 #include <unordered_map>
 #include <thread>
 
-#include <Eigen/Dense>
 #include <Core/Utility/Helper.h>
 
 namespace three{
@@ -79,7 +78,7 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
 	auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
 			intrinsic);
 	IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic,
-			extrinsic.inverse(), *depth2cameradistance);
+			extrinsic, *depth2cameradistance);
 }
 
 std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
@@ -111,7 +110,7 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
 								float r1 = std::fabs(f1);
 								Eigen::Vector3d p = p0;
 								p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
-								pointcloud->points_.push_back(p);
+								pointcloud->points_.push_back(p + origin_);
 								if (with_color_) {
 									pointcloud->colors_.push_back(
 											((color_[IndexOf(idx0)] * r1 +
@@ -518,7 +517,7 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
 							double f0 = std::abs((double)f[edge_to_vert[i][0]]);
 							double f1 = std::abs((double)f[edge_to_vert[i][1]]);
 							pt(edge_index(3)) += f0 * voxel_length_ / (f0 + f1);
-							mesh->vertices_.push_back(pt);
+							mesh->vertices_.push_back(pt + origin_);
 							if (with_color_) {
 								const auto &c0 = c[edge_to_vert[i][0]];
 								const auto &c1 = c[edge_to_vert[i][1]];
@@ -560,7 +559,7 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud()
 					p_tsdf++, p_weight++, p_color += 3) {
 				if (*p_weight != 0.0f && *p_tsdf < 0.98f &&
 						*p_tsdf >= -0.98f ) {
-					voxel->points_.push_back(pt);
+					voxel->points_.push_back(pt + origin_);
 					double c = (static_cast<double>(*p_tsdf) + 1.0) * 0.5;
 					voxel->colors_.push_back(Eigen::Vector3d(c, c, c));
 				}
@@ -572,19 +571,19 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud()
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 		const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
-		const Eigen::Matrix4d &extrinsic_inv,
+		const Eigen::Matrix4d &extrinsic,
 		const Image &depth_to_camera_distance_multiplier)
 {
 	const float fx = static_cast<float>(intrinsic.GetFocalLength().first);
 	const float fy = static_cast<float>(intrinsic.GetFocalLength().second);
 	const float cx = static_cast<float>(intrinsic.GetPrincipalPoint().first);
 	const float cy = static_cast<float>(intrinsic.GetPrincipalPoint().second);
-	const Eigen::Matrix4f extrinsic_inv_f = extrinsic_inv.cast<float>();
+	const Eigen::Matrix4f extrinsic_f = extrinsic.cast<float>();
 	const float voxel_length_f = static_cast<float>(voxel_length_);
 	const float half_voxel_length_f = voxel_length_f * 0.5f;
 	const float sdf_trunc_f = static_cast<float>(sdf_trunc_);
 	const float sdf_trunc_inv_f = 1.0f / sdf_trunc_f;
-	const Eigen::Matrix4f extrinsic_inv_scaled_f = extrinsic_inv_f *
+	const Eigen::Matrix4f extrinsic_scaled_f = extrinsic_f *
 			voxel_length_f;
 	const float safe_width_f = intrinsic.width_ - 0.0001f;
 	const float safe_height_f = intrinsic.height_ - 0.0001f;
@@ -598,7 +597,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 			float *p_tsdf = (float *)tsdf_.data() + idx_shift;
 			float *p_weight = (float *)weight_.data() + idx_shift;
 			float *p_color = (float *)color_.data() + idx_shift * 3;
-			Eigen::Vector4f voxel_pt_camera = extrinsic_inv_f * Eigen::Vector4f(
+			Eigen::Vector4f voxel_pt_camera = extrinsic_f * Eigen::Vector4f(
 					half_voxel_length_f + voxel_length_f * x +
 					(float)origin_(0),
 					half_voxel_length_f + voxel_length_f * y +
@@ -606,9 +605,9 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 					half_voxel_length_f + (float)origin_(2),
 					1.0f);
 			for (int z = 0; z < resolution_; z++,
-					voxel_pt_camera(0) += extrinsic_inv_scaled_f(0, 2),
-					voxel_pt_camera(1) += extrinsic_inv_scaled_f(1, 2),
-					voxel_pt_camera(2) += extrinsic_inv_scaled_f(2, 2),
+					voxel_pt_camera(0) += extrinsic_scaled_f(0, 2),
+					voxel_pt_camera(1) += extrinsic_scaled_f(1, 2),
+					voxel_pt_camera(2) += extrinsic_scaled_f(2, 2),
 					p_tsdf++, p_weight++, p_color += 3) {
 				if (voxel_pt_camera(2) > 0) {
 					float u_f = voxel_pt_camera(0) * fx /
