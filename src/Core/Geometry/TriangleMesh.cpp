@@ -96,6 +96,7 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
 {
+	if (mesh.IsEmpty()) return (*this);
 	size_t old_vert_num = vertices_.size();
 	size_t add_vert_num = mesh.vertices_.size();
 	size_t new_vert_num = old_vert_num + add_vert_num;
