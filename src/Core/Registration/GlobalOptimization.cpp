@@ -164,7 +164,6 @@ Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph)
 {
 	int n_edges = (int)pose_graph.edges_.size();	
 	Eigen::VectorXd output(n_edges * 6);
-	int line_process_cnt = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		Eigen::Matrix4d X_inv, Ts, Tt_inv;
 		std::tie(X_inv, Ts, Tt_inv) = GetRelativePoses(pose_graph, iter_edge);
@@ -192,7 +191,6 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeLinearSystem(
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
-	int line_process_cnt = 0;
 	Eigen::MatrixXd H(n_nodes * 6, n_nodes * 6);
 	Eigen::VectorXd b(n_nodes * 6);
 	H.setZero();
@@ -348,7 +346,6 @@ std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
 		pose_graph_pruned->nodes_.push_back(t);
 	}
 	int n_edges = (int)pose_graph.edges_.size();
-	int line_process_cnt = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		const PoseGraphEdge &t = pose_graph.edges_[iter_edge];		
 		if (t.uncertain_) {

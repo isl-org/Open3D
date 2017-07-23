@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 	if (ProgramOptionExists(argc, argv, "--verbose"))
 		SetVerbosityLevel(three::VERBOSE_ALWAYS);
 	
-	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type");
+	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
 	auto color_source = CreateImageFromFile(argv[1]);
 	auto depth_source = CreateImageFromFile(argv[2]);	
 	auto color_target = CreateImageFromFile(argv[3]);
@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
 	else if (rgbd_type == 1) CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
 	else if (rgbd_type == 2) CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
 	else if (rgbd_type == 3) CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
+    else CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
 	auto source = CreateRGBDImage(*color_source, *depth_source, true);
 	auto target = CreateRGBDImage(*color_target, *depth_target, true);
 	

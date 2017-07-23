@@ -41,7 +41,7 @@ void pybind_image(py::module &m)
 	image
 		.def("__init__", [](Image &img, py::buffer b) {
 			py::buffer_info info = b.request();
-			int width, height, num_of_channels, bytes_per_channel;
+			int width, height, num_of_channels = 0, bytes_per_channel;
 			if (info.format == py::format_descriptor<uint8_t>::format() ||
 					info.format == py::format_descriptor<int8_t>::format()) {
 				bytes_per_channel = 1;
