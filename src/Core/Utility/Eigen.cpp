@@ -136,7 +136,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 {
 	MatType JTJ;
 	VecType JTr;
-	double r2_sum;
+	double r2_sum = 0.0;
 	JTJ.setZero();
 	JTr.setZero();
 #ifdef _OPENMP
@@ -145,7 +145,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 #endif
 		MatType JTJ_private;
 		VecType JTr_private;
-		double r2_sum_private;
+		double r2_sum_private = 0.0;
 		JTJ_private.setZero();
 		JTr_private.setZero();
 		VecType J_r;
@@ -183,7 +183,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 {
 	MatType JTJ;
 	VecType JTr;
-	double r2_sum;
+	double r2_sum = 0.0;
 	JTJ.setZero();
 	JTr.setZero();
 #ifdef _OPENMP
@@ -192,7 +192,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 #endif
 		MatType JTJ_private;
 		VecType JTr_private;
-		double r2_sum_private;
+		double r2_sum_private = 0.0;
 		JTJ_private.setZero();
 		JTr_private.setZero();
 		std::vector<double> r;

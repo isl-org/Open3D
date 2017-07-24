@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	}
 
 	std::string intrinsic_path;
-	if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) { 
+	if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
 		intrinsic_path = GetProgramOptionAsString(
 				argc, argv, "--camera_intrinsic").c_str();
 		PrintInfo("Camera intrinsic path %s\n", intrinsic_path.c_str());
@@ -71,13 +71,13 @@ int main(int argc, char *argv[])
 		PrintWarning("Use default value for Primesense camera.\n");
 		intrinsic = PinholeCameraIntrinsic::PrimeSenseDefault;
 	}
-		
+
 	if (ProgramOptionExists(argc, argv, "--verbose"))
 		SetVerbosityLevel(three::VERBOSE_ALWAYS);
-	
-	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type");
+
+	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
 	auto color_source = CreateImageFromFile(argv[1]);
-	auto depth_source = CreateImageFromFile(argv[2]);	
+	auto depth_source = CreateImageFromFile(argv[2]);
 	auto color_target = CreateImageFromFile(argv[3]);
 	auto depth_target = CreateImageFromFile(argv[4]);
 	std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&,
@@ -86,14 +86,15 @@ int main(int argc, char *argv[])
 	else if (rgbd_type == 1) CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
 	else if (rgbd_type == 2) CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
 	else if (rgbd_type == 3) CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
+	else CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
 	auto source = CreateRGBDImage(*color_source, *depth_source, true);
 	auto target = CreateRGBDImage(*color_target, *depth_target, true);
-	
+
 	OdometryOption option;
 	Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
 	Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
 	Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
-	bool is_success;	
+	bool is_success;
 	if (ProgramOptionExists(argc, argv, "--hybrid")) {
 		RGBDOdometryJacobianFromHybridTerm jacobian_method;
 		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
 		RGBDOdometryJacobianFromColorTerm jacobian_method;
 		std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
 				(*source, *target, intrinsic, odo_init, jacobian_method, option);
-	}		
+	}
 	std::cout << "Estimated 4x4 motion matrix : " << std::endl;
 	std::cout << trans_odo << std::endl;
 	std::cout << "Estimated 6x6 information matrix : " << std::endl;

@@ -47,7 +47,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 	const Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
 	const Eigen::Matrix3d KRK_inv = K * R * K_inv;
 	Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
-	
+
 	// initialization: filling with any (u,v) to (-1,-1)
 	auto correspondence_map = std::make_shared<Image>();
 	correspondence_map->PrepareImage(depth_t.width_, depth_t.height_, 2, 4);
@@ -71,7 +71,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 		for (int u_t = 0; u_t < depth_t.width_; u_t++) {
 			double d_t = *PointerAt<float>(depth_t, u_t, v_t);
 			if (!std::isnan(d_t)) {
-				Eigen::Vector3d uv_in_t = 
+				Eigen::Vector3d uv_in_t =
 						d_t * KRK_inv * Eigen::Vector3d(u_t, v_t, 1.0) + Kt;
 				double transformed_d_t = uv_in_t(2);
 				int u_s = (int)(uv_in_t(0) / transformed_d_t + 0.5);
@@ -82,13 +82,13 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 					if (!std::isnan(d_s) &&
 						std::abs(transformed_d_t - d_s) <= option.max_depth_diff_) {
 						int exist_u_t, exist_v_t;
-						exist_u_t = 
+						exist_u_t =
 								*PointerAt<int>(*correspondence_map, u_s, v_s, 0);
-						exist_v_t = 
+						exist_v_t =
 								*PointerAt<int>(*correspondence_map, u_s, v_s, 1);
 						if (exist_u_t != -1 && exist_v_t != -1) {
 							double exist_d_t = *PointerAt<float>
-									(depth_t, exist_u_t, exist_v_t) * 
+									(depth_t, exist_u_t, exist_v_t) *
 									(KRK_inv(2,0) * exist_u_t + KRK_inv(2,1)
 									* exist_v_t + KRK_inv(2,2)) + Kt(2);
 							if (transformed_d_t < exist_d_t) {
@@ -96,8 +96,8 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 								*PointerAt<int>(*correspondence_map, u_s, v_s, 0)
 										= u_t;
 								*PointerAt<int>(*correspondence_map, u_s, v_s, 1)
-										= v_t;								
-							}								
+										= v_t;
+							}
 						} else {
 							// register correspondence
 							*PointerAt<int>(*correspondence_map, u_s, v_s, 0)
@@ -105,7 +105,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 							*PointerAt<int>(*correspondence_map, u_s, v_s, 1)
 									= v_t;
 							correspondence_count_private++;
-						}											
+						}
 					}
 				}
 			}
@@ -120,7 +120,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 }	//	omp critical
 }	//	omp parallel
 #endif
-	
+
 	auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
 	correspondence->resize(correspondence_count);
 	int cnt = 0;
@@ -172,9 +172,11 @@ std::vector<Eigen::Matrix3d>
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
 	pyramid_camera_matrix.reserve(levels);
 	for (int i = 0; i < levels; i++) {
-		Eigen::Matrix3d level_camera_matrix = i == 0 ?
-				pinhole_camera_intrinsic.intrinsic_matrix_ : 
-				0.5 * pyramid_camera_matrix[i - 1];
+		Eigen::Matrix3d level_camera_matrix;
+		if (i == 0)
+			level_camera_matrix = pinhole_camera_intrinsic.intrinsic_matrix_;
+		else
+			level_camera_matrix = 0.5 * pyramid_camera_matrix[i - 1];
 		level_camera_matrix(2, 2) = 1.;
 		pyramid_camera_matrix.push_back(level_camera_matrix);
 	}
@@ -190,7 +192,7 @@ Eigen::Matrix6d CreateInfomationMatrix(
 	Eigen::Matrix4d odo_inv = extrinsic.inverse();
 
 	auto correspondence = ComputeCorrespondence(
-			pinhole_camera_intrinsic.intrinsic_matrix_, 
+			pinhole_camera_intrinsic.intrinsic_matrix_,
 			odo_inv, depth_s, depth_t, option);
 
 	auto xyz_t = ConvertDepthImageToXYZImage(
@@ -228,7 +230,7 @@ Eigen::Matrix6d CreateInfomationMatrix(
 	return GTG;
 }
 
-void NormalizeIntensity(Image &image_s, Image &image_t, 
+void NormalizeIntensity(Image &image_s, Image &image_t,
 		CorrespondenceSetPixelWise &correspondence)
 {
 	if (image_s.width_ != image_t.width_ ||
@@ -257,7 +259,7 @@ inline std::shared_ptr<RGBDImage> PackRGBDImage(
 }
 
 std::shared_ptr<Image> PreprocessDepth(
-		const Image &depth_orig, const OdometryOption &option) 
+		const Image &depth_orig, const OdometryOption &option)
 {
 	std::shared_ptr<Image> depth_processed = std::make_shared<Image>();
 	*depth_processed = depth_orig;
@@ -265,19 +267,19 @@ std::shared_ptr<Image> PreprocessDepth(
 		for (int x = 0; x < depth_processed->width_; x++) {
 			float *p = PointerAt<float>(*depth_processed, x, y);
 			if ((*p < option.min_depth_ || *p > option.max_depth_ || *p <= 0))
-				*p = std::numeric_limits<float>::quiet_NaN();			
+				*p = std::numeric_limits<float>::quiet_NaN();
 		}
 	}
 	return depth_processed;
 }
 
-inline bool CheckImagePair(const Image &image_s, const Image &image_t) 
+inline bool CheckImagePair(const Image &image_s, const Image &image_t)
 {
-	return (image_s.width_ == image_t.width_ && 
+	return (image_s.width_ == image_t.width_ &&
 			image_s.height_ == image_t.height_);
 }
 
-inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target) 
+inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target)
 {
 	return (CheckImagePair(source.color_, target.color_) &&
 			CheckImagePair(source.depth_, target.depth_) &&
@@ -288,9 +290,9 @@ inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target)
 			source.depth_.num_of_channels_ == 1 &&
 			target.color_.num_of_channels_ == 1 &&
 			target.depth_.num_of_channels_ == 1 &&
-			source.color_.bytes_per_channel_ == 4 && 
-			target.color_.bytes_per_channel_ == 4 && 
-			source.depth_.bytes_per_channel_ == 4 && 
+			source.color_.bytes_per_channel_ == 4 &&
+			target.color_.bytes_per_channel_ == 4 &&
+			source.depth_.bytes_per_channel_ == 4 &&
 			target.depth_.bytes_per_channel_ == 4);
 }
 
@@ -299,7 +301,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 		const RGBDImage &source, const RGBDImage &target,
 		const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
 		const Eigen::Matrix4d &odo_init,
-		const OdometryOption &option) 
+		const OdometryOption &option)
 {
 	auto source_gray = FilterImage(source.color_, Image::FILTER_GAUSSIAN_3);
 	auto target_gray = FilterImage(target.color_, Image::FILTER_GAUSSIAN_3);
@@ -311,7 +313,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 			Image::FILTER_GAUSSIAN_3);
 
 	auto correspondence = ComputeCorrespondence(
-			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init.inverse(), 
+			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init.inverse(),
 			*source_depth, *target_depth, option);
 	PrintDebug("Number of correspondence is %d\n", (int)correspondence->size());
 
@@ -328,7 +330,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 }
 
 std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
-	const RGBDImage &source, const RGBDImage &target, 
+	const RGBDImage &source, const RGBDImage &target,
 	const Image &source_xyz,
 	const RGBDImage &target_dx, const RGBDImage &target_dy,
 	const Eigen::Matrix3d intrinsic,
@@ -339,7 +341,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	auto correspondence = ComputeCorrespondence(
 			intrinsic, extrinsic_initial.inverse(),
 			source.depth_, target.depth_, option);
-	int corresps_count_required = (int)(source.color_.height_ * 
+	int corresps_count_required = (int)(source.color_.height_ *
 			source.color_.width_ * option.minimum_correspondence_ratio_ + 0.5);
 	int corresps_count = (int)correspondence->size();
 	if (corresps_count < corresps_count_required) {
@@ -350,7 +352,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 
 	auto f_lambda = [&]
 			(int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
-		jacobian_method.ComputeJacobianAndResidual(i, J_r, r, 
+		jacobian_method.ComputeJacobianAndResidual(i, J_r, r,
 				source, target, source_xyz, target_dx, target_dy,
 				intrinsic, extrinsic_initial, *correspondence);
 	};
@@ -358,10 +360,10 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	Eigen::Vector6d JTr;
 	std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
 			f_lambda, corresps_count);
-	
+
 	bool is_success;
 	Eigen::Matrix4d extrinsic;
-	std::tie(is_success, extrinsic) = 
+	std::tie(is_success, extrinsic) =
 			SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 	if (!is_success) {
 		PrintError("[ComputeOdometry] no solution!\n");
@@ -387,12 +389,12 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 			(target_pyramid, Image::FILTER_SOBEL_3_DX);
 	auto target_pyramid_dy = FilterRGBDImagePyramid
 			(target_pyramid, Image::FILTER_SOBEL_3_DY);
-	
+
 	Eigen::Matrix4d result_odo = extrinsic_initial.isZero() ?
-			Eigen::Matrix4d::Identity() : extrinsic_initial;	
+			Eigen::Matrix4d::Identity() : extrinsic_initial;
 
 	std::vector<Eigen::Matrix3d> pyramid_camera_matrix =
-			CreateCameraMatrixPyramid(pinhole_camera_intrinsic, 
+			CreateCameraMatrixPyramid(pinhole_camera_intrinsic,
 			(int)iter_counts.size());
 
 	for (int level = num_levels - 1; level >= 0; level--) {
@@ -402,13 +404,13 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 				source_pyramid[level]->depth_, level_camera_matrix);
 		auto source_level = PackRGBDImage(source_pyramid[level]->color_,
 				source_pyramid[level]->depth_);
-		auto target_level = PackRGBDImage(target_pyramid[level]->color_, 
+		auto target_level = PackRGBDImage(target_pyramid[level]->color_,
 				target_pyramid[level]->depth_);
 		auto target_dx_level = PackRGBDImage(target_pyramid_dx[level]->color_,
 				target_pyramid_dx[level]->depth_);
 		auto target_dy_level = PackRGBDImage(target_pyramid_dy[level]->color_,
 				target_pyramid_dy[level]->depth_);
-		
+
 		for (int iter = 0; iter < iter_counts[num_levels - level - 1]; iter++) {
 			PrintDebug("Iter : %d, Level : %d, ", iter, level);
 			Eigen::Matrix4d curr_odo;
@@ -432,7 +434,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &pinhole_camera_intrinsic 
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic
 		/*= PinholeCameraIntrinsic()*/,
 		const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
 		const RGBDOdometryJacobian &jacobian_method
@@ -447,7 +449,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 
 	std::shared_ptr<RGBDImage> source_processed, target_processed;
 	std::tie(source_processed, target_processed) =
-			InitializeRGBDOdometry(source, target, pinhole_camera_intrinsic, 
+			InitializeRGBDOdometry(source, target, pinhole_camera_intrinsic,
 			odo_init, option);
 
 	Eigen::Matrix4d extrinsic;
@@ -458,7 +460,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 
 	if (is_success) {
 		Eigen::Matrix4d trans_output = extrinsic.inverse();
-		Eigen::MatrixXd info_output = CreateInfomationMatrix(extrinsic, 
+		Eigen::MatrixXd info_output = CreateInfomationMatrix(extrinsic,
 				pinhole_camera_intrinsic, source_processed->depth_,
 				target_processed->depth_, option);
 		return std::make_tuple(true, trans_output, info_output);

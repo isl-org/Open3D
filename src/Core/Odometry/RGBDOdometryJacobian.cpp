@@ -48,8 +48,6 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 		const Eigen::Matrix4d &extrinsic,
 		const CorrespondenceSetPixelWise &corresps) const
 {
-	const double fx = intrinsic(0, 0);
-	const double fy = intrinsic(1, 1);
 	Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
 	Eigen::Vector3d t = extrinsic.block<3, 1>(0, 3);
 
