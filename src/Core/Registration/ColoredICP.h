@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,27 +26,20 @@
 
 #pragma once
 
-#include "PointCloud.h"
+#include <Eigen/Core>
+#include <Core/Registration/Registration.h>
 
 namespace three {
 
-class CorrespondenceSet;
+class PointCloud;
+class RegistrationResult;
 
-class PointCloudForColoredICP : public PointCloud
-{
-public:
-	std::vector<Eigen::Vector3d> color_gradient_;
-};
-
-void MyInitializeGradient(PointCloudForColoredICP &target, 
-		double radius_for_gradient_computation);
-
-Eigen::Matrix4d MyComputeTransformation(
-		const PointCloudForColoredICP &source, 
-		PointCloudForColoredICP &target,
-		const CorrespondenceSet &corres,
-		double radius_for_gradient_computation,
-		double lambda_geometric_,
-		double lambda_photometric_);
+/// Function to align colored point clouds
+/// This is implementation of following paper
+/// J. Park, Q.-Y. Zhou, V. Koltun, Colored Point Cloud Revisited, ICCV 2017
+RegistrationResult RegistrationColoredICP(const PointCloud &source,
+		const PointCloud &target, double max_distance, 
+		const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
+		const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
 }	// namespace three

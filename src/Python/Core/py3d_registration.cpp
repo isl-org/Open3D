@@ -30,6 +30,7 @@
 #include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
 #include <Core/Registration/Registration.h>
+#include <Core/Registration/ColoredICP.h>
 
 using namespace three;
 
@@ -240,6 +241,11 @@ void pybind_registration_methods(py::module &m)
 			"init"_a = Eigen::Matrix4d::Identity(), "estimation_method"_a =
 			TransformationEstimationPointToPoint(false), "criteria"_a =
 			ICPConvergenceCriteria());
+	m.def("RegistrationColoredICP", &RegistrationColoredICP,
+			"Function for Colored ICP registration",
+			"source"_a, "target"_a, "max_correspondence_distance"_a,
+			"init"_a = Eigen::Matrix4d::Identity(), 
+			"criteria"_a = ICPConvergenceCriteria());
 	m.def("RegistrationRANSACBasedOnCorrespondence",
 			&RegistrationRANSACBasedOnCorrespondence,
 			"Function for global RANSAC registration based on a set of correspondences",
