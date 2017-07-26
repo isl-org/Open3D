@@ -37,7 +37,7 @@ UniformTSDFVolume::UniformTSDFVolume(double length, int resolution,
 		double sdf_trunc, bool with_color,
 		Eigen::Vector3d origin/* = Eigen::Vector3d::Zero()*/) :
 		TSDFVolume(length / (double)resolution, sdf_trunc, with_color),
-		length_(length), resolution_(resolution), origin_(origin),
+		origin_(origin), length_(length), resolution_(resolution),
 		voxel_num_(resolution * resolution * resolution),
 		tsdf_(voxel_num_, 0.0f), color_(with_color ? voxel_num_ : 0,
 		Eigen::Vector3f::Zero()), weight_(voxel_num_, 0.0f)
