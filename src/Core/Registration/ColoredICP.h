@@ -36,7 +36,8 @@ class RegistrationResult;
 
 /// Function to align colored point clouds
 /// This is implementation of following paper
-/// J. Park, Q.-Y. Zhou, V. Koltun, Colored Point Cloud Revisited, ICCV 2017
+/// J. Park, Q.-Y. Zhou, V. Koltun, 
+/// Colored Point Cloud Registration Revisited, ICCV 2017
 RegistrationResult RegistrationColoredICP(const PointCloud &source,
 		const PointCloud &target, double max_distance, 
 		const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
