@@ -16,7 +16,7 @@ if __name__ == "__main__":
         depth = ReadImage("../../TestData/RGBD/depth/{:05d}.png".format(i))
         rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
                 convert_rgb_to_intensity = False)
-        volume.Integrate(rgbd, intrinsic, extrinsic[i].pose)
+        volume.Integrate(rgbd, intrinsic, np.linalg.inv(extrinsic[i].pose))
 
     print("Extract a triangle mesh from the volume and visualize it.")
     mesh = volume.ExtractTriangleMesh()
