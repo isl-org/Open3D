@@ -26,6 +26,7 @@
 
 #include "ColoredICP.h"
 
+#include <Eigen/Dense>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Utility/Eigen.h>
