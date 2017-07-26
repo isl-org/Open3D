@@ -51,10 +51,10 @@ public:
 
 public:
 	double ComputeRMSE(const PointCloud &source, const PointCloud &target,
-			const CorrespondenceSet &corres) const;
+			const CorrespondenceSet &corres) const override;
 	Eigen::Matrix4d ComputeTransformation(
 			const PointCloud &source, const PointCloud &target,
-			const CorrespondenceSet &corres) const;
+			const CorrespondenceSet &corres) const override;
 
 public:
 	double lambda_geometric_;
