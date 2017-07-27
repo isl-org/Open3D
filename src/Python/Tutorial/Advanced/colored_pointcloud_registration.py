@@ -2,6 +2,11 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# This python script demos colored point cloud registration
+# This is implementation of following paper
+# J. Park, Q.-Y. Zhou, V. Koltun,
+# Colored Point Cloud Registration Revisited, ICCV 2017
+
 import sys
 sys.path.append("../..")
 from py3d import *
@@ -49,6 +54,7 @@ if __name__ == "__main__":
 			CorrespondenceCheckerBasedOnDistance(0.075)],
 			RANSACConvergenceCriteria(40000000, 500))
 	print(result_ransac)
+	result_ransac.transformation
 	#DrawRegistrationResultUniformColor(source_down, target_down,
 	#		result_ransac.transformation)
 

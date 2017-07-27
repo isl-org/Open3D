@@ -81,9 +81,9 @@ std::shared_ptr<PointCloudForColoredICP>
 	output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
 	
 	for (auto k = 0; k < n_points; k++) {
-		Eigen::Vector3d vt = output->points_[k];
-		Eigen::Vector3d nt = output->normals_[k];
-		const double it = (output->colors_[k](0) + output->colors_[k](1) 
+		const Eigen::Vector3d &vt = output->points_[k];
+		const Eigen::Vector3d &nt = output->normals_[k];
+		double it = (output->colors_[k](0) + output->colors_[k](1) 
 				+ output->colors_[k](2)) / 3.0;
 																							
 		std::vector<int> point_idx;
