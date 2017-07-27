@@ -127,14 +127,12 @@ int main(int argc, char *argv[])
 					WriteTriangleMesh("mesh_" + save_index_str + ".ply",
 							*mesh);
 				}
-				/*
 				if (save_voxel) {
 					PrintDebug("Saving voxel %d ...\n", save_index);
 					auto voxel = volume.ExtractVoxelPointCloud();
 					WritePointCloud("voxel_" + save_index_str + ".ply",
 							*voxel);
 				}
-				*/
 				save_index++;
 			}
 			timer.Signal();

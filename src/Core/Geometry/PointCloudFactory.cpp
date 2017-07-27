@@ -39,15 +39,15 @@ namespace {
 
 std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
 		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
-		const Eigen::Matrix4d &extrinsic)
+		const Eigen::Matrix4d &extrinsic, int stride)
 {
 	auto pointcloud = std::make_shared<PointCloud>();
 	Eigen::Matrix4d camera_pose = extrinsic.inverse();
 	auto focal_length = intrinsic.GetFocalLength();
 	auto principal_point = intrinsic.GetPrincipalPoint();
-	for (int i = 0; i < depth.height_; i++) {
-		float *p = (float *)(depth.data_.data() + i * depth.BytesPerLine());
-		for (int j = 0; j < depth.width_; j++, p++) {
+	for (int i = 0; i < depth.height_; i += stride) {
+		for (int j = 0; j < depth.width_; j += stride) {
+			const float *p = PointerAt<float>(depth, j, i);
 			if (*p > 0) {
 				double z = (double)(*p);
 				double x = (j - principal_point.first) * z /
@@ -109,17 +109,18 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic/* = Eigen::Matrix4d::Identity()*/, 
-		double depth_scale/* = 1000.0*/, double depth_trunc/* = 1000.0*/)
+		double depth_scale/* = 1000.0*/, double depth_trunc/* = 1000.0*/,
+		int stride/* = 1*/)
 {
 	if (depth.num_of_channels_ == 1) {
 		if (depth.bytes_per_channel_ == 2) {
 			auto float_depth = ConvertDepthToFloatImage(depth, depth_scale,
 					depth_trunc);
 			return CreatePointCloudFromFloatDepthImage(*float_depth, intrinsic,
-					extrinsic);
+					extrinsic, stride);
 		} else if (depth.bytes_per_channel_ == 4) {
 			return CreatePointCloudFromFloatDepthImage(depth, intrinsic,
-					extrinsic);
+					extrinsic, stride);
 		}
 	}
 	PrintDebug("[CreatePointCloudFromDepthImage] Unsupported image format.\n");

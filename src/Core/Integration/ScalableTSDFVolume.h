@@ -73,7 +73,8 @@ public:
 	};
 public:
 	ScalableTSDFVolume(double voxel_length, double sdf_trunc, bool with_color,
-			int volume_unit_resolution = 16, int carving_threshold = 8);
+			int volume_unit_resolution = 16, int carving_threshold = 8,
+			int depth_sampling_stride = 4);
 	~ScalableTSDFVolume() override;
 
 public:
@@ -83,11 +84,13 @@ public:
 			const Eigen::Matrix4d &extrinsic) override;
 	std::shared_ptr<PointCloud> ExtractPointCloud() override;
 	std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
+	std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
 
 public:
 	int volume_unit_resolution_;
 	double volume_unit_length_;
 	int carving_threshold_;
+	int depth_sampling_stride_;
 
 	/// Assume the index of the volume unit is (x, y, z), then the unit spans
 	/// from (x, y, z) * volume_unit_length_

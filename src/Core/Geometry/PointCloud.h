@@ -97,12 +97,14 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 /// model (PointCloudFactory.cpp)
 /// The input depth image can be either a float image, or a uint16_t image. In
 /// the latter case, the depth is scaled by 1 / depth_scale, and truncated at
-/// depth_trunc distance.
+/// depth_trunc distance. The depth image is also sampled with stride, in order
+/// to support (fast) coarse point cloud extraction.
 /// Return an empty pointcloud if the conversion fails.
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
-		double depth_scale = 1000.0, double depth_trunc = 1000.0);
+		double depth_scale = 1000.0, double depth_trunc = 1000.0,
+		int stride = 1);
 
 /// Factory function to create a pointcloud from an RGB-D image and a camera
 /// model (PointCloudFactory.cpp)
