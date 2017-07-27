@@ -75,7 +75,7 @@ void pybind_pointcloud_methods(py::module &m)
 			"    y = (v - cy) * z / fy",
 			"depth"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity(),
-			"depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0);
+			"depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0, "stride"_a = 1);
 	m.def("CreatePointCloudFromRGBDImage", &CreatePointCloudFromRGBDImage,
 			"Factory function to create a pointcloud from an RGB-D image and a camera.\n"
 			"Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"

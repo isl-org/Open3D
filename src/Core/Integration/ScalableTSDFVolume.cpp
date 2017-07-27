@@ -35,11 +35,12 @@ namespace three{
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
 		bool with_color, int volume_unit_resolution/* = 16*/,
-		int carving_threshold/* = 8*/) :
+		int carving_threshold/* = 8*/, int depth_sampling_stride/* = 4*/) :
 		TSDFVolume(voxel_length, sdf_trunc, with_color),
 		volume_unit_resolution_(volume_unit_resolution),
 		volume_unit_length_(voxel_length * volume_unit_resolution),
-		carving_threshold_(carving_threshold)
+		carving_threshold_(carving_threshold),
+		depth_sampling_stride_(depth_sampling_stride)
 {
 }
 
@@ -69,8 +70,8 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 	}
 	auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
 			intrinsic);
-	auto pointcloud = CreatePointCloudFromRGBDImage(image, intrinsic,
-			extrinsic);
+	auto pointcloud = CreatePointCloudFromDepthImage(image.depth_, intrinsic,
+			extrinsic, 1000.0, 1000.0, depth_sampling_stride_);
 	std::unordered_set<Eigen::Vector3i, hash_eigen::hash<Eigen::Vector3i>>
 			touched_volume_units_;
 	for (const auto &point : pointcloud->points_) {
@@ -101,6 +102,12 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
 {
 	auto pointcloud = std::make_shared<PointCloud>();
+	for (auto &unit : volume_units_) {
+		if (unit.second.volume_) {
+			auto c = unit.second.volume_->ExtractPointCloud();
+			*pointcloud += *c;
+		}
+	}
 	return pointcloud;
 }
 
@@ -114,6 +121,18 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
 		}
 	}
 	return mesh;
+}
+
+std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractVoxelPointCloud()
+{
+	auto voxel = std::make_shared<PointCloud>();
+	for (auto &unit : volume_units_) {
+		if (unit.second.volume_) {
+			auto v = unit.second.volume_->ExtractVoxelPointCloud();
+			*voxel += *v;
+		}
+	}
+	return voxel;
 }
 
 std::shared_ptr<UniformTSDFVolume> ScalableTSDFVolume::OpenVolumeUnit(
