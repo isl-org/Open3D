@@ -23,7 +23,9 @@ if __name__ == "__main__":
 	source = ReadPointCloud("../../TestData/frag_115.ply")
 	target = ReadPointCloud("../../TestData/frag_116.ply")
 
+
 	voxel_radius = [ 0.04, 0.02, 0.01 ];
+	reg_num_scale = [ 400, 3000, 20000 ];
 	max_iter = [ 50, 30, 14 ];
 	current = []
 	current_transformation = np.identity(4);
@@ -53,5 +55,4 @@ if __name__ == "__main__":
 				relative_rmse = 1e-6, max_iteration = iter))
 		current_transformation = result_icp.transformation
 		print(result_icp)
-
 	DrawRegistrationResultOriginalColor(source, target, result_icp.transformation)
