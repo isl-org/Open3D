@@ -13,9 +13,12 @@ def DrawRegistrationResultOriginalColor(source, target, transformation):
 
 if __name__ == "__main__":
 
-	print("1. Load two point clouds.")
+	print("1. Load two point clouds and show initial pose")
 	source = ReadPointCloud("../../TestData/ColoredICP/frag_115.ply")
 	target = ReadPointCloud("../../TestData/ColoredICP/frag_116.ply")
+
+	current_transformation = np.identity(4)
+	DrawRegistrationResultOriginalColor(source, target, current_transformation)
 
 	# colored pointcloud registration
  	# This is implementation of following paper
@@ -23,7 +26,7 @@ if __name__ == "__main__":
  	# Colored Point Cloud Registration Revisited, ICCV 2017
 	voxel_radius = [ 0.04, 0.02, 0.01 ];
 	max_iter = [ 50, 30, 14 ];
-	current_transformation = np.identity(4);
+	current_transformation = np.identity(4)
 	for scale in range(3):
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
