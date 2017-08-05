@@ -33,8 +33,8 @@ if __name__ == "__main__":
 		print([iter,radius,scale])
 
 		print("2. Downsample with a voxel size %.2f" % radius)
-		source_down = VoxelDownSample(source, scale)
-		target_down = VoxelDownSample(target, scale)
+		source_down = VoxelDownSample(source, radius)
+		target_down = VoxelDownSample(target, radius)
 
 		print("3. Estimate normal.")
 		EstimateNormals(source_down, KDTreeSearchParamHybrid(
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 		print("4. Colored point cloud registration is applied on original point")
 		print("   clouds to refine the alignment. This time we use a strict")
 		print("   distance threshold %.2f" % radius)
-		result_icp = RegistrationColoredICP(source, target,
+		result_icp = RegistrationColoredICP(source_down, target_down,
 				radius, current_transformation,
 				ICPConvergenceCriteria(relative_fitness = 1e-6,
 				relative_rmse = 1e-6, max_iteration = iter))
