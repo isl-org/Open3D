@@ -68,14 +68,20 @@ if __name__ == "__main__":
 
 	# testing pose graph - this should be moved to right python file
 	trans = np.identity(4)
+	info = np.zeros([6,6])
 	t = 1
-	s = 1
-	#pose_graph = PoseGraph()
-	#pose_graph.nodes.append(PoseGraphNode(trans))
-	#pose_graph.edges.append(PoseGraphEdge(t, s, trans, False))
-	pose_graph = ReadPoseGraph("../../TestData/test_pose_graph.json")
-	print(PoseGraphNode(trans))
-	print(PoseGraphEdge(1,1))
+	s = 2
+	pose_graph = PoseGraph()
+	print(pose_graph)
+	temp = PoseGraphNode(trans)
+	#print(temp.pose)
+	#temp1 = pose_graph.edges
+	#pose_graph.nodes.append(temp)
+	#pose_graph.edges.append(PoseGraphEdge(t, s, trans, info, False))
+	#print(pose_graph)
+	#pose_graph = ReadPoseGraph("../../TestData/test_pose_graph.json")
+	#print(PoseGraphNode(trans))
+	#print(PoseGraphEdge(t, s, trans, info, False))
 	#print(pose_graph.edges)
 
 def main():

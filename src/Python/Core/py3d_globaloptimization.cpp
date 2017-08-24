@@ -53,19 +53,21 @@ public:
 
 void pybind_globaloptimization(py::module &m)
 {
-	py::class_<PoseGraphNode> pose_graph_node(m, "PoseGraphNode");
+	py::class_<PoseGraphNode, std::shared_ptr<PoseGraphNode>>
+			pose_graph_node(m, "PoseGraphNode");
 	py::detail::bind_default_constructor<PoseGraphNode>(pose_graph_node);
 	py::detail::bind_copy_functions<PoseGraphNode>(pose_graph_node);
 	pose_graph_node
-		.def_readwrite("pose", &PoseGraphNode::pose_)		
+		.def_readwrite("pose", &PoseGraphNode::pose_)
 		.def("__init__", [](PoseGraphNode &c,
 				Eigen::Matrix4d pose = Eigen::Matrix4d::Identity()) {
 				new (&c)PoseGraphNode(pose); }, "pose"_a)
 		.def("__repr__", [](const PoseGraphNode &rr) {
-			return std::string("PoseGraphNode, access pose to get its current pose.\n");
+			return std::string("PoseGraphNode, access pose to get its current pose.");
 	});
-					
-	py::class_<PoseGraphEdge> pose_graph_edge(m, "PoseGraphEdge");
+
+	py::class_<PoseGraphEdge, std::shared_ptr<PoseGraphEdge>>
+			pose_graph_edge(m, "PoseGraphEdge");
 	py::detail::bind_default_constructor<PoseGraphEdge>(pose_graph_edge);
 	py::detail::bind_copy_functions<PoseGraphEdge>(pose_graph_edge);
 	pose_graph_edge
@@ -80,19 +82,21 @@ void pybind_globaloptimization(py::module &m)
 				Eigen::Matrix4d transformation, Eigen::Matrix6d information,
 				bool uncertain,
 				double confidence) {
-				new (&c)PoseGraphEdge(target_node_id, source_node_id, 
+				new (&c)PoseGraphEdge(target_node_id, source_node_id,
 				transformation, information, uncertain, confidence); },
 				"target_node_id"_a = -1, "source_node_id"_a = -1,
-				"transformation"_a = Eigen::Matrix4d::Identity(), 
-				"information"_a = Eigen::Matrix6d::Identity(), 
+				"transformation"_a = Eigen::Matrix4d::Identity(),
+				"information"_a = Eigen::Matrix6d::Identity(),
 				"uncertain"_a = false,
 				"confidence"_a = 1.0)
 		.def("__repr__", [](const PoseGraphEdge &rr) {
-			return std::string("PoseGraphEdge from nodes %d to %d, access transformation to get relative transformation\n", 
-					rr.source_node_id_, rr.target_node_id_);
+			return std::string("PoseGraphEdge from nodes ") +
+					std::to_string(rr.source_node_id_) + std::string(" to ") +
+					std::to_string(rr.target_node_id_) +
+					std::string(", access transformation to get relative transformation");
 	});
 
-	py::class_<PoseGraph> pose_graph(m, "PoseGraph");
+	py::class_<PoseGraph, std::shared_ptr<PoseGraph>> pose_graph(m, "PoseGraph");
 	py::detail::bind_default_constructor<PoseGraph>(pose_graph);
 	py::detail::bind_copy_functions<PoseGraph>(pose_graph);
 	pose_graph
@@ -146,22 +150,22 @@ void pybind_globaloptimization(py::module &m)
 	py::detail::bind_copy_functions
 			<GlobalOptimizationConvergenceCriteria>(criteria);
 	criteria
-		.def_readwrite("max_iteration", 
+		.def_readwrite("max_iteration",
 				&GlobalOptimizationConvergenceCriteria::max_iteration_)
-		.def_readwrite("min_relative_increment", 
+		.def_readwrite("min_relative_increment",
 				&GlobalOptimizationConvergenceCriteria::min_relative_increment_)
-		.def_readwrite("min_relative_residual_increment", 
+		.def_readwrite("min_relative_residual_increment",
 				&GlobalOptimizationConvergenceCriteria::
 				min_relative_residual_increment_)
-		.def_readwrite("min_right_term", 
+		.def_readwrite("min_right_term",
 				&GlobalOptimizationConvergenceCriteria::min_right_term_)
-		.def_readwrite("min_residual", 
+		.def_readwrite("min_residual",
 				&GlobalOptimizationConvergenceCriteria::min_residual_)
-		.def_readwrite("max_iteration_lm", 
+		.def_readwrite("max_iteration_lm",
 				&GlobalOptimizationConvergenceCriteria::max_iteration_lm_)
-		.def_readwrite("upper_scale_factor", 
+		.def_readwrite("upper_scale_factor",
 				&GlobalOptimizationConvergenceCriteria::upper_scale_factor_)
-		.def_readwrite("lower_scale_factor", 
+		.def_readwrite("lower_scale_factor",
 				&GlobalOptimizationConvergenceCriteria::lower_scale_factor_)
 		.def("__repr__", [](const GlobalOptimizationConvergenceCriteria &cr) {
 		return std::string("GlobalOptimizationConvergenceCriteria") +
@@ -190,9 +194,9 @@ void pybind_globaloptimization(py::module &m)
 	py::detail::bind_copy_functions
 			<GlobalOptimizationLineProcessOption>(line_process_option);
 	line_process_option
-		.def_readwrite("line_process_weight", 
+		.def_readwrite("line_process_weight",
 				&GlobalOptimizationLineProcessOption::line_process_weight_)
-		.def_readwrite("edge_prune_threshold", 
+		.def_readwrite("edge_prune_threshold",
 				&GlobalOptimizationLineProcessOption::edge_prune_threshold_)
 		.def("__repr__", [](const GlobalOptimizationLineProcessOption &lp) {
 		return std::string("GlobalOptimizationLineProcessOption") +
@@ -210,17 +214,17 @@ void pybind_globaloptimization_methods(py::module &m)
 			ReadPoseGraph(filename, pose_graph);
 			return pose_graph;
 			}, "Function to read PoseGraph from file", "filename"_a);
-	m.def("WritePoseGraph", [](const std::string &filename, 
+	m.def("WritePoseGraph", [](const std::string &filename,
 			const PoseGraph pose_graph) {
 			WritePoseGraph(filename, pose_graph);
-			}, "Function to write PoseGraph to file", 
+			}, "Function to write PoseGraph to file",
 					"filename"_a, "pose_graph"_a);
-	m.def("GlobalOptimization", [](PoseGraph &pose_graph, 
+	m.def("GlobalOptimization", [](PoseGraph &pose_graph,
 			const GlobalOptimizationMethod &method,
 			const GlobalOptimizationConvergenceCriteria &criteria,
 			const GlobalOptimizationLineProcessOption &line_process_option) {
 			GlobalOptimization(
 					pose_graph, method, criteria, line_process_option);
-			}, "Function to optimize PoseGraph", "pose_graph"_a, "method"_a, 
+			}, "Function to optimize PoseGraph", "pose_graph"_a, "method"_a,
 					"criteria"_a, "line_process_option"_a);
 }
