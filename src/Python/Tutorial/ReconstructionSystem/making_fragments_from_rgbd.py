@@ -10,7 +10,7 @@ from py3d import *
 # some global parameters
 path_dataset = '/Users/jaesikpa/Dropbox/Intel/fragment/011/'
 path_fragment = path_dataset + 'fragments/'
-frames_per_fragment = 100
+frames_per_fragment = 20
 opencv_installed = True
 
 def initialize_opencv():
@@ -52,9 +52,9 @@ def process_one_pair(s, t, color_files, depth_files):
 			pinhole_camera_intrinsic, odo_init,
 			RGBDOdometryJacobianFromHybridTerm())
 	if success:
-		return trans
+		return [trans, info]
 	else:
-		return np.identity(4)
+		return [np.identity(4), np.zeros(6)]
 
 def get_flie_lists(path_dataset):
 	# get list of color and depth images
@@ -65,26 +65,7 @@ def get_flie_lists(path_dataset):
 	return color_files, depth_files
 
 if __name__ == "__main__":
-
-	# testing pose graph - this should be moved to right python file
-	trans = np.identity(4)
-	info = np.zeros([6,6])
-	t = 1
-	s = 2
-	pose_graph = PoseGraph()
-	print(pose_graph)
-	temp = PoseGraphNode(trans)
-	#print(temp.pose)
-	#temp1 = pose_graph.edges
-	#pose_graph.nodes.append(temp)
-	#pose_graph.edges.append(PoseGraphEdge(t, s, trans, info, False))
-	#print(pose_graph)
-	#pose_graph = ReadPoseGraph("../../TestData/test_pose_graph.json")
-	#print(PoseGraphNode(trans))
-	#print(PoseGraphEdge(t, s, trans, info, False))
-	#print(pose_graph.edges)
-
-def main():
+#def main():
 
 	# check opencv python package
 	initialize_opencv()
@@ -96,15 +77,15 @@ def main():
 	n_fragments = int(math.ceil(n_files / frames_per_fragment))
 	keyframes_per_n_frame = 5
 
-	for fragment_id in range(n_fragments):
+	#for fragment_id in range(n_fragments):
+	for fragment_id in range(1):
 
 		pose_graph = PoseGraph()
 		print(pose_graph)
 		# odometry
 		for s in range(frames_per_fragment-1):
 			t = s + 1
-			trans = process_one_pair(s, t, color_files, depth_files)
-			#pose_graph.PoseGraphNode(trans)
+			[trans, info] = process_one_pair(s, t, color_files, depth_files)
 			pose_graph.nodes.append(PoseGraphNode(trans))
 			print(pose_graph)
 
@@ -114,5 +95,10 @@ def main():
 				if s is not t \
 					and s % keyframes_per_n_frame == 0 \
 					and t % keyframes_per_n_frame == 0:
-						a = 1
-						trans = process_one_pair(s, t, color_files, depth_files)
+						[trans, info] = process_one_pair(
+								s, t, color_files, depth_files)
+						pose_graph.edges.append(
+								PoseGraphEdge(t, s, trans, info, False))
+						print(pose_graph)
+		pose_graph_name = "fragments_%03d.json" % fragment_id
+		WritePoseGraph(pose_graph_name, pose_graph)
