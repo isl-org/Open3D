@@ -1,6 +1,6 @@
 import numpy as np
-from os import listdir
-from os.path import isfile, join
+from os import listdir, makedirs
+from os.path import isfile, join, exists
 import math
 import sys
 sys.path.append("../..")
@@ -27,8 +27,6 @@ def initialize_opencv():
 		print('OpenCV is detected. Using ORB + 5pt algorithm')
 
 def process_one_rgbd_pair(s, t, color_files, depth_files):
-	print([s,t])
-
 	# read images
 	color_s = ReadImage(color_files[s])
 	depth_s = ReadImage(depth_files[s])
@@ -68,21 +66,25 @@ def get_flie_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id):
+	SetVerbosityLevel(VerbosityLevel.Error)
 	pose_graph = PoseGraph()
-	print(pose_graph)
 	# odometry
-	for s in range(frames_per_fragment-1): # fragment name?
+	sid = fragment_id * frames_per_fragment
+	eid = sid + frames_per_fragment - 1
+	for s in range(sid, eid): # fragment name?
 		t = s + 1
+		#print([s,t])
 		[trans, info] = process_one_rgbd_pair(s, t, color_files, depth_files)
 		pose_graph.nodes.append(PoseGraphNode(trans))
 		print(pose_graph)
 
 	# keyframe loop closure
-	for s in range(frames_per_fragment):
-		for t in range(frames_per_fragment):
+	for s in range(sid, eid):
+		for t in range(sid, eid):
 			if s is not t \
 				and s % keyframes_per_n_frame == 0 \
 				and t % keyframes_per_n_frame == 0:
+					#print([s,t])
 					[trans, info] = process_one_rgbd_pair(
 							s, t, color_files, depth_files)
 					pose_graph.edges.append(
@@ -92,20 +94,46 @@ def make_one_fragment(fragment_id):
 
 
 def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
+	# to display messages from GlobalOptimization
+	SetVerbosityLevel(VerbosityLevel.Debug)
 	method = GlobalOptimizationLevenbergMarquardt()
 	criteria = GlobalOptimizationConvergenceCriteria()
 	line_process_option = GlobalOptimizationLineProcessOption()
 	pose_graph = ReadPoseGraph(pose_graph_name)
-	print(pose_graph_fragment)
-	GlobalOptimization(pose_graph_fragment, method, criteria, line_process_option)
-	WritePoseGraph(pose_graph_optmized_name, pose_graph_fragment)
+	GlobalOptimization(pose_graph, method, criteria, line_process_option)
+	WritePoseGraph(pose_graph_optmized_name, pose_graph)
+	SetVerbosityLevel(VerbosityLevel.Error)
+
+
+def integration(pose_graph_name):
+	intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
+	pose_graph = ReadPoseGraph(pose_graph_name)
+	volume = UniformTSDFVolume(length = 4.0, resolution = 512,
+			sdf_trunc = 0.04, with_color = True)
+
+	for i in range(len(pose_graph.nodes)):
+		print("Integrate {:d}-th image into the volume.".format(i))
+		color = ReadImage(color_files[i])
+		depth = ReadImage(depth_files[i])
+		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
+				convert_rgb_to_intensity = False)
+		volume.Integrate(rgbd, intrinsic, pose_graph.nodes[i].pose)
+
+	print("Extract a triangle mesh from the volume and visualize it.")
+	mesh = volume.ExtractTriangleMesh()
+	mesh.ComputeVertexNormals()
+	DrawGeometries([mesh])
 
 
 if __name__ == "__main__":
+
 	# check opencv python package
 	initialize_opencv()
 	if opencv_installed:
 		from opencv_pose_estimation import pose_estimation
+
+	if not exists(path_fragment):
+		makedirs(path_fragment)
 
 	[color_files, depth_files] = get_flie_lists(path_dataset)
 	n_files = len(color_files)
@@ -113,8 +141,10 @@ if __name__ == "__main__":
 
 	#for fragment_id in range(n_fragments):
 	for fragment_id in range(1):
-		pose_graph_name = "fragments_%03d.json" % fragment_id
+		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
 		pose_graph = make_one_fragment(fragment_id)
 		WritePoseGraph(pose_graph_name, pose_graph)
-		pose_graph_optmized_name = "fragments_opt_%03d.json" % fragment_id
+		pose_graph_optmized_name = path_fragment + \
+				"fragments_opt_%03d.json" % fragment_id
 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+		integration(pose_graph_optmized_name)
