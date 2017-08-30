@@ -6,9 +6,10 @@ from py3d import *
 from matplotlib import pyplot as plt
 import copy
 
-# following code is tested with OpenCV 3.2.0
+# following code is tested with OpenCV 3.2.0 and Python2.7
 # how to install opencv
-# conda create --prefix py27_test python=2.7
+# conda create --prefix py27opencv python=2.7
+# source activate py27opencv
 # conda install -c conda-forge opencv
 # conda install -c conda-forge openblas
 def pose_estimation(source_rgbd_image, target_rgbd_image,
