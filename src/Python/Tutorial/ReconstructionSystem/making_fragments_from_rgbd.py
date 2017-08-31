@@ -10,7 +10,7 @@ from py3d import *
 # some global parameters
 path_dataset = '/Users/jaesikpa/Dropbox/Intel/fragment/011/'
 path_fragment = path_dataset + 'fragments/'
-frames_per_fragment = 20
+frames_per_fragment = 100
 keyframes_per_n_frame = 5
 opencv_installed = True
 
@@ -56,11 +56,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files):
 			source_rgbd_image, target_rgbd_image,
 			pinhole_camera_intrinsic, odo_init,
 			RGBDOdometryJacobianFromHybridTerm())
-	if success:
-		# print(trans)
-		return [trans, info]
-	else:
-		return [np.identity(4), np.zeros(6)]
+	return [trans, info]
 
 
 def get_flie_lists(path_dataset):
@@ -75,37 +71,40 @@ def get_flie_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id):
+
 	SetVerbosityLevel(VerbosityLevel.Error)
-	pose_graph = PoseGraph()
-	# odometry
 	sid = fragment_id * frames_per_fragment
-	eid = sid + frames_per_fragment - 1
+	eid = sid + frames_per_fragment
+
+	pose_graph = PoseGraph()
 	trans_odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
 
-	# keyframe loop closure
 	for s in range(sid, eid):
-		for t in range(sid, eid):
-			if s is not t:
-				if t is s + 1:
-					[trans, info] = process_one_rgbd_pair(
-							s, t, color_files, depth_files)
-					trans_odometry = np.dot(trans, trans_odometry)
-					pose_graph.nodes.append(PoseGraphNode(trans_odometry))
-					# todo: this should be t, s according to the definition
-					pose_graph.edges.append(
-							PoseGraphEdge(s, t, trans, info, False))
-					print(pose_graph)
+		for t in range(s+1, eid):
+			# odometry
+			if t is s + 1:
+				#print([s,t])
+				[trans, info] = process_one_rgbd_pair(
+						s, t, color_files, depth_files)
+				trans_odometry = np.dot(trans_odometry, np.linalg.inv(trans))
+				pose_graph.nodes.append(PoseGraphNode(trans_odometry))
+				pose_graph.edges.append(
+						PoseGraphEdge(s, t, trans, info, False))
+				#print(trans)
+				print(pose_graph)
 
-				if s % keyframes_per_n_frame is 0 \
-						and t % keyframes_per_n_frame is 0:
-					print([s,t])
-					[trans, info] = process_one_rgbd_pair(
-							s, t, color_files, depth_files)
-					# todo: this should be t, s according to the definition
-					pose_graph.edges.append(
-							PoseGraphEdge(s, t, trans, info, True))
-					print(pose_graph)
+			# keyframe loop closure
+			if s % keyframes_per_n_frame is 0 \
+					and t % keyframes_per_n_frame is 0:
+				#print([s,t])
+				[trans, info] = process_one_rgbd_pair(
+						s, t, color_files, depth_files)
+				pose_graph.edges.append(
+						PoseGraphEdge(s, t, trans, info, True))
+				#print(trans)
+				#print(info)
+				print(pose_graph)
 	return pose_graph
 
 
@@ -135,7 +134,7 @@ def integration(pose_graph_name):
 	#print(trans)
 
 	for i in range(len(pose_graph.nodes)):
-		print("Integrate {:d}-th image into the volume.".format(i))
+		print("Integrate rgbd images %d/%d." % (i+1, len(pose_graph.nodes)))
 		color = ReadImage(color_files[i])
 		depth = ReadImage(depth_files[i])
 		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
@@ -145,7 +144,6 @@ def integration(pose_graph_name):
 		#print(transformed_pose)
 		volume.Integrate(rgbd, intrinsic, transformed_pose)
 
-	print("Extract a triangle mesh from the volume and visualize it.")
 	mesh = volume.ExtractTriangleMesh()
 	mesh.ComputeVertexNormals()
 	return mesh
@@ -162,7 +160,7 @@ def test_single_frame_integrate(i):
 	trans_offset[2,3] = -min_depth
 	#print(trans_offset)
 
-	print("Integrate {:d}-th image into the volume.".format(i))
+	print("Integrate a rgbd image.")
 	color = ReadImage(color_files[i])
 	depth = ReadImage(depth_files[i])
 	rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
@@ -210,9 +208,10 @@ def test_single_pair(s, t):
 #
 # 	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
 #
+# 	# no solution 5-70
 # 	# weird pairs 20-130
-# 	s = 20
-# 	t =	130
+# 	s = 33
+# 	t =	34
 # 	test_single_pair(s, t)
 
 
@@ -233,12 +232,15 @@ if __name__ == "__main__":
 	#for fragment_id in range(n_fragments):
 	for fragment_id in range(1):
 		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-		#integration(pose_graph_name)
-		pose_graph = make_one_fragment(fragment_id)
-		WritePoseGraph(pose_graph_name, pose_graph)
-		pose_graph_optmized_name = path_fragment + \
-				"fragments_opt_%03d.json" % fragment_id
-		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-		mesh = integration(pose_graph_optmized_name)
-		mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
+		# pose_graph = make_one_fragment(fragment_id)
+		# WritePoseGraph(pose_graph_name, pose_graph)
+		# pose_graph_optmized_name = path_fragment + \
+		# 		"fragments_opt_%03d.json" % fragment_id
+		# optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+		# mesh = integration(pose_graph_optmized_name)
+		# mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
+		# WriteTriangleMesh(mesh_name, mesh, False, True)
+
+		mesh = integration(pose_graph_name)
+		mesh_name = path_fragment + "fragment_%03d_odo.ply" % fragment_id
 		WriteTriangleMesh(mesh_name, mesh, False, True)

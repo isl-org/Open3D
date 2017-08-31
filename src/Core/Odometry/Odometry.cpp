@@ -465,7 +465,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 	}
 	else {
 		return std::make_tuple(false,
-				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
+				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Identity());
 	}
 }
 
