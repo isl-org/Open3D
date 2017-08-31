@@ -29,7 +29,7 @@ def initialize_opencv():
 
 
 def process_one_rgbd_pair(s, t, color_files, depth_files):
-	SetVerbosityLevel(VerbosityLevel.Debug)
+	#SetVerbosityLevel(VerbosityLevel.Debug)
 
 	# read images
 	color_s = ReadImage(color_files[s])
@@ -51,12 +51,6 @@ def process_one_rgbd_pair(s, t, color_files, depth_files):
 	else:
 		odo_init = np.identity(4)
 
-	#return [np.identity(4), np.zeros(6)]
-	#return [odo_init, np.zeros(6)]
-	#return [np.linalg.inv(odo_init), np.zeros(6)]
-
-	# print(odo_init)
-
 	# perform RGB-D odometry
 	[success, trans, info] = ComputeRGBDOdometry(
 			source_rgbd_image, target_rgbd_image,
@@ -73,8 +67,10 @@ def get_flie_lists(path_dataset):
 	# get list of color and depth images
 	path_color = path_dataset + 'image/'
 	path_depth = path_dataset + 'depth/'
-	color_files = [path_color + f for f in listdir(path_color) if isfile(join(path_color, f))]
-	depth_files = [path_depth + f for f in listdir(path_depth) if isfile(join(path_depth, f))]
+	color_files = [path_color + f for f in listdir(path_color)
+			if isfile(join(path_color, f))]
+	depth_files = [path_depth + f for f in listdir(path_depth)
+			if isfile(join(path_depth, f))]
 	return color_files, depth_files
 
 
@@ -86,23 +82,23 @@ def make_one_fragment(fragment_id):
 	eid = sid + frames_per_fragment - 1
 	trans_odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
-	# todo: I can merge two for loops
-	for s in range(sid, eid):
-		t = s + 1
-		[trans, info] = process_one_rgbd_pair(s, t, color_files, depth_files)
-		trans_odometry = np.dot(trans, trans_odometry)
-		pose_graph.nodes.append(PoseGraphNode(trans_odometry))
-		# todo: this should be t, s according to the definition
-		pose_graph.edges.append(PoseGraphEdge(s, t, trans, info, False))
-		print(pose_graph)
 
 	# keyframe loop closure
 	for s in range(sid, eid):
 		for t in range(sid, eid):
-			if s is not t \
-				and s % keyframes_per_n_frame is 0 \
-				and t % keyframes_per_n_frame is 0:
-				#and s is 10 and t is 90:
+			if s is not t:
+				if t is s + 1:
+					[trans, info] = process_one_rgbd_pair(
+							s, t, color_files, depth_files)
+					trans_odometry = np.dot(trans, trans_odometry)
+					pose_graph.nodes.append(PoseGraphNode(trans_odometry))
+					# todo: this should be t, s according to the definition
+					pose_graph.edges.append(
+							PoseGraphEdge(s, t, trans, info, False))
+					print(pose_graph)
+
+				if s % keyframes_per_n_frame is 0 \
+						and t % keyframes_per_n_frame is 0:
 					print([s,t])
 					[trans, info] = process_one_rgbd_pair(
 							s, t, color_files, depth_files)
@@ -152,7 +148,8 @@ def integration(pose_graph_name):
 	print("Extract a triangle mesh from the volume and visualize it.")
 	mesh = volume.ExtractTriangleMesh()
 	mesh.ComputeVertexNormals()
-	DrawGeometries([mesh])
+	return mesh
+	#DrawGeometries([mesh])
 
 
 def test_single_frame_integrate(i):
@@ -170,6 +167,7 @@ def test_single_frame_integrate(i):
 	depth = ReadImage(depth_files[i])
 	rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
 			convert_rgb_to_intensity = False)
+	intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 	volume.Integrate(rgbd, intrinsic, trans_offset)
 
 	print("Extract a triangle mesh from the volume and visualize it.")
@@ -180,23 +178,13 @@ def test_single_frame_integrate(i):
 	return mesh
 
 
-# test wide baseline matching
-if __name__ == "__main__":
+def test_single_pair(s, t):
 
 	SetVerbosityLevel(VerbosityLevel.Debug)
-
-	initialize_opencv()
-	if opencv_installed:
-		from opencv_pose_estimation import pose_estimation
 
 	if not exists(path_fragment):
 		makedirs(path_fragment)
 
-	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
-
-	# weird pairs 20-130
-	s = 0
-	t =	10
 	# todo: need to test with and without OpenCV
 	pose_graph = PoseGraph()
 	[trans, info] = process_one_rgbd_pair(s, t, color_files, depth_files)
@@ -205,7 +193,6 @@ if __name__ == "__main__":
 	print('from process_one_rgbd_pair')
 
 	# integration
-	intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
 	mesh_s = test_single_frame_integrate(s)
 	mesh_t = test_single_frame_integrate(t)
@@ -214,27 +201,44 @@ if __name__ == "__main__":
 	DrawGeometries([mesh_s, mesh_t])
 
 
+# # test wide baseline matching
 # if __name__ == "__main__":
 #
-# 	# check opencv python package
 # 	initialize_opencv()
 # 	if opencv_installed:
 # 		from opencv_pose_estimation import pose_estimation
 #
-# 	if not exists(path_fragment):
-# 		makedirs(path_fragment)
-#
 # 	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
-# 	n_files = len(color_files)
-# 	n_fragments = int(math.ceil(n_files / frames_per_fragment))
 #
-# 	#for fragment_id in range(n_fragments):
-# 	for fragment_id in range(1):
-# 		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-# 		#integration(pose_graph_name)
-# 		pose_graph = make_one_fragment(fragment_id)
-# 		WritePoseGraph(pose_graph_name, pose_graph)
-# 		pose_graph_optmized_name = path_fragment + \
-# 				"fragments_opt_%03d.json" % fragment_id
-# 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-# 		integration(pose_graph_optmized_name)
+# 	# weird pairs 20-130
+# 	s = 20
+# 	t =	130
+# 	test_single_pair(s, t)
+
+
+if __name__ == "__main__":
+
+	# check opencv python package
+	initialize_opencv()
+	if opencv_installed:
+		from opencv_pose_estimation import pose_estimation
+
+	if not exists(path_fragment):
+		makedirs(path_fragment)
+
+	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
+	n_files = len(color_files)
+	n_fragments = int(math.ceil(n_files / frames_per_fragment))
+
+	#for fragment_id in range(n_fragments):
+	for fragment_id in range(1):
+		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
+		#integration(pose_graph_name)
+		pose_graph = make_one_fragment(fragment_id)
+		WritePoseGraph(pose_graph_name, pose_graph)
+		pose_graph_optmized_name = path_fragment + \
+				"fragments_opt_%03d.json" % fragment_id
+		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+		mesh = integration(pose_graph_optmized_name)
+		mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
+		WriteTriangleMesh(mesh_name, mesh, False, True)

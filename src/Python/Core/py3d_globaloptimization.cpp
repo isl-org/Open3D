@@ -72,20 +72,20 @@ void pybind_globaloptimization(py::module &m)
 	py::detail::bind_default_constructor<PoseGraphEdge>(pose_graph_edge);
 	py::detail::bind_copy_functions<PoseGraphEdge>(pose_graph_edge);
 	pose_graph_edge
-		.def_readwrite("target_node_id", &PoseGraphEdge::target_node_id_)
 		.def_readwrite("source_node_id", &PoseGraphEdge::source_node_id_)
+		.def_readwrite("target_node_id", &PoseGraphEdge::target_node_id_)
 		.def_readwrite("transformation", &PoseGraphEdge::transformation_)
 		.def_readwrite("information", &PoseGraphEdge::information_)
 		.def_readwrite("uncertain", &PoseGraphEdge::uncertain_)
 		.def_readwrite("confidence", &PoseGraphEdge::confidence_)
 		.def("__init__", [](PoseGraphEdge &c,
-				int target_node_id, int source_node_id,
+				int source_node_id, int target_node_id,
 				Eigen::Matrix4d transformation, Eigen::Matrix6d information,
 				bool uncertain,
 				double confidence) {
-				new (&c)PoseGraphEdge(target_node_id, source_node_id,
+				new (&c)PoseGraphEdge(source_node_id, target_node_id,
 				transformation, information, uncertain, confidence); },
-				"target_node_id"_a = -1, "source_node_id"_a = -1,
+				"source_node_id"_a = -1, "target_node_id"_a = -1,
 				"transformation"_a = Eigen::Matrix4d::Identity(),
 				"information"_a = Eigen::Matrix6d::Identity(),
 				"uncertain"_a = false,
