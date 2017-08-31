@@ -131,7 +131,7 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 		#n_inlier = len(inlier_vec)
 		n_inlier = len([1 for diff_iter in diff if diff_iter < max_distance])
 		if (n_inlier > max_inlier):
-			print(max_inlier)
+			# print(max_inlier)
 			R_good = copy.copy(R_approx)
 			t_good = copy.copy(t_approx)
 			max_inlier = n_inlier

@@ -29,6 +29,8 @@ def initialize_opencv():
 
 
 def process_one_rgbd_pair(s, t, color_files, depth_files):
+	SetVerbosityLevel(VerbosityLevel.Debug)
+
 	# read images
 	color_s = ReadImage(color_files[s])
 	depth_s = ReadImage(depth_files[s])
@@ -53,17 +55,18 @@ def process_one_rgbd_pair(s, t, color_files, depth_files):
 	#return [odo_init, np.zeros(6)]
 	#return [np.linalg.inv(odo_init), np.zeros(6)]
 
-#'''
+	# print(odo_init)
+
 	# perform RGB-D odometry
 	[success, trans, info] = ComputeRGBDOdometry(
 			source_rgbd_image, target_rgbd_image,
 			pinhole_camera_intrinsic, odo_init,
 			RGBDOdometryJacobianFromHybridTerm())
 	if success:
+		# print(trans)
 		return [trans, info]
 	else:
 		return [np.identity(4), np.zeros(6)]
-#'''
 
 
 def get_flie_lists(path_dataset):
@@ -151,7 +154,32 @@ def integration(pose_graph_name):
 	mesh.ComputeVertexNormals()
 	DrawGeometries([mesh])
 
-'''
+
+def test_single_frame_integrate(i):
+	min_depth = 0.3
+	cubic_length = 4.0
+	volume = UniformTSDFVolume(length = cubic_length, resolution = 512,
+			sdf_trunc = 0.04, with_color = True)
+	trans_offset = np.identity(4)
+	trans_offset[0:2,3] = cubic_length / 2
+	trans_offset[2,3] = -min_depth
+	#print(trans_offset)
+
+	print("Integrate {:d}-th image into the volume.".format(i))
+	color = ReadImage(color_files[i])
+	depth = ReadImage(depth_files[i])
+	rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
+			convert_rgb_to_intensity = False)
+	volume.Integrate(rgbd, intrinsic, trans_offset)
+
+	print("Extract a triangle mesh from the volume and visualize it.")
+	mesh = volume.ExtractTriangleMesh()
+	mesh.ComputeVertexNormals()
+	mesh.Transform(np.linalg.inv(trans_offset))
+
+	return mesh
+
+
 # test wide baseline matching
 if __name__ == "__main__":
 
@@ -166,75 +194,47 @@ if __name__ == "__main__":
 
 	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
 
-	s = 20
-	t =	130
+	# weird pairs 20-130
+	s = 0
+	t =	10
 	# todo: need to test with and without OpenCV
 	pose_graph = PoseGraph()
-	pose_graph.nodes.append(PoseGraphNode(np.identity(4)))
 	[trans, info] = process_one_rgbd_pair(s, t, color_files, depth_files)
-	pose_graph.nodes.append(PoseGraphNode(np.linalg.inv(trans)))
+	pose_graph.nodes.append(PoseGraphNode(trans))
+	pose_graph.nodes.append(PoseGraphNode(np.identity(4)))
 	print('from process_one_rgbd_pair')
-	print(trans)
-	#print(pose_graph)
 
 	# integration
 	intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
-	min_depth = 0.3
-	cubic_length = 4.0
-	volume = UniformTSDFVolume(length = cubic_length, resolution = 512,
-			sdf_trunc = 0.04, with_color = True)
-	trans = np.identity(4)
-	trans[0:2,3] = cubic_length / 2
-	trans[2,3] = -min_depth
-	#print(trans)
+	mesh_s = test_single_frame_integrate(s)
+	mesh_t = test_single_frame_integrate(t)
+	#mesh_s.Transform(np.linalg.inv(trans)) # for RGBD odometry
+	mesh_s.Transform(trans) # for 5pt
+	DrawGeometries([mesh_s, mesh_t])
 
-	for i in [s,t]:
-		print("Integrate {:d}-th image into the volume.".format(i))
-		print(color_files[i])
-		color = ReadImage(color_files[i])
-		depth = ReadImage(depth_files[i])
-		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
-				convert_rgb_to_intensity = False)
-		if i is s:
-			pose = pose_graph.nodes[0].pose
-		elif i is t:
-			pose = pose_graph.nodes[1].pose
-		print('in Integration')
-		print(pose)
-		transformed_pose = np.dot(trans, pose)
-		print(transformed_pose)
-		volume.Integrate(rgbd, intrinsic, transformed_pose)
 
-	print("Extract a triangle mesh from the volume and visualize it.")
-	mesh = volume.ExtractTriangleMesh()
-	mesh.ComputeVertexNormals()
-	DrawGeometries([mesh])
-'''
-
-#'''
-if __name__ == "__main__":
-
-	# check opencv python package
-	initialize_opencv()
-	if opencv_installed:
-		from opencv_pose_estimation import pose_estimation
-
-	if not exists(path_fragment):
-		makedirs(path_fragment)
-
-	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
-	n_files = len(color_files)
-	n_fragments = int(math.ceil(n_files / frames_per_fragment))
-
-	#for fragment_id in range(n_fragments):
-	for fragment_id in range(1):
-		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-		#integration(pose_graph_name)
-		pose_graph = make_one_fragment(fragment_id)
-		WritePoseGraph(pose_graph_name, pose_graph)
-		pose_graph_optmized_name = path_fragment + \
-				"fragments_opt_%03d.json" % fragment_id
-		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-		integration(pose_graph_optmized_name)
-#'''
+# if __name__ == "__main__":
+#
+# 	# check opencv python package
+# 	initialize_opencv()
+# 	if opencv_installed:
+# 		from opencv_pose_estimation import pose_estimation
+#
+# 	if not exists(path_fragment):
+# 		makedirs(path_fragment)
+#
+# 	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
+# 	n_files = len(color_files)
+# 	n_fragments = int(math.ceil(n_files / frames_per_fragment))
+#
+# 	#for fragment_id in range(n_fragments):
+# 	for fragment_id in range(1):
+# 		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
+# 		#integration(pose_graph_name)
+# 		pose_graph = make_one_fragment(fragment_id)
+# 		WritePoseGraph(pose_graph_name, pose_graph)
+# 		pose_graph_optmized_name = path_fragment + \
+# 				"fragments_opt_%03d.json" % fragment_id
+# 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+# 		integration(pose_graph_optmized_name)
