@@ -37,10 +37,10 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 			pinhole_camera_intrinsic.intrinsic_matrix[1,1]) / 2.0
 	pp_x = pinhole_camera_intrinsic.intrinsic_matrix[0,2]
 	pp_y = pinhole_camera_intrinsic.intrinsic_matrix[1,2]
-	print('pinhole_camera_intrinsic.intrinsic_matrix')
-	print(pinhole_camera_intrinsic.intrinsic_matrix)
-	print('focal_input, pp_x, pp_y')
-	print([focal_input, pp_x, pp_y])
+	# print('pinhole_camera_intrinsic.intrinsic_matrix')
+	# print(pinhole_camera_intrinsic.intrinsic_matrix)
+	# print('focal_input, pp_x, pp_y')
+	# print([focal_input, pp_x, pp_y])
 
 	# Essential matrix is just used for masking inliers using Epipolar geometry
 	[E, mask] = cv2.findEssentialMat(pts_s, pts_t, focal=focal_input,
@@ -62,28 +62,29 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_xyz_s = pts_xyz_s[:,:cnt]
 	pts_xyz_t = pts_xyz_t[:,:cnt]
 
-	# can I draw correspondences here?
-	draw_correspondences(np.asarray(source_rgbd_image.color),
-			np.asarray(target_rgbd_image.color), pts_s, pts_t, mask)
-
-	R,t,inlier_id_vec = estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t)
+	# # can I draw correspondences here?
+	# draw_correspondences(np.asarray(source_rgbd_image.color),
+	# 		np.asarray(target_rgbd_image.color), pts_s, pts_t, mask)
+	#R,t,inlier_id_vec = estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t)
+	R,t = estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t)
 	trans = np.identity(4)
 	trans[:3,:3] = R
 	trans[:3,3] = [t[0],t[1],t[2]]
-	pts_s_new = np.zeros(shape=(len(inlier_id_vec),2))
-	pts_t_new = np.zeros(shape=(len(inlier_id_vec),2))
-	mask = np.ones(len(inlier_id_vec))
-	cnt = 0
-	for inlier_id in inlier_id_vec:
-		u_s,v_s = get_uv_from_xyz(pts_xyz_s[0,inlier_id], pts_xyz_s[1,inlier_id],
-				pts_xyz_s[2,inlier_id], pp_x, pp_y, focal_input)
-		u_t,v_t = get_uv_from_xyz(pts_xyz_t[0,inlier_id], pts_xyz_t[1,inlier_id],
-				pts_xyz_t[2,inlier_id], pp_x, pp_y, focal_input)
-		pts_s_new[cnt,:] = [u_s,v_s]
-		pts_t_new[cnt,:] = [u_t,v_t]
-		cnt = cnt + 1
-	draw_correspondences(np.asarray(source_rgbd_image.color),
-			np.asarray(target_rgbd_image.color), pts_s_new, pts_t_new, mask)
+
+	# pts_s_new = np.zeros(shape=(len(inlier_id_vec),2))
+	# pts_t_new = np.zeros(shape=(len(inlier_id_vec),2))
+	# mask = np.ones(len(inlier_id_vec))
+	# cnt = 0
+	# for inlier_id in inlier_id_vec:
+	# 	u_s,v_s = get_uv_from_xyz(pts_xyz_s[0,inlier_id], pts_xyz_s[1,inlier_id],
+	# 			pts_xyz_s[2,inlier_id], pp_x, pp_y, focal_input)
+	# 	u_t,v_t = get_uv_from_xyz(pts_xyz_t[0,inlier_id], pts_xyz_t[1,inlier_id],
+	# 			pts_xyz_t[2,inlier_id], pp_x, pp_y, focal_input)
+	# 	pts_s_new[cnt,:] = [u_s,v_s]
+	# 	pts_t_new[cnt,:] = [u_t,v_t]
+	# 	cnt = cnt + 1
+	# draw_correspondences(np.asarray(source_rgbd_image.color),
+	# 		np.asarray(target_rgbd_image.color), pts_s_new, pts_t_new, mask)
 	return trans
 
 
@@ -125,16 +126,17 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 		diff_mat = pts_xyz_t - (np.matmul(R_approx, pts_xyz_s) +
 				np.tile(t_approx, [1, n_points]))
 		diff = [np.linalg.norm(diff_mat[:,i]) for i in range(n_points)]
-		inlier_vec = [id_iter for diff_iter, id_iter in zip(diff, idvec) \
-				if diff_iter < max_distance]
-		n_inlier = len(inlier_vec)
+		# inlier_vec = [id_iter for diff_iter, id_iter in zip(diff, idvec) \
+		# 		if diff_iter < max_distance]
+		#n_inlier = len(inlier_vec)
+		n_inlier = len([1 for diff_iter in diff if diff_iter < max_distance])
 		if (n_inlier > max_inlier):
 			print(max_inlier)
 			R_good = copy.copy(R_approx)
 			t_good = copy.copy(t_approx)
 			max_inlier = n_inlier
-			inlier_vec_good = inlier_vec
-	return R_good, t_good, inlier_vec_good
+			# inlier_vec_good = inlier_vec
+	return R_good, t_good#, inlier_vec_good
 
 
 # singular value decomposition approach

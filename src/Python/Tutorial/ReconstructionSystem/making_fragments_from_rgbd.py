@@ -34,8 +34,8 @@ def process_one_rgbd_pair(s, t, color_files, depth_files):
 	depth_s = ReadImage(depth_files[s])
 	color_t = ReadImage(color_files[t])
 	depth_t = ReadImage(depth_files[t])
-	print(color_files[s])
-	print(color_files[t])
+	# print(color_files[s])
+	# print(color_files[t])
 	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s)
 	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t)
 
@@ -50,10 +50,10 @@ def process_one_rgbd_pair(s, t, color_files, depth_files):
 		odo_init = np.identity(4)
 
 	#return [np.identity(4), np.zeros(6)]
-	return [odo_init, np.zeros(6)]
+	#return [odo_init, np.zeros(6)]
 	#return [np.linalg.inv(odo_init), np.zeros(6)]
 
-'''
+#'''
 	# perform RGB-D odometry
 	[success, trans, info] = ComputeRGBDOdometry(
 			source_rgbd_image, target_rgbd_image,
@@ -63,7 +63,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files):
 		return [trans, info]
 	else:
 		return [np.identity(4), np.zeros(6)]
-'''
+#'''
 
 
 def get_flie_lists(path_dataset):
@@ -151,6 +151,7 @@ def integration(pose_graph_name):
 	mesh.ComputeVertexNormals()
 	DrawGeometries([mesh])
 
+'''
 # test wide baseline matching
 if __name__ == "__main__":
 
@@ -165,18 +166,15 @@ if __name__ == "__main__":
 
 	[color_files, depth_files] = get_flie_lists(path_dataset) #todo: is this global variable?
 
-	trans_odometry = np.identity(4)
-	pose_graph = PoseGraph()
-	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
-
 	s = 20
 	t =	130
 	# todo: need to test with and without OpenCV
+	pose_graph = PoseGraph()
+	pose_graph.nodes.append(PoseGraphNode(np.identity(4)))
 	[trans, info] = process_one_rgbd_pair(s, t, color_files, depth_files)
+	pose_graph.nodes.append(PoseGraphNode(np.linalg.inv(trans)))
 	print('from process_one_rgbd_pair')
 	print(trans)
-	trans_odometry = np.dot(trans, trans_odometry)
-	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
 	#print(pose_graph)
 
 	# integration
@@ -199,9 +197,9 @@ if __name__ == "__main__":
 		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
 				convert_rgb_to_intensity = False)
 		if i is s:
-			pose = pose_graph.nodes[1].pose
-		elif i is t:
 			pose = pose_graph.nodes[0].pose
+		elif i is t:
+			pose = pose_graph.nodes[1].pose
 		print('in Integration')
 		print(pose)
 		transformed_pose = np.dot(trans, pose)
@@ -212,8 +210,9 @@ if __name__ == "__main__":
 	mesh = volume.ExtractTriangleMesh()
 	mesh.ComputeVertexNormals()
 	DrawGeometries([mesh])
-
 '''
+
+#'''
 if __name__ == "__main__":
 
 	# check opencv python package
@@ -238,4 +237,4 @@ if __name__ == "__main__":
 				"fragments_opt_%03d.json" % fragment_id
 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
 		integration(pose_graph_optmized_name)
-'''
+#'''
