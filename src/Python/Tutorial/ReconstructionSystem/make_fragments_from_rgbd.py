@@ -87,7 +87,7 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	SetVerbosityLevel(VerbosityLevel.Error)
 
 
-def integrate_rgb_frames(pose_graph_name):
+def integrate_rgb_frames(pose_graph_name, intrinsic):
 
 	pose_graph = ReadPoseGraph(pose_graph_name)
 	min_depth = 0.3
@@ -106,7 +106,7 @@ def integrate_rgb_frames(pose_graph_name):
 				convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
 		transformed_pose = np.dot(trans, pose)
-		volume.Integrate(rgbd, pinhole_camera_intrinsic, transformed_pose)
+		volume.Integrate(rgbd, intrinsic, transformed_pose)
 
 	mesh = volume.ExtractTriangleMesh()
 	mesh.ComputeVertexNormals()
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 		# check opencv python package
 		with_opencv = initialize_opencv()
 		if with_opencv:
-			import opencv_pose_estimation
+			from opencv_pose_estimation import pose_estimation
 
 		path_fragment = path_dataset + 'fragments/'
 		if not exists(path_fragment):
@@ -149,6 +149,6 @@ if __name__ == "__main__":
 			pose_graph_optmized_name = path_fragment + \
 					"fragments_opt_%03d.json" % fragment_id
 			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-			mesh = integrate_rgb_frames(pose_graph_optmized_name)
+			mesh = integrate_rgb_frames(pose_graph_optmized_name, intrinsic)
 			mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
 			WriteTriangleMesh(mesh_name, mesh, False, True)
