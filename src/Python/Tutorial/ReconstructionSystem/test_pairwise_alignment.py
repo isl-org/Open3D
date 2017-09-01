@@ -6,8 +6,31 @@ import sys
 sys.path.append("../..")
 from py3d import *
 from utility import *
-from make_fragments_from_rgbd import \
-		process_one_rgbd_pair, initialize_opencv, get_file_lists
+from make_fragments_from_rgbd import get_file_lists
+
+
+def process_one_rgbd_pair(s, t, color_files, depth_files,
+		intrinsic, with_opencv):
+	# read images
+	color_s = ReadImage(color_files[s])
+	depth_s = ReadImage(depth_files[s])
+	color_t = ReadImage(color_files[t])
+	depth_t = ReadImage(depth_files[t])
+	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s)
+	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t)
+
+	# initialize_camera_pose
+	if abs(s-t) is not 1 and with_opencv:
+		odo_init = pose_estimation(
+				source_rgbd_image, target_rgbd_image, intrinsic, False)
+	else:
+		odo_init = np.identity(4)
+
+	# perform RGB-D odometry
+	[success, trans, info] = ComputeRGBDOdometry(
+			source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
+			RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
+	return [trans, info]
 
 
 def test_single_frame_integrate(i, intrinsic):

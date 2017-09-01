@@ -20,8 +20,8 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 
 	# initialize_camera_pose
 	if abs(s-t) is not 1 and with_opencv:
-		odo_init = pose_estimation(source_rgbd_image, target_rgbd_image,
-				intrinsic, False)
+		odo_init = pose_estimation(
+				source_rgbd_image, target_rgbd_image, intrinsic, False)
 	else:
 		odo_init = np.identity(4)
 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 		# check opencv python package
 		with_opencv = initialize_opencv()
 		if with_opencv:
-			from opencv_pose_estimation import pose_estimation
+			import opencv_pose_estimation
 
 		path_fragment = path_dataset + 'fragments/'
 		if not exists(path_fragment):
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 			intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
 		else:
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
-		
+
 		#for fragment_id in range(n_fragments):
 		for fragment_id in range(1):
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
