@@ -36,7 +36,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_s = np.asarray(pts_s)
 	pts_t = np.asarray(pts_t)
 	# inlier points after initial BF matching
-	if debug_draw_correspondences is True:
+	if debug_draw_correspondences:
 		draw_correspondences(np.asarray(source_rgbd_image.color),
 				np.asarray(target_rgbd_image.color), pts_s, pts_t,
 				np.ones(pts_s.shape[0]), "Initial BF matching")
@@ -52,7 +52,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	[E, mask] = cv2.findEssentialMat(pts_s_int, pts_t_int, focal=focal_input,
 			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.995, threshold=1.0)
 	# inlier points after 5pt algorithm
-	if debug_draw_correspondences is True:
+	if debug_draw_correspondences:
 		draw_correspondences(np.asarray(source_rgbd_image.color),
 				np.asarray(target_rgbd_image.color),
 				pts_s, pts_t, mask, "5-pt RANSAC")
@@ -77,7 +77,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 
 	trans,inlier_id_vec = estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t)
 
-	if debug_draw_correspondences is True:
+	if debug_draw_correspondences:
 		pts_s_new = np.zeros(shape=(len(inlier_id_vec),2))
 		pts_t_new = np.zeros(shape=(len(inlier_id_vec),2))
 		mask = np.ones(len(inlier_id_vec))

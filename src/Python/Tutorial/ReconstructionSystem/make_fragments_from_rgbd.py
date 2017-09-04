@@ -45,33 +45,35 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 
 	SetVerbosityLevel(VerbosityLevel.Error)
 	sid = fragment_id * n_frames_per_fragment
-	eid = sid + n_frames_per_fragment
+	eid = min(sid + n_frames_per_fragment, n_files)
 
 	pose_graph = PoseGraph()
 	trans_odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
 
 	for s in range(sid, eid):
-		for t in range(s+1, eid):
+		for t in range(s, eid):
 			# odometry
-			if t is s + 1:
+			if t == s + 1:
 				[trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				trans_odometry = np.dot(trans, trans_odometry)
 				trans_odometry_inv = np.linalg.inv(trans_odometry)
 				pose_graph.nodes.append(PoseGraphNode(trans_odometry_inv))
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, trans, info, False))
-				print(pose_graph)
+						PoseGraphEdge(s-sid, t-sid, trans, info, False))
+				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, s, t))
 
 			# keyframe loop closure
-			if s % n_keyframes_per_n_frame is 0 \
-					and t % n_keyframes_per_n_frame is 0:
+			if s % n_keyframes_per_n_frame == 0 \
+					and t % n_keyframes_per_n_frame == 0:
 				[trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, trans, info, True))
-				print(pose_graph)
+						PoseGraphEdge(s-sid, t-sid, trans, info, True))
+				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, s, t))
 	return pose_graph
 
 
@@ -87,7 +89,7 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	SetVerbosityLevel(VerbosityLevel.Error)
 
 
-def integrate_rgb_frames(pose_graph_name, intrinsic):
+def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 
 	pose_graph = ReadPoseGraph(pose_graph_name)
 	min_depth = 0.3
@@ -99,9 +101,11 @@ def integrate_rgb_frames(pose_graph_name, intrinsic):
 	trans[2,3] = -min_depth
 
 	for i in range(len(pose_graph.nodes)):
-		print("Integrate rgbd images %d/%d." % (i+1, len(pose_graph.nodes)))
-		color = ReadImage(color_files[i])
-		depth = ReadImage(depth_files[i])
+		i_abs = fragment_id * n_frames_per_fragment + i
+		print("Fragment[%d] :: Integrate rgbd frame %d (%d of %d)."
+				% (fragment_id, i_abs, i+1, len(pose_graph.nodes)))
+		color = ReadImage(color_files[i_abs])
+		depth = ReadImage(depth_files[i_abs])
 		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
 				convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
@@ -134,21 +138,21 @@ if __name__ == "__main__":
 
 		[color_files, depth_files] = get_file_lists(path_dataset)
 		n_files = len(color_files)
-		n_fragments = int(math.ceil(n_files / n_frames_per_fragment))
+		n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
 		if path_intrinsic:
 			intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
 		else:
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
-		#for fragment_id in range(n_fragments):
-		for fragment_id in range(1):
+		for fragment_id in range(n_fragments):
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
 			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
 			WritePoseGraph(pose_graph_name, pose_graph)
 			pose_graph_optmized_name = path_fragment + \
 					"fragments_opt_%03d.json" % fragment_id
 			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-			mesh = integrate_rgb_frames(pose_graph_optmized_name, intrinsic)
+			mesh = integrate_rgb_frames(
+					fragment_id, pose_graph_optmized_name, intrinsic)
 			mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
 			WriteTriangleMesh(mesh_name, mesh, False, True)
