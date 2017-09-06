@@ -4,7 +4,6 @@
 # source activate py27opencv
 # conda install -c conda-forge opencv
 # conda install -c conda-forge openblas
-
 import numpy as np
 import sys
 import cv2
@@ -12,6 +11,7 @@ sys.path.append("../..")
 from py3d import *
 from matplotlib import pyplot as plt
 import copy
+
 
 def pose_estimation(source_rgbd_image, target_rgbd_image,
 		pinhole_camera_intrinsic, debug_draw_correspondences):
@@ -93,7 +93,6 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 		draw_correspondences(np.asarray(source_rgbd_image.color),
 				np.asarray(target_rgbd_image.color),
 				pts_s_new, pts_t_new, mask, "5-pt RANSAC + 3D Rigid RANSAC")
-
 	return trans
 
 

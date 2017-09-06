@@ -59,7 +59,6 @@ def test_single_frame_integrate(i, intrinsic):
 
 
 def test_single_pair(s, t, intrinsic, with_opencv):
-
 	SetVerbosityLevel(VerbosityLevel.Debug)
 
 	pose_graph = PoseGraph()
@@ -77,7 +76,6 @@ def test_single_pair(s, t, intrinsic, with_opencv):
 
 # test wide baseline matching
 if __name__ == "__main__":
-
 	path_dataset = parse_argument(sys.argv, "--path_dataset")
 	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
 	source_id = parse_argument_int(sys.argv, "--source_id")

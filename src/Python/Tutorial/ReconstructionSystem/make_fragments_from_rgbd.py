@@ -5,8 +5,8 @@ import math
 import sys
 sys.path.append("../..")
 from py3d import *
-#from joblib import Parallel, delayed
 from utility import *
+
 
 def process_one_rgbd_pair(s, t, color_files, depth_files,
 		intrinsic, with_opencv):
@@ -42,7 +42,6 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-
 	SetVerbosityLevel(VerbosityLevel.Error)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
@@ -90,7 +89,6 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 
 
 def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
-
 	pose_graph = ReadPoseGraph(pose_graph_name)
 	min_depth = 0.3
 	cubic_length = 4.0
@@ -117,7 +115,6 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 	return mesh
 
 if __name__ == "__main__":
-
 	path_dataset = parse_argument(sys.argv, "--path_dataset")
 	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
 
