@@ -68,7 +68,7 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 	double c0 = dIdx * intrinsic(0, 0) * invz;
 	double c1 = dIdy * intrinsic(1, 1) * invz;
 	double c2 = -(c0 * p3d_trans(0) + c1 * p3d_trans(1)) * invz;
-	
+
 	J_r.resize(1);
 	J_r[0](0) = -p3d_trans(2) * c1 + p3d_trans(1) * c2;
 	J_r[0](1) = p3d_trans(2) * c0 - p3d_trans(0) * c2;
@@ -129,7 +129,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
 	double d0 = dDdx * fx * invz;
 	double d1 = dDdy * fy * invz;
 	double d2 = -(d0 * p3d_trans(0) + d1 * p3d_trans(1)) * invz;
-	
+
 	J_r.resize(2);
 	r.resize(2);
 	J_r[0](0) = sqrt_lambda_img * (-p3d_trans(2) * c1 + p3d_trans(1) * c2);
@@ -140,7 +140,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
 	J_r[0](5) = sqrt_lambda_img * (c2);
 	double r_photo = sqrt_lambda_img * diff_photo;
 	r[0] = r_photo;
-		
+
 	J_r[1](0) = sqrt_lamba_dep *
 			((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
 	J_r[1](1) = sqrt_lamba_dep *

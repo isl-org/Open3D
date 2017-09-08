@@ -44,7 +44,7 @@ bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const
 	Json::Value pose_object;
 	if (EigenMatrix4dToJsonArray(pose_, pose_object) == false) {
 		return false;
-	}	
+	}
 	value["pose"] = pose_object;
 	return true;
 }
@@ -80,8 +80,8 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
 	value["version_major"] = 1;
 	value["version_minor"] = 0;
 
+	value["source_node_id"] = source_node_id_;
 	value["target_node_id"] = target_node_id_;
-	value["source_node_id"] = source_node_id_;	
 	value["uncertain"] = uncertain_;
 	value["confidence"] = confidence_;
 	Json::Value transformation_object;
@@ -110,12 +110,12 @@ bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value)
 		return false;
 	}
 
+	source_node_id_ = value.get("source_node_id", -1).asInt();
 	target_node_id_ = value.get("target_node_id", -1).asInt();
-	source_node_id_ = value.get("source_node_id", -1).asInt();	
 	uncertain_ = value.get("uncertain", false).asBool();
 	confidence_ = value.get("confidence", 1.0).asDouble();
 	const Json::Value &transformation_object = value["transformation"];
-	if (EigenMatrix4dFromJsonArray(transformation_, 
+	if (EigenMatrix4dFromJsonArray(transformation_,
 			transformation_object) == false) {
 		return false;
 	}
@@ -167,7 +167,7 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
 {
 	if (value.isObject() == false) {
 		PrintWarning("PoseGraph read JSON failed: unsupported json format.\n");
-		return false;		
+		return false;
 	}
 	if (value.get("class_name", "").asString() != "PoseGraph" ||
 			value.get("version_major", 1).asInt() != 1 ||

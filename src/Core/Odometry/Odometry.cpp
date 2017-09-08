@@ -44,9 +44,10 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 {
 	const Eigen::Matrix3d K = intrinsic_matrix;
 	const Eigen::Matrix3d K_inv = K.inverse();
-	const Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
+	const Eigen::Matrix4d extrinsic_inv = extrinsic.inverse();
+	const Eigen::Matrix3d R = extrinsic_inv.block<3, 3>(0, 0);
 	const Eigen::Matrix3d KRK_inv = K * R * K_inv;
-	Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
+	Eigen::Vector3d Kt = K * extrinsic_inv.block<3, 1>(0, 3);
 
 	// initialization: filling with any (u,v) to (-1,-1)
 	auto correspondence_map = std::make_shared<Image>();
@@ -189,11 +190,9 @@ Eigen::Matrix6d CreateInfomationMatrix(
 		const Image &depth_s, const Image &depth_t,
 		const OdometryOption &option)
 {
-	Eigen::Matrix4d odo_inv = extrinsic.inverse();
-
 	auto correspondence = ComputeCorrespondence(
 			pinhole_camera_intrinsic.intrinsic_matrix_,
-			odo_inv, depth_s, depth_t, option);
+			extrinsic, depth_s, depth_t, option);
 
 	auto xyz_t = ConvertDepthImageToXYZImage(
 			depth_t, pinhole_camera_intrinsic.intrinsic_matrix_);
@@ -313,7 +312,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 			Image::FILTER_GAUSSIAN_3);
 
 	auto correspondence = ComputeCorrespondence(
-			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init.inverse(),
+			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init,
 			*source_depth, *target_depth, option);
 	PrintDebug("Number of correspondence is %d\n", (int)correspondence->size());
 
@@ -339,8 +338,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	const OdometryOption &option)
 {
 	auto correspondence = ComputeCorrespondence(
-			intrinsic, extrinsic_initial.inverse(),
-			source.depth_, target.depth_, option);
+			intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
 	int corresps_count_required = (int)(source.color_.height_ *
 			source.color_.width_ * option.minimum_correspondence_ratio_ + 0.5);
 	int corresps_count = (int)correspondence->size();
@@ -459,7 +457,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 			pinhole_camera_intrinsic, odo_init, jacobian_method, option);
 
 	if (is_success) {
-		Eigen::Matrix4d trans_output = extrinsic.inverse();
+		Eigen::Matrix4d trans_output = extrinsic;
 		Eigen::MatrixXd info_output = CreateInfomationMatrix(extrinsic,
 				pinhole_camera_intrinsic, source_processed->depth_,
 				target_processed->depth_, option);
@@ -467,7 +465,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 	}
 	else {
 		return std::make_tuple(false,
-				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Zero());
+				Eigen::Matrix4d::Identity(), Eigen::Matrix6d::Identity());
 	}
 }
 
