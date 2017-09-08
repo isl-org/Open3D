@@ -41,6 +41,7 @@ void PrintHelp()
 	printf("    --image file              : Add an image from file.\n");
 	printf("    --depth file              : Add a point cloud converted from a depth image.\n");
 	printf("    --depth_camera file       : Use with --depth, read a json file that stores\n");
+	printf("                                the camera parameters.\n");
 	printf("    --show_frame              : Add a coordinate frame.\n");
 	printf("    --verbose n               : Set verbose level (0-4).\n");
 	printf("\n");
