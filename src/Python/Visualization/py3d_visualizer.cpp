@@ -24,49 +24,42 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "py3d_visualization.h"
+#include "py3d_visualization_trampoline.h"
 
-#include <Python/py3d.h>
-#include <Core/Geometry/Geometry.h>
-#include <Core/Geometry/Geometry2D.h>
-#include <Core/Geometry/Geometry3D.h>
+#include <Visualization/Visualizer/Visualizer.h>
 using namespace three;
 
-template <class GeometryBase = Geometry> class PyGeometry : public GeometryBase
+void pybind_visualizer(py::module &m)
 {
-public:
-	using GeometryBase::GeometryBase;
-	void Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
-	bool IsEmpty() const override {
-		PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-	}
-};
+	py::class_<Visualizer, PyVisualizer<>, std::shared_ptr<Visualizer>>
+			visualizer(m, "Visualizer");
+	py::detail::bind_default_constructor<Visualizer>(visualizer);
+	visualizer
+		.def("__repr__", [](const Visualizer &vis) {
+			return std::string("Visualizer with name ") + vis.GetWindowName();
+		})
+		.def("CreateWindow", &Visualizer::CreateWindow,
+				"Function to create a window and initialize GLFW",
+				"window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
+				"left"_a = 50, "right"_a = 50)
+		.def("DestroyWindow", &Visualizer::DestroyWindow,
+				"Function to destroy a window")
+		.def("RegisterAnimationCallback",
+				&Visualizer::RegisterAnimationCallback,
+				"Function to register a callback function for animation",
+				"callback_func"_a)
+		.def("Run", &Visualizer::Run, "Function to activate the window",
+				"exit_when_idle"_a = false)
+		.def("AddGeometry", &Visualizer::AddGeometry,
+				"Function to add geometry to the scene and create corresponding shaders",
+				"geometry"_a)
+		.def("GetViewControl", &Visualizer::GetViewControl,
+				"Function to retrieve the associated ViewControl",
+				py::return_value_policy::reference_internal)
+		.def("GetWindowName", &Visualizer::GetWindowName);
+}
 
-template <class Geometry3DBase = Geometry3D> class PyGeometry3D :
-		public PyGeometry<Geometry3DBase>
+void pybind_visualizer_method(py::module &m)
 {
-public:
-	using PyGeometry<Geometry3DBase>::PyGeometry;
-	Eigen::Vector3d GetMinBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
-	}
-	Eigen::Vector3d GetMaxBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
-	}
-	void Transform(const Eigen::Matrix4d &transformation) override {
-		PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
-	}
-};
-
-template <class Geometry2DBase = Geometry2D> class PyGeometry2D :
-		public PyGeometry<Geometry2DBase>
-{
-public:
-	using PyGeometry<Geometry2DBase>::PyGeometry;
-	Eigen::Vector2d GetMinBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
-	}
-	Eigen::Vector2d GetMaxBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
-	}
-};
+}

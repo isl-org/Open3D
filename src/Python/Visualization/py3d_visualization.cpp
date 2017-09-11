@@ -28,10 +28,14 @@
 
 void pybind_visualization_classes(py::module &m)
 {
+	pybind_viewcontrol(m);
+	pybind_visualizer(m);
 	pybind_utility(m);
 }
 
 void pybind_visualization_methods(py::module &m)
 {
+	pybind_viewcontrol_method(m);
+	pybind_visualizer_method(m);
 	pybind_utility_methods(m);
 }

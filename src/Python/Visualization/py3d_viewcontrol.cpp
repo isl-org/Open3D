@@ -24,49 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "py3d_visualization.h"
+#include "py3d_visualization_trampoline.h"
 
-#include <Python/py3d.h>
-#include <Core/Geometry/Geometry.h>
-#include <Core/Geometry/Geometry2D.h>
-#include <Core/Geometry/Geometry3D.h>
+#include <Visualization/Visualizer/ViewControl.h>
 using namespace three;
 
-template <class GeometryBase = Geometry> class PyGeometry : public GeometryBase
+void pybind_viewcontrol(py::module &m)
 {
-public:
-	using GeometryBase::GeometryBase;
-	void Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
-	bool IsEmpty() const override {
-		PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-	}
-};
+	py::class_<ViewControl, PyViewControl<>, std::shared_ptr<ViewControl>>
+			viewcontrol(m, "ViewControl");
+	py::detail::bind_default_constructor<ViewControl>(viewcontrol);
+	viewcontrol
+		.def("__repr__", [](const ViewControl &vc) {
+			return std::string("ViewControl");
+		})
+		.def("ConvertToPinholeCameraParameters", [](ViewControl &vc) {
+			PinholeCameraIntrinsic intrinsic;
+			Eigen::Matrix4d extrinsic;
+			vc.ConvertToPinholeCameraParameters(intrinsic, extrinsic);
+			return std::make_tuple(intrinsic, extrinsic);
+		}, "Function to convert ViewControl to PinholeCameraParameters")
+		.def("ConvertFromPinholeCameraParameters",
+				&ViewControl::ConvertFromPinholeCameraParameters,
+				"intrinsic"_a, "extrinsic"_a)
+		.def("Scale", &ViewControl::Scale, "Function to process scaling",
+				"scale"_a)
+		.def("Rotate", &ViewControl::Rotate, "Function to process rotation",
+				"x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
+		.def("Translate", &ViewControl::Translate,
+				"Function to process translation",
+				"x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0);
+}
 
-template <class Geometry3DBase = Geometry3D> class PyGeometry3D :
-		public PyGeometry<Geometry3DBase>
+void pybind_viewcontrol_method(py::module &m)
 {
-public:
-	using PyGeometry<Geometry3DBase>::PyGeometry;
-	Eigen::Vector3d GetMinBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
-	}
-	Eigen::Vector3d GetMaxBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
-	}
-	void Transform(const Eigen::Matrix4d &transformation) override {
-		PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
-	}
-};
-
-template <class Geometry2DBase = Geometry2D> class PyGeometry2D :
-		public PyGeometry<Geometry2DBase>
-{
-public:
-	using PyGeometry<Geometry2DBase>::PyGeometry;
-	Eigen::Vector2d GetMinBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
-	}
-	Eigen::Vector2d GetMaxBound() const override {
-		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
-	}
-};
+}

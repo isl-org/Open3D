@@ -32,6 +32,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 
 #include <Core/Registration/PoseGraph.h>
 
