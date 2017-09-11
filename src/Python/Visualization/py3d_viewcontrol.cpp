@@ -28,6 +28,7 @@
 #include "py3d_visualization_trampoline.h"
 
 #include <Visualization/Visualizer/ViewControl.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace three;
 
 void pybind_viewcontrol(py::module &m)

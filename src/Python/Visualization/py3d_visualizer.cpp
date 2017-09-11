@@ -28,6 +28,7 @@
 #include "py3d_visualization_trampoline.h"
 
 #include <Visualization/Visualizer/Visualizer.h>
+#include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
 using namespace three;
 
 void pybind_visualizer(py::module &m)
@@ -57,7 +58,32 @@ void pybind_visualizer(py::module &m)
 		.def("GetViewControl", &Visualizer::GetViewControl,
 				"Function to retrieve the associated ViewControl",
 				py::return_value_policy::reference_internal)
+		.def("GetRenderOption", &Visualizer::GetRenderOption,
+				"Function to retrieve the associated RenderOption",
+				py::return_value_policy::reference_internal)
+		.def("CaptureScreenImage", &Visualizer::CaptureScreenImage,
+				"Function to capture and save a screen image",
+				"filename"_a, "do_render"_a = false)
+		.def("CaptureDepthImage", &Visualizer::CaptureDepthImage,
+				"Function to capture and save a depth image",
+				"filename"_a, "do_render"_a = false, "depth_scale"_a = 1000.0)
 		.def("GetWindowName", &Visualizer::GetWindowName);
+
+	py::class_<VisualizerWithKeyCallback,
+			PyVisualizer<VisualizerWithKeyCallback>,
+			std::shared_ptr<VisualizerWithKeyCallback>>
+			visualizer_key(m, "VisualizerWithKeyCallback", visualizer);
+	py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
+			visualizer_key);
+	visualizer_key
+		.def("__repr__", [](const VisualizerWithKeyCallback &vis) {
+			return std::string("VisualizerWithKeyCallback with name ") + 
+					vis.GetWindowName();
+		})
+		.def("RegisterKeyCallback",
+				&VisualizerWithKeyCallback::RegisterKeyCallback,
+				"Function to register a callback function for a key press event",
+				"key"_a, "callback_func"_a);
 }
 
 void pybind_visualizer_method(py::module &m)

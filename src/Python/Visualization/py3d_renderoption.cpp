@@ -24,16 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "py3d_visualization.h"
+#include "py3d_visualization_trampoline.h"
 
-#include <Python/py3d.h>
+#include <Visualization/Visualizer/RenderOption.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
+using namespace three;
 
-void pybind_renderoption(py::module &m);
-void pybind_viewcontrol(py::module &m);
-void pybind_visualizer(py::module &m);
-void pybind_utility(py::module &m);
+void pybind_renderoption(py::module &m)
+{
+	py::class_<RenderOption, std::shared_ptr<RenderOption>>
+			renderoption(m, "RenderOption");
+	py::detail::bind_default_constructor<RenderOption>(renderoption);
+	renderoption
+		.def("__repr__", [](const RenderOption &vc) {
+			return std::string("RenderOption");
+		})
+		.def("LoadFromJSON", [](RenderOption &ro, const std::string &filename) {
+			ReadIJsonConvertible(filename, ro);
+		}, "Function to load RenderOption from a JSON file", "filename"_a)
+		.def("SaveToJSON", [](RenderOption &ro, const std::string &filename) {
+			WriteIJsonConvertible(filename, ro);
+		}, "Function to save RenderOption to a JSON file", "filename"_a)
+		.def_readwrite("background_color", &RenderOption::background_color_)
+		.def_readwrite("light_on", &RenderOption::light_on_);
+}
 
-void pybind_renderoption_method(py::module &m);
-void pybind_viewcontrol_method(py::module &m);
-void pybind_visualizer_method(py::module &m);
-void pybind_utility_methods(py::module &m);
+void pybind_renderoption_method(py::module &m)
+{
+}
