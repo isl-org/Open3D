@@ -8,9 +8,9 @@ matrix:
     - python
 
   # pybind supports any python versions.
-  # We are using 3.6
+  # We are using 2.7
   python:
-    - "3.6"
+    - 2.7
 
   include:
 
@@ -71,6 +71,8 @@ before_install:
       scripts/install-deps-osx.sh;
     fi
   # for reference, display cmake and python version
+  - pyenv global system 2.7 3.6
+  - $PY_CMD -m pip install --user --upgrade pip wheel
   - python -V
   - cmake --version
 
