@@ -27,6 +27,8 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
+#include <Core/Geometry/PointCloud.h>
+#include <Core/Registration/Feature.h>
 #include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
 #include <Core/Registration/Registration.h>

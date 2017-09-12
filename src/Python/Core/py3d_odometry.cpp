@@ -27,6 +27,8 @@
 #include "py3d_core.h"
 #include "py3d_core_trampoline.h"
 
+#include <Core/Geometry/Image.h>
+#include <Core/Geometry/RGBDImage.h>
 #include <Core/Odometry/Odometry.h>
 #include <Core/Odometry/OdometryOption.h>
 #include <Core/Odometry/RGBDOdometryJacobian.h>

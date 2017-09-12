@@ -26,8 +26,10 @@
 
 #include "py3d_visualization.h"
 
-#include <Core/Core.h>
-#include <Visualization/Visualization.h>
+#include <Core/Utility/FileSystem.h>
+#include <Core/Geometry/PointCloud.h>
+#include <Visualization/Utility/SelectionPolygonVolume.h>
+#include <Visualization/Utility/DrawGeometry.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace three;
 

@@ -93,6 +93,15 @@ if (Open3D_USE_OPENMP)
 	endif()
 endif()
 
+# Check Python
+find_package (PythonLibs)
+find_package (PythonInterp)
+if (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
+  message(STATUS "Disable Open3D Python binding since Python is not installed.")
+  set(Open3D_BUILD_PYTHON_BINDING OFF)
+  set(Open3D_BUILD_PYTHON_BINDING_TESTS OFF)
+endif (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
+
 message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
 message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
 message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_TESTS}")
