@@ -31,6 +31,7 @@
 #include <Visualization/Shader/SimpleShader.h>
 #include <Visualization/Shader/SimpleBlackShader.h>
 #include <Visualization/Shader/PhongShader.h>
+#include <Visualization/Shader/NormalShader.h>
 #include <Visualization/Shader/ImageShader.h>
 #include <Visualization/Shader/Simple2DShader.h>
 #include <Visualization/Shader/ImageMaskShader.h>
@@ -86,6 +87,7 @@ public:
 protected:
 	SimpleShaderForPointCloud simple_point_shader_;
 	PhongShaderForPointCloud phong_point_shader_;
+	NormalShaderForPointCloud normal_point_shader_;
 	SimpleBlackShaderForPointCloudNormal simpleblack_normal_shader_;
 };
 
@@ -130,6 +132,7 @@ public:
 protected:
 	SimpleShaderForTriangleMesh simple_mesh_shader_;
 	PhongShaderForTriangleMesh phong_mesh_shader_;
+	NormalShaderForTriangleMesh normal_mesh_shader_;
 	SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
 };
 

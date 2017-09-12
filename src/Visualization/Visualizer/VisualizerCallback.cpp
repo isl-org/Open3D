@@ -298,6 +298,20 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 			PrintDebug("[Visualizer] Point color set to Z.\n");
 		}
 		break;
+	case GLFW_KEY_9:
+		if (mods & GLFW_MOD_CONTROL) {
+			render_option_ptr_->mesh_color_option_ =
+					RenderOption::TRIANGLEMESH_NORMAL;
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Mesh color set to NORMAL.\n");
+		} else if (mods & GLFW_MOD_SHIFT) {
+		} else {
+			render_option_ptr_->point_color_option_ =
+					RenderOption::POINTCOLOR_NORMAL;
+			UpdateGeometry();
+			PrintDebug("[Visualizer] Point color set to NORMAL.\n");
+		}
+		break;
 	default:
 		break;
 	}

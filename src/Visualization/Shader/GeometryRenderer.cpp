@@ -45,7 +45,11 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 	const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
 	bool success = true;
 	if (pointcloud.HasNormals()) {
-		success &= phong_point_shader_.Render(pointcloud, option, view);
+		if (option.point_color_option_ == RenderOption::POINTCOLOR_NORMAL) {
+			success &= normal_point_shader_.Render(pointcloud, option, view);
+		} else {
+			success &= phong_point_shader_.Render(pointcloud, option, view);
+		}
 		if (option.point_show_normal_) {
 			success &= simpleblack_normal_shader_.Render(pointcloud, option,
 					view);
@@ -70,6 +74,7 @@ bool PointCloudRenderer::UpdateGeometry()
 {
 	simple_point_shader_.InvalidateGeometry();
 	phong_point_shader_.InvalidateGeometry();
+	normal_point_shader_.InvalidateGeometry();
 	simpleblack_normal_shader_.InvalidateGeometry();
 	return true;
 }
@@ -127,7 +132,11 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
 	bool success = true;	
 	if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
-		success &= phong_mesh_shader_.Render(mesh, option, view);
+		if (option.mesh_color_option_ == RenderOption::TRIANGLEMESH_NORMAL) {
+			success &= normal_mesh_shader_.Render(mesh, option, view);
+		} else {
+			success &= phong_mesh_shader_.Render(mesh, option, view);
+		}
 	} else {
 		success &= simple_mesh_shader_.Render(mesh, option, view);
 	}
@@ -151,6 +160,7 @@ bool TriangleMeshRenderer::UpdateGeometry()
 {
 	simple_mesh_shader_.InvalidateGeometry();
 	phong_mesh_shader_.InvalidateGeometry();
+	normal_mesh_shader_.InvalidateGeometry();
 	simpleblack_wireframe_shader_.InvalidateGeometry();
 	return true;
 }
