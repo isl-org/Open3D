@@ -1,11 +1,14 @@
 # Open3D: www.open3d.org
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 import sys, os
 sys.path.append("../..")
 from py3d import *
 import numpy as np
+import matplotlib.pyplot as plt
 
 def custom_draw_geometry(pcd):
 	# The following code achieves the same effect as:
@@ -41,10 +44,22 @@ def custom_draw_geometry_with_key_callback(pcd):
 		opt = vis.GetRenderOption()
 		opt.background_color = np.asarray([0, 0, 0])
 		return False
+	def capture_depth(vis):
+		depth = vis.CaptureDepthFloatBuffer()
+		plt.imshow(np.asarray(depth))
+		plt.show()
+		return False
+	def capture_image(vis):
+		image = vis.CaptureScreenFloatBuffer()
+		plt.imshow(np.asarray(image))
+		plt.show()
+		return False
 	vis = VisualizerWithKeyCallback()
 	vis.CreateWindow()
 	vis.AddGeometry(pcd)
 	vis.RegisterKeyCallback(ord("K"), change_background_to_black)
+	vis.RegisterKeyCallback(ord(","), capture_depth)
+	vis.RegisterKeyCallback(ord("."), capture_image)
 	vis.Run()
 	vis.DestroyWindow()
 
@@ -55,6 +70,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
 	if not os.path.exists("image/"):
 		os.makedirs("image/")
+	if not os.path.exists("depth/"):
+		os.makedirs("depth/")
 	def move_forward(vis):
 		# This function is called within the Visualizer::Run() loop
 		# The Run loop calls the function, then re-render
@@ -66,8 +83,15 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 		ctr = vis.GetViewControl()
 		glb = custom_draw_geometry_with_camera_trajectory
 		if glb.index >= 0:
-			print("Capture image #{:05d}".format(glb.index))
-			vis.CaptureScreenImage("image/{:05d}.png".format(glb.index), False)
+			print("Capture image {:05d}".format(glb.index))
+			depth = vis.CaptureDepthFloatBuffer(False)
+			image = vis.CaptureScreenFloatBuffer(False)
+			plt.imsave("depth/{:05d}.png".format(glb.index),\
+					np.asarray(depth), dpi = 1)
+			plt.imsave("image/{:05d}.png".format(glb.index),\
+					np.asarray(image), dpi = 1)
+			#vis.CaptureDepthImage("depth/{:05d}.png".format(glb.index), False)
+			#vis.CaptureScreenImage("image/{:05d}.png".format(glb.index), False)
 		glb.index = glb.index + 1
 		if glb.index < len(glb.trajectory.extrinsic):
 			ctr.ConvertFromPinholeCameraParameters(glb.trajectory.intrinsic,\
@@ -95,7 +119,10 @@ if __name__ == "__main__":
 	print("3. Customized visualization loading a black background")
 	custom_draw_geometry_with_black_background(pcd)
 
-	print("4. Customized visualization loading a black background when press K")
+	print("4. Customized visualization with key press callbacks")
+	print("   Press 'K' to change background color to black")
+	print("   Press ',' to capture the depth buffer and show it")
+	print("   Press '.' to capture the screen and show it")
 	custom_draw_geometry_with_key_callback(pcd)
 
 	print("5. Customized visualization playing a camera trajectory")

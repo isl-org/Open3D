@@ -42,6 +42,7 @@
 namespace three {
 
 class TriangleMesh;
+class Image;
 
 class Visualizer
 {
@@ -120,8 +121,10 @@ public:
 
 	ViewControl &GetViewControl() { return *view_control_ptr_; }
 	RenderOption &GetRenderOption() { return *render_option_ptr_; }
+	std::shared_ptr<Image> CaptureScreenFloatBuffer(bool do_render = true);
 	void CaptureScreenImage(const std::string &filename = "",
 			bool do_render = true);
+	std::shared_ptr<Image> CaptureDepthFloatBuffer(bool do_render = true);
 	void CaptureDepthImage(const std::string &filename = "",
 			bool do_render = true, double depth_scale = 1000.0);
 	void CaptureDepthPointCloud(const std::string &filename = "",

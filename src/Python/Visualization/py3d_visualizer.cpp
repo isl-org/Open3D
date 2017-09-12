@@ -27,6 +27,7 @@
 #include "py3d_visualization.h"
 #include "py3d_visualization_trampoline.h"
 
+#include <Core/Geometry/Image.h>
 #include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
 using namespace three;
@@ -61,9 +62,15 @@ void pybind_visualizer(py::module &m)
 		.def("GetRenderOption", &Visualizer::GetRenderOption,
 				"Function to retrieve the associated RenderOption",
 				py::return_value_policy::reference_internal)
+		.def("CaptureScreenFloatBuffer", &Visualizer::CaptureScreenFloatBuffer,
+				"Function to capture screen and store RGB in a float buffer",
+				"do_render"_a = false)
 		.def("CaptureScreenImage", &Visualizer::CaptureScreenImage,
 				"Function to capture and save a screen image",
 				"filename"_a, "do_render"_a = false)
+		.def("CaptureDepthFloatBuffer", &Visualizer::CaptureDepthFloatBuffer,
+				"Function to capture depth in a float buffer",
+				"do_render"_a = false)
 		.def("CaptureDepthImage", &Visualizer::CaptureDepthImage,
 				"Function to capture and save a depth image",
 				"filename"_a, "do_render"_a = false, "depth_scale"_a = 1000.0)
