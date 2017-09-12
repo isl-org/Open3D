@@ -48,6 +48,7 @@ public:
 		POINTCOLOR_X = 2,
 		POINTCOLOR_Y = 3,
 		POINTCOLOR_Z = 4,
+		POINTCOLOR_NORMAL = 9,
 	};
 
 	static const double POINT_SIZE_MAX;
@@ -67,6 +68,7 @@ public:
 		TRIANGLEMESH_X = 2,
 		TRIANGLEMESH_Y = 3,
 		TRIANGLEMESH_Z = 4,
+		TRIANGLEMESH_NORMAL = 9,
 	};
 	
 	// Image options

@@ -31,7 +31,7 @@ def custom_draw_geometry_with_rotation(pcd):
 	vis.Run()
 	vis.DestroyWindow()	
 
-def custom_draw_geometry_with_black_background(pcd):
+def custom_draw_geometry_load_option(pcd):
 	vis = Visualizer()
 	vis.CreateWindow()
 	vis.AddGeometry(pcd)
@@ -103,6 +103,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	vis = custom_draw_geometry_with_camera_trajectory.vis
 	vis.CreateWindow()
 	vis.AddGeometry(pcd)
+	vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
 	vis.RegisterAnimationCallback(move_forward)
 	vis.Run(True)
 	vis.DestroyWindow()	
@@ -116,8 +117,8 @@ if __name__ == "__main__":
 	print("2. Customized visualization with a rotating view")
 	custom_draw_geometry_with_rotation(pcd)
 
-	print("3. Customized visualization loading a black background")
-	custom_draw_geometry_with_black_background(pcd)
+	print("3. Customized visualization showing normal rendering")
+	custom_draw_geometry_load_option(pcd)
 
 	print("4. Customized visualization with key press callbacks")
 	print("   Press 'K' to change background color to black")

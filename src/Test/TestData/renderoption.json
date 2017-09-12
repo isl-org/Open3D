@@ -1,5 +1,5 @@
 {
-	"background_color" : [ 0, 0, 0 ],
+	"background_color" : [ 1, 1, 1 ],
 	"class_name" : "RenderOption",
 	"default_mesh_color" : [ 0.69999999999999996, 0.69999999999999996, 0.69999999999999996 ],
 	"image_max_depth" : 3000,
@@ -31,7 +31,7 @@
 	"mesh_shade_option" : 0,
 	"mesh_show_back_face" : false,
 	"mesh_show_wireframe" : false,
-	"point_color_option" : 0,
+	"point_color_option" : 9,
 	"point_show_normal" : false,
 	"point_size" : 5,
 	"show_coordinate_frame" : false,
