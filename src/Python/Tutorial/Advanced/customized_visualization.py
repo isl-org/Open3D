@@ -66,10 +66,10 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	custom_draw_geometry_with_camera_trajectory.trajectory =\
 			ReadPinholeCameraTrajectory("../../TestData/camera_trajectory.json")
 	custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
-	if not os.path.exists("image/"):
-		os.makedirs("image/")
-	if not os.path.exists("depth/"):
-		os.makedirs("depth/")
+	if not os.path.exists("../../TestData/image/"):
+		os.makedirs("../../TestData/image/")
+	if not os.path.exists("../../TestData/depth/"):
+		os.makedirs("../../TestData/depth/")
 	def move_forward(vis):
 		# This function is called within the Visualizer::Run() loop
 		# The Run loop calls the function, then re-render
@@ -84,9 +84,9 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 			print("Capture image {:05d}".format(glb.index))
 			depth = vis.CaptureDepthFloatBuffer(False)
 			image = vis.CaptureScreenFloatBuffer(False)
-			plt.imsave("depth/{:05d}.png".format(glb.index),\
+			plt.imsave("../../TestData/depth/{:05d}.png".format(glb.index),\
 					np.asarray(depth), dpi = 1)
-			plt.imsave("image/{:05d}.png".format(glb.index),\
+			plt.imsave("../../TestData/image/{:05d}.png".format(glb.index),\
 					np.asarray(image), dpi = 1)
 			#vis.CaptureDepthImage("depth/{:05d}.png".format(glb.index), False)
 			#vis.CaptureScreenImage("image/{:05d}.png".format(glb.index), False)
