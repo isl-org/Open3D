@@ -52,6 +52,7 @@ matrix:
     # compiled using clang shipped with xcode8.3
     - os: osx
       osx_image: xcode8.3
+      env:
          - PYTHON=3.6
 
 before_install:
