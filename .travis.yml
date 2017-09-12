@@ -8,9 +8,9 @@ matrix:
     - python
 
   # pybind supports any python versions.
-  # We are using 2.7
+  # We are using 3.6
   python:
-    - "2.7"
+    - "3.6"
 
   include:
 
