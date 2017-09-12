@@ -7,13 +7,7 @@ matrix:
     - cpp
     - python
 
-  # pybind supports any python versions.
-  # We are using 2.7
-  python:
-    - 2.7
-
   include:
-
     # Default environment of Ubuntu 14.04
     - os: linux
       dist: trusty
@@ -70,10 +64,10 @@ before_install:
       brew update;
       scripts/install-deps-osx.sh;
     fi
+  # we are using python 3.6 for the test
+  - pyenv global system 3.6
+  - python3.6 -m pip install --user --upgrade pip wheel
   # for reference, display cmake and python version
-  - pyenv global system 2.7 3.6
-  - PY_CMD=python3.6
-  - $PY_CMD -m pip install --user --upgrade pip wheel
   - python -V
   - cmake --version
 
