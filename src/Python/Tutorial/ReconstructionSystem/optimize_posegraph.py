@@ -1,3 +1,4 @@
+import sys
 sys.path.append("../..")
 from py3d import *
 

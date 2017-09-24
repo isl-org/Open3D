@@ -3,6 +3,14 @@ import sys
 sys.path.append("../..")
 from py3d import *
 from utility import *
+from optimize_posegraph import *
+
+
+def DrawRegistrationResult(source, target, transformation):
+	source.PaintUniformColor([1, 0.706, 0])
+	target.PaintUniformColor([0, 0.651, 0.929])
+	source.Transform(transformation)
+	DrawGeometries([source, target])
 
 
 def preprocess_point_cloud(ply_file_name):
@@ -40,19 +48,21 @@ def register_point_cloud(ply_file_names):
 			print(result_ransac)
 			# DrawRegistrationResult(source_down, target_down,
 			# 		result_ransac.transformation)
-			# can it output information file too?
+			# todo: can it output information file too?
+			# todo: color point cloud registration
 			result_icp = RegistrationICP(source_down, target_down, 0.02,
 					result_ransac.transformation,
 					TransformationEstimationPointToPlane())
 			# print(result_icp)
-			# DrawRegistrationResult(source, target, result_icp.transformation)
-			if t == s + 1:
+			# DrawRegistrationResult(source_down, target_down,
+			# 		result_icp.transformation)
+			if t == s + 1: # odometry case
 				odometry = np.dot(result_icp.transformation, odometry)
 				odometry_inv = np.linalg.inv(odometry)
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, result_icp.transformation, info, False))
-			else:
+			else: # edge case
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, result_icp.transformation, info, True))
 	return pose_graph
@@ -61,10 +71,10 @@ def register_point_cloud(ply_file_names):
 if __name__ == "__main__":
 	path_dataset = parse_argument(sys.argv, "--path_dataset")
 	if path_dataset:
-		ply_file_names = get_file_list(path_dataset, '.ply')
+		ply_file_names = get_file_list(path_dataset + "fragments/", '.ply')
 		pose_graph = register_point_cloud(ply_file_names)
-		pose_graph_name = path_dataset + "global_registration.json"
+		pose_graph_name = path_dataset + "fragments/global_registration.json"
 		WritePoseGraph(pose_graph_name, pose_graph)
-		pose_graph_optmized_name = path_fragment + \
+		pose_graph_optmized_name = path_dataset + "fragments/" + \
 				"global_registration_optimized.json"
 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

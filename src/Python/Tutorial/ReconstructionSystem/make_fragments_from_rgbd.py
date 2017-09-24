@@ -5,7 +5,7 @@ import math
 import sys
 sys.path.append("../..")
 from py3d import *
-from optmize_posegraph import *
+from optimize_posegraph import *
 from utility import *
 
 

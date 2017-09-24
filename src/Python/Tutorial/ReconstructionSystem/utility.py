@@ -15,14 +15,12 @@ def parse_argument_int(argument, query):
 	return int(parse_argument(argument, query))
 
 
-def get_file_list(path):
-	file_list = [path + f for f in listdir(path) if isfile(join(path, f))]
-	return file_list
-
-
-def get_file_list(path, extension):
-	file_list = [path + f for f in listdir(path)
-			if isfile(join(path, f)) and splitext(f)[1] == extension]
+def get_file_list(path, extension=None):
+	if extension is None:
+		file_list = [path + f for f in listdir(path) if isfile(join(path, f))]
+	else:
+		file_list = [path + f for f in listdir(path)
+				if isfile(join(path, f)) and splitext(f)[1] == extension]
 	return file_list
 
 
