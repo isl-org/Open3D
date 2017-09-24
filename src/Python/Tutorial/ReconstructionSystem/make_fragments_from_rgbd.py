@@ -5,6 +5,7 @@ import math
 import sys
 sys.path.append("../..")
 from py3d import *
+from optmize_posegraph import *
 from utility import *
 
 
@@ -51,7 +52,7 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
 
 	for s in range(sid, eid):
-		for t in range(s, eid):
+		for t in range(s + 1, eid):
 			# odometry
 			if t == s + 1:
 				[trans, info] = process_one_rgbd_pair(
@@ -74,18 +75,6 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
 				 		% (fragment_id, s, t))
 	return pose_graph
-
-
-def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
-	# to display messages from GlobalOptimization
-	SetVerbosityLevel(VerbosityLevel.Debug)
-	method = GlobalOptimizationLevenbergMarquardt()
-	criteria = GlobalOptimizationConvergenceCriteria()
-	line_process_option = GlobalOptimizationLineProcessOption()
-	pose_graph = ReadPoseGraph(pose_graph_name)
-	GlobalOptimization(pose_graph, method, criteria, line_process_option)
-	WritePoseGraph(pose_graph_optmized_name, pose_graph)
-	SetVerbosityLevel(VerbosityLevel.Error)
 
 
 def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
@@ -119,7 +108,6 @@ if __name__ == "__main__":
 	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
 
 	if path_dataset:
-
 		# some global parameters
 		n_frames_per_fragment = 100
 		n_keyframes_per_n_frame = 5

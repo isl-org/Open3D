@@ -1,5 +1,6 @@
+import sys
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, splitext
 
 
 def parse_argument(argument, query):
@@ -16,6 +17,12 @@ def parse_argument_int(argument, query):
 
 def get_file_list(path):
 	file_list = [path + f for f in listdir(path) if isfile(join(path, f))]
+	return file_list
+
+
+def get_file_list(path, extension):
+	file_list = [path + f for f in listdir(path)
+			if isfile(join(path, f)) and splitext(f)[1] == extension]
 	return file_list
 
 
