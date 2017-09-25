@@ -38,16 +38,14 @@ namespace three {
 
 namespace {
 
-std::tuple<RegistrationResult, CorrespondenceSet>
-		GetRegistrationResultAndCorrespondences(
+RegistrationResult GetRegistrationResultAndCorrespondences(
 		const PointCloud &source, const PointCloud &target,
 		const KDTreeFlann &target_kdtree, double max_correspondence_distance,
 		const Eigen::Matrix4d &transformation)
 {
 	RegistrationResult result(transformation);
-	CorrespondenceSet corres;
 	if (max_correspondence_distance <= 0.0) {
-		return std::make_tuple(std::move(result), std::move(corres));
+		return std::move(result);
 	}
 	double error2 = 0.0;
 #ifdef _OPENMP
@@ -63,19 +61,21 @@ std::tuple<RegistrationResult, CorrespondenceSet>
 #pragma omp critical
 #endif
 			{
-				corres.push_back(Eigen::Vector2i(i, indices[0]));
+				result.correspondence_set_.push_back(
+						Eigen::Vector2i(i, indices[0]));
 				error2 += dists[0];
 			}
 		}
 	}
-	if (corres.empty()) {
+	if (result.correspondence_set_.empty()) {
 		result.fitness_ = 0.0;
 		result.inlier_rmse_ = 0.0;
 	} else {
-		result.fitness_ = (double)corres.size() / (double)source.points_.size();
-		result.inlier_rmse_ = std::sqrt(error2 / (double)corres.size());
+		size_t corres_number = result.correspondence_set_.size();
+		result.fitness_ = (double)corres_number / (double)source.points_.size();
+		result.inlier_rmse_ = std::sqrt(error2 / (double)corres_number);
 	}
-	return std::make_tuple(std::move(result), std::move(corres));
+	return std::move(result);
 }
 
 RegistrationResult EvaluateRANSACBasedOnCorrespondence(const PointCloud &source,
@@ -117,8 +117,8 @@ RegistrationResult EvaluateRegistration(const PointCloud &source,
 	if (transformation.isIdentity() == false) {
 		pcd.Transform(transformation);
 	}
-	return std::get<0>(GetRegistrationResultAndCorrespondences(pcd, target,
-			kdtree, max_correspondence_distance, transformation));
+	return GetRegistrationResultAndCorrespondences(pcd, target,
+			kdtree, max_correspondence_distance, transformation);
 }
 
 RegistrationResult RegistrationICP(const PointCloud &source,
@@ -139,18 +139,17 @@ RegistrationResult RegistrationICP(const PointCloud &source,
 		pcd.Transform(init);
 	}
 	RegistrationResult result;
-	CorrespondenceSet corres;
-	std::tie(result, corres) = GetRegistrationResultAndCorrespondences(
+	result = GetRegistrationResultAndCorrespondences(
 			pcd, target, kdtree, max_correspondence_distance, transformation);
 	for (int i = 0; i < criteria.max_iteration_; i++) {
 		PrintDebug("ICP Iteration #%d: Fitness %.4f, RMSE %.4f\n", i,
 				result.fitness_, result.inlier_rmse_);
 		Eigen::Matrix4d update = estimation.ComputeTransformation(
-				pcd, target, corres);
+				pcd, target, result.correspondence_set_);
 		transformation = update * transformation;
 		pcd.Transform(update);
 		RegistrationResult backup = result;
-		std::tie(result, corres) = GetRegistrationResultAndCorrespondences(pcd,
+		result = GetRegistrationResultAndCorrespondences(pcd,
 				target, kdtree, max_correspondence_distance, transformation);
 		if (std::abs(backup.fitness_ - result.fitness_) <
 				criteria.relative_fitness_ && std::abs(backup.inlier_rmse_ -
@@ -258,9 +257,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		if (check == false) continue;
 		PointCloud pcd = source;
 		pcd.Transform(transformation);
-		auto this_result = std::get<0>(GetRegistrationResultAndCorrespondences(
+		auto this_result = GetRegistrationResultAndCorrespondences(
 				pcd, target, kdtree, max_correspondence_distance,
-				transformation));
+				transformation);
 		if (this_result.fitness_ > result.fitness_ ||
 				(this_result.fitness_ == result.fitness_ &&
 				this_result.inlier_rmse_ < result.inlier_rmse_)) {
@@ -271,6 +270,39 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
 			result.inlier_rmse_);
 	return result;
+}
+
+Eigen::Matrix6d GetInformationMatrixFromRegistrationResult(
+		const PointCloud &source, const PointCloud &target,
+		const RegistrationResult &result)
+{
+	// write q^*
+	// see http://redwood-data.org/indoor/registration.html
+	// note: I comes first and q_skew is scaled by factor 2.
+	Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
+	Eigen::Vector6d G_r;
+	for (auto c = 0; c < result.correspondence_set_.size(); c++) {
+		int t = result.correspondence_set_[c](1);
+		double x = target.points_[t](0);
+		double y = target.points_[t](1);
+		double z = target.points_[t](2);
+		G_r.setZero();
+		G_r(0) = 1.0;
+		G_r(4) = 2.0 * z;
+		G_r(5) = -2.0 * y;
+		GTG.noalias() += G_r * G_r.transpose();
+		G_r.setZero();
+		G_r(1) = 1.0;
+		G_r(3) = -2.0 * z;
+		G_r(5) = 2.0 * x;
+		GTG.noalias() += G_r * G_r.transpose();
+		G_r.setZero();
+		G_r(2) = 1.0;
+		G_r(3) = 2.0 * y;
+		G_r(4) = -2.0 * x;
+		GTG.noalias() += G_r * G_r.transpose();
+	}
+	return std::move(GTG);
 }
 
 }	// namespace three
