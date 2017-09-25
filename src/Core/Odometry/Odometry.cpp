@@ -210,28 +210,28 @@ Eigen::Matrix6d CreateInfomationMatrix(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-	for (auto row = 0; row < correspondence->size(); row++) {
-		int u_t = (*correspondence)[row](2);
-		int v_t = (*correspondence)[row](3);
-		double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
-		double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
-		double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
-		G_r_private.setZero();
-		G_r_private(0) = 1.0;
-		G_r_private(4) = 2.0 * z;
-		G_r_private(5) = -2.0 * y;
-		GTG_private.noalias() += G_r_private * G_r_private.transpose();
-		G_r_private.setZero();
-		G_r_private(1) = 1.0;
-		G_r_private(3) = -2.0 * z;
-		G_r_private(5) = 2.0 * x;
-		GTG_private.noalias() += G_r_private * G_r_private.transpose();
-		G_r_private.setZero();
-		G_r_private(2) = 1.0;
-		G_r_private(3) = 2.0 * y;
-		G_r_private(4) = -2.0 * x;
-		GTG_private.noalias() += G_r_private * G_r_private.transpose();
-	}
+		for (auto row = 0; row < correspondence->size(); row++) {
+			int u_t = (*correspondence)[row](2);
+			int v_t = (*correspondence)[row](3);
+			double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
+			double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
+			double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
+			G_r_private.setZero();
+			G_r_private(0) = 1.0;
+			G_r_private(4) = 2.0 * z;
+			G_r_private(5) = -2.0 * y;
+			GTG_private.noalias() += G_r_private * G_r_private.transpose();
+			G_r_private.setZero();
+			G_r_private(1) = 1.0;
+			G_r_private(3) = -2.0 * z;
+			G_r_private(5) = 2.0 * x;
+			GTG_private.noalias() += G_r_private * G_r_private.transpose();
+			G_r_private.setZero();
+			G_r_private(2) = 1.0;
+			G_r_private(3) = 2.0 * y;
+			G_r_private(4) = -2.0 * x;
+			GTG_private.noalias() += G_r_private * G_r_private.transpose();
+		}
 #ifdef _OPENMP
 #pragma omp critical
 #endif
@@ -241,7 +241,7 @@ Eigen::Matrix6d CreateInfomationMatrix(
 #ifdef _OPENMP
 	}
 #endif
-	return std::move(GTG);	
+	return std::move(GTG);
 }
 
 void NormalizeIntensity(Image &image_s, Image &image_t,

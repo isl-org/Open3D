@@ -3,19 +3,13 @@ import sys
 sys.path.append("../..")
 from py3d import *
 from utility import *
+from utility_visualization import *
 from optimize_posegraph import *
-
-
-def DrawRegistrationResult(source, target, transformation):
-	source.PaintUniformColor([1, 0.706, 0])
-	target.PaintUniformColor([0, 0.651, 0.929])
-	source.Transform(transformation)
-	DrawGeometries([source, target])
 
 
 def preprocess_point_cloud(ply_file_name):
 	pcd = ReadPointCloud(ply_file_name)
-	pcd_down = VoxelDownSample(pcd, 0.05)
+	pcd_down = VoxelDownSample(pcd, 0.04)
 	EstimateNormals(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
 	pcd_fpfh = ComputeFPFHFeature(pcd_down,
@@ -23,13 +17,56 @@ def preprocess_point_cloud(ply_file_name):
 	return (pcd_down, pcd_fpfh)
 
 
-def register_point_cloud(ply_file_names):
+def register_point_cloud(source, target,
+		init_transformation = np.identity(4)):
+	result_icp = RegistrationICP(source, target, 0.02,
+			init_transformation,
+			TransformationEstimationPointToPlane())
+	print(result_icp)
+	information_matrix = GetInformationMatrixFromRegistrationResult(
+			source_down, target_down, result_icp)
+	return (result_icp.transformation, information_matrix)
+
+
+def register_colored_point_cloud(source, target,
+		init_transformation = np.identity(4)):
+	# colored pointcloud registration
+	# This is implementation of following paper
+	# J. Park, Q.-Y. Zhou, V. Koltun,
+	# Colored Point Cloud Registration Revisited, ICCV 2017
+	voxel_radius = [ 0.04, 0.02, 0.01 ]
+	max_iter = [ 50, 30, 14 ]
+	current_transformation = init_transformation
+	for scale in range(3):
+		iter = max_iter[scale]
+		radius = voxel_radius[scale]
+		source_down = VoxelDownSample(source, radius)
+		target_down = VoxelDownSample(target, radius)
+		EstimateNormals(source_down, KDTreeSearchParamHybrid(
+				radius = scale, max_nn = 30))
+		EstimateNormals(target_down, KDTreeSearchParamHybrid(
+				radius = scale, max_nn = 30))
+		result_icp = RegistrationColoredICP(source_down, target_down,
+				radius, current_transformation,
+				ICPConvergenceCriteria(relative_fitness = 1e-6,
+				relative_rmse = 1e-6, max_iteration = iter))
+		current_transformation = result_icp.transformation
+
+	information_matrix = GetInformationMatrixFromRegistrationResult(
+			source, target, result_icp)
+	DrawRegistrationResultOriginalColor(
+			source, target, result_icp.transformation)
+	return (result_icp.transformation, information_matrix)
+
+
+def register_point_cloud(ply_file_names, registration_type = "color"):
 	pose_graph = PoseGraph()
 	odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(odometry))
 	info = np.identity(6)
 
-	n_files = len(ply_file_names)
+	#n_files = len(ply_file_names)
+	n_files = 3
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
@@ -44,36 +81,36 @@ def register_point_cloud(ply_file_names):
 					TransformationEstimationPointToPoint(False), 4,
 					[CorrespondenceCheckerBasedOnEdgeLength(0.9),
 					CorrespondenceCheckerBasedOnDistance(0.075)],
-					RANSACConvergenceCriteria(40000, 500))
+					RANSACConvergenceCriteria(400000, 500))
 			print(result_ransac)
-			# DrawRegistrationResult(source_down, target_down,
-			# 		result_ransac.transformation)
-			# todo: can it output information file too?
-			# todo: color point cloud registration
-			result_icp = RegistrationICP(source_down, target_down, 0.02,
-					result_ransac.transformation,
-					TransformationEstimationPointToPlane())
-			information_matrix = GetInformationMatrixFromRegistrationResult(
-					source_down, target_down, result_icp)
-			print(information_matrix)
-			# print(result_icp)
+			DrawRegistrationResultOriginalColor(source_down, target_down,
+					result_ransac.transformation)
+			if (registration_type == "color"):
+				(transformation_matrix, information_matrix) = \
+						register_colored_point_cloud(source_down, target_down,
+						result_ransac.transformation)
+			else:
+				(transformation_matrix, information_matrix) = \
+						register_point_cloud(source_down, target_down,
+						result_ransac.transformation)
 			# DrawRegistrationResult(source_down, target_down,
 			# 		result_icp.transformation)
 			if t == s + 1: # odometry case
-				odometry = np.dot(result_icp.transformation, odometry)
+				odometry = np.dot(transformation_matrix, odometry)
 				odometry_inv = np.linalg.inv(odometry)
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, result_icp.transformation,
+						PoseGraphEdge(s, t, transformation_matrix,
 						information_matrix, False))
 			else: # edge case
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, result_icp.transformation,
+						PoseGraphEdge(s, t, transformation_matrix,
 						information_matrix, True))
 	return pose_graph
 
 
 if __name__ == "__main__":
+	# todo arguement notification
 	path_dataset = parse_argument(sys.argv, "--path_dataset")
 	if path_dataset:
 		ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
