@@ -29,7 +29,8 @@ def register_point_cloud(ply_file_names):
 	pose_graph.nodes.append(PoseGraphNode(odometry))
 	info = np.identity(6)
 
-	n_files = len(ply_file_names)
+	#n_files = len(ply_file_names)
+	n_files = 4
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
@@ -55,6 +56,7 @@ def register_point_cloud(ply_file_names):
 					TransformationEstimationPointToPlane())
 			information_matrix = GetInformationMatrixFromRegistrationResult(
 					source_down, target_down, result_icp)
+			print(information_matrix)
 			# print(result_icp)
 			# DrawRegistrationResult(source_down, target_down,
 			# 		result_icp.transformation)
@@ -75,10 +77,10 @@ def register_point_cloud(ply_file_names):
 if __name__ == "__main__":
 	path_dataset = parse_argument(sys.argv, "--path_dataset")
 	if path_dataset:
-		ply_file_names = get_file_list(path_dataset + "fragments/", '.ply')
+		ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
 		pose_graph = register_point_cloud(ply_file_names)
-		pose_graph_name = path_dataset + "fragments/global_registration.json"
+		pose_graph_name = path_dataset + "/fragments/global_registration.json"
 		WritePoseGraph(pose_graph_name, pose_graph)
-		pose_graph_optmized_name = path_dataset + "fragments/" + \
+		pose_graph_optmized_name = path_dataset + "/fragments/" + \
 				"global_registration_optimized.json"
 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

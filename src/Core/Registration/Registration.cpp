@@ -280,28 +280,45 @@ Eigen::Matrix6d GetInformationMatrixFromRegistrationResult(
 	// see http://redwood-data.org/indoor/registration.html
 	// note: I comes first and q_skew is scaled by factor 2.
 	Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
-	Eigen::Vector6d G_r;
-	for (auto c = 0; c < result.correspondence_set_.size(); c++) {
-		int t = result.correspondence_set_[c](1);
-		double x = target.points_[t](0);
-		double y = target.points_[t](1);
-		double z = target.points_[t](2);
-		G_r.setZero();
-		G_r(0) = 1.0;
-		G_r(4) = 2.0 * z;
-		G_r(5) = -2.0 * y;
-		GTG.noalias() += G_r * G_r.transpose();
-		G_r.setZero();
-		G_r(1) = 1.0;
-		G_r(3) = -2.0 * z;
-		G_r(5) = 2.0 * x;
-		GTG.noalias() += G_r * G_r.transpose();
-		G_r.setZero();
-		G_r(2) = 1.0;
-		G_r(3) = 2.0 * y;
-		G_r(4) = -2.0 * x;
-		GTG.noalias() += G_r * G_r.transpose();
+#ifdef _OPENMP
+#pragma omp parallel
+	{
+#endif
+		Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
+		Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+		for (auto c = 0; c < result.correspondence_set_.size(); c++) {
+			int t = result.correspondence_set_[c](1);
+			double x = target.points_[t](0);
+			double y = target.points_[t](1);
+			double z = target.points_[t](2);
+			G_r_private.setZero();
+			G_r_private(0) = 1.0;
+			G_r_private(4) = 2.0 * z;
+			G_r_private(5) = -2.0 * y;
+			GTG_private.noalias() += G_r_private * G_r_private.transpose();
+			G_r_private.setZero();
+			G_r_private(1) = 1.0;
+			G_r_private(3) = -2.0 * z;
+			G_r_private(5) = 2.0 * x;
+			GTG_private.noalias() += G_r_private * G_r_private.transpose();
+			G_r_private.setZero();
+			G_r_private(2) = 1.0;
+			G_r_private(3) = 2.0 * y;
+			G_r_private(4) = -2.0 * x;
+			GTG_private.noalias() += G_r_private * G_r_private.transpose();
+		}
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+		{
+			GTG += GTG_private;
+		}
+#ifdef _OPENMP
 	}
+#endif
 	return std::move(GTG);
 }
 
