@@ -32,6 +32,7 @@
 
 #include <Core/Registration/CorrespondenceChecker.h>
 #include <Core/Registration/TransformationEstimation.h>
+#include <Core/Utility/Eigen.h>
 
 namespace three {
 
@@ -50,7 +51,7 @@ public:
 			relative_fitness_(relative_fitness), relative_rmse_(relative_rmse),
 			max_iteration_(max_iteration) {}
 	~ICPConvergenceCriteria() {}
-	
+
 public:
 	double relative_fitness_;
 	double relative_rmse_;
@@ -70,7 +71,7 @@ public:
 			int max_validation = 1000) :
 			max_iteration_(max_iteration), max_validation_(max_validation) {}
 	~RANSACConvergenceCriteria() {}
-	
+
 public:
 	int max_iteration_;
 	int max_validation_;
@@ -87,6 +88,7 @@ public:
 
 public:
 	Eigen::Matrix4d transformation_;
+	CorrespondenceSet correspondence_set_;
 	double inlier_rmse_;
 	double fitness_;
 };
@@ -125,5 +127,10 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		const std::vector<std::reference_wrapper<const CorrespondenceChecker>> &
 		checkers = {}, const RANSACConvergenceCriteria &criteria =
 		RANSACConvergenceCriteria());
+
+/// Function for computing information matrix from RegistrationResult
+Eigen::Matrix6d GetInformationMatrixFromRegistrationResult(
+		const PointCloud &source, const PointCloud &target,
+		const RegistrationResult &result);
 
 }	// namespace three

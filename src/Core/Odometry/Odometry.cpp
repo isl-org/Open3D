@@ -200,16 +200,14 @@ Eigen::Matrix6d CreateInfomationMatrix(
 	// write q^*
 	// see http://redwood-data.org/indoor/registration.html
 	// note: I comes first and q_skew is scaled by factor 2.
-	Eigen::Matrix6d GTG;
-	GTG.setZero();
-
+	Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
+	Eigen::Vector6d G_r;	
 	for (auto row = 0; row < correspondence->size(); row++) {
 		int u_t = (*correspondence)[row](2);
 		int v_t = (*correspondence)[row](3);
 		double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
 		double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
 		double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
-		Eigen::Vector6d G_r;
 		G_r.setZero();
 		G_r(0) = 1.0;
 		G_r(4) = 2.0 * z;
