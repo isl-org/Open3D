@@ -53,6 +53,8 @@ def register_point_cloud(ply_file_names):
 			result_icp = RegistrationICP(source_down, target_down, 0.02,
 					result_ransac.transformation,
 					TransformationEstimationPointToPlane())
+			information_matrix = GetInformationMatrixFromRegistrationResult(
+					source_down, target_down, result_icp)
 			# print(result_icp)
 			# DrawRegistrationResult(source_down, target_down,
 			# 		result_icp.transformation)
@@ -61,10 +63,12 @@ def register_point_cloud(ply_file_names):
 				odometry_inv = np.linalg.inv(odometry)
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, result_icp.transformation, info, False))
+						PoseGraphEdge(s, t, result_icp.transformation,
+						information_matrix, False))
 			else: # edge case
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, result_icp.transformation, info, True))
+						PoseGraphEdge(s, t, result_icp.transformation,
+						information_matrix, True))
 	return pose_graph
 
 
