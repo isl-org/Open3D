@@ -201,30 +201,47 @@ Eigen::Matrix6d CreateInfomationMatrix(
 	// see http://redwood-data.org/indoor/registration.html
 	// note: I comes first and q_skew is scaled by factor 2.
 	Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
-	Eigen::Vector6d G_r;	
+#ifdef _OPENMP
+#pragma omp parallel
+	{
+#endif
+		Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
+		Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
 	for (auto row = 0; row < correspondence->size(); row++) {
 		int u_t = (*correspondence)[row](2);
 		int v_t = (*correspondence)[row](3);
 		double x = *PointerAt<float>(*xyz_t, u_t, v_t, 0);
 		double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
 		double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
-		G_r.setZero();
-		G_r(0) = 1.0;
-		G_r(4) = 2.0 * z;
-		G_r(5) = -2.0 * y;
-		GTG.noalias() += G_r * G_r.transpose();
-		G_r.setZero();
-		G_r(1) = 1.0;
-		G_r(3) = -2.0 * z;
-		G_r(5) = 2.0 * x;
-		GTG.noalias() += G_r * G_r.transpose();
-		G_r.setZero();
-		G_r(2) = 1.0;
-		G_r(3) = 2.0 * y;
-		G_r(4) = -2.0 * x;
-		GTG.noalias() += G_r * G_r.transpose();
+		G_r_private.setZero();
+		G_r_private(0) = 1.0;
+		G_r_private(4) = 2.0 * z;
+		G_r_private(5) = -2.0 * y;
+		GTG_private.noalias() += G_r_private * G_r_private.transpose();
+		G_r_private.setZero();
+		G_r_private(1) = 1.0;
+		G_r_private(3) = -2.0 * z;
+		G_r_private(5) = 2.0 * x;
+		GTG_private.noalias() += G_r_private * G_r_private.transpose();
+		G_r_private.setZero();
+		G_r_private(2) = 1.0;
+		G_r_private(3) = 2.0 * y;
+		G_r_private(4) = -2.0 * x;
+		GTG_private.noalias() += G_r_private * G_r_private.transpose();
 	}
-	return GTG;
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+		{
+			GTG += GTG_private;
+		}
+#ifdef _OPENMP
+	}
+#endif
+	return std::move(GTG);	
 }
 
 void NormalizeIntensity(Image &image_s, Image &image_t,
