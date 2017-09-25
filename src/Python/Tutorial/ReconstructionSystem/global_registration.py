@@ -29,8 +29,7 @@ def register_point_cloud(ply_file_names):
 	pose_graph.nodes.append(PoseGraphNode(odometry))
 	info = np.identity(6)
 
-	#n_files = len(ply_file_names)
-	n_files = 4
+	n_files = len(ply_file_names)
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
