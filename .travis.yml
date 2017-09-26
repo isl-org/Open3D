@@ -63,7 +63,7 @@ before_install:
   #
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
-      git clone https://github.com/glfw/glfw && mkdir build && cd build && cmake ../glfw && make -j4 && sudo make install;
+      git clone https://github.com/glfw/glfw && mkdir build_glfw && cd build_glfw && cmake ../glfw && make -j4 && sudo make install;
       cd;
     fi
   # scripts/install-deps-osx.sh works well
