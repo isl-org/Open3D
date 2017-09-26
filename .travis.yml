@@ -59,13 +59,13 @@ before_install:
   # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh'
   # but this shell script does not have -y, and
   # ubuntu 14.04 of travis-ci does not recognize sudo apt-get install libglfw3-dev
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
       python3.6 -m pip install --user --upgrade pip wheel;
       pyenv global system 3.6;
     fi
   # scripts/install-deps-osx.sh works well
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python3;
       scripts/install-deps-osx.sh;
     fi
