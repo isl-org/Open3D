@@ -4,14 +4,14 @@ matrix:
     email: false # turn off email notifications for build failure
 
   language:
-    - cpp
     - python
+    - cpp
 
   include:
     # Default environment of Ubuntu 14.04
     - os: linux
       dist: trusty
-      sudo: required
+      sudo: true
       addons:
         apt:
           sources:
@@ -26,9 +26,10 @@ matrix:
 
     # Similar environment of Ubuntu 16.04 (gcc 5.4)
     # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
+    # another option is to use docker.
     - os: linux
       dist: trusty
-      sudo: required
+      sudo: true
       addons:
         apt:
           sources:
@@ -56,18 +57,19 @@ matrix:
          - PYTHON=3.6
 
 before_install:
-  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh'
-  # but this shell script does not have -y, and
-  # ubuntu 14.04 of travis-ci does not recognize sudo apt-get install libglfw3-dev
+  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
+  # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
+  # does not recognize sudo apt-get install libglfw3-dev
+  #
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
-      python3.6 -m pip install --user --upgrade pip wheel;
-      pyenv global system 3.6;
+      git clone https://github.com/glfw/glfw && mkdir build && cd build && cmake ../glfw && make -j4 && sudo make install;
+      cd;
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python3;
-      scripts/install-deps-osx.sh;
+      ./scripts/install-deps-osx.sh;
     fi
   # for reference, display cmake and python version
   - python -V
