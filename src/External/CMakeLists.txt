@@ -29,7 +29,7 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 			add_subdirectory(libjpeg)
 		endif (JPEG_FOUND)
 
-		pkg_search_module(PNG libpng)
+		pkg_search_module(PNG libpng>=1.6.0)
 		if (PNG_FOUND)
 		    message(STATUS "Use native build of libpng")
 		else (PNG_FOUND)
