@@ -62,7 +62,7 @@ before_install:
   # does not recognize sudo apt-get install libglfw3-dev
   # custom build GLFW3
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
+      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev libpng-dev libjpeg-dev;
       python -m pip install --user --upgrade pip wheel;
       pyenv global system 3.5;
     fi
