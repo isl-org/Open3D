@@ -153,13 +153,13 @@ void pybind_registration(py::module &m)
 		.def("__repr__", [](const TransformationEstimationPointToPlane &te) {
 			return std::string("TransformationEstimationPointToPlane");
 		});
-	
+
 	py::class_<CorrespondenceChecker,
 			PyCorrespondenceChecker<CorrespondenceChecker>>
 			cc(m, "CorrespondenceChecker");
 	cc
 			.def("Check", &CorrespondenceChecker::Check);
-	
+
 	py::class_<CorrespondenceCheckerBasedOnEdgeLength,
 			PyCorrespondenceChecker<CorrespondenceCheckerBasedOnEdgeLength>,
 			CorrespondenceChecker> cc_el(m,
@@ -213,20 +213,24 @@ void pybind_registration(py::module &m)
 		})
 		.def_readwrite("normal_angle_threshold",
 				&CorrespondenceCheckerBasedOnNormal::normal_angle_threshold_);
-	
+
 	py::class_<RegistrationResult> registration_result(m, "RegistrationResult");
 	py::detail::bind_default_constructor<RegistrationResult>(
 			registration_result);
 	py::detail::bind_copy_functions<RegistrationResult>(registration_result);
 	registration_result
 		.def_readwrite("transformation", &RegistrationResult::transformation_)
+		.def_readwrite("correspondence_set",
+				&RegistrationResult::correspondence_set_)
 		.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_)
 		.def_readwrite("fitness", &RegistrationResult::fitness_)
 		.def("__repr__", [](const RegistrationResult &rr) {
 			return std::string("RegistrationResult with fitness = ") +
 					std::to_string(rr.fitness_) +
-					std::string(", and inlier_rmse = ") +
+					std::string(", inlier_rmse = ") +
 					std::to_string(rr.inlier_rmse_) +
+					std::string(", and correspondence_set size of ") +
+					std::to_string(rr.correspondence_set_.size()) +
 					std::string("\nAccess transformation to get result.");
 		});
 }
@@ -246,7 +250,7 @@ void pybind_registration_methods(py::module &m)
 	m.def("RegistrationColoredICP", &RegistrationColoredICP,
 			"Function for Colored ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
-			"init"_a = Eigen::Matrix4d::Identity(), 
+			"init"_a = Eigen::Matrix4d::Identity(),
 			"criteria"_a = ICPConvergenceCriteria());
 	m.def("RegistrationRANSACBasedOnCorrespondence",
 			&RegistrationRANSACBasedOnCorrespondence,
@@ -263,5 +267,8 @@ void pybind_registration_methods(py::module &m)
 			"checkers"_a = std::vector<std::reference_wrapper<const
 			CorrespondenceChecker>>(), "criteria"_a =
 			RANSACConvergenceCriteria(100000, 100));
+	m.def("GetInformationMatrixFromRegistrationResult",
+			&GetInformationMatrixFromRegistrationResult,
+			"Function for computing information matrix from RegistrationResult",
+			"source"_a, "target"_a, "transformation_result"_a);
 }
-

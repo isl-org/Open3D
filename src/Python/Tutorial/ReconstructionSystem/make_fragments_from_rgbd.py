@@ -5,6 +5,7 @@ import math
 import sys
 sys.path.append("../..")
 from py3d import *
+from optimize_posegraph import *
 from utility import *
 
 
@@ -51,7 +52,7 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
 
 	for s in range(sid, eid):
-		for t in range(s, eid):
+		for t in range(s + 1, eid):
 			# odometry
 			if t == s + 1:
 				[trans, info] = process_one_rgbd_pair(
@@ -74,18 +75,6 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
 				 		% (fragment_id, s, t))
 	return pose_graph
-
-
-def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
-	# to display messages from GlobalOptimization
-	SetVerbosityLevel(VerbosityLevel.Debug)
-	method = GlobalOptimizationLevenbergMarquardt()
-	criteria = GlobalOptimizationConvergenceCriteria()
-	line_process_option = GlobalOptimizationLineProcessOption()
-	pose_graph = ReadPoseGraph(pose_graph_name)
-	GlobalOptimization(pose_graph, method, criteria, line_process_option)
-	WritePoseGraph(pose_graph_optmized_name, pose_graph)
-	SetVerbosityLevel(VerbosityLevel.Error)
 
 
 def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
@@ -117,39 +106,42 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 if __name__ == "__main__":
 	path_dataset = parse_argument(sys.argv, "--path_dataset")
 	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
+	if not path_dataset:
+		print("usage : %s " % sys.argv[0])
+		print("  --path_dataset [path]   : Path to rgbd_dataset. Mandatory.")
+		print("  --path_intrinsic [path] : Path to json camera intrinsic file. Optional.")
+		sys.exit()
 
-	if path_dataset:
+	# some global parameters
+	n_frames_per_fragment = 100
+	n_keyframes_per_n_frame = 5
 
-		# some global parameters
-		n_frames_per_fragment = 100
-		n_keyframes_per_n_frame = 5
+	# check opencv python package
+	with_opencv = initialize_opencv()
+	if with_opencv:
+		from opencv_pose_estimation import pose_estimation
 
-		# check opencv python package
-		with_opencv = initialize_opencv()
-		if with_opencv:
-			from opencv_pose_estimation import pose_estimation
+	path_fragment = path_dataset + 'fragments/'
+	if not exists(path_fragment):
+		makedirs(path_fragment)
 
-		path_fragment = path_dataset + 'fragments/'
-		if not exists(path_fragment):
-			makedirs(path_fragment)
+	[color_files, depth_files] = get_file_lists(path_dataset)
+	n_files = len(color_files)
+	n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
-		[color_files, depth_files] = get_file_lists(path_dataset)
-		n_files = len(color_files)
-		n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
+	if path_intrinsic:
+		intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
+	else:
+		intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
-		if path_intrinsic:
-			intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
-		else:
-			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
-
-		for fragment_id in range(n_fragments):
-			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-			WritePoseGraph(pose_graph_name, pose_graph)
-			pose_graph_optmized_name = path_fragment + \
-					"fragments_opt_%03d.json" % fragment_id
-			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-			mesh = integrate_rgb_frames(
-					fragment_id, pose_graph_optmized_name, intrinsic)
-			mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
-			WriteTriangleMesh(mesh_name, mesh, False, True)
+	for fragment_id in range(n_fragments):
+		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
+		pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
+		WritePoseGraph(pose_graph_name, pose_graph)
+		pose_graph_optmized_name = path_fragment + \
+				"fragments_opt_%03d.json" % fragment_id
+		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+		mesh = integrate_rgb_frames(
+				fragment_id, pose_graph_optmized_name, intrinsic)
+		mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
+		WriteTriangleMesh(mesh_name, mesh, False, True)
