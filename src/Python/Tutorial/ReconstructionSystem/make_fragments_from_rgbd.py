@@ -22,6 +22,8 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	if abs(s-t) is not 1 and with_opencv:
 		odo_init = pose_estimation(
 				source_rgbd_image, target_rgbd_image, intrinsic, False)
+		if (odo_init - np.identity(4)).sum() < 0.01:
+			print("[NOTICE!!!!] Loop closure is estimated as identity [%d, %d]!!" % (s, t))
 	else:
 		odo_init = np.identity(4)
 
@@ -29,7 +31,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	[success, trans, info] = ComputeRGBDOdometry(
 			source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
 			RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
-	return [trans, info]
+	return [success, trans, info]
 
 
 def get_file_lists(path_dataset):
@@ -42,7 +44,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-	SetVerbosityLevel(VerbosityLevel.Error)
+	SetVerbosityLevel(VerbosityLevel.Warning)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
 
@@ -51,28 +53,29 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
 
 	for s in range(sid, eid):
-		for t in range(s, eid):
+		for t in range(s + 1, eid):
 			# odometry
 			if t == s + 1:
-				[trans, info] = process_one_rgbd_pair(
+				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, s, t))
+				[success, trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				trans_odometry = np.dot(trans, trans_odometry)
 				trans_odometry_inv = np.linalg.inv(trans_odometry)
 				pose_graph.nodes.append(PoseGraphNode(trans_odometry_inv))
 				pose_graph.edges.append(
 						PoseGraphEdge(s-sid, t-sid, trans, info, False))
-				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
-				 		% (fragment_id, s, t))
 
 			# keyframe loop closure
 			if s % n_keyframes_per_n_frame == 0 \
 					and t % n_keyframes_per_n_frame == 0:
-				[trans, info] = process_one_rgbd_pair(
-						s, t, color_files, depth_files, intrinsic, with_opencv)
-				pose_graph.edges.append(
-						PoseGraphEdge(s-sid, t-sid, trans, info, True))
 				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
 				 		% (fragment_id, s, t))
+				[success, trans, info] = process_one_rgbd_pair(
+						s, t, color_files, depth_files, intrinsic, with_opencv)
+				if success:
+					pose_graph.edges.append(
+							PoseGraphEdge(s-sid, t-sid, trans, info, True))
 	return pose_graph
 
 

@@ -314,8 +314,6 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 	auto correspondence = ComputeCorrespondence(
 			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init,
 			*source_depth, *target_depth, option);
-	PrintDebug("Number of correspondence is %d\n", (int)correspondence->size());
-
 	int corresps_count_required = (int)(source_gray->height_ *
 			source_gray->width_ * option.minimum_correspondence_ratio_ + 0.5);
 	if (correspondence->size() < corresps_count_required) {
@@ -329,6 +327,7 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 }
 
 std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
+	int iter, int level,
 	const RGBDImage &source, const RGBDImage &target,
 	const Image &source_xyz,
 	const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -343,7 +342,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 			source.color_.width_ * option.minimum_correspondence_ratio_ + 0.5);
 	int corresps_count = (int)correspondence->size();
 	if (corresps_count < corresps_count_required) {
-		PrintDebug("[ComputeOdometry] %d is too fewer than mininum requirement %d\n",
+		PrintWarning("[ComputeOdometry] Too fewer correspondences (%d found / %d required)\n",
 				corresps_count, corresps_count_required);
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	}
@@ -354,6 +353,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 				source, target, source_xyz, target_dx, target_dy,
 				intrinsic, extrinsic_initial, *correspondence);
 	};
+	PrintDebug("Iter : %d, Level : %d, ", iter, level);
 	Eigen::Matrix6d JTJ;
 	Eigen::Vector6d JTr;
 	std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
@@ -364,7 +364,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 	std::tie(is_success, extrinsic) =
 			SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 	if (!is_success) {
-		PrintError("[ComputeOdometry] no solution!\n");
+		PrintWarning("[ComputeOdometry] no solution!\n");
 		return std::make_tuple(false, Eigen::Matrix4d::Identity());
 	} else {
 		return std::make_tuple(true, extrinsic);
@@ -410,17 +410,17 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 				target_pyramid_dy[level]->depth_);
 
 		for (int iter = 0; iter < iter_counts[num_levels - level - 1]; iter++) {
-			PrintDebug("Iter : %d, Level : %d, ", iter, level);
 			Eigen::Matrix4d curr_odo;
 			bool is_success;
 			std::tie(is_success, curr_odo) = DoSingleIteration(
+				iter, level,
 				*source_level, *target_level, *source_xyz_level,
 				*target_dx_level, *target_dy_level, level_camera_matrix,
 				result_odo, jacobian_method, option);
 			result_odo = curr_odo * result_odo;
 
 			if (!is_success) {
-				PrintError("[ComputeOdometry] no solution!\n");
+				PrintWarning("[ComputeOdometry] no solution!\n");
 				return std::make_tuple(false, Eigen::Matrix4d::Identity());
 			}
 		}
