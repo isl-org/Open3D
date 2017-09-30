@@ -51,51 +51,41 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 	}
 
 	double error2 = 0.0;
-	{	
-		ScopeTimer t("one iteration");
-
+	
 #ifdef _OPENMP
 #pragma omp parallel
-		{
-			double error2_private = 0.0;
-			CorrespondenceSet correspondence_set_private;
+	{
+		double error2_private = 0.0;
+		CorrespondenceSet correspondence_set_private;
 #endif			
 #ifdef _OPENMP
 #pragma omp for nowait		
 #endif
-			for (int i = 0; i < (int)source.points_.size(); i++) {
-				std::vector<int> indices(1);
-				std::vector<double> dists(1);
-				const auto &point = source.points_[i];
-				if (target_kdtree.SearchHybrid(point, max_correspondence_distance, 1,
-					indices, dists) > 0) {
-					//double error_test = 0.0;
-					//for (int j = 0; j < 10000; j++) {
-					//	for (int k = 0; k < 1000; k++) {
-					//		error_test += j * k;
-					//	}
-					//}
-					//error2_private += error_test;
-					error2_private += dists[0];
-					correspondence_set_private.push_back(
-							Eigen::Vector2i(i, indices[0]));
-				}
+		for (int i = 0; i < (int)source.points_.size(); i++) {
+			std::vector<int> indices(1);
+			std::vector<double> dists(1);
+			const auto &point = source.points_[i];
+			if (target_kdtree.SearchHybrid(point, max_correspondence_distance, 1,
+				indices, dists) > 0) {
+				error2_private += dists[0];
+				correspondence_set_private.push_back(
+						Eigen::Vector2i(i, indices[0]));
 			}
+		}
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-			{
-				for (int i = 0; i < correspondence_set_private.size(); i++) {
-					result.correspondence_set_.push_back(
-							correspondence_set_private[i]);
-				}
-				error2 += error2_private;
-			}			
+		{
+			for (int i = 0; i < correspondence_set_private.size(); i++) {
+				result.correspondence_set_.push_back(
+						correspondence_set_private[i]);
+			}
+			error2 += error2_private;
+		}			
 #ifdef _OPENMP
-		}
-#endif
 	}
-	printf("after\n");
+#endif
+	
 	if (result.correspondence_set_.empty()) {
 		result.fitness_ = 0.0;
 		result.inlier_rmse_ = 0.0;
@@ -294,7 +284,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 				this_result.inlier_rmse_ < result.inlier_rmse_)) {
 			result = this_result;
 		}
-		val++;
+		val++;		
 	}
 	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
 			result.inlier_rmse_);

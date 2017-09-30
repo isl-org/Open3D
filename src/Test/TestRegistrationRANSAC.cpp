@@ -65,24 +65,6 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < 3; i++) {
 		ScopeTimer t("one iteration");
 
-//		double a = 0;
-//#ifdef _OPENMP
-//#pragma omp parallel for schedule(static)
-//#endif
-//		for (int i = 0; i < 3000; i++) {
-//			for (int j = 0; j < 10000; j++) {
-//				for (int k = 0; k < 1000; k++) {
-//#ifdef _OPENMP
-//#pragma omp critical
-//#endif
-//					{
-//						a += (double)j * k * 0.0001;
-//					}
-//				}
-//			}
-//		}
-//		printf("done! a : %lf\n", a);
-
 		std::string source_path("D:/Dropbox/Intel/fragment/011/fragments/fragment_000.ply");
 		std::string target_path("D:/Dropbox/Intel/fragment/011/fragments/fragment_001.ply");
 
