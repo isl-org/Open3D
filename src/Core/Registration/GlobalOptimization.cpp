@@ -394,7 +394,7 @@ void GlobalOptimizationGaussNewton::
 
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
-	PrintDebug("                       Line process weight : %f\n",
+	PrintDebug("Line process weight : %f\n",
 			line_process_weight);
 
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);
@@ -480,7 +480,7 @@ void GlobalOptimizationLevenbergMarquardt::
 
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
-	PrintDebug("                       Line process weight : %f\n",
+	PrintDebug("Line process weight : %f\n",
 			line_process_weight);
 
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);

@@ -37,6 +37,14 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 				RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 		return [success, trans, info]
 
+	# success_5pt, odo_init = pose_estimation(
+	# 		source_rgbd_image, target_rgbd_image, intrinsic, False)
+	# [success, trans, info] = ComputeRGBDOdometry(
+	# 		source_rgbd_image, target_rgbd_image, intrinsic,
+	# 		odo_init, RGBDOdometryJacobianFromHybridTerm(),
+	# 		OdometryOption())
+	# return [success, trans, info]
+
 
 def get_file_lists(path_dataset):
 	# get list of color and depth images
@@ -153,10 +161,10 @@ if __name__ == "__main__":
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
 		# for fragment_id in range(n_fragments):
-		for fragment_id in [35]:
+		for fragment_id in [12,21,32,37]:
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-			# pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-			# WritePoseGraph(pose_graph_name, pose_graph)
+			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
+			WritePoseGraph(pose_graph_name, pose_graph)
 			pose_graph_optmized_name = path_fragment + \
 					"fragments_opt_%03d.json" % fragment_id
 			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
