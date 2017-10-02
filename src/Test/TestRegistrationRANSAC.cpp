@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < 3; i++) {
 		ScopeTimer t("one iteration");
 
-		std::string source_path("D:/Dropbox/Intel/fragment/011/fragments/fragment_000.ply");
-		std::string target_path("D:/Dropbox/Intel/fragment/011/fragments/fragment_001.ply");
+		std::string source_path("D:/dataset/SceneNN/011/fragments/frag_000.ply");
+		std::string target_path("D:/dataset/SceneNN/011/fragments/frag_001.ply");
 
 		std::shared_ptr<PointCloud> source, target;
 		std::shared_ptr<Feature> source_fpfh, target_fpfh;
