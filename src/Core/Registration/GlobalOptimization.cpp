@@ -176,10 +176,10 @@ Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph)
 
 /// The information matrix used here is consistent with [Choi et al 2015].
 /// It is [p_x | I]^T[p_x | I]. \zeta is [\alpha \beta \gamma a b c]
-/// Another definition of information matrix used for [K�mmerle et al 2011] is
+/// Another definition of information matrix used for [Kümmerle et al 2011] is
 /// [I | p_x] ^ T[I | p_x]  so \zeta is [a b c \alpha \beta \gamma].
 ///
-/// To see how H can be derived see [K�mmerle et al 2011].
+/// To see how H can be derived see [Kümmerle et al 2011].
 /// Eq (9) for definition of H and b for k-th constraint.
 /// To see how the covariance matrix forms H, check g2o technical note:
 /// https ://github.com/RainerKuemmerle/g2o/blob/master/doc/g2o.pdf
@@ -345,7 +345,7 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	if (n_edges > 0) {
 		// see Section 5 in [Choi et al 2015]
 		average_number_of_correspondences /= (double)n_edges;
-		double line_process_weight = 0.01 *
+		double line_process_weight = 0.05 *
 				pow(option.max_correspondence_distance_, 2) *
 				average_number_of_correspondences;
 		return line_process_weight;

@@ -23,8 +23,6 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	if abs(s-t) is not 1 and with_opencv:
 		odo_init = pose_estimation(
 				source_rgbd_image, target_rgbd_image, intrinsic, False)
-		if (odo_init - np.identity(4)).sum() < 0.01:
-			print("[NOTICE!!!!] Loop closure is estimated as identity [%d, %d]!!" % (s, t))
 	else:
 		odo_init = np.identity(4)
 
@@ -46,6 +44,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
+	#SetVerbosityLevel(VerbosityLevel.Error)
 	SetVerbosityLevel(VerbosityLevel.Warning)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
@@ -58,8 +57,8 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 		for t in range(s + 1, eid):
 			# odometry
 			if t == s + 1:
-				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
-				 		% (fragment_id, s, t))
+				print("Fragment [%03d/%03d] :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, n_fragments, s, t))
 				[success, trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				trans_odometry = np.dot(trans, trans_odometry)
@@ -71,8 +70,8 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 			# keyframe loop closure
 			if s % n_keyframes_per_n_frame == 0 \
 					and t % n_keyframes_per_n_frame == 0:
-				print("Fragment [%d] :: RGBD matching between frame : %d and %d"
-				 		% (fragment_id, s, t))
+				print("Fragment [%03d/%03d] :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, n_fragments, s, t))
 				[success, trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				if success:
@@ -93,14 +92,6 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	print(line_process_option)
 
 	GlobalOptimization(pose_graph, method, criteria, line_process_option)
-	# # for debugging
-	# for node, node_orig in zip(pose_graph.nodes, pose_graph_orig.nodes):
-	# 	print(abs(node.pose - node_orig.pose))
-	# for debugging
-	# for edge in pose_graph.edges:
-	# 	print("Edge between %d-%d, uncertain : %d, confidence : %.4f" %
-	# 			(edge.source_node_id, edge.target_node_id,
-	# 			edge.uncertain, edge.confidence))
 	WritePoseGraph(pose_graph_optmized_name, pose_graph)
 	SetVerbosityLevel(VerbosityLevel.Error)
 
@@ -117,8 +108,8 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 
 	for i in range(len(pose_graph.nodes)):
 		i_abs = fragment_id * n_frames_per_fragment + i
-		print("Fragment[%d] :: Integrate rgbd frame %d (%d of %d)."
-				% (fragment_id, i_abs, i+1, len(pose_graph.nodes)))
+		print("Fragment [%03d/%03d] :: Integrate rgbd frame %d (%d of %d)."
+				% (fragment_id, n_fragments, i_abs, i+1, len(pose_graph.nodes)))
 		color = ReadImage(color_files[i_abs])
 		depth = ReadImage(depth_files[i_abs])
 		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
@@ -161,9 +152,10 @@ if __name__ == "__main__":
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
 		for fragment_id in range(n_fragments):
+		#for fragment_id in [12]:
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-			# pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-			# WritePoseGraph(pose_graph_name, pose_graph)
+			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
+			WritePoseGraph(pose_graph_name, pose_graph)
 			pose_graph_optmized_name = path_fragment + \
 					"fragments_opt_%03d.json" % fragment_id
 			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
