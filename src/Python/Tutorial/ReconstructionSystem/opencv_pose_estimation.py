@@ -15,13 +15,15 @@ import copy
 
 def pose_estimation(source_rgbd_image, target_rgbd_image,
 		pinhole_camera_intrinsic, debug_draw_correspondences):
+	success = False
+
 	# transform double array to unit8 array
 	color_cv_s = np.uint8(np.asarray(source_rgbd_image.color)*255.0)
 	color_cv_t = np.uint8(np.asarray(target_rgbd_image.color)*255.0)
 
 	orb = cv2.ORB_create(scaleFactor=1.2, nlevels = 8, edgeThreshold = 31,
-			firstLevel = 0, WTA_K = 2,
-			scoreType=cv2.ORB_HARRIS_SCORE, nfeatures=100) # to save time
+			firstLevel = 0, WTA_K = 2, scoreType=cv2.ORB_HARRIS_SCORE,
+			nfeatures = 100, patchSize = 31) # to save time
 	[kp_s, des_s] = orb.detectAndCompute(color_cv_s, None)
 	[kp_t, des_t] = orb.detectAndCompute(color_cv_t, None)
 
@@ -50,7 +52,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_s_int = np.int32(pts_s + 0.5)
 	pts_t_int = np.int32(pts_t + 0.5)
 	[E, mask] = cv2.findEssentialMat(pts_s_int, pts_t_int, focal=focal_input,
-			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.995, threshold=1.0)
+			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.95, threshold=1.0)
 	# # inlier points after 5pt algorithm
 	# if debug_draw_correspondences:
 	# 	draw_correspondences(np.asarray(source_rgbd_image.color),
@@ -75,7 +77,8 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_xyz_s = pts_xyz_s[:,:cnt]
 	pts_xyz_t = pts_xyz_t[:,:cnt]
 
-	trans,inlier_id_vec = estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t)
+	success, trans, inlier_id_vec = estimate_3D_transform_RANSAC(
+			pts_xyz_s, pts_xyz_t)
 
 	if debug_draw_correspondences:
 		pts_s_new = np.zeros(shape=(len(inlier_id_vec),2))
@@ -93,7 +96,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 		draw_correspondences(np.asarray(source_rgbd_image.color),
 				np.asarray(target_rgbd_image.color),
 				pts_s_new, pts_t_new, mask, "5-pt RANSAC + 3D Rigid RANSAC")
-	return trans
+	return success, trans
 
 
 def draw_correspondences(img_s, img_t, pts_s, pts_t, mask, title):
@@ -127,6 +130,10 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 	Transform_good = np.identity(4)
 	max_inlier = n_sample
 	inlier_vec_good = []
+	success = False
+
+	if n_points < n_sample:
+		return False, np.identity(4), []
 
 	for i in range(max_iter):
 
@@ -153,8 +160,9 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 					in zip(diff, range(n_points)) \
 					if diff_iter < max_distance]
 			inlier_vec_good = inlier_vec
+			success = True
 
-	return Transform_good, inlier_vec_good
+	return success, Transform_good, inlier_vec_good
 
 
 # singular value decomposition approach
