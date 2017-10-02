@@ -71,7 +71,7 @@ public:
 	bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    int source_node_id_;
+	int source_node_id_;
 	int target_node_id_;
 	Eigen::Matrix4d transformation_;
 	Eigen::Matrix6d information_;
