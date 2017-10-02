@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Visualization/Visualizer/Visualizer.h>
+#include <map>
 
 namespace three {
 
@@ -53,7 +54,7 @@ protected:
 	std::string PrintKeyToString(int key);
 
 protected:
-	std::vector<KeyCallbackPair> key_callback_pairs_;
+	std::map<int, std::function<bool(Visualizer &)>> key_to_callback_;
 };
 
 }	// namespace three

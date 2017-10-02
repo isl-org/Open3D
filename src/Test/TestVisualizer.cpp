@@ -79,12 +79,12 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 		mesh_ptr->ComputeVertexNormals();
-		DrawGeometriesWithKeyCallback({mesh_ptr}, GLFW_KEY_SPACE,
-				[&](Visualizer &vis) {
+		DrawGeometriesWithKeyCallbacks({mesh_ptr},
+				{{GLFW_KEY_SPACE, [&](Visualizer &vis) {
 					vis.GetViewControl().Rotate(10, 0);
 					std::this_thread::sleep_for(std::chrono::milliseconds(30));
 					return false;
-				}, "Press Space key to spin", 1600, 900);
+				}}}, "Press Space key to spin", 1600, 900);
 	} else if (option == "pointcloud") {
 		auto cloud_ptr = std::make_shared<PointCloud>();
 		if (ReadPointCloud(argv[2], *cloud_ptr)) {
