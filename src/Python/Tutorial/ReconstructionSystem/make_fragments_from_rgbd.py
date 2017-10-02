@@ -6,6 +6,7 @@ import sys
 sys.path.append("../..")
 from py3d import *
 from utility import *
+import copy
 
 
 def process_one_rgbd_pair(s, t, color_files, depth_files,
@@ -28,9 +29,10 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 		odo_init = np.identity(4)
 
 	# perform RGB-D odometry
+	option = OdometryOption(max_depth_diff = max_correspondence_distance)
 	[success, trans, info] = ComputeRGBDOdometry(
 			source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-			RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
+			RGBDOdometryJacobianFromHybridTerm(), option)
 	return [success, trans, info]
 
 
@@ -82,11 +84,23 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	# to display messages from GlobalOptimization
 	SetVerbosityLevel(VerbosityLevel.Debug)
+	pose_graph = ReadPoseGraph(pose_graph_name)
+
 	method = GlobalOptimizationLevenbergMarquardt()
 	criteria = GlobalOptimizationConvergenceCriteria()
-	line_process_option = GlobalOptimizationLineProcessOption()
-	pose_graph = ReadPoseGraph(pose_graph_name)
+	line_process_option = GlobalOptimizationLineProcessOption(
+			max_correspondence_distance = 0.07)
+	print(line_process_option)
+
 	GlobalOptimization(pose_graph, method, criteria, line_process_option)
+	# # for debugging
+	# for node, node_orig in zip(pose_graph.nodes, pose_graph_orig.nodes):
+	# 	print(abs(node.pose - node_orig.pose))
+	# for debugging
+	# for edge in pose_graph.edges:
+	# 	print("Edge between %d-%d, uncertain : %d, confidence : %.4f" %
+	# 			(edge.source_node_id, edge.target_node_id,
+	# 			edge.uncertain, edge.confidence))
 	WritePoseGraph(pose_graph_optmized_name, pose_graph)
 	SetVerbosityLevel(VerbosityLevel.Error)
 
@@ -126,6 +140,7 @@ if __name__ == "__main__":
 		# some global parameters
 		n_frames_per_fragment = 100
 		n_keyframes_per_n_frame = 5
+		max_correspondence_distance = 0.07
 
 		# check opencv python package
 		with_opencv = initialize_opencv()
@@ -147,8 +162,8 @@ if __name__ == "__main__":
 
 		for fragment_id in range(n_fragments):
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-			WritePoseGraph(pose_graph_name, pose_graph)
+			# pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
+			# WritePoseGraph(pose_graph_name, pose_graph)
 			pose_graph_optmized_name = path_fragment + \
 					"fragments_opt_%03d.json" % fragment_id
 			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

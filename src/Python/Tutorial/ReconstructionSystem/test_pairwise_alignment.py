@@ -22,10 +22,9 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	# initialize_camera_pose
 	if abs(s-t) is not 1 and with_opencv:
 		odo_init = pose_estimation(
-				source_rgbd_image, target_rgbd_image, intrinsic, True)
+				source_rgbd_image, target_rgbd_image, intrinsic, False)
 	else:
 		odo_init = np.identity(4)
-	print(odo_init)
 
 	# perform RGB-D odometry
 	[success, trans, info] = ComputeRGBDOdometry(

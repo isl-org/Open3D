@@ -32,22 +32,26 @@ class GlobalOptimizationLineProcessOption
 {
 public:
 	GlobalOptimizationLineProcessOption(
-			double line_process_weight = 10000.,
+			double max_correspondence_distance = 0.07,
 			double edge_prune_threshold = 0.25) :
-			line_process_weight_(line_process_weight),
+			max_correspondence_distance_(max_correspondence_distance),
 			edge_prune_threshold_(edge_prune_threshold) {
+		max_correspondence_distance_ = max_correspondence_distance < 0.0
+				? 0.07 : max_correspondence_distance;
 		edge_prune_threshold_ =
-				edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0 
+				edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
 				? 0.25 : edge_prune_threshold;
 	};
 	~GlobalOptimizationLineProcessOption() {};
 
 public:
 	/// See reference list in GlobalOptimization.h
-	/// line_process_weight_ is equivalent to mu in [Choi et al 2015].
-	double line_process_weight_;
-	/// According to [Choi et al 2015], 
-	/// line_process < edge_prune_threshold_ (0.25) is pruned.
+	/// Identifies which distance value is used for finding neighboring points
+	/// when making information matrix. According to [Choi et al 2015],
+	/// this distance used for determining $mu, a line process weight.
+	double max_correspondence_distance_;
+	/// According to [Choi et al 2015],
+	/// line_process weight < edge_prune_threshold_ (0.25) is pruned.
 	double edge_prune_threshold_;
 };
 
@@ -67,10 +71,10 @@ public:
 		min_relative_increment_(min_relative_increment),
 		min_relative_residual_increment_(min_relative_residual_increment),
 		min_right_term_(min_right_term),
-		min_residual_(min_residual), 
+		min_residual_(min_residual),
 		max_iteration_lm_(max_iteration_lm),
 		upper_scale_factor_(upper_scale_factor),
-		lower_scale_factor_(lower_scale_factor) 
+		lower_scale_factor_(lower_scale_factor)
 	{
 		upper_scale_factor_ =
 				upper_scale_factor < 0.0 || upper_scale_factor > 1.0
@@ -84,17 +88,17 @@ public:
 public:
 	/// maximum iteration number for iterative optmization module.
 	int max_iteration_;
-	/// several convergence criteria to determine 
+	/// several convergence criteria to determine
 	/// stablity of iterative optimization
 	double min_relative_increment_;
 	double min_relative_residual_increment_;
 	double min_right_term_;
 	double min_residual_;
-	/// max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop 
+	/// max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop
 	/// that automatically changes steepest gradient gain
 	int max_iteration_lm_;
 	/// below two variables used for levenberg marquardt algorithm
-	/// these are scaling factors that increase/decrease lambda 
+	/// these are scaling factors that increase/decrease lambda
 	/// used in H_LM = H + lambda * I
 	double upper_scale_factor_;
 	double lower_scale_factor_;
