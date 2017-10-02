@@ -19,28 +19,25 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s)
 	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t)
 
-	# initialize_camera_pose
-	if abs(s-t) is not 1 and with_opencv:
-		success_5pt, odo_init = pose_estimation(
-				source_rgbd_image, target_rgbd_image, intrinsic, False)
-		if success_5pt:
-			# perform RGB-D odometry
-			option = OdometryOption(max_depth_diff = max_correspondence_distance)
-			[success, trans, info] = ComputeRGBDOdometry(
-					source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-					RGBDOdometryJacobianFromHybridTerm(), option)
-			return [success, trans, info]
-		else:
-			return [False, np.identity(4), np.identity(6)]
+	if abs(s-t) is not 1:
+		if with_opencv:
+			success_5pt, odo_init = pose_estimation(
+					source_rgbd_image, target_rgbd_image, intrinsic, False)
+			if success_5pt:
+				option = OdometryOption(max_depth_diff = \
+						max_correspondence_distance)
+				[success, trans, info] = ComputeRGBDOdometry(
+						source_rgbd_image, target_rgbd_image, intrinsic,
+						odo_init, RGBDOdometryJacobianFromHybridTerm(), option)
+				return [success, trans, info]
+		return [False, np.identity(4), np.identity(6)]
 	else:
 		odo_init = np.identity(4)
-		# perform RGB-D odometry
 		option = OdometryOption(max_depth_diff = max_correspondence_distance)
 		[success, trans, info] = ComputeRGBDOdometry(
 				source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
 				RGBDOdometryJacobianFromHybridTerm(), option)
 		return [success, trans, info]
-
 
 
 def get_file_lists(path_dataset):
@@ -53,8 +50,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-	#SetVerbosityLevel(VerbosityLevel.Error)
-	SetVerbosityLevel(VerbosityLevel.Warning)
+	SetVerbosityLevel(VerbosityLevel.Error)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
 
@@ -160,8 +156,7 @@ if __name__ == "__main__":
 		else:
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
-		# for fragment_id in range(n_fragments):
-		for fragment_id in [12]:
+		for fragment_id in range(n_fragments):
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
 			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
 			WritePoseGraph(pose_graph_name, pose_graph)

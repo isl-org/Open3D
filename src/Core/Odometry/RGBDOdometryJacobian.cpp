@@ -35,7 +35,7 @@ namespace three {
 namespace {
 
 const double SOBEL_SCALE = 0.125;
-const double LAMBDA_HYBRID_DEPTH = 0.968;
+const double LAMBDA_HYBRID_DEPTH = 0.8;
 
 }	// unnamed namespace
 
