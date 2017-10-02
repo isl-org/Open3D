@@ -89,7 +89,7 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	method = GlobalOptimizationLevenbergMarquardt()
 	criteria = GlobalOptimizationConvergenceCriteria()
 	line_process_option = GlobalOptimizationLineProcessOption(
-			max_correspondence_distance = 0.07)
+			max_correspondence_distance = max_correspondence_distance)
 	print(line_process_option)
 
 	GlobalOptimization(pose_graph, method, criteria, line_process_option)

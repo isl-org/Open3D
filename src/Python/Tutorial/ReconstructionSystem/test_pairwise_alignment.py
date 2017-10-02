@@ -30,8 +30,6 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	[success, trans, info] = ComputeRGBDOdometry(
 			source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
 			RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
-	print(trans)
-	print(info)
 	return [trans, info]
 
 

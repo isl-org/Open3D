@@ -483,10 +483,6 @@ void GlobalOptimizationLevenbergMarquardt::
 	PrintDebug("                       Line process weight : %f\n",
 			line_process_weight);
 
-	// for debugging
-	std::shared_ptr<PoseGraph> pose_graph_orig = std::make_shared<PoseGraph>();
-	*pose_graph_orig = pose_graph;
-
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);
 	double current_residual, new_residual;
 	new_residual = ComputeResidual(pose_graph, zeta,
