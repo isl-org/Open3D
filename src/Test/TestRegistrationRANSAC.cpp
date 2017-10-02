@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,34 +61,45 @@ int main(int argc, char *argv[])
 	using namespace three;
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
-
-	for (int i = 0; i < 3; i++) {
-		ScopeTimer t("one iteration");
-
-		std::string source_path("D:/dataset/SceneNN/011/fragments/frag_000.ply");
-		std::string target_path("D:/dataset/SceneNN/011/fragments/frag_001.ply");
-
-		std::shared_ptr<PointCloud> source, target;
-		std::shared_ptr<Feature> source_fpfh, target_fpfh;
-		std::tie(source, source_fpfh) = 
-				PreprocessPointCloud(source_path.c_str());
-		std::tie(target, target_fpfh) = 
-				PreprocessPointCloud(target_path.c_str());
-
-		std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-			correspondence_checker;
-		auto correspondence_checker_edge_length =
-			CorrespondenceCheckerBasedOnEdgeLength(0.9);
-		auto correspondence_checker_distance =
-			CorrespondenceCheckerBasedOnDistance(0.075);
-
-		correspondence_checker.push_back(correspondence_checker_edge_length);
-		correspondence_checker.push_back(correspondence_checker_distance);
-		auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
-			*source, *target, *source_fpfh, *target_fpfh, 0.075,
-			TransformationEstimationPointToPoint(false), 4,
-			correspondence_checker, RANSACConvergenceCriteria(400000, 500));
-	}
 	
-	//VisualizeRegistration(*source, *target, registration_result.transformation_);
+	if (argc != 3) {
+		PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
+				argv[0]);
+		return 1;
+	}
+
+	bool visualization = false;
+
+#ifdef _OPENMP
+	PrintDebug("OpenMP is supported. Using %d threads.", omp_get_thread_num());
+#endif
+
+	ScopeTimer t("one iteration");
+
+	std::shared_ptr<PointCloud> source, target;
+	std::shared_ptr<Feature> source_fpfh, target_fpfh;
+	std::tie(source, source_fpfh) = 
+			PreprocessPointCloud(argv[1]);
+	std::tie(target, target_fpfh) = 
+			PreprocessPointCloud(argv[2]);
+
+	std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+		correspondence_checker;
+	auto correspondence_checker_edge_length =
+		CorrespondenceCheckerBasedOnEdgeLength(0.9);
+	auto correspondence_checker_distance =
+		CorrespondenceCheckerBasedOnDistance(0.075);
+
+	correspondence_checker.push_back(correspondence_checker_edge_length);
+	correspondence_checker.push_back(correspondence_checker_distance);
+	auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
+		*source, *target, *source_fpfh, *target_fpfh, 0.075,
+		TransformationEstimationPointToPoint(false), 4,
+		correspondence_checker, RANSACConvergenceCriteria(400000, 500));
+
+	if (visualization)
+		VisualizeRegistration(*source, *target, 
+				registration_result.transformation_);	
+
+	return 0;
 }

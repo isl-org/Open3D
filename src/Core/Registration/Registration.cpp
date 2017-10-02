@@ -27,14 +27,12 @@
 #include "Registration.h"
 
 #include <cstdlib>
-#include <ctime> // todo: why?
+#include <ctime>
 
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Registration/Feature.h>
-
-#include <Core/Utility/Timer.h>
 
 namespace three {
 
@@ -240,11 +238,18 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #endif
 		CorrespondenceSet ransac_corres(ransac_n);
 		KDTreeFlann kdtree(target);
-		KDTreeFlann kdtree_feature(target_feature);	
-		unsigned int seed_number = (unsigned int)std::time(0) * 
-				(omp_get_thread_num() + 1);
+		KDTreeFlann kdtree_feature(target_feature);			
+		RegistrationResult result_private;
+		unsigned int seed_number;
+#ifdef _OPENMP
+		// each thread has different seed_number
+		seed_number = (unsigned int)std::time(0) * 
+				(omp_get_thread_num() + 1); 
+#else
+		seed_number = (unsigned int)std::time(0);
+#endif
 		std::srand(seed_number);
-		RegistrationResult result_private;				
+		
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif

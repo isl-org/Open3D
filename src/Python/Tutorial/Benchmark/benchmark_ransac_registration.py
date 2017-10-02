@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.append("../Utility")
+sys.path.append("../ReconstructionSystem")
 import numpy as np # todo: this is just for testing
 from global_registration import *
 from utility_download import *
