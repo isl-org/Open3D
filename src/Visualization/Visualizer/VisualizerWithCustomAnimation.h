@@ -43,7 +43,8 @@ public:
 public:
 	void PrintVisualizerHelp() override;
 	void UpdateWindowTitle() override;
-	void Play(bool recording = false, bool recording_depth = false);
+	void Play(bool recording = false, bool recording_depth = false,
+			bool close_window_when_animation_ends = false);
 	void RegisterRecordingImageFormat(const std::string &basedir,
 			const std::string &format, const std::string &trajectory) {
 		recording_image_basedir_ = basedir;

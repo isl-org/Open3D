@@ -51,8 +51,9 @@ void pybind_visualizer(py::module &m)
 				&Visualizer::RegisterAnimationCallback,
 				"Function to register a callback function for animation",
 				"callback_func"_a)
-		.def("Run", &Visualizer::Run, "Function to activate the window",
-				"exit_when_idle"_a = false)
+		.def("Run", &Visualizer::Run, "Function to activate the window")
+		.def("Close", &Visualizer::Close,
+				"Function to notify the window to be closed")
 		.def("AddGeometry", &Visualizer::AddGeometry,
 				"Function to add geometry to the scene and create corresponding shaders",
 				"geometry"_a)

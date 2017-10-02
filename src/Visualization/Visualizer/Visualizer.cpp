@@ -250,7 +250,7 @@ void Visualizer::BuildUtilities()
 	utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
 }
 
-void Visualizer::Run(bool exit_when_idle/* = false*/)
+void Visualizer::Run()
 {
 	BuildUtilities();
 	UpdateWindowTitle();
@@ -264,10 +264,13 @@ void Visualizer::Run(bool exit_when_idle/* = false*/)
 			// and the redraw event should be triggered.
 			UpdateRender();
 		}
-		if (bool(animation_callback_func_) == false && exit_when_idle) {
-			return;
-		}
 	}
+}
+
+void Visualizer::Close()
+{
+	glfwSetWindowShouldClose(window_, GL_TRUE);
+	PrintDebug("[Visualizer] Window closing.\n");
 }
 
 bool Visualizer::WaitEvents()
