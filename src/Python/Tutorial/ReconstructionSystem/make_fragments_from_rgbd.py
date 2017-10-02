@@ -24,19 +24,17 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 			success_5pt, odo_init = pose_estimation(
 					source_rgbd_image, target_rgbd_image, intrinsic, False)
 			if success_5pt:
-				option = OdometryOption(max_depth_diff = \
-						max_correspondence_distance)
 				[success, trans, info] = ComputeRGBDOdometry(
 						source_rgbd_image, target_rgbd_image, intrinsic,
-						odo_init, RGBDOdometryJacobianFromHybridTerm(), option)
+						odo_init, RGBDOdometryJacobianFromHybridTerm(),
+						OdometryOption())
 				return [success, trans, info]
 		return [False, np.identity(4), np.identity(6)]
 	else:
 		odo_init = np.identity(4)
-		option = OdometryOption(max_depth_diff = max_correspondence_distance)
 		[success, trans, info] = ComputeRGBDOdometry(
 				source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-				RGBDOdometryJacobianFromHybridTerm(), option)
+				RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 		return [success, trans, info]
 
 
@@ -50,7 +48,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-	SetVerbosityLevel(VerbosityLevel.Error)
+	SetVerbosityLevel(VerbosityLevel.Warning)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
 
@@ -62,8 +60,8 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 		for t in range(s + 1, eid):
 			# odometry
 			if t == s + 1:
-				print("Fragment [%03d/%03d] :: RGBD matching between frame : %d and %d"
-				 		% (fragment_id, n_fragments, s, t))
+				print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, n_fragments-1, s, t))
 				[success, trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				trans_odometry = np.dot(trans, trans_odometry)
@@ -75,8 +73,8 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 			# keyframe loop closure
 			if s % n_keyframes_per_n_frame == 0 \
 					and t % n_keyframes_per_n_frame == 0:
-				print("Fragment [%03d/%03d] :: RGBD matching between frame : %d and %d"
-				 		% (fragment_id, n_fragments, s, t))
+				print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
+				 		% (fragment_id, n_fragments-1, s, t))
 				[success, trans, info] = process_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				if success:
@@ -92,8 +90,7 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 
 	method = GlobalOptimizationLevenbergMarquardt()
 	criteria = GlobalOptimizationConvergenceCriteria()
-	line_process_option = GlobalOptimizationLineProcessOption(
-			max_correspondence_distance = max_correspondence_distance)
+	line_process_option = GlobalOptimizationLineProcessOption()
 	print(line_process_option)
 
 	GlobalOptimization(pose_graph, method, criteria, line_process_option)
@@ -113,8 +110,8 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 
 	for i in range(len(pose_graph.nodes)):
 		i_abs = fragment_id * n_frames_per_fragment + i
-		print("Fragment [%03d/%03d] :: Integrate rgbd frame %d (%d of %d)."
-				% (fragment_id, n_fragments, i_abs, i+1, len(pose_graph.nodes)))
+		print("Fragment %03d / %03d :: Integrate rgbd frame %d (%d of %d)."
+				% (fragment_id, n_fragments-1, i_abs, i+1, len(pose_graph.nodes)))
 		color = ReadImage(color_files[i_abs])
 		depth = ReadImage(depth_files[i_abs])
 		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
@@ -136,7 +133,6 @@ if __name__ == "__main__":
 		# some global parameters
 		n_frames_per_fragment = 100
 		n_keyframes_per_n_frame = 5
-		max_correspondence_distance = 0.07
 
 		# check opencv python package
 		with_opencv = initialize_opencv()
@@ -156,10 +152,11 @@ if __name__ == "__main__":
 		else:
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
-		for fragment_id in range(n_fragments):
+		# for fragment_id in range(n_fragments):
+		for fragment_id in [35]:
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-			WritePoseGraph(pose_graph_name, pose_graph)
+			# pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
+			# WritePoseGraph(pose_graph_name, pose_graph)
 			pose_graph_optmized_name = path_fragment + \
 					"fragments_opt_%03d.json" % fragment_id
 			optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

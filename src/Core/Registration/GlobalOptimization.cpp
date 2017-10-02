@@ -588,7 +588,14 @@ void GlobalOptimization(
 		const GlobalOptimizationLineProcessOption &line_process_option
 		/* = GlobalOptimizationLineProcessOption() */)
 {
-	method.OptimizePoseGraph(pose_graph, criteria, line_process_option);
+	std::shared_ptr<PoseGraph> pose_graph_pre =
+			std::make_shared<PoseGraph>();
+	*pose_graph_pre = pose_graph;
+	method.OptimizePoseGraph(*pose_graph_pre, criteria, line_process_option);
+	auto pose_graph_pruned = CreatePoseGraphWithoutInvalidEdges(
+			*pose_graph_pre, line_process_option);
+	method.OptimizePoseGraph(*pose_graph_pruned, criteria, line_process_option);
+	pose_graph = *pose_graph_pruned;
 }
 
 }	// namespace three

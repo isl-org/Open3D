@@ -206,7 +206,7 @@ void pybind_globaloptimization(py::module &m)
 				double edge_prune_threshold) {
 				new (&o)GlobalOptimizationLineProcessOption(
 				max_correspondence_distance, edge_prune_threshold); },
-				"max_correspondence_distance"_a = 0.07,
+				"max_correspondence_distance"_a = 0.03,
 				"edge_prune_threshold"_a = 0.25)
 		.def("__repr__", [](const GlobalOptimizationLineProcessOption &lp) {
 		return std::string("GlobalOptimizationLineProcessOption") +
