@@ -61,6 +61,7 @@ public:
 public:
 	Visualizer();
 	virtual ~Visualizer();
+	Visualizer(Visualizer &&) = delete;
 	Visualizer(const Visualizer &) = delete;
 	Visualizer &operator=(const Visualizer &) = delete;
 
