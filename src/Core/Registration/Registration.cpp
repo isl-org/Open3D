@@ -233,7 +233,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	}
 
 	RegistrationResult result;
-	int val = 0;
+	int total_validation = 0;
 #ifdef _OPENMP
 #pragma omp parallel
 	{		
@@ -299,11 +299,11 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #pragma omp critical
 			{
 #endif
-				val = val + 1;				
+				total_validation++;;
 #ifdef _OPENMP
-			} // end of critical
+			} 
 #endif
-			if (val >= criteria.max_validation_)
+			if (total_validation >= criteria.max_validation_)
 				break;
 		} // end of for-loop
 #ifdef _OPENMP
