@@ -49,15 +49,15 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 	}
 
 	double error2 = 0.0;
-	
+
 #ifdef _OPENMP
 #pragma omp parallel
 	{
+#endif
 		double error2_private = 0.0;
 		CorrespondenceSet correspondence_set_private;
-#endif			
 #ifdef _OPENMP
-#pragma omp for nowait		
+#pragma omp for nowait
 #endif
 		for (int i = 0; i < (int)source.points_.size(); i++) {
 			std::vector<int> indices(1);
@@ -79,11 +79,11 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 						correspondence_set_private[i]);
 			}
 			error2 += error2_private;
-		}			
+		}
 #ifdef _OPENMP
 	}
 #endif
-	
+
 	if (result.correspondence_set_.empty()) {
 		result.fitness_ = 0.0;
 		result.inlier_rmse_ = 0.0;
@@ -235,27 +235,27 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	bool finished_validation = false;
 #ifdef _OPENMP
 #pragma omp parallel
-{		
+{
 #endif
 	CorrespondenceSet ransac_corres(ransac_n);
 	KDTreeFlann kdtree(target);
-	KDTreeFlann kdtree_feature(target_feature);			
+	KDTreeFlann kdtree_feature(target_feature);
 	RegistrationResult result_private;
 	unsigned int seed_number;
 #ifdef _OPENMP
 		// each thread has different seed_number
-	seed_number = (unsigned int)std::time(0) * 
-			(omp_get_thread_num() + 1); 
+	seed_number = (unsigned int)std::time(0) *
+			(omp_get_thread_num() + 1);
 #else
 	seed_number = (unsigned int)std::time(0);
 #endif
 	std::srand(seed_number);
-		
+
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
 	for (int itr = 0; itr < criteria.max_iteration_; itr++) {
-		if (!finished_validation) 
+		if (!finished_validation)
 		{
 			std::vector<int> indices(1);
 			std::vector<double> dists(1);
