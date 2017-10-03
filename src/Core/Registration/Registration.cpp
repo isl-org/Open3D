@@ -232,39 +232,43 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
 	RegistrationResult result;
 	int total_validation = 0;
+	bool finished_validation = false;
 #ifdef _OPENMP
 #pragma omp parallel
-	{		
+{		
 #endif
-		CorrespondenceSet ransac_corres(ransac_n);
-		KDTreeFlann kdtree(target);
-		KDTreeFlann kdtree_feature(target_feature);			
-		RegistrationResult result_private;
-		unsigned int seed_number;
+	CorrespondenceSet ransac_corres(ransac_n);
+	KDTreeFlann kdtree(target);
+	KDTreeFlann kdtree_feature(target_feature);			
+	RegistrationResult result_private;
+	unsigned int seed_number;
 #ifdef _OPENMP
 		// each thread has different seed_number
-		seed_number = (unsigned int)std::time(0) * 
-				(omp_get_thread_num() + 1); 
+	seed_number = (unsigned int)std::time(0) * 
+			(omp_get_thread_num() + 1); 
 #else
-		seed_number = (unsigned int)std::time(0);
+	seed_number = (unsigned int)std::time(0);
 #endif
-		std::srand(seed_number);
+	std::srand(seed_number);
 		
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-		for (int itr = 0; itr < criteria.max_iteration_; itr++) {			
+	for (int itr = 0; itr < criteria.max_iteration_; itr++) {
+		if (!finished_validation) 
+		{
 			std::vector<int> indices(1);
 			std::vector<double> dists(1);
 			Eigen::Matrix4d transformation;
 			for (int j = 0; j < ransac_n; j++) {
 				ransac_corres[j](0) = std::rand() % (int)source.points_.size();
 				if (kdtree_feature.SearchKNN(Eigen::VectorXd(
-						source_feature.data_.col(ransac_corres[j](0))), 1, 
+						source_feature.data_.col(ransac_corres[j](0))), 1,
 						indices, dists) == 0) {
 					PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
 					ransac_corres[j](1) = 0;
-				} else {
+				}
+				else {
 					ransac_corres[j](1) = indices[0];
 				}
 			}
@@ -293,10 +297,10 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 			PointCloud pcd = source;
 			pcd.Transform(transformation);
 			auto this_result = GetRegistrationResultAndCorrespondences(
-				pcd, target, kdtree, max_correspondence_distance,
-				transformation);
+					pcd, target, kdtree, max_correspondence_distance,
+					transformation);
 			if (this_result.fitness_ > result_private.fitness_ ||
-				(this_result.fitness_ == result_private.fitness_ &&
+					(this_result.fitness_ == result_private.fitness_ &&
 					this_result.inlier_rmse_ < result_private.inlier_rmse_)) {
 				result_private = this_result;
 			}
@@ -304,25 +308,26 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #pragma omp critical
 			{
 #endif
-				total_validation++;;
+				total_validation++;
+				if (total_validation >= criteria.max_validation_)
+					finished_validation = true;
 #ifdef _OPENMP
-			} 
+			}
 #endif
-			if (total_validation >= criteria.max_validation_)
-				break;
-		} // end of for-loop
+		} // end of if statement
+	} // end of for-loop
 #ifdef _OPENMP
 #pragma omp critical
-		{
+	{
 #endif
-			if (result_private.fitness_ > result.fitness_ ||
-				(result_private.fitness_ == result.fitness_ &&
-					result_private.inlier_rmse_ < result.inlier_rmse_)) {
-				result = result_private;
-			}
-#ifdef _OPENMP
+		if (result_private.fitness_ > result.fitness_ ||
+			(result_private.fitness_ == result.fitness_ &&
+				result_private.inlier_rmse_ < result.inlier_rmse_)) {
+			result = result_private;
 		}
+#ifdef _OPENMP
 	}
+}
 #endif
 	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
 			result.inlier_rmse_);
