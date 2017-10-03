@@ -37,14 +37,6 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 				RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 		return [success, trans, info]
 
-	# success_5pt, odo_init = pose_estimation(
-	# 		source_rgbd_image, target_rgbd_image, intrinsic, False)
-	# [success, trans, info] = ComputeRGBDOdometry(
-	# 		source_rgbd_image, target_rgbd_image, intrinsic,
-	# 		odo_init, RGBDOdometryJacobianFromHybridTerm(),
-	# 		OdometryOption())
-	# return [success, trans, info]
-
 
 def get_file_lists(path_dataset):
 	# get list of color and depth images
@@ -56,7 +48,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-	SetVerbosityLevel(VerbosityLevel.Warning)
+	SetVerbosityLevel(VerbosityLevel.Error)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
 

@@ -37,11 +37,11 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 		pts_s.append(kp_s[match.queryIdx].pt)
 	pts_s = np.asarray(pts_s)
 	pts_t = np.asarray(pts_t)
-	# # inlier points after initial BF matching
-	# if debug_draw_correspondences:
-	# 	draw_correspondences(np.asarray(source_rgbd_image.color),
-	# 			np.asarray(target_rgbd_image.color), pts_s, pts_t,
-	# 			np.ones(pts_s.shape[0]), "Initial BF matching")
+	# inlier points after initial BF matching
+	if debug_draw_correspondences:
+		draw_correspondences(np.asarray(source_rgbd_image.color),
+				np.asarray(target_rgbd_image.color), pts_s, pts_t,
+				np.ones(pts_s.shape[0]), "Initial BF matching")
 
 	focal_input = (pinhole_camera_intrinsic.intrinsic_matrix[0,0] +
 			pinhole_camera_intrinsic.intrinsic_matrix[1,1]) / 2.0
@@ -53,11 +53,11 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_t_int = np.int32(pts_t + 0.5)
 	[E, mask] = cv2.findEssentialMat(pts_s_int, pts_t_int, focal=focal_input,
 			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.95, threshold=1.0)
-	# # inlier points after 5pt algorithm
-	# if debug_draw_correspondences:
-	# 	draw_correspondences(np.asarray(source_rgbd_image.color),
-	# 			np.asarray(target_rgbd_image.color),
-	# 			pts_s, pts_t, mask, "5-pt RANSAC")
+	# inlier points after 5pt algorithm
+	if debug_draw_correspondences:
+		draw_correspondences(np.asarray(source_rgbd_image.color),
+				np.asarray(target_rgbd_image.color),
+				pts_s, pts_t, mask, "5-pt RANSAC")
 
 	# make 3D correspondences
 	depth_s = np.asarray(source_rgbd_image.depth)
@@ -117,7 +117,6 @@ def draw_correspondences(img_s, img_t, pts_s, pts_t, mask, title):
 			ty = pts_t[i,1]
 			plt.plot([sx,tx], [sy,ty], color=np.random.random(3)/2+0.5, lw=1.0)
 	plt.imshow(new_img)
-	# plt.show()
 	plt.pause(0.5)
 	plt.close()
 
