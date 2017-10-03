@@ -160,8 +160,8 @@ if __name__ == "__main__":
 		else:
 			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
-		# for fragment_id in range(n_fragments):
-		for fragment_id in [12,21,32,37]:
+		for fragment_id in range(n_fragments):
+		# for fragment_id in [12,21,32,37]:
 			pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
 			pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
 			WritePoseGraph(pose_graph_name, pose_graph)
