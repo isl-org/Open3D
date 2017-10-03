@@ -52,7 +52,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_s_int = np.int32(pts_s + 0.5)
 	pts_t_int = np.int32(pts_t + 0.5)
 	[E, mask] = cv2.findEssentialMat(pts_s_int, pts_t_int, focal=focal_input,
-			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.95, threshold=1.0)
+			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.995, threshold=1.0)
 	# inlier points after 5pt algorithm
 	if debug_draw_correspondences:
 		draw_correspondences(np.asarray(source_rgbd_image.color),
