@@ -47,8 +47,6 @@ bool ReadLogFile(const std::string &filename,
 	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
 	int i, j, k;
 	Eigen::Matrix4d trans;
-	int total_point_num = 0;
-	int total_correspondence_num = 0;
 	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
 		if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
 			if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
