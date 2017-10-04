@@ -109,8 +109,6 @@ bool ReadLogFile(const std::string &filename,
 	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
 	int i, j, k;
 	Eigen::Matrix4d trans;
-	int total_point_num = 0;
-	int total_correspondence_num = 0;
 	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
 		if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
 			if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
@@ -273,7 +271,6 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(static) num_threads(16) private(indices, fdistance2)
 #endif
 			for (auto i = 0; i < source.points_.size(); i++) {
-				const auto &pt = source.points_[i];
 				if (has_correspondence[i]) {
 					if (feature_trees[pair_ids[k].first].SearchKNN(
 							feature_trees[pair_ids[k].second].data_, i, 1,

@@ -18,7 +18,18 @@ def preprocess_point_cloud(ply_file_name):
 	return (pcd_down, pcd_fpfh)
 
 
-def register_point_cloud(source, target,
+def register_point_cloud_FPFH(source, target,
+		source_fpfh, target_fpfh):
+	result_ransac = RegistrationRANSACBasedOnFeatureMatching(
+			source, target, source_fpfh, target_fpfh, 0.075,
+			TransformationEstimationPointToPoint(False), 4,
+			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
+			CorrespondenceCheckerBasedOnDistance(0.075)],
+			RANSACConvergenceCriteria(400000, 500))
+	return result_ransac
+
+
+def register_point_cloud_ICP(source, target,
 		init_transformation = np.identity(4)):
 	result_icp = RegistrationICP(source, target, 0.02,
 			init_transformation,
@@ -33,7 +44,7 @@ def register_point_cloud(source, target,
 # This is implementation of following paper
 # J. Park, Q.-Y. Zhou, V. Koltun,
 # Colored Point Cloud Registration Revisited, ICCV 2017
-def register_colored_point_cloud(source, target,
+def register_colored_point_cloud_ICP(source, target,
 		init_transformation = np.identity(4), draw_result = False):
 	voxel_radius = [ 0.04, 0.02, 0.01 ]
 	max_iter = [ 50, 30, 14 ]
@@ -77,12 +88,8 @@ def register_point_cloud(ply_file_names,
 					ply_file_names[t])
 
 			print("RegistrationRANSACBasedOnFeatureMatching")
-			result_ransac = RegistrationRANSACBasedOnFeatureMatching(
-					source_down, target_down, source_fpfh, target_fpfh, 0.075,
-					TransformationEstimationPointToPoint(False), 4,
-					[CorrespondenceCheckerBasedOnEdgeLength(0.9),
-					CorrespondenceCheckerBasedOnDistance(0.075)],
-					RANSACConvergenceCriteria(400000, 500))
+			result_ransac = register_point_cloud_FPFH(source_down, target_down,
+					source_fpfh, target_fpfh)
 			if draw_reslt:
 				DrawRegistrationResultOriginalColor(source_down, target_down,
 						result_ransac.transformation)
@@ -90,12 +97,12 @@ def register_point_cloud(ply_file_names,
 			print("RegistrationPointCloud")
 			if (registration_type == "color"):
 				(transformation_matrix, information_matrix) = \
-						register_colored_point_cloud(source_down, target_down,
-						result_ransac.transformation)
+						register_colored_point_cloud_ICP(
+						source_down, target_down, result_ransac.transformation)
 			else:
 				(transformation_matrix, information_matrix) = \
-						register_point_cloud(source_down, target_down,
-						result_ransac.transformation)
+						register_point_cloud_ICP(
+						source_down, target_down, result_ransac.transformation)
 			if draw_reslt:
 				DrawRegistrationResult(source_down, target_down,
 						result_icp.transformation)
@@ -115,7 +122,7 @@ def register_point_cloud(ply_file_names,
 
 
 if __name__ == "__main__":
-	path_dataset = parse_argument(sys.argv, "--path_dataset")
+	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
 	if not path_dataset:
 		print("usage : %s " % sys.argv[0])
 		print("  --path_dataset [path]   : Path to rgbd_dataset. Mandatory.")
