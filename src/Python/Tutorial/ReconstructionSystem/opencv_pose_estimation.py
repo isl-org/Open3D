@@ -15,13 +15,15 @@ import copy
 
 def pose_estimation(source_rgbd_image, target_rgbd_image,
 		pinhole_camera_intrinsic, debug_draw_correspondences):
+	success = False
+
 	# transform double array to unit8 array
 	color_cv_s = np.uint8(np.asarray(source_rgbd_image.color)*255.0)
 	color_cv_t = np.uint8(np.asarray(target_rgbd_image.color)*255.0)
 
 	orb = cv2.ORB_create(scaleFactor=1.2, nlevels = 8, edgeThreshold = 31,
-			firstLevel = 0, WTA_K = 2,
-			scoreType=cv2.ORB_HARRIS_SCORE, nfeatures=100) # to save time
+			firstLevel = 0, WTA_K = 2, scoreType=cv2.ORB_HARRIS_SCORE,
+			nfeatures = 100, patchSize = 31) # to save time
 	[kp_s, des_s] = orb.detectAndCompute(color_cv_s, None)
 	[kp_t, des_t] = orb.detectAndCompute(color_cv_t, None)
 
@@ -75,7 +77,8 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_xyz_s = pts_xyz_s[:,:cnt]
 	pts_xyz_t = pts_xyz_t[:,:cnt]
 
-	trans,inlier_id_vec = estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t)
+	success, trans, inlier_id_vec = estimate_3D_transform_RANSAC(
+			pts_xyz_s, pts_xyz_t)
 
 	if debug_draw_correspondences:
 		pts_s_new = np.zeros(shape=(len(inlier_id_vec),2))
@@ -93,7 +96,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 		draw_correspondences(np.asarray(source_rgbd_image.color),
 				np.asarray(target_rgbd_image.color),
 				pts_s_new, pts_t_new, mask, "5-pt RANSAC + 3D Rigid RANSAC")
-	return trans
+	return success, trans
 
 
 def draw_correspondences(img_s, img_t, pts_s, pts_t, mask, title):
@@ -114,7 +117,8 @@ def draw_correspondences(img_s, img_t, pts_s, pts_t, mask, title):
 			ty = pts_t[i,1]
 			plt.plot([sx,tx], [sy,ty], color=np.random.random(3)/2+0.5, lw=1.0)
 	plt.imshow(new_img)
-	plt.show()
+	plt.pause(0.5)
+	plt.close()
 
 
 def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
@@ -125,6 +129,10 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 	Transform_good = np.identity(4)
 	max_inlier = n_sample
 	inlier_vec_good = []
+	success = False
+
+	if n_points < n_sample:
+		return False, np.identity(4), []
 
 	for i in range(max_iter):
 
@@ -140,7 +148,10 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 		diff = [np.linalg.norm(diff_mat[:,i]) for i in range(n_points)]
 		n_inlier = len([1 for diff_iter in diff if diff_iter < max_distance])
 
-		if (n_inlier > max_inlier):
+		# note: diag(R_approx) > 0 prevents ankward transformation between
+		# RGBD pair of relatively small amount of baseline.
+		if (n_inlier > max_inlier) and (np.linalg.det(R_approx) != 0.0) and \
+				(R_approx[0,0] > 0 and R_approx[1,1] > 0 and R_approx[2,2] > 0):
 			Transform_good[:3,:3] = R_approx
 			Transform_good[:3,3] = [t_approx[0],t_approx[1],t_approx[2]]
 			max_inlier = n_inlier
@@ -148,8 +159,9 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
 					in zip(diff, range(n_points)) \
 					if diff_iter < max_distance]
 			inlier_vec_good = inlier_vec
+			success = True
 
-	return Transform_good, inlier_vec_good
+	return success, Transform_good, inlier_vec_good
 
 
 # singular value decomposition approach
@@ -201,12 +213,20 @@ def get_xyz_from_pts(pts_row, depth, px, py, focal):
 
 
 def get_xyz_from_uv(u, v, d, px, py, focal):
-	x = (u - px) / focal * d
-	y = (v - py) / focal * d
+	if focal != 0:
+		x = (u - px) / focal * d
+		y = (v - py) / focal * d
+	else:
+		x = 0
+		y = 0
 	return np.array([x, y, d]).transpose()
 
 
 def get_uv_from_xyz(x, y, z, px, py, focal):
-	u = focal * x / z + px
-	v = focal * y / z + py
+	if z != 0:
+		u = focal * x / z + px
+		v = focal * y / z + py
+	else:
+		u = 0
+		v = 0
 	return u, v

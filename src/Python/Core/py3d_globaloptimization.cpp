@@ -196,14 +196,22 @@ void pybind_globaloptimization(py::module &m)
 	py::detail::bind_copy_functions
 			<GlobalOptimizationLineProcessOption>(line_process_option);
 	line_process_option
-		.def_readwrite("line_process_weight",
-				&GlobalOptimizationLineProcessOption::line_process_weight_)
+		.def_readwrite("max_correspondence_distance",
+				&GlobalOptimizationLineProcessOption::
+				max_correspondence_distance_)
 		.def_readwrite("edge_prune_threshold",
 				&GlobalOptimizationLineProcessOption::edge_prune_threshold_)
+		.def("__init__", [](GlobalOptimizationLineProcessOption &o,
+				double max_correspondence_distance,
+				double edge_prune_threshold) {
+				new (&o)GlobalOptimizationLineProcessOption(
+				max_correspondence_distance, edge_prune_threshold); },
+				"max_correspondence_distance"_a = 0.03,
+				"edge_prune_threshold"_a = 0.25)
 		.def("__repr__", [](const GlobalOptimizationLineProcessOption &lp) {
 		return std::string("GlobalOptimizationLineProcessOption") +
-			std::string("\n> line_process_weight : ") +
-			std::to_string(lp.line_process_weight_) +
+			std::string("\n> max_correspondence_distance : ") +
+			std::to_string(lp.max_correspondence_distance_) +
 			std::string("\n> edge_prune_threshold : ") +
 			std::to_string(lp.edge_prune_threshold_);
 	});

@@ -33,7 +33,7 @@ namespace three{
 
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
-		const Eigen::MatrixXd &A, const Eigen::VectorXd &b) 
+		const Eigen::MatrixXd &A, const Eigen::VectorXd &b)
 {
 	bool solution_exist = true;
 	// note: computing determinant for large scale matrix would be bottleneck.
@@ -53,7 +53,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 {
 	Eigen::Matrix4d output;
-	output.setIdentity();	
+	output.setIdentity();
 	output.block<3, 3>(0, 0) =
 		(Eigen::AngleAxisd(input(2), Eigen::Vector3d::UnitZ()) *
 			Eigen::AngleAxisd(input(1), Eigen::Vector3d::UnitY()) *
@@ -65,8 +65,8 @@ Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input)
 Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
 {
 	Eigen::Vector6d output;
-	Eigen::Matrix3d R = input.block<3, 3>(0, 0);	
-	float sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));		
+	Eigen::Matrix3d R = input.block<3, 3>(0, 0);
+	float sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));
 	if (!(sy < 1e-6)) {
 		output(0) = atan2(R(2, 1), R(2, 2));
 		output(1) = atan2(-R(2, 0), sy);
@@ -75,7 +75,7 @@ Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
 		output(0) = atan2(-R(1, 2), R(1, 1));
 		output(1) = atan2(-R(2, 0), sy);
 		output(2) = 0;
-	}	
+	}
 	output.block<3, 1>(3, 0) = input.block<3, 1>(0, 3);
 	return output;
 }
@@ -86,7 +86,7 @@ std::tuple<bool, Eigen::Matrix4d>
 {
 	std::vector<Eigen::Matrix4d> output_matrix_array;
 	output_matrix_array.clear();
-	
+
 	bool solution_exist;
 	Eigen::Vector6d x;
 	std::tie(solution_exist, x) = SolveLinearSystem(JTJ, JTr);
@@ -171,7 +171,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 	}
 #endif
 	r2_sum /= (double)iteration_num;
-	PrintDebug("Residual : %.2e (# of iterations : %d)\n", r2_sum,
+	PrintDebug("Residual : %.2e (# of elements : %d)\n", r2_sum,
 			iteration_num);
 	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
@@ -202,11 +202,11 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 #endif
 		for (int i = 0; i < iteration_num; i++) {
 			f(i, J_r, r);
-			for (int j = 0; j < (int)r.size(); j++) {				
+			for (int j = 0; j < (int)r.size(); j++) {
 				JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
 				JTr_private.noalias() += J_r[j] * r[j];
 				r2_sum_private += r[j] * r[j];
-			}			
+			}
 		}
 #ifdef _OPENMP
 #pragma omp critical
@@ -220,7 +220,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 	}
 #endif
 	r2_sum /= (double)iteration_num;
-	PrintDebug("Residual : %.2e (# of iterations : %d)\n", r2_sum,
+	PrintDebug("Residual : %.2e (# of elements : %d)\n", r2_sum,
 			iteration_num);
 	return std::make_tuple(std::move(JTJ), std::move(JTr));
 }
@@ -230,7 +230,7 @@ template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
 		int iteration_num);
 
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
-		std::function<void(int, std::vector<Eigen::Vector6d> &, 
+		std::function<void(int, std::vector<Eigen::Vector6d> &,
 		std::vector<double> &)> f, int iteration_num);
 
 }	// namespace three

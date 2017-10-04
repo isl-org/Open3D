@@ -6,7 +6,7 @@ import sys
 sys.path.append("../..")
 from py3d import *
 from utility import *
-from make_fragments_from_rgbd import get_file_lists
+from make_fragments_from_rgbd import *
 
 
 def process_one_rgbd_pair(s, t, color_files, depth_files,
@@ -21,15 +21,15 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 
 	# initialize_camera_pose
 	if abs(s-t) is not 1 and with_opencv:
-		odo_init = pose_estimation(
+		success_5pt, odo_init = pose_estimation(
 				source_rgbd_image, target_rgbd_image, intrinsic, False)
 	else:
 		odo_init = np.identity(4)
 
 	# perform RGB-D odometry
 	[success, trans, info] = ComputeRGBDOdometry(
-			source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-			RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
+			source_rgbd_image, target_rgbd_image, intrinsic,
+			odo_init, RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 	return [trans, info]
 
 
