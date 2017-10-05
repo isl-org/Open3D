@@ -131,7 +131,8 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 			int v_t = *PointerAt<int>(*correspondence_map, u_s, v_s, 1);
 			if (u_t != -1 && v_t != -1) {
 				Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-				(*correspondence)[cnt++] = pixel_correspondence;
+				(*correspondence)[cnt] = pixel_correspondence;
+				cnt++;
 			}
 		}
 	}
