@@ -35,11 +35,14 @@ def get_log_path(dataset_name):
 
 
 if __name__ == "__main__":
+	SetVerbosityLevel(VerbosityLevel.Debug)
+
 	# data preparation
 	if not os.path.exists(dataset_path):
 		get_dataset()
 
 	# do RANSAC based alignment
+	# for dataset_name in dataset_names:
 	for dataset_name in dataset_names:
 		ply_file_names = get_file_list(
 				"%s/%s/" % (dataset_path, dataset_name), ".ply")
@@ -55,10 +58,16 @@ if __name__ == "__main__":
 
 				result_ransac = register_point_cloud_FPFH(
 						source_down, target_down, source_fpfh, target_fpfh)
+				# Push only successful transformations. Ignoring identity
 				# Note: we save inverse of result_ransac.transformation
 				# to comply with http://redwood-data.org/indoor/fileformat.html
-				alignment.append(CameraPose("%d %d %d" % (s, t, n_ply_files),
-						np.linalg.inv(result_ransac.transformation)))
+				if (np.trace(result_ransac.transformation) != 4.0):
+					print("[Successfully found transformation]")
+					alignment.append(CameraPose([s, t, n_ply_files],
+							np.linalg.inv(result_ransac.transformation)))
+				else:
+					print("[No solution]")
+				print("")
 
 				if do_visualization:
 					DrawRegistrationResult(source_down, target_down,
