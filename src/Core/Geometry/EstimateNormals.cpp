@@ -147,6 +147,8 @@ bool EstimateNormals(PointCloud &cloud,
 				normal *= -1.0;
 			}
 			cloud.normals_[i] = normal;
+		} else {
+			cloud.normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
 		}
 	}
 	
