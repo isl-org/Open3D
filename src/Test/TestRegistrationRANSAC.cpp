@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 	bool visualization = false;
 
 #ifdef _OPENMP
-	PrintDebug("OpenMP is supported. Using %d threads.", omp_get_thread_num());
+	PrintDebug("OpenMP is supported. Using %d threads.", omp_get_num_threads());
 #endif
 
 	ScopeTimer t("one iteration");
