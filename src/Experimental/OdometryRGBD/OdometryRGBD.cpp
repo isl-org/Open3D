@@ -50,11 +50,11 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	//if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
-	//		ProgramOptionExists(argc, argv, "-h")) {
-	//	PrintHelp(argv);
-	//	return 1;
-	//}
+	if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
+			ProgramOptionExists(argc, argv, "-h")) {
+		PrintHelp(argv);
+		return 1;
+	}
 
 	std::string intrinsic_path;
 	if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
@@ -76,10 +76,10 @@ int main(int argc, char *argv[])
 		SetVerbosityLevel(three::VERBOSE_ALWAYS);
 
 	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
-	auto color_source = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/image/image00001.png");
-	auto depth_source = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/depth/depth00001.png");
-	auto color_target = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/image/image00002.png");
-	auto depth_target = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/depth/depth00002.png");
+	auto color_source = CreateImageFromFile(argv[1]);
+	auto depth_source = CreateImageFromFile(argv[2]);
+	auto color_target = CreateImageFromFile(argv[3]);
+	auto depth_target = CreateImageFromFile(argv[4]);
 	std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&,
 			bool);
 	if (rgbd_type == 0) CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
