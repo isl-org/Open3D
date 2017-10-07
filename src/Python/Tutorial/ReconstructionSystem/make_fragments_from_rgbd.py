@@ -48,7 +48,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-	SetVerbosityLevel(VerbosityLevel.Error)
+	SetVerbosityLevel(VerbosityLevel.Debug)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
 

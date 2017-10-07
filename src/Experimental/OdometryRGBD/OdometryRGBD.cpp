@@ -39,10 +39,10 @@ void PrintHelp(char* argv[])
 	PrintInfo("> %s [color_source] [source_target] [color_target] [depth_target] [options]\n", argv[0]);
 	PrintInfo("   Given RGBD image pair, estimate 6D odometry.\n");
 	PrintInfo("   [options]\n");
-	PrintInfo("      --camera_intrinsic [intrinsic_path]");
-	PrintInfo("      --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
-	PrintInfo("      --verbose : indicate this to display detailed information");
-	PrintInfo("      --hybrid : compute odometry using hybrid objective");
+	PrintInfo("      --camera_intrinsic [intrinsic_path]\n");
+	PrintInfo("      --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)\n");
+	PrintInfo("      --verbose : indicate this to display detailed information\n");
+	PrintInfo("      --hybrid : compute odometry using hybrid objective\n");
 	PrintInfo("\n");
 }
 
@@ -50,11 +50,11 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
-			ProgramOptionExists(argc, argv, "-h")) {
-		PrintHelp(argv);
-		return 1;
-	}
+	//if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
+	//		ProgramOptionExists(argc, argv, "-h")) {
+	//	PrintHelp(argv);
+	//	return 1;
+	//}
 
 	std::string intrinsic_path;
 	if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
@@ -76,10 +76,10 @@ int main(int argc, char *argv[])
 		SetVerbosityLevel(three::VERBOSE_ALWAYS);
 
 	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
-	auto color_source = CreateImageFromFile(argv[1]);
-	auto depth_source = CreateImageFromFile(argv[2]);
-	auto color_target = CreateImageFromFile(argv[3]);
-	auto depth_target = CreateImageFromFile(argv[4]);
+	auto color_source = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/image/image00001.png");
+	auto depth_source = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/depth/depth00001.png");
+	auto color_target = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/image/image00002.png");
+	auto depth_target = CreateImageFromFile("D:/Dropbox/Intel/fragment/011/depth/depth00002.png");
 	std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&,
 			bool);
 	if (rgbd_type == 0) CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
