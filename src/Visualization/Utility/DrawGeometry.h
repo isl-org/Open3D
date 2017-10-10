@@ -55,13 +55,13 @@ bool DrawGeometriesWithCustomAnimation(
 
 bool DrawGeometriesWithAnimationCallback(
 		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		std::function<bool(Visualizer &)> callback_func,
+		std::function<bool(Visualizer *)> callback_func,
 		const std::string &window_name = "Open3D", 
 		int width = 640, int height = 480, int left = 50, int top = 50);
 
 bool DrawGeometriesWithKeyCallbacks(
 		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		const std::map<int, std::function<bool(Visualizer &)>> &key_to_callback,
+		const std::map<int, std::function<bool(Visualizer *)>> &key_to_callback,
 		const std::string &window_name = "Open3D",
 		int width = 640, int height = 480, int left = 50, int top = 50);
 

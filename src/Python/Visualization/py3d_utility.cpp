@@ -84,7 +84,7 @@ void pybind_utility_methods(py::module &m)
 			"optional_view_trajectory_json_file"_a = "");
 	m.def("DrawGeometriesWithAnimationCallback",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-			std::function<bool(Visualizer &)> callback_func,
+			std::function<bool(Visualizer *)> callback_func,
 			const std::string &window_name, int width, int height,
 			int left, int top) {
 		std::string current_dir = filesystem::GetWorkingDirectory();
@@ -98,7 +98,7 @@ void pybind_utility_methods(py::module &m)
 			py::return_value_policy::reference);
 	m.def("DrawGeometriesWithKeyCallbacks",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-			const std::map<int, std::function<bool(Visualizer &)>>
+			const std::map<int, std::function<bool(Visualizer *)>>
 			&key_to_callback, const std::string &window_name, int width,
 			int height, int left, int top) {
 		std::string current_dir = filesystem::GetWorkingDirectory();

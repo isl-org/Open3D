@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
 		}
 		mesh_ptr->ComputeVertexNormals();
 		DrawGeometriesWithAnimationCallback({mesh_ptr},
-				[&](Visualizer &vis) {
-					vis.GetViewControl().Rotate(10, 0);
+				[&](Visualizer *vis) {
+					vis->GetViewControl().Rotate(10, 0);
 					std::this_thread::sleep_for(std::chrono::milliseconds(30));
 					return false;
 				}, "Spin", 1600, 900);
@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
 		}
 		mesh_ptr->ComputeVertexNormals();
 		DrawGeometriesWithKeyCallbacks({mesh_ptr},
-				{{GLFW_KEY_SPACE, [&](Visualizer &vis) {
-					vis.GetViewControl().Rotate(10, 0);
+				{{GLFW_KEY_SPACE, [&](Visualizer *vis) {
+					vis->GetViewControl().Rotate(10, 0);
 					std::this_thread::sleep_for(std::chrono::milliseconds(30));
 					return false;
 				}}}, "Press Space key to spin", 1600, 900);
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 		update_colors_func(1.0);
 
 		DrawGeometriesWithAnimationCallback({cloud_ptr},
-				[&](Visualizer &vis) {
+				[&](Visualizer *vis) {
 					color_index += color_index_step;
 					if (color_index > 2.0) color_index -= 2.0;
 					update_colors_func(fabs(color_index - 1.0));

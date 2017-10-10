@@ -79,7 +79,7 @@ public:
 	/// Function to register a callback function for animation
 	/// The callback function returns if UpdateGeometry() needs to be run
 	void RegisterAnimationCallback(
-			std::function<bool(Visualizer &)> callback_func);
+			std::function<bool(Visualizer *)> callback_func);
 
 	/// Function to activate the window
 	/// This function will block the current thread until the window is closed.
@@ -174,9 +174,9 @@ protected:
 	// window
 	GLFWwindow* window_ = NULL;
 	std::string window_name_ = "Open3D";
-	std::function<bool(Visualizer &)> animation_callback_func_in_loop_
+	std::function<bool(Visualizer *)> animation_callback_func_in_loop_
 			= nullptr;
-	std::function<bool(Visualizer &)> animation_callback_func_ = nullptr;
+	std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
 
 	// control
 	MouseControl mouse_control_;
