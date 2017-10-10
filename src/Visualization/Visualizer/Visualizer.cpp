@@ -207,7 +207,7 @@ void Visualizer::DestroyWindow()
 }
 
 void Visualizer::RegisterAnimationCallback(
-		std::function<bool (Visualizer &)> callback_func)
+		std::function<bool (Visualizer *)> callback_func)
 {
 	animation_callback_func_ = callback_func;
 }
@@ -250,13 +250,13 @@ void Visualizer::BuildUtilities()
 	utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
 }
 
-void Visualizer::Run(bool exit_when_idle/* = false*/)
+void Visualizer::Run()
 {
 	BuildUtilities();
 	UpdateWindowTitle();
 	while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
 		if (bool(animation_callback_func_in_loop_)) {
-			if (animation_callback_func_in_loop_(*this)) {
+			if (animation_callback_func_in_loop_(this)) {
 				UpdateGeometry();
 			}
 			// Set render flag as dirty anyways, because when we use callback
@@ -264,10 +264,13 @@ void Visualizer::Run(bool exit_when_idle/* = false*/)
 			// and the redraw event should be triggered.
 			UpdateRender();
 		}
-		if (bool(animation_callback_func_) == false && exit_when_idle) {
-			return;
-		}
 	}
+}
+
+void Visualizer::Close()
+{
+	glfwSetWindowShouldClose(window_, GL_TRUE);
+	PrintDebug("[Visualizer] Window closing.\n");
 }
 
 bool Visualizer::WaitEvents()

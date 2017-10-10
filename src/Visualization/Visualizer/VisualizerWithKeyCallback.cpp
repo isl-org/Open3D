@@ -41,7 +41,7 @@ void VisualizerWithKeyCallback::PrintVisualizerHelp()
 	Visualizer::PrintVisualizerHelp();
 	PrintInfo("  -- Keys registered for callback functions --\n");
 	PrintInfo("    ");
-	for (auto &key_callback_pair : key_callback_pairs_) {
+	for (auto &key_callback_pair : key_to_callback_) {
 		PrintInfo("[%s] ", PrintKeyToString(key_callback_pair.first).c_str());
 	}
 	PrintInfo("\n");
@@ -50,9 +50,9 @@ void VisualizerWithKeyCallback::PrintVisualizerHelp()
 }
 
 void VisualizerWithKeyCallback::RegisterKeyCallback(int key,
-		std::function<bool(Visualizer &)> callback)
+		std::function<bool(Visualizer *)> callback)
 {
-	key_callback_pairs_.push_back(std::make_pair(key, callback));
+	key_to_callback_[key] = callback;
 }
 
 void VisualizerWithKeyCallback::KeyPressCallback(GLFWwindow *window,
@@ -61,17 +61,15 @@ void VisualizerWithKeyCallback::KeyPressCallback(GLFWwindow *window,
 	if (action == GLFW_RELEASE) {
 		return;
 	}
-	for (auto &key_callback_pair : key_callback_pairs_) {
-		if (key_callback_pair.first == key && (bool(key_callback_pair.second)))
-		{
-			if (key_callback_pair.second(*this)) {
-				UpdateGeometry();
-			}
-			UpdateRender();
-			return;
+	auto callback = key_to_callback_.find(key);
+	if (callback != key_to_callback_.end()) {
+		if (callback->second(this)) {
+			UpdateGeometry();
 		}
+		UpdateRender();
+	} else {
+		Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 	}
-	Visualizer::KeyPressCallback(window, key, scancode, action, mods);
 }
 
 std::string VisualizerWithKeyCallback::PrintKeyToString(int key)

@@ -61,6 +61,7 @@ public:
 public:
 	Visualizer();
 	virtual ~Visualizer();
+	Visualizer(Visualizer &&) = delete;
 	Visualizer(const Visualizer &) = delete;
 	Visualizer &operator=(const Visualizer &) = delete;
 
@@ -78,11 +79,14 @@ public:
 	/// Function to register a callback function for animation
 	/// The callback function returns if UpdateGeometry() needs to be run
 	void RegisterAnimationCallback(
-			std::function<bool(Visualizer &)> callback_func);
+			std::function<bool(Visualizer *)> callback_func);
 
 	/// Function to activate the window
 	/// This function will block the current thread until the window is closed.
-	void Run(bool exit_when_idle = false);
+	void Run();
+
+	/// Function to to notify the window to be closed
+	void Close();
 
 	/// Function to process the event queue and return if the window is closed
 	/// Use this function if you want to manage the while loop yourself. This
@@ -170,9 +174,13 @@ protected:
 	// window
 	GLFWwindow* window_ = NULL;
 	std::string window_name_ = "Open3D";
-	std::function<bool(Visualizer &)> animation_callback_func_in_loop_
-			= nullptr;
-	std::function<bool(Visualizer &)> animation_callback_func_ = nullptr;
+	std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
+	// Auxiliary internal backup of the callback function.
+	// It copies animation_callback_func_ in each PollEvent() or WaitEvent()
+	// so that even if user calls RegisterAnimationCallback() within the
+	// callback function it is still safe.
+	std::function<bool(Visualizer *)> animation_callback_func_in_loop_
+		= nullptr;
 
 	// control
 	MouseControl mouse_control_;

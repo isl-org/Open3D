@@ -15,19 +15,14 @@ def custom_draw_geometry(pcd):
 	vis.CreateWindow()
 	vis.AddGeometry(pcd)
 	vis.Run()
-	vis.DestroyWindow()	
+	vis.DestroyWindow()
 
 def custom_draw_geometry_with_rotation(pcd):
 	def rotate_view(vis):
 		ctr = vis.GetViewControl()
 		ctr.Rotate(10.0, 0.0)
 		return False
-	vis = Visualizer()
-	vis.CreateWindow()
-	vis.AddGeometry(pcd)
-	vis.RegisterAnimationCallback(rotate_view)
-	vis.Run()
-	vis.DestroyWindow()	
+	DrawGeometriesWithAnimationCallback([pcd], rotate_view)
 
 def custom_draw_geometry_load_option(pcd):
 	vis = Visualizer()
@@ -35,12 +30,15 @@ def custom_draw_geometry_load_option(pcd):
 	vis.AddGeometry(pcd)
 	vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
 	vis.Run()
-	vis.DestroyWindow()	
+	vis.DestroyWindow()
 
 def custom_draw_geometry_with_key_callback(pcd):
 	def change_background_to_black(vis):
 		opt = vis.GetRenderOption()
 		opt.background_color = np.asarray([0, 0, 0])
+		return False
+	def load_render_option(vis):
+		vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
 		return False
 	def capture_depth(vis):
 		depth = vis.CaptureDepthFloatBuffer()
@@ -52,14 +50,12 @@ def custom_draw_geometry_with_key_callback(pcd):
 		plt.imshow(np.asarray(image))
 		plt.show()
 		return False
-	vis = VisualizerWithKeyCallback()
-	vis.CreateWindow()
-	vis.AddGeometry(pcd)
-	vis.RegisterKeyCallback(ord("K"), change_background_to_black)
-	vis.RegisterKeyCallback(ord(","), capture_depth)
-	vis.RegisterKeyCallback(ord("."), capture_image)
-	vis.Run()
-	vis.DestroyWindow()
+	key_to_callback = {}
+	key_to_callback[ord("K")] = change_background_to_black
+	key_to_callback[ord("R")] = load_render_option
+	key_to_callback[ord(",")] = capture_depth
+	key_to_callback[ord(".")] = capture_image
+	DrawGeometriesWithKeyCallbacks([pcd], key_to_callback)
 
 def custom_draw_geometry_with_camera_trajectory(pcd):
 	custom_draw_geometry_with_camera_trajectory.index = -1
@@ -104,7 +100,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
 	vis.RegisterAnimationCallback(move_forward)
 	vis.Run(True)
-	vis.DestroyWindow()	
+	vis.DestroyWindow()
 
 if __name__ == "__main__":
 	pcd = ReadPointCloud("../../TestData/fragment.ply")
@@ -120,6 +116,7 @@ if __name__ == "__main__":
 
 	print("4. Customized visualization with key press callbacks")
 	print("   Press 'K' to change background color to black")
+	print("   Press 'R' to load a customized render option, showing normals")
 	print("   Press ',' to capture the depth buffer and show it")
 	print("   Press '.' to capture the screen and show it")
 	custom_draw_geometry_with_key_callback(pcd)
