@@ -174,9 +174,13 @@ protected:
 	// window
 	GLFWwindow* window_ = NULL;
 	std::string window_name_ = "Open3D";
-	std::function<bool(Visualizer *)> animation_callback_func_in_loop_
-			= nullptr;
 	std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
+	// Auxiliary internal backup of the callback function.
+	// It copies animation_callback_func_ in each PollEvent() or WaitEvent()
+	// so that even if user calls RegisterAnimationCallback() within the
+	// callback function it is still safe.
+	std::function<bool(Visualizer *)> animation_callback_func_in_loop_
+		= nullptr;
 
 	// control
 	MouseControl mouse_control_;
