@@ -50,7 +50,7 @@ void VisualizerWithKeyCallback::PrintVisualizerHelp()
 }
 
 void VisualizerWithKeyCallback::RegisterKeyCallback(int key,
-		std::function<bool(Visualizer &)> callback)
+		std::function<bool(Visualizer *)> callback)
 {
 	key_to_callback_[key] = callback;
 }
@@ -63,7 +63,7 @@ void VisualizerWithKeyCallback::KeyPressCallback(GLFWwindow *window,
 	}
 	auto callback = key_to_callback_.find(key);
 	if (callback != key_to_callback_.end()) {
-		if (callback->second(*this)) {
+		if (callback->second(this)) {
 			UpdateGeometry();
 		}
 		UpdateRender();

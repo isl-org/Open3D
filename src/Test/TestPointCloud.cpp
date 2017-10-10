@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
 	// 6. test normal estimation
 	DrawGeometriesWithKeyCallbacks({pointcloud_ptr}, 
-			{{GLFW_KEY_SPACE, [&](Visualizer &vis) {
+			{{GLFW_KEY_SPACE, [&](Visualizer *vis) {
 				//EstimateNormals(*pointcloud_ptr, 
 				//		three::KDTreeSearchParamKNN(20));
 				EstimateNormals(*pointcloud_ptr,

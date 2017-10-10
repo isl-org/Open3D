@@ -110,7 +110,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 		}
 	}
 	RegisterAnimationCallback(
-			[=](Visualizer &vis) {
+			[=](Visualizer *vis) {
 				// The lambda function captures no references to avoid dangling
 				// references
 				auto &view_control =
