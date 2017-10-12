@@ -7,7 +7,9 @@ import numpy as np
 if __name__ == "__main__":
     intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
     extrinsic = read_trajectory("../../TestData/RGBD/odometry.log")
-    volume = UniformTSDFVolume(length = 4.0, resolution = 512, sdf_trunc = 0.04,
+    #volume = UniformTSDFVolume(length = 4.0, resolution = 512, sdf_trunc = 0.04,
+    #        with_color = True)
+    volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0, sdf_trunc = 0.04,\
             with_color = True)
 
     for i in range(len(extrinsic)):
