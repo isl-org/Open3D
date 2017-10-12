@@ -10,9 +10,9 @@ from optimize_posegraph import *
 def preprocess_point_cloud(ply_file_name):
 	print(ply_file_name)
 	pcd = ReadPointCloud(ply_file_name)
-	pcd_down = VoxelDownSample(pcd, 0.04)
+	pcd_down = VoxelDownSample(pcd, 0.03)
 	EstimateNormals(pcd_down,
-			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
+			KDTreeSearchParamHybrid(radius = 0.15, max_nn = 30))
 	pcd_fpfh = ComputeFPFHFeature(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
 	return (pcd_down, pcd_fpfh)
@@ -26,7 +26,7 @@ def register_point_cloud_FPFH(source, target,
 			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
 			CorrespondenceCheckerBasedOnDistance(0.075),
 			CorrespondenceCheckerBasedOnNormal(0.52359878)],
-			RANSACConvergenceCriteria(400000, 500))
+			RANSACConvergenceCriteria(400000, 1000))
 	return result_ransac
 
 
