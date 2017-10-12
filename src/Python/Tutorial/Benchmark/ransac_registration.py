@@ -40,7 +40,7 @@ if __name__ == "__main__":
 						source_down, target_down, source_fpfh, target_fpfh)
 				# Note: we save inverse of result_ransac.transformation
 				# to comply with http://redwood-data.org/indoor/fileformat.html
-				alignment.append(CameraPose("%d %d %d" % (s, t, n_ply_files),
+				alignment.append(CameraPose([s, t, n_ply_files],
 						np.linalg.inv(result_ransac.transformation)))
 
 				if do_visualization:
