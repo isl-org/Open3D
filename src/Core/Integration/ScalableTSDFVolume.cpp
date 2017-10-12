@@ -28,18 +28,19 @@
 
 #include <unordered_set>
 
+#include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Integration/UniformTSDFVolume.h>
+#include <Core/Integration/MarchingCubesConst.h>
 
 namespace three{
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
 		bool with_color, int volume_unit_resolution/* = 16*/,
-		int carving_threshold/* = 8*/, int depth_sampling_stride/* = 4*/) :
+		int depth_sampling_stride/* = 4*/) :
 		TSDFVolume(voxel_length, sdf_trunc, with_color),
 		volume_unit_resolution_(volume_unit_resolution),
 		volume_unit_length_(voxel_length * volume_unit_resolution),
-		carving_threshold_(carving_threshold),
 		depth_sampling_stride_(depth_sampling_stride)
 {
 }
@@ -87,11 +88,9 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 							touched_volume_units_.end()) {
 						touched_volume_units_.insert(loc);
 						auto volume = OpenVolumeUnit(Eigen::Vector3i(x, y, z));
-						if (volume) {
-							volume->IntegrateWithDepthToCameraDistanceMultiplier(
-									image, intrinsic, extrinsic,
-									*depth2cameradistance);
-						}
+						volume->IntegrateWithDepthToCameraDistanceMultiplier(
+								image, intrinsic, extrinsic,
+								*depth2cameradistance);
 					}
 				}
 			}
@@ -102,10 +101,80 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
 {
 	auto pointcloud = std::make_shared<PointCloud>();
-	for (auto &unit : volume_units_) {
+	double half_voxel_length = voxel_length_ * 0.5;
+	float w0, w1, f0, f1;
+	Eigen::Vector3f c0, c1;
+	for (const auto &unit : volume_units_) {
 		if (unit.second.volume_) {
-			auto c = unit.second.volume_->ExtractPointCloud();
-			*pointcloud += *c;
+			const auto &volume0 = *unit.second.volume_;
+			const auto &index0 = unit.second.index_;
+			for (int x = 0; x < volume0.resolution_; x++) {
+				for (int y = 0; y < volume0.resolution_; y++) {
+					for (int z = 0; z < volume0.resolution_; z++) {
+						Eigen::Vector3i idx0(x, y, z);
+						w0 = volume0.weight_[volume0.IndexOf(idx0)];
+						f0 = volume0.tsdf_[volume0.IndexOf(idx0)];
+						if (with_color_)
+							c0 = volume0.color_[volume0.IndexOf(idx0)];
+						if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
+							Eigen::Vector3d p0 = Eigen::Vector3d(
+								half_voxel_length + voxel_length_ * x,
+								half_voxel_length + voxel_length_ * y,
+								half_voxel_length + voxel_length_ * z) +
+								index0.cast<double>() * volume_unit_length_;
+							for (int i = 0; i < 3; i++) {
+								Eigen::Vector3d p1 = p0;
+								Eigen::Vector3i idx1 = idx0;
+								Eigen::Vector3i index1 = index0;
+								p1(i) += voxel_length_;
+								idx1(i) += 1;
+								if (idx1(i) < volume0.resolution_) {
+									w1 = volume0.weight_[volume0.IndexOf(idx1)];
+									f1 = volume0.tsdf_[volume0.IndexOf(idx1)];
+									if (with_color_)
+										c1 = volume0.color_[
+												volume0.IndexOf(idx1)];
+								} else {
+									idx1(i) -= volume0.resolution_;
+									index1(i) += 1;
+									auto unit_itr = volume_units_.find(index1);
+									if (unit_itr == volume_units_.end()) {
+										w1 = 0.0f; f1 = 0.0f;
+									} else {
+										const auto &volume1 =
+												*unit_itr->second.volume_;
+										w1 = volume1.weight_[volume1.IndexOf(
+												idx1)];
+										f1 = volume1.tsdf_[volume1.IndexOf(
+											idx1)];
+										if (with_color_)
+											c1 = volume1.color_[
+												volume1.IndexOf(idx1)];
+									}
+								}
+								if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
+										f0 * f1 < 0) {
+									float r0 = std::fabs(f0);
+									float r1 = std::fabs(f1);
+									Eigen::Vector3d p = p0;
+									p(i) = (p0(i) * r1 + p1(i) * r0) / 
+											(r0 + r1);
+									pointcloud->points_.push_back(p);
+									if (with_color_) {
+										pointcloud->colors_.push_back(
+												((c0 * r1 + c1 * r0) /
+												(r0 + r1) / 255.0f).
+												cast<double>());
+									}
+									// has_normal
+									pointcloud->normals_.push_back(
+											GetNormalAt(p));
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	return pointcloud;
@@ -138,13 +207,78 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractVoxelPointCloud()
 std::shared_ptr<UniformTSDFVolume> ScalableTSDFVolume::OpenVolumeUnit(
 		const Eigen::Vector3i &index)
 {
-	auto &volume = volume_units_[index];
-	if (!volume.volume_ && volume.num_of_carving_ < carving_threshold_) {
-		volume.volume_.reset(new UniformTSDFVolume(volume_unit_length_,
+	auto &unit = volume_units_[index];
+	if (!unit.volume_) {
+		unit.volume_.reset(new UniformTSDFVolume(volume_unit_length_,
 				volume_unit_resolution_, sdf_trunc_, with_color_,
 				index.cast<double>() * volume_unit_length_));
+		unit.index_ = index;
 	}
-	return volume.volume_;
+	return unit.volume_;
+}
+
+Eigen::Vector3d ScalableTSDFVolume::GetNormalAt(const Eigen::Vector3d &p)
+{
+	Eigen::Vector3d n;
+	const double half_gap = 0.99 * voxel_length_;
+	for (int i = 0; i < 3; i++) {
+		Eigen::Vector3d p0 = p;
+		p0(i) -= half_gap;
+		Eigen::Vector3d p1 = p;
+		p1(i) += half_gap;
+		n(i) = GetTSDFAt(p1) - GetTSDFAt(p0);
+	}
+	return n.normalized();
+}
+
+double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p)
+{
+	Eigen::Vector3d p_locate = p - Eigen::Vector3d(0.5, 0.5, 0.5) *
+			voxel_length_;
+	Eigen::Vector3i index0 = LocateVolumeUnit(p_locate);
+	auto unit_itr = volume_units_.find(index0);
+	if (unit_itr == volume_units_.end()) {
+		return 0.0;
+	}
+	const auto &volume0 = *unit_itr->second.volume_;
+	Eigen::Vector3i idx0;
+	Eigen::Vector3d p_grid = (p_locate - index0.cast<double>() * 
+			volume_unit_length_) / voxel_length_;
+	for (int i = 0; i < 3; i++) {
+		idx0(i) = (int)std::floor(p_grid(i));
+		if (idx0(i) < 0) idx0(i) = 0;
+		if (idx0(i) >= volume_unit_resolution_)
+			idx0(i) = volume_unit_resolution_ - 1;
+	}
+	Eigen::Vector3d r = p_grid - idx0.cast<double>();
+	float f[8];
+	for (int i = 0; i < 8; i++) {
+		Eigen::Vector3i index1 = index0;
+		Eigen::Vector3i idx1 = idx0 + shift[i];
+		if (idx1(0) < volume_unit_resolution_ &&
+			idx1(1) < volume_unit_resolution_ &&
+			idx1(2) < volume_unit_resolution_) {
+			f[i] = volume0.tsdf_[volume0.IndexOf(idx1)];
+		} else {
+			for (int j = 0; j < 3; j++) {
+				if (idx1(j) >= volume_unit_resolution_) {
+					idx1(j) -= volume_unit_resolution_;
+					index1(j) += 1;
+				}
+			}
+			auto unit_itr1 = volume_units_.find(index1);
+			if (unit_itr1 == volume_units_.end()) {
+				f[i] = 0.0f;
+			} else {
+				const auto &volume1 = *unit_itr1->second.volume_;
+				f[i] = volume1.tsdf_[volume1.IndexOf(idx1)];
+			}
+		}
+	}
+	return (1 - r(0)) * ( (1 - r(1)) * ((1 - r(2)) * f[0] + r(2) * f[4]) +
+			r(1) * ((1 - r(2)) * f[3] + r(2) * f[7])) + 
+			r(0) * ((1 - r(1)) * ((1 - r(2)) * f[1] + r(2) * f[5]) + 
+			r(1) * ((1 - r(2)) * f[2] + r(2) * f[6]));
 }
 
 }	// namespace three

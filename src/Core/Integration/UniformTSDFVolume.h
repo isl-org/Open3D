@@ -54,6 +54,14 @@ public:
 			const Eigen::Matrix4d &extrinsic,
 			const Image &depth_to_camera_distance_multiplier);
 
+	inline int IndexOf(int x, int y, int z) const {
+		return x * resolution_ * resolution_ + y * resolution_ + z;
+	}
+
+	inline int IndexOf(const Eigen::Vector3i &xyz) const {
+		return IndexOf(xyz(0), xyz(1), xyz(2));
+	}
+
 public:
 	Eigen::Vector3d origin_;
 	double length_;
@@ -62,16 +70,8 @@ public:
 	std::vector<float> tsdf_;
 	std::vector<Eigen::Vector3f> color_;
 	std::vector<float> weight_;
-	
+
 private:
-	inline int IndexOf(int x, int y, int z) {
-		return x * resolution_ * resolution_ + y * resolution_ + z;
-	}
-
-	inline int IndexOf(const Eigen::Vector3i xyz) {
-		return IndexOf(xyz(0), xyz(1), xyz(2));
-	}
-
 	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
 
 	double GetTSDFAt(const Eigen::Vector3d &p);
