@@ -103,6 +103,7 @@ void LineSet::Transform(const Eigen::Matrix4d &transformation)
 
 LineSet &LineSet::operator+=(const LineSet &lineset)
 {
+	if (lineset.IsEmpty()) return (*this);
 	size_t old_point_num[2] = {point_set_[0].size(), point_set_[1].size()};
 	size_t add_point_num[2] = {lineset.point_set_[0].size(),
 			lineset.point_set_[1].size()};

@@ -30,6 +30,7 @@
 #include <Core/Geometry/PointCloud.h>
 #include <Visualization/Utility/SelectionPolygonVolume.h>
 #include <Visualization/Utility/DrawGeometry.h>
+#include <Visualization/Visualizer/Visualizer.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace three;
 
@@ -77,10 +78,36 @@ void pybind_utility_methods(py::module &m)
 		DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name, width,
 				height, left, top, json_filename);
 		filesystem::ChangeWorkingDirectory(current_dir);
-	}, "Function to draw a list of Geometry objects",
+	}, "Function to draw a list of Geometry objects with a GUI that supports animation",
 			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
 			"optional_view_trajectory_json_file"_a = "");
+	m.def("DrawGeometriesWithAnimationCallback",
+	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+			std::function<bool(Visualizer *)> callback_func,
+			const std::string &window_name, int width, int height,
+			int left, int top) {
+		std::string current_dir = filesystem::GetWorkingDirectory();
+		DrawGeometriesWithAnimationCallback(geometry_ptrs, callback_func,
+				window_name, width, height, left, top);
+		filesystem::ChangeWorkingDirectory(current_dir);
+	}, "Function to draw a list of Geometry objects with a customized animation callback function",
+			"geometry_list"_a, "callback_function"_a,
+			"window_name"_a = "Open3D", "width"_a = 1920,
+			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
+			py::return_value_policy::reference);
+	m.def("DrawGeometriesWithKeyCallbacks",
+	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+			const std::map<int, std::function<bool(Visualizer *)>>
+			&key_to_callback, const std::string &window_name, int width,
+			int height, int left, int top) {
+		std::string current_dir = filesystem::GetWorkingDirectory();
+		DrawGeometriesWithKeyCallbacks(geometry_ptrs, key_to_callback,
+				window_name, width, height, left, top);
+		filesystem::ChangeWorkingDirectory(current_dir);
+	}, "Function to draw a list of Geometry objects with a customized key-callback mapping",
+			"geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
+			"width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
 	m.def("ReadSelectionPolygonVolume", [](const std::string &filename) {
 		SelectionPolygonVolume vol;
 		ReadIJsonConvertible(filename, vol);

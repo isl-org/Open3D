@@ -39,10 +39,10 @@ void PrintHelp(char* argv[])
 	PrintInfo("> %s [color_source] [source_target] [color_target] [depth_target] [options]\n", argv[0]);
 	PrintInfo("   Given RGBD image pair, estimate 6D odometry.\n");
 	PrintInfo("   [options]\n");
-	PrintInfo("      --camera_intrinsic [intrinsic_path]");
-	PrintInfo("      --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
-	PrintInfo("      --verbose : indicate this to display detailed information");
-	PrintInfo("      --hybrid : compute odometry using hybrid objective");
+	PrintInfo("      --camera_intrinsic [intrinsic_path]\n");
+	PrintInfo("      --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)\n");
+	PrintInfo("      --verbose : indicate this to display detailed information\n");
+	PrintInfo("      --hybrid : compute odometry using hybrid objective\n");
 	PrintInfo("\n");
 }
 

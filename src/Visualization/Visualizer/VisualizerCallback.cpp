@@ -137,8 +137,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_ESCAPE:
 	case GLFW_KEY_Q:
-		glfwSetWindowShouldClose(window_, GL_TRUE);
-		PrintDebug("[Visualizer] Window closing.\n");
+		Close();
 		break;
 	case GLFW_KEY_H:
 		PrintVisualizerHelp();

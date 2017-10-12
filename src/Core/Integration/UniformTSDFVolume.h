@@ -33,7 +33,7 @@ namespace three {
 class UniformTSDFVolume : public TSDFVolume {
 public:
 	UniformTSDFVolume(double length, int resolution, double sdf_trunc,
-			bool with_color);
+			bool with_color, Eigen::Vector3d origin = Eigen::Vector3d::Zero());
 	~UniformTSDFVolume() override;
 
 public:
@@ -47,23 +47,31 @@ public:
 	/// Debug function to extract the voxel data into a point cloud
 	std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
 
+	/// Faster Integrate function that uses depth_to_camera_distance_multiplier
+	/// precomputed from camera intrinsic
+	void IntegrateWithDepthToCameraDistanceMultiplier(const RGBDImage &image,
+			const PinholeCameraIntrinsic &intrinsic,
+			const Eigen::Matrix4d &extrinsic,
+			const Image &depth_to_camera_distance_multiplier);
+
+	inline int IndexOf(int x, int y, int z) const {
+		return x * resolution_ * resolution_ + y * resolution_ + z;
+	}
+
+	inline int IndexOf(const Eigen::Vector3i &xyz) const {
+		return IndexOf(xyz(0), xyz(1), xyz(2));
+	}
+
 public:
+	Eigen::Vector3d origin_;
 	double length_;
 	int resolution_;
 	int voxel_num_;
 	std::vector<float> tsdf_;
 	std::vector<Eigen::Vector3f> color_;
 	std::vector<float> weight_;
-	
+
 private:
-	inline int index(int x, int y, int z) {
-		return x * resolution_ * resolution_ + y * resolution_ + z;
-	}
-
-	inline int index(const Eigen::Vector3i xyz) {
-		return index(xyz(0), xyz(1), xyz(2));
-	}
-
 	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
 
 	double GetTSDFAt(const Eigen::Vector3d &p);
