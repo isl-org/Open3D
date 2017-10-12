@@ -29,6 +29,7 @@
 
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/Image.h>
+#include <Core/Geometry/RGBDImage.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/ClassIO/PointCloudIO.h>
 using namespace three;

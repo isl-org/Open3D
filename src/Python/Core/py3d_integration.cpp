@@ -29,6 +29,7 @@
 
 #include <Core/Integration/TSDFVolume.h>
 #include <Core/Integration/UniformTSDFVolume.h>
+#include <Core/Integration/ScalableTSDFVolume.h>
 
 using namespace three;
 
