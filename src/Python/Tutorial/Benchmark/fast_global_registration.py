@@ -41,11 +41,11 @@ def get_log_path(dataset_name):
 # read files
 if __name__ == "__main__":
 	# data preparation
-	get_redwood_dataset(dataset_path)
+	get_redwood_dataset()
 
 	for dataset_name in dataset_names:
-		ply_file_names = get_file_list(
-				"%s/%s/" % (dataset_path, dataset_name), ".ply")
+		ply_file_names = get_file_list_from_custom_format(
+				"%s/%s/" % (dataset_path, dataset_name), "cloud_bin_%d.ply")
 		n_ply_files = len(ply_file_names)
 
 		# preprocessing
@@ -66,7 +66,5 @@ if __name__ == "__main__":
 				traj_ij[0].metadata = [i,j,n_ply_files]
 				traj.append(traj_ij[0])
 				print(traj_ij[0])
-
-				DrawRegistrationResult(source, target, transformation)
 
 		write_trajectory(traj, get_log_path(dataset_name))

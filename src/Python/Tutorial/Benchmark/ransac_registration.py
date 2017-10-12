@@ -20,12 +20,12 @@ def get_log_path(dataset_name):
 
 if __name__ == "__main__":
 	# data preparation
-	get_redwood_dataset(dataset_path)
+	get_redwood_dataset()
 
 	# do RANSAC based alignment
 	for dataset_name in dataset_names:
-		ply_file_names = get_file_list(
-				"%s/%s/" % (dataset_path, dataset_name), ".ply")
+		ply_file_names = get_file_list_from_custom_format(
+				"%s/%s/" % (dataset_path, dataset_name), "cloud_bin_%d.ply")
 		n_ply_files = len(ply_file_names)
 
 		alignment = []

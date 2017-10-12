@@ -14,7 +14,7 @@ dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]
 dataset_path = "testdata/"
 
 
-def get_redwood_dataset(dataset_path):
+def get_redwood_dataset():
 	# data preparation
 	if not os.path.exists(dataset_path):
 		# download and unzip dataset

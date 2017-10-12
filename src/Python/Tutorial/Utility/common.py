@@ -23,3 +23,11 @@ def get_file_list(path, extension=None):
 				if isfile(join(path, f)) and splitext(f)[1] == extension]
 	file_list.sort()
 	return file_list
+
+
+def get_file_list_from_custom_format(path, format):
+	number_of_files = len(get_file_list(path, splitext(format)[1]))
+	file_list = []
+	for i in range(number_of_files):
+		file_list.append("%s/%s" % (path, format % i))
+	return file_list
