@@ -48,11 +48,11 @@ if __name__ == "__main__":
 				"%s/%s/" % (dataset_path, dataset_name), "cloud_bin_%d.ply")
 		n_ply_files = len(ply_file_names)
 
-		# # preprocessing
-		# for i in range(n_ply_files):
-		# 	(pcd_down, pcd_fpfh) = preprocess_point_cloud(ply_file_names[i])
-		# 	filename_i = get_full_bin_path(ply_file_names, i)
-		# 	write_binary_file_for_FGR(filename_i, pcd_down, pcd_fpfh)
+		# preprocessing
+		for i in range(n_ply_files):
+			(pcd_down, pcd_fpfh) = preprocess_point_cloud(ply_file_names[i])
+			filename_i = get_full_bin_path(ply_file_names, i)
+			write_binary_file_for_FGR(filename_i, pcd_down, pcd_fpfh)
 
 		# global alignment
 		traj = []
