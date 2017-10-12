@@ -43,11 +43,6 @@ class UniformTSDFVolume;
 /// Q.-Y. Zhou and V. Koltun
 /// Dense Scene Reconstruction with Points of Interest
 /// In SIGGRAPH 2013
-/// Moreover, this implementation also utilizes observations made by the
-/// following paper:
-/// J. Chen, D. Bautembach, and S. Izadi
-/// Scalable Real-time Volumetric Surface Reconstruction
-/// In SIGGRAPH, 2013
 ///
 /// An observed depth pixel gives two types of information: (a) an approximation
 /// of the nearby surface, and (b) empty space from the camera to the surface.
@@ -57,24 +52,19 @@ class UniformTSDFVolume;
 /// normal and producing a smooth surface output. The carving is great in
 /// removing outlier structures like floating noise pixels and bumps along
 /// structure edges.
-/// The scalable volume data structure has two layers of details. The leaf nodes
-/// build the weighted average of TSDF. They are allocated only around the
-/// surface. The interior nodes are used for carving. The carving algorithm is
-/// performed in a conservative way: do not carve when uncertain.
 
 class ScalableTSDFVolume : public TSDFVolume {
 public:
 	struct VolumeUnit {
 	public:
-		VolumeUnit() : volume_(NULL), num_of_carving_(0) {}
+		VolumeUnit() : volume_(NULL) {}
 	public:
 		std::shared_ptr<UniformTSDFVolume> volume_;
-		int num_of_carving_;
+		Eigen::Vector3i index_;
 	};
 public:
 	ScalableTSDFVolume(double voxel_length, double sdf_trunc, bool with_color,
-			int volume_unit_resolution = 16, int carving_threshold = 8,
-			int depth_sampling_stride = 4);
+			int volume_unit_resolution = 16, int depth_sampling_stride = 4);
 	~ScalableTSDFVolume() override;
 
 public:
@@ -89,7 +79,6 @@ public:
 public:
 	int volume_unit_resolution_;
 	double volume_unit_length_;
-	int carving_threshold_;
 	int depth_sampling_stride_;
 
 	/// Assume the index of the volume unit is (x, y, z), then the unit spans
@@ -107,6 +96,10 @@ private:
 	
 	std::shared_ptr<UniformTSDFVolume> OpenVolumeUnit(
 			const Eigen::Vector3i &index);
+
+	Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
+
+	double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
 }	// namespace three
