@@ -4,15 +4,12 @@ import struct
 sys.path.append("../Utility")
 sys.path.append("../ReconstructionSystem")
 from global_registration import *
+from downloader import *
 from redwood_dataset_trajectory_io import *
 from visualization import *
 
 # binary path to FGR
 FGR_PATH = "/Users/jaesikpa/Research/FastGlobalRegistration/build/FastGlobalRegistration/FastGlobalRegistration"
-
-# dataset from redwood-data.org
-dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]
-dataset_path = "testdata/"
 
 def write_binary_file_for_FGR(filename, pcd, fpfh):
 	n_points = len(pcd.points)
@@ -43,6 +40,8 @@ def get_log_path(dataset_name):
 
 # read files
 if __name__ == "__main__":
+	# data preparation
+	get_redwood_dataset(dataset_path)
 
 	for dataset_name in dataset_names:
 		ply_file_names = get_file_list(

@@ -7,23 +7,7 @@ from global_registration import *
 from downloader import *
 from redwood_dataset_trajectory_io import *
 
-# dataset from redwood-data.org
-dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]
-dataset_path = "testdata/"
 do_visualization = False
-
-
-def get_dataset():
-	# download and unzip dataset
-	for name in dataset_names:
-		print("==================================")
-		file_downloader("http://redwood-data.org/indoor/data/%s-fragments-ply.zip" % \
-				name)
-		unzip_data("%s-fragments-ply.zip" % name,
-				"%s/%s" % (dataset_path, name))
-		os.remove("%s-fragments-ply.zip" % name)
-		print("")
-	return 0
 
 
 def get_ply_path(dataset_name, id):
@@ -36,8 +20,7 @@ def get_log_path(dataset_name):
 
 if __name__ == "__main__":
 	# data preparation
-	if not os.path.exists(dataset_path):
-		get_dataset()
+	get_redwood_dataset(dataset_path)
 
 	# do RANSAC based alignment
 	for dataset_name in dataset_names:
