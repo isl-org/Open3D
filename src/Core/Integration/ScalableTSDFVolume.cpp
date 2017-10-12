@@ -26,7 +26,10 @@
 
 #include "ScalableTSDFVolume.h"
 
+<<<<<<< 36dbe733c483e75cd1e482a1065d1d11388a892c
 #include <Core/Geometry/PointCloud.h>
+=======
+>>>>>>> Working on ScalableTSDFVolume
 #include <Core/Integration/UniformTSDFVolume.h>
 
 namespace three{
