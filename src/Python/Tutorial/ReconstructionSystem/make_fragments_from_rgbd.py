@@ -4,9 +4,11 @@ from os.path import exists
 import math
 import sys
 sys.path.append("../..")
+sys.path.append("../Utility")
 from py3d import *
+from common import *
+from opencv import *
 from optimize_posegraph import *
-from utility import *
 
 
 def process_one_rgbd_pair(s, t, color_files, depth_files,

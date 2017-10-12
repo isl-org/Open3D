@@ -4,8 +4,8 @@ sys.path.append("../Utility")
 sys.path.append("../ReconstructionSystem")
 import numpy as np # todo: this is just for testing
 from global_registration import *
-from utility_download import *
-from utility_redwood_dataset_trajectory_io import *
+from downloader import *
+from redwood_dataset_trajectory_io import *
 
 # dataset from redwood-data.org
 dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]

@@ -4,7 +4,8 @@ import struct
 sys.path.append("../Utility")
 sys.path.append("../ReconstructionSystem")
 from global_registration import *
-from utility_redwood_dataset_trajectory_io import *
+from redwood_dataset_trajectory_io import *
+from visualization import *
 
 # binary path to FGR
 FGR_PATH = "/Users/jaesikpa/Research/FastGlobalRegistration/build/FastGlobalRegistration/FastGlobalRegistration"
@@ -38,7 +39,7 @@ def read_txt_file(txt_file_name):
 	return transformation
 
 def get_log_path(dataset_name):
-	return "%s/ransac_%s.log" % (dataset_path, dataset_name)
+	return "%s/fgr_%s.log" % (dataset_path, dataset_name)
 
 # read files
 if __name__ == "__main__":
@@ -66,4 +67,7 @@ if __name__ == "__main__":
 				traj_ij[0].metadata = [i,j,n_ply_files]
 				traj.append(traj_ij[0])
 				print(traj_ij[0])
+
+				DrawRegistrationResult(source, target, transformation)
+
 		write_trajectory(traj, get_log_path(dataset_name))

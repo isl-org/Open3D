@@ -1,9 +1,11 @@
 import numpy as np
 import sys
 sys.path.append("../..")
+sys.path.append("../Utility")
 from py3d import *
-from utility import *
-from utility_visualization import *
+from common import *
+from opencv import *
+from visualization import *
 from optimize_posegraph import *
 
 

@@ -5,7 +5,8 @@ import math
 import sys
 sys.path.append("../..")
 from py3d import *
-from utility import *
+sys.path.append("../Utility")
+from common import *
 from make_fragments_from_rgbd import *
 
 
