@@ -66,7 +66,7 @@ Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input)
 {
 	Eigen::Vector6d output;
 	Eigen::Matrix3d R = input.block<3, 3>(0, 0);
-	float sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));
+	double sy = sqrt(R(0, 0) * R(0, 0) + R(1, 0) * R(1, 0));
 	if (!(sy < 1e-6)) {
 		output(0) = atan2(R(2, 1), R(2, 2));
 		output(1) = atan2(-R(2, 0), sy);

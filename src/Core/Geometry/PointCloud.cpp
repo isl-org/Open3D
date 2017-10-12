@@ -90,6 +90,7 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud)
 {
 	// We do not use std::vector::insert to combine std::vector because it will
 	// crash if the pointcloud is added to itself.
+	if (cloud.IsEmpty()) return (*this);
 	size_t old_vert_num = points_.size();
 	size_t add_vert_num = cloud.points_.size();
 	size_t new_vert_num = old_vert_num + add_vert_num;

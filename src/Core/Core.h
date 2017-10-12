@@ -51,3 +51,4 @@
 
 #include "Integration/TSDFVolume.h"
 #include "Integration/UniformTSDFVolume.h"
+#include "Integration/ScalableTSDFVolume.h"
