@@ -48,11 +48,11 @@ if __name__ == "__main__":
 				"%s/%s/" % (dataset_path, dataset_name), "cloud_bin_%d.ply")
 		n_ply_files = len(ply_file_names)
 
-		# preprocessing
-		for i in range(n_ply_files):
-			(pcd_down, pcd_fpfh) = preprocess_point_cloud(ply_file_names[i])
-			filename_i = get_full_bin_path(ply_file_names, i)
-			write_binary_file_for_FGR(filename_i, pcd_down, pcd_fpfh)
+		# # preprocessing
+		# for i in range(n_ply_files):
+		# 	(pcd_down, pcd_fpfh) = preprocess_point_cloud(ply_file_names[i])
+		# 	filename_i = get_full_bin_path(ply_file_names, i)
+		# 	write_binary_file_for_FGR(filename_i, pcd_down, pcd_fpfh)
 
 		# global alignment
 		traj = []
@@ -60,11 +60,14 @@ if __name__ == "__main__":
 			filename_i = get_full_bin_path(ply_file_names, i)
 			for j in range(i + 1, n_ply_files):
 				filename_j = get_full_bin_path(ply_file_names, j)
+				print(filename_i)
+				print(filename_j)
 				os.system("%s %s %s temp.log" %
 						(FGR_PATH, filename_i, filename_j))
 				traj_ij = read_trajectory("temp.log")
-				traj_ij[0].metadata = [i, j, n_ply_files]
+				traj_ij[0].metadata = [i,j,n_ply_files]
 				traj.append(traj_ij[0])
 				print(traj_ij[0])
+				print("")
 
 		write_trajectory(traj, get_log_path(dataset_name))
