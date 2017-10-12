@@ -51,7 +51,7 @@ public:
 	/// precomputed from camera intrinsic
 	void IntegrateWithDepthToCameraDistanceMultiplier(const RGBDImage &image,
 			const PinholeCameraIntrinsic &intrinsic,
-			const Eigen::Matrix4d &extrinsic_inv,
+			const Eigen::Matrix4d &extrinsic,
 			const Image &depth_to_camera_distance_multiplier);
 
 public:

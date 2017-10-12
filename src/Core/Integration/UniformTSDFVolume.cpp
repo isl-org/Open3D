@@ -78,8 +78,8 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
 	}
 	auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
 			intrinsic);
-	IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic,
-			extrinsic.inverse(), *depth2cameradistance);
+	IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic, extrinsic,
+			*depth2cameradistance);
 }
 
 std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
@@ -572,14 +572,14 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud()
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 		const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
-		const Eigen::Matrix4d &extrinsic_inv,
+		const Eigen::Matrix4d &extrinsic,
 		const Image &depth_to_camera_distance_multiplier)
 {
 	const float fx = static_cast<float>(intrinsic.GetFocalLength().first);
 	const float fy = static_cast<float>(intrinsic.GetFocalLength().second);
 	const float cx = static_cast<float>(intrinsic.GetPrincipalPoint().first);
 	const float cy = static_cast<float>(intrinsic.GetPrincipalPoint().second);
-	const Eigen::Matrix4f extrinsic_inv_f = extrinsic_inv.cast<float>();
+	const Eigen::Matrix4f extrinsic_inv_f = extrinsic.inverse().cast<float>();
 	const float voxel_length_f = static_cast<float>(voxel_length_);
 	const float half_voxel_length_f = voxel_length_f * 0.5f;
 	const float sdf_trunc_f = static_cast<float>(sdf_trunc_);
