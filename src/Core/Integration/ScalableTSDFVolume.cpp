@@ -182,11 +182,119 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
 
 std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
 {
+	// implementation of marching cubes, based on
+	// http://paulbourke.net/geometry/polygonise/
 	auto mesh = std::make_shared<TriangleMesh>();
-	for (auto &unit : volume_units_) {
+	double half_voxel_length = voxel_length_ * 0.5;
+	std::unordered_map<Eigen::Vector4i, int, hash_eigen::hash<Eigen::Vector4i>>
+		edgeindex_to_vertexindex;
+	int edge_to_index[12];
+	for (const auto &unit : volume_units_) {
 		if (unit.second.volume_) {
-			auto m = unit.second.volume_->ExtractTriangleMesh();
-			*mesh += *m;
+			const auto &volume0 = *unit.second.volume_;
+			const auto &index0 = unit.second.index_;
+			for (int x = 0; x < volume0.resolution_; x++) {
+				for (int y = 0; y < volume0.resolution_; y++) {
+					for (int z = 0; z < volume0.resolution_; z++) {
+						Eigen::Vector3i idx0(x, y, z);
+						int cube_index = 0;
+						float w[8];
+						float f[8];
+						Eigen::Vector3d c[8];
+						for (int i = 0; i < 8; i++) {
+							Eigen::Vector3i index1 = index0;
+							Eigen::Vector3i idx1 = idx0 + shift[i];
+							if (idx1(0) < volume_unit_resolution_ &&
+								idx1(1) < volume_unit_resolution_ &&
+								idx1(2) < volume_unit_resolution_) {
+								w[i] = volume0.weight_[volume0.IndexOf(idx1)];
+								f[i] = volume0.tsdf_[volume0.IndexOf(idx1)];
+								if (with_color_)
+									c[i] = volume0.color_[volume0.IndexOf(
+											idx1)].cast<double>() / 255.0;;
+							} else {
+								for (int j = 0; j < 3; j++) {
+									if (idx1(j) >= volume_unit_resolution_) {
+										idx1(j) -= volume_unit_resolution_;
+										index1(j) += 1;
+									}
+								}
+								auto unit_itr1 = volume_units_.find(index1);
+								if (unit_itr1 == volume_units_.end()) {
+									w[i] = 0.0f;  f[i] = 0.0f;
+								} else {
+									const auto &volume1 = 
+											*unit_itr1->second.volume_;
+									w[i] = volume1.weight_[volume1.IndexOf(
+											idx1)];
+									f[i] = volume1.tsdf_[volume1.IndexOf(idx1)];
+									if (with_color_)
+										c[i] = volume1.color_[volume1.IndexOf(
+												idx1)].cast<double>() / 255.0;
+								}
+							}
+							if (w[i] == 0.0f) {
+								cube_index = 0;
+								break;
+							} else {
+								if (f[i] < 0.0f) {
+									cube_index |= (1 << i);
+								}
+							}
+						}
+						if (cube_index == 0 || cube_index == 255) {
+							continue;
+						}
+						for (int i = 0; i < 12; i++) {
+							if (edge_table[cube_index] & (1 << i)) {
+								Eigen::Vector4i edge_index = Eigen::Vector4i(
+										index0(0), index0(1), index0(2), 0) *
+										volume_unit_resolution_ +
+										Eigen::Vector4i(x, y, z, 0) + 
+										edge_shift[i];
+								if (edgeindex_to_vertexindex.find(edge_index) ==
+										edgeindex_to_vertexindex.end()) {
+									edge_to_index[i] = 
+											(int)mesh->vertices_.size();
+									edgeindex_to_vertexindex[edge_index] =
+											(int)mesh->vertices_.size();
+									Eigen::Vector3d pt(
+											half_voxel_length +
+											voxel_length_ * edge_index(0),
+											half_voxel_length +
+											voxel_length_ * edge_index(1),
+											half_voxel_length +
+											voxel_length_ * edge_index(2));
+									double f0 = std::abs((double)f[
+											edge_to_vert[i][0]]);
+									double f1 = std::abs((double)f[
+											edge_to_vert[i][1]]);
+									pt(edge_index(3)) += f0 * voxel_length_ / 
+											(f0 + f1);
+									mesh->vertices_.push_back(pt);
+									if (with_color_) {
+										const auto &c0 = c[edge_to_vert[i][0]];
+										const auto &c1 = c[edge_to_vert[i][1]];
+										mesh->vertex_colors_.push_back(
+											(f1 * c0 + f0 * c1) / (f0 + f1));
+									}
+								} else {
+									edge_to_index[i] =
+											edgeindex_to_vertexindex[
+											edge_index];
+								}
+							}
+						}
+						for (int i = 0; tri_table[cube_index][i] != -1; i += 3)
+						{
+							mesh->triangles_.push_back(Eigen::Vector3i(
+								edge_to_index[tri_table[cube_index][i]],
+								edge_to_index[tri_table[cube_index][i + 2]],
+								edge_to_index[tri_table[cube_index][i + 1]]));
+						}
+					}
+				}
+			}
 		}
 	}
 	return mesh;

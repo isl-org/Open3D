@@ -134,7 +134,6 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
 {
 	// implementation of marching cubes, based on
 	// http://paulbourke.net/geometry/polygonise/
-	
 	auto mesh = std::make_shared<TriangleMesh>();
 	double half_voxel_length = voxel_length_ * 0.5;
 	std::unordered_map<Eigen::Vector4i, int, hash_eigen::hash<Eigen::Vector4i>>
@@ -148,7 +147,7 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
 				Eigen::Vector3d c[8];
 				for (int i = 0; i < 8; i++ ) {
 					Eigen::Vector3i idx = Eigen::Vector3i(x, y, z) + shift[i];
-					if (weight_[IndexOf(idx)] == 0.0) {
+					if (weight_[IndexOf(idx)] == 0.0f) {
 						cube_index = 0;
 						break;
 					} else {
