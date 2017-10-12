@@ -63,7 +63,7 @@ if __name__ == "__main__":
 				os.system("%s %s %s temp.log" %
 						(FGR_PATH, filename_i, filename_j))
 				traj_ij = read_trajectory("temp.log")
-				traj_ij[0].metadata = [i,j,n_ply_files]
+				traj_ij[0].metadata = [i, j, n_ply_files]
 				traj.append(traj_ij[0])
 				print(traj_ij[0])
 
