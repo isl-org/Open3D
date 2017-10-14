@@ -29,6 +29,7 @@
 
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/Image.h>
+#include <Core/Geometry/RGBDImage.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/ClassIO/PointCloudIO.h>
 using namespace three;
@@ -77,16 +78,15 @@ void pybind_pointcloud_methods(py::module &m)
 			"    y = (v - cy) * z / fy",
 			"depth"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity(),
-			"depth_scale"_a = 1000.0);
+			"depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0, "stride"_a = 1);
 	m.def("CreatePointCloudFromRGBDImage", &CreatePointCloudFromRGBDImage,
 			"Factory function to create a pointcloud from an RGB-D image and a camera.\n"
 			"Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
 			"    z = d / depth_scale\n"
 			"    x = (u - cx) * z / fx\n"
 			"    y = (v - cy) * z / fy",
-			"depth"_a, "color"_a, "intrinsic"_a,
-			"extrinsic"_a = Eigen::Matrix4d::Identity(),
-			"depth_scale"_a = 1000.0);
+			"image"_a, "intrinsic"_a,
+			"extrinsic"_a = Eigen::Matrix4d::Identity());
 	m.def("SelectDownSample", &SelectDownSample,
 			"Function to select points from input pointcloud into output pointcloud",
 			"input"_a, "indices"_a);

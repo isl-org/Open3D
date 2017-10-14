@@ -185,13 +185,13 @@ int main(int argc, char **argv)
 		std::string mode = GetProgramOptionAsString(argc, argv,
 				"--auto_recording");
 		if (mode == "i") {
-			visualizer.Play(true, false);
+			visualizer.Play(true, false, true);
 		} else if (mode == "d") {
-			visualizer.Play(true, true);
+			visualizer.Play(true, true, true);
 		} else {
-			visualizer.Play(true, false);
+			visualizer.Play(true, false, true);
 		}
-		visualizer.Run(true);
+		visualizer.Run();
 	} else {
 		visualizer.Run();
 	}

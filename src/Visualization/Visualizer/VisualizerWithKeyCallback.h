@@ -27,13 +27,14 @@
 #pragma once
 
 #include <Visualization/Visualizer/Visualizer.h>
+#include <map>
 
 namespace three {
 
 class VisualizerWithKeyCallback : public Visualizer
 {
 public:
-	typedef std::pair<int, std::function<bool(Visualizer &)>> KeyCallbackPair;
+	typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;
 
 public:
 	VisualizerWithKeyCallback();
@@ -45,7 +46,7 @@ public:
 public:
 	void PrintVisualizerHelp() override;
 	void RegisterKeyCallback(int key, 
-			std::function<bool(Visualizer &)> callback);
+			std::function<bool(Visualizer *)> callback);
 
 protected:
 	void KeyPressCallback(GLFWwindow *window,
@@ -53,7 +54,7 @@ protected:
 	std::string PrintKeyToString(int key);
 
 protected:
-	std::vector<KeyCallbackPair> key_callback_pairs_;
+	std::map<int, std::function<bool(Visualizer *)>> key_to_callback_;
 };
 
 }	// namespace three

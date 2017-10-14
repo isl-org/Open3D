@@ -181,15 +181,16 @@ int main(int argc, char *argv[])
 	DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
 	// 6. test normal estimation
-	DrawGeometriesWithKeyCallback({pointcloud_ptr}, GLFW_KEY_SPACE,
-			[&](Visualizer &vis) {
+	DrawGeometriesWithKeyCallbacks({pointcloud_ptr}, 
+			{{GLFW_KEY_SPACE, [&](Visualizer *vis) {
 				//EstimateNormals(*pointcloud_ptr, 
 				//		three::KDTreeSearchParamKNN(20));
 				EstimateNormals(*pointcloud_ptr,
 						three::KDTreeSearchParamRadius(0.05));
 				PrintInfo("Done.\n");
 				return true;
-			}, "Press Space to Estimate Normal", 1600, 900);
+			}}},
+			"Press Space to Estimate Normal", 1600, 900);
 
 	// n. test end
 

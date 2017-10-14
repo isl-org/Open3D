@@ -86,7 +86,8 @@ void VisualizerWithCustomAnimation::UpdateWindowTitle()
 }
 
 void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
-		bool recording_depth/* = false*/)
+		bool recording_depth/* = false*/,
+		bool close_window_when_animation_ends/* = false*/)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
 	if (view_control.NumOfFrames() == 0) {
@@ -109,7 +110,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 		}
 	}
 	RegisterAnimationCallback(
-			[=](Visualizer &vis) {
+			[=](Visualizer *vis) {
 				// The lambda function captures no references to avoid dangling
 				// references
 				auto &view_control =
@@ -154,6 +155,9 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 									recording_image_trajectory_filename_,
 									*trajectory_ptr);
 						}
+					}
+					if (close_window_when_animation_ends) {
+						Close();
 					}
 				}
 				UpdateWindowTitle();
