@@ -12,7 +12,7 @@ from visualization import *
 # binary path to FGR
 FGR_PATH = "C:/git/FastGlobalRegistration/build/FastGlobalRegistration/Release/FastGlobalRegistration.exe"
 FGR_INLIER_RATIO = 0.3
-FGR_MAXIUM_DISTANCE = 0.75
+FGR_MAXIUM_DISTANCE = 0.075
 
 def write_binary_file_for_FGR(filename, pcd, fpfh):
 	n_points = len(pcd.points)
@@ -46,14 +46,22 @@ def read_binary_file_for_FGR(filename):
 	pcd.points = Vector3dVector(vec_point)
 	return pcd
 
-def validating_transform(source, target, transform):
-	tree_target = KDTreeFlann(target)
+def validating_transform_swap(pcd_i, pcd_j, transform):
+	if len(pcd_i.points) > len(pcd_j.points):
+		return validating_transform(pcd_j, pcd_i, np.linalg.inv(transform))
+	else:
+		return validating_transform(pcd_i, pcd_j, transform)
+
+def validating_transform(pcd_i, pcd_j, transform):
+	pcd_i_trans = copy.deepcopy(pcd_i)
+	pcd_i_trans.Transform(transform)
+	tree_pcd_j = KDTreeFlann(pcd_j)
 	inlier_number = 0
-	for i in range(len(source.points)):
-		[_, idx, dis] = tree_target.SearchKNNVector3D(source.points[i], 1)
+	for i in range(len(pcd_i.points)):
+		[_, idx, dis] = tree_pcd_j.SearchKNNVector3D(pcd_i_trans.points[i], 1)
 		if math.sqrt(dis[0]) < FGR_MAXIUM_DISTANCE:
 			inlier_number = inlier_number + 1
-	inlier_ratio = inlier_number / min(len(source.points), len(target.points));
+	inlier_ratio = inlier_number / len(pcd_i.points);
 	print("inlier_ratio : %f" % inlier_ratio)
 	if inlier_ratio > FGR_INLIER_RATIO:
 		return True
@@ -108,7 +116,7 @@ if __name__ == "__main__":
 				else:
 					source = read_binary_file_for_FGR(filename_i)
 					target = read_binary_file_for_FGR(filename_j)
-					if validating_transform(source, target,
+					if validating_transform_swap(source, target,
 							np.linalg.inv(traj_ij[0].pose)):
 						traj_ij[0].metadata = [i, j, n_ply_files]
 						traj.append(traj_ij[0])
