@@ -230,6 +230,21 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		return RegistrationResult();
 	}
 
+	KDTreeFlann kdtree_feature(target_feature);
+	std::vector<int> corres((int)source.points_.size());
+	std::vector<int> indices(1);
+	std::vector<double> dists(1);
+	for (int i = 0; i < (int)source.points_.size(); i++) {
+		if (kdtree_feature.SearchKNN(Eigen::VectorXd(
+			source_feature.data_.col(i)), 1,
+			indices, dists) == 0) {
+			PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
+			corres[i] = 0;
+		} else {
+			corres[i] = indices[0];
+		}
+	}
+
 	RegistrationResult result;
 	int total_validation = 0;
 	bool finished_validation = false;
@@ -239,7 +254,6 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 #endif
 	CorrespondenceSet ransac_corres(ransac_n);
 	KDTreeFlann kdtree(target);
-	KDTreeFlann kdtree_feature(target_feature);
 	RegistrationResult result_private;
 	unsigned int seed_number;
 #ifdef _OPENMP
@@ -257,20 +271,10 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	for (int itr = 0; itr < criteria.max_iteration_; itr++) {
 		if (!finished_validation)
 		{
-			std::vector<int> indices(1);
-			std::vector<double> dists(1);
 			Eigen::Matrix4d transformation;
 			for (int j = 0; j < ransac_n; j++) {
 				ransac_corres[j](0) = std::rand() % (int)source.points_.size();
-				if (kdtree_feature.SearchKNN(Eigen::VectorXd(
-						source_feature.data_.col(ransac_corres[j](0))), 1,
-						indices, dists) == 0) {
-					PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
-					ransac_corres[j](1) = 0;
-				}
-				else {
-					ransac_corres[j](1) = indices[0];
-				}
+				ransac_corres[j](1) = corres[ransac_corres[j](0)];
 			}
 			bool check = true;
 			for (const auto &checker : checkers) {
