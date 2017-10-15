@@ -28,7 +28,7 @@ def register_point_cloud_FPFH(source, target,
 			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
 			CorrespondenceCheckerBasedOnDistance(0.075),
 			CorrespondenceCheckerBasedOnNormal(0.52359878)],
-			RANSACConvergenceCriteria(4000000, 1000))
+			RANSACConvergenceCriteria(4000000, 2000))
 	return result_ransac
 
 

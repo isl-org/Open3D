@@ -35,6 +35,8 @@ if __name__ == "__main__":
 						preprocess_point_cloud(get_ply_path(dataset_name, s))
 				(target_down, target_fpfh) = \
 						preprocess_point_cloud(get_ply_path(dataset_name, t))
+				print("preprocessing done. points %d %d" % \
+						(len(source_down.points), len(target_down.points)))
 
 				result_ransac = register_point_cloud_FPFH(
 						source_down, target_down, source_fpfh, target_fpfh)
@@ -45,6 +47,7 @@ if __name__ == "__main__":
 				else:
 					alignment.append(CameraPose([s, t, n_ply_files],
 							np.linalg.inv(result_ransac.transformation)))
+					print(np.linalg.inv(result_ransac.transformation))
 
 				if do_visualization:
 					DrawRegistrationResult(source_down, target_down,

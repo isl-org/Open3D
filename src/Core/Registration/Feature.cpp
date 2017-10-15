@@ -149,7 +149,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
 				// Our initial test shows that the full fpfh function in the
 				// paper seems to be better than PCL implementation. Further
 				// test required.
-				// feature->data_(j, i) += spfh->data_(j, i);
+				feature->data_(j, i) += spfh->data_(j, i);
 			}
 		}
 	}
