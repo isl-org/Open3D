@@ -340,11 +340,6 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		double number_of_correspondences =
 				pose_graph.edges_[iter_edge].information_(0,0);
-		PrintDebug("edge : %03d [%d-%d], number_of_correspondences : %lf\n",
-				iter_edge,
-				pose_graph.edges_[iter_edge].source_node_id_,
-				pose_graph.edges_[iter_edge].target_node_id_,
-				number_of_correspondences);
 		average_number_of_correspondences += number_of_correspondences;
 	}
 	if (n_edges > 0) {
