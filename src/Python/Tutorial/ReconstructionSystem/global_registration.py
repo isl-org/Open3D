@@ -83,10 +83,8 @@ def register_point_cloud(ply_file_names,
 	info = np.identity(6)
 
 	n_files = len(ply_file_names)
-	# for s in range(n_files):
-	# 	for t in range(s + 1, n_files):
-	for s in [0]:
-		for t in [1]:
+	for s in range(n_files):
+		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
 					ply_file_names[s])
 			(target_down, target_fpfh) = preprocess_point_cloud(
