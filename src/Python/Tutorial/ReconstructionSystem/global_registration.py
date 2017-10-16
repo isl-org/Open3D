@@ -38,8 +38,8 @@ def register_point_cloud_ICP(source, target,
 			init_transformation,
 			TransformationEstimationPointToPlane())
 	print(result_icp)
-	information_matrix = GetInformationMatrixFromRegistrationResult(
-			source_down, target_down, result_icp)
+	information_matrix = GetInformationMatrixFromPointClouds(
+			source, target, 0.075, result_icp.transformation)
 	return (result_icp.transformation, information_matrix)
 
 
@@ -67,8 +67,8 @@ def register_colored_point_cloud_ICP(source, target,
 				relative_rmse = 1e-6, max_iteration = iter))
 		current_transformation = result_icp.transformation
 
-	information_matrix = GetInformationMatrixFromRegistrationResult(
-			source, target, result_icp)
+	information_matrix = GetInformationMatrixFromPointClouds(
+			source, target, 0.075, result_icp.transformation)
 	if draw_result:
 		DrawRegistrationResultOriginalColor(source, target,
 				result_icp.transformation)
@@ -76,15 +76,17 @@ def register_colored_point_cloud_ICP(source, target,
 
 
 def register_point_cloud(ply_file_names,
-		registration_type = "color", draw_reslt = False):
+		registration_type = "color", draw_result = True):
 	pose_graph = PoseGraph()
 	odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(odometry))
 	info = np.identity(6)
 
 	n_files = len(ply_file_names)
-	for s in range(n_files):
-		for t in range(s + 1, n_files):
+	# for s in range(n_files):
+	# 	for t in range(s + 1, n_files):
+	for s in [0]:
+		for t in [1]:
 			(source_down, source_fpfh) = preprocess_point_cloud(
 					ply_file_names[s])
 			(target_down, target_fpfh) = preprocess_point_cloud(
@@ -93,8 +95,8 @@ def register_point_cloud(ply_file_names,
 			print("RegistrationRANSACBasedOnFeatureMatching")
 			result_ransac = register_point_cloud_FPFH(source_down, target_down,
 					source_fpfh, target_fpfh)
-			if draw_reslt:
-				DrawRegistrationResultOriginalColor(source_down, target_down,
+			if draw_result:
+				DrawRegistrationResult(source_down, target_down,
 						result_ransac.transformation)
 
 			print("RegistrationPointCloud")
@@ -106,9 +108,9 @@ def register_point_cloud(ply_file_names,
 				(transformation_matrix, information_matrix) = \
 						register_point_cloud_ICP(
 						source_down, target_down, result_ransac.transformation)
-			if draw_reslt:
-				DrawRegistrationResult(source_down, target_down,
-						result_icp.transformation)
+			if draw_result:
+				DrawRegistrationResultOriginalColor(source_down, target_down,
+						transformation_matrix)
 
 			if t == s + 1: # odometry case
 				odometry = np.dot(transformation_matrix, odometry)

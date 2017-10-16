@@ -267,8 +267,9 @@ void pybind_registration_methods(py::module &m)
 			"checkers"_a = std::vector<std::reference_wrapper<const
 			CorrespondenceChecker>>(), "criteria"_a =
 			RANSACConvergenceCriteria(100000, 100));
-	m.def("GetInformationMatrixFromRegistrationResult",
-			&GetInformationMatrixFromRegistrationResult,
+	m.def("GetInformationMatrixFromPointClouds",
+			&GetInformationMatrixFromPointClouds,
 			"Function for computing information matrix from RegistrationResult",
-			"source"_a, "target"_a, "transformation_result"_a);
+			"source"_a, "target"_a, "max_correspondence_distance"_a,
+			"transformation_result"_a);
 }

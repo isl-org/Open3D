@@ -340,6 +340,11 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		double number_of_correspondences =
 				pose_graph.edges_[iter_edge].information_(0,0);
+		PrintDebug("edge : %03d [%d-%d], number_of_correspondences : %lf\n",
+				iter_edge,
+				pose_graph.edges_[iter_edge].source_node_id_,
+				pose_graph.edges_[iter_edge].target_node_id_,
+				number_of_correspondences);
 		average_number_of_correspondences += number_of_correspondences;
 	}
 	if (n_edges > 0) {
@@ -394,8 +399,7 @@ void GlobalOptimizationGaussNewton::
 
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
-	PrintDebug("Line process weight : %f\n",
-			line_process_weight);
+	PrintDebug("Line process weight : %f\n", line_process_weight);
 
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);
 	double current_residual, new_residual;
@@ -480,8 +484,7 @@ void GlobalOptimizationLevenbergMarquardt::
 
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
-	PrintDebug("Line process weight : %f\n",
-			line_process_weight);
+	PrintDebug("Line process weight : %f\n", line_process_weight);
 
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);
 	double current_residual, new_residual;
