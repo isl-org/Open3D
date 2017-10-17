@@ -74,14 +74,16 @@ def register_colored_point_cloud_ICP(source, target,
 	return (result_icp.transformation, information_matrix)
 
 
-def register_point_cloud(ply_file_names,
-		registration_type = "color", draw_result = False):
+def register_point_cloud(path_dataset, ply_file_names,
+		registration_type = "colo", draw_result = True):
 	pose_graph = PoseGraph()
 	odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(odometry))
 	info = np.identity(6)
 
 	n_files = len(ply_file_names)
+	path_fragment = path_dataset + 'fragments/'
+	n_frames_per_fragment = 100
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
@@ -89,37 +91,47 @@ def register_point_cloud(ply_file_names,
 			(target_down, target_fpfh) = preprocess_point_cloud(
 					ply_file_names[t])
 
-			print("RegistrationRANSACBasedOnFeatureMatching")
-			result_ransac = register_point_cloud_FPFH(source_down, target_down,
-					source_fpfh, target_fpfh)
+			if t == s + 1: # odometry case
+				print("Using RGBD odometry")
+				pose_graph_name = path_fragment + "fragments_opt_%03d.json" % s
+				pose_graph = ReadPoseGraph(pose_graph_name)
+				transformation_init = np.linalg.inv(pose_graph.nodes \
+						[n_frames_per_fragment-1].pose)
+			else: # loop closure case
+				print("RegistrationRANSACBasedOnFeatureMatching")
+				result_ransac = register_point_cloud_FPFH(
+						source_down, target_down,
+						source_fpfh, target_fpfh)
+				transformation_init = result_ransac.transformation
 			if draw_result:
 				DrawRegistrationResult(source_down, target_down,
-						result_ransac.transformation)
+						transformation_init)
 
 			print("RegistrationPointCloud")
 			if (registration_type == "color"):
-				(transformation_matrix, information_matrix) = \
+				(transformation_icp, information_icp) = \
 						register_colored_point_cloud_ICP(
-						source_down, target_down, result_ransac.transformation)
+						source_down, target_down, transformation_init)
 			else:
-				(transformation_matrix, information_matrix) = \
+				(transformation_icp, information_icp) = \
 						register_point_cloud_ICP(
-						source_down, target_down, result_ransac.transformation)
+						source_down, target_down, transformation_init)
 			if draw_result:
 				DrawRegistrationResultOriginalColor(source_down, target_down,
-						transformation_matrix)
+						transformation_icp)
 
+			print("Build PoseGraph for Further Optmiziation")
 			if t == s + 1: # odometry case
-				odometry = np.dot(transformation_matrix, odometry)
+				odometry = np.dot(transformation_icp, odometry)
 				odometry_inv = np.linalg.inv(odometry)
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, transformation_matrix,
-						information_matrix, False))
-			else: # edge case
+						PoseGraphEdge(s, t, transformation_icp,
+						information_icp, False))
+			else: # loop closure case
 				pose_graph.edges.append(
-						PoseGraphEdge(s, t, transformation_matrix,
-						information_matrix, True))
+						PoseGraphEdge(s, t, transformation_icp,
+						information_icp, True))
 	return pose_graph
 
 
@@ -131,7 +143,7 @@ if __name__ == "__main__":
 		sys.exit()
 
 	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
-	pose_graph = register_point_cloud(ply_file_names)
+	pose_graph = register_point_cloud(path_dataset, ply_file_names)
 	pose_graph_name = path_dataset + "/fragments/global_registration.json"
 	WritePoseGraph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + "/fragments/" + \

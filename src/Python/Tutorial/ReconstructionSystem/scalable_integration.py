@@ -16,7 +16,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
             with_color = True)
 
 	path_fragment = path_dataset + 'fragments/'
-	global_pose_graph_name = path_fragment + "global_registration_optimized.json"
+	global_pose_graph_name = path_fragment + "global_registration.json"
 	global_pose_graph = ReadPoseGraph(global_pose_graph_name)
 
 	for fragment_id in range(len(global_pose_graph.nodes)):
@@ -57,7 +57,6 @@ if __name__ == "__main__":
 		intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
 	mesh = scalable_integrate_rgb_frames(path_dataset, intrinsic)
-	path_fragment = path_dataset + 'fragments/'
-	mesh_name = path_fragment + "integrated.ply"
-	print("Saving mesh %s", mesh_name)
+	mesh_name = path_dataset + "integrated.ply"
+	print("Saving mesh as %s", mesh_name)
 	WriteTriangleMesh(mesh_name, mesh, False, True)
