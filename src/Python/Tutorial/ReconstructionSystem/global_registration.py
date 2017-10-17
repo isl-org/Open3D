@@ -28,7 +28,10 @@ def register_point_cloud_FPFH(source, target,
 			CorrespondenceCheckerBasedOnDistance(0.075),
 			CorrespondenceCheckerBasedOnNormal(0.52359878)],
 			RANSACConvergenceCriteria(4000000, 2000))
-	return result_ransac
+	if (result_ransac.transformation.trace() == 4.0):
+		return (False, np.identity(4))
+	else:
+		return (True, result_ransac)
 
 
 def register_point_cloud_ICP(source, target,
@@ -101,10 +104,14 @@ def register_point_cloud(path_dataset, ply_file_names,
 				print(transformation_init)
 			else: # loop closure case
 				print("RegistrationRANSACBasedOnFeatureMatching")
-				result_ransac = register_point_cloud_FPFH(
+				(success_ransac, result_ransac) = register_point_cloud_FPFH(
 						source_down, target_down,
 						source_fpfh, target_fpfh)
-				transformation_init = result_ransac.transformation
+				if success_ransac:
+					print("No resonable solution. Skip this pair")
+					continue
+				else:
+					transformation_init = result_ransac.transformation
 			if draw_result:
 				DrawRegistrationResult(source_down, target_down,
 						transformation_init)

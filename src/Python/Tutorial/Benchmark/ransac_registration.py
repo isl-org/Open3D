@@ -38,11 +38,11 @@ if __name__ == "__main__":
 				print("preprocessing done. points %d %d" % \
 						(len(source_down.points), len(target_down.points)))
 
-				result_ransac = register_point_cloud_FPFH(
+				(success_ransac, result_ransac) = register_point_cloud_FPFH(
 						source_down, target_down, source_fpfh, target_fpfh)
 				# Note: we save inverse of result_ransac.transformation
 				# to comply with http://redwood-data.org/indoor/fileformat.html
-				if (result_ransac.transformation.trace() == 4.0):
+				if success_ransac:
 					print("No resonable solution.")
 				else:
 					alignment.append(CameraPose([s, t, n_ply_files],
