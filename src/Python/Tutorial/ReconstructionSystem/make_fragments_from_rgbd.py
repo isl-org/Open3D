@@ -131,8 +131,8 @@ if __name__ == "__main__":
 
 	for fragment_id in range(n_fragments):
 		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-		pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-		WritePoseGraph(pose_graph_name, pose_graph)
+		# pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
+		# WritePoseGraph(pose_graph_name, pose_graph)
 		pose_graph_optmized_name = path_fragment + \
 				"fragments_opt_%03d.json" % fragment_id
 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

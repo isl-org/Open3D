@@ -28,12 +28,13 @@
 
 namespace three {
 
-class GlobalOptimizationLineProcessOption
+class GlobalOptimizationOption
 {
 public:
-	GlobalOptimizationLineProcessOption(
+	GlobalOptimizationOption(
 			double max_correspondence_distance = 0.07,
-			double edge_prune_threshold = 0.25) :
+			double edge_prune_threshold = 0.25,
+			int unchanged_node = -1) :
 			max_correspondence_distance_(max_correspondence_distance),
 			edge_prune_threshold_(edge_prune_threshold) {
 		max_correspondence_distance_ = max_correspondence_distance < 0.0
@@ -42,7 +43,7 @@ public:
 				edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
 				? 0.25 : edge_prune_threshold;
 	};
-	~GlobalOptimizationLineProcessOption() {};
+	~GlobalOptimizationOption() {};
 
 public:
 	/// See reference list in GlobalOptimization.h
@@ -53,6 +54,8 @@ public:
 	/// According to [Choi et al 2015],
 	/// line_process weight < edge_prune_threshold_ (0.25) is pruned.
 	double edge_prune_threshold_;
+	/// This node is unchanged after optimization
+	int unchanged_node_;
 };
 
 class GlobalOptimizationConvergenceCriteria
