@@ -107,11 +107,12 @@ def register_point_cloud(path_dataset, ply_file_names,
 				(success_ransac, result_ransac) = register_point_cloud_FPFH(
 						source_down, target_down,
 						source_fpfh, target_fpfh)
-				if success_ransac:
+				if not success_ransac:
 					print("No resonable solution. Skip this pair")
 					continue
 				else:
 					transformation_init = result_ransac.transformation
+				print(transformation_init)
 			if draw_result:
 				DrawRegistrationResult(source_down, target_down,
 						transformation_init)

@@ -42,7 +42,7 @@ if __name__ == "__main__":
 						source_down, target_down, source_fpfh, target_fpfh)
 				# Note: we save inverse of result_ransac.transformation
 				# to comply with http://redwood-data.org/indoor/fileformat.html
-				if success_ransac:
+				if not success_ransac:
 					print("No resonable solution.")
 				else:
 					alignment.append(CameraPose([s, t, n_ply_files],
