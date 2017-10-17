@@ -16,7 +16,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
             with_color = True)
 
 	path_fragment = path_dataset + 'fragments/'
-	global_pose_graph_name = path_fragment + "global_registration.json"
+	global_pose_graph_name = path_fragment + "global_registration_optimized.json"
 	global_pose_graph = ReadPoseGraph(global_pose_graph_name)
 
 	for fragment_id in range(len(global_pose_graph.nodes)):
@@ -34,7 +34,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 					depth_trunc = 4.0, convert_rgb_to_intensity = False)
 			pose = np.dot(global_pose_graph.nodes[fragment_id].pose,
 					pose_graph.nodes[frame_id].pose)
-        	volume.Integrate(rgbd, intrinsic, np.linalg.inv(pose))
+			volume.Integrate(rgbd, intrinsic, np.linalg.inv(pose))
 
 	mesh = volume.ExtractTriangleMesh()
 	mesh.ComputeVertexNormals()
@@ -58,5 +58,5 @@ if __name__ == "__main__":
 
 	mesh = scalable_integrate_rgb_frames(path_dataset, intrinsic)
 	mesh_name = path_dataset + "integrated.ply"
-	print("Saving mesh as %s", mesh_name)
+	print("Saving mesh as %s" % mesh_name)
 	WriteTriangleMesh(mesh_name, mesh, False, True)
