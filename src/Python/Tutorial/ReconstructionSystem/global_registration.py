@@ -84,10 +84,8 @@ def register_point_cloud(path_dataset, ply_file_names,
 	n_files = len(ply_file_names)
 	path_fragment = path_dataset + 'fragments/'
 	n_frames_per_fragment = 100
-	# for s in range(n_files):
-		# for t in range(s + 1, n_files):
-	for s in range(n_files - 1):
-		for t in [s + 1]:
+	for s in range(n_files):
+		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
 					ply_file_names[s])
 			(target_down, target_fpfh) = preprocess_point_cloud(
@@ -97,8 +95,10 @@ def register_point_cloud(path_dataset, ply_file_names,
 				print("Using RGBD odometry")
 				pose_graph_frag_name = path_fragment + "fragments_opt_%03d.json" % s
 				pose_graph_frag = ReadPoseGraph(pose_graph_frag_name)
-				transformation_init = np.linalg.inv(pose_graph_frag.nodes \
-						[n_frames_per_fragment-1].pose)
+				n_nodes = len(pose_graph_frag.nodes)
+				transformation_init = np.linalg.inv(
+						pose_graph_frag.nodes[n_nodes-1].pose)
+				print(transformation_init)
 			else: # loop closure case
 				print("RegistrationRANSACBasedOnFeatureMatching")
 				result_ransac = register_point_cloud_FPFH(
