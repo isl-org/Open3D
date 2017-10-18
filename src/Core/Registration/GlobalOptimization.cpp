@@ -355,19 +355,22 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	}
 }
 
-void CompensateUnchangedPoseGraphNode(PoseGraph &pose_graph,
-		int unchanged_node)
+void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
+		const PoseGraph &pose_graph_orig, int reference_node)
 {
-	int n_nodes = (int)pose_graph.nodes_.size();
-	if (unchanged_node < 0 || unchanged_node > n_nodes) {
+	PrintDebug("CompensateReferencePoseGraphNode : reference : %d",
+			reference_node);
+	int n_nodes = (int)pose_graph_new.nodes_.size();
+	if (reference_node < 0 || reference_node > n_nodes) {
 		return;
 	} else {
-		const Eigen::Matrix4d unchanged_node_pose_inv =
-				pose_graph.nodes_[unchanged_node].pose_.inverse();
+		Eigen::Matrix4d compensation =
+				pose_graph_orig.nodes_[reference_node].pose_ *
+				pose_graph_new.nodes_[reference_node].pose_.inverse();
 		for (int i = 0; i < n_nodes; i++)
 		{
-			pose_graph.nodes_[i].pose_ = unchanged_node_pose_inv *
-					pose_graph.nodes_[i].pose_;
+			pose_graph_new.nodes_[i].pose_ = compensation *
+					pose_graph_new.nodes_[i].pose_;
 		}
 	}
 }
@@ -610,8 +613,9 @@ void GlobalOptimization(
 	auto pose_graph_pruned = CreatePoseGraphWithoutInvalidEdges(
 			*pose_graph_pre, option);
 	method.OptimizePoseGraph(*pose_graph_pruned, criteria, option);
+	CompensateReferencePoseGraphNode(*pose_graph_pruned,
+			pose_graph, option.reference_node_);
 	pose_graph = *pose_graph_pruned;
-	CompensateUnchangedPoseGraphNode(pose_graph, option.unchanged_node_);
 }
 
 }	// namespace three

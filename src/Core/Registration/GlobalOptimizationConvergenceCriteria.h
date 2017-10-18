@@ -34,9 +34,10 @@ public:
 	GlobalOptimizationOption(
 			double max_correspondence_distance = 0.07,
 			double edge_prune_threshold = 0.25,
-			int unchanged_node = -1) :
+			int reference_node = -1) :
 			max_correspondence_distance_(max_correspondence_distance),
-			edge_prune_threshold_(edge_prune_threshold) {
+			edge_prune_threshold_(edge_prune_threshold),
+			reference_node_(reference_node) {
 		max_correspondence_distance_ = max_correspondence_distance < 0.0
 				? 0.07 : max_correspondence_distance;
 		edge_prune_threshold_ =
@@ -55,7 +56,7 @@ public:
 	/// line_process weight < edge_prune_threshold_ (0.25) is pruned.
 	double edge_prune_threshold_;
 	/// This node is unchanged after optimization
-	int unchanged_node_;
+	int reference_node_;
 };
 
 class GlobalOptimizationConvergenceCriteria

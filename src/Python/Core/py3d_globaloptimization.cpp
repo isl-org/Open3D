@@ -201,25 +201,25 @@ void pybind_globaloptimization(py::module &m)
 				max_correspondence_distance_)
 		.def_readwrite("edge_prune_threshold",
 				&GlobalOptimizationOption::edge_prune_threshold_)
-		.def_readwrite("unchanged_node",
-				&GlobalOptimizationOption::unchanged_node_)
+		.def_readwrite("reference_node",
+				&GlobalOptimizationOption::reference_node_)
 		.def("__init__", [](GlobalOptimizationOption &o,
 				double max_correspondence_distance,
 				double edge_prune_threshold,
-				int unchanged_node) {
+				int reference_node) {
 				new (&o)GlobalOptimizationOption(max_correspondence_distance,
-				edge_prune_threshold, unchanged_node); },
+				edge_prune_threshold, reference_node); },
 				"max_correspondence_distance"_a = 0.03,
 				"edge_prune_threshold"_a = 0.25,
-				"unchanged_node"_a = 0)
+				"reference_node"_a = -1)
 		.def("__repr__", [](const GlobalOptimizationOption &goo) {
 		return std::string("GlobalOptimizationOption") +
 			std::string("\n> max_correspondence_distance : ") +
 			std::to_string(goo.max_correspondence_distance_) +
 			std::string("\n> edge_prune_threshold : ") +
-			std::to_string(goo.edge_prune_threshold_);
-			std::string("\n> unchanged_node : ") +
-			std::to_string(goo.unchanged_node_);
+			std::to_string(goo.edge_prune_threshold_) +
+			std::string("\n> reference_node : ") +
+			std::to_string(goo.reference_node_);
 	});
 }
 

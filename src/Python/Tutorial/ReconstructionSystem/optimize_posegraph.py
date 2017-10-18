@@ -11,7 +11,7 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	option = GlobalOptimizationOption(
 			max_correspondence_distance = 0.03,
 			edge_prune_threshold = 0.25,
-			unchanged_node = 0)
+			reference_node = 0)
 	pose_graph = ReadPoseGraph(pose_graph_name)
 	GlobalOptimization(pose_graph, method, criteria, option)
 	WritePoseGraph(pose_graph_optmized_name, pose_graph)

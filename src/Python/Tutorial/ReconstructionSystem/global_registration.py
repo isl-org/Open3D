@@ -101,6 +101,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 				n_nodes = len(pose_graph_frag.nodes)
 				transformation_init = np.linalg.inv(
 						pose_graph_frag.nodes[n_nodes-1].pose)
+				print(pose_graph_frag.nodes[0].pose)
 				print(transformation_init)
 			else: # loop closure case
 				print("RegistrationRANSACBasedOnFeatureMatching")
