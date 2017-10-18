@@ -138,7 +138,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
-						information_icp, False))
+						information_icp, True))
 			else: # loop closure case
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
