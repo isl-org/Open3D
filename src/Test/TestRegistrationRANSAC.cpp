@@ -39,7 +39,7 @@ std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
 {
 	auto pcd = three::CreatePointCloudFromFile(file_name);
 	auto pcd_down = VoxelDownSample(*pcd, 0.04);
-	EstimateNormals(*pcd_down, three::KDTreeSearchParamHybrid(0.01, 30));
+	EstimateNormals(*pcd_down, three::KDTreeSearchParamHybrid(0.1, 30));
 	auto pcd_fpfh = ComputeFPFHFeature(
 			*pcd_down, three::KDTreeSearchParamHybrid(0.25, 100));
 	return std::make_tuple(pcd_down, pcd_fpfh);
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
 		*source, *target, *source_fpfh, *target_fpfh, 0.075,
 		TransformationEstimationPointToPoint(false), 4,
-		correspondence_checker, RANSACConvergenceCriteria(400000, 500));
+		correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
 
 	if (visualization)
 		VisualizeRegistration(*source, *target, 
