@@ -32,6 +32,8 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
+#include <Core/Utility/Timer.h>
+
 using namespace three;
 
 std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
@@ -89,9 +91,12 @@ int main(int argc, char *argv[])
 		CorrespondenceCheckerBasedOnEdgeLength(0.9);
 	auto correspondence_checker_distance =
 		CorrespondenceCheckerBasedOnDistance(0.075);
+	auto correspondence_checker_normal =
+		CorrespondenceCheckerBasedOnNormal(0.52359878);
 
 	correspondence_checker.push_back(correspondence_checker_edge_length);
 	correspondence_checker.push_back(correspondence_checker_distance);
+	correspondence_checker.push_back(correspondence_checker_normal);
 	auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
 		*source, *target, *source_fpfh, *target_fpfh, 0.075,
 		TransformationEstimationPointToPoint(false), 4,
@@ -100,6 +105,34 @@ int main(int argc, char *argv[])
 	if (visualization)
 		VisualizeRegistration(*source, *target, 
 				registration_result.transformation_);	
+
+	//Timer timer;
+
+	//timer.Start();
+
+	//// build random dataset
+	//Feature feature;
+	//feature.Resize(33, 1000000);
+	//for (int i = 0; i < 1000000; i++) {
+	//	Eigen::Vector3d point;
+	//	for (int j = 0; j < 33; j++)
+	//	{
+	//		feature.data_(j,i) = (rand() / (RAND_MAX + 1.0));
+	//	}
+	//}
+	//KDTreeFlann kdtree(feature);
+
+	//// Loop over the sampled features
+	//for (int i = 0; i < 1000000; i++)
+	//{
+	//	std::vector<int> ind(1);
+	//	std::vector<double> dist(1);
+	//	kdtree.SearchKNN(Eigen::VectorXd(feature.data_.col(0)), 1, ind, dist);
+	//}
+
+	//timer.Stop();
+	//timer.Print("Test");
+
 
 	return 0;
 }
