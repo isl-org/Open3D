@@ -50,15 +50,15 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 
 	double error2 = 0.0;
 
-#ifdef _OPENMP
-#pragma omp parallel
-	{
-#endif
+//#ifdef _OPENMP
+//#pragma omp parallel
+//	{
+//#endif
 		double error2_private = 0.0;
 		CorrespondenceSet correspondence_set_private;
-#ifdef _OPENMP
-#pragma omp for nowait
-#endif
+//#ifdef _OPENMP
+//#pragma omp for nowait
+//#endif
 		for (int i = 0; i < (int)source.points_.size(); i++) {
 			std::vector<int> indices(1);
 			std::vector<double> dists(1);
@@ -66,23 +66,23 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 			if (target_kdtree.SearchHybrid(point, max_correspondence_distance, 1,
 					indices, dists) > 0) {
 				error2_private += dists[0];
-				correspondence_set_private.push_back(
-						Eigen::Vector2i(i, indices[0]));
+				//correspondence_set_private.push_back(
+				//		Eigen::Vector2i(i, indices[0]));
 			}
 		}
-#ifdef _OPENMP
-#pragma omp critical
-#endif
+//#ifdef _OPENMP
+//#pragma omp critical
+//#endif
 		{
-			for (int i = 0; i < correspondence_set_private.size(); i++) {
-				result.correspondence_set_.push_back(
-						correspondence_set_private[i]);
-			}
+			//for (int i = 0; i < correspondence_set_private.size(); i++) {
+			//	result.correspondence_set_.push_back(
+			//			correspondence_set_private[i]);
+			//}
 			error2 += error2_private;
 		}
-#ifdef _OPENMP
-	}
-#endif
+//#ifdef _OPENMP
+//	}
+//#endif
 
 	if (result.correspondence_set_.empty()) {
 		result.fitness_ = 0.0;
@@ -233,44 +233,60 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	RegistrationResult result;
 	int total_validation = 0;
 	bool finished_validation = false;
-#ifdef _OPENMP
-#pragma omp parallel
-{
-#endif
+	int num_similar_features = 1;
+	std::vector<std::vector<int>> similar_features(source.points_.size());
+
+//#ifdef _OPENMP
+//#pragma omp parallel
+//{
+//#endif
 	CorrespondenceSet ransac_corres(ransac_n);
 	KDTreeFlann kdtree(target);
 	KDTreeFlann kdtree_feature(target_feature);
 	RegistrationResult result_private;
 	unsigned int seed_number;
-#ifdef _OPENMP
-		// each thread has different seed_number
-	seed_number = (unsigned int)std::time(0) *
-			(omp_get_thread_num() + 1);
-#else
+//#ifdef _OPENMP
+//		// each thread has different seed_number
+//	seed_number = (unsigned int)std::time(0) *
+//			(omp_get_thread_num() + 1);
+//#else
 	seed_number = (unsigned int)std::time(0);
-#endif
+//#endif
 	std::srand(seed_number);
-
-#ifdef _OPENMP
-#pragma omp for nowait
-#endif
+	int cnt = 0;
+//#ifdef _OPENMP
+//#pragma omp for nowait
+//#endif
 	for (int itr = 0; itr < criteria.max_iteration_; itr++) {
-		if (!finished_validation)
+		//if (!finished_validation)
+		if (true)
 		{
-			std::vector<int> indices(1);
-			std::vector<double> dists(1);
+			//std::vector<int> indices(num_similar_features);
+			std::vector<double> dists(num_similar_features);
 			Eigen::Matrix4d transformation;
 			for (int j = 0; j < ransac_n; j++) {
-				ransac_corres[j](0) = std::rand() % (int)source.points_.size();
-				if (kdtree_feature.SearchKNN(Eigen::VectorXd(
-						source_feature.data_.col(ransac_corres[j](0))), 1,
-						indices, dists) == 0) {
-					PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
-					ransac_corres[j](1) = 0;
-				}
-				else {
-					ransac_corres[j](1) = indices[0];
-				}
+				int source_sample_id = std::rand() % (int)source.points_.size();
+				if (similar_features[source_sample_id].empty()) {
+					kdtree_feature.SearchKNN(Eigen::VectorXd(
+							source_feature.data_.col(source_sample_id)),
+							num_similar_features,
+							similar_features[source_sample_id], dists);
+				}	
+				ransac_corres[j](0) = source_sample_id;
+				if (num_similar_features == 1)
+					ransac_corres[j](1) = similar_features[source_sample_id][0];
+				else
+					ransac_corres[j](1) = similar_features[source_sample_id]
+							[std::rand() % num_similar_features];
+				//if (kdtree_feature.SearchKNN(Eigen::VectorXd(
+				//		source_feature.data_.col(ransac_corres[j](0))), 1,
+				//		indices, dists) == 0) {
+				//	PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
+				//	ransac_corres[j](1) = 0;
+				//}
+				//else {
+				//	ransac_corres[j](1) = indices[0];
+				//}
 			}
 			bool check = true;
 			for (const auto &checker : checkers) {
@@ -304,31 +320,32 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 					this_result.inlier_rmse_ < result_private.inlier_rmse_)) {
 				result_private = this_result;
 			}
-#ifdef _OPENMP
-#pragma omp critical
-			{
-#endif
+//#ifdef _OPENMP
+//#pragma omp critical
+//			{
+//#endif
 				total_validation++;
 				if (total_validation >= criteria.max_validation_)
 					finished_validation = true;
-#ifdef _OPENMP
-			}
-#endif
+//#ifdef _OPENMP
+//			}
+//#endif
 		} // end of if statement
 	} // end of for-loop
-#ifdef _OPENMP
-#pragma omp critical
-	{
-#endif
+//#ifdef _OPENMP
+//#pragma omp critical
+//	{
+//#endif
 		if (result_private.fitness_ > result.fitness_ ||
 			(result_private.fitness_ == result.fitness_ &&
 				result_private.inlier_rmse_ < result.inlier_rmse_)) {
 			result = result_private;
 		}
-#ifdef _OPENMP
-	}
-}
-#endif
+//#ifdef _OPENMP
+//	}
+//}
+//#endif
+	PrintDebug("total_validation : %d\n", total_validation);
 	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
 			result.inlier_rmse_);
 	return result;

@@ -38,7 +38,7 @@ std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
 		PreprocessPointCloud(const char* file_name)
 {
 	auto pcd = three::CreatePointCloudFromFile(file_name);
-	auto pcd_down = VoxelDownSample(*pcd, 0.04);
+	auto pcd_down = VoxelDownSample(*pcd, 0.05);
 	EstimateNormals(*pcd_down, three::KDTreeSearchParamHybrid(0.1, 30));
 	auto pcd_fpfh = ComputeFPFHFeature(
 			*pcd_down, three::KDTreeSearchParamHybrid(0.25, 100));
@@ -62,11 +62,11 @@ int main(int argc, char *argv[])
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 	
-	if (argc != 3) {
-		PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
-				argv[0]);
-		return 1;
-	}
+	//if (argc != 3) {
+	//	PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
+	//			argv[0]);
+	//	return 1;
+	//}
 
 	bool visualization = false;
 
@@ -79,9 +79,9 @@ int main(int argc, char *argv[])
 	std::shared_ptr<PointCloud> source, target;
 	std::shared_ptr<Feature> source_fpfh, target_fpfh;
 	std::tie(source, source_fpfh) = 
-			PreprocessPointCloud(argv[1]);
+			PreprocessPointCloud("C:/git/Open3D/build/lib/Release/Tutorial/Benchmark/testdata/livingroom1/cloud_bin_0.ply");
 	std::tie(target, target_fpfh) = 
-			PreprocessPointCloud(argv[2]);
+			PreprocessPointCloud("C:/git/Open3D/build/lib/Release/Tutorial/Benchmark/testdata/livingroom1/cloud_bin_1.ply");
 
 	std::vector<std::reference_wrapper<const CorrespondenceChecker>>
 		correspondence_checker;
