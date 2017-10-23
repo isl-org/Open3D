@@ -50,15 +50,15 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 
 	double error2 = 0.0;
 
-//#ifdef _OPENMP
-//#pragma omp parallel
-//	{
-//#endif
+#ifdef _OPENMP
+#pragma omp parallel
+	{
+#endif
 		double error2_private = 0.0;
 		CorrespondenceSet correspondence_set_private;
-//#ifdef _OPENMP
-//#pragma omp for nowait
-//#endif
+#ifdef _OPENMP
+#pragma omp for nowait
+#endif
 		for (int i = 0; i < (int)source.points_.size(); i++) {
 			std::vector<int> indices(1);
 			std::vector<double> dists(1);
@@ -70,9 +70,9 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 						Eigen::Vector2i(i, indices[0]));
 			}
 		}
-//#ifdef _OPENMP
-//#pragma omp critical
-//#endif
+#ifdef _OPENMP
+#pragma omp critical
+#endif
 		{
 			for (int i = 0; i < correspondence_set_private.size(); i++) {
 				result.correspondence_set_.push_back(
@@ -80,9 +80,9 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 			}
 			error2 += error2_private;
 		}
-//#ifdef _OPENMP
-//	}
-//#endif
+#ifdef _OPENMP
+	}
+#endif
 
 	if (result.correspondence_set_.empty()) {
 		result.fitness_ = 0.0;
@@ -233,7 +233,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	RegistrationResult result;
 	int total_validation = 0;
 	bool finished_validation = false;
-	int num_similar_features = 2;
+	int num_similar_features = 1;
 	std::vector<std::vector<int>> similar_features(source.points_.size());
 
 #ifdef _OPENMP
