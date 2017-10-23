@@ -230,21 +230,6 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		return RegistrationResult();
 	}
 
-	KDTreeFlann kdtree_feature(target_feature);
-	std::vector<int> corres((int)source.points_.size());
-	std::vector<int> indices(1);
-	std::vector<double> dists(1);
-	for (int i = 0; i < (int)source.points_.size(); i++) {
-		if (kdtree_feature.SearchKNN(Eigen::VectorXd(
-			source_feature.data_.col(i)), 1,
-			indices, dists) == 0) {
-			PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
-			corres[i] = 0;
-		} else {
-			corres[i] = indices[0];
-		}
-	}
-
 	RegistrationResult result;
 	int total_validation = 0;
 	bool finished_validation = false;
@@ -290,7 +275,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 					{
 						similar_features[source_sample_id] = indices;
 					}
-				}	
+				}
 				ransac_corres[j](0) = source_sample_id;
 				if (num_similar_features == 1)
 					ransac_corres[j](1) = similar_features[source_sample_id][0];
@@ -331,7 +316,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 				result_private = this_result;
 			}
 #ifdef _OPENMP
-#pragma omp critical	
+#pragma omp critical
 #endif
 			{
 				total_validation = total_validation + 1;

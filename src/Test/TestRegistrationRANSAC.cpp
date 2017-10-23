@@ -47,7 +47,7 @@ std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
 	return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
-void VisualizeRegistration(const three::PointCloud &source, 
+void VisualizeRegistration(const three::PointCloud &source,
 		const three::PointCloud &target, const Eigen::Matrix4d &Transformation)
 {
 	std::shared_ptr<PointCloud> source_transformed_ptr(new PointCloud);
@@ -63,12 +63,12 @@ int main(int argc, char *argv[])
 	using namespace three;
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
-	
-	//if (argc != 3) {
-	//	PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
-	//			argv[0]);
-	//	return 1;
-	//}
+
+	if (argc != 3) {
+		PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
+				argv[0]);
+		return 1;
+	}
 
 	bool visualization = false;
 
@@ -80,10 +80,10 @@ int main(int argc, char *argv[])
 
 	std::shared_ptr<PointCloud> source, target;
 	std::shared_ptr<Feature> source_fpfh, target_fpfh;
-	std::tie(source, source_fpfh) = 
-			PreprocessPointCloud("C:/git/Open3D/build/lib/Release/Tutorial/Benchmark/testdata/livingroom1/cloud_bin_0.ply");
-	std::tie(target, target_fpfh) = 
-			PreprocessPointCloud("C:/git/Open3D/build/lib/Release/Tutorial/Benchmark/testdata/livingroom1/cloud_bin_1.ply");
+	std::tie(source, source_fpfh) =
+			PreprocessPointCloud(argv[0]);
+	std::tie(target, target_fpfh) =
+			PreprocessPointCloud(argv[1]);
 
 	std::vector<std::reference_wrapper<const CorrespondenceChecker>>
 		correspondence_checker;
@@ -103,36 +103,8 @@ int main(int argc, char *argv[])
 		correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
 
 	if (visualization)
-		VisualizeRegistration(*source, *target, 
-				registration_result.transformation_);	
-
-	//Timer timer;
-
-	//timer.Start();
-
-	//// build random dataset
-	//Feature feature;
-	//feature.Resize(33, 1000000);
-	//for (int i = 0; i < 1000000; i++) {
-	//	Eigen::Vector3d point;
-	//	for (int j = 0; j < 33; j++)
-	//	{
-	//		feature.data_(j,i) = (rand() / (RAND_MAX + 1.0));
-	//	}
-	//}
-	//KDTreeFlann kdtree(feature);
-
-	//// Loop over the sampled features
-	//for (int i = 0; i < 1000000; i++)
-	//{
-	//	std::vector<int> ind(1);
-	//	std::vector<double> dist(1);
-	//	kdtree.SearchKNN(Eigen::VectorXd(feature.data_.col(0)), 1, ind, dist);
-	//}
-
-	//timer.Stop();
-	//timer.Print("Test");
-
+		VisualizeRegistration(*source, *target,
+				registration_result.transformation_);
 
 	return 0;
 }
