@@ -32,14 +32,16 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
+#include <Core/Utility/Timer.h>
+
 using namespace three;
 
 std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
 		PreprocessPointCloud(const char* file_name)
 {
 	auto pcd = three::CreatePointCloudFromFile(file_name);
-	auto pcd_down = VoxelDownSample(*pcd, 0.04);
-	EstimateNormals(*pcd_down, three::KDTreeSearchParamHybrid(0.01, 30));
+	auto pcd_down = VoxelDownSample(*pcd, 0.05);
+	EstimateNormals(*pcd_down, three::KDTreeSearchParamHybrid(0.1, 30));
 	auto pcd_fpfh = ComputeFPFHFeature(
 			*pcd_down, three::KDTreeSearchParamHybrid(0.25, 100));
 	return std::make_tuple(pcd_down, pcd_fpfh);
@@ -62,11 +64,11 @@ int main(int argc, char *argv[])
 
 	SetVerbosityLevel(VERBOSE_ALWAYS);
 	
-	if (argc != 3) {
-		PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
-				argv[0]);
-		return 1;
-	}
+	//if (argc != 3) {
+	//	PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
+	//			argv[0]);
+	//	return 1;
+	//}
 
 	bool visualization = false;
 
@@ -79,9 +81,9 @@ int main(int argc, char *argv[])
 	std::shared_ptr<PointCloud> source, target;
 	std::shared_ptr<Feature> source_fpfh, target_fpfh;
 	std::tie(source, source_fpfh) = 
-			PreprocessPointCloud(argv[1]);
+			PreprocessPointCloud("C:/git/Open3D/build/lib/Release/Tutorial/Benchmark/testdata/livingroom1/cloud_bin_0.ply");
 	std::tie(target, target_fpfh) = 
-			PreprocessPointCloud(argv[2]);
+			PreprocessPointCloud("C:/git/Open3D/build/lib/Release/Tutorial/Benchmark/testdata/livingroom1/cloud_bin_1.ply");
 
 	std::vector<std::reference_wrapper<const CorrespondenceChecker>>
 		correspondence_checker;
@@ -89,17 +91,48 @@ int main(int argc, char *argv[])
 		CorrespondenceCheckerBasedOnEdgeLength(0.9);
 	auto correspondence_checker_distance =
 		CorrespondenceCheckerBasedOnDistance(0.075);
+	auto correspondence_checker_normal =
+		CorrespondenceCheckerBasedOnNormal(0.52359878);
 
 	correspondence_checker.push_back(correspondence_checker_edge_length);
 	correspondence_checker.push_back(correspondence_checker_distance);
+	correspondence_checker.push_back(correspondence_checker_normal);
 	auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
 		*source, *target, *source_fpfh, *target_fpfh, 0.075,
 		TransformationEstimationPointToPoint(false), 4,
-		correspondence_checker, RANSACConvergenceCriteria(400000, 500));
+		correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
 
 	if (visualization)
 		VisualizeRegistration(*source, *target, 
 				registration_result.transformation_);	
+
+	//Timer timer;
+
+	//timer.Start();
+
+	//// build random dataset
+	//Feature feature;
+	//feature.Resize(33, 1000000);
+	//for (int i = 0; i < 1000000; i++) {
+	//	Eigen::Vector3d point;
+	//	for (int j = 0; j < 33; j++)
+	//	{
+	//		feature.data_(j,i) = (rand() / (RAND_MAX + 1.0));
+	//	}
+	//}
+	//KDTreeFlann kdtree(feature);
+
+	//// Loop over the sampled features
+	//for (int i = 0; i < 1000000; i++)
+	//{
+	//	std::vector<int> ind(1);
+	//	std::vector<double> dist(1);
+	//	kdtree.SearchKNN(Eigen::VectorXd(feature.data_.col(0)), 1, ind, dist);
+	//}
+
+	//timer.Stop();
+	//timer.Print("Test");
+
 
 	return 0;
 }
