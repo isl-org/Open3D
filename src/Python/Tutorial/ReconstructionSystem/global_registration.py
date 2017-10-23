@@ -1,16 +1,18 @@
 import numpy as np
 import sys
 sys.path.append("../..")
+sys.path.append("../Utility")
 from py3d import *
-from utility import *
-from utility_visualization import *
+from common import *
+from opencv import *
+from visualization import *
 from optimize_posegraph import *
 
 
 def preprocess_point_cloud(ply_file_name):
 	print(ply_file_name)
 	pcd = ReadPointCloud(ply_file_name)
-	pcd_down = VoxelDownSample(pcd, 0.04)
+	pcd_down = VoxelDownSample(pcd, 0.05)
 	EstimateNormals(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
 	pcd_fpfh = ComputeFPFHFeature(pcd_down,
@@ -24,8 +26,9 @@ def register_point_cloud_FPFH(source, target,
 			source, target, source_fpfh, target_fpfh, 0.075,
 			TransformationEstimationPointToPoint(False), 4,
 			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
-			CorrespondenceCheckerBasedOnDistance(0.075)],
-			RANSACConvergenceCriteria(4000000, 1000))
+			CorrespondenceCheckerBasedOnDistance(0.075),
+			CorrespondenceCheckerBasedOnNormal(0.52359878)],
+			RANSACConvergenceCriteria(4000000, 2000))
 	return result_ransac
 
 
@@ -46,7 +49,7 @@ def register_point_cloud_ICP(source, target,
 # Colored Point Cloud Registration Revisited, ICCV 2017
 def register_colored_point_cloud_ICP(source, target,
 		init_transformation = np.identity(4), draw_result = False):
-	voxel_radius = [ 0.04, 0.02, 0.01 ]
+	voxel_radius = [ 0.05, 0.025, 0.0125 ]
 	max_iter = [ 50, 30, 14 ]
 	current_transformation = init_transformation
 	for scale in range(3): # multi-scale approach

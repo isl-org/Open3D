@@ -25,14 +25,9 @@ def get_file_list(path, extension=None):
 	return file_list
 
 
-def initialize_opencv():
-	opencv_installed = True
-	try:
-		import cv2
-	except ImportError:
-		pass
-		print('OpenCV is not detected. Using Identity as an initial')
-		opencv_installed = False
-	if opencv_installed:
-		print('OpenCV is detected. Using ORB + 5pt algorithm')
-	return opencv_installed
+def get_file_list_from_custom_format(path, format):
+	number_of_files = len(get_file_list(path, splitext(format)[1]))
+	file_list = []
+	for i in range(number_of_files):
+		file_list.append("%s/%s" % (path, format % i))
+	return file_list
