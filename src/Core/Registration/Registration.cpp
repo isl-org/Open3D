@@ -230,30 +230,19 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		return RegistrationResult();
 	}
 
-	KDTreeFlann kdtree_feature(target_feature);
-	std::vector<int> corres((int)source.points_.size());
-	std::vector<int> indices(1);
-	std::vector<double> dists(1);
-	for (int i = 0; i < (int)source.points_.size(); i++) {
-		if (kdtree_feature.SearchKNN(Eigen::VectorXd(
-			source_feature.data_.col(i)), 1,
-			indices, dists) == 0) {
-			PrintDebug("[RegistrationRANSACBasedOnFeatureMatching] Found a feature without neighbors.\n");
-			corres[i] = 0;
-		} else {
-			corres[i] = indices[0];
-		}
-	}
-
 	RegistrationResult result;
 	int total_validation = 0;
 	bool finished_validation = false;
+	int num_similar_features = 1;
+	std::vector<std::vector<int>> similar_features(source.points_.size());
+
 #ifdef _OPENMP
 #pragma omp parallel
 {
 #endif
 	CorrespondenceSet ransac_corres(ransac_n);
 	KDTreeFlann kdtree(target);
+	KDTreeFlann kdtree_feature(target_feature);
 	RegistrationResult result_private;
 	unsigned int seed_number;
 #ifdef _OPENMP
@@ -271,10 +260,28 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	for (int itr = 0; itr < criteria.max_iteration_; itr++) {
 		if (!finished_validation)
 		{
+			std::vector<double> dists(num_similar_features);
 			Eigen::Matrix4d transformation;
 			for (int j = 0; j < ransac_n; j++) {
-				ransac_corres[j](0) = std::rand() % (int)source.points_.size();
-				ransac_corres[j](1) = corres[ransac_corres[j](0)];
+				int source_sample_id = std::rand() % (int)source.points_.size();
+				if (similar_features[source_sample_id].empty()) {
+					std::vector<int> indices(num_similar_features);
+					kdtree_feature.SearchKNN(Eigen::VectorXd(
+							source_feature.data_.col(source_sample_id)),
+							num_similar_features, indices, dists);
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+					{
+						similar_features[source_sample_id] = indices;
+					}
+				}
+				ransac_corres[j](0) = source_sample_id;
+				if (num_similar_features == 1)
+					ransac_corres[j](1) = similar_features[source_sample_id][0];
+				else
+					ransac_corres[j](1) = similar_features[source_sample_id]
+							[std::rand() % num_similar_features];
 			}
 			bool check = true;
 			for (const auto &checker : checkers) {
@@ -310,29 +317,28 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 			}
 #ifdef _OPENMP
 #pragma omp critical
-			{
 #endif
-				total_validation++;
+			{
+				total_validation = total_validation + 1;
 				if (total_validation >= criteria.max_validation_)
 					finished_validation = true;
-#ifdef _OPENMP
 			}
-#endif
 		} // end of if statement
 	} // end of for-loop
 #ifdef _OPENMP
 #pragma omp critical
-	{
 #endif
+	{
 		if (result_private.fitness_ > result.fitness_ ||
 			(result_private.fitness_ == result.fitness_ &&
 				result_private.inlier_rmse_ < result.inlier_rmse_)) {
 			result = result_private;
 		}
-#ifdef _OPENMP
 	}
+#ifdef _OPENMP
 }
 #endif
+	PrintDebug("total_validation : %d\n", total_validation);
 	PrintDebug("RANSAC: Fitness %.4f, RMSE %.4f\n", result.fitness_,
 			result.inlier_rmse_);
 	return result;
