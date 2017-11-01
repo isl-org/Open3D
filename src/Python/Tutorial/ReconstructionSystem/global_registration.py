@@ -60,9 +60,10 @@ def register_colored_point_cloud_ICP(source, target,
 		source_down = VoxelDownSample(source, radius)
 		target_down = VoxelDownSample(target, radius)
 		EstimateNormals(source_down, KDTreeSearchParamHybrid(
-				radius = scale, max_nn = 30))
+				radius = radius * 2, max_nn = 30))
+		print(np.asarray(source_down.normals))
 		EstimateNormals(target_down, KDTreeSearchParamHybrid(
-				radius = scale, max_nn = 30))
+				radius = radius * 2, max_nn = 30))
 		result_icp = RegistrationColoredICP(source_down, target_down,
 				radius, current_transformation,
 				ICPConvergenceCriteria(relative_fitness = 1e-6,
@@ -78,7 +79,7 @@ def register_colored_point_cloud_ICP(source, target,
 
 
 def register_point_cloud(path_dataset, ply_file_names,
-		registration_type = "color", draw_result = False):
+		registration_type = "color", draw_result = True):
 	pose_graph = PoseGraph()
 	odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(odometry))
@@ -89,6 +90,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 	n_frames_per_fragment = 100
 	for s in range(n_files):
 		# for t in range(s + 1, n_files):
+		# for s in range(17,n_files):
 		for t in [s + 1]:
 			(source_down, source_fpfh) = preprocess_point_cloud(
 					ply_file_names[s])
@@ -148,6 +150,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 
 if __name__ == "__main__":
+	SetVerbosityLevel(VerbosityLevel.Debug)
 	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
 	if not path_dataset:
 		print("usage : %s " % sys.argv[0])

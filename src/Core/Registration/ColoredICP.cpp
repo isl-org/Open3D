@@ -31,6 +31,7 @@
 #include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Geometry/KDTreeSearchParam.h>
 #include <Core/Utility/Eigen.h>
+#include <Core/Utility/Console.h>
 
 namespace three{
 
@@ -109,6 +110,8 @@ std::shared_ptr<PointCloudForColoredICP>
 				A(i - 1, 1) = (vt_proj(1) - vt(1));
 				A(i - 1, 2) = (vt_proj(2) - vt(2));
 				b(i - 1, 0) = (it_adj - it);
+				PrintDebug("(%f %f %f) %f %f %f %f\n", nt(0), nt(1), nt(2),
+						A(i - 1, 0), A(i - 1, 1), A(i - 1, 2), b(i - 1, 0));
 			}
 			// adds orthogonal constraint
 			A(nn - 1, 0) = (nn - 1) * nt(0);
@@ -122,6 +125,7 @@ std::shared_ptr<PointCloudForColoredICP>
 				A.transpose() * A, A.transpose() * b);
 			if (is_success) {
 				output->color_gradient_[k] = x;
+				PrintDebug("%f %f %f\n", x(0), x(1), x(2));
 			}
 		}
 	}
@@ -173,7 +177,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 				-nt(0) * nt(1), 1.0 - nt(1) * nt(1), -nt(1) * nt(2),
 				-nt(0) * nt(2), -nt(1) * nt(2), 1.0 - nt(2) * nt(2)).finished();
 
-		const Eigen::Vector3d &ditM = -dit.transpose() * M;
+		const Eigen::Vector3d &ditM = dit.transpose() * M;
 		J_r[1].block<3, 1>(0, 0) = sqrt_lambda_photometric * vs.cross(ditM);
 		J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
 		r[1] = sqrt_lambda_photometric * (is - is0_proj);
