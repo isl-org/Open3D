@@ -177,7 +177,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 				-nt(0) * nt(1), 1.0 - nt(1) * nt(1), -nt(1) * nt(2),
 				-nt(0) * nt(2), -nt(1) * nt(2), 1.0 - nt(2) * nt(2)).finished();
 
-		const Eigen::Vector3d &ditM = dit.transpose() * M;
+		const Eigen::Vector3d &ditM = -dit.transpose() * M;
 		J_r[1].block<3, 1>(0, 0) = sqrt_lambda_photometric * vs.cross(ditM);
 		J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
 		r[1] = sqrt_lambda_photometric * (is - is0_proj);
