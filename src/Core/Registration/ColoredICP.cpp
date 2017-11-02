@@ -31,7 +31,6 @@
 #include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Geometry/KDTreeSearchParam.h>
 #include <Core/Utility/Eigen.h>
-#include <Core/Utility/Console.h>
 
 namespace three{
 

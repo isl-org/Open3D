@@ -79,7 +79,7 @@ def register_colored_point_cloud_ICP(source, target,
 
 
 def register_point_cloud(path_dataset, ply_file_names,
-		registration_type = "color", draw_result = True):
+		registration_type = "color", draw_result = False):
 	pose_graph = PoseGraph()
 	odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(odometry))
