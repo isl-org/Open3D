@@ -109,8 +109,6 @@ std::shared_ptr<PointCloudForColoredICP>
 				A(i - 1, 1) = (vt_proj(1) - vt(1));
 				A(i - 1, 2) = (vt_proj(2) - vt(2));
 				b(i - 1, 0) = (it_adj - it);
-				PrintDebug("(%f %f %f) %f %f %f %f\n", nt(0), nt(1), nt(2),
-						A(i - 1, 0), A(i - 1, 1), A(i - 1, 2), b(i - 1, 0));
 			}
 			// adds orthogonal constraint
 			A(nn - 1, 0) = (nn - 1) * nt(0);
@@ -124,7 +122,6 @@ std::shared_ptr<PointCloudForColoredICP>
 				A.transpose() * A, A.transpose() * b);
 			if (is_success) {
 				output->color_gradient_[k] = x;
-				PrintDebug("%f %f %f\n", x(0), x(1), x(2));
 			}
 		}
 	}
