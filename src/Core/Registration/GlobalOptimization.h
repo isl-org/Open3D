@@ -50,15 +50,15 @@ void GlobalOptimization(
 		PoseGraph &pose_graph,
 		const GlobalOptimizationMethod &method =
 		GlobalOptimizationLevenbergMarquardt(),
-		const GlobalOptimizationConvergenceCriteria &option =
+		const GlobalOptimizationConvergenceCriteria &criteria =
 		GlobalOptimizationConvergenceCriteria(),
-		const GlobalOptimizationLineProcessOption &line_process_option =
-		GlobalOptimizationLineProcessOption());
+		const GlobalOptimizationOption &option =
+		GlobalOptimizationOption());
 
 /// Function to prune out uncertain edges having
 /// confidence_ < .edge_prune_threshold_
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
 		const PoseGraph &pose_graph,
-		const GlobalOptimizationLineProcessOption &option);
+		const GlobalOptimizationOption &option);
 
 }	// namespace three

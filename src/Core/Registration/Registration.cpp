@@ -344,10 +344,16 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 	return result;
 }
 
-Eigen::Matrix6d GetInformationMatrixFromRegistrationResult(
+Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 		const PointCloud &source, const PointCloud &target,
-		const RegistrationResult &result)
+		double max_correspondence_distance,
+		const Eigen::Matrix4d &transformation)
 {
+	RegistrationResult result;
+	KDTreeFlann target_kdtree(target);
+	result = GetRegistrationResultAndCorrespondences(source, target,
+			target_kdtree, max_correspondence_distance, transformation);
+
 	// write q^*
 	// see http://redwood-data.org/indoor/registration.html
 	// note: I comes first and q_skew is scaled by factor 2.

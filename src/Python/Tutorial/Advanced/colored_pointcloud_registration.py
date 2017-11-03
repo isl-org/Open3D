@@ -38,9 +38,9 @@ if __name__ == "__main__":
 
 		print("3. Estimate normal.")
 		EstimateNormals(source_down, KDTreeSearchParamHybrid(
-				radius = scale, max_nn = 30))
+				radius = radius * 2, max_nn = 30))
 		EstimateNormals(target_down, KDTreeSearchParamHybrid(
-				radius = scale, max_nn = 30))
+				radius = radius * 2, max_nn = 30))
 
 		print("4. Colored point cloud registration is applied on original point")
 		print("   clouds to refine the alignment. This time we use a strict")

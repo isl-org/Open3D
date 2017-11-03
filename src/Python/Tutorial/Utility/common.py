@@ -25,6 +25,15 @@ def get_file_list(path, extension=None):
 	return file_list
 
 
+def get_file_lists(path_dataset):
+	# get list of color and depth images
+	path_color = path_dataset + 'image/'
+	path_depth = path_dataset + 'depth/'
+	color_files = get_file_list(path_color, '.png')
+	depth_files = get_file_list(path_depth, '.png')
+	return color_files, depth_files
+
+
 def get_file_list_from_custom_format(path, format):
 	number_of_files = len(get_file_list(path, splitext(format)[1]))
 	file_list = []
