@@ -86,18 +86,18 @@ def test_py3d_pointcloud():
 	pcd = read_point_cloud("../TestData/fragment.ply")
 	print(pcd)
 	print(np.asarray(pcd.points))
-	DrawGeometries([pcd])
+	draw_geometries([pcd])
 	print("Downsample the point cloud with a voxel of 0.05")
 	downpcd = voxel_down_sample(pcd, voxel_size = 0.05)
-	DrawGeometries([downpcd])
+	draw_geometries([downpcd])
 	print("Recompute the normal of the downsampled point cloud")
 	estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
-	DrawGeometries([downpcd])
+	draw_geometries([downpcd])
 	print("")
 	print("We load a polygon volume and use it to crop the original point cloud")
-	vol = ReadSelectionPolygonVolume("../TestData/Crop/cropped.json")
+	vol = read_selection_polygon_volume("../TestData/Crop/cropped.json")
 	chair = vol.crop_point_cloud(pcd)
-	DrawGeometries([chair])
+	draw_geometries([chair])
 	print("")
 
 def test_py3d_mesh():
@@ -121,7 +121,7 @@ def test_py3d_image():
 	print(y.shape)
 	yy = Image(y)
 	print(yy)
-	DrawGeometries([yy])
+	draw_geometries([yy])
 
 	print("Render a channel of the previous image.")
 	z = np.array(y[:,:,1])
@@ -129,7 +129,7 @@ def test_py3d_image():
 	print(z.strides)
 	zz = Image(z)
 	print(zz)
-	DrawGeometries([zz])
+	draw_geometries([zz])
 
 	print("Write the previous image to file then load it with matplotlib.")
 	write_image("test.jpg", zz, quality = 100)
@@ -177,7 +177,7 @@ def test_py3d_image():
 	pcd = create_point_cloud_from_rgbd_image(im, PinholeCameraIntrinsic.PrimeSenseDefault)
 	# Flip it, otherwise the pointcloud will be upside down
 	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-	DrawGeometries([pcd])
+	draw_geometries([pcd])
 
 	print("")
 
@@ -196,7 +196,7 @@ def test_py3d_kdtree():
 	[k, idx, _] = pcd_tree.search_radius_vector_3d(pcd.points[1500], 0.2)
 	np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
 	print("Visualize the point cloud.")
-	DrawGeometries([pcd])
+	draw_geometries([pcd])
 	print("")
 
 	print("Load two aligned point clouds.")
@@ -204,7 +204,7 @@ def test_py3d_kdtree():
 	pcd1 = read_point_cloud("../TestData/Feature/cloud_bin_1.pcd")
 	pcd0.paint_uniform_color([1, 0.706, 0])
 	pcd1.paint_uniform_color([0, 0.651, 0.929])
-	DrawGeometries([pcd0, pcd1])
+	draw_geometries([pcd0, pcd1])
 	print("Load their FPFH feature and evaluate.")
 	print("Black : matching distance > 0.2")
 	print("White : matching distance = 0")
@@ -216,7 +216,7 @@ def test_py3d_kdtree():
 		dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
 		c = (0.2 - np.fmin(dis, 0.2)) / 0.2
 		pcd0.colors[i] = [c, c, c]
-	DrawGeometries([pcd0])
+	draw_geometries([pcd0])
 	print("")
 
 	print("Load their L32D feature and evaluate.")
@@ -230,7 +230,7 @@ def test_py3d_kdtree():
 		dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
 		c = (0.2 - np.fmin(dis, 0.2)) / 0.2
 		pcd0.colors[i] = [c, c, c]
-	DrawGeometries([pcd0])
+	draw_geometries([pcd0])
 	print("")
 
 def test_py3d_posegraph():
@@ -266,27 +266,27 @@ def test_py3d_camera():
 		im = create_rgbd_image_from_color_and_depth(im2, im1, 1000.0, 5.0, False)
 		pcd = create_point_cloud_from_rgbd_image(im, trajectory.intrinsic, trajectory.extrinsic[i])
 		pcds.append(pcd)
-	DrawGeometries(pcds)
+	draw_geometries(pcds)
 	print("")
 
 def test_py3d_visualization():
 	print("Testing visualization in py3d ...")
 	mesh = read_triangle_mesh("../TestData/knot.ply")
 	print("Try to render a mesh with normals " + str(mesh.has_vertex_normals()) + " and colors " + str(mesh.has_vertex_colors()))
-	DrawGeometries([mesh])
+	draw_geometries([mesh])
 	print("A mesh with no normals and no colors does not seem good.")
 	mesh.compute_vertex_normals()
 	mesh.paint_uniform_color([0.1, 0.1, 0.7])
 	print(np.asarray(mesh.triangle_normals))
 	print("We paint the mesh and render it.")
-	DrawGeometries([mesh])
+	draw_geometries([mesh])
 	print("We make a partial mesh of only the first half triangles.")
 	mesh1 = copy.deepcopy(mesh)
 	print(mesh1.triangles)
 	mesh1.triangles = Vector3iVector(np.asarray(mesh1.triangles)[:len(mesh1.triangles)/2, :])
 	mesh1.triangle_normals = Vector3dVector(np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals)/2, :])
 	print(mesh1.triangles)
-	DrawGeometries([mesh1])
+	draw_geometries([mesh1])
 
 	# let's draw some primitives
 	mesh_sphere = create_mesh_sphere(radius = 1.0)
@@ -297,9 +297,9 @@ def test_py3d_visualization():
 	mesh_cylinder.paint_uniform_color([0.1, 0.9, 0.1])
 	mesh_frame = create_mesh_coordinate_frame(size = 0.6, origin = [-2, -2, -2])
 	print("We draw a few primitives using collection.")
-	DrawGeometries([mesh_sphere, mesh_cylinder, mesh_frame])
+	draw_geometries([mesh_sphere, mesh_cylinder, mesh_frame])
 	print("We draw a few primitives using + operator of mesh.")
-	DrawGeometries([mesh_sphere + mesh_cylinder + mesh_frame])
+	draw_geometries([mesh_sphere + mesh_cylinder + mesh_frame])
 
 	print("")
 
@@ -314,17 +314,17 @@ def test_py3d_icp():
 		target = pcds[reg.metadata[0]]
 		source = pcds[reg.metadata[1]]
 		trans = reg.pose
-		evaluation_init = EvaluateRegistration(source, target, threshold, trans)
+		evaluation_init = evaluate_registration(source, target, threshold, trans)
 		print(evaluation_init)
 
 		print("Apply point-to-point ICP")
-		reg_p2p = RegistrationICP(source, target, threshold, trans, TransformationEstimationPointToPoint())
+		reg_p2p = registration_icp(source, target, threshold, trans, TransformationEstimationPointToPoint())
 		print(reg_p2p)
 		print("Transformation is:")
 		print(reg_p2p.transformation)
 
 		print("Apply point-to-plane ICP")
-		reg_p2l = RegistrationICP(source, target, threshold, trans, TransformationEstimationPointToPlane())
+		reg_p2l = registration_icp(source, target, threshold, trans, TransformationEstimationPointToPlane())
 		print(reg_p2l)
 		print("Transformation is:")
 		print(reg_p2l.transformation)

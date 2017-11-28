@@ -105,9 +105,9 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 				convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
 		transformed_pose = np.dot(trans, pose)
-		volume.Integrate(rgbd, intrinsic, transformed_pose)
+		volume.integrate(rgbd, intrinsic, transformed_pose)
 
-	mesh = volume.ExtractTriangleMesh()
+	mesh = volume.extract_triangle_mesh()
 	mesh.compute_vertex_normals()
 	return mesh
 

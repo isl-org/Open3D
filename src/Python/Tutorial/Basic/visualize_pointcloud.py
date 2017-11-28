@@ -8,6 +8,6 @@ from py3d import *
 
 if __name__ == "__main__":
 	pcd = read_point_cloud("../../TestData/fragment.ply")
-	DrawGeometries([pcd])
+	draw_geometries([pcd])
 	pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-	DrawGeometries([pcd])
+	draw_geometries([pcd])

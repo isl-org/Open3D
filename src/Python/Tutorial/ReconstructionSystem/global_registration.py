@@ -22,7 +22,7 @@ def preprocess_point_cloud(ply_file_name):
 
 def register_point_cloud_FPFH(source, target,
 		source_fpfh, target_fpfh):
-	result_ransac = RegistrationRANSACBasedOnFeatureMatching(
+	result_ransac = registration_ransac_based_on_feature_matching(
 			source, target, source_fpfh, target_fpfh, 0.075,
 			TransformationEstimationPointToPoint(False), 4,
 			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
@@ -34,7 +34,7 @@ def register_point_cloud_FPFH(source, target,
 
 def register_point_cloud_ICP(source, target,
 		init_transformation = np.identity(4)):
-	result_icp = RegistrationICP(source, target, 0.02,
+	result_icp = registration_icp(source, target, 0.02,
 			init_transformation,
 			TransformationEstimationPointToPlane())
 	print(result_icp)
@@ -61,7 +61,7 @@ def register_colored_point_cloud_ICP(source, target,
 				radius = scale, max_nn = 30))
 		estimate_normals(target_down, KDTreeSearchParamHybrid(
 				radius = scale, max_nn = 30))
-		result_icp = RegistrationColoredICP(source_down, target_down,
+		result_icp = registration_colored_icp(source_down, target_down,
 				radius, current_transformation,
 				ICPConvergenceCriteria(relative_fitness = 1e-6,
 				relative_rmse = 1e-6, max_iteration = iter))
@@ -70,7 +70,7 @@ def register_colored_point_cloud_ICP(source, target,
 	information_matrix = GetInformationMatrixFromRegistrationResult(
 			source, target, result_icp)
 	if draw_result:
-		DrawRegistrationResultOriginalColor(source, target,
+		draw_registration_result_original_color(source, target,
 				result_icp.transformation)
 	return (result_icp.transformation, information_matrix)
 
@@ -90,14 +90,14 @@ def register_point_cloud(ply_file_names,
 			(target_down, target_fpfh) = preprocess_point_cloud(
 					ply_file_names[t])
 
-			print("RegistrationRANSACBasedOnFeatureMatching")
+			print("registration_ransac_based_on_feature_matching")
 			result_ransac = register_point_cloud_FPFH(source_down, target_down,
 					source_fpfh, target_fpfh)
 			if draw_reslt:
-				DrawRegistrationResultOriginalColor(source_down, target_down,
+				draw_registration_result_original_color(source_down, target_down,
 						result_ransac.transformation)
 
-			print("RegistrationPointCloud")
+			print("register_colored_point_cloud")
 			if (registration_type == "color"):
 				(transformation_matrix, information_matrix) = \
 						register_colored_point_cloud_ICP(
@@ -107,7 +107,7 @@ def register_point_cloud(ply_file_names,
 						register_point_cloud_ICP(
 						source_down, target_down, result_ransac.transformation)
 			if draw_reslt:
-				DrawRegistrationResult(source_down, target_down,
+				draw_registration_result(source_down, target_down,
 						result_icp.transformation)
 
 			if t == s + 1: # odometry case

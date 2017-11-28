@@ -9,4 +9,4 @@ from py3d import *
 if __name__ == "__main__":
 	mesh = read_triangle_mesh("../../TestData/knot.ply")
 	mesh.compute_vertex_normals()
-	DrawGeometries([mesh])
+	draw_geometries([mesh])

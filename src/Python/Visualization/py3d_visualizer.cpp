@@ -41,41 +41,41 @@ void pybind_visualizer(py::module &m)
 		.def("__repr__", [](const Visualizer &vis) {
 			return std::string("Visualizer with name ") + vis.GetWindowName();
 		})
-		.def("CreateWindow", &Visualizer::CreateWindow,
+		.def("create_window", &Visualizer::CreateWindow,
 				"Function to create a window and initialize GLFW",
 				"window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
 				"left"_a = 50, "right"_a = 50)
-		.def("DestroyWindow", &Visualizer::DestroyWindow,
+		.def("destroy_window", &Visualizer::DestroyWindow,
 				"Function to destroy a window")
-		.def("RegisterAnimationCallback",
+		.def("register_animation_callback",
 				&Visualizer::RegisterAnimationCallback,
 				"Function to register a callback function for animation",
 				"callback_func"_a)
-		.def("Run", &Visualizer::Run, "Function to activate the window")
-		.def("Close", &Visualizer::Close,
+		.def("run", &Visualizer::Run, "Function to activate the window")
+		.def("close", &Visualizer::Close,
 				"Function to notify the window to be closed")
-		.def("AddGeometry", &Visualizer::AddGeometry,
+		.def("add_geometry", &Visualizer::AddGeometry,
 				"Function to add geometry to the scene and create corresponding shaders",
 				"geometry"_a)
-		.def("GetViewControl", &Visualizer::GetViewControl,
+		.def("get_view_control", &Visualizer::GetViewControl,
 				"Function to retrieve the associated ViewControl",
 				py::return_value_policy::reference_internal)
-		.def("GetRenderOption", &Visualizer::GetRenderOption,
+		.def("get_render_option", &Visualizer::GetRenderOption,
 				"Function to retrieve the associated RenderOption",
 				py::return_value_policy::reference_internal)
-		.def("CaptureScreenFloatBuffer", &Visualizer::CaptureScreenFloatBuffer,
+		.def("capture_screen_float_buffer", &Visualizer::CaptureScreenFloatBuffer,
 				"Function to capture screen and store RGB in a float buffer",
 				"do_render"_a = false)
-		.def("CaptureScreenImage", &Visualizer::CaptureScreenImage,
+		.def("capture_screen_image", &Visualizer::CaptureScreenImage,
 				"Function to capture and save a screen image",
 				"filename"_a, "do_render"_a = false)
-		.def("CaptureDepthFloatBuffer", &Visualizer::CaptureDepthFloatBuffer,
+		.def("capture_depth_float_buffer", &Visualizer::CaptureDepthFloatBuffer,
 				"Function to capture depth in a float buffer",
 				"do_render"_a = false)
-		.def("CaptureDepthImage", &Visualizer::CaptureDepthImage,
+		.def("capture_depth_image", &Visualizer::CaptureDepthImage,
 				"Function to capture and save a depth image",
 				"filename"_a, "do_render"_a = false, "depth_scale"_a = 1000.0)
-		.def("GetWindowName", &Visualizer::GetWindowName);
+		.def("get_window_name", &Visualizer::GetWindowName);
 
 	py::class_<VisualizerWithKeyCallback,
 			PyVisualizer<VisualizerWithKeyCallback>,
@@ -85,10 +85,10 @@ void pybind_visualizer(py::module &m)
 			visualizer_key);
 	visualizer_key
 		.def("__repr__", [](const VisualizerWithKeyCallback &vis) {
-			return std::string("VisualizerWithKeyCallback with name ") + 
+			return std::string("VisualizerWithKeyCallback with name ") +
 					vis.GetWindowName();
 		})
-		.def("RegisterKeyCallback",
+		.def("register_key_callback",
 				&VisualizerWithKeyCallback::RegisterKeyCallback,
 				"Function to register a callback function for a key press event",
 				"key"_a, "callback_func"_a);

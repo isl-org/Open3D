@@ -60,13 +60,13 @@ void pybind_integration(py::module &m)
 	py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>>
 			tsdfvolume(m, "TSDFVolume");
 	tsdfvolume
-		.def("Reset", &TSDFVolume::Reset, "Function to reset the TSDFVolume")
-		.def("Integrate", &TSDFVolume::Integrate,
+		.def("reset", &TSDFVolume::Reset, "Function to reset the TSDFVolume")
+		.def("integrate", &TSDFVolume::Integrate,
 				"Function to integrate an RGB-D image into the volume",
 				"image"_a, "intrinsic"_a, "extrinsic"_a)
-		.def("ExtractPointCloud", &TSDFVolume::ExtractPointCloud,
+		.def("extract_point_cloud", &TSDFVolume::ExtractPointCloud,
 				"Function to extract a point cloud with normals")
-		.def("ExtractTriangleMesh", &TSDFVolume::ExtractTriangleMesh,
+		.def("extract_triangle_mesh", &TSDFVolume::ExtractTriangleMesh,
 				"Function to extract a triangle mesh")
 		.def_readwrite("voxel_length", &TSDFVolume::voxel_length_)
 		.def_readwrite("sdf_trunc", &TSDFVolume::sdf_trunc_)
@@ -86,7 +86,7 @@ void pybind_integration(py::module &m)
 					(vol.with_color_ ? std::string("with color.") :
 					std::string("without color."));
 		})
-		.def("ExtractVoxelPointCloud",
+		.def("extract_voxel_point_cloud",
 				&UniformTSDFVolume::ExtractVoxelPointCloud)
 		.def_readwrite("length", &UniformTSDFVolume::length_)
 		.def_readwrite("resolution", &UniformTSDFVolume::resolution_);
@@ -108,11 +108,10 @@ void pybind_integration(py::module &m)
 					(vol.with_color_ ? std::string("with color.") :
 					std::string("without color."));
 	})
-		.def("ExtractVoxelPointCloud",
+		.def("extract_voxel_point_cloud",
 				&ScalableTSDFVolume::ExtractVoxelPointCloud);
 }
 
 void pybind_integration_methods(py::module &m)
 {
 }
-

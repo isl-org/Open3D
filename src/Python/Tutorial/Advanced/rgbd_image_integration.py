@@ -18,9 +18,9 @@ if __name__ == "__main__":
         depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
         rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
                 convert_rgb_to_intensity = False)
-        volume.Integrate(rgbd, intrinsic, np.linalg.inv(camera_poses[i].pose))
+        volume.integrate(rgbd, intrinsic, np.linalg.inv(camera_poses[i].pose))
 
     print("Extract a triangle mesh from the volume and visualize it.")
-    mesh = volume.ExtractTriangleMesh()
+    mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
-    DrawGeometries([mesh])
+    draw_geometries([mesh])

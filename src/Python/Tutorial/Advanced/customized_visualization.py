@@ -10,43 +10,43 @@ import matplotlib.pyplot as plt
 
 def custom_draw_geometry(pcd):
 	# The following code achieves the same effect as:
-	# DrawGeometries([pcd])
+	# draw_geometries([pcd])
 	vis = Visualizer()
-	vis.CreateWindow()
-	vis.AddGeometry(pcd)
-	vis.Run()
-	vis.DestroyWindow()
+	vis.create_window()
+	vis.add_geometry(pcd)
+	vis.run()
+	vis.destroy_window()
 
 def custom_draw_geometry_with_rotation(pcd):
 	def rotate_view(vis):
-		ctr = vis.GetViewControl()
-		ctr.Rotate(10.0, 0.0)
+		ctr = vis.get_view_control()
+		ctr.rotate(10.0, 0.0)
 		return False
-	DrawGeometriesWithAnimationCallback([pcd], rotate_view)
+	draw_geometries_with_animation_callback([pcd], rotate_view)
 
 def custom_draw_geometry_load_option(pcd):
 	vis = Visualizer()
-	vis.CreateWindow()
-	vis.AddGeometry(pcd)
-	vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
-	vis.Run()
-	vis.DestroyWindow()
+	vis.create_window()
+	vis.add_geometry(pcd)
+	vis.get_render_option().load_from_json("../../TestData/renderoption.json")
+	vis.run()
+	vis.destroy_window()
 
 def custom_draw_geometry_with_key_callback(pcd):
 	def change_background_to_black(vis):
-		opt = vis.GetRenderOption()
+		opt = vis.get_render_option()
 		opt.background_color = np.asarray([0, 0, 0])
 		return False
 	def load_render_option(vis):
-		vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
+		vis.get_render_option().load_from_json("../../TestData/renderoption.json")
 		return False
 	def capture_depth(vis):
-		depth = vis.CaptureDepthFloatBuffer()
+		depth = vis.capture_depth_float_buffer()
 		plt.imshow(np.asarray(depth))
 		plt.show()
 		return False
 	def capture_image(vis):
-		image = vis.CaptureScreenFloatBuffer()
+		image = vis.capture_screen_float_buffer()
 		plt.imshow(np.asarray(image))
 		plt.show()
 		return False
@@ -55,7 +55,7 @@ def custom_draw_geometry_with_key_callback(pcd):
 	key_to_callback[ord("R")] = load_render_option
 	key_to_callback[ord(",")] = capture_depth
 	key_to_callback[ord(".")] = capture_image
-	DrawGeometriesWithKeyCallbacks([pcd], key_to_callback)
+	draw_geometries_with_key_callbacks([pcd], key_to_callback)
 
 def custom_draw_geometry_with_camera_trajectory(pcd):
 	custom_draw_geometry_with_camera_trajectory.index = -1
@@ -67,40 +67,40 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	if not os.path.exists("../../TestData/depth/"):
 		os.makedirs("../../TestData/depth/")
 	def move_forward(vis):
-		# This function is called within the Visualizer::Run() loop
-		# The Run loop calls the function, then re-render
+		# This function is called within the Visualizer::run() loop
+		# The run loop calls the function, then re-render
 		# So the sequence in this function is to:
 		# 1. Capture frame
 		# 2. index++, check ending criteria
 		# 3. Set camera
 		# 4. (Re-render)
-		ctr = vis.GetViewControl()
+		ctr = vis.get_view_control()
 		glb = custom_draw_geometry_with_camera_trajectory
 		if glb.index >= 0:
 			print("Capture image {:05d}".format(glb.index))
-			depth = vis.CaptureDepthFloatBuffer(False)
-			image = vis.CaptureScreenFloatBuffer(False)
+			depth = vis.capture_depth_float_buffer(False)
+			image = vis.capture_screen_float_buffer(False)
 			plt.imsave("../../TestData/depth/{:05d}.png".format(glb.index),\
 					np.asarray(depth), dpi = 1)
 			plt.imsave("../../TestData/image/{:05d}.png".format(glb.index),\
 					np.asarray(image), dpi = 1)
-			#vis.CaptureDepthImage("depth/{:05d}.png".format(glb.index), False)
-			#vis.CaptureScreenImage("image/{:05d}.png".format(glb.index), False)
+			#vis.capture_depth_image("depth/{:05d}.png".format(glb.index), False)
+			#vis.capture_screen_image("image/{:05d}.png".format(glb.index), False)
 		glb.index = glb.index + 1
 		if glb.index < len(glb.trajectory.extrinsic):
-			ctr.ConvertFromPinholeCameraParameters(glb.trajectory.intrinsic,\
+			ctr.convert_from_pinhole_camera_parameters(glb.trajectory.intrinsic,\
 					glb.trajectory.extrinsic[glb.index])
 		else:
 			custom_draw_geometry_with_camera_trajectory.vis.\
-					RegisterAnimationCallback(None)
+					register_animation_callback(None)
 		return False
 	vis = custom_draw_geometry_with_camera_trajectory.vis
-	vis.CreateWindow()
-	vis.AddGeometry(pcd)
-	vis.GetRenderOption().LoadFromJSON("../../TestData/renderoption.json")
-	vis.RegisterAnimationCallback(move_forward)
-	vis.Run(True)
-	vis.DestroyWindow()
+	vis.create_window()
+	vis.add_geometry(pcd)
+	vis.get_render_option().load_from_json("../../TestData/renderoption.json")
+	vis.register_animation_callback(move_forward)
+	vis.run(True)
+	vis.destroy_window()
 
 if __name__ == "__main__":
 	pcd = read_point_cloud("../../TestData/fragment.ply")

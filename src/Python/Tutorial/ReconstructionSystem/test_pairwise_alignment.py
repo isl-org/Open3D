@@ -50,9 +50,9 @@ def test_single_frame_integrate(i, intrinsic):
 	print(depth_files[i])
 	rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
 			convert_rgb_to_intensity = False)
-	volume.Integrate(rgbd, intrinsic, trans_offset)
+	volume.integrate(rgbd, intrinsic, trans_offset)
 
-	mesh = volume.ExtractTriangleMesh()
+	mesh = volume.extract_triangle_mesh()
 	mesh.compute_vertex_normals()
 	mesh.transform(np.linalg.inv(trans_offset))
 
@@ -72,7 +72,7 @@ def test_single_pair(s, t, intrinsic, with_opencv):
 	mesh_s = test_single_frame_integrate(s, intrinsic)
 	mesh_t = test_single_frame_integrate(t, intrinsic)
 	mesh_s.transform(trans) # for 5pt
-	DrawGeometries([mesh_s, mesh_t])
+	draw_geometries([mesh_s, mesh_t])
 
 
 # test wide baseline matching
