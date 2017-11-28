@@ -11,11 +11,11 @@ from optimize_posegraph import *
 
 def preprocess_point_cloud(ply_file_name):
 	print(ply_file_name)
-	pcd = ReadPointCloud(ply_file_name)
-	pcd_down = VoxelDownSample(pcd, 0.05)
-	EstimateNormals(pcd_down,
+	pcd = read_point_cloud(ply_file_name)
+	pcd_down = voxel_down_sample(pcd, 0.05)
+	estimate_normals(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
-	pcd_fpfh = ComputeFPFHFeature(pcd_down,
+	pcd_fpfh = compute_fpfh_feature(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
 	return (pcd_down, pcd_fpfh)
 
@@ -55,11 +55,11 @@ def register_colored_point_cloud_ICP(source, target,
 	for scale in range(3): # multi-scale approach
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
-		source_down = VoxelDownSample(source, radius)
-		target_down = VoxelDownSample(target, radius)
-		EstimateNormals(source_down, KDTreeSearchParamHybrid(
+		source_down = voxel_down_sample(source, radius)
+		target_down = voxel_down_sample(target, radius)
+		estimate_normals(source_down, KDTreeSearchParamHybrid(
 				radius = scale, max_nn = 30))
-		EstimateNormals(target_down, KDTreeSearchParamHybrid(
+		estimate_normals(target_down, KDTreeSearchParamHybrid(
 				radius = scale, max_nn = 30))
 		result_icp = RegistrationColoredICP(source_down, target_down,
 				radius, current_transformation,
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
 	pose_graph = register_point_cloud(ply_file_names)
 	pose_graph_name = path_dataset + "/fragments/global_registration.json"
-	WritePoseGraph(pose_graph_name, pose_graph)
+	write_pose_graph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + "/fragments/" + \
 			"global_registration_optimized.json"
 	optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

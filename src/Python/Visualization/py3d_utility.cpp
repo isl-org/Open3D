@@ -42,7 +42,7 @@ void pybind_utility(py::module &m)
 			selection_volume);
 	py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
 	selection_volume
-		.def("CropPointCloud", [](const SelectionPolygonVolume &s,
+		.def("crop_point_cloud", [](const SelectionPolygonVolume &s,
 				const PointCloud &input) {
 			return s.CropPointCloud(input);
 		}, "input"_a)
@@ -60,7 +60,7 @@ void pybind_utility(py::module &m)
 
 void pybind_utility_methods(py::module &m)
 {
-	m.def("DrawGeometries", 
+	m.def("DrawGeometries",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 			const std::string &window_name, int width, int height,
 			int left, int top) {

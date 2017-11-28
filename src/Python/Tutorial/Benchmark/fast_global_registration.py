@@ -54,11 +54,11 @@ def validating_transform_swap(pcd_i, pcd_j, transform):
 
 def validating_transform(pcd_i, pcd_j, transform):
 	pcd_i_trans = copy.deepcopy(pcd_i)
-	pcd_i_trans.Transform(transform)
+	pcd_i_trans.transform(transform)
 	tree_pcd_j = KDTreeFlann(pcd_j)
 	inlier_number = 0
 	for i in range(len(pcd_i.points)):
-		[_, idx, dis] = tree_pcd_j.SearchKNNVector3D(pcd_i_trans.points[i], 1)
+		[_, idx, dis] = tree_pcd_j.search_knn_vector_3d(pcd_i_trans.points[i], 1)
 		if math.sqrt(dis[0]) < FGR_MAXIUM_DISTANCE:
 			inlier_number = inlier_number + 1
 	inlier_ratio = inlier_number / len(pcd_i.points);

@@ -118,9 +118,9 @@ void pybind_image(py::module &m)
 		.def_readwrite("color", &RGBDImage::color_)
 		.def_readwrite("depth", &RGBDImage::depth_)
 		.def("__repr__", [](const RGBDImage &rgbd_image) {
-			return std::string("RGBDImage of size \n") + 
+			return std::string("RGBDImage of size \n") +
 			std::string("Color image : ") +
-			std::to_string(rgbd_image.color_.width_) + std::string("x") + 
+			std::to_string(rgbd_image.color_.width_) + std::string("x") +
 			std::to_string(rgbd_image.color_.height_) + ", with " +
 			std::to_string(rgbd_image.color_.num_of_channels_) +
 			std::string(" channels.\n") +
@@ -128,19 +128,19 @@ void pybind_image(py::module &m)
 			std::to_string(rgbd_image.depth_.width_) + std::string("x") +
 			std::to_string(rgbd_image.depth_.height_) + ", with " +
 			std::to_string(rgbd_image.depth_.num_of_channels_) +
-			std::string(" channels.\n") + 
+			std::string(" channels.\n") +
 			std::string("Use numpy.asarray to access buffer data.");
 		});
 }
 
 void pybind_image_methods(py::module &m)
 {
-	m.def("ReadImage", [](const std::string &filename) {
+	m.def("read_image", [](const std::string &filename) {
 		Image image;
 		ReadImage(filename, image);
 		return image;
 	}, "Function to read Image from file", "filename"_a);
-	m.def("WriteImage", [](const std::string &filename,
+	m.def("write_image", [](const std::string &filename,
 			const Image &image, int quality) {
 		return WriteImage(filename, image, quality);
 	}, "Function to write Image to file", "filename"_a, "image"_a,
@@ -152,7 +152,7 @@ void pybind_image_methods(py::module &m)
 		.value("Sobel3dx", Image::FILTER_SOBEL_3_DX)
 		.value("Sobel3dy", Image::FILTER_SOBEL_3_DY)
 		.export_values();
-	m.def("FilterImage", [](const Image &input, 
+	m.def("filter_image", [](const Image &input,
 			Image::FilterType filter_type) {
 		if (input.num_of_channels_ != 1 ||
 			input.bytes_per_channel_ != 4) {
@@ -164,7 +164,7 @@ void pybind_image_methods(py::module &m)
 			return *output;
 		}
 	}, "Function to filter Image", "image"_a, "filter_type"_a);
-	m.def("CreateImagePyramid", [](const Image &input,
+	m.def("create_image_pyramid", [](const Image &input,
 			size_t num_of_levels, bool with_gaussian_filter) {
 		if (input.num_of_channels_ != 1 ||
 			input.bytes_per_channel_ != 4) {
@@ -177,24 +177,24 @@ void pybind_image_methods(py::module &m)
 				input, num_of_levels, with_gaussian_filter);
 			return output;
 		}
-	}, "Function to create ImagePyramid", "image"_a, 
+	}, "Function to create ImagePyramid", "image"_a,
 			"num_of_levels"_a, "with_gaussian_filter"_a);
-	m.def("FilterImagePyramid", [](const ImagePyramid &input, 
+	m.def("filter_image_pyramid", [](const ImagePyramid &input,
 			Image::FilterType filter_type) {
 		auto output = FilterImagePyramid(input, filter_type);
 		return output;
 	}, "Function to filter ImagePyramid", "image_pyramid"_a, "filter_type"_a);
-	m.def("CreateRGBDImageFromColorAndDepth", &CreateRGBDImageFromColorAndDepth,
-			"Function to make RGBDImage", "color"_a, "depth"_a, 
+	m.def("create_rgbd_image_from_color_and_depth", &CreateRGBDImageFromColorAndDepth,
+			"Function to make RGBDImage", "color"_a, "depth"_a,
 			"depth_scale"_a = 1000.0, "depth_trunc"_a = 3.0,
 			"convert_rgb_to_intensity"_a = true);
-	m.def("CreateRGBDImageFromTUMFormat", &CreateRGBDImageFromTUMFormat,
+	m.def("create_rgbd_image_from_tum_format", &CreateRGBDImageFromTUMFormat,
 			"Function to make RGBDImage (for TUM format)", "color"_a, "depth"_a,
 			"convert_rgb_to_intensity"_a = true);
-	m.def("CreateRGBDImageFromSUNFormat", &CreateRGBDImageFromSUNFormat,
+	m.def("create_rgbd_image_from_sun_format", &CreateRGBDImageFromSUNFormat,
 			"Function to make RGBDImage (for SUN format)", "color"_a, "depth"_a,
 			"convert_rgb_to_intensity"_a = true);
-	m.def("CreateRGBDImageFromNYUFormat", &CreateRGBDImageFromNYUFormat,
+	m.def("create_rgbd_image_from_nyu_format", &CreateRGBDImageFromNYUFormat,
 			"Function to make RGBDImage (for NYU format)", "color"_a, "depth"_a,
 			"convert_rgb_to_intensity"_a = true);
 }

@@ -60,7 +60,7 @@ def custom_draw_geometry_with_key_callback(pcd):
 def custom_draw_geometry_with_camera_trajectory(pcd):
 	custom_draw_geometry_with_camera_trajectory.index = -1
 	custom_draw_geometry_with_camera_trajectory.trajectory =\
-			ReadPinholeCameraTrajectory("../../TestData/camera_trajectory.json")
+			read_pinhole_camera_trajectory("../../TestData/camera_trajectory.json")
 	custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
 	if not os.path.exists("../../TestData/image/"):
 		os.makedirs("../../TestData/image/")
@@ -103,7 +103,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	vis.DestroyWindow()
 
 if __name__ == "__main__":
-	pcd = ReadPointCloud("../../TestData/fragment.ply")
+	pcd = read_point_cloud("../../TestData/fragment.ply")
 
 	print("1. Customized visualization to mimic DrawGeometry")
 	custom_draw_geometry(pcd)

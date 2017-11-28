@@ -8,14 +8,14 @@ from py3d import *
 import numpy as np
 
 def DrawRegistrationResultOriginalColor(source, target, transformation):
-	source.Transform(transformation)
+	source.transform(transformation)
 	DrawGeometries([source, target])
 
 if __name__ == "__main__":
 
 	print("1. Load two point clouds and show initial pose")
-	source = ReadPointCloud("../../TestData/ColoredICP/frag_115.ply")
-	target = ReadPointCloud("../../TestData/ColoredICP/frag_116.ply")
+	source = read_point_cloud("../../TestData/ColoredICP/frag_115.ply")
+	target = read_point_cloud("../../TestData/ColoredICP/frag_116.ply")
 
 	current_transformation = np.identity(4)
 	DrawRegistrationResultOriginalColor(source, target, current_transformation)
@@ -33,13 +33,13 @@ if __name__ == "__main__":
 		print([iter,radius,scale])
 
 		print("2. Downsample with a voxel size %.2f" % radius)
-		source_down = VoxelDownSample(source, radius)
-		target_down = VoxelDownSample(target, radius)
+		source_down = voxel_down_sample(source, radius)
+		target_down = voxel_down_sample(target, radius)
 
 		print("3. Estimate normal.")
-		EstimateNormals(source_down, KDTreeSearchParamHybrid(
+		estimate_normals(source_down, KDTreeSearchParamHybrid(
 				radius = scale, max_nn = 30))
-		EstimateNormals(target_down, KDTreeSearchParamHybrid(
+		estimate_normals(target_down, KDTreeSearchParamHybrid(
 				radius = scale, max_nn = 30))
 
 		print("4. Colored point cloud registration is applied on original point")

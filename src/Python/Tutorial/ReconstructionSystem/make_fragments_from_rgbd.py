@@ -14,19 +14,19 @@ from optimize_posegraph import *
 def process_one_rgbd_pair(s, t, color_files, depth_files,
 		intrinsic, with_opencv):
 	# read images
-	color_s = ReadImage(color_files[s])
-	depth_s = ReadImage(depth_files[s])
-	color_t = ReadImage(color_files[t])
-	depth_t = ReadImage(depth_files[t])
-	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s)
-	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t)
+	color_s = read_image(color_files[s])
+	depth_s = read_image(depth_files[s])
+	color_t = read_image(color_files[t])
+	depth_t = read_image(depth_files[t])
+	source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s)
+	target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t)
 
 	if abs(s-t) is not 1:
 		if with_opencv:
 			success_5pt, odo_init = pose_estimation(
 					source_rgbd_image, target_rgbd_image, intrinsic, False)
 			if success_5pt:
-				[success, trans, info] = ComputeRGBDOdometry(
+				[success, trans, info] = compute_rgbd_odometry(
 						source_rgbd_image, target_rgbd_image, intrinsic,
 						odo_init, RGBDOdometryJacobianFromHybridTerm(),
 						OdometryOption())
@@ -34,7 +34,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 		return [False, np.identity(4), np.identity(6)]
 	else:
 		odo_init = np.identity(4)
-		[success, trans, info] = ComputeRGBDOdometry(
+		[success, trans, info] = compute_rgbd_odometry(
 				source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
 				RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 		return [success, trans, info]
@@ -50,7 +50,7 @@ def get_file_lists(path_dataset):
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
-	SetVerbosityLevel(VerbosityLevel.Error)
+	set_verbosity_level(VerbosityLevel.Error)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
 
@@ -86,7 +86,7 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 
 
 def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
-	pose_graph = ReadPoseGraph(pose_graph_name)
+	pose_graph = read_pose_graph(pose_graph_name)
 	min_depth = 0.3
 	cubic_length = 4.0
 	volume = UniformTSDFVolume(length = cubic_length, resolution = 512,
@@ -99,16 +99,16 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 		i_abs = fragment_id * n_frames_per_fragment + i
 		print("Fragment %03d / %03d :: Integrate rgbd frame %d (%d of %d)."
 				% (fragment_id, n_fragments-1, i_abs, i+1, len(pose_graph.nodes)))
-		color = ReadImage(color_files[i_abs])
-		depth = ReadImage(depth_files[i_abs])
-		rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
+		color = read_image(color_files[i_abs])
+		depth = read_image(depth_files[i_abs])
+		rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
 				convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
 		transformed_pose = np.dot(trans, pose)
 		volume.Integrate(rgbd, intrinsic, transformed_pose)
 
 	mesh = volume.ExtractTriangleMesh()
-	mesh.ComputeVertexNormals()
+	mesh.compute_vertex_normals()
 	return mesh
 
 if __name__ == "__main__":
@@ -138,18 +138,18 @@ if __name__ == "__main__":
 	n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
 	if path_intrinsic:
-		intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
+		intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
 	else:
 		intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
 
 	for fragment_id in range(n_fragments):
 		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
 		pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-		WritePoseGraph(pose_graph_name, pose_graph)
+		write_pose_graph(pose_graph_name, pose_graph)
 		pose_graph_optmized_name = path_fragment + \
 				"fragments_opt_%03d.json" % fragment_id
 		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
 		mesh = integrate_rgb_frames(
 				fragment_id, pose_graph_optmized_name, intrinsic)
 		mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
-		WriteTriangleMesh(mesh_name, mesh, False, True)
+		write_triangle_mesh(mesh_name, mesh, False, True)

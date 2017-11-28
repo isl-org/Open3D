@@ -43,16 +43,16 @@ void pybind_pointcloud(py::module &m)
 	py::detail::bind_copy_functions<PointCloud>(pointcloud);
 	pointcloud
 		.def("__repr__", [](const PointCloud &pcd) {
-			return std::string("PointCloud with ") + 
+			return std::string("PointCloud with ") +
 					std::to_string(pcd.points_.size()) + " points.";
 		})
 		.def(py::self + py::self)
 		.def(py::self += py::self)
-		.def("HasPoints", &PointCloud::HasPoints)
-		.def("HasNormals", &PointCloud::HasNormals)
-		.def("HasColors", &PointCloud::HasColors)
-		.def("NormalizeNormals", &PointCloud::NormalizeNormals)
-		.def("PaintUniformColor", &PointCloud::PaintUniformColor)
+		.def("has_points", &PointCloud::HasPoints)
+		.def("has_normals", &PointCloud::HasNormals)
+		.def("has_colors", &PointCloud::HasColors)
+		.def("normalize_normals", &PointCloud::NormalizeNormals)
+		.def("paint_uniform_color", &PointCloud::PaintUniformColor)
 		.def_readwrite("points", &PointCloud::points_)
 		.def_readwrite("normals", &PointCloud::normals_)
 		.def_readwrite("colors", &PointCloud::colors_);
@@ -60,17 +60,17 @@ void pybind_pointcloud(py::module &m)
 
 void pybind_pointcloud_methods(py::module &m)
 {
-	m.def("ReadPointCloud", [](const std::string &filename) {
+	m.def("read_point_cloud", [](const std::string &filename) {
 		PointCloud pcd;
 		ReadPointCloud(filename, pcd);
 		return pcd;
 	}, "Function to read PointCloud from file", "filename"_a);
-	m.def("WritePointCloud", [](const std::string &filename,
+	m.def("write_point_cloud", [](const std::string &filename,
 			const PointCloud &pointcloud, bool write_ascii, bool compressed) {
 		return WritePointCloud(filename, pointcloud, write_ascii, compressed);
 	}, "Function to write PointCloud to file", "filename"_a, "pointcloud"_a,
 			"write_ascii"_a = false, "compressed"_a = false);
-	m.def("CreatePointCloudFromDepthImage", &CreatePointCloudFromDepthImage,
+	m.def("create_point_cloud_from_depth_image", &CreatePointCloudFromDepthImage,
 			"Factory function to create a pointcloud from a depth image and a camera.\n"
 			"Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
 			"    z = d / depth_scale\n"
@@ -79,7 +79,7 @@ void pybind_pointcloud_methods(py::module &m)
 			"depth"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity(),
 			"depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0, "stride"_a = 1);
-	m.def("CreatePointCloudFromRGBDImage", &CreatePointCloudFromRGBDImage,
+	m.def("create_point_cloud_from_rgbd_image", &CreatePointCloudFromRGBDImage,
 			"Factory function to create a pointcloud from an RGB-D image and a camera.\n"
 			"Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
 			"    z = d / depth_scale\n"
@@ -87,43 +87,43 @@ void pybind_pointcloud_methods(py::module &m)
 			"    y = (v - cy) * z / fy",
 			"image"_a, "intrinsic"_a,
 			"extrinsic"_a = Eigen::Matrix4d::Identity());
-	m.def("SelectDownSample", &SelectDownSample,
+	m.def("select_down_sample", &SelectDownSample,
 			"Function to select points from input pointcloud into output pointcloud",
 			"input"_a, "indices"_a);
-	m.def("VoxelDownSample", &VoxelDownSample,
+	m.def("voxel_down_sample", &VoxelDownSample,
 			"Function to downsample input pointcloud into output pointcloud with a voxel",
 			"input"_a, "voxel_size"_a);
-	m.def("UniformDownSample", &UniformDownSample,
+	m.def("uniform_down_sample", &UniformDownSample,
 			"Function to downsample input pointcloud into output pointcloud uniformly",
 			"input"_a, "every_k_points"_a);
-	m.def("CropPointCloud", &CropPointCloud,
+	m.def("crop_point_cloud", &CropPointCloud,
 			"Function to crop input pointcloud into output pointcloud",
 			"input"_a, "min_bound"_a, "max_bound"_a);
-	m.def("EstimateNormals", &EstimateNormals,
+	m.def("estimate_normals", &EstimateNormals,
 			"Function to compute the normals of a point cloud",
 			"cloud"_a, "search_param"_a = KDTreeSearchParamKNN());
-	m.def("OrientNormalsToAlignWithDirection",
+	m.def("orient_normals_to_align_with_direction",
 			&OrientNormalsToAlignWithDirection,
 			"Function to orient the normals of a point cloud",
-			"cloud"_a, "orientation_reference"_a = 
+			"cloud"_a, "orientation_reference"_a =
 			Eigen::Vector3d(0.0, 0.0, 1.0));
-	m.def("OrientNormalsTowardsCameraLocation",
+	m.def("orient_normals_towards_camera_location",
 			&OrientNormalsTowardsCameraLocation,
 			"Function to orient the normals of a point cloud",
 			"cloud"_a, "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-	m.def("ComputePointCloudToPointCloudDistance",
+	m.def("compute_point_cloud_to_point_cloud_distance",
 			&ComputePointCloudToPointCloudDistance,
 			"Function to compute the ponit to point distances between point clouds",
 			"source"_a, "target"_a);
-	m.def("ComputePointCloudMeanAndCovariance",
+	m.def("compute_point_cloud_mean_and_covariance",
 			&ComputePointCloudMeanAndCovariance,
 			"Function to compute the mean and covariance matrix of a point cloud",
 			"input"_a);
-	m.def("ComputePointCloudMahalanobisDistance",
+	m.def("compute_point_cloud_mahalanobis_distance",
 			&ComputePointCloudMahalanobisDistance,
 			"Function to compute the Mahalanobis distance for points in a point cloud",
 			"input"_a);
-	m.def("ComputePointCloudNearestNeighborDistance",
+	m.def("compute_point_cloud_nearest_neighbor_distance",
 			&ComputePointCloudNearestNeighborDistance,
 			"Function to compute the distance from a point to its nearest neighbor in the point cloud",
 			"input"_a);

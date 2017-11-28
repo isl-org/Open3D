@@ -9,7 +9,7 @@ import numpy as np
 
 if __name__ == "__main__":
 
-	SetVerbosityLevel(VerbosityLevel.Debug)
+	set_verbosity_level(VerbosityLevel.Debug)
 
 	print("")
 	print("Parameters for PoseGraph optimization ...")
@@ -23,21 +23,21 @@ if __name__ == "__main__":
 	print("")
 
 	print("Optimizing Fragment PoseGraph using py3d ...")
-	pose_graph_fragment = ReadPoseGraph(
+	pose_graph_fragment = read_pose_graph(
 			"../../TestData/GraphOptimization/pose_graph_example_fragment.json")
 	print(pose_graph_fragment)
-	GlobalOptimization(pose_graph_fragment, method, criteria, line_process_option)
-	WritePoseGraph(
+	global_optimization(pose_graph_fragment, method, criteria, line_process_option)
+	write_pose_graph(
 			"../../TestData/GraphOptimization/pose_graph_example_fragment_optimized.json",
 			pose_graph_fragment)
 	print("")
 
 	print("Optimizing Global PoseGraph using py3d ...")
-	pose_graph_global = ReadPoseGraph(
+	pose_graph_global = read_pose_graph(
 			"../../TestData/GraphOptimization/pose_graph_example_global.json")
 	print(pose_graph_global)
-	GlobalOptimization(pose_graph_global, method, criteria, line_process_option)
-	WritePoseGraph(
+	global_optimization(pose_graph_global, method, criteria, line_process_option)
+	write_pose_graph(
 			"../../TestData/GraphOptimization/pose_graph_example_global_optimized.json",
 			pose_graph_global)
 	print("")

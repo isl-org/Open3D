@@ -14,13 +14,13 @@ if __name__ == "__main__":
 
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
-        color = ReadImage("../../TestData/RGBD/color/{:05d}.jpg".format(i))
-        depth = ReadImage("../../TestData/RGBD/depth/{:05d}.png".format(i))
-        rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
+        color = read_image("../../TestData/RGBD/color/{:05d}.jpg".format(i))
+        depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
+        rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
                 convert_rgb_to_intensity = False)
         volume.Integrate(rgbd, intrinsic, np.linalg.inv(camera_poses[i].pose))
 
     print("Extract a triangle mesh from the volume and visualize it.")
     mesh = volume.ExtractTriangleMesh()
-    mesh.ComputeVertexNormals()
+    mesh.compute_vertex_normals()
     DrawGeometries([mesh])

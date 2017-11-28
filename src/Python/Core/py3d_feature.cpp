@@ -38,9 +38,9 @@ void pybind_feature(py::module &m)
 	py::detail::bind_default_constructor<Feature>(feature);
 	py::detail::bind_copy_functions<Feature>(feature);
 	feature
-		.def("Resize", &Feature::Resize, "dim"_a, "n"_a)
-		.def("Dimension", &Feature::Dimension)
-		.def("Num", &Feature::Num)
+		.def("resize", &Feature::Resize, "dim"_a, "n"_a)
+		.def("dimension", &Feature::Dimension)
+		.def("num", &Feature::Num)
 		.def_readwrite("data", &Feature::data_)
 		.def("__repr__", [](const Feature &f) {
 			return std::string("Feature class with dimension = ") +
@@ -52,16 +52,16 @@ void pybind_feature(py::module &m)
 
 void pybind_feature_methods(py::module &m)
 {
-	m.def("ReadFeature", [](const std::string &filename) {
+	m.def("read_feature", [](const std::string &filename) {
 		Feature feature;
 		ReadFeature(filename, feature);
 		return feature;
 	}, "Function to read Feature from file", "filename"_a);
-	m.def("WriteFeature", [](const std::string &filename,
+	m.def("write_feature", [](const std::string &filename,
 			const Feature &feature) {
 		return WriteFeature(filename, feature);
 	}, "Function to write Feature to file", "filename"_a, "feature"_a);
-	m.def("ComputeFPFHFeature", &ComputeFPFHFeature,
+	m.def("compute_fpfh_feature", &ComputeFPFHFeature,
 			"Function to compute FPFH feature for a point cloud",
 			"input"_a, "search_param"_a);
 }
