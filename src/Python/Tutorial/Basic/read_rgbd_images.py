@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../..")
 
+#conda install pillow matplotlib
 from py3d import *
 import re
 import numpy as np

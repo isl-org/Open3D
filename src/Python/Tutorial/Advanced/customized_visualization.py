@@ -99,7 +99,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	vis.add_geometry(pcd)
 	vis.get_render_option().load_from_json("../../TestData/renderoption.json")
 	vis.register_animation_callback(move_forward)
-	vis.run(True)
+	vis.run()
 	vis.destroy_window()
 
 if __name__ == "__main__":
