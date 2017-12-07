@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import numpy as np
 from os import makedirs
 from os.path import exists
@@ -127,7 +131,7 @@ if __name__ == "__main__":
 	if path_intrinsic:
 		intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
 	else:
-		intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
+		intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
 	for fragment_id in range(n_fragments):
 		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id

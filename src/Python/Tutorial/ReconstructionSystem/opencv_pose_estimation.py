@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 # following code is tested with OpenCV 3.2.0 and Python2.7
 # how to install opencv
 # conda create --prefix py27opencv python=2.7

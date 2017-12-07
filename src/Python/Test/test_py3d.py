@@ -174,7 +174,7 @@ def test_py3d_image():
 	plt.subplot(1, 2, 2)
 	plt.imshow(im.color)
 	plt.show()
-	pcd = create_point_cloud_from_rgbd_image(im, PinholeCameraIntrinsic.PrimeSenseDefault)
+	pcd = create_point_cloud_from_rgbd_image(im, PinholeCameraIntrinsic.prime_sense_default)
 	# Flip it, otherwise the pointcloud will be upside down
 	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 	draw_geometries([pcd])
@@ -242,8 +242,8 @@ def test_py3d_posegraph():
 
 def test_py3d_camera():
 	print("Testing camera in py3d ...")
-	print(PinholeCameraIntrinsic.PrimeSenseDefault)
-	print(PinholeCameraIntrinsic.PrimeSenseDefault.intrinsic_matrix)
+	print(PinholeCameraIntrinsic.prime_sense_default)
+	print(PinholeCameraIntrinsic.prime_sense_default.intrinsic_matrix)
 	print(PinholeCameraIntrinsic())
 	x = PinholeCameraIntrinsic(640, 480, 525, 525, 320, 240)
 	print(x)

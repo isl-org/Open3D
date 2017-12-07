@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import numpy as np
 from os import listdir, makedirs
 from os.path import isfile, join, exists
@@ -91,6 +95,6 @@ if __name__ == "__main__":
 		if path_intrinsic:
 			intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
 		else:
-			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
+			intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
 		test_single_pair(source_id, target_id, intrinsic, with_opencv)

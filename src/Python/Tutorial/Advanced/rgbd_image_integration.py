@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import sys
 sys.path.append("../..")
 from py3d import *
@@ -5,7 +9,7 @@ from trajectory_io import *
 import numpy as np
 
 if __name__ == "__main__":
-    intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
+    intrinsic = PinholeCameraIntrinsic.prime_sense_default
     camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
     #volume = UniformTSDFVolume(length = 4.0, resolution = 512, sdf_trunc = 0.04,
     #        with_color = True)

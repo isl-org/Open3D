@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import numpy as np
 import math
 import sys
@@ -54,7 +58,7 @@ if __name__ == "__main__":
 	if path_intrinsic:
 		intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
 	else:
-		intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
+		intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
 	mesh = scalable_integrate_rgb_frames(path_dataset, intrinsic)
 	mesh_name = path_dataset + "integrated.ply"

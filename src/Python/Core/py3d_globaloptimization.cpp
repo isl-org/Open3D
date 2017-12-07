@@ -121,26 +121,26 @@ void pybind_globaloptimization(py::module &m)
 
 	py::class_<GlobalOptimizationLevenbergMarquardt,
 			PyGlobalOptimizationMethod<GlobalOptimizationLevenbergMarquardt>,
-			GlobalOptimizationMethod> global_optimization_method_LM(m,
+			GlobalOptimizationMethod> global_optimization_method_lm(m,
 			"GlobalOptimizationLevenbergMarquardt");
 	py::detail::bind_default_constructor<GlobalOptimizationLevenbergMarquardt>
-			(global_optimization_method_LM);
+			(global_optimization_method_lm);
 	py::detail::bind_copy_functions<GlobalOptimizationLevenbergMarquardt>(
-			global_optimization_method_LM);
-	global_optimization_method_LM
+			global_optimization_method_lm);
+	global_optimization_method_lm
 			.def("__repr__", [](const GlobalOptimizationLevenbergMarquardt &te) {
 			return std::string("GlobalOptimizationLevenbergMarquardt");
 	});
 
 	py::class_<GlobalOptimizationGaussNewton,
 			PyGlobalOptimizationMethod<GlobalOptimizationGaussNewton>,
-			GlobalOptimizationMethod> global_optimization_method_GN(m,
+			GlobalOptimizationMethod> global_optimization_method_gn(m,
 				"GlobalOptimizationGaussNewton");
 	py::detail::bind_default_constructor<GlobalOptimizationGaussNewton>
-			(global_optimization_method_GN);
+			(global_optimization_method_gn);
 	py::detail::bind_copy_functions<GlobalOptimizationGaussNewton>(
-			global_optimization_method_GN);
-	global_optimization_method_GN
+			global_optimization_method_gn);
+	global_optimization_method_gn
 			.def("__repr__", [](const GlobalOptimizationGaussNewton &te) {
 			return std::string("GlobalOptimizationGaussNewton");
 	});
