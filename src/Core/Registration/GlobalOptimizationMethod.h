@@ -36,7 +36,7 @@ class GlobalOptimizationOption;
 
 class GlobalOptimizationConvergenceCriteria;
 
-class GlobalOptimizationLineProcessOption;
+class GlobalOptimizationOption;
 
 class GlobalOptimizationMethod
 {
@@ -48,7 +48,7 @@ public:
 	virtual void OptimizePoseGraph(
 			PoseGraph &pose_graph,
 			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationLineProcessOption &option) const = 0;
+			const GlobalOptimizationOption &option) const = 0;
 };
 
 class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod
@@ -61,7 +61,7 @@ public:
 	void OptimizePoseGraph(
 			PoseGraph &pose_graph,
 			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationLineProcessOption &option) const override;
+			const GlobalOptimizationOption &option) const override;
 };
 
 class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod
@@ -74,7 +74,7 @@ public:
 	void OptimizePoseGraph(
 			PoseGraph &pose_graph,
 			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationLineProcessOption &option) const override;
+			const GlobalOptimizationOption &option) const override;
 };
 
 }	// namespace three

@@ -121,7 +121,7 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetJacobian(
 int UpdateConfidence(
 		PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
 		const double line_process_weight,
-		const GlobalOptimizationLineProcessOption &option)
+		const GlobalOptimizationOption &option)
 {
 	int n_edges = (int)pose_graph.edges_.size();
 	int valid_edges_num = 0;
@@ -144,7 +144,7 @@ int UpdateConfidence(
 /// Function to compute residual defined in [Choi et al 2015] See Eq (9).
 double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
 		const double line_process_weight,
-		const GlobalOptimizationLineProcessOption &option)
+		const GlobalOptimizationOption &option)
 {
 	int n_edges = (int)pose_graph.edges_.size();
 	double residual = 0.0;
@@ -333,7 +333,7 @@ bool CheckMaxIterationLM(int iteration,
 }
 
 double ComputeLineProcessWeight(const PoseGraph &pose_graph,
-		const GlobalOptimizationLineProcessOption &option)
+		const GlobalOptimizationOption &option)
 {
 	int n_edges = (int)pose_graph.edges_.size();
 	double average_number_of_correspondences = 0.0;
@@ -355,11 +355,31 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	}
 }
 
+void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
+		const PoseGraph &pose_graph_orig, int reference_node)
+{
+	PrintDebug("CompensateReferencePoseGraphNode : reference : %d",
+			reference_node);
+	int n_nodes = (int)pose_graph_new.nodes_.size();
+	if (reference_node < 0 || reference_node > n_nodes) {
+		return;
+	} else {
+		Eigen::Matrix4d compensation =
+				pose_graph_orig.nodes_[reference_node].pose_ *
+				pose_graph_new.nodes_[reference_node].pose_.inverse();
+		for (int i = 0; i < n_nodes; i++)
+		{
+			pose_graph_new.nodes_[i].pose_ = compensation *
+					pose_graph_new.nodes_[i].pose_;
+		}
+	}
+}
+
 }	// unnamed namespace
 
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
 		const PoseGraph &pose_graph,
-		const GlobalOptimizationLineProcessOption &option)
+		const GlobalOptimizationOption &option)
 {
 	std::shared_ptr<PoseGraph> pose_graph_pruned =
 			std::make_shared<PoseGraph>();
@@ -386,7 +406,7 @@ std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
 void GlobalOptimizationGaussNewton::
 		OptimizePoseGraph(PoseGraph &pose_graph,
 		const GlobalOptimizationConvergenceCriteria &criteria,
-		const GlobalOptimizationLineProcessOption &option) const
+		const GlobalOptimizationOption &option) const
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
@@ -394,8 +414,7 @@ void GlobalOptimizationGaussNewton::
 
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
-	PrintDebug("Line process weight : %f\n",
-			line_process_weight);
+	PrintDebug("Line process weight : %f\n", line_process_weight);
 
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);
 	double current_residual, new_residual;
@@ -472,7 +491,7 @@ void GlobalOptimizationGaussNewton::
 void GlobalOptimizationLevenbergMarquardt::
 		OptimizePoseGraph(PoseGraph &pose_graph,
 		const GlobalOptimizationConvergenceCriteria &criteria,
-		const GlobalOptimizationLineProcessOption &option) const
+		const GlobalOptimizationOption &option) const
 {
 	int n_nodes = (int)pose_graph.nodes_.size();
 	int n_edges = (int)pose_graph.edges_.size();
@@ -480,8 +499,7 @@ void GlobalOptimizationLevenbergMarquardt::
 
 	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
-	PrintDebug("Line process weight : %f\n",
-			line_process_weight);
+	PrintDebug("Line process weight : %f\n", line_process_weight);
 
 	Eigen::VectorXd zeta = ComputeZeta(pose_graph);
 	double current_residual, new_residual;
@@ -585,16 +603,18 @@ void GlobalOptimization(
 		/* = GlobalOptimizationLevenbergMarquardt() */,
 		const GlobalOptimizationConvergenceCriteria &criteria
 		/* = GlobalOptimizationConvergenceCriteria() */,
-		const GlobalOptimizationLineProcessOption &line_process_option
-		/* = GlobalOptimizationLineProcessOption() */)
+		const GlobalOptimizationOption &option
+		/* = GlobalOptimizationOption() */)
 {
 	std::shared_ptr<PoseGraph> pose_graph_pre =
 			std::make_shared<PoseGraph>();
 	*pose_graph_pre = pose_graph;
-	method.OptimizePoseGraph(*pose_graph_pre, criteria, line_process_option);
+	method.OptimizePoseGraph(*pose_graph_pre, criteria, option);
 	auto pose_graph_pruned = CreatePoseGraphWithoutInvalidEdges(
-			*pose_graph_pre, line_process_option);
-	method.OptimizePoseGraph(*pose_graph_pruned, criteria, line_process_option);
+			*pose_graph_pre, option);
+	method.OptimizePoseGraph(*pose_graph_pruned, criteria, option);
+	CompensateReferencePoseGraphNode(*pose_graph_pruned,
+			pose_graph, option.reference_node_);
 	pose_graph = *pose_graph_pruned;
 }
 
