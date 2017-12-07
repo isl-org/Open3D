@@ -32,8 +32,8 @@ if __name__ == "__main__":
 			# if edge.source_node_id == source_id and \
 			# 		edge.target_node_id == target_id:
 			if True:
-				source = ReadPointCloud(ply_file_names[edge.source_node_id])
-				source_down = VoxelDownSample(source, 0.05)
-				target = ReadPointCloud(ply_file_names[edge.target_node_id])
-				target_down = VoxelDownSample(target, 0.05)
-				DrawRegistrationResult(source, target, edge.transformation)
+				source = read_point_cloud(ply_file_names[edge.source_node_id])
+				source_down = voxel_down_sample(source, 0.05)
+				target = read_point_cloud(ply_file_names[edge.target_node_id])
+				target_down = voxel_down_sample(target, 0.05)
+				draw_registration_result(source, target, edge.transformation)

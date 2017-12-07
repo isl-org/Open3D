@@ -18,9 +18,9 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	depth_s = read_image(depth_files[s])
 	color_t = read_image(color_files[t])
 	depth_t = read_image(depth_files[t])
-	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s,
+	source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s,
 			depth_trunc = 4.0, convert_rgb_to_intensity = True)
-	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t,
+	target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t,
 			depth_trunc = 4.0, convert_rgb_to_intensity = True)
 
 	if abs(s-t) is not 1:

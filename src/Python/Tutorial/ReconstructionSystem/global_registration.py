@@ -57,14 +57,14 @@ def register_colored_point_cloud_ICP(source, target,
 	for scale in range(3): # multi-scale approach
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
-		source_down = VoxelDownSample(source, radius)
-		target_down = VoxelDownSample(target, radius)
-		EstimateNormals(source_down, KDTreeSearchParamHybrid(
+		source_down = voxel_down_sample(source, radius)
+		target_down = voxel_down_sample(target, radius)
+		estimate_normals(source_down, KDTreeSearchParamHybrid(
 				radius = radius * 2, max_nn = 30))
 		print(np.asarray(source_down.normals))
-		EstimateNormals(target_down, KDTreeSearchParamHybrid(
+		estimate_normals(target_down, KDTreeSearchParamHybrid(
 				radius = radius * 2, max_nn = 30))
-		result_icp = RegistrationColoredICP(source_down, target_down,
+		result_icp = registration_colored_icp(source_down, target_down,
 				radius, current_transformation,
 				ICPConvergenceCriteria(relative_fitness = 1e-6,
 				relative_rmse = 1e-6, max_iteration = iter))
@@ -89,9 +89,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 	path_fragment = path_dataset + 'fragments/'
 	n_frames_per_fragment = 100
 	for s in range(n_files):
-		# for t in range(s + 1, n_files):
-		# for s in range(17,n_files):
-		for t in [s + 1]:
+		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
 					ply_file_names[s])
 			(target_down, target_fpfh) = preprocess_point_cloud(
@@ -150,7 +148,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 
 if __name__ == "__main__":
-	SetVerbosityLevel(VerbosityLevel.Debug)
+	set_verbosity_level(VerbosityLevel.Debug)
 	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
 	if not path_dataset:
 		print("usage : %s " % sys.argv[0])

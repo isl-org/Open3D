@@ -30,15 +30,15 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 					len(pose_graph.nodes)))
 			color = read_image(color_files[frame_id_abs])
 			depth = read_image(depth_files[frame_id_abs])
-			rgbd = CreateRGBDImageFromColorAndDepth(color, depth,
+			rgbd = create_rgbd_image_from_color_and_depth(color, depth,
 					depth_trunc = 4.0, convert_rgb_to_intensity = False)
 			pose = np.dot(global_pose_graph.nodes[fragment_id].pose,
 					pose_graph.nodes[frame_id].pose)
 			volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
 
-	mesh = volume.ExtractTriangleMesh()
-	mesh.ComputeVertexNormals()
-	DrawGeometries([mesh])
+	mesh = volume.extract_triangle_mesh()
+	mesh.compute_vertex_normals()
+	draw_geometries([mesh])
 	return mesh
 
 
@@ -59,4 +59,4 @@ if __name__ == "__main__":
 	mesh = scalable_integrate_rgb_frames(path_dataset, intrinsic)
 	mesh_name = path_dataset + "integrated.ply"
 	print("Saving mesh as %s" % mesh_name)
-	WriteTriangleMesh(mesh_name, mesh, False, True)
+	write_triangle_mesh(mesh_name, mesh, False, True)
