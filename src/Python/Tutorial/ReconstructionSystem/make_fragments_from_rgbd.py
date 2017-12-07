@@ -18,8 +18,10 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	depth_s = read_image(depth_files[s])
 	color_t = read_image(color_files[t])
 	depth_t = read_image(depth_files[t])
-	source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s)
-	target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t)
+	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s,
+			depth_trunc = 4.0, convert_rgb_to_intensity = True)
+	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t,
+			depth_trunc = 4.0, convert_rgb_to_intensity = True)
 
 	if abs(s-t) is not 1:
 		if with_opencv:
@@ -38,15 +40,6 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 				source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
 				RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 		return [success, trans, info]
-
-
-def get_file_lists(path_dataset):
-	# get list of color and depth images
-	path_color = path_dataset + 'image/'
-	path_depth = path_dataset + 'depth/'
-	color_files = get_file_list(path_color)
-	depth_files = get_file_list(path_depth)
-	return color_files, depth_files
 
 
 def make_one_fragment(fragment_id, intrinsic, with_opencv):
@@ -87,13 +80,8 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 
 def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 	pose_graph = read_pose_graph(pose_graph_name)
-	min_depth = 0.3
-	cubic_length = 4.0
-	volume = UniformTSDFVolume(length = cubic_length, resolution = 512,
-			sdf_trunc = 0.04, with_color = True)
-	trans = np.identity(4)
-	trans[0:2,3] = cubic_length / 2
-	trans[2,3] = -min_depth
+	volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0, sdf_trunc = 0.04,\
+			with_color = True)
 
 	for i in range(len(pose_graph.nodes)):
 		i_abs = fragment_id * n_frames_per_fragment + i
@@ -104,8 +92,7 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 		rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
 				convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
-		transformed_pose = np.dot(trans, pose)
-		volume.integrate(rgbd, intrinsic, transformed_pose)
+		volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
 
 	mesh = volume.extract_triangle_mesh()
 	mesh.compute_vertex_normals()

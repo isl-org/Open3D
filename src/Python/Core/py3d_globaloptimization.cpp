@@ -43,7 +43,7 @@ public:
 	void OptimizePoseGraph(
 		PoseGraph &pose_graph,
 		const GlobalOptimizationConvergenceCriteria &criteria,
-		const GlobalOptimizationLineProcessOption &option) const override {
+		const GlobalOptimizationOption &option) const override {
 		PYBIND11_OVERLOAD_PURE(
 				void,
 				GlobalOptimizationMethodBase,
@@ -189,31 +189,37 @@ void pybind_globaloptimization(py::module &m)
 			std::to_string(cr.lower_scale_factor_);
 	});
 
-	py::class_<GlobalOptimizationLineProcessOption> line_process_option
-			(m, "GlobalOptimizationLineProcessOption");
+	py::class_<GlobalOptimizationOption> option
+			(m, "GlobalOptimizationOption");
 	py::detail::bind_default_constructor
-			<GlobalOptimizationLineProcessOption>(line_process_option);
+			<GlobalOptimizationOption>(option);
 	py::detail::bind_copy_functions
-			<GlobalOptimizationLineProcessOption>(line_process_option);
-	line_process_option
+			<GlobalOptimizationOption>(option);
+	option
 		.def_readwrite("max_correspondence_distance",
-				&GlobalOptimizationLineProcessOption::
+				&GlobalOptimizationOption::
 				max_correspondence_distance_)
 		.def_readwrite("edge_prune_threshold",
-				&GlobalOptimizationLineProcessOption::edge_prune_threshold_)
-		.def("__init__", [](GlobalOptimizationLineProcessOption &o,
+				&GlobalOptimizationOption::edge_prune_threshold_)
+		.def_readwrite("reference_node",
+				&GlobalOptimizationOption::reference_node_)
+		.def("__init__", [](GlobalOptimizationOption &o,
 				double max_correspondence_distance,
-				double edge_prune_threshold) {
-				new (&o)GlobalOptimizationLineProcessOption(
-				max_correspondence_distance, edge_prune_threshold); },
+				double edge_prune_threshold,
+				int reference_node) {
+				new (&o)GlobalOptimizationOption(max_correspondence_distance,
+				edge_prune_threshold, reference_node); },
 				"max_correspondence_distance"_a = 0.03,
-				"edge_prune_threshold"_a = 0.25)
-		.def("__repr__", [](const GlobalOptimizationLineProcessOption &lp) {
-		return std::string("GlobalOptimizationLineProcessOption") +
+				"edge_prune_threshold"_a = 0.25,
+				"reference_node"_a = -1)
+		.def("__repr__", [](const GlobalOptimizationOption &goo) {
+		return std::string("GlobalOptimizationOption") +
 			std::string("\n> max_correspondence_distance : ") +
-			std::to_string(lp.max_correspondence_distance_) +
+			std::to_string(goo.max_correspondence_distance_) +
 			std::string("\n> edge_prune_threshold : ") +
-			std::to_string(lp.edge_prune_threshold_);
+			std::to_string(goo.edge_prune_threshold_) +
+			std::string("\n> reference_node : ") +
+			std::to_string(goo.reference_node_);
 	});
 }
 
@@ -232,9 +238,9 @@ void pybind_globaloptimization_methods(py::module &m)
 	m.def("global_optimization", [](PoseGraph &pose_graph,
 			const GlobalOptimizationMethod &method,
 			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationLineProcessOption &line_process_option) {
+			const GlobalOptimizationOption &option) {
 			GlobalOptimization(
-					pose_graph, method, criteria, line_process_option);
+					pose_graph, method, criteria, option);
 			}, "Function to optimize PoseGraph", "pose_graph"_a, "method"_a,
-					"criteria"_a, "line_process_option"_a);
+					"criteria"_a, "option"_a);
 }

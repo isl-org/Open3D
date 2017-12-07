@@ -43,7 +43,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 
 	if (solution_exist) {
 		// Robust Cholesky decomposition of a matrix with pivoting.
-		Eigen::MatrixXd x = -A.ldlt().solve(b);
+		Eigen::MatrixXd x = A.ldlt().solve(b);
 		return std::make_tuple(solution_exist, std::move(x));
 	} else {
 		return std::make_tuple(false, std::move(Eigen::VectorXd::Zero(b.rows())));
@@ -89,7 +89,7 @@ std::tuple<bool, Eigen::Matrix4d>
 
 	bool solution_exist;
 	Eigen::Vector6d x;
-	std::tie(solution_exist, x) = SolveLinearSystem(JTJ, JTr);
+	std::tie(solution_exist, x) = SolveLinearSystem(JTJ, -JTr);
 
 	if (solution_exist) {
 		Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);

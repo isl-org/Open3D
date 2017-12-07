@@ -129,8 +129,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 		RANSACConvergenceCriteria());
 
 /// Function for computing information matrix from RegistrationResult
-Eigen::Matrix6d GetInformationMatrixFromRegistrationResult(
+Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 		const PointCloud &source, const PointCloud &target,
-		const RegistrationResult &result);
+		double max_correspondence_distance,
+		const Eigen::Matrix4d &transformation);
 
 }	// namespace three
