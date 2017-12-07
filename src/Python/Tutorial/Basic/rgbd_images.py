@@ -29,7 +29,7 @@ def read_nyu_pgm(filename, byteorder='>'):
 	return img_out
 
 if __name__ == "__main__":
-    # read Redwood dataset
+    print("Read Redwood dataset")
 	color_raw_redwood = read_image("../../TestData/RGBD/color/00000.jpg")
 	depth_raw_redwood = read_image("../../TestData/RGBD/depth/00000.png")
 	rgbd_image_redwood = create_rgbd_image_from_color_and_depth(
@@ -42,8 +42,12 @@ if __name__ == "__main__":
 	plt.title('Redwood depth image')
 	plt.imshow(rgbd_image_redwood.depth)
 	plt.show()
+	pcd = create_point_cloud_from_rgbd_image(rgbd_image_redwood, PinholeCameraIntrinsic.PrimeSenseDefault)
+	# Flip it, otherwise the pointcloud will be upside down
+	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+	draw_geometries([pcd])
 
-    # read SUN dataset
+    print("Read SUN dataset")
 	color_raw_sun = read_image("../../TestData/RGBD/other_formats/SUN_color.jpg")
 	depth_raw_sun = read_image("../../TestData/RGBD/other_formats/SUN_depth.png")
 	rgbd_image_sun = create_rgbd_image_from_sun_format(color_raw_sun, depth_raw_sun);
@@ -55,8 +59,12 @@ if __name__ == "__main__":
 	plt.title('SUN depth image')
 	plt.imshow(rgbd_image_sun.depth)
 	plt.show()
+	pcd = create_point_cloud_from_rgbd_image(rgbd_image_sun, PinholeCameraIntrinsic.PrimeSenseDefault)
+	# Flip it, otherwise the pointcloud will be upside down
+	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+	draw_geometries([pcd])
 
-    # read NYU dataset
+	print("Read NYU dataset")
 	# Open3D does not support ppm/pgm file yet. Not using read_image here.
 	# MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
 	color_raw_nyu = mpimg.imread("../../TestData/RGBD/other_formats/NYU_color.ppm")
@@ -72,8 +80,12 @@ if __name__ == "__main__":
 	plt.title('NYU depth image')
 	plt.imshow(rgbd_image_nyu.depth)
 	plt.show()
+	pcd = create_point_cloud_from_rgbd_image(rgbd_image_nyu, PinholeCameraIntrinsic.PrimeSenseDefault)
+	# Flip it, otherwise the pointcloud will be upside down
+	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+	draw_geometries([pcd])
 
-    # read TUM dataset
+    print("Read TUM dataset")
 	color_raw_tum = read_image("../../TestData/RGBD/other_formats/TUM_color.png")
 	depth_raw_tum = read_image("../../TestData/RGBD/other_formats/TUM_depth.png")
 	rgbd_image_tum = create_rgbd_image_from_tum_format(color_raw_tum, depth_raw_tum);
@@ -85,3 +97,7 @@ if __name__ == "__main__":
 	plt.title('TUM depth image')
 	plt.imshow(rgbd_image_tum.depth)
 	plt.show()
+	pcd = create_point_cloud_from_rgbd_image(rgbd_image_tum, PinholeCameraIntrinsic.PrimeSenseDefault)
+	# Flip it, otherwise the pointcloud will be upside down
+	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+	draw_geometries([pcd])

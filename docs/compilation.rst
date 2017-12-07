@@ -5,8 +5,12 @@ Compilation Options
 
 This page shows advanced options to customize your Open3D build. For quick start, see :ref:`getting_started_compilation`.
 
+.. _python_binding:
+
 Python binding
 =================
+
+We highly recommend this option as it gives easy interface to users. Open3D tutorial is written for Python binding.
 
 We use `pybind11 <https://github.com/pybind/pybind11>`_ to build the Python binding. It tries to automatically detect the installed version of Python and link against that. When this fails, or when there are multiple versions of Python and it finds the wrong one, delete CMakeCache.txt and then invoke CMake as follows:
 
@@ -14,6 +18,15 @@ We use `pybind11 <https://github.com/pybind/pybind11>`_ to build the Python bind
 
     cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-python-executable> ../src
 
+If you are familiar with Anaconda, settings for the compilation is
+
+.. code-block:: bash
+
+	conda create --name py35 python=3.5
+	source activate py35
+	cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-anaconda>/envs/py35/bin/python3.5 ../src
+
+This example uses Python 3.5, but you can choose 2.7 or other.
 If you do not want Python binding, turn off the compilation options ``Open3D_BUILD_PYTHON_BINDING`` and ``Open3D_BUILD_PYTHON_BINDING_TESTS``.
 
 Dependencies
