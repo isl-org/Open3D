@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import numpy as np
 from os import listdir, makedirs
 from os.path import isfile, join, exists
@@ -13,12 +17,12 @@ from make_fragments_from_rgbd import *
 def process_one_rgbd_pair(s, t, color_files, depth_files,
 		intrinsic, with_opencv):
 	# read images
-	color_s = ReadImage(color_files[s])
-	depth_s = ReadImage(depth_files[s])
-	color_t = ReadImage(color_files[t])
-	depth_t = ReadImage(depth_files[t])
-	source_rgbd_image = CreateRGBDImageFromColorAndDepth(color_s, depth_s)
-	target_rgbd_image = CreateRGBDImageFromColorAndDepth(color_t, depth_t)
+	color_s = read_image(color_files[s])
+	depth_s = read_image(depth_files[s])
+	color_t = read_image(color_files[t])
+	depth_t = read_image(depth_files[t])
+	source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s)
+	target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t)
 
 	# initialize_camera_pose
 	if abs(s-t) is not 1 and with_opencv:
@@ -28,7 +32,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 		odo_init = np.identity(4)
 
 	# perform RGB-D odometry
-	[success, trans, info] = ComputeRGBDOdometry(
+	[success, trans, info] = compute_rgbd_odometry(
 			source_rgbd_image, target_rgbd_image, intrinsic,
 			odo_init, RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
 	return [trans, info]
@@ -44,23 +48,23 @@ def test_single_frame_integrate(i, intrinsic):
 	trans_offset[2,3] = -min_depth
 
 	print("Integrate a rgbd image.")
-	color = ReadImage(color_files[i])
-	depth = ReadImage(depth_files[i])
+	color = read_image(color_files[i])
+	depth = read_image(depth_files[i])
 	print(color_files[i])
 	print(depth_files[i])
-	rgbd = CreateRGBDImageFromColorAndDepth(color, depth, depth_trunc = 4.0,
+	rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
 			convert_rgb_to_intensity = False)
-	volume.Integrate(rgbd, intrinsic, trans_offset)
+	volume.integrate(rgbd, intrinsic, trans_offset)
 
-	mesh = volume.ExtractTriangleMesh()
-	mesh.ComputeVertexNormals()
-	mesh.Transform(np.linalg.inv(trans_offset))
+	mesh = volume.extract_triangle_mesh()
+	mesh.compute_vertex_normals()
+	mesh.transform(np.linalg.inv(trans_offset))
 
 	return mesh
 
 
 def test_single_pair(s, t, intrinsic, with_opencv):
-	SetVerbosityLevel(VerbosityLevel.Debug)
+	set_verbosity_level(VerbosityLevel.Debug)
 
 	pose_graph = PoseGraph()
 	[trans, info] = process_one_rgbd_pair(s, t,
@@ -71,8 +75,8 @@ def test_single_pair(s, t, intrinsic, with_opencv):
 	# integration
 	mesh_s = test_single_frame_integrate(s, intrinsic)
 	mesh_t = test_single_frame_integrate(t, intrinsic)
-	mesh_s.Transform(trans) # for 5pt
-	DrawGeometries([mesh_s, mesh_t])
+	mesh_s.transform(trans) # for 5pt
+	draw_geometries([mesh_s, mesh_t])
 
 
 # test wide baseline matching
@@ -89,8 +93,8 @@ if __name__ == "__main__":
 
 		[color_files, depth_files] = get_file_lists(path_dataset)
 		if path_intrinsic:
-			intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
+			intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
 		else:
-			intrinsic = PinholeCameraIntrinsic.PrimeSenseDefault
+			intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
 		test_single_pair(source_id, target_id, intrinsic, with_opencv)

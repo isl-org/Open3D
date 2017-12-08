@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import numpy as np
 import sys
 sys.path.append("../..")
@@ -29,7 +33,7 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 			transformation_init = result_ransac.transformation
 			print(transformation_init)
 	if draw_result:
-		DrawRegistrationResult(source_down, target_down,
+		draw_registration_result(source_down, target_down,
 				transformation_init)
 
 	if (registration_type == "color"):
@@ -48,7 +52,7 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 
 
 if __name__ == "__main__":
-	SetVerbosityLevel(VerbosityLevel.Debug)
+	set_verbosity_level(VerbosityLevel.Debug)
 	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
 	path_init = parse_argument(sys.argv, "--init_pose")
 	source_id = parse_argument_int(sys.argv, "--source_id")

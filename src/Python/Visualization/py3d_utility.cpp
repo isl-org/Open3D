@@ -42,7 +42,7 @@ void pybind_utility(py::module &m)
 			selection_volume);
 	py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
 	selection_volume
-		.def("CropPointCloud", [](const SelectionPolygonVolume &s,
+		.def("crop_point_cloud", [](const SelectionPolygonVolume &s,
 				const PointCloud &input) {
 			return s.CropPointCloud(input);
 		}, "input"_a)
@@ -60,7 +60,7 @@ void pybind_utility(py::module &m)
 
 void pybind_utility_methods(py::module &m)
 {
-	m.def("DrawGeometries", 
+	m.def("draw_geometries",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 			const std::string &window_name, int width, int height,
 			int left, int top) {
@@ -70,7 +70,7 @@ void pybind_utility_methods(py::module &m)
 	}, "Function to draw a list of Geometry objects",
 			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50);
-	m.def("DrawGeometriesWithCustomAnimation",
+	m.def("draw_geometries_with_custom_animation",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 			const std::string &window_name, int width, int height,
 			int left, int top, const std::string &json_filename) {
@@ -82,7 +82,7 @@ void pybind_utility_methods(py::module &m)
 			"geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
 			"optional_view_trajectory_json_file"_a = "");
-	m.def("DrawGeometriesWithAnimationCallback",
+	m.def("draw_geometries_with_animation_callback",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 			std::function<bool(Visualizer *)> callback_func,
 			const std::string &window_name, int width, int height,
@@ -96,7 +96,7 @@ void pybind_utility_methods(py::module &m)
 			"window_name"_a = "Open3D", "width"_a = 1920,
 			"height"_a = 1080, "left"_a = 50, "top"_a = 50,
 			py::return_value_policy::reference);
-	m.def("DrawGeometriesWithKeyCallbacks",
+	m.def("draw_geometries_with_key_callbacks",
 	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
 			const std::map<int, std::function<bool(Visualizer *)>>
 			&key_to_callback, const std::string &window_name, int width,
@@ -108,7 +108,7 @@ void pybind_utility_methods(py::module &m)
 	}, "Function to draw a list of Geometry objects with a customized key-callback mapping",
 			"geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
 			"width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
-	m.def("ReadSelectionPolygonVolume", [](const std::string &filename) {
+	m.def("read_selection_polygon_volume", [](const std::string &filename) {
 		SelectionPolygonVolume vol;
 		ReadIJsonConvertible(filename, vol);
 		return vol;

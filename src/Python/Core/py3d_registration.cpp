@@ -118,8 +118,8 @@ void pybind_registration(py::module &m)
 			PyTransformationEstimation<TransformationEstimation>>
 			te(m, "TransformationEstimation");
 	te
-		.def("ComputeRMSE", &TransformationEstimation::ComputeRMSE)
-		.def("ComputeTransformation",
+		.def("compute_rmse", &TransformationEstimation::ComputeRMSE)
+		.def("compute_transformation",
 				&TransformationEstimation::ComputeTransformation);
 
 	py::class_<TransformationEstimationPointToPoint,
@@ -237,28 +237,28 @@ void pybind_registration(py::module &m)
 
 void pybind_registration_methods(py::module &m)
 {
-	m.def("EvaluateRegistration", &EvaluateRegistration,
+	m.def("evaluate_registration", &EvaluateRegistration,
 			"Function for evaluating registration between point clouds",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
 			"transformation"_a = Eigen::Matrix4d::Identity());
-	m.def("RegistrationICP", &RegistrationICP,
+	m.def("registration_icp", &RegistrationICP,
 			"Function for ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
 			"init"_a = Eigen::Matrix4d::Identity(), "estimation_method"_a =
 			TransformationEstimationPointToPoint(false), "criteria"_a =
 			ICPConvergenceCriteria());
-	m.def("RegistrationColoredICP", &RegistrationColoredICP,
+	m.def("registration_colored_icp", &RegistrationColoredICP,
 			"Function for Colored ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
 			"init"_a = Eigen::Matrix4d::Identity(),
 			"criteria"_a = ICPConvergenceCriteria());
-	m.def("RegistrationRANSACBasedOnCorrespondence",
+	m.def("registration_ransac_based_on_correspondence",
 			&RegistrationRANSACBasedOnCorrespondence,
 			"Function for global RANSAC registration based on a set of correspondences",
 			"source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
 			"estimation_method"_a = TransformationEstimationPointToPoint(false),
 			"ransac_n"_a = 6, "criteria"_a = RANSACConvergenceCriteria());
-	m.def("RegistrationRANSACBasedOnFeatureMatching",
+	m.def("registration_ransac_based_on_feature_matching",
 			&RegistrationRANSACBasedOnFeatureMatching,
 			"Function for global RANSAC registration based on feature matching",
 			"source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
@@ -267,7 +267,7 @@ void pybind_registration_methods(py::module &m)
 			"checkers"_a = std::vector<std::reference_wrapper<const
 			CorrespondenceChecker>>(), "criteria"_a =
 			RANSACConvergenceCriteria(100000, 100));
-	m.def("GetInformationMatrixFromPointClouds",
+	m.def("get_information_matrix_from_point_clouds",
 			&GetInformationMatrixFromPointClouds,
 			"Function for computing information matrix from RegistrationResult",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,

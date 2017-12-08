@@ -50,7 +50,7 @@ if __name__ == "__main__":
 					print(np.linalg.inv(result_ransac.transformation))
 
 				if do_visualization:
-					DrawRegistrationResult(source_down, target_down,
+					draw_registration_result(source_down, target_down,
 							result_ransac.transformation)
 		write_trajectory(alignment, get_log_path(dataset_name))
 

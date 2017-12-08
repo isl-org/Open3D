@@ -38,9 +38,9 @@ void pybind_console(py::module &m)
 		.value("Debug", VERBOSE_DEBUG)
 		.value("Always", VERBOSE_ALWAYS)
 		.export_values();
-	m.def("SetVerbosityLevel", &SetVerbosityLevel,
+	m.def("set_verbosity_level", &SetVerbosityLevel,
 			"Set global verbosity level of Open3D (py3d)",
 			py::arg("verbosity_level"));
-	m.def("GetVerbosityLevel", &GetVerbosityLevel,
+	m.def("get_verbosity_level", &GetVerbosityLevel,
 			"Get global verbosity level of Open3D (py3d)");
 }

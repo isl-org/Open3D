@@ -40,27 +40,27 @@ void pybind_trianglemesh(py::module &m)
 	py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
 	trianglemesh
 		.def("__repr__", [](const TriangleMesh &mesh) {
-			return std::string("TriangleMesh with ") + 
+			return std::string("TriangleMesh with ") +
 					std::to_string(mesh.vertices_.size()) + " points and " +
 					std::to_string(mesh.triangles_.size()) + " triangles.";
 		})
 		.def(py::self + py::self)
 		.def(py::self += py::self)
-		.def("ComputeTriangleNormals", &TriangleMesh::ComputeTriangleNormals,
+		.def("compute_triangle_normals", &TriangleMesh::ComputeTriangleNormals,
 				"Function to compute triangle normals, usually called before rendering",
 				"normalized"_a = true)
-		.def("ComputeVertexNormals", &TriangleMesh::ComputeVertexNormals,
+		.def("compute_vertex_normals", &TriangleMesh::ComputeVertexNormals,
 				"Function to compute vertex normals, usually called before rendering",
 				"normalized"_a = true)
-		.def("Purge", &TriangleMesh::Purge,
+		.def("purge", &TriangleMesh::Purge,
 				"Function to remove duplicated and non-manifold vertices/triangles")
-		.def("HasVertices", &TriangleMesh::HasVertices)
-		.def("HasTriangles", &TriangleMesh::HasTriangles)
-		.def("HasVertexNormals", &TriangleMesh::HasVertexNormals)
-		.def("HasVertexColors", &TriangleMesh::HasVertexColors)
-		.def("HasTriangleNormals", &TriangleMesh::HasTriangleNormals)
-		.def("NormalizeNormals", &TriangleMesh::NormalizeNormals)
-		.def("PaintUniformColor", &TriangleMesh::PaintUniformColor)
+		.def("has_vertices", &TriangleMesh::HasVertices)
+		.def("has_triangles", &TriangleMesh::HasTriangles)
+		.def("has_vertex_normals", &TriangleMesh::HasVertexNormals)
+		.def("has_vertex_colors", &TriangleMesh::HasVertexColors)
+		.def("has_triangle_normals", &TriangleMesh::HasTriangleNormals)
+		.def("normalize_normals", &TriangleMesh::NormalizeNormals)
+		.def("paint_uniform_color", &TriangleMesh::PaintUniformColor)
 		.def_readwrite("vertices", &TriangleMesh::vertices_)
 		.def_readwrite("vertex_normals", &TriangleMesh::vertex_normals_)
 		.def_readwrite("vertex_colors", &TriangleMesh::vertex_colors_)
@@ -70,33 +70,33 @@ void pybind_trianglemesh(py::module &m)
 
 void pybind_trianglemesh_methods(py::module &m)
 {
-	m.def("ReadTriangleMesh", [](const std::string &filename) {
+	m.def("read_triangle_mesh", [](const std::string &filename) {
 		TriangleMesh mesh;
 		ReadTriangleMesh(filename, mesh);
 		return mesh;
 	}, "Function to read TriangleMesh from file", "filename"_a);
-	m.def("WriteTriangleMesh", [](const std::string &filename,
+	m.def("write_triangle_mesh", [](const std::string &filename,
 			const TriangleMesh &mesh, bool write_ascii, bool compressed) {
 		return WriteTriangleMesh(filename, mesh, write_ascii, compressed);
 	}, "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
 			"write_ascii"_a = false, "compressed"_a = false);
-	m.def("CreateMeshSphere", &CreateMeshSphere,
+	m.def("create_mesh_sphere", &CreateMeshSphere,
 			"Factory function to create a sphere mesh",
 			"radius"_a = 1.0, "resolution"_a = 20);
-	m.def("CreateMeshCylinder", &CreateMeshCylinder,
+	m.def("create_mesh_cylinder", &CreateMeshCylinder,
 			"Factory function to create a cylinder mesh",
 			"radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
 			"split"_a = 4);
-	m.def("CreateMeshCone", &CreateMeshCone,
+	m.def("create_mesh_cone", &CreateMeshCone,
 			"Factory function to create a cone mesh",
 			"radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
 			"split"_a = 1);
-	m.def("CreateMeshArrow", &CreateMeshArrow,
+	m.def("create_mesh_arrow", &CreateMeshArrow,
 			"Factory function to create an arrow mesh",
 			"cylinder_radius"_a = 1.0, "cone_radius"_a = 1.5,
 			"cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
 			"resolution"_a = 20, "cylinder_split"_a = 4, "cone_split"_a = 1);
-	m.def("CreateMeshCoordinateFrame", &CreateMeshCoordinateFrame,
+	m.def("create_mesh_coordinate_frame", &CreateMeshCoordinateFrame,
 			"Factory function to create a coordinate frame mesh",
 			"size"_a = 1.0, "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
 }

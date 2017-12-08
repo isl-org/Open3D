@@ -35,10 +35,10 @@ void pybind_geometry(py::module &m)
 	py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
 			geometry(m, "Geometry");
 	geometry
-		.def("Clear", &Geometry::Clear)
-		.def("IsEmpty", &Geometry::IsEmpty)
-		.def("GetGeometryType", &Geometry::GetGeometryType)
-		.def("Dimension", &Geometry::Dimension);
+		.def("clear", &Geometry::Clear)
+		.def("is_empty", &Geometry::IsEmpty)
+		.def("get_geometry_type", &Geometry::GetGeometryType)
+		.def("dimension", &Geometry::Dimension);
 	py::enum_<Geometry::GeometryType>(geometry, "Type", py::arithmetic())
 		.value("Unspecified", Geometry::GEOMETRY_UNSPECIFIED)
 		.value("PointCloud", Geometry::GEOMETRY_POINTCLOUD)
@@ -50,13 +50,13 @@ void pybind_geometry(py::module &m)
 	py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
 			std::shared_ptr<Geometry3D>, Geometry> geometry3d(m, "Geometry3D");
 	geometry3d
-		.def("GetMinBound", &Geometry3D::GetMinBound)
-		.def("GetMaxBound", &Geometry3D::GetMaxBound)
-		.def("Transform", &Geometry3D::Transform);
-	
+		.def("get_min_bound", &Geometry3D::GetMinBound)
+		.def("get_max_bound", &Geometry3D::GetMaxBound)
+		.def("transform", &Geometry3D::Transform);
+
 	py::class_<Geometry2D, PyGeometry2D<Geometry2D>,
 			std::shared_ptr<Geometry2D>, Geometry> geometry2d(m, "Geometry2D");
 	geometry2d
-		.def("GetMinBound", &Geometry2D::GetMinBound)
-		.def("GetMaxBound", &Geometry2D::GetMaxBound);
+		.def("get_min_bound", &Geometry2D::GetMinBound)
+		.def("get_max_bound", &Geometry2D::GetMaxBound);
 }

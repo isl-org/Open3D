@@ -103,7 +103,7 @@ void pybind_odometry(py::module &m)
 			PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
 			jacobian(m, "RGBDOdometryJacobian");
 	jacobian
-			.def("ComputeJacobianAndResidual",
+			.def("compute_jacobian_and_residual",
 					&RGBDOdometryJacobian::ComputeJacobianAndResidual);
 
 	py::class_<RGBDOdometryJacobianFromColorTerm,
@@ -135,7 +135,7 @@ void pybind_odometry(py::module &m)
 
 void pybind_odometry_methods(py::module &m)
 {
-	m.def("ComputeRGBDOdometry", &ComputeRGBDOdometry,
+	m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
 			"Function to estimate 6D rigid motion from two RGBD image pairs",
 			"rgbd_source"_a, "rgbd_target"_a,
 			"pinhole_camera_intrinsic"_a = PinholeCameraIntrinsic(),

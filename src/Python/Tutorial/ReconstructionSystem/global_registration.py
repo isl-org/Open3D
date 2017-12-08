@@ -1,3 +1,7 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
 import numpy as np
 import sys
 sys.path.append("../..")
@@ -10,18 +14,18 @@ from optimize_posegraph import *
 
 def preprocess_point_cloud(ply_file_name):
 	print(ply_file_name)
-	pcd = ReadPointCloud(ply_file_name)
-	pcd_down = VoxelDownSample(pcd, 0.05)
-	EstimateNormals(pcd_down,
+	pcd = read_point_cloud(ply_file_name)
+	pcd_down = voxel_down_sample(pcd, 0.05)
+	estimate_normals(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
-	pcd_fpfh = ComputeFPFHFeature(pcd_down,
+	pcd_fpfh = compute_fpfh_feature(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
 	return (pcd_down, pcd_fpfh)
 
 
 def register_point_cloud_FPFH(source, target,
 		source_fpfh, target_fpfh):
-	result_ransac = RegistrationRANSACBasedOnFeatureMatching(
+	result_ransac = registration_ransac_based_on_feature_matching(
 			source, target, source_fpfh, target_fpfh, 0.075,
 			TransformationEstimationPointToPoint(False), 4,
 			[CorrespondenceCheckerBasedOnEdgeLength(0.9),
@@ -36,11 +40,11 @@ def register_point_cloud_FPFH(source, target,
 
 def register_point_cloud_ICP(source, target,
 		init_transformation = np.identity(4)):
-	result_icp = RegistrationICP(source, target, 0.02,
+	result_icp = registration_icp(source, target, 0.02,
 			init_transformation,
 			TransformationEstimationPointToPlane())
 	print(result_icp)
-	information_matrix = GetInformationMatrixFromPointClouds(
+	information_matrix = get_information_matrix_from_point_clouds(
 			source, target, 0.075, result_icp.transformation)
 	return (result_icp.transformation, information_matrix)
 
@@ -57,23 +61,23 @@ def register_colored_point_cloud_ICP(source, target,
 	for scale in range(3): # multi-scale approach
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
-		source_down = VoxelDownSample(source, radius)
-		target_down = VoxelDownSample(target, radius)
-		EstimateNormals(source_down, KDTreeSearchParamHybrid(
+		source_down = voxel_down_sample(source, radius)
+		target_down = voxel_down_sample(target, radius)
+		estimate_normals(source_down, KDTreeSearchParamHybrid(
 				radius = radius * 2, max_nn = 30))
 		print(np.asarray(source_down.normals))
-		EstimateNormals(target_down, KDTreeSearchParamHybrid(
+		estimate_normals(target_down, KDTreeSearchParamHybrid(
 				radius = radius * 2, max_nn = 30))
-		result_icp = RegistrationColoredICP(source_down, target_down,
+		result_icp = registration_colored_icp(source_down, target_down,
 				radius, current_transformation,
 				ICPConvergenceCriteria(relative_fitness = 1e-6,
 				relative_rmse = 1e-6, max_iteration = iter))
 		current_transformation = result_icp.transformation
 
-	information_matrix = GetInformationMatrixFromPointClouds(
+	information_matrix = get_information_matrix_from_point_clouds(
 			source, target, 0.075, result_icp.transformation)
 	if draw_result:
-		DrawRegistrationResultOriginalColor(source, target,
+		draw_registration_result_original_color(source, target,
 				result_icp.transformation)
 	return (result_icp.transformation, information_matrix)
 
@@ -89,9 +93,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 	path_fragment = path_dataset + 'fragments/'
 	n_frames_per_fragment = 100
 	for s in range(n_files):
-		# for t in range(s + 1, n_files):
-		# for s in range(17,n_files):
-		for t in [s + 1]:
+		for t in range(s + 1, n_files):
 			(source_down, source_fpfh) = preprocess_point_cloud(
 					ply_file_names[s])
 			(target_down, target_fpfh) = preprocess_point_cloud(
@@ -100,7 +102,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 			if t == s + 1: # odometry case
 				print("Using RGBD odometry")
 				pose_graph_frag_name = path_fragment + "fragments_opt_%03d.json" % s
-				pose_graph_frag = ReadPoseGraph(pose_graph_frag_name)
+				pose_graph_frag = read_pose_graph(pose_graph_frag_name)
 				n_nodes = len(pose_graph_frag.nodes)
 				transformation_init = np.linalg.inv(
 						pose_graph_frag.nodes[n_nodes-1].pose)
@@ -121,7 +123,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 				DrawRegistrationResult(source_down, target_down,
 						transformation_init)
 
-			print("RegistrationPointCloud")
+			print("register_colored_point_cloud")
 			if (registration_type == "color"):
 				(transformation_icp, information_icp) = \
 						register_colored_point_cloud_ICP(
@@ -150,7 +152,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 
 if __name__ == "__main__":
-	SetVerbosityLevel(VerbosityLevel.Debug)
+	set_verbosity_level(VerbosityLevel.Debug)
 	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
 	if not path_dataset:
 		print("usage : %s " % sys.argv[0])
@@ -160,7 +162,7 @@ if __name__ == "__main__":
 	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
 	pose_graph = register_point_cloud(path_dataset, ply_file_names)
 	pose_graph_name = path_dataset + "/fragments/global_registration.json"
-	WritePoseGraph(pose_graph_name, pose_graph)
+	write_pose_graph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + "/fragments/" + \
 			"global_registration_optimized.json"
 	optimize_posegraph(pose_graph_name, pose_graph_optmized_name)

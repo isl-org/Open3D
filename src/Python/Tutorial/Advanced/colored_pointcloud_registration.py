@@ -7,18 +7,18 @@ sys.path.append("../..")
 from py3d import *
 import numpy as np
 
-def DrawRegistrationResultOriginalColor(source, target, transformation):
-	source.Transform(transformation)
-	DrawGeometries([source, target])
+def draw_registration_result_original_color(source, target, transformation):
+	source.transform(transformation)
+	draw_geometries([source, target])
 
 if __name__ == "__main__":
 
 	print("1. Load two point clouds and show initial pose")
-	source = ReadPointCloud("../../TestData/ColoredICP/frag_115.ply")
-	target = ReadPointCloud("../../TestData/ColoredICP/frag_116.ply")
+	source = read_point_cloud("../../TestData/ColoredICP/frag_115.ply")
+	target = read_point_cloud("../../TestData/ColoredICP/frag_116.ply")
 
 	current_transformation = np.identity(4)
-	DrawRegistrationResultOriginalColor(source, target, current_transformation)
+	draw_registration_result_original_color(source, target, current_transformation)
 
 	# colored pointcloud registration
  	# This is implementation of following paper
@@ -33,31 +33,31 @@ if __name__ == "__main__":
 		print([iter,radius,scale])
 
 		print("2. Downsample with a voxel size %.2f" % radius)
-		source_down = VoxelDownSample(source, radius)
-		target_down = VoxelDownSample(target, radius)
+		source_down = voxel_down_sample(source, radius)
+		target_down = voxel_down_sample(target, radius)
 
 		print("3. Estimate normal.")
-		EstimateNormals(source_down, KDTreeSearchParamHybrid(
+		estimate_normals(source_down, KDTreeSearchParamHybrid(
 				radius = radius * 2, max_nn = 30))
-		EstimateNormals(target_down, KDTreeSearchParamHybrid(
+		estimate_normals(target_down, KDTreeSearchParamHybrid(
 				radius = radius * 2, max_nn = 30))
 
 		print("4. Colored point cloud registration is applied on original point")
 		print("   clouds to refine the alignment. This time we use a strict")
 		print("   distance threshold %.2f" % radius)
-		result_icp = RegistrationColoredICP(source_down, target_down,
+		result_icp = registration_colored_icp(source_down, target_down,
 				radius, current_transformation,
 				ICPConvergenceCriteria(relative_fitness = 1e-6,
 				relative_rmse = 1e-6, max_iteration = iter))
 		current_transformation = result_icp.transformation
 		print(result_icp)
-	DrawRegistrationResultOriginalColor(source, target, result_icp.transformation)
+	draw_registration_result_original_color(source, target, result_icp.transformation)
 
 	# point to plane ICP
 	current_transformation = np.identity(4);
 	print("5. Point-to-plane ICP registration is applied on original point")
 	print("   clouds to refine the alignment. Distance threshold 0.02.")
-	result_icp = RegistrationICP(source, target, 0.02,
+	result_icp = registration_icp(source, target, 0.02,
 			current_transformation, TransformationEstimationPointToPlane())
 	print(result_icp)
-	DrawRegistrationResultOriginalColor(source, target, result_icp.transformation)
+	draw_registration_result_original_color(source, target, result_icp.transformation)

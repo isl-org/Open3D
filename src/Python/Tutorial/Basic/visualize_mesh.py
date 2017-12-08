@@ -7,6 +7,6 @@ sys.path.append("../..")
 from py3d import *
 
 if __name__ == "__main__":
-	mesh = ReadTriangleMesh("../../TestData/knot.ply")
-	mesh.ComputeVertexNormals()
-	DrawGeometries([mesh])
+	mesh = read_triangle_mesh("../../TestData/knot.ply")
+	mesh.compute_vertex_normals()
+	draw_geometries([mesh])
