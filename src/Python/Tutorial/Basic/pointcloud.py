@@ -27,7 +27,8 @@ if __name__ == "__main__":
 	draw_geometries([downpcd])
 
 	print("Recompute the normal of the downsampled point cloud")
-	estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
+	estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(
+			radius = 0.1, max_nn = 30))
 	draw_geometries([downpcd])
 	print("")
 
