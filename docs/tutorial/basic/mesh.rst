@@ -1,6 +1,6 @@
 .. _mesh:
 
-Reading and visualizing 3D geometry
+Visualize Mesh
 -------------------------------------
 
 Let's get started Open3D with the following example.

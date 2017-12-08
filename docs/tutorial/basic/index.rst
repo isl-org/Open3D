@@ -5,3 +5,4 @@ Basic
 
   mesh
   pointcloud
+  rgbd_images

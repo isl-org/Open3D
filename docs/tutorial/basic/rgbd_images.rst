@@ -1,3 +1,7 @@
+.. _rgbd_images:
+
+Visualize RGBD images
+-------------------------------------
 
 .. code-block:: python
 
