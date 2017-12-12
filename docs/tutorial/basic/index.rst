@@ -3,6 +3,9 @@ Basic
 
 .. toctree::
 
-  mesh
-  pointcloud
-  rgbd_images
+	pointcloud
+	mesh
+	visualization
+	rgbd_images/index
+	kdtree
+	icp

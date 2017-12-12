@@ -11,19 +11,26 @@ if __name__ == "__main__":
 
 	print("Testing visualization in py3d ...")
 	mesh = read_triangle_mesh("../../TestData/knot.ply")
-	print("Try to render a mesh with normals " + str(mesh.has_vertex_normals()) + " and colors " + str(mesh.has_vertex_colors()))
+
+	print("Try to render a mesh with normals " +
+			str(mesh.has_vertex_normals()) +
+			" and colors " + str(mesh.has_vertex_colors()))
 	draw_geometries([mesh])
+
 	print("A mesh with no normals and no colors does not seem good.")
 	mesh.compute_vertex_normals()
 	mesh.paint_uniform_color([0.1, 0.1, 0.7])
 	print(np.asarray(mesh.triangle_normals))
 	print("We paint the mesh and render it.")
 	draw_geometries([mesh])
+
 	print("We make a partial mesh of only the first half triangles.")
 	mesh1 = copy.deepcopy(mesh)
 	print(mesh1.triangles)
-	mesh1.triangles = Vector3iVector(np.asarray(mesh1.triangles)[:len(mesh1.triangles)/2, :])
-	mesh1.triangle_normals = Vector3dVector(np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals)/2, :])
+	mesh1.triangles = Vector3iVector(
+			np.asarray(mesh1.triangles)[:len(mesh1.triangles)/2, :])
+	mesh1.triangle_normals = Vector3dVector(
+			np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals)/2, :])
 	print(mesh1.triangles)
 	draw_geometries([mesh1])
 

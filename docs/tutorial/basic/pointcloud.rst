@@ -1,14 +1,14 @@
-.. _pointcloud:
+.. _point cloud:
 
-Visualize pointcloud
+Point cloud
 -------------------------------------
 
-This tutorial address basic functions you can try with pointcloud.
+This tutorial address basic functions regarding point cloud.
 Consider the Python code below:
 
 .. code-block:: python
 
-	# src/Python/Tutorial/Basic/pointcloud.py
+	# src/Python/Tutorial/Basic/point cloud.py
 
 	import sys
 	import numpy as np
@@ -49,6 +49,32 @@ Consider the Python code below:
 This script addresses basic operations for point cloud: voxel downsampling, point normal estimation, and cropping.
 Let's take a look one by one.
 
+
+.. _import_py3d_module:
+
+Import py3d module
+=====================================
+
+The first few lines import necessary Python modules.
+
+.. code-block:: python
+
+	import sys
+	import numpy as np
+	sys.path.append("../..")
+	from py3d import *
+
+It uses ``sys.path.append()`` to refer the path where py3d.so is located.
+Once Open3D is successfully compiled with Python binding option,
+py3d.so should be visible under Open3D build folder.
+If it is not, please go over :ref:`python_binding`.
+
+
+.. _visualize_point_cloud:
+
+Visualize point cloud
+=====================================
+
 .. code-block:: python
 
 	print("Testing point cloud in py3d ...")
@@ -64,28 +90,39 @@ Let's take a look one by one.
 	print(np.asarray(pcd.points))
 	draw_geometries([pcd])
 
-This script will read pcd file and ply file. It visualizes the pointcloud.
-You will see below window twice:
+Function ``read_point_cloud`` reads a point cloud from a file. This function detects the extension name of the file and tries its best to decode the file into a point cloud. Current supported extension names include: pcd, ply, xyz, xyzrgb, xyzn, pts.
 
-.. image:: ../../_static/pointcloud.png
+``draw_geometries`` visualizes the point cloud.
+Below window will appear twice:
+
+.. image:: ../../_static/basic/point cloud.png
 	:width: 400px
 
-It looks like dense surface, but it is not. It is point cloud.
-It is because each point is large enough to make no empty space.
+It looks like dense surface, but it is point cloud.
+Press :kbd:`-` key for several times. It becomes:
 
-Press :kbd:`-` key for several times. You will see:
-
-.. image:: ../../_static/pointcloud_small.png
+.. image:: ../../_static/basic/point cloud_small.png
 	:width: 400px
 
-:kbd:`-` key is a helpful friend for analyzing your point cloud.
+:kbd:`-` key is a helpful friend for decreasing the size of visualized points.
+
+
+.. _voxel_downsampling:
+
+Voxel downsampling
+=====================================
 
 One of the most basic geometric operation with point cloud is voxel downsampling.
-It reduces number of points by using regular voxel grid.
-For example, if a voxel has multiple points, voxel downsampling outputs averaged points.
+It can reduce number of points by using a regular voxel grid. The pseudo algorithm is:
 
-Voxel downsampling is very important and useful tool for point cloud preprocessing.
-Below script performs voxel downsampling.
+1. Points are assigned for corresponding voxel grid.
+2. Voxel downsampling outputs a averaged point for each voxel.
+
+Voxel downsampling is very important and useful tool for point cloud pre-processing.
+Consider aligned point clouds. The points are dense for overlapping part and sparse for the non-overlapping part.
+Voxel downsampling helps points to be evenly distributed as it produces a single point from a single voxel.
+
+Below script performs voxel downsampling for point cloud.
 
 .. code-block:: python
 
@@ -93,16 +130,22 @@ Below script performs voxel downsampling.
 	downpcd = voxel_down_sample(pcd, voxel_size = 0.05)
 	draw_geometries([downpcd])
 
-For ``voxel_down_sample``, you need to specify the unit voxel size using ``voxel_size = 0.05``.
-Our example point cloud has metric unit: 1 means 1 meter, and 0.05 means 5cm.
-As a result, ``downpcd`` has sparser point cloud. Each point is distant away approximately 5cm.
+For ``voxel_down_sample``, it is necessary to specify the unit voxel size with ``voxel_size = 0.05``.
+Our example point cloud has metric unit. 0.05 means 5cm.
+As a result, ``downpcd`` has sparser point cloud than original point cloud.
 
-This is a downsampled point cloud you will see:
+This is a downsampled point cloud:
 
-.. image:: ../../_static/pointcloud_downsample.png
+.. image:: ../../_static/basic/point cloud_downsample.png
 	:width: 400px
 
-Another operation is computing point normal. Take a look at this script:
+
+.. _vertex_normal_estimation:
+
+Vertex normal estimation
+=====================================
+
+Another basic operation for point cloud is computing point normal. Take a look at this script:
 
 .. code-block:: python
 
@@ -112,19 +155,26 @@ Another operation is computing point normal. Take a look at this script:
 	draw_geometries([downpcd])
 	print("")
 
-It computes normal for every points. ``estimate_normals`` takes ``KDTreeSearchParamHybrid`` class.
-Detailed explaination about KDtree can be found [here].
+``estimate_normals`` computes normal for every points.
+The function finds adjacent points and calculate the principal axis of points using covariance analysis.
 
-Normal estimation uses covariance analysis. Each point uses a set of adjacent points.
+The function takes an instance of ``KDTreeSearchParamHybrid`` class as an arguement.
 The two key arguments ``radius = 0.1`` and ``max_nn = 30`` specifies search radius and maximum nearest neighbor.
 It has 10cm of search radius, and only considers up to 30 neighbors to save computation time.
 
-The point cloud has normal direction now. Press :kbd:`n` key to see point normal.
+The point cloud has normal direction now.
+Once ``draw_geometries`` draws geometry, press :kbd:`n` key to see point normal.
 
-.. image:: ../../_static/pointcloud_downsample_normal.png
+.. image:: ../../_static/basic/point cloud_downsample_normal.png
 	:width: 400px
 
 You can use :kbd:`-` or :kbd:`+` key to increase or decrease length of black needles representing normal direction.
+
+
+.. _crop_point_cloud:
+
+Crop point cloud
+=====================================
 
 Another example is point cloud cropping. See this script:
 
@@ -141,5 +191,5 @@ Another example is point cloud cropping. See this script:
 
 This will remain only the chair in the scene.
 
-.. image:: ../../_static/pointcloud_crop.png
+.. image:: ../../_static/basic/point cloud_crop.png
 	:width: 400px

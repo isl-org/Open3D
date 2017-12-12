@@ -1,6 +1,6 @@
 .. _mesh:
 
-Visualize Mesh
+Mesh
 -------------------------------------
 
 Let's get started Open3D with the following example.
@@ -28,19 +28,11 @@ Let's get started Open3D with the following example.
 
 This example reads ``knot.ply`` file and visualize it.
 
-Let's review the script line by line. The first few lines import necessary Python modules.
 
-.. code-block:: python
+.. _visualize_3d_mesh:
 
-	import sys
-	import numpy as np
-	sys.path.append("../..")
-	from py3d import *
-
-It uses ``sys.path.append()`` to refer the path where py3d.so is located.
-Once you successfully compiled Open3D with Python binding option,
-py3d.so should be visible under Open3D build folder.
-If it is not, please go over :ref:`python_binding`.
+Visualize 3D mesh
+=====================================
 
 Let's see the first few lines in the main function.
 
@@ -52,33 +44,46 @@ Let's see the first few lines in the main function.
 	mesh.compute_vertex_normals()
 
 Note that ``draw_geometries`` can visualize multiple geometries simultaneously by taking a list of objects.
-We will see more examples of this function later.
+There is more examples of this function later.
 
 .. note:: To get more information for Open3D functions or classes, it is recommended to use Python built-in ``help()``. For example, ``help(draw_geometries)`` will print detailed input/output arguments of ``draw_geometries`` function.
 
-With this script, you shall see this interactive window:
+With this script, this interactive window appears:
 
-.. image:: ../../_static/mesh_wo_shading.png
+.. image:: ../../_static/basic/mesh_wo_shading.png
     :width: 400px
 
-You can use your mouse/trackpad to see the geometry from different view point.
-Wait, why this geometry looks just gray? It is because this mesh does not have surface normal.
-Without surface normal, ``draw_geometries`` does not draw surface shading, and that's why we see the gray color.
+Use mouse/trackpad to see the geometry from different view point.
+This geometry looks just gray because this mesh does not have surface normal.
+Without surface normal, ``draw_geometries`` does not draw surface shading.
 Press :kbd:`q` to close this interactive window.
 
-OK, let's draw geometry with surface normal. It is pretty easy. Let's continue:
+
+.. _vertex_normal_estimation:
+
+Vertex normal estimation
+=====================================
+
+Let's draw geometry with surface normal. Let's continue:
 
 .. code-block:: python
 
 	mesh.compute_vertex_normals()
 	draw_geometries([mesh])
 
-Now have this!
+Now it looks like this!
 
-.. image:: ../../_static/mesh_w_shading.png
+.. image:: ../../_static/basic/mesh_w_shading.png
 	:width: 400px
 
-You can freely access member variables of ``mesh`` such as its vertices and indices of vertices for mesh triangles.
+``mesh`` has several member variables such as its vertices and indices of vertices for mesh triangles.
+
+
+.. _print_vertices_and_triangles:
+
+Print vertices and triangles
+=====================================
+
 The following line
 
 .. code-block:: python
@@ -107,4 +112,4 @@ will print
 	 [1439   11    0]
 	 [1439    0 1428]]
 
-Here, we got some help from ``numpy`` module. ``np.asarray`` transforms Open3D member variables ``mesh.vertices`` and ``mesh.triangles`` into numpy array.
+Here, the script got some help from ``numpy`` module. ``np.asarray`` transforms Open3D member variables ``mesh.vertices`` and ``mesh.triangles`` into numpy array.
