@@ -1,14 +1,14 @@
-.. _point cloud:
+.. _pointcloud:
 
-Point cloud
+Point Cloud
 -------------------------------------
 
-This tutorial address basic functions regarding point cloud.
+This tutorial address basic usage regarding point cloud.
 Consider the Python code below:
 
 .. code-block:: python
 
-	# src/Python/Tutorial/Basic/point cloud.py
+	# src/Python/Tutorial/Basic/pointcloud.py
 
 	import sys
 	import numpy as np
@@ -16,13 +16,6 @@ Consider the Python code below:
 	from py3d import *
 
 	if __name__ == "__main__":
-
-		print("Testing point cloud in py3d ...")
-		print("Load a pcd point cloud, print it, and render it")
-		pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-		print(pcd)
-		print(np.asarray(pcd.points))
-		draw_geometries([pcd])
 
 		print("Load a ply point cloud, print it, and render it")
 		pcd = read_point_cloud("../../TestData/fragment.ply")
@@ -40,34 +33,19 @@ Consider the Python code below:
 		draw_geometries([downpcd])
 		print("")
 
-		print("We load a polygon volume and use it to crop the original point cloud")
+		print("Load a polygon volume and use it to crop the original point cloud")
 		vol = read_selection_polygon_volume("../../TestData/Crop/cropped.json")
 		chair = vol.crop_point_cloud(pcd)
 		draw_geometries([chair])
 		print("")
 
+		print("Paint chair")
+		chair.paint_uniform_color([1, 0.706, 0])
+		draw_geometries([chair])
+		print("")
+
 This script addresses basic operations for point cloud: voxel downsampling, point normal estimation, and cropping.
 Let's take a look one by one.
-
-
-.. _import_py3d_module:
-
-Import py3d module
-=====================================
-
-The first few lines import necessary Python modules.
-
-.. code-block:: python
-
-	import sys
-	import numpy as np
-	sys.path.append("../..")
-	from py3d import *
-
-It uses ``sys.path.append()`` to refer the path where py3d.so is located.
-Once Open3D is successfully compiled with Python binding option,
-py3d.so should be visible under Open3D build folder.
-If it is not, please go over :ref:`python_binding`.
 
 
 .. _visualize_point_cloud:
@@ -76,13 +54,6 @@ Visualize point cloud
 =====================================
 
 .. code-block:: python
-
-	print("Testing point cloud in py3d ...")
-	print("Load a pcd point cloud, print it, and render it")
-	pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-	print(pcd)
-	print(np.asarray(pcd.points))
-	draw_geometries([pcd])
 
 	print("Load a ply point cloud, print it, and render it")
 	pcd = read_point_cloud("../../TestData/fragment.ply")
@@ -93,15 +64,16 @@ Visualize point cloud
 Function ``read_point_cloud`` reads a point cloud from a file. This function detects the extension name of the file and tries its best to decode the file into a point cloud. Current supported extension names include: pcd, ply, xyz, xyzrgb, xyzn, pts.
 
 ``draw_geometries`` visualizes the point cloud.
+Use mouse/trackpad to see the geometry from different view point.
 Below window will appear twice:
 
-.. image:: ../../_static/basic/point cloud.png
+.. image:: ../../_static/basic/pointcloud/scene.png
 	:width: 400px
 
 It looks like dense surface, but it is point cloud.
 Press :kbd:`-` key for several times. It becomes:
 
-.. image:: ../../_static/basic/point cloud_small.png
+.. image:: ../../_static/basic/pointcloud/scene_small.png
 	:width: 400px
 
 :kbd:`-` key is a helpful friend for decreasing the size of visualized points.
@@ -120,7 +92,7 @@ It can reduce number of points by using a regular voxel grid. The pseudo algorit
 
 Voxel downsampling is very important and useful tool for point cloud pre-processing.
 Consider aligned point clouds. The points are dense for overlapping part and sparse for the non-overlapping part.
-Voxel downsampling helps points to be evenly distributed as it produces a single point from a single voxel.
+Voxel downsampling helps points to be evenly distributed as it produces only a single point from a single voxel.
 
 Below script performs voxel downsampling for point cloud.
 
@@ -136,7 +108,7 @@ As a result, ``downpcd`` has sparser point cloud than original point cloud.
 
 This is a downsampled point cloud:
 
-.. image:: ../../_static/basic/point cloud_downsample.png
+.. image:: ../../_static/basic/pointcloud/downsampled.png
 	:width: 400px
 
 
@@ -165,7 +137,7 @@ It has 10cm of search radius, and only considers up to 30 neighbors to save comp
 The point cloud has normal direction now.
 Once ``draw_geometries`` draws geometry, press :kbd:`n` key to see point normal.
 
-.. image:: ../../_static/basic/point cloud_downsample_normal.png
+.. image:: ../../_static/basic/pointcloud/downsampled_normal.png
 	:width: 400px
 
 You can use :kbd:`-` or :kbd:`+` key to increase or decrease length of black needles representing normal direction.
@@ -191,5 +163,27 @@ Another example is point cloud cropping. See this script:
 
 This will remain only the chair in the scene.
 
-.. image:: ../../_static/basic/point cloud_crop.png
+.. image:: ../../_static/basic/pointcloud/crop.png
+	:width: 400px
+
+.. _paint_point_cloud:
+
+Paint point cloud
+=====================================
+
+The last script block paints the point cloud with yellow color.
+
+.. code-block:: python
+
+	print("Paint chair")
+	chair.paint_uniform_color([1, 0.706, 0])
+	draw_geometries([chair])
+	print("")
+
+``paint_uniform_color`` paints all the points to be specified color.
+The function accepts a list of red, green, and blue intensity in [0,1] range.
+
+The chair becomes yellow:
+
+.. image:: ../../_static/basic/pointcloud/crop_color.png
 	:width: 400px

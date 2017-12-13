@@ -3,7 +3,8 @@
 ICP
 -------------------------------------
 
-ICP
+ICP (iterative closest point) is popular method used for aligning two point clouds.
+Open3D supports various ICP methods.
 
 .. code-block:: python
 
