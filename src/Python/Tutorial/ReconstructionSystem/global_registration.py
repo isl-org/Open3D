@@ -38,7 +38,7 @@ def register_point_cloud_FPFH(source, target,
 		return (True, result_ransac)
 
 
-def register_point_cloud_ICP(source, target,
+def register_point_cloud_icp(source, target,
 		init_transformation = np.identity(4)):
 	result_icp = registration_icp(source, target, 0.02,
 			init_transformation,
@@ -53,7 +53,7 @@ def register_point_cloud_ICP(source, target,
 # This is implementation of following paper
 # J. Park, Q.-Y. Zhou, V. Koltun,
 # Colored Point Cloud Registration Revisited, ICCV 2017
-def register_colored_point_cloud_ICP(source, target,
+def register_colored_point_cloud_icp(source, target,
 		init_transformation = np.identity(4), draw_result = False):
 	voxel_radius = [ 0.05, 0.025, 0.0125 ]
 	max_iter = [ 50, 30, 14 ]
@@ -126,11 +126,11 @@ def register_point_cloud(path_dataset, ply_file_names,
 			print("register_colored_point_cloud")
 			if (registration_type == "color"):
 				(transformation_icp, information_icp) = \
-						register_colored_point_cloud_ICP(
+						register_colored_point_cloud_icp(
 						source_down, target_down, transformation_init)
 			else:
 				(transformation_icp, information_icp) = \
-						register_point_cloud_ICP(
+						register_point_cloud_icp(
 						source_down, target_down, transformation_init)
 			if draw_result:
 				DrawRegistrationResultOriginalColor(source_down, target_down,
