@@ -16,4 +16,5 @@ Open3D --- A modern library for 3d modeling and geometry processing
   introduction
   getting_started
   compilation
+  tutorial/index
   contribute
