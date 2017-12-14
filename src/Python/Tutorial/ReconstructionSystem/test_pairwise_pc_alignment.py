@@ -15,7 +15,7 @@ from global_registration import *
 def register_point_cloud_pairwise(path_dataset, ply_file_names,
 		source_id, target_id, transformation_init = np.identity(4),
 		feature_matching = True,
-		registration_type = "color", draw_result = True):
+		registration_type = "icp", draw_result = True):
 
 	(source_down, source_fpfh) = preprocess_point_cloud(
 			ply_file_names[source_id])
@@ -54,7 +54,7 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 if __name__ == "__main__":
 	set_verbosity_level(VerbosityLevel.Debug)
 	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
-	path_init = parse_argument(sys.argv, "--init_pose")
+	path_json = parse_argument(sys.argv, "--path_json")
 	source_id = parse_argument_int(sys.argv, "--source_id")
 	target_id = parse_argument_int(sys.argv, "--target_id")
 	if not path_dataset or not source_id or not target_id:
@@ -66,10 +66,17 @@ if __name__ == "__main__":
 		sys.exit()
 
 	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
-	if not path_init:
+	if not path_json:
 		register_point_cloud_pairwise(path_dataset, ply_file_names,
 				source_id, target_id)
 	else:
-		transformation_init = np.loadtxt(path_init)
+		pose_graph = read_pose_graph(path_json)
+		transformation_init = np.eye(4)
+		for i in range(len(pose_graph.edges)):
+			if pose_graph.edges[i].source_node_id == source_id and \
+					pose_graph.edges[i].target_node_id == target_id:
+				transformation_init = np.linalg.inv(pose_graph.edges[i].transformation)
+		print('using following matrix for initial transformation')
+		print(transformation_init)
 		register_point_cloud_pairwise(path_dataset, ply_file_names,
 				source_id, target_id, transformation_init)
