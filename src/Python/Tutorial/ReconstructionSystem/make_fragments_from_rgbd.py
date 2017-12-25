@@ -23,9 +23,9 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	color_t = read_image(color_files[t])
 	depth_t = read_image(depth_files[t])
 	source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s,
-			depth_trunc = 4.0, convert_rgb_to_intensity = True)
+			depth_trunc = 3.0, convert_rgb_to_intensity = True)
 	target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t,
-			depth_trunc = 4.0, convert_rgb_to_intensity = True)
+			depth_trunc = 3.0, convert_rgb_to_intensity = True)
 
 	if abs(s-t) is not 1:
 		if with_opencv:
@@ -84,7 +84,7 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 
 def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 	pose_graph = read_pose_graph(pose_graph_name)
-	volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0, sdf_trunc = 0.04,\
+	volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0, sdf_trunc = 0.04,\
 			with_color = True)
 
 	for i in range(len(pose_graph.nodes)):
@@ -93,7 +93,7 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 				% (fragment_id, n_fragments-1, i_abs, i+1, len(pose_graph.nodes)))
 		color = read_image(color_files[i_abs])
 		depth = read_image(depth_files[i_abs])
-		rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
+		rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 3.0,
 				convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
 		volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))

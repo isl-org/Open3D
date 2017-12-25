@@ -40,7 +40,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 
 def test_single_frame_integrate(i, intrinsic):
 	min_depth = 0.3
-	cubic_length = 4.0
+	cubic_length = 3.0
 	volume = UniformTSDFVolume(length = cubic_length, resolution = 512,
 			sdf_trunc = 0.04, with_color = True)
 	trans_offset = np.identity(4)
@@ -52,7 +52,7 @@ def test_single_frame_integrate(i, intrinsic):
 	depth = read_image(depth_files[i])
 	print(color_files[i])
 	print(depth_files[i])
-	rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
+	rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 3.0,
 			convert_rgb_to_intensity = False)
 	volume.integrate(rgbd, intrinsic, trans_offset)
 

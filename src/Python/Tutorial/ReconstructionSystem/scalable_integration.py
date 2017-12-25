@@ -16,7 +16,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 	n_files = len(color_files)
 	n_frames_per_fragment = 100
 	n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
-	volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0, sdf_trunc = 0.04,\
+	volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0, sdf_trunc = 0.04,\
             with_color = True)
 
 	path_fragment = path_dataset + 'fragments/'
@@ -35,7 +35,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 			color = read_image(color_files[frame_id_abs])
 			depth = read_image(depth_files[frame_id_abs])
 			rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-					depth_trunc = 4.0, convert_rgb_to_intensity = False)
+					depth_trunc = 3.0, convert_rgb_to_intensity = False)
 			pose = np.dot(global_pose_graph.nodes[fragment_id].pose,
 					pose_graph.nodes[frame_id].pose)
 			volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
