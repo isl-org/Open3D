@@ -30,12 +30,11 @@ if __name__ == "__main__":
 		print("PoseGraph having %d nodes and %d edges" % (n_nodes, n_edges))
 
 		for edge in pose_graph.edges:
-			print("PoseGraphEdge %d-%d" % \
-					(edge.source_node_id, edge.target_node_id))
-
-			# if edge.source_node_id == source_id and \
-			# 		edge.target_node_id == target_id:
-			if True:
+			if edge.source_node_id == source_id and \
+					edge.target_node_id == target_id:
+			# if True:
+				print("PoseGraphEdge %d-%d" % \
+						(edge.source_node_id, edge.target_node_id))
 				source = read_point_cloud(ply_file_names[edge.source_node_id])
 				source_down = voxel_down_sample(source, 0.05)
 				target = read_point_cloud(ply_file_names[edge.target_node_id])

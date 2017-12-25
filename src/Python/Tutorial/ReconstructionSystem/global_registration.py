@@ -12,9 +12,7 @@ from visualization import *
 from optimize_posegraph import *
 
 
-def preprocess_point_cloud(ply_file_name):
-	print(ply_file_name)
-	pcd = read_point_cloud(ply_file_name)
+def preprocess_point_cloud(pcd):
 	pcd_down = voxel_down_sample(pcd, 0.05)
 	estimate_normals(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
@@ -61,6 +59,7 @@ def register_colored_point_cloud_icp(source, target,
 	for scale in range(3): # multi-scale approach
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
+		print('radius %f' % radius)
 		source_down = voxel_down_sample(source, radius)
 		target_down = voxel_down_sample(target, radius)
 		estimate_normals(source_down, KDTreeSearchParamHybrid(
@@ -94,10 +93,12 @@ def register_point_cloud(path_dataset, ply_file_names,
 	n_frames_per_fragment = 100
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
-			(source_down, source_fpfh) = preprocess_point_cloud(
-					ply_file_names[s])
-			(target_down, target_fpfh) = preprocess_point_cloud(
-					ply_file_names[t])
+			print("reading %s ..." % ply_file_names[s])
+			source = read_point_cloud(ply_file_names[s])
+			print("reading %s ..." % ply_file_names[t])
+			target = read_point_cloud(ply_file_names[t])
+			(source_down, source_fpfh) = preprocess_point_cloud(source)
+			(target_down, target_fpfh) = preprocess_point_cloud(target)
 
 			if t == s + 1: # odometry case
 				print("Using RGBD odometry")
@@ -120,20 +121,20 @@ def register_point_cloud(path_dataset, ply_file_names,
 					transformation_init = result_ransac.transformation
 				print(transformation_init)
 			if draw_result:
-				DrawRegistrationResult(source_down, target_down,
+				draw_registration_result(source_down, target_down,
 						transformation_init)
 
 			print("register_colored_point_cloud")
 			if (registration_type == "color"):
 				(transformation_icp, information_icp) = \
 						register_colored_point_cloud_icp(
-						source_down, target_down, transformation_init)
+						source, target, transformation_init)
 			else:
 				(transformation_icp, information_icp) = \
 						register_point_cloud_icp(
 						source_down, target_down, transformation_init)
 			if draw_result:
-				DrawRegistrationResultOriginalColor(source_down, target_down,
+				draw_registration_result_original_color(source_down, target_down,
 						transformation_icp)
 
 			print("Build PoseGraph for Further Optmiziation")

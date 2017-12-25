@@ -15,7 +15,7 @@ from global_registration import *
 def register_point_cloud_pairwise(path_dataset, ply_file_names,
 		source_id, target_id, transformation_init = np.identity(4),
 		feature_matching = True,
-		registration_type = "icp", draw_result = True):
+		registration_type = "color", draw_result = True):
 
 	(source_down, source_fpfh) = preprocess_point_cloud(
 			ply_file_names[source_id])
@@ -57,12 +57,12 @@ if __name__ == "__main__":
 	path_json = parse_argument(sys.argv, "--path_json")
 	source_id = parse_argument_int(sys.argv, "--source_id")
 	target_id = parse_argument_int(sys.argv, "--target_id")
-	if not path_dataset or not source_id or not target_id:
+	if not path_dataset or not source_id or not target_id: # todo source_id or target_id can be 0
 		print("usage : %s " % sys.argv[0])
 		print("  --path_dataset [path]   : Path to the dataset. Mandatory.")
 		print("  --source_id [id]        : ID of source point cloud. Mandatory.")
 		print("  --target_id [id]        : ID of target point cloud. Mandatory.")
-		print("  --path_init [id]        : Path of initial pose [4x4]. Optional.")
+		print("  --path_json [path]      : Path of global registration json file. Optional.")
 		sys.exit()
 
 	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
@@ -70,6 +70,7 @@ if __name__ == "__main__":
 		register_point_cloud_pairwise(path_dataset, ply_file_names,
 				source_id, target_id)
 	else:
+		# todo: this is not a good way for giving initial pose.
 		pose_graph = read_pose_graph(path_json)
 		transformation_init = np.eye(4)
 		for i in range(len(pose_graph.edges)):
