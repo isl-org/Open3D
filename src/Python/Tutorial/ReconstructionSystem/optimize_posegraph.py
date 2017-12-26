@@ -12,7 +12,7 @@ def optimize_posegraph(pose_graph_name, pose_graph_optmized_name):
 	method = GlobalOptimizationLevenbergMarquardt()
 	criteria = GlobalOptimizationConvergenceCriteria()
 	option = GlobalOptimizationOption(
-			max_correspondence_distance = 0.03,
+			max_correspondence_distance = 0.07,
 			edge_prune_threshold = 0.25,
 			reference_node = 0)
 	pose_graph = read_pose_graph(pose_graph_name)
