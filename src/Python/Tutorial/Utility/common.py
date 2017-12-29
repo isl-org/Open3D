@@ -6,18 +6,17 @@ import sys
 from os import listdir
 from os.path import isfile, join, splitext
 
-
-def parse_argument(argument, query):
-	if query in argument:
-		query_idx = argument.index(query)
-		if query_idx + 1 <= len(argument):
-			return argument[query_idx + 1]
-	return False
+#######################
+# some global parameters for the global registration
+#######################
+n_frames_per_fragment = 100
+n_keyframes_per_n_frame = 5
 
 
-def parse_argument_int(argument, query):
-	return int(parse_argument(argument, query))
 
+#######################
+# file related
+#######################
 
 def get_file_list(path, extension=None):
 	if extension is None:
@@ -31,8 +30,8 @@ def get_file_list(path, extension=None):
 
 def get_file_lists(path_dataset):
 	# get list of color and depth images
-	path_color = path_dataset + 'image/'
-	path_depth = path_dataset + 'depth/'
+	path_color = path_dataset + '/image/'
+	path_depth = path_dataset + '/depth/'
 	color_files = get_file_list(path_color, '.png')
 	depth_files = get_file_list(path_depth, '.png')
 	return color_files, depth_files
@@ -44,3 +43,22 @@ def get_file_list_from_custom_format(path, format):
 	for i in range(number_of_files):
 		file_list.append("%s/%s" % (path, format % i))
 	return file_list
+
+
+#######################
+# visualization related
+#######################
+
+def draw_registration_result(source, target, transformation):
+	source_temp = copy.deepcopy(source)
+	target_temp = copy.deepcopy(target)
+	source_temp.paint_uniform_color([1, 0.706, 0])
+	target_temp.paint_uniform_color([0, 0.651, 0.929])
+	source_temp.transform(transformation)
+	draw_geometries([source_temp, target_temp])
+
+
+def draw_registration_result_original_color(source, target, transformation):
+	source_temp = copy.deepcopy(source)
+	source_temp.transform(transformation)
+	draw_geometries([source_temp, target])

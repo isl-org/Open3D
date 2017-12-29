@@ -3,7 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
-import math
+import argparse
 import sys
 sys.path.append("../..")
 sys.path.append("../Utility")
@@ -15,7 +15,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 	[color_files, depth_files] = get_file_lists(path_dataset)
 	n_files = len(color_files)
 	n_frames_per_fragment = 100
-	n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
+	n_fragments = n_files // n_frames_per_fragment + 1
 	volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0, sdf_trunc = 0.04,\
             with_color = True)
 
@@ -47,20 +47,17 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 
 
 if __name__ == "__main__":
-	path_dataset = parse_argument(sys.argv, "--path_dataset")
-	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
-	if not path_dataset:
-		print("usage : %s " % sys.argv[0])
-		print("  --path_dataset [path]   : Path to rgbd_dataset. Mandatory.")
-		print("  --path_intrinsic [path] : Path to json camera intrinsic file. Optional.")
-		sys.exit()
+	parser = argparse.ArgumentParser(description='integrate whole scene from RGBD sequence.')
+	parser.add_argument('path_dataset', help='path to the dataset')
+	parser.add_argument('-path_intrinsic', help='path to the RGBD camera intrinsic')
+	args = parser.parse_args()
 
-	if path_intrinsic:
-		intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
+	if args.path_intrinsic:
+		intrinsic = ReadPinholeCameraIntrinsic(args.path_intrinsic)
 	else:
 		intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
-	mesh = scalable_integrate_rgb_frames(path_dataset, intrinsic)
-	mesh_name = path_dataset + "integrated.ply"
+	mesh = scalable_integrate_rgb_frames(args.path_dataset, intrinsic)
+	mesh_name = args.path_dataset + "integrated.ply"
 	print("Saving mesh as %s" % mesh_name)
 	write_triangle_mesh(mesh_name, mesh, False, True)

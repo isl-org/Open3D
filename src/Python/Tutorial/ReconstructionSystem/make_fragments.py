@@ -6,6 +6,7 @@ import numpy as np
 from os import makedirs
 from os.path import exists
 import math
+import argparse
 import sys
 sys.path.append("../..")
 sys.path.append("../Utility")
@@ -46,7 +47,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 		return [success, trans, info]
 
 
-def make_one_fragment(fragment_id, intrinsic, with_opencv):
+def make_one_fragment(fragment_id, n_fragments, intrinsic, with_opencv):
 	set_verbosity_level(VerbosityLevel.Error)
 	sid = fragment_id * n_frames_per_fragment
 	eid = min(sid + n_frames_per_fragment, n_files)
@@ -54,7 +55,6 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 	pose_graph = PoseGraph()
 	trans_odometry = np.identity(4)
 	pose_graph.nodes.append(PoseGraphNode(trans_odometry))
-
 	for s in range(sid, eid):
 		for t in range(s + 1, eid):
 			# odometry
@@ -82,7 +82,7 @@ def make_one_fragment(fragment_id, intrinsic, with_opencv):
 	return pose_graph
 
 
-def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
+def integrate_rgb_frames_for_fragment(fragment_id, pose_graph_name, intrinsic):
 	pose_graph = read_pose_graph(pose_graph_name)
 	volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0, sdf_trunc = 0.04,\
 			with_color = True)
@@ -90,11 +90,12 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 	for i in range(len(pose_graph.nodes)):
 		i_abs = fragment_id * n_frames_per_fragment + i
 		print("Fragment %03d / %03d :: Integrate rgbd frame %d (%d of %d)."
-				% (fragment_id, n_fragments-1, i_abs, i+1, len(pose_graph.nodes)))
+				% (fragment_id, n_fragments-1,
+				i_abs, i+1, len(pose_graph.nodes)))
 		color = read_image(color_files[i_abs])
 		depth = read_image(depth_files[i_abs])
-		rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 3.0,
-				convert_rgb_to_intensity = False)
+		rgbd = create_rgbd_image_from_color_and_depth(color, depth,
+				depth_trunc = 3.0, convert_rgb_to_intensity = False)
 		pose = pose_graph.nodes[i].pose
 		volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
 
@@ -102,45 +103,43 @@ def integrate_rgb_frames(fragment_id, pose_graph_name, intrinsic):
 	mesh.compute_vertex_normals()
 	return mesh
 
-if __name__ == "__main__":
-	path_dataset = parse_argument(sys.argv, "--path_dataset")
-	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
-	if not path_dataset:
-		print("usage : %s " % sys.argv[0])
-		print("  --path_dataset [path]   : Path to rgbd_dataset. Mandatory.")
-		print("  --path_intrinsic [path] : Path to json camera intrinsic file. Optional.")
-		sys.exit()
 
-	# some global parameters
-	n_frames_per_fragment = 100
-	n_keyframes_per_n_frame = 5
+def make_mesh_for_fragment(path_dataset, fragment_id, intrinsic):
+	# extract a mesh from optimized fragment
+	mesh = integrate_rgb_frames_for_fragment(fragment_id,
+			path_dataset + "/fragments/fragments_opt_%03d.json" % fragment_id,
+			intrinsic)
+	mesh_name = path_dataset + "/fragments/fragment_%03d.ply" % fragment_id
+	write_triangle_mesh(mesh_name, mesh, False, True)
+
+
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser(description='making fragments from RGBD sequence.')
+	parser.add_argument('path_dataset', help='path to the dataset')
+	parser.add_argument('-path_intrinsic', help='path to the RGBD camera intrinsic')
+	args = parser.parse_args()
 
 	# check opencv python package
 	with_opencv = initialize_opencv()
 	if with_opencv:
 		from opencv_pose_estimation import pose_estimation
 
-	path_fragment = path_dataset + 'fragments/'
-	if not exists(path_fragment):
-		makedirs(path_fragment)
+	if not exists(args.path_dataset + '/fragments/'):
+		makedirs(args.path_dataset + '/fragments/')
 
-	[color_files, depth_files] = get_file_lists(path_dataset)
+	[color_files, depth_files] = get_file_lists(args.path_dataset)
 	n_files = len(color_files)
 	n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
-	if path_intrinsic:
-		intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
+	if args.path_intrinsic:
+		intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
 	else:
 		intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
 	for fragment_id in range(n_fragments):
-		pose_graph_name = path_fragment + "fragments_%03d.json" % fragment_id
-		pose_graph = make_one_fragment(fragment_id, intrinsic, with_opencv)
-		write_pose_graph(pose_graph_name, pose_graph)
-		pose_graph_optmized_name = path_fragment + \
-				"fragments_opt_%03d.json" % fragment_id
-		optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
-		mesh = integrate_rgb_frames(
-				fragment_id, pose_graph_optmized_name, intrinsic)
-		mesh_name = path_fragment + "fragment_%03d.ply" % fragment_id
-		write_triangle_mesh(mesh_name, mesh, False, True)
+		# make a fragment
+		pose_graph = make_one_fragment(
+				fragment_id, n_fragments, intrinsic, with_opencv)
+		optimize_posegraph_for_fragment(
+				args.path_dataset, fragment_id, pose_graph)
+		make_mesh_for_fragment(args.path_dataset, fragment_id, intrinsic)

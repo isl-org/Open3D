@@ -32,14 +32,14 @@ class GlobalOptimizationOption
 {
 public:
 	GlobalOptimizationOption(
-			double max_correspondence_distance = 0.07,
+			double max_correspondence_distance = 0.075,
 			double edge_prune_threshold = 0.25,
 			int reference_node = -1) :
 			max_correspondence_distance_(max_correspondence_distance),
 			edge_prune_threshold_(edge_prune_threshold),
 			reference_node_(reference_node) {
 		max_correspondence_distance_ = max_correspondence_distance < 0.0
-				? 0.07 : max_correspondence_distance;
+				? 0.075 : max_correspondence_distance;
 		edge_prune_threshold_ =
 				edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
 				? 0.25 : edge_prune_threshold;

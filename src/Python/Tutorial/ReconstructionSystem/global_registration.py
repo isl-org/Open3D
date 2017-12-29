@@ -3,6 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
+import argparse
 import sys
 sys.path.append("../..")
 sys.path.append("../Utility")
@@ -90,7 +91,6 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 	n_files = len(ply_file_names)
 	path_fragment = path_dataset + 'fragments/'
-	n_frames_per_fragment = 100
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
 			print("reading %s ..." % ply_file_names[s])
@@ -144,7 +144,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
-						information_icp, True))
+						information_icp, False))
 			else: # loop closure case
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
@@ -154,16 +154,10 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 if __name__ == "__main__":
 	set_verbosity_level(VerbosityLevel.Debug)
-	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
-	if not path_dataset:
-		print("usage : %s " % sys.argv[0])
-		print("  --path_dataset [path]   : Path to rgbd_dataset. Mandatory.")
-		sys.exit()
+	parser = argparse.ArgumentParser(description='register fragments.')
+	parser.add_argument('path_dataset', help='path to the dataset')
+	args = parser.parse_args()
 
-	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
-	pose_graph = register_point_cloud(path_dataset, ply_file_names)
-	pose_graph_name = path_dataset + "/fragments/global_registration.json"
-	write_pose_graph(pose_graph_name, pose_graph)
-	pose_graph_optmized_name = path_dataset + "/fragments/" + \
-			"global_registration_optimized.json"
-	optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+	ply_file_names = get_file_list(args.path_dataset + "/fragments/", ".ply")
+	pose_graph = register_point_cloud(args.path_dataset, ply_file_names)
+	optimize_posegraph_for_scene(args.path_dataset, pose_graph)

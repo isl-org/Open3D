@@ -3,6 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
+import argparse
 import sys
 sys.path.append("../..")
 sys.path.append("../Utility")
@@ -17,16 +18,15 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 		feature_matching = True,
 		registration_type = "color", draw_result = True):
 
-	(source_down, source_fpfh) = preprocess_point_cloud(
-			ply_file_names[source_id])
-	(target_down, target_fpfh) = preprocess_point_cloud(
-			ply_file_names[target_id])
+	source = read_point_cloud(ply_file_names[source_id])
+	target = read_point_cloud(ply_file_names[target_id])
+	(source_down, source_fpfh) = preprocess_point_cloud(source)
+	(target_down, target_fpfh) = preprocess_point_cloud(target)
 
 	if feature_matching:
 		print("Do feature matching")
 		(success_ransac, result_ransac) = register_point_cloud_FPFH(
-				source_down, target_down,
-				source_fpfh, target_fpfh)
+				source_down, target_down, source_fpfh, target_fpfh)
 		if not success_ransac:
 			print("No resonable solution for initial pose.")
 		else:
@@ -40,7 +40,7 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 		print("RegistrationPointCloud - color ICP")
 		(transformation_icp, information_icp) = \
 				register_colored_point_cloud_icp(
-				source_down, target_down, transformation_init)
+				source, target, transformation_init)
 	else:
 		print("RegistrationPointCloud - ICP")
 		(transformation_icp, information_icp) = \
@@ -52,32 +52,25 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 
 
 if __name__ == "__main__":
-	set_verbosity_level(VerbosityLevel.Debug)
-	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
-	path_json = parse_argument(sys.argv, "--path_json")
-	source_id = parse_argument_int(sys.argv, "--source_id")
-	target_id = parse_argument_int(sys.argv, "--target_id")
-	if not path_dataset or not source_id or not target_id: # todo source_id or target_id can be 0
-		print("usage : %s " % sys.argv[0])
-		print("  --path_dataset [path]   : Path to the dataset. Mandatory.")
-		print("  --source_id [id]        : ID of source point cloud. Mandatory.")
-		print("  --target_id [id]        : ID of target point cloud. Mandatory.")
-		print("  --path_json [path]      : Path of global registration json file. Optional.")
-		sys.exit()
+	parser = argparse.ArgumentParser(description='mathching two point clouds')
+	parser.add_argument('path_dataset', help='path to the dataset')
+	parser.add_argument('source_id', type=int, help='ID of source point cloud')
+	parser.add_argument('target_id', type=int, help='ID of target point cloud')
+	parser.add_argument('-path_json', help='reading json file for initial pose')
+	args = parser.parse_args()
 
-	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
-	if not path_json:
-		register_point_cloud_pairwise(path_dataset, ply_file_names,
-				source_id, target_id)
+	ply_file_names = get_file_list(args.path_dataset + "/fragments/", ".ply")
+	if not args.path_json:
+		register_point_cloud_pairwise(args.path_dataset, ply_file_names,
+				args.source_id, args.target_id)
 	else:
-		# todo: this is not a good way for giving initial pose.
-		pose_graph = read_pose_graph(path_json)
+		pose_graph = read_pose_graph(args.path_json)
 		transformation_init = np.eye(4)
 		for i in range(len(pose_graph.edges)):
-			if pose_graph.edges[i].source_node_id == source_id and \
-					pose_graph.edges[i].target_node_id == target_id:
+			if pose_graph.edges[i].source_node_id == args.source_id and \
+					pose_graph.edges[i].target_node_id == args.target_id:
 				transformation_init = np.linalg.inv(pose_graph.edges[i].transformation)
 		print('using following matrix for initial transformation')
 		print(transformation_init)
-		register_point_cloud_pairwise(path_dataset, ply_file_names,
-				source_id, target_id, transformation_init)
+		register_point_cloud_pairwise(args.path_dataset, ply_file_names,
+				args.source_id, args.target_id, transformation_init)

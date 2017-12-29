@@ -358,7 +358,7 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
 		const PoseGraph &pose_graph_orig, int reference_node)
 {
-	PrintDebug("CompensateReferencePoseGraphNode : reference : %d",
+	PrintDebug("CompensateReferencePoseGraphNode : reference : %d\n",
 			reference_node);
 	int n_nodes = (int)pose_graph_new.nodes_.size();
 	if (reference_node < 0 || reference_node > n_nodes) {
