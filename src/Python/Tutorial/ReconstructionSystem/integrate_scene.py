@@ -9,7 +9,6 @@ sys.path.append("../..")
 sys.path.append("../Utility")
 from py3d import *
 from common import *
-from visualization import *
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 	[color_files, depth_files] = get_file_lists(path_dataset)

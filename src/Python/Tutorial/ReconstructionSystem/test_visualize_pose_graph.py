@@ -9,7 +9,6 @@ sys.path.append("../..")
 sys.path.append("../Utility")
 from py3d import *
 from common import *
-from visualization import *
 from optimize_posegraph import *
 
 
