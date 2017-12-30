@@ -4,7 +4,9 @@
 
 import sys
 sys.path.append("../..")
+sys.path.append("../Utility")
 from py3d import *
+from common import *
 
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
@@ -24,20 +26,18 @@ def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 
 
 def optimize_posegraph_for_fragment(path_dataset, fragment_id, pose_graph):
-	pose_graph_name = path_dataset + \
-			"/fragments/fragments_%03d.json" % fragment_id
+	pose_graph_name = path_dataset + template_fragment_posegraph % fragment_id
 	write_pose_graph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + \
-			"/fragments/fragments_opt_%03d.json" % fragment_id
+			template_fragment_posegraph_optimized % fragment_id
 	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 			max_correspondence_distance = 0.075)
 
 
 def optimize_posegraph_for_scene(path_dataset, pose_graph):
-	pose_graph_name = path_dataset + \
-			"/fragments/global_registration.json"
+	pose_graph_name = path_dataset + template_global_posegraph
 	write_pose_graph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + \
-			"/fragments/global_registration_optimized.json"
+			template_global_posegraph_optimized
 	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 			max_correspondence_distance = 0.075)

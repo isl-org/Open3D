@@ -59,7 +59,7 @@ def register_colored_point_cloud_icp(source, target,
 	for scale in range(3): # multi-scale approach
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
-		print('radius %f' % radius)
+		print("radius %f" % radius)
 		source_down = voxel_down_sample(source, radius)
 		target_down = voxel_down_sample(target, radius)
 		estimate_normals(source_down, KDTreeSearchParamHybrid(
@@ -89,7 +89,6 @@ def register_point_cloud(path_dataset, ply_file_names,
 	info = np.identity(6)
 
 	n_files = len(ply_file_names)
-	path_fragment = path_dataset + 'fragments/'
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
 			print("reading %s ..." % ply_file_names[s])
@@ -101,15 +100,15 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 			if t == s + 1: # odometry case
 				print("Using RGBD odometry")
-				pose_graph_frag_name = path_fragment + "fragments_opt_%03d.json" % s
-				pose_graph_frag = read_pose_graph(pose_graph_frag_name)
+				pose_graph_frag = read_pose_graph(path_dataset +
+						template_fragment_posegraph_optimized % s)
 				n_nodes = len(pose_graph_frag.nodes)
 				transformation_init = np.linalg.inv(
 						pose_graph_frag.nodes[n_nodes-1].pose)
 				print(pose_graph_frag.nodes[0].pose)
 				print(transformation_init)
 			else: # loop closure case
-				print("RegistrationRANSACBasedOnFeatureMatching")
+				print("register_point_cloud_FPFH")
 				(success_ransac, result_ransac) = register_point_cloud_FPFH(
 						source_down, target_down,
 						source_fpfh, target_fpfh)
@@ -123,20 +122,21 @@ def register_point_cloud(path_dataset, ply_file_names,
 				draw_registration_result(source_down, target_down,
 						transformation_init)
 
-			print("register_colored_point_cloud")
 			if (registration_type == "color"):
+				print("register_colored_point_cloud")
 				(transformation_icp, information_icp) = \
 						register_colored_point_cloud_icp(
 						source, target, transformation_init)
 			else:
+				print("register_point_cloud_icp")
 				(transformation_icp, information_icp) = \
 						register_point_cloud_icp(
 						source_down, target_down, transformation_init)
 			if draw_result:
-				draw_registration_result_original_color(source_down, target_down,
-						transformation_icp)
+				draw_registration_result_original_color(
+						source_down, target_down, transformation_icp)
 
-			print("Build PoseGraph for Further Optmiziation")
+			print("Build PoseGraph for optmiziation")
 			if t == s + 1: # odometry case
 				odometry = np.dot(transformation_icp, odometry)
 				odometry_inv = np.linalg.inv(odometry)
@@ -153,10 +153,11 @@ def register_point_cloud(path_dataset, ply_file_names,
 
 if __name__ == "__main__":
 	set_verbosity_level(VerbosityLevel.Debug)
-	parser = argparse.ArgumentParser(description='register fragments.')
-	parser.add_argument('path_dataset', help='path to the dataset')
+	parser = argparse.ArgumentParser(description="register fragments.")
+	parser.add_argument("path_dataset", help="path to the dataset")
 	args = parser.parse_args()
 
-	ply_file_names = get_file_list(args.path_dataset + "/fragments/", ".ply")
+	ply_file_names = get_file_list(args.path_dataset + folder_fragment, ".ply")
+	make_folder(args.path_dataset + folder_scene)
 	pose_graph = register_point_cloud(args.path_dataset, ply_file_names)
 	optimize_posegraph_for_scene(args.path_dataset, pose_graph)

@@ -51,18 +51,18 @@ def test_single_pair(s, t, intrinsic, with_opencv):
 
 # test wide baseline matching
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description='mathching two RGBD images')
-	parser.add_argument('path_dataset', help='path to the dataset')
-	parser.add_argument('source_id', type=int, help='ID of source RGBD image')
-	parser.add_argument('target_id', type=int, help='ID of target RGBD image')
-	parser.add_argument('-path_intrinsic', help='path to the RGBD camera intrinsic')
+	parser = argparse.ArgumentParser(description="mathching two RGBD images")
+	parser.add_argument("path_dataset", help="path to the dataset")
+	parser.add_argument("source_id", type=int, help="ID of source RGBD image")
+	parser.add_argument("target_id", type=int, help="ID of target RGBD image")
+	parser.add_argument("-path_intrinsic", help="path to the RGBD camera intrinsic")
 	args = parser.parse_args()
 
 	with_opencv = initialize_opencv()
 	if with_opencv:
 		from opencv_pose_estimation import pose_estimation
 
-	[color_files, depth_files] = get_file_lists(args.path_dataset)
+	[color_files, depth_files] = get_rgbd_file_lists(args.path_dataset)
 	if args.path_intrinsic:
 		intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
 	else:
