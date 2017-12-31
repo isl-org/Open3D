@@ -143,12 +143,12 @@ def register_point_cloud(path_dataset, ply_file_names,
 				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
-						information_icp, False))
+						information_icp, True))
 			else: # loop closure case
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
 						information_icp, True))
-	return pose_graph
+	write_pose_graph(path_dataset + template_global_posegraph, pose_graph)
 
 
 if __name__ == "__main__":
@@ -159,5 +159,5 @@ if __name__ == "__main__":
 
 	ply_file_names = get_file_list(args.path_dataset + folder_fragment, ".ply")
 	make_folder(args.path_dataset + folder_scene)
-	pose_graph = register_point_cloud(args.path_dataset, ply_file_names)
-	optimize_posegraph_for_scene(args.path_dataset, pose_graph)
+	register_point_cloud(args.path_dataset, ply_file_names)
+	optimize_posegraph_for_scene(args.path_dataset)

@@ -45,7 +45,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 		return [success, trans, info]
 
 
-def make_one_fragment(sid, eid, color_files, depth_files,
+def make_one_fragment(path_dataset, sid, eid, color_files, depth_files,
 		fragment_id, n_fragments, intrinsic, with_opencv):
 	set_verbosity_level(VerbosityLevel.Error)
 	pose_graph = PoseGraph()
@@ -75,7 +75,8 @@ def make_one_fragment(sid, eid, color_files, depth_files,
 				if success:
 					pose_graph.edges.append(
 							PoseGraphEdge(s-sid, t-sid, trans, info, True))
-	return pose_graph
+	write_pose_graph(path_dataset + template_fragment_posegraph % fragment_id,
+			pose_graph)
 
 
 def integrate_rgb_frames_for_fragment(color_files, depth_files,
@@ -108,7 +109,6 @@ def make_mesh_for_fragment(path_dataset, color_files, depth_files,
 			path_dataset + template_fragment_posegraph_optimized % fragment_id,
 			intrinsic)
 	mesh_name = path_dataset + template_fragment_mesh % fragment_id
-	print("writing %s" % mesh_name)
 	write_triangle_mesh(mesh_name, mesh, False, True)
 
 
@@ -119,18 +119,17 @@ def process_fragments(path_dataset, path_intrinsic):
 		intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
 	make_folder(path_dataset + folder_fragment)
-	[color_files, depth_files] = get_rgbd_file_lists(args.path_dataset)
+	[color_files, depth_files] = get_rgbd_file_lists(path_dataset)
 	n_files = len(color_files)
 	n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
 	for fragment_id in range(n_fragments):
 		sid = fragment_id * n_frames_per_fragment
 		eid = min(sid + n_frames_per_fragment, n_files)
-		pose_graph = make_one_fragment(sid, eid, color_files, depth_files,
+		make_one_fragment(path_dataset, sid, eid, color_files, depth_files,
 				fragment_id, n_fragments, intrinsic, with_opencv)
-		optimize_posegraph_for_fragment(args.path_dataset,
-				fragment_id, pose_graph)
-		make_mesh_for_fragment(args.path_dataset, color_files, depth_files,
+		optimize_posegraph_for_fragment(path_dataset, fragment_id)
+		make_mesh_for_fragment(path_dataset, color_files, depth_files,
 				fragment_id, n_fragments, intrinsic)
 
 

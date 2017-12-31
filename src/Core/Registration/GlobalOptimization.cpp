@@ -345,7 +345,7 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	if (n_edges > 0) {
 		// see Section 5 in [Choi et al 2015]
 		average_number_of_correspondences /= (double)n_edges;
-		double line_process_weight = 0.1 *
+		double line_process_weight = 1.0 *
 				pow(option.max_correspondence_distance_, 2) *
 				average_number_of_correspondences;
 		return line_process_weight;
@@ -476,9 +476,8 @@ void GlobalOptimizationGaussNewton::
 				break;
 		}
 		timer_iter.Stop();
-		PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
-				iter, current_residual,
-				valid_edges_num, n_edges - (n_nodes - 1),
+		PrintDebug("[Iteration %02d] residual : %e, valid edges : %d, time : %.3f sec.\n",
+				iter, current_residual, valid_edges_num,
 				timer_iter.GetDuration() / 1000.0);
 		stop = stop || CheckResidual(current_residual, criteria)
 				|| CheckMaxIteration(iter, criteria);

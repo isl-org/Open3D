@@ -25,18 +25,16 @@ def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 	set_verbosity_level(VerbosityLevel.Error)
 
 
-def optimize_posegraph_for_fragment(path_dataset, fragment_id, pose_graph):
+def optimize_posegraph_for_fragment(path_dataset, fragment_id):
 	pose_graph_name = path_dataset + template_fragment_posegraph % fragment_id
-	write_pose_graph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + \
 			template_fragment_posegraph_optimized % fragment_id
 	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 			max_correspondence_distance = 0.075)
 
 
-def optimize_posegraph_for_scene(path_dataset, pose_graph):
+def optimize_posegraph_for_scene(path_dataset):
 	pose_graph_name = path_dataset + template_global_posegraph
-	write_pose_graph(pose_graph_name, pose_graph)
 	pose_graph_optmized_name = path_dataset + \
 			template_global_posegraph_optimized
 	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,

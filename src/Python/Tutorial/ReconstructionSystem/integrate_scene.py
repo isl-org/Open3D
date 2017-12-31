@@ -43,7 +43,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 	mesh.compute_vertex_normals()
 	draw_geometries([mesh])
 
-	mesh_name = args.path_dataset + template_global_mesh
+	mesh_name = path_dataset + template_global_mesh
 	write_triangle_mesh(mesh_name, mesh, False, True)
 
 
