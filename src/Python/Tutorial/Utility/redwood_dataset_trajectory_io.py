@@ -10,7 +10,7 @@ class CameraPose:
 		self.metadata = meta
 		self.pose = mat
 	def __str__(self):
-		return 'Metadata : ' + ' '.join(map(str, self.metadata)) + '\n' + \
+		return "Metadata : " + ' '.join(map(str, self.metadata)) + '\n' + \
 			"Pose : " + "\n" + np.array_str(self.pose)
 
 

@@ -3,18 +3,16 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
+import argparse
 import sys
 sys.path.append("../..")
 sys.path.append("../Utility")
 from py3d import *
 from common import *
-from visualization import *
 from optimize_posegraph import *
 
 
-def preprocess_point_cloud(ply_file_name):
-	print(ply_file_name)
-	pcd = read_point_cloud(ply_file_name)
+def preprocess_point_cloud(pcd):
 	pcd_down = voxel_down_sample(pcd, 0.05)
 	estimate_normals(pcd_down,
 			KDTreeSearchParamHybrid(radius = 0.1, max_nn = 30))
@@ -61,6 +59,7 @@ def register_colored_point_cloud_icp(source, target,
 	for scale in range(3): # multi-scale approach
 		iter = max_iter[scale]
 		radius = voxel_radius[scale]
+		print("radius %f" % radius)
 		source_down = voxel_down_sample(source, radius)
 		target_down = voxel_down_sample(target, radius)
 		estimate_normals(source_down, KDTreeSearchParamHybrid(
@@ -90,26 +89,26 @@ def register_point_cloud(path_dataset, ply_file_names,
 	info = np.identity(6)
 
 	n_files = len(ply_file_names)
-	path_fragment = path_dataset + 'fragments/'
-	n_frames_per_fragment = 100
 	for s in range(n_files):
 		for t in range(s + 1, n_files):
-			(source_down, source_fpfh) = preprocess_point_cloud(
-					ply_file_names[s])
-			(target_down, target_fpfh) = preprocess_point_cloud(
-					ply_file_names[t])
+			print("reading %s ..." % ply_file_names[s])
+			source = read_point_cloud(ply_file_names[s])
+			print("reading %s ..." % ply_file_names[t])
+			target = read_point_cloud(ply_file_names[t])
+			(source_down, source_fpfh) = preprocess_point_cloud(source)
+			(target_down, target_fpfh) = preprocess_point_cloud(target)
 
 			if t == s + 1: # odometry case
 				print("Using RGBD odometry")
-				pose_graph_frag_name = path_fragment + "fragments_opt_%03d.json" % s
-				pose_graph_frag = read_pose_graph(pose_graph_frag_name)
+				pose_graph_frag = read_pose_graph(path_dataset +
+						template_fragment_posegraph_optimized % s)
 				n_nodes = len(pose_graph_frag.nodes)
 				transformation_init = np.linalg.inv(
 						pose_graph_frag.nodes[n_nodes-1].pose)
 				print(pose_graph_frag.nodes[0].pose)
 				print(transformation_init)
 			else: # loop closure case
-				print("RegistrationRANSACBasedOnFeatureMatching")
+				print("register_point_cloud_FPFH")
 				(success_ransac, result_ransac) = register_point_cloud_FPFH(
 						source_down, target_down,
 						source_fpfh, target_fpfh)
@@ -120,23 +119,24 @@ def register_point_cloud(path_dataset, ply_file_names,
 					transformation_init = result_ransac.transformation
 				print(transformation_init)
 			if draw_result:
-				DrawRegistrationResult(source_down, target_down,
+				draw_registration_result(source_down, target_down,
 						transformation_init)
 
-			print("register_colored_point_cloud")
 			if (registration_type == "color"):
+				print("register_colored_point_cloud")
 				(transformation_icp, information_icp) = \
 						register_colored_point_cloud_icp(
-						source_down, target_down, transformation_init)
+						source, target, transformation_init)
 			else:
+				print("register_point_cloud_icp")
 				(transformation_icp, information_icp) = \
 						register_point_cloud_icp(
 						source_down, target_down, transformation_init)
 			if draw_result:
-				DrawRegistrationResultOriginalColor(source_down, target_down,
-						transformation_icp)
+				draw_registration_result_original_color(
+						source_down, target_down, transformation_icp)
 
-			print("Build PoseGraph for Further Optmiziation")
+			print("Build PoseGraph for optmiziation")
 			if t == s + 1: # odometry case
 				odometry = np.dot(transformation_icp, odometry)
 				odometry_inv = np.linalg.inv(odometry)
@@ -148,21 +148,16 @@ def register_point_cloud(path_dataset, ply_file_names,
 				pose_graph.edges.append(
 						PoseGraphEdge(s, t, transformation_icp,
 						information_icp, True))
-	return pose_graph
+	write_pose_graph(path_dataset + template_global_posegraph, pose_graph)
 
 
 if __name__ == "__main__":
 	set_verbosity_level(VerbosityLevel.Debug)
-	path_dataset = parse_argument(sys.argv, "--path_dataset") # todo use argparse
-	if not path_dataset:
-		print("usage : %s " % sys.argv[0])
-		print("  --path_dataset [path]   : Path to rgbd_dataset. Mandatory.")
-		sys.exit()
+	parser = argparse.ArgumentParser(description="register fragments.")
+	parser.add_argument("path_dataset", help="path to the dataset")
+	args = parser.parse_args()
 
-	ply_file_names = get_file_list(path_dataset + "/fragments/", ".ply")
-	pose_graph = register_point_cloud(path_dataset, ply_file_names)
-	pose_graph_name = path_dataset + "/fragments/global_registration.json"
-	write_pose_graph(pose_graph_name, pose_graph)
-	pose_graph_optmized_name = path_dataset + "/fragments/" + \
-			"global_registration_optimized.json"
-	optimize_posegraph(pose_graph_name, pose_graph_optmized_name)
+	ply_file_names = get_file_list(args.path_dataset + folder_fragment, ".ply")
+	make_folder(args.path_dataset + folder_scene)
+	register_point_cloud(args.path_dataset, ply_file_names)
+	optimize_posegraph_for_scene(args.path_dataset)
