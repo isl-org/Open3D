@@ -228,7 +228,7 @@ This script aligns two point cloud using ``result_icp.transformation`` as an ini
 
 The final result is shown below.
 
-.. image:: ../../_static/advanced/global_registration/icp.png
+.. image:: ../../_static/Advanced/global_registration/icp.png
     :width: 400px
 
 For the case where the colored texture alignment is important, point-to-plane ICP can be replaced with :ref:`colored_point_registration`.
