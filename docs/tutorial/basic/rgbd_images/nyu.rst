@@ -2,7 +2,7 @@
 
 NYU dataset
 -------------------------------------
-This tutorial reads and visualizes a RGBD image of SUN dataset [SILBERMAN2012]_.
+This tutorial reads and visualizes a RGBD image of SUN dataset [Silberman2012]_.
 Let's see following tutorial.
 
 .. code-block:: python
@@ -120,7 +120,7 @@ The next lines below
 
 displays two images using ``subplot``:
 
-.. image:: ../../../_static/basic/rgbd_images/nyu_rgbd.png
+.. image:: ../../../_static/Basic/rgbd_images/nyu_rgbd.png
 	:width: 400px
 
 Any RGBD image can be transformed into point cloud. This is interesting feature of RGBD image.
@@ -140,7 +140,5 @@ It corresponds to default camera intrinsic matrix of Kinect camera with 640x480 
 Note that ``pcd.transform`` is applied for the ``pcd`` just for visualization purpose.
 This script will display:
 
-.. image:: ../../../_static/basic/rgbd_images/nyu_pcd.png
+.. image:: ../../../_static/Basic/rgbd_images/nyu_pcd.png
 	:width: 400px
-
-.. [SILBERMAN2012] N. Silberman, D. Hoiem, P. Kohli and R. Fergus, Indoor Segmentation and Support Inference from RGBD Images, ECCV, 2012.

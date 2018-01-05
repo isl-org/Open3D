@@ -10,8 +10,8 @@ from py3d import *
 if __name__ == "__main__":
 
 	print("Testing camera in py3d ...")
-	print(PinholeCameraIntrinsic.PrimeSenseDefault)
-	print(PinholeCameraIntrinsic.PrimeSenseDefault.intrinsic_matrix)
+	print(PinholeCameraIntrinsic.prime_sense_default)
+	print(PinholeCameraIntrinsic.prime_sense_default.intrinsic_matrix)
 	print(PinholeCameraIntrinsic())
 	x = PinholeCameraIntrinsic(640, 480, 525, 525, 320, 240)
 	print(x)

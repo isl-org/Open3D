@@ -1,4 +1,4 @@
-.. _python_binding:
+.. _python_binding_tutorial:
 
 Python binding
 -------------------------------------

@@ -104,7 +104,7 @@ The next line will visualize the mesh
 
 With this script, this interactive window appears:
 
-.. image:: ../../_static/basic/mesh/without_shading.png
+.. image:: ../../_static/Basic/mesh/without_shading.png
     :width: 400px
 
 This geometry looks like gray silhouette because this mesh does not have surface normal.
@@ -118,7 +118,7 @@ This script also prints the following:
 	Try to render a mesh with normals (exist: False) and colors (exist: False)
 	A mesh with no normals and no colors does not seem good.
 
-.. _vertex_normal_estimation:
+.. _surface_normal_estimation:
 
 Surface normal estimation
 =====================================
@@ -135,7 +135,7 @@ Let's draw geometry with surface normal. Let's continue with following script:
 It uses ``compute_vertex_normals`` and ``paint_uniform_color`` which are member function of ``mesh``.
 Now it looks like:
 
-.. image:: ../../_static/basic/mesh/with_shading.png
+.. image:: ../../_static/Basic/mesh/with_shading.png
 	:width: 400px
 
 and prints the following
@@ -185,7 +185,7 @@ The same idea is applied for ``mesh1.triangle_normals``, but it uses ``Vector3dV
 
 After assignment, ``draw_geometries`` displays:
 
-.. image:: ../../_static/basic/mesh/half.png
+.. image:: ../../_static/Basic/mesh/half.png
 	:width: 400px
 
 
@@ -205,5 +205,5 @@ It uses ``paint_uniform_color``.
 
 Now we have:
 
-.. image:: ../../_static/basic/mesh/half_color.png
+.. image:: ../../_static/Basic/mesh/half_color.png
 	:width: 400px

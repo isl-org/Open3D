@@ -584,9 +584,9 @@ void GlobalOptimizationLevenbergMarquardt::
 		} while (!((rho > 0) || stop));
 		timer_iter.Stop();
 		if (!stop) {
-			PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
+			PrintDebug("[Iteration %02d] residual : %e, valid edges : %d, time : %.3f sec.\n",
 					iter, current_residual, valid_edges_num,
-					n_edges - (n_nodes - 1), timer_iter.GetDuration() / 1000.0);
+					timer_iter.GetDuration() / 1000.0);
 		}
 		stop = stop || CheckResidual(current_residual, criteria)
 				|| CheckMaxIteration(iter, criteria);

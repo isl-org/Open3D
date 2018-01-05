@@ -113,7 +113,7 @@ The next script calls ``search_radius_vector_3d``. This function finds a neighbo
 
 Finally, it visualizes colored point cloud:
 
-.. image:: ../../_static/basic/kdtree.png
+.. image:: ../../_static/Basic/kdtree/kdtree.png
 	:width: 400px
 
 Note that 1500th point is colored in red, and its 199 neighbors are colored in blue, and neighbors within 0.2 distance to 1500th point are colored in green.

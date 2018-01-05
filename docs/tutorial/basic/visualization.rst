@@ -88,24 +88,24 @@ Store view point
 
 The first part of the script displays fragment.ply:
 
-.. image:: ../../_static/basic/visualization/badview.png
+.. image:: ../../_static/Basic/visualization/badview.png
 	:width: 400px
 
 After adjusting view points using left button + drag, or mouse scroll,
 it is easy to get a better view point:
 
-.. image:: ../../_static/basic/visualization/color.png
+.. image:: ../../_static/Basic/visualization/color.png
 	:width: 400px
 
 If this view point is needed to be memorized, press :kbd:`ctrl+c`.
 Next, keep navigating the geometry. It might show:
 
-.. image:: ../../_static/basic/visualization/newview.png
+.. image:: ../../_static/Basic/visualization/newview.png
 	:width: 400px
 
 Now press press :kbd:`ctrl+v`. It goes back to the memorized view point below:
 
-.. image:: ../../_static/basic/visualization/color.png
+.. image:: ../../_static/Basic/visualization/color.png
 	:width: 400px
 
 
@@ -117,13 +117,13 @@ Color map
 Another intersting features of ``draw_geometries`` is changing color map.
 From the visualization window, press :kbd:`2`. It shows colored points based on x-coordinate.
 
-.. image:: ../../_static/basic/visualization/colormap_jet.png
+.. image:: ../../_static/Basic/visualization/colormap_jet.png
 	:width: 400px
 
 ``draw_geometries`` provides other color maps worth to try. For example, press :kbd:`shift + 4`.
 This changes jet color map to hot color map.
 
-.. image:: ../../_static/basic/visualization/colormap_hot.png
+.. image:: ../../_static/Basic/visualization/colormap_hot.png
 	:width: 400px
 
 Remember, help messages can be displayed anytime by pressing :kbd:`h`
@@ -176,5 +176,5 @@ Another way is to grouping geometries by using ``+`` operator like ``[mesh_spher
 
 Both of function call displays the same geometry like below:
 
-.. image:: ../../_static/basic/visualization/premitive.png
+.. image:: ../../_static/Basic/visualization/premitive.png
 	:width: 400px

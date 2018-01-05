@@ -23,7 +23,7 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 
 	if abs(source_id - target_id) != 1:
 		print("Do feature matching")
-		(success_ransac, result_ransac) = register_point_cloud_FPFH(
+		(success_ransac, result_ransac) = register_point_cloud_fpfh(
 				source_down, target_down, source_fpfh, target_fpfh)
 		if not success_ransac:
 			print("No resonable solution for initial pose.")

@@ -12,6 +12,7 @@ from os.path import exists, isfile, join, splitext
 #######################
 # some global parameters for the global registration
 #######################
+
 n_frames_per_fragment = 100
 n_keyframes_per_n_frame = 5
 
@@ -19,6 +20,7 @@ n_keyframes_per_n_frame = 5
 #######################
 # file related
 #######################
+
 folder_fragment = "/fragments/"
 template_fragment_posegraph = folder_fragment + "fragment_%03d.json"
 template_fragment_posegraph_optimized = folder_fragment + \

@@ -2,7 +2,7 @@
 
 SUN dataset
 -------------------------------------
-This tutorial reads and visualizes a RGBD image of SUN dataset [SONG2015]_.
+This tutorial reads and visualizes a RGBD image of SUN dataset [Song2015]_.
 Let's see following tutorial.
 
 .. code-block:: python
@@ -74,7 +74,7 @@ The next lines below
 
 displays two images using ``subplot``:
 
-.. image:: ../../../_static/basic/rgbd_images/sun_rgbd.png
+.. image:: ../../../_static/Basic/rgbd_images/sun_rgbd.png
 	:width: 400px
 
 Any RGBD image can be transformed into point cloud. This is interesting feature of RGBD image.
@@ -94,8 +94,5 @@ It corresponds to default camera intrinsic matrix of Kinect camera with 640x480 
 Note that ``pcd.transform`` is applied for the ``pcd`` just for visualization purpose.
 This script will display:
 
-.. image:: ../../../_static/basic/rgbd_images/sun_pcd.png
+.. image:: ../../../_static/Basic/rgbd_images/sun_pcd.png
 	:width: 400px
-
-.. [SONG2015] S. Song, S. Lichtenberg, and J. Xiao,
-	SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite, CVPR, 2015.

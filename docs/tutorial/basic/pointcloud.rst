@@ -67,13 +67,13 @@ Function ``read_point_cloud`` reads a point cloud from a file. This function det
 Use mouse/trackpad to see the geometry from different view point.
 Below window will appear twice:
 
-.. image:: ../../_static/basic/pointcloud/scene.png
+.. image:: ../../_static/Basic/pointcloud/scene.png
 	:width: 400px
 
 It looks like dense surface, but it is point cloud.
 Press :kbd:`-` key for several times. It becomes:
 
-.. image:: ../../_static/basic/pointcloud/scene_small.png
+.. image:: ../../_static/Basic/pointcloud/scene_small.png
 	:width: 400px
 
 :kbd:`-` key is a helpful friend for decreasing the size of visualized points.
@@ -108,7 +108,7 @@ As a result, ``downpcd`` has sparser point cloud than original point cloud.
 
 This is a downsampled point cloud:
 
-.. image:: ../../_static/basic/pointcloud/downsampled.png
+.. image:: ../../_static/Basic/pointcloud/downsampled.png
 	:width: 400px
 
 
@@ -137,7 +137,7 @@ It has 10cm of search radius, and only considers up to 30 neighbors to save comp
 The point cloud has normal direction now.
 Once ``draw_geometries`` draws geometry, press :kbd:`n` key to see point normal.
 
-.. image:: ../../_static/basic/pointcloud/downsampled_normal.png
+.. image:: ../../_static/Basic/pointcloud/downsampled_normal.png
 	:width: 400px
 
 You can use :kbd:`-` or :kbd:`+` key to increase or decrease length of black needles representing normal direction.
@@ -163,7 +163,7 @@ Another example is point cloud cropping. See this script:
 
 This will remain only the chair in the scene.
 
-.. image:: ../../_static/basic/pointcloud/crop.png
+.. image:: ../../_static/Basic/pointcloud/crop.png
 	:width: 400px
 
 .. _paint_point_cloud:
@@ -185,5 +185,5 @@ The function accepts a list of red, green, and blue intensity in [0,1] range.
 
 The chair becomes yellow:
 
-.. image:: ../../_static/basic/pointcloud/crop_color.png
+.. image:: ../../_static/Basic/pointcloud/crop_color.png
 	:width: 400px

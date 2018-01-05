@@ -2,7 +2,7 @@
 
 TUM dataset
 -------------------------------------
-This tutorial reads and visualizes a RGBD image of SUN dataset [STRUM2012]_.
+This tutorial reads and visualizes a RGBD image of SUN dataset [Strum2012]_.
 Let's see following script.
 
 .. code-block:: python
@@ -74,7 +74,7 @@ The next lines below
 
 displays two images using ``subplot``:
 
-.. image:: ../../../_static/basic/rgbd_images/tum_rgbd.png
+.. image:: ../../../_static/Basic/rgbd_images/tum_rgbd.png
 	:width: 400px
 
 The RGBD image can be transformed into point cloud. This is interesting feature of RGBD image.
@@ -86,7 +86,5 @@ It corresponds to default camera intrinsic matrix of Kinect camera with 640x480 
 Note that ``pcd.transform`` is applied for the ``pcd`` just for visualization purpose.
 This script will display:
 
-.. image:: ../../../_static/basic/rgbd_images/tum_pcd.png
+.. image:: ../../../_static/Basic/rgbd_images/tum_pcd.png
 	:width: 400px
-
-.. [STRUM2012] J. Sturm, N. Engelhard, F. Endres, W. Burgard and D. Cremers, A Benchmark for the Evaluation of RGB-D SLAM Systems, IROS, 2012.

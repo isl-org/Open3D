@@ -14,7 +14,7 @@ from opencv import *
 from optimize_posegraph import *
 
 
-def process_one_rgbd_pair(s, t, color_files, depth_files,
+def register_one_rgbd_pair(s, t, color_files, depth_files,
 		intrinsic, with_opencv):
 	# read images
 	color_s = read_image(color_files[s])
@@ -45,7 +45,7 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 		return [success, trans, info]
 
 
-def make_one_fragment(path_dataset, sid, eid, color_files, depth_files,
+def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
 		fragment_id, n_fragments, intrinsic, with_opencv):
 	set_verbosity_level(VerbosityLevel.Error)
 	pose_graph = PoseGraph()
@@ -57,7 +57,7 @@ def make_one_fragment(path_dataset, sid, eid, color_files, depth_files,
 			if t == s + 1:
 				print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
 						% (fragment_id, n_fragments-1, s, t))
-				[success, trans, info] = process_one_rgbd_pair(
+				[success, trans, info] = register_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				trans_odometry = np.dot(trans, trans_odometry)
 				trans_odometry_inv = np.linalg.inv(trans_odometry)
@@ -70,7 +70,7 @@ def make_one_fragment(path_dataset, sid, eid, color_files, depth_files,
 					and t % n_keyframes_per_n_frame == 0:
 				print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
 						% (fragment_id, n_fragments-1, s, t))
-				[success, trans, info] = process_one_rgbd_pair(
+				[success, trans, info] = register_one_rgbd_pair(
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				if success:
 					pose_graph.edges.append(
@@ -114,7 +114,7 @@ def make_mesh_for_fragment(path_dataset, color_files, depth_files,
 
 def process_fragments(path_dataset, path_intrinsic):
 	if path_intrinsic:
-		intrinsic = ReadPinholeCameraIntrinsic(path_intrinsic)
+		intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
 	else:
 		intrinsic = PinholeCameraIntrinsic.prime_sense_default
 
@@ -126,7 +126,7 @@ def process_fragments(path_dataset, path_intrinsic):
 	for fragment_id in range(n_fragments):
 		sid = fragment_id * n_frames_per_fragment
 		eid = min(sid + n_frames_per_fragment, n_files)
-		make_one_fragment(path_dataset, sid, eid, color_files, depth_files,
+		make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
 				fragment_id, n_fragments, intrinsic, with_opencv)
 		optimize_posegraph_for_fragment(path_dataset, fragment_id)
 		make_mesh_for_fragment(path_dataset, color_files, depth_files,

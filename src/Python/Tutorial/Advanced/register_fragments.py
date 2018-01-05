@@ -6,18 +6,27 @@ import sys
 sys.path.append("../..")
 from py3d import *
 import numpy as np
+import copy
 
 def draw_registration_result(source, target, transformation):
-	source.paint_uniform_color([1, 0.706, 0])
-	target.paint_uniform_color([0, 0.651, 0.929])
-	source.transform(transformation)
-	draw_geometries([source, target])
+	source_temp = copy.deepcopy(source)
+	target_temp = copy.deepcopy(target)
+	source_temp.paint_uniform_color([1, 0.706, 0])
+	target_temp.paint_uniform_color([0, 0.651, 0.929])
+	source_temp.transform(transformation)
+	draw_geometries([source_temp, target_temp])
 
 if __name__ == "__main__":
 
-	print("1. Load two point clouds.")
+	print("1. Load two point clouds and disturb initial pose.")
 	source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
 	target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+	trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
+							[1.0, 0.0, 0.0, 0.0],
+							[0.0, 1.0, 0.0, 0.0],
+							[0.0, 0.0, 0.0, 1.0]])
+	source.transform(trans_init)
+	draw_registration_result(source, target, np.identity(4))
 
 	print("2. Downsample with a voxel size 0.05.")
 	source_down = voxel_down_sample(source, 0.05)

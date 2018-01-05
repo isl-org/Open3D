@@ -21,7 +21,7 @@ def preprocess_point_cloud(pcd):
 	return (pcd_down, pcd_fpfh)
 
 
-def register_point_cloud_FPFH(source, target,
+def register_point_cloud_fpfh(source, target,
 		source_fpfh, target_fpfh):
 	result_ransac = registration_ransac_based_on_feature_matching(
 			source, target, source_fpfh, target_fpfh, 0.075,
@@ -34,6 +34,36 @@ def register_point_cloud_FPFH(source, target,
 		return (False, np.identity(4))
 	else:
 		return (True, result_ransac)
+
+
+def compute_initial_registration(s, t, source_down, target_down,
+		source_fpfh, target_fpfh, path_dataset, draw_result = False):
+
+	if t == s + 1: # odometry case
+		print("Using RGBD odometry")
+		pose_graph_frag = read_pose_graph(path_dataset +
+				template_fragment_posegraph_optimized % s)
+		n_nodes = len(pose_graph_frag.nodes)
+		transformation = np.linalg.inv(
+				pose_graph_frag.nodes[n_nodes-1].pose)
+		print(pose_graph_frag.nodes[0].pose)
+		print(transformation)
+	else: # loop closure case
+		print("register_point_cloud_fpfh")
+		(success_ransac, result_ransac) = register_point_cloud_fpfh(
+				source_down, target_down,
+				source_fpfh, target_fpfh)
+		if not success_ransac:
+			print("No resonable solution. Skip this pair")
+			return (False, np.identity(4))
+		else:
+			transformation = result_ransac.transformation
+		print(transformation)
+
+	if draw_result:
+		draw_registration_result(source_down, target_down,
+				transformation)
+	return (True, transformation)
 
 
 def register_point_cloud_icp(source, target,
@@ -81,6 +111,44 @@ def register_colored_point_cloud_icp(source, target,
 	return (result_icp.transformation, information_matrix)
 
 
+def local_refinement(source, target, source_down, target_down,
+		transformation_init, registration_type = "color",
+		draw_result = False):
+
+	if (registration_type == "color"):
+		print("register_colored_point_cloud")
+		(transformation, information) = \
+				register_colored_point_cloud_icp(
+				source, target, transformation_init)
+	else:
+		print("register_point_cloud_icp")
+		(transformation, information) = \
+				register_point_cloud_icp(
+				source_down, target_down, transformation_init)
+
+	if draw_result:
+		draw_registration_result_original_color(
+				source_down, target_down, transformation)
+	return (transformation, information)
+
+
+def update_posegrph_for_scene(s, t, transformation, information,
+		odometry, pose_graph):
+
+	print("Update PoseGraph")
+	if t == s + 1: # odometry case
+		odometry = np.dot(transformation, odometry)
+		odometry_inv = np.linalg.inv(odometry)
+		pose_graph.nodes.append(PoseGraphNode(odometry_inv))
+		pose_graph.edges.append(
+				PoseGraphEdge(s, t, transformation,
+				information, True))
+	else: # loop closure case
+		pose_graph.edges.append(
+				PoseGraphEdge(s, t, transformation,
+				information, True))
+
+
 def register_point_cloud(path_dataset, ply_file_names,
 		registration_type = "color", draw_result = False):
 	pose_graph = PoseGraph()
@@ -98,56 +166,23 @@ def register_point_cloud(path_dataset, ply_file_names,
 			(source_down, source_fpfh) = preprocess_point_cloud(source)
 			(target_down, target_fpfh) = preprocess_point_cloud(target)
 
-			if t == s + 1: # odometry case
-				print("Using RGBD odometry")
-				pose_graph_frag = read_pose_graph(path_dataset +
-						template_fragment_posegraph_optimized % s)
-				n_nodes = len(pose_graph_frag.nodes)
-				transformation_init = np.linalg.inv(
-						pose_graph_frag.nodes[n_nodes-1].pose)
-				print(pose_graph_frag.nodes[0].pose)
-				print(transformation_init)
-			else: # loop closure case
-				print("register_point_cloud_FPFH")
-				(success_ransac, result_ransac) = register_point_cloud_FPFH(
-						source_down, target_down,
-						source_fpfh, target_fpfh)
-				if not success_ransac:
-					print("No resonable solution. Skip this pair")
-					continue
-				else:
-					transformation_init = result_ransac.transformation
-				print(transformation_init)
-			if draw_result:
-				draw_registration_result(source_down, target_down,
-						transformation_init)
+			(success_global, transformation_init) = \
+					compute_initial_registration(
+					s, t, source_down, target_down,
+					source_fpfh, target_fpfh, path_dataset)
+			if not success_global:
+				continue
 
-			if (registration_type == "color"):
-				print("register_colored_point_cloud")
-				(transformation_icp, information_icp) = \
-						register_colored_point_cloud_icp(
-						source, target, transformation_init)
-			else:
-				print("register_point_cloud_icp")
-				(transformation_icp, information_icp) = \
-						register_point_cloud_icp(
-						source_down, target_down, transformation_init)
-			if draw_result:
-				draw_registration_result_original_color(
-						source_down, target_down, transformation_icp)
+			(transformation_icp, information_icp) = \
+					local_refinement(source, target,
+					source_down, target_down, transformation_init,
+					registration_type, draw_result)
 
-			print("Build PoseGraph for optmiziation")
-			if t == s + 1: # odometry case
-				odometry = np.dot(transformation_icp, odometry)
-				odometry_inv = np.linalg.inv(odometry)
-				pose_graph.nodes.append(PoseGraphNode(odometry_inv))
-				pose_graph.edges.append(
-						PoseGraphEdge(s, t, transformation_icp,
-						information_icp, True))
-			else: # loop closure case
-				pose_graph.edges.append(
-						PoseGraphEdge(s, t, transformation_icp,
-						information_icp, True))
+			update_posegrph_for_scene(s, t,
+					transformation_icp, information_icp,
+					odometry, pose_graph)
+			print(pose_graph)
+
 	write_pose_graph(path_dataset + template_global_posegraph, pose_graph)
 
 

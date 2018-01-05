@@ -10,7 +10,7 @@ from py3d import *
 
 if __name__ == "__main__":
 
-	print("Testing eigen in py3d ...")
+	print("Testing vector in py3d ...")
 
 	print("")
 	print("Testing IntVector ...")

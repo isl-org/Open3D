@@ -2,7 +2,7 @@
 
 Redwood dataset
 -------------------------------------
-This tutorial reads and visualizes a RGBD image of SUN dataset [CHOI2015]_.
+This tutorial reads and visualizes a RGBD image of SUN dataset [Choi2015]_.
 Let's see following tutorial.
 
 .. code-block:: python
@@ -76,7 +76,7 @@ The next lines below
 
 displays two images using ``subplot``:
 
-.. image:: ../../../_static/basic/rgbd_images/redwood_rgbd.png
+.. image:: ../../../_static/Basic/rgbd_images/redwood_rgbd.png
 	:width: 400px
 
 The RGBD image can be transformed into point cloud. This is interesting feature of RGBD image.
@@ -96,7 +96,5 @@ It corresponds to default camera intrinsic matrix of Kinect camera with 640x480 
 Note that ``pcd.transform`` is applied for the ``pcd`` just for visualization purpose.
 This script will display:
 
-.. image:: ../../../_static/basic/rgbd_images/redwood_pcd.png
+.. image:: ../../../_static/Basic/rgbd_images/redwood_pcd.png
 	:width: 400px
-
-.. [CHOI2015] S. Choi, Q.-Y. Zhou, V. Koltun, Robust Reconstruction of Indoor Scenes, CVPR, 2015.
