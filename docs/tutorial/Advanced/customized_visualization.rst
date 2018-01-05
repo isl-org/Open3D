@@ -3,9 +3,6 @@
 Customized visualization
 -------------------------------------
 
-ICP (iterative closest point) is popular method used for aligning two point clouds.
-Open3D supports various ICP methods.
-
 .. code-block:: python
 
 	# src/Python/Tutorial/Advanced/customized_visualization.py

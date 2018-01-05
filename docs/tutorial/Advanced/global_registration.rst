@@ -4,13 +4,11 @@ Global registration
 -------------------------------------
 
 The registration methods (:ref:`registration` and :ref:`colored_point_registration`)
-introduced so far is fit for small amount of misalignment. It is referred as *local* registration.
-However, there is a need to consider more challenging cases
-if the two point clouds are laid down significantly different poses.
-In these case, **local** registration gets stuck at local minima.
+introduced so far is fit for small amount of misalignment. It is often referred as **local** registration.
+In practice, there is a need to consider more challenging cases if the pose of two point clouds are significantly different. In these case, the iteration of **local** registration tempts to be stuck at local minima.
 
-This tutorial introduces **global** registration method that can register point coloud
-regardless how challenge the the initial poses. The example script is below.
+This tutorial introduces **global** registration method that can register two point clouds
+regardless how challenge their initial poses. The example script is shown below.
 
 .. code-block:: python
 
@@ -80,9 +78,10 @@ regardless how challenge the the initial poses. The example script is below.
         print(result_icp)
         draw_registration_result(source, target, result_icp.transformation)
 
-This script reads two point cloud, and challenge the initial pose. The later part of the script
-register point cloud using **global** registration method and refine the alignment using **local**
-registration method.
+This script reads two point clouds, and intentionally challenge the initial pose. The later part of the script
+registers point clouds using a **global** registration method and refine the registration using a **local** registration method.
+
+Let's see the script from the first part.
 
 .. code-block:: python
 
@@ -100,7 +99,7 @@ This code snippet reads two point clouds as source and target.
 The source point cloud is intentionally transformed with custom transformation matrix.
 This script uses ``draw_registration_result`` that is introduced in :ref:`visualize_registration`.
 
-The script displays two point clouds like below:
+The script displays two point clouds like below. This is challenging for ICP based methods.
 
 .. image:: ../../_static/Advanced/global_registration/initial.png
     :width: 400px
@@ -111,15 +110,15 @@ The script displays two point clouds like below:
 Extract geometric feature
 ``````````````````````````````````````
 
-To recover point cloud poses, it is necessary to extract some information from point cloud
-that is not depend on the poses of point cloud. Likewise feature in images, there is
-series of work that extracts pose invariant description from point clouds.
-This is widely referred as **geometric feature**.
+To recover correct poses, it is necessary to extract some information from point cloud
+that is invariant for the any poses of point cloud. Likewise local descriptors in images, there is
+series of work that extracts pose invariant description of point clouds.
+This is widely referred as **geometric feature**, or 3D feature.
 Open3D provides FPFH [Rasu2009]_ as a default geometric feature.
 
-Extracting feature descriptor from very dense point clouds are often prohibited as
-it takes a long time. One good trick for this is to downsample point cloud and extract
-geometric feature from sparse points. The script below implements this trick.
+Extracting feature descriptor from very dense point clouds is often prohibited as
+it takes a long time. One good trick is to downsample point cloud and extract
+geometric feature from downsampled points.
 
 .. code-block:: python
 
@@ -133,9 +132,9 @@ geometric feature from sparse points. The script below implements this trick.
     estimate_normals(target_down, KDTreeSearchParamHybrid(
             radius = 0.1, max_nn = 30))
 
-Please refer for more details.
+Please refer :ref:`voxel_downsampling` and :ref:`vertex_normal_estimation` for more details.
 
-As a next step the script extracts geometric feature for downsampled point cloud
+As a next step, the script extracts geometric feature from downsampled point cloud.
 
 .. code-block:: python
 
@@ -145,8 +144,7 @@ As a next step the script extracts geometric feature for downsampled point cloud
     target_fpfh = compute_fpfh_feature(target_down,
             KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
 
-``source_fpfh`` and ``target_fpfh`` are lists of 33 dimensional descriptors.
-These descriptors are matched using following script
+``source_fpfh`` and ``target_fpfh`` are lists of 33 dimensional descriptors computed for every points. These two descriptors are matched using following script.
 
 
 .. _feature_matching:
@@ -154,11 +152,9 @@ These descriptors are matched using following script
 Feature matching
 ``````````````````````````````````````
 
-Once geometric feature is extracted from point cloud,
-it can be matched to the feature from the other point cloud.
-The feature matching is the problem of determining correct matches from false positives.
-There are many approaches that can determine correct correspondences.
-By default, Open3D supports RANSAC based approach [Choi2015]_ for advanced geometric feature matching.
+Once geometric feature is extracted from point cloud, it can be matched to the feature of the other point cloud.
+The feature matching is a problem of finding correct matches while avoiding many false positives.
+By default, Open3D supports RANSAC based approach [Choi2015]_ for advanced geometric feature matching. Following script matches ``source_fpfh`` and ``target_fpfh``.
 
 .. code-block:: python
 
@@ -177,37 +173,37 @@ By default, Open3D supports RANSAC based approach [Choi2015]_ for advanced geome
 
 The RANSAC is based on following idea
 
-- Match the descriptors of two point clouds and build correspondence set
+- Find a best matching descriptors and build correspondence set
 - Iterate following loop
 
     - sample a few correspondences from the correspondence set
-    - compute transformation matrix using a few correspondences
-    - apply the computed transformation matrix and count inlier points
-    - update output if the computed transformation is better than prior iterations
+    - compute transformation matrix using the sampled correspondences
+    - apply the computed transformation to source point cloud and count inlier points
+    - update output if the computed transformation is better than that of in prior iterations
 
-Function ``registration_ransac_based_on_feature_matching`` takes several arguments. To list,
+Function ``registration_ransac_based_on_feature_matching`` performs RANSAC based matching and takes several arguments. To list:
 
 - source and target point clouds: ``source_down, target_down``
 - n-dimentional feature descriptors: ``source_fpfh, target_fpfh``
 - distance threshold that is used for determining inliers: ``0.075``
-- transform computation method given a set of correspondences ``TransformationEstimationPointToPoint``
-- number of sampling correspondences ``4``
-- a list of correspondence checking criterion
+- a method for computing transformation matrix: ``TransformationEstimationPointToPoint``
+- number of sampling correspondences: ``4``
+- a list of correspondence checking criterion:
 
-    - ``CorrespondenceCheckerBasedOnEdgeLength`` specify edge length of a point set is similar to the other points
-    - ``CorrespondenceCheckerBasedOnDistance`` specify minimum distance when consider two correspondences are adjacent
+    - ``CorrespondenceCheckerBasedOnEdgeLength`` specify affordable length difference between edge from a source point set compared to edge of the target point set
+    - ``CorrespondenceCheckerBasedOnDistance`` specify maximum Euclidean distance to consider transformed points are adjacent to another points
 
-- RANSAC parameters ``RANSACConvergenceCriteria(4000000, 500)``
+- RANSAC parameters: ``RANSACConvergenceCriteria(4000000, 500)``
 
     - maximum allowable iteration is ``4000000``
-    - quickly terminate after ``500`` iteration if all the criterions are met
+    - can terminate after ``500`` iteration if all the criterions are met
 
 The estimated transformation from RANSAC loop is stored in ``result_ransac.transformation``. The script displays following registration.
 
 .. image:: ../../_static/Advanced/global_registration/ransac.png
     :width: 400px
 
-Note that the point clouds are downsampled, and the alignment is not perfect as the transformation is estimated from a few correspondences.
+Note that the purpose of global registration is to get rough initial pose. The point clouds are downsampled, and the alignment is not perfect as the transformation is estimated just from a few feature correspondences.
 
 .. _local_refinement:
 
@@ -234,3 +230,5 @@ The final result is shown below.
 
 .. image:: ../../_static/advanced/global_registration/icp.png
     :width: 400px
+
+For the case where the colored texture alignment is important, point-to-plane ICP can be replaced with :ref:`colored_point_registration`.

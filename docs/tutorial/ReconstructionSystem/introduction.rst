@@ -14,8 +14,6 @@ This is brief introduction of each core module.
 
 **Step 3**, :ref:`reconstruction_system_integrate_scene`: as a final step, the pipeline generates beautiful mesh model of the scene by integrating RGBD sequence and estimated RGBD camera trajectory.
 
-The system includes :ref:`utilities` a python helper functions for utilities.
-
 
 .. _reconstruction_system_dataset:
 

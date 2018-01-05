@@ -97,8 +97,8 @@ visualizes multiple geometries using original color.
 		source_temp.transform(transformation)
 		draw_geometries([source_temp, target])
 
-It is notable that it makes hard copy of source point cloud to make source point cloud intact.
-``draw_geometries`` can take a list of geometries and displays geometries in the list altogether.
+The function makes hard copy of source point cloud to make source point cloud intact.
+Note that ``draw_geometries`` can take a list of geometries and displays geometries in the list altogether.
 
 .. code-block:: python
 
@@ -127,7 +127,7 @@ This script displays below geometry
 Geometric alignment
 ``````````````````````````````````````
 
-The next part of the script shows alignment using :ref:`point_to_plane_icp`.
+The next part of the script shows the alignment result using :ref:`point_to_plane_icp`.
 
 .. code-block:: python
 
@@ -141,7 +141,7 @@ The next part of the script shows alignment using :ref:`point_to_plane_icp`.
 	draw_registration_result_original_color(
 			source, target, result_icp.transformation)
 
-As the point-to-plane ICP does not consider color texture of point cloud, this produces following result.
+As the point-to-plane ICP does not consider color texture of point cloud, this produces following result. In a geometric view point, the two planar point clouds looks well aligned, but it is not optimal as the color texture is not correctly aligned.
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/point_to_plane.png
 	:width: 325px
@@ -151,15 +151,13 @@ As the point-to-plane ICP does not consider color texture of point cloud, this p
 
 [first figure: front view] [second figure: side view]
 
-Geometrically the two planar point clouds are well aligned, but it is not actually true.
-
 
 .. _multi_scale_geometric_color_alignment:
 
 Multi-scale geometric + color alignment
 ``````````````````````````````````````````````
 
-The next part of the tutorial script demos sophisticated colored point cloud registration.
+The next part of the tutorial script demonstrates colored point cloud registration.
 
 .. code-block:: python
 
@@ -199,25 +197,24 @@ The next part of the tutorial script demos sophisticated colored point cloud reg
 This script is implementation of paper [Park2017]_.
 The cost function of this method is linear combination of point-to-plane cost and
 vertex intensity matching cost.
-This simple extension allows to consider geometric as well as photometric assessment for the alignment.
+This simple extension allows to consider geometric as well as photometric assessment.
 
 The script repetitively calls ``registration_colored_icp`` with various scale space.
-The scale space idea is similar to the idea for image alignment:
-images are downsampled, and aligned in lower resolution, and gradually refined in higher image resolution.
-This Multi-scale approach is useful to cover large baseline.
+The scale space idea is similar to multi-scale image alignment:
+two images are downsampled, and aligned in lower resolution, and gradually refined in higher image resolution.
+This multi-scale approach is helpful to handle large baseline.
 
-For handling point clouds the multi-scale idea is implemented as the following workflow.
+For handling point clouds, the multi-scale idea is implemented as follows.
 
-- Set transformation matrix as identity
-- Iterate lower resolution to higher point cloud resolution
+- Set output transformation matrix as identity
+- Iterate from lower resolution to higher resolution
 
-	- resampling point cloud using ``voxel_down_sample``
-	- estimate vertex normal of resampled point using ``estimate_normals``
+	- resampling original point cloud using ``voxel_down_sample``
+	- estimate vertex normal of resampled point cloud using ``estimate_normals``
 	- apply color ICP using ``registration_colored_icp``
-	- update transformation matrix
+	- update output transformation matrix
 
-Refer :ref:`voxel_downsampling` and :ref:`vertex_normal_estimation` for details about basic point cloud operation.
-The script produces following result.
+Refer :ref:`voxel_downsampling` and :ref:`vertex_normal_estimation` for more details about basic point cloud operation. The script produces following result. The planar points are aligned well and texture of point clouds matches.
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/colored.png
 	:width: 325px

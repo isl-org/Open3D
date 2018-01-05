@@ -211,13 +211,13 @@ Batch processing
             eid = min(sid + n_frames_per_fragment, n_files)
             make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
                     fragment_id, n_fragments, intrinsic, with_opencv)
-            optimize_posegraph_for_fragment(path_dataset, fragment_id)
+            optimize_a_posegraph_for_fragment(path_dataset, fragment_id)
             make_mesh_for_fragment(path_dataset, color_files, depth_files,
                     fragment_id, n_fragments, intrinsic)
 
 The functions explained above is called by this main function. The first part of this function reads RGBD camera intrinsic using ``read_pinhole_camera_intrinsic`` if specified by user, and get the RGBD image sequence file list using ``get_rgbd_file_lists``. The number of fragments is computed using the number of RGBD frames. For example, if there is a 1650 frames, this function will make 17 fragments as one fragment is made from 100 frames.
 
-The next for-loop calls function ``make_posegraph_for_fragment``, ``optimize_posegraph_for_fragment``, and ``make_mesh_for_fragment``.
+The next for-loop calls function ``make_posegraph_for_fragment``, ``optimize_a_posegraph_for_fragment``, and ``make_mesh_for_fragment``.
 
 
 Results
@@ -238,7 +238,7 @@ For each fragment, this is a printed message from :ref:`make_fragments_register_
     Fragment 000 / 013 :: RGBD matching between frame : 97 and 98
     Fragment 000 / 013 :: RGBD matching between frame : 98 and 99
 
-The following is a log from ``optimize_posegraph_for_fragment``.
+The following is a log from ``optimize_a_posegraph_for_fragment``.
 
 .. code-block:: shell
 

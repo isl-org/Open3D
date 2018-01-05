@@ -72,18 +72,16 @@ The core function of this script is shown below:
         mesh_name = path_dataset + template_global_mesh
         write_triangle_mesh(mesh_name, mesh, False, True)
 
-Function ``scalable_integrate_rgb_frames`` defines ``ScalableTSDFVolume``. Note that ``ScalableTSDFVolume`` is not limited to 3x3x3 cubic space as it has *scalable* hashing scheme.
+Function ``scalable_integrate_rgb_frames`` defines ``ScalableTSDFVolume``. Note that the volume is not limited to 3x3x3 cubic space as it has *scalable* hashing scheme. The only parameters providing is the unit size of voxels.
 
-The script reads two posegraphs ``pose_graph_fragment`` and ``pose_graph_rgbd``. ``pose_graph_fragment`` has optmized poses of the fragments, and ``pose_graph_rgbd`` has optimized camera trajectory within a fragment.
+The script reads two posegraphs for calculating camera poses. ``pose_graph_fragment`` has optmized poses of the fragments, and ``pose_graph_rgbd`` has optimized camera trajectory within a fragment. ``pose`` corresponds to world-coordinate camera pose for RGBD frame belongs to ``fragment_id`` and ``frame_id``. This pose is used for integrating color and depth frames into TSDF volume using ``volume.integrate()``
 
-``pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose, pose_graph_rgbd.nodes[frame_id].pose)`` computes world-coordinate camera pose for RGBD frame belongs to ``fragment_id`` and ``frame_id``. This pose is used for integrating color and depth frames into TSDF volume using ``volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))``
-
-The mesh is extracted from volume using ``mesh = volume.extract_triangle_mesh()`` and it is written as scene.ply using ``write_triangle_mesh(mesh_name, mesh, False, True)``.
+The mesh is extracted from volume using ``volume.extract_triangle_mesh()`` and it is written as scene.ply using ``write_triangle_mesh()``. There is related tutorial in :ref:`rgbd_integration`.
 
 
 Results
 ``````````````````````````````````````
-This is a printed log from the script.
+This is a printed log from the volume integration script.
 
 .. code-block:: shell
 
@@ -98,7 +96,7 @@ This is a printed log from the script.
     Fragment 013 / 013 :: integrate rgbd frame 1363 (64 of 64).
     Writing PLY: [========================================] 100%
 
-The following images show final scene reconstruction.
+The following images show final scene reconstruction. :)
 
 .. image:: ../../_static/ReconstructionSystem/integrate_scene/scene.png
     :width: 500px

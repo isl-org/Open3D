@@ -22,11 +22,11 @@ Input arguments
         ply_file_names = get_file_list(args.path_dataset + folder_fragment, ".ply")
         make_folder(args.path_dataset + folder_scene)
         register_point_cloud(args.path_dataset, ply_file_names)
-        optimize_posegraph_for_scene(args.path_dataset)
+        optimize_a_posegraph_for_scene(args.path_dataset)
 
 This script runs with ``python make_fragments.py [path]``. [path] should have subfolders *fragments* where ply files and posegraph json files of the fragments are in. This script must run after :ref:`reconstruction_system_make_fragments`.
 
-The main function runs ``register_point_cloud`` and ``optimize_posegraph_for_scene``. These functions register any pairs of fragments and optimize a posegraph.
+The main function runs ``register_point_cloud`` and ``optimize_a_posegraph_for_scene``. These functions register any pairs of fragments and optimize a posegraph.
 
 
 Preprocess point cloud
@@ -292,7 +292,7 @@ The workflow of the main function follows:
     - colored ICP
 
 - Step 4: ``update_posegrph_for_scene``
-- Step 5: ``optimize_posegraph_for_scene``
+- Step 5: ``optimize_a_posegraph_for_scene``
 
 Results
 ``````````````````````````````````````
