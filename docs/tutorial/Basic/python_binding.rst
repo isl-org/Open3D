@@ -12,26 +12,26 @@ This tutorial addresses a script below.
 
 .. code-block:: python
 
-	# src/Python/Tutorial/Basic/python_binding.py
+    # src/Python/Tutorial/Basic/python_binding.py
 
-	import sys
-	import numpy as np
-	sys.path.append("../..")
+    import sys
+    import numpy as np
+    sys.path.append("../..")
 
-	def example_help_function():
-		import py3d as py3d
-		help(py3d)
-		help(py3d.PointCloud)
-		help(py3d.read_point_cloud)
+    def example_help_function():
+        import py3d as py3d
+        help(py3d)
+        help(py3d.PointCloud)
+        help(py3d.read_point_cloud)
 
-	def example_import_function():
-		from py3d import read_point_cloud
-		pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-		print(pcd)
+    def example_import_function():
+        from py3d import read_point_cloud
+        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+        print(pcd)
 
-	if __name__ == "__main__":
-		example_help_function()
-		example_import_function()
+    if __name__ == "__main__":
+        example_help_function()
+        example_import_function()
 
 This scripts has of two functions: ``example_help_function`` and ``example_import_all``
 that show fundamental usage example of Open3D Python module.
@@ -47,10 +47,10 @@ Import py3d module
 
 .. code-block:: python
 
-	def example_import_function():
-		from py3d import read_point_cloud
-		pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-		print(pcd)
+    def example_import_function():
+        from py3d import read_point_cloud
+        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+        print(pcd)
 
 This script imports ``read_point_cloud`` from py3d module.
 This is preferable choice for compact system resource usage.
@@ -62,7 +62,7 @@ To use all functions and classes in py3d,
 
 .. code-block:: shell
 
-	PointCloud with 198835 points.
+    PointCloud with 198835 points.
 
 
 
@@ -76,11 +76,11 @@ Open3D function definitions, input argument, and classes so on. Here is an examp
 
 .. code-block:: python
 
-	def example_help_function():
-		import py3d as py3d
-		help(py3d)
-		help(py3d.PointCloud)
-		help(py3d.read_point_cloud)
+    def example_help_function():
+        import py3d as py3d
+        help(py3d)
+        help(py3d.PointCloud)
+        help(py3d.read_point_cloud)
 
 This script imports ``py3d`` module and defines scope ``py3d``.
 
@@ -92,29 +92,29 @@ Browse py3d
 
 .. code-block:: shell
 
-	Help on module py3d:
+    Help on module py3d:
 
-	NAME
-	    py3d - Python binding of Open3D
+    NAME
+        py3d - Python binding of Open3D
 
-	FILE
-	    /Users/myaccount/Open3D/build/lib/py3d.so
+    FILE
+        /Users/myaccount/Open3D/build/lib/py3d.so
 
-	CLASSES
-	    __builtin__.object
-	        CorrespondenceChecker
-	            CorrespondenceCheckerBasedOnDistance
-	            CorrespondenceCheckerBasedOnEdgeLength
-	            CorrespondenceCheckerBasedOnNormal
-	        DoubleVector
-	        Feature
-	        Geometry
-	            Geometry2D
-	                Image
-	            Geometry3D
-	                PointCloud
-	                TriangleMesh
-	:
+    CLASSES
+        __builtin__.object
+            CorrespondenceChecker
+                CorrespondenceCheckerBasedOnDistance
+                CorrespondenceCheckerBasedOnEdgeLength
+                CorrespondenceCheckerBasedOnNormal
+            DoubleVector
+            Feature
+            Geometry
+                Geometry2D
+                    Image
+                Geometry3D
+                    PointCloud
+                    TriangleMesh
+    :
 
 
 Description of a class in py3d
@@ -124,21 +124,21 @@ The next script, ``help(py3d.PointCloud)`` provides description of ``PointCloud`
 
 .. code-block:: shell
 
-	Help on class PointCloud in module py3d:
+    Help on class PointCloud in module py3d:
 
-	class PointCloud(Geometry3D)
-	 |  Method resolution order:
-	 |      PointCloud
-	 |      Geometry3D
-	 |      Geometry
-	 |      __builtin__.object
-	 |
-	 |  Methods defined here:
-	 |
-	 |  __add__(...)
-	 |      __add__(self: py3d.PointCloud, arg0: py3d.PointCloud) -> py3d.PointCloud
-	 |
-	:
+    class PointCloud(Geometry3D)
+     |  Method resolution order:
+     |      PointCloud
+     |      Geometry3D
+     |      Geometry
+     |      __builtin__.object
+     |
+     |  Methods defined here:
+     |
+     |  __add__(...)
+     |      __add__(self: py3d.PointCloud, arg0: py3d.PointCloud) -> py3d.PointCloud
+     |
+    :
 
 
 Description of a function in py3d
@@ -148,11 +148,11 @@ The last script, ``help(py3d.read_point_cloud)`` provides description of input a
 
 .. code-block:: shell
 
-	Help on built-in function read_point_cloud in module py3d:
+    Help on built-in function read_point_cloud in module py3d:
 
-	read_point_cloud(...)
-	    read_point_cloud(filename: unicode) -> py3d.PointCloud
+    read_point_cloud(...)
+        read_point_cloud(filename: unicode) -> py3d.PointCloud
 
-	    Function to read PointCloud from file
+        Function to read PointCloud from file
 
 As it is shown above, ``read_point_cloud`` takes unicode string for filename and returns ``py3d.PointCloud`` instance.
