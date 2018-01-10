@@ -3,8 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
-//                    Jaesik Park <syncel@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +27,11 @@
 #include "Image.h"
 
 namespace {
-/// Isotropic 2D kernels are seperable: 
+/// Isotropic 2D kernels are seperable:
 /// two 1D kernels are applied in x and y direction.
 const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
 const std::vector<double> Gaussian5 = { 0.0625, 0.25, 0.375, 0.25, 0.0625 };
-const std::vector<double> Gaussian7 = 
+const std::vector<double> Gaussian7 =
 		{ 0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125 };
 const std::vector<double> Sobel31 = { -1.0, 0.0, 1.0 };
 const std::vector<double> Sobel32 = { 1.0, 2.0, 1.0 };
@@ -46,7 +45,7 @@ void Image::Clear()
 	height_ = 0;
 	data_.clear();
 }
-	
+
 bool Image::IsEmpty() const
 {
 	return !HasData();
@@ -108,9 +107,9 @@ template uint16_t * PointerAt<uint16_t>(const Image &image, int u, int v,
 		int ch);
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
-		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/) 
+		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/)
 {
-	// don't need warning message about image type 
+	// don't need warning message about image type
 	// as we call CreateFloatImageFromImage
 	auto output = CreateFloatImageFromImage(depth);
 	for (int y = 0; y < output->height_; y++) {
@@ -259,7 +258,7 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 	return output;
 }
 
-std::shared_ptr<Image> FilterImage(const Image &input, 
+std::shared_ptr<Image> FilterImage(const Image &input,
 		const std::vector<double> dx, const std::vector<double> dy)
 {
 	auto output = std::make_shared<Image>();

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ bool ReadPointCloudFromXYZN(const std::string &filename, PointCloud &pointcloud)
 
 	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
 		if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf",
-				&x, &y, &z, &nx, &ny, &nz) == 6) 
+				&x, &y, &z, &nx, &ny, &nz) == 6)
 		{
 			pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
 			pointcloud.normals_.push_back(Eigen::Vector3d(nx, ny, nz));
@@ -74,7 +74,7 @@ bool WritePointCloudToXYZN(const std::string &filename,
 		const Eigen::Vector3d &point = pointcloud.points_[i];
 		const Eigen::Vector3d &normal = pointcloud.normals_[i];
 		if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n",
-				point(0), point(1), point(2), 
+				point(0), point(1), point(2),
 				normal(0), normal(1), normal(2)) < 0)
 		{
 			PrintWarning("Write XYZN failed: unable to write file.\n");

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	bool has_tri_normal = mesh->HasTriangleNormals();
 	size_t old_triangle_num = mesh->triangles_.size();
 	size_t kt = 0;
-	for (size_t i = 0; i < old_vertex_num; i++) {			// old index		
+	for (size_t i = 0; i < old_vertex_num; i++) {			// old index
 		if (remove_vertex_mask[i] == false) {
 			mesh->vertices_[k] = mesh->vertices_[i];
 			if (has_vert_normal)
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 		mesh->triangles_.resize(kt);
 		if (has_tri_normal) mesh->triangle_normals_.resize(kt);
 	}
-	PrintDebug("[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have been removed.\n", 
+	PrintDebug("[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have been removed.\n",
 			old_vertex_num - k, old_triangle_num - kt);
 	WriteTriangleMesh(out_mesh_file, *mesh);
 	return 1;

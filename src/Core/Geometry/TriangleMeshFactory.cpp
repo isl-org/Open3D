@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename)
 	return mesh;
 }
 
-std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/, 
+std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 		int resolution/* = 20*/)
 {
 	auto mesh_ptr = std::make_shared<TriangleMesh>();
@@ -52,8 +52,8 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 		for (int j = 0; j < 2 * resolution; j++) {
 			double alpha = step * i;
 			double theta = step * j;
-			mesh_ptr->vertices_[2 + 2 * resolution * (i - 1) + j] = 
-					Eigen::Vector3d(sin(alpha) * cos(theta), 
+			mesh_ptr->vertices_[2 + 2 * resolution * (i - 1) + j] =
+					Eigen::Vector3d(sin(alpha) * cos(theta),
 					sin(alpha) * sin(theta), cos(alpha)) * radius;
 		}
 	}
@@ -69,9 +69,9 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 		int base2 = base1 + 2 * resolution;
 		for (int j = 0; j < 2 * resolution; j++) {
 			int j1 = (j + 1) % (2 * resolution);
-			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j, 
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
 					base1 + j1, base1 + j));
-			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j, 
+			mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
 					base2 + j1, base1 + j1));
 		}
 	}
@@ -94,7 +94,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius/* = 1.0*/,
 		for (int j = 0; j < resolution; j++) {
 			double theta = step * j;
 			mesh_ptr->vertices_[2 + resolution * i + j] =
-					Eigen::Vector3d(cos(theta) * radius, sin(theta) * radius, 
+					Eigen::Vector3d(cos(theta) * radius, sin(theta) * radius,
 					height * 0.5 - h_step * i);
 		}
 	}
@@ -190,7 +190,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 	std::shared_ptr<TriangleMesh> mesh_arrow;
 	Eigen::Matrix4d transformation;
 
-	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
+	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size,
 			0.2 * size);
 	mesh_arrow->ComputeVertexNormals();
 	mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
@@ -202,7 +202,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 	mesh_arrow->Transform(transformation);
 	*mesh_frame += *mesh_arrow;
 
-	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
+	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size,
 			0.2 * size);
 	mesh_arrow->ComputeVertexNormals();
 	mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
@@ -214,7 +214,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
 	mesh_arrow->Transform(transformation);
 	*mesh_frame += *mesh_arrow;
 
-	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 
+	mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size,
 			0.2 * size);
 	mesh_arrow->ComputeVertexNormals();
 	mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));

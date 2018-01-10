@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +73,7 @@ public:
 		return std::make_pair(point_set_[0][lines_[i].first],
 				point_set_[1][lines_[i].second]);
 	}
-	
+
 public:
 	std::vector<Eigen::Vector3d> point_set_[2];
 	std::vector<LineSegment> lines_;

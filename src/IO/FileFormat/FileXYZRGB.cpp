@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,7 +74,7 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
 		const Eigen::Vector3d &point = pointcloud.points_[i];
 		const Eigen::Vector3d &color = pointcloud.colors_[i];
 		if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n",
-				point(0), point(1), point(2), 
+				point(0), point(1), point(2),
 				color(0), color(1), color(2)) < 0) {
 			PrintWarning("Write XYZRGB failed: unable to write file.\n");
 			fclose(file);

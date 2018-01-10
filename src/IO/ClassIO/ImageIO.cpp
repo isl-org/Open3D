@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@
 #include <Core/Utility/FileSystem.h>
 
 namespace three{
-	
+
 namespace {
-	
+
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, Image &)>>
 		file_extension_to_image_read_function
@@ -54,7 +54,7 @@ static const std::unordered_map<std::string,
 
 bool ReadImage(const std::string &filename, Image &image)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read Image failed: unknown file extension.\n");
@@ -71,7 +71,7 @@ bool ReadImage(const std::string &filename, Image &image)
 bool WriteImage(const std::string &filename, const Image &image,
 		int quality/* = 90*/)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write Image failed: unknown file extension.\n");

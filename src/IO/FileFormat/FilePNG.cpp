@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 		PrintWarning("Read PNG failed: unable to parse header.\n");
 		return false;
 	}
-	
+
 	// We only support two channel type: gray, and RGB.
 	// There is no alpha channel.
 	// bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
@@ -65,7 +65,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 			(pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
 			(pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
 	SetPNGImageFromImage(image, pngimage);
-	if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 
+	if (png_image_finish_read(&pngimage, NULL, image.data_.data(),
 			0, NULL) == 0) {
 		PrintWarning("Read PNG failed: unable to read file.\n");
 		return false;
@@ -84,7 +84,7 @@ bool WriteImageToPNG(const std::string &filename, const Image &image,
 	memset(&pngimage, 0, sizeof(pngimage));
 	pngimage.version = PNG_IMAGE_VERSION;
 	SetPNGImageFromImage(image, pngimage);
-	if (png_image_write_to_file(&pngimage, filename.c_str(), 0, 
+	if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
 			image.data_.data(), 0, NULL) == 0) {
 		PrintWarning("Write PNG failed: unable to write file.\n");
 		return false;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,8 @@ namespace three {
 
 namespace {
 
-std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>> 
-		InitializeCorrespondenceMap(int width, int height) 
+std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>>
+		InitializeCorrespondenceMap(int width, int height)
 {
 	// initialization: filling with any (u,v) to (-1,-1)
 	auto correspondence_map = std::make_shared<Image>();
@@ -56,7 +56,7 @@ std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>>
 }
 
 inline void AddElementToCorrespondenceMap(
-		Image &correspondence_map, Image &depth_buffer, 
+		Image &correspondence_map, Image &depth_buffer,
 		int u_s, int v_s, int u_t, int v_t, float transformed_d_t) {
 	int exist_u_t, exist_v_t;
 	double exist_d_t;
@@ -77,7 +77,7 @@ inline void AddElementToCorrespondenceMap(
 }
 
 void MergeCorrespondenceMaps(
-		Image &correspondence_map, Image &depth_buffer, 
+		Image &correspondence_map, Image &depth_buffer,
 		Image &correspondence_map_part, Image &depth_buffer_part)
 {
 	for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
@@ -172,7 +172,7 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 }	//	omp critical
 }	//	omp parallel
 #endif
-	
+
 	auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
 	int correspondence_count = CountCorrespondence(*correspondence_map);
 	correspondence->resize(correspondence_count);

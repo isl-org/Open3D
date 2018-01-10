@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,10 @@ class RegistrationResult;
 
 /// Function to align colored point clouds
 /// This is implementation of following paper
-/// J. Park, Q.-Y. Zhou, V. Koltun, 
+/// J. Park, Q.-Y. Zhou, V. Koltun,
 /// Colored Point Cloud Registration Revisited, ICCV 2017
 RegistrationResult RegistrationColoredICP(const PointCloud &source,
-		const PointCloud &target, double max_distance, 
+		const PointCloud &target, double max_distance,
 		const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
 		const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 

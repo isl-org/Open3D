@@ -3,8 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
-//                    Jaesik Park <syncel@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,11 +65,11 @@ public:
 
 public:
 	virtual bool HasData() const {
-		return width_ > 0 && height_ > 0 && 
+		return width_ > 0 && height_ > 0 &&
 				data_.size() == height_ * BytesPerLine();
 	}
 
-	void PrepareImage(int width, int height, int num_of_channels, 
+	void PrepareImage(int width, int height, int num_of_channels,
 			int bytes_per_channel) {
 		width_ = width;
 		height_ = height;
@@ -86,7 +85,7 @@ public:
 	/// Function to access the bilinear interpolated float value of a
 	/// (single-channel) float image
 	std::pair<bool, double> FloatValueAt(double u, double v);
-		
+
 protected:
 	void AllocateDataBuffer() {
 		data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
@@ -126,7 +125,7 @@ T *PointerAt(const Image &image, int u, int v);
 template<typename T>
 T *PointerAt(const Image &image, int u, int v, int ch);
 
-std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth, 
+std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
 		double depth_scale = 1000.0, double depth_trunc = 3.0);
 
 std::shared_ptr<Image> FlipImage(const Image &input);
@@ -165,7 +164,7 @@ typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 		Image::FilterType type);
 
-ImagePyramid CreateImagePyramid(const Image& image, 
+ImagePyramid CreateImagePyramid(const Image& image,
 		size_t num_of_levels, bool with_gaussian_filter = true);
 
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;

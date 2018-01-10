@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
 	Json::Reader reader;
 	bool is_parse_successful = reader.parse(json_stream, root_object);
 	if (is_parse_successful == false) {
-		PrintWarning("Read JSON failed: %s.\n", 
+		PrintWarning("Read JSON failed: %s.\n",
 				reader.getFormattedErrorMessages().c_str());
 		return false;
 	}

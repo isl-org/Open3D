@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -117,7 +117,7 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
 	cinfo.image_width = image.width_;
 	cinfo.image_height = image.height_;
 	cinfo.input_components = image.num_of_channels_;
-	cinfo.in_color_space = 
+	cinfo.in_color_space =
 			(cinfo.input_components == 1 ? JCS_GRAYSCALE : JCS_RGB);
 	jpeg_set_defaults(&cinfo);
 	jpeg_set_quality(&cinfo, quality, TRUE);

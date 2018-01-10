@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
 		eigenvalues(1) = A.trace() - eigenvalues(0) - eigenvalues(2);
 	} else {
 		double q = A.trace() / 3.0;
-		double p2 = sqr((A(0, 0) - q)) + sqr(A(1, 1) - q) + sqr(A(2, 2) - q) + 
+		double p2 = sqr((A(0, 0) - q)) + sqr(A(1, 1) - q) + sqr(A(2, 2) - q) +
 				2 * p1;
 		double p = sqrt(p2 / 6.0);
 		Eigen::Matrix3d B = (1.0 / p) * (A - q * Eigen::Matrix3d::Identity());
@@ -66,8 +66,8 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
 		eigenvalues(1) = q * 3.0 - eigenvalues(0) - eigenvalues(2);
 	}
 
-	Eigen::Vector3d eigenvector = 
-			(A - Eigen::Matrix3d::Identity() * eigenvalues(0)) * 
+	Eigen::Vector3d eigenvector =
+			(A - Eigen::Matrix3d::Identity() * eigenvalues(0)) *
 			(A.col(0) - Eigen::Vector3d(eigenvalues(1), 0.0, 0.0));
 	double len = eigenvector.norm();
 	if (len <= 0.0) {
@@ -151,7 +151,7 @@ bool EstimateNormals(PointCloud &cloud,
 			cloud.normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
 		}
 	}
-	
+
 	return true;
 }
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 		PrintHelp();
 		return 0;
 	}
-	
+
 	std::string match_filename = GetProgramOptionAsString(argc, argv,
 			"--match");
 	std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 			"--sdf_trunc_percentage", 0.01);
 	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
 	SetVerbosityLevel((VerbosityLevel)verbose);
-	
+
 	auto camera_trajectory = CreatePinholeCameraTrajectoryFromFile(
 			log_filename);
 	std::string dir_name = filesystem::GetFileParentDirectory(

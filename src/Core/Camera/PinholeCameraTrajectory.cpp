@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
 {
 	if (value.isObject() == false) {
 		PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
-		return false;		
+		return false;
 	}
 	if (value.get("class_name", "").asString() != "PinholeCameraTrajectory" ||
 			value.get("version_major", 1).asInt() != 1 ||

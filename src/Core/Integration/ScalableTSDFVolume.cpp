@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
 		const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic)
 {
-	if ((image.depth_.num_of_channels_ != 1) || 
+	if ((image.depth_.num_of_channels_ != 1) ||
 			(image.depth_.bytes_per_channel_ != 4) ||
 			(image.depth_.width_ != intrinsic.width_) ||
 			(image.depth_.height_ != intrinsic.height_) ||
@@ -157,7 +157,7 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
 									float r0 = std::fabs(f0);
 									float r1 = std::fabs(f1);
 									Eigen::Vector3d p = p0;
-									p(i) = (p0(i) * r1 + p1(i) * r0) / 
+									p(i) = (p0(i) * r1 + p1(i) * r0) /
 											(r0 + r1);
 									pointcloud->points_.push_back(p);
 									if (with_color_) {
@@ -223,7 +223,7 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
 								if (unit_itr1 == volume_units_.end()) {
 									w[i] = 0.0f;  f[i] = 0.0f;
 								} else {
-									const auto &volume1 = 
+									const auto &volume1 =
 											*unit_itr1->second.volume_;
 									w[i] = volume1.weight_[volume1.IndexOf(
 											idx1)];
@@ -250,11 +250,11 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
 								Eigen::Vector4i edge_index = Eigen::Vector4i(
 										index0(0), index0(1), index0(2), 0) *
 										volume_unit_resolution_ +
-										Eigen::Vector4i(x, y, z, 0) + 
+										Eigen::Vector4i(x, y, z, 0) +
 										edge_shift[i];
 								if (edgeindex_to_vertexindex.find(edge_index) ==
 										edgeindex_to_vertexindex.end()) {
-									edge_to_index[i] = 
+									edge_to_index[i] =
 											(int)mesh->vertices_.size();
 									edgeindex_to_vertexindex[edge_index] =
 											(int)mesh->vertices_.size();
@@ -269,7 +269,7 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
 											edge_to_vert[i][0]]);
 									double f1 = std::abs((double)f[
 											edge_to_vert[i][1]]);
-									pt(edge_index(3)) += f0 * voxel_length_ / 
+									pt(edge_index(3)) += f0 * voxel_length_ /
 											(f0 + f1);
 									mesh->vertices_.push_back(pt);
 									if (with_color_) {
@@ -350,7 +350,7 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p)
 	}
 	const auto &volume0 = *unit_itr->second.volume_;
 	Eigen::Vector3i idx0;
-	Eigen::Vector3d p_grid = (p_locate - index0.cast<double>() * 
+	Eigen::Vector3d p_grid = (p_locate - index0.cast<double>() *
 			volume_unit_length_) / voxel_length_;
 	for (int i = 0; i < 3; i++) {
 		idx0(i) = (int)std::floor(p_grid(i));
@@ -384,8 +384,8 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p)
 		}
 	}
 	return (1 - r(0)) * ( (1 - r(1)) * ((1 - r(2)) * f[0] + r(2) * f[4]) +
-			r(1) * ((1 - r(2)) * f[3] + r(2) * f[7])) + 
-			r(0) * ((1 - r(1)) * ((1 - r(2)) * f[1] + r(2) * f[5]) + 
+			r(1) * ((1 - r(2)) * f[3] + r(2) * f[7])) +
+			r(0) * ((1 - r(1)) * ((1 - r(2)) * f[1] + r(2) * f[5]) +
 			r(1) * ((1 - r(2)) * f[2] + r(2) * f[6]));
 }
 

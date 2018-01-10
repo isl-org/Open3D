@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ std::string GetFileExtensionInLowerCase(const std::string &filename)
 	if (filename_ext.find_first_of("/\\") != std::string::npos) {
 		return "";
 	}
-	std::transform(filename_ext.begin(), filename_ext.end(), 
+	std::transform(filename_ext.begin(), filename_ext.end(),
 			filename_ext.begin(), ::tolower);
 	return filename_ext;
 }
@@ -192,7 +192,7 @@ bool ListFilesInDirectory(const std::string &directory,
 		const std::string file_name = ent->d_name;
 		if (file_name[0] == '.')
 			continue;
-		std::string full_file_name = GetRegularizedDirectoryName(directory) + 
+		std::string full_file_name = GetRegularizedDirectoryName(directory) +
 				file_name;
 		if (stat(full_file_name.c_str(), &st) == -1)
 			continue;
@@ -211,7 +211,7 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 		return false;
 	}
 	std::string ext_in_lower = extname;
-	std::transform(ext_in_lower.begin(), ext_in_lower.end(), 
+	std::transform(ext_in_lower.begin(), ext_in_lower.end(),
 			ext_in_lower.begin(), ::tolower);
 	filenames.clear();
 	for (const auto &fn : all_files) {

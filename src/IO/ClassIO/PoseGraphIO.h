@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ namespace three {
 
 /// The general entrance for reading a PoseGraph from a file
 /// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful. 
+/// \return If the read function is successful.
 bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 
 /// The general entrance for writing a PoseGraph to a file

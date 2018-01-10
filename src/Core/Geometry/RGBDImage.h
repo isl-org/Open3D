@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncel@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,8 @@
 
 namespace three {
 
-/// RGBDImage is for a pair of registered color and depth images, 
-/// viewed from the same view, of the same resolution. 
+/// RGBDImage is for a pair of registered color and depth images,
+/// viewed from the same view, of the same resolution.
 /// If you have other format, convert it first.
 class RGBDImage
 {
@@ -40,8 +40,8 @@ public:
 	RGBDImage() {};
 	RGBDImage(const Image &color, const Image &depth) :
 			color_(color), depth_(depth) {};
-	~RGBDImage() 
-	{ 
+	~RGBDImage()
+	{
 		color_.Clear();
 		depth_.Clear();
 	};
@@ -53,7 +53,7 @@ public:
 
 /// Factory function to create an RGBD Image from color and depth Images
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-		const Image &color, const Image &depth, 
+		const Image &color, const Image &depth,
 		double depth_scale = 1000.0, double depth_trunc = 3.0,
 		bool convert_rgb_to_intensity = true);
 
@@ -84,7 +84,7 @@ RGBImagePyramid FilterRGBDImagePyramid(
 		const RGBImagePyramid &rgbd_image_pyramid, Image::FilterType type);
 
 RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage &rgbd_image,
-		size_t num_of_levels, 
+		size_t num_of_levels,
 		bool with_gaussian_filter_for_color = true,
 		bool with_gaussian_filter_for_depth = false);
 

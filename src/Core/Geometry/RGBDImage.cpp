@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncel@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@ RGBImagePyramid FilterRGBDImagePyramid(
 }
 
 RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
-		size_t num_of_levels, 
+		size_t num_of_levels,
 		bool with_gaussian_filter_for_color/* = true */,
 		bool with_gaussian_filter_for_depth/* = false */)
 {

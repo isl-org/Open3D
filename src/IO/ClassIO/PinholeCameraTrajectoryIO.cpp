@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three{
-	
+
 namespace {
 
 bool ReadPinholeCameraTrajectoryFromJSON(const std::string &filename,
@@ -67,7 +67,7 @@ static const std::unordered_map<std::string,
 bool ReadPinholeCameraTrajectory(const std::string &filename,
 		PinholeCameraTrajectory &trajectory)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read PinholeCameraTrajectory failed: unknown file extension.\n");
@@ -85,7 +85,7 @@ bool ReadPinholeCameraTrajectory(const std::string &filename,
 bool WritePinholeCameraTrajectory(const std::string &filename,
 		const PinholeCameraTrajectory &trajectory)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write PinholeCameraTrajectory failed: unknown file extension.\n");

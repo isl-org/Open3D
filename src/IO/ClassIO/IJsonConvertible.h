@@ -3,8 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
-//                    Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,21 +41,21 @@ class IJsonConvertible
 {
 public:
 	virtual ~IJsonConvertible() {}
-	
+
 public:
 	virtual bool ConvertToJsonValue(Json::Value &value) const = 0;
 	virtual bool ConvertFromJsonValue(const Json::Value &value) = 0;
 
 public:
-	static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec, 
+	static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
 			const Json::Value &value);
 	static bool EigenVector3dToJsonArray(const Eigen::Vector3d &vec,
 			Json::Value &value);
-	static bool EigenVector4dFromJsonArray(Eigen::Vector4d &vec, 
+	static bool EigenVector4dFromJsonArray(Eigen::Vector4d &vec,
 			const Json::Value &value);
 	static bool EigenVector4dToJsonArray(const Eigen::Vector4d &vec,
 			Json::Value &value);
-	static bool EigenMatrix3dFromJsonArray(Eigen::Matrix3d &mat, 
+	static bool EigenMatrix3dFromJsonArray(Eigen::Matrix3d &mat,
 			const Json::Value &value);
 	static bool EigenMatrix3dToJsonArray(const Eigen::Matrix3d &mat,
 			Json::Value &value);

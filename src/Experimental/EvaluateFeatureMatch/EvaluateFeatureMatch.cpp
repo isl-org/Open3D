@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ class KDTreeFlannFeature
 public:
 	KDTreeFlannFeature() {}
 	~KDTreeFlannFeature() {}
-	
+
 public:
 	bool LoadFromFile(const std::string &filename) {
 		FILE* fid = fopen(filename.c_str(), "rb");
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		PrintHelp();
 		return 0;
 	}
-	
+
 	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
 	SetVerbosityLevel((VerbosityLevel)verbose);
 	std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 				(int)source.points_.size(),
 				correspondence_num * 100.0 / source.points_.size());
 	}
-	PrintWarning("Total %d out of %d (%.2f%% coverage).\n\n", 
+	PrintWarning("Total %d out of %d (%.2f%% coverage).\n\n",
 			total_correspondence_num, total_point_num,
 			total_correspondence_num * 100.0 / total_point_num);
 
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(static) num_threads(16)
 #endif
 		for (auto i = 0; i < pcd_names.size(); i++) {
-			feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" + 
+			feature_trees[i].LoadFromFile(pcd_dirname + "cloud_bin_" +
 					std::to_string(i) + "." + feature);
 		}
 		PrintInfo("All KDTrees built.\n");
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 					correspondence_num, (int)source.points_.size(),
 					positive * 100.0 / correspondence_num);
 		}
-		PrintWarning("Total %d out of %d out of %d (%.2f%% w.r.t. correspondences).\n\n", 
+		PrintWarning("Total %d out of %d out of %d (%.2f%% w.r.t. correspondences).\n\n",
 				total_positive, total_correspondence_num, total_point_num,
 				total_positive * 100.0 / total_correspondence_num);
 		WriteBinaryResult(pcd_dirname + feature + ".bin", true_dis);
