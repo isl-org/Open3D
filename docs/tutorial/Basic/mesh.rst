@@ -9,12 +9,12 @@ This tutorial introduces basic usage regarding mesh in Open3D.
 
     # src/Python/Tutorial/Basic/mesh.py
 
-    import sys
-    import numpy as np
-    sys.path.append("../..")
-    from py3d import *
+        import sys
+        import numpy as np
+        sys.path.append("../..")
+        from py3d import *
 
-    if __name__ == "__main__":
+        if __name__ == "__main__":
 
         print("Testing mesh in py3d ...")
         mesh = read_triangle_mesh("../../TestData/knot.ply")
@@ -37,9 +37,10 @@ This tutorial introduces basic usage regarding mesh in Open3D.
         print("We make a partial mesh of only the first half triangles.")
         mesh1 = copy.deepcopy(mesh)
         mesh1.triangles = Vector3iVector(
-                np.asarray(mesh1.triangles)[:len(mesh1.triangles)/2, :])
+                np.asarray(mesh1.triangles)[:len(mesh1.triangles)//2, :])
         mesh1.triangle_normals = Vector3dVector(
-                np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals)/2, :])
+                np.asarray(mesh1.triangle_normals)
+                [:len(mesh1.triangle_normals)//2, :])
         print(mesh1.triangles)
         draw_geometries([mesh1])
 
@@ -164,9 +165,10 @@ The next script generates a new mesh with half of original surfaces.
     print("We make a partial mesh of only the first half triangles.")
     mesh1 = copy.deepcopy(mesh)
     mesh1.triangles = Vector3iVector(
-            np.asarray(mesh1.triangles)[:len(mesh1.triangles)/2, :])
+            np.asarray(mesh1.triangles)[:len(mesh1.triangles)//2, :])
     mesh1.triangle_normals = Vector3dVector(
-            np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals)/2, :])
+            np.asarray(mesh1.triangle_normals)
+            [:len(mesh1.triangle_normals)//2, :])
     print(mesh1.triangles)
     draw_geometries([mesh1])
 
@@ -177,7 +179,7 @@ The next line assigns ``mesh1.triangles`` using half of triangles of the origina
 It uses following workflow.
 
 1. Transform ``mesh1.triangles`` into numpy array using ``np.asarray()``.
-2. Selects the first half of numpy array using ``[:len(mesh1.triangles)/2, :]``
+2. Selects the first half of numpy array using ``[:len(mesh1.triangles)//2, :]``
 3. Transform numpy array into vector of vectors used for Open3D. ``Vector3iVector()`` constructor used for this purpose here.
 4. Assign instance of ``Vector3iVector()`` to ``mesh1``
 
