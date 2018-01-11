@@ -3,8 +3,7 @@
 Point Cloud
 -------------------------------------
 
-This tutorial address basic usage regarding point cloud.
-Consider the Python code below:
+This tutorial demonstrates basic usage of a point cloud.
 
 .. code-block:: python
 
@@ -44,14 +43,12 @@ Consider the Python code below:
         draw_geometries([chair])
         print("")
 
-This script addresses basic operations for point cloud: voxel downsampling, point normal estimation, and cropping.
-Let's take a look one by one.
-
-
 .. _visualize_point_cloud:
 
 Visualize point cloud
 =====================================
+
+The first part of the tutorial reads a point cloud and visualizes it.
 
 .. code-block:: python
 
@@ -61,40 +58,32 @@ Visualize point cloud
     print(np.asarray(pcd.points))
     draw_geometries([pcd])
 
-Function ``read_point_cloud`` reads a point cloud from a file. This function detects the extension name of the file and tries its best to decode the file into a point cloud. Current supported extension names include: pcd, ply, xyz, xyzrgb, xyzn, pts.
+``read_point_cloud`` reads a point cloud from a file. It tries to decode the file based on the extension name. Current supported extension names include: ``pcd``, ``ply``, ``xyz``, ``xyzrgb``, ``xyzn``, ``pts``.
 
 ``draw_geometries`` visualizes the point cloud.
 Use mouse/trackpad to see the geometry from different view point.
-Below window will appear twice:
 
 .. image:: ../../_static/Basic/pointcloud/scene.png
     :width: 400px
 
-It looks like dense surface, but it is point cloud.
-Press :kbd:`-` key for several times. It becomes:
+It looks like a dense surface, but it is actually a point cloud rendered as surfels. The GUI supports various keyboard functions. One of them the :kbd:`-` key to reduce the size of the points (surfels). Press it multiple times, the visualization becomes:
 
 .. image:: ../../_static/Basic/pointcloud/scene_small.png
     :width: 400px
 
-:kbd:`-` key is a helpful friend for decreasing the size of visualized points.
+.. note:: Press :kbd:`h` key to print out a complete list of keyboard instructions for the GUI. For more information of the visualization GUI, refer to :ref:`visualization` and :ref:`customized_visualization`.
 
+.. note:: On OS X, the GUI window may not receive keyboard event. In this case, try to launch Python with ``pythonw`` instead of ``python``.
 
 .. _voxel_downsampling:
 
 Voxel downsampling
 =====================================
 
-One of the most basic geometric operation with point cloud is voxel downsampling.
-It can reduce number of points by using a regular voxel grid. The pseudo algorithm is:
+Voxel downsampling uses a regular voxel grid to create a roughly uniformly downsampled point cloud from an input point cloud. It is often used as a pre-processing step for many point cloud processing tasks. The algorithm operates in two steps:
 
-1. Points are assigned for corresponding voxel grid.
-2. Voxel downsampling outputs a averaged point for each voxel.
-
-Voxel downsampling is very important and useful tool for point cloud pre-processing.
-Consider aligned point clouds. The points are dense for overlapping part and sparse for the non-overlapping part.
-Voxel downsampling helps points to be evenly distributed as it produces only a single point from a single voxel.
-
-Below script performs voxel downsampling for point cloud.
+1. Points are bucketed into voxels.
+2. Each occupied voxel generates exact one point by averaging all points inside.
 
 .. code-block:: python
 
@@ -102,22 +91,17 @@ Below script performs voxel downsampling for point cloud.
     downpcd = voxel_down_sample(pcd, voxel_size = 0.05)
     draw_geometries([downpcd])
 
-For ``voxel_down_sample``, it is necessary to specify the unit voxel size with ``voxel_size = 0.05``.
-Our example point cloud has metric unit. 0.05 means 5cm.
-As a result, ``downpcd`` has sparser point cloud than original point cloud.
-
-This is a downsampled point cloud:
+This is the downsampled point cloud:
 
 .. image:: ../../_static/Basic/pointcloud/downsampled.png
     :width: 400px
-
 
 .. _vertex_normal_estimation:
 
 Vertex normal estimation
 =====================================
 
-Another basic operation for point cloud is computing point normal. Take a look at this script:
+Another basic operation for point cloud is point normal estimation.
 
 .. code-block:: python
 
@@ -127,28 +111,19 @@ Another basic operation for point cloud is computing point normal. Take a look a
     draw_geometries([downpcd])
     print("")
 
-``estimate_normals`` computes normal for every points.
-The function finds adjacent points and calculate the principal axis of points using covariance analysis.
+``estimate_normals`` computes normal for every points. The function finds adjacent points and calculate the principal axis of points using covariance analysis. The function takes an instance of ``KDTreeSearchParamHybrid`` class as an arguement. The two key arguments ``radius = 0.1`` and ``max_nn = 30`` specifies search radius and maximum nearest neighbor. It has 10cm of search radius, and only considers up to 30 neighbors to save computation time.
 
-The function takes an instance of ``KDTreeSearchParamHybrid`` class as an arguement.
-The two key arguments ``radius = 0.1`` and ``max_nn = 30`` specifies search radius and maximum nearest neighbor.
-It has 10cm of search radius, and only considers up to 30 neighbors to save computation time.
+.. note:: The covariance analysis algorithm produces two opposite directions as normal candidates. Without knowing the global structure of the geometry, both can be correct. This is known as the normal orientation problem. Open3D tries to orient the normal to align with the original normal if it exists. Otherwise, Open3D does a random guess. Further orientation functions such as ``orient_normals_to_align_with_direction`` and ``orient_normals_towards_camera_location`` need to be called if the orientation is a concern.
 
-The point cloud has normal direction now.
-Once ``draw_geometries`` draws geometry, press :kbd:`n` key to see point normal.
+Use ``draw_geometries`` to visualize the point cloud and press :kbd:`n` to see point normal. Key :kbd:`-` and key :kbd:`+` can be used to control the length of the normal.
 
 .. image:: ../../_static/Basic/pointcloud/downsampled_normal.png
     :width: 400px
-
-You can use :kbd:`-` or :kbd:`+` key to increase or decrease length of black needles representing normal direction.
-
 
 .. _crop_point_cloud:
 
 Crop point cloud
 =====================================
-
-Another example is point cloud cropping. See this script:
 
 .. code-block:: python
 
@@ -159,9 +134,7 @@ Another example is point cloud cropping. See this script:
     print("")
 
 ``read_selection_polygon_volume`` reads a json file that specifies polygon selection area.
-``vol.crop_point_cloud(pcd)`` filters out points.
-
-This will remain only the chair in the scene.
+``vol.crop_point_cloud(pcd)`` filters out points. Only the chair remains.
 
 .. image:: ../../_static/Basic/pointcloud/crop.png
     :width: 400px
@@ -171,8 +144,6 @@ This will remain only the chair in the scene.
 Paint point cloud
 =====================================
 
-The last script block paints the point cloud with yellow color.
-
 .. code-block:: python
 
     print("Paint chair")
@@ -180,10 +151,7 @@ The last script block paints the point cloud with yellow color.
     draw_geometries([chair])
     print("")
 
-``paint_uniform_color`` paints all the points to be specified color.
-The function accepts a list of red, green, and blue intensity in [0,1] range.
-
-The chair becomes yellow:
+``paint_uniform_color`` paints all the points to a uniform color. The color is in RGB space, [0, 1] range.
 
 .. image:: ../../_static/Basic/pointcloud/crop_color.png
     :width: 400px

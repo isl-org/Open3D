@@ -172,7 +172,7 @@ Make a fragment mesh
         mesh.compute_vertex_normals()
         return mesh
 
-Once the posegraph is made by ``make_posegraph_for_fragment``, this function is used for integrating RGBD frames into TSDF volume. The basic idea is the same as :ref:`rgbd_integration`. It defines 3x3x3 cubic with 512x512x512 resolution with color. The function makes a RGBD frame ``rgbd``, retrieve estimated camera pose ``pose``. It is integrated into the TSDF volume ``volume.integrate()``. The colored mesh is extracted by ``volume.extract_triangle_mesh``.
+Once the posegraph is made by ``make_posegraph_for_fragment``, this function is used for integrating RGBD frames into TSDF volume. The basic idea is the same as :ref:`rgbd_integration`. It defines scalable space with a unit voxel length of 3/512m. The function makes a RGBD frame ``rgbd``, retrieve estimated camera pose ``pose``. It is integrated into the TSDF volume ``volume.integrate()``. The colored mesh is extracted by ``volume.extract_triangle_mesh``.
 
 This function is called by following script.
 

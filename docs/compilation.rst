@@ -16,7 +16,7 @@ We use `pybind11 <https://github.com/pybind/pybind11>`_ to build the Python bind
 
     cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-python-executable> ../src
 
-If you do not want Python binding, turn off the compilation options ``Open3D_BUILD_PYTHON_BINDING`` and ``Open3D_BUILD_PYTHON_BINDING_TESTS``.
+Trouble shooting Python binding issues can also refer to `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_. If you do not want Python binding, turn off the compilation options ``Open3D_BUILD_PYTHON_BINDING`` and ``Open3D_BUILD_PYTHON_BINDING_TESTS``.
 
 Dependencies
 ================
@@ -40,7 +40,7 @@ The default LLVM compiler on OS X does not support OpenMP. A workaround is to in
 
     brew install gcc --without-multilib
     cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ../src
-    make -j12
+    make -j
 
 .. note:: This workaround has some compatibility issues with the source code of GLFW included in ``src/External``. Make sure Open3D is linked against GLFW installed on the OS.
 

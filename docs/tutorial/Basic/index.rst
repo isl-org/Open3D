@@ -1,8 +1,7 @@
 Basic
 ===================================================================
 
-This is series of basic tutorials for Open3D.
-It is recommended to go over this tutorial in following order.
+This page includes a number of basic functions using Open3D Python interface.
 
 .. toctree::
 

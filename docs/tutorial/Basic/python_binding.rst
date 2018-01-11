@@ -3,12 +3,7 @@
 Python binding
 -------------------------------------
 
-This tutorial introduces how to import Open3D module in Python environment.
-If Open3D is successfully compiled with Python binding option,
-py3d.so should be visible under Open3D build folder.
-If it is not, please go over :ref:`python_binding`.
-
-This tutorial addresses a script below.
+If Open3D is successfully compiled with Python binding, it will create a Python library with name ``py3d``. Typically, you will find a file ``py3d.so`` in ``build/lib`` directory. This tutorial shows how to import ``py3d`` module and print out help information. For trouble shooing, see :ref:`python_binding`.
 
 .. code-block:: python
 
@@ -34,11 +29,8 @@ This tutorial addresses a script below.
         example_import_function()
 
 This scripts has of two functions: ``example_help_function`` and ``example_import_all``
-that show fundamental usage example of Open3D Python module.
-In the heading, it uses ``sys.path.append()`` to refer the path where py3d.so is located.
-
-Let's consider each function from now on.
-
+that show very basic usage of Open3D Python module.
+In the heading, it uses ``sys.path.append()`` to refer the path where ``py3d.so`` is located.
 
 .. _import_py3d_module:
 
@@ -52,18 +44,11 @@ Import py3d module
         pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
         print(pcd)
 
-This script imports ``read_point_cloud`` from py3d module.
-This is preferable choice for compact system resource usage.
-To use all functions and classes in py3d,
-``from py3d import *`` should be placed in heading of a Python script.
+This imports ``read_point_cloud`` function from ``py3d`` module. It reads a point cloud file and returns an instance of ``PointCloud`` class. ``print(pcd)`` prints brief information of the point cloud:
 
-``read_point_cloud`` reads point cloud file and returns instance of ``PointCloud`` class, namely ``pcd``.
-``print(pcd)`` prints brief information of ``pcd`` like below:
-
-.. code-block:: shell
+.. code-block:: sh
 
     PointCloud with 198835 points.
-
 
 
 .. _using_builtin_help_function:
@@ -71,8 +56,7 @@ To use all functions and classes in py3d,
 Using built-in help function
 =====================================
 
-It is highly recommended to use Python built-in ``help`` function to browse
-Open3D function definitions, input argument, and classes so on. Here is an example.
+It is recommended to use Python built-in ``help`` function to get definitions and instructions of Open3D functions and classes. For example,
 
 .. code-block:: python
 
@@ -82,15 +66,13 @@ Open3D function definitions, input argument, and classes so on. Here is an examp
         help(py3d.PointCloud)
         help(py3d.read_point_cloud)
 
-This script imports ``py3d`` module and defines scope ``py3d``.
-
 
 Browse py3d
 ``````````````````````````````````````
 
-``help(py3d)`` prints documents of ``py3d`` module like below:
+``help(py3d)`` prints documents of ``py3d`` module.
 
-.. code-block:: shell
+.. code-block:: sh
 
     Help on module py3d:
 
@@ -120,9 +102,9 @@ Browse py3d
 Description of a class in py3d
 ``````````````````````````````````````
 
-The next script, ``help(py3d.PointCloud)`` provides description of ``PointCloud`` class.
+``help(py3d.PointCloud)`` provides description of ``PointCloud`` class.
 
-.. code-block:: shell
+.. code-block:: sh
 
     Help on class PointCloud in module py3d:
 
@@ -144,9 +126,9 @@ The next script, ``help(py3d.PointCloud)`` provides description of ``PointCloud`
 Description of a function in py3d
 ``````````````````````````````````````
 
-The last script, ``help(py3d.read_point_cloud)`` provides description of input argument and return type of ``read_point_cloud`` function.
+``help(py3d.read_point_cloud)`` provides description of input argument and return type of ``read_point_cloud`` function.
 
-.. code-block:: shell
+.. code-block:: sh
 
     Help on built-in function read_point_cloud in module py3d:
 
@@ -154,5 +136,3 @@ The last script, ``help(py3d.read_point_cloud)`` provides description of input a
         read_point_cloud(filename: unicode) -> py3d.PointCloud
 
         Function to read PointCloud from file
-
-As it is shown above, ``read_point_cloud`` takes unicode string for filename and returns ``py3d.PointCloud`` instance.
