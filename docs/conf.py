@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Open3D'
-copyright = u'2017, Qianyi Zhou and Jaesik Park'
+copyright = u'2018, Qianyi Zhou and Jaesik Park'
 author = u'Qianyi Zhou and Jaesik Park'
 
 # The version info for the project you're documenting, acts as replacement for
