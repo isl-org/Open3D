@@ -20,6 +20,7 @@ import copy
 def pose_estimation(source_rgbd_image, target_rgbd_image,
 		pinhole_camera_intrinsic, debug_draw_correspondences):
 	success = False
+	trans = np.identity(4)
 
 	# transform double array to unit8 array
 	color_cv_s = np.uint8(np.asarray(source_rgbd_image.color)*255.0)
@@ -30,6 +31,8 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 			nfeatures = 100, patchSize = 31) # to save time
 	[kp_s, des_s] = orb.detectAndCompute(color_cv_s, None)
 	[kp_t, des_t] = orb.detectAndCompute(color_cv_t, None)
+	if len(kp_s) is 0 or len(kp_t) is 0:
+		return success, trans
 
 	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 	matches = bf.match(des_s,des_t)
@@ -57,6 +60,9 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
 	pts_t_int = np.int32(pts_t + 0.5)
 	[E, mask] = cv2.findEssentialMat(pts_s_int, pts_t_int, focal=focal_input,
 			pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.995, threshold=1.0)
+	if mask is None:
+		return success, trans
+
 	# inlier points after 5pt algorithm
 	if debug_draw_correspondences:
 		draw_correspondences(np.asarray(source_rgbd_image.color),

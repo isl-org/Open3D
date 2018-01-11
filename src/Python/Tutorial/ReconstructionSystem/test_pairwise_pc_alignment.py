@@ -39,15 +39,15 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 	if (registration_type == "color"):
 		print("RegistrationPointCloud - color ICP")
 		(transformation_icp, information_icp) = \
-				register_colored_point_cloud_ICP(
+				register_colored_point_cloud_icp(
 				source_down, target_down, transformation_init)
 	else:
 		print("RegistrationPointCloud - ICP")
 		(transformation_icp, information_icp) = \
-				register_point_cloud_ICP(
+				register_point_cloud_icp(
 				source_down, target_down, transformation_init)
 	if draw_result:
-		DrawRegistrationResultOriginalColor(source_down, target_down,
+		draw_registration_result_original_color(source_down, target_down,
 				transformation_icp)
 
 
