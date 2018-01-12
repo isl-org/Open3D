@@ -361,7 +361,7 @@ void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
 	PrintDebug("CompensateReferencePoseGraphNode : reference : %d\n",
 			reference_node);
 	int n_nodes = (int)pose_graph_new.nodes_.size();
-	if (reference_node < 0 || reference_node > n_nodes) {
+	if (reference_node < 0 || reference_node >= n_nodes) {
 		return;
 	} else {
 		Eigen::Matrix4d compensation =
