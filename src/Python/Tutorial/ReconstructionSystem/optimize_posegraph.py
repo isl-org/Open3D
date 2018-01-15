@@ -8,7 +8,6 @@ sys.path.append("../Utility")
 from py3d import *
 from common import *
 
-
 def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 		max_correspondence_distance):
 	# to display messages from global_optimization
@@ -38,4 +37,4 @@ def optimize_posegraph_for_scene(path_dataset):
 	pose_graph_optmized_name = path_dataset + \
 			template_global_posegraph_optimized
 	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
-			max_correspondence_distance = 0.03)
+			max_correspondence_distance = 0.075)

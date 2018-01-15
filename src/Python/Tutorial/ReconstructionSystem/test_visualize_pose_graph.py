@@ -44,9 +44,11 @@ if __name__ == "__main__":
 
 	for edge in pose_graph.edges:
 		print("%d-%d" % (edge.source_node_id, edge.target_node_id))
-		if edge.source_node_id == args.source_id and \
-		 		edge.target_node_id == args.target_id:
+		# if edge.source_node_id == args.source_id and \
+		#  		edge.target_node_id == args.target_id:
 		# if True:
+		# if edge.source_node_id > 3:
+		if False:
 			print("PoseGraphEdge %d-%d" % \
 					(edge.source_node_id, edge.target_node_id))
 			source = read_point_cloud(ply_file_names[edge.source_node_id])
@@ -54,3 +56,13 @@ if __name__ == "__main__":
 			target = read_point_cloud(ply_file_names[edge.target_node_id])
 			target_down = voxel_down_sample(target, 0.05)
 			draw_registration_result(source, target, edge.transformation)
+
+	pcds = []
+	for i in range(len(pose_graph.nodes)):
+	# for i in range(10):
+		pcd = read_point_cloud(ply_file_names[i])
+		pcd_down = voxel_down_sample(pcd, 0.05)
+		pcd.transform(pose_graph.nodes[i].pose)
+		print(np.linalg.inv(pose_graph.nodes[i].pose))
+		pcds.append(pcd)
+	draw_geometries(pcds)
