@@ -345,7 +345,7 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	if (n_edges > 0) {
 		// see Section 5 in [Choi et al 2015]
 		average_number_of_correspondences /= (double)n_edges;
-		double line_process_weight = 1.0 *
+		double line_process_weight = 2.0 *
 				pow(option.max_correspondence_distance_, 2) *
 				average_number_of_correspondences;
 		return line_process_weight;
