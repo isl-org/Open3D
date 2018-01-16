@@ -46,7 +46,8 @@ def get_file_list(path, extension=None):
 def get_rgbd_file_lists(path_dataset):
 	path_color = path_dataset + "/image/"
 	path_depth = path_dataset + "/depth/"
-	color_files = get_file_list(path_color, ".png")
+	color_files = get_file_list(path_color, ".jpg") + \
+			get_file_list(path_color, ".png")
 	depth_files = get_file_list(path_depth, ".png")
 	return color_files, depth_files
 
