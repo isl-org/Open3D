@@ -1,10 +1,9 @@
 .. _registration:
 
-Registration
+ICP Registration
 -------------------------------------
 
-ICP (iterative closest point) is the popular method used for aligning two point clouds.
-This tutorial demonstrates point-to-point and point-to-plane ICP.
+This tutorial demonstrates the ICP (Iterative Closest Point) registration algorithm. It  has been a mainstay of geometric registration in both research and industry for many years. The input are two point clouds and an initial transformation that roughly aligns the source point cloud to the target point cloud. The output is a refined transformation that tightly aligns the two point clouds. A helper function ``draw_registration_result`` visualizes the alignment during the registration process. In this tutorial, we show two ICP variants, the point-to-point ICP and the point-to-plane ICP [Rusinkiewicz2001]_.
 
 .. code-block:: python
 
@@ -51,15 +50,9 @@ This tutorial demonstrates point-to-point and point-to-plane ICP.
         print("")
         draw_registration_result(source, target, reg_p2l.transformation)
 
-The tutorial script reads two point clouds (namely source and target),
-and align them.
-This script has a function ``draw_registration_result``
-for visualizing aligned point clouds.
-
-
 .. _visualize_registration:
 
-Visualize registration
+Helper visualization function
 =====================================
 
 .. code-block:: python
@@ -72,12 +65,12 @@ Visualize registration
         source_temp.transform(transformation)
         draw_geometries([source_temp, target_temp])
 
-For better visualization, the function paints yellow color for the source
-and paints cyan color for the target point cloud.
-Note that the function utilizes ``copy.deepcopy`` to make hardcopies of two point clouds.
-Without making hardcopies, ``transform`` or ``paint_uniform_color`` method
-will transform original point clod, which is not an appropriate for
-the visualization function.
+This function visualizes a target point cloud, and a source point cloud transformed with an alignment transformation. The target point cloud and the source point cloud are painted with cyan and yellow colors respectively. The more and tighter the two point clouds overlap with each other, the better the alignment result is.
+
+.. note:: Since functions ``transform`` and ``paint_uniform_color`` change the point cloud, we call ``copy.deepcopy`` to make copies and protect the original point clouds.
+
+Input
+===================
 
 .. code-block:: python
 
@@ -91,12 +84,12 @@ the visualization function.
                 [0.0, 0.0, 0.0, 1.0]])
     draw_registration_result(source, target, trans_init)
 
-This script will show the following initial alignment using ``trans_init``.
+This script reads source point cloud and target point cloud from two files. A rough transformation is given.
+
+.. note:: The initial alignment is usually obtained by a global registration algorithm. See :ref:`global_registration` for examples.
 
 .. image:: ../../_static/Basic/icp/initial.png
     :width: 400px
-
-``evaluate_registration`` is used for displaying how the alignment is good or bad.
 
 .. code-block:: python
 
@@ -105,36 +98,31 @@ This script will show the following initial alignment using ``trans_init``.
             threshold, trans_init)
     print(evaluation)
 
-This script prints the following:
+Function ``evaluate_registration`` calculates two main metrics. ``fitness`` measures the overlapping area (# of inlier correspondences / # of points in target). Higher the better. ``inlier_rmse`` measures the RMSE of all inlier correspondences. Lower the better.
 
-.. code-block:: shell
+.. code-block:: sh
 
     Initial alignment
     RegistrationResult with fitness = 0.174723, inlier_rmse = 0.011771,
     and correspondence_set size of 34741
     Access transformation to get result.
 
-This message indicates 34741 points are overlapped.
-Let's align these point clouds and get more number of overlapped points.
-
 
 .. _point_to_point_icp:
 
 Point-to-point ICP
 =====================================
-Point to point ICP [BeslAndMcKay1992]_ aligns the point cloud using following idea:
 
-- Step 1: Finding neighboring points between source point cloud and target point cloud.
-- Step 2: Compute the rigid transformation that minimizes ||Xs - Xt||_2
+In general, the ICP algorithm iterates over two steps:
 
-    * Xs is a source point
-    * Xt is a target point
-    * || ||_2 is L2 norm
+  1. Find correspondence set :math:`\mathcal{K}=\{(\mathbf{p}, \mathbf{q})\}` between target point cloud :math:`\mathbf{P}`, and source point cloud :math:`\mathbf{Q}` transformed with current transformation matrix :math:`\mathbf{T}`.
+  2. Update the transformation :math:`\mathbf{T}` by minimizing an objective function :math:`E(\mathbf{T})` defined over the correspondence set :math:`\mathcal{K}`.
 
-- Step 3: Transform source point cloud
-- Iterate step 1, 2 and 3 until converged, or terminate after few iterations.
+Different variants of ICP use different objective functions :math:`E(\mathbf{T})` [BeslAndMcKay1992]_ [ChenAndMedioni1992]_ [Park2017]_.
 
-This is a script for point-to-point ICP.
+We first show a point-to-point ICP algorithm [BeslAndMcKay1992]_ using an objective
+
+.. math:: E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\|\mathbf{p} - \mathbf{T}\mathbf{q}\|^{2}.
 
 .. code-block:: python
 
@@ -147,20 +135,12 @@ This is a script for point-to-point ICP.
     print("")
     draw_registration_result(source, target, reg_p2p.transformation)
 
-In this script, ``registration_icp`` takes following arguments: two point clouds,
-Euclidean distance threshold for determining neighboring points,
-4x4 numpy matrix for initial transformation, and alignment method
-``TransformationEstimationPointToPoint``.
-Note that the transformation matrix moves the source to align with the target.
-
-The script will show:
+Class ``TransformationEstimationPointToPoint`` provides functions to compute the residuals and Jacobian matrices of the point-to-point ICP objective. Function ``registration_icp`` takes it as a parameter and runs point-to-point ICP to obtain results.
 
 .. image:: ../../_static/Basic/icp/point_to_point.png
     :width: 400px
 
-with following message
-
-.. code-block:: shell
+.. code-block:: sh
 
     Apply point-to-point ICP
     RegistrationResult with fitness = 0.372450, inlier_rmse = 0.007760,
@@ -172,14 +152,7 @@ with following message
      [ 0.52191123  0.2616952   0.81146378 -1.50303533]
      [ 0.          0.          0.          1.        ]]
 
-It produces 74056 overlapping points, but it is not converged well.
-The cure is to increase the number of ICP iterations.
-
-Changing ICP parameters
-``````````````````````````````````````
-To change the number of ICP iteration, it is required to define ``ICPConvergenceCriteria``.
-The following script specifies 2000 iterations for point-to-point ICP.
-Without specified, the default parameter for ICP iteration is 1000.
+The ``fitness`` score increases from 0.174723 to 0.372450. The ``inlier_rmse`` reduces from 0.011771 to 0.007760. By default, ``registration_icp`` runs until convergence or reaches a maximum number of iterations (30 by default). It can be changed to allow more computation time and further improve the results.
 
 .. code-block:: python
 
@@ -187,12 +160,12 @@ Without specified, the default parameter for ICP iteration is 1000.
             TransformationEstimationPointToPoint(),
             ICPConvergenceCriteria(max_iteration = 2000))
 
-The alignment results are below.
+Outputs:
 
 .. image:: ../../_static/Basic/icp/point_to_point_2000.png
     :width: 400px
 
-.. code-block:: shell
+.. code-block:: sh
 
     Apply point-to-point ICP
     RegistrationResult with fitness = 0.621123, inlier_rmse = 0.006583,
@@ -204,31 +177,18 @@ The alignment results are below.
      [ 0.52111439  0.26195134  0.81189372 -1.48346821]
      [ 0.          0.          0.          1.        ]]
 
-This script produces better alignment than the result from 1000 iterations.
-The number of overlapping points are 123501. It was 74056 with 1000 ICP iterations.
-
+The ICP algorithm took 144 iterations until convergence. The final alignment is tight. The ``fitness`` score improves to 0.621123. The ``inlier_rmse`` reduces to 0.006583.
 
 .. _point_to_plane_icp:
 
 Point-to-plane ICP
 =====================================
 
-Point-to-plane ICP [ChenAndMedioni1992]_ is strong complement of point-to-plane ICP.
-It minimizes different cost function.
+The point-to-plane ICP algorithm [ChenAndMedioni1992]_ uses a different objective function
 
-- Step 1: Finding neighboring points between source point cloud and target point cloud.
-- Step 2: Compute the rigid transformation that minimizes || dot(Xs - Xt, Nt) ||_2
+.. math:: E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\big((\mathbf{p} - \mathbf{T}\mathbf{q})\cdot\mathbf{n}_{\mathbf{p}}\big)^{2},
 
-    * Xs is a source point
-    * Xt is a target point
-    * Nt is normal direction of a target point
-    * function dot() is a vector dot product operator and || ||_2 is L2 norm
-
-- Step 3: Transform source point cloud
-- Iterate step 1, 2 and 3 until converged, or terminate after few iterations.
-
-The following script uses ``registration_icp`` that is the same as point-to-point example.
-The difference is to specifying ``TransformationEstimationPointToPlane()``.
+where :math:`\mathbf{n}_{\mathbf{p}}` is the normal of point :math:`\mathbf{p}`. [Rusinkiewicz2001]_ has shown that the point-to-plane ICP algorithm has a faster convergence speed than the point-to-point ICP algorithm.
 
 .. code-block:: python
 
@@ -241,16 +201,14 @@ The difference is to specifying ``TransformationEstimationPointToPlane()``.
     print("")
     draw_registration_result(source, target, reg_p2l.transformation)
 
-In general point-to-plane shows better convergence behavior than the point-to-point ICP.
+``registration_icp`` is called with a different parameter ``TransformationEstimationPointToPlane``. Internally, this class implements functions to compute the residuals and Jacobian matrices of the point-to-plane ICP objective.
 
-.. note:: Note that point-to-plane utilizes point normal, hence an input point cloud should have point normal. To compute normal from point cloud, see :ref:`vertex_normal_estimation`.
-
-Finally, the script shows the following alignment results.
+.. note:: The point-to-plane ICP algorithm uses point normals. In this tutorial, we load normals from files. If normals are not given, they can be computed with :ref:`vertex_normal_estimation`.
 
 .. image:: ../../_static/Basic/icp/point_to_plane.png
     :width: 400px
 
-.. code-block:: shell
+.. code-block:: sh
 
     Apply point-to-plane ICP
     RegistrationResult with fitness = 0.620972, inlier_rmse = 0.006581,
@@ -261,3 +219,5 @@ Finally, the script shows the following alignment results.
      [-0.14752342  0.96523919 -0.21724508  0.81018928]
      [ 0.52132423  0.26174429  0.81182576 -1.48366001]
      [ 0.          0.          0.          1.        ]]
+
+The point-to-plane ICP reaches tight alignment within 30 iterations (``fitness`` 0.620972 and ``inlier_rmse`` 0.006581).
