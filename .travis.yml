@@ -22,7 +22,7 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env:
-         - PYTHON=3.5 CC=gcc-4.8 CXX=g++-4.8
+         - PYTHON=3.6 CC=gcc-4.8 CXX=g++-4.8
 
     # Similar environment of Ubuntu 16.04 (gcc 5.4)
     # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
@@ -40,21 +40,21 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env:
-         - PYTHON=3.5 CC=gcc-6 && CXX=g++-6
+         - PYTHON=3.6 CC=gcc-6 && CXX=g++-6
 
     # Default environment of MacOS El Capitan
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
       env:
-         - PYTHON=3.5
+         - PYTHON=3.6
 
     # Default environment of MacOS Sierra
     # compiled using clang shipped with xcode8.3
     - os: osx
       osx_image: xcode8.3
       env:
-         - PYTHON=3.5
+         - PYTHON=3.6
 
 before_install:
   # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
@@ -64,11 +64,11 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
       python -m pip install --user --upgrade pip wheel;
-      pyenv global system 3.5;
+      pyenv global system 3.6;
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      brew install python3;
+      brew install python;
       ./scripts/install-deps-osx.sh;
     fi
   # for reference, display cmake and python version
