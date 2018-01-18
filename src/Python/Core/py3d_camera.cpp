@@ -36,7 +36,7 @@ using namespace three;
 void pybind_camera(py::module &m)
 {
 	py::class_<PinholeCameraIntrinsic> pinhole_intr(m,
-			"PinholeCameraIntrinsic", py::metaclass());
+			"PinholeCameraIntrinsic");
 	py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
 	py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
 	pinhole_intr.def("__init__", [](PinholeCameraIntrinsic &c, int w, int h,

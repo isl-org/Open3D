@@ -26,8 +26,8 @@
 
 #include "py3d.h"
 
-PYBIND11_PLUGIN(py3d) {
-	py::module m("py3d", "Python binding of Open3D");
+PYBIND11_MODULE(py3d, m) {
+	m.doc() = "Python binding of Open3D";
 
 	pybind_eigen(m);
 
@@ -38,6 +38,4 @@ PYBIND11_PLUGIN(py3d) {
 	pybind_core_methods(m);
 	pybind_io_methods(m);
 	pybind_visualization_methods(m);
-
-    return m.ptr();
 }
