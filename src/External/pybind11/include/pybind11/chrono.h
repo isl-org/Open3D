@@ -27,7 +27,7 @@
 #define PyDateTime_DELTA_GET_MICROSECONDS(o) (((PyDateTime_Delta*)o)->microseconds)
 #endif
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
 
 template <typename type> class duration_caster {
@@ -85,9 +85,11 @@ public:
         using ss_t = duration<int, std::ratio<1>>;
         using us_t = duration<int, std::micro>;
 
-        return PyDelta_FromDSU(duration_cast<dd_t>(d).count(),
-                               duration_cast<ss_t>(d % days(1)).count(),
-                               duration_cast<us_t>(d % seconds(1)).count());
+        auto dd = duration_cast<dd_t>(d);
+        auto subd = d - dd;
+        auto ss = duration_cast<ss_t>(subd);
+        auto us = duration_cast<us_t>(subd - ss);
+        return PyDelta_FromDSU(dd.count(), ss.count(), us.count());
     }
 
     PYBIND11_TYPE_CASTER(type, _("datetime.timedelta"));
@@ -157,4 +159,4 @@ template <typename Rep, typename Period> class type_caster<std::chrono::duration
 };
 
 NAMESPACE_END(detail)
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)
