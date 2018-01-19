@@ -3,13 +3,7 @@
 Colored point cloud registration
 -------------------------------------
 
-Open3D provides ICP for point cloud alignment (refer :ref:`registration` in basic tutorial).
-Both point-to-point ICP and point-to-plane ICP only considers geometric alignment.
-There is a case the geometry does not helpful for the true alignment, but
-only the color texture of the point cloud is evidence for the correct alignment.
-
-This tutorial introduces a sophisticated registration method
-that considers color texture of point cloud as well. This is a tutorial script.
+This tutorial demonstrates an ICP variant that uses both geometry and color for registration. It implements the algorithm of [Park2017]_. The color information locks the alignment along the tangent plane. Thus this algorithm is more accurate and more robust than prior point cloud registration algorithms, while the running speed is comparable to that of ICP registration. This tutorial uses notations from :ref:`registration`.
 
 .. code-block:: python
 
@@ -85,10 +79,8 @@ that considers color texture of point cloud as well. This is a tutorial script.
 
 .. _visualize_color_alignment:
 
-Visualize color alignment
+Helper visualization function
 ``````````````````````````````````````
-Function ``draw_registration_result_original_color`` in this tutorial simply
-visualizes multiple geometries using original color.
 
 .. code-block:: python
 
@@ -97,8 +89,10 @@ visualizes multiple geometries using original color.
         source_temp.transform(transformation)
         draw_geometries([source_temp, target])
 
-The function makes hard copy of source point cloud to make source point cloud intact.
-Note that ``draw_geometries`` can take a list of geometries and displays geometries in the list altogether.
+In order to demonstrate the alignment between colored point clouds, ``draw_registration_result_original_color`` renders point clouds with their original color.
+
+Input
+```````````````
 
 .. code-block:: python
 
@@ -111,7 +105,7 @@ Note that ``draw_geometries`` can take a list of geometries and displays geometr
     draw_registration_result_original_color(
             source, target, current_transformation)
 
-This script displays below geometry
+This script reads a source point cloud and a target point cloud from two files. An identity matrix is used as initialization.
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/initial.png
     :width: 325px
@@ -119,15 +113,11 @@ This script displays below geometry
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/initial_side.png
     :width: 325px
 
-[first figure: front view] [second figure: side view]
-
 
 .. _geometric_alignment:
 
-Geometric alignment
+Point-to-plane ICP
 ``````````````````````````````````````
-
-The next part of the script shows the alignment result using :ref:`point_to_plane_icp`.
 
 .. code-block:: python
 
@@ -141,7 +131,7 @@ The next part of the script shows the alignment result using :ref:`point_to_plan
     draw_registration_result_original_color(
             source, target, result_icp.transformation)
 
-As the point-to-plane ICP does not consider color texture of point cloud, this produces following result. In a geometric view point, the two planar point clouds looks well aligned, but it is not optimal as the color texture is not correctly aligned.
+We first run :ref:`point_to_plane_icp` as a baseline approach. The visualization below shows misaligned green triangle textures. This is because geometric constraint does not prevent two planar surfaces from slipping.
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/point_to_plane.png
     :width: 325px
@@ -149,15 +139,31 @@ As the point-to-plane ICP does not consider color texture of point cloud, this p
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/point_to_plane_side.png
     :width: 325px
 
-[first figure: front view] [second figure: side view]
-
 
 .. _multi_scale_geometric_color_alignment:
 
-Multi-scale geometric + color alignment
+Colored point cloud registration
 ``````````````````````````````````````````````
 
-The next part of the tutorial script demonstrates colored point cloud registration.
+The core function for colored point cloud registration is ``registration_colored_icp``. Following [Park2017]_, it runs ICP iterations (see :ref:`point_to_point_icp` for details) with a joint optimization objective
+
+.. math:: E(\mathbf{T}) = (1-\delta)E_{C}(\mathbf{T}) + \delta E_{G}(\mathbf{T}),
+
+where :math:`\mathbf{T}` is the transformation matrix to be estimated. :math:`E_{C}` and :math:`E_{G}` are the photometric and geometric terms, respectively. :math:`\delta\in[0,1]` is a weight parameter that has been determined empirically.
+
+The geometric term :math:`E_{G}` is the same as the :ref:`point_to_plane_icp` objective
+
+.. math:: E_{G}(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\big((\mathbf{p} - \mathbf{T}\mathbf{q})\cdot\mathbf{n}_{\mathbf{p}}\big)^{2},
+
+where :math:`\mathcal{K}` is the correspondence set in the current iteration. :math:`\mathbf{n}_{\mathbf{p}}` is the normal of point :math:`\mathbf{p}`.
+
+The color term :math:`E_{C}` measures the difference between the color of point :math:`\mathbf{q}` (denoted as :math:`C(\mathbf{q})`) and the color of its projection on the tangent plane of :math:`\mathbf{p}`.
+
+.. math:: E_{C}(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\big(C_{\mathbf{p}}(\mathbf{f}(\mathbf{T}\mathbf{q})) - C(\mathbf{q})\big)^{2},
+
+where :math:`C_{\mathbf{p}}(\cdot)` is a precomputed function continuously defined on the tangent plane of :math:`\mathbf{p}`. Function :math:`\mathbf{f}(\cdot)` projects a 3D point to the tangent plane. More details refer to [Park2017]_.
+
+To further improve efficiency, [Park2017]_ proposes a multi-scale registration scheme. This has been implemented in the following script.
 
 .. code-block:: python
 
@@ -194,32 +200,10 @@ The next part of the tutorial script demonstrates colored point cloud registrati
         draw_registration_result_original_color(
                 source, target, result_icp.transformation)
 
-This script is implementation of paper [Park2017]_.
-The cost function of this method is linear combination of point-to-plane cost and
-vertex intensity matching cost.
-This simple extension allows to consider geometric as well as photometric assessment.
-
-The script repetitively calls ``registration_colored_icp`` with various scale space.
-The scale space idea is similar to multi-scale image alignment:
-two images are downsampled, and aligned in lower resolution, and gradually refined in higher image resolution.
-This multi-scale approach is helpful to handle large baseline.
-
-For handling point clouds, the multi-scale idea is implemented as follows.
-
-- Set output transformation matrix as identity
-- Iterate from lower resolution to higher resolution
-
-    - resampling original point cloud using ``voxel_down_sample``
-    - estimate vertex normal of resampled point cloud using ``estimate_normals``
-    - apply color ICP using ``registration_colored_icp``
-    - update output transformation matrix
-
-Refer :ref:`voxel_downsampling` and :ref:`vertex_normal_estimation` for more details about basic point cloud operation. The script produces following result. The planar points are aligned well and texture of point clouds matches.
+In total, 3 layers of multi-resolution point clouds are created with :ref:`voxel_downsampling`. Normals are computed with :ref:`vertex_normal_estimation`. The core registration function ``registration_colored_icp`` is called for each layer, from coarse to fine. The output is a tight alignment of the two point clouds. Notice the green triangles on the wall.
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/colored.png
     :width: 325px
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/colored_side.png
     :width: 325px
-
-[first figure: front view] [second figure: side view]

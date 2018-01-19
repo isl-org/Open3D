@@ -84,7 +84,7 @@ Input
                 [0.0, 0.0, 0.0, 1.0]])
     draw_registration_result(source, target, trans_init)
 
-This script reads source point cloud and target point cloud from two files. A rough transformation is given.
+This script reads a source point cloud and a target point cloud from two files. A rough transformation is given.
 
 .. note:: The initial alignment is usually obtained by a global registration algorithm. See :ref:`global_registration` for examples.
 
