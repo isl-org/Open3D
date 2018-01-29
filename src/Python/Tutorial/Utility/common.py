@@ -2,21 +2,35 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+import copy
 import sys
-from os import listdir
-from os.path import isfile, join, splitext
+sys.path.append("../..")
+from py3d import *
+from os import listdir, makedirs
+from os.path import exists, isfile, join, splitext
+
+#######################
+# some global parameters for the global registration
+#######################
+
+n_frames_per_fragment = 100
+n_keyframes_per_n_frame = 5
 
 
-def parse_argument(argument, query):
-	if query in argument:
-		query_idx = argument.index(query)
-		if query_idx + 1 <= len(argument):
-			return argument[query_idx + 1]
-	return False
+#######################
+# file related
+#######################
 
-
-def parse_argument_int(argument, query):
-	return int(parse_argument(argument, query))
+folder_fragment = "/fragments/"
+template_fragment_posegraph = folder_fragment + "fragment_%03d.json"
+template_fragment_posegraph_optimized = folder_fragment + \
+		"fragment_optimized_%03d.json"
+template_fragment_mesh = folder_fragment + "fragment_%03d.ply"
+folder_scene = "/scene/"
+template_global_posegraph = folder_scene + "global_registration.json"
+template_global_posegraph_optimized = folder_scene + \
+		"global_registration_optimized.json"
+template_global_mesh = folder_scene + "integrated.ply"
 
 
 def get_file_list(path, extension=None):
@@ -29,18 +43,33 @@ def get_file_list(path, extension=None):
 	return file_list
 
 
-def get_file_lists(path_dataset):
-	# get list of color and depth images
-	path_color = path_dataset + 'image/'
-	path_depth = path_dataset + 'depth/'
-	color_files = get_file_list(path_color, '.png')
-	depth_files = get_file_list(path_depth, '.png')
+def get_rgbd_file_lists(path_dataset):
+	path_color = path_dataset + "/image/"
+	path_depth = path_dataset + "/depth/"
+	color_files = get_file_list(path_color, ".png")
+	depth_files = get_file_list(path_depth, ".png")
 	return color_files, depth_files
 
 
-def get_file_list_from_custom_format(path, format):
-	number_of_files = len(get_file_list(path, splitext(format)[1]))
-	file_list = []
-	for i in range(number_of_files):
-		file_list.append("%s/%s" % (path, format % i))
-	return file_list
+def make_folder(path_folder):
+	if not exists(path_folder):
+		makedirs(path_folder)
+
+
+#######################
+# visualization related
+#######################
+
+def draw_registration_result(source, target, transformation):
+	source_temp = copy.deepcopy(source)
+	target_temp = copy.deepcopy(target)
+	source_temp.paint_uniform_color([1, 0.706, 0])
+	target_temp.paint_uniform_color([0, 0.651, 0.929])
+	source_temp.transform(transformation)
+	draw_geometries([source_temp, target_temp])
+
+
+def draw_registration_result_original_color(source, target, transformation):
+	source_temp = copy.deepcopy(source)
+	source_temp.transform(transformation)
+	draw_geometries([source_temp, target])

@@ -35,7 +35,7 @@ def get_redwood_dataset():
 def file_downloader(url):
 	file_name = url.split('/')[-1]
 	u = urlopen(url)
-	f = open(file_name, 'wb')
+	f = open(file_name, "wb")
 	if pyver == 2:
 		meta = u.info()
 		file_size = int(meta.getheaders("Content-Length")[0])
