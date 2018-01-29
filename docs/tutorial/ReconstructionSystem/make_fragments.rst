@@ -203,7 +203,7 @@ Batch processing
             make_mesh_for_fragment(path_dataset, color_files, depth_files,
                     fragment_id, n_fragments, intrinsic)
 
-The main function calls each individual functions explained above.
+The main function calls each individual function explained above.
 
 Results
 ``````````````````````````````````````

@@ -89,7 +89,7 @@ After adjusting view points using mouse left button + drag, we can reach a bette
 .. image:: ../../_static/Basic/visualization/color.png
     :width: 400px
 
-To retain this view point, press :kbd:`ctrl+c`. The view point will be translated into a json string stored in clipboard. When you moved the camera to a different view, such as:
+To retain this view point, press :kbd:`ctrl+c`. The view point will be translated into a json string stored in clipboard. When you move the camera to a different view, such as:
 
 .. image:: ../../_static/Basic/visualization/newview.png
     :width: 400px
@@ -104,7 +104,7 @@ You can get back to the original view by pressing :kbd:`ctrl+v`.
 Rendering styles
 =====================================
 
-Open3D ``Visualizer`` supports different built-in rendering styles. For example, pressing :kbd:`l` will switch between a Phong lighting and a simple color rendering. Pressing :kbd:`2` shows points colored based on x-coordinate.
+Open3D ``Visualizer`` supports several rendering styles. For example, pressing :kbd:`l` will switch between a Phong lighting and a simple color rendering. Pressing :kbd:`2` shows points colored based on x-coordinate.
 
 .. image:: ../../_static/Basic/visualization/colormap_jet.png
     :width: 400px
@@ -131,7 +131,7 @@ Geometry primitives
     mesh_frame = create_mesh_coordinate_frame(size = 0.6, origin = [-2, -2, -2])
 
 This script generates a sphere and a cylinder using ``create_mesh_sphere`` and
-``create_mesh_cylinder``.  The sphere is painted in blue. The cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
+``create_mesh_cylinder``.  The sphere is painted in blue. The cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh` and :ref:`surface_normal_estimation`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
 
 .. _draw_multiple_geometries:
 

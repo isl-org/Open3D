@@ -28,9 +28,11 @@ If Open3D is successfully compiled with Python binding, it will create a Python 
         example_help_function()
         example_import_function()
 
-This scripts has of two functions: ``example_help_function`` and ``example_import_all``
+This scripts has two functions: ``example_help_function`` and ``example_import_all``
 that show very basic usage of Open3D Python module.
 In the heading, it uses ``sys.path.append()`` to refer the path where ``py3d.so`` is located.
+
+.. note:: Depending on environment, the name of Python library may not ``py3d.so``. Regardless of the file name, ``import py3d`` should work.
 
 .. _import_py3d_module:
 

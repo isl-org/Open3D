@@ -143,11 +143,7 @@ Visualize RGBD image pairs
 
 The RGBD image pairs are converted into point clouds and rendered together. Note that the point cloud representing the first (source) RGBD image is transformed with the transformation estimated by the odometry. After this transformation, both point clouds are aligned.
 
-.. image:: ../../_static/Basic/rgbd_odometry/color_term.png
-    :width: 400px
-
-.. image:: ../../_static/Basic/rgbd_odometry/hybrid_term.png
-    :width: 400px
+Outputs:
 
 .. code-block:: sh
 
@@ -156,8 +152,17 @@ The RGBD image pairs are converted into point clouds and rendered together. Note
      [  1.48026964e-04   9.99896965e-01  -1.43539723e-02   2.88993731e-02]
      [  5.45117608e-03   1.43529524e-02   9.99882132e-01   7.82593526e-04]
      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   1.00000000e+00]]
+
+.. image:: ../../_static/Basic/rgbd_odometry/color_term.png
+    :width: 400px
+
+.. code-block:: sh
+
     Using Hybrid RGB-D Odometry
     [[  9.99994666e-01  -1.00290715e-03  -3.10826763e-03  -3.75410348e-03]
      [  9.64492959e-04   9.99923448e-01  -1.23356675e-02   2.54977516e-02]
      [  3.12040122e-03   1.23326038e-02   9.99919082e-01   1.88139799e-03]
      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   1.00000000e+00]]
+
+.. image:: ../../_static/Basic/rgbd_odometry/hybrid_term.png
+	:width: 400px

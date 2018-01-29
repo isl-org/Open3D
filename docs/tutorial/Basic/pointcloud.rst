@@ -58,7 +58,7 @@ The first part of the tutorial reads a point cloud and visualizes it.
     print(np.asarray(pcd.points))
     draw_geometries([pcd])
 
-``read_point_cloud`` reads a point cloud from a file. It tries to decode the file based on the extension name. Current supported extension names include: ``pcd``, ``ply``, ``xyz``, ``xyzrgb``, ``xyzn``, ``pts``.
+``read_point_cloud`` reads a point cloud from a file. It tries to decode the file based on the extension name. The supported extension names are: ``pcd``, ``ply``, ``xyz``, ``xyzrgb``, ``xyzn``, ``pts``.
 
 ``draw_geometries`` visualizes the point cloud.
 Use mouse/trackpad to see the geometry from different view point.
@@ -66,7 +66,7 @@ Use mouse/trackpad to see the geometry from different view point.
 .. image:: ../../_static/Basic/pointcloud/scene.png
     :width: 400px
 
-It looks like a dense surface, but it is actually a point cloud rendered as surfels. The GUI supports various keyboard functions. One of them the :kbd:`-` key to reduce the size of the points (surfels). Press it multiple times, the visualization becomes:
+It looks like a dense surface, but it is actually a point cloud rendered as surfels. The GUI supports various keyboard functions. One of them, the :kbd:`-` key reduces the size of the points (surfels). Press it multiple times, the visualization becomes:
 
 .. image:: ../../_static/Basic/pointcloud/scene_small.png
     :width: 400px
@@ -80,7 +80,7 @@ It looks like a dense surface, but it is actually a point cloud rendered as surf
 Voxel downsampling
 =====================================
 
-Voxel downsampling uses a regular voxel grid to create a roughly uniformly downsampled point cloud from an input point cloud. It is often used as a pre-processing step for many point cloud processing tasks. The algorithm operates in two steps:
+Voxel downsampling uses a regular voxel grid to create a uniformly downsampled point cloud from an input point cloud. It is often used as a pre-processing step for many point cloud processing tasks. The algorithm operates in two steps:
 
 1. Points are bucketed into voxels.
 2. Each occupied voxel generates exact one point by averaging all points inside.
@@ -111,7 +111,9 @@ Another basic operation for point cloud is point normal estimation.
     draw_geometries([downpcd])
     print("")
 
-``estimate_normals`` computes normal for every points. The function finds adjacent points and calculate the principal axis of points using covariance analysis. The function takes an instance of ``KDTreeSearchParamHybrid`` class as an arguement. The two key arguments ``radius = 0.1`` and ``max_nn = 30`` specifies search radius and maximum nearest neighbor. It has 10cm of search radius, and only considers up to 30 neighbors to save computation time.
+``estimate_normals`` computes normal for every point. The function finds adjacent points and calculate the principal axis of the adjacent points using covariance analysis.
+
+The function takes an instance of ``KDTreeSearchParamHybrid`` class as an argument. The two key arguments ``radius = 0.1`` and ``max_nn = 30`` specifies search radius and maximum nearest neighbor. It has 10cm of search radius, and only considers up to 30 neighbors to save computation time.
 
 .. note:: The covariance analysis algorithm produces two opposite directions as normal candidates. Without knowing the global structure of the geometry, both can be correct. This is known as the normal orientation problem. Open3D tries to orient the normal to align with the original normal if it exists. Otherwise, Open3D does a random guess. Further orientation functions such as ``orient_normals_to_align_with_direction`` and ``orient_normals_towards_camera_location`` need to be called if the orientation is a concern.
 

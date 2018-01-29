@@ -3,7 +3,7 @@
 Colored point cloud registration
 -------------------------------------
 
-This tutorial demonstrates an ICP variant that uses both geometry and color for registration. It implements the algorithm of [Park2017]_. The color information locks the alignment along the tangent plane. Thus this algorithm is more accurate and more robust than prior point cloud registration algorithms, while the running speed is comparable to that of ICP registration. This tutorial uses notations from :ref:`registration`.
+This tutorial demonstrates an ICP variant that uses both geometry and color for registration. It implements the algorithm of [Park2017]_. The color information locks the alignment along the tangent plane. Thus this algorithm is more accurate and more robust than prior point cloud registration algorithms, while the running speed is comparable to that of ICP registration. This tutorial uses notations from :ref:`icp_registration`.
 
 .. code-block:: python
 

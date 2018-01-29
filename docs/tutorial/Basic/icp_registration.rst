@@ -1,4 +1,4 @@
-.. _registration:
+.. _icp_registration:
 
 ICP Registration
 -------------------------------------
@@ -7,7 +7,7 @@ This tutorial demonstrates the ICP (Iterative Closest Point) registration algori
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/icp.py
+    # src/Python/Tutorial/Basic/icp_registration.py
 
     def draw_registration_result(source, target, transformation):
         source_temp = copy.deepcopy(source)
@@ -115,7 +115,7 @@ Point-to-point ICP
 
 In general, the ICP algorithm iterates over two steps:
 
-  1. Find correspondence set :math:`\mathcal{K}=\{(\mathbf{p}, \mathbf{q})\}` between target point cloud :math:`\mathbf{P}`, and source point cloud :math:`\mathbf{Q}` transformed with current transformation matrix :math:`\mathbf{T}`.
+  1. Find correspondence set :math:`\mathcal{K}=\{(\mathbf{p}, \mathbf{q})\}` from target point cloud :math:`\mathbf{P}`, and source point cloud :math:`\mathbf{Q}` transformed with current transformation matrix :math:`\mathbf{T}`.
   2. Update the transformation :math:`\mathbf{T}` by minimizing an objective function :math:`E(\mathbf{T})` defined over the correspondence set :math:`\mathcal{K}`.
 
 Different variants of ICP use different objective functions :math:`E(\mathbf{T})` [BeslAndMcKay1992]_ [ChenAndMedioni1992]_ [Park2017]_.

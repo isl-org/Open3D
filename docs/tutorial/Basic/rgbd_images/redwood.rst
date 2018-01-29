@@ -47,7 +47,7 @@ The Redwood format stored depth in a 16-bit single channel image. The integer va
 		color_raw, depth_raw);
 	print(rgbd_image)
 
-The default conversion function ``create_rgbd_image_from_color_and_depth`` creates an ``RGBDImage`` from a pair of color and depth image. The color image is converted into a grayscale image, stored in ``float`` ranged in [0, 1]. The depth image is stored in float, representing the depth value in meters. ``print(rgbd_image)`` yields:
+The default conversion function ``create_rgbd_image_from_color_and_depth`` creates an ``RGBDImage`` from a pair of color and depth image. The color image is converted into a grayscale image, stored in ``float`` ranged in [0, 1]. The depth image is stored in ``float``, representing the depth value in meters. ``print(rgbd_image)`` yields:
 
 .. code-block:: sh
 

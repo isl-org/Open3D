@@ -3,7 +3,7 @@
 KDTree
 -------------------------------------
 
-Open3D uses flann to build KDTrees for fast retrieval of nearest neighbors.
+Open3D uses `FLANN <https://www.cs.ubc.ca/research/flann/>`_ to build KDTrees for fast retrieval of nearest neighbors.
 
 .. code-block:: python
 
@@ -50,7 +50,7 @@ Build KDTree from point cloud
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd_tree = KDTreeFlann(pcd)
 
-This script reads a point cloud and builds a KDTree. This is the preprocessing step for the following nearest neighbor queries.
+This script reads a point cloud and builds a KDTree. This is a preprocessing step for the following nearest neighbor queries.
 
 .. _find_neighboring_points:
 

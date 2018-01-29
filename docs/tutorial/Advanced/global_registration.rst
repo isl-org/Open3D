@@ -3,7 +3,7 @@
 Global registration
 -------------------------------------
 
-Both :ref:`registration` and :ref:`colored_point_registration` are known as **local** registration methods because they rely on a rough alignment as initialization. This tutorial shows another class of registration methods, known as **global** registration. This family of algorithms do not require an alignment for initialization. They usually produce less tight alignment results and are used as initialization of the local methods.
+Both :ref:`icp_registration` and :ref:`colored_point_registration` are known as **local** registration methods because they rely on a rough alignment as initialization. This tutorial shows another class of registration methods, known as **global** registration. This family of algorithms do not require an alignment for initialization. They usually produce less tight alignment results and are used as initialization of the local methods.
 
 .. code-block:: python
 
@@ -125,7 +125,7 @@ RANSAC
 
 .. code-block:: python
 
-    print("5. RANSAC registration on downsampled point clouds.")
+    print("5. RANSAC registration on down-sampled point clouds.")
     print("   Since the downsampling voxel size is 0.05, we use a liberal")
     print("   distance threshold 0.075.")
     result_ransac = registration_ransac_based_on_feature_matching(
@@ -154,7 +154,7 @@ We set the RANSAC parameters based on the empirical value provided by [Choi2015]
 Local refinement
 ``````````````````````````````````````
 
-For performance reason, the global registration is only performed on a heavily down sampled point cloud. The result is also not tight. We use :ref:`point_to_plane_icp` to further refine the alignment.
+For performance reason, the global registration is only performed on a heavily down-sampled point cloud. The result is also not tight. We use :ref:`point_to_plane_icp` to further refine the alignment.
 
 .. code-block:: python
 
