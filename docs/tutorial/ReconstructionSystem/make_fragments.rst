@@ -3,10 +3,7 @@
 Make fragments
 -------------------------------------
 
-The first step for scene recontruction from RGBD frames is making fragments. Fragments are small piece of the scene, it is necessary as the RGBD odometry is error prone for the large scene.
-
-This tutorial reviews `src/Python/Tutorial/ReconstructionSystem/make_fragments.py <../../../../../src/Python/Tutorial/ReconstructionSystem/make_fragments.py>`_ function by function. The tutorial script makes fragments from RGBD image sequence.
-
+The first step of the scene reconstruction system is to create fragments from short RGBD sequences.
 
 Input arguments
 ``````````````````````````````````````
@@ -27,9 +24,8 @@ Input arguments
             from opencv_pose_estimation import pose_estimation
         process_fragments(args.path_dataset, args.path_intrinsic)
 
-The script runs with ``python make_fragments.py [path]``. [path] should have subfolders *image* and *depth* in which frames are synchronized and aligned. The optional argument ``-path_intrinsic`` specifies path to json file that has a camera intrinsic matrix. An example about reading RGBD camera intrinsic is found from :ref:`reading_camera_intrinsic`.
+The script runs with ``python make_fragments.py [path]``. ``[path]`` should have subfolders *image* and *depth* to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. The optional argument ``-path_intrinsic`` specifies path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used.
 
-The next part of the main function loads OpenCV module if available. The script utilizes OpenCV for feature extraction, matching, and 5-point pose estimation algorithm. OpenCV module is optional requirement, but it is helpful to match two RGBD images if the baseline is wide.
 
 .. _make_fragments_register_rgbd_image_pairs:
 
@@ -68,21 +64,12 @@ Register RGBD image pairs
                     RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
             return [success, trans, info]
 
-The function reads source and target RGBD frames and makes two RGBD image instance ``source_rgbd_image`` and ``target_rgbd_image``.
-
-``s`` and ``t`` in function argument indicate RGBD frame ids of source and target. Based on two cases, this function matches RGBD frames in two different ways.
-
-- if s and t are not adjacent (abs(s-t) is not 1), it does *wide baseline matching*
-- if s and t are adjacent, it performs *RGBD odometry*
-
-*Wide baseline matching* calls ``pose_estimation``. This function uses OpenCV ORB feature to match sparse features over wide baseline images. With matched features, ``pose_estimation`` performs 5-point RANSAC to reliably estimate rough motion between frames. The estimated pose ``odo_init`` is fed into ``compute_rgbd_odometry`` for fine-grained alignment. In the case of *RGBD odometry*, identity matrix is used as an initial pose.
-
-Function ``process_one_rgbd_pair`` returns whether the matching of two RGBD frame ``s`` and ``t`` is successful, estimated 4x4 transformation matrix, and 6x6 information matrix. Information matrix is computed for posegraph optimization for joint alignment of multiple frames. Refer :ref:`global_optimization` to see how information matrix is used.
+The function reads a pair of RGBD images and registers the ``source_rgbd_image`` to the ``target_rgbd_image``. Open3D function ``compute_rgbd_odometry`` is called to align the RGBD images. For adjacent RGBD images, an identity matrix is used as initialization. For non-adjacent RGBD images, wide baseline matching is used as an initialization. In particular, function ``pose_estimation`` computes OpenCV ORB feature to match sparse features over wide baseline images, then performs 5-point RANSAC to estimate a rough alignment. It is used as the initialization of ``compute_rgbd_odometry``.
 
 
 .. _make_fragments_make_a_posegraph:
 
-Make a posegraph
+Multiway registration
 ``````````````````````````````````````
 
 .. code-block:: python
@@ -120,28 +107,36 @@ Make a posegraph
         write_pose_graph(path_dataset + template_fragment_posegraph % fragment_id,
                 pose_graph)
 
-Function ``make_posegraph_for_fragment`` builds a ``pose_graph`` of RGBD image matchings. It adds nodes and edges. Posegraph node holds absolute camera odometry, and posegraph edge holds pairwise alignment information including source and target node ID, transformation matrix and information matrix. This information is obtained from ``process_one_rgbd_pair``.
+This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``make_posegraph_for_fragment`` builds a pose graph for multiway registration of all RGBD images in this sequence. Each graph node represents an RGBD image and its pose which transforms the geometry to the global fragment space. For efficiency, only key frames are used.
 
-To simplify, this function is based on following idea
+Once a pose graph is created, multiway registration is performed by calling function ``optimize_posegraph_for_fragment``.
 
-.. code-block:: shell
+.. code-block:: python
 
-    for s in range(sid, eid):
-        for t in range(s + 1, eid):
+    def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+    		max_correspondence_distance):
+    	# to display messages from global_optimization
+    	set_verbosity_level(VerbosityLevel.Debug)
+    	method = GlobalOptimizationLevenbergMarquardt()
+    	criteria = GlobalOptimizationConvergenceCriteria()
+    	option = GlobalOptimizationOption(
+    			max_correspondence_distance = max_correspondence_distance,
+    			edge_prune_threshold = 0.25,
+    			reference_node = 0)
+    	pose_graph = read_pose_graph(pose_graph_name)
+    	global_optimization(pose_graph, method, criteria, option)
+    	write_pose_graph(pose_graph_optmized_name, pose_graph)
+    	set_verbosity_level(VerbosityLevel.Error)
 
-            if t is adjacent frame of s:
-                process_one_rgbd_pair (with odometry matching mode)
-                add posegraph node using camera odometry
-                add posegraph edge of matching s and t
 
-            if s and t is keyframe:
-                process_one_rgbd_pair (with wide baseline matching mode)
-                add posegraph edge of matching s and t
+    def optimize_posegraph_for_fragment(path_dataset, fragment_id):
+    	pose_graph_name = path_dataset + template_fragment_posegraph % fragment_id
+    	pose_graph_optmized_name = path_dataset + \
+    			template_fragment_posegraph_optimized % fragment_id
+    	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+    			max_correspondence_distance = 0.075)
 
-    write posegraph
-
-The principle idea for building posegraph is the same as :ref:`global_optimization`, but it does not match every combinations of RGBD frames. Instead this script matches keyframes to save computation time.
-
+This function calls ``global_optimization`` to estimate poses of the RGBD images.
 
 .. _make_fragments_make_a_fragment_mesh:
 
@@ -172,12 +167,6 @@ Make a fragment mesh
         mesh.compute_vertex_normals()
         return mesh
 
-Once the posegraph is made by ``make_posegraph_for_fragment``, this function is used for integrating RGBD frames into TSDF volume. The basic idea is the same as :ref:`rgbd_integration`. It defines scalable space with a unit voxel length of 3/512m. The function makes a RGBD frame ``rgbd``, retrieve estimated camera pose ``pose``. It is integrated into the TSDF volume ``volume.integrate()``. The colored mesh is extracted by ``volume.extract_triangle_mesh``.
-
-This function is called by following script.
-
-.. code-block:: python
-
     def make_mesh_for_fragment(path_dataset, color_files, depth_files,
             fragment_id, n_fragments, intrinsic):
         mesh = integrate_rgb_frames_for_fragment(
@@ -187,8 +176,7 @@ This function is called by following script.
         mesh_name = path_dataset + template_fragment_mesh % fragment_id
         write_triangle_mesh(mesh_name, mesh, False, True)
 
-Previous function ``integrate_rgb_frames_for_fragment`` is called by this function. This function saves mesh file into dataset folder.
-
+Once the poses are estimates, :ref:`rgbd_integration` is used to reconstruct a colored fragment from each RGBD sequence.
 
 Batch processing
 ``````````````````````````````````````
@@ -215,17 +203,12 @@ Batch processing
             make_mesh_for_fragment(path_dataset, color_files, depth_files,
                     fragment_id, n_fragments, intrinsic)
 
-The functions explained above is called by this main function. The first part of this function reads RGBD camera intrinsic using ``read_pinhole_camera_intrinsic`` if specified by user, and get the RGBD image sequence file list using ``get_rgbd_file_lists``. The number of fragments is computed using the number of RGBD frames. For example, if there is a 1650 frames, this function will make 17 fragments as one fragment is made from 100 frames.
-
-The next for-loop calls function ``make_posegraph_for_fragment``, ``optimize_a_posegraph_for_fragment``, and ``make_mesh_for_fragment``.
-
+The main function calls each individual function explained above.
 
 Results
 ``````````````````````````````````````
 
-For each fragment, this is a printed message from :ref:`make_fragments_register_rgbd_image_pairs`.
-
-.. code-block:: shell
+.. code-block:: sh
 
     Fragment 000 / 013 :: RGBD matching between frame : 0 and 1
     Fragment 000 / 013 :: RGBD matching between frame : 0 and 5
@@ -240,7 +223,7 @@ For each fragment, this is a printed message from :ref:`make_fragments_register_
 
 The following is a log from ``optimize_a_posegraph_for_fragment``.
 
-.. code-block:: shell
+.. code-block:: sh
 
     [GlobalOptimizationLM] Optimizing PoseGraph having 100 nodes and 196 edges.
     Line process weight : 1209.438798
@@ -262,9 +245,9 @@ The following is a log from ``optimize_a_posegraph_for_fragment``.
     [GlobalOptimizationLM] total time : 0.089 sec.
     CompensateReferencePoseGraphNode : reference : 0
 
-The following is a log from :ref:`make_fragments_make_a_fragment_mesh`.
+The following is a log from ``integrate_rgb_frames_for_fragment``.
 
-.. code-block:: shell
+.. code-block:: sh
 
     Fragment 000 / 013 :: integrate rgbd frame 0 (1 of 100).
     Fragment 000 / 013 :: integrate rgbd frame 1 (2 of 100).

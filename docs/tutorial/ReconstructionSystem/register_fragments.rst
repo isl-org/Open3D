@@ -3,10 +3,7 @@
 Register fragments
 -------------------------------------
 
-Once the fragments of the scene obtained from :ref:`reconstruction_system_make_fragments`, the next step is register fragments and optimize pairwise registration altogether.
-
-This tutorial reviews `src/Python/Tutorial/ReconstructionSystem/register_fragments.py <../../../../../src/Python/Tutorial/ReconstructionSystem/register_fragments.py>`_ function by function.
-
+Once the fragments of the scene are created, the next step is to align them in a global space.
 
 Input arguments
 ``````````````````````````````````````
@@ -24,9 +21,9 @@ Input arguments
         register_point_cloud(args.path_dataset, ply_file_names)
         optimize_a_posegraph_for_scene(args.path_dataset)
 
-This script runs with ``python make_fragments.py [path]``. [path] should have subfolders *fragments* where ply files and posegraph json files of the fragments are in. This script must run after :ref:`reconstruction_system_make_fragments`.
+This script runs with ``python register_fragments.py [path]``. ``[path]`` should have subfolders *fragments* which stores fragments in .ply files and a pose graph in a .json file.
 
-The main function runs ``register_point_cloud`` and ``optimize_a_posegraph_for_scene``. These functions register any pairs of fragments and optimize a posegraph.
+The main function runs ``register_point_cloud`` and ``optimize_a_posegraph_for_scene``. The first function performs pairwise registration. The second function performs multiway registration.
 
 
 Preprocess point cloud
@@ -42,19 +39,13 @@ Preprocess point cloud
                 KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
         return (pcd_down, pcd_fpfh)
 
-This function downsample point cloud to make a point cloud sparser and regularly distributed. This is virtue as it avoids biased point cloud density, and helps better performance for registration methods (see :ref:`voxel_downsampling` for more details).
-
-Point cloud normal is estimated from the downsampled points with larger search radius for covariance analysis (see :ref:`vertex_normal_estimation` for more details).
-
-The FPFH feature extracted from downsampled point clouds instead of using original point cloud to save computation time (see :ref:`extract_geometric_feature` for more details).  All the unit in this script in meter unit.
+This function downsample point cloud to make a point cloud sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`voxel_downsampling`, :ref:`vertex_normal_estimation`, and :ref:`extract_geometric_feature` for more details.
 
 
 .. _reconstruction_system_feature_matching:
 
-Feature matching
+Pairwise global registration
 ``````````````````````````````````````
-
-This function matches two point clouds using feature descriptor. Using modified RANSAC based matching scheme [Choi2015]_, ``registration_ransac_based_on_feature_matching`` outputs 4x4 registration matrix. Please refer :ref:`feature_matching` for detaild explanation of input arguments.
 
 .. code-block:: python
 
@@ -72,15 +63,13 @@ This function matches two point clouds using feature descriptor. Using modified 
         else:
             return (True, result_ransac)
 
-There are two return cases. If the registration result is identity, it means matching failure, so the function returns failure signal ``False``.
+This function uses :ref:`feature_matching` for pairwise global registration.
 
 
 .. _reconstruction_system_compute_initial_registration:
 
 Compute initial registration
 ``````````````````````````````````````
-
-This function provides initial alignment. The initial alignment feeds into fine-grained registration in the next step. Let's see the function below.
 
 .. code-block:: python
 
@@ -114,26 +103,11 @@ This function provides initial alignment. The initial alignment feeds into fine-
         return (True, transformation)
 
 
-There are two cases how the initial alignment is computed.
-
-- Case 1: if the source and target fragment are from sequential frames (for example fragment_000.ply and fragment_001.ply pair), the function uses the camera pose of the last frame in source fragment
-
-    - The canonical domain of the source fragment is identity
-    - Therefore the inverse matrix of the last camera pose can be good approximate for source to target transformation matrix
-    - This corresponds to the code ``transformation = np.linalg.inv(pose_graph_frag.nodes[n_nodes-1].pose)``
-
-- Case 2: if not case 1, do global registration using geometric feature
-
-    - Function ``register_point_cloud_fpfh`` is called in this case
-
+This function computes a rough alignment between two fragments. The rough alignments are used to initialize ICP refinement. If the fragments are neighboring fragments, the rough alignment is determined by an aggregating RGBD odometry obtained from :ref:`reconstruction_system_make_fragments`. Otherwise, ``register_point_cloud_fpfh`` is called to perform global registration. Note that global registration is less reliable according to [Choi2015]_.
 
 
 Fine-grained registration
 ``````````````````````````````````````
-
-The following two functions are for fine-grained registration of point clouds. These two functions uses rough transformation matrix obtained from  :ref:`reconstruction_system_feature_matching` as an initial matrix. One of this two functions conditionally runs depending on user selection.
-
-The first function ``register_point_cloud_icp`` is point-to-plane ICP [ChenAndMedioni1992]_. It minimizes geometric alignment. The detailed explanations can be found from :ref:`reconstruction_system_compute_initial_registration`.
 
 .. code-block:: python
 
@@ -146,11 +120,6 @@ The first function ``register_point_cloud_icp`` is point-to-plane ICP [ChenAndMe
         information_matrix = get_information_matrix_from_point_clouds(
                 source, target, 0.075, result_icp.transformation)
         return (result_icp.transformation, information_matrix)
-
-
-The another function ``register_colored_point_cloud_icp`` implements colored ICP [Park2017]_. It also uses multi-scale approach to cover larger baselines and to avoid local minima. It has hybrid term that jointly optimizes alignment of colored texture and geometries.
-
-.. code-block:: python
 
     def register_colored_point_cloud_icp(source, target,
             init_transformation = np.identity(4), draw_result = False):
@@ -181,12 +150,6 @@ The another function ``register_colored_point_cloud_icp`` implements colored ICP
                     result_icp.transformation)
         return (result_icp.transformation, information_matrix)
 
-This function is introduced in tutorial :ref:`colored_point_registration`. Please refer it for more details.
-
-Below function ``local_refinement`` calls one of function (``register_point_cloud_icp`` or ``register_colored_point_cloud_icp``) for fine-grained refinement of initial registration.
-
-.. code-block:: python
-
     def local_refinement(source, target, source_down, target_down,
             transformation_init, registration_type = "color",
             draw_result = False):
@@ -207,11 +170,11 @@ Below function ``local_refinement`` calls one of function (``register_point_clou
                     source_down, target_down, transformation)
         return (transformation, information)
 
+Two options are given for the fine-grained registration: :ref:`point_to_plane_icp` and :ref:`colored_point_registration`. The latter is recommended since it uses color information to prevent drift. Details see [Park2017]_.
 
-Make a posegraph
+
+Multiway registration
 ``````````````````````````````````````
-
-After local-refinement, the next step is to make a posegraph. The posegraph is necessary to optimize all the pairwise alignments to make globally tight alignment of every point clouds.
 
 .. code-block:: python
 
@@ -231,7 +194,33 @@ After local-refinement, the next step is to make a posegraph. The posegraph is n
                     PoseGraphEdge(s, t, transformation,
                     information, True))
 
-Note that the script builds posegraph for fragment. Likewise :ref:`make_fragments_make_a_posegraph` in make_fragments.py, this script adds nodes and edges depending on whether it is odometry case or not. However, optimizing posegraph here corresponds to optimize the geometry of the whole scene, not a fragment. Another difference is that the posegraph is build for the point clouds, not RGBD frames.
+This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragments and its pose which transforms the geometry to the global space.
+
+Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called for multiway registration.
+
+.. code-block:: python
+
+    def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+    		max_correspondence_distance):
+    	# to display messages from global_optimization
+    	set_verbosity_level(VerbosityLevel.Debug)
+    	method = GlobalOptimizationLevenbergMarquardt()
+    	criteria = GlobalOptimizationConvergenceCriteria()
+    	option = GlobalOptimizationOption(
+    			max_correspondence_distance = max_correspondence_distance,
+    			edge_prune_threshold = 0.25,
+    			reference_node = 0)
+    	pose_graph = read_pose_graph(pose_graph_name)
+    	global_optimization(pose_graph, method, criteria, option)
+    	write_pose_graph(pose_graph_optmized_name, pose_graph)
+    	set_verbosity_level(VerbosityLevel.Error)
+
+    def optimize_posegraph_for_scene(path_dataset):
+    	pose_graph_name = path_dataset + template_global_posegraph
+    	pose_graph_optmized_name = path_dataset + \
+    			template_global_posegraph_optimized
+    	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+    			max_correspondence_distance = 0.075)
 
 
 Main registration loop
@@ -277,29 +266,14 @@ The function ``register_point_cloud`` below calls all the functions introduced a
 
         write_pose_graph(path_dataset + template_global_posegraph, pose_graph)
 
-
-The workflow of the main function follows:
-
-- Step 1: read two point clouds
-- Step 2: ``compute_initial_registration`` using either
-
-    - odometry from fragment
-    - feature based registration
-
-- Step 3: ``local_refinement`` using either
-
-    - point-to-plane ICP
-    - colored ICP
-
-- Step 4: ``update_posegrph_for_scene``
-- Step 5: ``optimize_a_posegraph_for_scene``
+The main workflow is: pairwise global registration -> local refinement -> multiway registration.
 
 Results
 ``````````````````````````````````````
 
-The following is messages from posegraph optmization.
+The following is messages from pose graph optimization.
 
-.. code-block:: python
+.. code-block:: sh
 
     [GlobalOptimizationLM] Optimizing PoseGraph having 14 nodes and 52 edges.
     Line process weight : 416.822452
@@ -326,6 +300,4 @@ The following is messages from posegraph optmization.
     CompensateReferencePoseGraphNode : reference : 0
 
 
-The message indicates there is 14 fragments and 52 valid matching pairs between fragments. After 21 iteration, the pose of the fragments are optimized and 42 edges are remained. After pruning invalid edges, it does posegraph optimization again using only valid edges, resulting ignore two edges more.
-
-The overall registration error after optimization is 1.988630e+03 which is reduced from 3.560956e+07.
+There are 14 fragments and 52 valid matching pairs between fragments. After 21 iteration, 10 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.

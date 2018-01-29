@@ -2,8 +2,7 @@
 
 Redwood dataset
 -------------------------------------
-This tutorial reads and visualizes a RGBD image of SUN dataset [Choi2015]_.
-Let's see following tutorial.
+This tutorial reads and visualizes an ``RGBDImage`` from `the Redwood dataset <http://redwood-data.org/>`_ [Choi2015]_.
 
 .. code-block:: python
 
@@ -37,7 +36,7 @@ Let's see following tutorial.
 		pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 		draw_geometries([pcd])
 
-Let's take a look at this script one by one.
+The Redwood format stored depth in a 16-bit single channel image. The integer value represents the depth measurement in millimeters. It is the default format for Open3D to parse depth images.
 
 .. code-block:: python
 
@@ -48,21 +47,16 @@ Let's take a look at this script one by one.
 		color_raw, depth_raw);
 	print(rgbd_image)
 
-The above block reads color and depth images.
-``create_rgbd_image_from_color_and_depth`` transforms color and depth image into ``rgbd_image`` that has float type images of color and depth.
-The color image is normalized to [0,1] and depth image is [0,infinity].
-The depth unit is metric: 1 means 1 meter and 0 indicates invalid depth.
+The default conversion function ``create_rgbd_image_from_color_and_depth`` creates an ``RGBDImage`` from a pair of color and depth image. The color image is converted into a grayscale image, stored in ``float`` ranged in [0, 1]. The depth image is stored in ``float``, representing the depth value in meters. ``print(rgbd_image)`` yields:
 
-``print(rgbd_image)`` prints brief information of ``rgbd_image``.
-
-.. code-block:: python
+.. code-block:: sh
 
 	RGBDImage of size
 	Color image : 640x480, with 1 channels.
 	Depth image : 640x480, with 1 channels.
 	Use numpy.asarray to access buffer data.
 
-The next lines below
+The converted images can be rendered as numpy arrays.
 
 .. code-block:: python
 
@@ -74,12 +68,12 @@ The next lines below
 	plt.imshow(rgbd_image.depth)
 	plt.show()
 
-displays two images using ``subplot``:
+Outputs:
 
 .. image:: ../../../_static/Basic/rgbd_images/redwood_rgbd.png
 	:width: 400px
 
-The RGBD image can be transformed into point cloud. This is interesting feature of RGBD image.
+The RGBD image can be converted into a point cloud, given a set of camera parameters.
 
 .. code-block:: python
 
@@ -89,12 +83,7 @@ The RGBD image can be transformed into point cloud. This is interesting feature 
 	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 	draw_geometries([pcd])
 
-``create_point_cloud_from_rgbd_image`` makes point cloud from ``rgbd_image``.
-Here, ``PinholeCameraIntrinsic.prime_sense_default`` is used as an input arguement.
-It corresponds to default camera intrinsic matrix of Kinect camera with 640x480 resolution.
-
-Note that ``pcd.transform`` is applied for the ``pcd`` just for visualization purpose.
-This script will display:
+Here we use ``PinholeCameraIntrinsic.prime_sense_default`` as default camera parameter. It has image resolution 640x480, focal length (fx, fy) = (525.0, 525.0), and optical center (cx, cy) = (319.5, 239.5). An identity matrix is used as the default extrinsic parameter. ``pcd.transform`` applies an up-down flip transformation on the point cloud for better visualization purpose. This outputs:
 
 .. image:: ../../../_static/Basic/rgbd_images/redwood_pcd.png
 	:width: 400px

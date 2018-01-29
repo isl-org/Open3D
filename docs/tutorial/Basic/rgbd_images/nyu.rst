@@ -2,8 +2,7 @@
 
 NYU dataset
 -------------------------------------
-This tutorial reads and visualizes a RGBD image of SUN dataset [Silberman2012]_.
-Let's see following tutorial.
+This tutorial reads and visualizes an ``RGBDImage`` from `the NYU dataset <https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html>`_ [Silberman2012]_.
 
 .. code-block:: python
 
@@ -62,83 +61,14 @@ Let's see following tutorial.
 		pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 		draw_geometries([pcd])
 
-Let's take a look at this script one by one.
+This tutorial is almost the same as the tutorial processing :ref:`rgbd_redwood`, with two differences. First, NYU images are not in standard ``jpg`` or ``png`` formats. Thus, we use ``mpimg.imread`` to read the color image as a numpy array and convert it to an Open3D ``Image``. An additional helper function ``read_nyu_pgm`` is called to read depth images from the special big endian ``pgm`` format used in the NYU dataset. Second, we use a different conversion function ``create_rgbd_image_from_nyu_format`` to parse depth images in the SUN dataset.
 
-.. code-block:: python
-
-	def read_nyu_pgm(filename, byteorder='>'):
-		with open(filename, 'rb') as f:
-			buffer = f.read()
-		try:
-			header, width, height, maxval = re.search(
-				b"(^P5\s(?:\s*#.*[\r\n])*"
-				b"(\d+)\s(?:\s*#.*[\r\n])*"
-				b"(\d+)\s(?:\s*#.*[\r\n])*"
-				b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
-		except AttributeError:
-			raise ValueError("Not a raw PGM file: '%s'" % filename)
-		img = np.frombuffer(buffer,
-			dtype=byteorder+'u2',
-			count=int(width)*int(height),
-			offset=len(header)).reshape((int(height), int(width)))
-		img_out = img.astype('u2')
-		return img_out
-
-This function is specialized for reading pgm format depth images. The depth bits of NYU dataset is written in big endian byte order. This function is to transform it into little endian byte order. It returns 16bit depth images.
-
-.. code-block:: python
-
-	color_raw = mpimg.imread("../../TestData/RGBD/other_formats/NYU_color.ppm")
-	depth_raw = read_nyu_pgm("../../TestData/RGBD/other_formats/NYU_depth.pgm")
-	color = Image(color_raw)
-	depth = Image(depth_raw)
-	rgbd_image = create_rgbd_image_from_nyu_format(color, depth)
-
-This script is bit tweaked for reading ppm and pgm images. The raw images are transformed float type ``Image`` class. The color image is normalized to [0,1] and depth image is [0,infinity].
-The depth unit is metric: 1 means 1 meter and 0 indicates invalid depth. Open3D rgbd_image class is made with ``create_rgbd_image_from_nyu_format``.
-
-``print(rgbd_image)`` prints brief information of ``rgbd_image``.
-
-.. code-block:: python
-
-	RGBDImage of size
-	Color image : 640x480, with 1 channels.
-	Depth image : 640x480, with 1 channels.
-	Use numpy.asarray to access buffer data.
-
-The next lines below
-
-.. code-block:: python
-
-	plt.subplot(1, 2, 1)
-	plt.title('NYU grayscale image')
-	plt.imshow(rgbd_image.color)
-	plt.subplot(1, 2, 2)
-	plt.title('NYU depth image')
-	plt.imshow(rgbd_image.depth)
-	plt.show()
-
-displays two images using ``subplot``:
+Similarly, the RGBDImage can be rendered as numpy arrays:
 
 .. image:: ../../../_static/Basic/rgbd_images/nyu_rgbd.png
 	:width: 400px
 
-Any RGBD image can be transformed into point cloud. This is interesting feature of RGBD image.
-
-.. code-block:: python
-
-	pcd = create_point_cloud_from_rgbd_image(rgbd_image,
-			PinholeCameraIntrinsic.prime_sense_default)
-	# Flip it, otherwise the pointcloud will be upside down
-	pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-	draw_geometries([pcd])
-
-``create_point_cloud_from_rgbd_image`` makes point cloud from ``rgbd_image``.
-Here, ``PinholeCameraIntrinsic.prime_sense_default`` is used as an input arguement.
-It corresponds to default camera intrinsic matrix of Kinect camera with 640x480 resolution.
-
-Note that ``pcd.transform`` is applied for the ``pcd`` just for visualization purpose.
-This script will display:
+Or a point cloud:
 
 .. image:: ../../../_static/Basic/rgbd_images/nyu_pcd.png
 	:width: 400px
