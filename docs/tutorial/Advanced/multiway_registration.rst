@@ -1,35 +1,11 @@
-.. _global_optimization:
+.. _multiway_registration:
 
-Global optimization
+Multiway Registration
 -------------------------------------
 
-The registration methods introduced so far (:ref:`point_to_point_icp`, :ref:`point_to_plane_icp`, and :ref:`point_to_point_icp`) handles pairwise registration.
+Multiway registration is the process to align multiple pieces of geometry in a global space. Typically, the input is a set of geometries (e.g., point clouds, RGBD images) :math:`\{\mathbf{P}_{i}\}`. The output is a set of rigid transformations :math:`\{\mathbf{T}_{i}\}`, so that the transformed point clouds :math:`\{\mathbf{T}_{i}\mathbf{P}_{i}\}` are aligned in the global space.
 
-Let's consider a general case: there are more than two point clouds, and the goal is to **jointly optimize any combination of pairwise alignment altogether**. For this purpose, Open3D provides advanced graph optimization method called posegraph optimization [Choi2015]_ [Park2017]_.
-
-
-.. _introduction_to_posegraph:
-
-Introduction to posegraph
-``````````````````````````````````````
-
-**Posegraph** is special type graph data structure. It has following elements:
-
-- **node**
-    - it represents a single geometry like RGBD image or a point cloud
-    - a node has a global pose
-    - the global pose is the variable to be optimized
-
-- **edge**
-    - it represents relationship between two nodes
-    - a edge has relative 4x4 transformation between two nodes
-    - a edge also has 6x6 information matrix
-
-The **information matrix** is very important to assess the quality of alignment. Note that any rigid motion is expressed by 6-dimensional vectors: 3-dimension for rotation and the other 3-dimension for translation. By definition of information matrix, a 6-dimensional vector ``x`` is multiplied with information matrix ``I`` as a form of ``x^T*I*x``, where ``^T`` is vector transpose and ``*`` is matrix multiplication.
-
-``x^T*I*x`` is good approximation of sum of point-to-point Euclidean distance. The beauty is that there is no need to explicitly finding adjacent point depending on relative pose ``x``. This makes optimizing posegraph much easier.
-
-The following script builds a posegraph and optimizes it to align three point cloud altogether.
+Open3D implements multiway registration via pose graph optimization. The backend implements the technique presented in [Choi2015]_.
 
 .. code-block:: python
 
@@ -38,12 +14,10 @@ The following script builds a posegraph and optimizes it to align three point cl
     import sys
     sys.path.append("../..")
     from py3d import *
-    from trajectory_io import *
 
     if __name__ == "__main__":
 
         set_verbosity_level(VerbosityLevel.Debug)
-        traj = read_trajectory("../../TestData/ICP/init.log")
         pcds = []
         for i in range(3):
             pcd = read_point_cloud(
@@ -96,12 +70,12 @@ The following script builds a posegraph and optimizes it to align three point cl
             pcds[point_id].transform(pose_graph.nodes[point_id].pose)
         draw_geometries(pcds)
 
-The first part of tutorial script reads point clouds, downsample them, and visualize them together.
+Input
+````````````````````
 
 .. code-block:: python
 
     set_verbosity_level(VerbosityLevel.Debug)
-    traj = read_trajectory("../../TestData/ICP/init.log")
     pcds = []
     for i in range(3):
         pcd = read_point_cloud(
@@ -110,18 +84,15 @@ The first part of tutorial script reads point clouds, downsample them, and visua
         pcds.append(downpcd)
     draw_geometries(pcds)
 
-The initial poses for the point clouds are shown below. More details about ``voxel_down_sample`` and ``draw_geometries`` can be found from :ref:`voxel_downsampling` and :ref:`draw_multiple_geometries`.
+The first part of the tutorial script reads three point clouds from files. The point clouds are downsampled and visualized together. They are misaligned.
 
 .. image:: ../../_static/Advanced/global_optimization/initial.png
     :width: 400px
 
-
 .. _build_a_posegraph:
 
-Build a posegraph
+Build a pose graph
 ``````````````````````````````````````
-
-The next part of the tutorial script builds a posegraph.
 
 .. code-block:: python
 
@@ -151,39 +122,27 @@ The next part of the tutorial script builds a posegraph.
                         PoseGraphNode(np.linalg.inv(odometry)))
                 pose_graph.edges.append(
                         PoseGraphEdge(source_id, target_id,
-                        transformation_icp, information_icp, False))
+                        transformation_icp, information_icp, uncertain = False))
             else: # loop closure case
                 pose_graph.edges.append(
                         PoseGraphEdge(source_id, target_id,
-                        transformation_icp, information_icp, True))
+                        transformation_icp, information_icp, uncertain = True))
 
-An instance of posegraph is made by constructor ``PoseGraph()``. Nodes and edges of posegraph is expressed as Python list type. The new element can be easily added using ``nodes.append()`` or ``edges.append()``.
+A pose graph has two key elements: nodes and edges. A node is a piece of geometry :math:`\mathbf{P}_{i}` associated with a pose matrix :math:`\mathbf{T}_{i}` which transforms :math:`\mathbf{P}_{i}` into the global space. The set :math:`\{\mathbf{T}_{i}\}` are the unknown variables to be optimized. ``PoseGraph.nodes`` is a list of ``PoseGraphNode``. We set the global space to be the space of :math:`\mathbf{P}_{0}`. Thus :math:`\mathbf{T}_{0}` is identity matrix. The other pose matrices are initialized by accumulating transformation between neighboring nodes. The neighboring nodes usually have large overlap and can be registered with :ref:`point_to_plane_icp`.
 
-Two nested for-loop in the script is for matching every pair of point clouds. As there are three point clouds, it will match [0-1] [0-2] [1-2] point cloud pairs. The matching is done with :ref:`point_to_plane_icp`. This choice is enough for this example because the initial misalignment can be handled by vanilla ICP. If the initial pose of point clouds are challenging, it is recommended to use :ref:`global_registration`.
+A pose graph edge connects two nodes (pieces of geometry) that overlap. Each edge contains a transformation matrix :math:`\mathbf{T}_{i,j}` that aligns the source geometry :math:`\mathbf{P}_{i}` to the target geometry :math:`\mathbf{P}_{j}`. This tutorial uses :ref:`point_to_plane_icp` to estimate the transformation. In more complicated cases, this pairwise registration problem should be solved via :ref:`global_registration`.
 
-Posegraph should have nodes as many as number of the point cloud. For an initial estimate of poses in nodes, the script uses accumulated transformation between sequencial geometries. For example, an initial pose for the geometry 2 is ``inv(T_01*T_12)`` where ``T_ij`` is transformation from ``i`` to ``j``. The first node gets the pose as identity. This idea is applied for ``odometry`` in the script.
+[Choi2015]_ has observed that pairwise registration is error-prone. False pairwise alignments can outnumber correctly
+aligned pairs. Thus, they partition pose graph edges into two classes. **Odometry edges** connect temporally close, neighboring nodes. A local registration algorithm such as ICP can reliably align them. **Loop closure edges** connect any non-neighboring nodes. The alignment is found by global registration and is less reliable. In Open3D, these two classes of edges are distinguished by the ``uncertain`` parameter in the initializer of ``PoseGraphEdge``.
 
-The later part of the nested for-loop adds nodes or edges. The scripts two cases to be considered.
+In addition to the transformation matrix :math:`\mathbf{T}_{i}`, the user can set an information matrix :math:`\mathbf{\Lambda}_{i}` for each edge. If :math:`\mathbf{\Lambda}_{i}` is set using function ``get_information_matrix_from_point_clouds``, the loss on this pose graph edge approximates the RMSE of the corresponding sets between the two nodes. Refer to [Choi2015]_ and `the Redwood registration benchmark <http://redwood-data.org/indoor/registration.html>`_ for details.
 
-- Case 1: odometry case
-
-    - this case is valid if two geometry is sequentially captured
-    - the script adds nodes
-    - the script adds posegraph edge to be less flexible to adjust.
-    - for marking flexiblity, it uses ``False`` when making ``PoseGraphEdge``
-
-- Case 2: loop closure
-
-    - if the two point clouds are matched randomly, the two point clouds are not guarantees there is overlapping region. Therefore, this case is less confident.
-    - in this case, it marks uncertain as ``True`` when making ``PoseGraphEdge``
-
-As a result, the posegraph will have three nodes (for point cloud 0, 1, 2) and three edges (for [0,1], [0,2], [1,2]). [0,1] and [1,2] is considered as odometry case and marked as confident. [0,2] is not odometry case and marked as not confident.
+The script creates a pose graph with three nodes and three edges. Among the edges, two of them are odometry edges (``uncertain = False``) and one is a loop closure edge (``uncertain = True``).
 
 .. _optimize_a_posegraph:
 
-Optimize a posegraph
+Optimize a pose graph
 ``````````````````````````````````````
-Posegraph optimization is done with minimizing convex cost function. Open3D provides function ``global_optimization``. Let's check the next part of the tutorial script.
 
 .. code-block:: python
 
@@ -193,11 +152,9 @@ Posegraph optimization is done with minimizing convex cost function. Open3D prov
             GlobalOptimizationConvergenceCriteria(),
             GlobalOptimizationOption())
 
-``global_optimization`` takes ``pose_graph`` and optimizes the graph in-place. Users can specify ``GlobalOptimizationGaussNewton`` or ``GlobalOptimizationLevenbergMarquardt`` as a convex optimization method. Levenberg Marquardt is recommended as it is more effective for the optimization. Specific parameters for optimization can be tuned up using ``GlobalOptimizationConvergenceCriteria``. These parameters defines maximum number of iterations and various optimization parameters such as scaling factors. More practical parameters are in ``GlobalOptimizationOption``. It cab specify how the information matrix is computed with distance threshold.
+Open3D uses function ``global_optimization`` to perform pose graph optimization. Two types of optimization methods can be chosen: ``GlobalOptimizationGaussNewton`` or ``GlobalOptimizationLevenbergMarquardt``. The latter is recommended since it has better convergence property. Class ``GlobalOptimizationConvergenceCriteria`` can be used to set the maximum number of iterations and various optimization parameters. Class ``GlobalOptimizationOption`` defines the loss function of the pose graph.
 
-The script displays following output.
-
-.. code-block:: shell
+.. code-block:: sh
 
     Optimizing PoseGraph ...
     [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
@@ -216,14 +173,12 @@ The script displays following output.
     [GlobalOptimizationLM] total time : 0.000 sec.
     CompensateReferencePoseGraphNode : reference : -1
 
-The global optimization performs twice on the posegraph. The first iteration optimizes poses for the original posegraph, and the second iteration filters runs without unreliable edges.
-
+The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments are pruned after the first pass. The second pass runs without them and produces a tight global alignment.
 
 .. _visualize_optimization:
 
 Visualize optimization
 ``````````````````````````````````````
-To see how well the joint optimization is done, the following script transforms all the point clouds using optimized posegraph.
 
 .. code-block:: python
 
@@ -233,10 +188,9 @@ To see how well the joint optimization is done, the following script transforms 
         pcds[point_id].transform(pose_graph.nodes[point_id].pose)
     draw_geometries(pcds)
 
-The script apply ``pose_graph.nodes[point_id].pose`` to transform ``pcds[point_id]``. The visualized point clouds are below.
+Ouputs:
 
 .. image:: ../../_static/Advanced/global_optimization/optimized.png
     :width: 400px
 
-
-This example shows joint optimization for the point clouds. This idea can be adopted to RGBD image sequence optimization too. More examples with RGBD sequence can be found from :ref:`reconstruction_system_make_fragments`.
+Although this tutorial demonstrates multiway registration for point clouds. The same procedure can be applied to RGBD images. See :ref:`reconstruction_system_make_fragments` for an example.

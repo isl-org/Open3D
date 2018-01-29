@@ -5,6 +5,6 @@ Advanced
 
     colored_pointcloud_registration
     global_registration
-    global_optimization
+    multiway_registration
     rgbd_integration
     customized_visualization
