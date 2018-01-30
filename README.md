@@ -8,12 +8,12 @@ Open3D is an open-source library that supports rapid development of software tha
 
 If you use Open3D in an academic project, please cite our paper:
 ```
-    @inproceedings{Zhou2018,
-    	author    = {Qian-Yi Zhou and Jaesik Park and Vladlen Koltun},
-    	title     = {Open3D: A Modern Library for 3D Data Processing},
-    	booktitle = {arxiv},
-    	year      = {2018},
-    }
+@article{Zhou2018,
+	author    = {Qian-Yi Zhou and Jaesik Park and Vladlen Koltun},
+	title     = {{Open3D}: {A} Modern Library for {3D} Data Processing},
+	journal   = {arXiv:NNNN.NNNNN},
+	year      = {2018},
+}
 ```
 
 ## Core features
@@ -33,7 +33,7 @@ If you use Open3D in an academic project, please cite our paper:
 
 ## Resources
 
-* Website: [open3d.org](http://open3d.org/)
+* Website: [www.open3d.org](http://www.open3d.org)
 * Code: [github.com/IntelVCL/Open3D](https://github.com/IntelVCL/Open3D)
-* Document: [open3d.org/docs](http://open3d.org/docs/)
+* Document: [www.open3d.org/docs](http://www.open3d.org/docs)
 * License: [The MIT license](https://opensource.org/licenses/MIT)
