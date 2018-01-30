@@ -9,7 +9,7 @@ sys.path.append("../..")
 sys.path.append("../Utility")
 from py3d import *
 from common import *
-from global_registration import *
+from register_fragments import *
 
 
 def register_point_cloud_pairwise(path_dataset, ply_file_names,
@@ -23,27 +23,22 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
 
 	if abs(source_id - target_id) != 1:
 		print("Do feature matching")
-		(success_ransac, result_ransac) = register_point_cloud_fpfh(
-				source_down, target_down, source_fpfh, target_fpfh)
-		if not success_ransac:
+		(success_global, transformation_init) = \
+					compute_initial_registration(
+					source_id, target_id, source_down, target_down,
+					source_fpfh, target_fpfh, path_dataset)
+		if not success_global:
 			print("No resonable solution for initial pose.")
 		else:
-			transformation_init = result_ransac.transformation
 			print(transformation_init)
 	if draw_result:
 		draw_registration_result(source_down, target_down,
 				transformation_init)
 
-	if (registration_type == "color"):
-		print("RegistrationPointCloud - color ICP")
-		(transformation_icp, information_icp) = \
-				register_colored_point_cloud_icp(
-				source, target, transformation_init)
-	else:
-		print("RegistrationPointCloud - ICP")
-		(transformation_icp, information_icp) = \
-				register_point_cloud_icp(
-				source_down, target_down, transformation_init)
+	(transformation_icp, information_icp) = \
+			local_refinement(source, target,
+			source_down, target_down, transformation_init,
+			registration_type, draw_result)
 	if draw_result:
 		draw_registration_result_original_color(source_down, target_down,
 				transformation_icp)

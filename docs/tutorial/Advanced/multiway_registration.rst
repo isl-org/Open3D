@@ -37,14 +37,18 @@ Open3D implements multiway registration via pose graph optimization. The backend
                 target = pcds[target_id]
 
                 print("Apply point-to-plane ICP")
-                result_icp = registration_icp(source, target, 0.30,
+                icp_coarse = registration_icp(source, target, 0.3,
                         np.identity(4),
                         TransformationEstimationPointToPlane())
-                transformation_icp = result_icp.transformation
+                icp_fine = registration_icp(source, target, 0.03,
+                        icp_coarse.transformation,
+                        TransformationEstimationPointToPlane())
+                transformation_icp = icp_fine.transformation
                 information_icp = get_information_matrix_from_point_clouds(
-                        source, target, 0.30, result_icp.transformation)
+                        source, target, 0.03, icp_fine.transformation)
                 print(transformation_icp)
 
+                # draw_registration_result(source, target, np.identity(4))
                 print("Build PoseGraph")
                 if target_id == source_id + 1: # odometry case
                     odometry = np.dot(transformation_icp, odometry)
@@ -59,10 +63,13 @@ Open3D implements multiway registration via pose graph optimization. The backend
                             transformation_icp, information_icp, True))
 
         print("Optimizing PoseGraph ...")
+        option = GlobalOptimizationOption(
+                max_correspondence_distance = 0.03,
+                edge_prune_threshold = 0.25,
+                reference_node = 0)
         global_optimization(pose_graph,
                 GlobalOptimizationLevenbergMarquardt(),
-                GlobalOptimizationConvergenceCriteria(),
-                GlobalOptimizationOption())
+                GlobalOptimizationConvergenceCriteria(), option)
 
         print("Transform points and display")
         for point_id in range(n_pcds):
@@ -107,14 +114,18 @@ Build a pose graph
             target = pcds[target_id]
 
             print("Apply point-to-plane ICP")
-            result_icp = registration_icp(source, target, 0.30,
+            icp_coarse = registration_icp(source, target, 0.3,
                     np.identity(4),
                     TransformationEstimationPointToPlane())
-            transformation_icp = result_icp.transformation
+            icp_fine = registration_icp(source, target, 0.03,
+                    icp_coarse.transformation,
+                    TransformationEstimationPointToPlane())
+            transformation_icp = icp_fine.transformation
             information_icp = get_information_matrix_from_point_clouds(
-                    source, target, 0.30, result_icp.transformation)
+                    source, target, 0.03, icp_fine.transformation)
             print(transformation_icp)
 
+            # draw_registration_result(source, target, np.identity(4))
             print("Build PoseGraph")
             if target_id == source_id + 1: # odometry case
                 odometry = np.dot(transformation_icp, odometry)
@@ -147,33 +158,37 @@ Optimize a pose graph
 .. code-block:: python
 
     print("Optimizing PoseGraph ...")
+    option = GlobalOptimizationOption(
+            max_correspondence_distance = 0.03,
+            edge_prune_threshold = 0.25,
+            reference_node = 0)
     global_optimization(pose_graph,
             GlobalOptimizationLevenbergMarquardt(),
-            GlobalOptimizationConvergenceCriteria(),
-            GlobalOptimizationOption())
+            GlobalOptimizationConvergenceCriteria(), option)
 
 Open3D uses function ``global_optimization`` to perform pose graph optimization. Two types of optimization methods can be chosen: ``GlobalOptimizationGaussNewton`` or ``GlobalOptimizationLevenbergMarquardt``. The latter is recommended since it has better convergence property. Class ``GlobalOptimizationConvergenceCriteria`` can be used to set the maximum number of iterations and various optimization parameters. Class ``GlobalOptimizationOption`` defines the loss function of the pose graph.
 
 .. code-block:: sh
 
-    Optimizing PoseGraph ...
-    [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
-    Line process weight : 7.796553
-    [Initial     ] residual : 8.789272e+02, lambda : 1.263999e+01
-    [Iteration 00] residual : 7.726156e+00, valid edges : 0, time : 0.000 sec.
-    [Iteration 01] residual : 7.725927e+00, valid edges : 0, time : 0.000 sec.
-    Current_residual - new_residual < 1.000000e-06 * current_residual
-    [GlobalOptimizationLM] total time : 0.000 sec.
-    [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 2 edges.
-    Line process weight : 7.914725
-    [Initial     ] residual : 2.184441e-03, lambda : 1.264504e+01
-    [Iteration 00] residual : 5.134888e-06, valid edges : 0, time : 0.000 sec.
-    [Iteration 01] residual : 6.945283e-09, valid edges : 0, time : 0.000 sec.
-    Current_residual < 1.000000e-06
-    [GlobalOptimizationLM] total time : 0.000 sec.
-    CompensateReferencePoseGraphNode : reference : -1
+	Optimizing PoseGraph ...
+	[GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
+	Line process weight : 3.745800
+	[Initial     ] residual : 6.741225e+00, lambda : 6.042803e-01
+	[Iteration 00] residual : 1.791471e+00, valid edges : 3, time : 0.000 sec.
+	[Iteration 01] residual : 5.133682e-01, valid edges : 3, time : 0.000 sec.
+	[Iteration 02] residual : 4.412544e-01, valid edges : 3, time : 0.000 sec.
+	[Iteration 03] residual : 4.408356e-01, valid edges : 3, time : 0.000 sec.
+	[Iteration 04] residual : 4.408342e-01, valid edges : 3, time : 0.000 sec.
+	Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
+	[GlobalOptimizationLM] total time : 0.000 sec.
+	[GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
+	Line process weight : 3.745800
+	[Initial     ] residual : 4.408342e-01, lambda : 6.064910e-01
+	Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
+	[GlobalOptimizationLM] total time : 0.000 sec.
+	CompensateReferencePoseGraphNode : reference : 0
 
-The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments are pruned after the first pass. The second pass runs without them and produces a tight global alignment.
+The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments are pruned after the first pass. The second pass runs without them and produces a tight global alignment. In this example, all the edges are considered as true alignments, hence the second pass did nothing.
 
 .. _visualize_optimization:
 

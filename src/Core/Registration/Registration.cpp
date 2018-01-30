@@ -356,7 +356,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 
 	// write q^*
 	// see http://redwood-data.org/indoor/registration.html
-	// note: I comes first and q_skew is scaled by factor 2.
+	// note: I comes first in this implementation
 	Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
 #ifdef _OPENMP
 #pragma omp parallel
@@ -374,18 +374,18 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 			double z = target.points_[t](2);
 			G_r_private.setZero();
 			G_r_private(0) = 1.0;
-			G_r_private(4) = 2.0 * z;
-			G_r_private(5) = -2.0 * y;
+			G_r_private(4) = z;
+			G_r_private(5) = -y;
 			GTG_private.noalias() += G_r_private * G_r_private.transpose();
 			G_r_private.setZero();
 			G_r_private(1) = 1.0;
-			G_r_private(3) = -2.0 * z;
-			G_r_private(5) = 2.0 * x;
+			G_r_private(3) = -z;
+			G_r_private(5) = x;
 			GTG_private.noalias() += G_r_private * G_r_private.transpose();
 			G_r_private.setZero();
 			G_r_private(2) = 1.0;
-			G_r_private(3) = 2.0 * y;
-			G_r_private(4) = -2.0 * x;
+			G_r_private(3) = y;
+			G_r_private(4) = -x;
 			GTG_private.noalias() += G_r_private * G_r_private.transpose();
 		}
 #ifdef _OPENMP
