@@ -8,8 +8,8 @@ This page includes a number of basic functions using Open3D Python interface.
     python_binding
     pointcloud
     mesh
-    rgbd_odometry
     rgbd_images/index
+    rgbd_odometry
     visualization
     kdtree
-    registration
+    icp_registration

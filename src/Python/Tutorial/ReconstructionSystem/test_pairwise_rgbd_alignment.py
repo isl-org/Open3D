@@ -9,7 +9,7 @@ sys.path.append("../..")
 from py3d import *
 sys.path.append("../Utility")
 from common import *
-from make_fragments_from_rgbd import *
+from make_fragments import *
 
 
 def register_one_rgbd_pair(s, t, color_files, depth_files,

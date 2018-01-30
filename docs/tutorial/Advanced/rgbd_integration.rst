@@ -3,8 +3,7 @@
 RGBD integration
 -------------------------------------
 
-Once a RGBD odometry is estimated, the next step is to make beautiful tight mesh from a noisy RGBD sequence.
-This tutorial shows how to integrate rgbd frames into thresholded signed distance (TSDF) volume and extract a mesh from the volume.
+Open3D implements a scalable RGBD image integration algorithm. The algorithm is based on the technique presented in [Curless1996]_ and [Newcombe2011]_. In order to support large scenes, we use a hierarchical hashing structure introduced in `Integrater in ElasticReconstruction <https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate>`_.
 
 .. code-block:: python
 
@@ -17,7 +16,6 @@ This tutorial shows how to integrate rgbd frames into thresholded signed distanc
     import numpy as np
 
     if __name__ == "__main__":
-        camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
         volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
                 sdf_trunc = 0.04, with_color = True)
 
@@ -36,13 +34,18 @@ This tutorial shows how to integrate rgbd frames into thresholded signed distanc
         draw_geometries([mesh])
 
 
-.. _using_log_file_format:
+.. _log_file_format:
 
-Using log file format
+Read trajectory from .log file
 ``````````````````````````````````````
-This tutorial script uses `Log file format <http://redwood-data.org/indoor/fileformat.html>`_ to retrieve camera odometry as an example. A log file represents camera odometry has following format.
 
-.. code-block:: shell
+.. code-block:: python
+
+    camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
+
+This tutorial uses function ``read_trajectory`` to read a camera trajectory from `a .log file <http://redwood-data.org/indoor/fileformat.html>`_. A sample .log file is as follows.
+
+.. code-block:: sh
 
     # src/test/TestData/RGBD/odometry.log
     0   0   1
@@ -57,14 +60,10 @@ This tutorial script uses `Log file format <http://redwood-data.org/indoor/filef
     0  0  0  1
     :
 
-A log file has one line of meta data and 4x4 matrix for each frame. The function ``read_trajectory`` reads a list of camera poses. There is a function ``write_trajectory`` in src/Python/Tutorial/Advanced/trajectory_io.py for writing log files.
-
-
 .. _tsdf_volume_integration:
 
 TSDF volume integration
 ``````````````````````````````````````
-The following script integrates five RGBD frames into a TSDF volume.
 
 .. code-block:: python
 
@@ -80,16 +79,14 @@ The following script integrates five RGBD frames into a TSDF volume.
         volume.integrate(rgbd, PinholeCameraIntrinsic.prime_sense_default,
                 np.linalg.inv(camera_poses[i].pose))
 
-The script defines a volume using ``ScalableTSDFVolume``. It sets voxels of TSDF to be in 4.0/512.0m size. Note that ``ScalableTSDFVolume`` does not limited to specific cubic size. ``sdf_trunc = 0.04`` sets truncation value. This indicates TSDF having smaller than 0.04 is ignored for memory efficiency. Integrating depth maps into a TSDF volume is implementation of [Curless1996]_ and [Newcombe2011]_.
-
-``with_color = True`` flag indicate that there are separate TSDF volumes made for integrating the color channels too. In this way extracted mesh from the volume has color. This color integration idea is from [Park2017]_ and can be actively used for :ref:`colored_point_registration`.
-
+Open3D provides two types of TSDF volumes: ``UniformTSDFVolume`` and ``ScalableTSDFVolume``. The latter is recommended since it uses a hierarchical structure and thus supports larger scenes. When ``with_color = True``, color is also integrated as part of the TSDF volume. The color integration is inspired by `PCL <http://pointclouds.org/>`_.
 
 .. _extract_a_mesh:
 
 Extract a mesh
 ``````````````````````````````````````
-After integrating few frames, the mesh can be extracted from TSDF volume using marching cubes [LorensenAndCline1987]_. Below script does mesh extraction.
+
+Mesh extraction uses the marching cubes algorithm [LorensenAndCline1987]_.
 
 .. code-block:: python
 
@@ -98,8 +95,7 @@ After integrating few frames, the mesh can be extracted from TSDF volume using m
     mesh.compute_vertex_normals()
     draw_geometries([mesh])
 
-The raw mesh extracted from a volume does not have surface normal, so ``compute_vertex_normals`` is applied for computing surface normal.
-``draw_geometries([mesh])`` displays the extracted mesh like below. 
+Outputs:
 
 .. image:: ../../_static/Advanced/rgbd_integration/integrated.png
     :width: 400px

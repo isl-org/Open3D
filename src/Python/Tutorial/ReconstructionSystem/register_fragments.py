@@ -73,7 +73,7 @@ def register_point_cloud_icp(source, target,
 			TransformationEstimationPointToPlane())
 	print(result_icp)
 	information_matrix = get_information_matrix_from_point_clouds(
-			source, target, 0.075, result_icp.transformation)
+			source, target, 0.03, result_icp.transformation)
 	return (result_icp.transformation, information_matrix)
 
 
@@ -104,7 +104,7 @@ def register_colored_point_cloud_icp(source, target,
 		current_transformation = result_icp.transformation
 
 	information_matrix = get_information_matrix_from_point_clouds(
-			source, target, 0.075, result_icp.transformation)
+			source, target, 0.03, result_icp.transformation)
 	if draw_result:
 		draw_registration_result_original_color(source, target,
 				result_icp.transformation)
@@ -132,7 +132,7 @@ def local_refinement(source, target, source_down, target_down,
 	return (transformation, information)
 
 
-def update_posegrph_for_scene(s, t, transformation, information,
+def update_odometry_posegrph(s, t, transformation, information,
 		odometry, pose_graph):
 
 	print("Update PoseGraph")
@@ -142,11 +142,12 @@ def update_posegrph_for_scene(s, t, transformation, information,
 		pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 		pose_graph.edges.append(
 				PoseGraphEdge(s, t, transformation,
-				information, True))
+				information, uncertain = False))
 	else: # loop closure case
 		pose_graph.edges.append(
 				PoseGraphEdge(s, t, transformation,
-				information, True))
+				information, uncertain = True))
+	return (odometry, pose_graph)
 
 
 def register_point_cloud(path_dataset, ply_file_names,
@@ -178,7 +179,7 @@ def register_point_cloud(path_dataset, ply_file_names,
 					source_down, target_down, transformation_init,
 					registration_type, draw_result)
 
-			update_posegrph_for_scene(s, t,
+			(odometry, pose_graph) = update_odometry_posegrph(s, t,
 					transformation_icp, information_icp,
 					odometry, pose_graph)
 			print(pose_graph)

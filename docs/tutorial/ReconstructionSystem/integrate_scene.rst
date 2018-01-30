@@ -3,10 +3,7 @@
 Integrate scene
 -------------------------------------
 
-After optmizing posegraph and camera poses, the final step is to integrate all the RGBD frames into a single TSDF volume. The mesh extracted from this volume is the 3D scene.
-
-This tutorial reviews `src/Python/Tutorial/ReconstructionSystem/integrate_scene.py <../../../../../src/Python/Tutorial/ReconstructionSystem/integrate_scene.py>`_ function by function. The tutorial script makes fragments from RGBD image sequence.
-
+The final step of the system is to integrate all RGBD images into a single TSDF volume and extract a mesh as the result.
 
 Input arguments
 ``````````````````````````````````````
@@ -27,13 +24,10 @@ Input arguments
             intrinsic = PinholeCameraIntrinsic.prime_sense_default
         scalable_integrate_rgb_frames(args.path_dataset, intrinsic)
 
-The script runs with ``python integrate_scene.py [path]``. [path] should have subfolders *image* and *depth* in which frames are synchronized and aligned. The optional argument ``-path_intrinsic`` specifies path to json file that has a camera intrinsic matrix. An example about reading RGBD camera intrinsic is found from :ref:`reading_camera_intrinsic`.
-
+The script runs with ``python integrate_scene.py [path]``. ``[path]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. The optional argument ``-path_intrinsic`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used.
 
 Integrate RGBD frames
 ``````````````````````````````````````
-
-The core function of this script is shown below:
 
 .. code-block:: python
 
@@ -72,18 +66,14 @@ The core function of this script is shown below:
         mesh_name = path_dataset + template_global_mesh
         write_triangle_mesh(mesh_name, mesh, False, True)
 
-Function ``scalable_integrate_rgb_frames`` defines ``ScalableTSDFVolume``. Note that the volume is not limited to 3x3x3 cubic space as it has *scalable* hashing scheme. The only parameters providing is the unit size of voxels.
-
-The script reads two posegraphs for calculating camera poses. ``pose_graph_fragment`` has optmized poses of the fragments, and ``pose_graph_rgbd`` has optimized camera trajectory within a fragment. ``pose`` corresponds to world-coordinate camera pose for RGBD frame belongs to ``fragment_id`` and ``frame_id``. This pose is used for integrating color and depth frames into TSDF volume using ``volume.integrate()``
-
-The mesh is extracted from volume using ``volume.extract_triangle_mesh()`` and it is written as scene.ply using ``write_triangle_mesh()``. There is related tutorial in :ref:`rgbd_integration`.
+This function first reads the alignment results from both :ref:`reconstruction_system_make_fragments` and :ref:`reconstruction_system_register_fragments`, then computes the pose of each RGBD image in the global space. After that, RGBD images are integrated using :ref:`rgbd_integration`.
 
 
 Results
 ``````````````````````````````````````
 This is a printed log from the volume integration script.
 
-.. code-block:: shell
+.. code-block:: sh
 
     Fragment 000 / 013 :: integrate rgbd frame 0 (1 of 100).
     Fragment 000 / 013 :: integrate rgbd frame 1 (2 of 100).
@@ -96,7 +86,7 @@ This is a printed log from the volume integration script.
     Fragment 013 / 013 :: integrate rgbd frame 1363 (64 of 64).
     Writing PLY: [========================================] 100%
 
-The following images show final scene reconstruction. :)
+The following images show final scene reconstruction.
 
 .. image:: ../../_static/ReconstructionSystem/integrate_scene/scene.png
     :width: 500px

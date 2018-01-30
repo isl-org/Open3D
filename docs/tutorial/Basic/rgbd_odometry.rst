@@ -3,11 +3,7 @@
 RGBD odometry
 -------------------------------------
 
-RGBD image sequence is interesting data that can be used for 3D scene reconstruction.
-The basic idea for the scene reconstruction begins with estimating small movement between the sequential frames.
-The small movement is often called odometry.
-
-Open3D provides two ways to estimate RGBD odometry. The following tutorial shows basic usage of two methods.
+An RGBD odometry finds the camera movement between two consecutive RGBD image pairs. The input are two instances of ``RGBDImage``. The output is the motion in the form of a rigid body transformation. Open3D has implemented two RGBD odometries: [Steinbrucker2011]_ and [Park2017]_.
 
 .. code-block:: python
 
@@ -63,12 +59,10 @@ Open3D provides two ways to estimate RGBD odometry. The following tutorial shows
 
 .. _reading_camera_intrinsic:
 
-Reading camera intrinsic
+Read camera intrinsic
 =====================================
 
-Every RGBD camera has unique intrinsic matrix that can express how the 3D point is
-projected onto image plane. This intrinsic matrix is an essential element for transforming
-RGBD image into point cloud. The following script reads camera intrinsic parameter.
+We first read the camera intrinsic matrix from a json file.
 
 .. code-block:: python
 
@@ -76,24 +70,23 @@ RGBD image into point cloud. The following script reads camera intrinsic paramet
             "../../TestData/camera.json")
     print(pinhole_camera_intrinsic.intrinsic_matrix)
 
-This script prints following intrinsic matrix loaded from camera.json
+This yields:
 
-.. code-block:: shell
+.. code-block:: sh
 
     [[ 415.69219382    0.          319.5       ]
      [   0.          415.69219382  239.5       ]
      [   0.            0.            1.        ]]
 
 
+.. Note:: Lots of small data structures in Open3D can be read from / written into ``json`` files. This includes camera intrinsics, camera trajectory, pose graph, etc.
+
 .. _reading_rgbd_image:
 
-Reading RGBD image
+Read RGBD image
 =====================================
 
-Reading RGBD image is easy. It is required to read color and depth image independently, and
-make RGBD image from the two images. Let's review following script.
-
-.. code-block:: shell
+.. code-block:: python
 
     source_color = read_image("../../TestData/RGBD/color/00000.jpg")
     source_depth = read_image("../../TestData/RGBD/depth/00000.png")
@@ -104,19 +97,14 @@ make RGBD image from the two images. Let's review following script.
     target_rgbd_image = create_rgbd_image_from_color_and_depth(
             target_color, target_depth)
 
-The script reads two color and depth image pairs using ``read_image`` and makes
-two RGBD image class using ``create_rgbd_image_from_color_and_depth``.
-This is basic data format used for RGBD odometry or for transforming 3D point cloud.
+This code block reads two pairs of RGBD images in the Redwood format. We refer to :ref:`rgbd_redwood` for a comprehensive explanation.
 
-.. note:: ``compute_rgbd_odometry`` assumes color and depth image are in the same image domain. To align the two image domain, it is necessary to do intrinsic and extrinsic camera calibration of two cameras. Please refer RGBD camera API to utilize factory calibration parameter, or use image domain alignment functions provided.
-
+.. note:: Open3D assumes the color image and depth image are synchronized and registered in the same coordinate frame. This can usually be done by turning on both the synchronization and registration features in the RGBD camera settings.
 
 .. _compute_odometry:
 
-Compute odometry from RGBD image pair
-=====================================
-
-The script calls ``compute_rgbd_odometry`` twice. Let's review code snippet.
+Compute odometry from two RGBD image pairs
+==================================================
 
 .. code-block:: python
 
@@ -129,16 +117,12 @@ The script calls ``compute_rgbd_odometry`` twice. Let's review code snippet.
             pinhole_camera_intrinsic, odo_init,
             RGBDOdometryJacobianFromHybridTerm(), option)
 
-The only difference is to specify odometry estimation method with ``RGBDOdometryJacobianFromColorTerm()`` or ``RGBDOdometryJacobianFromHybridTerm()``.
-The first one computes odometry using idea of [Steinbrucker2011]_. It minimizes photo consistency of aligned images. The corresponding points are detemined by depth image. The second method computes odometry using [Park2017]_. This method has additional cost term that also optimizes geometric alignment.
-
+This code block calls two different RGBD odometry methods. The first one is [Steinbrucker2011]_. It minimizes photo consistency of aligned images. The second one is [Park2017]_. In addition to photo consistency, it implements constraint for geometry. Both functions run in similar speed. But [Park2017]_ is more accurate in our test on benchmark datasets. It is recommended.
 
 .. _visualize_rgbd_image:
 
-Visualize RGBD image pair
+Visualize RGBD image pairs
 =====================================
-
-After computing alignment, it is useful to visualize aligned RGBD images. The idea is transform source and target RGBD images into point cloud and visualize together. The following script implements the idea.
 
 .. code-block:: python
 
@@ -157,25 +141,28 @@ After computing alignment, it is useful to visualize aligned RGBD images. The id
         source_pcd_hybrid_term.transform(trans_hybrid_term)
         draw_geometries([target_pcd, source_pcd_hybrid_term])
 
-``create_point_cloud_from_rgbd_image`` is useful function that transform RGBD image into point cloud. The source point cloud is transformed using ``.transform()`` with estimated odometry. ``draw_geometries`` display two point clouds by taking a list of point cloud objects ``[target_pcd, source_pcd_color_term]``.
+The RGBD image pairs are converted into point clouds and rendered together. Note that the point cloud representing the first (source) RGBD image is transformed with the transformation estimated by the odometry. After this transformation, both point clouds are aligned.
 
-This script will show two windows and transformation matrix
+Outputs:
 
-.. image:: ../../_static/Basic/rgbd_odometry/color_term.png
-    :width: 400px
-
-.. image:: ../../_static/Basic/rgbd_odometry/hybrid_term.png
-    :width: 400px
-
-.. code-block:: shell
+.. code-block:: sh
 
     Using RGB-D Odometry
     [[  9.99985131e-01  -2.26255547e-04  -5.44848980e-03  -4.68289761e-04]
      [  1.48026964e-04   9.99896965e-01  -1.43539723e-02   2.88993731e-02]
      [  5.45117608e-03   1.43529524e-02   9.99882132e-01   7.82593526e-04]
      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   1.00000000e+00]]
+
+.. image:: ../../_static/Basic/rgbd_odometry/color_term.png
+    :width: 400px
+
+.. code-block:: sh
+
     Using Hybrid RGB-D Odometry
     [[  9.99994666e-01  -1.00290715e-03  -3.10826763e-03  -3.75410348e-03]
      [  9.64492959e-04   9.99923448e-01  -1.23356675e-02   2.54977516e-02]
      [  3.12040122e-03   1.23326038e-02   9.99919082e-01   1.88139799e-03]
      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   1.00000000e+00]]
+
+.. image:: ../../_static/Basic/rgbd_odometry/hybrid_term.png
+	:width: 400px

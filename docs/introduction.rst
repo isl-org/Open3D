@@ -35,7 +35,7 @@ Supported compilers
 Resources
 ======================
 
-* Website: `www.open3d.org <http://www.open3d.org/>`_
+* Website: `www.open3d.org <http://www.open3d.org>`_
 * Code: `https://github.com/IntelVCL/Open3D <https://github.com/IntelVCL/Open3D>`_
-* Document: `http://www.open3d.org/html/ <http://www.open3d.org/html/>`_
+* Document: `http://www.open3d.org/docs <http://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_
