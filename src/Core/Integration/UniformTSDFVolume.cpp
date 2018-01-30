@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
 	// This function goes through the voxels, and scan convert the relative
 	// depth/color value into the voxel.
 	// The following implementation is a highly optimized version.
-	if ((image.depth_.num_of_channels_ != 1) || 
+	if ((image.depth_.num_of_channels_ != 1) ||
 			(image.depth_.bytes_per_channel_ != 4) ||
 			(image.depth_.width_ != intrinsic.width_) ||
 			(image.depth_.height_ != intrinsic.height_) ||
@@ -252,7 +252,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 			voxel_length_f;
 	const float safe_width_f = intrinsic.width_ - 0.0001f;
 	const float safe_height_f = intrinsic.height_ - 0.0001f;
-	
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif

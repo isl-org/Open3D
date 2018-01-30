@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 		Eigen::Vector3d(127, 184, 0) / 255.0,
 		Eigen::Vector3d(13, 44, 84) / 255.0,
 	};
-	
+
 	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
 	SetVerbosityLevel((VerbosityLevel)verbose);
 	std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 	std::vector<std::tuple<int, int, int>> metadata;
 	std::vector<Eigen::Matrix4d> transformations;
 	ReadLogFile(log_filename, metadata, transformations);
-	
+
 	for (auto k = 0; k < metadata.size(); k++) {
 		auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
 		PrintInfo("Showing matched point cloud #%d and #%d.\n", i, j);

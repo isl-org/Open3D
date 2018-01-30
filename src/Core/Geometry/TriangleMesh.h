@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,21 +65,21 @@ protected:
 	void RemoveDuplicatedTriangles();
 	void RemoveNonManifoldVertices();
 	void RemoveNonManifoldTriangles();
-	
+
 public:
 	bool HasVertices() const {
 		return vertices_.size() > 0;
 	}
-	
+
 	bool HasTriangles() const {
 		return vertices_.size() > 0 && triangles_.size() > 0;
 	}
-	
+
 	bool HasVertexNormals() const {
 		return vertices_.size() > 0 &&
 				vertex_normals_.size() == vertices_.size();
 	}
-	
+
 	bool HasVertexColors() const {
 		return vertices_.size() > 0 &&
 				vertex_colors_.size() == vertices_.size();
@@ -89,7 +89,7 @@ public:
 		return HasTriangles() &&
 				triangles_.size() == triangle_normals_.size();
 	}
-	
+
 	void NormalizeNormals() {
 		for (size_t i = 0; i < vertex_normals_.size(); i++) {
 			vertex_normals_[i].normalize();
@@ -128,7 +128,7 @@ std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename);
 /// The sphere will be centered at (0, 0, 0). Its axis is aligned with z-axis.
 /// The longitudes will be split into \param resolution segments.
 /// The latitudes will be split into \param resolution * 2 segments.
-std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius = 1.0, 
+std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius = 1.0,
 		int resolution = 20);
 
 /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)

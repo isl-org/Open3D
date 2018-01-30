@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +73,7 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
-	
+
 void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 {
 	for (auto &vertex : vertices_) {
@@ -88,7 +88,7 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
 	}
 	for (auto &triangle_normal : triangle_normals_) {
 		Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
-				triangle_normal(0), triangle_normal(1), 
+				triangle_normal(0), triangle_normal(1),
 				triangle_normal(2), 0.0);
 		triangle_normal = new_normal.block<3, 1>(0, 0);
 	}
@@ -130,7 +130,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
 		triangle_normals_.clear();
 	}
 	triangles_.resize(triangles_.size() + mesh.triangles_.size());
-	Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num, 
+	Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num,
 			(int)old_vert_num);
 	for (size_t i = 0; i < add_tri_num; i++) {
 		triangles_[old_tri_num + i] = mesh.triangles_[i] + index_shift;
@@ -185,7 +185,7 @@ void TriangleMesh::Purge()
 void TriangleMesh::RemoveDuplicatedVertices()
 {
 	typedef std::tuple<double, double, double> Coordinate3;
-	std::unordered_map<Coordinate3, size_t, hash_tuple::hash<Coordinate3>> 
+	std::unordered_map<Coordinate3, size_t, hash_tuple::hash<Coordinate3>>
 			point_to_old_index;
 	std::vector<int> index_old_to_new(vertices_.size());
 	bool has_vert_normal = HasVertexNormals();
@@ -193,7 +193,7 @@ void TriangleMesh::RemoveDuplicatedVertices()
 	size_t old_vertex_num = vertices_.size();
 	size_t k = 0;											// new index
 	for (size_t i = 0; i < old_vertex_num; i++) {			// old index
-		Coordinate3 coord = std::make_tuple(vertices_[i](0), vertices_[i](1), 
+		Coordinate3 coord = std::make_tuple(vertices_[i](0), vertices_[i](1),
 				vertices_[i](2));
 		if (point_to_old_index.find(coord) == point_to_old_index.end()) {
 			point_to_old_index[coord] = i;
@@ -216,14 +216,14 @@ void TriangleMesh::RemoveDuplicatedVertices()
 			triangle(2) = index_old_to_new[triangle(2)];
 		}
 	}
-	PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n", 
+	PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n",
 			old_vertex_num - k);
 }
 
 void TriangleMesh::RemoveDuplicatedTriangles()
 {
 	typedef std::tuple<int, int, int> Index3;
-	std::unordered_map<Index3, size_t, hash_tuple::hash<Index3>> 
+	std::unordered_map<Index3, size_t, hash_tuple::hash<Index3>>
 			triangle_to_old_index;
 	bool has_tri_normal = HasTriangleNormals();
 	size_t old_triangle_num = triangles_.size();
@@ -258,7 +258,7 @@ void TriangleMesh::RemoveDuplicatedTriangles()
 	}
 	triangles_.resize(k);
 	if (has_tri_normal) triangle_normals_.resize(k);
-	PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n", 
+	PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
 			old_triangle_num - k);
 }
 
@@ -298,7 +298,7 @@ void TriangleMesh::RemoveNonManifoldVertices()
 			triangle(2) = index_old_to_new[triangle(2)];
 		}
 	}
-	PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n", 
+	PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n",
 			old_vertex_num - k);
 }
 
@@ -321,7 +321,7 @@ void TriangleMesh::RemoveNonManifoldTriangles()
 	}
 	triangles_.resize(k);
 	if (has_tri_normal) triangle_normals_.resize(k);
-	PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n", 
+	PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
 			old_triangle_num - k);
 }
 

@@ -28,7 +28,8 @@ def custom_draw_geometry_load_option(pcd):
 	vis = Visualizer()
 	vis.create_window()
 	vis.add_geometry(pcd)
-	vis.get_render_option().load_from_json("../../TestData/renderoption.json")
+	vis.get_render_option().load_from_json(
+			"../../TestData/renderoption.json")
 	vis.run()
 	vis.destroy_window()
 
@@ -38,7 +39,8 @@ def custom_draw_geometry_with_key_callback(pcd):
 		opt.background_color = np.asarray([0, 0, 0])
 		return False
 	def load_render_option(vis):
-		vis.get_render_option().load_from_json("../../TestData/renderoption.json")
+		vis.get_render_option().load_from_json(
+				"../../TestData/renderoption.json")
 		return False
 	def capture_depth(vis):
 		depth = vis.capture_depth_float_buffer()
@@ -60,7 +62,8 @@ def custom_draw_geometry_with_key_callback(pcd):
 def custom_draw_geometry_with_camera_trajectory(pcd):
 	custom_draw_geometry_with_camera_trajectory.index = -1
 	custom_draw_geometry_with_camera_trajectory.trajectory =\
-			read_pinhole_camera_trajectory("../../TestData/camera_trajectory.json")
+			read_pinhole_camera_trajectory(
+					"../../TestData/camera_trajectory.json")
 	custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
 	if not os.path.exists("../../TestData/image/"):
 		os.makedirs("../../TestData/image/")

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,9 @@
 #include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Geometry/KDTreeSearchParam.h>
 #include <Core/Utility/Eigen.h>
+
+#include <iostream>
+#include <Core/Utility/Console.h>
 
 namespace three{
 
@@ -69,6 +72,8 @@ std::shared_ptr<PointCloudForColoredICP>
 		InitializePointCloudForColoredICP(const PointCloud &target,
 		const KDTreeSearchParamHybrid &search_param)
 {
+	PrintDebug("InitializePointCloudForColoredICP");
+
 	KDTreeFlann tree;
 	tree.SetGeometry(target);
 
@@ -122,6 +127,9 @@ std::shared_ptr<PointCloudForColoredICP>
 				A.transpose() * A, A.transpose() * b);
 			if (is_success) {
 				output->color_gradient_[k] = x;
+				// std::cout << x(0) << std::endl;
+				// std::cout << x(1) << std::endl;
+				// std::cout << x(2) << std::endl;
 			}
 		}
 	}

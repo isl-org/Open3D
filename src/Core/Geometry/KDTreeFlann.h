@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,14 +52,14 @@ public:
 	~KDTreeFlann();
 	KDTreeFlann(const KDTreeFlann &) = delete;
 	KDTreeFlann &operator=(const KDTreeFlann &) = delete;
-	
+
 public:
 	bool SetMatrixData(const Eigen::MatrixXd &data);
 	bool SetGeometry(const Geometry &geometry);
 	bool SetFeature(const Feature &feature);
 
 	template<typename T>
-	int Search(const T &query, const KDTreeSearchParam &param, 
+	int Search(const T &query, const KDTreeSearchParam &param,
 			std::vector<int> &indices, std::vector<double> &distance2) const;
 
 	template<typename T>

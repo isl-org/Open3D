@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ void PointCloud::Clear()
 	normals_.clear();
 	colors_.clear();
 }
-	
+
 bool PointCloud::IsEmpty() const
 {
 	return !HasPoints();
@@ -71,7 +71,7 @@ Eigen::Vector3d PointCloud::GetMaxBound() const
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
-	
+
 void PointCloud::Transform(const Eigen::Matrix4d &transformation)
 {
 	for (auto &point : points_) {

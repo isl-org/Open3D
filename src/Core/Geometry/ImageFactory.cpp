@@ -3,8 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
-//                    Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +79,7 @@ std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image,
 	fimage->PrepareImage(image.width_, image.height_, 1, 4);
 	for (int i = 0; i < image.height_ * image.width_; i++) {
 		float *p = (float *)(fimage->data_.data() + i * 4);
-		const uint8_t *pi = image.data_.data() + 
+		const uint8_t *pi = image.data_.data() +
 				i * image.num_of_channels_ * image.bytes_per_channel_;
 		if (image.num_of_channels_ == 1) {
 			// grayscale image
@@ -101,15 +100,15 @@ std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image,
 				} else if (type == Image::WEIGHTED) {
 					*p = (0.2990f * (float)(pi[0]) + 0.5870f * (float)(pi[1]) +
 							0.1140f * (float)(pi[2])) / 255.0f;
-				}				
+				}
 			} else if (image.bytes_per_channel_ == 2) {
 				const uint16_t *pi16 = (const uint16_t *)pi;
 				if (type == Image::EQUAL) {
-					*p = ((float)(pi16[0]) + (float)(pi16[1]) + 
+					*p = ((float)(pi16[0]) + (float)(pi16[1]) +
 							(float)(pi16[2])) / 3.0f;
 				} else if (type == Image::WEIGHTED) {
-					*p = (0.2990f * (float)(pi16[0]) + 
-							0.5870f * (float)(pi16[1]) + 
+					*p = (0.2990f * (float)(pi16[0]) +
+							0.5870f * (float)(pi16[1]) +
 							0.1140f * (float)(pi16[2]));
 				}
 			} else if (image.bytes_per_channel_ == 4) {
@@ -142,7 +141,7 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
 	for (int i = 0; i < input.height_ * input.width_; i++, p++, pi++) {
 		if (sizeof(T) == 1)
 			*p = static_cast<T>(*pi * 255.0f);
-		if (sizeof(T) == 2) 
+		if (sizeof(T) == 2)
 			*p = static_cast<T>(*pi);
 	}
 	return output;

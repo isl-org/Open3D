@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@
 #include <Core/Utility/FileSystem.h>
 
 namespace three{
-	
+
 namespace {
-	
+
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, IJsonConvertible &)>>
 		file_extension_to_ijsonconvertible_read_function
@@ -48,16 +48,16 @@ static const std::unordered_map<std::string,
 
 }	// unnamed namespace
 
-bool ReadIJsonConvertible(const std::string &filename, 
+bool ReadIJsonConvertible(const std::string &filename,
 		IJsonConvertible &object)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
 		return false;
 	}
-	auto map_itr = 
+	auto map_itr =
 			file_extension_to_ijsonconvertible_read_function.find(filename_ext);
 	if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
 		PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
@@ -66,16 +66,16 @@ bool ReadIJsonConvertible(const std::string &filename,
 	return map_itr->second(filename, object);
 }
 
-bool WriteIJsonConvertible(const std::string &filename, 
+bool WriteIJsonConvertible(const std::string &filename,
 		const IJsonConvertible &object)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
 		return false;
 	}
-	auto map_itr = 
+	auto map_itr =
 			file_extension_to_ijsonconvertible_write_function.find(
 			filename_ext);
 	if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {

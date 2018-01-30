@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 					indices, distance2) > 0) {
 				if (distance2[0] < threshold2) {
 					correspondence_num++;
-					double new_dis = (source.points_[i] - 
+					double new_dis = (source.points_[i] -
 							pcds[pair_ids[k].first].points_[indices[0]]
 							).norm();
 					rmse += new_dis * new_dis;
@@ -176,11 +176,11 @@ int main(int argc, char *argv[])
 			positive_rmse += rmse;
 		}
 	}
-	PrintInfo("Average rmse %.8f (%.8f / %d)\n", total_rmse / 
+	PrintInfo("Average rmse %.8f (%.8f / %d)\n", total_rmse /
 			(double)pair_ids.size(), total_rmse, (int)pair_ids.size());
-	PrintInfo("Average rmse of positives %.8f (%.8f / %d)\n", positive_rmse / 
+	PrintInfo("Average rmse of positives %.8f (%.8f / %d)\n", positive_rmse /
 			(double)positive, positive_rmse, positive);
-	PrintInfo("Accuracy %.2f%% (%d / %d)\n", (double)positive * 100.0 / 
+	PrintInfo("Accuracy %.2f%% (%d / %d)\n", (double)positive * 100.0 /
 			(double)pair_ids.size(), positive, (int)pair_ids.size());
 	return 1;
 }

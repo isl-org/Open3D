@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ bool PinholeCameraIntrinsic::ConvertToJsonValue(Json::Value &value) const
 {
 	value["width"] = width_;
 	value["height"] = height_;
-	if (EigenMatrix3dToJsonArray(intrinsic_matrix_, 
+	if (EigenMatrix3dToJsonArray(intrinsic_matrix_,
 			value["intrinsic_matrix"]) == false) {
 		return false;
 	}
@@ -64,11 +64,11 @@ bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value)
 {
 	if (value.isObject() == false) {
 		PrintWarning("PinholeCameraParameters read JSON failed: unsupported json format.\n");
-		return false;		
+		return false;
 	}
 	width_ = value.get("width", -1).asInt();
 	height_ = value.get("height", -1).asInt();
-	if (EigenMatrix3dFromJsonArray(intrinsic_matrix_, 
+	if (EigenMatrix3dFromJsonArray(intrinsic_matrix_,
 			value["intrinsic_matrix"]) == false) {
 		PrintWarning("PinholeCameraParameters read JSON failed: wrong format.\n");
 		return false;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <iostream> 
+#include <iostream>
 #include <vector>
 #include <tuple>
 #include <Eigen/Core>
@@ -50,8 +50,8 @@ public:
 
 public:
 	/// Function to compute i-th row of J and r
-	/// the vector form of J_r is basically 6x1 matrix, but it can be 
-	/// easily extendable to 6xn matrix. 
+	/// the vector form of J_r is basically 6x1 matrix, but it can be
+	/// easily extendable to 6xn matrix.
 	/// See RGBDOdometryJacobianFromHybridTerm for this case.
 	virtual void ComputeJacobianAndResidual(
 			int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
@@ -63,10 +63,10 @@ public:
 			const CorrespondenceSetPixelWise &corresps) const = 0;
 };
 
-/// Function to Compute Jacobian using color term 
+/// Function to Compute Jacobian using color term
 /// Energy: (I_p-I_q)^2
-/// reference: 
-/// F. Steinbrucker, J. Sturm, and D. Cremers. 
+/// reference:
+/// F. Steinbrucker, J. Sturm, and D. Cremers.
 /// Real-time visual odometry from dense RGB-D images.
 /// In ICCV Workshops, 2011.
 class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian
@@ -86,9 +86,9 @@ public:
 			const CorrespondenceSetPixelWise &corresps) const override;
 };
 
-/// Function to Compute Jacobian using hybrid term 
+/// Function to Compute Jacobian using hybrid term
 /// Energy: (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
-/// reference: 
+/// reference:
 /// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian

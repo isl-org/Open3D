@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,13 +45,13 @@ public:
 			color(0.0, 0.0, 0.0)
 	{
 	}
-	
+
 public:
 	void AddPoint(const PointCloud &cloud, int index)
 	{
 		point += cloud.points_[index];
 		if (cloud.HasNormals()) {
-			if (!std::isnan(cloud.normals_[index](0)) && 
+			if (!std::isnan(cloud.normals_[index](0)) &&
 					!std::isnan(cloud.normals_[index](1)) &&
 					!std::isnan(cloud.normals_[index](2))) {
 				normal += cloud.normals_[index];
@@ -111,11 +111,11 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
 		PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
 		return output;
 	}
-	Eigen::Vector3d voxel_size3 = 
+	Eigen::Vector3d voxel_size3 =
 			Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
 	Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
 	Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
-	if (voxel_size * std::numeric_limits<int>::max() < 
+	if (voxel_size * std::numeric_limits<int>::max() <
 			(voxel_max_bound - voxel_min_bound).maxCoeff()) {
 		PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
 		return output;

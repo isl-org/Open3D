@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,20 +38,20 @@ public:
 		GEOMETRY_TRIANGLEMESH = 3,
 		GEOMETRY_IMAGE = 4,
 	};
-	
+
 public:
 	virtual ~Geometry() {}
-	
+
 protected:
 	Geometry(GeometryType type, int dimension) : geometry_type_(type),
 			dimension_(dimension) {}
 
 public:
 	virtual void Clear() = 0;
-	virtual bool IsEmpty() const = 0;	
+	virtual bool IsEmpty() const = 0;
 	GeometryType GetGeometryType() const { return geometry_type_; }
 	int Dimension() const { return dimension_; }
-	
+
 private:
 	GeometryType geometry_type_ = GEOMETRY_UNSPECIFIED;
 	int dimension_ = 3;

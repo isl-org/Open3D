@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three{
-	
+
 namespace {
 
 bool ReadPoseGraphFromJSON(const std::string &filename,
@@ -65,7 +65,7 @@ static const std::unordered_map<std::string,
 bool ReadPoseGraph(const std::string &filename,
 		PoseGraph &pose_graph)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read PoseGraph failed: unknown file extension.\n");
@@ -83,7 +83,7 @@ bool ReadPoseGraph(const std::string &filename,
 bool WritePoseGraph(const std::string &filename,
 		const PoseGraph &pose_graph)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write PoseGraph failed: unknown file extension.\n");

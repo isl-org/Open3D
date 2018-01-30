@@ -3,18 +3,16 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
-from os import listdir, makedirs
-from os.path import isfile, join, exists
-import math
+import argparse
 import sys
 sys.path.append("../..")
 from py3d import *
 sys.path.append("../Utility")
 from common import *
-from make_fragments_from_rgbd import *
+from make_fragments import *
 
 
-def process_one_rgbd_pair(s, t, color_files, depth_files,
+def register_one_rgbd_pair(s, t, color_files, depth_files,
 		intrinsic, with_opencv):
 	# read images
 	color_s = read_image(color_files[s])
@@ -35,66 +33,38 @@ def process_one_rgbd_pair(s, t, color_files, depth_files,
 	[success, trans, info] = compute_rgbd_odometry(
 			source_rgbd_image, target_rgbd_image, intrinsic,
 			odo_init, RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
-	return [trans, info]
 
-
-def test_single_frame_integrate(i, intrinsic):
-	min_depth = 0.3
-	cubic_length = 4.0
-	volume = UniformTSDFVolume(length = cubic_length, resolution = 512,
-			sdf_trunc = 0.04, with_color = True)
-	trans_offset = np.identity(4)
-	trans_offset[0:2,3] = cubic_length / 2
-	trans_offset[2,3] = -min_depth
-
-	print("Integrate a rgbd image.")
-	color = read_image(color_files[i])
-	depth = read_image(depth_files[i])
-	print(color_files[i])
-	print(depth_files[i])
-	rgbd = create_rgbd_image_from_color_and_depth(color, depth, depth_trunc = 4.0,
-			convert_rgb_to_intensity = False)
-	volume.integrate(rgbd, intrinsic, trans_offset)
-
-	mesh = volume.extract_triangle_mesh()
-	mesh.compute_vertex_normals()
-	mesh.transform(np.linalg.inv(trans_offset))
-
-	return mesh
+	source = create_point_cloud_from_rgbd_image(source_rgbd_image, intrinsic)
+	target = create_point_cloud_from_rgbd_image(target_rgbd_image, intrinsic)
+	return [source, target, trans, info]
 
 
 def test_single_pair(s, t, intrinsic, with_opencv):
 	set_verbosity_level(VerbosityLevel.Debug)
-
-	pose_graph = PoseGraph()
-	[trans, info] = process_one_rgbd_pair(s, t,
+	[source, target, trans, info] = register_one_rgbd_pair(s, t,
 			color_files, depth_files, intrinsic, with_opencv)
-	pose_graph.nodes.append(PoseGraphNode(trans))
-	pose_graph.nodes.append(PoseGraphNode(np.identity(4)))
 
 	# integration
-	mesh_s = test_single_frame_integrate(s, intrinsic)
-	mesh_t = test_single_frame_integrate(t, intrinsic)
-	mesh_s.transform(trans) # for 5pt
-	draw_geometries([mesh_s, mesh_t])
+	source.transform(trans) # for 5pt
+	draw_geometries([source, target])
 
 
 # test wide baseline matching
 if __name__ == "__main__":
-	path_dataset = parse_argument(sys.argv, "--path_dataset")
-	path_intrinsic = parse_argument(sys.argv, "--path_intrinsic")
-	source_id = parse_argument_int(sys.argv, "--source_id")
-	target_id = parse_argument_int(sys.argv, "--target_id")
+	parser = argparse.ArgumentParser(description="mathching two RGBD images")
+	parser.add_argument("path_dataset", help="path to the dataset")
+	parser.add_argument("source_id", type=int, help="ID of source RGBD image")
+	parser.add_argument("target_id", type=int, help="ID of target RGBD image")
+	parser.add_argument("-path_intrinsic", help="path to the RGBD camera intrinsic")
+	args = parser.parse_args()
 
-	if path_dataset:
-		with_opencv = initialize_opencv()
-		if with_opencv:
-			from opencv_pose_estimation import pose_estimation
+	with_opencv = initialize_opencv()
+	if with_opencv:
+		from opencv_pose_estimation import pose_estimation
 
-		[color_files, depth_files] = get_file_lists(path_dataset)
-		if path_intrinsic:
-			intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
-		else:
-			intrinsic = PinholeCameraIntrinsic.prime_sense_default
-
-		test_single_pair(source_id, target_id, intrinsic, with_opencv)
+	[color_files, depth_files] = get_rgbd_file_lists(args.path_dataset)
+	if args.path_intrinsic:
+		intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
+	else:
+		intrinsic = PinholeCameraIntrinsic.prime_sense_default
+	test_single_pair(args.source_id, args.target_id, intrinsic, with_opencv)
