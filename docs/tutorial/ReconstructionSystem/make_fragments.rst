@@ -34,7 +34,7 @@ Register RGBD image pairs
 
 .. code-block:: python
 
-    def process_one_rgbd_pair(s, t, color_files, depth_files,
+    def register_one_rgbd_pair(s, t, color_files, depth_files,
             intrinsic, with_opencv):
         # read images
         color_s = read_image(color_files[s])
@@ -86,7 +86,7 @@ Multiway registration
                 if t == s + 1:
                     print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
                             % (fragment_id, n_fragments-1, s, t))
-                    [success, trans, info] = process_one_rgbd_pair(
+                    [success, trans, info] = register_one_rgbd_pair(
                             s, t, color_files, depth_files, intrinsic, with_opencv)
                     trans_odometry = np.dot(trans, trans_odometry)
                     trans_odometry_inv = np.linalg.inv(trans_odometry)
@@ -99,7 +99,7 @@ Multiway registration
                         and t % n_keyframes_per_n_frame == 0:
                     print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
                             % (fragment_id, n_fragments-1, s, t))
-                    [success, trans, info] = process_one_rgbd_pair(
+                    [success, trans, info] = register_one_rgbd_pair(
                             s, t, color_files, depth_files, intrinsic, with_opencv)
                     if success:
                         pose_graph.edges.append(
@@ -114,27 +114,27 @@ Once a pose graph is created, multiway registration is performed by calling func
 .. code-block:: python
 
     def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
-    		max_correspondence_distance):
-    	# to display messages from global_optimization
-    	set_verbosity_level(VerbosityLevel.Debug)
-    	method = GlobalOptimizationLevenbergMarquardt()
-    	criteria = GlobalOptimizationConvergenceCriteria()
-    	option = GlobalOptimizationOption(
-    			max_correspondence_distance = max_correspondence_distance,
-    			edge_prune_threshold = 0.25,
-    			reference_node = 0)
-    	pose_graph = read_pose_graph(pose_graph_name)
-    	global_optimization(pose_graph, method, criteria, option)
-    	write_pose_graph(pose_graph_optmized_name, pose_graph)
-    	set_verbosity_level(VerbosityLevel.Error)
+            max_correspondence_distance):
+        # to display messages from global_optimization
+        set_verbosity_level(VerbosityLevel.Debug)
+        method = GlobalOptimizationLevenbergMarquardt()
+        criteria = GlobalOptimizationConvergenceCriteria()
+        option = GlobalOptimizationOption(
+                max_correspondence_distance = max_correspondence_distance,
+                edge_prune_threshold = 0.25,
+                reference_node = 0)
+        pose_graph = read_pose_graph(pose_graph_name)
+        global_optimization(pose_graph, method, criteria, option)
+        write_pose_graph(pose_graph_optmized_name, pose_graph)
+        set_verbosity_level(VerbosityLevel.Error)
 
 
     def optimize_posegraph_for_fragment(path_dataset, fragment_id):
-    	pose_graph_name = path_dataset + template_fragment_posegraph % fragment_id
-    	pose_graph_optmized_name = path_dataset + \
-    			template_fragment_posegraph_optimized % fragment_id
-    	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
-    			max_correspondence_distance = 0.075)
+        pose_graph_name = path_dataset + template_fragment_posegraph % fragment_id
+        pose_graph_optmized_name = path_dataset + \
+                template_fragment_posegraph_optimized % fragment_id
+        run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+                max_correspondence_distance = 0.03)
 
 This function calls ``global_optimization`` to estimate poses of the RGBD images.
 
@@ -199,7 +199,7 @@ Batch processing
             eid = min(sid + n_frames_per_fragment, n_files)
             make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
                     fragment_id, n_fragments, intrinsic, with_opencv)
-            optimize_a_posegraph_for_fragment(path_dataset, fragment_id)
+            optimize_posegraph_for_fragment(path_dataset, fragment_id)
             make_mesh_for_fragment(path_dataset, color_files, depth_files,
                     fragment_id, n_fragments, intrinsic)
 
@@ -225,24 +225,24 @@ The following is a log from ``optimize_a_posegraph_for_fragment``.
 
 .. code-block:: sh
 
-    [GlobalOptimizationLM] Optimizing PoseGraph having 100 nodes and 196 edges.
-    Line process weight : 1209.438798
-    [Initial     ] residual : 2.609760e+05, lambda : 2.044341e+02
-    [Iteration 00] residual : 3.786013e+04, valid edges : 78, time : 0.016 sec.
-    [Iteration 01] residual : 2.206913e+04, valid edges : 85, time : 0.015 sec.
+    [GlobalOptimizationLM] Optimizing PoseGraph having 100 nodes and 195 edges.
+    Line process weight : 389.309502
+    [Initial     ] residual : 3.223357e+05, lambda : 1.771814e+02
+    [Iteration 00] residual : 1.721845e+04, valid edges : 157, time : 0.022 sec.
+    [Iteration 01] residual : 1.350251e+04, valid edges : 168, time : 0.017 sec.
     :
-    [Iteration 14] residual : 1.779927e+04, valid edges : 88, time : 0.013 sec.
+    [Iteration 32] residual : 9.779118e+03, valid edges : 179, time : 0.013 sec.
     Current_residual - new_residual < 1.000000e-06 * current_residual
-    [GlobalOptimizationLM] total time : 0.225 sec.
-    [GlobalOptimizationLM] Optimizing PoseGraph having 100 nodes and 187 edges.
-    Line process weight : 1230.270792
-    [Initial     ] residual : 1.052490e+04, lambda : 2.805398e+02
-    [Iteration 00] residual : 1.043319e+04, valid edges : 88, time : 0.013 sec.
-    [Iteration 01] residual : 1.041026e+04, valid edges : 88, time : 0.014 sec.
+    [GlobalOptimizationLM] total time : 0.519 sec.
+    [GlobalOptimizationLM] Optimizing PoseGraph having 100 nodes and 179 edges.
+    Line process weight : 398.292104
+    [Initial     ] residual : 5.120047e+03, lambda : 2.565362e+02
+    [Iteration 00] residual : 5.064539e+03, valid edges : 179, time : 0.014 sec.
+    [Iteration 01] residual : 5.037665e+03, valid edges : 178, time : 0.015 sec.
     :
-    [Iteration 05] residual : 1.040701e+04, valid edges : 88, time : 0.013 sec.
+    [Iteration 11] residual : 5.017307e+03, valid edges : 177, time : 0.013 sec.
     Current_residual - new_residual < 1.000000e-06 * current_residual
-    [GlobalOptimizationLM] total time : 0.089 sec.
+    [GlobalOptimizationLM] total time : 0.197 sec.
     CompensateReferencePoseGraphNode : reference : 0
 
 The following is a log from ``integrate_rgb_frames_for_fragment``.

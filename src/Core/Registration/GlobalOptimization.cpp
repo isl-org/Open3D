@@ -127,16 +127,14 @@ int UpdateConfidence(
 	int valid_edges_num = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		PoseGraphEdge &t = pose_graph.edges_[iter_edge];
-		//if (t.uncertain_) {
-			Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
-			double residual_square = e.transpose() * t.information_ * e;
-			double temp = line_process_weight /
-					(line_process_weight + residual_square);
-			double temp2 = temp * temp;
-			t.confidence_ = temp2;
-			if (temp2 > option.edge_prune_threshold_)
-				valid_edges_num++;
-		//}
+		Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
+		double residual_square = e.transpose() * t.information_ * e;
+		double temp = line_process_weight /
+				(line_process_weight + residual_square);
+		double temp2 = temp * temp;
+		t.confidence_ = temp2;
+		if (temp2 > option.edge_prune_threshold_)
+			valid_edges_num++;
 	}
 	return valid_edges_num;
 }

@@ -5,12 +5,10 @@
 import sys
 sys.path.append("../..")
 from py3d import *
-from trajectory_io import *
 
 if __name__ == "__main__":
 
 	set_verbosity_level(VerbosityLevel.Debug)
-	traj = read_trajectory("../../TestData/ICP/init.log")
 	pcds = []
 	for i in range(3):
 		pcd = read_point_cloud(
@@ -49,7 +47,7 @@ if __name__ == "__main__":
 						PoseGraphNode(np.linalg.inv(odometry)))
 				pose_graph.edges.append(
 						PoseGraphEdge(source_id, target_id,
-						transformation_icp, information_icp, True))
+						transformation_icp, information_icp, False))
 			else: # loop closure case
 				pose_graph.edges.append(
 						PoseGraphEdge(source_id, target_id,

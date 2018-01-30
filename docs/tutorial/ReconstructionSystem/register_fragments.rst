@@ -19,7 +19,7 @@ Input arguments
         ply_file_names = get_file_list(args.path_dataset + folder_fragment, ".ply")
         make_folder(args.path_dataset + folder_scene)
         register_point_cloud(args.path_dataset, ply_file_names)
-        optimize_a_posegraph_for_scene(args.path_dataset)
+        optimize_posegraph_for_scene(args.path_dataset)
 
 This script runs with ``python register_fragments.py [path]``. ``[path]`` should have subfolders *fragments* which stores fragments in .ply files and a pose graph in a .json file.
 
@@ -118,7 +118,7 @@ Fine-grained registration
                 TransformationEstimationPointToPlane())
         print(result_icp)
         information_matrix = get_information_matrix_from_point_clouds(
-                source, target, 0.075, result_icp.transformation)
+                source, target, 0.03, result_icp.transformation)
         return (result_icp.transformation, information_matrix)
 
     def register_colored_point_cloud_icp(source, target,
@@ -144,7 +144,7 @@ Fine-grained registration
             current_transformation = result_icp.transformation
 
         information_matrix = get_information_matrix_from_point_clouds(
-                source, target, 0.075, result_icp.transformation)
+                source, target, 0.03, result_icp.transformation)
         if draw_result:
             draw_registration_result_original_color(source, target,
                     result_icp.transformation)
@@ -178,7 +178,7 @@ Multiway registration
 
 .. code-block:: python
 
-    def update_posegrph_for_scene(s, t, transformation, information,
+    def update_odometry_posegrph(s, t, transformation, information,
             odometry, pose_graph):
 
         print("Update PoseGraph")
@@ -188,11 +188,12 @@ Multiway registration
             pose_graph.nodes.append(PoseGraphNode(odometry_inv))
             pose_graph.edges.append(
                     PoseGraphEdge(s, t, transformation,
-                    information, True))
+                    information, False))
         else: # loop closure case
             pose_graph.edges.append(
                     PoseGraphEdge(s, t, transformation,
                     information, True))
+        return (odometry, pose_graph)
 
 This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragments and its pose which transforms the geometry to the global space.
 
@@ -201,26 +202,26 @@ Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called 
 .. code-block:: python
 
     def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
-    		max_correspondence_distance):
-    	# to display messages from global_optimization
-    	set_verbosity_level(VerbosityLevel.Debug)
-    	method = GlobalOptimizationLevenbergMarquardt()
-    	criteria = GlobalOptimizationConvergenceCriteria()
-    	option = GlobalOptimizationOption(
-    			max_correspondence_distance = max_correspondence_distance,
-    			edge_prune_threshold = 0.25,
-    			reference_node = 0)
-    	pose_graph = read_pose_graph(pose_graph_name)
-    	global_optimization(pose_graph, method, criteria, option)
-    	write_pose_graph(pose_graph_optmized_name, pose_graph)
-    	set_verbosity_level(VerbosityLevel.Error)
+            max_correspondence_distance):
+        # to display messages from global_optimization
+        set_verbosity_level(VerbosityLevel.Debug)
+        method = GlobalOptimizationLevenbergMarquardt()
+        criteria = GlobalOptimizationConvergenceCriteria()
+        option = GlobalOptimizationOption(
+                max_correspondence_distance = max_correspondence_distance,
+                edge_prune_threshold = 0.25,
+                reference_node = 0)
+        pose_graph = read_pose_graph(pose_graph_name)
+        global_optimization(pose_graph, method, criteria, option)
+        write_pose_graph(pose_graph_optmized_name, pose_graph)
+        set_verbosity_level(VerbosityLevel.Error)
 
     def optimize_posegraph_for_scene(path_dataset):
-    	pose_graph_name = path_dataset + template_global_posegraph
-    	pose_graph_optmized_name = path_dataset + \
-    			template_global_posegraph_optimized
-    	run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
-    			max_correspondence_distance = 0.075)
+        pose_graph_name = path_dataset + template_global_posegraph
+        pose_graph_optmized_name = path_dataset + \
+                template_global_posegraph_optimized
+        run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+                max_correspondence_distance = 0.03)
 
 
 Main registration loop
@@ -259,7 +260,7 @@ The function ``register_point_cloud`` below calls all the functions introduced a
                         source_down, target_down, transformation_init,
                         registration_type, draw_result)
 
-                update_posegrph_for_scene(s, t,
+                (odometry, pose_graph) = update_odometry_posegrph(s, t,
                         transformation_icp, information_icp,
                         odometry, pose_graph)
                 print(pose_graph)
@@ -275,29 +276,30 @@ The following is messages from pose graph optimization.
 
 .. code-block:: sh
 
+    PoseGraph with 14 nodes and 52 edges.
     [GlobalOptimizationLM] Optimizing PoseGraph having 14 nodes and 52 edges.
-    Line process weight : 416.822452
-    [Initial     ] residual : 3.560956e+07, lambda : 1.227002e+01
-    [Iteration 00] residual : 2.115086e+04, valid edges : 2, time : 0.000 sec.
-    [Iteration 01] residual : 2.011877e+04, valid edges : 5, time : 0.000 sec.
-    [Iteration 02] residual : 1.838354e+04, valid edges : 8, time : 0.000 sec.
-    [Iteration 03] residual : 1.557901e+04, valid edges : 25, time : 0.000 sec.
+    Line process weight : 49.899808
+    [Initial     ] residual : 1.307073e+06, lambda : 8.415505e+00
+    [Iteration 00] residual : 1.164909e+03, valid edges : 31, time : 0.000 sec.
+    [Iteration 01] residual : 1.026223e+03, valid edges : 34, time : 0.000 sec.
+    [Iteration 02] residual : 9.263710e+02, valid edges : 41, time : 0.000 sec.
+    [Iteration 03] residual : 8.434943e+02, valid edges : 40, time : 0.000 sec.
     :
-    [Iteration 21] residual : 5.580001e+03, valid edges : 42, time : 0.000 sec.
+    [Iteration 22] residual : 8.002788e+02, valid edges : 41, time : 0.000 sec.
     Current_residual - new_residual < 1.000000e-06 * current_residual
-    [GlobalOptimizationLM] total time : 0.019 sec.
-    [GlobalOptimizationLM] Optimizing PoseGraph having 14 nodes and 42 edges.
-    Line process weight : 404.368527
-    [Initial     ] residual : 2.080906e+03, lambda : 8.109836e+01
-    [Iteration 00] residual : 2.015805e+03, valid edges : 41, time : 0.000 sec.
-    [Iteration 01] residual : 2.002335e+03, valid edges : 41, time : 0.000 sec.
-    [Iteration 02] residual : 1.999133e+03, valid edges : 41, time : 0.000 sec.
-    [Iteration 03] residual : 1.997591e+03, valid edges : 41, time : 0.000 sec.
+    [GlobalOptimizationLM] total time : 0.006 sec.
+    [GlobalOptimizationLM] Optimizing PoseGraph having 14 nodes and 41 edges.
+    Line process weight : 52.121020
+    [Initial     ] residual : 3.490871e+02, lambda : 1.198591e+01
+    [Iteration 00] residual : 3.409909e+02, valid edges : 40, time : 0.000 sec.
+    [Iteration 01] residual : 3.393578e+02, valid edges : 40, time : 0.000 sec.
+    [Iteration 02] residual : 3.390909e+02, valid edges : 40, time : 0.000 sec.
+    [Iteration 03] residual : 3.390108e+02, valid edges : 40, time : 0.000 sec.
     :
-    [Iteration 26] residual : 1.988630e+03, valid edges : 39, time : 0.000 sec.
+    [Iteration 08] residual : 3.389679e+02, valid edges : 40, time : 0.000 sec.
     Current_residual - new_residual < 1.000000e-06 * current_residual
-    [GlobalOptimizationLM] total time : 0.007 sec.
+    [GlobalOptimizationLM] total time : 0.002 sec.
     CompensateReferencePoseGraphNode : reference : 0
 
 
-There are 14 fragments and 52 valid matching pairs between fragments. After 21 iteration, 10 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.
+There are 14 fragments and 52 valid matching pairs between fragments. After 23 iteration, 11 edges are detected to be false positive. After they are pruned, pose graph optimization runs again to achieve tight alignment.

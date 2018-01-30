@@ -37,14 +37,18 @@ Open3D implements multiway registration via pose graph optimization. The backend
                 target = pcds[target_id]
 
                 print("Apply point-to-plane ICP")
-                result_icp = registration_icp(source, target, 0.30,
+                icp_coarse = registration_icp(source, target, 0.3,
                         np.identity(4),
                         TransformationEstimationPointToPlane())
-                transformation_icp = result_icp.transformation
+                icp_fine = registration_icp(source, target, 0.03,
+                        icp_coarse.transformation,
+                        TransformationEstimationPointToPlane())
+                transformation_icp = icp_fine.transformation
                 information_icp = get_information_matrix_from_point_clouds(
-                        source, target, 0.30, result_icp.transformation)
+                        source, target, 0.03, icp_fine.transformation)
                 print(transformation_icp)
 
+                # draw_registration_result(source, target, np.identity(4))
                 print("Build PoseGraph")
                 if target_id == source_id + 1: # odometry case
                     odometry = np.dot(transformation_icp, odometry)
@@ -59,10 +63,13 @@ Open3D implements multiway registration via pose graph optimization. The backend
                             transformation_icp, information_icp, True))
 
         print("Optimizing PoseGraph ...")
+        option = GlobalOptimizationOption(
+                max_correspondence_distance = 0.03,
+                edge_prune_threshold = 0.25,
+                reference_node = 0)
         global_optimization(pose_graph,
                 GlobalOptimizationLevenbergMarquardt(),
-                GlobalOptimizationConvergenceCriteria(),
-                GlobalOptimizationOption())
+                GlobalOptimizationConvergenceCriteria(), option)
 
         print("Transform points and display")
         for point_id in range(n_pcds):
@@ -107,14 +114,18 @@ Build a pose graph
             target = pcds[target_id]
 
             print("Apply point-to-plane ICP")
-            result_icp = registration_icp(source, target, 0.30,
+            icp_coarse = registration_icp(source, target, 0.3,
                     np.identity(4),
                     TransformationEstimationPointToPlane())
-            transformation_icp = result_icp.transformation
+            icp_fine = registration_icp(source, target, 0.03,
+                    icp_coarse.transformation,
+                    TransformationEstimationPointToPlane())
+            transformation_icp = icp_fine.transformation
             information_icp = get_information_matrix_from_point_clouds(
-                    source, target, 0.30, result_icp.transformation)
+                    source, target, 0.03, icp_fine.transformation)
             print(transformation_icp)
 
+            # draw_registration_result(source, target, np.identity(4))
             print("Build PoseGraph")
             if target_id == source_id + 1: # odometry case
                 odometry = np.dot(transformation_icp, odometry)
@@ -122,11 +133,11 @@ Build a pose graph
                         PoseGraphNode(np.linalg.inv(odometry)))
                 pose_graph.edges.append(
                         PoseGraphEdge(source_id, target_id,
-                        transformation_icp, information_icp, uncertain = False))
+                        transformation_icp, information_icp, False))
             else: # loop closure case
                 pose_graph.edges.append(
                         PoseGraphEdge(source_id, target_id,
-                        transformation_icp, information_icp, uncertain = True))
+                        transformation_icp, information_icp, True))
 
 A pose graph has two key elements: nodes and edges. A node is a piece of geometry :math:`\mathbf{P}_{i}` associated with a pose matrix :math:`\mathbf{T}_{i}` which transforms :math:`\mathbf{P}_{i}` into the global space. The set :math:`\{\mathbf{T}_{i}\}` are the unknown variables to be optimized. ``PoseGraph.nodes`` is a list of ``PoseGraphNode``. We set the global space to be the space of :math:`\mathbf{P}_{0}`. Thus :math:`\mathbf{T}_{0}` is identity matrix. The other pose matrices are initialized by accumulating transformation between neighboring nodes. The neighboring nodes usually have large overlap and can be registered with :ref:`point_to_plane_icp`.
 
@@ -147,10 +158,13 @@ Optimize a pose graph
 .. code-block:: python
 
     print("Optimizing PoseGraph ...")
+    option = GlobalOptimizationOption(
+            max_correspondence_distance = 0.03,
+            edge_prune_threshold = 0.25,
+            reference_node = 0)
     global_optimization(pose_graph,
             GlobalOptimizationLevenbergMarquardt(),
-            GlobalOptimizationConvergenceCriteria(),
-            GlobalOptimizationOption())
+            GlobalOptimizationConvergenceCriteria(), option)
 
 Open3D uses function ``global_optimization`` to perform pose graph optimization. Two types of optimization methods can be chosen: ``GlobalOptimizationGaussNewton`` or ``GlobalOptimizationLevenbergMarquardt``. The latter is recommended since it has better convergence property. Class ``GlobalOptimizationConvergenceCriteria`` can be used to set the maximum number of iterations and various optimization parameters. Class ``GlobalOptimizationOption`` defines the loss function of the pose graph.
 
