@@ -1,6 +1,6 @@
 # Open3D: A Modern Library for 3D Data Processing
 
-[![Build Status](https://travis-ci.com/IntelVCL/Open3D.svg?token=J6RafDafqG2bAk9tQXMU&branch=master)](https://travis-ci.com/IntelVCL/Open3D)
+[![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
 
 ## About this project
 
