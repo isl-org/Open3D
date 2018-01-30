@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/IntelVCL/Open3D.svg?token=J6RafDafqG2bAk9tQXMU&branch=master)](https://travis-ci.com/IntelVCL/Open3D)
 
-## About This Project
+## About this project
 
 Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
 
@@ -33,7 +33,7 @@ If you use Open3D in an academic project, please cite our paper:
 
 ## Resources
 
-* Website: [open3d.org](http://www.open3d.org/)
+* Website: [open3d.org](http://open3d.org/)
 * Code: [github.com/IntelVCL/Open3D](https://github.com/IntelVCL/Open3D)
-* Document: [open3d.org/docs/](http://www.open3d.org/docs/)
+* Document: [open3d.org/docs](http://open3d.org/docs/)
 * License: [The MIT license](https://opensource.org/licenses/MIT)
