@@ -133,11 +133,11 @@ Build a pose graph
                         PoseGraphNode(np.linalg.inv(odometry)))
                 pose_graph.edges.append(
                         PoseGraphEdge(source_id, target_id,
-                        transformation_icp, information_icp, False))
+                        transformation_icp, information_icp, uncertain = False))
             else: # loop closure case
                 pose_graph.edges.append(
                         PoseGraphEdge(source_id, target_id,
-                        transformation_icp, information_icp, True))
+                        transformation_icp, information_icp, uncertain = True))
 
 A pose graph has two key elements: nodes and edges. A node is a piece of geometry :math:`\mathbf{P}_{i}` associated with a pose matrix :math:`\mathbf{T}_{i}` which transforms :math:`\mathbf{P}_{i}` into the global space. The set :math:`\{\mathbf{T}_{i}\}` are the unknown variables to be optimized. ``PoseGraph.nodes`` is a list of ``PoseGraphNode``. We set the global space to be the space of :math:`\mathbf{P}_{0}`. Thus :math:`\mathbf{T}_{0}` is identity matrix. The other pose matrices are initialized by accumulating transformation between neighboring nodes. The neighboring nodes usually have large overlap and can be registered with :ref:`point_to_plane_icp`.
 
@@ -170,24 +170,25 @@ Open3D uses function ``global_optimization`` to perform pose graph optimization.
 
 .. code-block:: sh
 
-    Optimizing PoseGraph ...
-    [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
-    Line process weight : 7.796553
-    [Initial     ] residual : 8.789272e+02, lambda : 1.263999e+01
-    [Iteration 00] residual : 7.726156e+00, valid edges : 0, time : 0.000 sec.
-    [Iteration 01] residual : 7.725927e+00, valid edges : 0, time : 0.000 sec.
-    Current_residual - new_residual < 1.000000e-06 * current_residual
-    [GlobalOptimizationLM] total time : 0.000 sec.
-    [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 2 edges.
-    Line process weight : 7.914725
-    [Initial     ] residual : 2.184441e-03, lambda : 1.264504e+01
-    [Iteration 00] residual : 5.134888e-06, valid edges : 0, time : 0.000 sec.
-    [Iteration 01] residual : 6.945283e-09, valid edges : 0, time : 0.000 sec.
-    Current_residual < 1.000000e-06
-    [GlobalOptimizationLM] total time : 0.000 sec.
-    CompensateReferencePoseGraphNode : reference : -1
+	Optimizing PoseGraph ...
+	[GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
+	Line process weight : 3.745800
+	[Initial     ] residual : 6.741225e+00, lambda : 6.042803e-01
+	[Iteration 00] residual : 1.791471e+00, valid edges : 3, time : 0.000 sec.
+	[Iteration 01] residual : 5.133682e-01, valid edges : 3, time : 0.000 sec.
+	[Iteration 02] residual : 4.412544e-01, valid edges : 3, time : 0.000 sec.
+	[Iteration 03] residual : 4.408356e-01, valid edges : 3, time : 0.000 sec.
+	[Iteration 04] residual : 4.408342e-01, valid edges : 3, time : 0.000 sec.
+	Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
+	[GlobalOptimizationLM] total time : 0.000 sec.
+	[GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
+	Line process weight : 3.745800
+	[Initial     ] residual : 4.408342e-01, lambda : 6.064910e-01
+	Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
+	[GlobalOptimizationLM] total time : 0.000 sec.
+	CompensateReferencePoseGraphNode : reference : 0
 
-The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments are pruned after the first pass. The second pass runs without them and produces a tight global alignment.
+The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments are pruned after the first pass. The second pass runs without them and produces a tight global alignment. In this example, all the edges are considered as true alignments, hence the second pass did nothing.
 
 .. _visualize_optimization:
 

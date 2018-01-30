@@ -47,11 +47,11 @@ if __name__ == "__main__":
 						PoseGraphNode(np.linalg.inv(odometry)))
 				pose_graph.edges.append(
 						PoseGraphEdge(source_id, target_id,
-						transformation_icp, information_icp, False))
+						transformation_icp, information_icp, uncertain = False))
 			else: # loop closure case
 				pose_graph.edges.append(
 						PoseGraphEdge(source_id, target_id,
-						transformation_icp, information_icp, True))
+						transformation_icp, information_icp, uncertain = True))
 
 	print("Optimizing PoseGraph ...")
 	option = GlobalOptimizationOption(

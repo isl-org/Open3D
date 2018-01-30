@@ -188,11 +188,11 @@ Multiway registration
             pose_graph.nodes.append(PoseGraphNode(odometry_inv))
             pose_graph.edges.append(
                     PoseGraphEdge(s, t, transformation,
-                    information, False))
+                    information, uncertain = False))
         else: # loop closure case
             pose_graph.edges.append(
                     PoseGraphEdge(s, t, transformation,
-                    information, True))
+                    information, uncertain = True))
         return (odometry, pose_graph)
 
 This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragments and its pose which transforms the geometry to the global space.

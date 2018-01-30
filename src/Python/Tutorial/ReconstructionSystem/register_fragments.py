@@ -142,11 +142,11 @@ def update_odometry_posegrph(s, t, transformation, information,
 		pose_graph.nodes.append(PoseGraphNode(odometry_inv))
 		pose_graph.edges.append(
 				PoseGraphEdge(s, t, transformation,
-				information, False))
+				information, uncertain = False))
 	else: # loop closure case
 		pose_graph.edges.append(
 				PoseGraphEdge(s, t, transformation,
-				information, True))
+				information, uncertain = True))
 	return (odometry, pose_graph)
 
 

@@ -63,7 +63,8 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
 				trans_odometry_inv = np.linalg.inv(trans_odometry)
 				pose_graph.nodes.append(PoseGraphNode(trans_odometry_inv))
 				pose_graph.edges.append(
-						PoseGraphEdge(s-sid, t-sid, trans, info, False))
+						PoseGraphEdge(s-sid, t-sid, trans, info,
+								uncertain = False))
 
 			# keyframe loop closure
 			if s % n_keyframes_per_n_frame == 0 \
@@ -74,7 +75,8 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
 						s, t, color_files, depth_files, intrinsic, with_opencv)
 				if success:
 					pose_graph.edges.append(
-							PoseGraphEdge(s-sid, t-sid, trans, info, True))
+							PoseGraphEdge(s-sid, t-sid, trans, info,
+									uncertain = True))
 	write_pose_graph(path_dataset + template_fragment_posegraph % fragment_id,
 			pose_graph)
 
