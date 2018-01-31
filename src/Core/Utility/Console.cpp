@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ static VerbosityLevel global_verbosity_level = VERBOSE_INFO;
 
 /// Internal function to change text color for the console
 /// Note there is no security check for parameters.
-/// \param text_color, from 0 to 7, they are black, red, green, yellow, blue, 
+/// \param text_color, from 0 to 7, they are black, red, green, yellow, blue,
 /// magenta, cyan, white
 /// \param emphasis_text is 0 or 1
 void ChangeConsoleColor(int text_color, int highlight_text)
@@ -79,7 +79,7 @@ void ChangeConsoleColor(int text_color, int highlight_text)
 		FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED
 	};
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(h, 
+	SetConsoleTextAttribute(h,
 			EMPHASIS_MASK[highlight_text] | COLOR_MASK[text_color]);
 #else
 	printf("%c[%d;%dm", 0x1B, highlight_text, text_color + 30);
@@ -98,13 +98,13 @@ void ResetConsoleColor()
 }
 
 static int64_t expected_console_count = 0;
-	
+
 static int64_t current_console_progress = 0;
 
 static int current_console_progress_pixel = 0;
 
 static std::string console_progress_info = "";
-	
+
 static const int CONSOLE_PROGRESS_RESOLUTION = 40;
 
 void PrintConsoleProgress()
@@ -198,7 +198,7 @@ void PrintAlways(const char *format, ...)
 		ResetConsoleColor();
 	}
 }
-	
+
 void ResetConsoleProgress(const int64_t expected_count,
 		const std::string &progress_info/* = ""*/)
 {
@@ -213,7 +213,7 @@ void ResetConsoleProgress(const int64_t expected_count,
 	console_progress_info = progress_info;
 	PrintConsoleProgress();
 }
-	
+
 void AdvanceConsoleProgress()
 {
 	current_console_progress++;
@@ -231,7 +231,7 @@ std::string GetCurrentTimeStamp()
 	return std::string(buffer);
 }
 
-std::string GetProgramOptionAsString(int argc, char **argv, 
+std::string GetProgramOptionAsString(int argc, char **argv,
 		const std::string &option, const std::string &default_value/* = ""*/)
 {
 	char **itr = std::find(argv, argv + argc, option);
@@ -241,7 +241,7 @@ std::string GetProgramOptionAsString(int argc, char **argv,
 	return default_value;
 }
 
-int GetProgramOptionAsInt(int argc, char **argv, 
+int GetProgramOptionAsInt(int argc, char **argv,
 		const std::string &option, const int default_value/* = 0*/)
 {
 	std::string str = GetProgramOptionAsString(argc, argv, option, "");
@@ -261,7 +261,7 @@ int GetProgramOptionAsInt(int argc, char **argv,
 	return (int)l;
 }
 
-double GetProgramOptionAsDouble(int argc, char **argv, 
+double GetProgramOptionAsDouble(int argc, char **argv,
 		const std::string &option, const double default_value/* = 0.0*/)
 {
 	std::string str = GetProgramOptionAsString(argc, argv, option, "");
@@ -280,7 +280,7 @@ double GetProgramOptionAsDouble(int argc, char **argv,
 }
 
 Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv,
-		const std::string &option, const Eigen::VectorXd default_value/* = 
+		const std::string &option, const Eigen::VectorXd default_value/* =
 		Eigen::VectorXd::Zero()*/)
 {
 	std::string str = GetProgramOptionAsString(argc, argv, option, "");

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,9 @@
 #include <Core/Utility/FileSystem.h>
 
 namespace three{
-	
+
 namespace {
-	
+
 static const std::unordered_map<std::string,
 		std::function<bool(const std::string &, TriangleMesh &)>>
 		file_extension_to_trianglemesh_read_function
@@ -51,20 +51,20 @@ static const std::unordered_map<std::string,
 
 bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
-	auto map_itr = 
+	auto map_itr =
 			file_extension_to_trianglemesh_read_function.find(filename_ext);
 	if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
 		PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
 		return false;
 	}
 	bool success = map_itr->second(filename, mesh);
-	PrintDebug("Read TriangleMesh: %d triangles and %d vertices.\n", 
+	PrintDebug("Read TriangleMesh: %d triangles and %d vertices.\n",
 			(int)mesh.triangles_.size(), (int)mesh.vertices_.size());
 	return success;
 }
@@ -72,7 +72,7 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 		bool write_ascii/* = false*/, bool compressed/* = false*/)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
@@ -85,7 +85,7 @@ bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
 		return false;
 	}
 	bool success = map_itr->second(filename, mesh, write_ascii, compressed);
-	PrintDebug("Write TriangleMesh: %d triangles and %d vertices.\n", 
+	PrintDebug("Write TriangleMesh: %d triangles and %d vertices.\n",
 			(int)mesh.triangles_.size(), (int)mesh.vertices_.size());
 	return success;
 }

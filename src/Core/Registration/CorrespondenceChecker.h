@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@ public:
 	CorrespondenceChecker(bool require_pointcloud_alignment) :
 			require_pointcloud_alignment_(require_pointcloud_alignment) {}
 	virtual ~CorrespondenceChecker() {}
-	
+
 public:
 	/// Function to check if two points can be aligned. The two input point
 	/// clouds must have exact the same number of points.
@@ -71,12 +71,12 @@ public:
 			CorrespondenceChecker(false),
 			similarity_threshold_(similarity_threshold) {}
 	~CorrespondenceCheckerBasedOnEdgeLength() override {}
-	
+
 public:
 	bool Check(const PointCloud &source, const PointCloud &target,
 			const CorrespondenceSet &corres,
 			const Eigen::Matrix4d &transformation) const override;
-	
+
 public:
 	double similarity_threshold_;
 };
@@ -89,12 +89,12 @@ public:
 			CorrespondenceChecker(true),
 			distance_threshold_(distance_threshold) {}
 	~CorrespondenceCheckerBasedOnDistance() override {}
-	
+
 public:
 	bool Check(const PointCloud &source, const PointCloud &target,
 			const CorrespondenceSet &corres,
 			const Eigen::Matrix4d &transformation) const override;
-	
+
 public:
 	double distance_threshold_;
 };
@@ -107,12 +107,12 @@ public:
 			CorrespondenceChecker(true),
 			normal_angle_threshold_(normal_angle_threshold) {}
 	~CorrespondenceCheckerBasedOnNormal() override {}
-	
+
 public:
 	bool Check(const PointCloud &source, const PointCloud &target,
 			const CorrespondenceSet &corres,
 			const Eigen::Matrix4d &transformation) const override;
-	
+
 public:
 	double normal_angle_threshold_;
 };

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,14 +33,14 @@ namespace three {
 
 /// The general entrance for reading an IJsonConvertible from a file
 /// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful. 
-bool ReadIJsonConvertible(const std::string &filename, 
+/// \return If the read function is successful.
+bool ReadIJsonConvertible(const std::string &filename,
 		IJsonConvertible &object);
 
 /// The general entrance for writing an IJsonConvertible to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return If the write function is successful.
-bool WriteIJsonConvertible(const std::string &filename, 
+bool WriteIJsonConvertible(const std::string &filename,
 		const IJsonConvertible &object);
 
 bool ReadIJsonConvertibleFromJSON(const std::string &filename,

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,12 @@ namespace three {
 
 /// The general entrance for reading an Image from a file
 /// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful. 
+/// \return If the read function is successful.
 bool ReadImage(const std::string &filename, Image &image);
 
 /// The general entrance for writing an Image to a file
 /// The function calls write functions based on the extension name of filename.
-/// If the write function supports quality, the parameter will be used. 
+/// If the write function supports quality, the parameter will be used.
 /// Otherwise it will be ignored.
 /// \return If the write function is successful.
 bool WriteImage(const std::string &filename, const Image &image,

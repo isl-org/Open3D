@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,7 @@ static const std::unordered_map<std::string,
 
 bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Read PointCloud failed: unknown file extension.\n");
@@ -81,7 +81,7 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud)
 bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
 		bool write_ascii/* = false*/, bool compressed/* = false*/)
 {
-	std::string filename_ext = 
+	std::string filename_ext =
 			filesystem::GetFileExtensionInLowerCase(filename);
 	if (filename_ext.empty()) {
 		PrintWarning("Write PointCloud failed: unknown file extension.\n");

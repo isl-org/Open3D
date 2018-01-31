@@ -30,9 +30,10 @@ if __name__ == "__main__":
 	print("We make a partial mesh of only the first half triangles.")
 	mesh1 = copy.deepcopy(mesh)
 	mesh1.triangles = Vector3iVector(
-			np.asarray(mesh1.triangles)[:len(mesh1.triangles)/2, :])
+			np.asarray(mesh1.triangles)[:len(mesh1.triangles)//2, :])
 	mesh1.triangle_normals = Vector3dVector(
-			np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals)/2, :])
+			np.asarray(mesh1.triangle_normals)
+			[:len(mesh1.triangle_normals)//2, :])
 	print(mesh1.triangles)
 	draw_geometries([mesh1])
 

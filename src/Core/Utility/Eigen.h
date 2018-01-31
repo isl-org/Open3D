@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 namespace three {
 
 /// Function to transform 6D motion vector to 4D motion matrix
-/// Reference: 
+/// Reference:
 /// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input);
 

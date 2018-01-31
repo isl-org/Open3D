@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-Open3D --- A modern library for 3d modeling and geometry processing
+Open3D: A Modern Library for 3D Data Processing
 ===================================================================
 
 .. only: not latex

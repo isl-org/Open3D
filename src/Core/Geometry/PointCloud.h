@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,7 @@ public:
 	bool HasColors() const {
 		return points_.size() > 0 && colors_.size() == points_.size();
 	}
-	
+
 	void NormalizeNormals() {
 		for (size_t i = 0; i < normals_.size(); i++) {
 			normals_[i].normalize();
@@ -81,7 +81,7 @@ public:
 			colors_[i] = color;
 		}
 	}
-	
+
 public:
 	std::vector<Eigen::Vector3d> points_;
 	std::vector<Eigen::Vector3d> normals_;
@@ -102,7 +102,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
 /// Return an empty pointcloud if the conversion fails.
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 		const Image &depth, const PinholeCameraIntrinsic &intrinsic,
-		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(), 
+		const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
 		double depth_scale = 1000.0, double depth_trunc = 1000.0,
 		int stride = 1);
 
@@ -119,7 +119,7 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
 		const std::vector<size_t> &indices);
 
 /// Function to downsample input pointcloud into output pointcloud with a voxel
-/// \param voxel_size defines the resolution of the voxel grid, smaller value 
+/// \param voxel_size defines the resolution of the voxel grid, smaller value
 /// leads to denser output point cloud.
 /// Normals and colors are averaged if they exist.
 std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,

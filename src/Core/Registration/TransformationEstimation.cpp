@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,7 +96,7 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
 
 	bool is_success;
 	Eigen::Matrix4d extrinsic;
-	std::tie(is_success, extrinsic) = 
+	std::tie(is_success, extrinsic) =
 			SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
 	return is_success ? extrinsic : Eigen::Matrix4d::Identity();

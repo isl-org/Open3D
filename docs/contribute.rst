@@ -3,7 +3,7 @@
 Contributing to Open3D
 ##########################
 
-The Open3D project was started by `Qianyi Zhou <http://qianyi.info>`_ and is developed and maintained by a community effort. To contribute to the project, you need to
+The Open3D project was started by `Qianyi Zhou <http://qianyi.info>`_ and `Jaesik Park <http://jaesik.info>`_. The project is developed and maintained by a community effort. To contribute to the project, you need to
 
 * Know how to use Open3D;
 * Know basic development rules such as coding style, issues, and pull requests;

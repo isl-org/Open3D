@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <iostream> 
+#include <iostream>
 #include <vector>
 #include <tuple>
 #include <Eigen/Core>
@@ -44,10 +44,10 @@ class RGBDImage;
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
-		const PinholeCameraIntrinsic &pinhole_camera_intrinsic = 
+		const PinholeCameraIntrinsic &pinhole_camera_intrinsic =
 		PinholeCameraIntrinsic(),
 		const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
-		const RGBDOdometryJacobian &jacobian_method = 
+		const RGBDOdometryJacobian &jacobian_method =
 		RGBDOdometryJacobianFromHybridTerm(),
 		const OdometryOption &option = OdometryOption());
 

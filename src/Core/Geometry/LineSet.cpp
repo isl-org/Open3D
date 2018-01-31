@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,8 +59,8 @@ Eigen::Vector3d LineSet::GetMinBound() const
 	auto itr_z1 = std::min_element(point_set_[1].begin(), point_set_[1].end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
 	return Eigen::Vector3d(
-			std::min((*itr_x0)(0), (*itr_x1)(0)), 
-			std::min((*itr_y0)(1), (*itr_y1)(1)), 
+			std::min((*itr_x0)(0), (*itr_x1)(0)),
+			std::min((*itr_y0)(1), (*itr_y1)(1)),
 			std::min((*itr_z0)(2), (*itr_z1)(2)));
 }
 
@@ -82,11 +82,11 @@ Eigen::Vector3d LineSet::GetMaxBound() const
 	auto itr_z1 = std::max_element(point_set_[1].begin(), point_set_[1].end(),
 		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
 	return Eigen::Vector3d(
-			std::max((*itr_x0)(0), (*itr_x1)(0)), 
-			std::max((*itr_y0)(1), (*itr_y1)(1)), 
+			std::max((*itr_x0)(0), (*itr_x1)(0)),
+			std::max((*itr_y0)(1), (*itr_y1)(1)),
 			std::max((*itr_z0)(2), (*itr_z1)(2)));
 }
-	
+
 void LineSet::Transform(const Eigen::Matrix4d &transformation)
 {
 	for (auto &point : point_set_[0]) {

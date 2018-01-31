@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -127,16 +127,14 @@ int UpdateConfidence(
 	int valid_edges_num = 0;
 	for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
 		PoseGraphEdge &t = pose_graph.edges_[iter_edge];
-		if (t.uncertain_) {
-			Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
-			double residual_square = e.transpose() * t.information_ * e;
-			double temp = line_process_weight /
-					(line_process_weight + residual_square);
-			double temp2 = temp * temp;
-			t.confidence_ = temp2;
-			if (temp2 > option.edge_prune_threshold_)
-				valid_edges_num++;
-		}
+		Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
+		double residual_square = e.transpose() * t.information_ * e;
+		double temp = line_process_weight /
+				(line_process_weight + residual_square);
+		double temp2 = temp * temp;
+		t.confidence_ = temp2;
+		if (temp2 > option.edge_prune_threshold_)
+			valid_edges_num++;
 	}
 	return valid_edges_num;
 }
@@ -345,7 +343,7 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 	if (n_edges > 0) {
 		// see Section 5 in [Choi et al 2015]
 		average_number_of_correspondences /= (double)n_edges;
-		double line_process_weight = 0.1 *
+		double line_process_weight = 2.0 *
 				pow(option.max_correspondence_distance_, 2) *
 				average_number_of_correspondences;
 		return line_process_weight;
@@ -358,10 +356,10 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
 		const PoseGraph &pose_graph_orig, int reference_node)
 {
-	PrintDebug("CompensateReferencePoseGraphNode : reference : %d",
+	PrintDebug("CompensateReferencePoseGraphNode : reference : %d\n",
 			reference_node);
 	int n_nodes = (int)pose_graph_new.nodes_.size();
-	if (reference_node < 0 || reference_node > n_nodes) {
+	if (reference_node < 0 || reference_node >= n_nodes) {
 		return;
 	} else {
 		Eigen::Matrix4d compensation =
@@ -476,9 +474,8 @@ void GlobalOptimizationGaussNewton::
 				break;
 		}
 		timer_iter.Stop();
-		PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
-				iter, current_residual,
-				valid_edges_num, n_edges - (n_nodes - 1),
+		PrintDebug("[Iteration %02d] residual : %e, valid edges : %d, time : %.3f sec.\n",
+				iter, current_residual, valid_edges_num,
 				timer_iter.GetDuration() / 1000.0);
 		stop = stop || CheckResidual(current_residual, criteria)
 				|| CheckMaxIteration(iter, criteria);
@@ -585,9 +582,9 @@ void GlobalOptimizationLevenbergMarquardt::
 		} while (!((rho > 0) || stop));
 		timer_iter.Stop();
 		if (!stop) {
-			PrintDebug("[Iteration %02d] residual : %e, valid edges : %d/%d, time : %.3f sec.\n",
+			PrintDebug("[Iteration %02d] residual : %e, valid edges : %d, time : %.3f sec.\n",
 					iter, current_residual, valid_edges_num,
-					n_edges - (n_nodes - 1), timer_iter.GetDuration() / 1000.0);
+					timer_iter.GetDuration() / 1000.0);
 		}
 		stop = stop || CheckResidual(current_residual, criteria)
 				|| CheckMaxIteration(iter, criteria);

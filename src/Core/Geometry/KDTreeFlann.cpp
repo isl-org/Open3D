@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -92,12 +92,12 @@ bool KDTreeFlann::SetFeature(const Feature &feature)
 }
 
 template<typename T>
-int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param, 
+int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param,
 			std::vector<int> &indices, std::vector<double> &distance2) const
 {
 	switch (param.GetSearchType()) {
 	case KDTreeSearchParam::SEARCH_KNN:
-		return SearchKNN(query, ((const KDTreeSearchParamKNN &)param).knn_, 
+		return SearchKNN(query, ((const KDTreeSearchParamKNN &)param).knn_,
 				indices, distance2);
 	case KDTreeSearchParam::SEARCH_RADIUS:
 		return SearchRadius(query,
@@ -121,7 +121,7 @@ int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
 	// This is optimized code for heavily repeated search.
 	// Other flann::Index::knnSearch() implementations lose performance due to
 	// memory allocation/deallocation.
-	if (data_.empty() || dataset_size_ <= 0 || 
+	if (data_.empty() || dataset_size_ <= 0 ||
 			query.rows() != dimension_ || knn < 0)
 	{
 		return -1;
@@ -181,7 +181,7 @@ int KDTreeFlann::SearchHybrid(const T &query, double radius, int max_nn,
 	flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, max_nn);
 	flann::Matrix<double> dists_flann(distance2.data(), query_flann.rows,
 			max_nn);
-	int k = flann_index_->radiusSearch(query_flann, indices_flann, dists_flann, 
+	int k = flann_index_->radiusSearch(query_flann, indices_flann, dists_flann,
 			float(radius * radius), param);
 	indices.resize(k);
 	distance2.resize(k);

@@ -3,8 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Qianyi Zhou <Qianyi.Zhou@gmail.com>
-//                    Jaesik Park <syncle@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +29,7 @@
 namespace three{
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-		const Image &color, const Image &depth, 
+		const Image &color, const Image &depth,
 		double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/,
 		bool convert_rgb_to_intensity/* = true*/)
 {

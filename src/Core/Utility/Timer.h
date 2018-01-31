@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Qianyi Zhou <Qianyi.Zhou@gmail.com>
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ class FPSTimer : public Timer
 public:
 	FPSTimer(const std::string &fps_timer_info = "", int expectation = -1,
 			double time_to_print = 3000.0, int events_to_print = 100);
-	
+
 	/// Function to signal an event
 	/// It automatically prints FPS information when duration is more than
 	/// time_to_print_, or event has been signaled events_to_print_ times.
