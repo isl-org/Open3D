@@ -11,7 +11,7 @@ Please cite our work if you use Open3D.
 @article{Zhou2018,
 	author    = {Qian-Yi Zhou and Jaesik Park and Vladlen Koltun},
 	title     = {{Open3D}: {A} Modern Library for {3D} Data Processing},
-	journal   = {arXiv:NNNN.NNNNN},
+	journal   = {arXiv:1801.09847},
 	year      = {2018},
 }
 ```
