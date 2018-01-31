@@ -68,12 +68,12 @@ int main(int argc, char **argv)
 
 	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
 	SetVerbosityLevel((VerbosityLevel)verbose);
-	if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") || 
+	if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
 			ProgramOptionExists(argc, argv, "-h")) {
 		PrintHelp();
 		return 0;
 	}
-	
+
 	std::vector<std::shared_ptr<Geometry>> geometry_ptrs;
 	int width = GetProgramOptionAsInt(argc, argv, "--width", 1920);
 	int height = GetProgramOptionAsInt(argc, argv, "--height", 1080);
@@ -100,10 +100,10 @@ int main(int argc, char **argv)
 			"--show_frame");
 
 	VisualizerWithCustomAnimation visualizer;
-	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+	if (visualizer.CreateWindow(window_name, width, height, left, top) ==
 			false) {
 		PrintWarning("Failed creating OpenGL window.\n");
-		return false;
+		return 0;
 	}
 
 	if (!mesh_filename.empty()) {
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!view_filename.empty()) {
-		auto &view_control = 
+		auto &view_control =
 				(ViewControlWithCustomAnimation &)visualizer.GetViewControl();
 		if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
 			PrintWarning("Failed loading view trajectory.\n");
