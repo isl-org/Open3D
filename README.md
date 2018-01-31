@@ -1,17 +1,17 @@
 # Open3D: A Modern Library for 3D Data Processing
 
-[![Build Status](https://travis-ci.com/IntelVCL/Open3D.svg?token=J6RafDafqG2bAk9tQXMU&branch=master)](https://travis-ci.com/IntelVCL/Open3D)
+[![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
 
 ## About this project
 
 Open3D is an open-source library that supports rapid development of software that deals with 3D data. The Open3D frontend exposes a set of carefully selected data structures and algorithms in both C++ and Python. The backend is highly optimized and is set up for parallelization. We welcome contributions from the open-source community.
 
-If you use Open3D in an academic project, please cite our paper:
+Please cite our work if you use Open3D.
 ```
 @article{Zhou2018,
 	author    = {Qian-Yi Zhou and Jaesik Park and Vladlen Koltun},
 	title     = {{Open3D}: {A} Modern Library for {3D} Data Processing},
-	journal   = {arXiv:NNNN.NNNNN},
+	journal   = {arXiv:1801.09847},
 	year      = {2018},
 }
 ```
