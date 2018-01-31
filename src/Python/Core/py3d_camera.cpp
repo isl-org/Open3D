@@ -39,11 +39,11 @@ void pybind_camera(py::module &m)
 			"PinholeCameraIntrinsic");
 	py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
 	py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
-	pinhole_intr.def("__init__", [](PinholeCameraIntrinsic &c, int w, int h,
-			double fx, double fy, double cx, double cy) {
-		new (&c)PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
-	}, "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a);
 	pinhole_intr
+		.def(py::init([](int w, int h, double fx, double fy,
+				double cx, double cy) {
+			return new PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
+		}),"width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
 		.def("set_intrinsics", &PinholeCameraIntrinsic::SetIntrinsics,
 				"width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
 		.def("get_focal_length", &PinholeCameraIntrinsic::GetFocalLength)
