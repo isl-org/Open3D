@@ -14,8 +14,8 @@ if __name__ == "__main__":
 
 	print("")
 	print("Testing IntVector ...")
-	vi = IntVector([1, 2, 3, 4, 5])
-	vi1 = IntVector(vi) # valid copy
+	vi = IntVector([1, 2, 3, 4, 5]) # made from python list
+	vi1 = IntVector(np.asarray([1, 2, 3, 4, 5])) # made from numpy array
 	vi2 = copy.copy(vi) # valid copy
 	vi3 = copy.deepcopy(vi) # valid copy
 	vi4 = vi[:] # valid copy

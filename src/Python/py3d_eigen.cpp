@@ -87,10 +87,11 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
 	auto vec = py::bind_vector_without_repr<std::vector<EigenVector>>(
 			m, bind_name, py::buffer_protocol());
 	vec.def_buffer([](std::vector<EigenVector> &v) -> py::buffer_info {
+		size_t rows = EigenVector::RowsAtCompileTime;
 		return py::buffer_info(
 				v.data(), sizeof(Scalar),
 				py::format_descriptor<Scalar>::format(),
-				2, {v.size(), EigenVector::RowsAtCompileTime},
+				2, {v.size(), rows},
 				{sizeof(EigenVector), sizeof(Scalar)});
 	});
 	vec.def("__repr__", [repr_name](const std::vector<EigenVector> &v) {
@@ -145,13 +146,14 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
 	vec.def_buffer([](std::vector<EigenMatrix> &v) -> py::buffer_info {
 		// We use this function to bind Eigen default matrix.
 		// Thus they are all column major.
+		size_t rows = EigenMatrix::RowsAtCompileTime;
+		size_t cols = EigenMatrix::ColsAtCompileTime;
 		return py::buffer_info(
 				v.data(), sizeof(Scalar),
 				py::format_descriptor<Scalar>::format(),
-				3, {v.size(), EigenMatrix::RowsAtCompileTime,
-				EigenMatrix::ColsAtCompileTime},
+				3, {v.size(), rows, cols},
 				{sizeof(EigenMatrix), sizeof(Scalar),
-				sizeof(Scalar) * (size_t)EigenMatrix::RowsAtCompileTime});
+				sizeof(Scalar) * rows});
 	});
 	vec.def("__repr__", [repr_name](const std::vector<EigenMatrix> &v) {
 		return repr_name + std::string(" with ") +
