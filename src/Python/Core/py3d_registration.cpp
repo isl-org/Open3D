@@ -73,12 +73,11 @@ void pybind_registration(py::module &m)
 			"ICPConvergenceCriteria");
 	py::detail::bind_copy_functions<ICPConvergenceCriteria>(
 			convergence_criteria);
-	convergence_criteria.def("__init__", [](ICPConvergenceCriteria &c,
-			double fitness, double rmse, int itr) {
-		new (&c)ICPConvergenceCriteria(fitness, rmse, itr);
-	}, "relative_fitness"_a = 1e-6, "relative_rmse"_a = 1e-6,
-			"max_iteration"_a = 30);
 	convergence_criteria
+		.def(py::init([](double fitness, double rmse, int itr) {
+			return new ICPConvergenceCriteria(fitness, rmse, itr);
+		}), "relative_fitness"_a = 1e-6, "relative_rmse"_a = 1e-6,
+				"max_iteration"_a = 30)
 		.def_readwrite("relative_fitness",
 				&ICPConvergenceCriteria::relative_fitness_)
 		.def_readwrite("relative_rmse", &ICPConvergenceCriteria::relative_rmse_)
@@ -97,11 +96,10 @@ void pybind_registration(py::module &m)
 			"RANSACConvergenceCriteria");
 	py::detail::bind_copy_functions<RANSACConvergenceCriteria>(
 			ransac_criteria);
-	ransac_criteria.def("__init__", [](RANSACConvergenceCriteria &c,
-			int max_iteration, int max_validation) {
-		new (&c)RANSACConvergenceCriteria(max_iteration, max_validation);
-	}, "max_iteration"_a = 1000, "max_validation"_a = 1000);
 	ransac_criteria
+		.def(py::init([](int max_iteration, int max_validation) {
+			return new RANSACConvergenceCriteria(max_iteration, max_validation);
+		}), "max_iteration"_a = 1000, "max_validation"_a = 1000)
 		.def_readwrite("max_iteration",
 				&RANSACConvergenceCriteria::max_iteration_)
 		.def_readwrite("max_validation",
@@ -128,11 +126,10 @@ void pybind_registration(py::module &m)
 			"TransformationEstimationPointToPoint");
 	py::detail::bind_copy_functions<TransformationEstimationPointToPoint>(
 			te_p2p);
-	te_p2p.def("__init__", [](TransformationEstimationPointToPoint &c,
-			bool with_scaling) {
-		new (&c)TransformationEstimationPointToPoint(with_scaling);
-	}, "with_scaling"_a = false);
 	te_p2p
+		.def(py::init([](bool with_scaling) {
+			return new TransformationEstimationPointToPoint(with_scaling);
+		}), "with_scaling"_a = false)
 		.def("__repr__", [](const TransformationEstimationPointToPoint &te) {
 			return std::string("TransformationEstimationPointToPoint ") +
 					(te.with_scaling_ ? std::string("with scaling.") :
@@ -166,11 +163,11 @@ void pybind_registration(py::module &m)
 			"CorrespondenceCheckerBasedOnEdgeLength");
 	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnEdgeLength>(
 			cc_el);
-	cc_el.def("__init__", [](CorrespondenceCheckerBasedOnEdgeLength &c,
-			double similarity_threshold) {
-		new (&c)CorrespondenceCheckerBasedOnEdgeLength(similarity_threshold);
-	}, "similarity_threshold"_a = 0.9);
 	cc_el
+		.def(py::init([](double similarity_threshold) {
+			return new CorrespondenceCheckerBasedOnEdgeLength(
+				similarity_threshold);
+		}), "similarity_threshold"_a = 0.9)
 		.def("__repr__", [](const CorrespondenceCheckerBasedOnEdgeLength &c) {
 			return std::string("CorrespondenceCheckerBasedOnEdgeLength with similarity threshold ") +
 					std::to_string(c.similarity_threshold_);
@@ -184,11 +181,11 @@ void pybind_registration(py::module &m)
 			"CorrespondenceCheckerBasedOnDistance");
 	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnDistance>(
 			cc_d);
-	cc_d.def("__init__", [](CorrespondenceCheckerBasedOnDistance &c,
-			double distance_threshold) {
-		new (&c)CorrespondenceCheckerBasedOnDistance(distance_threshold);
-	}, "distance_threshold"_a);
 	cc_d
+		.def(py::init([](double distance_threshold) {
+			return new CorrespondenceCheckerBasedOnDistance(
+				distance_threshold);
+		}), "distance_threshold"_a)
 		.def("__repr__", [](const CorrespondenceCheckerBasedOnDistance &c) {
 			return std::string("CorrespondenceCheckerBasedOnDistance with distance threshold ") +
 					std::to_string(c.distance_threshold_);
@@ -202,11 +199,11 @@ void pybind_registration(py::module &m)
 			"CorrespondenceCheckerBasedOnNormal");
 	py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnNormal>(
 			cc_n);
-	cc_n.def("__init__", [](CorrespondenceCheckerBasedOnNormal &c,
-			double normal_angle_threshold) {
-		new (&c)CorrespondenceCheckerBasedOnNormal(normal_angle_threshold);
-	}, "normal_angle_threshold"_a);
 	cc_n
+		.def(py::init([](double normal_angle_threshold) {
+			return new CorrespondenceCheckerBasedOnNormal(
+					normal_angle_threshold);
+		}), "normal_angle_threshold"_a)
 		.def("__repr__", [](const CorrespondenceCheckerBasedOnNormal &c) {
 			return std::string("CorrespondenceCheckerBasedOnNormal with normal threshold ") +
 					std::to_string(c.normal_angle_threshold_);

@@ -54,9 +54,9 @@ namespace detail {
 
 template <typename T, typename Class_>
 void bind_default_constructor(Class_ &cl) {
-	cl.def("__init__", [](T &t) {
-		new (&t)T();
-	}, "Default constructor");
+	cl.def(py::init([]() {
+		return new T();
+	}), "Default constructor");
 }
 
 template <typename T, typename Class_>

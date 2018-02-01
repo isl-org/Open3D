@@ -6,6 +6,8 @@ with the basics of binding functions and classes, as explained in :doc:`/basics`
 and :doc:`/classes`. The following guide is applicable to both free and member
 functions, i.e. *methods* in Python.
 
+.. _return_value_policies:
+
 Return value policies
 =====================
 
@@ -90,9 +92,10 @@ The following table provides an overview of available policies:
 +--------------------------------------------------+----------------------------------------------------------------------------+
 | :enum:`return_value_policy::automatic`           | **Default policy.** This policy falls back to the policy                   |
 |                                                  | :enum:`return_value_policy::take_ownership` when the return value is a     |
-|                                                  | pointer. Otherwise, it uses :enum:`return_value::move` or                  |
-|                                                  | :enum:`return_value::copy` for rvalue and lvalue references, respectively. |
-|                                                  | See above for a description of what all of these different policies do.    |
+|                                                  | pointer. Otherwise, it uses :enum:`return_value_policy::move` or           |
+|                                                  | :enum:`return_value_policy::copy` for rvalue and lvalue references,        |
+|                                                  | respectively. See above for a description of what all of these different   |
+|                                                  | policies do.                                                               |
 +--------------------------------------------------+----------------------------------------------------------------------------+
 | :enum:`return_value_policy::automatic_reference` | As above, but use policy :enum:`return_value_policy::reference` when the   |
 |                                                  | return value is a pointer. This is the default conversion policy for       |
@@ -159,22 +162,25 @@ Additional call policies
 ========================
 
 In addition to the above return value policies, further *call policies* can be
-specified to indicate dependencies between parameters. In general, call policies
-are required when the C++ object is any kind of container and another object is being
-added to the container.
+specified to indicate dependencies between parameters or ensure a certain state
+for the function call.
 
-There is currently just
-one policy named ``keep_alive<Nurse, Patient>``, which indicates that the
-argument with index ``Patient`` should be kept alive at least until the
-argument with index ``Nurse`` is freed by the garbage collector. Argument
+Keep alive
+----------
+
+In general, this policy is required when the C++ object is any kind of container
+and another object is being added to the container. ``keep_alive<Nurse, Patient>``
+indicates that the argument with index ``Patient`` should be kept alive at least
+until the argument with index ``Nurse`` is freed by the garbage collector. Argument
 indices start at one, while zero refers to the return value. For methods, index
 ``1`` refers to the implicit ``this`` pointer, while regular arguments begin at
 index ``2``. Arbitrarily many call policies can be specified. When a ``Nurse``
 with value ``None`` is detected at runtime, the call policy does nothing.
 
-This feature internally relies on the ability to create a *weak reference* to
-the nurse object, which is permitted by all classes exposed via pybind11. When
-the nurse object does not support weak references, an exception will be thrown.
+When the nurse is not a pybind11-registered type, the implementation internally
+relies on the ability to create a *weak reference* to the nurse object. When
+the nurse object is not a pybind11-registered type and does not support weak
+references, an exception will be thrown.
 
 Consider the following example: here, the binding code for a list append
 operation ties the lifetime of the newly added element to the underlying
@@ -185,16 +191,53 @@ container:
     py::class_<List>(m, "List")
         .def("append", &List::append, py::keep_alive<1, 2>());
 
+For consistency, the argument indexing is identical for constructors. Index
+``1`` still refers to the implicit ``this`` pointer, i.e. the object which is
+being constructed. Index ``0`` refers to the return type which is presumed to
+be ``void`` when a constructor is viewed like a function. The following example
+ties the lifetime of the constructor element to the constructed object:
+
+.. code-block:: cpp
+
+    py::class_<Nurse>(m, "Nurse")
+        .def(py::init<Patient &>(), py::keep_alive<1, 2>());
+
 .. note::
 
     ``keep_alive`` is analogous to the ``with_custodian_and_ward`` (if Nurse,
     Patient != 0) and ``with_custodian_and_ward_postcall`` (if Nurse/Patient ==
     0) policies from Boost.Python.
 
+Call guard
+----------
+
+The ``call_guard<T>`` policy allows any scope guard type ``T`` to be placed
+around the function call. For example, this definition:
+
+.. code-block:: cpp
+
+    m.def("foo", foo, py::call_guard<T>());
+
+is equivalent to the following pseudocode:
+
+.. code-block:: cpp
+
+    m.def("foo", [](args...) {
+        T scope_guard;
+        return foo(args...); // forwarded arguments
+    });
+
+The only requirement is that ``T`` is default-constructible, but otherwise any
+scope guard will work. This is very useful in combination with `gil_scoped_release`.
+See :ref:`gil`.
+
+Multiple guards can also be specified as ``py::call_guard<T1, T2, T3...>``. The
+constructor order is left to right and destruction happens in reverse.
+
 .. seealso::
 
-    The file :file:`tests/test_keep_alive.cpp` contains a complete example
-    that demonstrates using :class:`keep_alive` in more detail.
+    The file :file:`tests/test_call_policies.cpp` contains a complete example
+    that demonstrates using `keep_alive` and `call_guard` in more detail.
 
 .. _python_objects_as_args:
 
@@ -319,6 +362,8 @@ like so:
     py::class_<MyClass>("MyClass")
         .def("myFunction", py::arg("arg") = (SomeType *) nullptr);
 
+.. _nonconverting_arguments:
+
 Non-converting arguments
 ========================
 
@@ -372,6 +417,55 @@ name, i.e. by specifying ``py::arg().noconvert()``.
     enable no-convert behaviour for just one of several arguments, you will
     need to specify a ``py::arg()`` annotation for each argument with the
     no-convert argument modified to ``py::arg().noconvert()``.
+
+.. _none_arguments:
+
+Allow/Prohibiting None arguments
+================================
+
+When a C++ type registered with :class:`py::class_` is passed as an argument to
+a function taking the instance as pointer or shared holder (e.g. ``shared_ptr``
+or a custom, copyable holder as described in :ref:`smart_pointers`), pybind
+allows ``None`` to be passed from Python which results in calling the C++
+function with ``nullptr`` (or an empty holder) for the argument.
+
+To explicitly enable or disable this behaviour, using the
+``.none`` method of the :class:`py::arg` object:
+
+.. code-block:: cpp
+
+    py::class_<Dog>(m, "Dog").def(py::init<>());
+    py::class_<Cat>(m, "Cat").def(py::init<>());
+    m.def("bark", [](Dog *dog) -> std::string {
+        if (dog) return "woof!"; /* Called with a Dog instance */
+        else return "(no dog)"; /* Called with None, d == nullptr */
+    }, py::arg("dog").none(true));
+    m.def("meow", [](Cat *cat) -> std::string {
+        // Can't be called with None argument
+        return "meow";
+    }, py::arg("cat").none(false));
+
+With the above, the Python call ``bark(None)`` will return the string ``"(no
+dog)"``, while attempting to call ``meow(None)`` will raise a ``TypeError``:
+
+.. code-block:: pycon
+
+    >>> from animals import Dog, Cat, bark, meow
+    >>> bark(Dog())
+    'woof!'
+    >>> meow(Cat())
+    'meow'
+    >>> bark(None)
+    '(no dog)'
+    >>> meow(None)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: meow(): incompatible function arguments. The following argument types are supported:
+        1. (cat: animals.Cat) -> str
+
+    Invoked with: None
+
+The default behaviour when the tag is unspecified is to allow ``None``.
 
 Overload resolution order
 =========================

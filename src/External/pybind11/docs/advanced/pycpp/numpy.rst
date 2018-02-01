@@ -57,11 +57,11 @@ specification.
 
     struct buffer_info {
         void *ptr;
-        size_t itemsize;
+        ssize_t itemsize;
         std::string format;
-        int ndim;
-        std::vector<size_t> shape;
-        std::vector<size_t> strides;
+        ssize_t ndim;
+        std::vector<ssize_t> shape;
+        std::vector<ssize_t> strides;
     };
 
 To create a C++ function that can take a Python buffer object as an argument,
@@ -95,11 +95,11 @@ buffer objects (e.g. a NumPy matrix).
                 throw std::runtime_error("Incompatible buffer dimension!");
 
             auto strides = Strides(
-                info.strides[rowMajor ? 0 : 1] / sizeof(Scalar),
-                info.strides[rowMajor ? 1 : 0] / sizeof(Scalar));
+                info.strides[rowMajor ? 0 : 1] / (py::ssize_t)sizeof(Scalar),
+                info.strides[rowMajor ? 1 : 0] / (py::ssize_t)sizeof(Scalar));
 
             auto map = Eigen::Map<Matrix, 0, Strides>(
-                static_cat<Scalar *>(info.ptr), info.shape[0], info.shape[1], strides);
+                static_cast<Scalar *>(info.ptr), info.shape[0], info.shape[1], strides);
 
             new (&m) Matrix(map);
         });
@@ -111,18 +111,14 @@ as follows:
 
     .def_buffer([](Matrix &m) -> py::buffer_info {
         return py::buffer_info(
-            m.data(),                /* Pointer to buffer */
-            sizeof(Scalar),          /* Size of one scalar */
-            /* Python struct-style format descriptor */
-            py::format_descriptor<Scalar>::format(),
-            /* Number of dimensions */
-            2,
-            /* Buffer dimensions */
-            { (size_t) m.rows(),
-              (size_t) m.cols() },
-            /* Strides (in bytes) for each index */
+            m.data(),                                /* Pointer to buffer */
+            sizeof(Scalar),                          /* Size of one scalar */
+            py::format_descriptor<Scalar>::format(), /* Python struct-style format descriptor */
+            2,                                       /* Number of dimensions */
+            { m.rows(), m.cols() },                  /* Buffer dimensions */
             { sizeof(Scalar) * (rowMajor ? m.cols() : 1),
               sizeof(Scalar) * (rowMajor ? 1 : m.rows()) }
+                                                     /* Strides (in bytes) for each index */
         );
      })
 
@@ -194,13 +190,20 @@ expects the type followed by field names:
     };
 
     // ...
-    PYBIND11_PLUGIN(test) {
+    PYBIND11_MODULE(test, m) {
         // ...
 
         PYBIND11_NUMPY_DTYPE(A, x, y);
         PYBIND11_NUMPY_DTYPE(B, z, a);
         /* now both A and B can be used as template arguments to py::array_t */
     }
+
+The structure should consist of fundamental arithmetic types, ``std::complex``,
+previously registered substructures, and arrays of any of the above. Both C++
+arrays and ``std::array`` are supported. While there is a static assertion to
+prevent many types of unsupported structures, it is still the user's
+responsibility to use only "plain" structures that can be safely manipulated as
+raw memory without violating invariants.
 
 Vectorizing functions
 =====================
@@ -236,27 +239,13 @@ by the compiler. The result is returned as a NumPy array of type
 The scalar argument ``z`` is transparently replicated 4 times.  The input
 arrays ``x`` and ``y`` are automatically converted into the right types (they
 are of type  ``numpy.dtype.int64`` but need to be ``numpy.dtype.int32`` and
-``numpy.dtype.float32``, respectively)
+``numpy.dtype.float32``, respectively).
 
-Sometimes we might want to explicitly exclude an argument from the vectorization
-because it makes little sense to wrap it in a NumPy array. For instance,
-suppose the function signature was
+.. note::
 
-.. code-block:: cpp
-
-    double my_func(int x, float y, my_custom_type *z);
-
-This can be done with a stateful Lambda closure:
-
-.. code-block:: cpp
-
-    // Vectorize a lambda function with a capture object (e.g. to exclude some arguments from the vectorization)
-    m.def("vectorized_func",
-        [](py::array_t<int> x, py::array_t<float> y, my_custom_type *z) {
-            auto stateful_closure = [z](int x, float y) { return my_func(x, y, z); };
-            return py::vectorize(stateful_closure)(x, y);
-        }
-    );
+    Only arithmetic, complex, and POD types passed by value or by ``const &``
+    reference are vectorized; all other arguments are passed through as-is.
+    Functions taking rvalue reference arguments cannot be vectorized.
 
 In cases where the computation is too complicated to be reduced to
 ``vectorize``, it will be necessary to create and access the buffer contents
@@ -295,13 +284,83 @@ simply using ``vectorize``).
         return result;
     }
 
-    PYBIND11_PLUGIN(test) {
-        py::module m("test");
+    PYBIND11_MODULE(test, m) {
         m.def("add_arrays", &add_arrays, "Add two NumPy arrays");
-        return m.ptr();
     }
 
 .. seealso::
 
     The file :file:`tests/test_numpy_vectorize.cpp` contains a complete
     example that demonstrates using :func:`vectorize` in more detail.
+
+Direct access
+=============
+
+For performance reasons, particularly when dealing with very large arrays, it
+is often desirable to directly access array elements without internal checking
+of dimensions and bounds on every access when indices are known to be already
+valid.  To avoid such checks, the ``array`` class and ``array_t<T>`` template
+class offer an unchecked proxy object that can be used for this unchecked
+access through the ``unchecked<N>`` and ``mutable_unchecked<N>`` methods,
+where ``N`` gives the required dimensionality of the array:
+
+.. code-block:: cpp
+
+    m.def("sum_3d", [](py::array_t<double> x) {
+        auto r = x.unchecked<3>(); // x must have ndim = 3; can be non-writeable
+        double sum = 0;
+        for (ssize_t i = 0; i < r.shape(0); i++)
+            for (ssize_t j = 0; j < r.shape(1); j++)
+                for (ssize_t k = 0; k < r.shape(2); k++)
+                    sum += r(i, j, k);
+        return sum;
+    });
+    m.def("increment_3d", [](py::array_t<double> x) {
+        auto r = x.mutable_unchecked<3>(); // Will throw if ndim != 3 or flags.writeable is false
+        for (ssize_t i = 0; i < r.shape(0); i++)
+            for (ssize_t j = 0; j < r.shape(1); j++)
+                for (ssize_t k = 0; k < r.shape(2); k++)
+                    r(i, j, k) += 1.0;
+    }, py::arg().noconvert());
+
+To obtain the proxy from an ``array`` object, you must specify both the data
+type and number of dimensions as template arguments, such as ``auto r =
+myarray.mutable_unchecked<float, 2>()``.
+
+If the number of dimensions is not known at compile time, you can omit the
+dimensions template parameter (i.e. calling ``arr_t.unchecked()`` or
+``arr.unchecked<T>()``.  This will give you a proxy object that works in the
+same way, but results in less optimizable code and thus a small efficiency
+loss in tight loops.
+
+Note that the returned proxy object directly references the array's data, and
+only reads its shape, strides, and writeable flag when constructed.  You must
+take care to ensure that the referenced array is not destroyed or reshaped for
+the duration of the returned object, typically by limiting the scope of the
+returned instance.
+
+The returned proxy object supports some of the same methods as ``py::array`` so
+that it can be used as a drop-in replacement for some existing, index-checked
+uses of ``py::array``:
+
+- ``r.ndim()`` returns the number of dimensions
+
+- ``r.data(1, 2, ...)`` and ``r.mutable_data(1, 2, ...)``` returns a pointer to
+  the ``const T`` or ``T`` data, respectively, at the given indices.  The
+  latter is only available to proxies obtained via ``a.mutable_unchecked()``.
+
+- ``itemsize()`` returns the size of an item in bytes, i.e. ``sizeof(T)``.
+
+- ``ndim()`` returns the number of dimensions.
+
+- ``shape(n)`` returns the size of dimension ``n``
+
+- ``size()`` returns the total number of elements (i.e. the product of the shapes).
+
+- ``nbytes()`` returns the number of bytes used by the referenced elements
+  (i.e. ``itemsize()`` times ``size()``).
+
+.. seealso::
+
+    The file :file:`tests/test_numpy_array.cpp` contains additional examples
+    demonstrating the use of this feature.

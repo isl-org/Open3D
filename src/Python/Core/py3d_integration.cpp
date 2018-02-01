@@ -76,16 +76,16 @@ void pybind_integration(py::module &m)
 			uniform_tsdfvolume(m, "UniformTSDFVolume");
 	py::detail::bind_copy_functions<UniformTSDFVolume>(
 			uniform_tsdfvolume);
-	uniform_tsdfvolume.def("__init__", [](UniformTSDFVolume &c, double length,
-			int resolution, double sdf_trunc, bool with_color) {
-		new (&c)UniformTSDFVolume(length, resolution, sdf_trunc, with_color);
-	}, "length"_a, "resolution"_a, "sdf_trunc"_a, "with_color"_a);
 	uniform_tsdfvolume
+		.def(py::init([](double length, int resolution,
+				double sdf_trunc, bool with_color) {
+			return new UniformTSDFVolume(
+					length, resolution, sdf_trunc, with_color);
+		}), "length"_a, "resolution"_a, "sdf_trunc"_a, "with_color"_a)
 		.def("__repr__", [](const UniformTSDFVolume &vol) {
 			return std::string("UniformTSDFVolume ") +
 					(vol.with_color_ ? std::string("with color.") :
-					std::string("without color."));
-		})
+					std::string("without color.")); })
 		.def("extract_voxel_point_cloud",
 				&UniformTSDFVolume::ExtractVoxelPointCloud)
 		.def_readwrite("length", &UniformTSDFVolume::length_)
@@ -95,14 +95,13 @@ void pybind_integration(py::module &m)
 			scalable_tsdfvolume(m, "ScalableTSDFVolume");
 	py::detail::bind_copy_functions<ScalableTSDFVolume>(
 			scalable_tsdfvolume);
-	scalable_tsdfvolume.def("__init__", [](ScalableTSDFVolume &c,
-			double voxel_length, double sdf_trunc, bool with_color,
-			int volume_unit_resolution, int depth_sampling_stride) {
-		new (&c)ScalableTSDFVolume(voxel_length, sdf_trunc, with_color,
-			volume_unit_resolution, depth_sampling_stride);
-	}, "voxel_length"_a, "sdf_trunc"_a, "with_color"_a,
-			"volume_unit_resolution"_a = 16, "depth_sampling_stride"_a = 4);
 	scalable_tsdfvolume
+		.def(py::init([](double voxel_length, double sdf_trunc, bool with_color,
+				int volume_unit_resolution, int depth_sampling_stride) {
+			return new ScalableTSDFVolume(voxel_length, sdf_trunc,
+				with_color, volume_unit_resolution, depth_sampling_stride);
+		}), "voxel_length"_a, "sdf_trunc"_a, "with_color"_a,
+				"volume_unit_resolution"_a = 16, "depth_sampling_stride"_a = 4)
 		.def("__repr__", [](const ScalableTSDFVolume &vol) {
 			return std::string("ScalableTSDFVolume ") +
 					(vol.with_color_ ? std::string("with color.") :

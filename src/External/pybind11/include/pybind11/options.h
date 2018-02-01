@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include "common.h"
+#include "detail/common.h"
 
-NAMESPACE_BEGIN(pybind11)
+NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 class options {
 public:
@@ -62,4 +62,4 @@ private:
     state previous_state;
 };
 
-NAMESPACE_END(pybind11)
+NAMESPACE_END(PYBIND11_NAMESPACE)

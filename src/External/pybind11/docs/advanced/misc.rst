@@ -15,6 +15,7 @@ T2>, myFunc)``. In this case, the preprocessor assumes that the comma indicates
 the beginning of the next parameter. Use a ``typedef`` to bind the template to
 another name and use it in the macro to avoid this problem.
 
+.. _gil:
 
 Global Interpreter Lock (GIL)
 =============================
@@ -27,7 +28,7 @@ multiple Python threads. Taking :ref:`overriding_virtuals` as an example, this
 could be realized as follows (important changes highlighted):
 
 .. code-block:: cpp
-    :emphasize-lines: 8,9,33,34
+    :emphasize-lines: 8,9,31,32
 
     class PyAnimal : public Animal {
     public:
@@ -48,9 +49,7 @@ could be realized as follows (important changes highlighted):
         }
     };
 
-    PYBIND11_PLUGIN(example) {
-        py::module m("example", "pybind11 example plugin");
-
+    PYBIND11_MODULE(example, m) {
         py::class_<Animal, PyAnimal> animal(m, "Animal");
         animal
             .def(py::init<>())
@@ -64,9 +63,14 @@ could be realized as follows (important changes highlighted):
             py::gil_scoped_release release;
             return call_go(animal);
         });
-
-        return m.ptr();
     }
+
+The ``call_go`` wrapper can also be simplified using the `call_guard` policy
+(see :ref:`call_policies`) which yields the same result:
+
+.. code-block:: cpp
+
+    m.def("call_go", &call_go, py::call_guard<py::gil_scoped_release>());
 
 
 Binding sequence data types, iterators, the slicing protocol, etc.
@@ -131,22 +135,16 @@ has been executed:
 
 Naturally, both methods will fail when there are cyclic dependencies.
 
-Note that compiling code which has its default symbol visibility set to
-*hidden* (e.g. via the command line flag ``-fvisibility=hidden`` on GCC/Clang) can interfere with the
-ability to access types defined in another extension module. Workarounds
-include changing the global symbol visibility (not recommended, because it will
-lead unnecessarily large binaries) or manually exporting types that are
-accessed by multiple extension modules:
+Note that pybind11 code compiled with hidden-by-default symbol visibility (e.g.
+via the command line flag ``-fvisibility=hidden`` on GCC/Clang), which is
+required proper pybind11 functionality, can interfere with the ability to
+access types defined in another extension module.  Working around this requires
+manually exporting types that are accessed by multiple extension modules;
+pybind11 provides a macro to do just this:
 
 .. code-block:: cpp
 
-    #ifdef _WIN32
-    #  define EXPORT_TYPE __declspec(dllexport)
-    #else
-    #  define EXPORT_TYPE __attribute__ ((visibility("default")))
-    #endif
-
-    class EXPORT_TYPE Dog : public Animal {
+    class PYBIND11_EXPORT Dog : public Animal {
         ...
     };
 
@@ -169,6 +167,54 @@ a ``"mydata"`` key with a pointer to it. Extensions that are imported later
 would be then able to access the data behind the same pointer.
 
 .. [#f6] https://docs.python.org/3/extending/extending.html#using-capsules
+
+Module Destructors
+==================
+
+pybind11 does not provide an explicit mechanism to invoke cleanup code at
+module destruction time. In rare cases where such functionality is required, it
+is possible to emulate it using Python capsules or weak references with a
+destruction callback.
+
+.. code-block:: cpp
+
+    auto cleanup_callback = []() {
+        // perform cleanup here -- this function is called with the GIL held
+    };
+
+    m.add_object("_cleanup", py::capsule(cleanup_callback));
+
+This approach has the potential downside that instances of classes exposed
+within the module may still be alive when the cleanup callback is invoked
+(whether this is acceptable will generally depend on the application).
+
+Alternatively, the capsule may also be stashed within a type object, which
+ensures that it not called before all instances of that type have been
+collected:
+
+.. code-block:: cpp
+
+    auto cleanup_callback = []() { /* ... */ };
+    m.attr("BaseClass").attr("_cleanup") = py::capsule(cleanup_callback);
+
+Both approaches also expose a potentially dangerous ``_cleanup`` attribute in
+Python, which may be undesirable from an API standpoint (a premature explicit
+call from Python might lead to undefined behavior). Yet another approach that 
+avoids this issue involves weak reference with a cleanup callback:
+
+.. code-block:: cpp
+
+    // Register a callback function that is invoked when the BaseClass object is colelcted
+    py::cpp_function cleanup_callback(
+        [](py::handle weakref) {
+            // perform cleanup here -- this function is called with the GIL held
+
+            weakref.dec_ref(); // release weak reference
+        }
+    );
+
+    // Create a weak reference with a cleanup callback and initially leak it
+    (void) py::weakref(m.attr("BaseClass"), cleanup_callback).release();
 
 
 Generating documentation using Sphinx
@@ -211,15 +257,11 @@ The class ``options`` allows you to selectively suppress auto-generated signatur
 
 .. code-block:: cpp
 
-    PYBIND11_PLUGIN(example) {
-        py::module m("example", "pybind11 example plugin");
-
+    PYBIND11_MODULE(example, m) {
         py::options options;
         options.disable_function_signatures();
-        
+
         m.def("add", [](int a, int b) { return a + b; }, "A function which adds two numbers");
-        
-        return m.ptr();
     }
 
 Note that changes to the settings affect only function bindings created during the 
