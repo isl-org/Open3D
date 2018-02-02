@@ -1,4 +1,4 @@
-// Copyright 2007-2010 Baptiste Lepilleur
+// Copyright 2007-2010 Baptiste Lepilleur and The JsonCpp Authors
 // Distributed under MIT license, or public domain if desired and
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
@@ -25,7 +25,7 @@
 
 # define JSON_FAIL_MESSAGE(message)                                            \
   {                                                                            \
-    std::ostringstream oss; oss << message;                                    \
+    JSONCPP_OSTRINGSTREAM oss; oss << message;                                    \
     Json::throwLogicError(oss.str());                                          \
     abort();                                                                   \
   }
@@ -38,7 +38,7 @@
 // release builds we abort, for a core-dump or debugger.
 # define JSON_FAIL_MESSAGE(message)                                            \
   {                                                                            \
-    std::ostringstream oss; oss << message;                                    \
+    JSONCPP_OSTRINGSTREAM oss; oss << message;                                    \
     assert(false && oss.str().c_str());                                        \
     abort();                                                                   \
   }
