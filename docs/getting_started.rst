@@ -71,8 +71,6 @@ Running Open3D tutorials
 
 By default, compiling Open3D will create a Python library under directory ``build/lib/`` or ``build/lib/release/``. A complete set of Python tutorials and testing data will also be copied to the same directory to demonstrate the usage of Open3D Python interface.
 
-.. note:: A comprehensive explanation for all tutorials can be find in the :ref:`tutorial_index` page.
-
 For example, tutorial ``Basic/rgbd_redwood.py`` can be run with:
 
 .. code-block:: bash
@@ -83,45 +81,47 @@ For example, tutorial ``Basic/rgbd_redwood.py`` can be run with:
 It reads a pair of RGB-D images and visualizes them.
 
 .. image:: _static/Basic/rgbd_images/redwood_rgbd.png
-	:width: 400px
+    :width: 400px
 
 It then transforms the RGB-D image into a point cloud, then renders the point cloud using Open3D visualizer.
 
 .. image:: _static/Basic/rgbd_images/redwood_pcd.png
-	:width: 400px
+    :width: 400px
+
+.. note:: If there is a error regarding importing ``py3d``, check whether the Python version detected by cmake (see cmake log) and the Python version for command line environment (type ``python -V``) match. If it is not, please follow :ref:`python_binding` in compilation options.
 
 The Python code is quite straightforward, and the detailed explanation can be found in :ref:`rgbd_redwood`.
 
 .. code-block:: python
 
-	# src/Python/Tutorial/Basic/rgbd_redwood.py
+    # src/Python/Tutorial/Basic/rgbd_redwood.py
 
-	import sys
-	sys.path.append("../..")
+    import sys
+    sys.path.append("../..")
 
-	#conda install pillow matplotlib
-	from py3d import *
-	import matplotlib.pyplot as plt
+    #conda install pillow matplotlib
+    from py3d import *
+    import matplotlib.pyplot as plt
 
 
-	if __name__ == "__main__":
-		print("Read Redwood dataset")
-		color_raw = read_image("../../TestData/RGBD/color/00000.jpg")
-		depth_raw = read_image("../../TestData/RGBD/depth/00000.png")
-		rgbd_image = create_rgbd_image_from_color_and_depth(
-			color_raw, depth_raw);
-		print(rgbd_image)
-		plt.subplot(1, 2, 1)
-		plt.title('Redwood grayscale image')
-		plt.imshow(rgbd_image.color)
-		plt.subplot(1, 2, 2)
-		plt.title('Redwood depth image')
-		plt.imshow(rgbd_image.depth)
-		plt.show()
-		pcd = create_point_cloud_from_rgbd_image(rgbd_image,
-				PinholeCameraIntrinsic.prime_sense_default)
-		# Flip it, otherwise the pointcloud will be upside down
-		pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-		draw_geometries([pcd])
+    if __name__ == "__main__":
+        print("Read Redwood dataset")
+        color_raw = read_image("../../TestData/RGBD/color/00000.jpg")
+        depth_raw = read_image("../../TestData/RGBD/depth/00000.png")
+        rgbd_image = create_rgbd_image_from_color_and_depth(
+            color_raw, depth_raw);
+        print(rgbd_image)
+        plt.subplot(1, 2, 1)
+        plt.title('Redwood grayscale image')
+        plt.imshow(rgbd_image.color)
+        plt.subplot(1, 2, 2)
+        plt.title('Redwood depth image')
+        plt.imshow(rgbd_image.depth)
+        plt.show()
+        pcd = create_point_cloud_from_rgbd_image(rgbd_image,
+                PinholeCameraIntrinsic.prime_sense_default)
+        # Flip it, otherwise the pointcloud will be upside down
+        pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+        draw_geometries([pcd])
 
 You may further experiment with different tutorials or check out the complete tutorial list in the :ref:`tutorial_index` page.
