@@ -60,7 +60,7 @@ bool WriteIJsonConvertibleToJSONStream(std::ostream &json_stream,
 	}
 	Json::StreamWriterBuilder builder;
 	builder["commentStyle"] = "None";
-	builder["indentation"] = "   ";
+	builder["indentation"] = "	";
 	std::unique_ptr<Json::StreamWriter> writer(
 	    builder.newStreamWriter());
 	writer->write(root_object, &json_stream);
