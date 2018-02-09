@@ -39,7 +39,7 @@ libjpeg                     9a                                   libjpeg license
 A widely used C library for reading and writing JPEG image files
 http://libjpeg.sourceforge.net/
 --------------------------------------------------------------------------------
-jsoncpp                     1.6.5                                    MIT license
+jsoncpp                     1.8.4                                    MIT license
 A C++ library that allows manipulating JSON values
 https://github.com/open-source-parsers/jsoncpp
 --------------------------------------------------------------------------------

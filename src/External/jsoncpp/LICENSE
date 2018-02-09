@@ -2,13 +2,13 @@ The JsonCpp library's source code, including accompanying documentation,
 tests and demonstration applications, are licensed under the following
 conditions...
 
-The author (Baptiste Lepilleur) explicitly disclaims copyright in all 
+Baptiste Lepilleur and The JsonCpp Authors explicitly disclaim copyright in all 
 jurisdictions which recognize such a disclaimer. In such jurisdictions, 
 this software is released into the Public Domain.
 
 In jurisdictions which do not recognize Public Domain property (e.g. Germany as of
-2010), this software is Copyright (c) 2007-2010 by Baptiste Lepilleur, and is
-released under the terms of the MIT License (see below).
+2010), this software is Copyright (c) 2007-2010 by Baptiste Lepilleur and
+The JsonCpp Authors, and is released under the terms of the MIT License (see below).
 
 In jurisdictions which recognize Public Domain property, the user of this 
 software may choose to accept it either as 1) Public Domain, 2) under the 
@@ -23,7 +23,7 @@ described in clear, concise terms at:
 The full text of the MIT License follows:
 
 ========================================================================
-Copyright (c) 2007-2010 Baptiste Lepilleur
+Copyright (c) 2007-2010 Baptiste Lepilleur and The JsonCpp Authors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
