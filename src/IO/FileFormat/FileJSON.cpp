@@ -39,11 +39,13 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
 		IJsonConvertible &object)
 {
 	Json::Value root_object;
-	Json::Reader reader;
-	bool is_parse_successful = reader.parse(json_stream, root_object);
+	Json::CharReaderBuilder builder;
+	builder["collectComments"] = false;
+	JSONCPP_STRING errs;
+	bool is_parse_successful = parseFromStream(
+				builder, json_stream, &root_object, &errs);
 	if (is_parse_successful == false) {
-		PrintWarning("Read JSON failed: %s.\n",
-				reader.getFormattedErrorMessages().c_str());
+		PrintWarning("Read JSON failed: %s.\n", errs.c_str());
 		return false;
 	}
 	return object.ConvertFromJsonValue(root_object);
@@ -56,8 +58,11 @@ bool WriteIJsonConvertibleToJSONStream(std::ostream &json_stream,
 	if (object.ConvertToJsonValue(root_object) == false) {
 		return false;
 	}
-	Json::StyledStreamWriter writer;
-	writer.write(json_stream, root_object);
+	Json::StreamWriterBuilder builder;
+	builder["commentStyle"] = "None";
+	builder["indentation"] = "\t";
+	auto writer = builder.newStreamWriter();
+	writer->write(root_object, &json_stream);
 	return true;
 }
 
