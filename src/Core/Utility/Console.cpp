@@ -63,8 +63,8 @@ static VerbosityLevel global_verbosity_level = VERBOSE_INFO;
 /// Note there is no security check for parameters.
 /// \param text_color, from 0 to 7, they are black, red, green, yellow, blue,
 /// magenta, cyan, white
-/// \param emphasis_text is 0 or 1
-void ChangeConsoleColor(int text_color, int highlight_text)
+/// \param highlight_text is 0 or 1
+static void ChangeConsoleColor(int text_color, int highlight_text)
 {
 #ifdef _WIN32
 	const WORD EMPHASIS_MASK[2] = { 0, FOREGROUND_INTENSITY };
@@ -86,7 +86,7 @@ void ChangeConsoleColor(int text_color, int highlight_text)
 #endif
 }
 
-void ResetConsoleColor()
+static void ResetConsoleColor()
 {
 #ifdef _WIN32
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -107,7 +107,7 @@ static std::string console_progress_info = "";
 
 static const int CONSOLE_PROGRESS_RESOLUTION = 40;
 
-void PrintConsoleProgress()
+static void PrintConsoleProgress()
 {
 	if (current_console_progress == expected_console_count) {
 		PrintInfo("%s[%s] 100%%\n", console_progress_info.c_str(),
