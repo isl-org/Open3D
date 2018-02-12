@@ -42,8 +42,8 @@ public:
 public:
 	void Start();
 	void Stop();
-	void Print(const std::string &timer_info);
-	double GetDuration();
+	void Print(const std::string &timer_info) const;
+	double GetDuration() const;
 
 private:
 	double start_time_in_milliseconds_;
