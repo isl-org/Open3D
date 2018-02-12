@@ -88,7 +88,7 @@ It then transforms the RGB-D image into a point cloud, then renders the point cl
 .. image:: _static/Basic/rgbd_images/redwood_pcd.png
     :width: 400px
 
-.. note:: If there is a error regarding importing ``py3d``, check whether the Python version detected by cmake (see cmake log) and the Python version for command line environment (type ``python -V``) match. If it is not, please follow :ref:`python_binding` in compilation options.
+.. note:: If there is an error regarding importing ``py3d``, check whether the Python version detected by cmake (see cmake log) and the Python version for command line environment (type ``python -V``) match. If it is not, please follow :ref:`python_binding` in compilation options.
 
 The Python code is quite straightforward, and the detailed explanation can be found in :ref:`rgbd_redwood`.
 
