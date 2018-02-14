@@ -73,7 +73,7 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
 	if (len <= 0.0) {
 		return Eigen::Vector3d::Zero();
 	} else {
-		return eigenvector / len;
+		return eigenvector.normalized();
 	}
 }
 
