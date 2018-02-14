@@ -135,7 +135,7 @@ std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type);
 
 /// Function to filter image with arbitrary dx, dy separable filters
 std::shared_ptr<Image> FilterImage(const Image &input,
-		const std::vector<double> dx, const std::vector<double> dy);
+		const std::vector<double> &dx, const std::vector<double> &dy);
 
 std::shared_ptr<Image> FilterHorizontalImage(
 		const Image &input, const std::vector<double> &kernel);
