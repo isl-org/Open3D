@@ -214,6 +214,7 @@ bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 	}
 	if (!ply_read_header(ply_file)) {
 		PrintWarning("Read PLY failed: unable to parse header.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -236,6 +237,7 @@ bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 
 	if (state.vertex_num <= 0) {
 		PrintWarning("Read PLY failed: number of vertex <= 0.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -252,6 +254,7 @@ bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 
 	if (!ply_read(ply_file)) {
 		PrintWarning("Read PLY failed: unable to read file.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -293,6 +296,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 	}
 	if (!ply_write_header(ply_file)) {
 		PrintWarning("Write PLY failed: unable to write header.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -337,6 +341,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh)
 	}
 	if (!ply_read_header(ply_file)) {
 		PrintWarning("Read PLY failed: unable to parse header.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -359,6 +364,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh)
 
 	if (state.vertex_num <= 0) {
 		PrintWarning("Read PLY failed: number of vertex <= 0.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -385,6 +391,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh)
 
 	if (!ply_read(ply_file)) {
 		PrintWarning("Read PLY failed: unable to read file.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
@@ -428,6 +435,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 	ply_add_property(ply_file, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT);
 	if (!ply_write_header(ply_file)) {
 		PrintWarning("Write PLY failed: unable to write header.\n");
+		ply_close(ply_file);
 		return false;
 	}
 
