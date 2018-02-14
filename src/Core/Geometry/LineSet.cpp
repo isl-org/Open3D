@@ -138,7 +138,7 @@ LineSet &LineSet::operator+=(const LineSet &lineset)
 	return (*this);
 }
 
-const LineSet LineSet::operator+(const LineSet &lineset)
+LineSet LineSet::operator+(const LineSet &lineset) const
 {
 	return (LineSet(*this) += lineset);
 }
