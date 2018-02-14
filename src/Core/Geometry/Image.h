@@ -112,7 +112,7 @@ std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
 		const PinholeCameraIntrinsic &intrinsic);
 
-/// Return an gray scaled float type image.
+/// Return a gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(
 		const Image &image,
 		Image::ColorToIntensityConversionType type = Image::WEIGHTED);
