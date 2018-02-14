@@ -217,7 +217,7 @@ void TriangleMesh::RemoveDuplicatedVertices()
 		}
 	}
 	PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n",
-			old_vertex_num - k);
+			(int)(old_vertex_num - k));
 }
 
 void TriangleMesh::RemoveDuplicatedTriangles()
@@ -259,12 +259,12 @@ void TriangleMesh::RemoveDuplicatedTriangles()
 	triangles_.resize(k);
 	if (has_tri_normal) triangle_normals_.resize(k);
 	PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
-			old_triangle_num - k);
+			(int)(old_triangle_num - k));
 }
 
 void TriangleMesh::RemoveNonManifoldVertices()
 {
-	// Non-manifold vertices are vertices without a trianlge reference. They
+	// Non-manifold vertices are vertices without a triangle reference. They
 	// should not exist in a valid triangle mesh.
 	std::vector<bool> vertex_has_reference(vertices_.size(), false);
 	for (const auto &triangle : triangles_) {
@@ -299,14 +299,14 @@ void TriangleMesh::RemoveNonManifoldVertices()
 		}
 	}
 	PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n",
-			old_vertex_num - k);
+			(int)(old_vertex_num - k));
 }
 
 void TriangleMesh::RemoveNonManifoldTriangles()
 {
 	// Non-manifold triangles are degenerate triangles that have one vertex as
 	// its multiple end-points. They are usually the product of removing
-	// duplicate vertices.
+	// duplicated vertices.
 	bool has_tri_normal = HasTriangleNormals();
 	size_t old_triangle_num = triangles_.size();
 	size_t k = 0;
@@ -322,7 +322,7 @@ void TriangleMesh::RemoveNonManifoldTriangles()
 	triangles_.resize(k);
 	if (has_tri_normal) triangle_normals_.resize(k);
 	PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
-			old_triangle_num - k);
+			(int)(old_triangle_num - k));
 }
 
 }	// namespace three
