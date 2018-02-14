@@ -167,6 +167,4 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 ImagePyramid CreateImagePyramid(const Image& image,
 		size_t num_of_levels, bool with_gaussian_filter = true);
 
-typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
-
 }	// namespace three
