@@ -43,8 +43,8 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
 	double p1 = sqr(A(0, 1)) + sqr(A(0, 2)) + sqr(A(1, 2));
 	Eigen::Vector3d eigenvalues;
 	if (p1 == 0.0) {
-		eigenvalues(0) = std::min(A(0, 0), std::min(A(1, 1), A(2, 2)));
-		eigenvalues(2) = std::max(A(0, 0), std::max(A(1, 1), A(2, 2)));
+		eigenvalues(2) = std::min(A(0, 0), std::min(A(1, 1), A(2, 2)));
+		eigenvalues(0) = std::max(A(0, 0), std::max(A(1, 1), A(2, 2)));
 		eigenvalues(1) = A.trace() - eigenvalues(0) - eigenvalues(2);
 	} else {
 		double q = A.trace() / 3.0;
