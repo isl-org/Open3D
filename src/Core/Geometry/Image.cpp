@@ -259,7 +259,7 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 }
 
 std::shared_ptr<Image> FilterImage(const Image &input,
-		const std::vector<double> dx, const std::vector<double> dy)
+		const std::vector<double> &dx, const std::vector<double> &dy)
 {
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
