@@ -31,7 +31,7 @@ namespace three {
 class KDTreeSearchParam
 {
 public:
-	enum SearchType {
+	enum classSearchType {
 		SEARCH_KNN = 0,
 		SEARCH_RADIUS = 1,
 		SEARCH_HYBRID = 2,

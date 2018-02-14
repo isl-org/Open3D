@@ -46,7 +46,7 @@ namespace three{
 
 namespace {
 
-enum {
+enum class{
 	TEXT_COLOR_BLACK = 0,
 	TEXT_COLOR_RED = 1,
 	TEXT_COLOR_GREEN = 2,

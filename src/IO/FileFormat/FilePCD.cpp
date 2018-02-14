@@ -42,7 +42,7 @@ namespace three{
 
 namespace {
 
-enum PCDDataType {
+enum classclassPCDDataType {
 	PCD_DATA_ASCII = 0,
 	PCD_DATA_BINARY = 1,
 	PCD_DATA_BINARY_COMPRESSED = 2

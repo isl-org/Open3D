@@ -40,12 +40,12 @@ class PinholeCameraIntrinsic;
 class Image : public Geometry2D
 {
 public:
-	enum ColorToIntensityConversionType {
+	enum classColorToIntensityConversionType {
 		EQUAL,
 		WEIGHTED,
 	};
 
-	enum FilterType {
+	enum classFilterType {
 		FILTER_GAUSSIAN_3,
 		FILTER_GAUSSIAN_5,
 		FILTER_GAUSSIAN_7,

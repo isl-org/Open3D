@@ -35,7 +35,7 @@ namespace three {
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
-enum VerbosityLevel {
+enum classVerbosityLevel {
 	VERBOSE_ERROR = 0,
 	VERBOSE_WARNING = 1,
 	VERBOSE_INFO = 2,

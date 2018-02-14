@@ -31,7 +31,7 @@ namespace three {
 class Geometry
 {
 public:
-	enum GeometryType {
+	enum classGeometryType {
 		GEOMETRY_UNSPECIFIED = 0,
 		GEOMETRY_POINTCLOUD = 1,
 		GEOMETRY_LINESET = 2,
