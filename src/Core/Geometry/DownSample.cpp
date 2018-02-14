@@ -63,17 +63,17 @@ public:
 		num_of_points++;
 	}
 
-	Eigen::Vector3d GetAveragePoint()
+	Eigen::Vector3d GetAveragePoint() const
 	{
 		return point / double(num_of_points);
 	}
 
-	Eigen::Vector3d GetAverageNormal()
+	Eigen::Vector3d GetAverageNormal() const
 	{
 		return normal.normalized();
 	}
 
-	Eigen::Vector3d GetAverageColor()
+	Eigen::Vector3d GetAverageColor() const
 	{
 		return color / double(num_of_points);
 	}
