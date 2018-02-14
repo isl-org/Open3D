@@ -147,7 +147,7 @@ std::shared_ptr<Image> DownsampleImage(const Image &input);
 /// image_new = scale * image + offset
 void LinearTransformImage(Image &input, double scale = 1.0, double offset = 0.0);
 
-/// Function to cilpping pixel intensities
+/// Function to clipping pixel intensities
 /// min is lower bound
 /// max is upper bound
 void ClipIntensityImage(Image &input, double min = 0.0, double max = 1.0);

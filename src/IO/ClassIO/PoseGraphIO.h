@@ -31,14 +31,14 @@
 
 namespace three {
 
-/// The general entrance for reading a PoseGraph from a file
+/// The general entrance for reading a PoseGraph from a file.
 /// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful.
+/// \return return true if the read function is successful, false otherwise.
 bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 
-/// The general entrance for writing a PoseGraph to a file
+/// The general entrance for writing a PoseGraph to a file.
 /// The function calls write functions based on the extension name of filename.
-/// \return If the write function is successful.
+/// \return return true if the write function is successful, false otherwise.
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
 
 }	// namespace three

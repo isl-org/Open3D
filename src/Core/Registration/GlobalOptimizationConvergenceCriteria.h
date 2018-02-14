@@ -50,7 +50,7 @@ public:
 	/// See reference list in GlobalOptimization.h
 	/// Identifies which distance value is used for finding neighboring points
 	/// when making information matrix. According to [Choi et al 2015],
-	/// this distance used for determining $mu, a line process weight.
+	/// this distance is used for determining $mu, a line process weight.
 	double max_correspondence_distance_;
 	/// According to [Choi et al 2015],
 	/// line_process weight < edge_prune_threshold_ (0.25) is pruned.
@@ -93,7 +93,7 @@ public:
 	/// maximum iteration number for iterative optmization module.
 	int max_iteration_;
 	/// several convergence criteria to determine
-	/// stablity of iterative optimization
+	/// stability of iterative optimization
 	double min_relative_increment_;
 	double min_relative_residual_increment_;
 	double min_right_term_;

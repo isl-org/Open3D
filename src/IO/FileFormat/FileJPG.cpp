@@ -39,7 +39,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 	JSAMPARRAY buffer;
 
 	if ((file_in = fopen(filename.c_str(), "rb")) == NULL) {
-		PrintWarning("Read JPG failed: unable to open file.\n");
+		PrintWarning("Read JPG failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 
@@ -48,7 +48,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
 	jpeg_stdio_src(&cinfo, file_in);
 	jpeg_read_header(&cinfo, TRUE);
 
-	// We only support two channel type: gray, and RGB.
+	// We only support two channel types: gray, and RGB.
 	int num_of_channels = 3;
 	int bytes_per_channel = 1;
 	switch (cinfo.jpeg_color_space) {
@@ -107,7 +107,7 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
 	JSAMPROW row_pointer[1];
 
 	if ((file_out = fopen(filename.c_str(), "wb")) == NULL) {
-		PrintWarning("Write JPG failed: unable to open file.\n");
+		PrintWarning("Write JPG failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 

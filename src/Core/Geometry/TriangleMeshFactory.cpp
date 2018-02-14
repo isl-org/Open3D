@@ -49,10 +49,11 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 	mesh_ptr->vertices_[1] = Eigen::Vector3d(0.0, 0.0, -radius);
 	double step = M_PI / (double)resolution;
 	for (int i = 1; i < resolution; i++) {
+        double alpha = step * i;
+        int base = 2 + 2 * resolution * (i - 1);
 		for (int j = 0; j < 2 * resolution; j++) {
-			double alpha = step * i;
 			double theta = step * j;
-			mesh_ptr->vertices_[2 + 2 * resolution * (i - 1) + j] =
+			mesh_ptr->vertices_[base + j] =
 					Eigen::Vector3d(sin(alpha) * cos(theta),
 					sin(alpha) * sin(theta), cos(alpha)) * radius;
 		}
@@ -133,10 +134,11 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius/* = 1.0*/,
 	double h_step = height / (double)split;
 	double r_step = radius / (double)split;
 	for (int i = 0; i < split; i++) {
+		int base = 2 + resolution * i;
+		double r = r_step * (split - i);
 		for (int j = 0; j < resolution; j++) {
 			double theta = step * j;
-			double r = r_step * (split - i);
-			mesh_ptr->vertices_[2 + resolution * i + j] =
+			mesh_ptr->vertices_[base + j] =
 					Eigen::Vector3d(cos(theta) * r, sin(theta) * r, h_step * i);
 		}
 	}

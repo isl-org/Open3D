@@ -36,7 +36,7 @@ namespace three{
 
 UniformTSDFVolume::UniformTSDFVolume(double length, int resolution,
 		double sdf_trunc, bool with_color,
-		Eigen::Vector3d origin/* = Eigen::Vector3d::Zero()*/) :
+		const Eigen::Vector3d &origin/* = Eigen::Vector3d::Zero()*/) :
 		TSDFVolume(length / (double)resolution, sdf_trunc, with_color),
 		origin_(origin), length_(length), resolution_(resolution),
 		voxel_num_(resolution * resolution * resolution),

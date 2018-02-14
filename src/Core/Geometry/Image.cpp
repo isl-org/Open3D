@@ -27,7 +27,7 @@
 #include "Image.h"
 
 namespace {
-/// Isotropic 2D kernels are seperable:
+/// Isotropic 2D kernels are separable:
 /// two 1D kernels are applied in x and y direction.
 const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
 const std::vector<double> Gaussian5 = { 0.0625, 0.25, 0.375, 0.25, 0.0625 };

@@ -44,7 +44,7 @@ const double ViewControl::ZOOM_STEP = 0.02;
 const double ViewControl::ROTATION_RADIAN_PER_PIXEL = 0.003;
 
 void ViewControl::SetViewMatrices(
-		Eigen::Matrix4d model_matrix/* = Eigen::Matrix4d::Identity()*/)
+		const Eigen::Matrix4d &model_matrix/* = Eigen::Matrix4d::Identity()*/)
 {
 	if (window_height_ <= 0 || window_width_ <= 0) {
 		PrintWarning("[ViewControl] SetViewPoint() failed because window height and width are not set.");

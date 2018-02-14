@@ -35,7 +35,7 @@ bool ReadPointCloudFromXYZN(const std::string &filename, PointCloud &pointcloud)
 {
 	FILE *file = fopen(filename.c_str(), "r");
 	if (file == NULL) {
-		PrintWarning("Read XYZN failed: unable to open file.\n");
+		PrintWarning("Read XYZN failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 
@@ -66,7 +66,7 @@ bool WritePointCloudToXYZN(const std::string &filename,
 
 	FILE *file = fopen(filename.c_str(), "w");
 	if (file == NULL) {
-		PrintWarning("Write XYZN failed: unable to open file.\n");
+		PrintWarning("Write XYZN failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 
@@ -77,9 +77,9 @@ bool WritePointCloudToXYZN(const std::string &filename,
 				point(0), point(1), point(2),
 				normal(0), normal(1), normal(2)) < 0)
 		{
-			PrintWarning("Write XYZN failed: unable to write file.\n");
+			PrintWarning("Write XYZN failed: unable to write file: %s\n", filename.c_str());
 			fclose(file);
-			return false;	// error happens during writting.
+			return false;	// error happens during writing.
 		}
 	}
 

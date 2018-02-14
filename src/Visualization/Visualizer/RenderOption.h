@@ -81,7 +81,7 @@ public:
 public:
 	RenderOption() {
 		// VS2013 does not fully support C++11
-		// Array initialization has to be done in contructors.
+		// Array initialization has to be done in constructors.
 		light_position_relative_[0] = Eigen::Vector3d(0, 0, 2);
 		light_position_relative_[1] = Eigen::Vector3d(0, 0, 2);
 		light_position_relative_[2] = Eigen::Vector3d(0, 0, -2);

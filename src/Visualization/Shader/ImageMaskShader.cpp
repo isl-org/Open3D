@@ -62,7 +62,7 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 {
 	// If there is already geometry, we first unbind it.
 	// We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
-	// rebind the geometry. Note that this approach is slow. If the geomtry is
+	// rebind the geometry. Note that this approach is slow. If the geometry is
 	// changing per frame, consider implementing a new ShaderWrapper using
 	// GL_STREAM_DRAW, and replace UnbindGeometry() with Buffer Object
 	// Streaming mechanisms.

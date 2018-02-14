@@ -75,7 +75,7 @@ public:
 	int GetTrajectoryInterval() const {
 		return view_trajectory_.interval_;
 	}
-	std::string GetStatusString();
+	std::string GetStatusString() const;
 	void Step(double change);
 	void GoToFirst();
 	void GoToLast();
@@ -83,12 +83,12 @@ public:
 	bool LoadTrajectoryFromJsonFile(const std::string &filename);
 	bool LoadTrajectoryFromCameraTrajectory(
 			const PinholeCameraTrajectory &camera_trajectory);
-	bool IsPreviewing() { return animation_mode_ == ANIMATION_PREVIEWMODE; }
-	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
-	bool IsPlayingEnd(size_t num) {
+	bool IsPreviewing() const { return animation_mode_ == ANIMATION_PREVIEWMODE; }
+	bool IsPlaying() const { return animation_mode_ == ANIMATION_PLAYMODE; }
+	bool IsPlayingEnd(size_t num) const {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
 	}
-	bool IsValidPinholeCameraTrajectory();
+	bool IsValidPinholeCameraTrajectory() const;
 
 protected:
 	size_t CurrentFrame() const { return (size_t)round(current_frame_); }

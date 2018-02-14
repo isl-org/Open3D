@@ -78,7 +78,7 @@ bool ReadFeatureFromBIN(const std::string &filename, Feature &feature)
 {
 	FILE *fid = fopen(filename.c_str(), "rb");
 	if (fid == NULL) {
-		PrintWarning("Read BIN failed: unable to open file.\n");
+		PrintWarning("Read BIN failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	bool success = ReadMatrixXdFromBINFile(fid, feature.data_);
@@ -90,7 +90,7 @@ bool WriteFeatureToBIN(const std::string &filename, const Feature &feature)
 {
 	FILE *fid = fopen(filename.c_str(), "wb");
 	if (fid == NULL) {
-		PrintWarning("Write BIN failed: unable to open file.\n");
+		PrintWarning("Write BIN failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	bool success = WriteMatrixXdToBINFile(fid, feature.data_);

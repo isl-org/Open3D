@@ -158,7 +158,7 @@ bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
 
 /// Function to compute the ponit to point distances between point clouds
 /// \param distances is the output distance. It has the same size as the number
-/// of point in \param source.
+/// of points in \param source.
 std::vector<double> ComputePointCloudToPointCloudDistance(
 		const PointCloud &source, const PointCloud &target);
 

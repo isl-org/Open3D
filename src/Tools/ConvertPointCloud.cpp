@@ -60,7 +60,7 @@ void PrintHelp()
 	printf("                                exist. Otherwise, they are oriented towards -Z\n");
 	printf("                                direction.\n");
 	printf("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
-	printf("    --camera_location [x,y,z] : Orient the normals w.r.t camera loation [x,y,z].\n");
+	printf("    --camera_location [x,y,z] : Orient the normals w.r.t camera location [x,y,z].\n");
 }
 
 void convert(int argc, char **argv, const std::string &file_in,

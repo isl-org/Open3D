@@ -154,7 +154,7 @@ void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames
 	}
 }
 
-std::string ViewControlWithCustomAnimation::GetStatusString()
+std::string ViewControlWithCustomAnimation::GetStatusString() const
 {
 	std::string prefix;
 	switch (animation_mode_) {
@@ -292,7 +292,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
 	return true;
 }
 
-bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory()
+bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const
 {
 	if (view_trajectory_.view_status_.empty()) {
 		return false;

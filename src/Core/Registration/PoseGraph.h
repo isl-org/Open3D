@@ -37,7 +37,7 @@ namespace three {
 class PoseGraphNode : public IJsonConvertible
 {
 public:
-	PoseGraphNode(Eigen::Matrix4d pose = Eigen::Matrix4d::Identity()) :
+	PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) :
 			pose_(pose) {};
 	~PoseGraphNode();
 
@@ -54,8 +54,8 @@ class PoseGraphEdge : public IJsonConvertible
 public:
 	PoseGraphEdge(
 			int source_node_id = -1, int target_node_id = -1,
-			Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity(),
-			Eigen::Matrix6d information = Eigen::Matrix6d::Identity(),
+			const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
+			const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
 			bool uncertain = false,
 			double confidence = 1.0) :
 			source_node_id_(source_node_id),
