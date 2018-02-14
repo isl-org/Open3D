@@ -47,17 +47,17 @@ Eigen::Vector3d LineSet::GetMinBound() const
 		return Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
 	auto itr_x0 = std::min_element(point_set_[0].begin(), point_set_[0].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
 	auto itr_y0 = std::min_element(point_set_[0].begin(), point_set_[0].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
 	auto itr_z0 = std::min_element(point_set_[0].begin(), point_set_[0].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
 	auto itr_x1 = std::min_element(point_set_[1].begin(), point_set_[1].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
 	auto itr_y1 = std::min_element(point_set_[1].begin(), point_set_[1].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
 	auto itr_z1 = std::min_element(point_set_[1].begin(), point_set_[1].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
 	return Eigen::Vector3d(
 			std::min((*itr_x0)(0), (*itr_x1)(0)),
 			std::min((*itr_y0)(1), (*itr_y1)(1)),
@@ -70,17 +70,17 @@ Eigen::Vector3d LineSet::GetMaxBound() const
 		return Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
 	auto itr_x0 = std::max_element(point_set_[0].begin(), point_set_[0].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
 	auto itr_y0 = std::max_element(point_set_[0].begin(), point_set_[0].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
 	auto itr_z0 = std::max_element(point_set_[0].begin(), point_set_[0].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
 	auto itr_x1 = std::max_element(point_set_[1].begin(), point_set_[1].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
 	auto itr_y1 = std::max_element(point_set_[1].begin(), point_set_[1].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
 	auto itr_z1 = std::max_element(point_set_[1].begin(), point_set_[1].end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
 	return Eigen::Vector3d(
 			std::max((*itr_x0)(0), (*itr_x1)(0)),
 			std::max((*itr_y0)(1), (*itr_y1)(1)),
