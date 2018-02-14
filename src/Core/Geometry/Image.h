@@ -84,7 +84,7 @@ public:
 
 	/// Function to access the bilinear interpolated float value of a
 	/// (single-channel) float image
-	std::pair<bool, double> FloatValueAt(double u, double v);
+	std::pair<bool, double> FloatValueAt(double u, double v) const;
 
 protected:
 	void AllocateDataBuffer() {

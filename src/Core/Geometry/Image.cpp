@@ -61,7 +61,7 @@ Eigen::Vector2d Image::GetMaxBound() const
 	return Eigen::Vector2d(width_, height_);
 }
 
-std::pair<bool, double> Image::FloatValueAt(double u, double v)
+std::pair<bool, double> Image::FloatValueAt(double u, double v) const
 {
 	if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4) ||
 		(u < 0.0 || u >(double)(width_ - 1) ||
