@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VerbosityLevel::Always);
+	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");

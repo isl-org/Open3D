@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VerbosityLevel::Always);
+	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
 	if (argc != 3) {
 		PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",

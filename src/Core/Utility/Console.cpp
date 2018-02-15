@@ -57,7 +57,7 @@ enum class TextColor {
 	White = 7
 };
 
-static VerbosityLevel global_verbosity_level = VerbosityLevel::Info;
+static VerbosityLevel global_verbosity_level = VerbosityLevel::VerboseInfo;
 
 /// Internal function to change text color for the console
 /// Note there is no security check for parameters.
@@ -143,7 +143,7 @@ VerbosityLevel GetVerbosityLevel()
 
 void PrintError(const char *format, ...)
 {
-	if (global_verbosity_level >= VerbosityLevel::Error) {
+	if (global_verbosity_level >= VerbosityLevel::VerboseError) {
 		ChangeConsoleColor(TextColor::Red, 1);
 		va_list args;
 		va_start(args, format);
@@ -155,7 +155,7 @@ void PrintError(const char *format, ...)
 
 void PrintWarning(const char *format, ...)
 {
-	if (global_verbosity_level >= VerbosityLevel::Warning) {
+	if (global_verbosity_level >= VerbosityLevel::VerboseWarning) {
 		ChangeConsoleColor(TextColor::Yellow, 1);
 		va_list args;
 		va_start(args, format);
@@ -167,7 +167,7 @@ void PrintWarning(const char *format, ...)
 
 void PrintInfo(const char *format, ...)
 {
-	if (global_verbosity_level >= VerbosityLevel::Info) {
+	if (global_verbosity_level >= VerbosityLevel::VerboseInfo) {
 		va_list args;
 		va_start(args, format);
 		vprintf(format, args);
@@ -177,7 +177,7 @@ void PrintInfo(const char *format, ...)
 
 void PrintDebug(const char *format, ...)
 {
-	if (global_verbosity_level >= VerbosityLevel::Debug) {
+	if (global_verbosity_level >= VerbosityLevel::VerboseDebug) {
 		ChangeConsoleColor(TextColor::Green, 0);
 		va_list args;
 		va_start(args, format);
@@ -189,7 +189,7 @@ void PrintDebug(const char *format, ...)
 
 void PrintAlways(const char *format, ...)
 {
-	if (global_verbosity_level >= VerbosityLevel::Always) {
+	if (global_verbosity_level >= VerbosityLevel::VerboseAlways) {
 		ChangeConsoleColor(TextColor::Blue, 0);
 		va_list args;
 		va_start(args, format);

@@ -32,11 +32,11 @@ using namespace three;
 void pybind_console(py::module &m)
 {
 	py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic())
-		.value("Error", VerbosityLevel::Error)
-		.value("Warning", VerbosityLevel::Warning)
-		.value("Info", VerbosityLevel::Info)
-		.value("Debug", VerbosityLevel::Debug)
-		.value("Always", VerbosityLevel::Always)
+		.value("Error", VerbosityLevel::VerboseError)
+		.value("Warning", VerbosityLevel::VerboseWarning)
+		.value("Info", VerbosityLevel::VerboseInfo)
+		.value("Debug", VerbosityLevel::VerboseDebug)
+		.value("Always", VerbosityLevel::VerboseAlways)
 		.export_values();
 	m.def("set_verbosity_level", &SetVerbosityLevel,
 			"Set global verbosity level of Open3D (py3d)",
