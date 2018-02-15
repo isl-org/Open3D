@@ -44,14 +44,14 @@ void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 			// Once editing starts, lock ProjectionType.
 			// This is because ProjectionType cannot be easily switched in a
 			// smooth trajectory.
-			if (GetProjectionType() == Perspective) {
+			if (GetProjectionType() == ProjectionType::Perspective) {
 				double old_fov = field_of_view_;
 				ViewControl::ChangeFieldOfView(step);
-				if (GetProjectionType() == Orthogonal) {
+				if (GetProjectionType() == ProjectionType::Orthogonal) {
 					field_of_view_ = old_fov;
 				}
 			} else {
-				// do nothing, lock as Orthogonal
+				// do nothing, lock as ProjectionType::Orthogonal
 			}
 			SetProjectionParameters();
 		} else {
@@ -67,7 +67,7 @@ void ViewControlWithCustomAnimation::Scale(double scale)
 	}
 }
 
-void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo, 
+void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo,
 		double yo)
 {
 	if (animation_mode_ == AnimationMode::FreeMode) {
@@ -277,7 +277,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
 	for (size_t i = 0; i < camera_trajectory.extrinsic_.size(); i++) {
 		ViewControlWithCustomAnimation view_control = *this;
 		if (view_control.ConvertFromPinholeCameraParameters(
-				camera_trajectory.intrinsic_, 
+				camera_trajectory.intrinsic_,
 				camera_trajectory.extrinsic_[i]) == false) {
 			view_trajectory_.Reset();
 			return false;
@@ -301,7 +301,7 @@ bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory()
 		return false;
 	}
 	for (const auto &status : view_trajectory_.view_status_) {
-		if (status.field_of_view_ != 
+		if (status.field_of_view_ !=
 				view_trajectory_.view_status_[0].field_of_view_) {
 			return false;
 		}
@@ -345,7 +345,7 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
 	} else {
 		bool success;
 		ViewParameters status;
-		std::tie(success, status) = 
+		std::tie(success, status) =
 				view_trajectory_.GetInterpolatedFrame(CurrentFrame());
 		if (success) {
 			ConvertFromViewParameters(status);
