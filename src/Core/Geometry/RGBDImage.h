@@ -77,13 +77,13 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
 		const Image &color, const Image &depth,
 		bool convert_rgb_to_intensity = true);
 
-/// Typedef and functions for RGBImagePyramid
-typedef std::vector<std::shared_ptr<RGBDImage>> RGBImagePyramid;
+/// Typedef and functions for RGBDImagePyramid
+typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 
-RGBImagePyramid FilterRGBDImagePyramid(
-		const RGBImagePyramid &rgbd_image_pyramid, Image::FilterType type);
+RGBDImagePyramid FilterRGBDImagePyramid(
+		const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type);
 
-RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage &rgbd_image,
+RGBDImagePyramid CreateRGBDImagePyramid(const RGBDImage &rgbd_image,
 		size_t num_of_levels,
 		bool with_gaussian_filter_for_color = true,
 		bool with_gaussian_filter_for_depth = false);
