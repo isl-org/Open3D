@@ -31,34 +31,34 @@ namespace three{
 void ViewControlWithEditing::Reset()
 {
 	if (IsLocked()) return;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Reset();
 	} else {
 		field_of_view_ = FIELD_OF_VIEW_MIN;
 		zoom_ = ZOOM_DEFAULT;
 		lookat_ = bounding_box_.GetCenter();
 		switch (editing_mode_) {
-		case EditingMode::ORTHO_POSITIVE_X:
+		case EDITING_ORTHO_POSITIVE_X:
 			up_ = Eigen::Vector3d(0.0, 0.0, 1.0);
 			front_ = Eigen::Vector3d(1.0, 0.0, 0.0);
 			break;
-		case EditingMode::ORTHO_NEGATIVE_X:
+		case EDITING_ORTHO_NEGATIVE_X:
 			up_ = Eigen::Vector3d(0.0, 0.0, 1.0);
 			front_ = Eigen::Vector3d(-1.0, 0.0, 0.0);
 			break;
-		case EditingMode::ORTHO_POSITIVE_Y:
+		case EDITING_ORTHO_POSITIVE_Y:
 			up_ = Eigen::Vector3d(1.0, 0.0, 0.0);
 			front_ = Eigen::Vector3d(0.0, 1.0, 0.0);
 			break;
-		case EditingMode::ORTHO_NEGATIVE_Y:
+		case EDITING_ORTHO_NEGATIVE_Y:
 			up_ = Eigen::Vector3d(1.0, 0.0, 0.0);
 			front_ = Eigen::Vector3d(0.0, -1.0, 0.0);
 			break;
-		case EditingMode::ORTHO_POSITIVE_Z:
+		case EDITING_ORTHO_POSITIVE_Z:
 			up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
 			front_ = Eigen::Vector3d(0.0, 0.0, 1.0);
 			break;
-		case EditingMode::ORTHO_NEGATIVE_Z:
+		case EDITING_ORTHO_NEGATIVE_Z:
 			up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
 			front_ = Eigen::Vector3d(0.0, 0.0, -1.0);
 			break;
@@ -72,7 +72,7 @@ void ViewControlWithEditing::Reset()
 void ViewControlWithEditing::ChangeFieldOfView(double step)
 {
 	if (IsLocked()) return;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::ChangeFieldOfView(step);
 	} else {
 		// Do nothing. Lock field of view if we are in orthogonal editing mode.
@@ -82,7 +82,7 @@ void ViewControlWithEditing::ChangeFieldOfView(double step)
 void ViewControlWithEditing::Scale(double scale)
 {
 	if (IsLocked()) return;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Scale(scale);
 	} else {
 		ViewControl::Scale(scale);
@@ -92,7 +92,7 @@ void ViewControlWithEditing::Scale(double scale)
 void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
 {
 	if (IsLocked()) return;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Rotate(x, y);
 	} else {
 		// In orthogonal editing mode, lock front, and rotate around it
@@ -113,7 +113,7 @@ void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
 void ViewControlWithEditing::Translate(double x, double y, double xo, double yo)
 {
 	if (IsLocked()) return;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ViewControl::Translate(x, y, xo, yo);
 	} else {
 		ViewControl::Translate(x, y, xo, yo);
@@ -123,11 +123,11 @@ void ViewControlWithEditing::Translate(double x, double y, double xo, double yo)
 void ViewControlWithEditing::SetEditingMode(EditingMode mode)
 {
 	if (IsLocked()) return;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ConvertToViewParameters(view_status_backup_);
 	}
 	editing_mode_ = mode;
-	if (editing_mode_ == EditingMode::FREEMODE) {
+	if (editing_mode_ == EDITING_FREEMODE) {
 		ConvertFromViewParameters(view_status_backup_);
 	} else {
 		Reset();
@@ -138,19 +138,19 @@ std::string ViewControlWithEditing::GetStatusString()
 {
 	std::string prefix;
 	switch (editing_mode_) {
-	case EditingMode::FREEMODE:
+	case EDITING_FREEMODE:
 		prefix = "free view";
 		break;
-	case EditingMode::ORTHO_POSITIVE_X:
-	case EditingMode::ORTHO_NEGATIVE_X:
+	case EDITING_ORTHO_POSITIVE_X:
+	case EDITING_ORTHO_NEGATIVE_X:
 		prefix = "orthogonal X asix";
 		break;
-	case EditingMode::ORTHO_POSITIVE_Y:
-	case EditingMode::ORTHO_NEGATIVE_Y:
+	case EDITING_ORTHO_POSITIVE_Y:
+	case EDITING_ORTHO_NEGATIVE_Y:
 		prefix = "orthogonal Y asix";
 		break;
-	case EditingMode::ORTHO_POSITIVE_Z:
-	case EditingMode::ORTHO_NEGATIVE_Z:
+	case EDITING_ORTHO_POSITIVE_Z:
+	case EDITING_ORTHO_NEGATIVE_Z:
 		prefix = "orthogonal Z asix";
 		break;
 	}
