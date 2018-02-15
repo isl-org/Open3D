@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VerbosityLevel::VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::ALWAYS);
 
 	if (argc < 2) {
 		PrintHelp();

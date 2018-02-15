@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	using namespace three;
 	using namespace three::filesystem;
 
-	SetVerbosityLevel(VerbosityLevel::VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::ALWAYS);
 	if (argc <= 2 || ProgramOptionExists(argc, argv, "--help")) {
 		PrintHelp();
 		return 0;
