@@ -80,7 +80,7 @@ void ChangeConsoleColor(TextColor text_color, int highlight_text)
 	};
 	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(h,
-			EMPHASIS_MASK[highlight_text] | COLOR_MASK[text_color]);
+			EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
 #else
 	printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
 #endif
