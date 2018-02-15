@@ -121,7 +121,7 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -137,7 +137,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -188,7 +188,7 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_LINESET) {
+			Geometry::GeometryType::LINESET) {
 		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
@@ -204,7 +204,7 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_LINESET) {
+			Geometry::GeometryType::LINESET) {
 		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
@@ -236,7 +236,7 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -263,7 +263,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}

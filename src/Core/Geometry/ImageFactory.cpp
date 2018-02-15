@@ -176,7 +176,7 @@ ImagePyramid CreateImagePyramid(
 			if (with_gaussian_filter) {
 				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
 				auto level_b = FilterImage(*pyramid_image[i - 1],
-						Image::FilterType::FILTER_GAUSSIAN_3);
+						Image::FilterType::GAUSSIAN_3);
 				auto level_bd = DownsampleImage(*level_b);
 				pyramid_image.push_back(level_bd);
 			}

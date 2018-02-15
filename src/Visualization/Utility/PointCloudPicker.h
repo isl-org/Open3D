@@ -39,7 +39,7 @@ class PointCloud;
 class PointCloudPicker : public Geometry3D
 {
 public:
-	PointCloudPicker() : Geometry3D(Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {}
+	PointCloudPicker() : Geometry3D(Geometry::GeometryType::UNSPECIFIED) {}
 	~PointCloudPicker() override {}
 
 public:

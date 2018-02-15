@@ -46,15 +46,15 @@ public:
 	};
 
 	enum class FilterType {
-		FILTER_GAUSSIAN_3,
-		FILTER_GAUSSIAN_5,
-		FILTER_GAUSSIAN_7,
-		FILTER_SOBEL_3_DX,
-		FILTER_SOBEL_3_DY
+		GAUSSIAN_3,
+		GAUSSIAN_5,
+		GAUSSIAN_7,
+		SOBEL_3_DX,
+		SOBEL_3_DY
 	};
 
 public:
-	Image() : Geometry2D(Geometry::GeometryType::GEOMETRY_IMAGE) {};
+	Image() : Geometry2D(Geometry::GeometryType::IMAGE) {};
 	~Image() override {};
 
 public:

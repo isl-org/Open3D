@@ -64,7 +64,7 @@ bool PointCloudRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::POINTCLOUD) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -92,7 +92,7 @@ bool PointCloudPickingRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::POINTCLOUD) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -115,7 +115,7 @@ bool LineSetRenderer::Render(const RenderOption &option,
 bool LineSetRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_LINESET) {
+			Geometry::GeometryType::LINESET) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -153,7 +153,7 @@ bool TriangleMeshRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::TRIANGLEMESH) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -178,7 +178,7 @@ bool ImageRenderer::Render(const RenderOption &option, const ViewControl &view)
 bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_IMAGE) {
+			Geometry::GeometryType::IMAGE) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -204,7 +204,7 @@ bool CoordinateFrameRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::TRIANGLEMESH) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -233,7 +233,7 @@ bool SelectionPolygonRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {
+			Geometry::GeometryType::UNSPECIFIED) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -287,7 +287,7 @@ bool PointCloudPickerRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
 	if (geometry_ptr->GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {
+			Geometry::GeometryType::UNSPECIFIED) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;

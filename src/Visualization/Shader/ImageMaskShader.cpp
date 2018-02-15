@@ -162,7 +162,7 @@ void ImageMaskShader::UnbindGeometry()
 bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::GEOMETRY_IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}
@@ -185,7 +185,7 @@ bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view,
 		Image &render_image)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::GEOMETRY_IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}

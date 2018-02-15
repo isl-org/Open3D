@@ -52,7 +52,7 @@ public:
 	};
 
 public:
-	SelectionPolygon() : Geometry2D(Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {}
+	SelectionPolygon() : Geometry2D(Geometry::GeometryType::UNSPECIFIED) {}
 	~SelectionPolygon() override {}
 
 public:

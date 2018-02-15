@@ -32,11 +32,11 @@ class Geometry
 {
 public:
 	enum class GeometryType {
-		GEOMETRY_UNSPECIFIED = 0,
-		GEOMETRY_POINTCLOUD = 1,
-		GEOMETRY_LINESET = 2,
-		GEOMETRY_TRIANGLEMESH = 3,
-		GEOMETRY_IMAGE = 4,
+		UNSPECIFIED = 0,
+		POINTCLOUD = 1,
+		LINESET = 2,
+		TRIANGLEMESH = 3,
+		IMAGE = 4,
 	};
 
 public:
@@ -53,7 +53,7 @@ public:
 	int Dimension() const { return dimension_; }
 
 private:
-	GeometryType geometry_type_ = GeometryType::GEOMETRY_UNSPECIFIED;
+	GeometryType geometry_type_ = GeometryType::UNSPECIFIED;
 	int dimension_ = 3;
 };
 

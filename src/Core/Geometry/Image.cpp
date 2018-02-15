@@ -225,19 +225,19 @@ std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type)
 	}
 
 	switch (type) {
-	case Image::FilterType::FILTER_GAUSSIAN_3:
+	case Image::FilterType::GAUSSIAN_3:
 		output = FilterImage(input, Gaussian3, Gaussian3);
 		break;
-	case Image::FilterType::FILTER_GAUSSIAN_5:
+	case Image::FilterType::GAUSSIAN_5:
 		output = FilterImage(input, Gaussian5, Gaussian5);
 		break;
-	case Image::FilterType::FILTER_GAUSSIAN_7:
+	case Image::FilterType::GAUSSIAN_7:
 		output = FilterImage(input, Gaussian7, Gaussian7);
 		break;
-	case Image::FilterType::FILTER_SOBEL_3_DX:
+	case Image::FilterType::SOBEL_3_DX:
 		output = FilterImage(input, Sobel31, Sobel32);
 		break;
-	case Image::FilterType::FILTER_SOBEL_3_DY:
+	case Image::FilterType::SOBEL_3_DY:
 		output = FilterImage(input, Sobel32, Sobel31);
 		break;
 	default:

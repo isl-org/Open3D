@@ -186,7 +186,7 @@ bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -204,7 +204,7 @@ bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -262,7 +262,7 @@ bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -291,7 +291,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
