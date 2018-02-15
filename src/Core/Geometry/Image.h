@@ -84,7 +84,7 @@ public:
 
 	/// Function to access the bilinear interpolated float value of a
 	/// (single-channel) float image
-	std::pair<bool, double> FloatValueAt(double u, double v);
+	std::pair<bool, double> FloatValueAt(double u, double v) const;
 
 protected:
 	void AllocateDataBuffer() {
@@ -112,7 +112,7 @@ std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
 		const PinholeCameraIntrinsic &intrinsic);
 
-/// Return an gray scaled float type image.
+/// Return a gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(
 		const Image &image,
 		Image::ColorToIntensityConversionType type = Image::WEIGHTED);
@@ -135,7 +135,7 @@ std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type);
 
 /// Function to filter image with arbitrary dx, dy separable filters
 std::shared_ptr<Image> FilterImage(const Image &input,
-		const std::vector<double> dx, const std::vector<double> dy);
+		const std::vector<double> &dx, const std::vector<double> &dy);
 
 std::shared_ptr<Image> FilterHorizontalImage(
 		const Image &input, const std::vector<double> &kernel);
@@ -166,7 +166,5 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 
 ImagePyramid CreateImagePyramid(const Image& image,
 		size_t num_of_levels, bool with_gaussian_filter = true);
-
-typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
 }	// namespace three

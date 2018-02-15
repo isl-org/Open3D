@@ -18,44 +18,95 @@ find_package(PythonLibsNew ${PYBIND11_PYTHON_VERSION} REQUIRED)
 include(CheckCXXCompilerFlag)
 include(CMakeParseArguments)
 
-function(select_cxx_standard)
-  if(NOT MSVC AND NOT PYBIND11_CPP_STANDARD)
+if(NOT PYBIND11_CPP_STANDARD AND NOT CMAKE_CXX_STANDARD)
+  if(NOT MSVC)
     check_cxx_compiler_flag("-std=c++14" HAS_CPP14_FLAG)
-    check_cxx_compiler_flag("-std=c++11" HAS_CPP11_FLAG)
 
     if (HAS_CPP14_FLAG)
       set(PYBIND11_CPP_STANDARD -std=c++14)
-    elseif (HAS_CPP11_FLAG)
-      set(PYBIND11_CPP_STANDARD -std=c++11)
     else()
-      message(FATAL_ERROR "Unsupported compiler -- pybind11 requires C++11 support!")
+      check_cxx_compiler_flag("-std=c++11" HAS_CPP11_FLAG)
+      if (HAS_CPP11_FLAG)
+        set(PYBIND11_CPP_STANDARD -std=c++11)
+      else()
+        message(FATAL_ERROR "Unsupported compiler -- pybind11 requires C++11 support!")
+      endif()
     endif()
+  elseif(MSVC)
+    set(PYBIND11_CPP_STANDARD /std:c++14)
+  endif()
 
-    set(PYBIND11_CPP_STANDARD ${PYBIND11_CPP_STANDARD} CACHE STRING
-        "C++ standard flag, e.g. -std=c++11 or -std=c++14. Defaults to latest available." FORCE)
+  set(PYBIND11_CPP_STANDARD ${PYBIND11_CPP_STANDARD} CACHE STRING
+      "C++ standard flag, e.g. -std=c++11, -std=c++14, /std:c++14.  Defaults to C++14 mode." FORCE)
+endif()
+
+# Checks whether the given CXX/linker flags can compile and link a cxx file.  cxxflags and
+# linkerflags are lists of flags to use.  The result variable is a unique variable name for each set
+# of flags: the compilation result will be cached base on the result variable.  If the flags work,
+# sets them in cxxflags_out/linkerflags_out internal cache variables (in addition to ${result}).
+function(_pybind11_return_if_cxx_and_linker_flags_work result cxxflags linkerflags cxxflags_out linkerflags_out)
+  set(CMAKE_REQUIRED_LIBRARIES ${linkerflags})
+  check_cxx_compiler_flag("${cxxflags}" ${result})
+  if (${result})
+    set(${cxxflags_out} "${cxxflags}" CACHE INTERNAL "" FORCE)
+    set(${linkerflags_out} "${linkerflags}" CACHE INTERNAL "" FORCE)
   endif()
 endfunction()
 
-# Internal: find the appropriate LTO flag for this compiler
-macro(_pybind11_find_lto_flag output_var prefer_thin_lto)
-  if(${prefer_thin_lto})
-    # Check for ThinLTO support (Clang)
-    check_cxx_compiler_flag("-flto=thin" HAS_THIN_LTO_FLAG)
-    set(${output_var} $<${HAS_THIN_LTO_FLAG}:-flto=thin>)
-  endif()
+# Internal: find the appropriate link time optimization flags for this compiler
+function(_pybind11_add_lto_flags target_name prefer_thin_lto)
+  if (NOT DEFINED PYBIND11_LTO_CXX_FLAGS)
+    set(PYBIND11_LTO_CXX_FLAGS "" CACHE INTERNAL "")
+    set(PYBIND11_LTO_LINKER_FLAGS "" CACHE INTERNAL "")
 
-  if(NOT ${prefer_thin_lto} OR NOT HAS_THIN_LTO_FLAG)
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-      # Check for Link Time Optimization support (GCC/Clang)
-      check_cxx_compiler_flag("-flto" HAS_LTO_FLAG)
-      set(${output_var} $<${HAS_LTO_FLAG}:-flto>)
-    else()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+      set(cxx_append "")
+      set(linker_append "")
+      if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT APPLE)
+        # Clang Gold plugin does not support -Os; append -O3 to MinSizeRel builds to override it
+        set(linker_append ";$<$<CONFIG:MinSizeRel>:-O3>")
+      elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        set(cxx_append ";-fno-fat-lto-objects")
+      endif()
+
+      if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND prefer_thin_lto)
+        _pybind11_return_if_cxx_and_linker_flags_work(HAS_FLTO_THIN
+          "-flto=thin${cxx_append}" "-flto=thin${linker_append}"
+          PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
+      endif()
+
+      if (NOT HAS_FLTO_THIN)
+        _pybind11_return_if_cxx_and_linker_flags_work(HAS_FLTO
+          "-flto${cxx_append}" "-flto${linker_append}"
+          PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
+      endif()
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
       # Intel equivalent to LTO is called IPO
-      check_cxx_compiler_flag("-ipo" HAS_IPO_FLAG)
-      set(${output_var} $<${HAS_IPO_FLAG}:-ipo>)
+      _pybind11_return_if_cxx_and_linker_flags_work(HAS_INTEL_IPO
+      "-ipo" "-ipo" PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
+    elseif(MSVC)
+      # cmake only interprets libraries as linker flags when they start with a - (otherwise it
+      # converts /LTCG to \LTCG as if it was a Windows path).  Luckily MSVC supports passing flags
+      # with - instead of /, even if it is a bit non-standard:
+      _pybind11_return_if_cxx_and_linker_flags_work(HAS_MSVC_GL_LTCG
+        "/GL" "-LTCG" PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
+    endif()
+
+    if (PYBIND11_LTO_CXX_FLAGS)
+      message(STATUS "LTO enabled")
+    else()
+      message(STATUS "LTO disabled (not supported by the compiler and/or linker)")
     endif()
   endif()
-endmacro()
+
+  # Enable LTO flags if found, except for Debug builds
+  if (PYBIND11_LTO_CXX_FLAGS)
+    target_compile_options(${target_name} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:${PYBIND11_LTO_CXX_FLAGS}>")
+  endif()
+  if (PYBIND11_LTO_LINKER_FLAGS)
+    target_link_libraries(${target_name} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:${PYBIND11_LTO_LINKER_FLAGS}>")
+  endif()
+endfunction()
 
 # Build a Python extension module:
 # pybind11_add_module(<name> [MODULE | SHARED] [EXCLUDE_FROM_ALL]
@@ -88,6 +139,13 @@ function(pybind11_add_module target_name)
   set_target_properties(${target_name} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
   set_target_properties(${target_name} PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
+  # -fvisibility=hidden is required to allow multiple modules compiled against
+  # different pybind versions to work properly, and for some features (e.g.
+  # py::module_local).  We force it on everything inside the `pybind11`
+  # namespace; also turning it on for a pybind module compilation here avoids
+  # potential warnings or issues from having mixed hidden/non-hidden types.
+  set_target_properties(${target_name} PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+
   if(WIN32 OR CYGWIN)
     # Link against the Python shared library on Windows
     target_link_libraries(${target_name} PRIVATE ${PYTHON_LIBRARIES})
@@ -114,52 +172,31 @@ function(pybind11_add_module target_name)
     endif()
   endif()
 
-  select_cxx_standard()
-  if(NOT MSVC)
-    # Make sure C++11/14 are enabled
-    target_compile_options(${target_name} PUBLIC ${PYBIND11_CPP_STANDARD})
-  endif()
+  # Make sure C++11/14 are enabled
+  target_compile_options(${target_name} PUBLIC ${PYBIND11_CPP_STANDARD})
 
   if(ARG_NO_EXTRAS)
     return()
   endif()
 
-  if(NOT MSVC)
-    # Enable link time optimization and set the default symbol
-    # visibility to hidden (very important to obtain small binaries)
-    string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
-    if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-      # Link Time Optimization
-      if(NOT CYGWIN)
-        _pybind11_find_lto_flag(lto_flag ARG_THIN_LTO)
-        target_compile_options(${target_name} PRIVATE ${lto_flag})
-      endif()
+  _pybind11_add_lto_flags(${target_name} ${ARG_THIN_LTO})
 
-      # Default symbol visibility
-      target_compile_options(${target_name} PRIVATE "-fvisibility=hidden")
-
-      # Strip unnecessary sections of the binary on Linux/Mac OS
-      if(CMAKE_STRIP)
-        if(APPLE)
-          add_custom_command(TARGET ${target_name} POST_BUILD
-                             COMMAND ${CMAKE_STRIP} -x $<TARGET_FILE:${target_name}>)
-        else()
-          add_custom_command(TARGET ${target_name} POST_BUILD
-                             COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${target_name}>)
-        endif()
+  if (NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug)
+    # Strip unnecessary sections of the binary on Linux/Mac OS
+    if(CMAKE_STRIP)
+      if(APPLE)
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                           COMMAND ${CMAKE_STRIP} -x $<TARGET_FILE:${target_name}>)
+      else()
+        add_custom_command(TARGET ${target_name} POST_BUILD
+                           COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${target_name}>)
       endif()
     endif()
-  elseif(MSVC)
+  endif()
+
+  if(MSVC)
     # /MP enables multithreaded builds (relevant when there are many files), /bigobj is
     # needed for bigger binding projects due to the limit to 64k addressable sections
     target_compile_options(${target_name} PRIVATE /MP /bigobj)
-
-    # Enforce link time code generation on MSVC, except in debug mode
-    target_compile_options(${target_name} PRIVATE $<$<NOT:$<CONFIG:Debug>>:/GL>)
-
-    # Fancy generator expressions don't work with linker flags, for reasons unknown
-    set_property(TARGET ${target_name} APPEND_STRING PROPERTY LINK_FLAGS_RELEASE /LTCG)
-    set_property(TARGET ${target_name} APPEND_STRING PROPERTY LINK_FLAGS_MINSIZEREL /LTCG)
-    set_property(TARGET ${target_name} APPEND_STRING PROPERTY LINK_FLAGS_RELWITHDEBINFO /LTCG)
   endif()
 endfunction()

@@ -39,7 +39,7 @@ void pybind_image(py::module &m)
 	py::detail::bind_default_constructor<Image>(image);
 	py::detail::bind_copy_functions<Image>(image);
 	image
-		.def("__init__", [](Image &img, py::buffer b) {
+		.def(py::init([](py::buffer b) {
 			py::buffer_info info = b.request();
 			int width, height, num_of_channels = 0, bytes_per_channel;
 			if (info.format == py::format_descriptor<uint8_t>::format() ||
@@ -63,10 +63,12 @@ void pybind_image(py::module &m)
 				num_of_channels = (int)info.shape[2];
 			}
 			height = (int)info.shape[0]; width = (int)info.shape[1];
-			new (&img) Image();
-			img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
-			memcpy(img.data_.data(), info.ptr, img.data_.size());
-		})
+			auto img = new Image();
+			img->PrepareImage(width, height,
+					num_of_channels, bytes_per_channel);
+			memcpy(img->data_.data(), info.ptr, img->data_.size());
+			return img;
+		}))
 		.def_buffer([](Image &img) -> py::buffer_info {
 			std::string format;
 			switch (img.bytes_per_channel_) {

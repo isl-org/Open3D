@@ -58,12 +58,12 @@ void Timer::Stop()
 	end_time_in_milliseconds_ = GetSystemTimeInMilliseconds();
 }
 
-double Timer::GetDuration()
+double Timer::GetDuration() const
 {
 	return end_time_in_milliseconds_ - start_time_in_milliseconds_;
 }
 
-void Timer::Print(const std::string &timer_info)
+void Timer::Print(const std::string &timer_info) const
 {
 	PrintInfo("%s %.2f ms.\n", timer_info.c_str(),
 			end_time_in_milliseconds_ - start_time_in_milliseconds_);

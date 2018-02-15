@@ -52,11 +52,11 @@ Eigen::Vector3d TriangleMesh::GetMinBound() const
 		return Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
 	auto itr_x = std::min_element(vertices_.begin(), vertices_.end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
 	auto itr_y = std::min_element(vertices_.begin(), vertices_.end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
 	auto itr_z = std::min_element(vertices_.begin(), vertices_.end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
@@ -66,11 +66,11 @@ Eigen::Vector3d TriangleMesh::GetMaxBound() const
 		return Eigen::Vector3d(0.0, 0.0, 0.0);
 	}
 	auto itr_x = std::max_element(vertices_.begin(), vertices_.end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(0) < b(0); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
 	auto itr_y = std::max_element(vertices_.begin(), vertices_.end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(1) < b(1); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
 	auto itr_z = std::max_element(vertices_.begin(), vertices_.end(),
-		[](Eigen::Vector3d a, Eigen::Vector3d b) { return a(2) < b(2); });
+		[](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
 	return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
@@ -217,7 +217,7 @@ void TriangleMesh::RemoveDuplicatedVertices()
 		}
 	}
 	PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n",
-			old_vertex_num - k);
+			(int)(old_vertex_num - k));
 }
 
 void TriangleMesh::RemoveDuplicatedTriangles()
@@ -259,12 +259,12 @@ void TriangleMesh::RemoveDuplicatedTriangles()
 	triangles_.resize(k);
 	if (has_tri_normal) triangle_normals_.resize(k);
 	PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
-			old_triangle_num - k);
+			(int)(old_triangle_num - k));
 }
 
 void TriangleMesh::RemoveNonManifoldVertices()
 {
-	// Non-manifold vertices are vertices without a trianlge reference. They
+	// Non-manifold vertices are vertices without a triangle reference. They
 	// should not exist in a valid triangle mesh.
 	std::vector<bool> vertex_has_reference(vertices_.size(), false);
 	for (const auto &triangle : triangles_) {
@@ -299,14 +299,14 @@ void TriangleMesh::RemoveNonManifoldVertices()
 		}
 	}
 	PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n",
-			old_vertex_num - k);
+			(int)(old_vertex_num - k));
 }
 
 void TriangleMesh::RemoveNonManifoldTriangles()
 {
 	// Non-manifold triangles are degenerate triangles that have one vertex as
 	// its multiple end-points. They are usually the product of removing
-	// duplicate vertices.
+	// duplicated vertices.
 	bool has_tri_normal = HasTriangleNormals();
 	size_t old_triangle_num = triangles_.size();
 	size_t k = 0;
@@ -322,7 +322,7 @@ void TriangleMesh::RemoveNonManifoldTriangles()
 	triangles_.resize(k);
 	if (has_tri_normal) triangle_normals_.resize(k);
 	PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
-			old_triangle_num - k);
+			(int)(old_triangle_num - k));
 }
 
 }	// namespace three

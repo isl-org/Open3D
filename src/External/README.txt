@@ -39,7 +39,7 @@ libjpeg                     9a                                   libjpeg license
 A widely used C library for reading and writing JPEG image files
 http://libjpeg.sourceforge.net/
 --------------------------------------------------------------------------------
-jsoncpp                     1.6.5                                    MIT license
+jsoncpp                     1.8.4                                    MIT license
 A C++ library that allows manipulating JSON values
 https://github.com/open-source-parsers/jsoncpp
 --------------------------------------------------------------------------------
@@ -61,6 +61,6 @@ tinyfiledialogs             2.7.2                                   zlib license
 A lightweight cross-platform file dialog library
 https://sourceforge.net/projects/tinyfiledialogs/
 --------------------------------------------------------------------------------
-pybind11                    2.1                                      BSD license
+pybind11                    2.2                                      BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11

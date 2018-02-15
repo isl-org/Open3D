@@ -9,10 +9,12 @@
 Reference
 #########
 
+.. _macros:
+
 Macros
 ======
 
-.. doxygendefine:: PYBIND11_PLUGIN
+.. doxygendefine:: PYBIND11_MODULE
 
 .. _core_types:
 
@@ -57,6 +59,26 @@ Passing extra arguments to ``def`` or ``class_``
 
 .. doxygengroup:: annotations
     :members:
+
+Embedding the interpreter
+=========================
+
+.. doxygendefine:: PYBIND11_EMBEDDED_MODULE
+
+.. doxygenfunction:: initialize_interpreter
+
+.. doxygenfunction:: finalize_interpreter
+
+.. doxygenclass:: scoped_interpreter
+
+Redirecting C++ streams
+=======================
+
+.. doxygenclass:: scoped_ostream_redirect
+
+.. doxygenclass:: scoped_estream_redirect
+
+.. doxygenfunction:: add_ostream_redirect
 
 Python build-in functions
 =========================

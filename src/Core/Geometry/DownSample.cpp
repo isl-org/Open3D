@@ -39,50 +39,50 @@ class AccumulatedPoint
 {
 public:
 	AccumulatedPoint() :
-			num_of_points(0),
-			point(0.0, 0.0, 0.0),
-			normal(0.0, 0.0, 0.0),
-			color(0.0, 0.0, 0.0)
+			num_of_points_(0),
+			point_(0.0, 0.0, 0.0),
+			normal_(0.0, 0.0, 0.0),
+			color_(0.0, 0.0, 0.0)
 	{
 	}
 
 public:
 	void AddPoint(const PointCloud &cloud, int index)
 	{
-		point += cloud.points_[index];
+		point_ += cloud.points_[index];
 		if (cloud.HasNormals()) {
 			if (!std::isnan(cloud.normals_[index](0)) &&
 					!std::isnan(cloud.normals_[index](1)) &&
 					!std::isnan(cloud.normals_[index](2))) {
-				normal += cloud.normals_[index];
+				normal_ += cloud.normals_[index];
 			}
 		}
 		if (cloud.HasColors()) {
-			color += cloud.colors_[index];
+			color_ += cloud.colors_[index];
 		}
-		num_of_points++;
+		num_of_points_++;
 	}
 
-	Eigen::Vector3d GetAveragePoint()
+	Eigen::Vector3d GetAveragePoint() const
 	{
-		return point / double(num_of_points);
+		return point_ / double(num_of_points_);
 	}
 
-	Eigen::Vector3d GetAverageNormal()
+	Eigen::Vector3d GetAverageNormal() const
 	{
-		return normal.normalized();
+		return normal_.normalized();
 	}
 
-	Eigen::Vector3d GetAverageColor()
+	Eigen::Vector3d GetAverageColor() const
 	{
-		return color / double(num_of_points);
+		return color_ / double(num_of_points_);
 	}
 
 private:
-	int num_of_points;
-	Eigen::Vector3d point;
-	Eigen::Vector3d normal;
-	Eigen::Vector3d color;
+	int num_of_points_;
+	Eigen::Vector3d point_;
+	Eigen::Vector3d normal_;
+	Eigen::Vector3d color_;
 };
 
 }	// unnamed namespace

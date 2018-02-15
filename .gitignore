@@ -13,4 +13,5 @@ build14-rdp/
 src/Sandbox/
 src/Visualization/Shader/Shader.h
 _build/
+doxygen/
 .vs/

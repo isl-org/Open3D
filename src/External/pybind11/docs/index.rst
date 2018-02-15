@@ -14,6 +14,7 @@ pybind11 --- Seamless operability between C++11 and Python
 
    intro
    changelog
+   upgrade
 
 .. toctree::
    :caption: The Basics
@@ -33,6 +34,7 @@ pybind11 --- Seamless operability between C++11 and Python
    advanced/smart_ptrs
    advanced/cast/index
    advanced/pycpp/index
+   advanced/embedding
    advanced/misc
 
 .. toctree::
