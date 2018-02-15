@@ -37,7 +37,7 @@ namespace three {
 class TriangleMesh : public Geometry3D
 {
 public:
-	TriangleMesh() : Geometry3D(GEOMETRY_TRIANGLEMESH) {};
+	TriangleMesh() : Geometry3D(Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {};
 	~TriangleMesh() override {};
 
 public:

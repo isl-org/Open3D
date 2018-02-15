@@ -66,7 +66,8 @@ void PointCloudPicker::Transform(const Eigen::Matrix4d &transformation)
 
 bool PointCloudPicker::SetPointCloud(std::shared_ptr<const Geometry> ptr)
 {
-	if (!ptr || ptr->GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (!ptr || ptr->GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
 		return false;
 	}
 	pointcloud_ptr_ = ptr;

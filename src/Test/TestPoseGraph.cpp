@@ -35,7 +35,7 @@ using namespace three;
 
 int main(int argc, char **argv)
 {
-	SetVerbosityLevel(three::VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::VERBOSE_ALWAYS);
 
 	if (argc != 2) {
 		PrintInfo("Usage:\n");

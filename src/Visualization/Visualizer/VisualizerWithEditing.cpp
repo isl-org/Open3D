@@ -52,10 +52,10 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 	glfwMakeContextCurrent(window_);
 	original_geometry_ptr_ = geometry_ptr;
 	if (geometry_ptr->GetGeometryType() ==
-			Geometry::GEOMETRY_UNSPECIFIED) {
+			Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {
 		return false;
 	} else if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_POINTCLOUD) {
+			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
 		auto ptr = std::make_shared<PointCloud>();
 		*ptr = (const PointCloud &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -66,7 +66,7 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 			return false;
 		}
 	} else if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_LINESET) {
+			Geometry::GeometryType::GEOMETRY_LINESET) {
 		auto ptr = std::make_shared<LineSet>();
 		*ptr = (const LineSet &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -77,7 +77,7 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 			return false;
 		}
 	} else if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_TRIANGLEMESH) {
+			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
 		auto ptr = std::make_shared<TriangleMesh>();
 		*ptr = (const TriangleMesh &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -88,7 +88,7 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 			return false;
 		}
 	} else if (geometry_ptr->GetGeometryType() ==
-			Geometry::GEOMETRY_IMAGE) {
+			Geometry::GeometryType::GEOMETRY_IMAGE) {
 		auto ptr = std::make_shared<Image>();
 		*ptr = (const Image &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -349,7 +349,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 			}
 			if (voxel_size_ > 0.0 && editing_geometry_ptr_ &&
 					editing_geometry_ptr_->GetGeometryType() == 
-					Geometry::GEOMETRY_POINTCLOUD) {
+					Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
 				PrintInfo("Voxel downsample with voxel size %.4f.\n",
 						voxel_size_);
 				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
@@ -366,7 +366,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 		if (view_control.IsLocked() && selection_polygon_ptr_) {
 			if (editing_geometry_ptr_ && 
 					editing_geometry_ptr_->GetGeometryType() ==
-					Geometry::GEOMETRY_POINTCLOUD) {
+					Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
 				glfwMakeContextCurrent(window_);
 				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
 				pcd = *selection_polygon_ptr_->CropPointCloud(pcd,

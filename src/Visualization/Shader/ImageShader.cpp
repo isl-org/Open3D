@@ -173,7 +173,7 @@ void ImageShader::UnbindGeometry()
 bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::GEOMETRY_IMAGE) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}
@@ -212,7 +212,7 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view,
 		Image &render_image)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::GEOMETRY_IMAGE) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}

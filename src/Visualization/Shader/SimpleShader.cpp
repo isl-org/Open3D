@@ -73,7 +73,7 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-	
+
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -120,7 +120,8 @@ void SimpleShader::UnbindGeometry()
 bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -135,7 +136,8 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -185,7 +187,8 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_LINESET) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_LINESET) {
 		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
@@ -200,7 +203,8 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_LINESET) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_LINESET) {
 		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
@@ -231,7 +235,8 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -257,7 +262,8 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -269,7 +275,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 	const ColorMap &global_color_map = *GetGlobalColorMap();
 	points.resize(mesh.triangles_.size() * 3);
 	colors.resize(mesh.triangles_.size() * 3);
-	
+
 	for (size_t i = 0; i < mesh.triangles_.size(); i++) {
 		const auto &triangle = mesh.triangles_[i];
 		for (size_t j = 0; j < 3; j++) {

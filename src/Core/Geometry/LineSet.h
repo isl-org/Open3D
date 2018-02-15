@@ -41,7 +41,7 @@ public:
 	typedef std::pair<int, int> LineSegment;
 
 public:
-	LineSet() : Geometry3D(GEOMETRY_LINESET) {}
+	LineSet() : Geometry3D(Geometry::GeometryType::GEOMETRY_LINESET) {}
 	~LineSet() override {}
 
 public:

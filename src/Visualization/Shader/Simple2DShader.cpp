@@ -70,7 +70,7 @@ bool Simple2DShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-	
+
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -80,8 +80,8 @@ bool Simple2DShader::BindGeometry(const Geometry &geometry,
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
 	glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
 			colors.data(), GL_STATIC_DRAW);
-	
-	bound_ = true;	
+
+	bound_ = true;
 	return true;
 }
 
@@ -118,7 +118,8 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_UNSPECIFIED) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {
 		PrintShaderWarning("Rendering type is illegal.");
 		return false;
 	}
@@ -133,7 +134,8 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &colors)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_UNSPECIFIED) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::GEOMETRY_UNSPECIFIED) {
 		PrintShaderWarning("Rendering type is illegal.");
 		return false;
 	}
@@ -148,7 +150,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
 	points.resize(segment_num * 2);
 	colors.resize(segment_num * 2);
 	for (size_t i = 0; i < segment_num; i++) {
-		
+
 	}
 	if (polygon.is_closed_) {
 		points.resize(polygon.polygon_.size() * 2);

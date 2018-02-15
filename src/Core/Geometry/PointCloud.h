@@ -42,7 +42,7 @@ class PinholeCameraIntrinsic;
 class PointCloud : public Geometry3D
 {
 public:
-	PointCloud() : Geometry3D(GEOMETRY_POINTCLOUD) {};
+	PointCloud() : Geometry3D(Geometry::GeometryType::GEOMETRY_POINTCLOUD) {};
 	~PointCloud() override {};
 
 public:
