@@ -221,7 +221,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			const auto &vertex = mesh.vertices_[vi];
 			points[idx] = vertex.cast<float>();
 			if (option.mesh_shade_option_ ==
-					RenderOption::MESHSHADE_FLATSHADE) {
+					RenderOption::MeshShadeOption::FLAT) {
 				normals[idx] = mesh.triangle_normals_[i].cast<float>();
 			} else {
 				normals[idx] = mesh.vertex_normals_[vi].cast<float>();

@@ -228,20 +228,20 @@ bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		normals[i] = normal.cast<float>();
 		Eigen::Vector3d color;
 		switch (option.point_color_option_) {
-		case RenderOption::POINTCOLOR_X:
+		case RenderOption::PointColorOption::X:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetXPercentage(point(0)));
 			break;
-		case RenderOption::POINTCOLOR_Y:
+		case RenderOption::PointColorOption::Y:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetYPercentage(point(1)));
 			break;
-		case RenderOption::POINTCOLOR_Z:
+		case RenderOption::PointColorOption::Z:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetZPercentage(point(2)));
 			break;
-		case RenderOption::POINTCOLOR_COLOR:
-		case RenderOption::POINTCOLOR_DEFAULT:
+		case RenderOption::PointColorOption::COLOR:
+		case RenderOption::PointColorOption::DEFAULT:
 		default:
 			if (pointcloud.HasColors()) {
 				color = pointcloud.colors_[i];
@@ -321,24 +321,24 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 
 			Eigen::Vector3d color;
 			switch (option.mesh_color_option_) {
-			case RenderOption::TRIANGLEMESH_X:
+			case RenderOption::MeshColorOption::X:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetXPercentage(vertex(0)));
 				break;
-			case RenderOption::TRIANGLEMESH_Y:
+			case RenderOption::MeshColorOption::Y:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetYPercentage(vertex(1)));
 				break;
-			case RenderOption::TRIANGLEMESH_Z:
+			case RenderOption::MeshColorOption::Z:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetZPercentage(vertex(2)));
 				break;
-			case RenderOption::TRIANGLEMESH_COLOR:
+			case RenderOption::MeshColorOption::COLOR:
 				if (mesh.HasVertexColors()) {
 					color = mesh.vertex_colors_[vi];
 					break;
 				}
-			case RenderOption::TRIANGLEMESH_DEFAULT:
+			case RenderOption::MeshColorOption::DEFAULT:
 			default:
 				color = option.default_mesh_color_;
 				break;
@@ -346,7 +346,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			colors[idx] = color.cast<float>();
 
 			if (option.mesh_shade_option_ ==
-					RenderOption::MESHSHADE_FLATSHADE) {
+					RenderOption::MeshShadeOption::FLAT) {
 				normals[idx] = mesh.triangle_normals_[i].cast<float>();
 			} else {
 				normals[idx] = mesh.vertex_normals_[vi].cast<float>();

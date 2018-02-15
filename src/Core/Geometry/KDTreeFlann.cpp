@@ -70,16 +70,16 @@ bool KDTreeFlann::SetMatrixData(const Eigen::MatrixXd &data)
 bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 {
 	switch (geometry.GetGeometryType()) {
-	case Geometry::Geometry::GeometryType::GEOMETRY_POINTCLOUD:
+	case Geometry::GeometryType::GEOMETRY_POINTCLOUD:
 		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
 				(const double *)((const PointCloud &)geometry).points_.data(),
 				3, ((const PointCloud &)geometry).points_.size()));
-	case Geometry::Geometry::GeometryType::GEOMETRY_TRIANGLEMESH:
+	case Geometry::GeometryType::GEOMETRY_TRIANGLEMESH:
 		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
 				(const double *)((const TriangleMesh &)geometry).vertices_.
 				data(), 3, ((const TriangleMesh &)geometry).vertices_.size()));
-	case Geometry::Geometry::GeometryType::GEOMETRY_IMAGE:
-	case Geometry::Geometry::GeometryType::GEOMETRY_UNSPECIFIED:
+	case Geometry::GeometryType::GEOMETRY_IMAGE:
+	case Geometry::GeometryType::GEOMETRY_UNSPECIFIED:
 	default:
 		PrintDebug("[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
 		return false;

@@ -46,9 +46,9 @@ class SelectionPolygon : public Geometry2D
 {
 public:
 	enum class SectionPolygonType {
-		POLYGON_UNFILLED = 0,
-		POLYGON_RECTANGLE = 1,
-		POLYGON_POLYGON = 2,
+		UNFILLED = 0,
+		RECTANGLE = 1,
+		POLYGON = 2,
 	};
 
 public:
@@ -80,7 +80,7 @@ public:
 	std::vector<Eigen::Vector2d> polygon_;
 	bool is_closed_ = false;
 	Image polygon_interior_mask_;
-	SectionPolygonType polygon_type_ = POLYGON_UNFILLED;
+	SectionPolygonType polygon_type_ = SectionPolygonType::UNFILLED;
 };
 
 }	// namespace three

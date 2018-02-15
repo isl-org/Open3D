@@ -45,7 +45,7 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 	const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
 	bool success = true;
 	if (pointcloud.HasNormals()) {
-		if (option.point_color_option_ == RenderOption::POINTCOLOR_NORMAL) {
+		if (option.point_color_option_ == RenderOption::PointColorOption::NORMAL) {
 			success &= normal_point_shader_.Render(pointcloud, option, view);
 		} else {
 			success &= phong_point_shader_.Render(pointcloud, option, view);
@@ -135,7 +135,7 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
 	bool success = true;
 	if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
-		if (option.mesh_color_option_ == RenderOption::TRIANGLEMESH_NORMAL) {
+		if (option.mesh_color_option_ == RenderOption::MeshColorOption::NORMAL) {
 			success &= normal_mesh_shader_.Render(mesh, option, view);
 		} else {
 			success &= phong_mesh_shader_.Render(mesh, option, view);

@@ -95,7 +95,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 		return;
 	}
 	view_control.SetAnimationMode(
-			ViewControlWithCustomAnimation::ANIMATION_PLAYMODE);
+			ViewControlWithCustomAnimation::AnimationMode::PLAY);
 	is_redraw_required_ = true;
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
@@ -143,7 +143,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 				AdvanceConsoleProgress();
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
 					view_control.SetAnimationMode(
-							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
+							ViewControlWithCustomAnimation::AnimationMode::FREE);
 					RegisterAnimationCallback(nullptr);
 					if (recording && recording_trajectory) {
 						if (recording_depth) {
@@ -185,12 +185,12 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 		switch (key) {
 		case GLFW_KEY_F:
 			view_control.SetAnimationMode(
-					ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
+					ViewControlWithCustomAnimation::AnimationMode::FREE);
 			PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
 			break;
 		case GLFW_KEY_W:
 			view_control.SetAnimationMode(
-					ViewControlWithCustomAnimation::ANIMATION_PREVIEWMODE);
+					ViewControlWithCustomAnimation::AnimationMode::PREVIEW);
 			PrintDebug("[Visualizer] Enter preview mode.\n");
 			break;
 		case GLFW_KEY_P:

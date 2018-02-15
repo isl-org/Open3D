@@ -86,7 +86,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-	
+
 	// Create buffers and bind the geometry
 	const GLfloat vertex_position_buffer_data[18] = {
 		-1.0f, -1.0f, 0.0f,
@@ -106,7 +106,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 	};
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position_buffer_data), 
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position_buffer_data),
 			vertex_position_buffer_data, GL_STATIC_DRAW);
 	glGenBuffers(1, &vertex_UV_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_UV_buffer_);
@@ -120,17 +120,17 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 			render_image.data_.data());
 
 	if (option.interpolation_option_ ==
-			RenderOption::TEXTURE_INTERPOLATION_NEAREST) {
+			RenderOption::TextureInterpolationOption::NEAREST) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	} else {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
-				GL_LINEAR_MIPMAP_LINEAR); 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-	bound_ = true;	
+	bound_ = true;
 	return true;
 }
 
@@ -156,7 +156,7 @@ bool ImageShader::RenderGeometry(const Geometry &geometry,
 	glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
 	glDisableVertexAttribArray(vertex_position_);
 	glDisableVertexAttribArray(vertex_UV_);
-	
+
 	return true;
 }
 
@@ -180,7 +180,7 @@ bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 	const Image &image = (const Image &)geometry;
 	GLfloat ratio_x, ratio_y;
 	switch (option.image_stretch_option_) {
-		case RenderOption::IMAGE_STRETCH_KEEP_RATIO:
+		case RenderOption::ImageStretchOption::STRETCH_KEEP_RATIO:
 			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
 			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
 			if (ratio_x < ratio_y) {
@@ -191,11 +191,11 @@ bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 				ratio_x = 1.0f;
 			}
 			break;
-		case RenderOption::IMAGE_STRETCH_WITH_WINDOW:
+		case RenderOption::ImageStretchOption::STRETCH_WITH_WINDOW:
 			ratio_x = 1.0f;
 			ratio_y = 1.0f;
 			break;
-		case RenderOption::IMAGE_ORIGINAL_SIZE:
+		case RenderOption::ImageStretchOption::ORIGINAL_SIZE:
 		default:
 			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
 			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
@@ -226,7 +226,7 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 		render_image = image;
 	} else {
 		render_image.PrepareImage(image.width_, image.height_, 3, 1);
-		if (image.num_of_channels_ == 1 && 
+		if (image.num_of_channels_ == 1 &&
 				image.bytes_per_channel_ == 1) {
 			// grayscale image
 			for (int i = 0; i < image.height_ * image.width_; i++) {
@@ -251,14 +251,14 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 				float *p = (float*)(image.data_.data() + i * 4);
 				render_image.data_[i] = ConvertColorFromFloatToUnsignedChar(*p);
 			}
-		} else if (image.num_of_channels_ == 3 && 
+		} else if (image.num_of_channels_ == 3 &&
 				image.bytes_per_channel_ == 2) {
 			// image with RGB channels, each channel is a 16-bit integer
 			for (int i = 0; i < image.height_ * image.width_ * 3; i++) {
 				uint16_t *p = (uint16_t*)(image.data_.data() + i * 2);
 				render_image.data_[i] = (uint8_t)((*p) & 0xff);
 			}
-		} else if (image.num_of_channels_ == 1 && 
+		} else if (image.num_of_channels_ == 1 &&
 				image.bytes_per_channel_ == 2) {
 			// depth image, one channel of 16-bit integer
 			const ColorMap &global_color_map = *GetGlobalColorMap();
