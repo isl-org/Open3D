@@ -135,7 +135,8 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
 	bool success = true;
 	if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
-		if (option.mesh_color_option_ == RenderOption::MeshColorOption::NORMAL) {
+		if (option.mesh_color_option_ ==
+				RenderOption::MeshColorOption::NORMAL) {
 			success &= normal_mesh_shader_.Render(mesh, option, view);
 		} else {
 			success &= phong_mesh_shader_.Render(mesh, option, view);
