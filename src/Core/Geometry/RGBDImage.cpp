@@ -28,10 +28,10 @@
 
 namespace three {
 
-RGBImagePyramid FilterRGBDImagePyramid(
-		const RGBImagePyramid &rgbd_image_pyramid, Image::FilterType type)
+RGBDImagePyramid FilterRGBDImagePyramid(
+		const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type)
 {
-	RGBImagePyramid rgbd_image_pyramid_filtered;
+	RGBDImagePyramid rgbd_image_pyramid_filtered;
 	rgbd_image_pyramid_filtered.clear();
 	int num_of_levels = (int)rgbd_image_pyramid.size();
 	for (int level = 0; level < num_of_levels; level++) {
@@ -46,7 +46,7 @@ RGBImagePyramid FilterRGBDImagePyramid(
 	return rgbd_image_pyramid_filtered;
 }
 
-RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
+RGBDImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
 		size_t num_of_levels,
 		bool with_gaussian_filter_for_color/* = true */,
 		bool with_gaussian_filter_for_depth/* = false */)
@@ -55,7 +55,7 @@ RGBImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
 			num_of_levels, with_gaussian_filter_for_color);
 	ImagePyramid depth_pyramid = CreateImagePyramid(rgbd_image.depth_,
 			num_of_levels, with_gaussian_filter_for_depth);
-	RGBImagePyramid rgbd_image_pyramid;
+	RGBDImagePyramid rgbd_image_pyramid;
 	rgbd_image_pyramid.clear();
 	for (int level = 0; level < num_of_levels; level++) {
 		auto rgbd_image_level = std::make_shared<RGBDImage>

@@ -37,9 +37,9 @@ class VisualizerWithEditing : public Visualizer
 {
 public:
 	enum class SelectionMode {
-		NONE = 0,
-		RECTANGLE = 1,
-		POLYGON = 2,
+		None = 0,
+		Rectangle = 1,
+		Polygon = 2,
 	};
 
 public:
@@ -76,7 +76,7 @@ protected:
 	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
 	std::shared_ptr<glsl::SelectionPolygonRenderer>
 			selection_polygon_renderer_ptr_;
-	SelectionMode selection_mode_ = SelectionMode::NONE;
+	SelectionMode selection_mode_ = SelectionMode::None;
 
 	std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
 	std::shared_ptr<glsl::PointCloudPickerRenderer>

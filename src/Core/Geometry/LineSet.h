@@ -52,8 +52,8 @@ public:
 	void Transform(const Eigen::Matrix4d &transformation) override;
 
 public:
-	virtual LineSet &operator+=(const LineSet &lineset);
-	virtual const LineSet operator+(const LineSet &lineset);
+	LineSet &operator+=(const LineSet &lineset);
+	LineSet operator+(const LineSet &lineset) const;
 
 public:
 	bool HasPoints() const {

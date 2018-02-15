@@ -33,14 +33,14 @@ namespace three {
 class ViewControlWithEditing : public ViewControl
 {
 public:
-	enum class EditingMode {
-		FREEMODE = 0,
-		ORTHO_POSITIVE_X = 1,
-		ORTHO_NEGATIVE_X = 2,
-		ORTHO_POSITIVE_Y = 3,
-		ORTHO_NEGATIVE_Y = 4,
-		ORTHO_POSITIVE_Z = 5,
-		ORTHO_NEGATIVE_Z = 6,
+	enum EditingMode {
+		FreeMode = 0,
+		OrthoPositiveX = 1,
+		OrthoNegativeX = 2,
+		OrthoPositiveY = 3,
+		OrthoNegativeY = 4,
+		OrthoPositiveZ = 5,
+		OrthoNegativeZ = 6,
 	};
 
 public:
@@ -55,26 +55,26 @@ public:
 
 	EditingMode GetEditingMode() const { return editing_mode_; };
 	void ToggleEditingX() {
-		if (editing_mode_ == EditingMode::ORTHO_POSITIVE_X) {
-			SetEditingMode(EditingMode::ORTHO_NEGATIVE_X);
+		if (editing_mode_ == EditingMode::OrthoPositiveX) {
+			SetEditingMode(EditingMode::OrthoNegativeX);
 		} else {
-			SetEditingMode(EditingMode::ORTHO_POSITIVE_X);
+			SetEditingMode(EditingMode::OrthoPositiveX);
 		}
 	}
 
 	void ToggleEditingY() {
-		if (editing_mode_ == EditingMode::ORTHO_POSITIVE_Y) {
-			SetEditingMode(EditingMode::ORTHO_NEGATIVE_Y);
+		if (editing_mode_ == EditingMode::OrthoPositiveY) {
+			SetEditingMode(EditingMode::OrthoNegativeY);
 		} else {
-			SetEditingMode(EditingMode::ORTHO_POSITIVE_Y);
+			SetEditingMode(EditingMode::OrthoPositiveY);
 		}
 	}
 
 	void ToggleEditingZ() {
-		if (editing_mode_ == EditingMode::ORTHO_POSITIVE_Z) {
-			SetEditingMode(EditingMode::ORTHO_NEGATIVE_Z);
+		if (editing_mode_ == EditingMode::OrthoPositiveZ) {
+			SetEditingMode(EditingMode::OrthoNegativeZ);
 		} else {
-			SetEditingMode(EditingMode::ORTHO_POSITIVE_Z);
+			SetEditingMode(EditingMode::OrthoPositiveZ);
 		}
 	}
 
@@ -82,7 +82,7 @@ public:
 	bool IsLocked() const { return is_view_locked_; }
 
 protected:
-	EditingMode editing_mode_ = EditingMode::FREEMODE;
+	EditingMode editing_mode_ = FreeMode;
 	ViewParameters view_status_backup_;
 	bool is_view_locked_ = false;
 };

@@ -51,10 +51,10 @@ void ViewControl::SetViewMatrices(
 		return;
 	}
 	glViewport(0, 0, window_width_, window_height_);
-	if (GetProjectionType() == ProjectionType::PERSPECTIVE)
+	if (GetProjectionType() == Perspective)
 	{
 		// Perspective projection
-		z_near_ = std::max(0.01 * bounding_box_.GetSize(),
+		z_near_ = std::max(0.01 * bounding_box_.GetSize(), 
 				distance_ - 3.0 * bounding_box_.GetSize());
 		z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
 		projection_matrix_ = GLHelper::Perspective(field_of_view_, aspect_,
@@ -102,7 +102,7 @@ bool ViewControl::ConvertFromViewParameters(
 	up_ = status.up_;
 	front_ = status.front_;
 	bounding_box_.min_bound_ = status.boundingbox_min_;
-	bounding_box_.max_bound_ = status.boundingbox_max_;
+	bounding_box_.max_bound_ = status.boundingbox_max_;	
 	SetProjectionParameters();
 	return true;
 }
@@ -114,7 +114,7 @@ bool ViewControl::ConvertToPinholeCameraParameters(
 		PrintWarning("[ViewControl] ConvertToPinholeCameraParameters() failed because window height and width are not set.\n");
 		return false;
 	}
-	if (GetProjectionType() == ProjectionType::ORTHOGONAL) {
+	if (GetProjectionType() == Orthogonal) {
 		PrintWarning("[ViewControl] ConvertToPinholeCameraParameters() failed because orthogonal view cannot be translated to a pinhole camera.\n");
 		return false;
 	}
@@ -146,23 +146,23 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
 		const PinholeCameraIntrinsic &intrinsic,
 		const Eigen::Matrix4d &extrinsic)
 {
-	if (window_height_ <= 0 || window_width_ <= 0 ||
-			window_height_ != intrinsic.height_ ||
+	if (window_height_ <= 0 || window_width_ <= 0 || 
+			window_height_ != intrinsic.height_ || 
 			window_width_ != intrinsic.width_ ||
-			intrinsic.intrinsic_matrix_(0, 2) !=
+			intrinsic.intrinsic_matrix_(0, 2) != 
 			(double)window_width_ / 2.0 - 0.5 ||
-			intrinsic.intrinsic_matrix_(1, 2) !=
+			intrinsic.intrinsic_matrix_(1, 2) != 
 			(double)window_height_ / 2.0 - 0.5) {
 		PrintWarning("[ViewControl] ConvertFromPinholeCameraParameters() failed because window height and width do not match.\n");
 		return false;
 	}
-	double tan_half_fov =
+	double tan_half_fov = 
 			(double)window_height_ / (intrinsic.intrinsic_matrix_(1, 1) * 2.0);
 	double fov_rad = std::atan(tan_half_fov) * 2.0;
 	double old_fov = field_of_view_;
-	field_of_view_ = std::max(std::min(fov_rad * 180.0 / M_PI,
+	field_of_view_ = std::max(std::min(fov_rad * 180.0 / M_PI, 
 			FIELD_OF_VIEW_MAX), FIELD_OF_VIEW_MIN);
-	if (GetProjectionType() == ProjectionType::ORTHOGONAL) {
+	if (GetProjectionType() == Orthogonal) {
 		field_of_view_ = old_fov;
 		PrintWarning("[ViewControl] ConvertFromPinholeCameraParameters() failed because field of view is impossible.\n");
 		return false;
@@ -170,15 +170,15 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
 	right_ = extrinsic.block<1, 3>(0, 0).transpose();
 	up_ = -extrinsic.block<1, 3>(1, 0).transpose();
 	front_ = -extrinsic.block<1, 3>(2, 0).transpose();
-	eye_ = extrinsic.block<3, 3>(0, 0).inverse() *
+	eye_ = extrinsic.block<3, 3>(0, 0).inverse() * 
 			(extrinsic.block<3, 1>(0, 3) * -1.0);
 	double ideal_distance = (eye_ - bounding_box_.GetCenter()).dot(front_);
-	double ideal_zoom = ideal_distance *
-			std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
+	double ideal_zoom = ideal_distance * 
+			std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) / 
 			bounding_box_.GetSize();
 	zoom_ = std::max(std::min(ideal_zoom, ZOOM_MAX), ZOOM_MIN);
 	view_ratio_ = zoom_ * bounding_box_.GetSize();
-	distance_ = view_ratio_ /
+	distance_ = view_ratio_ / 
 			std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
 	lookat_ = eye_ - front_ * distance_;
 	return true;
@@ -187,9 +187,9 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
 ViewControl::ProjectionType ViewControl::GetProjectionType() const
 {
 	if (field_of_view_ == FIELD_OF_VIEW_MIN) {
-		return ProjectionType::ORTHOGONAL;
+		return Orthogonal;
 	} else {
-		return ProjectionType::PERSPECTIVE;
+		return Perspective;
 	}
 }
 
@@ -208,14 +208,14 @@ void ViewControl::SetProjectionParameters()
 	front_ = front_.normalized();
 	right_ = up_.cross(front_).normalized();
 	up_ = front_.cross(right_).normalized();
-	if (GetProjectionType() == ProjectionType::PERSPECTIVE) {
+	if (GetProjectionType() == Perspective) {
 		view_ratio_ = zoom_ * bounding_box_.GetSize();
-		distance_ = view_ratio_ /
+		distance_ = view_ratio_ / 
 				std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);
 		eye_ = lookat_ + front_ * distance_;
 	} else {
 		view_ratio_ = zoom_ * bounding_box_.GetSize();
-		distance_ = view_ratio_ /
+		distance_ = view_ratio_ / 
 				std::tan(FIELD_OF_VIEW_STEP * 0.5 / 180.0 * M_PI);
 		eye_ = lookat_ + front_ * distance_;
 	}
@@ -223,7 +223,7 @@ void ViewControl::SetProjectionParameters()
 
 void ViewControl::ChangeFieldOfView(double step)
 {
-	field_of_view_ = std::max(std::min(field_of_view_ +
+	field_of_view_ = std::max(std::min(field_of_view_ + 
 			step * FIELD_OF_VIEW_STEP, FIELD_OF_VIEW_MAX), FIELD_OF_VIEW_MIN);
 	SetProjectionParameters();
 }
