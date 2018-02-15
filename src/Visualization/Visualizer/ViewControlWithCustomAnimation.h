@@ -35,7 +35,7 @@ namespace three {
 class ViewControlWithCustomAnimation : public ViewControl
 {
 public:
-	enum AnimationMode {
+	enum class AnimationMode {
 		ANIMATION_FREEMODE = 0,
 		ANIMATION_PREVIEWMODE = 1,
 		ANIMATION_PLAYMODE = 2,
@@ -69,7 +69,7 @@ public:
 	}
 	void ChangeTrajectoryInterval(int change) {
 		if (animation_mode_ == ANIMATION_FREEMODE) {
-			view_trajectory_.ChangeInterval(change); 
+			view_trajectory_.ChangeInterval(change);
 		}
 	}
 	int GetTrajectoryInterval() const {

@@ -33,7 +33,7 @@ namespace three {
 class ColorMap
 {
 public:
-	enum ColorMapOption {
+	enum class ColorMapOption {
 		COLORMAP_GRAY = 0,
 		COLORMAP_JET = 1,
 		COLORMAP_SUMMER = 2,
@@ -50,7 +50,7 @@ public:
 	virtual Eigen::Vector3d GetColor(double value) const = 0;
 
 protected:
-	double Interpolate(double value, 
+	double Interpolate(double value,
 			double y0, double x0, double y1, double x1) const {
 		if (value < x0) return y0;
 		if (value > x1) return y1;
@@ -78,7 +78,7 @@ public:
 
 protected:
 	double JetBase(double value) const {
-		if (value <= -0.75) { 
+		if (value <= -0.75) {
 			return 0.0;
 		} else if (value <= -0.25) {
 			return Interpolate(value, 0.0, -0.75, 1.0, -0.25);

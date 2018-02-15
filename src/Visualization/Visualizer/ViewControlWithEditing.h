@@ -33,7 +33,7 @@ namespace three {
 class ViewControlWithEditing : public ViewControl
 {
 public:
-	enum EditingMode {
+	enum class EditingMode {
 		EDITING_FREEMODE = 0,
 		EDITING_ORTHO_POSITIVE_X = 1,
 		EDITING_ORTHO_NEGATIVE_X = 2,
@@ -77,7 +77,7 @@ public:
 			SetEditingMode(EDITING_ORTHO_POSITIVE_Z);
 		}
 	}
-	
+
 	void ToggleLocking() { is_view_locked_ = !is_view_locked_; }
 	bool IsLocked() const { return is_view_locked_; }
 

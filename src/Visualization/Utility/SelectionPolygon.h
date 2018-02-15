@@ -45,7 +45,7 @@ class SelectionPolygonVolume;
 class SelectionPolygon : public Geometry2D
 {
 public:
-	enum SectionPolygonType {
+	enum class SectionPolygonType {
 		POLYGON_UNFILLED = 0,
 		POLYGON_RECTANGLE = 1,
 		POLYGON_POLYGON = 2,

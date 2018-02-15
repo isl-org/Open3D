@@ -36,13 +36,13 @@ class RenderOption : public IJsonConvertible
 {
 public:
 	// Global options
-	enum TextureInterpolationOption {
+	enum class TextureInterpolationOption {
 		TEXTURE_INTERPOLATION_NEAREST = 0,
 		TEXTURE_INTERPOLATION_LINEAR = 1,
 	};
-	
+
 	// PointCloud options
-	enum PointColorOption {
+	enum class PointColorOption {
 		POINTCOLOR_DEFAULT = 0,
 		POINTCOLOR_COLOR = 1,
 		POINTCOLOR_X = 2,
@@ -55,14 +55,14 @@ public:
 	static const double POINT_SIZE_MIN;
 	static const double POINT_SIZE_STEP;
 	static const double POINT_SIZE_DEFAULT;
-	
+
 	// TriangleMesh options
-	enum MeshShadeOption {
+	enum class MeshShadeOption {
 		MESHSHADE_FLATSHADE = 0,
 		MESHSHADE_SMOOTHSHADE = 1,
 	};
 
-	enum MeshColorOption {
+	enum class MeshColorOption {
 		TRIANGLEMESH_DEFAULT = 0,
 		TRIANGLEMESH_COLOR = 1,
 		TRIANGLEMESH_X = 2,
@@ -70,9 +70,9 @@ public:
 		TRIANGLEMESH_Z = 4,
 		TRIANGLEMESH_NORMAL = 9,
 	};
-	
+
 	// Image options
-	enum ImageStretchOption {
+	enum class ImageStretchOption {
 		IMAGE_ORIGINAL_SIZE = 0,
 		IMAGE_STRETCH_KEEP_RATIO = 1,
 		IMAGE_STRETCH_WITH_WINDOW = 2,
@@ -121,7 +121,7 @@ public:
 		}
 	}
 	void ChangePointSize(double change) {
-		point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP, 
+		point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
 				POINT_SIZE_MAX), POINT_SIZE_MIN);
 	}
 	void TogglePointShowNormal() {
@@ -169,7 +169,7 @@ public:
 	double point_size_ = POINT_SIZE_DEFAULT;
 	PointColorOption point_color_option_ = POINTCOLOR_DEFAULT;
 	bool point_show_normal_ = false;
-	
+
 	// TriangleMesh options
 	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
 	MeshColorOption mesh_color_option_ = TRIANGLEMESH_COLOR;
@@ -177,7 +177,7 @@ public:
 	bool mesh_show_wireframe_ = false;
 	Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(
 			0.7, 0.7, 0.7);
-	
+
 	// Image options
 	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
 	int image_max_depth_ = 3000;
