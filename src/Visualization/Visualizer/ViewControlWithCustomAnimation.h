@@ -35,10 +35,10 @@ namespace three {
 class ViewControlWithCustomAnimation : public ViewControl
 {
 public:
-	enum class AnimationMode {
-		FREE = 0,
-		PREVIEW = 1,
-		PLAY = 2,
+	enum AnimationMode {
+		ANIMATION_FREEMODE = 0,
+		ANIMATION_PREVIEWMODE = 1,
+		ANIMATION_PLAYMODE = 2,
 	};
 
 public:
@@ -63,13 +63,13 @@ public:
 		return view_trajectory_.NumOfFrames();
 	}
 	void ToggleTrajectoryLoop() {
-		if (animation_mode_ == AnimationMode::FREE) {
+		if (animation_mode_ == ANIMATION_FREEMODE) {
 			view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
 		}
 	}
 	void ChangeTrajectoryInterval(int change) {
-		if (animation_mode_ == AnimationMode::FREE) {
-			view_trajectory_.ChangeInterval(change);
+		if (animation_mode_ == ANIMATION_FREEMODE) {
+			view_trajectory_.ChangeInterval(change); 
 		}
 	}
 	int GetTrajectoryInterval() const {
@@ -83,8 +83,8 @@ public:
 	bool LoadTrajectoryFromJsonFile(const std::string &filename);
 	bool LoadTrajectoryFromCameraTrajectory(
 			const PinholeCameraTrajectory &camera_trajectory);
-	bool IsPreviewing() { return animation_mode_ == AnimationMode::PREVIEW; }
-	bool IsPlaying() { return animation_mode_ == AnimationMode::PLAY; }
+	bool IsPreviewing() { return animation_mode_ == ANIMATION_PREVIEWMODE; }
+	bool IsPlaying() { return animation_mode_ == ANIMATION_PLAYMODE; }
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
 	}
@@ -98,7 +98,7 @@ protected:
 	void SetViewControlFromTrajectory();
 
 protected:
-	AnimationMode animation_mode_ = AnimationMode::FREE;
+	AnimationMode animation_mode_ = ANIMATION_FREEMODE;
 	ViewTrajectory view_trajectory_;
 	double current_frame_ = 0.0;
 	double current_keyframe_ = 0.0;

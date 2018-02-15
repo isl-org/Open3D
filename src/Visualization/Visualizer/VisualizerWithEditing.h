@@ -36,12 +36,12 @@ class PointCloudPicker;
 class VisualizerWithEditing : public Visualizer
 {
 public:
-	enum class SelectionMode {
-		NONE = 0,
-		RECTANGLE = 1,
-		POLYGON = 2,
+	enum SelectionMode {
+		SELECTION_NONE = 0,
+		SELECTION_RECTANGLE = 1,
+		SELECTION_POLYGON = 2,
 	};
-
+	
 public:
 	VisualizerWithEditing(double voxel_size = -1.0, bool use_dialog = true,
 			const std::string &directory = "") : voxel_size_(voxel_size),
@@ -76,8 +76,8 @@ protected:
 	std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
 	std::shared_ptr<glsl::SelectionPolygonRenderer>
 			selection_polygon_renderer_ptr_;
-	SelectionMode selection_mode_ = SelectionMode::NONE;
-
+	SelectionMode selection_mode_ = SELECTION_NONE;
+	
 	std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
 	std::shared_ptr<glsl::PointCloudPickerRenderer>
 			pointcloud_picker_renderer_ptr_;

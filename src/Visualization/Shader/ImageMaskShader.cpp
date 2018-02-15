@@ -74,7 +74,7 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-
+	
 	// Create buffers and bind the geometry
 	const GLfloat vertex_position_buffer_data[18] = {
 		-1.0f, -1.0f, 0.0f,
@@ -94,7 +94,7 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 	};
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position_buffer_data),
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position_buffer_data), 
 			vertex_position_buffer_data, GL_STATIC_DRAW);
 	glGenBuffers(1, &vertex_UV_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_UV_buffer_);
@@ -108,17 +108,17 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 			render_image.data_.data());
 
 	if (option.interpolation_option_ ==
-			RenderOption::TextureInterpolationOption::NEAREST) {
+			RenderOption::TEXTURE_INTERPOLATION_NEAREST) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
 	} else {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-				GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+				GL_LINEAR_MIPMAP_LINEAR); 
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-	bound_ = true;
+	bound_ = true;	
 	return true;
 }
 
@@ -145,7 +145,7 @@ bool ImageMaskShader::RenderGeometry(const Geometry &geometry,
 	glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
 	glDisableVertexAttribArray(vertex_position_);
 	glDisableVertexAttribArray(vertex_UV_);
-
+	
 	return true;
 }
 
@@ -162,7 +162,7 @@ void ImageMaskShader::UnbindGeometry()
 bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}
@@ -185,7 +185,7 @@ bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view,
 		Image &render_image)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}

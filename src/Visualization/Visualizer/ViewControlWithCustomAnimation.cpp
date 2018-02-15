@@ -32,26 +32,26 @@ namespace three{
 
 void ViewControlWithCustomAnimation::Reset()
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Reset();
 	}
 }
 
 void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		if (!view_trajectory_.view_status_.empty()) {
 			// Once editing starts, lock ProjectionType.
 			// This is because ProjectionType cannot be easily switched in a
 			// smooth trajectory.
-			if (GetProjectionType() == ProjectionType::PERSPECTIVE) {
+			if (GetProjectionType() == PROJECTION_PERSPECTIVE) {
 				double old_fov = field_of_view_;
 				ViewControl::ChangeFieldOfView(step);
-				if (GetProjectionType() == ProjectionType::ORTHOGONAL) {
+				if (GetProjectionType() == PROJECTION_ORTHOGONAL) {
 					field_of_view_ = old_fov;
 				}
 			} else {
-				// do nothing, lock as ProjectionType::ORTHOGONAL
+				// do nothing, lock as PROJECTION_ORTHOGONAL
 			}
 			SetProjectionParameters();
 		} else {
@@ -62,7 +62,7 @@ void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 
 void ViewControlWithCustomAnimation::Scale(double scale)
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Scale(scale);
 	}
 }
@@ -70,7 +70,7 @@ void ViewControlWithCustomAnimation::Scale(double scale)
 void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo, 
 		double yo)
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Rotate(x, y, xo, yo);
 	}
 }
@@ -78,24 +78,24 @@ void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo,
 void ViewControlWithCustomAnimation::Translate(double x, double y, double xo,
 		double yo)
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewControl::Translate(x, y, xo, yo);
 	}
 }
 
 void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
 {
-	if (mode != AnimationMode::FREE && view_trajectory_.view_status_.empty()) {
+	if (mode != ANIMATION_FREEMODE && view_trajectory_.view_status_.empty()) {
 		return;
 	}
 	animation_mode_ = mode;
 	switch (mode) {
-	case AnimationMode::PREVIEW:
-	case AnimationMode::PLAY:
+	case ANIMATION_PREVIEWMODE:
+	case ANIMATION_PLAYMODE:
 		view_trajectory_.ComputeInterpolationCoefficients();
 		GoToFirst();
 		break;
-	case AnimationMode::FREE:
+	case ANIMATION_FREEMODE:
 	default:
 		break;
 	}
@@ -103,7 +103,7 @@ void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
 
 void ViewControlWithCustomAnimation::AddKeyFrame()
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ViewParameters current_status;
 		ConvertToViewParameters(current_status);
 		if (view_trajectory_.view_status_.empty()) {
@@ -121,7 +121,7 @@ void ViewControlWithCustomAnimation::AddKeyFrame()
 
 void ViewControlWithCustomAnimation::UpdateKeyFrame()
 {
-	if (animation_mode_ == AnimationMode::FREE &&
+	if (animation_mode_ == ANIMATION_FREEMODE &&
 			!view_trajectory_.view_status_.empty()) {
 		ConvertToViewParameters(
 				view_trajectory_.view_status_[CurrentKeyframe()]);
@@ -130,7 +130,7 @@ void ViewControlWithCustomAnimation::UpdateKeyFrame()
 
 void ViewControlWithCustomAnimation::DeleteKeyFrame()
 {
-	if (animation_mode_ == AnimationMode::FREE &&
+	if (animation_mode_ == ANIMATION_FREEMODE &&
 			!view_trajectory_.view_status_.empty()) {
 		size_t current_index = CurrentKeyframe();
 		view_trajectory_.view_status_.erase(
@@ -145,7 +145,7 @@ void ViewControlWithCustomAnimation::DeleteKeyFrame()
 void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames
 		/* = 20*/)
 {
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		double radian_per_step = M_PI * 2.0 / double(num_of_key_frames);
 		for (int i = 0; i < num_of_key_frames; i++) {
 			ViewControl::Rotate(radian_per_step / ROTATION_RADIAN_PER_PIXEL, 0);
@@ -158,18 +158,18 @@ std::string ViewControlWithCustomAnimation::GetStatusString()
 {
 	std::string prefix;
 	switch (animation_mode_) {
-	case AnimationMode::FREE:
+	case ANIMATION_FREEMODE:
 		prefix = "Editing ";
 		break;
-	case AnimationMode::PREVIEW:
+	case ANIMATION_PREVIEWMODE:
 		prefix = "Previewing ";
 		break;
-	case AnimationMode::PLAY:
+	case ANIMATION_PLAYMODE:
 		prefix = "Playing ";
 		break;
 	}
 	char buffer[DEFAULT_IO_BUFFER_SIZE];
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
@@ -196,7 +196,7 @@ void ViewControlWithCustomAnimation::Step(double change)
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		current_keyframe_ += change;
 		current_keyframe_ = RegularizeFrameIndex(current_keyframe_,
 				view_trajectory_.view_status_.size(),
@@ -214,7 +214,7 @@ void ViewControlWithCustomAnimation::GoToFirst()
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		current_keyframe_ = 0.0;
 	} else {
 		current_frame_ = 0.0;
@@ -227,7 +227,7 @@ void ViewControlWithCustomAnimation::GoToLast()
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		current_keyframe_ = view_trajectory_.view_status_.size() - 1.0;
 	} else {
 		current_frame_ = view_trajectory_.NumOfFrames() - 1.0;
@@ -339,7 +339,7 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == AnimationMode::FREE) {
+	if (animation_mode_ == ANIMATION_FREEMODE) {
 		ConvertFromViewParameters(
 				view_trajectory_.view_status_[CurrentKeyframe()]);
 	} else {

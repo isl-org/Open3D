@@ -70,14 +70,14 @@ bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-
+	
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
 	glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
 			points.data(), GL_STATIC_DRAW);
-
-	bound_ = true;
+	
+	bound_ = true;	
 	return true;
 }
 
@@ -110,8 +110,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view)
 {
-	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -124,8 +123,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
-	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -152,8 +150,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view)
 {
-	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -169,8 +166,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
 		const Geometry &geometry, const RenderOption &option,
 		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
-	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
