@@ -40,7 +40,7 @@ void SelectionPolygon::Clear()
 	polygon_.clear();
 	is_closed_ = false;
 	polygon_interior_mask_.Clear();
-	polygon_type_ = POLYGON_UNFILLED;
+	polygon_type_ = SectionPolygonType::UNFILLED;
 }
 
 bool SelectionPolygon::IsEmpty() const
@@ -117,11 +117,11 @@ std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
 		return std::make_shared<PointCloud>();
 	}
 	switch (polygon_type_) {
-	case POLYGON_RECTANGLE:
+	case SectionPolygonType::RECTANGLE:
 		return CropPointCloudInRectangle(input, view);
-	case POLYGON_POLYGON:
+	case SectionPolygonType::POLYGON:
 		return CropPointCloudInPolygon(input, view);
-	case POLYGON_UNFILLED:
+	case SectionPolygonType::UNFILLED:
 	default:
 		return std::shared_ptr<PointCloud>();
 	}
@@ -133,23 +133,23 @@ std::shared_ptr<SelectionPolygonVolume> SelectionPolygon::
 	auto volume = std::make_shared<SelectionPolygonVolume>();
 	const auto &editing_view = (const ViewControlWithEditing &)view;
 	if (editing_view.IsLocked() == false || editing_view.GetEditingMode() ==
-			ViewControlWithEditing::EDITING_FREEMODE) {
+			ViewControlWithEditing::EditingMode::FREEMODE) {
 		return volume;
 	}
 	int idx = 0;
 	switch (editing_view.GetEditingMode()) {
-	case ViewControlWithEditing::EDITING_ORTHO_NEGATIVE_X:
-	case ViewControlWithEditing::EDITING_ORTHO_POSITIVE_X:
+	case ViewControlWithEditing::EditingMode::ORTHO_NEGATIVE_X:
+	case ViewControlWithEditing::EditingMode::ORTHO_POSITIVE_X:
 		volume->orthogonal_axis_ = "X";
 		idx = 0;
 		break;
-	case ViewControlWithEditing::EDITING_ORTHO_NEGATIVE_Y:
-	case ViewControlWithEditing::EDITING_ORTHO_POSITIVE_Y:
+	case ViewControlWithEditing::EditingMode::ORTHO_NEGATIVE_Y:
+	case ViewControlWithEditing::EditingMode::ORTHO_POSITIVE_Y:
 		volume->orthogonal_axis_ = "Y";
 		idx = 1;
 		break;
-	case ViewControlWithEditing::EDITING_ORTHO_NEGATIVE_Z:
-	case ViewControlWithEditing::EDITING_ORTHO_POSITIVE_Z:
+	case ViewControlWithEditing::EditingMode::ORTHO_NEGATIVE_Z:
+	case ViewControlWithEditing::EditingMode::ORTHO_POSITIVE_Z:
 		volume->orthogonal_axis_ = "Z";
 		idx = 2;
 		break;

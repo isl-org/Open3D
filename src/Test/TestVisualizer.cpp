@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::ALWAYS);
 	if (argc < 3) {
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 		auto image_ptr = CreateImageFromFile(argv[2]);
 		PinholeCameraIntrinsic camera;
 		camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
-		auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr, 
+		auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
 				camera);
 		DrawGeometries({pointcloud_ptr}, "PointCloud from Depth Image",
 				1920, 1080);

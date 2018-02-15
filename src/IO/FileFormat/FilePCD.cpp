@@ -42,10 +42,10 @@ namespace three{
 
 namespace {
 
-enum PCDDataType {
-	PCD_DATA_ASCII = 0,
-	PCD_DATA_BINARY = 1,
-	PCD_DATA_BINARY_COMPRESSED = 2
+enum class PCDDataType {
+	ASCII = 0,
+	BINARY = 1,
+	BINARY_COMPRESSED = 2
 };
 
 struct PCLPointField {
@@ -216,12 +216,12 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header)
 		} else if (line_type.substr(0, 6) == "POINTS") {
 			sstream >> header.points;
 		} else if (line_type.substr(0, 4) == "DATA") {
-			header.datatype = PCD_DATA_ASCII;
+			header.datatype = PCDDataType::ASCII;
 			if (st.size() >= 2) {
 				if (st[1].substr(0, 17) == "binary_compressed") {
-					header.datatype = PCD_DATA_BINARY_COMPRESSED;
+					header.datatype = PCDDataType::BINARY_COMPRESSED;
 				} else if (st[1].substr(0, 6) == "binary") {
-					header.datatype = PCD_DATA_BINARY;
+					header.datatype = PCDDataType::BINARY;
 				}
 			}
 			break;
@@ -346,7 +346,7 @@ bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud)
 	if (header.has_colors) {
 		pointcloud.colors_.resize(header.points);
 	}
-	if (header.datatype == PCD_DATA_ASCII) {
+	if (header.datatype == PCDDataType::ASCII) {
 		char line_buffer[DEFAULT_IO_BUFFER_SIZE];
 		int idx = 0;
 		while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file) &&
@@ -391,7 +391,7 @@ bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud)
 			}
 			idx++;
 		}
-	} else if (header.datatype == PCD_DATA_BINARY) {
+	} else if (header.datatype == PCDDataType::BINARY) {
 		std::unique_ptr<char []> buffer(new char[header.pointsize]);
 		for (int i = 0; i < header.points; i++) {
 			if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
@@ -431,7 +431,7 @@ bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud)
 				}
 			}
 		}
-	} else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
+	} else if (header.datatype == PCDDataType::BINARY_COMPRESSED) {
 		std::uint32_t compressed_size;
 		std::uint32_t uncompressed_size;
 		if (fread(&compressed_size, sizeof(compressed_size), 1, file) != 1) {
@@ -573,12 +573,12 @@ bool GenerateHeader(const PointCloud &pointcloud, const bool write_ascii,
 		header.pointsize += 4;
 	}
 	if (write_ascii) {
-		header.datatype = PCD_DATA_ASCII;
+		header.datatype = PCDDataType::ASCII;
 	} else {
 		if (compressed) {
-			header.datatype = PCD_DATA_BINARY_COMPRESSED;
+			header.datatype = PCDDataType::BINARY_COMPRESSED;
 		} else {
-			header.datatype = PCD_DATA_BINARY;
+			header.datatype = PCDDataType::BINARY;
 		}
 	}
 	return true;
@@ -615,13 +615,13 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header)
 	fprintf(file, "POINTS %d\n", header.points);
 
 	switch (header.datatype) {
-	case PCD_DATA_BINARY:
+	case PCDDataType::BINARY:
 		fprintf(file, "DATA binary\n");
 		break;
-	case PCD_DATA_BINARY_COMPRESSED:
+	case PCDDataType::BINARY_COMPRESSED:
 		fprintf(file, "DATA binary_compressed\n");
 		break;
-	case PCD_DATA_ASCII:
+	case PCDDataType::ASCII:
 	default:
 		fprintf(file, "DATA ascii\n");
 		break;
@@ -645,7 +645,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 {
 	bool has_normal = pointcloud.HasNormals();
 	bool has_color = pointcloud.HasColors();
-	if (header.datatype == PCD_DATA_ASCII) {
+	if (header.datatype == PCDDataType::ASCII) {
 		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 			const auto &point = pointcloud.points_[i];
 			fprintf(file, "%.10g %.10g %.10g", point(0), point(1), point(2));
@@ -660,7 +660,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 			}
 			fprintf(file, "\n");
 		}
-	} else if (header.datatype == PCD_DATA_BINARY) {
+	} else if (header.datatype == PCDDataType::BINARY) {
 		std::unique_ptr<float []> data(new float[header.elementnum]);
 		for (size_t i = 0; i < pointcloud.points_.size(); i++) {
 			const auto &point = pointcloud.points_[i];
@@ -681,7 +681,7 @@ bool WritePCDData(FILE *file, const PCDHeader &header,
 			}
 			fwrite(data.get(), sizeof(float), header.elementnum, file);
 		}
-	} else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
+	} else if (header.datatype == PCDDataType::BINARY_COMPRESSED) {
 		int strip_size = header.points;
 		std::uint32_t buffer_size = (std::uint32_t)(header.elementnum *
 				header.points);

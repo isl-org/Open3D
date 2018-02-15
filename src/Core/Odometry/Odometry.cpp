@@ -370,14 +370,16 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
 		const Eigen::Matrix4d &odo_init,
 		const OdometryOption &option)
 {
-	auto source_gray = FilterImage(source.color_, Image::FILTER_GAUSSIAN_3);
-	auto target_gray = FilterImage(target.color_, Image::FILTER_GAUSSIAN_3);
+	auto source_gray = FilterImage(source.color_,
+			Image::FilterType::GAUSSIAN_3);
+	auto target_gray = FilterImage(target.color_,
+			Image::FilterType::GAUSSIAN_3);
 	auto source_depth_preprocessed = PreprocessDepth(source.depth_, option);
 	auto target_depth_preprocessed = PreprocessDepth(target.depth_, option);
 	auto source_depth = FilterImage(*source_depth_preprocessed,
-			Image::FILTER_GAUSSIAN_3);
+			Image::FilterType::GAUSSIAN_3);
 	auto target_depth = FilterImage(*target_depth_preprocessed,
-			Image::FILTER_GAUSSIAN_3);
+			Image::FilterType::GAUSSIAN_3);
 
 	auto correspondence = ComputeCorrespondence(
 			pinhole_camera_intrinsic.intrinsic_matrix_, odo_init,
@@ -452,9 +454,9 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 	auto source_pyramid = CreateRGBDImagePyramid(source, num_levels);
 	auto target_pyramid = CreateRGBDImagePyramid(target, num_levels);
 	auto target_pyramid_dx = FilterRGBDImagePyramid
-			(target_pyramid, Image::FILTER_SOBEL_3_DX);
+			(target_pyramid, Image::FilterType::SOBEL_3_DX);
 	auto target_pyramid_dy = FilterRGBDImagePyramid
-			(target_pyramid, Image::FILTER_SOBEL_3_DY);
+			(target_pyramid, Image::FilterType::SOBEL_3_DY);
 
 	Eigen::Matrix4d result_odo = extrinsic_initial.isZero() ?
 			Eigen::Matrix4d::Identity() : extrinsic_initial;

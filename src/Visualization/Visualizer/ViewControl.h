@@ -49,9 +49,9 @@ public:
 
 	static const double ROTATION_RADIAN_PER_PIXEL;
 
-	enum ProjectionType {
-		PROJECTION_PERSPECTIVE = 0,
-		PROJECTION_ORTHOGONAL = 1,
+	enum class ProjectionType {
+		PERSPECTIVE = 0,
+		ORTHOGONAL = 1,
 	};
 
 public:

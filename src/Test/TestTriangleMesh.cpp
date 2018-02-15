@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::ALWAYS);
 
 	if (argc < 2) {
 		PrintHelp();
@@ -100,10 +100,10 @@ int main(int argc, char *argv[])
 		PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
 				mesh2->vertices_.size(), mesh2->triangles_.size());
 		*mesh1 += *mesh2;
-		PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n", 
+		PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n",
 				mesh1->vertices_.size(), mesh1->triangles_.size());
 		mesh1->Purge();
-		PrintInfo("After purge vertices, Mesh1 has %d vertices, %d triangles.\n", 
+		PrintInfo("After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
 				mesh1->vertices_.size(), mesh1->triangles_.size());
 		DrawGeometries({mesh1});
 		WriteTriangleMesh("temp.ply", *mesh1, true, true);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 		trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetSize();
 		mesh->Transform(trans);
 		trans.setIdentity();
-		trans.block<3, 1>(0, 3) = Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, 
+		trans.block<3, 1>(0, 3) = Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0,
 				scale2 / 2.0) - bbox.GetCenter() * scale1 / bbox.GetSize();
 		mesh->Transform(trans);
 		WriteTriangleMesh(argv[3], *mesh);
@@ -190,11 +190,11 @@ int main(int argc, char *argv[])
 			sprintf(buffer, "image/image_%06d.png", (int)i + 1);
 			auto image = CreateImageFromFile(buffer);
 			auto fimage = CreateFloatImageFromImage(*image);
-			Eigen::Vector4d pt_in_camera = trajectory.extrinsic_[i] * 
-					Eigen::Vector4d(mesh->vertices_[idx](0), 
+			Eigen::Vector4d pt_in_camera = trajectory.extrinsic_[i] *
+					Eigen::Vector4d(mesh->vertices_[idx](0),
 					mesh->vertices_[idx](1), mesh->vertices_[idx](2), 1.0);
-			Eigen::Vector3d pt_in_plane = 
-					trajectory.intrinsic_.intrinsic_matrix_ * 
+			Eigen::Vector3d pt_in_plane =
+					trajectory.intrinsic_.intrinsic_matrix_ *
 					pt_in_camera.block<3, 1>(0, 0);
 			Eigen::Vector3d uv = pt_in_plane / pt_in_plane(2);
 			std::cout << pt_in_camera << std::endl;

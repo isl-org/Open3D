@@ -94,28 +94,31 @@ std::shared_ptr<Image> CreateFloatImageFromImage(const Image &image,
 			}
 		} else if (image.num_of_channels_ == 3) {
 			if (image.bytes_per_channel_ == 1) {
-				if (type == Image::EQUAL) {
+				if (type == Image::ColorToIntensityConversionType::EQUAL) {
 					*p = ((float)(pi[0]) + (float)(pi[1]) + (float)(pi[2])) /
 						3.0f / 255.0f;
-				} else if (type == Image::WEIGHTED) {
+				} else if (type ==
+						Image::ColorToIntensityConversionType::WEIGHTED) {
 					*p = (0.2990f * (float)(pi[0]) + 0.5870f * (float)(pi[1]) +
 							0.1140f * (float)(pi[2])) / 255.0f;
 				}
 			} else if (image.bytes_per_channel_ == 2) {
 				const uint16_t *pi16 = (const uint16_t *)pi;
-				if (type == Image::EQUAL) {
+				if (type == Image::ColorToIntensityConversionType::EQUAL) {
 					*p = ((float)(pi16[0]) + (float)(pi16[1]) +
 							(float)(pi16[2])) / 3.0f;
-				} else if (type == Image::WEIGHTED) {
+				} else if (type ==
+						Image::ColorToIntensityConversionType::WEIGHTED) {
 					*p = (0.2990f * (float)(pi16[0]) +
 							0.5870f * (float)(pi16[1]) +
 							0.1140f * (float)(pi16[2]));
 				}
 			} else if (image.bytes_per_channel_ == 4) {
 				const float *pf = (const float *)pi;
-				if (type == Image::EQUAL) {
+				if (type == Image::ColorToIntensityConversionType::EQUAL) {
 					*p = (pf[0] + pf[1] + pf[2]) / 3.0f;
-				} else if (type == Image::WEIGHTED) {
+				} else if (type ==
+						Image::ColorToIntensityConversionType::WEIGHTED) {
 					*p = (0.2990f * pf[0] + 0.5870f * pf[1] + 0.1140f * pf[2]);
 				}
 			}
@@ -173,7 +176,7 @@ ImagePyramid CreateImagePyramid(
 			if (with_gaussian_filter) {
 				// https://en.wikipedia.org/wiki/Pyramid_(image_processing)
 				auto level_b = FilterImage(*pyramid_image[i - 1],
-						Image::FILTER_GAUSSIAN_3);
+						Image::FilterType::GAUSSIAN_3);
 				auto level_bd = DownsampleImage(*level_b);
 				pyramid_image.push_back(level_bd);
 			}

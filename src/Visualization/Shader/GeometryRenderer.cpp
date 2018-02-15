@@ -45,7 +45,7 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 	const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
 	bool success = true;
 	if (pointcloud.HasNormals()) {
-		if (option.point_color_option_ == RenderOption::POINTCOLOR_NORMAL) {
+		if (option.point_color_option_ == RenderOption::PointColorOption::NORMAL) {
 			success &= normal_point_shader_.Render(pointcloud, option, view);
 		} else {
 			success &= phong_point_shader_.Render(pointcloud, option, view);
@@ -63,7 +63,8 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 bool PointCloudRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::POINTCLOUD) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -90,7 +91,8 @@ bool PointCloudPickingRenderer::Render(const RenderOption &option,
 bool PointCloudPickingRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::POINTCLOUD) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -112,7 +114,8 @@ bool LineSetRenderer::Render(const RenderOption &option,
 
 bool LineSetRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_LINESET) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::LINESET) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -130,9 +133,10 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 {
 	if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
 	const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
-	bool success = true;	
+	bool success = true;
 	if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
-		if (option.mesh_color_option_ == RenderOption::TRIANGLEMESH_NORMAL) {
+		if (option.mesh_color_option_ ==
+				RenderOption::MeshColorOption::NORMAL) {
 			success &= normal_mesh_shader_.Render(mesh, option, view);
 		} else {
 			success &= phong_mesh_shader_.Render(mesh, option, view);
@@ -149,7 +153,8 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 bool TriangleMeshRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::TRIANGLEMESH) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -173,7 +178,8 @@ bool ImageRenderer::Render(const RenderOption &option, const ViewControl &view)
 
 bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_IMAGE) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::IMAGE) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -198,7 +204,8 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
 bool CoordinateFrameRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::TRIANGLEMESH) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -226,7 +233,8 @@ bool SelectionPolygonRenderer::Render(const RenderOption &option,
 bool SelectionPolygonRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_UNSPECIFIED) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::UNSPECIFIED) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;
@@ -279,7 +287,8 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
 bool PointCloudPickerRenderer::AddGeometry(
 		std::shared_ptr<const Geometry> geometry_ptr)
 {
-	if (geometry_ptr->GetGeometryType() != Geometry::GEOMETRY_UNSPECIFIED) {
+	if (geometry_ptr->GetGeometryType() !=
+			Geometry::GeometryType::UNSPECIFIED) {
 		return false;
 	}
 	geometry_ptr_ = geometry_ptr;

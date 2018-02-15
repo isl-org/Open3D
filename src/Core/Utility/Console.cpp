@@ -46,25 +46,25 @@ namespace three{
 
 namespace {
 
-enum {
-	TEXT_COLOR_BLACK = 0,
-	TEXT_COLOR_RED = 1,
-	TEXT_COLOR_GREEN = 2,
-	TEXT_COLOR_YELLOW = 3,
-	TEXT_COLOR_BLUE = 4,
-	TEXT_COLOR_MAGENTA = 5,
-	TEXT_COLOR_CYAN = 6,
-	TEXT_COLOR_WHITE = 7
+enum class TextColor {
+	BLACK = 0,
+	RED = 1,
+	GREEN = 2,
+	YELLOW = 3,
+	BLUE = 4,
+	MAGENTA = 5,
+	CYAN = 6,
+	WHITE = 7
 };
 
-static VerbosityLevel global_verbosity_level = VERBOSE_INFO;
+static VerbosityLevel global_verbosity_level = VerbosityLevel::INFO;
 
 /// Internal function to change text color for the console
 /// Note there is no security check for parameters.
 /// \param text_color, from 0 to 7, they are black, red, green, yellow, blue,
 /// magenta, cyan, white
 /// \param emphasis_text is 0 or 1
-void ChangeConsoleColor(int text_color, int highlight_text)
+void ChangeConsoleColor(TextColor text_color, int highlight_text)
 {
 #ifdef _WIN32
 	const WORD EMPHASIS_MASK[2] = { 0, FOREGROUND_INTENSITY };
@@ -82,7 +82,7 @@ void ChangeConsoleColor(int text_color, int highlight_text)
 	SetConsoleTextAttribute(h,
 			EMPHASIS_MASK[highlight_text] | COLOR_MASK[text_color]);
 #else
-	printf("%c[%d;%dm", 0x1B, highlight_text, text_color + 30);
+	printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
 #endif
 }
 
@@ -143,8 +143,8 @@ VerbosityLevel GetVerbosityLevel()
 
 void PrintError(const char *format, ...)
 {
-	if (global_verbosity_level >= VERBOSE_ERROR) {
-		ChangeConsoleColor(TEXT_COLOR_RED, 1);
+	if (global_verbosity_level >= VerbosityLevel::ERROR) {
+		ChangeConsoleColor(TextColor::RED, 1);
 		va_list args;
 		va_start(args, format);
 		vprintf(format, args);
@@ -155,8 +155,8 @@ void PrintError(const char *format, ...)
 
 void PrintWarning(const char *format, ...)
 {
-	if (global_verbosity_level >= VERBOSE_WARNING) {
-		ChangeConsoleColor(TEXT_COLOR_YELLOW, 1);
+	if (global_verbosity_level >= VerbosityLevel::WARNING) {
+		ChangeConsoleColor(TextColor::YELLOW, 1);
 		va_list args;
 		va_start(args, format);
 		vprintf(format, args);
@@ -167,7 +167,7 @@ void PrintWarning(const char *format, ...)
 
 void PrintInfo(const char *format, ...)
 {
-	if (global_verbosity_level >= VERBOSE_INFO) {
+	if (global_verbosity_level >= VerbosityLevel::INFO) {
 		va_list args;
 		va_start(args, format);
 		vprintf(format, args);
@@ -177,8 +177,8 @@ void PrintInfo(const char *format, ...)
 
 void PrintDebug(const char *format, ...)
 {
-	if (global_verbosity_level >= VERBOSE_DEBUG) {
-		ChangeConsoleColor(TEXT_COLOR_GREEN, 0);
+	if (global_verbosity_level >= VerbosityLevel::DEBUG) {
+		ChangeConsoleColor(TextColor::GREEN, 0);
 		va_list args;
 		va_start(args, format);
 		vprintf(format, args);
@@ -189,8 +189,8 @@ void PrintDebug(const char *format, ...)
 
 void PrintAlways(const char *format, ...)
 {
-	if (global_verbosity_level >= VERBOSE_ALWAYS) {
-		ChangeConsoleColor(TEXT_COLOR_BLUE, 0);
+	if (global_verbosity_level >= VerbosityLevel::ALWAYS) {
+		ChangeConsoleColor(TextColor::BLUE, 0);
 		va_list args;
 		va_start(args, format);
 		vprintf(format, args);

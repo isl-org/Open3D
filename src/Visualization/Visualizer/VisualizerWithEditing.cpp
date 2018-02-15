@@ -52,10 +52,10 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 	glfwMakeContextCurrent(window_);
 	original_geometry_ptr_ = geometry_ptr;
 	if (geometry_ptr->GetGeometryType() ==
-			Geometry::GEOMETRY_UNSPECIFIED) {
+			Geometry::GeometryType::UNSPECIFIED) {
 		return false;
-	} else if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_POINTCLOUD) {
+	} else if (geometry_ptr->GetGeometryType() ==
+			Geometry::GeometryType::POINTCLOUD) {
 		auto ptr = std::make_shared<PointCloud>();
 		*ptr = (const PointCloud &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -65,8 +65,8 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 				editing_geometry_ptr_) == false) {
 			return false;
 		}
-	} else if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_LINESET) {
+	} else if (geometry_ptr->GetGeometryType() ==
+			Geometry::GeometryType::LINESET) {
 		auto ptr = std::make_shared<LineSet>();
 		*ptr = (const LineSet &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -76,8 +76,8 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 				editing_geometry_ptr_) == false) {
 			return false;
 		}
-	} else if (geometry_ptr->GetGeometryType() == 
-			Geometry::GEOMETRY_TRIANGLEMESH) {
+	} else if (geometry_ptr->GetGeometryType() ==
+			Geometry::GeometryType::TRIANGLEMESH) {
 		auto ptr = std::make_shared<TriangleMesh>();
 		*ptr = (const TriangleMesh &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -88,7 +88,7 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 			return false;
 		}
 	} else if (geometry_ptr->GetGeometryType() ==
-			Geometry::GEOMETRY_IMAGE) {
+			Geometry::GeometryType::IMAGE) {
 		auto ptr = std::make_shared<Image>();
 		*ptr = (const Image &)*original_geometry_ptr_;
 		editing_geometry_ptr_ = ptr;
@@ -104,7 +104,7 @@ bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
 	geometry_ptrs_.push_back(editing_geometry_ptr_);
 	geometry_renderer_ptrs_.push_back(editing_geometry_renderer_ptr_);
 	ResetViewPoint(true);
-	PrintDebug("Add geometry and update bounding box to %s\n", 
+	PrintDebug("Add geometry and update bounding box to %s\n",
 			view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
 	return UpdateGeometry();
 }
@@ -138,7 +138,7 @@ void VisualizerWithEditing::UpdateWindowTitle()
 {
 	if (window_ != NULL) {
 		auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
-		std::string new_window_title = window_name_ + " - " + 
+		std::string new_window_title = window_name_ + " - " +
 				view_control.GetStatusString();
 		glfwSetWindowTitle(window_, new_window_title.c_str());
 	}
@@ -148,7 +148,7 @@ void VisualizerWithEditing::BuildUtilities()
 {
 	Visualizer::BuildUtilities();
 	bool success;
-	
+
 	// 1. Build selection polygon
 	success = true;
 	selection_polygon_ptr_ = std::make_shared<SelectionPolygon>();
@@ -162,7 +162,7 @@ void VisualizerWithEditing::BuildUtilities()
 		utility_ptrs_.push_back(selection_polygon_ptr_);
 		utility_renderer_ptrs_.push_back(selection_polygon_renderer_ptr_);
 	}
-	
+
 	// 2. Build pointcloud picker
 	success = true;
 	pointcloud_picker_ptr_ = std::make_shared<PointCloudPicker>();
@@ -200,7 +200,7 @@ int VisualizerWithEditing::PickPoint(double x, double y)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, view.GetWindowWidth(),
 			view.GetWindowHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	if (!GLEW_ARB_framebuffer_object){
@@ -240,7 +240,7 @@ int VisualizerWithEditing::PickPoint(double x, double y)
 	glReadPixels((int)(x + 0.5), (int)(view.GetWindowHeight() - y + 0.5), 1, 1,
 			GL_RGBA, GL_UNSIGNED_BYTE, rgba);
 	int index = GLHelper::ColorCodeToPickIndex(Eigen::Vector4i(rgba[0],
-			rgba[1], rgba[2], rgba[3]));	
+			rgba[1], rgba[2], rgba[3]));
 	// Recover rendering state
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_MULTISAMPLE);
@@ -275,8 +275,8 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 	if (action == GLFW_RELEASE) {
 		if (key == GLFW_KEY_LEFT_CONTROL || key == GLFW_KEY_RIGHT_CONTROL) {
 			if (view_control.IsLocked() &&
-					selection_mode_ == SELECTION_POLYGON) {
-				selection_mode_ = SELECTION_NONE;
+					selection_mode_ == SelectionMode::POLYGON) {
+				selection_mode_ = SelectionMode::NONE;
 				selection_polygon_ptr_->polygon_.pop_back();
 				if (selection_polygon_ptr_->IsEmpty()) {
 					selection_polygon_ptr_->Clear();
@@ -285,7 +285,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 							view_control.GetWindowWidth(),
 							view_control.GetWindowHeight());
 					selection_polygon_ptr_->polygon_type_ =
-							SelectionPolygon::POLYGON_POLYGON;
+							SelectionPolygon::SectionPolygonType::POLYGON;
 				}
 				selection_polygon_renderer_ptr_->UpdateGeometry();
 				is_redraw_required_ = true;
@@ -296,7 +296,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 
 	switch (key) {
 	case GLFW_KEY_F:
-		view_control.SetEditingMode(ViewControlWithEditing::EDITING_FREEMODE);
+		view_control.SetEditingMode(ViewControlWithEditing::EditingMode::FREEMODE);
 		PrintDebug("[Visualizer] Enter freeview mode.\n");
 		break;
 	case GLFW_KEY_X:
@@ -348,8 +348,8 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 				}
 			}
 			if (voxel_size_ > 0.0 && editing_geometry_ptr_ &&
-					editing_geometry_ptr_->GetGeometryType() == 
-					Geometry::GEOMETRY_POINTCLOUD) {
+					editing_geometry_ptr_->GetGeometryType() ==
+					Geometry::GeometryType::POINTCLOUD) {
 				PrintInfo("Voxel downsample with voxel size %.4f.\n",
 						voxel_size_);
 				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
@@ -364,9 +364,9 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 		break;
 	case GLFW_KEY_C:
 		if (view_control.IsLocked() && selection_polygon_ptr_) {
-			if (editing_geometry_ptr_ && 
+			if (editing_geometry_ptr_ &&
 					editing_geometry_ptr_->GetGeometryType() ==
-					Geometry::GEOMETRY_POINTCLOUD) {
+					Geometry::GeometryType::POINTCLOUD) {
 				glfwMakeContextCurrent(window_);
 				PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
 				pcd = *selection_polygon_ptr_->CropPointCloud(pcd,
@@ -425,7 +425,7 @@ void VisualizerWithEditing::WindowResizeCallback(GLFWwindow *window,
 	Visualizer::WindowResizeCallback(window, w, h);
 }
 
-void VisualizerWithEditing::MouseMoveCallback(GLFWwindow* window, 
+void VisualizerWithEditing::MouseMoveCallback(GLFWwindow* window,
 		double x, double y)
 {
 	auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
@@ -435,15 +435,15 @@ void VisualizerWithEditing::MouseMoveCallback(GLFWwindow* window,
 		y /= pixel_to_screen_coordinate_;
 #endif
 		double y_inv = view_control.GetWindowHeight() - y;
-		if (selection_mode_ == SELECTION_NONE) {
-		} else if (selection_mode_ == SELECTION_RECTANGLE) {
+		if (selection_mode_ == SelectionMode::NONE) {
+		} else if (selection_mode_ == SelectionMode::RECTANGLE) {
 			selection_polygon_ptr_->polygon_[1](0) = x;
 			selection_polygon_ptr_->polygon_[2](0) = x;
 			selection_polygon_ptr_->polygon_[2](1) = y_inv;
 			selection_polygon_ptr_->polygon_[3](1) = y_inv;
 			selection_polygon_renderer_ptr_->UpdateGeometry();
 			is_redraw_required_ = true;
-		} else if (selection_mode_ == SELECTION_POLYGON) {
+		} else if (selection_mode_ == SelectionMode::POLYGON) {
 			selection_polygon_ptr_->polygon_.back() = Eigen::Vector2d(x, y_inv);
 			selection_polygon_renderer_ptr_->UpdateGeometry();
 			is_redraw_required_ = true;
@@ -453,7 +453,7 @@ void VisualizerWithEditing::MouseMoveCallback(GLFWwindow* window,
 	}
 }
 
-void VisualizerWithEditing::MouseScrollCallback(GLFWwindow* window, 
+void VisualizerWithEditing::MouseScrollCallback(GLFWwindow* window,
 		double x, double y)
 {
 	auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
@@ -478,16 +478,16 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 #endif
 			if (action == GLFW_PRESS) {
 				double y_inv = view_control.GetWindowHeight() - y;
-				if (selection_mode_ == SELECTION_NONE) {
+				if (selection_mode_ == SelectionMode::NONE) {
 					InvalidateSelectionPolygon();
 					if (mods & GLFW_MOD_CONTROL) {
-						selection_mode_ = SELECTION_POLYGON;
+						selection_mode_ = SelectionMode::POLYGON;
 						selection_polygon_ptr_->polygon_.push_back(
 								Eigen::Vector2d(x, y_inv));
 						selection_polygon_ptr_->polygon_.push_back(
 								Eigen::Vector2d(x, y_inv));
 					} else {
-						selection_mode_ = SELECTION_RECTANGLE;
+						selection_mode_ = SelectionMode::RECTANGLE;
 						selection_polygon_ptr_->is_closed_ = true;
 						selection_polygon_ptr_->polygon_.push_back(
 								Eigen::Vector2d(x, y_inv));
@@ -499,8 +499,8 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 								Eigen::Vector2d(x, y_inv));
 					}
 					selection_polygon_renderer_ptr_->UpdateGeometry();
-				} else if (selection_mode_ == SELECTION_RECTANGLE) {
-				} else if (selection_mode_ == SELECTION_POLYGON) {
+				} else if (selection_mode_ == SelectionMode::RECTANGLE) {
+				} else if (selection_mode_ == SelectionMode::POLYGON) {
 					if (mods & GLFW_MOD_CONTROL) {
 						selection_polygon_ptr_->polygon_.back() =
 								Eigen::Vector2d(x, y_inv);
@@ -510,21 +510,21 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 					}
 				}
 			} else if (action == GLFW_RELEASE) {
-				if (selection_mode_ == SELECTION_NONE) {
-				} else if (selection_mode_ == SELECTION_RECTANGLE) {
-					selection_mode_ = SELECTION_NONE;
+				if (selection_mode_ == SelectionMode::NONE) {
+				} else if (selection_mode_ == SelectionMode::RECTANGLE) {
+					selection_mode_ = SelectionMode::NONE;
 					selection_polygon_ptr_->FillPolygon(
 							view_control.GetWindowWidth(),
 							view_control.GetWindowHeight());
 					selection_polygon_ptr_->polygon_type_ =
-							SelectionPolygon::POLYGON_RECTANGLE;
+							SelectionPolygon::SectionPolygonType::RECTANGLE;
 					selection_polygon_renderer_ptr_->UpdateGeometry();
-				} else if (selection_mode_ == SELECTION_POLYGON) {
+				} else if (selection_mode_ == SelectionMode::POLYGON) {
 				}
 			}
 			is_redraw_required_ = true;
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			if (action == GLFW_PRESS && selection_mode_ == SELECTION_POLYGON &&
+			if (action == GLFW_PRESS && selection_mode_ == SelectionMode::POLYGON &&
 					(mods & GLFW_MOD_CONTROL)) {
 				if (selection_polygon_ptr_->polygon_.size() > 2) {
 					selection_polygon_ptr_->polygon_[selection_polygon_ptr_->
@@ -577,7 +577,7 @@ void VisualizerWithEditing::InvalidateSelectionPolygon()
 	if (selection_polygon_renderer_ptr_) {
 		selection_polygon_renderer_ptr_->UpdateGeometry();
 	}
-	selection_mode_ = SELECTION_NONE;
+	selection_mode_ = SelectionMode::NONE;
 }
 
 void VisualizerWithEditing::InvalidatePicking()

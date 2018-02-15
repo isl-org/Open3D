@@ -51,7 +51,7 @@ protected:
 					camera.intrinsic_, camera.extrinsic_[0]);
 			WriteIJsonConvertible("camera.json", camera);
 		} else if (key == GLFW_KEY_L) {
-			if (filesystem::FileExists("depth.png") && 
+			if (filesystem::FileExists("depth.png") &&
 					filesystem::FileExists("camera.json")) {
 				PinholeCameraTrajectory camera;
 				ReadIJsonConvertible("camera.json", camera);
@@ -66,7 +66,7 @@ protected:
 				AddGeometry(pointcloud_ptr);
 			}
 		} else if (key == GLFW_KEY_P) {
-			if (filesystem::FileExists("depth.png") && 
+			if (filesystem::FileExists("depth.png") &&
 					filesystem::FileExists("camera.json")) {
 				PinholeCameraTrajectory camera;
 				ReadIJsonConvertible("camera.json", camera);
@@ -83,7 +83,7 @@ protected:
 
 int main(int argc, char *argv[])
 {
-	SetVerbosityLevel(VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::ALWAYS);
 	if (argc < 2) {
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestDepthCapture  [filename]\n");

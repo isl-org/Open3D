@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (ProgramOptionExists(argc, argv, "--verbose"))
-		SetVerbosityLevel(three::VERBOSE_ALWAYS);
+		SetVerbosityLevel(VerbosityLevel::ALWAYS);
 
 	int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
 	auto color_source = CreateImageFromFile(argv[1]);
