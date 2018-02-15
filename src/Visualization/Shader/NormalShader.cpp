@@ -123,7 +123,7 @@ bool NormalShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -139,7 +139,7 @@ bool NormalShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &normals)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -169,7 +169,7 @@ bool NormalShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -196,7 +196,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &normals)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -221,7 +221,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			const auto &vertex = mesh.vertices_[vi];
 			points[idx] = vertex.cast<float>();
 			if (option.mesh_shade_option_ ==
-					RenderOption::MeshShadeOption::FLAT) {
+					RenderOption::MeshShadeOption::Flat) {
 				normals[idx] = mesh.triangle_normals_[i].cast<float>();
 			} else {
 				normals[idx] = mesh.vertex_normals_[vi].cast<float>();

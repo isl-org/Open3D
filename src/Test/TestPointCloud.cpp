@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VerbosityLevel::ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::Always);
 
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{

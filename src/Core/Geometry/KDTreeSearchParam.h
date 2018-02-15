@@ -32,9 +32,9 @@ class KDTreeSearchParam
 {
 public:
 	enum class SearchType {
-		KNN = 0,
-		RADIUS = 1,
-		HYBRID = 2,
+		Knn = 0,
+		Radius = 1,
+		Hybrid = 2,
 	};
 
 public:
@@ -54,7 +54,7 @@ class KDTreeSearchParamKNN : public KDTreeSearchParam
 {
 public:
 	KDTreeSearchParamKNN(int knn = 30) :
-			KDTreeSearchParam(SearchType::KNN), knn_(knn) {}
+			KDTreeSearchParam(SearchType::Knn), knn_(knn) {}
 public:
 	int knn_;
 };
@@ -63,7 +63,7 @@ class KDTreeSearchParamRadius : public KDTreeSearchParam
 {
 public:
 	KDTreeSearchParamRadius(double radius) :
-			KDTreeSearchParam(SearchType::RADIUS), radius_(radius) {}
+			KDTreeSearchParam(SearchType::Radius), radius_(radius) {}
 public:
 	double radius_;
 };
@@ -72,7 +72,7 @@ class KDTreeSearchParamHybrid : public KDTreeSearchParam
 {
 public:
 	KDTreeSearchParamHybrid(double radius, int max_nn) :
-			KDTreeSearchParam(SearchType::HYBRID), radius_(radius),
+			KDTreeSearchParam(SearchType::Hybrid), radius_(radius),
 			max_nn_(max_nn) {}
 public:
 	double radius_;

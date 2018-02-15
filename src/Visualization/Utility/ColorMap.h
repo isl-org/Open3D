@@ -34,11 +34,11 @@ class ColorMap
 {
 public:
 	enum class ColorMapOption {
-		GRAY = 0,
-		JET = 1,
-		SUMMER = 2,
-		WINTER = 3,
-		HOT = 4,
+		Gray = 0,
+		Jet = 1,
+		Summer = 2,
+		Winter = 3,
+		Hot = 4,
 	};
 
 public:

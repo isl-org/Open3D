@@ -111,7 +111,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 		const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -125,7 +125,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -153,7 +153,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 		const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -170,7 +170,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
 		const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}

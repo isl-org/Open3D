@@ -121,7 +121,7 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -137,7 +137,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -154,20 +154,20 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		points[i] = point.cast<float>();
 		Eigen::Vector3d color;
 		switch (option.point_color_option_) {
-		case RenderOption::PointColorOption::X:
+		case RenderOption::PointColorOption::XCoordinate:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetXPercentage(point(0)));
 			break;
-		case RenderOption::PointColorOption::Y:
+		case RenderOption::PointColorOption::YCoordinate:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetYPercentage(point(1)));
 			break;
-		case RenderOption::PointColorOption::Z:
+		case RenderOption::PointColorOption::ZCoordinate:
 			color = global_color_map.GetColor(
 					view.GetBoundingBox().GetZPercentage(point(2)));
 			break;
-		case RenderOption::PointColorOption::COLOR:
-		case RenderOption::PointColorOption::DEFAULT:
+		case RenderOption::PointColorOption::Color:
+		case RenderOption::PointColorOption::Default:
 		default:
 			if (pointcloud.HasColors()) {
 				color = pointcloud.colors_[i];
@@ -188,7 +188,7 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::LINESET) {
+			Geometry::GeometryType::LineSet) {
 		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
@@ -204,7 +204,7 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::LINESET) {
+			Geometry::GeometryType::LineSet) {
 		PrintShaderWarning("Rendering type is not LineSet.");
 		return false;
 	}
@@ -236,7 +236,7 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -263,7 +263,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -286,24 +286,24 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 
 			Eigen::Vector3d color;
 			switch (option.mesh_color_option_) {
-			case RenderOption::MeshColorOption::X:
+			case RenderOption::MeshColorOption::XCoordinate:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetXPercentage(vertex(0)));
 				break;
-			case RenderOption::MeshColorOption::Y:
+			case RenderOption::MeshColorOption::YCoordinate:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetYPercentage(vertex(1)));
 				break;
-			case RenderOption::MeshColorOption::Z:
+			case RenderOption::MeshColorOption::ZCoordinate:
 				color = global_color_map.GetColor(
 						view.GetBoundingBox().GetZPercentage(vertex(2)));
 				break;
-			case RenderOption::MeshColorOption::COLOR:
+			case RenderOption::MeshColorOption::Color:
 				if (mesh.HasVertexColors()) {
 					color = mesh.vertex_colors_[vi];
 					break;
 				}
-			case RenderOption::MeshColorOption::DEFAULT:
+			case RenderOption::MeshColorOption::Default:
 			default:
 				color = option.default_mesh_color_;
 				break;

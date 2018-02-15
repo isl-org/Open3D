@@ -41,20 +41,20 @@ class Image : public Geometry2D
 {
 public:
 	enum class ColorToIntensityConversionType {
-		EQUAL,
-		WEIGHTED,
+		Equal,
+		Weighted,
 	};
 
 	enum class FilterType {
-		GAUSSIAN_3,
-		GAUSSIAN_5,
-		GAUSSIAN_7,
-		SOBEL_3_DX,
-		SOBEL_3_DY
+		Gaussian3,
+		Gaussian5,
+		Gaussian7,
+		Sobel3Dx,
+		Sobel3Dy
 	};
 
 public:
-	Image() : Geometry2D(Geometry::GeometryType::IMAGE) {};
+	Image() : Geometry2D(Geometry::GeometryType::Image) {};
 	~Image() override {};
 
 public:
@@ -116,7 +116,7 @@ std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
 std::shared_ptr<Image> CreateFloatImageFromImage(
 		const Image &image,
 		Image::ColorToIntensityConversionType type =
-				Image::ColorToIntensityConversionType::WEIGHTED);
+				Image::ColorToIntensityConversionType::Weighted);
 
 /// Function to access the raw data of a single-channel Image
 template<typename T>

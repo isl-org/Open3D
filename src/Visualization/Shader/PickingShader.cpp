@@ -121,7 +121,7 @@ bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -137,7 +137,7 @@ bool PickingShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<float> &indices)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}

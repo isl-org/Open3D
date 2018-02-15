@@ -119,7 +119,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 		const ViewControl &view)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::UNSPECIFIED) {
+			Geometry::GeometryType::Unspecified) {
 		PrintShaderWarning("Rendering type is illegal.");
 		return false;
 	}
@@ -135,7 +135,7 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &colors)
 {
 	if (geometry.GetGeometryType() !=
-			Geometry::GeometryType::UNSPECIFIED) {
+			Geometry::GeometryType::Unspecified) {
 		PrintShaderWarning("Rendering type is illegal.");
 		return false;
 	}

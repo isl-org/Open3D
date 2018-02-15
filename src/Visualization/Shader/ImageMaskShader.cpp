@@ -108,7 +108,7 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 			render_image.data_.data());
 
 	if (option.interpolation_option_ ==
-			RenderOption::TextureInterpolationOption::NEAREST) {
+			RenderOption::TextureInterpolationOption::Nearest) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	} else {
@@ -162,7 +162,7 @@ void ImageMaskShader::UnbindGeometry()
 bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}
@@ -185,7 +185,7 @@ bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view,
 		Image &render_image)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}

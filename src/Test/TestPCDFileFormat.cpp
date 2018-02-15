@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	using namespace three;
 	using namespace flann;
 
-	SetVerbosityLevel(VerbosityLevel::ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::Always);
 
 	if (argc < 2) {
 		PrintInfo("Usage:\n");

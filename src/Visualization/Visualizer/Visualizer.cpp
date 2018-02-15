@@ -309,31 +309,31 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
 
 	glfwMakeContextCurrent(window_);
 	if (geometry_ptr->GetGeometryType() ==
-			Geometry::GeometryType::UNSPECIFIED) {
+			Geometry::GeometryType::Unspecified) {
 		return false;
 	} else if (geometry_ptr->GetGeometryType() ==
-			Geometry::GeometryType::POINTCLOUD) {
+			Geometry::GeometryType::PointCloud) {
 		auto renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
 		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() ==
-			Geometry::GeometryType::LINESET) {
+			Geometry::GeometryType::LineSet) {
 		auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
 		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() ==
-			Geometry::GeometryType::TRIANGLEMESH) {
+			Geometry::GeometryType::TriangleMesh) {
 		auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;
 		}
 		geometry_renderer_ptrs_.push_back(renderer_ptr);
 	} else if (geometry_ptr->GetGeometryType() ==
-			Geometry::GeometryType::IMAGE) {
+			Geometry::GeometryType::Image) {
 		auto renderer_ptr = std::make_shared<glsl::ImageRenderer>();
 		if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
 			return false;

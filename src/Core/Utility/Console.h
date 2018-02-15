@@ -36,11 +36,11 @@ namespace three {
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
 enum class VerbosityLevel {
-	ERROR = 0,
-	WARNING = 1,
-	INFO = 2,
-	DEBUG = 3,
-	ALWAYS = 4
+	Error = 0,
+	Warning = 1,
+	Info = 2,
+	Debug = 3,
+	Always = 4
 };
 
 void SetVerbosityLevel(VerbosityLevel verbosity_level);

@@ -120,7 +120,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
 			render_image.data_.data());
 
 	if (option.interpolation_option_ ==
-			RenderOption::TextureInterpolationOption::NEAREST) {
+			RenderOption::TextureInterpolationOption::Nearest) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	} else {
@@ -173,14 +173,14 @@ void ImageShader::UnbindGeometry()
 bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}
 	const Image &image = (const Image &)geometry;
 	GLfloat ratio_x, ratio_y;
 	switch (option.image_stretch_option_) {
-		case RenderOption::ImageStretchOption::STRETCH_KEEP_RATIO:
+		case RenderOption::ImageStretchOption::StretchKeepRatio:
 			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
 			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
 			if (ratio_x < ratio_y) {
@@ -191,11 +191,11 @@ bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
 				ratio_x = 1.0f;
 			}
 			break;
-		case RenderOption::ImageStretchOption::STRETCH_WITH_WINDOW:
+		case RenderOption::ImageStretchOption::StretchWithWindow:
 			ratio_x = 1.0f;
 			ratio_y = 1.0f;
 			break;
-		case RenderOption::ImageStretchOption::ORIGINAL_SIZE:
+		case RenderOption::ImageStretchOption::OriginalSize:
 		default:
 			ratio_x = GLfloat(image.width_) / GLfloat(view.GetWindowWidth());
 			ratio_y = GLfloat(image.height_) / GLfloat(view.GetWindowHeight());
@@ -212,7 +212,7 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view,
 		Image &render_image)
 {
-	if (geometry.GetGeometryType() != Geometry::GeometryType::IMAGE) {
+	if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
 		PrintShaderWarning("Rendering type is not Image.");
 		return false;
 	}

@@ -35,7 +35,7 @@
 int main(int argc, char *argv[])
 {
 	using namespace three;
-	SetVerbosityLevel(VerbosityLevel::ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::Always);
 
 	if (argc != 3) {
 		PrintInfo("> TestCameraPoseTrajectory trajectory_file pcds_dir\n");
