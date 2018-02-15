@@ -186,7 +186,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
 		UpdateGeometry();
 		PrintDebug("[Visualizer] Mesh shading mode is %s.\n",
 				render_option_ptr_->mesh_shade_option_ ==
-				RenderOption::MeshShadeOption::Flat ?
+				RenderOption::MeshShadeOption::FlatShade ?
 				"FLAT" : "SMOOTH");
 		break;
 	case GLFW_KEY_W:

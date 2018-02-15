@@ -296,7 +296,8 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
 
 	switch (key) {
 	case GLFW_KEY_F:
-		view_control.SetEditingMode(ViewControlWithEditing::EditingMode::FreeMode);
+		view_control.SetEditingMode(
+				ViewControlWithEditing::EditingMode::FreeMode);
 		PrintDebug("[Visualizer] Enter freeview mode.\n");
 		break;
 	case GLFW_KEY_X:
@@ -524,8 +525,8 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow* window,
 			}
 			is_redraw_required_ = true;
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			if (action == GLFW_PRESS && selection_mode_ == SelectionMode::Polygon &&
-					(mods & GLFW_MOD_CONTROL)) {
+			if (action == GLFW_PRESS && selection_mode_ ==
+					SelectionMode::Polygon && (mods & GLFW_MOD_CONTROL)) {
 				if (selection_polygon_ptr_->polygon_.size() > 2) {
 					selection_polygon_ptr_->polygon_[selection_polygon_ptr_->
 							polygon_.size() - 2] = selection_polygon_ptr_->

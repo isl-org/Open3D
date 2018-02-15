@@ -346,7 +346,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			colors[idx] = color.cast<float>();
 
 			if (option.mesh_shade_option_ ==
-					RenderOption::MeshShadeOption::Flat) {
+					RenderOption::MeshShadeOption::FlatShade) {
 				normals[idx] = mesh.triangle_normals_[i].cast<float>();
 			} else {
 				normals[idx] = mesh.vertex_normals_[vi].cast<float>();

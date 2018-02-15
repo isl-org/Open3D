@@ -58,8 +58,8 @@ public:
 
 	// TriangleMesh options
 	enum class MeshShadeOption {
-		Flat = 0,
-		Smooth = 1,
+		FlatShade = 0,
+		SmoothShade = 1,
 	};
 
 	enum class MeshColorOption {
@@ -128,10 +128,10 @@ public:
 		point_show_normal_ = !point_show_normal_;
 	}
 	void ToggleShadingOption() {
-		if (mesh_shade_option_ == MeshShadeOption::Flat) {
-			mesh_shade_option_ = MeshShadeOption::Smooth;
+		if (mesh_shade_option_ == MeshShadeOption::FlatShade) {
+			mesh_shade_option_ = MeshShadeOption::SmoothShade;
 		} else {
-			mesh_shade_option_ = MeshShadeOption::Flat;
+			mesh_shade_option_ = MeshShadeOption::FlatShade;
 		}
 	}
 	void ToggleMeshShowBackFace() {
@@ -172,7 +172,7 @@ public:
 	bool point_show_normal_ = false;
 
 	// TriangleMesh options
-	MeshShadeOption mesh_shade_option_ = MeshShadeOption::Flat;
+	MeshShadeOption mesh_shade_option_ = MeshShadeOption::FlatShade;
 	MeshColorOption mesh_color_option_ = MeshColorOption::Color;
 	bool mesh_show_back_face_ = false;
 	bool mesh_show_wireframe_ = false;
