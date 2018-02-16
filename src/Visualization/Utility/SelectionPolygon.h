@@ -39,7 +39,7 @@ class ViewControl;
 class SelectionPolygonVolume;
 
 /// A 2D polygon used for selection on screen
-/// It is an utility class for Visualization
+/// It is a utility class for Visualization
 /// The coordinates in SelectionPolygon are lower-left corner based (the OpenGL
 /// convention).
 class SelectionPolygon : public Geometry2D

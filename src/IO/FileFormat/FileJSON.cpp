@@ -73,7 +73,7 @@ bool ReadIJsonConvertibleFromJSON(const std::string &filename,
 {
 	std::ifstream file_in(filename);
 	if (file_in.is_open() == false) {
-		PrintWarning("Read JSON failed: unable to open file.\n");
+		PrintWarning("Read JSON failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	bool success = ReadIJsonConvertibleFromJSONStream(file_in, object);
@@ -86,7 +86,7 @@ bool WriteIJsonConvertibleToJSON(const std::string &filename,
 {
 	std::ofstream file_out(filename);
 	if (file_out.is_open() == false) {
-		PrintWarning("Write JSON failed: unable to open file.\n");
+		PrintWarning("Write JSON failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	bool success = WriteIJsonConvertibleToJSONStream(file_out, object);

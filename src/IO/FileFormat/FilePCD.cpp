@@ -530,7 +530,7 @@ void RemoveNanData(PointCloud &pointcloud)
 	pointcloud.points_.resize(k);
 	if (has_normal) pointcloud.normals_.resize(k);
 	if (has_color) pointcloud.colors_.resize(k);
-	PrintDebug("[Purge] %d nan points have been removed.\n", old_point_num - k);
+	PrintDebug("[Purge] %d nan points have been removed.\n", (int)(old_point_num - k));
 }
 
 bool GenerateHeader(const PointCloud &pointcloud, const bool write_ascii,
@@ -729,7 +729,7 @@ bool ReadPointCloudFromPCD(const std::string &filename, PointCloud &pointcloud)
 	PCDHeader header;
 	FILE *file = fopen(filename.c_str(), "rb");
 	if (file == NULL) {
-		PrintWarning("Read PCD failed: unable to open file.\n");
+		PrintWarning("Read PCD failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	if (ReadPCDHeader(file, header) == false) {

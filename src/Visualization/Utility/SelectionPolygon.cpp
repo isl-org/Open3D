@@ -55,9 +55,9 @@ Eigen::Vector2d SelectionPolygon::GetMinBound() const
 		return Eigen::Vector2d(0.0, 0.0);
 	}
 	auto itr_x = std::min_element(polygon_.begin(), polygon_.end(),
-		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(0) < b(0); });
+		[](const Eigen::Vector2d &a, const Eigen::Vector2d &b) { return a(0) < b(0); });
 	auto itr_y = std::min_element(polygon_.begin(), polygon_.end(),
-		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(1) < b(1); });
+		[](const Eigen::Vector2d &a, const Eigen::Vector2d &b) { return a(1) < b(1); });
 	return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
 }
 
@@ -67,9 +67,9 @@ Eigen::Vector2d SelectionPolygon::GetMaxBound() const
 		return Eigen::Vector2d(0.0, 0.0);
 	}
 	auto itr_x = std::max_element(polygon_.begin(), polygon_.end(),
-		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(0) < b(0); });
+		[](const Eigen::Vector2d &a, const Eigen::Vector2d &b) { return a(0) < b(0); });
 	auto itr_y = std::max_element(polygon_.begin(), polygon_.end(),
-		[](Eigen::Vector2d a, Eigen::Vector2d b) { return a(1) < b(1); });
+		[](const Eigen::Vector2d &a, const Eigen::Vector2d &b) { return a(1) < b(1); });
 	return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
 }
 

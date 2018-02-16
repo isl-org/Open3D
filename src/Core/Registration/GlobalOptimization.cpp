@@ -183,7 +183,7 @@ Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph)
 /// https ://github.com/RainerKuemmerle/g2o/blob/master/doc/g2o.pdf
 /// Eq (20) and Eq (21). (There is a typo in the equation though. B should be J)
 ///
-/// This function focus the case that every edge has two nodes (not hyper graph)
+/// This function focuses the case that every edge has two nodes (not hyper graph)
 /// so we have two Jacobian matrices from one constraint.
 std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeLinearSystem(
 		const PoseGraph &pose_graph, const Eigen::VectorXd &zeta)
@@ -410,7 +410,7 @@ void GlobalOptimizationGaussNewton::
 	int n_edges = (int)pose_graph.edges_.size();
 	double line_process_weight = ComputeLineProcessWeight(pose_graph, option);
 
-	PrintDebug("[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and %d edges. \n",
+	PrintDebug("[GlobalOptimizationGaussNewton] Optimizing PoseGraph having %d nodes and %d edges. \n",
 			n_nodes, n_edges);
 	PrintDebug("Line process weight : %f\n", line_process_weight);
 
@@ -481,7 +481,7 @@ void GlobalOptimizationGaussNewton::
 				|| CheckMaxIteration(iter, criteria);
 	}	// end for
 	timer_overall.Stop();
-	PrintDebug("[GlobalOptimization] total time : %.3f sec.\n",
+	PrintDebug("[GlobalOptimizationGaussNewton] total time : %.3f sec.\n",
 			timer_overall.GetDuration() / 1000.0);
 }
 

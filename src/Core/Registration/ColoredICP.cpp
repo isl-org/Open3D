@@ -127,9 +127,6 @@ std::shared_ptr<PointCloudForColoredICP>
 				A.transpose() * A, A.transpose() * b);
 			if (is_success) {
 				output->color_gradient_[k] = x;
-				// std::cout << x(0) << std::endl;
-				// std::cout << x(1) << std::endl;
-				// std::cout << x(2) << std::endl;
 			}
 		}
 	}
@@ -210,7 +207,7 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 	const auto &target_c = (const PointCloudForColoredICP &)target;
 
 	double residual = 0.0;
-	for (auto i = 0; i < corres.size(); i++) {
+	for (size_t i = 0; i < corres.size(); i++) {
 		size_t cs = corres[i][0];
 		size_t ct = corres[i][1];
 		const Eigen::Vector3d &vs = source.points_[cs];

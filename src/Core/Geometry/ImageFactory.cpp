@@ -133,7 +133,7 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input)
 	auto output = std::make_shared<Image>();
 	if (input.num_of_channels_ != 1 ||
 			input.bytes_per_channel_ != 4) {
-		PrintDebug("[TypecastImage] Unsupported image format.\n");
+		PrintDebug("[CreateImageFromFloatImage] Unsupported image format.\n");
 		return output;
 	}
 

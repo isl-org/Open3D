@@ -40,7 +40,7 @@ public:
 	~SimpleBlackShader() override { Release(); }
 
 protected:
-	SimpleBlackShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	SimpleBlackShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
 protected:
 	bool Compile() final;

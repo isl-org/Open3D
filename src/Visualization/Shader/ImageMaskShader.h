@@ -39,7 +39,7 @@ public:
 	~ImageMaskShader() override { Release(); }
 
 protected:
-	ImageMaskShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	ImageMaskShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 	
 protected:
 	bool Compile() final;

@@ -74,7 +74,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 #pragma omp critical
 #endif
 		{
-			for (int i = 0; i < correspondence_set_private.size(); i++) {
+			for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
 				result.correspondence_set_.push_back(
 						correspondence_set_private[i]);
 			}

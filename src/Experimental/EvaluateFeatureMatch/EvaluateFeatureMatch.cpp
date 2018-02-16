@@ -56,6 +56,7 @@ public:
 		flann_index_.reset(new flann::Index<flann::L2<float>>(*flann_dataset_,
 				flann::KDTreeSingleIndexParams(15)));
 		flann_index_->buildIndex();
+        fclose(fid);
 		return true;
 	}
 

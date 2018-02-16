@@ -40,7 +40,7 @@ public:
 	~NormalShader() override { Release(); }
 	
 protected:
-	NormalShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	NormalShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 	
 protected:
 	bool Compile() final;

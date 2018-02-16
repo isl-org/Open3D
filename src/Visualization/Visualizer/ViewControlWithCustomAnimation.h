@@ -75,7 +75,7 @@ public:
 	int GetTrajectoryInterval() const {
 		return view_trajectory_.interval_;
 	}
-	std::string GetStatusString();
+	std::string GetStatusString() const;
 	void Step(double change);
 	void GoToFirst();
 	void GoToLast();
@@ -89,7 +89,7 @@ public:
 	bool IsPlayingEnd(size_t num) {
 		return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
 	}
-	bool IsValidPinholeCameraTrajectory();
+	bool IsValidPinholeCameraTrajectory() const;
 
 protected:
 	size_t CurrentFrame() const { return (size_t)round(current_frame_); }

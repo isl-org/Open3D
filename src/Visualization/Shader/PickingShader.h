@@ -40,7 +40,7 @@ public:
 	~PickingShader() override { Release(); }
 
 protected:
-	PickingShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	PickingShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 	
 protected:
 	bool Compile() final;

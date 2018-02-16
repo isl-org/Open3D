@@ -209,7 +209,7 @@ bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {
-		PrintWarning("Read PLY failed: unable to open file.\n");
+		PrintWarning("Read PLY failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	if (!ply_read_header(ply_file)) {
@@ -253,7 +253,7 @@ bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 	ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
 
 	if (!ply_read(ply_file)) {
-		PrintWarning("Read PLY failed: unable to read file.\n");
+		PrintWarning("Read PLY failed: unable to read file: %s\n", filename.c_str());
 		ply_close(ply_file);
 		return false;
 	}
@@ -275,7 +275,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 	p_ply ply_file = ply_create(filename.c_str(),
 			write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
 	if (!ply_file) {
-		PrintWarning("Write PLY failed: unable to open file.\n");
+		PrintWarning("Write PLY failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	ply_add_comment(ply_file, "Created by Open3D");
@@ -336,7 +336,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh)
 
 	p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
 	if (!ply_file) {
-		PrintWarning("Read PLY failed: unable to open file.\n");
+		PrintWarning("Read PLY failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	if (!ply_read_header(ply_file)) {
@@ -390,7 +390,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh)
 			"Reading PLY: ");
 
 	if (!ply_read(ply_file)) {
-		PrintWarning("Read PLY failed: unable to read file.\n");
+		PrintWarning("Read PLY failed: unable to read file: %s\n", filename.c_str());
 		ply_close(ply_file);
 		return false;
 	}
@@ -411,7 +411,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 	p_ply ply_file = ply_create(filename.c_str(),
 			write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
 	if (!ply_file) {
-		PrintWarning("Write PLY failed: unable to open file.\n");
+		PrintWarning("Write PLY failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	ply_add_comment(ply_file, "Created by Open3D");

@@ -40,7 +40,7 @@ public:
 	~Simple2DShader() override { Release(); }
 
 protected:
-	Simple2DShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	Simple2DShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 	
 protected:
 	bool Compile() final;

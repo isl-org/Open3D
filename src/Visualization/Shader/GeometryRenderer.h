@@ -58,7 +58,7 @@ public:
 	/// UpdateGeometry() to notify the renderer.
 	virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) = 0;
 
-	/// Function to upadte geometry
+	/// Function to update geometry
 	/// Programmer must call this function to notify a change of the geometry
 	virtual bool UpdateGeometry() = 0;
 

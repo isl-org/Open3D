@@ -134,7 +134,7 @@ void ViewControlWithEditing::SetEditingMode(EditingMode mode)
 	}
 }
 
-std::string ViewControlWithEditing::GetStatusString()
+std::string ViewControlWithEditing::GetStatusString() const
 {
 	std::string prefix;
 	switch (editing_mode_) {

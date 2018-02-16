@@ -34,7 +34,7 @@ namespace three{
 
 bool CorrespondenceCheckerBasedOnEdgeLength::Check(const PointCloud &source,
 		const PointCloud &target, const CorrespondenceSet &corres,
-		const Eigen::Matrix4d &transformation) const
+		const Eigen::Matrix4d &/*transformation*/) const
 {
 	for (auto i = 0; i < corres.size(); i++) {
 		for (auto j = i + 1; j < corres.size(); j++) {
@@ -72,7 +72,7 @@ bool CorrespondenceCheckerBasedOnNormal::Check(const PointCloud &source,
 		const Eigen::Matrix4d &transformation) const
 {
 	if (source.HasNormals() == false || target.HasNormals() == false) {
-		PrintDebug("[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has not normals.\n");
+		PrintDebug("[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no normals.\n");
 		return true;
 	}
 	double cos_normal_angle_threshold = std::cos(normal_angle_threshold_);

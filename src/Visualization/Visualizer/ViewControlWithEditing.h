@@ -51,7 +51,7 @@ public:
 	void Translate(double x, double y, double xo, double yo) override;
 
 	void SetEditingMode(EditingMode mode);
-	std::string GetStatusString();
+	std::string GetStatusString() const;
 
 	EditingMode GetEditingMode() const { return editing_mode_; };
 	void ToggleEditingX() {
