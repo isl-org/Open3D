@@ -37,9 +37,9 @@ void pybind_kdtreeflann(py::module &m)
 		.def("get_search_type", &KDTreeSearchParam::GetSearchType);
 	py::enum_<KDTreeSearchParam::SearchType>(kdtreesearchparam, "Type",
 			py::arithmetic())
-		.value("KNNSearch", KDTreeSearchParam::SEARCH_KNN)
-		.value("RadiusSearch", KDTreeSearchParam::SEARCH_RADIUS)
-		.value("HybridSearch", KDTreeSearchParam::SEARCH_HYBRID)
+		.value("KNNSearch", KDTreeSearchParam::SearchType::Knn)
+		.value("RadiusSearch", KDTreeSearchParam::SearchType::Radius)
+		.value("HybridSearch", KDTreeSearchParam::SearchType::Hybrid)
 		.export_values();
 
 	py::class_<KDTreeSearchParamKNN> kdtreesearchparam_knn(m,

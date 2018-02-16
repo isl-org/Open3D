@@ -72,7 +72,7 @@ bool PickingShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-	
+
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -82,8 +82,8 @@ bool PickingShader::BindGeometry(const Geometry &geometry,
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_index_buffer_);
 	glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(float),
 			indices.data(), GL_STATIC_DRAW);
-	
-	bound_ = true;	
+
+	bound_ = true;
 	return true;
 }
 
@@ -120,7 +120,8 @@ void PickingShader::UnbindGeometry()
 bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -135,7 +136,8 @@ bool PickingShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<float> &indices)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}

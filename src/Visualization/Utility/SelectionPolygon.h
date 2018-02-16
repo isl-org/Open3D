@@ -45,14 +45,14 @@ class SelectionPolygonVolume;
 class SelectionPolygon : public Geometry2D
 {
 public:
-	enum SectionPolygonType {
-		POLYGON_UNFILLED = 0,
-		POLYGON_RECTANGLE = 1,
-		POLYGON_POLYGON = 2,
+	enum class SectionPolygonType {
+		Unfilled = 0,
+		Rectangle = 1,
+		Polygon = 2,
 	};
 
 public:
-	SelectionPolygon() : Geometry2D(GEOMETRY_UNSPECIFIED) {}
+	SelectionPolygon() : Geometry2D(Geometry::GeometryType::Unspecified) {}
 	~SelectionPolygon() override {}
 
 public:
@@ -80,7 +80,7 @@ public:
 	std::vector<Eigen::Vector2d> polygon_;
 	bool is_closed_ = false;
 	Image polygon_interior_mask_;
-	SectionPolygonType polygon_type_ = POLYGON_UNFILLED;
+	SectionPolygonType polygon_type_ = SectionPolygonType::Unfilled;
 };
 
 }	// namespace three

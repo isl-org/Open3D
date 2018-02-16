@@ -36,46 +36,46 @@ class RenderOption : public IJsonConvertible
 {
 public:
 	// Global options
-	enum TextureInterpolationOption {
-		TEXTURE_INTERPOLATION_NEAREST = 0,
-		TEXTURE_INTERPOLATION_LINEAR = 1,
+	enum class TextureInterpolationOption {
+		Nearest = 0,
+		Linear = 1,
 	};
-	
+
 	// PointCloud options
-	enum PointColorOption {
-		POINTCOLOR_DEFAULT = 0,
-		POINTCOLOR_COLOR = 1,
-		POINTCOLOR_X = 2,
-		POINTCOLOR_Y = 3,
-		POINTCOLOR_Z = 4,
-		POINTCOLOR_NORMAL = 9,
+	enum class PointColorOption {
+		Default = 0,
+		Color = 1,
+		XCoordinate = 2,
+		YCoordinate = 3,
+		ZCoordinate = 4,
+		Normal = 9,
 	};
 
 	static const double POINT_SIZE_MAX;
 	static const double POINT_SIZE_MIN;
 	static const double POINT_SIZE_STEP;
 	static const double POINT_SIZE_DEFAULT;
-	
+
 	// TriangleMesh options
-	enum MeshShadeOption {
-		MESHSHADE_FLATSHADE = 0,
-		MESHSHADE_SMOOTHSHADE = 1,
+	enum class MeshShadeOption {
+		FlatShade = 0,
+		SmoothShade = 1,
 	};
 
-	enum MeshColorOption {
-		TRIANGLEMESH_DEFAULT = 0,
-		TRIANGLEMESH_COLOR = 1,
-		TRIANGLEMESH_X = 2,
-		TRIANGLEMESH_Y = 3,
-		TRIANGLEMESH_Z = 4,
-		TRIANGLEMESH_NORMAL = 9,
+	enum class MeshColorOption {
+		Default = 0,
+		Color = 1,
+		XCoordinate = 2,
+		YCoordinate = 3,
+		ZCoordinate = 4,
+		Normal = 9,
 	};
-	
+
 	// Image options
-	enum ImageStretchOption {
-		IMAGE_ORIGINAL_SIZE = 0,
-		IMAGE_STRETCH_KEEP_RATIO = 1,
-		IMAGE_STRETCH_WITH_WINDOW = 2,
+	enum class ImageStretchOption {
+		OriginalSize = 0,
+		StretchKeepRatio = 1,
+		StretchWithWindow = 2,
 	};
 
 public:
@@ -114,24 +114,24 @@ public:
 		light_on_ = !light_on_;
 	}
 	void ToggleInterpolationOption() {
-		if (interpolation_option_ == TEXTURE_INTERPOLATION_NEAREST) {
-			interpolation_option_ = TEXTURE_INTERPOLATION_LINEAR;
+		if (interpolation_option_ == TextureInterpolationOption::Nearest) {
+			interpolation_option_ = TextureInterpolationOption::Linear;
 		} else {
-			interpolation_option_ = TEXTURE_INTERPOLATION_NEAREST;
+			interpolation_option_ = TextureInterpolationOption::Nearest;
 		}
 	}
 	void ChangePointSize(double change) {
-		point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP, 
+		point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
 				POINT_SIZE_MAX), POINT_SIZE_MIN);
 	}
 	void TogglePointShowNormal() {
 		point_show_normal_ = !point_show_normal_;
 	}
 	void ToggleShadingOption() {
-		if (mesh_shade_option_ == MESHSHADE_FLATSHADE) {
-			mesh_shade_option_ = MESHSHADE_SMOOTHSHADE;
+		if (mesh_shade_option_ == MeshShadeOption::FlatShade) {
+			mesh_shade_option_ = MeshShadeOption::SmoothShade;
 		} else {
-			mesh_shade_option_ = MESHSHADE_FLATSHADE;
+			mesh_shade_option_ = MeshShadeOption::FlatShade;
 		}
 	}
 	void ToggleMeshShowBackFace() {
@@ -141,12 +141,13 @@ public:
 		mesh_show_wireframe_ = !mesh_show_wireframe_;
 	}
 	void ToggleImageStretchOption() {
-		if (image_stretch_option_ == IMAGE_ORIGINAL_SIZE) {
-			image_stretch_option_ = IMAGE_STRETCH_KEEP_RATIO;
-		} else if (image_stretch_option_ == IMAGE_STRETCH_KEEP_RATIO) {
-			image_stretch_option_ = IMAGE_STRETCH_WITH_WINDOW;
+		if (image_stretch_option_ == ImageStretchOption::OriginalSize) {
+			image_stretch_option_ = ImageStretchOption::StretchKeepRatio;
+		} else if (image_stretch_option_ ==
+				ImageStretchOption::StretchKeepRatio) {
+			image_stretch_option_ = ImageStretchOption::StretchWithWindow;
 		} else {
-			image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
+			image_stretch_option_ = ImageStretchOption::OriginalSize;
 		}
 	}
 
@@ -154,7 +155,7 @@ public:
 	// global options
 	Eigen::Vector3d background_color_ = Eigen::Vector3d::Ones();
 	TextureInterpolationOption interpolation_option_ =
-			TEXTURE_INTERPOLATION_NEAREST;
+			TextureInterpolationOption::Nearest;
 
 	// Phong lighting options
 	bool light_on_ = true;
@@ -167,19 +168,19 @@ public:
 
 	// PointCloud options
 	double point_size_ = POINT_SIZE_DEFAULT;
-	PointColorOption point_color_option_ = POINTCOLOR_DEFAULT;
+	PointColorOption point_color_option_ = PointColorOption::Default;
 	bool point_show_normal_ = false;
-	
+
 	// TriangleMesh options
-	MeshShadeOption mesh_shade_option_ = MESHSHADE_FLATSHADE;
-	MeshColorOption mesh_color_option_ = TRIANGLEMESH_COLOR;
+	MeshShadeOption mesh_shade_option_ = MeshShadeOption::FlatShade;
+	MeshColorOption mesh_color_option_ = MeshColorOption::Color;
 	bool mesh_show_back_face_ = false;
 	bool mesh_show_wireframe_ = false;
 	Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(
 			0.7, 0.7, 0.7);
-	
+
 	// Image options
-	ImageStretchOption image_stretch_option_ = IMAGE_ORIGINAL_SIZE;
+	ImageStretchOption image_stretch_option_ = ImageStretchOption::OriginalSize;
 	int image_max_depth_ = 3000;
 
 	// Coordinate frame

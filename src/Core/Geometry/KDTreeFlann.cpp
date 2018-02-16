@@ -70,16 +70,16 @@ bool KDTreeFlann::SetMatrixData(const Eigen::MatrixXd &data)
 bool KDTreeFlann::SetGeometry(const Geometry &geometry)
 {
 	switch (geometry.GetGeometryType()) {
-	case Geometry::GEOMETRY_POINTCLOUD:
+	case Geometry::GeometryType::PointCloud:
 		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
 				(const double *)((const PointCloud &)geometry).points_.data(),
 				3, ((const PointCloud &)geometry).points_.size()));
-	case Geometry::GEOMETRY_TRIANGLEMESH:
+	case Geometry::GeometryType::TriangleMesh:
 		return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
 				(const double *)((const TriangleMesh &)geometry).vertices_.
 				data(), 3, ((const TriangleMesh &)geometry).vertices_.size()));
-	case Geometry::GEOMETRY_IMAGE:
-	case Geometry::GEOMETRY_UNSPECIFIED:
+	case Geometry::GeometryType::Image:
+	case Geometry::GeometryType::Unspecified:
 	default:
 		PrintDebug("[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
 		return false;
@@ -96,14 +96,14 @@ int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param,
 			std::vector<int> &indices, std::vector<double> &distance2) const
 {
 	switch (param.GetSearchType()) {
-	case KDTreeSearchParam::SEARCH_KNN:
+	case KDTreeSearchParam::SearchType::Knn:
 		return SearchKNN(query, ((const KDTreeSearchParamKNN &)param).knn_,
 				indices, distance2);
-	case KDTreeSearchParam::SEARCH_RADIUS:
+	case KDTreeSearchParam::SearchType::Radius:
 		return SearchRadius(query,
 				((const KDTreeSearchParamRadius &)param).radius_, indices,
 				distance2);
-	case KDTreeSearchParam::SEARCH_HYBRID:
+	case KDTreeSearchParam::SearchType::Hybrid:
 		return SearchHybrid(query,
 				((const KDTreeSearchParamHybrid &)param).radius_,
 				((const KDTreeSearchParamHybrid &)param).max_nn_,

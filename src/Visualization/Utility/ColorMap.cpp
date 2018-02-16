@@ -116,23 +116,23 @@ const std::shared_ptr<const ColorMap> GetGlobalColorMap()
 void SetGlobalColorMap(ColorMap::ColorMapOption option)
 {
 	switch (option) {
-	case ColorMap::COLORMAP_GRAY:
+	case ColorMap::ColorMapOption::Gray:
 		GlobalColorMapSingleton::GetInstance().color_map_.reset(
 				new ColorMapGray);
 		break;
-	case ColorMap::COLORMAP_SUMMER:
+	case ColorMap::ColorMapOption::Summer:
 		GlobalColorMapSingleton::GetInstance().color_map_.reset(
 				new ColorMapSummer);
 		break;
-	case ColorMap::COLORMAP_WINTER:
+	case ColorMap::ColorMapOption::Winter:
 		GlobalColorMapSingleton::GetInstance().color_map_.reset(
 				new ColorMapWinter);
 		break;
-	case ColorMap::COLORMAP_HOT:
+	case ColorMap::ColorMapOption::Hot:
 		GlobalColorMapSingleton::GetInstance().color_map_.reset(
 				new ColorMapHot);
 		break;
-	case ColorMap::COLORMAP_JET:
+	case ColorMap::ColorMapOption::Jet:
 	default:
 		GlobalColorMapSingleton::GetInstance().color_map_.reset(
 				new ColorMapJet);

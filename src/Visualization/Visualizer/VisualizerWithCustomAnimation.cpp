@@ -79,7 +79,7 @@ void VisualizerWithCustomAnimation::UpdateWindowTitle()
 	if (window_ != NULL) {
 		auto &view_control = (ViewControlWithCustomAnimation &)
 				(*view_control_ptr_);
-		std::string new_window_title = window_name_ + " - " + 
+		std::string new_window_title = window_name_ + " - " +
 				view_control.GetStatusString();
 		glfwSetWindowTitle(window_, new_window_title.c_str());
 	}
@@ -95,7 +95,7 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 		return;
 	}
 	view_control.SetAnimationMode(
-			ViewControlWithCustomAnimation::ANIMATION_PLAYMODE);
+			ViewControlWithCustomAnimation::AnimationMode::PlayMode);
 	is_redraw_required_ = true;
 	UpdateWindowTitle();
 	recording_file_index_ = 0;
@@ -126,16 +126,16 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 					}
 					char buffer[DEFAULT_IO_BUFFER_SIZE];
 					if (recording_depth) {
-						sprintf(buffer, 
+						sprintf(buffer,
 								recording_depth_filename_format_.c_str(),
 								recording_file_index_);
-						CaptureDepthImage(recording_depth_basedir_ + 
+						CaptureDepthImage(recording_depth_basedir_ +
 								std::string(buffer), false);
 					} else {
-						sprintf(buffer, 
+						sprintf(buffer,
 								recording_image_filename_format_.c_str(),
 								recording_file_index_);
-						CaptureScreenImage(recording_image_basedir_ + 
+						CaptureScreenImage(recording_image_basedir_ +
 								std::string(buffer), false);
 					}
 				}
@@ -143,15 +143,16 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
 				AdvanceConsoleProgress();
 				if (view_control.IsPlayingEnd(recording_file_index_)) {
 					view_control.SetAnimationMode(
-							ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
+							ViewControlWithCustomAnimation::
+							AnimationMode::FreeMode);
 					RegisterAnimationCallback(nullptr);
 					if (recording && recording_trajectory) {
 						if (recording_depth) {
-							WriteIJsonConvertible(recording_depth_basedir_ + 
+							WriteIJsonConvertible(recording_depth_basedir_ +
 									recording_depth_trajectory_filename_,
 									*trajectory_ptr);
 						} else {
-							WriteIJsonConvertible(recording_image_basedir_ + 
+							WriteIJsonConvertible(recording_image_basedir_ +
 									recording_image_trajectory_filename_,
 									*trajectory_ptr);
 						}
@@ -185,12 +186,12 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 		switch (key) {
 		case GLFW_KEY_F:
 			view_control.SetAnimationMode(
-					ViewControlWithCustomAnimation::ANIMATION_FREEMODE);
+					ViewControlWithCustomAnimation::AnimationMode::FreeMode);
 			PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
 			break;
 		case GLFW_KEY_W:
 			view_control.SetAnimationMode(
-					ViewControlWithCustomAnimation::ANIMATION_PREVIEWMODE);
+					ViewControlWithCustomAnimation::AnimationMode::PreviewMode);
 			PrintDebug("[Visualizer] Enter preview mode.\n");
 			break;
 		case GLFW_KEY_P:
@@ -266,7 +267,7 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 	}
 }
 
-void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window, 
+void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window,
 		double x, double y)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
@@ -277,7 +278,7 @@ void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window,
 	}
 }
 
-void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow* window, 
+void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow* window,
 		double x, double y)
 {
 	auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);

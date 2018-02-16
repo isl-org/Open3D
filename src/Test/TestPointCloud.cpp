@@ -35,7 +35,7 @@
 void PrintPointCloud(const three::PointCloud &pointcloud)
 {
 	using namespace three;
-	
+
 	bool pointcloud_has_normal = pointcloud.HasNormals();
 	PrintInfo("Pointcloud has %d points.\n",
 			(int)pointcloud.points_.size());
@@ -50,8 +50,8 @@ void PrintPointCloud(const three::PointCloud &pointcloud)
 		if (pointcloud_has_normal) {
 			const Eigen::Vector3d &point = pointcloud.points_[i];
 			const Eigen::Vector3d &normal = pointcloud.normals_[i];
-			PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n", 
-					point(0), point(1), point(2), 
+			PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n",
+					point(0), point(1), point(2),
 					normal(0), normal(1), normal(2));
 		} else {
 			const Eigen::Vector3d &point = pointcloud.points_[i];
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
 	using namespace three;
 
-	SetVerbosityLevel(VERBOSE_ALWAYS);
+	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
 	auto pcd = CreatePointCloudFromFile(argv[1]);
 	{
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	{
 		ScopeTimer timer("Normal estimation with KNN20");
 		for (int i = 0; i < 20; i++) {
-			EstimateNormals(*pcd, 
+			EstimateNormals(*pcd,
 					three::KDTreeSearchParamKNN(20));
 		}
 	}
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 	auto downpcd = VoxelDownSample(*pcd, 0.05);
 
 	// 1. test basic pointcloud functions.
-	
+
 	PointCloud pointcloud;
 	PrintPointCloud(pointcloud);
 
@@ -126,11 +126,11 @@ int main(int argc, char *argv[])
 
 	if (ReadPointCloud(argv[1], pointcloud)) {
 		PrintWarning("Successfully read %s\n", argv[1]);
-		
+
 		/*
 		PointCloud pointcloud_copy;
 		pointcloud_copy.CloneFrom(pointcloud);
-		
+
 		if (WritePointCloud(filename_xyz, pointcloud)) {
 			PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
 		} else {
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	pointcloud_ptr->NormalizeNormals();
 	BoundingBox bounding_box;
 	bounding_box.FitInGeometry(*pointcloud_ptr);
-	
+
 	std::shared_ptr<PointCloud> pointcloud_transformed_ptr(new PointCloud);
 	*pointcloud_transformed_ptr = *pointcloud_ptr;
 	Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
@@ -181,9 +181,9 @@ int main(int argc, char *argv[])
 	DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
 	// 6. test normal estimation
-	DrawGeometriesWithKeyCallbacks({pointcloud_ptr}, 
+	DrawGeometriesWithKeyCallbacks({pointcloud_ptr},
 			{{GLFW_KEY_SPACE, [&](Visualizer *vis) {
-				//EstimateNormals(*pointcloud_ptr, 
+				//EstimateNormals(*pointcloud_ptr,
 				//		three::KDTreeSearchParamKNN(20));
 				EstimateNormals(*pointcloud_ptr,
 						three::KDTreeSearchParamRadius(0.05));

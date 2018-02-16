@@ -40,11 +40,11 @@ void pybind_geometry(py::module &m)
 		.def("get_geometry_type", &Geometry::GetGeometryType)
 		.def("dimension", &Geometry::Dimension);
 	py::enum_<Geometry::GeometryType>(geometry, "Type", py::arithmetic())
-		.value("Unspecified", Geometry::GEOMETRY_UNSPECIFIED)
-		.value("PointCloud", Geometry::GEOMETRY_POINTCLOUD)
-		.value("LineSet", Geometry::GEOMETRY_LINESET)
-		.value("TriangleMesh", Geometry::GEOMETRY_TRIANGLEMESH)
-		.value("Image", Geometry::GEOMETRY_IMAGE)
+		.value("Unspecified", Geometry::GeometryType::Unspecified)
+		.value("PointCloud", Geometry::GeometryType::PointCloud)
+		.value("LineSet", Geometry::GeometryType::LineSet)
+		.value("TriangleMesh", Geometry::GeometryType::TriangleMesh)
+		.value("Image", Geometry::GeometryType::Image)
 		.export_values();
 
 	py::class_<Geometry3D, PyGeometry3D<Geometry3D>,

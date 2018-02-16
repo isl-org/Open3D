@@ -29,7 +29,8 @@
 namespace pybind11 {
 
 template <typename Vector, typename holder_type = std::unique_ptr<Vector>, typename... Args>
-pybind11::class_<Vector, holder_type> bind_vector_without_repr(pybind11::module &m, std::string const &name, Args&&... args) {
+pybind11::class_<Vector, holder_type> bind_vector_without_repr(
+		pybind11::module &m, std::string const &name, Args&&... args) {
 	// hack function to disable __repr__ for the convenient function
 	// bind_vector()
 	using Class_ = pybind11::class_<Vector, holder_type>;

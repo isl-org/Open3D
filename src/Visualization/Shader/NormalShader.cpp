@@ -73,7 +73,7 @@ bool NormalShader::BindGeometry(const Geometry &geometry,
 		PrintShaderWarning("Binding failed when preparing data.");
 		return false;
 	}
-	
+
 	// Create buffers and bind the geometry
 	glGenBuffers(1, &vertex_position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -86,7 +86,7 @@ bool NormalShader::BindGeometry(const Geometry &geometry,
 	bound_ = true;
 	return true;
 }
-	
+
 bool NormalShader::RenderGeometry(const Geometry &geometry,
 		const RenderOption &option, const ViewControl &view)
 {
@@ -122,7 +122,8 @@ void NormalShader::UnbindGeometry()
 bool NormalShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -137,7 +138,8 @@ bool NormalShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &normals)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_POINTCLOUD) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::PointCloud) {
 		PrintShaderWarning("Rendering type is not PointCloud.");
 		return false;
 	}
@@ -166,7 +168,8 @@ bool NormalShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 bool NormalShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 		const RenderOption &option,const ViewControl &view)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -192,7 +195,8 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 		std::vector<Eigen::Vector3f> &points,
 		std::vector<Eigen::Vector3f> &normals)
 {
-	if (geometry.GetGeometryType() != Geometry::GEOMETRY_TRIANGLEMESH) {
+	if (geometry.GetGeometryType() !=
+			Geometry::GeometryType::TriangleMesh) {
 		PrintShaderWarning("Rendering type is not TriangleMesh.");
 		return false;
 	}
@@ -217,7 +221,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 			const auto &vertex = mesh.vertices_[vi];
 			points[idx] = vertex.cast<float>();
 			if (option.mesh_shade_option_ ==
-					RenderOption::MESHSHADE_FLATSHADE) {
+					RenderOption::MeshShadeOption::FlatShade) {
 				normals[idx] = mesh.triangle_normals_[i].cast<float>();
 			} else {
 				normals[idx] = mesh.vertex_normals_[vi].cast<float>();

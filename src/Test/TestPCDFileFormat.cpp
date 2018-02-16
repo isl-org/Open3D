@@ -33,8 +33,8 @@ int main(int argc, char **argv)
 	using namespace three;
 	using namespace flann;
 
-	SetVerbosityLevel(three::VERBOSE_ALWAYS);
-	
+	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+
 	if (argc < 2) {
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestFlann [filename] [ascii|binary|compressed]\n");

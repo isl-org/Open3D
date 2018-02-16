@@ -32,26 +32,26 @@ namespace three{
 
 void ViewControlWithCustomAnimation::Reset()
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		ViewControl::Reset();
 	}
 }
 
 void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		if (!view_trajectory_.view_status_.empty()) {
 			// Once editing starts, lock ProjectionType.
 			// This is because ProjectionType cannot be easily switched in a
 			// smooth trajectory.
-			if (GetProjectionType() == PROJECTION_PERSPECTIVE) {
+			if (GetProjectionType() == ProjectionType::Perspective) {
 				double old_fov = field_of_view_;
 				ViewControl::ChangeFieldOfView(step);
-				if (GetProjectionType() == PROJECTION_ORTHOGONAL) {
+				if (GetProjectionType() == ProjectionType::Orthogonal) {
 					field_of_view_ = old_fov;
 				}
 			} else {
-				// do nothing, lock as PROJECTION_ORTHOGONAL
+				// do nothing, lock as ProjectionType::Orthogonal
 			}
 			SetProjectionParameters();
 		} else {
@@ -62,15 +62,15 @@ void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
 
 void ViewControlWithCustomAnimation::Scale(double scale)
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		ViewControl::Scale(scale);
 	}
 }
 
-void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo, 
+void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo,
 		double yo)
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		ViewControl::Rotate(x, y, xo, yo);
 	}
 }
@@ -78,24 +78,24 @@ void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo,
 void ViewControlWithCustomAnimation::Translate(double x, double y, double xo,
 		double yo)
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		ViewControl::Translate(x, y, xo, yo);
 	}
 }
 
 void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
 {
-	if (mode != ANIMATION_FREEMODE && view_trajectory_.view_status_.empty()) {
+	if (mode != AnimationMode::FreeMode && view_trajectory_.view_status_.empty()) {
 		return;
 	}
 	animation_mode_ = mode;
 	switch (mode) {
-	case ANIMATION_PREVIEWMODE:
-	case ANIMATION_PLAYMODE:
+	case AnimationMode::PreviewMode:
+	case AnimationMode::PlayMode:
 		view_trajectory_.ComputeInterpolationCoefficients();
 		GoToFirst();
 		break;
-	case ANIMATION_FREEMODE:
+	case AnimationMode::FreeMode:
 	default:
 		break;
 	}
@@ -103,7 +103,7 @@ void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
 
 void ViewControlWithCustomAnimation::AddKeyFrame()
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		ViewParameters current_status;
 		ConvertToViewParameters(current_status);
 		if (view_trajectory_.view_status_.empty()) {
@@ -121,7 +121,7 @@ void ViewControlWithCustomAnimation::AddKeyFrame()
 
 void ViewControlWithCustomAnimation::UpdateKeyFrame()
 {
-	if (animation_mode_ == ANIMATION_FREEMODE &&
+	if (animation_mode_ == AnimationMode::FreeMode &&
 			!view_trajectory_.view_status_.empty()) {
 		ConvertToViewParameters(
 				view_trajectory_.view_status_[CurrentKeyframe()]);
@@ -130,7 +130,7 @@ void ViewControlWithCustomAnimation::UpdateKeyFrame()
 
 void ViewControlWithCustomAnimation::DeleteKeyFrame()
 {
-	if (animation_mode_ == ANIMATION_FREEMODE &&
+	if (animation_mode_ == AnimationMode::FreeMode &&
 			!view_trajectory_.view_status_.empty()) {
 		size_t current_index = CurrentKeyframe();
 		view_trajectory_.view_status_.erase(
@@ -145,7 +145,7 @@ void ViewControlWithCustomAnimation::DeleteKeyFrame()
 void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames
 		/* = 20*/)
 {
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		double radian_per_step = M_PI * 2.0 / double(num_of_key_frames);
 		for (int i = 0; i < num_of_key_frames; i++) {
 			ViewControl::Rotate(radian_per_step / ROTATION_RADIAN_PER_PIXEL, 0);
@@ -158,18 +158,18 @@ std::string ViewControlWithCustomAnimation::GetStatusString() const
 {
 	std::string prefix;
 	switch (animation_mode_) {
-	case ANIMATION_FREEMODE:
+	case AnimationMode::FreeMode:
 		prefix = "Editing ";
 		break;
-	case ANIMATION_PREVIEWMODE:
+	case AnimationMode::PreviewMode:
 		prefix = "Previewing ";
 		break;
-	case ANIMATION_PLAYMODE:
+	case AnimationMode::PlayMode:
 		prefix = "Playing ";
 		break;
 	}
 	char buffer[DEFAULT_IO_BUFFER_SIZE];
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		if (view_trajectory_.view_status_.empty()) {
 			sprintf(buffer, "empty trajectory");
 		} else {
@@ -196,7 +196,7 @@ void ViewControlWithCustomAnimation::Step(double change)
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		current_keyframe_ += change;
 		current_keyframe_ = RegularizeFrameIndex(current_keyframe_,
 				view_trajectory_.view_status_.size(),
@@ -214,7 +214,7 @@ void ViewControlWithCustomAnimation::GoToFirst()
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		current_keyframe_ = 0.0;
 	} else {
 		current_frame_ = 0.0;
@@ -227,7 +227,7 @@ void ViewControlWithCustomAnimation::GoToLast()
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		current_keyframe_ = view_trajectory_.view_status_.size() - 1.0;
 	} else {
 		current_frame_ = view_trajectory_.NumOfFrames() - 1.0;
@@ -277,7 +277,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
 	for (size_t i = 0; i < camera_trajectory.extrinsic_.size(); i++) {
 		ViewControlWithCustomAnimation view_control = *this;
 		if (view_control.ConvertFromPinholeCameraParameters(
-				camera_trajectory.intrinsic_, 
+				camera_trajectory.intrinsic_,
 				camera_trajectory.extrinsic_[i]) == false) {
 			view_trajectory_.Reset();
 			return false;
@@ -301,7 +301,7 @@ bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const
 		return false;
 	}
 	for (const auto &status : view_trajectory_.view_status_) {
-		if (status.field_of_view_ != 
+		if (status.field_of_view_ !=
 				view_trajectory_.view_status_[0].field_of_view_) {
 			return false;
 		}
@@ -339,13 +339,13 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
 	if (view_trajectory_.view_status_.empty()) {
 		return;
 	}
-	if (animation_mode_ == ANIMATION_FREEMODE) {
+	if (animation_mode_ == AnimationMode::FreeMode) {
 		ConvertFromViewParameters(
 				view_trajectory_.view_status_[CurrentKeyframe()]);
 	} else {
 		bool success;
 		ViewParameters status;
-		std::tie(success, status) = 
+		std::tie(success, status) =
 				view_trajectory_.GetInterpolatedFrame(CurrentFrame());
 		if (success) {
 			ConvertFromViewParameters(status);

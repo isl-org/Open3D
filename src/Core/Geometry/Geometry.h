@@ -31,12 +31,12 @@ namespace three {
 class Geometry
 {
 public:
-	enum GeometryType {
-		GEOMETRY_UNSPECIFIED = 0,
-		GEOMETRY_POINTCLOUD = 1,
-		GEOMETRY_LINESET = 2,
-		GEOMETRY_TRIANGLEMESH = 3,
-		GEOMETRY_IMAGE = 4,
+	enum class GeometryType {
+		Unspecified = 0,
+		PointCloud = 1,
+		LineSet = 2,
+		TriangleMesh = 3,
+		Image = 4,
 	};
 
 public:
@@ -53,7 +53,7 @@ public:
 	int Dimension() const { return dimension_; }
 
 private:
-	GeometryType geometry_type_ = GEOMETRY_UNSPECIFIED;
+	GeometryType geometry_type_ = GeometryType::Unspecified;
 	int dimension_ = 3;
 };
 

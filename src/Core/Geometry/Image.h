@@ -40,21 +40,21 @@ class PinholeCameraIntrinsic;
 class Image : public Geometry2D
 {
 public:
-	enum ColorToIntensityConversionType {
-		EQUAL,
-		WEIGHTED,
+	enum class ColorToIntensityConversionType {
+		Equal,
+		Weighted,
 	};
 
-	enum FilterType {
-		FILTER_GAUSSIAN_3,
-		FILTER_GAUSSIAN_5,
-		FILTER_GAUSSIAN_7,
-		FILTER_SOBEL_3_DX,
-		FILTER_SOBEL_3_DY
+	enum class FilterType {
+		Gaussian3,
+		Gaussian5,
+		Gaussian7,
+		Sobel3Dx,
+		Sobel3Dy
 	};
 
 public:
-	Image() : Geometry2D(GEOMETRY_IMAGE) {};
+	Image() : Geometry2D(Geometry::GeometryType::Image) {};
 	~Image() override {};
 
 public:
@@ -115,7 +115,8 @@ std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
 /// Return a gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(
 		const Image &image,
-		Image::ColorToIntensityConversionType type = Image::WEIGHTED);
+		Image::ColorToIntensityConversionType type =
+				Image::ColorToIntensityConversionType::Weighted);
 
 /// Function to access the raw data of a single-channel Image
 template<typename T>
@@ -145,7 +146,8 @@ std::shared_ptr<Image> DownsampleImage(const Image &input);
 
 /// Function to linearly transform pixel intensities
 /// image_new = scale * image + offset
-void LinearTransformImage(Image &input, double scale = 1.0, double offset = 0.0);
+void LinearTransformImage(Image &input,
+		double scale = 1.0, double offset = 0.0);
 
 /// Function to clipping pixel intensities
 /// min is lower bound
