@@ -58,7 +58,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 		return false;
 	}
 
-	// We only support two channel type: gray, and RGB.
+	// We only support two channel types: gray, and RGB.
 	// There is no alpha channel.
 	// bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
 	image.PrepareImage(pngimage.width, pngimage.height,
@@ -67,7 +67,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
 	SetPNGImageFromImage(image, pngimage);
 	if (png_image_finish_read(&pngimage, NULL, image.data_.data(),
 			0, NULL) == 0) {
-		PrintWarning("Read PNG failed: unable to read file.\n");
+		PrintWarning("Read PNG failed: unable to read file: %s\n", filename.c_str());
 		return false;
 	}
 	return true;
@@ -86,7 +86,7 @@ bool WriteImageToPNG(const std::string &filename, const Image &image,
 	SetPNGImageFromImage(image, pngimage);
 	if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
 			image.data_.data(), 0, NULL) == 0) {
-		PrintWarning("Write PNG failed: unable to write file.\n");
+		PrintWarning("Write PNG failed: unable to write file: %s\n", filename.c_str());
 		return false;
 	}
 	return true;

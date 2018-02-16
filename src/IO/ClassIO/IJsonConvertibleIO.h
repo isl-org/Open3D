@@ -33,13 +33,13 @@ namespace three {
 
 /// The general entrance for reading an IJsonConvertible from a file
 /// The function calls read functions based on the extension name of filename.
-/// \return If the read function is successful.
+/// \return return true if the read function is successful, false otherwise.
 bool ReadIJsonConvertible(const std::string &filename,
 		IJsonConvertible &object);
 
 /// The general entrance for writing an IJsonConvertible to a file
 /// The function calls write functions based on the extension name of filename.
-/// \return If the write function is successful.
+/// \return return true if the write function is successful, false otherwise.
 bool WriteIJsonConvertible(const std::string &filename,
 		const IJsonConvertible &object);
 

@@ -40,7 +40,7 @@ public:
 	~PhongShader() override { Release(); }
 	
 protected:
-	PhongShader(std::string name) : ShaderWrapper(name) { Compile(); }
+	PhongShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 	
 protected:
 	bool Compile() final;

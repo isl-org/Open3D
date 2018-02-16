@@ -57,7 +57,7 @@ RGBDImagePyramid CreateRGBDImagePyramid(const RGBDImage& rgbd_image,
 			num_of_levels, with_gaussian_filter_for_depth);
 	RGBDImagePyramid rgbd_image_pyramid;
 	rgbd_image_pyramid.clear();
-	for (int level = 0; level < num_of_levels; level++) {
+	for (size_t level = 0; level < num_of_levels; level++) {
 		auto rgbd_image_level = std::make_shared<RGBDImage>
 				(RGBDImage(*color_pyramid[level], *depth_pyramid[level]));
 		rgbd_image_pyramid.push_back(rgbd_image_level);

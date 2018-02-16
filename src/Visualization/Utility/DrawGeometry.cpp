@@ -44,13 +44,13 @@ bool DrawGeometries(
 	Visualizer visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
 			false) {
-		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		PrintWarning("[DrawGeometries] Failed creating OpenGL window.\n");
 		return false;
 	}
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
+			PrintWarning("[DrawGeometries] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometries] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
@@ -69,13 +69,13 @@ bool DrawGeometriesWithCustomAnimation(
 	VisualizerWithCustomAnimation visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
 			false) {
-		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		PrintWarning("[DrawGeometriesWithCustomAnimation] Failed creating OpenGL window.\n");
 		return false;
 	}
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
+			PrintWarning("[DrawGeometriesWithCustomAnimation] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometriesWithCustomAnimation] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
@@ -83,8 +83,8 @@ bool DrawGeometriesWithCustomAnimation(
 			(ViewControlWithCustomAnimation &)visualizer.GetViewControl();
 	if (json_filename.empty() == false) {
 		if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
-			PrintWarning("[DrawGeometry] Failed loading json file.\n");
-			PrintWarning("[DrawGeometry] Possibly due to bad file or file does not contain trajectory.\n");
+			PrintWarning("[DrawGeometriesWithCustomAnimation] Failed loading json file.\n");
+			PrintWarning("[DrawGeometriesWithCustomAnimation] Possibly due to bad file or file does not contain trajectory.\n");
 			return false;
 		}
 		visualizer.UpdateWindowTitle();
@@ -104,13 +104,13 @@ bool DrawGeometriesWithAnimationCallback(
 	Visualizer visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
 			false) {
-		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		PrintWarning("[DrawGeometriesWithAnimationCallback] Failed creating OpenGL window.\n");
 		return false;
 	}
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
+			PrintWarning("[DrawGeometriesWithAnimationCallback] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometriesWithAnimationCallback] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
@@ -130,13 +130,13 @@ bool DrawGeometriesWithKeyCallbacks(
 	VisualizerWithKeyCallback visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
 			false) {
-		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL window.\n");
 		return false;
 	}
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
+			PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometriesWithKeyCallbacks] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}
@@ -158,13 +158,13 @@ bool DrawGeometriesWithEditing(
 	VisualizerWithEditing visualizer;
 	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
 			false) {
-		PrintWarning("[DrawGeometry] Failed creating OpenGL window.\n");
+		PrintWarning("[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
 		return false;
 	}
 	for (const auto &geometry_ptr : geometry_ptrs) {
 		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometry] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometry] Possibly due to bad geometry or wrong geometry type.\n");
+			PrintWarning("[DrawGeometriesWithEditing] Failed adding geometry.\n");
+			PrintWarning("[DrawGeometriesWithEditing] Possibly due to bad geometry or wrong geometry type.\n");
 			return false;
 		}
 	}

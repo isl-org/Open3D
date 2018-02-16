@@ -32,7 +32,7 @@
 namespace three {
 
 /// A 3D bounding box class
-/// It is an utility class for Visualization
+/// It is a utility class for Visualization
 class BoundingBox
 {
 public:
@@ -67,7 +67,7 @@ public:
 
 	std::string GetPrintInfo() const {
 		char buffer[DEFAULT_IO_BUFFER_SIZE];
-		sprintf(buffer, "[(%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)]",
+		snprintf(buffer, DEFAULT_IO_BUFFER_SIZE, "[(%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)]",
 				min_bound_(0), min_bound_(1), min_bound_(2),
 				max_bound_(0), max_bound_(1), max_bound_(2));
 		return std::string(buffer);

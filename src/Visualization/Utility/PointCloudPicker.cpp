@@ -59,7 +59,7 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const
 	}
 }
 
-void PointCloudPicker::Transform(const Eigen::Matrix4d &transformation)
+void PointCloudPicker::Transform(const Eigen::Matrix4d &/*transformation*/)
 {
 	// Do nothing
 }

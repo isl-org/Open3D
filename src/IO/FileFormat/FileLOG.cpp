@@ -45,7 +45,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 	trajectory.extrinsic_.clear();
 	FILE * f = fopen(filename.c_str(), "r");
 	if (f == NULL) {
-		PrintWarning("Read LOG failed: unable to open file.\n");
+		PrintWarning("Read LOG failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -55,10 +55,12 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 		if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
 			if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
 				PrintWarning("Read LOG failed: unrecognized format.\n");
+                fclose(f);
 				return false;
 			}
 			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
 				PrintWarning("Read LOG failed: unrecognized format.\n");
+                fclose(f);
 				return false;
 			} else {
 				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0,0), &trans(0,1),
@@ -66,6 +68,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 			}
 			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
 				PrintWarning("Read LOG failed: unrecognized format.\n");
+                fclose(f);
 				return false;
 			} else {
 				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1,0), &trans(1,1),
@@ -73,6 +76,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 			}
 			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
 				PrintWarning("Read LOG failed: unrecognized format.\n");
+                fclose(f);
 				return false;
 			} else {
 				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2,0), &trans(2,1),
@@ -80,6 +84,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 			}
 			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
 				PrintWarning("Read LOG failed: unrecognized format.\n");
+                fclose(f);
 				return false;
 			} else {
 				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
@@ -97,7 +102,7 @@ bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
 {
 	FILE * f = fopen( filename.c_str(), "w" );
 	if (f == NULL) {
-		PrintWarning("Write LOG failed: unable to open file.\n");
+		PrintWarning("Write LOG failed: unable to open file: %s\n", filename.c_str());
 		return false;
 	}
 	for (size_t i = 0; i < trajectory.extrinsic_.size(); i++ ) {
