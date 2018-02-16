@@ -1,7 +1,7 @@
 # Open3D: A Modern Library for 3D Data Processing
 
 [![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
-[![Build Status](https://ci.appveyor.com/api/projects/status/84l4d7xjkiu7d0tw/branch/master?svg=true)](https://ci.appveyor.com/project/syncle/open3d-7rite)
+[![Build status](https://ci.appveyor.com/api/projects/status/sau3yewsyxaxpkqe?svg=true)](https://ci.appveyor.com/project/syncle/open3d)
 
 ## About this project
 
