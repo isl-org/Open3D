@@ -61,9 +61,9 @@ void bind_default_constructor(Class_ &cl) {
 
 template <typename T, typename Class_>
 void bind_copy_functions(Class_ &cl) {
-	cl.def("__init__", [](T &t, const T &cp) {
-		new (&t)T(cp);
-	}, "Copy constructor");
+	cl.def(py::init([](const T &cp) {
+		return new T(cp);
+	}), "Copy constructor");
 	cl.def("__copy__", [](T &v) {
 		return T(v);
 	});
