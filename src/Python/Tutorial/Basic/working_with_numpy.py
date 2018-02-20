@@ -31,5 +31,5 @@ if __name__ == "__main__":
 	print('xyz_load')
 	print(xyz_load)
 
-    # visualization
-    draw_geometries([pcd_load])
+	# visualization
+	draw_geometries([pcd_load])
