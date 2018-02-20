@@ -29,6 +29,7 @@
 #include <Python/py3d.h>
 #include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/ViewControl.h>
+
 using namespace three;
 
 template <class VisualizerBase = Visualizer> class PyVisualizer :

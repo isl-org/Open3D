@@ -108,6 +108,15 @@ void pybind_utility_methods(py::module &m)
 	}, "Function to draw a list of Geometry objects with a customized key-callback mapping",
 			"geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
 			"width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+	m.def("draw_geometries_with_editing",
+	[](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+			const std::string &window_name, int width,
+			int height, int left, int top) {
+		DrawGeometriesWithEditing(geometry_ptrs, window_name,
+				width, height, left, top);
+	}, "Function to draw a list of Geometry providing user interaction",
+			"geometry_list"_a, "window_name"_a = "Open3D",
+			"width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
 	m.def("read_selection_polygon_volume", [](const std::string &filename) {
 		SelectionPolygonVolume vol;
 		ReadIJsonConvertible(filename, vol);
