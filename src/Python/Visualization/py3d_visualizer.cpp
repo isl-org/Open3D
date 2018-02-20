@@ -30,6 +30,8 @@
 #include <Core/Geometry/Image.h>
 #include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
+#include <Visualization/Visualizer/VisualizerWithEditing.h>
+
 using namespace three;
 
 void pybind_visualizer(py::module &m)
@@ -104,10 +106,9 @@ void pybind_visualizer(py::module &m)
             return std::string("VisualizerWithEditing with name ") +
                     vis.GetWindowName();
         })
-        .def("pick_point",
-                 &VisualizerWithEditing::PickPoint,
-                 "Function to pick a point given x and y coordinate",
-                 "x"_a, "y"_a);
+        .def("get_picked_points",
+                 &VisualizerWithEditing::GetPickedPoints,
+                 "Function to get a picked points");
 }
 
 void pybind_visualizer_method(py::module &m)
