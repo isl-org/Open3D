@@ -8,3 +8,4 @@ Advanced
     multiway_registration
     rgbd_integration
     customized_visualization
+    interactive_visualization
