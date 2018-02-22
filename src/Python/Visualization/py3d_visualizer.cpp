@@ -30,6 +30,8 @@
 #include <Core/Geometry/Image.h>
 #include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
+#include <Visualization/Visualizer/VisualizerWithEditing.h>
+
 using namespace three;
 
 void pybind_visualizer(py::module &m)
@@ -92,6 +94,21 @@ void pybind_visualizer(py::module &m)
 				&VisualizerWithKeyCallback::RegisterKeyCallback,
 				"Function to register a callback function for a key press event",
 				"key"_a, "callback_func"_a);
+
+	py::class_<VisualizerWithEditing,
+			PyVisualizer<VisualizerWithEditing>,
+			std::shared_ptr<VisualizerWithEditing>>
+			visualizer_edit(m, "VisualizerWithEditing", visualizer);
+	py::detail::bind_default_constructor<VisualizerWithEditing>(
+			visualizer_edit);
+	visualizer_edit
+		.def("__repr__", [](const VisualizerWithEditing &vis) {
+			return std::string("VisualizerWithEditing with name ") +
+					vis.GetWindowName();
+		})
+		.def("get_picked_points",
+				&VisualizerWithEditing::GetPickedPoints,
+				"Function to get a picked points");
 }
 
 void pybind_visualizer_method(py::module &m)
