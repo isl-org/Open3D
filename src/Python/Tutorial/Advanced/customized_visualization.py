@@ -105,16 +105,6 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 	vis.run()
 	vis.destroy_window()
 
-def custom_draw_geometry_with_editing(pcd):
-	vis = VisualizerWithEditing()
-	vis.create_window()
-	vis.add_geometry(pcd)
-	vis.run()
-	points = vis.get_picked_points()
-	vis.destroy_window()
-	print(points)
-	# draw_geometries_with_editing([pcd])
-
 if __name__ == "__main__":
 	pcd = read_point_cloud("../../TestData/fragment.ply")
 
@@ -136,5 +126,3 @@ if __name__ == "__main__":
 
 	print("5. Customized visualization playing a camera trajectory")
 	custom_draw_geometry_with_camera_trajectory(pcd)
-
-	custom_draw_geometry_with_editing(pcd)
