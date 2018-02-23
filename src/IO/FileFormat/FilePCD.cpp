@@ -324,8 +324,8 @@ Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr, const char type,
 			std::float_t value = std::strtof(data_ptr, &end);
 			memcpy(data, &value, 4);
 		}
-		return Eigen::Vector3d((double)data[0] / 255.0, (double)data[1] / 255.0,
-				(double)data[2] / 255.0);
+		return Eigen::Vector3d((double)data[2] / 255.0, (double)data[1] / 255.0,
+				(double)data[0] / 255.0);
 	} else {
 		return Eigen::Vector3d::Zero();
 	}
