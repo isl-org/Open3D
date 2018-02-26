@@ -632,9 +632,9 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header)
 float ConvertRGBToFloat(const Eigen::Vector3d &color)
 {
 	std::uint8_t rgba[4] = {0, 0, 0, 0};
-	rgba[0] = (std::uint8_t)std::max(std::min((int)(color(0) * 255.0), 255), 0);
+	rgba[2] = (std::uint8_t)std::max(std::min((int)(color(0) * 255.0), 255), 0);
 	rgba[1] = (std::uint8_t)std::max(std::min((int)(color(1) * 255.0), 255), 0);
-	rgba[2] = (std::uint8_t)std::max(std::min((int)(color(2) * 255.0), 255), 0);
+	rgba[0] = (std::uint8_t)std::max(std::min((int)(color(2) * 255.0), 255), 0);
 	float value;
 	memcpy(&value, rgba, 4);
 	return value;
