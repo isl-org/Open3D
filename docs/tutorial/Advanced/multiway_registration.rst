@@ -190,7 +190,7 @@ Class ``GlobalOptimizationOption`` defines a couple of options. ``max_correspond
 	[GlobalOptimizationLM] total time : 0.000 sec.
 	CompensateReferencePoseGraphNode : reference : 0
 
-The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments have small line process weights and they are pruned after the first pass. The second pass runs without them and produces a tight global alignment. In this example, all the edges are considered as true alignments, hence the second pass terminates immediately.
+The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments have small line process weights, and they are pruned after the first pass. The second pass runs without them and produces a tight global alignment. In this example, all the edges are considered as true alignments, hence the second pass terminates immediately.
 
 .. _visualize_optimization:
 
