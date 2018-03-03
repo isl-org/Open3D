@@ -1,7 +1,8 @@
 //========================================================================
-// GLFW 3.3 macOS - www.glfw.org
+// GLFW 3.3 POSIX - www.glfw.org
 //------------------------------------------------------------------------
-// Copyright (c) 2009-2016 Camilla Löwy <elmindreda@glfw.org>
+// Copyright (c) 2002-2006 Marcus Geelnard
+// Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -24,33 +25,27 @@
 //
 //========================================================================
 
-#define _GLFW_PLATFORM_CONTEXT_STATE            _GLFWcontextNSGL nsgl
-#define _GLFW_PLATFORM_LIBRARY_CONTEXT_STATE    _GLFWlibraryNSGL nsgl
+#include <pthread.h>
+
+#define _GLFW_PLATFORM_TLS_STATE    _GLFWtlsPOSIX   posix
+#define _GLFW_PLATFORM_MUTEX_STATE  _GLFWmutexPOSIX posix
 
 
-// NSGL-specific per-context data
+// POSIX-specific thread local storage data
 //
-typedef struct _GLFWcontextNSGL
+typedef struct _GLFWtlsPOSIX
 {
-    id           pixelFormat;
-    id	         object;
+    GLFWbool        allocated;
+    pthread_key_t   key;
 
-} _GLFWcontextNSGL;
+} _GLFWtlsPOSIX;
 
-// NSGL-specific global data
+// POSIX-specific mutex data
 //
-typedef struct _GLFWlibraryNSGL
+typedef struct _GLFWmutexPOSIX
 {
-    // dlopen handle for OpenGL.framework (for glfwGetProcAddress)
-    CFBundleRef     framework;
+    GLFWbool        allocated;
+    pthread_mutex_t handle;
 
-} _GLFWlibraryNSGL;
-
-
-GLFWbool _glfwInitNSGL(void);
-void _glfwTerminateNSGL(void);
-GLFWbool _glfwCreateContextNSGL(_GLFWwindow* window,
-                                const _GLFWctxconfig* ctxconfig,
-                                const _GLFWfbconfig* fbconfig);
-void _glfwDestroyContextNSGL(_GLFWwindow* window);
+} _GLFWmutexPOSIX;
 

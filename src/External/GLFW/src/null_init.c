@@ -1,8 +1,8 @@
 //========================================================================
-// GLFW 3.1 Win32 - www.glfw.org
+// GLFW 3.3 - www.glfw.org
 //------------------------------------------------------------------------
-// Copyright (c) 2002-2006 Marcus Geelnard
-// Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) 2016 Google Inc.
+// Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -29,41 +29,22 @@
 
 
 //////////////////////////////////////////////////////////////////////////
-//////                       GLFW internal API                      //////
-//////////////////////////////////////////////////////////////////////////
-
-int _glfwCreateContextTLS(void)
-{
-    _glfw.win32_tls.context = TlsAlloc();
-    if (_glfw.win32_tls.context == TLS_OUT_OF_INDEXES)
-    {
-        _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Win32: Failed to allocate TLS index");
-        return GL_FALSE;
-    }
-
-    _glfw.win32_tls.allocated = GL_TRUE;
-    return GL_TRUE;
-}
-
-void _glfwDestroyContextTLS(void)
-{
-    if (_glfw.win32_tls.allocated)
-        TlsFree(_glfw.win32_tls.context);
-}
-
-void _glfwSetContextTLS(_GLFWwindow* context)
-{
-    TlsSetValue(_glfw.win32_tls.context, context);
-}
-
-
-//////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
 
-_GLFWwindow* _glfwPlatformGetCurrentContext(void)
+int _glfwPlatformInit(void)
 {
-    return TlsGetValue(_glfw.win32_tls.context);
+    _glfwInitTimerPOSIX();
+    return GLFW_TRUE;
+}
+
+void _glfwPlatformTerminate(void)
+{
+    _glfwTerminateOSMesa();
+}
+
+const char* _glfwPlatformGetVersionString(void)
+{
+    return _GLFW_VERSION_NUMBER " null OSMesa";
 }
 
