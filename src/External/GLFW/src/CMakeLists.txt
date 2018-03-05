@@ -96,7 +96,7 @@ set_target_properties(glfw PROPERTIES
                       VERSION ${GLFW_VERSION}
                       SOVERSION ${GLFW_VERSION_MAJOR}
                       POSITION_INDEPENDENT_CODE ON
-                      FOLDER "External")
+                      FOLDER "GLFW3")
 
 target_compile_definitions(glfw PRIVATE _GLFW_USE_CONFIG_H)
 target_include_directories(glfw PUBLIC
@@ -153,10 +153,10 @@ if (MSVC)
 endif()
 
 if (GLFW_INSTALL)
-#    install(TARGETS glfw
-#            EXPORT glfwTargets
-#            RUNTIME DESTINATION "bin"
-#            ARCHIVE DESTINATION "lib${LIB_SUFFIX}"
-#            LIBRARY DESTINATION "lib${LIB_SUFFIX}")
-	install(TARGETS glfw EXPORT glfwTargets DESTINATION lib)
+    install(TARGETS glfw
+            EXPORT glfwTargets
+            RUNTIME DESTINATION "bin"
+            ARCHIVE DESTINATION "lib${LIB_SUFFIX}"
+            LIBRARY DESTINATION "lib${LIB_SUFFIX}")
 endif()
+
