@@ -103,8 +103,16 @@ include_directories(${EIGEN3_INCLUDE_DIRS})
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${JSONCPP_INCLUDE_DIRS})
-link_directories(${GLFW_LIBRARY_DIRS})
-link_directories(${JSONCPP_LIBRARY_DIRS})
+#link_directories(${GLFW_LIBRARY_DIRS})
+#link_directories(${JSONCPP_LIBRARY_DIRS})
+link_directories(${Open3D_BINARY_DIR}/lib)
+
+#message(STATUS "link_directories=${Open3D_BINARY_DIR}/lib")
+#message(STATUS "EIGEN3_INCLUDE_DIRS=${EIGEN3_INCLUDE_DIRS}")
+#message(STATUS "GLEW_INCLUDE_DIRS=${GLEW_INCLUDE_DIRS}")
+#message(STATUS "GLFW_INCLUDE_DIRS=${GLFW_INCLUDE_DIRS}")
+#message(STATUS "GLFW_LIBRARY_DIRS=${GLFW_LIBRARY_DIRS}")
+#message(STATUS "JSONCPP_LIBRARY_DIRS=${JSONCPP_LIBRARY_DIRS}")
 
 # Open3D libraries
 add_subdirectory(Core)

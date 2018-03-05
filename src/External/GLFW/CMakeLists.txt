@@ -24,7 +24,7 @@ set(LIB_SUFFIX "" CACHE STRING "Takes an empty string or 64. Directory where lib
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
 option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
 option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
@@ -52,12 +52,13 @@ if (BUILD_SHARED_LIBS)
     set(_GLFW_BUILD_DLL 1)
 endif()
 
-if (BUILD_SHARED_LIBS AND UNIX)
-    # On Unix-like systems, shared libraries can use the soname system.
-    set(GLFW_LIB_NAME glfw)
-else()
-    set(GLFW_LIB_NAME glfw3)
-endif()
+#if (BUILD_SHARED_LIBS AND UNIX)
+#    # On Unix-like systems, shared libraries can use the soname system.
+#    set(GLFW_LIB_NAME glfw)
+#else()
+#    set(GLFW_LIB_NAME glfw3)
+#endif()
+set(GLFW_LIB_NAME glfw3)
 
 if (GLFW_VULKAN_STATIC)
     set(_GLFW_VULKAN_STATIC 1)
@@ -315,10 +316,11 @@ if (_GLFW_COCOA)
         "-framework Cocoa"
         "-framework IOKit"
         "-framework CoreFoundation"
-        "-framework CoreVideo")
+        "-framework CoreVideo"
+		"-framework OpenGL")
 
     set(glfw_PKG_DEPS "")
-	set(glfw_PKG_LIBS "-framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreVideo")
+    set(glfw_PKG_LIBS "-framework Cocoa -framework IOKit -framework OpenGL -framework CoreFoundation -framework CoreVideo")
 endif()
 
 #--------------------------------------------------------------------
@@ -356,6 +358,23 @@ configure_file(src/glfw3.pc.in src/glfw3.pc @ONLY)
 #--------------------------------------------------------------------
 add_subdirectory(src)
 
+#if (GLFW_BUILD_EXAMPLES)
+#    add_subdirectory(examples)
+#endif()
+
+#if (GLFW_BUILD_TESTS)
+#    add_subdirectory(tests)
+#endif()
+
+#if (DOXYGEN_FOUND AND GLFW_BUILD_DOCS)
+#    add_subdirectory(docs)
+#endif()
+
+set(GLFW_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/GLFW/include")
+set(GLFW_LIBRARIES "glfw")
+set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
+set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
+
 #--------------------------------------------------------------------
 # Install files other than the library
 # The library is installed by src/CMakeLists.txt
@@ -363,25 +382,25 @@ add_subdirectory(src)
 if (GLFW_INSTALL)
     install(DIRECTORY include/GLFW DESTINATION include
             FILES_MATCHING PATTERN glfw3.h PATTERN glfw3native.h)
-
-    install(FILES "${GLFW_BINARY_DIR}/src/glfw3Config.cmake"
-                  "${GLFW_BINARY_DIR}/src/glfw3ConfigVersion.cmake"
-            DESTINATION "${GLFW_CONFIG_PATH}")
-
-    install(EXPORT glfwTargets FILE glfw3Targets.cmake
-            EXPORT_LINK_INTERFACE_LIBRARIES
-            DESTINATION "${GLFW_CONFIG_PATH}")
-    install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
-            DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
-
-    # Only generate this target if no higher-level project already has
-    if (NOT TARGET uninstall)
-        configure_file(cmake_uninstall.cmake.in
-                       cmake_uninstall.cmake IMMEDIATE @ONLY)
-
-        add_custom_target(uninstall
-                          "${CMAKE_COMMAND}" -P
-                          "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
-        set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
-    endif()
+#
+#    install(FILES "${GLFW_BINARY_DIR}/src/glfw3Config.cmake"
+#                  "${GLFW_BINARY_DIR}/src/glfw3ConfigVersion.cmake"
+#            DESTINATION "${GLFW_CONFIG_PATH}")
+#
+#    install(EXPORT glfwTargets FILE glfw3Targets.cmake
+#            EXPORT_LINK_INTERFACE_LIBRARIES
+#            DESTINATION "${GLFW_CONFIG_PATH}")
+#    install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
+#            DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
+#
+#    # Only generate this target if no higher-level project already has
+#    if (NOT TARGET uninstall)
+#        configure_file(cmake_uninstall.cmake.in
+#                       cmake_uninstall.cmake IMMEDIATE @ONLY)
+#
+#        add_custom_target(uninstall
+#                          "${CMAKE_COMMAND}" -P
+#                          "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
+#        set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
+#    endif()
 endif()
