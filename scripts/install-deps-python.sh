@@ -8,10 +8,10 @@
 # To install these package, try one of the following
 while true; do
 	read -p "Install Python dependencies using pip or conda? (p: pip, c: conda, q: quit) : " pcq
-	    case $pcq in
+		case $pcq in
 			[Pp]* )
 			# for pip users
-	        python -m pip install --user numpy matplotlib opencv-python;
+			python -m pip install --user numpy matplotlib opencv-python;
 			break;;
 
 			[Cc]* )
@@ -26,7 +26,7 @@ while true; do
 			# quit
 			exit;;
 
-	        * )
+			* )
 			echo "Please answer p or c.";;
-	    esac
+		esac
 done
