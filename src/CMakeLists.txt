@@ -122,11 +122,6 @@ if(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
 	add_subdirectory(Experimental)
 endif(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
 
-if(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
-	message(STATUS "Build projects in Sandbox")
-	add_subdirectory(Sandbox)
-endif(EXISTS "${Open3D_SOURCE_DIR}/Sandbox/CMakeLists.txt")
-
 # Python binding
 if (Open3D_BUILD_PYTHON_BINDING)
 	add_subdirectory(Python)

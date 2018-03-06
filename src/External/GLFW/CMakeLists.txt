@@ -309,20 +309,16 @@ endif()
 #--------------------------------------------------------------------
 # Use Cocoa for window creation and NSOpenGL for context creation
 #--------------------------------------------------------------------
-#--------------------------------------------------------------------
-# MODIFICATION BY Open3D: "-framework OpenGL" is added
-#--------------------------------------------------------------------
 if (_GLFW_COCOA)
 
     list(APPEND glfw_LIBRARIES
         "-framework Cocoa"
         "-framework IOKit"
         "-framework CoreFoundation"
-        "-framework CoreVideo"
-		"-framework OpenGL")
+        "-framework CoreVideo")
 
     set(glfw_PKG_DEPS "")
-    set(glfw_PKG_LIBS "-framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreVideo -framework OpenGL")
+    set(glfw_PKG_LIBS "-framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreVideo")
 endif()
 
 #--------------------------------------------------------------------
