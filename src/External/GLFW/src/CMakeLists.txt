@@ -159,3 +159,4 @@ if (GLFW_INSTALL)
             ARCHIVE DESTINATION "lib${LIB_SUFFIX}"
             LIBRARY DESTINATION "lib${LIB_SUFFIX}")
 endif()
+
