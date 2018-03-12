@@ -68,10 +68,6 @@ set(PYBIND11_HEADERS
 string(REPLACE "include/" "${CMAKE_CURRENT_SOURCE_DIR}/include/"
        PYBIND11_HEADERS "${PYBIND11_HEADERS}")
 
-if (PYBIND11_TEST)
-  add_subdirectory(tests)
-endif()
-
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
