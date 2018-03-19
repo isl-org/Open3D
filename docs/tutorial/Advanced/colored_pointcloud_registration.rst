@@ -200,7 +200,9 @@ To further improve efficiency, [Park2017]_ proposes a multi-scale registration s
         draw_registration_result_original_color(
                 source, target, result_icp.transformation)
 
-In total, 3 layers of multi-resolution point clouds are created with :ref:`voxel_downsampling`. Normals are computed with :ref:`vertex_normal_estimation`. The core registration function ``registration_colored_icp`` is called for each layer, from coarse to fine. The output is a tight alignment of the two point clouds. Notice the green triangles on the wall.
+In total, 3 layers of multi-resolution point clouds are created with :ref:`voxel_downsampling`. Normals are computed with :ref:`vertex_normal_estimation`. The core registration function ``registration_colored_icp`` is called for each layer, from coarse to fine.  ``lambda_geometric`` is an optional argument for ``registration_colored_icp`` that determines :math:`\lambda \in [0,1]` in the overall energy :math:`\lambda E_{G} + (1-\lambda) E_{C}`.
+
+The output is a tight alignment of the two point clouds. Notice the green triangles on the wall.
 
 .. image:: ../../_static/Advanced/colored_pointcloud_registration/colored.png
     :width: 325px
