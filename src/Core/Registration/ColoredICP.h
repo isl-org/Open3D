@@ -41,6 +41,7 @@ class RegistrationResult;
 RegistrationResult RegistrationColoredICP(const PointCloud &source,
 		const PointCloud &target, double max_distance,
 		const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
-		const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+		const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+		double lambda_geometric = 0.968);
 
 }	// namespace three

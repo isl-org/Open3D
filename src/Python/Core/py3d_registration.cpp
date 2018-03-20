@@ -248,7 +248,8 @@ void pybind_registration_methods(py::module &m)
 			"Function for Colored ICP registration",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
 			"init"_a = Eigen::Matrix4d::Identity(),
-			"criteria"_a = ICPConvergenceCriteria());
+			"criteria"_a = ICPConvergenceCriteria(),
+			"lambda_geometric"_a = 0.968);
 	m.def("registration_ransac_based_on_correspondence",
 			&RegistrationRANSACBasedOnCorrespondence,
 			"Function for global RANSAC registration based on a set of correspondences",
