@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 # Please set a path to Open3D root
-set(Open3D_DIR "/home/cvl/contrib/Open3D")
+set(Open3D_DIR "/home/cvl/workspace/Open3D")
 set(Open3D_SOURCE_DIR "${Open3D_DIR}/src")
 set(Open3D_LIBRARY_DIR "${Open3D_DIR}/build/lib/")
 
 # Please set a project name
-#set(PROJECT_NAME "ColoredPointRegistration")
+set(PROJECT_NAME "ColoredPointRegistration")
 #set(PROJECT_NAME "GlobalRegistration")
-set(PROJECT_NAME "MultiwayRegistration")
+#set(PROJECT_NAME "MultiwayRegistration")
 set(EXECUTABLE_OUTPUT_PATH "${Open3D_DIR}/build/bin/Tutorial")
 
 project(${PROJECT_NAME})
