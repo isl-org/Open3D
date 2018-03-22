@@ -71,9 +71,9 @@ int main(int argc, char *argv[])
         target = three::CreatePointCloudFromFile(argv[2]);
 	Eigen::Matrix4d trans_init;
         trans_init << 0.0, 0.0, 1.0, 0.0,
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 1.0; 
+			1.0, 0.0, 0.0, 0.0,
+			0.0, 1.0, 0.0, 0.0,
+			0.0, 0.0, 0.0, 1.0; 
 	source->Transform(trans_init);
         if(visualization){
                 VisualizeRegistration(*source, *target,
