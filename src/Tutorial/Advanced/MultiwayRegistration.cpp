@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 {
 	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
-	bool visualization = true; // false;
+	bool visualization = true;
 
 #ifdef _OPENMP
 	PrintDebug("OpenMP is supported. Using %d threads.", omp_get_num_threads());
