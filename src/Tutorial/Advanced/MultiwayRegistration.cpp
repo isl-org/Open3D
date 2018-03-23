@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 {
 	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
-	bool visualization = true; // false;
+	bool visualization = true;
 
 #ifdef _OPENMP
 	PrintDebug("OpenMP is supported. Using %d threads.", omp_get_num_threads());
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
 	std::vector<std::shared_ptr<PointCloud> > pcds;
 	for(int i=0; i<3; i++){
-		std::string filename = std::string("../../lib/TestData/ICP/cloud_bin_")
+		std::string filename = std::string("../../../lib/TestData/ICP/cloud_bin_")
 				+ std::to_string(i) + std::string(".pcd");
 		std::shared_ptr<PointCloud> pcd = CreatePointCloudFromFile(filename);
 		double voxel_size = 0.02;
