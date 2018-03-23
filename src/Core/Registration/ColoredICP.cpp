@@ -39,9 +39,6 @@ namespace three{
 
 namespace {
 
-const double default_lambda_geometric = 0.968;
-const int max_neighbors_for_gradient_approximation = 30;
-
 class PointCloudForColoredICP : public PointCloud {
 public:
 	std::vector<Eigen::Vector3d> color_gradient_;
@@ -50,10 +47,10 @@ public:
 class TransformationEstimationForColoredICP : public TransformationEstimation {
 public:
 	TransformationEstimationForColoredICP(
-			double lambda_geometric = default_lambda_geometric) :
+			double lambda_geometric = 0.968) :
 			lambda_geometric_(lambda_geometric) {
 		if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0)
-			lambda_geometric_ = default_lambda_geometric;
+			lambda_geometric_ = 0.968;
 	}
 	~TransformationEstimationForColoredICP() override {}
 
@@ -233,13 +230,13 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 RegistrationResult RegistrationColoredICP(const PointCloud &source,
 		const PointCloud &target, double max_distance,
 		const Eigen::Matrix4d &init/* = Eigen::Matrix4d::Identity()*/,
-		const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/)
+		const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/,
+		double lambda_geometric/* = 0.968*/)
 {
 	auto target_c = InitializePointCloudForColoredICP(
-			target, KDTreeSearchParamHybrid(max_distance * 2.0,
-			max_neighbors_for_gradient_approximation));
+			target, KDTreeSearchParamHybrid(max_distance * 2.0, 30));
 	return RegistrationICP(source, *target_c, max_distance, init,
-			TransformationEstimationForColoredICP(), criteria);
+			TransformationEstimationForColoredICP(lambda_geometric), criteria);
 }
 
 }	// namespace three

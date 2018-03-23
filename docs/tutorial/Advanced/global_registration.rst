@@ -140,9 +140,15 @@ RANSAC
     draw_registration_result(source_down, target_down,
             result_ransac.transformation)
 
-We use RANSAC for global registration. In each RANSAC iteration, ``ransac_n`` random points are picked from the source point cloud. Their corresponding points in the target point cloud are detected by querying the nearest neighbor in the 33-dimensional FPFH feature space. A pruning step takes fast pruning algorithms such as ``CorrespondenceCheckerBasedOnEdgeLength`` and ``CorrespondenceCheckerBasedOnDistance`` to quickly reject false matches early. Only matches that pass the pruning step are used to compute a transformation, which is validated on the entire point cloud.
+We use RANSAC for global registration. In each RANSAC iteration, ``ransac_n`` random points are picked from the source point cloud. Their corresponding points in the target point cloud are detected by querying the nearest neighbor in the 33-dimensional FPFH feature space. A pruning step takes fast pruning algorithms  to quickly reject false matches early.
 
-The core function is ``registration_ransac_based_on_feature_matching``. The most important hyperparameter of this function is ``RANSACConvergenceCriteria``. It defines the maximum number of RANSAC iterations and the maximum number of validation steps. The larger these two numbers are, the more accurate the result is, but also the more time the algorithm takes.
+Open3D provides the following pruning algorithms:
+
+- ``CorrespondenceCheckerBasedOnDistance`` checks if aligned point clouds are close (less than specified threshold).
+- ``CorrespondenceCheckerBasedOnEdgeLength`` checks if the lengths of any two arbitrary edges (line formed by two vertices) individually drawn from source and target correspondences are similar. This tutorial checks that :math:`||edge_{source}|| > 0.9 \times ||edge_{target}||` and :math:`||edge_{target}|| > 0.9 \times ||edge_{source}||` are true.
+- ``CorrespondenceCheckerBasedOnNormal`` considers vertex normal affinity of any correspondences. It computes dot product of two normal vectors. It takes radian value for the threshold.
+
+Only matches that pass the pruning step are used to compute a transformation, which is validated on the entire point cloud. The core function is ``registration_ransac_based_on_feature_matching``. The most important hyperparameter of this function is ``RANSACConvergenceCriteria``. It defines the maximum number of RANSAC iterations and the maximum number of validation steps. The larger these two numbers are, the more accurate the result is, but also the more time the algorithm takes.
 
 We set the RANSAC parameters based on the empirical value provided by [Choi2015]_. The result is
 
