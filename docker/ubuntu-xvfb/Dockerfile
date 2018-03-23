@@ -44,6 +44,20 @@ RUN apt-get --reinstall install xfonts-base
 
 RUN apt-get install -y git
 
+# Open3D dependencies
+RUN apt-get install -y xorg-dev
+RUN apt-get install -y libglu1-mesa-dev
+RUN apt-get install -y libgl1-mesa-glx
+RUN apt-get install -y libglew-dev
+RUN apt-get install -y libglfw3-dev
+RUN apt-get install -y libjsoncpp-dev
+RUN apt-get install -y libeigen3-dev
+RUN apt-get install -y libpng-dev
+RUN apt-get install -y libjpeg-dev
+RUN apt-get install -y python-dev
+RUN apt-get install -y python3-dev
+RUN apt-get install -y cmake
+
 # upgrade existing
 RUN apt-get update
 RUN apt-get upgrade -y
@@ -65,5 +79,11 @@ RUN DISPLAY=:0 ratpoison &
 EXPOSE 5920
 
 RUN cd ~ && git clone https://github.com/IntelVCL/Open3D
+
+# DONE above
+# RUN cd ~/Open3D && ./scripts/install-deps-ubuntu.sh
+RUN cd ~/Open3D && mkdir build
+RUN cd ~/Open3D/build && cmake ../src
+RUN cd ~/Open3D/build && make -j
 
 CMD ["x11vnc", "-forever", "-usepw", "-create"]
