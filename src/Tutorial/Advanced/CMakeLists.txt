@@ -16,3 +16,9 @@ set_target_properties(MultiwayRegistration PROPERTIES
                 FOLDER "Tutorial"
                 RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Tutorial/Advanced")
 
+add_executable(RGBDIntegration RGBDIntegration.cpp)
+target_link_libraries(RGBDIntegration Visualization IO Core)
+set_target_properties(RGBDIntegration PROPERTIES
+                FOLDER "Tutorial"
+                RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Tutorial/Advanced")
+
