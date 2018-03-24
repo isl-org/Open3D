@@ -56,7 +56,14 @@ RUN apt-get install -y libpng-dev
 RUN apt-get install -y libjpeg-dev
 RUN apt-get install -y python-dev
 RUN apt-get install -y python3-dev
+RUN apt-get install -y python3-pip
+RUN apt-get install -y python3-tk
 RUN apt-get install -y cmake
+
+RUN pip3 install --upgrade pip
+RUN pip install numpy
+RUN pip install matplotlib
+RUN pip install opencv-python
 
 # upgrade existing
 RUN apt-get update
