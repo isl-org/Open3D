@@ -70,7 +70,8 @@ std::ostream& operator << (std::ostream& os, const CameraPose& p)
 
 std::shared_ptr<std::vector<CameraPose>> ReadTrajectory(std::string filename)
 {
-	std::shared_ptr<std::vector<CameraPose>> traj = std::make_shared<std::vector<CameraPose>>();
+	std::shared_ptr<std::vector<CameraPose>> traj
+			= std::make_shared<std::vector<CameraPose>>();
 	traj->clear();
 
         std::ifstream fin;
@@ -79,13 +80,25 @@ std::shared_ptr<std::vector<CameraPose>> ReadTrajectory(std::string filename)
                 Metadata meta;
 		Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
 
-		fin >> meta[0] >> meta[1] >> meta[2];
+		std::string metastr;
+		std::stringstream metass;
+		std::getline(fin, metastr);
+		metass << metastr;
+		metass >> meta[0] >> meta[1] >> meta[2];
 		while(fin) {
                         for(int i=0; i<4; i++){
-                                fin >> pose(i, 0) >> pose(i,1) >> pose(i, 2) >> pose(i, 3);
+				std::string matstr;
+				std::stringstream matss;
+				std::getline(fin, matstr);
+				matss << matstr;
+                                matss >> pose(i, 0) >> pose(i, 1) >> pose(i, 2) >> pose(i, 3);
                         }
                         traj->push_back(CameraPose(meta, pose));
-			fin >> meta[0] >> meta[1] >> meta[2];
+			metass.str("");
+			metass.clear(std::stringstream::goodbit);
+			std::getline(fin, metastr);
+			metass << metastr;
+			metass >> meta[0] >> meta[1] >> meta[2];
 		}
 
 		fin.close();
@@ -102,7 +115,8 @@ void WriteTrajectory(std::vector<CameraPose>& traj, std::string filename)
 	std::ofstream fout;
 	fout.open(filename, std::ios::out);
 	for(unsigned int i=0; i<traj.size(); i++){
-		fout << traj[i].metadata[0] << " " << traj[i].metadata[1] << " " << traj[i].metadata[2] << std::endl;
+		fout << traj[i].metadata[0] << " " << traj[i].metadata[1] << " "
+				<< traj[i].metadata[2] << std::endl;
 		fout << traj[i].pose << std::endl;
 	}
 	fout.close();
@@ -130,24 +144,26 @@ int main(int argc, char *argv[])
 	for(unsigned int i=0; i<camera_poses->size(); i++){
 		std::cout << "Integrate " << i << "-th image into the volume." << std::endl;
 		std::stringstream cpath, dpath;
-		cpath << "../../../lib/TestData/RGBD/color/" << std::setfill('0') << std::setw(5) << i << ".jpg";
-		dpath << "../../../lib/TestData/RGBD/depth/" << std::setfill('0') << std::setw(5) << i << ".png";
+		cpath << "../../../lib/TestData/RGBD/color/"
+				<< std::setfill('0') << std::setw(5) << i << ".jpg";
+		dpath << "../../../lib/TestData/RGBD/depth/"
+				<< std::setfill('0') << std::setw(5) << i << ".png";
                 std::shared_ptr<Image> color, depth;
 		color = CreateImageFromFile(cpath.str());
 		depth = CreateImageFromFile(dpath.str());
 		double depth_scale = 1000;
 		double depth_trunc = 4.0;
 		bool convert_rgb_to_intensity = false;
-                // std::shared_ptr<RGBDImage>
-		auto rgbd = CreateRGBDImageFromColorAndDepth(*color, *depth,
+                std::shared_ptr<RGBDImage> rgbd;
+		rgbd = CreateRGBDImageFromColorAndDepth(*color, *depth,
 				depth_scale, depth_trunc, convert_rgb_to_intensity);
 		volume->Integrate(*rgbd, PinholeCameraIntrinsic::PrimeSenseDefault,
 				(*camera_poses)[i].pose.inverse());
 	}
 
 	std::cout << "Extract a triangle mesh from the volume and visualize it." << std::endl;
-        // std::shared_ptr<TriangleMesh>
-	auto mesh = volume->ExtractTriangleMesh();
+        std::shared_ptr<TriangleMesh> mesh;
+	mesh = volume->ExtractTriangleMesh();
 	mesh->ComputeVertexNormals();
 	if(visualization){
 		DrawGeometries({mesh}, "RGBD Integration");
