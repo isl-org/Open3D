@@ -48,6 +48,8 @@ RUN apt-get install -y git
 RUN apt-get install -y xorg-dev
 RUN apt-get install -y libglu1-mesa-dev
 RUN apt-get install -y libgl1-mesa-glx
+RUN apt-get install -y libgl1-mesa-dev
+RUN apt-get install -y libosmesa6-dev
 RUN apt-get install -y libglew-dev
 RUN apt-get install -y libglfw3-dev
 RUN apt-get install -y libjsoncpp-dev
@@ -85,12 +87,13 @@ RUN DISPLAY=:0 ratpoison &
 
 EXPOSE 5920
 
-RUN cd ~ && git clone https://github.com/IntelVCL/Open3D
+# RUN cd ~ && git clone https://github.com/IntelVCL/Open3D
+RUN cd ~ && git clone -b headless_rendering https://github.com/syncle/Open3D.git
 
 # DONE above
 # RUN cd ~/Open3D && ./scripts/install-deps-ubuntu.sh
 RUN cd ~/Open3D && mkdir build
-RUN cd ~/Open3D/build && cmake ../src
+RUN cd ~/Open3D/build && cmake ../src -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF
 RUN cd ~/Open3D/build && make -j
 
 CMD ["x11vnc", "-forever", "-usepw", "-create"]
