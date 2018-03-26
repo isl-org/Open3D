@@ -78,12 +78,12 @@ int main(int argc, char *argv[])
 			std::shared_ptr<PointCloud> target = pcds[target_id];
 
 			std::cout << "Apply point-to-plane ICP" << std::endl;
-                        // RegistrationResult
-			auto icp_coarse = RegistrationICP(*source, *target, 0.3,
+
+                        RegistrationResult icp_coarse, icp_fine;
+			icp_coarse = RegistrationICP(*source, *target, 0.3,
 					Eigen::Matrix4d::Identity(),
 					TransformationEstimationPointToPlane());
-                        // RegistrationResult
-			auto icp_fine = RegistrationICP(*source, *target, 0.03,
+			icp_fine = RegistrationICP(*source, *target, 0.03,
 					icp_coarse.transformation_,
 					TransformationEstimationPointToPlane());
 			transformation_icp = icp_fine.transformation_;
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 			reference_node);
 	GlobalOptimizationLevenbergMarquardt optimization_method;
 	GlobalOptimization(pose_graph, optimization_method,
-			criteria, option); 
+			criteria, option);
 
 	std::cout << "Transform points and display" << std::endl;
 	for(int point_id=0; point_id<n_pcds; point_id++){
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(visualization){
-                std::vector<std::shared_ptr<const Geometry> > geoms; // cast?
+                std::vector<std::shared_ptr<const Geometry> > geoms;
 	        geoms.assign(pcds.begin(), pcds.end());
                 DrawGeometries({geoms});
 	}
