@@ -49,15 +49,6 @@ RUN pip install \
     numpy \
     opencv-python
 
-# start virtual framebuffer and ratpoison
-# RUN Xvfb -screen 0 800x600x32 -ac &
-# RUN DISPLAY=:0 ratpoison &
-
-RUN mkdir ~/.vnc
-# Setup a password
-RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
-EXPOSE 5920
-
 ENV HOME=/root
 WORKDIR $HOME
 RUN git clone -b headless_rendering https://github.com/syncle/Open3D.git
@@ -67,6 +58,13 @@ WORKDIR $HOME/Open3D/build
 RUN cmake -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF ../src
 RUN make -j
 
+WORKDIR $HOME
+COPY entrypoint.sh .
+
 WORKDIR $HOME/Open3D/build/lib/Tutorial/Advanced
 
-CMD ["x11vnc", "-forever", "-usepw", "-create"]
+ENV DISPLAY :20
+
+EXPOSE 5920
+
+CMD ["bash", "/root/entrypoint.sh"]
