@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	bool visualization = true; // false;
+	bool visualization = true;
 
 #ifdef _OPENMP
 	PrintDebug("OpenMP is supported. Using %d threads.", omp_get_num_threads());
@@ -81,9 +81,9 @@ int main(int argc, char *argv[])
 	current_transformation = Eigen::Matrix4d::Identity();
 	std::cout << "2. point-to-plane ICP registration is applied on original point" << std::endl;
 	std::cout << "   clouds to refine the alignment. Distance threshold 0.02." << std::endl;
-        // RegistrationResult
-	auto result_icp = RegistrationICP(*source, *target, 0.02,
-					current_transformation, TransformationEstimationPointToPlane());
+        RegistrationResult result_icp;
+	result_icp = RegistrationICP(*source, *target, 0.02,
+			current_transformation, TransformationEstimationPointToPlane());
 	std::cout << result_icp.transformation_ << std::endl;
 	if(visualization){
                 VisualizeRegistration(*source, *target,
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 		EstimateNormals(*target_down, KDTreeSearchParamHybrid(radius * 2.0, 30));
 
 		std::cout << "3-3. Applying colored point cloud registration" << std::endl;
-		result_icp = RegistrationColoredICP(*source_down, *target_down, radius, current_transformation, 
+		result_icp = RegistrationColoredICP(*source_down, *target_down, radius, current_transformation,
                          ICPConvergenceCriteria(1e-16, 1e-6, iter));
 		current_transformation = result_icp.transformation_;
 		std::cout << result_icp.transformation_ << std::endl;
