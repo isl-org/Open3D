@@ -1,1 +1,1 @@
-docker container stop ubuntu-xvfb
+docker container stop -t 0 ubuntu-xvfb
