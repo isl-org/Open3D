@@ -132,7 +132,7 @@ public:
 	void CaptureDepthImage(const std::string &filename = "",
 			bool do_render = true, double depth_scale = 1000.0);
 	void CaptureDepthPointCloud(const std::string &filename = "",
-			bool do_render = true);
+			bool do_render = true, bool convert_to_world_coordinate = false);
 	void CaptureRenderOption(const std::string &filename = "");
 	void ResetViewPoint(bool reset_bounding_box = false);
 
