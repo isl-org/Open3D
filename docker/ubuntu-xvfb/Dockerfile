@@ -1,6 +1,7 @@
 # MAINTAINER Dan Petre dan.petre@intel.com
 
-FROM ubuntu:16.04
+# FROM ubuntu:16.04
+FROM nvidia/cuda:9.1-cudnn7-devel-ubuntu16.04
 
 ENV http_proxy "http://proxy-chain.intel.com:911"
 ENV HTTP_PROXY "http://proxy-chain.intel.com:911"
@@ -30,7 +31,8 @@ RUN apt-get update && \
     libjsoncpp-dev \
     libosmesa6-dev \
     libpng-dev \
-    lxterminal \
+    # lxterminal \
+    ne \
     python-dev \
     python3-dev \
     python3-pip \
@@ -59,11 +61,13 @@ RUN cmake -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF ../src
 RUN make -j
 
 WORKDIR $HOME
+COPY .xinitrc .
 COPY entrypoint.sh .
 
 WORKDIR $HOME/Open3D/build/lib/Tutorial/Advanced
+COPY test.py .
 
-ENV DISPLAY :20
+# ENV DISPLAY :0.0
 
 EXPOSE 5920
 
