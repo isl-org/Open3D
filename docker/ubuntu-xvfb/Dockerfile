@@ -62,12 +62,12 @@ RUN make -j
 
 WORKDIR $HOME
 COPY .xinitrc .
+RUN chmod a+x .xinitrc
 COPY entrypoint.sh .
 
 WORKDIR $HOME/Open3D/build/lib/Tutorial/Advanced
 COPY test.py .
-
-# ENV DISPLAY :0.0
+RUN chmod a+x test.py
 
 EXPOSE 5920
 
