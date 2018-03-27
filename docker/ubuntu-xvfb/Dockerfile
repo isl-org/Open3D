@@ -15,6 +15,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # install Open3D dependencies
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y \
     apt-utils \
     build-essential \
@@ -52,11 +53,15 @@ RUN pip install \
 
 ENV HOME=/root
 WORKDIR $HOME
-RUN git clone -b headless_rendering https://github.com/syncle/Open3D.git
+# RUN git clone -b headless_rendering https://github.com/syncle/Open3D.git
+RUN git clone https://github.com/IntelVCL/Open3D.git
 
 RUN mkdir $HOME/Open3D/build
 WORKDIR $HOME/Open3D/build
-RUN cmake -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF ../src
+RUN cmake \
+    -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF \
+    -DCMAKE_BUILD_TYPE=Debug \
+    ../src
 RUN make -j
 
 # debug tools
