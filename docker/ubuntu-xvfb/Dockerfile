@@ -53,7 +53,6 @@ RUN pip install \
 
 ENV HOME=/root
 WORKDIR $HOME
-# RUN git clone -b headless_rendering https://github.com/syncle/Open3D.git
 RUN git clone https://github.com/IntelVCL/Open3D.git
 
 RUN mkdir $HOME/Open3D/build
