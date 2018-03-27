@@ -21,16 +21,16 @@ RUN apt-get update && \
     build-essential \
     cmake \
     git \
-    libeigen3-dev \
-    libgl1-mesa-dev \
-    libgl1-mesa-glx \
-    libglew-dev \
-    libglfw3-dev \
+    # libeigen3-dev \
+    # libgl1-mesa-dev \
+    # libgl1-mesa-glx \
+    # libglew-dev \
+    # libglfw3-dev \
     libglu1-mesa-dev \
-    libjpeg-dev \
-    libjsoncpp-dev \
+    # libjpeg-dev \
+    # libjsoncpp-dev \
     libosmesa6-dev \
-    libpng-dev \
+    # libpng-dev \
     # lxterminal \
     ne \
     python-dev \

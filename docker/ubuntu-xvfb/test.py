@@ -11,17 +11,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def custom_draw_geometry(pcd):
-	# The following code achieves the same effect as:
-	# draw_geometries([pcd])
-	vis = Visualizer()
-	vis.create_window()
-	vis.add_geometry(pcd)
-	vis.run()
-	vis.destroy_window()
+    # The following code achieves the same effect as:
+    # draw_geometries([pcd])
+    print("1")
+    vis = Visualizer()
+    print("2")
+    vis.create_window()
+    print("3")
+    vis.add_geometry(pcd)
+    print("4")
+    vis.run()
+    print("5")
+    vis.destroy_window()
+    print("6")
 
 if __name__ == "__main__":
-	pcd = read_point_cloud("../../TestData/fragment.ply")
+    pcd = read_point_cloud("../../TestData/fragment.ply")
 
-	print("1. Customized visualization to mimic DrawGeometry")
-	custom_draw_geometry(pcd)
+    print("1. Customized visualization to mimic DrawGeometry")
+    custom_draw_geometry(pcd)
 
