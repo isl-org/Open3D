@@ -1,7 +1,6 @@
 # MAINTAINER Dan Petre dan.petre@intel.com
 
-# FROM ubuntu:16.04
-FROM nvidia/cuda:9.1-cudnn7-devel-ubuntu16.04
+FROM ubuntu:16.04
 
 ENV http_proxy "http://proxy-chain.intel.com:911"
 ENV HTTP_PROXY "http://proxy-chain.intel.com:911"
@@ -59,6 +58,14 @@ RUN mkdir $HOME/Open3D/build
 WORKDIR $HOME/Open3D/build
 RUN cmake -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF ../src
 RUN make -j
+
+# debug tools
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    gdb \
+    python3.5-dbg && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR $HOME
 COPY .xinitrc .

@@ -10,20 +10,17 @@ from py3d import *
 import numpy as np
 import matplotlib.pyplot as plt
 
+import faulthandler
+faulthandler.enable()
+
 def custom_draw_geometry(pcd):
     # The following code achieves the same effect as:
     # draw_geometries([pcd])
-    print("1")
     vis = Visualizer()
-    print("2")
     vis.create_window()
-    print("3")
     vis.add_geometry(pcd)
-    print("4")
     vis.run()
-    print("5")
     vis.destroy_window()
-    print("6")
 
 if __name__ == "__main__":
     pcd = read_point_cloud("../../TestData/fragment.ply")
