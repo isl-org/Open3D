@@ -21,6 +21,7 @@ RUN apt-get update && \
     build-essential \
     cmake \
     git \
+    gdb \
     # libeigen3-dev \
     # libgl1-mesa-dev \
     # libgl1-mesa-glx \
@@ -31,13 +32,14 @@ RUN apt-get update && \
     # libjsoncpp-dev \
     libosmesa6-dev \
     # libpng-dev \
+    lxde \
     # lxterminal \
     ne \
-    python-dev \
+    # python-dev \
     python3-dev \
     python3-pip \
     python3-tk \
-    ratpoison \
+    python3.5-dbg \
     software-properties-common \
     x11vnc \
     xorg-dev \
@@ -62,14 +64,6 @@ RUN cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     ../src
 RUN make -j
-
-# debug tools
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y \
-    gdb \
-    python3.5-dbg && \
-    rm -rf /var/lib/apt/lists/*
 
 WORKDIR $HOME
 COPY .xinitrc .
