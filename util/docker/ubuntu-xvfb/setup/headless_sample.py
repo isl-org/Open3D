@@ -62,5 +62,5 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 if __name__ == "__main__":
     pcd = read_point_cloud("../../TestData/fragment.ply")
 
-    print("5. Customized visualization playing a camera trajectory")
+    print("Customized visualization playing a camera trajectory")
     custom_draw_geometry_with_camera_trajectory(pcd)
