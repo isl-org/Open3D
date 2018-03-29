@@ -74,11 +74,11 @@ COPY ./setup/entrypoint.sh .
 
 WORKDIR $HOME/Open3D/build/lib/Tutorial/Advanced
 
-COPY ./setup/test.py .
-RUN chmod a+x test.py
+COPY ./setup/headless_sample.py .
+RUN chmod a+x headless_sample.py
 
-COPY ./setup/test.sh .
-RUN chmod a+x test.sh
+COPY ./setup/headless_sample.sh .
+RUN chmod a+x headless_sample.sh
 
 EXPOSE 5920
 
