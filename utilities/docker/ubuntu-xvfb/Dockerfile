@@ -1,15 +1,13 @@
-# MAINTAINER Dan Petre dan.petre@intel.com
-
 FROM ubuntu:16.04
 
-ENV http_proxy "http://proxy-chain.intel.com:911"
-ENV HTTP_PROXY "http://proxy-chain.intel.com:911"
-ENV https_proxy "http://proxy-chain.intel.com:912"
-ENV HTTPS_PROXY "http://proxy-chain.intel.com:912"
-ENV ftp_proxy "http://proxy-chain.intel.com:911"
-ENV socks_proxy "http://proxy-us.intel.com:1080"
-ENV no_proxy "intel.com;.intel.com;localhost;127.0.0.1"
-ENV ALL_PROXY "socks5://proxy-us.intel.com"
+# ENV http_proxy  ""
+# ENV HTTP_PROXY  ""
+# ENV https_proxy ""
+# ENV HTTPS_PROXY ""
+# ENV ftp_proxy   ""
+# ENV socks_proxy ""
+# ENV no_proxy    ""
+# ENV ALL_PROXY   ""
 
 ENV DEBIAN_FRONTEND noninteractive
 
