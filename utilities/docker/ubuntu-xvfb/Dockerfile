@@ -60,8 +60,8 @@ RUN git clone https://github.com/IntelVCL/Open3D.git
 RUN mkdir $HOME/Open3D/build
 WORKDIR $HOME/Open3D/build
 RUN cmake \
-    -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF \
-    -DCMAKE_BUILD_TYPE=Debug \
+    # -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF \
+    # -DCMAKE_BUILD_TYPE=Debug \
     ../src
 RUN make -j
 
