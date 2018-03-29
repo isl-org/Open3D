@@ -22,20 +22,18 @@ RUN apt-get update && \
     cmake \
     git \
     gdb \
-    # libeigen3-dev \
-    # libgl1-mesa-dev \
-    # libgl1-mesa-glx \
-    # libglew-dev \
-    # libglfw3-dev \
+    libeigen3-dev \
+    libgl1-mesa-dev \
+    libgl1-mesa-glx \
+    libglew-dev \
+    libglfw3-dev \
     libglu1-mesa-dev \
-    # libjpeg-dev \
-    # libjsoncpp-dev \
+    libjpeg-dev \
+    libjsoncpp-dev \
     libosmesa6-dev \
-    # libpng-dev \
+    libpng-dev \
     lxde \
-    # lxterminal \
     ne \
-    # python-dev \
     python3-dev \
     python3-pip \
     python3-tk \
@@ -48,7 +46,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
-RUN pip install \
+RUN pip3 install \
     matplotlib \
     numpy \
     opencv-python
