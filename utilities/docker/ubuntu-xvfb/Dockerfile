@@ -66,13 +66,19 @@ RUN cmake \
 RUN make -j
 
 WORKDIR $HOME
+
 COPY ./setup/.xinitrc .
 RUN chmod a+x .xinitrc
+
 COPY ./setup/entrypoint.sh .
 
 WORKDIR $HOME/Open3D/build/lib/Tutorial/Advanced
+
 COPY ./setup/test.py .
 RUN chmod a+x test.py
+
+COPY ./setup/test.sh .
+RUN chmod a+x test.sh
 
 EXPOSE 5920
 
