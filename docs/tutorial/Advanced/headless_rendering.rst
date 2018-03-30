@@ -3,13 +3,14 @@
 Headless Rendering
 ------------------
 
+The following document describes the current solution for headless rendering.
+
+This recipe was developed and tested on Ubuntu 16.04. Other distributions might need slightly different instructions.
+
 Docker installation
 ===================
 
-The prefered installation mode is using the official Docker repository.
-
-https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-repository
-https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+The prefered installation mode is to use the official `Docker repository <https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-repository>`_.
 
 Install dependencies
 
@@ -61,12 +62,15 @@ Verify the installation:
 The verification will timeout if running behind a proxy:
 ``Unable to find image 'hello-world:latest' locally``
 
+Optional steps
+==============
+
+`Docker Post-installation steps for Linux <https://docs.docker.com/install/linux/linux-postinstall>`_
+
 Proxy settings
 ``````````````
 
-https://docs.docker.com/config/daemon/systemd/#httphttps-proxy
-
-Solves the hello-world issue above.
+In order to solve the hello-world issue above follow the `Docker proxy settings <https://docs.docker.com/config/daemon/systemd/#httphttps-proxy>`_.
 
 Create a systemd drop-in directory for the docker service:
 
@@ -102,15 +106,14 @@ Verify that the configuration has been loaded:
 DNS servers
 ```````````
 
-https://docs.docker.com/install/linux/linux-postinstall/#specify-dns-servers-for-docker
-
-On the host:
+In order to specify `DNS servers for docker <https://docs.docker.com/install/linux/linux-postinstall/#specify-dns-servers-for-docker>`_
+edit ``/etc/docker/daemon.json`` on the host:
 
 .. code-block:: sh
 
     $ sudo ne /etc/docker/daemon.json
     {
-        "dns": ["10.248.2.1", "10.22.224.196", "10.3.86.116"]
+        "dns": ["xxx.xxx.xxx.xxx", "xxx.xxx.xxx.xxx"]
     }
 
 Add user to “docker” group
@@ -121,8 +124,6 @@ This will eliminate the need to use sudo in order to run docker commands.
 .. code-block:: sh
 
     $ sudo usermod -aG docker <user_name>
-
-https://docs.docker.com/install/linux/linux-postinstall/
 
 ``Warning``
 ````````````
