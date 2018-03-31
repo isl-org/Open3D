@@ -3,7 +3,7 @@
 Headless Rendering
 ------------------
 
-The following document describes the current solution for headless rendering.
+The following document describes a Docker CE based solution for headless rendering.
 
 This recipe was developed and tested on Ubuntu 16.04. Other distributions might need slightly different instructions.
 
@@ -134,15 +134,88 @@ For details on how this impacts security in your system, see
 Usage notes
 ===========
 
-- clone my branch
-- $ cd <Open3D path>/utilities/docker/ubuntu-xvfb/tools
-- $ ./build.sh to build the image
-- $ ./attach.sh to clone/build the master Open3D repo and start the Open3D container
-- $ ./headless_sample.sh to run the sample that renders some images and saves them to disk. The sample will render some images which can be accessed on the host at ~/Open3D_docker. These files don't go away if the container is stopped.
+Docker utilities
+````````````````
 
-Notes:
+The Docker files can be found under ``Open3D/util/docker/ubuntu-xvfb``::
 
-- the sample will not return. Ctrl+c to exit. Need to update the sample to exit on it's own.
-- the cloning is done for now to ~/Open3D_docker. We have options: find a way to let the user specify the destination or just reuse the current location of Open3D.
-- TODO: uncomment entries in the dependencies section inside the Dockerfile.
+    - Dockerfile
+    - setup
+        - build.sh
+        - entrypoint.s
+        - headless_sample.py
+        - headless_sample.sh
+    - tools
+        - attach.sh
+        - build.sh
+        - delete.sh
+        - it.sh
+        - prune.sh
+        - run.sh
+        - stop.sh
+
+We provide a number of scripts for convenience.
+These can be found under ``Open3D/util/docker/ubuntu-xvfb/tools``:
+
+- ``attach.sh``
+  Use it to start the Open3D docker container and attach to it using a terminal interface.
+- ``build.sh``
+  Use it to build the Open3D docker image.
+- ``delete.sh``
+  Use it to delete the Open3D image.
+- ``it.sh``
+  Use it to start the Open3D docker container and get realtime feedback on what the container is doing. The container is automatically deleted when stopped.
+- ``prune.sh``
+  Use it to delete hanging containers and images. This is very useful when making changes to the Dockerfile and building new images.
+- ``run.sh``
+  Run the Open3D container. The container is automatically removed when stopped.
+- ``stop.sh``
+  Stop the Open3D container.
+
+Building the Open3D Docker image will take approximately 10-15 minutes to complete.
+At the end the image will be ~2.1 GB in size.
+
+Running the Open3D Docker container will perform the following steps:
+
+- git clone Open3D master to ``~/Open3D_docker``
+- copy the ``headless_sample.py`` and ``headless_sample.sh`` to ``~/Open3D_docker/build/lib/Tutorial/Advanced``
+- run and detach the Open3D container with the host path ``~/Open3D_docker`` mounted inside the container at ``/root/Open3D``
+- attach a terminal to the Open3D container for command line input from the host side
+
+The Open3D container is automatically removed when stopped. None of the Open3D files are removed as they in fact reside on the host due to the Docker bind mounting functionality.
+
+VNC
+```
+A running Open3D container listens to port 5920 on the host.
+The ``it.sh``, ``run.sh`` and ``attach.sh`` scripts redirect host port 5920 to container port 5900.
+
+This allows remoting into the container using VNC to ``<host ip>:5920``. Once connected you can use Open3D as usual.
+
+Headless rendering in terminal
+``````````````````````````````
+
+Sometimes it may be necessary to perform rendering as part of some script automation.
+In order to do this follow the next steps::
+
+$ cd <Open3D path>/utilities/docker/ubuntu-xvfb/tools
+$ ./build.sh
+$ ./attach.sh
+$ ./headless_sample.sh
+
+The ``headless_sample.sh`` render some images and saves them to disk.
+The images can be accessed in real time on the host at ``~/Open3D_docker/build/lib/TestData/depth`` and won't go away when the container is stopped/deleted.
+
+Limitations:
+
+- the ``lxde`` based interface employed in this Docker image needs more configuring.
+  Some things won't work as expected. For example ``lxterminal`` crashes.
+- the resolution is set at ``Xvfb`` default: 1280x1024x8.
+  Open3D windows are larger than this. The resolution will be increased in the future.
+- the ``headless_sample.py`` sample does not return as it expects GUI user input.
+  The sample will be redesigned in the future.
+- for now running the Open3D docker container clones Open3D master to ``~/Open3D_docker``.
+  We are considering the following options:
+
+    - let the user specify the destination
+    - reuse the current location of Open3D.
 
