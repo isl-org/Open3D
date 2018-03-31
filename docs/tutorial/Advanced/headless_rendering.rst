@@ -134,7 +134,7 @@ For details on how this impacts security in your system, see
 Usage notes
 ===========
 
-Docker utilities
+Docker files
 ````````````````
 
 The Docker files can be found under ``Open3D/util/docker/ubuntu-xvfb``::
@@ -154,21 +154,28 @@ The Docker files can be found under ``Open3D/util/docker/ubuntu-xvfb``::
         - run.sh
         - stop.sh
 
-We provide a number of scripts for convenience.
-These can be found under ``Open3D/util/docker/ubuntu-xvfb/tools``:
+Dockerfile
+++++++++++
+
+``Dockerfile`` is the Docker script used to build the Open3D image.
+
+Tools
++++++
+
+We provide a number of Docker tools for convenience:
 
 - ``attach.sh``
-  Use it to start the Open3D docker container and attach to it using a terminal interface.
+  Start the Open3D docker container and attach to it using a terminal interface.
 - ``build.sh``
-  Use it to build the Open3D docker image.
+  Build the Open3D docker image.
 - ``delete.sh``
-  Use it to delete the Open3D image.
+  Delete the Open3D image.
 - ``it.sh``
-  Use it to start the Open3D docker container and get realtime feedback on what the container is doing. The container is automatically deleted when stopped.
+  Start the Open3D docker container and display container stdout.
 - ``prune.sh``
-  Use it to delete hanging containers and images. This is very useful when making changes to the Dockerfile and building new images.
+  Delete hanging containers and images.
 - ``run.sh``
-  Run the Open3D container. The container is automatically removed when stopped.
+  Run the Open3D container.
 - ``stop.sh``
   Stop the Open3D container.
 
@@ -182,7 +189,11 @@ Running the Open3D Docker container will perform the following steps:
 - run and detach the Open3D container with the host path ``~/Open3D_docker`` mounted inside the container at ``/root/Open3D``
 - attach a terminal to the Open3D container for command line input from the host side
 
-The Open3D container is automatically removed when stopped. None of the Open3D files are removed as they in fact reside on the host due to the Docker bind mounting functionality.
+The Open3D container is automatically removed when stopped.
+None of the Open3D files are removed as they in fact reside on the host due to the Docker bind mounting functionality.
+In order to keep the container around remove the ``-rm`` option in ``it.sh`` and/or ``run.sh``.
+
+Prunning images/containers is useful when modifying/testing a new image.
 
 VNC
 ```
