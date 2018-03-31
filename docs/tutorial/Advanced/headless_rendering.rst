@@ -213,14 +213,15 @@ $ ./build.sh
 $ ./attach.sh
 $ ./headless_sample.sh
 
-The ``headless_sample.sh`` render some images and saves them to disk.
+The ``headless_sample.sh`` renders some images and saves them to disk.
 The images can be accessed in real time on the host at ``~/Open3D_docker/build/lib/TestData/depth`` and won't go away when the container is stopped/deleted.
 
-Limitations:
+Limitations
+```````````
 
 - the ``lxde`` based interface employed in this Docker image needs more configuring.
   Some things won't work as expected. For example ``lxterminal`` crashes.
-- the resolution is set at ``Xvfb`` default: 1280x1024x8.
+- the resolution is set to 1280x1024x8 when remoting into an Open3D container.
   Open3D windows are larger than this. The resolution will be increased in the future.
 - the ``headless_sample.py`` sample does not return as it expects GUI user input.
   The sample will be redesigned in the future.
