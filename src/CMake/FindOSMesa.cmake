@@ -4,7 +4,7 @@
 # OSMESA_FOUND        - true if OSMesa has been found
 # OSMESA_INCLUDE_DIR  - where the GL/osmesa.h can be found
 # OSMESA_LIBRARY      - Link this to use OSMesa
-set(OSMESA_ROOT "/home/syncle/mesa-18.0.0/")
+#set(OSMESA_ROOT "/home/syncle/mesa-18.0.0/")
 
 if(NOT OSMESA_INCLUDE_DIR)
 

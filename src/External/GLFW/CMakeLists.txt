@@ -32,7 +32,11 @@ option(GLFW_INSTALL "Generate installation target" OFF)
 option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into application" OFF)
 
 if (UNIX)
-    option(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" ON)
+    if (Open3D_HEADLESS_RENDERING)
+    	option(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" ON)
+    else ()
+        option(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" OFF)
+    endif ()
 endif()
 
 if (WIN32)
