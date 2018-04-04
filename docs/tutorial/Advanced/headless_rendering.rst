@@ -3,13 +3,13 @@
 Headless rendering
 -------------------------------------
 
-This tutorial introduces how to save rendered images from terminal, named headless rendering.
-This feature is experimental. Tested with Ubuntu 16.04.
+This tutorial introduces how to render and save images from terminal without any display device.
+This feature is experimental. Tested with Ubuntu 16.04 environment.
 
 Install OSMesa
 ````````````````````````
 
-To generate headless context, it is necessary to install `OSMesa <https://www.mesa3d.org/osmesa.html>`_.
+To generate a headless context, it is necessary to install `OSMesa <https://www.mesa3d.org/osmesa.html>`_.
 
 .. code-block:: shell
 
@@ -36,7 +36,7 @@ Otherwise, recent version of OSMesa can be built from source.
 Install virtualenv
 ````````````````````````
 
-The next step is to make a Python virtual environment.
+The next step is to make a virtual environment for Python.
 
 .. code-block:: shell
 
@@ -45,29 +45,29 @@ The next step is to make a Python virtual environment.
 	$ source py3env/bin/activate
 	(py3env) $ pip install numpy matplotlib
 
-This script installs and activates ``py3env``. ``numpy`` and ``matplotlib`` are installed on ``py3env``.
+This script installs and activates ``py3env``. Necessary modules, ``numpy`` and ``matplotlib`` are installed on ``py3env``.
 
-.. Error:: Anaconda users recommended to use this configuration as ``conda install matplotlib`` installs additional dependencies that is not based on OSMesa. This will make **segmentation fault error** at the runtime.
+.. Error:: Anaconda users recommended to use this configuration as ``conda install matplotlib`` installs additional modules that is not based on OSMesa. This will make **segmentation fault error** at the runtime.
 
 
 Build Open3D with OSMesa
 ````````````````````````
 
-Open ``~/Open3D/src/CMakeLists.txt`` and change ``Open3D_HEADLESS_RENDERING`` flag to ``ON``.
+To notify cmake to link OSMesa, open ``~/Open3D/src/CMakeLists.txt`` and change ``Open3D_HEADLESS_RENDERING`` flag to ``ON``.
 
 .. code-block:: shell
 
 	(py3env) $ vi ~/Open3D/src/CMakeLists.txt
 	# option(Open3D_HEADLESS_RENDERING "Use OSMesa for headless rendering" ON)
 
-The next step is to build Open3D with this flag.
+Let's move to build folder.
 
 .. code-block:: shell
 
 	(py3env) $ cd ~/Open3D/
 	(py3env) $ mkdir build && cd build
 
-As ``Open3D_HEADLESS_RENDERING`` is ``ON``, ``-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF`` will build glew and glfw from source and link them with OSMesa.
+As ``Open3D_HEADLESS_RENDERING`` is ``ON``, ``-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF`` will build glew and glfw from source. It will link them to OSMesa.
 
 .. code-block:: shell
 
@@ -88,7 +88,7 @@ As a final step, test a python script that saves depth and surface normal sequen
 	(py3env) $ cd ~/Open3D/build/lib/Tutorial/Advanced/
 	(py3env) $ python headless_rendering.py
 
-This should print
+This should print the following:
 
 .. code-block:: shell
 
@@ -101,8 +101,8 @@ This should print
 	:
 	Capture image 00030
 
-and rendered images are at ~/Open3D/build/lib/TestData/depth and image folder.
+Rendered images are at ~/Open3D/build/lib/TestData/depth and image folder.
 
-.. Note:: ``headless_rendering.py`` saves png files. Try tweak the script for your purpose.
+.. Note:: ``headless_rendering.py`` saves png files. This may take some time. Try tweak the script for your purpose.
 
-.. Error:: If glew and glfw did not correctly linked with OSMesa, it may display following error. **GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW**
+.. Error:: If glew and glfw did not correctly linked with OSMesa, it may crash with following error. **GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW**
