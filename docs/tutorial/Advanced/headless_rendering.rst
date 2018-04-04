@@ -47,7 +47,7 @@ The next step is to make a virtual environment for Python.
 
 This script installs and activates ``py3env``. Necessary modules, ``numpy`` and ``matplotlib`` are installed on ``py3env``.
 
-.. Error:: Anaconda users recommended to use this configuration as ``conda install matplotlib`` installs additional modules that is not based on OSMesa. This will make **segmentation fault error** at the runtime.
+.. Error:: Anaconda users are recommended to use this configuration as ``conda install matplotlib`` installs additional modules that is not based on OSMesa. This will make **segmentation fault error** at the runtime.
 
 
 Build Open3D with OSMesa
