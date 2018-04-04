@@ -106,6 +106,12 @@ include_directories(${JSONCPP_INCLUDE_DIRS})
 link_directories(${GLFW_LIBRARY_DIRS})
 link_directories(${JSONCPP_LIBRARY_DIRS})
 
+# jaesik's trick
+find_package(OSMesa REQUIRED)
+#find_package(OpenGL REQUIRED)
+include_directories(string(${OSMESA_INCLUDE_DIR} "/GL/"))
+message(STATUS "OSMESA_INCLUDE_DIR=${OSMESA_INCLUDE_DIR}")
+
 # Open3D libraries
 add_subdirectory(Core)
 add_subdirectory(Tools)
