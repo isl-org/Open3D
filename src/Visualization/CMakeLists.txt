@@ -52,7 +52,7 @@ if (Open3D_HEADLESS_RENDERING)
 	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OSMESA_LIBRARY})
 else ()
 	find_package(OpenGL REQUIRED)
-	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES})
+	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 endif ()
 
 install(TARGETS Visualization

@@ -10,32 +10,36 @@ else ()
 endif ()
 
 if (GLEW_OSMESA)
-  if (WIN32)
-    set (OSMESA_LIB_NAME osmesa)
-  else ()
-    set (OSMESA_LIB_NAME OSMesa)
-  endif ()
-  add_definitions (-DGLEW_OSMESA)
-  set (GLEW_LIBRARIES ${OSMESA_LIB_NAME} ${OPENGL_LIBRARIES})
-  set (X11_LIBRARIES)
+	find_package(OSMesa REQUIRED)
+	include_directories(string(${OSMESA_INCLUDE_DIR} "/GL/"))
+	message(STATUS ${OSMESA_INCLUDE_DIR})
+	if (WIN32)
+		set (OSMESA_LIB_NAME osmesa)
+	else ()
+		set (OSMESA_LIB_NAME OSMesa)
+	endif ()
+	add_definitions (-DGLEW_OSMESA)
+	set (GLEW_LIBRARIES ${OSMESA_LIB_NAME} ${OPENGL_LIBRARIES})
+	set (X11_LIBRARIES)
 endif ()
 
-message("${OSMESA_INCLUDE_DIR}")
-message(STATUS ${OSMESA_INCLUDE_DIR})
-include_directories(${OSMESA_INCLUDE_DIR})
 include_directories("${Open3D_SOURCE_DIR}/External/glew/include")
 
 # SET LIBNAME
 set(GLEW_LIBRARY glew)
 
 file(GLOB glew_sources src/glew.c)
-file(GLOB glew_headers ${OSMESA_INCLUDE_DIR}/GL/*.h include/GL/*.h)
+if (GLEW_OSMESA)
+	file(GLOB glew_headers ${OSMESA_INCLUDE_DIR}/GL/*.h include/GL/*.h)
+else ()
+	file(GLOB glew_headers include/GL/*.h)
+endif ()
 
 add_library(${GLEW_LIBRARY} STATIC ${glew_sources} ${glew_headers})
 set_target_properties(${GLEW_LIBRARY} PROPERTIES
-        OUTPUT_NAME ${GLEW_LIBRARY}
-        FOLDER "External"
-    )
+		OUTPUT_NAME ${GLEW_LIBRARY}
+		FOLDER "External"
+)
 
 set(GLEW_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/glew/include")
 set(GLEW_LIBRARIES "glew")
