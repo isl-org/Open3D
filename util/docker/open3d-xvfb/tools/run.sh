@@ -1,3 +1,7 @@
+#!/bin/sh
+
+. ./name.sh
+
 ./stop.sh
 
 # create shared folder
@@ -33,7 +37,8 @@ docker container run \
        -d \
        -v ~/Open3D_docker:/root/Open3D \
        -p 5920:5900 \
-       --name ubuntu-xvfb \
-       ubuntu-xvfb
+       -h $NAME \
+       --name $NAME \
+       $NAME
 
-docker container exec -it -w /root/Open3D ubuntu-xvfb bash ./build.sh
+docker container exec -it -w /root/Open3D $NAME bash ./build.sh

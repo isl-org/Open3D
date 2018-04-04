@@ -1,3 +1,5 @@
+#!/bin/sh
+
 ./stop.sh
 
 docker container prune

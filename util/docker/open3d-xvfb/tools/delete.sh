@@ -1,3 +1,7 @@
+#!/bin/sh
+
+. ./name.sh
+
 ./stop.sh
 
-docker image rm ubuntu-xvfb:latest
+docker image rm $NAME:latest

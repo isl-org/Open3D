@@ -1,3 +1,5 @@
+#!/bin/sh
+
 echo
 echo building...
 

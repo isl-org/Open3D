@@ -1,3 +1,7 @@
+#!/bin/sh
+
+. ./name.sh
+
 ./run.sh
 
-docker container exec -it ubuntu-xvfb bash
+docker container exec -it $NAME bash

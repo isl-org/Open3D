@@ -9,6 +9,15 @@ FROM ubuntu:16.04
 # ENV no_proxy    ""
 # ENV ALL_PROXY   ""
 
+ENV http_proxy  "http://proxy-chain.intel.com:911"
+ENV HTTP_PROXY  "http://proxy-chain.intel.com:911"
+ENV https_proxy "http://proxy-chain.intel.com:912"
+ENV HTTPS_PROXY "http://proxy-chain.intel.com:912"
+ENV ftp_proxy   "http://proxy-chain.intel.com:911"
+ENV socks_proxy "http://proxy-us.intel.com:1080"
+ENV no_proxy    "intel.com;.intel.com;localhost;127.0.0.1"
+ENV ALL_PROXY   "socks5://proxy-us.intel.com"
+
 ENV DEBIAN_FRONTEND noninteractive
 
 # install Open3D dependencies
@@ -31,6 +40,7 @@ RUN apt-get update && \
     libosmesa6-dev \
     libpng-dev \
     lxde \
+    mesa-utils \
     ne \
     python3-dev \
     python3-pip \
