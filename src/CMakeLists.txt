@@ -20,7 +20,7 @@ option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
 option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy test files for Open3D Python binding" ON)
 option(Open3D_BUILD_PYTHON_BINDING_TUTORIALS "Copy tutorial files for Open3D Python binding" ON)
 option(Open3D_USE_NATIVE_DEPENDENCY_BUILD "Prioritize using native dependency build" ON)
-option(Open3D_HEADLESS_RENDERING "Force to use OSMesa for headless rendering" OFF)
+option(Open3D_HEADLESS_RENDERING "Use OSMesa for headless rendering" OFF)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
