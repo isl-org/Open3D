@@ -5,6 +5,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.0")
 endif()
 
 project(Open3D)
+set (CMAKE_INSTALL_PREFIX ~/.local/)
 
 set(Open3D_VERSION_MAJOR "1")
 set(Open3D_VERSION_MINOR "0")
