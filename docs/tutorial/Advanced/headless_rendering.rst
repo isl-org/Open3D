@@ -40,7 +40,7 @@ The next step is to make a virtual environment for Python.
 
 .. code-block:: shell
 
-	$ sudo apt-get install python3-tk virtualenv python-pip
+	$ sudo apt-get install virtualenv python-pip
 	$ virtualenv -p /usr/bin/python3 py3env
 	$ source py3env/bin/activate
 	(py3env) $ pip install numpy matplotlib
