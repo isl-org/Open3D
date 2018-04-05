@@ -64,14 +64,14 @@ Let's move to build folder.
 
 In the next step, there are two cmake flags need to be specified.
 
-- ``-Open3D_HEADLESS_RENDERING=ON``: this flag informs glew and glfw should use **OSMesa**.
+- ``-DOpen3D_HEADLESS_RENDERING=ON``: this flag informs glew and glfw should use **OSMesa**.
 - ``-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF``: note that headless rendering is only working with **glew 2.1** and **glfw 3.3-dev** version. In most of the case, these versions are not installed in vanilla Ubuntu systems. Instead of using naive build, this flag lets Open3D build glew 2.1 and glfw 3.3-dev from source.
 
 As a result, the cmake command is the following
 
 .. code-block:: shell
 
-    (py3env) $ cmake -Open3D_HEADLESS_RENDERING=ON \
+    (py3env) $ cmake -DOpen3D_HEADLESS_RENDERING=ON \
             -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF \
             -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
             ../src
