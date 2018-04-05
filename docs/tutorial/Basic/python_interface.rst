@@ -1,6 +1,6 @@
-.. _python_binding_tutorial:
+.. _python_interface_tutorial:
 
-Python binding
+Python interface
 -------------------------------------
 
 If Open3D is successfully compiled with Python binding, it will create a Python library with name ``py3d``. Typically, you will find a file ``py3d.so`` in ``build/lib`` directory. This tutorial shows how to import ``py3d`` module and print out help information. For trouble shooing, see :ref:`python_binding`.
