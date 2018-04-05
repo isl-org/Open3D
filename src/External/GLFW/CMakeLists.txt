@@ -24,18 +24,18 @@ set(LIB_SUFFIX "" CACHE STRING "Takes an empty string or 64. Directory where lib
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
-option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
-option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
-option(GLFW_INSTALL "Generate installation target" OFF)
+set(BUILD_SHARED_LIBS OFF)
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
+set(GLFW_BUILD_DOCS OFF)
+set(GLFW_INSTALL OFF)
 option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into application" OFF)
 
 if (UNIX)
     if (Open3D_HEADLESS_RENDERING)
-    	option(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" ON)
+    	set(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" ON)
     else ()
-        option(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" OFF)
+        set(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" OFF)
     endif ()
 endif()
 

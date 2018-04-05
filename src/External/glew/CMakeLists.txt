@@ -4,9 +4,9 @@ cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
 if (Open3D_HEADLESS_RENDERING)
-	option (GLEW_OSMESA "OSMesa mode" ON)
+	set(GLEW_OSMESA ON)
 else ()
-	option (GLEW_OSMESA "OSMesa mode" OFF)
+	set(GLEW_OSMESA OFF)
 endif ()
 
 if (GLEW_OSMESA)
