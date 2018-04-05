@@ -1,6 +1,6 @@
 .. _pointcloud:
 
-Point Cloud
+Point cloud
 -------------------------------------
 
 This tutorial demonstrates basic usage of a point cloud.

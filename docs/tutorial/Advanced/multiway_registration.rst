@@ -1,6 +1,6 @@
 .. _multiway_registration:
 
-Multiway Registration
+Multiway registration
 -------------------------------------
 
 Multiway registration is the process to align multiple pieces of geometry in a global space. Typically, the input is a set of geometries (e.g., point clouds or RGBD images) :math:`\{\mathbf{P}_{i}\}`. The output is a set of rigid transformations :math:`\{\mathbf{T}_{i}\}`, so that the transformed point clouds :math:`\{\mathbf{T}_{i}\mathbf{P}_{i}\}` are aligned in the global space.
