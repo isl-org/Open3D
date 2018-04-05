@@ -33,9 +33,9 @@ option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into applicat
 
 if (UNIX)
     if (Open3D_HEADLESS_RENDERING)
-    	set(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" ON)
+    	set(GLFW_USE_OSMESA ON)
     else ()
-        set(GLFW_USE_OSMESA "Use OSMesa for offscreen context creation" OFF)
+        set(GLFW_USE_OSMESA OFF)
     endif ()
 endif()
 
