@@ -57,3 +57,37 @@ if (Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
 	endif (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
 	add_dependencies(py3d PythonTutorial)
 endif(Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
+
+# find_package(PythonLibs REQUIRED)
+# find_package(PythonInterp REQUIRED)
+
+# if (${PYTHON_VERSION_MAJOR} EQUAL 3)
+#     message("\n\nhmm, python3\n\n")
+# endif()
+
+# message("FindPythonInterp:")
+# message("${PYTHONINTERP_FOUND}")
+# message("${PYTHON_EXECUTABLE}")
+# message("${PYTHON_VERSION_STRING}")
+# message("${PYTHON_VERSION_MAJOR}")
+# message("${PYTHON_VERSION_MINOR}")
+# message("${PYTHON_VERSION_PATCH}")
+# message("\n")
+
+# message("FindPythonLibs:")
+# message("${PYTHONLIBS_FOUND}")
+# message("${PYTHON_LIBRARIES}")
+# message("${PYTHON_INCLUDE_PATH}")
+# message("${PYTHON_INCLUDE_DIRS}")
+# message("${PYTHON_DEBUG_LIBRARIES}")
+# message("${PYTHONLIBS_VERSION_STRING}")
+# message("\n")
+
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+message("python site: ${PYTHON_SITE_PACKAGES}")
+message("\n")
+
+install(TARGETS py3d DESTINATION ${PYTHON_SITE_PACKAGES})
+
+# .local/lib/python3.5/site-packages/ is the location where py3d...so must be placed when building from source
+
