@@ -1,4 +1,4 @@
-RGBD Images
+RGBD images
 ===================================================================
 
 Open3D has a data structure for images. It supports various functions such as ``read_image``, ``write_image``, ``filter_image`` and ``draw_geometries``. An Open3D ``Image`` can be directly converted to/from a numpy array.
