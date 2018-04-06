@@ -69,3 +69,9 @@ for path in paths:
         basename = os.path.basename(header)
         guard = label(basename)
         print("%-50s%s" % (guard, basename))
+
+        guardBegin = "#ifndef %s\n#define %s" % (guard, guard)
+        guardEnd = "#endif /* %s */" % guard
+        print(guardBegin)
+        print(guardEnd)
+        print()
