@@ -20,14 +20,27 @@ def label(header):
     label.extend(list("OPEN3D"))
 
     prvUpper = False
+    upper = list()
     for c in list(fileName):
         if c.isupper():
-            if not prvUpper and 0 < len(label):
-                label.append('_')
-            prvUpper = True
+            upper.append(c)
+            continue
         else:
-            prvUpper = False
-        label.append(c.upper())
+            if 1 == len(upper):
+                label.append('_')
+                label.extend(upper)
+                upper = list()
+                label.append(c.upper())
+            elif 1 < len(upper):
+                label.append('_')
+                label.extend(upper[:-1])
+                label.append('_')
+                label.append(upper[-1])
+                upper = list()
+                label.append(c.upper())
+            else:
+                label.append(c.upper())
+
     label.append('_H')
 
     output = "".join(label)
