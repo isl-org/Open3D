@@ -52,26 +52,46 @@ def label(header):
 
     return output
 
+def guard(fileName):
+    guard = label(fileName)
+
+    guardBegin = "#ifndef %s\n#define %s" % (guard, guard)
+    guardEnd = "#endif /* %s */" % guard
+
+    return (guardBegin, guardEnd)
+
+def replaceGuard(header):
+    fileName = os.path.basename(header)
+
+    guardBegin, guardEnd = guard(fileName)
+
+    with open(header, 'r') as file:
+        data = file.read()
+
+        data = data.replace("#pragma once", guardBegin)
+        data = ("%s\n%s") % (data, guardEnd)
+
+    with open(header, 'w') as file:
+        file.write(data)
+
+# paths = [
+#     "/home/dpetre/Open3D/issue_278/src/Core",
+#     "/home/dpetre/Open3D/issue_278/src/Experimental",
+#     "/home/dpetre/Open3D/issue_278/src/IO",
+#     "/home/dpetre/Open3D/issue_278/src/Python",
+#     "/home/dpetre/Open3D/issue_278/src/Test",
+#     "/home/dpetre/Open3D/issue_278/src/Tools",
+#     "/home/dpetre/Open3D/issue_278/src/Visualization"
+# ]
+
 paths = [
-    "/home/dpetre/Open3D/issue_278/src/Core",
-    "/home/dpetre/Open3D/issue_278/src/Experimental",
-    "/home/dpetre/Open3D/issue_278/src/IO",
-    "/home/dpetre/Open3D/issue_278/src/Python",
-    "/home/dpetre/Open3D/issue_278/src/Test",
-    "/home/dpetre/Open3D/issue_278/src/Tools",
-    "/home/dpetre/Open3D/issue_278/src/Visualization"
+    "/home/dpetre/Open3D/issue_278/testHeader"
 ]
 
 for path in paths:
     headers = files(path, 'h')
 
     for header in headers:
-        basename = os.path.basename(header)
-        guard = label(basename)
-        print("%-50s%s" % (guard, basename))
+        replaceGuard(header)
 
-        guardBegin = "#ifndef %s\n#define %s" % (guard, guard)
-        guardEnd = "#endif /* %s */" % guard
-        print(guardBegin)
-        print(guardEnd)
-        print()
+        break
