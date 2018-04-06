@@ -74,18 +74,14 @@ def replaceGuard(header):
     with open(header, 'w') as file:
         file.write(data)
 
-# paths = [
-#     "/home/dpetre/Open3D/issue_278/src/Core",
-#     "/home/dpetre/Open3D/issue_278/src/Experimental",
-#     "/home/dpetre/Open3D/issue_278/src/IO",
-#     "/home/dpetre/Open3D/issue_278/src/Python",
-#     "/home/dpetre/Open3D/issue_278/src/Test",
-#     "/home/dpetre/Open3D/issue_278/src/Tools",
-#     "/home/dpetre/Open3D/issue_278/src/Visualization"
-# ]
-
 paths = [
-    "/home/dpetre/Open3D/issue_278/testHeader"
+    "/home/dpetre/Open3D/issue_278/src/Core",
+    "/home/dpetre/Open3D/issue_278/src/Experimental",
+    "/home/dpetre/Open3D/issue_278/src/IO",
+    "/home/dpetre/Open3D/issue_278/src/Python",
+    "/home/dpetre/Open3D/issue_278/src/Test",
+    "/home/dpetre/Open3D/issue_278/src/Tools",
+    "/home/dpetre/Open3D/issue_278/src/Visualization"
 ]
 
 for path in paths:
