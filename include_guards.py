@@ -3,19 +3,17 @@
 import os
 import glob
 
-def headers(path):
-    output = list()
-    files = glob.glob(path + '/**/*.h', recursive=True)
-    for file in files:
-        output.append(file)
+# recursively list all the files with a specific extension
+def files(path, ext):
+    output = glob.glob(path + '/**/*.' + ext, recursive=True)
     return output
 
 path = "/home/dpetre/Open3D/issue_278/src/Core"
 
-files = headers(path)
+headers = files(path, 'h')
 
-for file in files:
-    basename = os.path.basename(file)
+def label(header):
+    basename = os.path.basename(header)
     fileName = os.path.splitext(basename)[0]
 
     label = list()
@@ -32,4 +30,11 @@ for file in files:
         label.append(c.upper())
     label.append('_H')
 
-    print("%-50s%s" % (fileName, "".join(label)))
+    output = "".join(label)
+
+    return output
+
+for header in headers:
+    basename = os.path.basename(header)
+    guard = label(basename)
+    print("%-50s%s" % (basename, guard))
