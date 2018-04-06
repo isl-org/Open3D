@@ -69,7 +69,7 @@ before_install:
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python;
-      ./scripts/install-deps-osx.sh;
+      ./util/scripts/install-deps-osx.sh;
     fi
   # for reference, display cmake and python version
   - python -V
