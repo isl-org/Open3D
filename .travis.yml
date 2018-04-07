@@ -3,33 +3,43 @@ matrix:
     notifications:
         email: false # turn off email notifications for build failure
 
-    sudo: required
-
     language:
       - python
       - cpp
 
     include:
 
+        # Ubuntu Xenial Xerus
         - os: linux
           env:
-          - distribution: ubuntu
-          - version: 16.04
+            - distribution: ubuntu
+            - version: 16.04
 
+        # Ubuntu Trusty Tahr
         - os: linux
           env:
-          - distribution: ubuntu
-          - version: 14.04
+            - distribution: ubuntu
+            - version: 14.04
+          sudo: true
+          addons:
+            apt:
+              sources:
+                - ubuntu-toolchain-r-test
+              packages:
+                - cmake-data # to use cmake 3.0 or more recent
+                - cmake
 
-        # Default environment of MacOS El Capitan
-        # compiled using clang shipped with xcode8
+        # MacOS El Capitan
         - os: osx
           osx_image: xcode8
+          env:
+            - version: 10.12
 
-        # Default environment of MacOS Sierra
-        # compiled using clang shipped with xcode8.3
+        # MacOS Sierra
         - os: osx
           osx_image: xcode8.3
+          env:
+            - version: 10.11
 
     services:
         - docker
@@ -42,28 +52,25 @@ before_install:
     # Note: Ubuntu 14.04 has custom script: 'sudo apt-get install libglfw3-dev' is not working, and cmake 3.x is not installed.
     # Note: comment in if-statement is now allowed.
     -   if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            docker pull ${distribution}:${version};
-            docker run -d -v $(pwd):/Open3D ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
-            docker exec $(docker ps -aq) /bin/bash -c 'apt-get update && apt-get -y install sudo cmake';
-            if [ "$version" == "16.04" ]; then
-                docker exec $(docker ps -aq) /bin/bash -c './Open3D/util/scripts/install-deps-ubuntu.sh';
-            fi;
             if [ "$version" == "14.04" ]; then
-                docker exec $(docker ps -aq) /bin/bash -c 'sudo add-apt-repository ppa:george-edison55/cmake-3.x && sudo apt-get update && sudo apt-get upgrade';
-                docker exec $(docker ps -aq) /bin/bash -c 'sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;';
+                sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
+            else
+                docker pull ${distribution}:${version};
+                docker run -d -v $(pwd):/Open3D ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
+                docker exec $(docker ps -aq) /bin/bash -c 'apt-get update && apt-get -y install sudo cmake';
+                docker exec $(docker ps -aq) /bin/bash -c './Open3D/util/scripts/install-deps-ubuntu.sh';
             fi;
         fi
 
     # homebrew and cmake 3.x is already installed in MacOS images
     # 'brew upgrade python' installs Python 3.6
     -   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-            ./scripts/install-deps-osx.sh;
+            ./util/scripts/install-deps-osx.sh;
         fi
 
 script:
-    -   if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+    -   if [ "$TRAVIS_OS_NAME" == "linux" ] AND NOT [ "$version" == "14.04" ]; then
             docker exec $(docker ps -aq) /bin/bash -c 'cd /Open3D && mkdir build && cd build && cmake ../src/ && make';
-        fi
-    -   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+        else
             mkdir build && cd build && cmake ../src/ && make;
         fi
