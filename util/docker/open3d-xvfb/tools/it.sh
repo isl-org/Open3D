@@ -40,5 +40,3 @@ docker container run \
        -h $NAME \
        --name $NAME \
        $NAME
-
-docker container exec -it -w /root/Open3D $NAME bash ./build.sh
