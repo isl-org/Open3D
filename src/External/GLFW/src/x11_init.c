@@ -1,8 +1,8 @@
 //========================================================================
-// GLFW 3.1 X11 - www.glfw.org
+// GLFW 3.3 X11 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
-// Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -38,7 +38,7 @@
 
 // Translate an X11 key code to a GLFW key code.
 //
-static int translateKey(int scancode)
+static int translateKeyCode(int scancode)
 {
     int keySym;
 
@@ -72,9 +72,8 @@ static int translateKey(int scancode)
             default:                break;
         }
 
-        // Now try primary keysym for function keys (non-printable keys). These
-        // should not be layout dependent (i.e. US layout and international
-        // layouts should give the same result).
+        // Now try primary keysym for function keys (non-printable keys)
+        // These should not depend on the current keyboard layout
         keySym = XkbKeycodeToKeysym(_glfw.x11.display, scancode, 0, 0);
     }
     else
@@ -233,23 +232,23 @@ static void createKeyTables(void)
 {
     int scancode, key;
 
-    memset(_glfw.x11.publicKeys, -1, sizeof(_glfw.x11.publicKeys));
+    memset(_glfw.x11.keycodes, -1, sizeof(_glfw.x11.keycodes));
+    memset(_glfw.x11.scancodes, -1, sizeof(_glfw.x11.scancodes));
 
     if (_glfw.x11.xkb.available)
     {
-        // Use XKB to determine physical key locations independently of the current
-        // keyboard layout
+        // Use XKB to determine physical key locations independently of the
+        // current keyboard layout
 
         char name[XkbKeyNameLength + 1];
-        XkbDescPtr descr = XkbGetKeyboard(_glfw.x11.display,
-                                          XkbAllComponentsMask,
-                                          XkbUseCoreKbd);
+        XkbDescPtr desc = XkbGetMap(_glfw.x11.display, 0, XkbUseCoreKbd);
+        XkbGetNames(_glfw.x11.display, XkbKeyNamesMask, desc);
 
         // Find the X11 key code -> GLFW key code mapping
-        for (scancode = descr->min_key_code;  scancode <= descr->max_key_code;  scancode++)
+        for (scancode = desc->min_key_code;  scancode <= desc->max_key_code;  scancode++)
         {
-            memcpy(name, descr->names->keys[scancode].name, XkbKeyNameLength);
-            name[XkbKeyNameLength] = 0;
+            memcpy(name, desc->names->keys[scancode].name, XkbKeyNameLength);
+            name[XkbKeyNameLength] = '\0';
 
             // Map the key name to a GLFW key code. Note: We only map printable
             // keys here, and we use the US keyboard layout. The rest of the
@@ -306,37 +305,42 @@ static void createKeyTables(void)
             else key = GLFW_KEY_UNKNOWN;
 
             if ((scancode >= 0) && (scancode < 256))
-                _glfw.x11.publicKeys[scancode] = key;
+                _glfw.x11.keycodes[scancode] = key;
         }
 
-        XkbFreeKeyboard(descr, 0, True);
+        XkbFreeNames(desc, XkbKeyNamesMask, True);
+        XkbFreeKeyboard(desc, 0, True);
     }
 
-    // Translate the un-translated key codes using traditional X11 KeySym
-    // lookups
     for (scancode = 0;  scancode < 256;  scancode++)
     {
-        if (_glfw.x11.publicKeys[scancode] < 0)
-            _glfw.x11.publicKeys[scancode] = translateKey(scancode);
+        // Translate the un-translated key codes using traditional X11 KeySym
+        // lookups
+        if (_glfw.x11.keycodes[scancode] < 0)
+            _glfw.x11.keycodes[scancode] = translateKeyCode(scancode);
+
+        // Store the reverse translation for faster key name lookup
+        if (_glfw.x11.keycodes[scancode] > 0)
+            _glfw.x11.scancodes[_glfw.x11.keycodes[scancode]] = scancode;
     }
 }
 
 // Check whether the IM has a usable style
 //
-static GLboolean hasUsableInputMethodStyle(void)
+static GLFWbool hasUsableInputMethodStyle(void)
 {
     unsigned int i;
-    GLboolean found = GL_FALSE;
+    GLFWbool found = GLFW_FALSE;
     XIMStyles* styles = NULL;
 
     if (XGetIMValues(_glfw.x11.im, XNQueryInputStyle, &styles, NULL) != NULL)
-        return GL_FALSE;
+        return GLFW_FALSE;
 
     for (i = 0;  i < styles->count_styles;  i++)
     {
         if (styles->supported_styles[i] == (XIMPreeditNothing | XIMStatusNothing))
         {
-            found = GL_TRUE;
+            found = GLFW_TRUE;
             break;
         }
     }
@@ -351,16 +355,13 @@ static Atom getSupportedAtom(Atom* supportedAtoms,
                              unsigned long atomCount,
                              const char* atomName)
 {
-    Atom atom = XInternAtom(_glfw.x11.display, atomName, True);
-    if (atom != None)
-    {
-        unsigned long i;
+    unsigned long i;
+    const Atom atom = XInternAtom(_glfw.x11.display, atomName, False);
 
-        for (i = 0;  i < atomCount;  i++)
-        {
-            if (supportedAtoms[i] == atom)
-                return atom;
-        }
+    for (i = 0;  i < atomCount;  i++)
+    {
+        if (supportedAtoms[i] == atom)
+            return atom;
     }
 
     return None;
@@ -373,41 +374,35 @@ static void detectEWMH(void)
     Window* windowFromRoot = NULL;
     Window* windowFromChild = NULL;
 
-    // First we need a couple of atoms, which should already be there
-    Atom supportingWmCheck =
-        XInternAtom(_glfw.x11.display, "_NET_SUPPORTING_WM_CHECK", True);
-    Atom wmSupported =
-        XInternAtom(_glfw.x11.display, "_NET_SUPPORTED", True);
-    if (supportingWmCheck == None || wmSupported == None)
-        return;
+    // First we need a couple of atoms
+    const Atom supportingWmCheck =
+        XInternAtom(_glfw.x11.display, "_NET_SUPPORTING_WM_CHECK", False);
+    const Atom wmSupported =
+        XInternAtom(_glfw.x11.display, "_NET_SUPPORTED", False);
 
     // Then we look for the _NET_SUPPORTING_WM_CHECK property of the root window
-    if (_glfwGetWindowProperty(_glfw.x11.root,
-                               supportingWmCheck,
-                               XA_WINDOW,
-                               (unsigned char**) &windowFromRoot) != 1)
+    if (!_glfwGetWindowPropertyX11(_glfw.x11.root,
+                                   supportingWmCheck,
+                                   XA_WINDOW,
+                                   (unsigned char**) &windowFromRoot))
     {
-        if (windowFromRoot)
-            XFree(windowFromRoot);
         return;
     }
 
-    _glfwGrabXErrorHandler();
+    _glfwGrabErrorHandlerX11();
 
     // It should be the ID of a child window (of the root)
     // Then we look for the same property on the child window
-    if (_glfwGetWindowProperty(*windowFromRoot,
-                               supportingWmCheck,
-                               XA_WINDOW,
-                               (unsigned char**) &windowFromChild) != 1)
+    if (!_glfwGetWindowPropertyX11(*windowFromRoot,
+                                   supportingWmCheck,
+                                   XA_WINDOW,
+                                   (unsigned char**) &windowFromChild))
     {
         XFree(windowFromRoot);
-        if (windowFromChild)
-            XFree(windowFromChild);
         return;
     }
 
-    _glfwReleaseXErrorHandler();
+    _glfwReleaseErrorHandlerX11();
 
     // It should be the ID of that same child window
     if (*windowFromRoot != *windowFromChild)
@@ -427,10 +422,10 @@ static void detectEWMH(void)
 
     // Now we need to check the _NET_SUPPORTED property of the root window
     // It should be a list of supported WM protocol and state atoms
-    atomCount = _glfwGetWindowProperty(_glfw.x11.root,
-                                       wmSupported,
-                                       XA_ATOM,
-                                       (unsigned char**) &supportedAtoms);
+    atomCount = _glfwGetWindowPropertyX11(_glfw.x11.root,
+                                          wmSupported,
+                                          XA_ATOM,
+                                          (unsigned char**) &supportedAtoms);
 
     // See which of the atoms we support that are supported by the WM
     _glfw.x11.NET_WM_STATE =
@@ -439,119 +434,195 @@ static void detectEWMH(void)
         getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_STATE_ABOVE");
     _glfw.x11.NET_WM_STATE_FULLSCREEN =
         getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_STATE_FULLSCREEN");
+    _glfw.x11.NET_WM_STATE_MAXIMIZED_VERT =
+        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_STATE_MAXIMIZED_VERT");
+    _glfw.x11.NET_WM_STATE_MAXIMIZED_HORZ =
+        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_STATE_MAXIMIZED_HORZ");
+    _glfw.x11.NET_WM_STATE_DEMANDS_ATTENTION =
+        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_STATE_DEMANDS_ATTENTION");
     _glfw.x11.NET_WM_FULLSCREEN_MONITORS =
         getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_FULLSCREEN_MONITORS");
-    _glfw.x11.NET_WM_NAME =
-        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_NAME");
-    _glfw.x11.NET_WM_ICON_NAME =
-        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_ICON_NAME");
-    _glfw.x11.NET_WM_PID =
-        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_PID");
-    _glfw.x11.NET_WM_PING =
-        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_PING");
+    _glfw.x11.NET_WM_WINDOW_TYPE =
+        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_WINDOW_TYPE");
+    _glfw.x11.NET_WM_WINDOW_TYPE_NORMAL =
+        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_WINDOW_TYPE_NORMAL");
     _glfw.x11.NET_ACTIVE_WINDOW =
         getSupportedAtom(supportedAtoms, atomCount, "_NET_ACTIVE_WINDOW");
     _glfw.x11.NET_FRAME_EXTENTS =
         getSupportedAtom(supportedAtoms, atomCount, "_NET_FRAME_EXTENTS");
     _glfw.x11.NET_REQUEST_FRAME_EXTENTS =
         getSupportedAtom(supportedAtoms, atomCount, "_NET_REQUEST_FRAME_EXTENTS");
-    _glfw.x11.NET_WM_BYPASS_COMPOSITOR =
-        getSupportedAtom(supportedAtoms, atomCount, "_NET_WM_BYPASS_COMPOSITOR");
 
-    XFree(supportedAtoms);
+    if (supportedAtoms)
+        XFree(supportedAtoms);
 }
 
-// Initialize X11 display and look for supported X11 extensions
+// Look for and initialize supported X11 extensions
 //
-static GLboolean initExtensions(void)
+static GLFWbool initExtensions(void)
 {
-    // Find or create window manager atoms
-    _glfw.x11.WM_PROTOCOLS = XInternAtom(_glfw.x11.display,
-                                         "WM_PROTOCOLS",
-                                         False);
-    _glfw.x11.WM_STATE = XInternAtom(_glfw.x11.display, "WM_STATE", False);
-    _glfw.x11.WM_DELETE_WINDOW = XInternAtom(_glfw.x11.display,
-                                             "WM_DELETE_WINDOW",
-                                             False);
-    _glfw.x11.MOTIF_WM_HINTS = XInternAtom(_glfw.x11.display,
-                                           "_MOTIF_WM_HINTS",
-                                           False);
+    _glfw.x11.vidmode.handle = _glfw_dlopen("libXxf86vm.so.1");
+    if (_glfw.x11.vidmode.handle)
+    {
+        _glfw.x11.vidmode.QueryExtension = (PFN_XF86VidModeQueryExtension)
+            _glfw_dlsym(_glfw.x11.vidmode.handle, "XF86VidModeQueryExtension");
+        _glfw.x11.vidmode.GetGammaRamp = (PFN_XF86VidModeGetGammaRamp)
+            _glfw_dlsym(_glfw.x11.vidmode.handle, "XF86VidModeGetGammaRamp");
+        _glfw.x11.vidmode.SetGammaRamp = (PFN_XF86VidModeSetGammaRamp)
+            _glfw_dlsym(_glfw.x11.vidmode.handle, "XF86VidModeSetGammaRamp");
+        _glfw.x11.vidmode.GetGammaRampSize = (PFN_XF86VidModeGetGammaRampSize)
+            _glfw_dlsym(_glfw.x11.vidmode.handle, "XF86VidModeGetGammaRampSize");
 
-#if defined(_GLFW_HAS_XF86VM)
-    // Check for XF86VidMode extension
-    _glfw.x11.vidmode.available =
-        XF86VidModeQueryExtension(_glfw.x11.display,
-                                  &_glfw.x11.vidmode.eventBase,
-                                  &_glfw.x11.vidmode.errorBase);
-#endif /*_GLFW_HAS_XF86VM*/
+        _glfw.x11.vidmode.available =
+            XF86VidModeQueryExtension(_glfw.x11.display,
+                                      &_glfw.x11.vidmode.eventBase,
+                                      &_glfw.x11.vidmode.errorBase);
+    }
 
-    // Check for RandR extension
-    _glfw.x11.randr.available =
-        XRRQueryExtension(_glfw.x11.display,
-                          &_glfw.x11.randr.eventBase,
-                          &_glfw.x11.randr.errorBase);
+    _glfw.x11.xi.handle = _glfw_dlopen("libXi.so.6");
+    if (_glfw.x11.xi.handle)
+    {
+        _glfw.x11.xi.QueryVersion = (PFN_XIQueryVersion)
+            _glfw_dlsym(_glfw.x11.xi.handle, "XIQueryVersion");
+        _glfw.x11.xi.SelectEvents = (PFN_XISelectEvents)
+            _glfw_dlsym(_glfw.x11.xi.handle, "XISelectEvents");
+
+        if (XQueryExtension(_glfw.x11.display,
+                            "XInputExtension",
+                            &_glfw.x11.xi.majorOpcode,
+                            &_glfw.x11.xi.eventBase,
+                            &_glfw.x11.xi.errorBase))
+        {
+            _glfw.x11.xi.major = 2;
+            _glfw.x11.xi.minor = 0;
+
+            if (XIQueryVersion(_glfw.x11.display,
+                               &_glfw.x11.xi.major,
+                               &_glfw.x11.xi.minor) == Success)
+            {
+                _glfw.x11.xi.available = GLFW_TRUE;
+            }
+        }
+    }
+
+    _glfw.x11.randr.handle = _glfw_dlopen("libXrandr.so.2");
+    if (_glfw.x11.randr.handle)
+    {
+        _glfw.x11.randr.AllocGamma = (PFN_XRRAllocGamma)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRAllocGamma");
+        _glfw.x11.randr.FreeGamma = (PFN_XRRFreeGamma)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRFreeGamma");
+        _glfw.x11.randr.FreeCrtcInfo = (PFN_XRRFreeCrtcInfo)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRFreeCrtcInfo");
+        _glfw.x11.randr.FreeGamma = (PFN_XRRFreeGamma)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRFreeGamma");
+        _glfw.x11.randr.FreeOutputInfo = (PFN_XRRFreeOutputInfo)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRFreeOutputInfo");
+        _glfw.x11.randr.FreeScreenResources = (PFN_XRRFreeScreenResources)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRFreeScreenResources");
+        _glfw.x11.randr.GetCrtcGamma = (PFN_XRRGetCrtcGamma)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRGetCrtcGamma");
+        _glfw.x11.randr.GetCrtcGammaSize = (PFN_XRRGetCrtcGammaSize)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRGetCrtcGammaSize");
+        _glfw.x11.randr.GetCrtcInfo = (PFN_XRRGetCrtcInfo)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRGetCrtcInfo");
+        _glfw.x11.randr.GetOutputInfo = (PFN_XRRGetOutputInfo)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRGetOutputInfo");
+        _glfw.x11.randr.GetOutputPrimary = (PFN_XRRGetOutputPrimary)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRGetOutputPrimary");
+        _glfw.x11.randr.GetScreenResourcesCurrent = (PFN_XRRGetScreenResourcesCurrent)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRGetScreenResourcesCurrent");
+        _glfw.x11.randr.QueryExtension = (PFN_XRRQueryExtension)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRQueryExtension");
+        _glfw.x11.randr.QueryVersion = (PFN_XRRQueryVersion)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRQueryVersion");
+        _glfw.x11.randr.SelectInput = (PFN_XRRSelectInput)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRSelectInput");
+        _glfw.x11.randr.SetCrtcConfig = (PFN_XRRSetCrtcConfig)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRSetCrtcConfig");
+        _glfw.x11.randr.SetCrtcGamma = (PFN_XRRSetCrtcGamma)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRSetCrtcGamma");
+        _glfw.x11.randr.UpdateConfiguration = (PFN_XRRUpdateConfiguration)
+            _glfw_dlsym(_glfw.x11.randr.handle, "XRRUpdateConfiguration");
+
+        if (XRRQueryExtension(_glfw.x11.display,
+                              &_glfw.x11.randr.eventBase,
+                              &_glfw.x11.randr.errorBase))
+        {
+            if (XRRQueryVersion(_glfw.x11.display,
+                                &_glfw.x11.randr.major,
+                                &_glfw.x11.randr.minor))
+            {
+                // The GLFW RandR path requires at least version 1.3
+                if (_glfw.x11.randr.major > 1 || _glfw.x11.randr.minor >= 3)
+                    _glfw.x11.randr.available = GLFW_TRUE;
+            }
+            else
+            {
+                _glfwInputError(GLFW_PLATFORM_ERROR,
+                                "X11: Failed to query RandR version");
+            }
+        }
+    }
 
     if (_glfw.x11.randr.available)
     {
-        XRRScreenResources* sr;
-
-        if (!XRRQueryVersion(_glfw.x11.display,
-                             &_glfw.x11.randr.major,
-                             &_glfw.x11.randr.minor))
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to query RandR version");
-            return GL_FALSE;
-        }
-
-        // The GLFW RandR path requires at least version 1.3
-        if (_glfw.x11.randr.major == 1 && _glfw.x11.randr.minor < 3)
-            _glfw.x11.randr.available = GL_FALSE;
-
-        sr = XRRGetScreenResources(_glfw.x11.display, _glfw.x11.root);
+        XRRScreenResources* sr = XRRGetScreenResourcesCurrent(_glfw.x11.display,
+                                                              _glfw.x11.root);
 
         if (!sr->ncrtc || !XRRGetCrtcGammaSize(_glfw.x11.display, sr->crtcs[0]))
         {
-            // This is either a headless system or an older Nvidia binary driver
-            // with broken gamma support
-            // Flag it as useless and fall back to Xf86VidMode gamma, if
-            // available
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: RandR gamma ramp support seems broken");
-            _glfw.x11.randr.gammaBroken = GL_TRUE;
+            // This is likely an older Nvidia driver with broken gamma support
+            // Flag it as useless and fall back to xf86vm gamma, if available
+            _glfw.x11.randr.gammaBroken = GLFW_TRUE;
+        }
+
+        if (!sr->ncrtc)
+        {
+            // A system without CRTCs is likely a system with broken RandR
+            // Disable the RandR monitor path and fall back to core functions
+            _glfw.x11.randr.monitorBroken = GLFW_TRUE;
         }
 
         XRRFreeScreenResources(sr);
     }
 
-    if (XineramaQueryExtension(_glfw.x11.display,
-                               &_glfw.x11.xinerama.major,
-                               &_glfw.x11.xinerama.minor))
+    if (_glfw.x11.randr.available && !_glfw.x11.randr.monitorBroken)
     {
-        if (XineramaIsActive(_glfw.x11.display))
-            _glfw.x11.xinerama.available = GL_TRUE;
+        XRRSelectInput(_glfw.x11.display, _glfw.x11.root,
+                       RROutputChangeNotifyMask);
     }
 
-#if defined(_GLFW_HAS_XINPUT)
-    if (XQueryExtension(_glfw.x11.display,
-                        "XInputExtension",
-                        &_glfw.x11.xi.majorOpcode,
-                        &_glfw.x11.xi.eventBase,
-                        &_glfw.x11.xi.errorBase))
+    _glfw.x11.xcursor.handle = _glfw_dlopen("libXcursor.so.1");
+    if (_glfw.x11.xcursor.handle)
     {
-        _glfw.x11.xi.major = 2;
-        _glfw.x11.xi.minor = 0;
+        _glfw.x11.xcursor.ImageCreate = (PFN_XcursorImageCreate)
+            _glfw_dlsym(_glfw.x11.xcursor.handle, "XcursorImageCreate");
+        _glfw.x11.xcursor.ImageDestroy = (PFN_XcursorImageDestroy)
+            _glfw_dlsym(_glfw.x11.xcursor.handle, "XcursorImageDestroy");
+        _glfw.x11.xcursor.ImageLoadCursor = (PFN_XcursorImageLoadCursor)
+            _glfw_dlsym(_glfw.x11.xcursor.handle, "XcursorImageLoadCursor");
+    }
 
-        if (XIQueryVersion(_glfw.x11.display,
-                           &_glfw.x11.xi.major,
-                           &_glfw.x11.xi.minor) != BadRequest)
+    _glfw.x11.xinerama.handle = _glfw_dlopen("libXinerama.so.1");
+    if (_glfw.x11.xinerama.handle)
+    {
+        _glfw.x11.xinerama.IsActive = (PFN_XineramaIsActive)
+            _glfw_dlsym(_glfw.x11.xinerama.handle, "XineramaIsActive");
+        _glfw.x11.xinerama.QueryExtension = (PFN_XineramaQueryExtension)
+            _glfw_dlsym(_glfw.x11.xinerama.handle, "XineramaQueryExtension");
+        _glfw.x11.xinerama.QueryScreens = (PFN_XineramaQueryScreens)
+            _glfw_dlsym(_glfw.x11.xinerama.handle, "XineramaQueryScreens");
+
+        if (XineramaQueryExtension(_glfw.x11.display,
+                                   &_glfw.x11.xinerama.major,
+                                   &_glfw.x11.xinerama.minor))
         {
-            _glfw.x11.xi.available = GL_TRUE;
+            if (XineramaIsActive(_glfw.x11.display))
+                _glfw.x11.xinerama.available = GLFW_TRUE;
         }
     }
-#endif /*_GLFW_HAS_XINPUT*/
 
-    // Check if Xkb is supported on this display
     _glfw.x11.xkb.major = 1;
     _glfw.x11.xkb.minor = 0;
     _glfw.x11.xkb.available =
@@ -569,7 +640,37 @@ static GLboolean initExtensions(void)
         if (XkbSetDetectableAutoRepeat(_glfw.x11.display, True, &supported))
         {
             if (supported)
-                _glfw.x11.xkb.detectable = GL_TRUE;
+                _glfw.x11.xkb.detectable = GLFW_TRUE;
+        }
+    }
+
+    _glfw.x11.x11xcb.handle = _glfw_dlopen("libX11-xcb.so.1");
+    if (_glfw.x11.x11xcb.handle)
+    {
+        _glfw.x11.x11xcb.GetXCBConnection = (PFN_XGetXCBConnection)
+            _glfw_dlsym(_glfw.x11.x11xcb.handle, "XGetXCBConnection");
+    }
+
+    _glfw.x11.xrender.handle = _glfw_dlopen("libXrender.so.1");
+    if (_glfw.x11.xrender.handle)
+    {
+        _glfw.x11.xrender.QueryExtension = (PFN_XRenderQueryExtension)
+            _glfw_dlsym(_glfw.x11.xrender.handle, "XRenderQueryExtension");
+        _glfw.x11.xrender.QueryVersion = (PFN_XRenderQueryVersion)
+            _glfw_dlsym(_glfw.x11.xrender.handle, "XRenderQueryVersion");
+        _glfw.x11.xrender.FindVisualFormat = (PFN_XRenderFindVisualFormat)
+            _glfw_dlsym(_glfw.x11.xrender.handle, "XRenderFindVisualFormat");
+
+        if (XRenderQueryExtension(_glfw.x11.display,
+                                  &_glfw.x11.xrender.errorBase,
+                                  &_glfw.x11.xrender.eventBase))
+        {
+            if (XRenderQueryVersion(_glfw.x11.display,
+                                    &_glfw.x11.xrender.major,
+                                    &_glfw.x11.xrender.minor))
+            {
+                _glfw.x11.xrender.available = GLFW_TRUE;
+            }
         }
     }
 
@@ -581,53 +682,134 @@ static GLboolean initExtensions(void)
     // Detect whether an EWMH-conformant window manager is running
     detectEWMH();
 
-    // Find or create string format atoms
+    // String format atoms
     _glfw.x11.NULL_ = XInternAtom(_glfw.x11.display, "NULL", False);
-    _glfw.x11.UTF8_STRING =
-        XInternAtom(_glfw.x11.display, "UTF8_STRING", False);
-    _glfw.x11.COMPOUND_STRING =
-        XInternAtom(_glfw.x11.display, "COMPOUND_STRING", False);
+    _glfw.x11.UTF8_STRING = XInternAtom(_glfw.x11.display, "UTF8_STRING", False);
     _glfw.x11.ATOM_PAIR = XInternAtom(_glfw.x11.display, "ATOM_PAIR", False);
 
-    // Find or create selection property atom
+    // Custom selection property atom
     _glfw.x11.GLFW_SELECTION =
         XInternAtom(_glfw.x11.display, "GLFW_SELECTION", False);
 
-    // Find or create standard clipboard atoms
+    // ICCCM standard clipboard atoms
     _glfw.x11.TARGETS = XInternAtom(_glfw.x11.display, "TARGETS", False);
     _glfw.x11.MULTIPLE = XInternAtom(_glfw.x11.display, "MULTIPLE", False);
+    _glfw.x11.PRIMARY = XInternAtom(_glfw.x11.display, "PRIMARY", False);
+    _glfw.x11.INCR = XInternAtom(_glfw.x11.display, "INCR", False);
     _glfw.x11.CLIPBOARD = XInternAtom(_glfw.x11.display, "CLIPBOARD", False);
 
-    // Find or create clipboard manager atoms
+    // Clipboard manager atoms
     _glfw.x11.CLIPBOARD_MANAGER =
         XInternAtom(_glfw.x11.display, "CLIPBOARD_MANAGER", False);
     _glfw.x11.SAVE_TARGETS =
         XInternAtom(_glfw.x11.display, "SAVE_TARGETS", False);
 
-    // Find Xdnd (drag and drop) atoms, if available
-    _glfw.x11.XdndAware = XInternAtom(_glfw.x11.display, "XdndAware", True);
-    _glfw.x11.XdndEnter = XInternAtom(_glfw.x11.display, "XdndEnter", True);
-    _glfw.x11.XdndPosition = XInternAtom(_glfw.x11.display, "XdndPosition", True);
-    _glfw.x11.XdndStatus = XInternAtom(_glfw.x11.display, "XdndStatus", True);
-    _glfw.x11.XdndActionCopy = XInternAtom(_glfw.x11.display, "XdndActionCopy", True);
-    _glfw.x11.XdndDrop = XInternAtom(_glfw.x11.display, "XdndDrop", True);
-    _glfw.x11.XdndLeave = XInternAtom(_glfw.x11.display, "XdndLeave", True);
-    _glfw.x11.XdndFinished = XInternAtom(_glfw.x11.display, "XdndFinished", True);
-    _glfw.x11.XdndSelection = XInternAtom(_glfw.x11.display, "XdndSelection", True);
+    // Xdnd (drag and drop) atoms
+    _glfw.x11.XdndAware = XInternAtom(_glfw.x11.display, "XdndAware", False);
+    _glfw.x11.XdndEnter = XInternAtom(_glfw.x11.display, "XdndEnter", False);
+    _glfw.x11.XdndPosition = XInternAtom(_glfw.x11.display, "XdndPosition", False);
+    _glfw.x11.XdndStatus = XInternAtom(_glfw.x11.display, "XdndStatus", False);
+    _glfw.x11.XdndActionCopy = XInternAtom(_glfw.x11.display, "XdndActionCopy", False);
+    _glfw.x11.XdndDrop = XInternAtom(_glfw.x11.display, "XdndDrop", False);
+    _glfw.x11.XdndFinished = XInternAtom(_glfw.x11.display, "XdndFinished", False);
+    _glfw.x11.XdndSelection = XInternAtom(_glfw.x11.display, "XdndSelection", False);
+    _glfw.x11.XdndTypeList = XInternAtom(_glfw.x11.display, "XdndTypeList", False);
+    _glfw.x11.text_uri_list = XInternAtom(_glfw.x11.display, "text/uri-list", False);
 
-    return GL_TRUE;
+    // ICCCM, EWMH and Motif window property atoms
+    // These can be set safely even without WM support
+    // The EWMH atoms that require WM support are handled in detectEWMH
+    _glfw.x11.WM_PROTOCOLS =
+        XInternAtom(_glfw.x11.display, "WM_PROTOCOLS", False);
+    _glfw.x11.WM_STATE =
+        XInternAtom(_glfw.x11.display, "WM_STATE", False);
+    _glfw.x11.WM_DELETE_WINDOW =
+        XInternAtom(_glfw.x11.display, "WM_DELETE_WINDOW", False);
+    _glfw.x11.NET_WM_ICON =
+        XInternAtom(_glfw.x11.display, "_NET_WM_ICON", False);
+    _glfw.x11.NET_WM_PING =
+        XInternAtom(_glfw.x11.display, "_NET_WM_PING", False);
+    _glfw.x11.NET_WM_PID =
+        XInternAtom(_glfw.x11.display, "_NET_WM_PID", False);
+    _glfw.x11.NET_WM_NAME =
+        XInternAtom(_glfw.x11.display, "_NET_WM_NAME", False);
+    _glfw.x11.NET_WM_ICON_NAME =
+        XInternAtom(_glfw.x11.display, "_NET_WM_ICON_NAME", False);
+    _glfw.x11.NET_WM_BYPASS_COMPOSITOR =
+        XInternAtom(_glfw.x11.display, "_NET_WM_BYPASS_COMPOSITOR", False);
+    _glfw.x11.NET_WM_WINDOW_OPACITY =
+        XInternAtom(_glfw.x11.display, "_NET_WM_WINDOW_OPACITY", False);
+    _glfw.x11.MOTIF_WM_HINTS =
+        XInternAtom(_glfw.x11.display, "_MOTIF_WM_HINTS", False);
+
+    // The compositing manager selection name contains the screen number
+    {
+        char name[32];
+        snprintf(name, sizeof(name), "_NET_WM_CM_S%u", _glfw.x11.screen);
+        _glfw.x11.NET_WM_CM_Sx = XInternAtom(_glfw.x11.display, name, False);
+    }
+
+    return GLFW_TRUE;
+}
+
+// Retrieve system content scale via folklore heuristics
+//
+static void getSystemContentScale(float* xscale, float* yscale)
+{
+    // NOTE: Default to the display-wide DPI as we don't currently have a policy
+    //       for which monitor a window is considered to be on
+    float xdpi = DisplayWidth(_glfw.x11.display, _glfw.x11.screen) *
+        25.4f / DisplayWidthMM(_glfw.x11.display, _glfw.x11.screen);
+    float ydpi = DisplayHeight(_glfw.x11.display, _glfw.x11.screen) *
+        25.4f / DisplayHeightMM(_glfw.x11.display, _glfw.x11.screen);
+
+    // NOTE: Basing the scale on Xft.dpi where available should provide the most
+    //       consistent user experience (matches Qt, Gtk, etc), although not
+    //       always the most accurate one
+    char* rms = XResourceManagerString(_glfw.x11.display);
+    if (rms)
+    {
+        XrmDatabase db = XrmGetStringDatabase(rms);
+        if (db)
+        {
+            XrmValue value;
+            char* type = NULL;
+
+            if (XrmGetResource(db, "Xft.dpi", "Xft.Dpi", &type, &value))
+            {
+                if (type && strcmp(type, "String") == 0)
+                    xdpi = ydpi = atof(value.addr);
+            }
+
+            XrmDestroyDatabase(db);
+        }
+    }
+
+    *xscale = xdpi / 96.f;
+    *yscale = ydpi / 96.f;
 }
 
 // Create a blank cursor for hidden and disabled cursor modes
 //
-static Cursor createNULLCursor(void)
+static Cursor createHiddenCursor(void)
 {
-    unsigned char pixels[16 * 16 * 4];
+    unsigned char pixels[16 * 16 * 4] = { 0 };
     GLFWimage image = { 16, 16, pixels };
+    return _glfwCreateCursorX11(&image, 0, 0);
+}
 
-    memset(pixels, 0, sizeof(pixels));
+// Create a helper window for IPC
+//
+static Window createHelperWindow(void)
+{
+    XSetWindowAttributes wa;
+    wa.event_mask = PropertyChangeMask;
 
-    return _glfwCreateCursor(&image, 0, 0);
+    return XCreateWindow(_glfw.x11.display, _glfw.x11.root,
+                         0, 0, 1, 1, 0, 0,
+                         InputOnly,
+                         DefaultVisual(_glfw.x11.display, _glfw.x11.screen),
+                         CWEventMask, &wa);
 }
 
 // X error handler
@@ -645,7 +827,7 @@ static int errorHandler(Display *display, XErrorEvent* event)
 
 // Sets the X error handler callback
 //
-void _glfwGrabXErrorHandler(void)
+void _glfwGrabErrorHandlerX11(void)
 {
     _glfw.x11.errorCode = Success;
     XSetErrorHandler(errorHandler);
@@ -653,7 +835,7 @@ void _glfwGrabXErrorHandler(void)
 
 // Clears the X error handler callback
 //
-void _glfwReleaseXErrorHandler(void)
+void _glfwReleaseErrorHandlerX11(void)
 {
     // Synchronize to make sure all commands are processed
     XSync(_glfw.x11.display, False);
@@ -662,9 +844,9 @@ void _glfwReleaseXErrorHandler(void)
 
 // Reports the specified error, appending information about the last X error
 //
-void _glfwInputXError(int error, const char* message)
+void _glfwInputErrorX11(int error, const char* message)
 {
-    char buffer[8192];
+    char buffer[_GLFW_MESSAGE_SIZE];
     XGetErrorText(_glfw.x11.display, _glfw.x11.errorCode,
                   buffer, sizeof(buffer));
 
@@ -673,10 +855,13 @@ void _glfwInputXError(int error, const char* message)
 
 // Creates a native cursor object from the specified image and hotspot
 //
-Cursor _glfwCreateCursor(const GLFWimage* image, int xhot, int yhot)
+Cursor _glfwCreateCursorX11(const GLFWimage* image, int xhot, int yhot)
 {
     int i;
     Cursor cursor;
+
+    if (!_glfw.x11.xcursor.handle)
+        return None;
 
     XcursorImage* native = XcursorImageCreate(image->width, image->height);
     if (native == NULL)
@@ -690,10 +875,12 @@ Cursor _glfwCreateCursor(const GLFWimage* image, int xhot, int yhot)
 
     for (i = 0;  i < image->width * image->height;  i++, target++, source += 4)
     {
-        *target = (source[3] << 24) |
-                  (source[0] << 16) |
-                  (source[1] <<  8) |
-                   source[2];
+        unsigned int alpha = source[3];
+
+        *target = (alpha << 24) |
+                  ((unsigned char) ((source[0] * alpha) / 255) << 16) |
+                  ((unsigned char) ((source[1] * alpha) / 255) <<  8) |
+                  ((unsigned char) ((source[2] * alpha) / 255) <<  0);
     }
 
     cursor = XcursorImageLoadCursor(_glfw.x11.display, native);
@@ -709,12 +896,18 @@ Cursor _glfwCreateCursor(const GLFWimage* image, int xhot, int yhot)
 
 int _glfwPlatformInit(void)
 {
-    // HACK: If the current locale is C, apply the environment's locale
-    //       This is done because the C locale breaks character input
+#if !defined(X_HAVE_UTF8_STRING)
+    // HACK: If the current locale is "C" and the Xlib UTF-8 functions are
+    //       unavailable, apply the environment's locale in the hope that it's
+    //       both available and not "C"
+    //       This is done because the "C" locale breaks wide character input,
+    //       which is what we fall back on when UTF-8 support is missing
     if (strcmp(setlocale(LC_CTYPE, NULL), "C") == 0)
         setlocale(LC_CTYPE, "");
+#endif
 
     XInitThreads();
+    XrmInitialize();
 
     _glfw.x11.display = XOpenDisplay(NULL);
     if (!_glfw.x11.display)
@@ -731,17 +924,20 @@ int _glfwPlatformInit(void)
                             "X11: The DISPLAY environment variable is missing");
         }
 
-        return GL_FALSE;
+        return GLFW_FALSE;
     }
 
     _glfw.x11.screen = DefaultScreen(_glfw.x11.display);
     _glfw.x11.root = RootWindow(_glfw.x11.display, _glfw.x11.screen);
     _glfw.x11.context = XUniqueContext();
 
-    if (!initExtensions())
-        return GL_FALSE;
+    getSystemContentScale(&_glfw.x11.contentScaleX, &_glfw.x11.contentScaleY);
 
-    _glfw.x11.cursor = createNULLCursor();
+    if (!initExtensions())
+        return GLFW_FALSE;
+
+    _glfw.x11.helperWindowHandle = createHelperWindow();
+    _glfw.x11.hiddenCursorHandle = createHiddenCursor();
 
     if (XSupportsLocale())
     {
@@ -758,25 +954,38 @@ int _glfwPlatformInit(void)
         }
     }
 
-    if (!_glfwInitContextAPI())
-        return GL_FALSE;
+#if defined(__linux__)
+    if (!_glfwInitJoysticksLinux())
+        return GLFW_FALSE;
+#endif
 
-    if (!_glfwInitJoysticks())
-        return GL_FALSE;
+    _glfwInitTimerPOSIX();
 
-    _glfwInitTimer();
-
-    return GL_TRUE;
+    _glfwPollMonitorsX11();
+    return GLFW_TRUE;
 }
 
 void _glfwPlatformTerminate(void)
 {
-    if (_glfw.x11.cursor)
+    if (_glfw.x11.helperWindowHandle)
     {
-        XFreeCursor(_glfw.x11.display, _glfw.x11.cursor);
-        _glfw.x11.cursor = (Cursor) 0;
+        if (XGetSelectionOwner(_glfw.x11.display, _glfw.x11.CLIPBOARD) ==
+            _glfw.x11.helperWindowHandle)
+        {
+            _glfwPushSelectionToManagerX11();
+        }
+
+        XDestroyWindow(_glfw.x11.display, _glfw.x11.helperWindowHandle);
+        _glfw.x11.helperWindowHandle = None;
     }
 
+    if (_glfw.x11.hiddenCursorHandle)
+    {
+        XFreeCursor(_glfw.x11.display, _glfw.x11.hiddenCursorHandle);
+        _glfw.x11.hiddenCursorHandle = (Cursor) 0;
+    }
+
+    free(_glfw.x11.primarySelectionString);
     free(_glfw.x11.clipboardString);
 
     if (_glfw.x11.im)
@@ -785,31 +994,56 @@ void _glfwPlatformTerminate(void)
         _glfw.x11.im = NULL;
     }
 
-    _glfwTerminateJoysticks();
-    _glfwTerminateContextAPI();
-
     if (_glfw.x11.display)
     {
         XCloseDisplay(_glfw.x11.display);
         _glfw.x11.display = NULL;
     }
+
+    if (_glfw.x11.x11xcb.handle)
+    {
+        _glfw_dlclose(_glfw.x11.x11xcb.handle);
+        _glfw.x11.x11xcb.handle = NULL;
+    }
+
+    if (_glfw.x11.xcursor.handle)
+    {
+        _glfw_dlclose(_glfw.x11.xcursor.handle);
+        _glfw.x11.xcursor.handle = NULL;
+    }
+
+    if (_glfw.x11.randr.handle)
+    {
+        _glfw_dlclose(_glfw.x11.randr.handle);
+        _glfw.x11.randr.handle = NULL;
+    }
+
+    if (_glfw.x11.xinerama.handle)
+    {
+        _glfw_dlclose(_glfw.x11.xinerama.handle);
+        _glfw.x11.xinerama.handle = NULL;
+    }
+
+    // NOTE: These need to be unloaded after XCloseDisplay, as they register
+    //       cleanup callbacks that get called by that function
+    _glfwTerminateEGL();
+    _glfwTerminateGLX();
+
+#if defined(__linux__)
+    _glfwTerminateJoysticksLinux();
+#endif
 }
 
 const char* _glfwPlatformGetVersionString(void)
 {
-    return _GLFW_VERSION_NUMBER " X11"
-#if defined(_GLFW_GLX)
-        " GLX"
-#elif defined(_GLFW_EGL)
-        " EGL"
-#endif
+    return _GLFW_VERSION_NUMBER " X11 GLX EGL"
 #if defined(_POSIX_TIMERS) && defined(_POSIX_MONOTONIC_CLOCK)
         " clock_gettime"
 #else
         " gettimeofday"
 #endif
 #if defined(__linux__)
-        " /dev/js"
+        " evdev"
 #endif
 #if defined(_GLFW_BUILD_DLL)
         " shared"

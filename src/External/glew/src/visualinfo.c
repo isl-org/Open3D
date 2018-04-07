@@ -34,7 +34,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <GL/glew.h>
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA)
+#define GLAPI extern
+#include <GL/osmesa.h>
+#elif defined(GLEW_EGL)
+#include <GL/eglew.h>
+#elif defined(_WIN32)
 #include <GL/wglew.h>
 #elif defined(__APPLE__) && !defined(GLEW_APPLE_GLX)
 #include <OpenGL/OpenGL.h>
@@ -57,7 +62,11 @@ GLXEWContext _glxewctx;
 
 typedef struct GLContextStruct
 {
-#ifdef _WIN32
+#if defined(GLEW_OSMESA)
+  OSMesaContext ctx;
+#elif defined(GLEW_EGL)
+  EGLContext ctx;
+#elif defined(_WIN32)
   HWND wnd;
   HDC dc;
   HGLRC rc;
@@ -180,7 +189,9 @@ main (int argc, char** argv)
 
   /* ---------------------------------------------------------------------- */
   /* extensions string */
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA)
+#elif defined(GLEW_EGL)
+#elif defined(_WIN32)
   /* WGL extensions */
   if (WGLEW_ARB_extensions_string || WGLEW_EXT_extensions_string)
   {
@@ -258,7 +269,14 @@ void PrintExtensions (const char* s)
 
 /* ---------------------------------------------------------------------- */
 
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA) || defined(GLEW_EGL)
+
+void
+VisualInfo (GLContext* ctx)
+{
+}
+
+#elif defined(_WIN32)
 
 void
 VisualInfoARB (GLContext* ctx)
@@ -599,7 +617,7 @@ VisualInfo (GLContext* ctx)
 #elif defined(__APPLE__) && !defined(GLEW_APPLE_GLX)
 
 void
-VisualInfo (GLContext* __attribute__((__unused__)) ctx)
+VisualInfo (__attribute__((unused)) GLContext* ctx)
 {
 /*
   int attrib[] = { AGL_RGBA, AGL_NONE };
@@ -1003,7 +1021,60 @@ VisualInfo (GLContext* ctx)
 
 /* ------------------------------------------------------------------------ */
 
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA)
+void InitContext (GLContext* ctx)
+{
+  ctx->ctx = NULL;
+}
+
+static const GLint osmFormat = GL_UNSIGNED_BYTE;
+static const GLint osmWidth = 640;
+static const GLint osmHeight = 480;
+static GLubyte *osmPixels = NULL;
+
+GLboolean CreateContext (GLContext* ctx)
+{
+  if (NULL == ctx) return GL_TRUE;
+  ctx->ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
+  if (NULL == ctx->ctx) return GL_TRUE;
+  if (NULL == osmPixels)
+  {
+    osmPixels = (GLubyte *) calloc(osmWidth*osmHeight*4, 1);
+  }
+  if (!OSMesaMakeCurrent(ctx->ctx, osmPixels, GL_UNSIGNED_BYTE, osmWidth, osmHeight))
+  {
+      return GL_TRUE;
+  }
+  return GL_FALSE;
+}
+
+void DestroyContext (GLContext* ctx)
+{
+  if (NULL == ctx) return;
+  if (NULL != ctx->ctx) OSMesaDestroyContext(ctx->ctx);
+}
+/* ------------------------------------------------------------------------ */
+
+#elif defined(GLEW_EGL)
+void InitContext (GLContext* ctx)
+{
+  ctx->ctx = NULL;
+}
+
+GLboolean CreateContext (GLContext* ctx)
+{
+  return GL_FALSE;
+}
+
+void DestroyContext (GLContext* ctx)
+{
+  if (NULL == ctx) return;
+  return;
+}
+
+/* ------------------------------------------------------------------------ */
+
+#elif defined(_WIN32)
 
 void InitContext (GLContext* ctx)
 {
