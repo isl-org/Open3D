@@ -89,5 +89,3 @@ for path in paths:
 
     for header in headers:
         replaceGuard(header)
-
-        break
