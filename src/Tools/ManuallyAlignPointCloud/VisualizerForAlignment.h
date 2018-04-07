@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#ifndef OPEN3D_VISUALIZER_FOR_ALIGNMENT_H
+#define OPEN3D_VISUALIZER_FOR_ALIGNMENT_H
+
 #include <Core/Core.h>
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
