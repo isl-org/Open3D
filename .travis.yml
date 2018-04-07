@@ -65,6 +65,7 @@ before_install:
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
       python -m pip install --user --upgrade pip wheel;
       pyenv global system 3.6;
+      ./util/scripts/make-documentation.sh
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
