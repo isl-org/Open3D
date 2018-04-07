@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.1 Wayland - www.glfw.org
+// GLFW 3.3 Wayland - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2014 Jonas Ådahl <jadahl@gmail.com>
 //
@@ -26,15 +26,54 @@
 
 #include "internal.h"
 
+#include <assert.h>
 #include <linux/input.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/timerfd.h>
 #include <unistd.h>
 #include <wayland-client.h>
-#include <wayland-cursor.h>
 
+
+static inline int min(int n1, int n2)
+{
+    return n1 < n2 ? n1 : n2;
+}
+
+static _GLFWwindow* findWindowFromDecorationSurface(struct wl_surface* surface, int* which)
+{
+    int focus;
+    _GLFWwindow* window = _glfw.windowListHead;
+    if (!which)
+        which = &focus;
+    while (window)
+    {
+        if (surface == window->wl.decorations.top.surface)
+        {
+            *which = topDecoration;
+            break;
+        }
+        if (surface == window->wl.decorations.left.surface)
+        {
+            *which = leftDecoration;
+            break;
+        }
+        if (surface == window->wl.decorations.right.surface)
+        {
+            *which = rightDecoration;
+            break;
+        }
+        if (surface == window->wl.decorations.bottom.surface)
+        {
+            *which = bottomDecoration;
+            break;
+        }
+        window = window->next;
+    }
+    return window;
+}
 
 static void pointerHandleEnter(void* data,
                                struct wl_pointer* pointer,
@@ -43,13 +82,27 @@ static void pointerHandleEnter(void* data,
                                wl_fixed_t sx,
                                wl_fixed_t sy)
 {
-    _GLFWwindow* window = wl_surface_get_user_data(surface);
+    // Happens in the case we just destroyed the surface.
+    if (!surface)
+        return;
 
+    int focus = 0;
+    _GLFWwindow* window = wl_surface_get_user_data(surface);
+    if (!window)
+    {
+        window = findWindowFromDecorationSurface(surface, &focus);
+        if (!window)
+            return;
+    }
+
+    window->wl.decorations.focus = focus;
     _glfw.wl.pointerSerial = serial;
     _glfw.wl.pointerFocus = window;
 
+    window->wl.hovered = GLFW_TRUE;
+
     _glfwPlatformSetCursor(window, window->wl.currentCursor);
-    _glfwInputCursorEnter(window, GL_TRUE);
+    _glfwInputCursorEnter(window, GLFW_TRUE);
 }
 
 static void pointerHandleLeave(void* data,
@@ -62,9 +115,44 @@ static void pointerHandleLeave(void* data,
     if (!window)
         return;
 
+    window->wl.hovered = GLFW_FALSE;
+
     _glfw.wl.pointerSerial = serial;
     _glfw.wl.pointerFocus = NULL;
-    _glfwInputCursorEnter(window, GL_FALSE);
+    _glfwInputCursorEnter(window, GLFW_FALSE);
+}
+
+static void setCursor(const char* name)
+{
+    struct wl_buffer* buffer;
+    struct wl_cursor* cursor;
+    struct wl_cursor_image* image;
+    struct wl_surface* surface = _glfw.wl.cursorSurface;
+
+    cursor = wl_cursor_theme_get_cursor(_glfw.wl.cursorTheme,
+                                        name);
+    if (!cursor)
+    {
+        _glfwInputError(GLFW_PLATFORM_ERROR,
+                        "Wayland: Standard cursor not found");
+        return;
+    }
+    image = cursor->images[0];
+
+    if (!image)
+        return;
+
+    buffer = wl_cursor_image_get_buffer(image);
+    if (!buffer)
+        return;
+    wl_pointer_set_cursor(_glfw.wl.pointer, _glfw.wl.pointerSerial,
+                          surface,
+                          image->hotspot_x,
+                          image->hotspot_y);
+    wl_surface_attach(surface, buffer, 0, 0);
+    wl_surface_damage(surface, 0, 0,
+                      image->width, image->height);
+    wl_surface_commit(surface);
 }
 
 static void pointerHandleMotion(void* data,
@@ -74,30 +162,60 @@ static void pointerHandleMotion(void* data,
                                 wl_fixed_t sy)
 {
     _GLFWwindow* window = _glfw.wl.pointerFocus;
+    const char* cursorName;
 
     if (!window)
         return;
 
     if (window->cursorMode == GLFW_CURSOR_DISABLED)
-    {
-        /* TODO */
-        _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Wayland: GLFW_CURSOR_DISABLED not supported");
         return;
-    }
     else
     {
         window->wl.cursorPosX = wl_fixed_to_double(sx);
         window->wl.cursorPosY = wl_fixed_to_double(sy);
     }
 
-    _glfwInputCursorMotion(window,
-                           wl_fixed_to_double(sx),
-                           wl_fixed_to_double(sy));
+    switch (window->wl.decorations.focus)
+    {
+        case mainWindow:
+            _glfwInputCursorPos(window,
+                                wl_fixed_to_double(sx),
+                                wl_fixed_to_double(sy));
+            return;
+        case topDecoration:
+            if (window->wl.cursorPosY < _GLFW_DECORATION_WIDTH)
+                cursorName = "n-resize";
+            else
+                cursorName = "left_ptr";
+            break;
+        case leftDecoration:
+            if (window->wl.cursorPosY < _GLFW_DECORATION_WIDTH)
+                cursorName = "nw-resize";
+            else
+                cursorName = "w-resize";
+            break;
+        case rightDecoration:
+            if (window->wl.cursorPosY < _GLFW_DECORATION_WIDTH)
+                cursorName = "ne-resize";
+            else
+                cursorName = "e-resize";
+            break;
+        case bottomDecoration:
+            if (window->wl.cursorPosX < _GLFW_DECORATION_WIDTH)
+                cursorName = "sw-resize";
+            else if (window->wl.cursorPosX > window->wl.width + _GLFW_DECORATION_WIDTH)
+                cursorName = "se-resize";
+            else
+                cursorName = "s-resize";
+            break;
+        default:
+            assert(0);
+    }
+    setCursor(cursorName);
 }
 
 static void pointerHandleButton(void* data,
-                                struct wl_pointer* wl_pointer,
+                                struct wl_pointer* pointer,
                                 uint32_t serial,
                                 uint32_t time,
                                 uint32_t button,
@@ -106,8 +224,78 @@ static void pointerHandleButton(void* data,
     _GLFWwindow* window = _glfw.wl.pointerFocus;
     int glfwButton;
 
+    // Both xdg-shell and wl_shell use the same values.
+    uint32_t edges = WL_SHELL_SURFACE_RESIZE_NONE;
+
     if (!window)
         return;
+    if (button == BTN_LEFT)
+    {
+        switch (window->wl.decorations.focus)
+        {
+            case mainWindow:
+                break;
+            case topDecoration:
+                if (window->wl.cursorPosY < _GLFW_DECORATION_WIDTH)
+                    edges = WL_SHELL_SURFACE_RESIZE_TOP;
+                else
+                {
+                    if (window->wl.xdg.toplevel)
+                        xdg_toplevel_move(window->wl.xdg.toplevel, _glfw.wl.seat, serial);
+                    else
+                        wl_shell_surface_move(window->wl.shellSurface, _glfw.wl.seat, serial);
+                }
+                break;
+            case leftDecoration:
+                if (window->wl.cursorPosY < _GLFW_DECORATION_WIDTH)
+                    edges = WL_SHELL_SURFACE_RESIZE_TOP_LEFT;
+                else
+                    edges = WL_SHELL_SURFACE_RESIZE_LEFT;
+                break;
+            case rightDecoration:
+                if (window->wl.cursorPosY < _GLFW_DECORATION_WIDTH)
+                    edges = WL_SHELL_SURFACE_RESIZE_TOP_RIGHT;
+                else
+                    edges = WL_SHELL_SURFACE_RESIZE_RIGHT;
+                break;
+            case bottomDecoration:
+                if (window->wl.cursorPosX < _GLFW_DECORATION_WIDTH)
+                    edges = WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT;
+                else if (window->wl.cursorPosX > window->wl.width + _GLFW_DECORATION_WIDTH)
+                    edges = WL_SHELL_SURFACE_RESIZE_BOTTOM_RIGHT;
+                else
+                    edges = WL_SHELL_SURFACE_RESIZE_BOTTOM;
+                break;
+            default:
+                assert(0);
+        }
+        if (edges != WL_SHELL_SURFACE_RESIZE_NONE)
+        {
+            if (window->wl.xdg.toplevel)
+                xdg_toplevel_resize(window->wl.xdg.toplevel, _glfw.wl.seat,
+                                    serial, edges);
+            else
+                wl_shell_surface_resize(window->wl.shellSurface, _glfw.wl.seat,
+                                        serial, edges);
+        }
+    }
+    else if (button == BTN_RIGHT)
+    {
+        if (window->wl.decorations.focus != mainWindow && window->wl.xdg.toplevel)
+        {
+            xdg_toplevel_show_window_menu(window->wl.xdg.toplevel,
+                                          _glfw.wl.seat, serial,
+                                          window->wl.cursorPosX,
+                                          window->wl.cursorPosY);
+            return;
+        }
+    }
+
+    // Don’t pass the button to the user if it was related to a decoration.
+    if (window->wl.decorations.focus != mainWindow)
+        return;
+
+    _glfw.wl.pointerSerial = serial;
 
     /* Makes left, right and middle 0, 1 and 2. Overall order follows evdev
      * codes. */
@@ -122,36 +310,28 @@ static void pointerHandleButton(void* data,
 }
 
 static void pointerHandleAxis(void* data,
-                              struct wl_pointer* wl_pointer,
+                              struct wl_pointer* pointer,
                               uint32_t time,
                               uint32_t axis,
                               wl_fixed_t value)
 {
     _GLFWwindow* window = _glfw.wl.pointerFocus;
-    double scroll_factor;
-    double x, y;
+    double x = 0.0, y = 0.0;
+    // Wayland scroll events are in pointer motion coordinate space (think two
+    // finger scroll).  The factor 10 is commonly used to convert to "scroll
+    // step means 1.0.
+    const double scrollFactor = 1.0 / 10.0;
 
     if (!window)
         return;
 
-    /* Wayland scroll events are in pointer motion coordinate space (think
-     * two finger scroll). The factor 10 is commonly used to convert to
-     * "scroll step means 1.0. */
-    scroll_factor = 1.0/10.0;
+    assert(axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL ||
+           axis == WL_POINTER_AXIS_VERTICAL_SCROLL);
 
-    switch (axis)
-    {
-        case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
-            x = wl_fixed_to_double(value) * scroll_factor;
-            y = 0.0;
-            break;
-        case WL_POINTER_AXIS_VERTICAL_SCROLL:
-            x = 0.0;
-            y = wl_fixed_to_double(value) * scroll_factor;
-            break;
-        default:
-            break;
-    }
+    if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
+        x = wl_fixed_to_double(value) * scrollFactor;
+    else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
+        y = wl_fixed_to_double(value) * scrollFactor;
 
     _glfwInputScroll(window, x, y);
 }
@@ -172,7 +352,14 @@ static void keyboardHandleKeymap(void* data,
 {
     struct xkb_keymap* keymap;
     struct xkb_state* state;
+
+#ifdef HAVE_XKBCOMMON_COMPOSE_H
+    struct xkb_compose_table* composeTable;
+    struct xkb_compose_state* composeState;
+#endif
+
     char* mapStr;
+    const char* locale;
 
     if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1)
     {
@@ -186,10 +373,10 @@ static void keyboardHandleKeymap(void* data,
         return;
     }
 
-    keymap = xkb_map_new_from_string(_glfw.wl.xkb.context,
-                                     mapStr,
-                                     XKB_KEYMAP_FORMAT_TEXT_V1,
-                                     0);
+    keymap = xkb_keymap_new_from_string(_glfw.wl.xkb.context,
+                                        mapStr,
+                                        XKB_KEYMAP_FORMAT_TEXT_V1,
+                                        0);
     munmap(mapStr, size);
     close(fd);
 
@@ -205,23 +392,58 @@ static void keyboardHandleKeymap(void* data,
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
                         "Wayland: Failed to create XKB state");
-        xkb_map_unref(keymap);
+        xkb_keymap_unref(keymap);
         return;
     }
+
+    // Look up the preferred locale, falling back to "C" as default.
+    locale = getenv("LC_ALL");
+    if (!locale)
+        locale = getenv("LC_CTYPE");
+    if (!locale)
+        locale = getenv("LANG");
+    if (!locale)
+        locale = "C";
+
+#ifdef HAVE_XKBCOMMON_COMPOSE_H
+    composeTable =
+        xkb_compose_table_new_from_locale(_glfw.wl.xkb.context, locale,
+                                          XKB_COMPOSE_COMPILE_NO_FLAGS);
+    if (composeTable)
+    {
+        composeState =
+            xkb_compose_state_new(composeTable, XKB_COMPOSE_STATE_NO_FLAGS);
+        xkb_compose_table_unref(composeTable);
+        if (composeState)
+            _glfw.wl.xkb.composeState = composeState;
+        else
+            _glfwInputError(GLFW_PLATFORM_ERROR,
+                            "Wayland: Failed to create XKB compose state");
+    }
+    else
+    {
+        _glfwInputError(GLFW_PLATFORM_ERROR,
+                        "Wayland: Failed to create XKB compose table");
+    }
+#endif
 
     xkb_keymap_unref(_glfw.wl.xkb.keymap);
     xkb_state_unref(_glfw.wl.xkb.state);
     _glfw.wl.xkb.keymap = keymap;
     _glfw.wl.xkb.state = state;
 
-    _glfw.wl.xkb.control_mask =
-        1 << xkb_map_mod_get_index(_glfw.wl.xkb.keymap, "Control");
-    _glfw.wl.xkb.alt_mask =
-        1 << xkb_map_mod_get_index(_glfw.wl.xkb.keymap, "Mod1");
-    _glfw.wl.xkb.shift_mask =
-        1 << xkb_map_mod_get_index(_glfw.wl.xkb.keymap, "Shift");
-    _glfw.wl.xkb.super_mask =
-        1 << xkb_map_mod_get_index(_glfw.wl.xkb.keymap, "Mod4");
+    _glfw.wl.xkb.controlMask =
+        1 << xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Control");
+    _glfw.wl.xkb.altMask =
+        1 << xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Mod1");
+    _glfw.wl.xkb.shiftMask =
+        1 << xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Shift");
+    _glfw.wl.xkb.superMask =
+        1 << xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Mod4");
+    _glfw.wl.xkb.capsLockMask =
+        1 << xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Lock");
+    _glfw.wl.xkb.numLockMask =
+        1 << xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Mod2");
 }
 
 static void keyboardHandleEnter(void* data,
@@ -230,10 +452,20 @@ static void keyboardHandleEnter(void* data,
                                 struct wl_surface* surface,
                                 struct wl_array* keys)
 {
+    // Happens in the case we just destroyed the surface.
+    if (!surface)
+        return;
+
     _GLFWwindow* window = wl_surface_get_user_data(surface);
+    if (!window)
+    {
+        window = findWindowFromDecorationSurface(surface, NULL);
+        if (!window)
+            return;
+    }
 
     _glfw.wl.keyboardFocus = window;
-    _glfwInputWindowFocus(window, GL_TRUE);
+    _glfwInputWindowFocus(window, GLFW_TRUE);
 }
 
 static void keyboardHandleLeave(void* data,
@@ -247,131 +479,66 @@ static void keyboardHandleLeave(void* data,
         return;
 
     _glfw.wl.keyboardFocus = NULL;
-    _glfwInputWindowFocus(window, GL_FALSE);
+    _glfwInputWindowFocus(window, GLFW_FALSE);
 }
 
 static int toGLFWKeyCode(uint32_t key)
 {
-    switch (key)
+    if (key < sizeof(_glfw.wl.keycodes) / sizeof(_glfw.wl.keycodes[0]))
+        return _glfw.wl.keycodes[key];
+
+    return GLFW_KEY_UNKNOWN;
+}
+
+#ifdef HAVE_XKBCOMMON_COMPOSE_H
+static xkb_keysym_t composeSymbol(xkb_keysym_t sym)
+{
+    if (sym == XKB_KEY_NoSymbol || !_glfw.wl.xkb.composeState)
+        return sym;
+    if (xkb_compose_state_feed(_glfw.wl.xkb.composeState, sym)
+            != XKB_COMPOSE_FEED_ACCEPTED)
+        return sym;
+    switch (xkb_compose_state_get_status(_glfw.wl.xkb.composeState))
     {
-        case KEY_GRAVE:         return GLFW_KEY_GRAVE_ACCENT;
-        case KEY_1:             return GLFW_KEY_1;
-        case KEY_2:             return GLFW_KEY_2;
-        case KEY_3:             return GLFW_KEY_3;
-        case KEY_4:             return GLFW_KEY_4;
-        case KEY_5:             return GLFW_KEY_5;
-        case KEY_6:             return GLFW_KEY_6;
-        case KEY_7:             return GLFW_KEY_7;
-        case KEY_8:             return GLFW_KEY_8;
-        case KEY_9:             return GLFW_KEY_9;
-        case KEY_0:             return GLFW_KEY_0;
-        case KEY_MINUS:         return GLFW_KEY_MINUS;
-        case KEY_EQUAL:         return GLFW_KEY_EQUAL;
-        case KEY_Q:             return GLFW_KEY_Q;
-        case KEY_W:             return GLFW_KEY_W;
-        case KEY_E:             return GLFW_KEY_E;
-        case KEY_R:             return GLFW_KEY_R;
-        case KEY_T:             return GLFW_KEY_T;
-        case KEY_Y:             return GLFW_KEY_Y;
-        case KEY_U:             return GLFW_KEY_U;
-        case KEY_I:             return GLFW_KEY_I;
-        case KEY_O:             return GLFW_KEY_O;
-        case KEY_P:             return GLFW_KEY_P;
-        case KEY_LEFTBRACE:     return GLFW_KEY_LEFT_BRACKET;
-        case KEY_RIGHTBRACE:    return GLFW_KEY_RIGHT_BRACKET;
-        case KEY_A:             return GLFW_KEY_A;
-        case KEY_S:             return GLFW_KEY_S;
-        case KEY_D:             return GLFW_KEY_D;
-        case KEY_F:             return GLFW_KEY_F;
-        case KEY_G:             return GLFW_KEY_G;
-        case KEY_H:             return GLFW_KEY_H;
-        case KEY_J:             return GLFW_KEY_J;
-        case KEY_K:             return GLFW_KEY_K;
-        case KEY_L:             return GLFW_KEY_L;
-        case KEY_SEMICOLON:     return GLFW_KEY_SEMICOLON;
-        case KEY_APOSTROPHE:    return GLFW_KEY_APOSTROPHE;
-        case KEY_Z:             return GLFW_KEY_Z;
-        case KEY_X:             return GLFW_KEY_X;
-        case KEY_C:             return GLFW_KEY_C;
-        case KEY_V:             return GLFW_KEY_V;
-        case KEY_B:             return GLFW_KEY_B;
-        case KEY_N:             return GLFW_KEY_N;
-        case KEY_M:             return GLFW_KEY_M;
-        case KEY_COMMA:         return GLFW_KEY_COMMA;
-        case KEY_DOT:           return GLFW_KEY_PERIOD;
-        case KEY_SLASH:         return GLFW_KEY_SLASH;
-        case KEY_BACKSLASH:     return GLFW_KEY_BACKSLASH;
-        case KEY_ESC:           return GLFW_KEY_ESCAPE;
-        case KEY_TAB:           return GLFW_KEY_TAB;
-        case KEY_LEFTSHIFT:     return GLFW_KEY_LEFT_SHIFT;
-        case KEY_RIGHTSHIFT:    return GLFW_KEY_RIGHT_SHIFT;
-        case KEY_LEFTCTRL:      return GLFW_KEY_LEFT_CONTROL;
-        case KEY_RIGHTCTRL:     return GLFW_KEY_RIGHT_CONTROL;
-        case KEY_LEFTALT:       return GLFW_KEY_LEFT_ALT;
-        case KEY_RIGHTALT:      return GLFW_KEY_RIGHT_ALT;
-        case KEY_LEFTMETA:      return GLFW_KEY_LEFT_SUPER;
-        case KEY_RIGHTMETA:     return GLFW_KEY_RIGHT_SUPER;
-        case KEY_MENU:          return GLFW_KEY_MENU;
-        case KEY_NUMLOCK:       return GLFW_KEY_NUM_LOCK;
-        case KEY_CAPSLOCK:      return GLFW_KEY_CAPS_LOCK;
-        case KEY_PRINT:         return GLFW_KEY_PRINT_SCREEN;
-        case KEY_SCROLLLOCK:    return GLFW_KEY_SCROLL_LOCK;
-        case KEY_PAUSE:         return GLFW_KEY_PAUSE;
-        case KEY_DELETE:        return GLFW_KEY_DELETE;
-        case KEY_BACKSPACE:     return GLFW_KEY_BACKSPACE;
-        case KEY_ENTER:         return GLFW_KEY_ENTER;
-        case KEY_HOME:          return GLFW_KEY_HOME;
-        case KEY_END:           return GLFW_KEY_END;
-        case KEY_PAGEUP:        return GLFW_KEY_PAGE_UP;
-        case KEY_PAGEDOWN:      return GLFW_KEY_PAGE_DOWN;
-        case KEY_INSERT:        return GLFW_KEY_INSERT;
-        case KEY_LEFT:          return GLFW_KEY_LEFT;
-        case KEY_RIGHT:         return GLFW_KEY_RIGHT;
-        case KEY_DOWN:          return GLFW_KEY_DOWN;
-        case KEY_UP:            return GLFW_KEY_UP;
-        case KEY_F1:            return GLFW_KEY_F1;
-        case KEY_F2:            return GLFW_KEY_F2;
-        case KEY_F3:            return GLFW_KEY_F3;
-        case KEY_F4:            return GLFW_KEY_F4;
-        case KEY_F5:            return GLFW_KEY_F5;
-        case KEY_F6:            return GLFW_KEY_F6;
-        case KEY_F7:            return GLFW_KEY_F7;
-        case KEY_F8:            return GLFW_KEY_F8;
-        case KEY_F9:            return GLFW_KEY_F9;
-        case KEY_F10:           return GLFW_KEY_F10;
-        case KEY_F11:           return GLFW_KEY_F11;
-        case KEY_F12:           return GLFW_KEY_F12;
-        case KEY_F13:           return GLFW_KEY_F13;
-        case KEY_F14:           return GLFW_KEY_F14;
-        case KEY_F15:           return GLFW_KEY_F15;
-        case KEY_F16:           return GLFW_KEY_F16;
-        case KEY_F17:           return GLFW_KEY_F17;
-        case KEY_F18:           return GLFW_KEY_F18;
-        case KEY_F19:           return GLFW_KEY_F19;
-        case KEY_F20:           return GLFW_KEY_F20;
-        case KEY_F21:           return GLFW_KEY_F21;
-        case KEY_F22:           return GLFW_KEY_F22;
-        case KEY_F23:           return GLFW_KEY_F23;
-        case KEY_F24:           return GLFW_KEY_F24;
-        case KEY_KPSLASH:       return GLFW_KEY_KP_DIVIDE;
-        case KEY_KPDOT:         return GLFW_KEY_KP_MULTIPLY;
-        case KEY_KPMINUS:       return GLFW_KEY_KP_SUBTRACT;
-        case KEY_KPPLUS:        return GLFW_KEY_KP_ADD;
-        case KEY_KP0:           return GLFW_KEY_KP_0;
-        case KEY_KP1:           return GLFW_KEY_KP_1;
-        case KEY_KP2:           return GLFW_KEY_KP_2;
-        case KEY_KP3:           return GLFW_KEY_KP_3;
-        case KEY_KP4:           return GLFW_KEY_KP_4;
-        case KEY_KP5:           return GLFW_KEY_KP_5;
-        case KEY_KP6:           return GLFW_KEY_KP_6;
-        case KEY_KP7:           return GLFW_KEY_KP_7;
-        case KEY_KP8:           return GLFW_KEY_KP_8;
-        case KEY_KP9:           return GLFW_KEY_KP_9;
-        case KEY_KPCOMMA:       return GLFW_KEY_KP_DECIMAL;
-        case KEY_KPEQUAL:       return GLFW_KEY_KP_EQUAL;
-        case KEY_KPENTER:       return GLFW_KEY_KP_ENTER;
-        default:                return GLFW_KEY_UNKNOWN;
+        case XKB_COMPOSE_COMPOSED:
+            return xkb_compose_state_get_one_sym(_glfw.wl.xkb.composeState);
+        case XKB_COMPOSE_COMPOSING:
+        case XKB_COMPOSE_CANCELLED:
+            return XKB_KEY_NoSymbol;
+        case XKB_COMPOSE_NOTHING:
+        default:
+            return sym;
     }
+}
+#endif
+
+static GLFWbool inputChar(_GLFWwindow* window, uint32_t key)
+{
+    uint32_t code, numSyms;
+    long cp;
+    const xkb_keysym_t *syms;
+    xkb_keysym_t sym;
+
+    code = key + 8;
+    numSyms = xkb_state_key_get_syms(_glfw.wl.xkb.state, code, &syms);
+
+    if (numSyms == 1)
+    {
+#ifdef HAVE_XKBCOMMON_COMPOSE_H
+        sym = composeSymbol(syms[0]);
+#else
+        sym = syms[0];
+#endif
+        cp = _glfwKeySym2Unicode(sym);
+        if (cp != -1)
+        {
+            const int mods = _glfw.wl.xkb.modifiers;
+            const int plain = !(mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT));
+            _glfwInputChar(window, cp, mods, plain);
+        }
+    }
+
+    return xkb_keymap_key_repeats(_glfw.wl.xkb.keymap, syms[0]);
 }
 
 static void keyboardHandleKey(void* data,
@@ -381,12 +548,11 @@ static void keyboardHandleKey(void* data,
                               uint32_t key,
                               uint32_t state)
 {
-    uint32_t code, num_syms;
-    long cp;
     int keyCode;
     int action;
-    const xkb_keysym_t *syms;
     _GLFWwindow* window = _glfw.wl.keyboardFocus;
+    GLFWbool shouldRepeat;
+    struct itimerspec timer = {};
 
     if (!window)
         return;
@@ -398,19 +564,21 @@ static void keyboardHandleKey(void* data,
     _glfwInputKey(window, keyCode, key, action,
                   _glfw.wl.xkb.modifiers);
 
-    code = key + 8;
-    num_syms = xkb_key_get_syms(_glfw.wl.xkb.state, code, &syms);
-
-    if (num_syms == 1)
+    if (action == GLFW_PRESS)
     {
-        cp = _glfwKeySym2Unicode(syms[0]);
-        if (cp != -1)
+        shouldRepeat = inputChar(window, key);
+
+        if (shouldRepeat && _glfw.wl.keyboardRepeatRate > 0)
         {
-            const int mods = _glfw.wl.xkb.modifiers;
-            const int plain = !(mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT));
-            _glfwInputChar(window, cp, mods, plain);
+            _glfw.wl.keyboardLastKey = keyCode;
+            _glfw.wl.keyboardLastScancode = key;
+            timer.it_interval.tv_sec = _glfw.wl.keyboardRepeatRate / 1000;
+            timer.it_interval.tv_nsec = (_glfw.wl.keyboardRepeatRate % 1000) * 1000000;
+            timer.it_value.tv_sec = _glfw.wl.keyboardRepeatDelay / 1000;
+            timer.it_value.tv_nsec = (_glfw.wl.keyboardRepeatDelay % 1000) * 1000000;
         }
     }
+    timerfd_settime(_glfw.wl.timerfd, 0, &timer, NULL);
 }
 
 static void keyboardHandleModifiers(void* data,
@@ -436,18 +604,38 @@ static void keyboardHandleModifiers(void* data,
                           group);
 
     mask = xkb_state_serialize_mods(_glfw.wl.xkb.state,
-                                    XKB_STATE_DEPRESSED |
-                                    XKB_STATE_LATCHED);
-    if (mask & _glfw.wl.xkb.control_mask)
+                                    XKB_STATE_MODS_DEPRESSED |
+                                    XKB_STATE_LAYOUT_DEPRESSED |
+                                    XKB_STATE_MODS_LATCHED |
+                                    XKB_STATE_LAYOUT_LATCHED);
+    if (mask & _glfw.wl.xkb.controlMask)
         modifiers |= GLFW_MOD_CONTROL;
-    if (mask & _glfw.wl.xkb.alt_mask)
+    if (mask & _glfw.wl.xkb.altMask)
         modifiers |= GLFW_MOD_ALT;
-    if (mask & _glfw.wl.xkb.shift_mask)
+    if (mask & _glfw.wl.xkb.shiftMask)
         modifiers |= GLFW_MOD_SHIFT;
-    if (mask & _glfw.wl.xkb.super_mask)
+    if (mask & _glfw.wl.xkb.superMask)
         modifiers |= GLFW_MOD_SUPER;
+    if (mask & _glfw.wl.xkb.capsLockMask)
+        modifiers |= GLFW_MOD_CAPS_LOCK;
+    if (mask & _glfw.wl.xkb.numLockMask)
+        modifiers |= GLFW_MOD_NUM_LOCK;
     _glfw.wl.xkb.modifiers = modifiers;
 }
+
+#ifdef WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION
+static void keyboardHandleRepeatInfo(void* data,
+                                     struct wl_keyboard* keyboard,
+                                     int32_t rate,
+                                     int32_t delay)
+{
+    if (keyboard != _glfw.wl.keyboard)
+        return;
+
+    _glfw.wl.keyboardRepeatRate = rate;
+    _glfw.wl.keyboardRepeatDelay = delay;
+}
+#endif
 
 static const struct wl_keyboard_listener keyboardListener = {
     keyboardHandleKeymap,
@@ -455,6 +643,9 @@ static const struct wl_keyboard_listener keyboardListener = {
     keyboardHandleLeave,
     keyboardHandleKey,
     keyboardHandleModifiers,
+#ifdef WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION
+    keyboardHandleRepeatInfo,
+#endif
 };
 
 static void seatHandleCapabilities(void* data,
@@ -484,8 +675,26 @@ static void seatHandleCapabilities(void* data,
     }
 }
 
+static void seatHandleName(void* data,
+                           struct wl_seat* seat,
+                           const char* name)
+{
+}
+
 static const struct wl_seat_listener seatListener = {
-    seatHandleCapabilities
+    seatHandleCapabilities,
+    seatHandleName,
+};
+
+static void wmBaseHandlePing(void* data,
+                             struct xdg_wm_base* wmBase,
+                             uint32_t serial)
+{
+    xdg_wm_base_pong(wmBase, serial);
+}
+
+static const struct xdg_wm_base_listener wmBaseListener = {
+    wmBaseHandlePing
 };
 
 static void registryHandleGlobal(void* data,
@@ -496,8 +705,15 @@ static void registryHandleGlobal(void* data,
 {
     if (strcmp(interface, "wl_compositor") == 0)
     {
+        _glfw.wl.compositorVersion = min(3, version);
         _glfw.wl.compositor =
-            wl_registry_bind(registry, name, &wl_compositor_interface, 1);
+            wl_registry_bind(registry, name, &wl_compositor_interface,
+                             _glfw.wl.compositorVersion);
+    }
+    else if (strcmp(interface, "wl_subcompositor") == 0)
+    {
+        _glfw.wl.subcompositor =
+            wl_registry_bind(registry, name, &wl_subcompositor_interface, 1);
     }
     else if (strcmp(interface, "wl_shm") == 0)
     {
@@ -511,16 +727,50 @@ static void registryHandleGlobal(void* data,
     }
     else if (strcmp(interface, "wl_output") == 0)
     {
-        _glfwAddOutput(name, version);
+        _glfwAddOutputWayland(name, version);
     }
     else if (strcmp(interface, "wl_seat") == 0)
     {
         if (!_glfw.wl.seat)
         {
+            _glfw.wl.seatVersion = min(4, version);
             _glfw.wl.seat =
-                wl_registry_bind(registry, name, &wl_seat_interface, 1);
+                wl_registry_bind(registry, name, &wl_seat_interface,
+                                 _glfw.wl.seatVersion);
             wl_seat_add_listener(_glfw.wl.seat, &seatListener, NULL);
         }
+    }
+    else if (strcmp(interface, "xdg_wm_base") == 0)
+    {
+        _glfw.wl.wmBase =
+            wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
+        xdg_wm_base_add_listener(_glfw.wl.wmBase, &wmBaseListener, NULL);
+    }
+    else if (strcmp(interface, "wp_viewporter") == 0)
+    {
+        _glfw.wl.viewporter =
+            wl_registry_bind(registry, name, &wp_viewporter_interface, 1);
+    }
+    else if (strcmp(interface, "zwp_relative_pointer_manager_v1") == 0)
+    {
+        _glfw.wl.relativePointerManager =
+            wl_registry_bind(registry, name,
+                             &zwp_relative_pointer_manager_v1_interface,
+                             1);
+    }
+    else if (strcmp(interface, "zwp_pointer_constraints_v1") == 0)
+    {
+        _glfw.wl.pointerConstraints =
+            wl_registry_bind(registry, name,
+                             &zwp_pointer_constraints_v1_interface,
+                             1);
+    }
+    else if (strcmp(interface, "zwp_idle_inhibit_manager_v1") == 0)
+    {
+        _glfw.wl.idleInhibitManager =
+            wl_registry_bind(registry, name,
+                             &zwp_idle_inhibit_manager_v1_interface,
+                             1);
     }
 }
 
@@ -528,6 +778,18 @@ static void registryHandleGlobalRemove(void *data,
                                        struct wl_registry *registry,
                                        uint32_t name)
 {
+    int i;
+    _GLFWmonitor* monitor;
+
+    for (i = 0; i < _glfw.monitorCount; ++i)
+    {
+        monitor = _glfw.monitors[i];
+        if (monitor->wl.name == name)
+        {
+            _glfwInputMonitor(monitor, GLFW_DISCONNECTED, 0);
+            return;
+        }
+    }
 }
 
 
@@ -536,6 +798,140 @@ static const struct wl_registry_listener registryListener = {
     registryHandleGlobalRemove
 };
 
+// Create key code translation tables
+//
+static void createKeyTables(void)
+{
+    int scancode;
+
+    memset(_glfw.wl.keycodes, -1, sizeof(_glfw.wl.keycodes));
+    memset(_glfw.wl.scancodes, -1, sizeof(_glfw.wl.scancodes));
+
+    _glfw.wl.keycodes[KEY_GRAVE]      = GLFW_KEY_GRAVE_ACCENT;
+    _glfw.wl.keycodes[KEY_1]          = GLFW_KEY_1;
+    _glfw.wl.keycodes[KEY_2]          = GLFW_KEY_2;
+    _glfw.wl.keycodes[KEY_3]          = GLFW_KEY_3;
+    _glfw.wl.keycodes[KEY_4]          = GLFW_KEY_4;
+    _glfw.wl.keycodes[KEY_5]          = GLFW_KEY_5;
+    _glfw.wl.keycodes[KEY_6]          = GLFW_KEY_6;
+    _glfw.wl.keycodes[KEY_7]          = GLFW_KEY_7;
+    _glfw.wl.keycodes[KEY_8]          = GLFW_KEY_8;
+    _glfw.wl.keycodes[KEY_9]          = GLFW_KEY_9;
+    _glfw.wl.keycodes[KEY_0]          = GLFW_KEY_0;
+    _glfw.wl.keycodes[KEY_SPACE]      = GLFW_KEY_SPACE;
+    _glfw.wl.keycodes[KEY_MINUS]      = GLFW_KEY_MINUS;
+    _glfw.wl.keycodes[KEY_EQUAL]      = GLFW_KEY_EQUAL;
+    _glfw.wl.keycodes[KEY_Q]          = GLFW_KEY_Q;
+    _glfw.wl.keycodes[KEY_W]          = GLFW_KEY_W;
+    _glfw.wl.keycodes[KEY_E]          = GLFW_KEY_E;
+    _glfw.wl.keycodes[KEY_R]          = GLFW_KEY_R;
+    _glfw.wl.keycodes[KEY_T]          = GLFW_KEY_T;
+    _glfw.wl.keycodes[KEY_Y]          = GLFW_KEY_Y;
+    _glfw.wl.keycodes[KEY_U]          = GLFW_KEY_U;
+    _glfw.wl.keycodes[KEY_I]          = GLFW_KEY_I;
+    _glfw.wl.keycodes[KEY_O]          = GLFW_KEY_O;
+    _glfw.wl.keycodes[KEY_P]          = GLFW_KEY_P;
+    _glfw.wl.keycodes[KEY_LEFTBRACE]  = GLFW_KEY_LEFT_BRACKET;
+    _glfw.wl.keycodes[KEY_RIGHTBRACE] = GLFW_KEY_RIGHT_BRACKET;
+    _glfw.wl.keycodes[KEY_A]          = GLFW_KEY_A;
+    _glfw.wl.keycodes[KEY_S]          = GLFW_KEY_S;
+    _glfw.wl.keycodes[KEY_D]          = GLFW_KEY_D;
+    _glfw.wl.keycodes[KEY_F]          = GLFW_KEY_F;
+    _glfw.wl.keycodes[KEY_G]          = GLFW_KEY_G;
+    _glfw.wl.keycodes[KEY_H]          = GLFW_KEY_H;
+    _glfw.wl.keycodes[KEY_J]          = GLFW_KEY_J;
+    _glfw.wl.keycodes[KEY_K]          = GLFW_KEY_K;
+    _glfw.wl.keycodes[KEY_L]          = GLFW_KEY_L;
+    _glfw.wl.keycodes[KEY_SEMICOLON]  = GLFW_KEY_SEMICOLON;
+    _glfw.wl.keycodes[KEY_APOSTROPHE] = GLFW_KEY_APOSTROPHE;
+    _glfw.wl.keycodes[KEY_Z]          = GLFW_KEY_Z;
+    _glfw.wl.keycodes[KEY_X]          = GLFW_KEY_X;
+    _glfw.wl.keycodes[KEY_C]          = GLFW_KEY_C;
+    _glfw.wl.keycodes[KEY_V]          = GLFW_KEY_V;
+    _glfw.wl.keycodes[KEY_B]          = GLFW_KEY_B;
+    _glfw.wl.keycodes[KEY_N]          = GLFW_KEY_N;
+    _glfw.wl.keycodes[KEY_M]          = GLFW_KEY_M;
+    _glfw.wl.keycodes[KEY_COMMA]      = GLFW_KEY_COMMA;
+    _glfw.wl.keycodes[KEY_DOT]        = GLFW_KEY_PERIOD;
+    _glfw.wl.keycodes[KEY_SLASH]      = GLFW_KEY_SLASH;
+    _glfw.wl.keycodes[KEY_BACKSLASH]  = GLFW_KEY_BACKSLASH;
+    _glfw.wl.keycodes[KEY_ESC]        = GLFW_KEY_ESCAPE;
+    _glfw.wl.keycodes[KEY_TAB]        = GLFW_KEY_TAB;
+    _glfw.wl.keycodes[KEY_LEFTSHIFT]  = GLFW_KEY_LEFT_SHIFT;
+    _glfw.wl.keycodes[KEY_RIGHTSHIFT] = GLFW_KEY_RIGHT_SHIFT;
+    _glfw.wl.keycodes[KEY_LEFTCTRL]   = GLFW_KEY_LEFT_CONTROL;
+    _glfw.wl.keycodes[KEY_RIGHTCTRL]  = GLFW_KEY_RIGHT_CONTROL;
+    _glfw.wl.keycodes[KEY_LEFTALT]    = GLFW_KEY_LEFT_ALT;
+    _glfw.wl.keycodes[KEY_RIGHTALT]   = GLFW_KEY_RIGHT_ALT;
+    _glfw.wl.keycodes[KEY_LEFTMETA]   = GLFW_KEY_LEFT_SUPER;
+    _glfw.wl.keycodes[KEY_RIGHTMETA]  = GLFW_KEY_RIGHT_SUPER;
+    _glfw.wl.keycodes[KEY_MENU]       = GLFW_KEY_MENU;
+    _glfw.wl.keycodes[KEY_NUMLOCK]    = GLFW_KEY_NUM_LOCK;
+    _glfw.wl.keycodes[KEY_CAPSLOCK]   = GLFW_KEY_CAPS_LOCK;
+    _glfw.wl.keycodes[KEY_PRINT]      = GLFW_KEY_PRINT_SCREEN;
+    _glfw.wl.keycodes[KEY_SCROLLLOCK] = GLFW_KEY_SCROLL_LOCK;
+    _glfw.wl.keycodes[KEY_PAUSE]      = GLFW_KEY_PAUSE;
+    _glfw.wl.keycodes[KEY_DELETE]     = GLFW_KEY_DELETE;
+    _glfw.wl.keycodes[KEY_BACKSPACE]  = GLFW_KEY_BACKSPACE;
+    _glfw.wl.keycodes[KEY_ENTER]      = GLFW_KEY_ENTER;
+    _glfw.wl.keycodes[KEY_HOME]       = GLFW_KEY_HOME;
+    _glfw.wl.keycodes[KEY_END]        = GLFW_KEY_END;
+    _glfw.wl.keycodes[KEY_PAGEUP]     = GLFW_KEY_PAGE_UP;
+    _glfw.wl.keycodes[KEY_PAGEDOWN]   = GLFW_KEY_PAGE_DOWN;
+    _glfw.wl.keycodes[KEY_INSERT]     = GLFW_KEY_INSERT;
+    _glfw.wl.keycodes[KEY_LEFT]       = GLFW_KEY_LEFT;
+    _glfw.wl.keycodes[KEY_RIGHT]      = GLFW_KEY_RIGHT;
+    _glfw.wl.keycodes[KEY_DOWN]       = GLFW_KEY_DOWN;
+    _glfw.wl.keycodes[KEY_UP]         = GLFW_KEY_UP;
+    _glfw.wl.keycodes[KEY_F1]         = GLFW_KEY_F1;
+    _glfw.wl.keycodes[KEY_F2]         = GLFW_KEY_F2;
+    _glfw.wl.keycodes[KEY_F3]         = GLFW_KEY_F3;
+    _glfw.wl.keycodes[KEY_F4]         = GLFW_KEY_F4;
+    _glfw.wl.keycodes[KEY_F5]         = GLFW_KEY_F5;
+    _glfw.wl.keycodes[KEY_F6]         = GLFW_KEY_F6;
+    _glfw.wl.keycodes[KEY_F7]         = GLFW_KEY_F7;
+    _glfw.wl.keycodes[KEY_F8]         = GLFW_KEY_F8;
+    _glfw.wl.keycodes[KEY_F9]         = GLFW_KEY_F9;
+    _glfw.wl.keycodes[KEY_F10]        = GLFW_KEY_F10;
+    _glfw.wl.keycodes[KEY_F11]        = GLFW_KEY_F11;
+    _glfw.wl.keycodes[KEY_F12]        = GLFW_KEY_F12;
+    _glfw.wl.keycodes[KEY_F13]        = GLFW_KEY_F13;
+    _glfw.wl.keycodes[KEY_F14]        = GLFW_KEY_F14;
+    _glfw.wl.keycodes[KEY_F15]        = GLFW_KEY_F15;
+    _glfw.wl.keycodes[KEY_F16]        = GLFW_KEY_F16;
+    _glfw.wl.keycodes[KEY_F17]        = GLFW_KEY_F17;
+    _glfw.wl.keycodes[KEY_F18]        = GLFW_KEY_F18;
+    _glfw.wl.keycodes[KEY_F19]        = GLFW_KEY_F19;
+    _glfw.wl.keycodes[KEY_F20]        = GLFW_KEY_F20;
+    _glfw.wl.keycodes[KEY_F21]        = GLFW_KEY_F21;
+    _glfw.wl.keycodes[KEY_F22]        = GLFW_KEY_F22;
+    _glfw.wl.keycodes[KEY_F23]        = GLFW_KEY_F23;
+    _glfw.wl.keycodes[KEY_F24]        = GLFW_KEY_F24;
+    _glfw.wl.keycodes[KEY_KPSLASH]    = GLFW_KEY_KP_DIVIDE;
+    _glfw.wl.keycodes[KEY_KPDOT]      = GLFW_KEY_KP_MULTIPLY;
+    _glfw.wl.keycodes[KEY_KPMINUS]    = GLFW_KEY_KP_SUBTRACT;
+    _glfw.wl.keycodes[KEY_KPPLUS]     = GLFW_KEY_KP_ADD;
+    _glfw.wl.keycodes[KEY_KP0]        = GLFW_KEY_KP_0;
+    _glfw.wl.keycodes[KEY_KP1]        = GLFW_KEY_KP_1;
+    _glfw.wl.keycodes[KEY_KP2]        = GLFW_KEY_KP_2;
+    _glfw.wl.keycodes[KEY_KP3]        = GLFW_KEY_KP_3;
+    _glfw.wl.keycodes[KEY_KP4]        = GLFW_KEY_KP_4;
+    _glfw.wl.keycodes[KEY_KP5]        = GLFW_KEY_KP_5;
+    _glfw.wl.keycodes[KEY_KP6]        = GLFW_KEY_KP_6;
+    _glfw.wl.keycodes[KEY_KP7]        = GLFW_KEY_KP_7;
+    _glfw.wl.keycodes[KEY_KP8]        = GLFW_KEY_KP_8;
+    _glfw.wl.keycodes[KEY_KP9]        = GLFW_KEY_KP_9;
+    _glfw.wl.keycodes[KEY_KPCOMMA]    = GLFW_KEY_KP_DECIMAL;
+    _glfw.wl.keycodes[KEY_KPEQUAL]    = GLFW_KEY_KP_EQUAL;
+    _glfw.wl.keycodes[KEY_KPENTER]    = GLFW_KEY_KP_ENTER;
+
+    for (scancode = 0;  scancode < 256;  scancode++)
+    {
+        if (_glfw.wl.keycodes[scancode] > 0)
+            _glfw.wl.scancodes[_glfw.wl.keycodes[scancode]] = scancode;
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
@@ -543,26 +939,105 @@ static const struct wl_registry_listener registryListener = {
 
 int _glfwPlatformInit(void)
 {
+    _glfw.wl.cursor.handle = _glfw_dlopen("libwayland-cursor.so.0");
+    if (!_glfw.wl.cursor.handle)
+    {
+        _glfwInputError(GLFW_PLATFORM_ERROR,
+                        "Wayland: Failed to open libwayland-cursor");
+        return GLFW_FALSE;
+    }
+
+    _glfw.wl.cursor.theme_load = (PFN_wl_cursor_theme_load)
+        _glfw_dlsym(_glfw.wl.cursor.handle, "wl_cursor_theme_load");
+    _glfw.wl.cursor.theme_destroy = (PFN_wl_cursor_theme_destroy)
+        _glfw_dlsym(_glfw.wl.cursor.handle, "wl_cursor_theme_destroy");
+    _glfw.wl.cursor.theme_get_cursor = (PFN_wl_cursor_theme_get_cursor)
+        _glfw_dlsym(_glfw.wl.cursor.handle, "wl_cursor_theme_get_cursor");
+    _glfw.wl.cursor.image_get_buffer = (PFN_wl_cursor_image_get_buffer)
+        _glfw_dlsym(_glfw.wl.cursor.handle, "wl_cursor_image_get_buffer");
+
+    _glfw.wl.egl.handle = _glfw_dlopen("libwayland-egl.so.1");
+    if (!_glfw.wl.egl.handle)
+    {
+        _glfwInputError(GLFW_PLATFORM_ERROR,
+                        "Wayland: Failed to open libwayland-egl");
+        return GLFW_FALSE;
+    }
+
+    _glfw.wl.egl.window_create = (PFN_wl_egl_window_create)
+        _glfw_dlsym(_glfw.wl.egl.handle, "wl_egl_window_create");
+    _glfw.wl.egl.window_destroy = (PFN_wl_egl_window_destroy)
+        _glfw_dlsym(_glfw.wl.egl.handle, "wl_egl_window_destroy");
+    _glfw.wl.egl.window_resize = (PFN_wl_egl_window_resize)
+        _glfw_dlsym(_glfw.wl.egl.handle, "wl_egl_window_resize");
+
+    _glfw.wl.xkb.handle = _glfw_dlopen("libxkbcommon.so.0");
+    if (!_glfw.wl.xkb.handle)
+    {
+        _glfwInputError(GLFW_PLATFORM_ERROR,
+                        "Wayland: Failed to open libxkbcommon");
+        return GLFW_FALSE;
+    }
+
+    _glfw.wl.xkb.context_new = (PFN_xkb_context_new)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_context_new");
+    _glfw.wl.xkb.context_unref = (PFN_xkb_context_unref)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_context_unref");
+    _glfw.wl.xkb.keymap_new_from_string = (PFN_xkb_keymap_new_from_string)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_keymap_new_from_string");
+    _glfw.wl.xkb.keymap_unref = (PFN_xkb_keymap_unref)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_keymap_unref");
+    _glfw.wl.xkb.keymap_mod_get_index = (PFN_xkb_keymap_mod_get_index)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_keymap_mod_get_index");
+    _glfw.wl.xkb.keymap_key_repeats = (PFN_xkb_keymap_key_repeats)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_keymap_key_repeats");
+    _glfw.wl.xkb.state_new = (PFN_xkb_state_new)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_state_new");
+    _glfw.wl.xkb.state_unref = (PFN_xkb_state_unref)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_state_unref");
+    _glfw.wl.xkb.state_key_get_syms = (PFN_xkb_state_key_get_syms)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_state_key_get_syms");
+    _glfw.wl.xkb.state_update_mask = (PFN_xkb_state_update_mask)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_state_update_mask");
+    _glfw.wl.xkb.state_serialize_mods = (PFN_xkb_state_serialize_mods)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_state_serialize_mods");
+
+#ifdef HAVE_XKBCOMMON_COMPOSE_H
+    _glfw.wl.xkb.compose_table_new_from_locale = (PFN_xkb_compose_table_new_from_locale)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_table_new_from_locale");
+    _glfw.wl.xkb.compose_table_unref = (PFN_xkb_compose_table_unref)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_table_unref");
+    _glfw.wl.xkb.compose_state_new = (PFN_xkb_compose_state_new)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_state_new");
+    _glfw.wl.xkb.compose_state_unref = (PFN_xkb_compose_state_unref)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_state_unref");
+    _glfw.wl.xkb.compose_state_feed = (PFN_xkb_compose_state_feed)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_state_feed");
+    _glfw.wl.xkb.compose_state_get_status = (PFN_xkb_compose_state_get_status)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_state_get_status");
+    _glfw.wl.xkb.compose_state_get_one_sym = (PFN_xkb_compose_state_get_one_sym)
+        _glfw_dlsym(_glfw.wl.xkb.handle, "xkb_compose_state_get_one_sym");
+#endif
+
     _glfw.wl.display = wl_display_connect(NULL);
     if (!_glfw.wl.display)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
                         "Wayland: Failed to connect to display");
-        return GL_FALSE;
+        return GLFW_FALSE;
     }
 
     _glfw.wl.registry = wl_display_get_registry(_glfw.wl.display);
     wl_registry_add_listener(_glfw.wl.registry, &registryListener, NULL);
 
-    _glfw.wl.monitors = calloc(4, sizeof(_GLFWmonitor*));
-    _glfw.wl.monitorsSize = 4;
+    createKeyTables();
 
     _glfw.wl.xkb.context = xkb_context_new(0);
     if (!_glfw.wl.xkb.context)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
                         "Wayland: Failed to initialize xkb context");
-        return GL_FALSE;
+        return GLFW_FALSE;
     }
 
     // Sync so we got all registry objects
@@ -571,11 +1046,14 @@ int _glfwPlatformInit(void)
     // Sync so we got all initial output events
     wl_display_roundtrip(_glfw.wl.display);
 
-    if (!_glfwInitContextAPI())
-        return GL_FALSE;
+    if (!_glfwInitJoysticksLinux())
+        return GLFW_FALSE;
 
-    _glfwInitTimer();
-    _glfwInitJoysticks();
+    _glfwInitTimerPOSIX();
+
+    _glfw.wl.timerfd = -1;
+    if (_glfw.wl.seatVersion >= 4)
+        _glfw.wl.timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC);
 
     if (_glfw.wl.pointer && _glfw.wl.shm)
     {
@@ -583,39 +1061,83 @@ int _glfwPlatformInit(void)
         if (!_glfw.wl.cursorTheme)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "Wayland: Unable to load default cursor theme\n");
-            return GL_FALSE;
-        }
-        _glfw.wl.defaultCursor =
-            wl_cursor_theme_get_cursor(_glfw.wl.cursorTheme, "left_ptr");
-        if (!_glfw.wl.defaultCursor)
-        {
-            _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "Wayland: Unable to load default left pointer\n");
-            return GL_FALSE;
+                            "Wayland: Unable to load default cursor theme");
+            return GLFW_FALSE;
         }
         _glfw.wl.cursorSurface =
             wl_compositor_create_surface(_glfw.wl.compositor);
     }
 
-    return GL_TRUE;
+    return GLFW_TRUE;
 }
 
 void _glfwPlatformTerminate(void)
 {
-    _glfwTerminateContextAPI();
-    _glfwTerminateJoysticks();
+    _glfwTerminateJoysticksLinux();
+    _glfwTerminateEGL();
+    if (_glfw.wl.egl.handle)
+    {
+        _glfw_dlclose(_glfw.wl.egl.handle);
+        _glfw.wl.egl.handle = NULL;
+    }
+
+#ifdef HAVE_XKBCOMMON_COMPOSE_H
+    if (_glfw.wl.xkb.composeState)
+        xkb_compose_state_unref(_glfw.wl.xkb.composeState);
+#endif
+    if (_glfw.wl.xkb.keymap)
+        xkb_keymap_unref(_glfw.wl.xkb.keymap);
+    if (_glfw.wl.xkb.state)
+        xkb_state_unref(_glfw.wl.xkb.state);
+    if (_glfw.wl.xkb.context)
+        xkb_context_unref(_glfw.wl.xkb.context);
+    if (_glfw.wl.xkb.handle)
+    {
+        _glfw_dlclose(_glfw.wl.xkb.handle);
+        _glfw.wl.xkb.handle = NULL;
+    }
 
     if (_glfw.wl.cursorTheme)
         wl_cursor_theme_destroy(_glfw.wl.cursorTheme);
+    if (_glfw.wl.cursor.handle)
+    {
+        _glfw_dlclose(_glfw.wl.cursor.handle);
+        _glfw.wl.cursor.handle = NULL;
+    }
+
     if (_glfw.wl.cursorSurface)
         wl_surface_destroy(_glfw.wl.cursorSurface);
+    if (_glfw.wl.subcompositor)
+        wl_subcompositor_destroy(_glfw.wl.subcompositor);
+    if (_glfw.wl.compositor)
+        wl_compositor_destroy(_glfw.wl.compositor);
+    if (_glfw.wl.shm)
+        wl_shm_destroy(_glfw.wl.shm);
+    if (_glfw.wl.shell)
+        wl_shell_destroy(_glfw.wl.shell);
+    if (_glfw.wl.viewporter)
+        wp_viewporter_destroy(_glfw.wl.viewporter);
+    if (_glfw.wl.wmBase)
+        xdg_wm_base_destroy(_glfw.wl.wmBase);
+    if (_glfw.wl.pointer)
+        wl_pointer_destroy(_glfw.wl.pointer);
+    if (_glfw.wl.keyboard)
+        wl_keyboard_destroy(_glfw.wl.keyboard);
+    if (_glfw.wl.seat)
+        wl_seat_destroy(_glfw.wl.seat);
+    if (_glfw.wl.relativePointerManager)
+        zwp_relative_pointer_manager_v1_destroy(_glfw.wl.relativePointerManager);
+    if (_glfw.wl.pointerConstraints)
+        zwp_pointer_constraints_v1_destroy(_glfw.wl.pointerConstraints);
+    if (_glfw.wl.idleInhibitManager)
+        zwp_idle_inhibit_manager_v1_destroy(_glfw.wl.idleInhibitManager);
     if (_glfw.wl.registry)
         wl_registry_destroy(_glfw.wl.registry);
     if (_glfw.wl.display)
+    {
         wl_display_flush(_glfw.wl.display);
-    if (_glfw.wl.display)
         wl_display_disconnect(_glfw.wl.display);
+    }
 }
 
 const char* _glfwPlatformGetVersionString(void)
@@ -626,9 +1148,7 @@ const char* _glfwPlatformGetVersionString(void)
 #else
         " gettimeofday"
 #endif
-#if defined(__linux__)
-        " /dev/js"
-#endif
+        " evdev"
 #if defined(_GLFW_BUILD_DLL)
         " shared"
 #endif

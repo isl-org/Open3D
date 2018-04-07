@@ -1,8 +1,8 @@
 //========================================================================
-// GLFW 3.1 POSIX - www.glfw.org
+// GLFW 3.3 POSIX - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
-// Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -25,25 +25,20 @@
 //
 //========================================================================
 
-#ifndef _glfw3_posix_time_h_
-#define _glfw3_posix_time_h_
-
-#define _GLFW_PLATFORM_LIBRARY_TIME_STATE _GLFWtimePOSIX posix_time
+#define _GLFW_PLATFORM_LIBRARY_TIMER_STATE _GLFWtimerPOSIX posix
 
 #include <stdint.h>
 
 
 // POSIX-specific global timer data
 //
-typedef struct _GLFWtimePOSIX
+typedef struct _GLFWtimerPOSIX
 {
-    GLboolean   monotonic;
-    double      resolution;
-    uint64_t    base;
+    GLFWbool    monotonic;
+    uint64_t    frequency;
 
-} _GLFWtimePOSIX;
+} _GLFWtimerPOSIX;
 
 
-void _glfwInitTimer(void);
+void _glfwInitTimerPOSIX(void);
 
-#endif // _glfw3_posix_time_h_

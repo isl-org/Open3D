@@ -14,12 +14,12 @@ A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 http://eigen.tuxfamily.org/
 --------------------------------------------------------------------------------
-GLFW                        3.1.1                            zlib/libpng license
+GLFW                        3.3.0 (dev)                      zlib/libpng license
 A cross-platform library for creating windows with OpenGL contexts and receiving
 input and events
 http://www.glfw.org/
 --------------------------------------------------------------------------------
-GLEW                        1.13.0                                   MIT License
+GLEW                        2.1.0                                    MIT License
 A cross-platform open-source C/C++ extension loading library
 http://glew.sourceforge.net/
 --------------------------------------------------------------------------------

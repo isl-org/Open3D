@@ -43,7 +43,15 @@ add_library(Visualization ${Open3D_LIB_TYPE}
 	${VISUALIZATION_VISUALIZER_HEADER_FILES} ${VISUALIZATION_VISUALIZER_SOURCE_FILES}
 )
 add_dependencies(Visualization ShaderFileTarget)
-target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES})
+
+if (Open3D_HEADLESS_RENDERING)
+	find_package(OSMesa REQUIRED)
+	include_directories(${OSMESA_INCLUDE_DIR})
+	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OSMESA_LIBRARY})
+else ()
+	find_package(OpenGL REQUIRED)
+	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
+endif ()
 
 install(TARGETS Visualization
 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
