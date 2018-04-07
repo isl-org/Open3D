@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VISUALIZATION_H
+#define OPEN3D_VISUALIZATION_H
 
 #include "Utility/BoundingBox.h"
 #include "Utility/SelectionPolygon.h"
@@ -39,3 +40,5 @@
 #include "Visualizer/ViewControl.h"
 #include "Visualizer/ViewControlWithCustomAnimation.h"
 #include "Visualizer/ViewControlWithEditing.h"
+
+#endif /* OPEN3D_VISUALIZATION_H */

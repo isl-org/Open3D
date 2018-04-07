@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_IMAGE_IO_H
+#define OPEN3D_IMAGE_IO_H
 
 #include <string>
 #include <Core/Geometry/Image.h>
@@ -55,3 +56,5 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
 		int quality = 90);
 
 }	// namespace three
+
+#endif /* OPEN3D_IMAGE_IO_H */

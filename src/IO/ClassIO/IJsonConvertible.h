@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_I_JSON_CONVERTIBLE_H
+#define OPEN3D_I_JSON_CONVERTIBLE_H
 
 #include <Eigen/Core>
 #include <Core/Utility/Eigen.h>
@@ -70,3 +71,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_I_JSON_CONVERTIBLE_H */

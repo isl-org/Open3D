@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PY3D_IO_H
+#define OPEN3D_PY3D_IO_H
 
 #include <Python/py3d.h>
+
+#endif /* OPEN3D_PY3D_IO_H */

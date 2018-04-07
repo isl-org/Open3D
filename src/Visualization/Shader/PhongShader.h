@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PHONG_SHADER_H
+#define OPEN3D_PHONG_SHADER_H
 
 #include <vector>
 #include <Eigen/Core>
@@ -122,3 +123,5 @@ protected:
 }	// namespace three::glsl
 
 }	// namespace three
+
+#endif /* OPEN3D_PHONG_SHADER_H */

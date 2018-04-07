@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_HELPER_H
+#define OPEN3D_HELPER_H
 
 #include <tuple>
 #include <functional>
@@ -117,3 +118,5 @@ void SplitString(std::vector<std::string> &tokens, const std::string &str,
 		const std::string &delimiters = " ", bool trim_empty_str = true);
 
 }	// namespace three
+
+#endif /* OPEN3D_HELPER_H */

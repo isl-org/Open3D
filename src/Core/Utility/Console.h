@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_CONSOLE_H
+#define OPEN3D_CONSOLE_H
 
 #include <vector>
 #include <string>
@@ -83,3 +84,5 @@ bool ProgramOptionExistsAny(int argc, char **argv,
 		const std::vector<std::string> &options);
 
 }	// namespace three
+
+#endif /* OPEN3D_CONSOLE_H */

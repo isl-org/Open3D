@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VIEW_TRAJECTORY_H
+#define OPEN3D_VIEW_TRAJECTORY_H
 
 #include <vector>
 #include <tuple>
@@ -93,3 +94,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VIEW_TRAJECTORY_H */

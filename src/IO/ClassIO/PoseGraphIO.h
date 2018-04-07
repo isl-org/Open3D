@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_POSE_GRAPH_IO_H
+#define OPEN3D_POSE_GRAPH_IO_H
 
 #include <string>
 #include <Core/Registration/PoseGraph.h>
@@ -42,3 +43,5 @@ bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
 
 }	// namespace three
+
+#endif /* OPEN3D_POSE_GRAPH_IO_H */

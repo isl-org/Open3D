@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#ifndef OPEN3D_ALIGNMENT_SESSION_H
+#define OPEN3D_ALIGNMENT_SESSION_H
+
 #include <thread>
 #include <Core/Core.h>
 #include <IO/IO.h>
@@ -49,3 +52,5 @@ public:
 };
 
 }		// namespace three
+
+#endif /* OPEN3D_ALIGNMENT_SESSION_H */

@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_TRIANGLE_MESH_IO_H
+#define OPEN3D_TRIANGLE_MESH_IO_H
 
 #include <string>
 #include <Core/Geometry/TriangleMesh.h>
@@ -51,3 +52,5 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
 		bool compressed = false);
 
 }	// namespace three
+
+#endif /* OPEN3D_TRIANGLE_MESH_IO_H */

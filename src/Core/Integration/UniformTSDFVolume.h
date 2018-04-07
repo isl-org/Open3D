@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_UNIFORM_TSDF_VOLUME_H
+#define OPEN3D_UNIFORM_TSDF_VOLUME_H
 
 #include <Core/Integration/TSDFVolume.h>
 
@@ -78,3 +79,5 @@ private:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_UNIFORM_TSDF_VOLUME_H */

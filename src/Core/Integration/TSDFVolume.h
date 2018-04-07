@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_TSDF_VOLUME_H
+#define OPEN3D_TSDF_VOLUME_H
 
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Geometry/PointCloud.h>
@@ -72,3 +73,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_TSDF_VOLUME_H */

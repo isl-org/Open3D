@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_GEOMETRY2_D_H
+#define OPEN3D_GEOMETRY2_D_H
 
 #include <Eigen/Core>
 #include <Core/Geometry/Geometry.h>
@@ -47,3 +48,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_GEOMETRY2_D_H */

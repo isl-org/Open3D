@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_ODOMETRY_H
+#define OPEN3D_ODOMETRY_H
 
 #include <iostream>
 #include <vector>
@@ -52,3 +53,5 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 		const OdometryOption &option = OdometryOption());
 
 }	// namespace three
+
+#endif /* OPEN3D_ODOMETRY_H */

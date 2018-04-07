@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PY3D_VISUALIZATION_H
+#define OPEN3D_PY3D_VISUALIZATION_H
 
 #include <Python/py3d.h>
 
@@ -37,3 +38,5 @@ void pybind_renderoption_method(py::module &m);
 void pybind_viewcontrol_method(py::module &m);
 void pybind_visualizer_method(py::module &m);
 void pybind_utility_methods(py::module &m);
+
+#endif /* OPEN3D_PY3D_VISUALIZATION_H */

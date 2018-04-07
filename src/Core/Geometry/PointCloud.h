@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_POINT_CLOUD_H
+#define OPEN3D_POINT_CLOUD_H
 
 #include <tuple>
 #include <vector>
@@ -177,3 +178,5 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 		const PointCloud &input);
 
 }	// namespace three
+
+#endif /* OPEN3D_POINT_CLOUD_H */

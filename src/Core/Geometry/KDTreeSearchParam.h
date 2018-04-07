@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_KD_TREE_SEARCH_PARAM_H
+#define OPEN3D_KD_TREE_SEARCH_PARAM_H
 
 namespace three {
 
@@ -80,3 +81,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_KD_TREE_SEARCH_PARAM_H */

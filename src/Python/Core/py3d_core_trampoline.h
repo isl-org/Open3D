@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PY3D_CORE_TRAMPOLINE_H
+#define OPEN3D_PY3D_CORE_TRAMPOLINE_H
 
 #include <Python/py3d.h>
 #include <Core/Geometry/Geometry.h>
@@ -70,3 +71,5 @@ public:
 		PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
 	}
 };
+
+#endif /* OPEN3D_PY3D_CORE_TRAMPOLINE_H */

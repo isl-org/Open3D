@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_IO_H
+#define OPEN3D_IO_H
 
 #include "ClassIO/PointCloudIO.h"
 #include "ClassIO/TriangleMeshIO.h"
@@ -33,3 +34,5 @@
 #include "ClassIO/IJsonConvertibleIO.h"
 #include "ClassIO/FeatureIO.h"
 #include "ClassIO/PoseGraphIO.h"
+
+#endif /* OPEN3D_IO_H */

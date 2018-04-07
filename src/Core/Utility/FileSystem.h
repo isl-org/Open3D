@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_FILE_SYSTEM_H
+#define OPEN3D_FILE_SYSTEM_H
 
 #include <string>
 #include <vector>
@@ -68,3 +69,5 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 }	// namespace three::filesystem
 
 }	// namespace three
+
+#endif /* OPEN3D_FILE_SYSTEM_H */

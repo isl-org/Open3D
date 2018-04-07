@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_COLOR_MAP_H
+#define OPEN3D_COLOR_MAP_H
 #include <memory>
 #include <Eigen/Core>
 
@@ -117,3 +118,5 @@ const std::shared_ptr<const ColorMap> GetGlobalColorMap();
 void SetGlobalColorMap(ColorMap::ColorMapOption option);
 
 }	// namespace three
+
+#endif /* OPEN3D_COLOR_MAP_H */

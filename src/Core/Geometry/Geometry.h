@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_GEOMETRY_H
+#define OPEN3D_GEOMETRY_H
 
 namespace three {
 
@@ -58,3 +59,5 @@ private:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_GEOMETRY_H */

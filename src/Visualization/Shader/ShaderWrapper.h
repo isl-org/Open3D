@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_SHADER_WRAPPER_H
+#define OPEN3D_SHADER_WRAPPER_H
 
 #include <GL/glew.h>
 #include <Core/Geometry/Geometry.h>
@@ -109,3 +110,5 @@ private:
 }	// namespace three::glsl
 
 }	// namespace three
+
+#endif /* OPEN3D_SHADER_WRAPPER_H */

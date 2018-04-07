@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PY3D_H
+#define OPEN3D_PY3D_H
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -84,3 +85,5 @@ void pybind_visualization_classes(py::module &m);
 void pybind_core_methods(py::module &m);
 void pybind_io_methods(py::module &m);
 void pybind_visualization_methods(py::module &m);
+
+#endif /* OPEN3D_PY3D_H */

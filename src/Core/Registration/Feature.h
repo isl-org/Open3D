@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_FEATURE_H
+#define OPEN3D_FEATURE_H
 
 #include <vector>
 #include <memory>
@@ -51,3 +52,5 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
 		const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
 }	// namespace three
+
+#endif /* OPEN3D_FEATURE_H */
