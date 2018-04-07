@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_POINT_CLOUD_IO_H
+#define OPEN3D_POINT_CLOUD_IO_H
 
 #include <string>
 #include <Core/Geometry/PointCloud.h>
@@ -85,3 +86,5 @@ bool WritePointCloudToPTS(const std::string &filename,
 		bool compressed = false);
 
 }	// namespace three
+
+#endif /* OPEN3D_POINT_CLOUD_IO_H */

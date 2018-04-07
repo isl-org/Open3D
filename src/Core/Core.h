@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_CORE_H
+#define OPEN3D_CORE_H
 
 #include "Utility/Helper.h"
 #include "Utility/Console.h"
@@ -52,3 +53,5 @@
 #include "Integration/TSDFVolume.h"
 #include "Integration/UniformTSDFVolume.h"
 #include "Integration/ScalableTSDFVolume.h"
+
+#endif /* OPEN3D_CORE_H */

@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_REGISTRATION_H
+#define OPEN3D_REGISTRATION_H
 
 #include <vector>
 #include <tuple>
@@ -135,3 +136,5 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
 		const Eigen::Matrix4d &transformation);
 
 }	// namespace three
+
+#endif /* OPEN3D_REGISTRATION_H */

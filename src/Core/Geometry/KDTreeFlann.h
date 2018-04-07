@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_KD_TREE_FLANN_H
+#define OPEN3D_KD_TREE_FLANN_H
 
 #include <vector>
 #include <memory>
@@ -86,3 +87,5 @@ protected:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_KD_TREE_FLANN_H */

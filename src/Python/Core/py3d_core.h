@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PY3D_CORE_H
+#define OPEN3D_PY3D_CORE_H
 
 #include <Python/py3d.h>
 
@@ -50,3 +51,5 @@ void pybind_registration_methods(py::module &m);
 void pybind_odometry_methods(py::module &m);
 void pybind_globaloptimization_methods(py::module &m);
 void pybind_integration_methods(py::module &m);
+
+#endif /* OPEN3D_PY3D_CORE_H */

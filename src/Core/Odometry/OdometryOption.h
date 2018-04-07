@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_ODOMETRY_OPTION_H
+#define OPEN3D_ODOMETRY_OPTION_H
 
 #include <string>
 
@@ -56,3 +57,5 @@ public:
 };
 
 }
+
+#endif /* OPEN3D_ODOMETRY_OPTION_H */

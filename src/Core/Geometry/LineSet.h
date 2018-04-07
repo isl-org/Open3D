@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_LINE_SET_H
+#define OPEN3D_LINE_SET_H
 
 #include <vector>
 #include <memory>
@@ -87,3 +88,5 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
 		const std::vector<std::pair<int, int>> &correspondences);
 
 }	// namespace three
+
+#endif /* OPEN3D_LINE_SET_H */

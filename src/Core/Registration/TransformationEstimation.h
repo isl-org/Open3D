@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_TRANSFORMATION_ESTIMATION_H
+#define OPEN3D_TRANSFORMATION_ESTIMATION_H
 
 #include <vector>
 #include <memory>
@@ -91,3 +92,5 @@ public:
 
 
 }	// namespace three
+
+#endif /* OPEN3D_TRANSFORMATION_ESTIMATION_H */

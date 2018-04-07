@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_COLORED_ICP_H
+#define OPEN3D_COLORED_ICP_H
 
 #include <Eigen/Core>
 #include <Core/Registration/Registration.h>
@@ -45,3 +46,5 @@ RegistrationResult RegistrationColoredICP(const PointCloud &source,
 		double lambda_geometric = 0.968);
 
 }	// namespace three
+
+#endif /* OPEN3D_COLORED_ICP_H */

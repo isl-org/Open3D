@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_DRAW_GEOMETRY_H
+#define OPEN3D_DRAW_GEOMETRY_H
 
 #include <string>
 #include <memory>
@@ -71,3 +72,5 @@ bool DrawGeometriesWithEditing(
 		int width = 640, int height = 480, int left = 50, int top = 50);
 
 }	// namespace three
+
+#endif /* OPEN3D_DRAW_GEOMETRY_H */

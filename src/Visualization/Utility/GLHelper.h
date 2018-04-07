@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_GL_HELPER_H
+#define OPEN3D_GL_HELPER_H
 
 #include <string>
 
@@ -59,3 +60,5 @@ int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 }	// namespace GLHelper
 
 }	// namespace three
+
+#endif /* OPEN3D_GL_HELPER_H */

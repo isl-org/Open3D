@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_GLOBAL_OPTIMIZATION_H
+#define OPEN3D_GLOBAL_OPTIMIZATION_H
 
 #include <memory>
 #include <Core/Registration/GlobalOptimizationMethod.h>
@@ -62,3 +63,5 @@ std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
 		const GlobalOptimizationOption &option);
 
 }	// namespace three
+
+#endif /* OPEN3D_GLOBAL_OPTIMIZATION_H */

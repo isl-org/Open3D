@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_TIMER_H
+#define OPEN3D_TIMER_H
 
 #include <string>
 
@@ -81,3 +82,5 @@ private:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_TIMER_H */

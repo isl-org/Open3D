@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VIEW_CONTROL_H
+#define OPEN3D_VIEW_CONTROL_H
 
 #include <Core/Geometry/Geometry.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
@@ -156,3 +157,5 @@ protected:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VIEW_CONTROL_H */

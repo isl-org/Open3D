@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PINHOLE_CAMERA_TRAJECTORY_IO_H
+#define OPEN3D_PINHOLE_CAMERA_TRAJECTORY_IO_H
 
 #include <string>
 #include <Core/Camera/PinholeCameraTrajectory.h>
@@ -50,3 +51,5 @@ bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
 		const PinholeCameraTrajectory &trajectory);
 
 }	// namespace three
+
+#endif /* OPEN3D_PINHOLE_CAMERA_TRAJECTORY_IO_H */

@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VISUALIZER_WITH_EDITING_H
+#define OPEN3D_VISUALIZER_WITH_EDITING_H
 
 #include <Visualization/Visualizer/Visualizer.h>
 
@@ -92,3 +93,5 @@ protected:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VISUALIZER_WITH_EDITING_H */

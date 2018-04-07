@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VISUALIZER_WITH_KEY_CALLBACK_H
+#define OPEN3D_VISUALIZER_WITH_KEY_CALLBACK_H
 
 #include <Visualization/Visualizer/Visualizer.h>
 #include <map>
@@ -58,3 +59,5 @@ protected:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VISUALIZER_WITH_KEY_CALLBACK_H */

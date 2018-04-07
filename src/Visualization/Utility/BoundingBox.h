@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_BOUNDING_BOX_H
+#define OPEN3D_BOUNDING_BOX_H
 
 #include <Core/Geometry/Geometry3D.h>
 #include <Core/Utility/Console.h>
@@ -79,3 +80,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_BOUNDING_BOX_H */

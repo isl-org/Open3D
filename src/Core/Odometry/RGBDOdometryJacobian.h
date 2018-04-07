@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_RGBD_ODOMETRY_JACOBIAN_H
+#define OPEN3D_RGBD_ODOMETRY_JACOBIAN_H
 
 #include <iostream>
 #include <vector>
@@ -109,3 +110,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_RGBD_ODOMETRY_JACOBIAN_H */

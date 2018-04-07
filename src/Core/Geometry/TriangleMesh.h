@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_TRIANGLE_MESH_H
+#define OPEN3D_TRIANGLE_MESH_H
 
 #include <vector>
 #include <memory>
@@ -161,3 +162,5 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size = 1.0,
 		const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
 }	// namespace three
+
+#endif /* OPEN3D_TRIANGLE_MESH_H */

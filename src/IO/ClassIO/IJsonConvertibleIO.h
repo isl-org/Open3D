@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_I_JSON_CONVERTIBLE_IO_H
+#define OPEN3D_I_JSON_CONVERTIBLE_IO_H
 
 #include <string>
 #include <IO/ClassIO/IJsonConvertible.h>
@@ -56,3 +57,5 @@ bool WriteIJsonConvertibleToJSONString(std::string &json_string,
 		const IJsonConvertible &object);
 
 }	// namespace three
+
+#endif /* OPEN3D_I_JSON_CONVERTIBLE_IO_H */

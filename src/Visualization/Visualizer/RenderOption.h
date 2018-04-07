@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_RENDER_OPTION_H
+#define OPEN3D_RENDER_OPTION_H
 
 #include <Eigen/Core>
 
@@ -188,3 +189,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_RENDER_OPTION_H */

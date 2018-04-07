@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VIEW_CONTROL_WITH_CUSTOM_ANIMATION_H
+#define OPEN3D_VIEW_CONTROL_WITH_CUSTOM_ANIMATION_H
 
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Visualization/Visualizer/ViewControl.h>
@@ -106,3 +107,5 @@ protected:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VIEW_CONTROL_WITH_CUSTOM_ANIMATION_H */

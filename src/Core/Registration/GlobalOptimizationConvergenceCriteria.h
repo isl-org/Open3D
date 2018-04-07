@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_GLOBAL_OPTIMIZATION_CONVERGENCE_CRITERIA_H
+#define OPEN3D_GLOBAL_OPTIMIZATION_CONVERGENCE_CRITERIA_H
 
 namespace three {
 
@@ -109,3 +110,5 @@ public:
 };
 
 }
+
+#endif /* OPEN3D_GLOBAL_OPTIMIZATION_CONVERGENCE_CRITERIA_H */

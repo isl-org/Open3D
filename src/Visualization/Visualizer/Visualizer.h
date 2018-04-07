@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VISUALIZER_H
+#define OPEN3D_VISUALIZER_H
 
 #include <string>
 #include <memory>
@@ -220,3 +221,5 @@ protected:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VISUALIZER_H */

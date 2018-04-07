@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PY3D_VISUALIZATION_TRAMPOLINE_H
+#define OPEN3D_PY3D_VISUALIZATION_TRAMPOLINE_H
 
 #include <Python/py3d.h>
 #include <Visualization/Visualizer/Visualizer.h>
@@ -85,3 +86,5 @@ public:
 		PYBIND11_OVERLOAD(void, ViewControlBase, Translate, x, y, xo, yo);
 	}
 };
+
+#endif /* OPEN3D_PY3D_VISUALIZATION_TRAMPOLINE_H */

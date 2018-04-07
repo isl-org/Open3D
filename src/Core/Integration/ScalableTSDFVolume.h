@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_SCALABLE_TSDF_VOLUME_H
+#define OPEN3D_SCALABLE_TSDF_VOLUME_H
 
 #include <memory>
 #include <unordered_map>
@@ -103,3 +104,5 @@ private:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_SCALABLE_TSDF_VOLUME_H */

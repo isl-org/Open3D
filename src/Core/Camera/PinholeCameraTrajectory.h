@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_PINHOLE_CAMERA_TRAJECTORY_H
+#define OPEN3D_PINHOLE_CAMERA_TRAJECTORY_H
 
 #include <vector>
 #include <memory>
@@ -55,3 +56,5 @@ std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
 		const std::string &filename);
 
 }	// namespace three
+
+#endif /* OPEN3D_PINHOLE_CAMERA_TRAJECTORY_H */

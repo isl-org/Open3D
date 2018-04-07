@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_IMAGE_SHADER_H
+#define OPEN3D_IMAGE_SHADER_H
 
 #include <Core/Geometry/Image.h>
 #include <Visualization/Shader/ShaderWrapper.h>
@@ -85,3 +86,5 @@ protected:
 }	// namespace three::glsl
 
 }	// namespace three
+
+#endif /* OPEN3D_IMAGE_SHADER_H */

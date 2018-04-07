@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_GEOMETRY_RENDERER_H
+#define OPEN3D_GEOMETRY_RENDERER_H
 
 #include <Core/Geometry/Geometry.h>
 
@@ -196,3 +197,5 @@ protected:
 }	// namespace three::glsl
 
 }	// namespace three
+
+#endif /* OPEN3D_GEOMETRY_RENDERER_H */

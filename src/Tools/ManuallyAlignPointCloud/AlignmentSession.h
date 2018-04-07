@@ -49,3 +49,5 @@ public:
 };
 
 }		// namespace three
+
+#endif /* OPEN3D_ALIGNMENT_SESSION_H */

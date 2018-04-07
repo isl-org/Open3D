@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_IMAGE_H
+#define OPEN3D_IMAGE_H
 
 #include <vector>
 #include <memory>
@@ -170,3 +171,5 @@ ImagePyramid CreateImagePyramid(const Image& image,
 		size_t num_of_levels, bool with_gaussian_filter = true);
 
 }	// namespace three
+
+#endif /* OPEN3D_IMAGE_H */

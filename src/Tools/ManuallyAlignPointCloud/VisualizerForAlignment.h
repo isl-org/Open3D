@@ -79,3 +79,5 @@ protected:
 };
 
 }		// namespace three
+
+#endif /* OPEN3D_VISUALIZER_FOR_ALIGNMENT_H */

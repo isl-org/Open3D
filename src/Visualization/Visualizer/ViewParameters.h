@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_VIEW_PARAMETERS_H
+#define OPEN3D_VIEW_PARAMETERS_H
 
 #include <Eigen/Core>
 #include <IO/ClassIO/IJsonConvertible.h>
@@ -58,3 +59,5 @@ public:
 };
 
 }	// namespace three
+
+#endif /* OPEN3D_VIEW_PARAMETERS_H */

@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_RGBD_IMAGE_H
+#define OPEN3D_RGBD_IMAGE_H
 
 #include <Core/Geometry/Geometry2D.h>
 #include <Core/Geometry/Image.h>
@@ -89,3 +90,5 @@ RGBDImagePyramid CreateRGBDImagePyramid(const RGBDImage &rgbd_image,
 		bool with_gaussian_filter_for_depth = false);
 
 }	// namespace three
+
+#endif /* OPEN3D_RGBD_IMAGE_H */

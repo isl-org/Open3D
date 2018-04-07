@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_EIGEN_H
+#define OPEN3D_EIGEN_H
 
 #include <tuple>
 #include <vector>
@@ -88,3 +89,5 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 		int iteration_num);
 
 }	// namespace three
+
+#endif /* OPEN3D_EIGEN_H */

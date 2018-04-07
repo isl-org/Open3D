@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_MARCHING_CUBES_CONST_H
+#define OPEN3D_MARCHING_CUBES_CONST_H
 
 #include <Eigen/Core>
 
@@ -363,3 +364,5 @@ namespace {
 		{ 3, 7 },
 	};
 }  // unnamed namespace
+
+#endif /* OPEN3D_MARCHING_CUBES_CONST_H */

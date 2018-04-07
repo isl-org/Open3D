@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#ifndef OPEN3D_FEATURE_IO_H
+#define OPEN3D_FEATURE_IO_H
 
 #include <string>
 #include <Core/Registration/Feature.h>
@@ -44,3 +45,5 @@ bool ReadFeatureFromBIN(const std::string &filename, Feature &feature);
 bool WriteFeatureToBIN(const std::string &filename, const Feature &feature);
 
 }	// namespace three
+
+#endif /* OPEN3D_FEATURE_IO_H */
