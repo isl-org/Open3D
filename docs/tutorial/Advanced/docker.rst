@@ -1,7 +1,7 @@
-.. _headless_rendering:
+.. _docker:
 
-Headless Rendering
-------------------
+Docker
+------
 
 The following document describes a Docker CE based solution for headless rendering.
 
