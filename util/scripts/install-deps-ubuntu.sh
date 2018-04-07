@@ -3,7 +3,7 @@
 set -ev
 
 # install OpenGL, for GLFW
-sudo apt-get install \
+sudo apt-get -y install \
 		xorg-dev \
 		libglu1-mesa-dev \
 		libgl1-mesa-glx \

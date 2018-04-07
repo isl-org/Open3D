@@ -46,7 +46,7 @@ before_install:
             docker run -d -v $(pwd):/Open3D ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
             docker exec $(docker ps -aq) /bin/bash -c 'apt-get update && apt-get -y install sudo cmake';
             if [ "$version" == "16.04" ]; then
-                docker exec $(docker ps -aq) /bin/bash -c '/Open3D/util/scripts/install-deps-ubuntu.sh';
+                docker exec $(docker ps -aq) /bin/bash -c './Open3D/util/scripts/install-deps-ubuntu.sh';
             fi;
             if [ "$version" == "14.04" ]; then
                 docker exec $(docker ps -aq) /bin/bash -c 'sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;';
@@ -57,7 +57,7 @@ before_install:
     # scripts/install-deps-osx.sh works well
     # brew upgrade python; installs Python 3.6
     -   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-            ./scripts/install-deps-osx.sh;
+            ./util/scripts/install-deps-osx.sh;
         fi
 
 script:
