@@ -3,7 +3,11 @@
 Docker
 ------
 
-The following document describes a Docker CE based solution for headless rendering.
+The following document describes a Docker CE based solution for utilizing Open3D.
+Utilizing this approach the user can:
+- sandbox Open3D from other applications on a machine
+- operate Open3D on a headless machine using VNC or the terminal
+- edit the Open3D code on the host side but run it inside an Open3D container
 
 This recipe was developed and tested on Ubuntu 16.04. Other distributions might need slightly different instructions.
 
@@ -126,7 +130,6 @@ This will eliminate the need to use sudo in order to run docker commands.
     $ sudo usermod -aG docker <user_name>
 
 ``Warning``
-````````````
 The docker group grants privileges equivalent to the root user.
 For details on how this impacts security in your system, see
 `Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
@@ -137,7 +140,7 @@ Usage notes
 Docker files
 ````````````````
 
-The Docker files can be found under ``Open3D/util/docker/ubuntu-xvfb``::
+The Docker files can be found under ``Open3D/util/docker/open3d-xvfb``::
 
     - Dockerfile
     - setup
@@ -175,7 +178,7 @@ We provide a number of Docker tools for convenience:
 - ``prune.sh``
   Delete hanging containers and images.
 - ``run.sh``
-  Run the Open3D container.
+  Run the Open3D container. Checkout Open3D and build.
 - ``stop.sh``
   Stop the Open3D container.
 
@@ -200,7 +203,9 @@ VNC
 A running Open3D container listens to port 5920 on the host.
 The ``it.sh``, ``run.sh`` and ``attach.sh`` scripts redirect host port 5920 to container port 5900.
 
-This allows remoting into the container using VNC to ``<host ip>:5920``. Once connected you can use Open3D as usual.
+This allows remoting into the container using VNC to ``<host ip>:5920``.
+The default password is ``1234`` and can be changed in ``Open3D/issue_17/util/docker/open3d-xvfb/setup/entrypoint.sh``.
+Once connected you can use Open3D as usual.
 
 Headless rendering in terminal
 ``````````````````````````````
@@ -208,7 +213,7 @@ Headless rendering in terminal
 Sometimes it may be necessary to perform rendering as part of some script automation.
 In order to do this follow the next steps::
 
-$ cd <Open3D path>/utilities/docker/ubuntu-xvfb/tools
+$ cd <Open3D path>/utilities/docker/open3d-xvfb/tools
 $ ./build.sh
 $ ./attach.sh
 $ ./headless_sample.sh
@@ -223,8 +228,10 @@ Limitations
   Some things won't work as expected. For example ``lxterminal`` crashes.
 - the resolution is set to 1280x1024x8 when remoting into an Open3D container.
   Open3D windows are larger than this. The resolution will be increased in the future.
-- the ``headless_sample.py`` sample does not return as it expects GUI user input.
-  The sample will be redesigned in the future.
+- the ``headless_sample.py`` sample:
+
+    - when run from the host terminal attached to the container, correctly renders the depth images however color images are black. Will fix in the future if there's demand. 
+    - does not return as it expects GUI user input. The sample will be redesigned in the future.
 - for now running the Open3D docker container clones Open3D master to ``~/Open3D_docker``.
   We are considering the following options:
 
