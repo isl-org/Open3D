@@ -183,7 +183,7 @@ We provide a number of Docker tools for convenience:
   Stop the Open3D container.
 
 Building the Open3D Docker image will take approximately 10-15 minutes to complete.
-At the end the image will be ~2.1 GB in size.
+At the end the image will be ~1GB in size.
 
 Running the Open3D Docker container will perform the following steps:
 
