@@ -36,11 +36,11 @@ matrix:
 
 before_install:
 
-    # Ubuntu systems Docker as travis-ci supports up to ubuntu 14.04.
-    # pull and running docker on the background
-    # installing dependencies. install sudo as it is not installed by default.
-    # Note: Ubuntu 14.04 and this environment does not recognize sudo apt-get install libglfw3-dev
-    # Comment in if-statement is now allowed.
+    # Ubuntu systems uses docker as travis-ci supports ubuntu 14.04 by default.
+    # Step 1) pull and run docker on the background
+    # Step 2) installing dependencies. install sudo as it is not installed in docker.
+    # Note: Ubuntu 14.04 has custom script: 'sudo apt-get install libglfw3-dev' is not working, and cmake 3.x is not installed.
+    # Note: comment in if-statement is now allowed.
     -   if [ "$TRAVIS_OS_NAME" == "linux" ]; then
             docker pull ${distribution}:${version};
             docker run -d -v $(pwd):/Open3D ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
@@ -49,15 +49,15 @@ before_install:
                 docker exec $(docker ps -aq) /bin/bash -c './Open3D/util/scripts/install-deps-ubuntu.sh';
             fi;
             if [ "$version" == "14.04" ]; then
+                docker exec $(docker ps -aq) /bin/bash -c 'sudo add-apt-repository ppa:george-edison55/cmake-3.x && sudo apt-get update && sudo apt-get upgrade';
                 docker exec $(docker ps -aq) /bin/bash -c 'sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;';
             fi;
         fi
 
-    # brew and cmake is already installed in MacOS images
-    # scripts/install-deps-osx.sh works well
-    # brew upgrade python; installs Python 3.6
+    # homebrew and cmake 3.x is already installed in MacOS images
+    # 'brew upgrade python' installs Python 3.6
     -   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-            ./util/scripts/install-deps-osx.sh;
+            ./scripts/install-deps-osx.sh;
         fi
 
 script:
