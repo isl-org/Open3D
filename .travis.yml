@@ -1,85 +1,76 @@
 matrix:
 
-  notifications:
-    email: false # turn off email notifications for build failure
+    notifications:
+        email: false # turn off email notifications for build failure
 
-  language:
-    - python
-    - cpp
+    language:
+      - python
+      - cpp
 
-  include:
-    # Default environment of Ubuntu 14.04
-    - os: linux
-      dist: trusty
-      sudo: true
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.8
-            - g++-4.8
-            - cmake-data # to use cmake 3.0 or more recent
-            - cmake
-      env:
-         - PYTHON=3.6 CC=gcc-4.8 CXX=g++-4.8
+    include:
 
-    # Similar environment of Ubuntu 16.04 (gcc 5.4)
-    # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
-    # another option is to use docker.
-    - os: linux
-      dist: trusty
-      sudo: true
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-6
-            - g++-6
-            - cmake-data # to use cmake 3.0 or more recent
-            - cmake
-      env:
-         - PYTHON=3.6 CC=gcc-6 && CXX=g++-6
+        # Ubuntu Xenial Xerus
+        - os: linux
+          env:
+            - distribution: ubuntu
+            - version: 16.04
 
-    # Default environment of MacOS El Capitan
-    # compiled using clang shipped with xcode8
-    - os: osx
-      osx_image: xcode8
-      env:
-         - PYTHON=3.6
+        # Ubuntu Trusty Tahr
+        - os: linux
+          env:
+            - distribution: ubuntu
+            - version: 14.04
+          sudo: true
+          addons:
+            apt:
+              sources:
+                - ubuntu-toolchain-r-test
+              packages:
+                - cmake-data # to use cmake 3.0 or more recent
+                - cmake
 
-    # Default environment of MacOS Sierra
-    # compiled using clang shipped with xcode8.3
-    - os: osx
-      osx_image: xcode8.3
-      env:
-         - PYTHON=3.6
+        # MacOS El Capitan
+        - os: osx
+          osx_image: xcode8
+          env:
+            - version: 10.12
+
+        # MacOS Sierra
+        - os: osx
+          osx_image: xcode8.3
+          env:
+            - version: 10.11
+
+    services:
+        - docker
 
 before_install:
-  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
-  # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
-  # does not recognize sudo apt-get install libglfw3-dev
-  # custom build GLFW3
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
-      python -m pip install --user --upgrade pip wheel;
-      pyenv global system 3.6;
-    fi
-  # scripts/install-deps-osx.sh works well
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      brew install python;
-      ./scripts/install-deps-osx.sh;
-    fi
-  # for reference, display cmake and python version
-  - python -V
-  - cmake --version
+
+    # Ubuntu systems uses docker as travis-ci supports ubuntu 14.04 by default.
+    # Step 1) pull and run docker on the background
+    # Step 2) installing dependencies. install sudo as it is not installed in docker.
+    # Note: Ubuntu 14.04 has custom script: 'sudo apt-get install libglfw3-dev' is not working, and cmake 3.x is not installed.
+    # Note: comment in if-statement is now allowed.
+    -   if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+            if [ "$version" == "14.04" ]; then
+                sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
+            else
+                docker pull ${distribution}:${version};
+                docker run -d -v $(pwd):/Open3D ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
+                docker exec $(docker ps -aq) /bin/bash -c 'apt-get update && apt-get -y install sudo cmake';
+                docker exec $(docker ps -aq) /bin/bash -c './Open3D/util/scripts/install-deps-ubuntu.sh';
+            fi;
+        fi
+
+    # homebrew and cmake 3.x is already installed in MacOS images
+    # 'brew upgrade python' installs Python 3.6
+    -   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+            ./util/scripts/install-deps-osx.sh;
+        fi
 
 script:
-  # Build commands
-  - mkdir build
-  - cd build
-  - cmake ../src/
-  # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
-  # this is presumably due to limited memory space of travis-ci
-  - make
+    -   if [ "$TRAVIS_OS_NAME" == "linux" ] AND NOT [ "$version" == "14.04" ]; then
+            docker exec $(docker ps -aq) /bin/bash -c 'cd /Open3D && mkdir build && cd build && cmake ../src/ && make';
+        else
+            mkdir build && cd build && cmake ../src/ && make;
+        fi
