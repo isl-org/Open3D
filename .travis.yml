@@ -43,10 +43,10 @@ before_install:
     # Comment in if-statement is now allowed.
     -   if [ "$TRAVIS_OS_NAME" == "linux" ]; then
             docker pull ${distribution}:${version};
-            docker run -d -v $(pwd):/travis_ci ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
+            docker run -d -v $(pwd):/Open3D ${distribution}:${version} /bin/bash -c 'while true; do sleep 1; done';
             docker exec $(docker ps -aq) /bin/bash -c 'apt-get update && apt-get -y install sudo cmake';
             if [ "$version" == "16.04" ]; then
-                docker exec $(docker ps -aq) /bin/bash -c '/travis_ci/scripts/install-deps-ubuntu.sh';
+                docker exec $(docker ps -aq) /bin/bash -c '/Open3D/util/scripts/install-deps-ubuntu.sh';
             fi;
             if [ "$version" == "14.04" ]; then
                 docker exec $(docker ps -aq) /bin/bash -c 'sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;';
@@ -62,7 +62,7 @@ before_install:
 
 script:
     -   if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            docker exec $(docker ps -aq) /bin/bash -c 'mkdir build && cd build && cmake ../src/ && make';
+            docker exec $(docker ps -aq) /bin/bash -c 'cd /Open3D && mkdir build && cd build && cmake ../src/ && make';
         fi
     -   if [ "$TRAVIS_OS_NAME" == "osx" ]; then
             mkdir build && cd build && cmake ../src/ && make;
