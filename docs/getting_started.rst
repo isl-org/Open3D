@@ -23,7 +23,7 @@ Run the following commands to install the dependencies and use CMake to build th
 
 .. code-block:: bash
 
-    scripts/install-deps-ubuntu.sh
+    util/scripts/install-deps-ubuntu.sh
     mkdir build
     cd build
     cmake ../src
@@ -38,7 +38,7 @@ Alternatively, if you want to use Xcode IDE, run:
 
 .. code-block:: bash
 
-    scripts/install-deps-osx.sh
+    util/scripts/install-deps-osx.sh
     mkdir build-xcode
     cd build-xcode
     cmake -G Xcode ../src
@@ -76,12 +76,12 @@ For quick sanity check, try importing the library using following python script:
 
 .. code-block:: python
 
-	# type "python" and use following script
-	import sys
-	sys.path.append("lib") # (or "lib/Release")
-	import py3d
+    # type "python" and use following script
+    import sys
+    sys.path.append("lib") # (or "lib/Release")
+    import py3d
 
-.. tip:: If there is an issue, check whether the Python version detected by cmake (see log from cmake) and the Python version for command line environment (type ``python -V``) match. If it is not, please follow :ref:`python_binding`. In addition, `Pybind issue board <https://github.com/IntelVCL/Open3D/issues?q=is%3Aissue+is%3Aclosed+label%3Apybind>`_ on Github repository has helpful notes from Open3D users.
+.. tip:: If there is an issue, check whether the Python version detected by cmake (see log from cmake) and the Python version for command line environment (type python -V). They should match. If it is not, please follow :ref:`python_binding` in docs. In addition, `python binding issue  <https://github.com/IntelVCL/Open3D/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22python+binding%22+>`_ on Github repository has helpful notes from Open3D users.
 
 Python tutorials
 ------------------
@@ -107,4 +107,4 @@ It then transforms the RGB-D image into a point cloud, then renders the point cl
 The Python code is quite straightforward, and the detailed explanation can be found in :ref:`rgbd_redwood`.
 You may further experiment with different tutorials or check out the complete tutorial list in the :ref:`tutorial_index` page.
 
-.. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``, ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction system. Please read scripts/install-deps-python.sh for installing these packages.
+.. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``, ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction system. Please read util/scripts/install-deps-python.sh for installing these packages.

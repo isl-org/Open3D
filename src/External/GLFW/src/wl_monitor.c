@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.1 Wayland - www.glfw.org
+// GLFW 3.3 Wayland - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2014 Jonas Ådahl <jadahl@gmail.com>
 //
@@ -32,12 +32,6 @@
 #include <errno.h>
 
 
-struct _GLFWvidmodeWayland
-{
-    GLFWvidmode         base;
-    uint32_t            flags;
-};
-
 static void geometry(void* data,
                      struct wl_output* output,
                      int32_t x,
@@ -50,11 +44,15 @@ static void geometry(void* data,
                      int32_t transform)
 {
     struct _GLFWmonitor *monitor = data;
+    char name[1024];
 
     monitor->wl.x = x;
     monitor->wl.y = y;
     monitor->widthMM = physicalWidth;
     monitor->heightMM = physicalHeight;
+
+    snprintf(name, sizeof(name), "%s %s", make, model);
+    monitor->name = _glfw_strdup(name);
 }
 
 static void mode(void* data,
@@ -65,41 +63,41 @@ static void mode(void* data,
                  int32_t refresh)
 {
     struct _GLFWmonitor *monitor = data;
-    _GLFWvidmodeWayland mode = { { 0 }, };
+    GLFWvidmode mode;
 
-    mode.base.width = width;
-    mode.base.height = height;
-    mode.base.refreshRate = refresh;
-    mode.flags = flags;
+    mode.width = width;
+    mode.height = height;
+    mode.redBits = 8;
+    mode.greenBits = 8;
+    mode.blueBits = 8;
+    mode.refreshRate = refresh / 1000;
 
-    if (monitor->wl.modesCount + 1 >= monitor->wl.modesSize)
-    {
-        int size = monitor->wl.modesSize * 2;
-        _GLFWvidmodeWayland* modes =
-            realloc(monitor->wl.modes,
-                    size * sizeof(_GLFWvidmodeWayland));
-        monitor->wl.modes = modes;
-        monitor->wl.modesSize = size;
-    }
+    monitor->modeCount++;
+    monitor->modes =
+        realloc(monitor->modes, monitor->modeCount * sizeof(GLFWvidmode));
+    monitor->modes[monitor->modeCount - 1] = mode;
 
-    monitor->wl.modes[monitor->wl.modesCount++] = mode;
+    if (flags & WL_OUTPUT_MODE_CURRENT)
+        monitor->wl.currentMode = monitor->modeCount - 1;
 }
 
-static void done(void* data,
-                 struct wl_output* output)
+static void done(void* data, struct wl_output* output)
 {
     struct _GLFWmonitor *monitor = data;
 
-    monitor->wl.done = GL_TRUE;
+    _glfwInputMonitor(monitor, GLFW_CONNECTED, _GLFW_INSERT_LAST);
 }
 
 static void scale(void* data,
                   struct wl_output* output,
                   int32_t factor)
 {
+    struct _GLFWmonitor *monitor = data;
+
+    monitor->wl.scale = factor;
 }
 
-static const struct wl_output_listener output_listener = {
+static const struct wl_output_listener outputListener = {
     geometry,
     mode,
     done,
@@ -111,14 +109,10 @@ static const struct wl_output_listener output_listener = {
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
 
-void _glfwAddOutput(uint32_t name, uint32_t version)
+void _glfwAddOutputWayland(uint32_t name, uint32_t version)
 {
     _GLFWmonitor *monitor;
     struct wl_output *output;
-    char name_str[80];
-
-    memset(name_str, 0, 80 * sizeof(char));
-    snprintf(name_str, 79, "wl_output@%u", name);
 
     if (version < 2)
     {
@@ -127,7 +121,8 @@ void _glfwAddOutput(uint32_t name, uint32_t version)
         return;
     }
 
-    monitor = _glfwAllocMonitor(name_str, 0, 0);
+    // The actual name of this output will be set in the geometry handler.
+    monitor = _glfwAllocMonitor(NULL, 0, 0);
 
     output = wl_registry_bind(_glfw.wl.registry,
                               name,
@@ -139,24 +134,11 @@ void _glfwAddOutput(uint32_t name, uint32_t version)
         return;
     }
 
-    monitor->wl.modes = calloc(4, sizeof(_GLFWvidmodeWayland));
-    monitor->wl.modesSize = 4;
-
+    monitor->wl.scale = 1;
     monitor->wl.output = output;
-    wl_output_add_listener(output, &output_listener, monitor);
+    monitor->wl.name = name;
 
-    if (_glfw.wl.monitorsCount + 1 >= _glfw.wl.monitorsSize)
-    {
-        _GLFWmonitor** monitors = _glfw.wl.monitors;
-        int size = _glfw.wl.monitorsSize * 2;
-
-        monitors = realloc(monitors, size * sizeof(_GLFWmonitor*));
-
-        _glfw.wl.monitors = monitors;
-        _glfw.wl.monitorsSize = size;
-    }
-
-    _glfw.wl.monitors[_glfw.wl.monitorsCount++] = monitor;
+    wl_output_add_listener(output, &outputListener, monitor);
 }
 
 
@@ -164,40 +146,10 @@ void _glfwAddOutput(uint32_t name, uint32_t version)
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
 
-_GLFWmonitor** _glfwPlatformGetMonitors(int* count)
+void _glfwPlatformFreeMonitor(_GLFWmonitor* monitor)
 {
-    _GLFWmonitor** monitors;
-    _GLFWmonitor* monitor;
-    int i, monitorsCount = _glfw.wl.monitorsCount;
-
-    if (_glfw.wl.monitorsCount == 0)
-        goto err;
-
-    monitors = calloc(monitorsCount, sizeof(_GLFWmonitor*));
-
-    for (i = 0; i < monitorsCount; i++)
-    {
-        _GLFWmonitor* origMonitor = _glfw.wl.monitors[i];
-        monitor = calloc(1, sizeof(_GLFWmonitor));
-
-        monitor->modes =
-            _glfwPlatformGetVideoModes(origMonitor,
-                                       &origMonitor->wl.modesCount);
-        *monitor = *_glfw.wl.monitors[i];
-        monitors[i] = monitor;
-    }
-
-    *count = monitorsCount;
-    return monitors;
-
-err:
-    *count = 0;
-    return NULL;
-}
-
-GLboolean _glfwPlatformIsSameMonitor(_GLFWmonitor* first, _GLFWmonitor* second)
-{
-    return first->wl.output == second->wl.output;
+    if (monitor->wl.output)
+        wl_output_destroy(monitor->wl.output);
 }
 
 void _glfwPlatformGetMonitorPos(_GLFWmonitor* monitor, int* xpos, int* ypos)
@@ -208,43 +160,49 @@ void _glfwPlatformGetMonitorPos(_GLFWmonitor* monitor, int* xpos, int* ypos)
         *ypos = monitor->wl.y;
 }
 
+void _glfwPlatformGetMonitorContentScale(_GLFWmonitor* monitor,
+                                         float* xscale, float* yscale)
+{
+    if (xscale)
+        *xscale = (float) monitor->wl.scale;
+    if (yscale)
+        *yscale = (float) monitor->wl.scale;
+}
+
 GLFWvidmode* _glfwPlatformGetVideoModes(_GLFWmonitor* monitor, int* found)
 {
-    GLFWvidmode *modes;
-    int i, modesCount = monitor->wl.modesCount;
-
-    modes = calloc(modesCount, sizeof(GLFWvidmode));
-
-    for (i = 0;  i < modesCount;  i++)
-        modes[i] = monitor->wl.modes[i].base;
-
-    *found = modesCount;
-    return modes;
+    *found = monitor->modeCount;
+    return monitor->modes;
 }
 
 void _glfwPlatformGetVideoMode(_GLFWmonitor* monitor, GLFWvidmode* mode)
 {
-    int i;
-
-    for (i = 0;  i < monitor->wl.modesCount;  i++)
-    {
-        if (monitor->wl.modes[i].flags & WL_OUTPUT_MODE_CURRENT)
-        {
-            *mode = monitor->wl.modes[i].base;
-            return;
-        }
-    }
+    *mode = monitor->modes[monitor->wl.currentMode];
 }
 
 void _glfwPlatformGetGammaRamp(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
 {
     // TODO
-    fprintf(stderr, "_glfwPlatformGetGammaRamp not implemented yet\n");
+    _glfwInputError(GLFW_PLATFORM_ERROR,
+                    "Wayland: Gamma ramp getting not supported yet");
 }
 
 void _glfwPlatformSetGammaRamp(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
 {
     // TODO
-    fprintf(stderr, "_glfwPlatformSetGammaRamp not implemented yet\n");
+    _glfwInputError(GLFW_PLATFORM_ERROR,
+                    "Wayland: Gamma ramp setting not supported yet");
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//////                        GLFW native API                       //////
+//////////////////////////////////////////////////////////////////////////
+
+GLFWAPI struct wl_output* glfwGetWaylandMonitor(GLFWmonitor* handle)
+{
+    _GLFWmonitor* monitor = (_GLFWmonitor*) handle;
+    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
+    return monitor->wl.output;
 }
 

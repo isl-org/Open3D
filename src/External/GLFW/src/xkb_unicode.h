@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.1 Linux - www.glfw.org
+// GLFW 3.3 Linux - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2014 Jonas Ådahl <jadahl@gmail.com>
 //
@@ -24,10 +24,5 @@
 //
 //========================================================================
 
-#ifndef _glfw3_xkb_unicode_h_
-#define _glfw3_xkb_unicode_h_
-
-
 long _glfwKeySym2Unicode(unsigned int keysym);
 
-#endif // _glfw3_xkb_unicode_h_

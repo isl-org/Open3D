@@ -369,7 +369,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
 }
 
 void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
-		bool do_render/* = true*/)
+		bool do_render/* = true*/, bool convert_to_world_coordinate/* = false*/)
 {
 	std::string ply_filename = filename;
 	std::string camera_filename;
@@ -414,6 +414,14 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
 			GL_DEPTH_COMPONENT, GL_FLOAT, depth_image.data_.data());
 #endif //__APPLE__
 
+	GLHelper::GLMatrix4f mvp_matrix;
+	if (convert_to_world_coordinate) {
+		mvp_matrix = view_control_ptr_->GetMVPMatrix();
+	}
+	else {
+		mvp_matrix = view_control_ptr_->GetProjectionMatrix();
+	}
+
 	// glReadPixels get the screen in a vertically flipped manner
 	// We should flip it back, and convert it to the correct depth value
 	PointCloud depth_pointcloud;
@@ -426,7 +434,7 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
 			}
 			depth_pointcloud.points_.push_back(GLHelper::Unproject(
 					Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]),
-					view_control_ptr_->GetMVPMatrix(),
+					mvp_matrix,
 					view_control_ptr_->GetWindowWidth(),
 					view_control_ptr_->GetWindowHeight()));
 		}

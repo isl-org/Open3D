@@ -5,7 +5,8 @@ This page includes a number of basic functions using Open3D Python interface.
 
 .. toctree::
 
-    python_binding
+    python_interface
+    file_io
     pointcloud
     mesh
     rgbd_images/index
