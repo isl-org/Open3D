@@ -1,7 +1,7 @@
 //========================================================================
-// GLFW 3.1 Mir - www.glfw.org
+// GLFW 3.3 Mir - www.glfw.org
 //------------------------------------------------------------------------
-// Copyright (c) 2014-2015 Brandon Schaefer <brandon.schaefer@canonical.com>
+// Copyright (c) 2014-2017 Brandon Schaefer <brandon.schaefer@canonical.com>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -30,52 +30,58 @@
 
 
 //////////////////////////////////////////////////////////////////////////
-//////                       GLFW platform API                      //////
+//////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
 
-_GLFWmonitor** _glfwPlatformGetMonitors(int* count)
+// Poll for changes in the set of connected monitors
+//
+void _glfwPollMonitorsMir(void)
 {
-    int i, found = 0;
-    _GLFWmonitor** monitors = NULL;
-    MirDisplayConfiguration* displayConfig =
-        mir_connection_create_display_config(_glfw.mir.connection);
+    int i;
+    MirDisplayConfig* displayConfig =
+        mir_connection_create_display_configuration(_glfw.mir.connection);
 
-    *count = 0;
+    int numOutputs = mir_display_config_get_num_outputs(displayConfig);
 
-    for (i = 0;  i < displayConfig->num_outputs;  i++)
+    for (i = 0;  i < numOutputs;  i++)
     {
-        const MirDisplayOutput* out = displayConfig->outputs + i;
+        const MirOutput* output        = mir_display_config_get_output(displayConfig, i);
+        MirOutputConnectionState state = mir_output_get_connection_state(output);
+        bool enabled = mir_output_is_enabled(output);
 
-        if (out->used &&
-            out->connected &&
-            out->num_modes &&
-            out->current_mode < out->num_modes)
+        if (enabled && state == mir_output_connection_state_connected)
         {
-            found++;
-            monitors        = realloc(monitors, sizeof(_GLFWmonitor*) * found);
-            monitors[i]     = _glfwAllocMonitor("Unknown",
-                                                out->physical_width_mm,
-                                                out->physical_height_mm);
+            int widthMM  = mir_output_get_physical_width_mm(output);
+            int heightMM = mir_output_get_physical_height_mm(output);
+            int x  = mir_output_get_position_x(output);
+            int y  = mir_output_get_position_y(output);
+            int id = mir_output_get_id(output);
+            size_t currentMode = mir_output_get_current_mode_index(output);
+            const char* name   = mir_output_type_name(mir_output_get_type(output));
 
-            monitors[i]->mir.x         = out->position_x;
-            monitors[i]->mir.y         = out->position_y;
-            monitors[i]->mir.output_id = out->output_id;
-            monitors[i]->mir.cur_mode  = out->current_mode;
+            _GLFWmonitor* monitor = _glfwAllocMonitor(name,
+                                                      widthMM,
+                                                      heightMM);
+            monitor->mir.x        = x;
+            monitor->mir.y        = y;
+            monitor->mir.outputId = id;
+            monitor->mir.curMode  = currentMode;
+            monitor->modes = _glfwPlatformGetVideoModes(monitor, &monitor->modeCount);
 
-            monitors[i]->modes = _glfwPlatformGetVideoModes(monitors[i],
-                                                            &monitors[i]->modeCount);
+            _glfwInputMonitor(monitor, GLFW_CONNECTED, _GLFW_INSERT_LAST);
         }
     }
 
-    mir_display_config_destroy(displayConfig);
-
-    *count = found;
-    return monitors;
+    mir_display_config_release(displayConfig);
 }
 
-GLboolean _glfwPlatformIsSameMonitor(_GLFWmonitor* first, _GLFWmonitor* second)
+
+//////////////////////////////////////////////////////////////////////////
+//////                       GLFW platform API                      //////
+//////////////////////////////////////////////////////////////////////////
+
+void _glfwPlatformFreeMonitor(_GLFWmonitor* monitor)
 {
-    return first->mir.output_id == second->mir.output_id;
 }
 
 void _glfwPlatformGetMonitorPos(_GLFWmonitor* monitor, int* xpos, int* ypos)
@@ -86,7 +92,16 @@ void _glfwPlatformGetMonitorPos(_GLFWmonitor* monitor, int* xpos, int* ypos)
         *ypos = monitor->mir.y;
 }
 
-void FillInRGBBitsFromPixelFormat(GLFWvidmode* mode, MirPixelFormat const pf)
+void _glfwPlatformGetMonitorContentScale(_GLFWmonitor* monitor,
+                                         float* xscale, float* yscale)
+{
+    if (xscale)
+        *xscale = 1.f;
+    if (yscale)
+        *yscale = 1.f;
+}
+
+static void FillInRGBBitsFromPixelFormat(GLFWvidmode* mode, const MirPixelFormat pf)
 {
     switch (pf)
     {
@@ -123,37 +138,59 @@ GLFWvidmode* _glfwPlatformGetVideoModes(_GLFWmonitor* monitor, int* found)
 {
     int i;
     GLFWvidmode* modes = NULL;
-    MirDisplayConfiguration* displayConfig =
-        mir_connection_create_display_config(_glfw.mir.connection);
+    MirDisplayConfig* displayConfig =
+        mir_connection_create_display_configuration(_glfw.mir.connection);
 
-    for (i = 0;  i < displayConfig->num_outputs;  i++)
+    int numOutputs = mir_display_config_get_num_outputs(displayConfig);
+
+    for (i = 0;  i < numOutputs;  i++)
     {
-        const MirDisplayOutput* out = displayConfig->outputs + i;
-        if (out->output_id != monitor->mir.output_id)
+        const MirOutput* output = mir_display_config_get_output(displayConfig, i);
+        int id = mir_output_get_id(output);
+
+        if (id != monitor->mir.outputId)
             continue;
 
-        modes = calloc(out->num_modes, sizeof(GLFWvidmode));
+        MirOutputConnectionState state = mir_output_get_connection_state(output);
+        bool enabled = mir_output_is_enabled(output);
 
-        for (*found = 0;  *found < out->num_modes;  (*found)++)
+        // We must have been disconnected
+        if (!enabled || state != mir_output_connection_state_connected)
         {
-            modes[*found].width  = out->modes[*found].horizontal_resolution;
-            modes[*found].height = out->modes[*found].vertical_resolution;
-            modes[*found].refreshRate = out->modes[*found].refresh_rate;
+            _glfwInputError(GLFW_PLATFORM_ERROR,
+                            "Mir: Monitor no longer connected");
+            return NULL;
+        }
 
-            FillInRGBBitsFromPixelFormat(&modes[*found], out->output_formats[*found]);
+        int numModes = mir_output_get_num_modes(output);
+        modes = calloc(numModes, sizeof(GLFWvidmode));
+
+        for (*found = 0;  *found < numModes;  (*found)++)
+        {
+            const MirOutputMode* mode = mir_output_get_mode(output, *found);
+            int width  = mir_output_mode_get_width(mode);
+            int height = mir_output_mode_get_height(mode);
+            double refreshRate = mir_output_mode_get_refresh_rate(mode);
+            MirPixelFormat currentFormat = mir_output_get_current_pixel_format(output);
+
+            modes[*found].width  = width;
+            modes[*found].height = height;
+            modes[*found].refreshRate = refreshRate;
+
+            FillInRGBBitsFromPixelFormat(&modes[*found], currentFormat);
         }
 
         break;
     }
 
-    mir_display_config_destroy(displayConfig);
+    mir_display_config_release(displayConfig);
 
     return modes;
 }
 
 void _glfwPlatformGetVideoMode(_GLFWmonitor* monitor, GLFWvidmode* mode)
 {
-    *mode = monitor->modes[monitor->mir.cur_mode];
+    *mode = monitor->modes[monitor->mir.curMode];
 }
 
 void _glfwPlatformGetGammaRamp(_GLFWmonitor* monitor, GLFWgammaramp* ramp)
@@ -168,3 +205,14 @@ void _glfwPlatformSetGammaRamp(_GLFWmonitor* monitor, const GLFWgammaramp* ramp)
                     "Mir: Unsupported function %s", __PRETTY_FUNCTION__);
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+//////                        GLFW native API                       //////
+//////////////////////////////////////////////////////////////////////////
+
+GLFWAPI int glfwGetMirMonitor(GLFWmonitor* handle)
+{
+    _GLFWmonitor* monitor = (_GLFWmonitor*) handle;
+    _GLFW_REQUIRE_INIT_OR_RETURN(0);
+    return monitor->mir.outputId;
+}

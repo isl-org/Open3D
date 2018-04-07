@@ -1,8 +1,8 @@
 //========================================================================
-// GLFW 3.1 X11 - www.glfw.org
+// GLFW 3.3 X11 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
-// Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -826,25 +826,76 @@ static const struct codepair {
   { 0x13bd, 0x0153 },
   { 0x13be, 0x0178 },
   { 0x20ac, 0x20ac },
-  // Numeric keypad with numlock on
-  { XK_KP_Space, ' ' },
-  { XK_KP_Equal, '=' },
-  { XK_KP_Multiply, '*' },
-  { XK_KP_Add, '+' },
-  { XK_KP_Separator, ',' },
-  { XK_KP_Subtract, '-' },
-  { XK_KP_Decimal, '.' },
-  { XK_KP_Divide, '/' },
-  { XK_KP_0, 0x0030 },
-  { XK_KP_1, 0x0031 },
-  { XK_KP_2, 0x0032 },
-  { XK_KP_3, 0x0033 },
-  { XK_KP_4, 0x0034 },
-  { XK_KP_5, 0x0035 },
-  { XK_KP_6, 0x0036 },
-  { XK_KP_7, 0x0037 },
-  { XK_KP_8, 0x0038 },
-  { XK_KP_9, 0x0039 }
+  { 0xfe50,    '`' },
+  { 0xfe51, 0x00b4 },
+  { 0xfe52,    '^' },
+  { 0xfe53,    '~' },
+  { 0xfe54, 0x00af },
+  { 0xfe55, 0x02d8 },
+  { 0xfe56, 0x02d9 },
+  { 0xfe57, 0x00a8 },
+  { 0xfe58, 0x02da },
+  { 0xfe59, 0x02dd },
+  { 0xfe5a, 0x02c7 },
+  { 0xfe5b, 0x00b8 },
+  { 0xfe5c, 0x02db },
+  { 0xfe5d, 0x037a },
+  { 0xfe5e, 0x309b },
+  { 0xfe5f, 0x309c },
+  { 0xfe63,    '/' },
+  { 0xfe64, 0x02bc },
+  { 0xfe65, 0x02bd },
+  { 0xfe66, 0x02f5 },
+  { 0xfe67, 0x02f3 },
+  { 0xfe68, 0x02cd },
+  { 0xfe69, 0xa788 },
+  { 0xfe6a, 0x02f7 },
+  { 0xfe6e,    ',' },
+  { 0xfe6f, 0x00a4 },
+  { 0xfe80,    'a' }, // XK_dead_a
+  { 0xfe81,    'A' }, // XK_dead_A
+  { 0xfe82,    'e' }, // XK_dead_e
+  { 0xfe83,    'E' }, // XK_dead_E
+  { 0xfe84,    'i' }, // XK_dead_i
+  { 0xfe85,    'I' }, // XK_dead_I
+  { 0xfe86,    'o' }, // XK_dead_o
+  { 0xfe87,    'O' }, // XK_dead_O
+  { 0xfe88,    'u' }, // XK_dead_u
+  { 0xfe89,    'U' }, // XK_dead_U
+  { 0xfe8a, 0x0259 },
+  { 0xfe8b, 0x018f },
+  { 0xfe8c, 0x00b5 },
+  { 0xfe90,    '_' },
+  { 0xfe91, 0x02c8 },
+  { 0xfe92, 0x02cc },
+  { 0xff80 /*XKB_KEY_KP_Space*/,     ' ' },
+  { 0xff95 /*XKB_KEY_KP_7*/, 0x0037 },
+  { 0xff96 /*XKB_KEY_KP_4*/, 0x0034 },
+  { 0xff97 /*XKB_KEY_KP_8*/, 0x0038 },
+  { 0xff98 /*XKB_KEY_KP_6*/, 0x0036 },
+  { 0xff99 /*XKB_KEY_KP_2*/, 0x0032 },
+  { 0xff9a /*XKB_KEY_KP_9*/, 0x0039 },
+  { 0xff9b /*XKB_KEY_KP_3*/, 0x0033 },
+  { 0xff9c /*XKB_KEY_KP_1*/, 0x0031 },
+  { 0xff9d /*XKB_KEY_KP_5*/, 0x0035 },
+  { 0xff9e /*XKB_KEY_KP_0*/, 0x0030 },
+  { 0xffaa /*XKB_KEY_KP_Multiply*/,  '*' },
+  { 0xffab /*XKB_KEY_KP_Add*/,       '+' },
+  { 0xffac /*XKB_KEY_KP_Separator*/, ',' },
+  { 0xffad /*XKB_KEY_KP_Subtract*/,  '-' },
+  { 0xffae /*XKB_KEY_KP_Decimal*/,   '.' },
+  { 0xffaf /*XKB_KEY_KP_Divide*/,    '/' },
+  { 0xffb0 /*XKB_KEY_KP_0*/, 0x0030 },
+  { 0xffb1 /*XKB_KEY_KP_1*/, 0x0031 },
+  { 0xffb2 /*XKB_KEY_KP_2*/, 0x0032 },
+  { 0xffb3 /*XKB_KEY_KP_3*/, 0x0033 },
+  { 0xffb4 /*XKB_KEY_KP_4*/, 0x0034 },
+  { 0xffb5 /*XKB_KEY_KP_5*/, 0x0035 },
+  { 0xffb6 /*XKB_KEY_KP_6*/, 0x0036 },
+  { 0xffb7 /*XKB_KEY_KP_7*/, 0x0037 },
+  { 0xffb8 /*XKB_KEY_KP_8*/, 0x0038 },
+  { 0xffb9 /*XKB_KEY_KP_9*/, 0x0039 },
+  { 0xffbd /*XKB_KEY_KP_Equal*/,     '=' }
 };
 
 
