@@ -57,3 +57,11 @@ if (Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
 	endif (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
 	add_dependencies(py3d PythonTutorial)
 endif(Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
+
+# find the python site-packages location
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+message("python site: ${PYTHON_SITE_PACKAGES}")
+message("\n")
+
+# configure installer to copy the python module to the python site-packages
+install(TARGETS py3d DESTINATION ${PYTHON_SITE_PACKAGES})
