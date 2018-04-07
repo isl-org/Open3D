@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # install Open3D dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends\
     apt-utils \
     build-essential \
     cmake \
