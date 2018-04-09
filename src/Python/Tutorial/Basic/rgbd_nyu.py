@@ -3,7 +3,6 @@
 # See license file or visit www.open3d.org for details
 
 import sys
-sys.path.append("../..")
 
 #conda install pillow matplotlib
 from py3d import *

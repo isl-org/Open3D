@@ -4,7 +4,6 @@
 
 import numpy as np
 import sys, copy
-sys.path.append("../..")
 from py3d import *
 
 def demo_crop_geometry():

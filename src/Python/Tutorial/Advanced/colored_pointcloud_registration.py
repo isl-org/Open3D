@@ -5,7 +5,6 @@
 import sys
 import numpy as np
 import copy
-sys.path.append("../..")
 from py3d import *
 
 

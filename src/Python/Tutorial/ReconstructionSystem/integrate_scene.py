@@ -6,7 +6,6 @@ import numpy as np
 import argparse
 import math
 import sys
-sys.path.append("../..")
 sys.path.append("../Utility")
 from py3d import *
 from common import *

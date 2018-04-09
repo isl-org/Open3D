@@ -11,7 +11,6 @@
 import numpy as np
 import sys
 import cv2
-sys.path.append("../..")
 from py3d import *
 from matplotlib import pyplot as plt # for visualizing feature matching
 import copy
