@@ -73,7 +73,7 @@ Importing py3d module
 ----------------------
 
 Compiling Open3D will create a Python library under directory ``build/lib/`` or ``build/lib/Release/``.
-On Linux/Mac this library can be installed/uninstalled by runnint the script in ``util/scripts``.
+Install/uninstall this module on Linux/Mac by running the utilities in ``util/scripts``.
 
 .. code-block:: sh
 
