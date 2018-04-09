@@ -52,11 +52,3 @@ else ()
 	find_package(OpenGL REQUIRED)
 	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 endif ()
-
-# install(TARGETS Visualization
-# 	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-# 	LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-# 	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-# )
-# file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-# install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
