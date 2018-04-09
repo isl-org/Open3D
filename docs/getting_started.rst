@@ -73,7 +73,11 @@ Importing py3d module
 ----------------------
 
 Compiling Open3D will create a Python library under directory ``build/lib/`` or ``build/lib/Release/``.
-Install/uninstall this module on Linux/Mac by running the utilities in ``util/scripts``.
+
+Linux/macOS
+```````````
+
+Install/uninstall this module by running the utilities in ``util/scripts``.
 
 .. code-block:: sh
 
@@ -84,6 +88,18 @@ Install/uninstall this module on Linux/Mac by running the utilities in ``util/sc
 
     # uninstall the Python module
     ./uninstall.sh
+
+Windows
+```````
+
+Intall this module by building the ``ALL_BUILD`` and the ``INSTALL`` targets in this order in Visual Studio.
+
+.. image:: _static/python-install-windows.png
+    :width: 400px
+
+
+Validation
+``````````
 
 For quick sanity check, try importing the library from the python interactive shell:
 
