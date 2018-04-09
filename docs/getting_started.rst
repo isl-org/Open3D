@@ -71,15 +71,27 @@ Running Open3D tutorials
 
 Importing py3d module
 ----------------------
-By default, compiling Open3D will create a Python library under directory ``build/lib/`` or ``build/lib/Release/``.
-For quick sanity check, try importing the library using following python script:
 
-.. code-block:: python
+Compiling Open3D will create a Python library under directory ``build/lib/`` or ``build/lib/Release/``.
+On Linux/Mac this library can be installed/uninstalled by runnint the script in ``util/scripts``.
 
-    # type "python" and use following script
-    import sys
-    sys.path.append("lib") # (or "lib/Release")
-    import py3d
+.. code-block:: sh
+
+    cd util/scripts
+
+    # install the Python module
+    ./install.sh
+
+    # uninstall the Python module
+    ./uninstall.sh
+
+For quick sanity check, try importing the library from the python interactive shell:
+
+.. code-block:: sh
+
+    python
+
+    >>> import py3d
 
 .. tip:: If there is an issue, check whether the Python version detected by cmake (see log from cmake) and the Python version for command line environment (type python -V). They should match. If it is not, please follow :ref:`python_binding` in docs. In addition, `python binding issue  <https://github.com/IntelVCL/Open3D/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22python+binding%22+>`_ on Github repository has helpful notes from Open3D users.
 
