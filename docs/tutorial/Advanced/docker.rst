@@ -129,10 +129,7 @@ This will eliminate the need to use sudo in order to run docker commands.
 
     $ sudo usermod -aG docker <user_name>
 
-``Warning``
-The docker group grants privileges equivalent to the root user.
-For details on how this impacts security in your system, see
-`Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
+.. warning:: The docker group grants privileges equivalent to the root user. For details on how this impacts security in your system, see `Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
 
 Usage notes
 ===========
