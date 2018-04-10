@@ -18,17 +18,13 @@ find . -name cmake_install.cmake -exec rm -rf {} +
 # -- Installing: /home/dpetre/.local/include/Visualization.h
 # -- Installing: /home/dpetre/.local/lib/python3.5/site-packages/py3d.cpython-35m-x86_64-linux-gnu.so
 
+# remove the Open3D runtime binaries
+rm -rf ~/.local/bin/Open3D
+
 # remove the Open3D libs
-rm -rf ~/.local/lib/libCore.a
-rm -rf ~/.local/lib/libIO.a
-rm -rf ~/.local/lib/libVisualization.a
+rm -rf ~/.local/lib/Open3D
 
 # remove the Open3D headers
-rm -rf ~/.local/include/Core.h
-rm -rf ~/.local/include/IO.h
-rm -rf ~/.local/include/Visualization.h
-
-# remove the Open3D Python module
-rm -rf ~/.local/lib/python3.5/site-packages/py3d.cpython-35m-x86_64-linux-gnu.so
+rm -rf ~/.local/include/Open3D
 
 echo

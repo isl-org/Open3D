@@ -36,9 +36,9 @@ add_library(Core ${Open3D_LIB_TYPE}
 target_link_libraries(Core IO)
 
 install(TARGETS Core
-	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-	LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+	RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/Open3D
+	LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/Open3D
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/Open3D
 )
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Camera/*.h")
@@ -47,4 +47,4 @@ file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Integration/*.h")
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Odometry/*.h")
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Registration/*.h")
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Utility/*.h")
-install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Open3D)
