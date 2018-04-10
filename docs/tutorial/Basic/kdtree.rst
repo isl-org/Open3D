@@ -9,9 +9,7 @@ Open3D uses `FLANN <https://www.cs.ubc.ca/research/flann/>`_ to build KDTrees fo
 
     # src/Python/Tutorial/Basic/kdtree.py
 
-    import sys
     import numpy as np
-    sys.path.append("../..")
     from py3d import *
 
     if __name__ == "__main__":

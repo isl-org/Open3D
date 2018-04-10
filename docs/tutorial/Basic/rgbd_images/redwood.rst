@@ -8,9 +8,6 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the Redwood dataset <h
 
 	# src/Python/Tutorial/Basic/rgbd_redwood.py
 
-	import sys
-	sys.path.append("../..")
-
 	#conda install pillow matplotlib
 	from py3d import *
 	import matplotlib.pyplot as plt

@@ -10,8 +10,7 @@ This tutorial introduces user interaction features of visualizer window.
     # src/Python/Tutorial/Advanced/interactive_visualization.py
 
     import numpy as np
-    import sys, copy
-    sys.path.append("../..")
+    import copy
     from py3d import *
 
     def demo_crop_geometry():
