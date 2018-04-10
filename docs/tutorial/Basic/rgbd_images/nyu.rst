@@ -8,9 +8,6 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the NYU dataset <https
 
 	# src/Python/Tutorial/Basic/rgbd_nyu.py
 
-	import sys
-	sys.path.append("../..")
-
 	#conda install pillow matplotlib
 	from py3d import *
 	import numpy as np

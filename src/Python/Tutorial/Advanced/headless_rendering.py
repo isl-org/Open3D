@@ -2,8 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import sys, os
-sys.path.append("../..")
+import os
 from py3d import *
 import numpy as np
 import matplotlib.pyplot as plt

@@ -9,9 +9,7 @@ If Open3D is successfully compiled with Python binding, it will create a Python 
 
     # src/Python/Tutorial/Basic/python_binding.py
 
-    import sys
     import numpy as np
-    sys.path.append("../..")
 
     def example_help_function():
         import py3d as py3d
@@ -30,7 +28,6 @@ If Open3D is successfully compiled with Python binding, it will create a Python 
 
 This scripts has two functions: ``example_help_function`` and ``example_import_all``
 that show very basic usage of Open3D Python module.
-In the heading, it uses ``sys.path.append()`` to refer the path where ``py3d.so`` is located.
 
 .. note:: Depending on environment, the name of Python library may not ``py3d.so``. Regardless of the file name, ``import py3d`` should work.
 

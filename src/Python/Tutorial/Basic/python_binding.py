@@ -2,9 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import sys
 import numpy as np
-sys.path.append("../..")
 
 def example_help_function():
 	import py3d as py3d

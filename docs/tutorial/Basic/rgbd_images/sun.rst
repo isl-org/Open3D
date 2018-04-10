@@ -8,9 +8,6 @@ This tutorial reads and visualizes an ``RGBDImage`` of `the SUN dataset <http://
 
 	# src/Python/Tutorial/Basic/rgbd_sun.py
 
-	import sys
-	sys.path.append("../..")
-
 	#conda install pillow matplotlib
 	from py3d import *
 	import matplotlib.pyplot as plt

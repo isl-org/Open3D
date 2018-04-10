@@ -3,8 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
-import sys, copy
-sys.path.append("../..")
+import copy
 from py3d import *
 
 def demo_crop_geometry():
