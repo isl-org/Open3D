@@ -2,7 +2,6 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import sys
 import numpy as np
 
 def example_help_function():

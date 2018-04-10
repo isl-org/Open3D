@@ -2,7 +2,6 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import sys
 from py3d import *
 from trajectory_io import *
 import numpy as np
