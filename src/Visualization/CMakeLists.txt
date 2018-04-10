@@ -59,4 +59,7 @@ install(TARGETS Visualization
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
 )
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Shader/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Utility/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Visualizer/*.h")
 install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)

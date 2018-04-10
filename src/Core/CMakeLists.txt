@@ -41,4 +41,10 @@ install(TARGETS Core
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
 )
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Camera/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Geometry/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Integration/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Odometry/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Registration/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/Utility/*.h")
 install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)

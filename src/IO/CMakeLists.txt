@@ -31,4 +31,6 @@ install(TARGETS IO
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
 )
 file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/ClassIO/*.h")
+file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/FileFormat/*.h")
 install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
