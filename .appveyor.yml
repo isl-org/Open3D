@@ -19,6 +19,8 @@ matrix:
   exclude:
     - image: Visual Studio 2015
       CPP: latest
+    - image: Visual Studio 2017
+      CPP: 14
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
