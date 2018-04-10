@@ -1,7 +1,6 @@
 #!/bin/sh
 
 . ./name.sh
-
 ./stop.sh
 
 # create shared folder
