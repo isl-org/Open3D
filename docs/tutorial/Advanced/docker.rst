@@ -185,7 +185,7 @@ At the end the image will be ~1GB in size.
 Running the Open3D Docker container will perform the following steps:
 
 - git clone Open3D master to ``~/Open3D_docker``
-- copy the ``headless_sample.py`` and ``headless_sample.sh`` to ``~/Open3D_docker/build/lib/Tutorial/Advanced``
+- copy the ``docker_sample.sh`` to ``~/Open3D_docker/build/lib/Tutorial/Advanced``
 - run and detach the Open3D container with the host path ``~/Open3D_docker`` mounted inside the container at ``/root/Open3D``
 - attach a terminal to the Open3D container for command line input from the host side
 
@@ -204,19 +204,16 @@ This allows remoting into the container using VNC to ``<host ip>:5920``.
 The default password is ``1234`` and can be changed in ``Open3D/issue_17/util/docker/open3d-xvfb/setup/entrypoint.sh``.
 Once connected you can use Open3D as usual.
 
-Headless rendering in terminal
-``````````````````````````````
+Running in terminal
+```````````````````
 
-Sometimes it may be necessary to perform rendering as part of some script automation.
-In order to do this follow the next steps::
+It is also possible to run Open3D from a host side terminal attached to a running Open3D Docker container.
+An example on how this can be perfomed::
 
 $ cd <Open3D path>/utilities/docker/open3d-xvfb/tools
 $ ./build.sh
 $ ./attach.sh
-$ ./headless_sample.sh
-
-The ``headless_sample.sh`` renders some images and saves them to disk.
-The images can be accessed in real time on the host at ``~/Open3D_docker/build/lib/TestData/depth`` and won't go away when the container is stopped/deleted.
+$ ./docker_sample.sh
 
 Limitations
 ```````````
@@ -225,10 +222,7 @@ Limitations
   Some things won't work as expected. For example ``lxterminal`` crashes.
 - the resolution is set to 1280x1024x8 when remoting into an Open3D container.
   Open3D windows are larger than this. The resolution will be increased in the future.
-- the ``headless_sample.py`` sample:
-
-    - when run from the host terminal attached to the container, correctly renders the depth images however color images are black. Will fix in the future if there's demand. 
-    - does not return as it expects GUI user input. The sample will be redesigned in the future.
+- there are some rendering issues. When running the ``headless_sample.py`` sample from the docker terminal depth images are rendered and saved correctly to the disk however color images saved to the disk are black.
 - for now running the Open3D docker container clones Open3D master to ``~/Open3D_docker``.
   We are considering the following options:
 
