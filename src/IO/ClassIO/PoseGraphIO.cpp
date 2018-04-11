@@ -62,6 +62,14 @@ static const std::unordered_map<std::string,
 
 }	// unnamed namespace
 
+std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
+    const std::string &filename)
+{
+    auto pose_graph = std::make_shared<PoseGraph>();
+    ReadPoseGraph(filename, *pose_graph);
+    return pose_graph;
+}
+
 bool ReadPoseGraph(const std::string &filename,
 		PoseGraph &pose_graph)
 {

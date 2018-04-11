@@ -13,6 +13,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
+option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
@@ -36,9 +37,6 @@ include_directories(
 	${Open3D_SOURCE_DIR}/External/librealsense/include
 	)
 
-# all static link, no dynamic links
-set(Open3D_LIB_TYPE STATIC)
-
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
@@ -49,6 +47,7 @@ if(WIN32)
 	add_definitions(-DWINDOWS)
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
 	add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
+	SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 	message(STATUS "Compiling on Windows")
 	if(MSVC)
 		message(STATUS "Compiling with MSVC")

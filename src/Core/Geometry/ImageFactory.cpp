@@ -27,16 +27,8 @@
 #include "Image.h"
 
 #include <Core/Camera/PinholeCameraIntrinsic.h>
-#include <IO/ClassIO/ImageIO.h>
 
 namespace three{
-
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
-{
-	auto image = std::make_shared<Image>();
-	ReadImage(filename, *image);
-	return image;
-}
 
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
 		const PinholeCameraIntrinsic &intrinsic)
