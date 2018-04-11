@@ -36,10 +36,10 @@ target_link_libraries(IO Core tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES}
 # file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/FileFormat/*.h")
 # install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Open3D)
 
-INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D
-        FILES_MATCHING PATTERN "*.h*"
-        )
+# INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#         DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D
+#         FILES_MATCHING PATTERN "*.h*"
+#         )
 
 # # Only generate this target if no higher-level project already has
 # if (NOT TARGET uninstall)
@@ -51,3 +51,24 @@ INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 #                         "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
 #     set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
 # endif()
+
+
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/IO.h"                                DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PinholeCameraTrajectoryIO.h" DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/ImageIO.h"                   DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PoseGraphIO.h"               DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/TriangleMeshIO.h"            DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/FeatureIO.h"                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/IJsonConvertible.h"          DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/IJsonConvertibleIO.h"        DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+# install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PointCloudIO.h"              DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+
+# INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/IO
+#         DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D
+#         FILES_MATCHING PATTERN "*.h*"
+#         )
+
+# INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/IO/ClassIO
+#         DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D
+#         FILES_MATCHING PATTERN "*.h*"
+#         )
