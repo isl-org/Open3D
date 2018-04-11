@@ -52,3 +52,10 @@ else ()
 	find_package(OpenGL REQUIRED)
 	target_link_libraries(Visualization ${OPENGL_LIBRARIES})
 endif ()
+
+install(TARGETS Visualization
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+install(FILES ${INCLUDE_FILES}
+        DESTINATION include)

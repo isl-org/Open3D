@@ -5,3 +5,9 @@ target_link_libraries(EvaluatePCDMatch Visualization IO Core)
 set_target_properties(EvaluatePCDMatch PROPERTIES
 		FOLDER "Experimental"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Experimental")
+install(TARGETS EvaluatePCDMatch
+        RUNTIME DESTINATION bin/Experimental
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+install(FILES ${INCLUDE_FILES}
+        DESTINATION include)
