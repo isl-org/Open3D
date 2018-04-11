@@ -29,12 +29,12 @@ install(TARGETS IO
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/Open3D
 )
 
-install(FILES "${CMAKE_SOURCE_DIR}/IO/IO.h"                                DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO)
-install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PinholeCameraTrajectoryIO.h" DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
-install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/ImageIO.h"                   DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
-install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PoseGraphIO.h"               DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
-install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/TriangleMeshIO.h"            DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
 install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/FeatureIO.h"                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
 install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/IJsonConvertible.h"          DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
 install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/IJsonConvertibleIO.h"        DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/ImageIO.h"                   DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PinholeCameraTrajectoryIO.h" DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
 install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PointCloudIO.h"              DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/PoseGraphIO.h"               DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+install(FILES "${CMAKE_SOURCE_DIR}/IO/ClassIO/TriangleMeshIO.h"            DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO/ClassIO)
+install(FILES "${CMAKE_SOURCE_DIR}/IO/IO.h"                                DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/IO)
