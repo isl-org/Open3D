@@ -120,10 +120,6 @@ public:
 	std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
-/// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
-/// Return an empty mesh if fail to read the file.
-std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename);
-
 /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
 /// The sphere will be centered at (0, 0, 0). Its axis is aligned with z-axis.
 /// The longitudes will be split into \param resolution segments.
