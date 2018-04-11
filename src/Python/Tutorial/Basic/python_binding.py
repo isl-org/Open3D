@@ -12,7 +12,7 @@ def example_help_function():
 
 def example_import_function():
     from py3d import read_point_cloud
-    pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+    pcd = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
     print(pcd)
 
 if __name__ == "__main__":

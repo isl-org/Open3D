@@ -15,8 +15,8 @@ def draw_registration_result(source, target, transformation):
     draw_geometries([source_temp, target_temp])
 
 if __name__ == "__main__":
-    source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    source = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
+    target = read_point_cloud("../../../test/TestData/ICP/cloud_bin_1.pcd")
     threshold = 0.02
     trans_init = np.asarray(
                 [[0.862, 0.011, -0.507,  0.5],

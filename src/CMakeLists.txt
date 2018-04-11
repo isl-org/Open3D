@@ -127,3 +127,12 @@ endif(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
 if (Open3D_BUILD_PYTHON_BINDING)
 	add_subdirectory(Python)
 endif(Open3D_BUILD_PYTHON_BINDING)
+
+install(DIRECTORY Core
+        DESTINATION include/Open3D COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY IO
+        DESTINATION include/Open3D COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY Visualization
+        DESTINATION include/Open3D COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY External
+        DESTINATION include COMPONENT Devel FILES_MATCHING PATTERN "*.h")

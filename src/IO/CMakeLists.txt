@@ -24,3 +24,8 @@ add_library(IO
 	${IO_FILEFORMAT_HEADER_FILES} ${IO_FILEFORMAT_SOURCE_FILES}
 )
 target_link_libraries(IO Core tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES})
+
+install(TARGETS IO
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     print("Testing kdtree in py3d ...")
     print("Load a point cloud and paint it gray.")
-    pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
+    pcd = read_point_cloud("../../../test/TestData/Feature/cloud_bin_0.pcd")
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd_tree = KDTreeFlann(pcd)
 

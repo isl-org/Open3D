@@ -34,3 +34,8 @@ add_library(Core
 	${CORE_INTEGRATION_HEADER_FILES} ${CORE_INTEGRATION_SOURCE_FILES}
 )
 target_link_libraries(Core ${JSONCPP_LIBRARIES})
+
+install(TARGETS Core
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

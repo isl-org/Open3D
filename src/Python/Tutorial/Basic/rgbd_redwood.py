@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     print("Read Redwood dataset")
-    color_raw = read_image("../../TestData/RGBD/color/00000.jpg")
-    depth_raw = read_image("../../TestData/RGBD/depth/00000.png")
+    color_raw = read_image("../../../test/TestData/RGBD/color/00000.jpg")
+    depth_raw = read_image("../../../test/TestData/RGBD/depth/00000.png")
     rgbd_image = create_rgbd_image_from_color_and_depth(
         color_raw, depth_raw);
     print(rgbd_image)

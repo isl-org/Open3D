@@ -9,7 +9,7 @@ from py3d import *
 if __name__ == "__main__":
 
     print("Testing mesh in py3d ...")
-    mesh = read_triangle_mesh("../../TestData/knot.ply")
+    mesh = read_triangle_mesh("../../../test/TestData/knot.ply")
     print(mesh)
     print(np.asarray(mesh.vertices))
     print(np.asarray(mesh.triangles))
