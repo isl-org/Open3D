@@ -1,9 +1,10 @@
 file(GLOB HEADER_FILES "*.h")
 file(GLOB SOURCE_FILES "*.cpp")
-add_executable(TestPCDFileFormat ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(TestPCDFileFormat Visualization IO Core)
-set_target_properties(TestPCDFileFormat PROPERTIES
+project(TestPCDFileFormat)
+add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} Visualization IO Core)
+set_target_properties(${PROJECT_NAME} PROPERTIES
         FOLDER "Test"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
-install(TARGETS TestPCDFileFormat
+install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION test/bin)

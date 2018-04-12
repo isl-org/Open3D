@@ -35,25 +35,27 @@ source_group("Header Files\\Visualizer" FILES ${VISUALIZATION_VISUALIZER_HEADER_
 file(GLOB VISUALIZATION_VISUALIZER_SOURCE_FILES "Visualizer/*.cpp")
 source_group("Source Files\\Visualizer" FILES ${VISUALIZATION_VISUALIZER_SOURCE_FILES})
 
-add_library(Visualization 
+project(Visualization)
+add_library(${PROJECT_NAME} 
 	${SHADER_FILES}
 	${VISUALIZATION_ALL_HEADER_FILES} ${VISUALIZATION_ALL_SOURCE_FILES}
 	${VISUALIZATION_UTILITY_HEADER_FILES} ${VISUALIZATION_UTILITY_SOURCE_FILES}
 	${VISUALIZATION_SHADER_HEADER_FILES} ${VISUALIZATION_SHADER_SOURCE_FILES}
 	${VISUALIZATION_VISUALIZER_HEADER_FILES} ${VISUALIZATION_VISUALIZER_SOURCE_FILES}
 )
-add_dependencies(Visualization ShaderFileTarget)
-target_link_libraries(Visualization Core IO ${GLFW_LIBRARIES} ${GLEW_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ShaderFileTarget)
+target_link_libraries(${PROJECT_NAME} Core IO ${GLFW_LIBRARIES} ${GLEW_LIBRARIES})
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "open3d_${PROJECT_NAME}${OPEN3D_INLINE_VERSION}")
 if (Open3D_HEADLESS_RENDERING)
 	find_package(OSMesa REQUIRED)
 	include_directories(${OSMESA_INCLUDE_DIR})
-	target_link_libraries(Visualization ${OSMESA_LIBRARY})
+	target_link_libraries(${PROJECT_NAME} ${OSMESA_LIBRARY})
 else ()
 	find_package(OpenGL REQUIRED)
-	target_link_libraries(Visualization ${OPENGL_LIBRARIES})
+	target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
-install(TARGETS Visualization
+install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
