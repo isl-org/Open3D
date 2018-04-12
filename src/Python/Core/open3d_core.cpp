@@ -24,23 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#include "open3d_core.h"
 
-#include <Core/Utility/Console.h>
-using namespace three;
-
-void pybind_console(py::module &m)
+void pybind_core_classes(py::module &m)
 {
-	py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic())
-		.value("Error", VerbosityLevel::VerboseError)
-		.value("Warning", VerbosityLevel::VerboseWarning)
-		.value("Info", VerbosityLevel::VerboseInfo)
-		.value("Debug", VerbosityLevel::VerboseDebug)
-		.value("Always", VerbosityLevel::VerboseAlways)
-		.export_values();
-	m.def("set_verbosity_level", &SetVerbosityLevel,
-			"Set global verbosity level of Open3D (py3d)",
-			py::arg("verbosity_level"));
-	m.def("get_verbosity_level", &GetVerbosityLevel,
-			"Get global verbosity level of Open3D (py3d)");
+    pybind_console(m);
+    pybind_geometry(m);
+    pybind_pointcloud(m);
+    pybind_trianglemesh(m);
+    pybind_image(m);
+    pybind_kdtreeflann(m);
+    pybind_feature(m);
+    pybind_camera(m);
+    pybind_registration(m);
+    pybind_odometry(m);
+    pybind_globaloptimization(m);
+    pybind_integration(m);
+}
+
+void pybind_core_methods(py::module &m)
+{
+    pybind_pointcloud_methods(m);
+    pybind_trianglemesh_methods(m);
+    pybind_image_methods(m);
+    pybind_feature_methods(m);
+    pybind_camera_methods(m);
+    pybind_registration_methods(m);
+    pybind_odometry_methods(m);
+    pybind_globaloptimization_methods(m);
+    pybind_integration_methods(m);
 }

@@ -12,7 +12,7 @@ The following tutorial generates a variant of sync function using NumPy and visu
 
     import copy
     import numpy as np
-    from py3d import *
+    from open3d import *
 
     if __name__ == "__main__":
 
@@ -56,9 +56,9 @@ From NumPy to Open3D
     pcd.points = Vector3dVector(xyz)
     write_point_cloud("../../TestData/sync.ply", pcd)
 
-Open3D provides conversion from NumPy matrix to a vector of 3D vectors. By using ``Vector3dVector``, NumPy matrix can be directly assigned for ``py3d.PointCloud.points``.
+Open3D provides conversion from NumPy matrix to a vector of 3D vectors. By using ``Vector3dVector``, NumPy matrix can be directly assigned for ``open3d.PointCloud.points``.
 
-In this manner, any similar data structure such as ``py3d.PointCloud.colors`` or ``py3d.PointCloud.normals`` can be assigned or modified using NumPy. The script saves the point cloud as a ply file for the next step.
+In this manner, any similar data structure such as ``open3d.PointCloud.colors`` or ``open3d.PointCloud.normals`` can be assigned or modified using NumPy. The script saves the point cloud as a ply file for the next step.
 
 
 .. _from_open3d_to_numpy:

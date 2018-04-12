@@ -4,7 +4,7 @@
 
 import numpy as np
 import copy
-from py3d import *
+from open3d import *
 
 
 def draw_registration_result_original_color(source, target, transformation):

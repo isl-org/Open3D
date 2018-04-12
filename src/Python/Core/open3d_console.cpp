@@ -24,29 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d_core.h"
 
-#include <Python/py3d.h>
+#include <Core/Utility/Console.h>
+using namespace three;
 
-void pybind_console(py::module &m);
-void pybind_geometry(py::module &m);
-void pybind_pointcloud(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_feature(py::module &m);
-void pybind_camera(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_odometry(py::module &m);
-void pybind_globaloptimization(py::module &m);
-void pybind_integration(py::module &m);
-
-void pybind_pointcloud_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_feature_methods(py::module &m);
-void pybind_camera_methods(py::module &m);
-void pybind_registration_methods(py::module &m);
-void pybind_odometry_methods(py::module &m);
-void pybind_globaloptimization_methods(py::module &m);
-void pybind_integration_methods(py::module &m);
+void pybind_console(py::module &m)
+{
+    py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic())
+        .value("Error", VerbosityLevel::VerboseError)
+        .value("Warning", VerbosityLevel::VerboseWarning)
+        .value("Info", VerbosityLevel::VerboseInfo)
+        .value("Debug", VerbosityLevel::VerboseDebug)
+        .value("Always", VerbosityLevel::VerboseAlways)
+        .export_values();
+    m.def("set_verbosity_level", &SetVerbosityLevel,
+            "Set global verbosity level of Open3D (open3d)",
+            py::arg("verbosity_level"));
+    m.def("get_verbosity_level", &GetVerbosityLevel,
+            "Get global verbosity level of Open3D (open3d)");
+}
