@@ -31,6 +31,10 @@
 
 namespace three {
 
+/// Factory function to create an image from a file (ImageFactory.cpp)
+/// Return an empty image if fail to read the file.
+std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
+
 /// The general entrance for reading an Image from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.

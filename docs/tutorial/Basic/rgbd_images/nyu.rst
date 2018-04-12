@@ -9,7 +9,7 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the NYU dataset <https
 	# src/Python/Tutorial/Basic/rgbd_nyu.py
 
 	#conda install pillow matplotlib
-	from py3d import *
+	from open3d import *
 	import numpy as np
 	import re
 	import matplotlib.image as mpimg

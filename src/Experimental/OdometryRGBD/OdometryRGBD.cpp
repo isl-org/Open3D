@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 			!ReadIJsonConvertible(intrinsic_path, intrinsic)) {
 		PrintWarning("Failed to read intrinsic parameters for depth image.\n");
 		PrintWarning("Use default value for Primesense camera.\n");
-		intrinsic = PinholeCameraIntrinsic::PrimeSenseDefault;
+		intrinsic = PinholeCameraIntrinsic::GetPrimeSenseDefault();
 	}
 
 	if (ProgramOptionExists(argc, argv, "--verbose"))

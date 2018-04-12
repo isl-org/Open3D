@@ -5,3 +5,9 @@ target_link_libraries(TrimMeshBasedOnPointCloud Visualization IO Core)
 set_target_properties(TrimMeshBasedOnPointCloud PROPERTIES
 		FOLDER "Experimental"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Experimental")
+install(TARGETS TrimMeshBasedOnPointCloud
+        RUNTIME DESTINATION bin/Experimental
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+install(FILES ${INCLUDE_FILES}
+        DESTINATION include)
