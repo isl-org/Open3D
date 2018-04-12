@@ -10,11 +10,11 @@ Open3D uses `FLANN <https://www.cs.ubc.ca/research/flann/>`_ to build KDTrees fo
     # src/Python/Tutorial/Basic/kdtree.py
 
     import numpy as np
-    from py3d import *
+    from open3d import *
 
     if __name__ == "__main__":
 
-        print("Testing kdtree in py3d ...")
+        print("Testing kdtree in open3d ...")
         print("Load a point cloud and paint it gray.")
         pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
         pcd.paint_uniform_color([0.5, 0.5, 0.5])
@@ -42,7 +42,7 @@ Build KDTree from point cloud
 
 .. code-block:: python
 
-    print("Testing kdtree in py3d ...")
+    print("Testing kdtree in open3d ...")
     print("Load a point cloud and paint it gray.")
     pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
     pcd.paint_uniform_color([0.5, 0.5, 0.5])

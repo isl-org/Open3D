@@ -3,7 +3,7 @@ echo installing...
 
 cd ../../build
 
-# this will copy the py3d module to a system-wide-known location
+# this will copy the open3d module to a system-wide-known location
 make install
 
 echo
