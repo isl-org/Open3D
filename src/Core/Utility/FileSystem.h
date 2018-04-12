@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-namespace three {
+namespace open3d {
 
 namespace filesystem {
 
@@ -60,11 +60,11 @@ bool FileExists(const std::string &filename);
 bool RemoveFile(const std::string &filename);
 
 bool ListFilesInDirectory(const std::string &directory,
-		std::vector<std::string> &filenames);
+        std::vector<std::string> &filenames);
 
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
-		const std::string &extname, std::vector<std::string> &filenames);
+        const std::string &extname, std::vector<std::string> &filenames);
 
-}	// namespace three::filesystem
+}   // namespace open3d::filesystem
 
-}	// namespace three
+}   // namespace open3d

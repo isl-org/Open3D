@@ -32,7 +32,7 @@
 #include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
 #include <Visualization/Visualizer/VisualizerWithEditing.h>
 
-using namespace three;
+using namespace open3d;
 
 void pybind_visualizer(py::module &m)
 {

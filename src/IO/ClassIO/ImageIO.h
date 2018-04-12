@@ -29,7 +29,7 @@
 #include <string>
 #include <Core/Geometry/Image.h>
 
-namespace three {
+namespace open3d {
 
 /// Factory function to create an image from a file (ImageFactory.cpp)
 /// Return an empty image if fail to read the file.
@@ -46,16 +46,16 @@ bool ReadImage(const std::string &filename, Image &image);
 /// Otherwise it will be ignored.
 /// \return return true if the write function is successful, false otherwise.
 bool WriteImage(const std::string &filename, const Image &image,
-		int quality = 90);
+        int quality = 90);
 
 bool ReadImageFromPNG(const std::string &filename, Image &image);
 
 bool WriteImageToPNG(const std::string &filename, const Image &image,
-		int quality);
+        int quality);
 
 bool ReadImageFromJPG(const std::string &filename, Image &image);
 
 bool WriteImageToJPG(const std::string &filename, const Image &image,
-		int quality = 90);
+        int quality = 90);
 
-}	// namespace three
+}   // namespace open3d

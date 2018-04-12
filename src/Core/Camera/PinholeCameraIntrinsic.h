@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <Core/Utility/IJsonConvertible.h>
 
-namespace three {
+namespace open3d {
 
 class PinholeCameraIntrinsic : public IJsonConvertible
 {
@@ -72,4 +72,4 @@ public:
     Eigen::Matrix3d intrinsic_matrix_;
 };
 
-}   // namespace three
+}   // namespace open3d

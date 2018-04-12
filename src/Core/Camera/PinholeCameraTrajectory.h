@@ -31,21 +31,21 @@
 
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace three {
+namespace open3d {
 
 class PinholeCameraTrajectory : public IJsonConvertible
 {
 public:
-	PinholeCameraTrajectory();
-	~PinholeCameraTrajectory() override;
+    PinholeCameraTrajectory();
+    ~PinholeCameraTrajectory() override;
 
 public:
-	bool ConvertToJsonValue(Json::Value &value) const override;
-	bool ConvertFromJsonValue(const Json::Value &value) override;
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	PinholeCameraIntrinsic intrinsic_;
-	std::vector<Eigen::Matrix4d> extrinsic_;
+    PinholeCameraIntrinsic intrinsic_;
+    std::vector<Eigen::Matrix4d> extrinsic_;
 };
 
-}	// namespace three
+}   // namespace open3d

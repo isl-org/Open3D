@@ -32,7 +32,7 @@
 #include <Core/Odometry/Odometry.h>
 #include <Core/Odometry/OdometryOption.h>
 #include <Core/Odometry/RGBDOdometryJacobian.h>
-using namespace three;
+using namespace open3d;
 
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase

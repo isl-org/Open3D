@@ -29,21 +29,21 @@
 #include <Eigen/Core>
 #include <Core/Geometry/Geometry.h>
 
-namespace three {
+namespace open3d {
 
 class Geometry2D : public Geometry
 {
 public:
-	~Geometry2D() override {}
+    ~Geometry2D() override {}
 
 protected:
-	Geometry2D(GeometryType type) : Geometry(type, 2) {}
+    Geometry2D(GeometryType type) : Geometry(type, 2) {}
 
 public:
-	void Clear() override = 0;
-	bool IsEmpty() const override = 0;
-	virtual Eigen::Vector2d GetMinBound() const = 0;
-	virtual Eigen::Vector2d GetMaxBound() const = 0;
+    void Clear() override = 0;
+    bool IsEmpty() const override = 0;
+    virtual Eigen::Vector2d GetMinBound() const = 0;
+    virtual Eigen::Vector2d GetMaxBound() const = 0;
 };
 
-}	// namespace three
+}   // namespace open3d

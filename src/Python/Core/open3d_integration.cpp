@@ -31,7 +31,7 @@
 #include <Core/Integration/UniformTSDFVolume.h>
 #include <Core/Integration/ScalableTSDFVolume.h>
 
-using namespace three;
+using namespace open3d;
 
 template <class TSDFVolumeBase = TSDFVolume>
 class PyTSDFVolume : public TSDFVolumeBase

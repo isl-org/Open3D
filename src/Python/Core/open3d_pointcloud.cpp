@@ -32,7 +32,7 @@
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/ClassIO/PointCloudIO.h>
-using namespace three;
+using namespace open3d;
 
 void pybind_pointcloud(py::module &m)
 {

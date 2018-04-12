@@ -26,7 +26,7 @@
 
 #include "PoseGraph.h"
 
-namespace three{
+namespace open3d {
 
 
-}	// namespace three
+}   // namespace open3d

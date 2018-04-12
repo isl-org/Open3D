@@ -30,7 +30,7 @@
 #include <Core/Geometry/Geometry.h>
 #include <Core/Geometry/Geometry2D.h>
 #include <Core/Geometry/Geometry3D.h>
-using namespace three;
+using namespace open3d;
 
 template <class GeometryBase = Geometry> class PyGeometry : public GeometryBase
 {

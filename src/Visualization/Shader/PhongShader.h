@@ -30,95 +30,95 @@
 #include <Eigen/Core>
 #include <Visualization/Shader/ShaderWrapper.h>
 
-namespace three {
+namespace open3d {
 
 namespace glsl {
-	
+
 class PhongShader : public ShaderWrapper
 {
 public:
-	~PhongShader() override { Release(); }
-	
-protected:
-	PhongShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-	
-protected:
-	bool Compile() final;
-	void Release() final;
-	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	void UnbindGeometry() final;
+    ~PhongShader() override { Release(); }
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) = 0;
-	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &normals,
-			std::vector<Eigen::Vector3f> &colors) = 0;
-	
-protected:
-	void SetLighting(const ViewControl &view, const RenderOption &option);
+    PhongShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
 protected:
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_color_;
-	GLuint vertex_color_buffer_;
-	GLuint vertex_normal_;
-	GLuint vertex_normal_buffer_;
-	GLuint MVP_;
-	GLuint V_;
-	GLuint M_;
-	GLuint light_position_world_;
-	GLuint light_color_;
-	GLuint light_diffuse_power_;
-	GLuint light_specular_power_;
-	GLuint light_specular_shininess_;
-	GLuint light_ambient_;
+    bool Compile() final;
+    void Release() final;
+    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    void UnbindGeometry() final;
 
-	// At most support 4 lights
-	GLHelper::GLMatrix4f light_position_world_data_;
-	GLHelper::GLMatrix4f light_color_data_;
-	GLHelper::GLVector4f light_diffuse_power_data_;
-	GLHelper::GLVector4f light_specular_power_data_;
-	GLHelper::GLVector4f light_specular_shininess_data_;
-	GLHelper::GLVector4f light_ambient_data_;
+protected:
+    virtual bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) = 0;
+    virtual bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals,
+            std::vector<Eigen::Vector3f> &colors) = 0;
+
+protected:
+    void SetLighting(const ViewControl &view, const RenderOption &option);
+
+protected:
+    GLuint vertex_position_;
+    GLuint vertex_position_buffer_;
+    GLuint vertex_color_;
+    GLuint vertex_color_buffer_;
+    GLuint vertex_normal_;
+    GLuint vertex_normal_buffer_;
+    GLuint MVP_;
+    GLuint V_;
+    GLuint M_;
+    GLuint light_position_world_;
+    GLuint light_color_;
+    GLuint light_diffuse_power_;
+    GLuint light_specular_power_;
+    GLuint light_specular_shininess_;
+    GLuint light_ambient_;
+
+    // At most support 4 lights
+    GLHelper::GLMatrix4f light_position_world_data_;
+    GLHelper::GLMatrix4f light_color_data_;
+    GLHelper::GLVector4f light_diffuse_power_data_;
+    GLHelper::GLVector4f light_specular_power_data_;
+    GLHelper::GLVector4f light_specular_shininess_data_;
+    GLHelper::GLVector4f light_ambient_data_;
 };
 
 class PhongShaderForPointCloud : public PhongShader
 {
 public:
-	PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
-	
+    PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
+
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &normals,
-			std::vector<Eigen::Vector3f> &colors) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
 class PhongShaderForTriangleMesh : public PhongShader
 {
 public:
-	PhongShaderForTriangleMesh() : PhongShader("PhongShaderForTriangleMesh") {}
-	
+    PhongShaderForTriangleMesh() : PhongShader("PhongShaderForTriangleMesh") {}
+
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &normals,
-			std::vector<Eigen::Vector3f> &colors) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
-}	// namespace three::glsl
+}   // namespace open3d::glsl
 
-}	// namespace three
+}   // namespace open3d
