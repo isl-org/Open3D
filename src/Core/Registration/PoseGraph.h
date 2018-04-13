@@ -29,7 +29,7 @@
 #include <vector>
 #include <memory>
 
-#include <IO/ClassIO/IJsonConvertible.h>
+#include <Core/Utility/IJsonConvertible.h>
 #include <Core/Utility/Eigen.h>
 
 namespace three {
@@ -99,11 +99,5 @@ public:
 	std::vector<PoseGraphNode> nodes_;
 	std::vector<PoseGraphEdge> edges_;
 };
-
-/// Factory function to create a PoseGraph from a file
-/// (PinholeCameraTrajectoryFactory.cpp)
-/// Return an empty PinholeCameraTrajectory if fail to read the file.
-std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
-		const std::string &filename);
 
 }	// namespace three

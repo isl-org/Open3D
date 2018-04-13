@@ -52,6 +52,13 @@ static const std::unordered_map<std::string,
 
 }	// unnamed namespace
 
+std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
+{
+    auto image = std::make_shared<Image>();
+    ReadImage(filename, *image);
+    return image;
+}
+
 bool ReadImage(const std::string &filename, Image &image)
 {
 	std::string filename_ext =

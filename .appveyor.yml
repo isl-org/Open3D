@@ -12,9 +12,19 @@ environment:
   - PYTHON: 36
     CPP: 14
     CONFIG: Release
+    SHARED: OFF
+  - PYTHON: 36
+    CPP: 14
+    CONFIG: Release
+    SHARED: ON
   - PYTHON: 36
     CPP: latest
     CONFIG: Release
+    SHARED: OFF
+  - PYTHON: 36
+    CPP: latest
+    CONFIG: Release
+    SHARED: ON
 matrix:
   exclude:
     - image: Visual Studio 2015
@@ -38,5 +48,5 @@ install:
 build_script:
 - mkdir build
 - cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" ../src
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DBUILD_SHARED_LIBS=%SHARED% ../src
 - cmake --build . --config %CONFIG% --target ALL_BUILD

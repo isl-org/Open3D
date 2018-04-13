@@ -26,16 +26,7 @@
 
 #include "TriangleMesh.h"
 
-#include <IO/ClassIO/TriangleMeshIO.h>
-
 namespace three{
-
-std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename)
-{
-	auto mesh = std::make_shared<TriangleMesh>();
-	ReadTriangleMesh(filename, *mesh);
-	return mesh;
-}
 
 std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
 		int resolution/* = 20*/)

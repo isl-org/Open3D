@@ -12,7 +12,7 @@ This tutorial focuses on more advanced functionalities to customize the behavior
     # src/Python/Tutorial/Advanced/customized_visualization.py
 
     import os
-    from py3d import *
+    from open3d import *
     import numpy as np
     import matplotlib.pyplot as plt
 

@@ -31,6 +31,10 @@
 
 namespace three {
 
+/// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
+/// Return an empty mesh if fail to read the file.
+std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename);
+
 /// The general entrance for reading a TriangleMesh from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.

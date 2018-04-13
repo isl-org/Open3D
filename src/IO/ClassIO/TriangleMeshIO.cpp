@@ -49,6 +49,13 @@ static const std::unordered_map<std::string,
 
 }	// unnamed namespace
 
+std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename)
+{
+    auto mesh = std::make_shared<TriangleMesh>();
+    ReadTriangleMesh(filename, *mesh);
+    return mesh;
+}
+
 bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
 {
 	std::string filename_ext =
