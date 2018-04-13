@@ -1,22 +1,22 @@
 # some black magic to automatically create a header file from shader files
 file(GLOB SHADER_FILES "Shader/GLSL/*.glsl")
 add_custom_command(
-	OUTPUT ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h
+	OUTPUT ${OPEN3D_INCLUDE_DIR}/Open3D/Visualization/Shader/Shader.h
 	COMMAND EncodeShader Shader.h
-	WORKING_DIRECTORY ${Open3D_SOURCE_DIR}/Visualization/Shader/
+	WORKING_DIRECTORY ${OPEN3D_INCLUDE_DIR}/Open3D/Visualization/Shader/
 	DEPENDS ${SHADER_FILES} EncodeShader
 )
 foreach(file ${SHADER_FILES})
 	add_custom_command(
-		OUTPUT ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h
+		OUTPUT ${OPEN3D_INCLUDE_DIR}/Open3D/Visualization/Shader/Shader.h
 		COMMAND EncodeShader Shader.h ${file}
-		WORKING_DIRECTORY ${Open3D_SOURCE_DIR}/Visualization/Shader/
+		WORKING_DIRECTORY ${OPEN3D_INCLUDE_DIR}/Open3D/Visualization/Shader/
 		DEPENDS ${SHADER_FILES} EncodeShader
 		APPEND
 	)
 endforeach(file)
 add_custom_target(ShaderFileTarget ALL
-DEPENDS ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h)
+DEPENDS ${OPEN3D_INCLUDE_DIR}/Open3D/Visualization/Shader/Shader.h)
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
@@ -52,3 +52,8 @@ else ()
 	find_package(OpenGL REQUIRED)
 	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 endif ()
+
+install(TARGETS Visualization
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

@@ -5,3 +5,5 @@ target_link_libraries(OdometryRGBD IO Core)
 set_target_properties(OdometryRGBD PROPERTIES
 		FOLDER "Experimental"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Experimental")
+install(TARGETS OdometryRGBD
+        RUNTIME DESTINATION bin)

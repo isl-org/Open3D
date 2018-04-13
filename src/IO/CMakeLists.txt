@@ -24,3 +24,8 @@ add_library(IO ${Open3D_LIB_TYPE}
 	${IO_FILEFORMAT_HEADER_FILES} ${IO_FILEFORMAT_SOURCE_FILES}
 )
 target_link_libraries(IO Core tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${JSONCPP_LIBRARIES})
+
+install(TARGETS IO
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

@@ -34,3 +34,8 @@ add_library(Core ${Open3D_LIB_TYPE}
 	${CORE_INTEGRATION_HEADER_FILES} ${CORE_INTEGRATION_SOURCE_FILES}
 )
 target_link_libraries(Core IO)
+
+install(TARGETS Core
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

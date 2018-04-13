@@ -1,6 +1,14 @@
 # Require Python.
 find_package(PythonInterp REQUIRED)
 
+# find the python site-packages location
+if (NOT PYTHON_SITE_PACKAGES)
+	#set(GET_SITE_PACKAGE "import site\; print([path for path in site.getsitepackages() if path.endswith('packages')][-1])")
+	set(GET_SITE_PACKAGE "from distutils import sysconfig\; print(sysconfig.get_python_lib())")
+	execute_process(COMMAND ${PYTHON_EXECUTABLE} -c ${GET_SITE_PACKAGE} OUTPUT_VARIABLE _PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+	set(PYTHON_SITE_PACKAGES ${_PYTHON_SITE_PACKAGES} CACHE PATH "Where to install the python packages." FORCE)
+endif()
+
 file(GLOB PY_ALL_HEADER_FILES "*.h")
 file(GLOB PY_ALL_SOURCE_FILES "*.cpp")
 file(GLOB PY_CORE_HEADER_FILES "Core/*.h")
@@ -61,8 +69,7 @@ if (Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
 	add_dependencies(py3d PythonTutorial)
 endif(Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
 
-# find the python site-packages location
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
-
 # configure installer to copy the python module to the python site-packages
 install(TARGETS py3d DESTINATION ${PYTHON_SITE_PACKAGES})
+install(TARGETS py3d DESTINATION python/lib)
+install(DIRECTORY Tutorial DESTINATION python)
