@@ -19,8 +19,8 @@ Open3D implements a scalable RGBD image integration algorithm. The algorithm is 
 
         for i in range(len(camera_poses)):
             print("Integrate {:d}-th image into the volume.".format(i))
-            color = read_image("../../TestData/RGBD/color/{:05d}.jpg".format(i))
-            depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
+            color = read_image("../../../test/TestData/RGBD/color/{:05d}.jpg".format(i))
+            depth = read_image("../../../test/TestData/RGBD/depth/{:05d}.png".format(i))
             rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                     depth_trunc = 4.0, convert_rgb_to_intensity = False)
             volume.integrate(rgbd, PinholeCameraIntrinsic.prime_sense_default,
@@ -39,7 +39,7 @@ Read trajectory from .log file
 
 .. code-block:: python
 
-    camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
+    camera_poses = read_trajectory("../../../test/TestData/RGBD/odometry.log")
 
 This tutorial uses function ``read_trajectory`` to read a camera trajectory from `a .log file <http://redwood-data.org/indoor/fileformat.html>`_. A sample .log file is as follows.
 
@@ -70,8 +70,8 @@ TSDF volume integration
 
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
-        color = read_image("../../TestData/RGBD/color/{:05d}.jpg".format(i))
-        depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
+        color = read_image("../../../test/TestData/RGBD/color/{:05d}.jpg".format(i))
+        depth = read_image("../../../test/TestData/RGBD/depth/{:05d}.png".format(i))
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                 depth_trunc = 4.0, convert_rgb_to_intensity = False)
         volume.integrate(rgbd, PinholeCameraIntrinsic.prime_sense_default,

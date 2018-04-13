@@ -39,8 +39,8 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the NYU dataset <https
 		print("Read NYU dataset")
 		# Open3D does not support ppm/pgm file yet. Not using read_image here.
 		# MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
-		color_raw = mpimg.imread("../../TestData/RGBD/other_formats/NYU_color.ppm")
-		depth_raw = read_nyu_pgm("../../TestData/RGBD/other_formats/NYU_depth.pgm")
+		color_raw = mpimg.imread("../../../test/TestData/RGBD/other_formats/NYU_color.ppm")
+		depth_raw = read_nyu_pgm("../../../test/TestData/RGBD/other_formats/NYU_depth.pgm")
 		color = Image(color_raw)
 		depth = Image(depth_raw)
 		rgbd_image = create_rgbd_image_from_nyu_format(color, depth)

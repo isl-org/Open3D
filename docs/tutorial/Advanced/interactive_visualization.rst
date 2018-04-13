@@ -21,7 +21,7 @@ This tutorial introduces user interaction features of visualizer window.
         print("   or use ctrl + left click for polygon selection")
         print("4) Press 'C' to get a selected geometry and to save it")
         print("5) Press 'F' to switch to freeview mode")
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+        pcd = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
         draw_geometries_with_editing([pcd])
 
     def draw_registration_result(source, target, transformation):
@@ -47,8 +47,8 @@ This tutorial introduces user interaction features of visualizer window.
 
     def demo_manual_registration():
         print("Demo for manual ICP")
-        source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        target = read_point_cloud("../../TestData/ICP/cloud_bin_2.pcd")
+        source = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
+        target = read_point_cloud("../../../test/TestData/ICP/cloud_bin_2.pcd")
         print("Visualization of two point clouds before manual alignment")
         draw_registration_result(source, target, np.identity(4))
 
@@ -96,7 +96,7 @@ Crop geometry
         print("   or use ctrl + left click for polygon selection")
         print("4) Press 'C' to get a selected geometry and to save it")
         print("5) Press 'F' to switch to freeview mode")
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+        pcd = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
         draw_geometries_with_editing([pcd])
 
 This function simply reads a point cloud and calls ``draw_geometries_with_editing``. This function provides vertex selection and cropping.
@@ -142,8 +142,8 @@ The following script register two point clouds using point-to-point ICP. It gets
 
     def demo_manual_registration():
         print("Demo for manual ICP")
-        source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        target = read_point_cloud("../../TestData/ICP/cloud_bin_2.pcd")
+        source = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
+        target = read_point_cloud("../../../test/TestData/ICP/cloud_bin_2.pcd")
         print("Visualization of two point clouds before manual alignment")
         draw_registration_result(source, target, np.identity(4))
 

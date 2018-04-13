@@ -19,7 +19,7 @@ If Open3D is successfully compiled with Python binding, it will create a Python 
 
     def example_import_function():
         from py3d import read_point_cloud
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+        pcd = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
         print(pcd)
 
     if __name__ == "__main__":
@@ -40,7 +40,7 @@ Import py3d module
 
     def example_import_function():
         from py3d import read_point_cloud
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+        pcd = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
         print(pcd)
 
 This imports ``read_point_cloud`` function from ``py3d`` module. It reads a point cloud file and returns an instance of ``PointCloud`` class. ``print(pcd)`` prints brief information of the point cloud:

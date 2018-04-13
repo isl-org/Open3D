@@ -14,17 +14,17 @@ This tutorial shows how basic geometries are read and written by Open3D.
     if __name__ == "__main__":
 
         print("Testing IO for point cloud ...")
-        pcd = read_point_cloud("../../TestData/fragment.pcd")
+        pcd = read_point_cloud("../../../test/TestData/fragment.pcd")
         print(pcd)
         write_point_cloud("copy_of_fragment.pcd", pcd)
 
         print("Testing IO for meshes ...")
-        mesh = read_triangle_mesh("../../TestData/knot.ply")
+        mesh = read_triangle_mesh("../../../test/TestData/knot.ply")
         print(mesh)
         write_triangle_mesh("copy_of_knot.ply", mesh)
 
         print("Testing IO for images ...")
-        img = read_image("../../TestData/lena_color.jpg")
+        img = read_image("../../../test/TestData/lena_color.jpg")
         print(img)
         write_image("copy_of_lena_color.jpg", img)
 
@@ -38,7 +38,7 @@ This script reads and writes a point cloud.
 .. code-block:: python
 
     print("Testing IO for point cloud ...")
-    pcd = read_point_cloud("../../TestData/fragment.pcd")
+    pcd = read_point_cloud("../../../test/TestData/fragment.pcd")
     print(pcd)
     write_point_cloud("copy_of_fragment.pcd", pcd)
 
@@ -60,7 +60,7 @@ This script reads and writes a mesh.
 .. code-block:: python
 
     print("Testing IO for meshes ...")
-    mesh = read_triangle_mesh("../../TestData/knot.ply")
+    mesh = read_triangle_mesh("../../../test/TestData/knot.ply")
     print(mesh)
     write_triangle_mesh("copy_of_knot.ply", mesh)
 
@@ -82,7 +82,7 @@ This script reads and writes an image.
 .. code-block:: python
 
     print("Testing IO for images ...")
-    img = read_image("../../TestData/lena_color.jpg")
+    img = read_image("../../../test/TestData/lena_color.jpg")
     print(img)
     write_image("copy_of_lena_color.jpg", img)
 

@@ -14,13 +14,13 @@ An RGBD odometry finds the camera movement between two consecutive RGBD image pa
 
     if __name__ == "__main__":
         pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-                "../../TestData/camera.json")
+                "../../../test/TestData/camera.json")
         print(pinhole_camera_intrinsic.intrinsic_matrix)
 
-        source_color = read_image("../../TestData/RGBD/color/00000.jpg")
-        source_depth = read_image("../../TestData/RGBD/depth/00000.png")
-        target_color = read_image("../../TestData/RGBD/color/00001.jpg")
-        target_depth = read_image("../../TestData/RGBD/depth/00001.png")
+        source_color = read_image("../../../test/TestData/RGBD/color/00000.jpg")
+        source_depth = read_image("../../../test/TestData/RGBD/depth/00000.png")
+        target_color = read_image("../../../test/TestData/RGBD/color/00001.jpg")
+        target_depth = read_image("../../../test/TestData/RGBD/depth/00001.png")
         source_rgbd_image = create_rgbd_image_from_color_and_depth(
                 source_color, source_depth);
         target_rgbd_image = create_rgbd_image_from_color_and_depth(
@@ -67,7 +67,7 @@ We first read the camera intrinsic matrix from a json file.
 .. code-block:: python
 
     pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-            "../../TestData/camera.json")
+            "../../../test/TestData/camera.json")
     print(pinhole_camera_intrinsic.intrinsic_matrix)
 
 This yields:
@@ -88,10 +88,10 @@ Read RGBD image
 
 .. code-block:: python
 
-    source_color = read_image("../../TestData/RGBD/color/00000.jpg")
-    source_depth = read_image("../../TestData/RGBD/depth/00000.png")
-    target_color = read_image("../../TestData/RGBD/color/00001.jpg")
-    target_depth = read_image("../../TestData/RGBD/depth/00001.png")
+    source_color = read_image("../../../test/TestData/RGBD/color/00000.jpg")
+    source_depth = read_image("../../../test/TestData/RGBD/depth/00000.png")
+    target_color = read_image("../../../test/TestData/RGBD/color/00001.jpg")
+    target_depth = read_image("../../../test/TestData/RGBD/depth/00001.png")
     source_rgbd_image = create_rgbd_image_from_color_and_depth(
             source_color, source_depth)
     target_rgbd_image = create_rgbd_image_from_color_and_depth(
