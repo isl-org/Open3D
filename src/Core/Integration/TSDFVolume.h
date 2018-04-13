@@ -31,7 +31,7 @@
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace three {
+namespace open3d {
 
 /// Interface class of the Truncated Signed Distance Function (TSDF) volume
 /// This volume is usually used to integrate surface data (e.g., a series of
@@ -43,32 +43,32 @@ namespace three {
 class TSDFVolume
 {
 public:
-	TSDFVolume(double voxel_length, double sdf_trunc, bool with_color) :
-			voxel_length_(voxel_length), sdf_trunc_(sdf_trunc),
-			with_color_(with_color) {}
-	virtual ~TSDFVolume() {}
+    TSDFVolume(double voxel_length, double sdf_trunc, bool with_color) :
+            voxel_length_(voxel_length), sdf_trunc_(sdf_trunc),
+            with_color_(with_color) {}
+    virtual ~TSDFVolume() {}
 
 public:
-	/// Function to reset the TSDFVolume
-	virtual void Reset() = 0;
+    /// Function to reset the TSDFVolume
+    virtual void Reset() = 0;
 
-	/// Function to integrate an RGB-D image into the volume
-	virtual void Integrate(const RGBDImage &image,
-			const PinholeCameraIntrinsic &intrinsic,
-			const Eigen::Matrix4d &extrinsic) = 0;
+    /// Function to integrate an RGB-D image into the volume
+    virtual void Integrate(const RGBDImage &image,
+            const PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4d &extrinsic) = 0;
 
-	/// Function to extract a point cloud with normals, using the marching cubes
-	/// algorithm (https://en.wikipedia.org/wiki/Marching_cubes)
-	virtual std::shared_ptr<PointCloud> ExtractPointCloud() = 0;
+    /// Function to extract a point cloud with normals, using the marching cubes
+    /// algorithm (https://en.wikipedia.org/wiki/Marching_cubes)
+    virtual std::shared_ptr<PointCloud> ExtractPointCloud() = 0;
 
-	/// Function to extract a triangle mesh, using the marching cubes algorithm
-	/// (https://en.wikipedia.org/wiki/Marching_cubes)
-	virtual std::shared_ptr<TriangleMesh> ExtractTriangleMesh() = 0;
+    /// Function to extract a triangle mesh, using the marching cubes algorithm
+    /// (https://en.wikipedia.org/wiki/Marching_cubes)
+    virtual std::shared_ptr<TriangleMesh> ExtractTriangleMesh() = 0;
 
 public:
-	double voxel_length_;
-	double sdf_trunc_;
-	bool with_color_;
+    double voxel_length_;
+    double sdf_trunc_;
+    bool with_color_;
 };
 
-}	// namespace three
+}   // namespace open3d

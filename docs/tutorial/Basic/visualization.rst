@@ -9,7 +9,7 @@ Visualization
 
     import copy
     import numpy as np
-    from py3d import *
+    from open3d import *
 
     if __name__ == "__main__":
 

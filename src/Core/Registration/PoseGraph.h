@@ -29,81 +29,75 @@
 #include <vector>
 #include <memory>
 
-#include <IO/ClassIO/IJsonConvertible.h>
+#include <Core/Utility/IJsonConvertible.h>
 #include <Core/Utility/Eigen.h>
 
-namespace three {
+namespace open3d {
 
 class PoseGraphNode : public IJsonConvertible
 {
 public:
-	PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) :
-			pose_(pose) {};
-	~PoseGraphNode();
+    PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) :
+            pose_(pose) {};
+    ~PoseGraphNode();
 
 public:
-	bool ConvertToJsonValue(Json::Value &value) const override;
-	bool ConvertFromJsonValue(const Json::Value &value) override;
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	Eigen::Matrix4d pose_;
+    Eigen::Matrix4d pose_;
 };
 
 class PoseGraphEdge : public IJsonConvertible
 {
 public:
-	PoseGraphEdge(
-			int source_node_id = -1, int target_node_id = -1,
-			const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
-			const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
-			bool uncertain = false,
-			double confidence = 1.0) :
-			source_node_id_(source_node_id),
-			target_node_id_(target_node_id),
-			transformation_(transformation),
-			information_(information),
-			uncertain_(uncertain),
-			confidence_(confidence) {};
-	~PoseGraphEdge();
+    PoseGraphEdge(
+            int source_node_id = -1, int target_node_id = -1,
+            const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
+            const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
+            bool uncertain = false,
+            double confidence = 1.0) :
+            source_node_id_(source_node_id),
+            target_node_id_(target_node_id),
+            transformation_(transformation),
+            information_(information),
+            uncertain_(uncertain),
+            confidence_(confidence) {};
+    ~PoseGraphEdge();
 
 public:
-	bool ConvertToJsonValue(Json::Value &value) const override;
-	bool ConvertFromJsonValue(const Json::Value &value) override;
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	int source_node_id_;
-	int target_node_id_;
-	Eigen::Matrix4d transformation_;
-	Eigen::Matrix6d information_;
-	/// odometry edge has uncertain == false
-	/// loop closure edges has uncertain == true
-	bool uncertain_;
-	/// if uncertain_ is true, it has confidence bounded in [0,1].
-	/// 1 means reliable, and 0 means unreliable edge.
-	/// This correspondence to line process value in [Choi et al 2015]
-	/// See core/registration/globaloptimization.h for more details.
-	double confidence_;
+    int source_node_id_;
+    int target_node_id_;
+    Eigen::Matrix4d transformation_;
+    Eigen::Matrix6d information_;
+    /// odometry edge has uncertain == false
+    /// loop closure edges has uncertain == true
+    bool uncertain_;
+    /// if uncertain_ is true, it has confidence bounded in [0,1].
+    /// 1 means reliable, and 0 means unreliable edge.
+    /// This correspondence to line process value in [Choi et al 2015]
+    /// See core/registration/globaloptimization.h for more details.
+    double confidence_;
 };
 
 class PoseGraph : public IJsonConvertible
 {
 public:
-	PoseGraph();
-	~PoseGraph() override;
+    PoseGraph();
+    ~PoseGraph() override;
 
 public:
-	bool ConvertToJsonValue(Json::Value &value) const override;
-	bool ConvertFromJsonValue(const Json::Value &value) override;
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-	std::vector<PoseGraphNode> nodes_;
-	std::vector<PoseGraphEdge> edges_;
+    std::vector<PoseGraphNode> nodes_;
+    std::vector<PoseGraphEdge> edges_;
 };
 
-/// Factory function to create a PoseGraph from a file
-/// (PinholeCameraTrajectoryFactory.cpp)
-/// Return an empty PinholeCameraTrajectory if fail to read the file.
-std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
-		const std::string &filename);
-
-}	// namespace three
+}   // namespace open3d

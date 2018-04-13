@@ -30,46 +30,46 @@
 
 void PrintHelp()
 {
-	printf("Usage:\n");
-	printf("    > ManuallyCropPointCloud pointcloud_file [options]\n");
-	printf("      Manually crop point clouds in pointcloud_file.\n");
-	printf("\n");
-	printf("Options:\n");
-	printf("    --help, -h                : Print help information.\n");
-	printf("    --verbose n               : Set verbose level (0-4).\n");
-	printf("    --voxel_size d            : Set downsample voxel size.\n");
-	printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    printf("Usage:\n");
+    printf("    > ManuallyCropPointCloud pointcloud_file [options]\n");
+    printf("      Manually crop point clouds in pointcloud_file.\n");
+    printf("\n");
+    printf("Options:\n");
+    printf("    --help, -h                : Print help information.\n");
+    printf("    --verbose n               : Set verbose level (0-4).\n");
+    printf("    --voxel_size d            : Set downsample voxel size.\n");
+    printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
 }
 
 int main(int argc, char **argv)
 {
-	using namespace three;
+    using namespace open3d;
 
-	if (argc < 2 || ProgramOptionExists(argc, argv, "--help") ||
-			ProgramOptionExists(argc, argv, "-h")) {
-		PrintHelp();
-		return 0;
-	}
-	
-	int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-	SetVerbosityLevel((VerbosityLevel)verbose);
-	double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
-			-1.0);
-	bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
+    if (argc < 2 || ProgramOptionExists(argc, argv, "--help") ||
+            ProgramOptionExists(argc, argv, "-h")) {
+        PrintHelp();
+        return 0;
+    }
 
-	auto pcd_ptr = CreatePointCloudFromFile(argv[1]);
-	if (pcd_ptr->IsEmpty()) {
-		PrintWarning("Failed to read the point cloud.\n");
-		return 0;
-	}
-	VisualizerWithEditing vis(voxel_size, with_dialog,
-			filesystem::GetFileParentDirectory(argv[1]));
-	vis.CreateWindow("Crop Point Cloud", 1920, 1080, 100, 100);
-	vis.AddGeometry(pcd_ptr);
-	if (pcd_ptr->points_.size() > 5000000) {
-		vis.GetRenderOption().point_size_ = 1.0;
-	}
-	vis.Run();
-	vis.DestroyWindow();
-	return 1;
+    int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    SetVerbosityLevel((VerbosityLevel)verbose);
+    double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
+            -1.0);
+    bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
+
+    auto pcd_ptr = CreatePointCloudFromFile(argv[1]);
+    if (pcd_ptr->IsEmpty()) {
+        PrintWarning("Failed to read the point cloud.\n");
+        return 0;
+    }
+    VisualizerWithEditing vis(voxel_size, with_dialog,
+            filesystem::GetFileParentDirectory(argv[1]));
+    vis.CreateWindow("Crop Point Cloud", 1920, 1080, 100, 100);
+    vis.AddGeometry(pcd_ptr);
+    if (pcd_ptr->points_.size() > 5000000) {
+        vis.GetRenderOption().point_size_ = 1.0;
+    }
+    vis.Run();
+    vis.DestroyWindow();
+    return 1;
 }

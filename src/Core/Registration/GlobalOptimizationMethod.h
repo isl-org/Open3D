@@ -28,7 +28,7 @@
 
 #include <memory>
 
-namespace three {
+namespace open3d {
 
 class PoseGraph;
 
@@ -41,40 +41,40 @@ class GlobalOptimizationOption;
 class GlobalOptimizationMethod
 {
 public:
-	GlobalOptimizationMethod() {}
-	virtual ~GlobalOptimizationMethod() {}
+    GlobalOptimizationMethod() {}
+    virtual ~GlobalOptimizationMethod() {}
 
 public:
-	virtual void OptimizePoseGraph(
-			PoseGraph &pose_graph,
-			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationOption &option) const = 0;
+    virtual void OptimizePoseGraph(
+            PoseGraph &pose_graph,
+            const GlobalOptimizationConvergenceCriteria &criteria,
+            const GlobalOptimizationOption &option) const = 0;
 };
 
 class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod
 {
 public:
-	GlobalOptimizationGaussNewton() {}
-	~GlobalOptimizationGaussNewton() override {}
+    GlobalOptimizationGaussNewton() {}
+    ~GlobalOptimizationGaussNewton() override {}
 
 public:
-	void OptimizePoseGraph(
-			PoseGraph &pose_graph,
-			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationOption &option) const override;
+    void OptimizePoseGraph(
+            PoseGraph &pose_graph,
+            const GlobalOptimizationConvergenceCriteria &criteria,
+            const GlobalOptimizationOption &option) const override;
 };
 
 class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod
 {
 public:
-	GlobalOptimizationLevenbergMarquardt() {}
-	~GlobalOptimizationLevenbergMarquardt() override {}
+    GlobalOptimizationLevenbergMarquardt() {}
+    ~GlobalOptimizationLevenbergMarquardt() override {}
 
 public:
-	void OptimizePoseGraph(
-			PoseGraph &pose_graph,
-			const GlobalOptimizationConvergenceCriteria &criteria,
-			const GlobalOptimizationOption &option) const override;
+    void OptimizePoseGraph(
+            PoseGraph &pose_graph,
+            const GlobalOptimizationConvergenceCriteria &criteria,
+            const GlobalOptimizationOption &option) const override;
 };
 
-}	// namespace three
+}   // namespace open3d

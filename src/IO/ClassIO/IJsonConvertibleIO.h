@@ -27,32 +27,32 @@
 #pragma once
 
 #include <string>
-#include <IO/ClassIO/IJsonConvertible.h>
+#include <Core/Utility/IJsonConvertible.h>
 
-namespace three {
+namespace open3d {
 
 /// The general entrance for reading an IJsonConvertible from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
 bool ReadIJsonConvertible(const std::string &filename,
-		IJsonConvertible &object);
+        IJsonConvertible &object);
 
 /// The general entrance for writing an IJsonConvertible to a file
 /// The function calls write functions based on the extension name of filename.
 /// \return return true if the write function is successful, false otherwise.
 bool WriteIJsonConvertible(const std::string &filename,
-		const IJsonConvertible &object);
+        const IJsonConvertible &object);
 
 bool ReadIJsonConvertibleFromJSON(const std::string &filename,
-		IJsonConvertible &object);
+        IJsonConvertible &object);
 
 bool WriteIJsonConvertibleToJSON(const std::string &filename,
-		const IJsonConvertible &object);
+        const IJsonConvertible &object);
 
 bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
-		IJsonConvertible &object);
+        IJsonConvertible &object);
 
 bool WriteIJsonConvertibleToJSONString(std::string &json_string,
-		const IJsonConvertible &object);
+        const IJsonConvertible &object);
 
-}	// namespace three
+}   // namespace open3d

@@ -30,86 +30,86 @@
 #include <Eigen/Core>
 #include <Visualization/Shader/ShaderWrapper.h>
 
-namespace three {
+namespace open3d {
 
 namespace glsl {
-	
+
 class SimpleShader : public ShaderWrapper
 {
 public:
-	~SimpleShader() override { Release(); }
+    ~SimpleShader() override { Release(); }
 
 protected:
-	SimpleShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-	
-protected:
-	bool Compile() final;
-	void Release() final;
-	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	void UnbindGeometry() final;
+    SimpleShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) = 0;
-	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors) = 0;
+    bool Compile() final;
+    void Release() final;
+    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    void UnbindGeometry() final;
 
 protected:
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_color_;
-	GLuint vertex_color_buffer_;
-	GLuint MVP_;
+    virtual bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) = 0;
+    virtual bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) = 0;
+
+protected:
+    GLuint vertex_position_;
+    GLuint vertex_position_buffer_;
+    GLuint vertex_color_;
+    GLuint vertex_color_buffer_;
+    GLuint MVP_;
 };
 
 class SimpleShaderForPointCloud : public SimpleShader
 {
 public:
-	SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
-	
+    SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
+
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
 class SimpleShaderForLineSet : public SimpleShader
 {
 public:
-	SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
-	
+    SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
+
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
 class SimpleShaderForTriangleMesh : public SimpleShader
 {
 public:
-	SimpleShaderForTriangleMesh() :
-			SimpleShader("SimpleShaderForTriangleMesh") {}
-	
+    SimpleShaderForTriangleMesh() :
+            SimpleShader("SimpleShaderForTriangleMesh") {}
+
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
-}	// namespace three::glsl
+}   // namespace open3d::glsl
 
-}	// namespace three
+}   // namespace open3d

@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+#Current Open3D version
+set(OPEN3D_VERSION "0.1.2")
+
 if (NOT CMAKE_VERSION VERSION_LESS "3.0")
     cmake_policy(SET CMP0054 OLD)
 endif()
@@ -13,6 +16,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
+option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
@@ -36,9 +40,6 @@ include_directories(
 	${Open3D_SOURCE_DIR}/External/librealsense/include
 	)
 
-# all static link, no dynamic links
-set(Open3D_LIB_TYPE STATIC)
-
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
@@ -49,6 +50,7 @@ if(WIN32)
 	add_definitions(-DWINDOWS)
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
 	add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
+	SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 	message(STATUS "Compiling on Windows")
 	if(MSVC)
 		message(STATUS "Compiling with MSVC")
@@ -57,6 +59,7 @@ if(WIN32)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 	endif(MSVC)
 elseif(CYGWIN)
+	SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 	message(STATUS "Compiling on Cygwin")
 	# enable c++11
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -64,7 +67,7 @@ elseif(CYGWIN)
 elseif(APPLE)
 	add_definitions(-DUNIX)
 	# enable c++11
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fvisibility=hidden")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 	# compile speed optimization for clang
 	add_definitions(-O3)
 elseif(UNIX)
@@ -98,6 +101,11 @@ message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
 message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
 message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_TESTS}")
 
+STRING(REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+" "\\1" OPEN3D_MAJOR_VERSION "${OPEN3D_VERSION}")
+STRING(REGEX REPLACE "^[0-9]+\\.([0-9]+)\\.[0-9]+" "\\1" OPEN3D_MINOR_VERSION "${OPEN3D_VERSION}")
+STRING(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)" "\\1" OPEN3D_PATCH_VERSION "${OPEN3D_VERSION}")
+set(OPEN3D_INLINE_VERSION "${OPEN3D_MAJOR_VERSION}${OPEN3D_MINOR_VERSION}${OPEN3D_PATCH_VERSION}")
+
 # Handling dependencies
 add_subdirectory(External)
 include_directories(${EIGEN3_INCLUDE_DIRS})
@@ -127,3 +135,12 @@ endif(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
 if (Open3D_BUILD_PYTHON_BINDING)
 	add_subdirectory(Python)
 endif(Open3D_BUILD_PYTHON_BINDING)
+
+install(DIRECTORY Core
+        DESTINATION include/Open3D COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY IO
+        DESTINATION include/Open3D COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY Visualization
+        DESTINATION include/Open3D COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY External
+        DESTINATION include COMPONENT Devel FILES_MATCHING PATTERN "*.h")
