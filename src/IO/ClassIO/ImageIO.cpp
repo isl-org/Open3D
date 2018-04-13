@@ -30,59 +30,66 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/FileSystem.h>
 
-namespace three{
+namespace open3d {
 
 namespace {
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, Image &)>>
-		file_extension_to_image_read_function
-		{{"png", ReadImageFromPNG},
-		{"jpg", ReadImageFromJPG},
-		{"jpeg", ReadImageFromJPG},
-		};
+        std::function<bool(const std::string &, Image &)>>
+        file_extension_to_image_read_function
+        {{"png", ReadImageFromPNG},
+        {"jpg", ReadImageFromJPG},
+        {"jpeg", ReadImageFromJPG},
+        };
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, const Image &, int)>>
-		file_extension_to_image_write_function
-		{{"png", WriteImageToPNG},
-		{"jpg", WriteImageToJPG},
-		{"jpeg", WriteImageToJPG},
-		};
+        std::function<bool(const std::string &, const Image &, int)>>
+        file_extension_to_image_write_function
+        {{"png", WriteImageToPNG},
+        {"jpg", WriteImageToJPG},
+        {"jpeg", WriteImageToJPG},
+        };
 
-}	// unnamed namespace
+}   // unnamed namespace
+
+std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
+{
+    auto image = std::make_shared<Image>();
+    ReadImage(filename, *image);
+    return image;
+}
 
 bool ReadImage(const std::string &filename, Image &image)
 {
-	std::string filename_ext =
-			filesystem::GetFileExtensionInLowerCase(filename);
-	if (filename_ext.empty()) {
-		PrintWarning("Read Image failed: unknown file extension.\n");
-		return false;
-	}
-	auto map_itr = file_extension_to_image_read_function.find(filename_ext);
-	if (map_itr == file_extension_to_image_read_function.end()) {
-		PrintWarning("Read Image failed: unknown file extension.\n");
-		return false;
-	}
-	return map_itr->second(filename, image);
+    std::string filename_ext =
+            filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        PrintWarning("Read Image failed: unknown file extension.\n");
+        return false;
+    }
+    auto map_itr = file_extension_to_image_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_image_read_function.end()) {
+        PrintWarning("Read Image failed: unknown file extension.\n");
+        return false;
+    }
+    return map_itr->second(filename, image);
 }
 
 bool WriteImage(const std::string &filename, const Image &image,
-		int quality/* = 90*/)
+        int quality/* = 90*/)
 {
-	std::string filename_ext =
-			filesystem::GetFileExtensionInLowerCase(filename);
-	if (filename_ext.empty()) {
-		PrintWarning("Write Image failed: unknown file extension.\n");
-		return false;
-	}
-	auto map_itr = file_extension_to_image_write_function.find(filename_ext);
-	if (map_itr == file_extension_to_image_write_function.end()) {
-		PrintWarning("Write Image failed: unknown file extension.\n");
-		return false;
-	}
-	return map_itr->second(filename, image, quality);
+    std::string filename_ext =
+            filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        PrintWarning("Write Image failed: unknown file extension.\n");
+        return false;
+    }
+    auto map_itr = file_extension_to_image_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_image_write_function.end()) {
+        PrintWarning("Write Image failed: unknown file extension.\n");
+        return false;
+    }
+    return map_itr->second(filename, image, quality);
 }
 
-}	// namespace three
+}   // namespace open3d

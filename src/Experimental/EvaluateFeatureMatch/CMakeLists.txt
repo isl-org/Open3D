@@ -5,3 +5,5 @@ target_link_libraries(EvaluateFeatureMatch Visualization IO Core)
 set_target_properties(EvaluateFeatureMatch PROPERTIES
 		FOLDER "Experimental"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Experimental")
+install(TARGETS EvaluateFeatureMatch
+        RUNTIME DESTINATION bin)
