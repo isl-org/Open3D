@@ -31,81 +31,81 @@ namespace three {
 class GlobalOptimizationOption
 {
 public:
-	GlobalOptimizationOption(
-			double max_correspondence_distance = 0.075,
-			double edge_prune_threshold = 0.25,
-			int reference_node = -1) :
-			max_correspondence_distance_(max_correspondence_distance),
-			edge_prune_threshold_(edge_prune_threshold),
-			reference_node_(reference_node) {
-		max_correspondence_distance_ = max_correspondence_distance < 0.0
-				? 0.075 : max_correspondence_distance;
-		edge_prune_threshold_ =
-				edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
-				? 0.25 : edge_prune_threshold;
-	};
-	~GlobalOptimizationOption() {};
+    GlobalOptimizationOption(
+            double max_correspondence_distance = 0.075,
+            double edge_prune_threshold = 0.25,
+            int reference_node = -1) :
+            max_correspondence_distance_(max_correspondence_distance),
+            edge_prune_threshold_(edge_prune_threshold),
+            reference_node_(reference_node) {
+        max_correspondence_distance_ = max_correspondence_distance < 0.0
+                ? 0.075 : max_correspondence_distance;
+        edge_prune_threshold_ =
+                edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
+                ? 0.25 : edge_prune_threshold;
+    };
+    ~GlobalOptimizationOption() {};
 
 public:
-	/// See reference list in GlobalOptimization.h
-	/// Identifies which distance value is used for finding neighboring points
-	/// when making information matrix. According to [Choi et al 2015],
-	/// this distance is used for determining $mu, a line process weight.
-	double max_correspondence_distance_;
-	/// According to [Choi et al 2015],
-	/// line_process weight < edge_prune_threshold_ (0.25) is pruned.
-	double edge_prune_threshold_;
-	/// This node is unchanged after optimization
-	int reference_node_;
+    /// See reference list in GlobalOptimization.h
+    /// Identifies which distance value is used for finding neighboring points
+    /// when making information matrix. According to [Choi et al 2015],
+    /// this distance is used for determining $mu, a line process weight.
+    double max_correspondence_distance_;
+    /// According to [Choi et al 2015],
+    /// line_process weight < edge_prune_threshold_ (0.25) is pruned.
+    double edge_prune_threshold_;
+    /// This node is unchanged after optimization
+    int reference_node_;
 };
 
 class GlobalOptimizationConvergenceCriteria
 {
 public:
-	GlobalOptimizationConvergenceCriteria(
-		int max_iteration = 100,
-		double min_relative_increment = 1e-6,
-		double min_relative_residual_increment = 1e-6,
-		double min_right_term = 1e-6,
-		double min_residual = 1e-6,
-		int max_iteration_lm = 20,
-		double upper_scale_factor = 2. / 3.,
-		double lower_scale_factor = 1. / 3.) :
-		max_iteration_(max_iteration),
-		min_relative_increment_(min_relative_increment),
-		min_relative_residual_increment_(min_relative_residual_increment),
-		min_right_term_(min_right_term),
-		min_residual_(min_residual),
-		max_iteration_lm_(max_iteration_lm),
-		upper_scale_factor_(upper_scale_factor),
-		lower_scale_factor_(lower_scale_factor)
-	{
-		upper_scale_factor_ =
-				upper_scale_factor < 0.0 || upper_scale_factor > 1.0
-				? 2. / 3. : upper_scale_factor;
-		lower_scale_factor_ =
-				lower_scale_factor < 0.0 || lower_scale_factor > 1.0
-				? 1. / 3. : lower_scale_factor;
-	};
-	~GlobalOptimizationConvergenceCriteria() {};
+    GlobalOptimizationConvergenceCriteria(
+        int max_iteration = 100,
+        double min_relative_increment = 1e-6,
+        double min_relative_residual_increment = 1e-6,
+        double min_right_term = 1e-6,
+        double min_residual = 1e-6,
+        int max_iteration_lm = 20,
+        double upper_scale_factor = 2. / 3.,
+        double lower_scale_factor = 1. / 3.) :
+        max_iteration_(max_iteration),
+        min_relative_increment_(min_relative_increment),
+        min_relative_residual_increment_(min_relative_residual_increment),
+        min_right_term_(min_right_term),
+        min_residual_(min_residual),
+        max_iteration_lm_(max_iteration_lm),
+        upper_scale_factor_(upper_scale_factor),
+        lower_scale_factor_(lower_scale_factor)
+    {
+        upper_scale_factor_ =
+                upper_scale_factor < 0.0 || upper_scale_factor > 1.0
+                ? 2. / 3. : upper_scale_factor;
+        lower_scale_factor_ =
+                lower_scale_factor < 0.0 || lower_scale_factor > 1.0
+                ? 1. / 3. : lower_scale_factor;
+    };
+    ~GlobalOptimizationConvergenceCriteria() {};
 
 public:
-	/// maximum iteration number for iterative optmization module.
-	int max_iteration_;
-	/// several convergence criteria to determine
-	/// stability of iterative optimization
-	double min_relative_increment_;
-	double min_relative_residual_increment_;
-	double min_right_term_;
-	double min_residual_;
-	/// max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop
-	/// that automatically changes steepest gradient gain
-	int max_iteration_lm_;
-	/// below two variables used for levenberg marquardt algorithm
-	/// these are scaling factors that increase/decrease lambda
-	/// used in H_LM = H + lambda * I
-	double upper_scale_factor_;
-	double lower_scale_factor_;
+    /// maximum iteration number for iterative optmization module.
+    int max_iteration_;
+    /// several convergence criteria to determine
+    /// stability of iterative optimization
+    double min_relative_increment_;
+    double min_relative_residual_increment_;
+    double min_right_term_;
+    double min_residual_;
+    /// max_iteration_lm_ is used for additional Levenberg-Marquardt inner loop
+    /// that automatically changes steepest gradient gain
+    int max_iteration_lm_;
+    /// below two variables used for levenberg marquardt algorithm
+    /// these are scaling factors that increase/decrease lambda
+    /// used in H_LM = H + lambda * I
+    double upper_scale_factor_;
+    double lower_scale_factor_;
 };
 
 }

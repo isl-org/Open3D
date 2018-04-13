@@ -33,54 +33,54 @@
 namespace three {
 
 namespace glsl {
-	
+    
 class Simple2DShader : public ShaderWrapper
 {
 public:
-	~Simple2DShader() override { Release(); }
+    ~Simple2DShader() override { Release(); }
 
 protected:
-	Simple2DShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-	
+    Simple2DShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    
 protected:
-	bool Compile() final;
-	void Release() final;
-	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	void UnbindGeometry() final;
+    bool Compile() final;
+    void Release() final;
+    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    void UnbindGeometry() final;
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) = 0;
-	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors) = 0;
+    virtual bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) = 0;
+    virtual bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) = 0;
 
 protected:
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_color_;
-	GLuint vertex_color_buffer_;
+    GLuint vertex_position_;
+    GLuint vertex_position_buffer_;
+    GLuint vertex_color_;
+    GLuint vertex_color_buffer_;
 };
 
 class Simple2DShaderForSelectionPolygon : public Simple2DShader
 {
 public:
-	Simple2DShaderForSelectionPolygon() :
-			Simple2DShader("Simple2DShaderForSelectionPolygon") {}
-	
+    Simple2DShaderForSelectionPolygon() :
+            Simple2DShader("Simple2DShaderForSelectionPolygon") {}
+    
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &colors) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
-}	// namespace three::glsl
+}    // namespace three::glsl
 
-}	// namespace three
+}    // namespace three

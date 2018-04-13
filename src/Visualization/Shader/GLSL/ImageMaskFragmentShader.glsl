@@ -8,5 +8,5 @@ uniform float mask_alpha;
 
 void main()
 {
-	gl_FragColor = vec4(mask_color, texture2D(image_texture, UV).r * mask_alpha);
+    gl_FragColor = vec4(mask_color, texture2D(image_texture, UV).r * mask_alpha);
 }

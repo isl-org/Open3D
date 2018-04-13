@@ -48,180 +48,180 @@ namespace filesystem {
 
 std::string GetFileExtensionInLowerCase(const std::string &filename)
 {
-	size_t dot_pos = filename.find_last_of(".");
-	if (dot_pos == std::string::npos || dot_pos == filename.length() - 1) {
-		return "";
-	}
-	std::string filename_ext = filename.substr(dot_pos + 1);
-	if (filename_ext.find_first_of("/\\") != std::string::npos) {
-		return "";
-	}
-	std::transform(filename_ext.begin(), filename_ext.end(),
-			filename_ext.begin(), ::tolower);
-	return filename_ext;
+    size_t dot_pos = filename.find_last_of(".");
+    if (dot_pos == std::string::npos || dot_pos == filename.length() - 1) {
+        return "";
+    }
+    std::string filename_ext = filename.substr(dot_pos + 1);
+    if (filename_ext.find_first_of("/\\") != std::string::npos) {
+        return "";
+    }
+    std::transform(filename_ext.begin(), filename_ext.end(),
+            filename_ext.begin(), ::tolower);
+    return filename_ext;
 }
 
 std::string GetFileNameWithoutExtension(const std::string &filename)
 {
-	std::string ext = GetFileExtensionInLowerCase(filename);
-	if (ext.length() >= filename.length() - 1) {
-		return "";
-	} else {
-		return filename.substr(0, filename.length() - ext.length() - 1);
-	}
+    std::string ext = GetFileExtensionInLowerCase(filename);
+    if (ext.length() >= filename.length() - 1) {
+        return "";
+    } else {
+        return filename.substr(0, filename.length() - ext.length() - 1);
+    }
 }
 
 std::string GetFileNameWithoutDirectory(const std::string &filename)
 {
-	size_t slash_pos = filename.find_last_of("/\\");
-	if (slash_pos == std::string::npos) {
-		return filename;
-	} else {
-		return filename.substr(slash_pos + 1);
-	}
+    size_t slash_pos = filename.find_last_of("/\\");
+    if (slash_pos == std::string::npos) {
+        return filename;
+    } else {
+        return filename.substr(slash_pos + 1);
+    }
 }
 
 std::string GetFileParentDirectory(const std::string &filename)
 {
-	size_t slash_pos = filename.find_last_of("/\\");
-	if (slash_pos == std::string::npos) {
-		return "";
-	} else {
-		return filename.substr(0, slash_pos + 1);
-	}
+    size_t slash_pos = filename.find_last_of("/\\");
+    if (slash_pos == std::string::npos) {
+        return "";
+    } else {
+        return filename.substr(0, slash_pos + 1);
+    }
 }
 
 std::string GetRegularizedDirectoryName(const std::string &directory)
 {
-	if (directory.back() != '/' && directory.back() != '\\') {
-		return directory + "/";
-	} else {
-		return directory;
-	}
+    if (directory.back() != '/' && directory.back() != '\\') {
+        return directory + "/";
+    } else {
+        return directory;
+    }
 }
 
 std::string GetWorkingDirectory()
 {
-	char buff[PATH_MAX + 1];
-	getcwd(buff, PATH_MAX + 1);
-	return std::string(buff);
+    char buff[PATH_MAX + 1];
+    getcwd(buff, PATH_MAX + 1);
+    return std::string(buff);
 }
 
 bool ChangeWorkingDirectory(const std::string &directory)
 {
-	return (chdir(directory.c_str()) == 0);
+    return (chdir(directory.c_str()) == 0);
 }
 
 bool DirectoryExists(const std::string &directory)
 {
-	struct stat info;
-	if (stat(directory.c_str(), &info) == -1)
-		return false;
-	return S_ISDIR(info.st_mode);
+    struct stat info;
+    if (stat(directory.c_str(), &info) == -1)
+        return false;
+    return S_ISDIR(info.st_mode);
 }
 
 bool MakeDirectory(const std::string &directory)
 {
 #ifdef WINDOWS
-	return (_mkdir(directory.c_str()) == 0);
+    return (_mkdir(directory.c_str()) == 0);
 #else
-	return (mkdir(directory.c_str(), S_IRWXU) == 0);
+    return (mkdir(directory.c_str(), S_IRWXU) == 0);
 #endif
 }
 
 bool MakeDirectoryHierarchy(const std::string &directory)
 {
-	std::string full_path = GetRegularizedDirectoryName(directory);
-	size_t curr_pos = full_path.find_first_of("/\\", 1);
-	while (curr_pos != std::string::npos) {
-		std::string subdir = full_path.substr(0, curr_pos + 1);
-		if (DirectoryExists(subdir) == false) {
-			if (MakeDirectory(subdir) == false) {
-				return false;
-			}
-		}
-		curr_pos = full_path.find_first_of("/\\", curr_pos + 1);
-	}
-	return true;
+    std::string full_path = GetRegularizedDirectoryName(directory);
+    size_t curr_pos = full_path.find_first_of("/\\", 1);
+    while (curr_pos != std::string::npos) {
+        std::string subdir = full_path.substr(0, curr_pos + 1);
+        if (DirectoryExists(subdir) == false) {
+            if (MakeDirectory(subdir) == false) {
+                return false;
+            }
+        }
+        curr_pos = full_path.find_first_of("/\\", curr_pos + 1);
+    }
+    return true;
 }
 
 bool DeleteDirectory(const std::string &directory)
 {
 #ifdef WINDOWS
-	return (_rmdir(directory.c_str()) == 0);
+    return (_rmdir(directory.c_str()) == 0);
 #else
-	return (rmdir(directory.c_str()) == 0);
+    return (rmdir(directory.c_str()) == 0);
 #endif
 }
 
 bool FileExists(const std::string &filename)
 {
 #ifdef WINDOWS
-	struct _stat64 info;
-	if (_stat64(filename.c_str(), &info) == -1)
-		return false;
-	return S_ISREG(info.st_mode);
+    struct _stat64 info;
+    if (_stat64(filename.c_str(), &info) == -1)
+        return false;
+    return S_ISREG(info.st_mode);
 #else
-	struct stat info;
-	if (stat(filename.c_str(), &info) == -1)
-		return false;
-	return S_ISREG(info.st_mode);
+    struct stat info;
+    if (stat(filename.c_str(), &info) == -1)
+        return false;
+    return S_ISREG(info.st_mode);
 #endif
 }
 
 bool RemoveFile(const std::string &filename)
 {
-	return (std::remove(filename.c_str()) == 0);
+    return (std::remove(filename.c_str()) == 0);
 }
 
 bool ListFilesInDirectory(const std::string &directory,
-	std::vector<std::string> &filenames)
+    std::vector<std::string> &filenames)
 {
-	if (directory.empty()) {
-		return false;
-	}
-	DIR *dir;
-	struct dirent *ent;
-	struct stat st;
-	dir = opendir(directory.c_str());
-	if (!dir) {
-		return false;
-	}
-	filenames.clear();
-	while ((ent = readdir(dir)) != NULL) {
-		const std::string file_name = ent->d_name;
-		if (file_name[0] == '.')
-			continue;
-		std::string full_file_name = GetRegularizedDirectoryName(directory) +
-				file_name;
-		if (stat(full_file_name.c_str(), &st) == -1)
-			continue;
-		if (S_ISREG(st.st_mode))
-			filenames.push_back(full_file_name);
-	}
-	closedir(dir);
-	return true;
+    if (directory.empty()) {
+        return false;
+    }
+    DIR *dir;
+    struct dirent *ent;
+    struct stat st;
+    dir = opendir(directory.c_str());
+    if (!dir) {
+        return false;
+    }
+    filenames.clear();
+    while ((ent = readdir(dir)) != NULL) {
+        const std::string file_name = ent->d_name;
+        if (file_name[0] == '.')
+            continue;
+        std::string full_file_name = GetRegularizedDirectoryName(directory) +
+                file_name;
+        if (stat(full_file_name.c_str(), &st) == -1)
+            continue;
+        if (S_ISREG(st.st_mode))
+            filenames.push_back(full_file_name);
+    }
+    closedir(dir);
+    return true;
 }
 
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
-		const std::string &extname, std::vector<std::string> &filenames)
+        const std::string &extname, std::vector<std::string> &filenames)
 {
-	std::vector<std::string> all_files;
-	if (ListFilesInDirectory(directory, all_files) == false) {
-		return false;
-	}
-	std::string ext_in_lower = extname;
-	std::transform(ext_in_lower.begin(), ext_in_lower.end(),
-			ext_in_lower.begin(), ::tolower);
-	filenames.clear();
-	for (const auto &fn : all_files) {
-		if (GetFileExtensionInLowerCase(fn) == ext_in_lower) {
-			filenames.push_back(fn);
-		}
-	}
-	return true;
+    std::vector<std::string> all_files;
+    if (ListFilesInDirectory(directory, all_files) == false) {
+        return false;
+    }
+    std::string ext_in_lower = extname;
+    std::transform(ext_in_lower.begin(), ext_in_lower.end(),
+            ext_in_lower.begin(), ::tolower);
+    filenames.clear();
+    for (const auto &fn : all_files) {
+        if (GetFileExtensionInLowerCase(fn) == ext_in_lower) {
+            filenames.push_back(fn);
+        }
+    }
+    return true;
 }
 
-}	// namespace three::filesystem
+}    // namespace three::filesystem
 
-}	// namespace three
+}    // namespace three
