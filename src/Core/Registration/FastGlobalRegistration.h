@@ -32,16 +32,46 @@ namespace three {
 class PointCloud;
 class Feature;
 class RegistrationResult;
-class ICPConvergenceCriteria;
-class TransformationEstimation;
+
+class FastGlobalRegistrationOption{
+
+public:
+    FastGlobalRegistrationOption(double division_factor = 1.4,
+            bool use_absolute_scale = false,
+            bool decrease_mu = false,
+            double maximum_correspondence_distance = 0.025,
+            double iteration_number = 64,
+            double tuple_scale = 0.95,
+            double maximum_tuple_count = 1000) :
+            division_factor_(division_factor),
+            use_absolute_scale_(use_absolute_scale),
+            iteration_number_(iteration_number),
+            tuple_scale_(tuple_scale),
+            maximum_tuple_count_(maximum_tuple_count) {}
+    ~FastGlobalRegistrationOption() {}
+
+public:
+    // Division factor used for graduated non-convexity
+    double division_factor_;
+    // Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
+    bool use_absolute_scale_;
+    bool decrease_mu_;
+    // Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
+    double maximum_correspondence_distance_;
+    // Maximum number of iteration
+    double iteration_number_;
+    // Similarity measure used for tuples of feature points.
+    double tuple_scale_;
+    // Maximum tuple numbers.
+    double maximum_tuple_count_;
+};
 
 RegistrationResult FastGlobalRegistration(
         const PointCloud &source, const PointCloud &target,
         const Feature &source_feature, const Feature &target_feature,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &init/* = Eigen::Matrix4d::Identity()*/,
-        const TransformationEstimation &estimation
-        /* = TransformationEstimationPointToPoint(false)*/,
-        const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/);
+        const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
+        const FastGlobalRegistrationOption &option =
+        FastGlobalRegistrationOption());
 
-}
+}    // namespace three

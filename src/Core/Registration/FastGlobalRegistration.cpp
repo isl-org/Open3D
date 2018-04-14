@@ -31,13 +31,6 @@
 #include <Core/Registration/Feature.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
-#define DIV_FACTOR          1.4      // Division factor used for graduated non-convexity
-#define USE_ABSOLUTE_SCALE  0        // Measure distance in absolute scale (1) or in scale relative to the diameter of the model (0)
-#define MAX_CORR_DIST       0.025    // Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
-#define ITERATION_NUMBER    64       // Maximum number of iteration
-#define TUPLE_SCALE         0.95     // Similarity measure used for tuples of feature points.
-#define TUPLE_MAX_CNT       1000     // Maximum tuple numbers.
-
 namespace three {
 
 namespace {
@@ -50,7 +43,7 @@ std::vector<std::shared_ptr<Feature>> features_;
 std::vector<std::pair<int, int>> corres_;
 Eigen::Matrix4d TransOutput_;
 
-void AdvancedMatching()
+void AdvancedMatching(const FastGlobalRegistrationOption& option)
 {
     int fi = 0;
     int fj = 1;
@@ -185,7 +178,7 @@ void AdvancedMatching()
         int rand0, rand1, rand2;
         int idi0, idi1, idi2;
         int idj0, idj1, idj2;
-        float scale = TUPLE_SCALE;
+        float scale = option.tuple_scale_;
         int ncorr = corres.size();
         int number_of_trial = ncorr * 100;
         std::vector<std::pair<int, int>> corres_tuple;
@@ -233,7 +226,7 @@ void AdvancedMatching()
                 cnt++;
             }
 
-            if (cnt >= TUPLE_MAX_CNT)
+            if (cnt >= option.maximum_tuple_count_)
                 break;
         }
 
@@ -260,7 +253,7 @@ void AdvancedMatching()
 
 // Normalize scale of points.
 // X' = (X-\mu)/scale
-void NormalizePoints()
+void NormalizePoints(const FastGlobalRegistrationOption& option)
 {
     int num = 2;
     float scale = 0;
@@ -304,7 +297,7 @@ void NormalizePoints()
     }
 
     // mean of the scale variation
-    if (USE_ABSOLUTE_SCALE) {
+    if (option.use_absolute_scale_) {
         GlobalScale = 1.0f;
         StartScale = scale;
     } else {
@@ -323,12 +316,12 @@ void NormalizePoints()
     }
 }
 
-double OptimizePairwise(bool decrease_mu_, int numIter_)
+double OptimizePairwise(const FastGlobalRegistrationOption& option)
 {
     printf("Pairwise rigid pose optimization\n");
 
     double par;
-    int numIter = numIter_;
+    int numIter = option.iteration_number_;
     TransOutput_ = Eigen::Matrix4d::Identity();
 
     par = StartScale;
@@ -354,10 +347,10 @@ double OptimizePairwise(bool decrease_mu_, int numIter_)
     for (int itr = 0; itr < numIter; itr++) {
 
         // graduated non-convexity.
-        if (decrease_mu_)
+        if (option.decrease_mu_)
         {
-            if (itr % 4 == 0 && par > MAX_CORR_DIST) {
-                par /= DIV_FACTOR;
+            if (itr % 4 == 0 && par > option.maximum_correspondence_distance_) {
+                par /= option.division_factor_;
             }
         }
 
@@ -467,9 +460,8 @@ RegistrationResult FastGlobalRegistration(
         const Feature &source_feature, const Feature &target_feature,
         double max_correspondence_distance,
         const Eigen::Matrix4d &init/* = Eigen::Matrix4d::Identity()*/,
-        const TransformationEstimation &estimation
-        /* = TransformationEstimationPointToPoint(false)*/,
-        const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/)
+        const FastGlobalRegistrationOption &option/* =
+        FastGlobalRegistrationOption()*/)
 {
     std::shared_ptr<PointCloud> source_copy = std::make_shared<PointCloud>();
     std::shared_ptr<PointCloud> target_copy = std::make_shared<PointCloud>();
@@ -485,9 +477,9 @@ RegistrationResult FastGlobalRegistration(
     features_.push_back(source_feature_copy);
     features_.push_back(target_feature_copy);
 
-    NormalizePoints();
-    AdvancedMatching();
-    OptimizePairwise(true, ITERATION_NUMBER);
+    NormalizePoints(option);
+    AdvancedMatching(option);
+    OptimizePairwise(option);
 
     // as the original code T * pointcloud_[1] is aligned with pointcloud_[0].
     // matrix inverse is applied here.
