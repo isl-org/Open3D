@@ -24,6 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#pragma once
+
+#include <vector>
+#include <tuple>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -38,7 +43,7 @@ class FastGlobalRegistrationOption{
 public:
     FastGlobalRegistrationOption(double division_factor = 1.4,
             bool use_absolute_scale = false,
-            bool decrease_mu = false,
+            bool decrease_mu = true,
             double maximum_correspondence_distance = 0.025,
             double iteration_number = 64,
             double tuple_scale = 0.95,
@@ -69,8 +74,6 @@ public:
 RegistrationResult FastGlobalRegistration(
         const PointCloud &source, const PointCloud &target,
         const Feature &source_feature, const Feature &target_feature,
-        double max_correspondence_distance,
-        const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
         const FastGlobalRegistrationOption &option =
         FastGlobalRegistrationOption());
 

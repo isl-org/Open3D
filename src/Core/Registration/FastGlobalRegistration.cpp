@@ -27,9 +27,10 @@
 #include "FastGlobalRegistration.h"
 
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Registration/Registration.h>
 #include <Core/Registration/Feature.h>
-#include <Core/Geometry/KDTreeFlann.h>
+#include <Core/Utility/Console.h>
 
 namespace three {
 
@@ -48,7 +49,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     int fi = 0;
     int fj = 1;
 
-    printf("Advanced matching : [%d - %d]\n", fi, fj);
+    PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
     bool swapped = false;
 
     if (pointcloud_[fj]->points_.size() > pointcloud_[fi]->points_.size())
@@ -66,7 +67,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     /// BUILD FLANNTREE
     ///////////////////////////
 
-    // build FLANNTree - fi
+    // build FLANNTrees
     KDTreeFlann feature_tree_i(*features_[fi]);
     KDTreeFlann feature_tree_j(*features_[fj]);
 
@@ -89,11 +90,14 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     std::vector<int> i_to_j(nPti, -1);
     for (int j = 0; j < nPtj; j++)
     {
-        feature_tree_i.SearchKNN(features_[fj]->data_.row(j), 1, corres_K, dis);
+        feature_tree_i.SearchKNN(Eigen::VectorXd(features_[fj]->data_.col(j)),
+                1, corres_K, dis);
         int i = corres_K[0];
         if (i_to_j[i] == -1)
         {
-            feature_tree_j.SearchKNN(features_[fi]->data_.row(i), 1, corres_K, dis);
+            feature_tree_j.SearchKNN(
+                    Eigen::VectorXd(features_[fi]->data_.col(i)),
+                    1, corres_K, dis);
             int ij = corres_K[0];
             i_to_j[i] = ij;
         }
@@ -106,6 +110,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
             corres_ij.push_back(std::pair<int, int>(i, i_to_j[i]));
     }
 
+
     int ncorres_ij = corres_ij.size();
     int ncorres_ji = corres_ji.size();
 
@@ -115,7 +120,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     for (int j = 0; j < ncorres_ji; ++j)
         corres.push_back(std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
 
-    printf("points are remained : %d\n", (int)corres.size());
+    PrintDebug("points are remained : %d\n", (int)corres.size());
 
     ///////////////////////////
     /// CROSS CHECK
@@ -124,7 +129,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     ///////////////////////////
     if (crosscheck)
     {
-        printf("\t[cross check] ");
+        PrintDebug("\t[cross check] ");
 
         // build data structure for cross check
         corres.clear();
@@ -162,7 +167,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
                 }
             }
         }
-        printf("points are remained : %d\n", (int)corres.size());
+        PrintDebug("points are remained : %d\n", (int)corres.size());
     }
 
     ///////////////////////////
@@ -174,7 +179,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     {
         srand(time(NULL));
 
-        printf("\t[tuple constraint] ");
+        PrintDebug("\t[tuple constraint] ");
         int rand0, rand1, rand2;
         int idi0, idi1, idi2;
         int idj0, idj1, idj2;
@@ -230,7 +235,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
                 break;
         }
 
-        printf("%d tuples (%d trial, %d actual).\n", cnt, number_of_trial, i);
+        PrintDebug("%d tuples (%d trial, %d actual).\n", cnt, number_of_trial, i);
         corres.clear();
 
         for (int i = 0; i < corres_tuple.size(); ++i)
@@ -246,7 +251,7 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
         corres = temp;
     }
 
-    printf("\t[final] matches %d.\n", (int)corres.size());
+    PrintDebug("\t[final] matches %d.\n", (int)corres.size());
     corres_ = corres;
 }
 
@@ -276,7 +281,7 @@ void NormalizePoints(const FastGlobalRegistrationOption& option)
         mean = mean / npti;
         Means.push_back(mean);
 
-        printf("normalize points :: mean = [%f %f %f]\n", mean(0), mean(1), mean(2));
+        PrintDebug("normalize points :: mean = [%f %f %f]\n", mean(0), mean(1), mean(2));
 
         for (int ii = 0; ii < npti; ++ii)
         {
@@ -304,7 +309,7 @@ void NormalizePoints(const FastGlobalRegistrationOption& option)
         GlobalScale = scale; // second choice: we keep the maximum scale.
         StartScale = 1.0f;
     }
-    printf("normalize points :: global scale : %f\n", GlobalScale);
+    PrintDebug("normalize points :: global scale : %f\n", GlobalScale);
 
     for (int i = 0; i < num; ++i)
     {
@@ -318,7 +323,7 @@ void NormalizePoints(const FastGlobalRegistrationOption& option)
 
 double OptimizePairwise(const FastGlobalRegistrationOption& option)
 {
-    printf("Pairwise rigid pose optimization\n");
+    PrintDebug("Pairwise rigid pose optimization\n");
 
     double par;
     int numIter = option.iteration_number_;
@@ -458,8 +463,6 @@ Eigen::Matrix4d GetTrans()
 RegistrationResult FastGlobalRegistration(
         const PointCloud &source, const PointCloud &target,
         const Feature &source_feature, const Feature &target_feature,
-        double max_correspondence_distance,
-        const Eigen::Matrix4d &init/* = Eigen::Matrix4d::Identity()*/,
         const FastGlobalRegistrationOption &option/* =
         FastGlobalRegistrationOption()*/)
 {

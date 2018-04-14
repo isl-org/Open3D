@@ -14,9 +14,8 @@ def draw_registration_result(source, target, transformation):
     source_temp.transform(transformation)
     draw_geometries([source_temp, target_temp])
 
-if __name__ == "__main__":
-
-    print("1. Load two point clouds and disturb initial pose.")
+def prepare_dataset(voxel_size):
+    print(":: Load two point clouds and disturb initial pose.")
     source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
     target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
     trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
@@ -26,40 +25,61 @@ if __name__ == "__main__":
     source.transform(trans_init)
     draw_registration_result(source, target, np.identity(4))
 
-    print("2. Downsample with a voxel size 0.05.")
-    source_down = voxel_down_sample(source, 0.05)
-    target_down = voxel_down_sample(target, 0.05)
+    print(":: Downsample with a voxel size %.3f." % voxel_size)
+    source_down = voxel_down_sample(source, voxel_size)
+    target_down = voxel_down_sample(target, voxel_size)
 
-    print("3. Estimate normal with search radius 0.1.")
+    radius_normal = voxel_size * 2
+    print(":: Estimate normal with search radius %.3f." % radius_normal)
     estimate_normals(source_down, KDTreeSearchParamHybrid(
-            radius = 0.1, max_nn = 30))
+            radius = radius_normal, max_nn = 30))
     estimate_normals(target_down, KDTreeSearchParamHybrid(
-            radius = 0.1, max_nn = 30))
+            radius = radius_normal, max_nn = 30))
 
-    print("4. Compute FPFH feature with search radius 0.25")
+    radius_feature = voxel_size * 5
+    print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
     source_fpfh = compute_fpfh_feature(source_down,
-            KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
+            KDTreeSearchParamHybrid(radius = radius_feature, max_nn = 100))
     target_fpfh = compute_fpfh_feature(target_down,
-            KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
+            KDTreeSearchParamHybrid(radius = radius_feature, max_nn = 100))
+    return source, target, source_down, target_down, source_fpfh, target_fpfh
 
-    print("5. RANSAC registration on downsampled point clouds.")
-    print("   Since the downsampling voxel size is 0.05, we use a liberal")
-    print("   distance threshold 0.075.")
-    result_ransac = registration_ransac_based_on_feature_matching(
+def execute_global_registration(
+        source_down, target_down, source_fpfh, target_fpfh, voxel_size):
+    distance_threshold = voxel_size * 1.5
+    print(":: RANSAC registration on downsampled point clouds.")
+    print("   Since the downsampling voxel size is %.3f," % voxel_size)
+    print("   we use a liberal distance threshold %.3f." % distance_threshold)
+    result = registration_ransac_based_on_feature_matching(
             source_down, target_down, source_fpfh, target_fpfh, 0.075,
             TransformationEstimationPointToPoint(False), 4,
             [CorrespondenceCheckerBasedOnEdgeLength(0.9),
             CorrespondenceCheckerBasedOnDistance(0.075)],
             RANSACConvergenceCriteria(4000000, 500))
+    return result
+
+def refine_registration(source, target, source_fpfh, target_fpfh, voxel_size):
+    distance_threshold = voxel_size * 0.4
+    print(":: Point-to-plane ICP registration is applied on original point")
+    print("   clouds to refine the alignment. This time we use a strict")
+    print("   distance threshold %.3f." % distance_threshold)
+    result = registration_icp(source, target, distance_threshold,
+            result_ransac.transformation,
+            TransformationEstimationPointToPlane())
+    return result
+
+if __name__ == "__main__":
+    voxel_size = 0.05 # means 5cm for the dataset
+    source, target, source_down, target_down, source_fpfh, target_fpfh = \
+            prepare_dataset(voxel_size)
+
+    result_ransac = execute_global_registration(source_down, target_down,
+            source_fpfh, target_fpfh, voxel_size)
     print(result_ransac)
     draw_registration_result(source_down, target_down,
             result_ransac.transformation)
 
-    print("6. Point-to-plane ICP registration is applied on original point")
-    print("   clouds to refine the alignment. This time we use a strict")
-    print("   distance threshold 0.02.")
-    result_icp = registration_icp(source, target, 0.02,
-            result_ransac.transformation,
-            TransformationEstimationPointToPlane())
+    result_icp = refine_registration(source, target,
+            source_fpfh, target_fpfh, voxel_size)
     print(result_icp)
     draw_registration_result(source, target, result_icp.transformation)
