@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "BoundingBox.h"
+#include <Open3D/Visualization/Utility/BoundingBox.h>
 
 namespace three{
 

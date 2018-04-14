@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "FileSystem.h"
+#include <Open3D/Core/Utility/FileSystem.h>
 
 #include <algorithm>
 #include <cstdio>

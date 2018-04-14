@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "ViewControl.h"
+#include <Open3D/Visualization/Visualizer/ViewControl.h>
 
 #include <Eigen/Dense>
 #include <GLFW/glfw3.h>

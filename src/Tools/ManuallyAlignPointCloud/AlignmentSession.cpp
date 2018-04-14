@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "AlignmentSession.h"
+#include <Open3D/Tools/ManuallyAlignPointCloud/AlignmentSession.h>
 
 #include <json/json.h>
 

@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PoseGraph.h"
+#include <Open3D/Core/Registration/PoseGraph.h>
 
-#include <IO/ClassIO/PoseGraphIO.h>
+#include <Open3D/IO/ClassIO/PoseGraphIO.h>
 
 namespace three{
 
 std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
-		const std::string &filename)
+        const std::string &filename)
 {
-	auto pose_graph = std::make_shared<PoseGraph>();
-	ReadPoseGraph(filename, *pose_graph);
-	return pose_graph;
+    auto pose_graph = std::make_shared<PoseGraph>();
+    ReadPoseGraph(filename, *pose_graph);
+    return pose_graph;
 }
 
-}	// namespace three
+}   // namespace three

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "RGBDImage.h"
+#include <Open3D/Core/Geometry/RGBDImage.h>
 
 namespace three{
 

@@ -24,80 +24,80 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PinholeCameraTrajectoryIO.h"
+#include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
 #include <unordered_map>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/FileSystem.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/FileSystem.h>
+#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace three{
 
 namespace {
 
 bool ReadPinholeCameraTrajectoryFromJSON(const std::string &filename,
-		PinholeCameraTrajectory &trajectory)
+        PinholeCameraTrajectory &trajectory)
 {
-	return ReadIJsonConvertible(filename, trajectory);
+    return ReadIJsonConvertible(filename, trajectory);
 }
 
 bool WritePinholeCameraTrajectoryToJSON(const std::string &filename,
-		const PinholeCameraTrajectory &trajectory)
+        const PinholeCameraTrajectory &trajectory)
 {
-	return WriteIJsonConvertibleToJSON(filename, trajectory);
+    return WriteIJsonConvertibleToJSON(filename, trajectory);
 }
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, PinholeCameraTrajectory &)>>
-		file_extension_to_trajectory_read_function
-		{{"log", ReadPinholeCameraTrajectoryFromLOG},
-		{"json", ReadPinholeCameraTrajectoryFromJSON},
-		};
+        std::function<bool(const std::string &, PinholeCameraTrajectory &)>>
+        file_extension_to_trajectory_read_function
+        {{"log", ReadPinholeCameraTrajectoryFromLOG},
+        {"json", ReadPinholeCameraTrajectoryFromJSON},
+        };
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &,
-		const PinholeCameraTrajectory &)>>
-		file_extension_to_trajectory_write_function
-		{{"log", WritePinholeCameraTrajectoryToLOG},
-		{"json", WritePinholeCameraTrajectoryToJSON},
-		};
+        std::function<bool(const std::string &,
+        const PinholeCameraTrajectory &)>>
+        file_extension_to_trajectory_write_function
+        {{"log", WritePinholeCameraTrajectoryToLOG},
+        {"json", WritePinholeCameraTrajectoryToJSON},
+        };
 
-}	// unnamed namespace
+}   // unnamed namespace
 
 bool ReadPinholeCameraTrajectory(const std::string &filename,
-		PinholeCameraTrajectory &trajectory)
+        PinholeCameraTrajectory &trajectory)
 {
-	std::string filename_ext =
-			filesystem::GetFileExtensionInLowerCase(filename);
-	if (filename_ext.empty()) {
-		PrintWarning("Read PinholeCameraTrajectory failed: unknown file extension.\n");
-		return false;
-	}
-	auto map_itr =
-			file_extension_to_trajectory_read_function.find(filename_ext);
-	if (map_itr == file_extension_to_trajectory_read_function.end()) {
-		PrintWarning("Read PinholeCameraTrajectory failed: unknown file extension.\n");
-		return false;
-	}
-	return map_itr->second(filename, trajectory);
+    std::string filename_ext =
+            filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        PrintWarning("Read PinholeCameraTrajectory failed: unknown file extension.\n");
+        return false;
+    }
+    auto map_itr =
+            file_extension_to_trajectory_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_trajectory_read_function.end()) {
+        PrintWarning("Read PinholeCameraTrajectory failed: unknown file extension.\n");
+        return false;
+    }
+    return map_itr->second(filename, trajectory);
 }
 
 bool WritePinholeCameraTrajectory(const std::string &filename,
-		const PinholeCameraTrajectory &trajectory)
+        const PinholeCameraTrajectory &trajectory)
 {
-	std::string filename_ext =
-			filesystem::GetFileExtensionInLowerCase(filename);
-	if (filename_ext.empty()) {
-		PrintWarning("Write PinholeCameraTrajectory failed: unknown file extension.\n");
-		return false;
-	}
-	auto map_itr =
-			file_extension_to_trajectory_write_function.find(filename_ext);
-	if (map_itr == file_extension_to_trajectory_write_function.end()) {
-		PrintWarning("Write PinholeCameraTrajectory failed: unknown file extension.\n");
-		return false;
-	}
-	return map_itr->second(filename, trajectory);
+    std::string filename_ext =
+            filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        PrintWarning("Write PinholeCameraTrajectory failed: unknown file extension.\n");
+        return false;
+    }
+    auto map_itr =
+            file_extension_to_trajectory_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_trajectory_write_function.end()) {
+        PrintWarning("Write PinholeCameraTrajectory failed: unknown file extension.\n");
+        return false;
+    }
+    return map_itr->second(filename, trajectory);
 }
 
-}	// namespace three
+}   // namespace three

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Helper.h"
+#include <Open3D/Core/Utility/Helper.h>
 
 namespace three {
 

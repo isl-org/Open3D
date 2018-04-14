@@ -24,65 +24,65 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "IJsonConvertibleIO.h"
+#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 #include <unordered_map>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/FileSystem.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/FileSystem.h>
 
 namespace three{
 
 namespace {
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, IJsonConvertible &)>>
-		file_extension_to_ijsonconvertible_read_function
-		{{"json", ReadIJsonConvertibleFromJSON},
-		};
+        std::function<bool(const std::string &, IJsonConvertible &)>>
+        file_extension_to_ijsonconvertible_read_function
+        {{"json", ReadIJsonConvertibleFromJSON},
+        };
 
 static const std::unordered_map<std::string,
-		std::function<bool(const std::string &, const IJsonConvertible &)>>
-		file_extension_to_ijsonconvertible_write_function
-		{{"json", WriteIJsonConvertibleToJSON},
-		};
+        std::function<bool(const std::string &, const IJsonConvertible &)>>
+        file_extension_to_ijsonconvertible_write_function
+        {{"json", WriteIJsonConvertibleToJSON},
+        };
 
-}	// unnamed namespace
+}   // unnamed namespace
 
 bool ReadIJsonConvertible(const std::string &filename,
-		IJsonConvertible &object)
+        IJsonConvertible &object)
 {
-	std::string filename_ext =
-			filesystem::GetFileExtensionInLowerCase(filename);
-	if (filename_ext.empty()) {
-		PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
-		return false;
-	}
-	auto map_itr =
-			file_extension_to_ijsonconvertible_read_function.find(filename_ext);
-	if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
-		PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
-		return false;
-	}
-	return map_itr->second(filename, object);
+    std::string filename_ext =
+            filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
+        return false;
+    }
+    auto map_itr =
+            file_extension_to_ijsonconvertible_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_ijsonconvertible_read_function.end()) {
+        PrintWarning("Read IJsonConvertible failed: unknown file extension.\n");
+        return false;
+    }
+    return map_itr->second(filename, object);
 }
 
 bool WriteIJsonConvertible(const std::string &filename,
-		const IJsonConvertible &object)
+        const IJsonConvertible &object)
 {
-	std::string filename_ext =
-			filesystem::GetFileExtensionInLowerCase(filename);
-	if (filename_ext.empty()) {
-		PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
-		return false;
-	}
-	auto map_itr =
-			file_extension_to_ijsonconvertible_write_function.find(
-			filename_ext);
-	if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
-		PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
-		return false;
-	}
-	return map_itr->second(filename, object);
+    std::string filename_ext =
+            filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
+        return false;
+    }
+    auto map_itr =
+            file_extension_to_ijsonconvertible_write_function.find(
+            filename_ext);
+    if (map_itr == file_extension_to_ijsonconvertible_write_function.end()) {
+        PrintWarning("Write IJsonConvertible failed: unknown file extension.\n");
+        return false;
+    }
+    return map_itr->second(filename, object);
 }
 
-}	// namespace three
+}   // namespace three

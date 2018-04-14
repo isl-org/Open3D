@@ -24,97 +24,97 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <IO/ClassIO/PointCloudIO.h>
+#include <Open3D/IO/ClassIO/PointCloudIO.h>
 
 #include <cstdio>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Helper.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Helper.h>
 
 namespace three{
 
 bool ReadPointCloudFromPTS(const std::string &filename, PointCloud &pointcloud)
 {
-	FILE *file = fopen(filename.c_str(), "r");
-	if (file == NULL) {
-		PrintWarning("Read PTS failed: unable to open file.\n");
-		return false;
-	}
-	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-	int num_of_pts = 0, num_of_fields = 0;
-	if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
-		sscanf(line_buffer, "%d", &num_of_pts);
-	}
-	if (num_of_pts <= 0) {
-		PrintWarning("Read PTS failed: unable to read header.\n");
-		fclose(file);
-		return false;
-	}
-	ResetConsoleProgress(num_of_pts, "Reading PTS: ");
-	int idx = 0;
-	while (idx < num_of_pts && fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE,
-			file)) {
-		if (num_of_fields == 0) {
-			std::vector<std::string> st;
-			SplitString(st, line_buffer, " ");
-			num_of_fields = (int)st.size();
-			if (num_of_fields < 3) {
-				PrintWarning("Read PTS failed: insufficient data fields.\n");
-				fclose(file);
-				return false;
-			}
-			pointcloud.points_.resize(num_of_pts);
-			if (num_of_fields >= 7) {
-				// X Y Z I R G B
-				pointcloud.colors_.resize(num_of_pts);
-			}
-		}
-		double x, y, z;
-		int i, r, g, b;
-		if (num_of_fields < 7) {
-			if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
-				pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-			}
-		} else {
-			if (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z,
-					&i, &r, &g, &b) == 7) {
-				pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-				pointcloud.colors_[idx] = Eigen::Vector3d(r, g, b) / 255.0;
-			}
-		}
-		idx++;
-		AdvanceConsoleProgress();
-	}
-	fclose(file);
-	return true;
+    FILE *file = fopen(filename.c_str(), "r");
+    if (file == NULL) {
+        PrintWarning("Read PTS failed: unable to open file.\n");
+        return false;
+    }
+    char line_buffer[DEFAULT_IO_BUFFER_SIZE];
+    int num_of_pts = 0, num_of_fields = 0;
+    if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
+        sscanf(line_buffer, "%d", &num_of_pts);
+    }
+    if (num_of_pts <= 0) {
+        PrintWarning("Read PTS failed: unable to read header.\n");
+        fclose(file);
+        return false;
+    }
+    ResetConsoleProgress(num_of_pts, "Reading PTS: ");
+    int idx = 0;
+    while (idx < num_of_pts && fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE,
+            file)) {
+        if (num_of_fields == 0) {
+            std::vector<std::string> st;
+            SplitString(st, line_buffer, " ");
+            num_of_fields = (int)st.size();
+            if (num_of_fields < 3) {
+                PrintWarning("Read PTS failed: insufficient data fields.\n");
+                fclose(file);
+                return false;
+            }
+            pointcloud.points_.resize(num_of_pts);
+            if (num_of_fields >= 7) {
+                // X Y Z I R G B
+                pointcloud.colors_.resize(num_of_pts);
+            }
+        }
+        double x, y, z;
+        int i, r, g, b;
+        if (num_of_fields < 7) {
+            if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
+                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+            }
+        } else {
+            if (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z,
+                    &i, &r, &g, &b) == 7) {
+                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+                pointcloud.colors_[idx] = Eigen::Vector3d(r, g, b) / 255.0;
+            }
+        }
+        idx++;
+        AdvanceConsoleProgress();
+    }
+    fclose(file);
+    return true;
 }
 
 bool WritePointCloudToPTS(const std::string &filename,
-		const PointCloud &pointcloud, bool write_ascii/* = false*/,
-		bool compressed/* = false*/)
+        const PointCloud &pointcloud, bool write_ascii/* = false*/,
+        bool compressed/* = false*/)
 {
-	FILE *file = fopen(filename.c_str(), "w");
-	if (file == NULL) {
-		PrintWarning("Write PTS failed: unable to open file.\n");
-		return false;
-	}
-	fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
-	ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
-			"Writinging PTS: ");
-	for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-		const auto &point = pointcloud.points_[i];
-		if (pointcloud.HasColors() == false) {
-			fprintf(file, "%.10f %.10f %.10f\r\n", point(0), point(1),
-					point(2));
-		} else {
-			const auto &color = pointcloud.colors_[i] * 255.0;
-			fprintf(file, "%.10f %.10f %.10f %d %d %d %d\r\n", point(0),
-					point(1), point(2), 0, (int)color(0),
-					(int)color(1), (int)(color(2)));
-		}
-		AdvanceConsoleProgress();
-	}
-	fclose(file);
-	return true;
+    FILE *file = fopen(filename.c_str(), "w");
+    if (file == NULL) {
+        PrintWarning("Write PTS failed: unable to open file.\n");
+        return false;
+    }
+    fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
+    ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
+            "Writinging PTS: ");
+    for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+        const auto &point = pointcloud.points_[i];
+        if (pointcloud.HasColors() == false) {
+            fprintf(file, "%.10f %.10f %.10f\r\n", point(0), point(1),
+                    point(2));
+        } else {
+            const auto &color = pointcloud.colors_[i] * 255.0;
+            fprintf(file, "%.10f %.10f %.10f %d %d %d %d\r\n", point(0),
+                    point(1), point(2), 0, (int)color(0),
+                    (int)color(1), (int)(color(2)));
+        }
+        AdvanceConsoleProgress();
+    }
+    fclose(file);
+    return true;
 }
 
-}	// namespace three
+}   // namespace three
