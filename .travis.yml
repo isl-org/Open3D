@@ -1,77 +1,15 @@
-matrix:
-
-  notifications:
-    email: false # turn off email notifications for build failure
-
-  language:
-    - python
-    - cpp
-
-  include:
-    # Default environment of Ubuntu 14.04
-    - os: linux
-      dist: trusty
-      sudo: true
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.8
-            - g++-4.8
-            - cmake-data # to use cmake 3.0 or more recent
-            - cmake
-
-    # Similar environment of Ubuntu 16.04 (gcc 5.4)
-    # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
-    # another option is to use docker.
-    - os: linux
-      dist: trusty
-      sudo: true
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-6
-            - g++-6
-            - cmake-data # to use cmake 3.0 or more recent
-            - cmake
-
-    # Default environment of MacOS El Capitan
-    # compiled using clang shipped with xcode8
-    - os: osx
-      osx_image: xcode8
-
-    # Default environment of MacOS Sierra
-    # compiled using clang shipped with xcode8.3
-    - os: osx
-      osx_image: xcode8.3
+os: osx
 
 before_install:
-  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
-  # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
-  # does not recognize sudo apt-get install libglfw3-dev
-  # Travis CI has pyenv with Python 3.6
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
-      pyenv global 3.6;
-      ./util/scripts/make-documentation.sh;
-    fi
-  # scripts/install-deps-osx.sh works well
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      brew install python;
-      ./util/scripts/install-deps-osx.sh;
-    fi
-  # for reference, display cmake and python version
-  - python -V
-  - cmake --version
+  - brew update > /dev/null 2>&1
+  - brew upgrade python > /dev/null 2>&1
+  - sudo rm -f /usr/local/include/c++
+  - brew install gcc5 --without-multilib
+  - brew install libomp
+  - ./util/scripts/install-deps-osx.sh > /dev/null 2>&1
+  - gcc --version && cmake --version && python -V
 
 script:
-  # Build commands
-  - mkdir build
-  - cd build
-  - cmake ../src/
-  # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
-  # this is presumably due to limited memory space of travis-ci
+  - mkdir build && cd build
+  - cmake -DOpenMP_C_FLAGS="-fopenmp=libomp" -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_libomp_LIBRARY=/usr/local/opt/libomp/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_LIB_NAMES="omp" -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.dylib ../src/
   - make
