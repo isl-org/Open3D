@@ -1,6 +1,7 @@
 file(GLOB HEADER_FILES "*.h")
 file(GLOB SOURCE_FILES "*.cpp")
 add_executable(ConvertPointCloud ${HEADER_FILES} ${SOURCE_FILES})
+target_include_directories(ConvertPointCloud PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(ConvertPointCloud IO Core)
 set_target_properties(ConvertPointCloud PROPERTIES
         FOLDER "Tools"

@@ -111,7 +111,6 @@ message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_
 
 # Handling dependencies
 add_subdirectory(External)
-include_directories(${EIGEN3_INCLUDE_DIRS})
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${JSONCPP_INCLUDE_DIRS})

@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.0.0)
+
+project(${LIB_NAME}-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(${LIB_NAME}-download
+  ${DOWNLOAD_TYPE}   "${DOWNLOAD_URL}"
+  UPDATE_COMMAND     ""
+  CONFIGURE_COMMAND  ""
+  BUILD_COMMAND      ""
+  INSTALL_COMMAND    ""
+  SOURCE_DIR         "${BASE_DIR}"
+  #BINARY_DIR        ""
+  #INSTALL_DIR       ""
+  #LOG_DOWNLOAD      ON
+  #LOG_CONFIGURE     ON
+  #LOG_BUILD         ON
+)

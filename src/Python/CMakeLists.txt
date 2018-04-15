@@ -29,6 +29,7 @@ pybind11_add_module(py3d
 	${PY_IO_SOURCE_FILES} ${PY_IO_HEADER_FILES}
 	${PY_VISUALIZATION_SOURCE_FILES} ${PY_VISUALIZATION_HEADER_FILES}
 )
+target_include_directories(py3d PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(py3d PRIVATE Core IO Visualization)
 
 file(GLOB PY_HELPER_FILES "Helper/*.py")

@@ -1,6 +1,7 @@
 file(GLOB HEADER_FILES "*.h")
 file(GLOB SOURCE_FILES "*.cpp")
 add_executable(ManuallyCropPointCloud ${HEADER_FILES} ${SOURCE_FILES})
+target_include_directories(ManuallyCropPointCloud PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(ManuallyCropPointCloud Visualization IO Core)
 set_target_properties(ManuallyCropPointCloud PROPERTIES
         FOLDER "Tools"

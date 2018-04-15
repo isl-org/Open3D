@@ -12,15 +12,6 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 	find_package(PkgConfig)
 	if (PKGCONFIG_FOUND)
 
-		# Eigen 3.2.7 version is required for pybind11 included in Open3D
-		pkg_check_modules(EIGEN3 eigen3>=3.2.7)
-		if (EIGEN3_FOUND)
-			message(STATUS "Use native eigen3")
-		else (EIGEN3_FOUND)
-			message(STATUS "Use eigen3 included in Open3D")
-			set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
-		endif (EIGEN3_FOUND)
-
 		pkg_search_module(JPEG libjpeg)
 		if (JPEG_FOUND)
 				message(STATUS "Use native build of libjpeg")
@@ -48,14 +39,14 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 			    find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
 			    find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
 			    mark_as_advanced(COCOA_FRAMEWORK
-			                     IOKIT_FRAMEWORK
-			                     CORE_FOUNDATION_FRAMEWORK
-			                     CORE_VIDEO_FRAMEWORK)
+					     IOKIT_FRAMEWORK
+					     CORE_FOUNDATION_FRAMEWORK
+					     CORE_VIDEO_FRAMEWORK)
 			    list(APPEND GLFW_LIBRARIES "${COCOA_FRAMEWORK}"
-			                               "${OPENGL_gl_LIBRARY}"
-			                               "${IOKIT_FRAMEWORK}"
-			                               "${CORE_FOUNDATION_FRAMEWORK}"
-			                               "${CORE_VIDEO_FRAMEWORK}")
+						       "${OPENGL_gl_LIBRARY}"
+						       "${IOKIT_FRAMEWORK}"
+						       "${CORE_FOUNDATION_FRAMEWORK}"
+						       "${CORE_VIDEO_FRAMEWORK}")
 			else (APPLE)
 				set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
 				set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
@@ -83,8 +74,6 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 			endif (JSONCPP_FOUND)
 		endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
 	else (PKGCONFIG_FOUND)
-		message(STATUS "Use eigen3 included in Open3D")
-		set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
 		message(STATUS "Build libjpeg from source")
 		add_subdirectory(libjpeg)
 		message(STATUS "Build libpng from source")
@@ -109,8 +98,6 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 	endif(Open3D_BUILD_PYTHON_BINDING)
 
 else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-	message(STATUS "Use eigen3 included in Open3D")
-	set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
 	message(STATUS "Build GLEW from source")
 	add_subdirectory(glew)
 	message(STATUS "Build libjpeg from source")
@@ -135,8 +122,10 @@ else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 	endif(Open3D_BUILD_PYTHON_BINDING)
 endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
+include(configureEigen3.cmake)
+include(configureFlann.cmake)
+
 # pop everything to root
-set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLEW_LIBRARIES ${GLEW_LIBRARIES} PARENT_SCOPE)
 set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
@@ -152,13 +141,6 @@ set(JSONCPP_LIBRARY_DIRS ${JSONCPP_LIBRARY_DIRS} PARENT_SCOPE)
 
 # Install dependencies
 if (Open3D_INSTALL_EXTERNALS)
-
-	install(DIRECTORY ${EIGEN3_INCLUDE_DIRS}/
-		DESTINATION include COMPONENT Devel
-		PATTERN "COPYING.*" EXCLUDE
-		PATTERN "CMakeLists.txt" EXCLUDE
-		PATTERN "src" EXCLUDE)
-
 	install(DIRECTORY ${GLEW_INCLUDE_DIRS}/
 		DESTINATION include COMPONENT Devel)
 	#TODO: Install GLEW library

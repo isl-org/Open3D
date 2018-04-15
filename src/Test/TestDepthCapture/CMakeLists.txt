@@ -1,6 +1,7 @@
 file(GLOB HEADER_FILES "*.h")
 file(GLOB SOURCE_FILES "*.cpp")
 add_executable(TestDepthCapture ${HEADER_FILES} ${SOURCE_FILES})
+target_include_directories(TestDepthCapture PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(TestDepthCapture Visualization IO Core)
 set_target_properties(TestDepthCapture PROPERTIES
         FOLDER "Test"

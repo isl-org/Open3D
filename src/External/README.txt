@@ -9,11 +9,6 @@ libusb. Run corresponding script file under "script" directory to automatically
 config them.
 
 --------------------------------------------------------------------------------
-Eigen                       3.3.2                            Mainly MPL2 license
-A high-level C++ library of template headers for linear algebra, matrix and
-vector operations, numerical solvers and related algorithms
-http://eigen.tuxfamily.org/
---------------------------------------------------------------------------------
 GLFW                        3.3.0 (dev)                      zlib/libpng license
 A cross-platform library for creating windows with OpenGL contexts and receiving
 input and events
@@ -42,11 +37,6 @@ http://libjpeg.sourceforge.net/
 jsoncpp                     1.8.4                                    MIT license
 A C++ library that allows manipulating JSON values
 https://github.com/open-source-parsers/jsoncpp
---------------------------------------------------------------------------------
-flann                       1.8.4                                    BSD license
-A C++ library for performing fast approximate nearest neighbor searches in high
-dimensional spaces
-http://www.cs.ubc.ca/research/flann/
 --------------------------------------------------------------------------------
 dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
