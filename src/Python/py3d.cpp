@@ -27,15 +27,15 @@
 #include "py3d.h"
 
 PYBIND11_MODULE(py3d, m) {
-    m.doc() = "Python binding of Open3D";
+	m.doc() = "Python binding of Open3D";
 
-    pybind_eigen(m);
+	pybind_eigen(m);
 
-    pybind_core_classes(m);
-    pybind_io_classes(m);
-    pybind_visualization_classes(m);
+	pybind_core_classes(m);
+	pybind_io_classes(m);
+	pybind_visualization_classes(m);
 
-    pybind_core_methods(m);
-    pybind_io_methods(m);
-    pybind_visualization_methods(m);
+	pybind_core_methods(m);
+	pybind_io_methods(m);
+	pybind_visualization_methods(m);
 }

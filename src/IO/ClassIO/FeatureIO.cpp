@@ -33,12 +33,12 @@ namespace three{
 
 bool ReadFeature(const std::string &filename, Feature &feature)
 {
-    return ReadFeatureFromBIN(filename, feature);
+	return ReadFeatureFromBIN(filename, feature);
 }
 
 bool WriteFeature(const std::string &filename, const Feature &feature)
 {
-    return WriteFeatureToBIN(filename, feature);
+	return WriteFeatureToBIN(filename, feature);
 }
 
-}    // namespace three
+}	// namespace three
