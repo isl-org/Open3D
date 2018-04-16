@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "LineSet.h"
+#include <Open3D/Core/Geometry/LineSet.h>
 
 namespace three{
 

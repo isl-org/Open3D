@@ -14,7 +14,7 @@ Visualization
     if __name__ == "__main__":
 
         print("Load a ply point cloud, print it, and render it")
-        pcd = read_point_cloud("../../TestData/fragment.ply")
+        pcd = read_point_cloud("../../../test/TestData/fragment.ply")
         draw_geometries([pcd])
 
         print('Lets draw some primitives')
@@ -43,7 +43,7 @@ Function draw_geometries
 .. code-block:: python
 
     print("Load a ply point cloud, print it, and render it")
-    pcd = read_point_cloud("../../TestData/fragment.ply")
+    pcd = read_point_cloud("../../../test/TestData/fragment.ply")
     draw_geometries([pcd])
 
 Open3D provides a convenient visualization function ``draw_geometries`` which takes a list of geometry objects (``PointCloud``, ``TriangleMesh``, or ``Image``), and renders them together. We have implemented many functions in the visualizer, such as rotation, translation, and scaling via mouse operations, changing rendering style, and screen capture. Press :kbd:`h` inside the window to print out a comprehensive list of functions.

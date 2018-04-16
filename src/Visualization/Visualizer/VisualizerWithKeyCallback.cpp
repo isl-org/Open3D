@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "VisualizerWithKeyCallback.h"
+#include <Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h>
 
 namespace three{
 

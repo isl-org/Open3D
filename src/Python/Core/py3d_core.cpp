@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#include <Open3D/Python/Core/py3d_core.h>
 
 void pybind_core_classes(py::module &m)
 {

@@ -15,7 +15,7 @@ This tutorial demonstrates basic usage of a point cloud.
     if __name__ == "__main__":
 
         print("Load a ply point cloud, print it, and render it")
-        pcd = read_point_cloud("../../TestData/fragment.ply")
+        pcd = read_point_cloud("../../../test/TestData/fragment.ply")
         print(pcd)
         print(np.asarray(pcd.points))
         draw_geometries([pcd])
@@ -31,7 +31,7 @@ This tutorial demonstrates basic usage of a point cloud.
         print("")
 
         print("Load a polygon volume and use it to crop the original point cloud")
-        vol = read_selection_polygon_volume("../../TestData/Crop/cropped.json")
+        vol = read_selection_polygon_volume("../../../test/TestData/Crop/cropped.json")
         chair = vol.crop_point_cloud(pcd)
         draw_geometries([chair])
         print("")
@@ -51,7 +51,7 @@ The first part of the tutorial reads a point cloud and visualizes it.
 .. code-block:: python
 
     print("Load a ply point cloud, print it, and render it")
-    pcd = read_point_cloud("../../TestData/fragment.ply")
+    pcd = read_point_cloud("../../../test/TestData/fragment.ply")
     print(pcd)
     print(np.asarray(pcd.points))
     draw_geometries([pcd])
@@ -128,7 +128,7 @@ Crop point cloud
 .. code-block:: python
 
     print("We load a polygon volume and use it to crop the original point cloud")
-    vol = read_selection_polygon_volume("../../TestData/Crop/cropped.json")
+    vol = read_selection_polygon_volume("../../../test/TestData/Crop/cropped.json")
     chair = vol.crop_point_cloud(pcd)
     draw_geometries([chair])
     print("")

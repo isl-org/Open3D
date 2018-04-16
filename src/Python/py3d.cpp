@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d.h"
+#include <Open3D/Python/py3d.h>
 
 PYBIND11_MODULE(py3d, m) {
 	m.doc() = "Python binding of Open3D";

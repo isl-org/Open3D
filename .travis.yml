@@ -1,16 +1,14 @@
+notifications:
+  email: false # turn off email notifications for build failure
+
 matrix:
-
-  notifications:
-    email: false # turn off email notifications for build failure
-
-  language:
-    - python
-    - cpp
-
   include:
     # Default environment of Ubuntu 14.04
     - os: linux
       dist: trusty
+      language: python
+      python: 3.6
+      #compiler: gcc
       sudo: true
       addons:
         apt:
@@ -27,6 +25,9 @@ matrix:
     # another option is to use docker.
     - os: linux
       dist: trusty
+      language: python
+      python: 3.6
+      #compiler: gcc
       sudo: true
       addons:
         apt:
@@ -42,36 +43,45 @@ matrix:
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
+      language: cpp
+      #compiler: clang
 
     # Default environment of MacOS Sierra
     # compiled using clang shipped with xcode8.3
     - os: osx
       osx_image: xcode8.3
+      language: cpp
+      #compiler: clang
 
-before_install:
+install:
   # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
   # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
   # does not recognize sudo apt-get install libglfw3-dev
-  # Travis CI has pyenv with Python 3.6
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
-      pyenv global 3.6;
       ./util/scripts/make-documentation.sh;
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python;
+      sudo python -m ensurepip;
       ./util/scripts/install-deps-osx.sh;
     fi
   # for reference, display cmake and python version
-  - python -V
   - cmake --version
+  - python -V
+  - pip install --upgrade pip numpy
 
 script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake ../src/
+  - cmake -DCMAKE_INSTALL_PREFIX=install ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make
+
+after_script:
+  - sudo make install
+  - cd install/test/bin && ls -ali && ./TestProgramOptions --string Hello 2>&1 && cd ../../..
+  - output=`cd install/python/Tutorial/Basic && ls -ali && python file_io.py 2>&1 && cd ../../../..` || echo $output

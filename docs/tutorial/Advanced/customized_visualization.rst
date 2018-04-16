@@ -37,7 +37,7 @@ This tutorial focuses on more advanced functionalities to customize the behavior
         vis.create_window()
         vis.add_geometry(pcd)
         vis.get_render_option().load_from_json(
-                "../../TestData/renderoption.json")
+                "../../../test/TestData/renderoption.json")
         vis.run()
         vis.destroy_window()
 
@@ -48,7 +48,7 @@ This tutorial focuses on more advanced functionalities to customize the behavior
             return False
         def load_render_option(vis):
             vis.get_render_option().load_from_json(
-                    "../../TestData/renderoption.json")
+                    "../../../test/TestData/renderoption.json")
             return False
         def capture_depth(vis):
             depth = vis.capture_depth_float_buffer()
@@ -71,12 +71,12 @@ This tutorial focuses on more advanced functionalities to customize the behavior
         custom_draw_geometry_with_camera_trajectory.index = -1
         custom_draw_geometry_with_camera_trajectory.trajectory =\
                 read_pinhole_camera_trajectory(
-                        "../../TestData/camera_trajectory.json")
+                        "../../../test/TestData/camera_trajectory.json")
         custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
-        if not os.path.exists("../../TestData/image/"):
-            os.makedirs("../../TestData/image/")
-        if not os.path.exists("../../TestData/depth/"):
-            os.makedirs("../../TestData/depth/")
+        if not os.path.exists("../../../test/TestData/image/"):
+            os.makedirs("../../../test/TestData/image/")
+        if not os.path.exists("../../../test/TestData/depth/"):
+            os.makedirs("../../../test/TestData/depth/")
         def move_forward(vis):
             # This function is called within the Visualizer::run() loop
             # The run loop calls the function, then re-render
@@ -91,9 +91,9 @@ This tutorial focuses on more advanced functionalities to customize the behavior
                 print("Capture image {:05d}".format(glb.index))
                 depth = vis.capture_depth_float_buffer(False)
                 image = vis.capture_screen_float_buffer(False)
-                plt.imsave("../../TestData/depth/{:05d}.png".format(glb.index),\
+                plt.imsave("../../../test/TestData/depth/{:05d}.png".format(glb.index),\
                         np.asarray(depth), dpi = 1)
-                plt.imsave("../../TestData/image/{:05d}.png".format(glb.index),\
+                plt.imsave("../../../test/TestData/image/{:05d}.png".format(glb.index),\
                         np.asarray(image), dpi = 1)
                 #vis.capture_depth_image("depth/{:05d}.png".format(glb.index), False)
                 #vis.capture_screen_image("image/{:05d}.png".format(glb.index), False)
@@ -108,13 +108,13 @@ This tutorial focuses on more advanced functionalities to customize the behavior
         vis = custom_draw_geometry_with_camera_trajectory.vis
         vis.create_window()
         vis.add_geometry(pcd)
-        vis.get_render_option().load_from_json("../../TestData/renderoption.json")
+        vis.get_render_option().load_from_json("../../../test/TestData/renderoption.json")
         vis.register_animation_callback(move_forward)
         vis.run()
         vis.destroy_window()
 
     if __name__ == "__main__":
-        pcd = read_point_cloud("../../TestData/fragment.ply")
+        pcd = read_point_cloud("../../../test/TestData/fragment.ply")
 
         print("1. Customized visualization to mimic DrawGeometry")
         custom_draw_geometry(pcd)
@@ -163,7 +163,7 @@ Class ``Visualizer`` has a couple of variables such as a ``ViewControl`` and a `
         vis.create_window()
         vis.add_geometry(pcd)
         vis.get_render_option().load_from_json(
-                "../../TestData/renderoption.json")
+                "../../../test/TestData/renderoption.json")
         vis.run()
         vis.destroy_window()
 
@@ -199,7 +199,7 @@ Function ``draw_geometries_with_animation_callback`` registers a Python callback
             return False
         def load_render_option(vis):
             vis.get_render_option().load_from_json(
-                    "../../TestData/renderoption.json")
+                    "../../../test/TestData/renderoption.json")
             return False
         def capture_depth(vis):
             depth = vis.capture_depth_float_buffer()
@@ -232,12 +232,12 @@ Capture images in a customized animation
         custom_draw_geometry_with_camera_trajectory.index = -1
         custom_draw_geometry_with_camera_trajectory.trajectory =\
                 read_pinhole_camera_trajectory(
-                        "../../TestData/camera_trajectory.json")
+                        "../../../test/TestData/camera_trajectory.json")
         custom_draw_geometry_with_camera_trajectory.vis = Visualizer()
-        if not os.path.exists("../../TestData/image/"):
-            os.makedirs("../../TestData/image/")
-        if not os.path.exists("../../TestData/depth/"):
-            os.makedirs("../../TestData/depth/")
+        if not os.path.exists("../../../test/TestData/image/"):
+            os.makedirs("../../../test/TestData/image/")
+        if not os.path.exists("../../../test/TestData/depth/"):
+            os.makedirs("../../../test/TestData/depth/")
         def move_forward(vis):
             # This function is called within the Visualizer::run() loop
             # The run loop calls the function, then re-render
@@ -252,9 +252,9 @@ Capture images in a customized animation
                 print("Capture image {:05d}".format(glb.index))
                 depth = vis.capture_depth_float_buffer(False)
                 image = vis.capture_screen_float_buffer(False)
-                plt.imsave("../../TestData/depth/{:05d}.png".format(glb.index),\
+                plt.imsave("../../../test/TestData/depth/{:05d}.png".format(glb.index),\
                         np.asarray(depth), dpi = 1)
-                plt.imsave("../../TestData/image/{:05d}.png".format(glb.index),\
+                plt.imsave("../../../test/TestData/image/{:05d}.png".format(glb.index),\
                         np.asarray(image), dpi = 1)
                 #vis.capture_depth_image("depth/{:05d}.png".format(glb.index), False)
                 #vis.capture_screen_image("image/{:05d}.png".format(glb.index), False)
@@ -269,7 +269,7 @@ Capture images in a customized animation
         vis = custom_draw_geometry_with_camera_trajectory.vis
         vis.create_window()
         vis.add_geometry(pcd)
-        vis.get_render_option().load_from_json("../../TestData/renderoption.json")
+        vis.get_render_option().load_from_json("../../../test/TestData/renderoption.json")
         vis.register_animation_callback(move_forward)
         vis.run()
         vis.destroy_window()

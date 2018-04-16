@@ -24,38 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_visualization.h"
-#include "py3d_visualization_trampoline.h"
+#include <Open3D/Python/Visualization/py3d_visualization.h>
+#include <Open3D/Python/Visualization/py3d_visualization_trampoline.h>
 
-#include <Visualization/Visualizer/ViewControl.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <Open3D/Visualization/Visualizer/ViewControl.h>
+#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 using namespace three;
 
 void pybind_viewcontrol(py::module &m)
 {
-	py::class_<ViewControl, PyViewControl<>, std::shared_ptr<ViewControl>>
-			viewcontrol(m, "ViewControl");
-	py::detail::bind_default_constructor<ViewControl>(viewcontrol);
-	viewcontrol
-		.def("__repr__", [](const ViewControl &vc) {
-			return std::string("ViewControl");
-		})
-		.def("convert_to_pinhole_camera_parameters", [](ViewControl &vc) {
-			PinholeCameraIntrinsic intrinsic;
-			Eigen::Matrix4d extrinsic;
-			vc.ConvertToPinholeCameraParameters(intrinsic, extrinsic);
-			return std::make_tuple(intrinsic, extrinsic);
-		}, "Function to convert ViewControl to PinholeCameraParameters")
-		.def("convert_from_pinhole_camera_parameters",
-				&ViewControl::ConvertFromPinholeCameraParameters,
-				"intrinsic"_a, "extrinsic"_a)
-		.def("scale", &ViewControl::Scale, "Function to process scaling",
-				"scale"_a)
-		.def("rotate", &ViewControl::Rotate, "Function to process rotation",
-				"x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
-		.def("translate", &ViewControl::Translate,
-				"Function to process translation",
-				"x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0);
+    py::class_<ViewControl, PyViewControl<>, std::shared_ptr<ViewControl>>
+            viewcontrol(m, "ViewControl");
+    py::detail::bind_default_constructor<ViewControl>(viewcontrol);
+    viewcontrol
+        .def("__repr__", [](const ViewControl &vc) {
+            return std::string("ViewControl");
+        })
+        .def("convert_to_pinhole_camera_parameters", [](ViewControl &vc) {
+            PinholeCameraIntrinsic intrinsic;
+            Eigen::Matrix4d extrinsic;
+            vc.ConvertToPinholeCameraParameters(intrinsic, extrinsic);
+            return std::make_tuple(intrinsic, extrinsic);
+        }, "Function to convert ViewControl to PinholeCameraParameters")
+        .def("convert_from_pinhole_camera_parameters",
+                &ViewControl::ConvertFromPinholeCameraParameters,
+                "intrinsic"_a, "extrinsic"_a)
+        .def("scale", &ViewControl::Scale, "Function to process scaling",
+                "scale"_a)
+        .def("rotate", &ViewControl::Rotate, "Function to process rotation",
+                "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
+        .def("translate", &ViewControl::Translate,
+                "Function to process translation",
+                "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0);
 }
 
 void pybind_viewcontrol_method(py::module &m)

@@ -24,8 +24,8 @@ Both :ref:`icp_registration` and :ref:`colored_point_registration` are known as 
     if __name__ == "__main__":
 
         print("1. Load two point clouds and disturb initial pose.")
-        source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+        source = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
+        target = read_point_cloud("../../../test/TestData/ICP/cloud_bin_1.pcd")
         trans_init = np.asarray([[0.0, 1.0, 0.0, 0.0],
                                 [1.0, 0.0, 0.0, 0.0],
                                 [0.0, 0.0, 1.0, 0.0],
@@ -77,8 +77,8 @@ Input
 .. code-block:: python
 
     print("1. Load two point clouds and disturb initial pose.")
-    source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    source = read_point_cloud("../../../test/TestData/ICP/cloud_bin_0.pcd")
+    target = read_point_cloud("../../../test/TestData/ICP/cloud_bin_1.pcd")
     trans_init = np.asarray([[0.0, 1.0, 0.0, 0.0],
                             [1.0, 0.0, 0.0, 0.0],
                             [0.0, 0.0, 1.0, 0.0],

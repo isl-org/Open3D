@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PinholeCameraTrajectory.h"
+#include <Open3D/Core/Camera/PinholeCameraTrajectory.h>
 
-#include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
+#include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
 namespace three{
 
 std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
-		const std::string &filename)
+        const std::string &filename)
 {
-	auto trajectory = std::make_shared<PinholeCameraTrajectory>();
-	ReadPinholeCameraTrajectory(filename, *trajectory);
-	return trajectory;
+    auto trajectory = std::make_shared<PinholeCameraTrajectory>();
+    ReadPinholeCameraTrajectory(filename, *trajectory);
+    return trajectory;
 }
 
-}	// namespace three
+}   // namespace three

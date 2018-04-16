@@ -6,11 +6,21 @@ endif()
 
 project(Open3D)
 
-set(Open3D_VERSION_MAJOR "1")
-set(Open3D_VERSION_MINOR "0")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
+set(OPEN3D_INCLUDE_DIR "${Open3D_SOURCE_DIR}/../include")
+include_directories(${OPEN3D_INCLUDE_DIR})
+
+# Read and expose current Open3D version
+file(READ "${OPEN3D_INCLUDE_DIR}/Open3D/Core/Utility/Helper.h" _open3d_version_header)
+string(REGEX MATCH "define[ \t]+OPEN3D_VERSION_MAJOR[ \t]+([0-9]+)" _open3d_version_major_match "${_open3d_version_header}")
+set(OPEN3D_VERSION_MAJOR "${CMAKE_MATCH_1}")
+string(REGEX MATCH "define[ \t]+OPEN3D_VERSION_MINOR[ \t]+([0-9]+)" _open3d_version_minor_match "${_open3d_version_header}")
+set(OPEN3D_VERSION_MINOR "${CMAKE_MATCH_1}")
+string(REGEX MATCH "define[ \t]+OPEN3D_VERSION_PATCH[ \t]+([0-9]+)" _open3d_version_patch_match "${_open3d_version_header}")
+set(OPEN3D_VERSION_PATCH "${CMAKE_MATCH_1}")
+set(OPEN3D_VERSION ${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}.${OPEN3D_VERSION_PATCH})
+MESSAGE(STATUS "Welcome to Open3D v${OPEN3D_VERSION} CMake")
 
 # config options
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
@@ -21,6 +31,7 @@ option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy test files for Open3D Python bind
 option(Open3D_BUILD_PYTHON_BINDING_TUTORIALS "Copy tutorial files for Open3D Python binding" ON)
 option(Open3D_USE_NATIVE_DEPENDENCY_BUILD "Prioritize using native dependency build" ON)
 option(Open3D_HEADLESS_RENDERING "Use OSMesa for headless rendering" OFF)
+option(Open3D_INSTALL_EXTERNALS "Install external libraries along Open3D" OFF)
 
 # default built type
 if(NOT CMAKE_BUILD_TYPE)
@@ -100,7 +111,6 @@ message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_
 
 # Handling dependencies
 add_subdirectory(External)
-include_directories(${EIGEN3_INCLUDE_DIRS})
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${JSONCPP_INCLUDE_DIRS})
@@ -127,3 +137,6 @@ endif(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
 if (Open3D_BUILD_PYTHON_BINDING)
 	add_subdirectory(Python)
 endif(Open3D_BUILD_PYTHON_BINDING)
+
+install(DIRECTORY ${OPEN3D_INCLUDE_DIR}/
+        DESTINATION include COMPONENT Devel)

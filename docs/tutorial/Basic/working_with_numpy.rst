@@ -30,10 +30,10 @@ The following tutorial generates a variant of sync function using NumPy and visu
         # Pass xyz to Open3D.PointCloud and visualize
         pcd = PointCloud()
         pcd.points = Vector3dVector(xyz)
-        write_point_cloud("../../TestData/sync.ply", pcd)
+        write_point_cloud("../../../test/TestData/sync.ply", pcd)
 
         # Load saved point cloud and transform it into NumPy array
-        pcd_load = read_point_cloud("../../TestData/sync.ply")
+        pcd_load = read_point_cloud("../../../test/TestData/sync.ply")
         xyz_load = np.asarray(pcd_load.points)
         print('xyz_load')
         print(xyz_load)
@@ -54,7 +54,7 @@ From NumPy to Open3D
     # Pass xyz to Open3D.PointCloud.points and visualize
     pcd = PointCloud()
     pcd.points = Vector3dVector(xyz)
-    write_point_cloud("../../TestData/sync.ply", pcd)
+    write_point_cloud("../../../test/TestData/sync.ply", pcd)
 
 Open3D provides conversion from NumPy matrix to a vector of 3D vectors. By using ``Vector3dVector``, NumPy matrix can be directly assigned for ``py3d.PointCloud.points``.
 
@@ -69,7 +69,7 @@ From Open3D to NumPy
 .. code-block:: python
 
     # Load saved point cloud and transform it into NumPy array
-    pcd_load = read_point_cloud("../../TestData/sync.ply")
+    pcd_load = read_point_cloud("../../../test/TestData/sync.ply")
     xyz_load = np.asarray(pcd_load.points)
     print('xyz_load')
     print(xyz_load)

@@ -33,4 +33,10 @@ add_library(Core ${Open3D_LIB_TYPE}
 	${CORE_ODOMETRY_HEADER_FILES} ${CORE_ODOMETRY_SOURCE_FILES}
 	${CORE_INTEGRATION_HEADER_FILES} ${CORE_INTEGRATION_SOURCE_FILES}
 )
-target_link_libraries(Core IO)
+target_include_directories(Core PRIVATE ${EIGEN3_INCLUDE_DIR} ${FLANN_INCLUDE_DIR})
+target_link_libraries(Core IO ${FLANN_CPP_LIBRARY_STATIC})
+
+install(TARGETS Core
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)

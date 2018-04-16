@@ -1,12 +1,15 @@
 version: 1.0.{build}
+
 image:
 - Visual Studio 2017
 - Visual Studio 2015
-test: off
+
 build:
   parallel: true
+
 platform:
 - x64
+
 environment:
   matrix:
   - PYTHON: 36
@@ -15,12 +18,14 @@ environment:
   - PYTHON: 36
     CPP: latest
     CONFIG: Release
+
 matrix:
   exclude:
     - image: Visual Studio 2015
       CPP: latest
     - image: Visual Studio 2017
       CPP: 14
+
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
@@ -32,11 +37,15 @@ install:
     if ($env:PYTHON) {
       if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
       $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
-      pip install --disable-pip-version-check --user --upgrade pip wheel
-      pip install pytest numpy
+      pip install --disable-pip-version-check --user --upgrade pip wheel pytest numpy
     }
+
 build_script:
 - mkdir build
-- cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" ../src
-- cmake --build . --config %CONFIG% --target ALL_BUILD
+- cd build && mkdir install
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX=install ../src
+
+test_script:
+- cmake --build . --config %CONFIG% --target INSTALL
+- cd install/test/bin && dir && TestProgramOptions --string Hello && cd ../../..
+- cd install/python/Tutorial/Basic && dir && python file_io.py && cd ../../../..

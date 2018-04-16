@@ -19,7 +19,7 @@ Open3D implements multiway registration via pose graph optimization. The backend
         pcds = []
         for i in range(3):
             pcd = read_point_cloud(
-                    "../../TestData/ICP/cloud_bin_%d.pcd" % i)
+                    "../../../test/TestData/ICP/cloud_bin_%d.pcd" % i)
             downpcd = voxel_down_sample(pcd, voxel_size = 0.02)
             pcds.append(downpcd)
         draw_geometries(pcds)
@@ -84,7 +84,7 @@ Input
     pcds = []
     for i in range(3):
         pcd = read_point_cloud(
-                "../../TestData/ICP/cloud_bin_%d.pcd" % i)
+                "../../../test/TestData/ICP/cloud_bin_%d.pcd" % i)
         downpcd = voxel_down_sample(pcd, voxel_size = 0.02)
         pcds.append(downpcd)
     draw_geometries(pcds)

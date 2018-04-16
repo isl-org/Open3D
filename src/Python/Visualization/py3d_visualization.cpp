@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_visualization.h"
+#include <Open3D/Python/Visualization/py3d_visualization.h>
 
 void pybind_visualization_classes(py::module &m)
 {
