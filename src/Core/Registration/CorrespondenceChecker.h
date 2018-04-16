@@ -44,21 +44,21 @@ class PointCloud;
 class CorrespondenceChecker
 {
 public:
-    CorrespondenceChecker(bool require_pointcloud_alignment) :
-            require_pointcloud_alignment_(require_pointcloud_alignment) {}
-    virtual ~CorrespondenceChecker() {}
+	CorrespondenceChecker(bool require_pointcloud_alignment) :
+			require_pointcloud_alignment_(require_pointcloud_alignment) {}
+	virtual ~CorrespondenceChecker() {}
 
 public:
-    /// Function to check if two points can be aligned. The two input point
-    /// clouds must have exact the same number of points.
-    virtual bool Check(const PointCloud &source, const PointCloud &target,
-            const CorrespondenceSet &corres,
-            const Eigen::Matrix4d &transformation) const = 0;
+	/// Function to check if two points can be aligned. The two input point
+	/// clouds must have exact the same number of points.
+	virtual bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const = 0;
 
 public:
-    /// Some checkers do not require point clouds to be aligned, e.g., the edge
-    /// length checker. Some checkers do, e.g., the distance checker.
-    bool require_pointcloud_alignment_;
+	/// Some checkers do not require point clouds to be aligned, e.g., the edge
+	/// length checker. Some checkers do, e.g., the distance checker.
+	bool require_pointcloud_alignment_;
 };
 
 /// Check if two point clouds build the polygons with similar edge lengths
@@ -67,54 +67,54 @@ public:
 class CorrespondenceCheckerBasedOnEdgeLength : public CorrespondenceChecker
 {
 public:
-    CorrespondenceCheckerBasedOnEdgeLength(double similarity_threshold = 0.9) :
-            CorrespondenceChecker(false),
-            similarity_threshold_(similarity_threshold) {}
-    ~CorrespondenceCheckerBasedOnEdgeLength() override {}
+	CorrespondenceCheckerBasedOnEdgeLength(double similarity_threshold = 0.9) :
+			CorrespondenceChecker(false),
+			similarity_threshold_(similarity_threshold) {}
+	~CorrespondenceCheckerBasedOnEdgeLength() override {}
 
 public:
-    bool Check(const PointCloud &source, const PointCloud &target,
-            const CorrespondenceSet &corres,
-            const Eigen::Matrix4d &transformation) const override;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override;
 
 public:
-    double similarity_threshold_;
+	double similarity_threshold_;
 };
 
 /// Check if two aligned point clouds are close
 class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker
 {
 public:
-    CorrespondenceCheckerBasedOnDistance(double distance_threshold) :
-            CorrespondenceChecker(true),
-            distance_threshold_(distance_threshold) {}
-    ~CorrespondenceCheckerBasedOnDistance() override {}
+	CorrespondenceCheckerBasedOnDistance(double distance_threshold) :
+			CorrespondenceChecker(true),
+			distance_threshold_(distance_threshold) {}
+	~CorrespondenceCheckerBasedOnDistance() override {}
 
 public:
-    bool Check(const PointCloud &source, const PointCloud &target,
-            const CorrespondenceSet &corres,
-            const Eigen::Matrix4d &transformation) const override;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override;
 
 public:
-    double distance_threshold_;
+	double distance_threshold_;
 };
 
 /// Check if two aligned point clouds have similar normals
 class CorrespondenceCheckerBasedOnNormal : public CorrespondenceChecker
 {
 public:
-    CorrespondenceCheckerBasedOnNormal(double normal_angle_threshold) :
-            CorrespondenceChecker(true),
-            normal_angle_threshold_(normal_angle_threshold) {}
-    ~CorrespondenceCheckerBasedOnNormal() override {}
+	CorrespondenceCheckerBasedOnNormal(double normal_angle_threshold) :
+			CorrespondenceChecker(true),
+			normal_angle_threshold_(normal_angle_threshold) {}
+	~CorrespondenceCheckerBasedOnNormal() override {}
 
 public:
-    bool Check(const PointCloud &source, const PointCloud &target,
-            const CorrespondenceSet &corres,
-            const Eigen::Matrix4d &transformation) const override;
+	bool Check(const PointCloud &source, const PointCloud &target,
+			const CorrespondenceSet &corres,
+			const Eigen::Matrix4d &transformation) const override;
 
 public:
-    double normal_angle_threshold_;
+	double normal_angle_threshold_;
 };
 
-}    // namespace three
+}	// namespace three

@@ -15,4 +15,3 @@ src/Visualization/Shader/Shader.h
 _build/
 doxygen/
 .vs/
-.DS_Store

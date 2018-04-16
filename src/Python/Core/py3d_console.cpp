@@ -31,16 +31,16 @@ using namespace three;
 
 void pybind_console(py::module &m)
 {
-    py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic())
-        .value("Error", VerbosityLevel::VerboseError)
-        .value("Warning", VerbosityLevel::VerboseWarning)
-        .value("Info", VerbosityLevel::VerboseInfo)
-        .value("Debug", VerbosityLevel::VerboseDebug)
-        .value("Always", VerbosityLevel::VerboseAlways)
-        .export_values();
-    m.def("set_verbosity_level", &SetVerbosityLevel,
-            "Set global verbosity level of Open3D (py3d)",
-            py::arg("verbosity_level"));
-    m.def("get_verbosity_level", &GetVerbosityLevel,
-            "Get global verbosity level of Open3D (py3d)");
+	py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic())
+		.value("Error", VerbosityLevel::VerboseError)
+		.value("Warning", VerbosityLevel::VerboseWarning)
+		.value("Info", VerbosityLevel::VerboseInfo)
+		.value("Debug", VerbosityLevel::VerboseDebug)
+		.value("Always", VerbosityLevel::VerboseAlways)
+		.export_values();
+	m.def("set_verbosity_level", &SetVerbosityLevel,
+			"Set global verbosity level of Open3D (py3d)",
+			py::arg("verbosity_level"));
+	m.def("get_verbosity_level", &GetVerbosityLevel,
+			"Get global verbosity level of Open3D (py3d)");
 }

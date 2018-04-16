@@ -41,4 +41,4 @@ bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 /// \return return true if the write function is successful, false otherwise.
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
 
-}    // namespace three
+}	// namespace three

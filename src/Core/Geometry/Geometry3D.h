@@ -34,17 +34,17 @@ namespace three {
 class Geometry3D : public Geometry
 {
 public:
-    ~Geometry3D() override {}
+	~Geometry3D() override {}
 
 protected:
-    Geometry3D(GeometryType type) : Geometry(type, 3) {}
+	Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
 public:
-    void Clear() override = 0;
-    bool IsEmpty() const override = 0;
-    virtual Eigen::Vector3d GetMinBound() const = 0;
-    virtual Eigen::Vector3d GetMaxBound() const = 0;
-    virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
+	void Clear() override = 0;
+	bool IsEmpty() const override = 0;
+	virtual Eigen::Vector3d GetMinBound() const = 0;
+	virtual Eigen::Vector3d GetMaxBound() const = 0;
+	virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
 };
 
-}    // namespace three
+}	// namespace three
