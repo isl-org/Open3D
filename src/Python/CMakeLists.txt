@@ -23,6 +23,8 @@ file(GLOB PY_VISUALIZATION_HEADER_FILES "Visualization/*.h")
 source_group("Header Files\\Visualization" FILES ${PY_VISUALIZATION_HEADER_FILES})
 file(GLOB PY_VISUALIZATION_SOURCE_FILES "Visualization/*.cpp")
 source_group("Source Files\\Visualization" FILES ${PY_VISUALIZATION_SOURCE_FILES})
+
+include(CMake/pybind11Tools.cmake)
 pybind11_add_module(py3d
 	${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
 	${PY_CORE_SOURCE_FILES} ${PY_CORE_HEADER_FILES}

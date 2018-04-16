@@ -6,6 +6,7 @@ SET(DOWNLOAD_URL     "http://bitbucket.org/eigen/eigen/get/${DOWNLOAD_VERSION}.t
 SET(BASE_DIR         "${CMAKE_BINARY_DIR}/${LIB_NAME}")
 SET(DOWNLOADER_DIR   "${BASE_DIR}-download")
 SET(BUILD_SOURCE     OFF)
+SET(INSTALL_SOURCE   OFF)
 
 include(configure.cmake)
 

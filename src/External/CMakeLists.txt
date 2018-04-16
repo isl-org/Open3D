@@ -93,10 +93,6 @@ if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 		add_subdirectory(librealsense)
 	endif(Open3D_BUILD_LIBREALSENSE)
 
-	if (Open3D_BUILD_PYTHON_BINDING)
-		add_subdirectory(pybind11)
-	endif(Open3D_BUILD_PYTHON_BINDING)
-
 else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 	message(STATUS "Build GLEW from source")
 	add_subdirectory(glew)
@@ -117,13 +113,13 @@ else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 		add_subdirectory(librealsense)
 	endif(Open3D_BUILD_LIBREALSENSE)
 
-	if (Open3D_BUILD_PYTHON_BINDING)
-		add_subdirectory(pybind11)
-	endif(Open3D_BUILD_PYTHON_BINDING)
 endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 include(configureEigen3.cmake)
 include(configureFlann.cmake)
+if (Open3D_BUILD_PYTHON_BINDING)
+	include(configurepybind11.cmake)
+endif(Open3D_BUILD_PYTHON_BINDING)
 
 # pop everything to root
 set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIRS} PARENT_SCOPE)
