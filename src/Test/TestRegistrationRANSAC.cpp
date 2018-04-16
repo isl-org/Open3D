@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     if (argc != 3) {
         PrintDebug("Usage : %s [path_to_first_point_cloud] [path_to_second_point_cloud]\n",
                 argv[0]);
-        return 1;
+        return 0;
     }
 
     bool visualization = false;

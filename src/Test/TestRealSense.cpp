@@ -155,5 +155,5 @@ int main(int argc, char **args)
     //                  dev->get_frame_data(rs::stream::depth), 640 * 480 * 2);
     //          return true;
     //      }, "Depth", 640, 480);
-    return 1;
+    return 0;
 }

@@ -128,5 +128,5 @@ int main(int argc, char *argv[])
 
     PrintInfo("End of the test.\n");
 
-    return 1;
+    return 0;
 }

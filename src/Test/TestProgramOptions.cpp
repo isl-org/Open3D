@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     using namespace three;
     if (argc == 1 || ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
-        return 1;
+        return 0;
     }
 
     PrintInfo("Switch is %s.\n",
@@ -66,5 +66,5 @@ int main(int argc, char *argv[])
         }
     }
     PrintInfo(")\n");
-    return 1;
+    return 0;
 }

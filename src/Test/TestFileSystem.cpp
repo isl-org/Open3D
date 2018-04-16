@@ -89,5 +89,5 @@ int main(int argc, char **args)
         bool success = FileExists(directory);
         std::cout << "fileexists " << (success ? "yes" : "no") << std::endl;
     }
-    return 1;
+    return 0;
 }
