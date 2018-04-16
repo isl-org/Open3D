@@ -59,7 +59,7 @@ void pybind_globaloptimization(py::module &m)
     py::detail::bind_copy_functions<PoseGraphNode>(pose_graph_node);
     pose_graph_node
         .def_readwrite("pose", &PoseGraphNode::pose_)
-        .def(py::init([](Eigen::Matrix4d pose = Eigen::Matrix4d::Identity()) {
+        .def(py::init([](const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) {
             return new PoseGraphNode(pose); }), "pose"_a)
         .def("__repr__", [](const PoseGraphNode &rr) {
             return std::string("PoseGraphNode, access pose to get its current pose.");
@@ -78,7 +78,7 @@ void pybind_globaloptimization(py::module &m)
         .def_readwrite("uncertain", &PoseGraphEdge::uncertain_)
         .def_readwrite("confidence", &PoseGraphEdge::confidence_)
         .def(py::init([](int source_node_id, int target_node_id,
-                Eigen::Matrix4d transformation, Eigen::Matrix6d information,
+                Eigen::Matrix4d &transformation, Eigen::Matrix6d &information,
                 bool uncertain, double confidence) {
             return new PoseGraphEdge(source_node_id, target_node_id,
                     transformation, information, uncertain, confidence);

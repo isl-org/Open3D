@@ -67,7 +67,7 @@ const std::vector<Eigen::Matrix4d> jacobian_operator = {
 /// Alternatively, explicit representation that uses quaternion can be used
 /// here to replace this function. Refer to linearizeOplus() in
 /// https://github.com/RainerKuemmerle/g2o/blob/master/g2o/types/slam3d/edge_se3.cpp
-inline Eigen::Vector6d GetLinearized6DVector(const Eigen::Matrix4d input)
+inline Eigen::Vector6d GetLinearized6DVector(const Eigen::Matrix4d &input)
 {
     Eigen::Vector6d output;
     output(0) = (-input(1, 2) + input(2, 1)) / 2.0;
