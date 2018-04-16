@@ -7,7 +7,7 @@ An Open3D ``RGBDImage`` is composed of two images, ``RGBDImage.depth`` and ``RGB
 
 .. toctree::
 
-	redwood
-	sun
-	nyu
-	tum
+    redwood
+    sun
+    nyu
+    tum

@@ -9,6 +9,6 @@ uniform vec3 vertex_scale;
 
 void main()
 {
-	gl_Position = vec4(vertex_position * vertex_scale, 1);
-	UV = vertex_UV;
+    gl_Position = vec4(vertex_position * vertex_scale, 1);
+    UV = vertex_UV;
 }

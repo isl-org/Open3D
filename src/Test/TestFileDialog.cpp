@@ -29,28 +29,28 @@
 
 void PrintHelp()
 {
-	using namespace three;
-	PrintInfo("Usage :\n");
-	PrintInfo("    > TestFileDialog [save|load]\n");
+    using namespace three;
+    PrintInfo("Usage :\n");
+    PrintInfo("    > TestFileDialog [save|load]\n");
 }
 
 int main(int argc, char *argv[])
 {
-	using namespace three;
-	if (argc == 1) {
-		PrintHelp();
-		return 1;
-	}
-	std::string option(argv[1]);
-	char const *pattern = "*.*";
-	if (option == "load") {
-		char const *str = tinyfd_openFileDialog(
-				"Find a file to load", "", 0, NULL, NULL, 1);
-		PrintInfo("%s\n", str);
-	} else if (option == "save") {
-		char const *str = tinyfd_saveFileDialog("Find a file to save", "", 1,
-				&pattern, NULL);
-		PrintInfo("%s\n", str);
-	}
-	return 1;
+    using namespace three;
+    if (argc == 1) {
+        PrintHelp();
+        return 1;
+    }
+    std::string option(argv[1]);
+    char const *pattern = "*.*";
+    if (option == "load") {
+        char const *str = tinyfd_openFileDialog(
+                "Find a file to load", "", 0, NULL, NULL, 1);
+        PrintInfo("%s\n", str);
+    } else if (option == "save") {
+        char const *str = tinyfd_saveFileDialog("Find a file to save", "", 1,
+                &pattern, NULL);
+        PrintInfo("%s\n", str);
+    }
+    return 1;
 }

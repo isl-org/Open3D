@@ -800,7 +800,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = README.md \
-						 src
+                         src
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -884,10 +884,10 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = src/External \
-						 src/Python \
-						 src/Test \
-						 src/Tools \
-						 src/Experimental
+                         src/Python \
+                         src/Test \
+                         src/Tools \
+                         src/Experimental
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
