@@ -45,9 +45,9 @@ public:
             bool use_absolute_scale = false,
             bool decrease_mu = true,
             double maximum_correspondence_distance = 0.025,
-            double iteration_number = 64,
+            int iteration_number = 64,
             double tuple_scale = 0.95,
-            double maximum_tuple_count = 1000) :
+            int maximum_tuple_count = 1000) :
             division_factor_(division_factor),
             use_absolute_scale_(use_absolute_scale),
             iteration_number_(iteration_number),
@@ -64,11 +64,11 @@ public:
     // Maximum correspondence distance (also see comment of USE_ABSOLUTE_SCALE)
     double maximum_correspondence_distance_;
     // Maximum number of iteration
-    double iteration_number_;
+    int iteration_number_;
     // Similarity measure used for tuples of feature points.
     double tuple_scale_;
     // Maximum tuple numbers.
-    double maximum_tuple_count_;
+    int maximum_tuple_count_;
 };
 
 RegistrationResult FastGlobalRegistration(

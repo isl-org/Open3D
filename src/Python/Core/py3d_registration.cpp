@@ -219,8 +219,8 @@ void pybind_registration(py::module &m)
     fgr_option
         .def(py::init([](double division_factor, bool use_absolute_scale,
                 bool decrease_mu, double maximum_correspondence_distance,
-                double iteration_number, double tuple_scale,
-                double maximum_tuple_count) {
+                int iteration_number, double tuple_scale,
+                int maximum_tuple_count) {
             return new FastGlobalRegistrationOption(division_factor,
                     use_absolute_scale, decrease_mu,
                     maximum_correspondence_distance, iteration_number,

@@ -4,8 +4,8 @@ Fast global registration
 -------------------------------------
 
 RANSAC based :ref:`global_registration` solution may take a long time due to countless model proposal and evaluation.
-[Zhou2016]_ introduced a faster approach that quickly optimizes line process weights of few matched pairs.
-As there is no model proposal and evaluation for each iteration, the approach proposed in [Zhou2016]_ can save a lot of computational time.
+[Zhou2016]_ introduced a faster approach that quickly optimizes line process weights of few correspondences.
+As there is no model proposal and evaluation involved for each iteration, the approach proposed in [Zhou2016]_ can save a lot of computational time.
 
 This script compares running time of RANSAC based :ref:`global_registration` and implementation of [Zhou2016]_.
 
@@ -62,9 +62,9 @@ Input
             prepare_dataset(voxel_size)
 
 For the pair comparison, the script reuses ``prepare_dataset`` function defined in :ref:`global_registration`.
-It produces downsampled point cloud as well as fpfh features.
+It produces a pair of downsampled point clouds as well as FPFH features.
 
-RANSAC
+Baseline
 ``````````````````````````````````````
 
 .. code-block:: python
@@ -86,11 +86,10 @@ This script calls RANSAC based :ref:`global_registration` as a baseline. After r
 
     RANSAC based global registration took 2.538 sec.
 
-
 Fast global registration
 ``````````````````````````````````````
 
-Given the same input, the next script calls the implementation of [Zhou2016]_.
+With the same input used for baseline, the next script calls the implementation of [Zhou2016]_.
 
 .. code-block:: python
 
@@ -114,4 +113,4 @@ This script displays the followings.
     Fast global registration took 0.193 sec.
 
 With proper configuration, the accuracy of fast global registration is even comparable with ICP.
-Please refer [Zhou2016]_ for more details.
+Please refer [Zhou2016]_ for more experimental results.

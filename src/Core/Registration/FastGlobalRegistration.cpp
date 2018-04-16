@@ -26,6 +26,8 @@
 
 #include "FastGlobalRegistration.h"
 
+#include <ctime>
+
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
 #include <Core/Registration/Registration.h>
@@ -60,8 +62,8 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
         swapped = true;
     }
 
-    int nPti = pointcloud_[fi]->points_.size();
-    int nPtj = pointcloud_[fj]->points_.size();
+    int nPti = static_cast<int>(pointcloud_[fi]->points_.size());
+    int nPtj = static_cast<int>(pointcloud_[fj]->points_.size());
 
     ///////////////////////////
     /// BUILD FLANNTREE
@@ -111,8 +113,8 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     }
 
 
-    int ncorres_ij = corres_ij.size();
-    int ncorres_ji = corres_ji.size();
+    int ncorres_ij = static_cast<int>(corres_ij.size());
+    int ncorres_ji = static_cast<int>(corres_ji.size());
 
     // corres = corres_ij + corres_ji;
     for (int i = 0; i < ncorres_ij; ++i)
@@ -177,14 +179,14 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
     ///////////////////////////
     if (tuple)
     {
-        srand(time(NULL));
+        std::srand((unsigned int)std::time(0));
 
         PrintDebug("\t[tuple constraint] ");
         int rand0, rand1, rand2;
         int idi0, idi1, idi2;
         int idj0, idj1, idj2;
-        float scale = option.tuple_scale_;
-        int ncorr = corres.size();
+        double scale = option.tuple_scale_;
+        int ncorr = static_cast<int>(corres.size());
         int number_of_trial = ncorr * 100;
         std::vector<std::pair<int, int>> corres_tuple;
 
@@ -208,18 +210,18 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
             Eigen::Vector3d pti1 = pointcloud_[fi]->points_[idi1];
             Eigen::Vector3d pti2 = pointcloud_[fi]->points_[idi2];
 
-            float li0 = (pti0 - pti1).norm();
-            float li1 = (pti1 - pti2).norm();
-            float li2 = (pti2 - pti0).norm();
+            double li0 = (pti0 - pti1).norm();
+            double li1 = (pti1 - pti2).norm();
+            double li2 = (pti2 - pti0).norm();
 
             // collect 3 points from j-th fragment
             Eigen::Vector3d ptj0 = pointcloud_[fj]->points_[idj0];
             Eigen::Vector3d ptj1 = pointcloud_[fj]->points_[idj1];
             Eigen::Vector3d ptj2 = pointcloud_[fj]->points_[idj2];
 
-            float lj0 = (ptj0 - ptj1).norm();
-            float lj1 = (ptj1 - ptj2).norm();
-            float lj2 = (ptj2 - ptj0).norm();
+            double lj0 = (ptj0 - ptj1).norm();
+            double lj1 = (ptj1 - ptj2).norm();
+            double lj2 = (ptj2 - ptj0).norm();
 
             if ((li0 * scale < lj0) && (lj0 < li0 / scale) &&
                 (li1 * scale < lj1) && (lj1 < li1 / scale) &&
@@ -261,19 +263,19 @@ void AdvancedMatching(const FastGlobalRegistrationOption& option)
 void NormalizePoints(const FastGlobalRegistrationOption& option)
 {
     int num = 2;
-    float scale = 0;
+    double scale = 0;
 
     Means.clear();
 
     for (int i = 0; i < num; ++i)
     {
-        float max_scale = 0;
+        double max_scale = 0.0;
 
         // compute mean
         Eigen::Vector3d mean;
         mean.setZero();
 
-        int npti = pointcloud_[i]->points_.size();
+        int npti = static_cast<int>(pointcloud_[i]->points_.size());
         for (int ii = 0; ii < npti; ++ii)
         {
             mean = mean + pointcloud_[i]->points_[ii];
@@ -292,7 +294,7 @@ void NormalizePoints(const FastGlobalRegistrationOption& option)
         for (int ii = 0; ii < npti; ++ii)
         {
             Eigen::Vector3d p(pointcloud_[i]->points_[ii]);
-            float temp = p.norm(); // because we extract mean in the previous stage.
+            double temp = p.norm(); // because we extract mean in the previous stage.
             if (temp > max_scale)
                 max_scale = temp;
         }
@@ -313,7 +315,7 @@ void NormalizePoints(const FastGlobalRegistrationOption& option)
 
     for (int i = 0; i < num; ++i)
     {
-        int npti = pointcloud_[i]->points_.size();
+        int npti = static_cast<int>(pointcloud_[i]->points_.size());
         for (int ii = 0; ii < npti; ++ii)
         {
             pointcloud_[i]->points_[ii] /= GlobalScale;
@@ -336,7 +338,7 @@ double OptimizePairwise(const FastGlobalRegistrationOption& option)
 
     // make another copy of pointcloud_[j].
     std::vector<Eigen::Vector3d> pcj_copy;
-    int npcj = pointcloud_[j]->points_.size();
+    int npcj = static_cast<int>(pointcloud_[j]->points_.size());
     pcj_copy.resize(npcj);
     for (int cnt = 0; cnt < npcj; cnt++)
         pcj_copy[cnt] = pointcloud_[j]->points_[cnt];
@@ -379,7 +381,7 @@ double OptimizePairwise(const FastGlobalRegistrationOption& option)
 
             int c2 = c;
 
-            float temp = par / (rpq.dot(rpq) + par);
+            double temp = par / (rpq.dot(rpq) + par);
             s[c2] = temp * temp;
 
             J.setZero();
