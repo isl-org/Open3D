@@ -17,10 +17,10 @@ source_group("Header Files\\FileFormat" FILES ${IO_FILEFORMAT_HEADER_FILES})
 file(GLOB IO_FILEFORMAT_SOURCE_FILES "FileFormat/*.cpp")
 source_group("Source Files\\FileFormat" FILES ${IO_FILEFORMAT_SOURCE_FILES})
 
-add_library(IO ${Open3D_LIB_TYPE}
+add_library(IO 
 	${IO_ALL_HEADER_FILES} ${IO_ALL_SOURCE_FILES}
 	${IO_RPLY_FILES} ${IO_LIBLZF_FILES} ${IO_DIRENT_FILES}
 	${IO_CLASSIO_HEADER_FILES} ${IO_CLASSIO_SOURCE_FILES}
 	${IO_FILEFORMAT_HEADER_FILES} ${IO_FILEFORMAT_SOURCE_FILES}
 )
-target_link_libraries(IO Core tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${JSONCPP_LIBRARIES})
+target_link_libraries(IO Core tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES})

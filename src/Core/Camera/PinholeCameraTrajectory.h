@@ -48,10 +48,4 @@ public:
 	std::vector<Eigen::Matrix4d> extrinsic_;
 };
 
-/// Factory function to create a PinholeCameraTrajectory from a file
-/// (PinholeCameraTrajectoryFactory.cpp)
-/// Return an empty PinholeCameraTrajectory if fail to read the file.
-std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
-		const std::string &filename);
-
 }	// namespace three

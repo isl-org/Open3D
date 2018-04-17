@@ -31,6 +31,12 @@
 
 namespace three {
 
+/// Factory function to create a PinholeCameraTrajectory from a file
+/// (PinholeCameraTrajectoryFactory.cpp)
+/// Return an empty PinholeCameraTrajectory if fail to read the file.
+std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
+    const std::string &filename);
+
 /// The general entrance for reading a PinholeCameraTrajectory from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return If the read function is successful.
