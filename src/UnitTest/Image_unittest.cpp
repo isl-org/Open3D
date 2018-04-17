@@ -42,4 +42,40 @@ TEST(Image, DefaultConstructor)
     EXPECT_EQ(0, image.num_of_channels_);
     EXPECT_EQ(0, image.bytes_per_channel_);
     EXPECT_EQ(0, image.data_.size());
+
+    // public members
+    EXPECT_TRUE(image.IsEmpty());
+    EXPECT_EQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    EXPECT_EQ(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
+
+    image.Clear();
+
+    // public member variables
+    EXPECT_EQ(0, image.width_);
+    EXPECT_EQ(0, image.height_);
+    EXPECT_EQ(0, image.num_of_channels_);
+    EXPECT_EQ(0, image.bytes_per_channel_);
+    EXPECT_EQ(0, image.data_.size());
+
+    // public members
+    EXPECT_TRUE(image.IsEmpty());
+    EXPECT_EQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    EXPECT_EQ(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
+
+    image.width_ = 1920;
+    image.height_ = 1080;
+    image.num_of_channels_ = 3;
+    image.bytes_per_channel_ = 8;
+
+    // public member variables
+    EXPECT_EQ(1920, image.width_);
+    EXPECT_EQ(1080, image.height_);
+    EXPECT_EQ(3, image.num_of_channels_);
+    EXPECT_EQ(8, image.bytes_per_channel_);
+    EXPECT_EQ(0, image.data_.size());
+
+    // public members
+    EXPECT_TRUE(image.IsEmpty());
+    EXPECT_EQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    EXPECT_EQ(Eigen::Vector2d(1920, 1080), image.GetMaxBound());
 }
