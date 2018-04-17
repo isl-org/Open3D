@@ -64,6 +64,14 @@ static const std::unordered_map<std::string,
 
 }	// unnamed namespace
 
+std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
+    const std::string &filename)
+{
+    auto trajectory = std::make_shared<PinholeCameraTrajectory>();
+    ReadPinholeCameraTrajectory(filename, *trajectory);
+    return trajectory;
+}
+
 bool ReadPinholeCameraTrajectory(const std::string &filename,
 		PinholeCameraTrajectory &trajectory)
 {

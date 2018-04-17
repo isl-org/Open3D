@@ -31,11 +31,6 @@
 
 namespace three{
 
-const double RenderOption::POINT_SIZE_MAX = 25.0;
-const double RenderOption::POINT_SIZE_MIN = 1.0;
-const double RenderOption::POINT_SIZE_STEP = 1.0;
-const double RenderOption::POINT_SIZE_DEFAULT = 5.0;
-
 bool RenderOption::ConvertToJsonValue(Json::Value &value) const
 {
 	value["class_name"] = "RenderOption";

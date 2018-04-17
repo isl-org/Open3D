@@ -44,6 +44,7 @@ void pybind_camera(py::module &m)
 				double cx, double cy) {
 			return new PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
 		}),"width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
+		.def("get_prime_sense_default", &PinholeCameraIntrinsic::GetPrimeSenseDefault)
 		.def("set_intrinsics", &PinholeCameraIntrinsic::SetIntrinsics,
 				"width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
 		.def("get_focal_length", &PinholeCameraIntrinsic::GetFocalLength)
@@ -54,8 +55,6 @@ void pybind_camera(py::module &m)
 		.def_readwrite("height", &PinholeCameraIntrinsic::height_)
 		.def_readwrite("intrinsic_matrix",
 				&PinholeCameraIntrinsic::intrinsic_matrix_)
-		.def_readonly_static("prime_sense_default",
-				&PinholeCameraIntrinsic::PrimeSenseDefault)
 		.def("__repr__", [](const PinholeCameraIntrinsic &c) {
 			return std::string("PinholeCameraIntrinsic with width = ") +
 					std::to_string(c.width_) + std::string(" and height = ") +
