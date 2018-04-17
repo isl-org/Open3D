@@ -26,8 +26,9 @@
 
 #include <gtest/gtest.h>
 
-#include <Core/Geometry/Geometry.h>
+#include <Core/Geometry/Image.h>
 
-TEST(Geometry, DefaultConstructor)
+TEST(Image, DefaultConstructor)
 {
+    three::Image image;
 }
