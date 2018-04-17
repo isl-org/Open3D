@@ -46,6 +46,40 @@ The default LLVM compiler on OS X does not support OpenMP. A workaround is to in
 
 .. note:: This workaround has some compatibility issues with the source code of GLFW included in ``src/External``. Make sure Open3D is linked against GLFW installed on the OS.
 
+Unit testing
+============
+
+.. warning:: Work in progress!
+
+    - Unit test coverage: low.
+    - Tested on: Ubuntu 16.04.
+
+Unit testing is based on `Google Test <https://github.com/google/googletest>`_.
+By default unit tests are turned off. In order to turn them on follow the next steps:
+
+    1. Install Google Test. On Ubuntu it is convenient to install the ``libgtest-dev`` package.
+    2. Set the Open3D_BUILD_UNIT_TESTS flag to ON.
+
+.. code-block:: bash
+
+    sudo apt-get install libgtest-dev
+    cd /usr/src/gtest
+    sudo cmake .
+    sudo make
+    sudo cp *.a /usr/lib
+
+    mkdir build
+    cd build
+    cmake ../src -DOpen3D_BUILD_UNIT_TESTS=ON
+    make -j
+
+In order to perform the unit tests:
+
+.. code-block:: bash
+
+    cd util/scripts
+    ./runUnitTests.sh
+
 Documentation
 ===============
 
