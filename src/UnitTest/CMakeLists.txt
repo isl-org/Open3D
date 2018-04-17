@@ -11,4 +11,4 @@ add_executable(unitTests
                Image_unittest.cpp)
 
 # Link with GTest and pthread libraries
-target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread)
+target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread Core)

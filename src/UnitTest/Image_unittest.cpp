@@ -37,9 +37,9 @@ TEST(Image, DefaultConstructor)
     EXPECT_EQ(2, image.Dimension());
 
     // public member variables
-    // EXPECT_EQ(0, image.width_);
-    // EXPECT_EQ(0, image.height_);
-    // EXPECT_EQ(0, image.num_of_channels_);
-    // EXPECT_EQ(0, image.bytes_per_channel_);
-    // EXPECT_EQ(0, image.data_.size());
+    EXPECT_EQ(0, image.width_);
+    EXPECT_EQ(0, image.height_);
+    EXPECT_EQ(0, image.num_of_channels_);
+    EXPECT_EQ(0, image.bytes_per_channel_);
+    EXPECT_EQ(0, image.data_.size());
 }
