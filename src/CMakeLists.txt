@@ -14,7 +14,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
-option(Open3D_BUILD_UNIT_TESTS "Build the Open3D unit tests" ON)
+option(Open3D_BUILD_UNIT_TESTS "Build the Open3D unit tests" OFF)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
