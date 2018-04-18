@@ -68,6 +68,7 @@ By default unit tests are turned off. In order to turn them on follow the next s
     sudo make
     sudo cp *.a /usr/lib
 
+    cd <path_to_Open3D>
     mkdir build
     cd build
     cmake ../src -DOpen3D_BUILD_UNIT_TESTS=ON
