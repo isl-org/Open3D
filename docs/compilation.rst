@@ -57,16 +57,25 @@ Unit testing
 Unit testing is based on `Google Test <https://github.com/google/googletest>`_.
 By default unit tests are turned off. In order to turn them on follow the next steps:
 
-    1. Install Google Test. On Ubuntu it is convenient to install the ``libgtest-dev`` package.
+    1. Download/Build/Install Google Test.
     2. Set the Open3D_BUILD_UNIT_TESTS flag to ON.
 
 .. code-block:: bash
 
-    sudo apt-get install libgtest-dev
-    cd /usr/src/gtest
-    sudo cmake .
-    sudo make
-    sudo cp *.a /usr/lib
+    wget https://github.com/google/googletest/archive/release-1.8.0.tar.gz
+    tar -xzvf release-1.8.0.tar.gz
+    
+    cd googletest-release-1.8.0
+    mkdir build
+    cd build
+    cmake ..
+    make
+
+    cd googlemock/gtest
+    sudo cp lib*.a /usr/local/lib
+
+    cd ../../../googletest
+    sudo cp -r include/gtest /usr/local/include
 
     cd <path_to_Open3D>
     mkdir build
