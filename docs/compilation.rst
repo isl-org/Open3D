@@ -52,7 +52,7 @@ Unit testing
 .. warning:: Work in progress!
 
     - Unit test coverage: low.
-    - Tested on: Ubuntu 16.04.
+    - Tested on: macOS and Ubuntu.
 
 Unit testing is based on `Google Test <https://github.com/google/googletest>`_.
 By default unit tests are turned off. In order to turn them on follow the next steps:
