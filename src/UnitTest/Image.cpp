@@ -28,7 +28,7 @@
 
 #include <Core/Geometry/Image.h>
 
-TEST(Image1, Default)
+TEST(Image, Default)
 {
     three::Image image;
 
