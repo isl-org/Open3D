@@ -26,9 +26,14 @@
 
 #include "UnitTest.h"
 
-#include <Core/Geometry/Image.h>
+#include "Core/Geometry/Image.h"
 
 TEST(Image, Default)
+{
+    NotImplemented();
+}
+
+TEST(Image, DefaultConstructor)
 {
     three::Image image;
 

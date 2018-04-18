@@ -5,10 +5,9 @@ cmake_minimum_required(VERSION 3.0)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
-# Specify the unit tests
-add_executable(unitTests
-               main.cpp
-               Image.cpp)
+include_directories(".")
 
-# Link with GTest and pthread libraries
-target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread Core)
+file(GLOB_RECURSE UNIT_TESTS "*.cpp")
+add_executable(unitTests ${UNIT_TESTS})
+
+target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread Core IO Visualization)
