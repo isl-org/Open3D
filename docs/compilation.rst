@@ -75,7 +75,7 @@ By default unit tests are turned off. In order to turn them on follow the next s
     sudo cp lib*.a /usr/local/lib
 
     cd ../../../googletest
-    sudo cp -r include/gtest /usr/local/include
+    sudo cp -r include/gtest /usr/local/include/gtest
 
     cd <path_to_Open3D>
     mkdir build
