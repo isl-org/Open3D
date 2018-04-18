@@ -24,23 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
-#include <iostream>
+#include "UnitTest.h"
 
 #include <Core/Geometry/Image.h>
 
-using namespace std;
-
-TEST(Image, DefaultConstructor)
+TEST(Image1, Default)
 {
-    // FAIL() << "Not implemented.";
-    // ADD_FAILURE() << "Not implemented.";
-    // EXPECT_TRUE(false) << "Not implemented";
-
-    cout << "\033[0;32m" << "[          ] " << "\033[0;0m";
-    cout << "\033[0;31m" << "Not implemented." << "\033[0;0m" << endl;
-    FAIL();
-
     three::Image image;
 
     // inherited from Geometry2D
