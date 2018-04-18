@@ -8,7 +8,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # Specify the unit tests
 add_executable(unitTests
                main.cpp
-               Image_unittest.cpp)
+               Image.cpp)
 
 # Link with GTest and pthread libraries
 target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread Core)
