@@ -9,9 +9,7 @@ Open3D has a data structure for triangle mesh.
 
     # src/Python/Tutorial/Basic/mesh.py
 
-        import sys
         import numpy as np
-        sys.path.append("../..")
         from py3d import *
 
         if __name__ == "__main__":

@@ -3,8 +3,6 @@
 # See license file or visit www.open3d.org for details
 
 import copy
-import sys
-sys.path.append("../..")
 from py3d import *
 from os import listdir, makedirs
 from os.path import exists, isfile, join, splitext

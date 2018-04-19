@@ -7,9 +7,8 @@ Visualization
 
     # src/Python/Tutorial/Basic/visualization.py
 
-    import sys, copy
+    import copy
     import numpy as np
-    sys.path.append("../..")
     from py3d import *
 
     if __name__ == "__main__":

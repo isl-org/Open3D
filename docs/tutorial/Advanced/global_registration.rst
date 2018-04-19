@@ -9,8 +9,6 @@ Both :ref:`icp_registration` and :ref:`colored_point_registration` are known as 
 
     # src/Python/Tutorial/Advanced/global_registration.py
 
-    import sys
-    sys.path.append("../..")
     from py3d import *
     import numpy as np
     import copy

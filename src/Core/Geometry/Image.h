@@ -99,10 +99,6 @@ public:
 	std::vector<uint8_t> data_;
 };
 
-/// Factory function to create an image from a file (ImageFactory.cpp)
-/// Return an empty image if fail to read the file.
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename);
-
 /// Factory function to create a float image composed of multipliers that
 /// convert depth values into camera distances (ImageFactory.cpp)
 /// The multiplier function M(u,v) is defined as:

@@ -24,7 +24,7 @@ file(GLOB CORE_INTEGRATION_HEADER_FILES "Integration/*.h")
 source_group("Header Files\\Integration" FILES ${CORE_INTEGRATION_HEADER_FILES})
 file(GLOB CORE_INTEGRATION_SOURCE_FILES "Integration/*.cpp")
 source_group("Source Files\\Integration" FILES ${CORE_INTEGRATION_SOURCE_FILES})
-add_library(Core ${Open3D_LIB_TYPE}
+add_library(Core 
 	${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES}
 	${CORE_UTILITY_HEADER_FILES} ${CORE_UTILITY_SOURCE_FILES}
 	${CORE_GEOMETRY_HEADER_FILES} ${CORE_GEOMETRY_SOURCE_FILES}
@@ -33,43 +33,4 @@ add_library(Core ${Open3D_LIB_TYPE}
 	${CORE_ODOMETRY_HEADER_FILES} ${CORE_ODOMETRY_SOURCE_FILES}
 	${CORE_INTEGRATION_HEADER_FILES} ${CORE_INTEGRATION_SOURCE_FILES}
 )
-target_link_libraries(Core IO)
-
-install(TARGETS Core
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/Open3D
-)
-
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Camera/PinholeCameraIntrinsic.h"                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Camera)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Camera/PinholeCameraTrajectory.h"                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Camera)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Core.h"                                               DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/Geometry.h"                                  DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/Geometry2D.h"                                DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/Geometry3D.h"                                DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/Image.h"                                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/KDTreeFlann.h"                               DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/KDTreeSearchParam.h"                         DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/LineSet.h"                                   DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/PointCloud.h"                                DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/RGBDImage.h"                                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Geometry/TriangleMesh.h"                              DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Geometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Integration/MarchingCubesConst.h"                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Integration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Integration/ScalableTSDFVolume.h"                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Integration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Integration/TSDFVolume.h"                             DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Integration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Integration/UniformTSDFVolume.h"                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Integration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Odometry/Odometry.h"                                  DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Odometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Odometry/OdometryOption.h"                            DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Odometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Odometry/RGBDOdometryJacobian.h"                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Odometry)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/ColoredICP.h"                            DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/CorrespondenceChecker.h"                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/Feature.h"                               DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/GlobalOptimization.h"                    DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/GlobalOptimizationConvergenceCriteria.h" DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/GlobalOptimizationMethod.h"              DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/PoseGraph.h"                             DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/Registration.h"                          DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Registration/TransformationEstimation.h"              DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Registration)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Utility/Console.h"                                    DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Utility/Eigen.h"                                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Utility/FileSystem.h"                                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Utility/Helper.h"                                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Core/Utility/Timer.h"                                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Core/Utility)
+target_link_libraries(Core ${JSONCPP_LIBRARIES})

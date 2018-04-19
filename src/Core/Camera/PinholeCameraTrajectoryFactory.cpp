@@ -26,16 +26,7 @@
 
 #include "PinholeCameraTrajectory.h"
 
-#include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
-
 namespace three{
 
-std::shared_ptr<PinholeCameraTrajectory> CreatePinholeCameraTrajectoryFromFile(
-		const std::string &filename)
-{
-	auto trajectory = std::make_shared<PinholeCameraTrajectory>();
-	ReadPinholeCameraTrajectory(filename, *trajectory);
-	return trajectory;
-}
 
 }	// namespace three

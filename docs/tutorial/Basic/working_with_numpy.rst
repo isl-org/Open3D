@@ -10,9 +10,8 @@ The following tutorial generates a variant of sync function using NumPy and visu
 
     # src/Python/Tutorial/Basic/working_with_numpy.py
 
-    import sys, copy
+    import copy
     import numpy as np
-    sys.path.append("../..")
     from py3d import *
 
     if __name__ == "__main__":

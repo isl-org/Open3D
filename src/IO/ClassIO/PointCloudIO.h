@@ -31,6 +31,11 @@
 
 namespace three {
 
+/// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
+/// Return an empty pointcloud if fail to read the file.
+std::shared_ptr<PointCloud> CreatePointCloudFromFile(
+    const std::string &filename);
+
 /// The general entrance for reading a PointCloud from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.

@@ -35,7 +35,7 @@ source_group("Header Files\\Visualizer" FILES ${VISUALIZATION_VISUALIZER_HEADER_
 file(GLOB VISUALIZATION_VISUALIZER_SOURCE_FILES "Visualizer/*.cpp")
 source_group("Source Files\\Visualizer" FILES ${VISUALIZATION_VISUALIZER_SOURCE_FILES})
 
-add_library(Visualization ${Open3D_LIB_TYPE}
+add_library(Visualization 
 	${SHADER_FILES}
 	${VISUALIZATION_ALL_HEADER_FILES} ${VISUALIZATION_ALL_SOURCE_FILES}
 	${VISUALIZATION_UTILITY_HEADER_FILES} ${VISUALIZATION_UTILITY_SOURCE_FILES}
@@ -43,48 +43,12 @@ add_library(Visualization ${Open3D_LIB_TYPE}
 	${VISUALIZATION_VISUALIZER_HEADER_FILES} ${VISUALIZATION_VISUALIZER_SOURCE_FILES}
 )
 add_dependencies(Visualization ShaderFileTarget)
-
+target_link_libraries(Visualization Core IO ${GLFW_LIBRARIES} ${GLEW_LIBRARIES})
 if (Open3D_HEADLESS_RENDERING)
 	find_package(OSMesa REQUIRED)
 	include_directories(${OSMESA_INCLUDE_DIR})
-	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OSMESA_LIBRARY})
+	target_link_libraries(Visualization ${OSMESA_LIBRARY})
 else ()
 	find_package(OpenGL REQUIRED)
-	target_link_libraries(Visualization Core ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
+	target_link_libraries(Visualization ${OPENGL_LIBRARIES})
 endif ()
-
-
-install(TARGETS Visualization
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/Open3D
-)
-
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/GeometryRenderer.h"                   DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/ImageMaskShader.h"                    DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/ImageShader.h"                        DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/NormalShader.h"                       DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/PhongShader.h"                        DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/PickingShader.h"                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/Shader.h"                             DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/ShaderWrapper.h"                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/Simple2DShader.h"                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/SimpleBlackShader.h"                  DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Shader/SimpleShader.h"                       DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Shader)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/BoundingBox.h"                       DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/ColorMap.h"                          DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/DrawGeometry.h"                      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/GLHelper.h"                          DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/PointCloudPicker.h"                  DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/SelectionPolygon.h"                  DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Utility/SelectionPolygonVolume.h"            DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Utility)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualization.h"                             DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/RenderOption.h"                   DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/RenderOptionWithEditing.h"        DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/ViewControl.h"                    DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/ViewControlWithCustomAnimation.h" DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/ViewControlWithEditing.h"         DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/ViewParameters.h"                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/ViewTrajectory.h"                 DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/Visualizer.h"                     DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/VisualizerWithCustomAnimation.h"  DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/VisualizerWithEditing.h"          DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)
-install(FILES "${CMAKE_SOURCE_DIR}/Visualization/Visualizer/VisualizerWithKeyCallback.h"      DESTINATION ${CMAKE_INSTALL_PREFIX}include/Open3D/Visualization/Visualizer)

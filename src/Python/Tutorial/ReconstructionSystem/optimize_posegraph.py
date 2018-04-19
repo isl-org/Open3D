@@ -3,7 +3,6 @@
 # See license file or visit www.open3d.org for details
 
 import sys
-sys.path.append("../..")
 sys.path.append("../Utility")
 from py3d import *
 from common import *
