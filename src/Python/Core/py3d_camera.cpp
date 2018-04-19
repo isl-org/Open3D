@@ -54,7 +54,7 @@ void pybind_camera(py::module &m)
         .def_readwrite("height", &PinholeCameraIntrinsic::height_)
         .def_readwrite("intrinsic_matrix",
                 &PinholeCameraIntrinsic::intrinsic_matrix_)
-        .def_readonly_static("prime_sense_default",
+        .def_readonly_static("get_prime_sense_default()",
                 &PinholeCameraIntrinsic::PrimeSenseDefault)
         .def("__repr__", [](const PinholeCameraIntrinsic &c) {
             return std::string("PinholeCameraIntrinsic with width = ") +
