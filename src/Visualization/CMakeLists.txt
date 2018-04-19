@@ -34,7 +34,11 @@ add_library(Visualization
             ${VISUALIZATION_ALL_SOURCE_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
-target_link_libraries(Visualization Core IO ${GLFW_LIBRARIES} ${GLEW_LIBRARIES})
+target_link_libraries(Visualization
+                      Core
+                      IO
+                      ${GLFW_LIBRARIES}
+                      ${GLEW_LIBRARIES})
 
 if (Open3D_HEADLESS_RENDERING)
 	find_package(OSMesa REQUIRED)
