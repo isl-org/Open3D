@@ -32,58 +32,58 @@
 namespace three {
 
 namespace glsl {
-	
+    
 class ImageMaskShader : public ShaderWrapper
 {
 public:
-	~ImageMaskShader() override { Release(); }
+    ~ImageMaskShader() override { Release(); }
 
 protected:
-	ImageMaskShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-	
+    ImageMaskShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    
 protected:
-	bool Compile() final;
-	void Release() final;
-	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	void UnbindGeometry() final;
+    bool Compile() final;
+    void Release() final;
+    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    void UnbindGeometry() final;
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) = 0;
-	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			Image &image) = 0;
+    virtual bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) = 0;
+    virtual bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            Image &image) = 0;
 
 protected:
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_UV_;
-	GLuint vertex_UV_buffer_;
-	GLuint image_texture_;
-	GLuint image_texture_buffer_;
-	GLuint mask_color_;
-	GLuint mask_alpha_;
-	
-	GLHelper::GLVector3f mask_color_data_;
-	GLfloat mask_alpha_data_;
+    GLuint vertex_position_;
+    GLuint vertex_position_buffer_;
+    GLuint vertex_UV_;
+    GLuint vertex_UV_buffer_;
+    GLuint image_texture_;
+    GLuint image_texture_buffer_;
+    GLuint mask_color_;
+    GLuint mask_alpha_;
+    
+    GLHelper::GLVector3f mask_color_data_;
+    GLfloat mask_alpha_data_;
 };
 
 class ImageMaskShaderForImage : public ImageMaskShader
 {
 public:
-	ImageMaskShaderForImage() : ImageMaskShader("ImageMaskShaderForImage") {}
+    ImageMaskShaderForImage() : ImageMaskShader("ImageMaskShaderForImage") {}
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			Image &render_image) final;
+    virtual bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    virtual bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            Image &render_image) final;
 };
-	
-}	// namespace three::glsl
+    
+}    // namespace three::glsl
 
-}	// namespace three
+}    // namespace three

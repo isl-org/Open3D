@@ -38,51 +38,51 @@ namespace flann {
 template <typename T> class Matrix;
 template <typename T> struct L2;
 template <typename T> class Index;
-}	// namespace flann
+}    // namespace flann
 
 namespace three {
 
 class KDTreeFlann
 {
 public:
-	KDTreeFlann();
-	KDTreeFlann(const Eigen::MatrixXd &data);
-	KDTreeFlann(const Geometry &geometry);
-	KDTreeFlann(const Feature &feature);
-	~KDTreeFlann();
-	KDTreeFlann(const KDTreeFlann &) = delete;
-	KDTreeFlann &operator=(const KDTreeFlann &) = delete;
+    KDTreeFlann();
+    KDTreeFlann(const Eigen::MatrixXd &data);
+    KDTreeFlann(const Geometry &geometry);
+    KDTreeFlann(const Feature &feature);
+    ~KDTreeFlann();
+    KDTreeFlann(const KDTreeFlann &) = delete;
+    KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 
 public:
-	bool SetMatrixData(const Eigen::MatrixXd &data);
-	bool SetGeometry(const Geometry &geometry);
-	bool SetFeature(const Feature &feature);
+    bool SetMatrixData(const Eigen::MatrixXd &data);
+    bool SetGeometry(const Geometry &geometry);
+    bool SetFeature(const Feature &feature);
 
-	template<typename T>
-	int Search(const T &query, const KDTreeSearchParam &param,
-			std::vector<int> &indices, std::vector<double> &distance2) const;
+    template<typename T>
+    int Search(const T &query, const KDTreeSearchParam &param,
+            std::vector<int> &indices, std::vector<double> &distance2) const;
 
-	template<typename T>
-	int SearchKNN(const T &query, int knn, std::vector<int> &indices,
-			std::vector<double> &distance2) const;
+    template<typename T>
+    int SearchKNN(const T &query, int knn, std::vector<int> &indices,
+            std::vector<double> &distance2) const;
 
-	template<typename T>
-	int SearchRadius(const T &query, double radius, std::vector<int> &indices,
-			std::vector<double> &distance2) const;
+    template<typename T>
+    int SearchRadius(const T &query, double radius, std::vector<int> &indices,
+            std::vector<double> &distance2) const;
 
-	template<typename T>
-	int SearchHybrid(const T &query, double radius, int max_nn,
-			std::vector<int> &indices, std::vector<double> &distance2) const;
+    template<typename T>
+    int SearchHybrid(const T &query, double radius, int max_nn,
+            std::vector<int> &indices, std::vector<double> &distance2) const;
 
 private:
-	bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
+    bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
 protected:
-	std::vector<double> data_;
-	std::unique_ptr<flann::Matrix<double>> flann_dataset_;
-	std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
-	size_t dimension_ = 0;
-	size_t dataset_size_ = 0;
+    std::vector<double> data_;
+    std::unique_ptr<flann::Matrix<double>> flann_dataset_;
+    std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
+    size_t dimension_ = 0;
+    size_t dataset_size_ = 0;
 };
 
-}	// namespace three
+}    // namespace three
