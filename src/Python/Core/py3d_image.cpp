@@ -107,6 +107,8 @@ void pybind_image(py::module &m)
 						static_cast<unsigned long>(img.bytes_per_channel_)});
 			}
 		})
+        .def_readonly("width", &Image::width_)
+		.def_readonly("height", &Image::height_)
 		.def("__repr__", [](const Image &img) {
 			return std::string("Image of size ") + std::to_string(img.width_) +
 					std::string("x") + std::to_string(img.height_) + ", with " +

@@ -62,6 +62,7 @@ public:
 	bool IsEmpty() const override;
 	Eigen::Vector2d GetMinBound() const override;
 	Eigen::Vector2d GetMaxBound() const override;
+    bool TestImageBoundary(double u, double v, double inner_margin) const;
 
 public:
 	virtual bool HasData() const {

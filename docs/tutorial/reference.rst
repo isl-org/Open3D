@@ -16,3 +16,4 @@ Reference
 .. [Song2015] S. Song, S. Lichtenberg, and J. Xiao,	SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite, CVPR, 2015.
 .. [Steinbrucker2011] F. Steinbrucker, J. Sturm, and D. Cremers, Real-time visual odometry from dense RGB-D images, In ICCV Workshops, 2011.
 .. [Strum2012] J. Sturm, N. Engelhard, F. Endres, W. Burgard and D. Cremers, A Benchmark for the Evaluation of RGB-D SLAM Systems, IROS, 2012.
+.. [Zhou2014]  Q.-Y. Zhou, and V. Koltun, Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras, SIGGRAPH, 2014.

@@ -38,8 +38,9 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 	bool solution_exist = true;
 	// note: computing determinant for large scale matrix would be bottleneck.
 	double det = A.determinant();
-	if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
-		solution_exist = false;
+    // PrintDebug("det : %f", det);
+	// if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
+	// 	solution_exist = false;
 
 	if (solution_exist) {
 		// Robust Cholesky decomposition of a matrix with pivoting.

@@ -34,6 +34,12 @@
 #include <Core/Registration/Registration.h>
 #include <Core/Registration/ColoredICP.h>
 
+// #include <Core/Geometry/Image.h>
+#include <Core/Geometry/RGBDImage.h>
+#include <Core/Geometry/TriangleMesh.h>
+#include <Core/Registration/TextureMapOptimization.h>
+#include <Core/Camera/PinholeCameraTrajectory.h>
+
 using namespace three;
 
 template <class TransformationEstimationBase = TransformationEstimation>
@@ -230,6 +236,38 @@ void pybind_registration(py::module &m)
 					std::to_string(rr.correspondence_set_.size()) +
 					std::string("\nAccess transformation to get result.");
 		});
+    py::class_<TextureMapOptmizationOption> texture_map_optimization_option(
+            m, "TextureMapOptmizationOption");
+	py::detail::bind_default_constructor<TextureMapOptmizationOption>(
+			texture_map_optimization_option);
+	texture_map_optimization_option
+        .def_readwrite("non_rigid_camera_coordinate",
+        &TextureMapOptmizationOption::non_rigid_camera_coordinate_)
+        .def_readwrite("number_of_vertical_anchors",
+        &TextureMapOptmizationOption::number_of_vertical_anchors_)
+        .def_readwrite("non_rigid_anchor_point_weight",
+        &TextureMapOptmizationOption::non_rigid_anchor_point_weight_)
+        .def_readwrite("maximum_iteration",
+        &TextureMapOptmizationOption::maximum_iteration_)
+        .def_readwrite("maximum_allowable_depth",
+        &TextureMapOptmizationOption::maximum_allowable_depth_)
+        .def_readwrite("depth_threshold_for_visiblity_check",
+        &TextureMapOptmizationOption::depth_threshold_for_visiblity_check_)
+		.def("__repr__", [](const TextureMapOptmizationOption &to) {
+			return std::string("TextureMapOptmizationOption with") +
+                    std::string("\n- non_rigid_camera_coordinate : ") +
+                    std::to_string(to.non_rigid_camera_coordinate_) +
+                    std::string("\n- number_of_vertical_anchors : ") +
+					std::to_string(to.number_of_vertical_anchors_) +
+                    std::string("\n- non_rigid_anchor_point_weight : ") +
+					std::to_string(to.non_rigid_anchor_point_weight_) +
+                    std::string("\n- maximum_iteration : ") +
+					std::to_string(to.maximum_iteration_) +
+                    std::string("\n- maximum_allowable_depth : ") +
+					std::to_string(to.maximum_allowable_depth_) +
+					std::string("\n- depth_threshold_for_visiblity_check : ") +
+					std::to_string(to.depth_threshold_for_visiblity_check_);
+		});
 }
 
 void pybind_registration_methods(py::module &m)
@@ -270,4 +308,9 @@ void pybind_registration_methods(py::module &m)
 			"Function for computing information matrix from RegistrationResult",
 			"source"_a, "target"_a, "max_correspondence_distance"_a,
 			"transformation_result"_a);
+    m.def("texture_map_optimization",
+			&TextureMapOptimization,
+			"Function for optimizing texture mapping for reconstructed scenes",
+			"mesh"_a, "imgs_rgbd"_a, "camera"_a,
+            "option"_a = TextureMapOptmizationOption());
 }
