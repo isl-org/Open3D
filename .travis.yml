@@ -87,7 +87,7 @@ before_install:
     fi
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ] or [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      ./util/scripts/install-gtest.sh
+      ./util/scripts/install-gtest.sh;
     fi
 
   # for reference, display cmake and python version
