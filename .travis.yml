@@ -93,7 +93,7 @@ script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake -DBUILD_SHARED_LIBS=$SHARED ../src/
+  - cmake -DBUILD_SHARED_LIBS=$SHARED -DOpen3D_BUILD_UNIT_TESTS=ON ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make

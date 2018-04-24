@@ -45,6 +45,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/bin)
 
 # Set OS-specific things here
 if(WIN32)
+	# can't hide the unit testing option on Windows only
+	# as a precaution: disable unit testing on Windows regardless of user input
+	message(STATUS "Disable Open3D_BUILD_UNIT_TESTS since it is not fully supported on Windows.")
+	set(Open3D_BUILD_UNIT_TESTS OFF)
+
 	add_definitions(-DWINDOWS)
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
 	add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
