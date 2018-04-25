@@ -79,14 +79,12 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
       ./util/scripts/make-documentation.sh;
+      ./util/scripts/install-gtest.sh;
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python;
       ./util/scripts/install-deps-osx.sh;
-    fi
-  # install the googletest framework
-  - if [ "$TRAVIS_OS_NAME" == "linux" or "$TRAVIS_OS_NAME" == "osx" ]; then
       ./util/scripts/install-gtest.sh;
     fi
 
