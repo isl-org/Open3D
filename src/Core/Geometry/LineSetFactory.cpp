@@ -32,14 +32,14 @@
 namespace three{
 
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-		const PointCloud &cloud0, const PointCloud &cloud1,
-		const std::vector<std::pair<int, int>> &correspondences)
+        const PointCloud &cloud0, const PointCloud &cloud1,
+        const std::vector<std::pair<int, int>> &correspondences)
 {
-	auto lineset_ptr = std::make_shared<LineSet>();
-	lineset_ptr->point_set_[0] = cloud0.points_;
-	lineset_ptr->point_set_[1] = cloud1.points_;
-	lineset_ptr->lines_ = correspondences;
-	return lineset_ptr;
+    auto lineset_ptr = std::make_shared<LineSet>();
+    lineset_ptr->point_set_[0] = cloud0.points_;
+    lineset_ptr->point_set_[1] = cloud1.points_;
+    lineset_ptr->lines_ = correspondences;
+    return lineset_ptr;
 }
 
-}	// namespace three
+}    // namespace three

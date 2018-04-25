@@ -2,20 +2,20 @@
 file(GLOB SHADER_FILES "Shader/GLSL/*.glsl")
 
 add_custom_command(
-	OUTPUT ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h
-	COMMAND EncodeShader Shader.h
-	WORKING_DIRECTORY ${Open3D_SOURCE_DIR}/Visualization/Shader/
-	DEPENDS ${SHADER_FILES} EncodeShader
+    OUTPUT ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h
+    COMMAND EncodeShader Shader.h
+    WORKING_DIRECTORY ${Open3D_SOURCE_DIR}/Visualization/Shader/
+    DEPENDS ${SHADER_FILES} EncodeShader
 )
 
 foreach(file ${SHADER_FILES})
-	add_custom_command(
-		OUTPUT ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h
-		COMMAND EncodeShader Shader.h ${file}
-		WORKING_DIRECTORY ${Open3D_SOURCE_DIR}/Visualization/Shader/
-		DEPENDS ${SHADER_FILES} EncodeShader
-		APPEND
-	)
+    add_custom_command(
+        OUTPUT ${Open3D_SOURCE_DIR}/Visualization/Shader/Shader.h
+        COMMAND EncodeShader Shader.h ${file}
+        WORKING_DIRECTORY ${Open3D_SOURCE_DIR}/Visualization/Shader/
+        DEPENDS ${SHADER_FILES} EncodeShader
+        APPEND
+    )
 endforeach(file)
 
 add_custom_target(ShaderFileTarget ALL
@@ -41,10 +41,10 @@ target_link_libraries(Visualization
                       ${GLEW_LIBRARIES})
 
 if (Open3D_HEADLESS_RENDERING)
-	find_package(OSMesa REQUIRED)
-	include_directories(${OSMESA_INCLUDE_DIR})
-	target_link_libraries(Visualization ${OSMESA_LIBRARY})
+    find_package(OSMesa REQUIRED)
+    include_directories(${OSMESA_INCLUDE_DIR})
+    target_link_libraries(Visualization ${OSMESA_LIBRARY})
 else ()
-	find_package(OpenGL REQUIRED)
-	target_link_libraries(Visualization ${OPENGL_LIBRARIES})
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(Visualization ${OPENGL_LIBRARIES})
 endif ()
