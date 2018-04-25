@@ -15,6 +15,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # config options
 option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
+option(Open3D_BUILD_UNIT_TESTS "Build the Open3D unit tests" OFF)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
@@ -44,9 +45,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/bin)
 
 # Set OS-specific things here
 if(WIN32)
+    # can't hide the unit testing option on Windows only
+    # as a precaution: disable unit testing on Windows regardless of user input
+    message(STATUS "Disable Open3D_BUILD_UNIT_TESTS since it is not fully supported on Windows.")
+    set(Open3D_BUILD_UNIT_TESTS OFF)
+
     add_definitions(-DWINDOWS)
-    add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)        # suppress C4996 warning
-    add_definitions(-DGLEW_STATIC)        # enable GLEW for windows
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
+    add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Windows")
     if(MSVC)
@@ -117,6 +123,11 @@ message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")
 if(Open3D_BUILD_TESTS)
     add_subdirectory(Test)
 endif(Open3D_BUILD_TESTS)
+
+message(STATUS "Open3D_BUILD_UNIT_TESTS=${Open3D_BUILD_UNIT_TESTS}")
+if(Open3D_BUILD_UNIT_TESTS)
+    add_subdirectory(UnitTest)
+endif(Open3D_BUILD_UNIT_TESTS)
 
 if(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
     message(STATUS "Build experimental projects")
