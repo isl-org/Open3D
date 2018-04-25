@@ -79,19 +79,25 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
       ./util/scripts/make-documentation.sh;
+      ./util/scripts/install-gtest.sh;
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python;
       ./util/scripts/install-deps-osx.sh;
+      ./util/scripts/install-gtest.sh;
     fi
+
+  # for reference, display cmake and python version
+  - python -V
+  - cmake --version
   # - pip install numpy
 
 script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake -DBUILD_SHARED_LIBS=$SHARED ../src/
+  - cmake -DBUILD_SHARED_LIBS=$SHARED -DOpen3D_BUILD_UNIT_TESTS=ON ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make install
