@@ -85,7 +85,7 @@ before_install:
       brew install python;
       ./util/scripts/install-deps-osx.sh;
     fi
-
+  # install the googletest framework
   - if [ "$TRAVIS_OS_NAME" == "linux" or "$TRAVIS_OS_NAME" == "osx" ]; then
       ./util/scripts/install-gtest.sh;
     fi
