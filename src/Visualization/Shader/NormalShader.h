@@ -33,70 +33,70 @@
 namespace three {
 
 namespace glsl {
-	
+    
 class NormalShader : public ShaderWrapper
 {
 public:
-	~NormalShader() override { Release(); }
-	
+    ~NormalShader() override { Release(); }
+    
 protected:
-	NormalShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-	
+    NormalShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+    
 protected:
-	bool Compile() final;
-	void Release() final;
-	bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-			const ViewControl &view) final;
-	void UnbindGeometry() final;
+    bool Compile() final;
+    void Release() final;
+    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+            const ViewControl &view) final;
+    void UnbindGeometry() final;
 
 protected:
-	virtual bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) = 0;
-	virtual bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &normals) = 0;
-	
+    virtual bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) = 0;
+    virtual bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals) = 0;
+    
 protected:
-	GLuint vertex_position_;
-	GLuint vertex_position_buffer_;
-	GLuint vertex_normal_;
-	GLuint vertex_normal_buffer_;
-	GLuint MVP_;
-	GLuint V_;
-	GLuint M_;
+    GLuint vertex_position_;
+    GLuint vertex_position_buffer_;
+    GLuint vertex_normal_;
+    GLuint vertex_normal_buffer_;
+    GLuint MVP_;
+    GLuint V_;
+    GLuint M_;
 };
 
 class NormalShaderForPointCloud : public NormalShader
 {
 public:
-	NormalShaderForPointCloud() : NormalShader("NormalShaderForPointCloud") {}
-	
+    NormalShaderForPointCloud() : NormalShader("NormalShaderForPointCloud") {}
+    
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &normals) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals) final;
 };
 
 class NormalShaderForTriangleMesh : public NormalShader
 {
 public:
-	NormalShaderForTriangleMesh() : NormalShader("NormalShaderForTriangleMesh") {}
-	
+    NormalShaderForTriangleMesh() : NormalShader("NormalShaderForTriangleMesh") {}
+    
 protected:
-	bool PrepareRendering(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view) final;
-	bool PrepareBinding(const Geometry &geometry,
-			const RenderOption &option, const ViewControl &view,
-			std::vector<Eigen::Vector3f> &points,
-			std::vector<Eigen::Vector3f> &normals) final;
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals) final;
 };
 
-}	// namespace three::glsl
+}    // namespace three::glsl
 
-}	// namespace three
+}    // namespace three

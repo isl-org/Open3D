@@ -36,141 +36,141 @@
 namespace three{
 
 bool DrawGeometries(
-		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		const std::string &window_name/* = "Open3D"*/, 
-		int width/* = 640*/, int height/* = 480*/,
-		int left/* = 50*/, int top/* = 50*/)
+        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::string &window_name/* = "Open3D"*/, 
+        int width/* = 640*/, int height/* = 480*/,
+        int left/* = 50*/, int top/* = 50*/)
 {
-	Visualizer visualizer;
-	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
-			false) {
-		PrintWarning("[DrawGeometries] Failed creating OpenGL window.\n");
-		return false;
-	}
-	for (const auto &geometry_ptr : geometry_ptrs) {
-		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometries] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometries] Possibly due to bad geometry or wrong geometry type.\n");
-			return false;
-		}
-	}
-	visualizer.Run();
-	visualizer.DestroyWindow();
-	return true;
+    Visualizer visualizer;
+    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+            false) {
+        PrintWarning("[DrawGeometries] Failed creating OpenGL window.\n");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            PrintWarning("[DrawGeometries] Failed adding geometry.\n");
+            PrintWarning("[DrawGeometries] Possibly due to bad geometry or wrong geometry type.\n");
+            return false;
+        }
+    }
+    visualizer.Run();
+    visualizer.DestroyWindow();
+    return true;
 }
 
 bool DrawGeometriesWithCustomAnimation(
-		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		const std::string &window_name/* = "Open3D"*/, 
-		int width/* = 640*/, int height/* = 480*/,
-		int left/* = 50*/, int top/* = 50*/,
-		const std::string &json_filename/* = ""*/)
+        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::string &window_name/* = "Open3D"*/, 
+        int width/* = 640*/, int height/* = 480*/,
+        int left/* = 50*/, int top/* = 50*/,
+        const std::string &json_filename/* = ""*/)
 {
-	VisualizerWithCustomAnimation visualizer;
-	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
-			false) {
-		PrintWarning("[DrawGeometriesWithCustomAnimation] Failed creating OpenGL window.\n");
-		return false;
-	}
-	for (const auto &geometry_ptr : geometry_ptrs) {
-		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometriesWithCustomAnimation] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometriesWithCustomAnimation] Possibly due to bad geometry or wrong geometry type.\n");
-			return false;
-		}
-	}
-	auto &view_control = 
-			(ViewControlWithCustomAnimation &)visualizer.GetViewControl();
-	if (json_filename.empty() == false) {
-		if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
-			PrintWarning("[DrawGeometriesWithCustomAnimation] Failed loading json file.\n");
-			PrintWarning("[DrawGeometriesWithCustomAnimation] Possibly due to bad file or file does not contain trajectory.\n");
-			return false;
-		}
-		visualizer.UpdateWindowTitle();
-	}
-	visualizer.Run();
-	visualizer.DestroyWindow();
-	return true;
+    VisualizerWithCustomAnimation visualizer;
+    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+            false) {
+        PrintWarning("[DrawGeometriesWithCustomAnimation] Failed creating OpenGL window.\n");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            PrintWarning("[DrawGeometriesWithCustomAnimation] Failed adding geometry.\n");
+            PrintWarning("[DrawGeometriesWithCustomAnimation] Possibly due to bad geometry or wrong geometry type.\n");
+            return false;
+        }
+    }
+    auto &view_control = 
+            (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
+    if (json_filename.empty() == false) {
+        if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
+            PrintWarning("[DrawGeometriesWithCustomAnimation] Failed loading json file.\n");
+            PrintWarning("[DrawGeometriesWithCustomAnimation] Possibly due to bad file or file does not contain trajectory.\n");
+            return false;
+        }
+        visualizer.UpdateWindowTitle();
+    }
+    visualizer.Run();
+    visualizer.DestroyWindow();
+    return true;
 }
 
 bool DrawGeometriesWithAnimationCallback(
-		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		std::function<bool(Visualizer *)> callback_func,
-		const std::string &window_name/* = "Open3D"*/, 
-		int width/* = 640*/, int height/* = 480*/,
-		int left/* = 50*/, int top/* = 50*/)
+        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        std::function<bool(Visualizer *)> callback_func,
+        const std::string &window_name/* = "Open3D"*/, 
+        int width/* = 640*/, int height/* = 480*/,
+        int left/* = 50*/, int top/* = 50*/)
 {
-	Visualizer visualizer;
-	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
-			false) {
-		PrintWarning("[DrawGeometriesWithAnimationCallback] Failed creating OpenGL window.\n");
-		return false;
-	}
-	for (const auto &geometry_ptr : geometry_ptrs) {
-		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometriesWithAnimationCallback] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometriesWithAnimationCallback] Possibly due to bad geometry or wrong geometry type.\n");
-			return false;
-		}
-	}
-	visualizer.RegisterAnimationCallback(callback_func);
-	visualizer.Run();
-	visualizer.DestroyWindow();
-	return true;
+    Visualizer visualizer;
+    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+            false) {
+        PrintWarning("[DrawGeometriesWithAnimationCallback] Failed creating OpenGL window.\n");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            PrintWarning("[DrawGeometriesWithAnimationCallback] Failed adding geometry.\n");
+            PrintWarning("[DrawGeometriesWithAnimationCallback] Possibly due to bad geometry or wrong geometry type.\n");
+            return false;
+        }
+    }
+    visualizer.RegisterAnimationCallback(callback_func);
+    visualizer.Run();
+    visualizer.DestroyWindow();
+    return true;
 }
 
 bool DrawGeometriesWithKeyCallbacks(
-		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		const std::map<int, std::function<bool(Visualizer *)>> &key_to_callback,
-		const std::string &window_name/* = "Open3D"*/,
-		int width/* = 640*/, int height/* = 480*/,
-		int left/* = 50*/, int top/* = 50*/)
+        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::map<int, std::function<bool(Visualizer *)>> &key_to_callback,
+        const std::string &window_name/* = "Open3D"*/,
+        int width/* = 640*/, int height/* = 480*/,
+        int left/* = 50*/, int top/* = 50*/)
 {
-	VisualizerWithKeyCallback visualizer;
-	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
-			false) {
-		PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL window.\n");
-		return false;
-	}
-	for (const auto &geometry_ptr : geometry_ptrs) {
-		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometriesWithKeyCallbacks] Possibly due to bad geometry or wrong geometry type.\n");
-			return false;
-		}
-	}
-	for (auto key_func_pair : key_to_callback) {
-		visualizer.RegisterKeyCallback(key_func_pair.first,
-				key_func_pair.second);
-	}
-	visualizer.Run();
-	visualizer.DestroyWindow();
-	return true;
+    VisualizerWithKeyCallback visualizer;
+    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+            false) {
+        PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL window.\n");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed adding geometry.\n");
+            PrintWarning("[DrawGeometriesWithKeyCallbacks] Possibly due to bad geometry or wrong geometry type.\n");
+            return false;
+        }
+    }
+    for (auto key_func_pair : key_to_callback) {
+        visualizer.RegisterKeyCallback(key_func_pair.first,
+                key_func_pair.second);
+    }
+    visualizer.Run();
+    visualizer.DestroyWindow();
+    return true;
 }
 
 bool DrawGeometriesWithEditing(
-		const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-		const std::string &window_name/* = "Open3D"*/,
-		int width/* = 640*/, int height/* = 480*/,
-		int left/* = 50*/, int top/* = 50*/)
+        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::string &window_name/* = "Open3D"*/,
+        int width/* = 640*/, int height/* = 480*/,
+        int left/* = 50*/, int top/* = 50*/)
 {
-	VisualizerWithEditing visualizer;
-	if (visualizer.CreateWindow(window_name, width, height, left, top) == 
-			false) {
-		PrintWarning("[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
-		return false;
-	}
-	for (const auto &geometry_ptr : geometry_ptrs) {
-		if (visualizer.AddGeometry(geometry_ptr) == false) {
-			PrintWarning("[DrawGeometriesWithEditing] Failed adding geometry.\n");
-			PrintWarning("[DrawGeometriesWithEditing] Possibly due to bad geometry or wrong geometry type.\n");
-			return false;
-		}
-	}
-	visualizer.Run();
-	visualizer.DestroyWindow();
-	return true;
+    VisualizerWithEditing visualizer;
+    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+            false) {
+        PrintWarning("[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
+        return false;
+    }
+    for (const auto &geometry_ptr : geometry_ptrs) {
+        if (visualizer.AddGeometry(geometry_ptr) == false) {
+            PrintWarning("[DrawGeometriesWithEditing] Failed adding geometry.\n");
+            PrintWarning("[DrawGeometriesWithEditing] Possibly due to bad geometry or wrong geometry type.\n");
+            return false;
+        }
+    }
+    visualizer.Run();
+    visualizer.DestroyWindow();
+    return true;
 }
 
-}	// namespace three
+}    // namespace three

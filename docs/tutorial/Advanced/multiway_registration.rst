@@ -170,23 +170,23 @@ Class ``GlobalOptimizationOption`` defines a couple of options. ``max_correspond
 
 .. code-block:: sh
 
-	Optimizing PoseGraph ...
-	[GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
-	Line process weight : 3.745800
-	[Initial     ] residual : 6.741225e+00, lambda : 6.042803e-01
-	[Iteration 00] residual : 1.791471e+00, valid edges : 3, time : 0.000 sec.
-	[Iteration 01] residual : 5.133682e-01, valid edges : 3, time : 0.000 sec.
-	[Iteration 02] residual : 4.412544e-01, valid edges : 3, time : 0.000 sec.
-	[Iteration 03] residual : 4.408356e-01, valid edges : 3, time : 0.000 sec.
-	[Iteration 04] residual : 4.408342e-01, valid edges : 3, time : 0.000 sec.
-	Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
-	[GlobalOptimizationLM] total time : 0.000 sec.
-	[GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
-	Line process weight : 3.745800
-	[Initial     ] residual : 4.408342e-01, lambda : 6.064910e-01
-	Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
-	[GlobalOptimizationLM] total time : 0.000 sec.
-	CompensateReferencePoseGraphNode : reference : 0
+    Optimizing PoseGraph ...
+    [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
+    Line process weight : 3.745800
+    [Initial     ] residual : 6.741225e+00, lambda : 6.042803e-01
+    [Iteration 00] residual : 1.791471e+00, valid edges : 3, time : 0.000 sec.
+    [Iteration 01] residual : 5.133682e-01, valid edges : 3, time : 0.000 sec.
+    [Iteration 02] residual : 4.412544e-01, valid edges : 3, time : 0.000 sec.
+    [Iteration 03] residual : 4.408356e-01, valid edges : 3, time : 0.000 sec.
+    [Iteration 04] residual : 4.408342e-01, valid edges : 3, time : 0.000 sec.
+    Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
+    [GlobalOptimizationLM] total time : 0.000 sec.
+    [GlobalOptimizationLM] Optimizing PoseGraph having 3 nodes and 3 edges.
+    Line process weight : 3.745800
+    [Initial     ] residual : 4.408342e-01, lambda : 6.064910e-01
+    Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
+    [GlobalOptimizationLM] total time : 0.000 sec.
+    CompensateReferencePoseGraphNode : reference : 0
 
 The global optimization performs twice on the pose graph. The first pass optimizes poses for the original pose graph taking all edges into account and does its best to distinguish false alignments among uncertain edges. These false alignments have small line process weights, and they are pruned after the first pass. The second pass runs without them and produces a tight global alignment. In this example, all the edges are considered as true alignments, hence the second pass terminates immediately.
 
