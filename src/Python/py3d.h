@@ -54,26 +54,26 @@ namespace detail {
 
 template <typename T, typename Class_>
 void bind_default_constructor(Class_ &cl) {
-	cl.def(py::init([]() {
-		return new T();
-	}), "Default constructor");
+    cl.def(py::init([]() {
+        return new T();
+    }), "Default constructor");
 }
 
 template <typename T, typename Class_>
 void bind_copy_functions(Class_ &cl) {
-	cl.def(py::init([](const T &cp) {
-		return new T(cp);
-	}), "Copy constructor");
-	cl.def("__copy__", [](T &v) {
-		return T(v);
-	});
-	cl.def("__deepcopy__", [](T &v, py::dict &memo) {
-		return T(v);
-	});
+    cl.def(py::init([](const T &cp) {
+        return new T(cp);
+    }), "Copy constructor");
+    cl.def("__copy__", [](T &v) {
+        return T(v);
+    });
+    cl.def("__deepcopy__", [](T &v, py::dict &memo) {
+        return T(v);
+    });
 }
 
-}	// namespace pybind11::detail
-}	// namespace pybind11
+}    // namespace pybind11::detail
+}    // namespace pybind11
 
 void pybind_eigen(py::module &m);
 
