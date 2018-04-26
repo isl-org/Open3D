@@ -4,6 +4,12 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.0")
     cmake_policy(SET CMP0054 OLD)
 endif()
 
+set(Open3D_MAJOR_VERSION 0)
+set(Open3D_MINOR_VERSION 1)
+set(Open3D_PATCH_VERSION 0)
+set(Open3D_VERSION
+    ${Open3D_MAJOR_VERSION}.${Open3D_MINOR_VERSION}.${Open3D_PATCH_VERSION})
+
 project(Open3D)
 if(WIN32)
 elseif(CYGWIN)
@@ -22,6 +28,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
 option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
 option(Open3D_BUILD_UNIT_TESTS "Build the Open3D unit tests" OFF)
+option(Open3D_BUILD_EXPERIMENTAL "Build the Open3D experimental programs" ON)
 option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
 option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
 option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
@@ -125,20 +132,24 @@ add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
+# Tests
 message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")
 if(Open3D_BUILD_TESTS)
     add_subdirectory(Test)
 endif(Open3D_BUILD_TESTS)
 
+# Unit tests
 message(STATUS "Open3D_BUILD_UNIT_TESTS=${Open3D_BUILD_UNIT_TESTS}")
 if(Open3D_BUILD_UNIT_TESTS)
     add_subdirectory(UnitTest)
 endif(Open3D_BUILD_UNIT_TESTS)
 
-if(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
+# Experimental
+message(STATUS "Open3D_BUILD_EXPERIMENTAL=${Open3D_BUILD_EXPERIMENTAL}")
+if(Open3D_BUILD_EXPERIMENTAL)
     message(STATUS "Build experimental projects")
     add_subdirectory(Experimental)
-endif(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
+endif(Open3D_BUILD_EXPERIMENTAL)
 
 # Python binding
 if (Open3D_BUILD_PYTHON_BINDING)
