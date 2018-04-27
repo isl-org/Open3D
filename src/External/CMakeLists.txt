@@ -11,134 +11,102 @@ if (PKGCONFIG_FOUND)
 endif (PKGCONFIG_FOUND)
 
 if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Finding dependencies of Open3D")
-    message(STATUS "Dependencies are built from source if they are not found in the system")
-
-    if (GLEW_FOUND)
-        message(STATUS "Use native build of GLEW")
-    else (GLEW_FOUND)
-        message(STATUS "Build GLEW from source")
-        add_subdirectory(glew)
-    endif (GLEW_FOUND)
-
-    if (PKGCONFIG_FOUND)
-
-        # Eigen 3.2.7 version is required for pybind11 included in Open3D
-        if (EIGEN3_FOUND)
-            message(STATUS "Use native eigen3")
-        else (EIGEN3_FOUND)
-            message(STATUS "Use eigen3 included in Open3D")
-            set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
-        endif (EIGEN3_FOUND)
-
-        if (JPEG_FOUND)
-                message(STATUS "Use native build of libjpeg")
-        else (JPEG_FOUND)
-            message(STATUS "Build libjpeg from source")
-            add_subdirectory(libjpeg)
-        endif (JPEG_FOUND)
-
-        if (PNG_FOUND)
-            message(STATUS "Use native build of libpng")
-        else (PNG_FOUND)
-            message(STATUS "Build libpng from source")
-            add_subdirectory(zlib)
-            add_subdirectory(libpng)
-        endif (PNG_FOUND)
-
-        if (GLFW_FOUND AND OPENGL_FOUND)
-            message(STATUS "Use native build of glfw")
-            if (APPLE)
-                find_library(COCOA_FRAMEWORK Cocoa)
-                find_library(IOKIT_FRAMEWORK IOKit)
-                find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
-                find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-                mark_as_advanced(COCOA_FRAMEWORK
-                                 IOKIT_FRAMEWORK
-                                 CORE_FOUNDATION_FRAMEWORK
-                                 CORE_VIDEO_FRAMEWORK)
-                list(APPEND GLFW_LIBRARIES "${COCOA_FRAMEWORK}"
-                                           "${OPENGL_gl_LIBRARY}"
-                                           "${IOKIT_FRAMEWORK}"
-                                           "${CORE_FOUNDATION_FRAMEWORK}"
-                                           "${CORE_VIDEO_FRAMEWORK}")
-            else (APPLE)
-                set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
-                set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
-            endif (APPLE)
-        else (GLFW_FOUND AND OPENGL_FOUND)
-            message(STATUS "Build glfw from source")
-            add_subdirectory(GLFW)
-        endif (GLFW_FOUND AND OPENGL_FOUND)
-
-        if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-            # It is a known bug that g++ on OSX only supports libstdc++
-            # The jsoncpp installed by brew by default is compiled with libc++
-            # If the two libraries are linked together, they break the build
-            # https://github.com/open-source-parsers/jsoncpp/issues/597
-            # https://github.com/IntelVCL/Open3D/issues/9
-            message(STATUS "Build jsoncpp from source")
-            add_subdirectory(jsoncpp)
-        else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-            if (JSONCPP_FOUND)
-                message(STATUS "Use native build of jsoncpp")
-            else (JSONCPP_FOUND)
-                message(STATUS "Build jsoncpp from source")
-                add_subdirectory(jsoncpp)
-            endif (JSONCPP_FOUND)
-        endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-    else (PKGCONFIG_FOUND)
-        message(STATUS "Use eigen3 included in Open3D")
-        set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
-        message(STATUS "Build libjpeg from source")
-        add_subdirectory(libjpeg)
-        message(STATUS "Build libpng from source")
-        add_subdirectory(zlib)
-        add_subdirectory(libpng)
-        message(STATUS "Build glfw from source")
-        add_subdirectory(GLFW)
-        message(STATUS "Build jsoncpp from source")
-        add_subdirectory(jsoncpp)
-    endif (PKGCONFIG_FOUND)
-
-    message(STATUS "Build tinyfiledialogs from source")
-    add_subdirectory(tinyfiledialogs)
-
-    if(Open3D_BUILD_LIBREALSENSE)
-        message(STATUS "Build librealsense from source")
-        add_subdirectory(librealsense)
-    endif(Open3D_BUILD_LIBREALSENSE)
-
-    if (Open3D_BUILD_PYTHON_BINDING)
-        add_subdirectory(pybind11)
-    endif(Open3D_BUILD_PYTHON_BINDING)
-
+    message(STATUS "Using native dependencies if available.")
 else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use eigen3 included in Open3D")
-    set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
+    message(STATUS "Building dependencies from source.")
+endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# GLEW
+if (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of GLEW")
+else (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Build GLEW from source")
     add_subdirectory(glew)
+endif (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# Eigen 3.2.7 version is required for pybind11 included in Open3D
+if (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native eigen3")
+else (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use eigen3 included in Open3D")
+    set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
+endif (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# JPEG
+if (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of libjpeg")
+else (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Build libjpeg from source")
     add_subdirectory(libjpeg)
+endif (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# PNG
+if (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of libpng")
+else (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Build libpng from source")
     add_subdirectory(zlib)
     add_subdirectory(libpng)
+endif (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# OpenGL
+if (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of glfw")
+    if (APPLE)
+        find_library(COCOA_FRAMEWORK Cocoa)
+        find_library(IOKIT_FRAMEWORK IOKit)
+        find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+        find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
+        mark_as_advanced(COCOA_FRAMEWORK
+                         IOKIT_FRAMEWORK
+                         CORE_FOUNDATION_FRAMEWORK
+                         CORE_VIDEO_FRAMEWORK)
+        list(APPEND GLFW_LIBRARIES "${COCOA_FRAMEWORK}"
+                                    "${OPENGL_gl_LIBRARY}"
+                                    "${IOKIT_FRAMEWORK}"
+                                    "${CORE_FOUNDATION_FRAMEWORK}"
+                                    "${CORE_VIDEO_FRAMEWORK}")
+    else (APPLE)
+        set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
+        set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
+    endif (APPLE)
+else (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Build glfw from source")
     add_subdirectory(GLFW)
+endif (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# JSON
+if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+    # It is a known bug that g++ on OSX only supports libstdc++
+    # The jsoncpp installed by brew by default is compiled with libc++
+    # If the two libraries are linked together, they break the build
+    # https://github.com/open-source-parsers/jsoncpp/issues/597
+    # https://github.com/IntelVCL/Open3D/issues/9
     message(STATUS "Build jsoncpp from source")
     add_subdirectory(jsoncpp)
-    message(STATUS "Build tinyfiledialogs from source")
-    add_subdirectory(tinyfiledialogs)
+else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+    if (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+        message(STATUS "Use native build of jsoncpp")
+    else (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+        message(STATUS "Build jsoncpp from source")
+        add_subdirectory(jsoncpp)
+    endif (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
 
-    if(Open3D_BUILD_LIBREALSENSE)
-        message(STATUS "Build librealsense from source")
-        add_subdirectory(librealsense)
-    endif(Open3D_BUILD_LIBREALSENSE)
+# tinyfiledialogs
+message(STATUS "Build tinyfiledialogs from source")
+add_subdirectory(tinyfiledialogs)
 
-    if (Open3D_BUILD_PYTHON_BINDING)
-        add_subdirectory(pybind11)
-    endif(Open3D_BUILD_PYTHON_BINDING)
-endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+# RealSense
+if(Open3D_BUILD_LIBREALSENSE)
+    message(STATUS "Build librealsense from source")
+    add_subdirectory(librealsense)
+endif(Open3D_BUILD_LIBREALSENSE)
+
+# PyBind
+if (Open3D_BUILD_PYTHON_BINDING)
+    add_subdirectory(pybind11)
+endif(Open3D_BUILD_PYTHON_BINDING)
 
 # pop everything to root
 set(EIGEN3_INCLUDE_DIRS  ${EIGEN3_INCLUDE_DIRS}  PARENT_SCOPE)
