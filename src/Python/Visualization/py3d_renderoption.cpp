@@ -47,7 +47,10 @@ void pybind_renderoption(py::module &m)
             WriteIJsonConvertible(filename, ro);
         }, "Function to save RenderOption to a JSON file", "filename"_a)
         .def_readwrite("background_color", &RenderOption::background_color_)
-        .def_readwrite("light_on", &RenderOption::light_on_);
+        .def_readwrite("light_on", &RenderOption::light_on_)
+        .def_readwrite("point_size", &RenderOption::point_size_)
+        .def_readwrite("point_show_normal", &RenderOption::point_show_normal_)
+        .def_readwrite("show_coordinate_frame", &RenderOption::show_coordinate_frame_);
 }
 
 void pybind_renderoption_method(py::module &m)
