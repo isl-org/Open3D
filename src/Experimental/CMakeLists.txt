@@ -9,7 +9,6 @@ macro(EXPERIMENT EXPERIMENT_NAME)
     set_target_properties(${EXPERIMENT_NAME} PROPERTIES
             FOLDER "EXPERIMENTAL"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Experimental")
-
 endmacro(EXPERIMENT)
 
 EXPERIMENT(EvaluateFeatureMatch      Core IO Visualization)
