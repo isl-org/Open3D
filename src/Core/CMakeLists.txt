@@ -9,16 +9,10 @@ include_directories("/Odometry")
 include_directories("/Registration")
 include_directories("/Utility")
 
-add_library(Core ${CORE_ALL_SOURCE_FILES})
+# create object library
+add_library(Core OBJECT ${CORE_ALL_SOURCE_FILES})
 
-target_link_libraries(Core ${JSONCPP_LIBRARIES})
-
-# install
-install(TARGETS Core
-        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
+#install headers
 file(GLOB HEADERS_ROOT         "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB HEADERS_CAMERA       "${CMAKE_CURRENT_SOURCE_DIR}/Camera/*.h")
 file(GLOB HEADERS_GEOMETRY     "${CMAKE_CURRENT_SOURCE_DIR}/Geometry/*.h")

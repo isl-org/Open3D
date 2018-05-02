@@ -18,8 +18,6 @@ elseif(UNIX)
     set (CMAKE_INSTALL_PREFIX ~/.local/)
 endif(WIN32)
 
-set(Open3D_VERSION_MAJOR "1")
-set(Open3D_VERSION_MINOR "0")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -131,6 +129,33 @@ add_subdirectory(Core)
 add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
+
+add_library(Open3D $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
+
+# headless rendering
+if (Open3D_HEADLESS_RENDERING)
+    find_package(OSMesa REQUIRED)
+    include_directories(${OSMESA_INCLUDE_DIR})
+    target_link_libraries(Open3D ${OSMESA_LIBRARY})
+else ()
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(Open3D ${OPENGL_LIBRARIES})
+endif ()
+
+target_link_libraries(Open3D
+                      ${GLFW_LIBRARIES}
+                      ${GLEW_LIBRARIES}
+                      ${JPEG_LIBRARIES}
+                      ${JSONCPP_LIBRARIES}
+                      ${OMP_LIBRARIES}
+                      ${PNG_LIBRARIES}
+                      tinyfiledialogs)
+
+# install
+install(TARGETS Open3D
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 # Tests
 message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")

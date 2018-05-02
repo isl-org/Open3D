@@ -30,32 +30,14 @@ include_directories("/Shader")
 include_directories("/Utility")
 include_directories("/Visualizer")
 
-add_library(Visualization
+# create object library
+add_library(Visualization OBJECT
 	        ${SHADER_FILES}
             ${VISUALIZATION_ALL_SOURCE_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
-target_link_libraries(Visualization
-                      Core
-                      IO
-                      ${GLFW_LIBRARIES}
-                      ${GLEW_LIBRARIES})
 
-if (Open3D_HEADLESS_RENDERING)
-    find_package(OSMesa REQUIRED)
-    include_directories(${OSMESA_INCLUDE_DIR})
-    target_link_libraries(Visualization ${OSMESA_LIBRARY})
-else ()
-    find_package(OpenGL REQUIRED)
-    target_link_libraries(Visualization ${OPENGL_LIBRARIES})
-endif ()
-
-#install
-install(TARGETS Visualization
-        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
+#install headers
 file(GLOB HEADERS_ROOT       "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB HEADERS_SHADER     "${CMAKE_CURRENT_SOURCE_DIR}/Shader/*.h")
 file(GLOB HEADERS_UTILITY    "${CMAKE_CURRENT_SOURCE_DIR}/Utility/*.h")

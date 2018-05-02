@@ -10,4 +10,4 @@ include_directories(".")
 file(GLOB_RECURSE UNIT_TESTS "*.cpp")
 add_executable(unitTests ${UNIT_TESTS})
 
-target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread Core IO Visualization)
+target_link_libraries(unitTests ${GTEST_LIBRARIES} pthread Open3D)

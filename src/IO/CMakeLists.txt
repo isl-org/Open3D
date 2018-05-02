@@ -12,23 +12,13 @@ include_directories("../External/rply")
 include_directories("../External/liblzf")
 include_directories("../External/dirent")
 
-add_library(IO
+# create object library
+add_library(IO OBJECT
             ${IO_ALL_SOURCE_FILES}
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
 
-target_link_libraries(IO
-                      Core
-                      tinyfiledialogs
-                      ${JPEG_LIBRARIES}
-                      ${PNG_LIBRARIES})
-
-# install
-install(TARGETS IO
-        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
+#install headers
 file(GLOB HEADERS_ROOT     "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 file(GLOB HEADERS_CLASS_IO "${CMAKE_CURRENT_SOURCE_DIR}/ClassIO/*.h")
 
