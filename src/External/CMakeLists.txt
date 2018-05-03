@@ -16,14 +16,6 @@ else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Building dependencies from source.")
 endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
-# GLEW
-if (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of GLEW")
-else (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build GLEW from source")
-    add_subdirectory(glew)
-endif (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
 if (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Use native eigen3")
@@ -32,24 +24,15 @@ else (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
 endif (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
-# JPEG
-if (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of libjpeg")
-else (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build libjpeg from source")
-    add_subdirectory(libjpeg)
-endif (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+# GLEW
+if (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of GLEW")
+else (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Build GLEW from source")
+    add_subdirectory(glew)
+endif (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
-# PNG
-if (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of libpng")
-else (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build libpng from source")
-    add_subdirectory(zlib)
-    add_subdirectory(libpng)
-endif (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-
-# OpenGL
+# GLFW
 if (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Use native build of glfw")
     if (APPLE)
@@ -75,6 +58,14 @@ else (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     add_subdirectory(GLFW)
 endif (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
+# JPEG
+if (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of libjpeg")
+else (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Build libjpeg from source")
+    add_subdirectory(libjpeg)
+endif (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
 # JSON
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # It is a known bug that g++ on OSX only supports libstdc++
@@ -93,9 +84,19 @@ else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     endif (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
 
-# tinyfiledialogs
-message(STATUS "Build tinyfiledialogs from source")
-add_subdirectory(tinyfiledialogs)
+# PNG
+if (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Use native build of libpng")
+else (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+    message(STATUS "Build libpng from source")
+    add_subdirectory(zlib)
+    add_subdirectory(libpng)
+endif (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+
+# PyBind
+if (Open3D_BUILD_PYTHON_BINDING)
+    add_subdirectory(pybind11)
+endif(Open3D_BUILD_PYTHON_BINDING)
 
 # RealSense
 if(Open3D_BUILD_LIBREALSENSE)
@@ -103,10 +104,9 @@ if(Open3D_BUILD_LIBREALSENSE)
     add_subdirectory(librealsense)
 endif(Open3D_BUILD_LIBREALSENSE)
 
-# PyBind
-if (Open3D_BUILD_PYTHON_BINDING)
-    add_subdirectory(pybind11)
-endif(Open3D_BUILD_PYTHON_BINDING)
+# tinyfiledialogs
+message(STATUS "Build tinyfiledialogs from source")
+add_subdirectory(tinyfiledialogs)
 
 # pop everything to root
 set(EIGEN3_INCLUDE_DIRS  ${EIGEN3_INCLUDE_DIRS}  PARENT_SCOPE)
@@ -117,8 +117,8 @@ set(GLFW_LIBRARIES       ${GLFW_LIBRARIES}       PARENT_SCOPE)
 set(GLFW_LIBRARY_DIRS    ${GLFW_LIBRARY_DIRS}    PARENT_SCOPE)
 set(JPEG_INCLUDE_DIR     ${JPEG_INCLUDE_DIR}     PARENT_SCOPE)
 set(JPEG_LIBRARIES       ${JPEG_LIBRARIES}       PARENT_SCOPE)
-set(PNG_INCLUDE_DIRS     ${PNG_INCLUDE_DIRS}     PARENT_SCOPE)
-set(PNG_LIBRARIES        ${PNG_LIBRARIES}        PARENT_SCOPE)
 set(JSONCPP_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS} PARENT_SCOPE)
 set(JSONCPP_LIBRARIES    ${JSONCPP_LIBRARIES}    PARENT_SCOPE)
 set(JSONCPP_LIBRARY_DIRS ${JSONCPP_LIBRARY_DIRS} PARENT_SCOPE)
+set(PNG_INCLUDE_DIRS     ${PNG_INCLUDE_DIRS}     PARENT_SCOPE)
+set(PNG_LIBRARIES        ${PNG_LIBRARIES}        PARENT_SCOPE)
