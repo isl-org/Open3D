@@ -7,7 +7,7 @@ if (PKGCONFIG_FOUND)
     pkg_search_module(JPEG libjpeg)
     pkg_search_module(PNG libpng>=1.6.0)
     pkg_search_module(GLFW glfw3)
-    pkg_search_module(JSONCPP jsoncpp>=1.8.0)
+    pkg_search_module(JSONCPP jsoncpp>=1.7.0)
 endif (PKGCONFIG_FOUND)
 
 if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
