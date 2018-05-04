@@ -7,16 +7,14 @@ Consider color mapping to the geometry reconstructed from depth cameras. As colo
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Advanced/color_map_optimization.py
+from py3d import *
+from trajectory_io import *
+import os, sys
+sys.path.append("../Utility")
+from common import *
 
-    from py3d import *
-    from trajectory_io import *
-    import os, sys
-    sys.path.append("../Utility")
-    from common import *
-
-    path = "[set_this_path_to_fountain_dataset]"
-    debug_mode = False
+path = "[set_this_path_to_fountain_dataset]"
+debug_mode = False
 
     if __name__ == "__main__":
         set_verbosity_level(VerbosityLevel.Debug)
@@ -45,10 +43,12 @@ Consider color mapping to the geometry reconstructed from depth cameras. As colo
 
         # Before full optimization, let's just visualize texture map
         # with given geometry, RGBD images, and camera poses.
-        option = TextureMapOptmizationOption()
+        option = ColorMapOptmizationOption()
         option.maximum_iteration = 0
-        texture_map_optimization(mesh, rgbd_images, camera, option)
+        color_map_optimization(mesh, rgbd_images, camera, option)
         draw_geometries([mesh])
+        write_triangle_mesh(os.path.join(path, "scene",
+            "color_map_before_optimization.ply"), mesh)
 
         # Optimize texture and save the mesh as texture_mapped.ply
         # This is implementation of following paper
@@ -57,9 +57,10 @@ Consider color mapping to the geometry reconstructed from depth cameras. As colo
         # SIGGRAPH 2014
         option.maximum_iteration = 500
         option.non_rigid_camera_coordinate = True
-        texture_map_optimization(mesh, rgbd_images, camera, option)
+        color_map_optimization(mesh, rgbd_images, camera, option)
         draw_geometries([mesh])
-        write_triangle_mesh(os.path.join(path, "scene", "texture_mapped.ply"), mesh)
+        write_triangle_mesh(os.path.join(path, "scene",
+            "color_map_after_optimization.ply"), mesh)
 
 Input
 ````````````````````````
@@ -98,17 +99,19 @@ The script reads camera trajectory and mesh.
 
 .. code-block:: python
 
-    option = TextureMapOptmizationOption()
+    option = ColorMapOptmizationOption()
     option.maximum_iteration = 0
-    texture_map_optimization(mesh, rgbd_images, camera, option)
+    color_map_optimization(mesh, rgbd_images, camera, option)
     draw_geometries([mesh])
+    write_triangle_mesh(os.path.join(path, "scene",
+        "color_map_before_optimization.ply"), mesh)
 
-To visualize how the camera poses are not good for color mapping, this script intentionally set the iteration number as 0, which means no optimization. ``texture_map_optimization`` paints a mesh using corresponding RGBD images and camera poses. Without optimization, the texture map is blurred.
+To visualize how the camera poses are not good for color mapping, this script intentionally set the iteration number as 0, which means no optimization. ``color_map_optimization`` paints a mesh using corresponding RGBD images and camera poses. Without optimization, the texture map is blurred.
 
-.. image:: ../../_static/Advanced/texture_map_optimization/initial.png
+.. image:: ../../_static/Advanced/color_map_optimization/initial.png
     :width: 300px
 
-.. image:: ../../_static/Advanced/texture_map_optimization/initial_zoom.png
+.. image:: ../../_static/Advanced/color_map_optimization/initial_zoom.png
     :width: 300px
 
 Rigid Optimization
@@ -119,29 +122,31 @@ The next step is to optimize camera poses to get a sharp color map.
 .. code-block:: python
 
     option.maximum_iteration = 500
-    texture_map_optimization(mesh, rgbd_images, camera, option)
+    option.non_rigid_camera_coordinate = True
+    color_map_optimization(mesh, rgbd_images, camera, option)
     draw_geometries([mesh])
-    write_triangle_mesh(os.path.join(path, "scene", "texture_mapped.ply"), mesh)
+    write_triangle_mesh(os.path.join(path, "scene",
+        "color_map_after_optimization.ply"), mesh)
 
 The script sets ``maximum_iteration = 500`` for actual iterations. The optimization displays the following energy profile.
 
 .. code-block:: shell
 
-    [TextureMapOptimization] :: Rigid Optimization
-    [Iteration #0000] Residual error : 35745.077565 (avg : 0.006930)
-    [Iteration #0001] Residual error : 35633.791960 (avg : 0.006909)
-    [Iteration #0002] Residual error : 35518.568729 (avg : 0.006886)
+    [ColorMapOptimization] :: Rigid Optimization
+    [Iteration 0001] Residual error : 25777.372725 (avg : 0.004998)
+    [Iteration 0002] Residual error : 25620.681829 (avg : 0.004967)
+    [Iteration 0003] Residual error : 25463.806101 (avg : 0.004937)
     :
-    [Iteration #0497] Residual error : 17452.550395 (avg : 0.003407)
-    [Iteration #0498] Residual error : 17452.747174 (avg : 0.003407)
-    [Iteration #0499] Residual error : 17451.573304 (avg : 0.003407)
+    [Iteration 0498] Residual error : 11550.014763 (avg : 0.002255)
+    [Iteration 0499] Residual error : 11549.850827 (avg : 0.002255)
+    [Iteration 0500] Residual error : 11550.062068 (avg : 0.002255)
 
-Residual error implies inconsistency of image intensities. Lower residual leads better color map quality. By default, ``TextureMapOptmizationOption`` enables rigid optimization. It optimizes 6-dimentional pose of every cameras.
+Residual error implies inconsistency of image intensities. Lower residual leads better color map quality. By default, ``ColorMapOptmizationOption`` enables rigid optimization. It optimizes 6-dimentional pose of every cameras.
 
-.. image:: ../../_static/Advanced/texture_map_optimization/rigid.png
+.. image:: ../../_static/Advanced/color_map_optimization/rigid.png
     :width: 300px
 
-.. image:: ../../_static/Advanced/texture_map_optimization/rigid_zoom.png
+.. image:: ../../_static/Advanced/color_map_optimization/rigid_zoom.png
     :width: 300px
 
 Non-rigid Optimization
@@ -153,12 +158,23 @@ For better alignment quality, there is an option for non-rigid optimization. To 
 
     option.non_rigid_camera_coordinate = True
 
-before calling ``texture_map_optimization``. Besides 6-dimentional camera poses, non-rigid optimization even consider local image warping represented by anchor points. This adds even more flexibility and leads higher quality color map. Due to increased number of parameters, non-rigid optimization is slower than rigid optimization option.
+before calling ``color_map_optimization``. Besides 6-dimentional camera poses, non-rigid optimization even consider local image warping represented by anchor points. This adds even more flexibility and leads higher quality color mapping. The residual error is smaller than the case of rigid optimization.
+
+.. code-block:: shell
+
+    [ColorMapOptimization] :: Non-Rigid Optimization
+    [Iteration 0001] Residual error : 25777.372725, reg : 0.000000
+    [Iteration 0002] Residual error : 25330.445704, reg : 13.005639
+    [Iteration 0003] Residual error : 24885.912182, reg : 40.000765
+    :
+    [Iteration 0498] Residual error : 7585.606850, reg : 3294.124184
+    [Iteration 0499] Residual error : 7585.274846, reg : 3294.887659
+    [Iteration 0500] Residual error : 7583.972930, reg : 3294.634065
 
 Results of non-rigid optimization follow.
 
-.. image:: ../../_static/Advanced/texture_map_optimization/non_rigid.png
+.. image:: ../../_static/Advanced/color_map_optimization/non_rigid.png
     :width: 300px
 
-.. image:: ../../_static/Advanced/texture_map_optimization/non_rigid_zoom.png
+.. image:: ../../_static/Advanced/color_map_optimization/non_rigid_zoom.png
     :width: 300px

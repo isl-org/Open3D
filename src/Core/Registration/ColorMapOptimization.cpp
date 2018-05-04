@@ -64,10 +64,11 @@ public:
 
     Eigen::Vector2d QueryFlow(int i, int j) const {
         int baseidx = (i + j * anchor_w_) * 2;
+        // exceptional case: quried anchor index is out of pre-defined space
         if (baseidx < 0 || baseidx > anchor_w_ * anchor_h_ * 2)
-            PrintDebug("error here! i : %d, j : %d, base : %d, max : %d\n",
-            i, j, baseidx, anchor_w_ * anchor_h_ * 2);
-        return Eigen::Vector2d(flow_(baseidx), flow_(baseidx + 1));
+            return Eigen::Vector2d(0.0, 0.0);
+        else
+            return Eigen::Vector2d(flow_(baseidx), flow_(baseidx + 1));
     }
 
     Eigen::Vector2d GetImageWarpingField(double u, double v) const {
@@ -117,7 +118,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
     visiblity_vertex_to_image.resize(n_vertex);
     visiblity_image_to_vertex.resize(n_camera);
 #ifdef _OPENMP
-#pragma omp parallel for num_threads( 8 ) schedule( dynamic )
+#pragma omp parallel for schedule(static)
 #endif
     for (int c = 0; c < n_camera; c++) {
         int h = images_rgbd[c].depth_.height_;
@@ -217,7 +218,7 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     int n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
-#pragma omp parallel for num_threads( 8 )
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -292,12 +293,12 @@ void OptimizeImageCoorNonrigid(
     SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
             visiblity_vertex_to_image, proxy_intensity);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
-        PrintDebug("[Iteration %04d] ", itr);
+        PrintDebug("[Iteration %04d] ", itr+1);
         double residual = 0.0;
         double residual_reg = 0.0;
         int total_num_ = 0;
 #ifdef _OPENMP
-#pragma omp parallel for num_threads( 8 ) schedule( dynamic )
+#pragma omp parallel for schedule(static)
 #endif
         for (int i = 0; i < n_camera; i++) {
             int nonrigidval = warping_fields[i].anchor_w_ *
@@ -459,11 +460,11 @@ void OptimizeImageCoorRigid(
     SetProxyIntensityForVertex(mesh, images_gray, camera,
             visiblity_vertex_to_image, proxy_intensity);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
-        PrintDebug("[Iteration %04d] ", itr);
+        PrintDebug("[Iteration %04d] ", itr+1);
         double residual = 0.0;
         total_num_ = 0;
 #ifdef _OPENMP
-#pragma omp parallel for num_threads( 8 ) schedule( dynamic )
+#pragma omp parallel for schedule(static)
 #endif
         for (int i = 0; i < n_camera; i++) {
             Eigen::MatrixXd JJ(6, 6);
@@ -547,8 +548,9 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     int n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
-#pragma omp parallel for num_threads( 8 ) //schedule( dynamic )
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < n_vertex; i++) {
+        mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
         for (int iter = 0; iter < visiblity_vertex_to_image[i].size(); iter++) {
             int j = visiblity_vertex_to_image[i][iter];
@@ -586,8 +588,9 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     int n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
-#pragma omp parallel for num_threads( 8 ) //schedule( dynamic )
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < n_vertex; i++) {
+        mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
         for (int iter = 0; iter < visiblity_vertex_to_image[i].size(); iter++) {
             int j = visiblity_vertex_to_image[i][iter];
@@ -624,10 +627,12 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
     std::vector<std::shared_ptr<Image>> images_dy;
     for (int i=0; i<n_images; i++) {
         auto gray_image = CreateFloatImageFromImage(images_rgbd[i].color_);
-        images_gray.push_back(gray_image);
-        images_dx.push_back(FilterImage(*gray_image,
+        auto gray_image_filtered = FilterImage(*gray_image,
+                Image::FilterType::Gaussian3);
+        images_gray.push_back(gray_image_filtered);
+        images_dx.push_back(FilterImage(*gray_image_filtered,
                 Image::FilterType::Sobel3Dx));
-        images_dy.push_back(FilterImage(*gray_image,
+        images_dy.push_back(FilterImage(*gray_image_filtered,
                 Image::FilterType::Sobel3Dy));
     }
     return std::move(std::make_tuple(images_gray, images_dx, images_dy));
