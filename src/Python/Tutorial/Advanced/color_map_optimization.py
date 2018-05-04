@@ -8,7 +8,7 @@ import os, sys
 sys.path.append("../Utility")
 from common import *
 
-path = "[set_this_path_to_fountain_dataset]"
+path = "/Users/jaesikpa/Downloads/texturemap_optimization/dataset/fountain_small/"
 debug_mode = False
 
 if __name__ == "__main__":
@@ -38,9 +38,9 @@ if __name__ == "__main__":
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    option = TextureMapOptmizationOption()
+    option = ColorMapOptmizationOption()
     option.maximum_iteration = 0
-    texture_map_optimization(mesh, rgbd_images, camera, option)
+    color_map_optimization(mesh, rgbd_images, camera, option)
     draw_geometries([mesh])
 
     # Optimize texture and save the mesh as texture_mapped.ply
@@ -49,6 +49,6 @@ if __name__ == "__main__":
     # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     # SIGGRAPH 2014
     option.maximum_iteration = 500
-    texture_map_optimization(mesh, rgbd_images, camera, option)
+    color_map_optimization(mesh, rgbd_images, camera, option)
     draw_geometries([mesh])
     write_triangle_mesh(os.path.join(path, "scene", "texture_mapped.ply"), mesh)

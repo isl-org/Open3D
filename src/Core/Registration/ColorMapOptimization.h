@@ -35,10 +35,10 @@ class RGBDImage;
 class Image;
 class PinholeCameraTrajectory;
 
-class TextureMapOptmizationOption
+class ColorMapOptmizationOption
 {
 public:
-	TextureMapOptmizationOption(
+	ColorMapOptmizationOption(
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
             double non_rigid_anchor_point_weight = 0.316,
@@ -52,7 +52,7 @@ public:
             maximum_allowable_depth_(maximum_allowable_depth),
             depth_threshold_for_visiblity_check_(
             depth_threshold_for_visiblity_check) {}
-	~TextureMapOptmizationOption() {}
+	~ColorMapOptmizationOption() {}
 
 public:
     bool non_rigid_camera_coordinate_;
@@ -67,9 +67,9 @@ public:
 /// Q.-Y. Zhou and V. Koltun,
 /// Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
 /// SIGGRAPH 2014
-void TextureMapOptimization(TriangleMesh& mesh,
+void ColorMapOptimization(TriangleMesh& mesh,
         const std::vector<RGBDImage>& imgs_rgbd,
         PinholeCameraTrajectory& camera,
-        const TextureMapOptmizationOption& option =
-        TextureMapOptmizationOption());
+        const ColorMapOptmizationOption& option =
+        ColorMapOptmizationOption());
 }	// namespace three

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "TextureMapOptimization.h"
+#include "ColorMapOptimization.h"
 
 #include <Eigen/Dense>
 
@@ -107,7 +107,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         MakeVertexAndImageVisibility(const TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
         const PinholeCameraTrajectory& camera,
-        const TextureMapOptmizationOption& option)
+        const ColorMapOptmizationOption& option)
 {
     int n_camera = camera.extrinsic_.size();
     int n_vertex = mesh.vertices_.size();
@@ -153,7 +153,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
 
 std::vector<ImageWarpingField> MakeWarpingFields(
         const std::vector<std::shared_ptr<Image>>& images,
-        const TextureMapOptmizationOption& option)
+        const ColorMapOptmizationOption& option)
 {
     std::vector<ImageWarpingField> fields;
     for (size_t i = 0; i < images.size(); i++) {
@@ -280,7 +280,7 @@ void OptimizeImageCoorNonrigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const TextureMapOptmizationOption& option)
+        const ColorMapOptmizationOption& option)
 {
     int n_vertex = mesh.vertices_.size();
     int n_camera = camera.extrinsic_.size();
@@ -411,7 +411,7 @@ void OptimizeImageCoorNonrigid(
             {
                 bool success = false;
                 Eigen::VectorXd result;
-                std::tie(success, result) = SolveLinearSystem(JJ, -Jb);
+                std::tie(success, result) = SolveLinearSystem(JJ, -Jb, false);
                 Eigen::Affine3d aff_mat;
                 aff_mat.linear() = (Eigen::Matrix3d)
                         Eigen::AngleAxisd(result(2),Eigen::Vector3d::UnitZ())
@@ -446,7 +446,7 @@ void OptimizeImageCoorRigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const TextureMapOptmizationOption& option)
+        const ColorMapOptmizationOption& option)
 {
     int total_num_ = 0;
     int n_vertex = mesh.vertices_.size();
@@ -635,20 +635,20 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
 
 }    // unnamed namespace
 
-void TextureMapOptimization(TriangleMesh& mesh,
+void ColorMapOptimization(TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
         PinholeCameraTrajectory& camera,
-        const TextureMapOptmizationOption& option
-        /* = TextureMapOptmizationOption()*/)
+        const ColorMapOptmizationOption& option
+        /* = ColorMapOptmizationOption()*/)
 {
-    PrintDebug("[TextureMapOptimization]\n");
+    PrintDebug("[ColorMapOptimization]\n");
     std::vector<std::shared_ptr<Image>> images_gray;
     std::vector<std::shared_ptr<Image>> images_dx;
     std::vector<std::shared_ptr<Image>> images_dy;
     std::tie(images_gray, images_dx, images_dy) =
             MakeGradientImages(images_rgbd);
 
-    PrintDebug("[TextureMapOptimization] :: VisibilityCheck\n");
+    PrintDebug("[ColorMapOptimization] :: VisibilityCheck\n");
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
@@ -656,7 +656,7 @@ void TextureMapOptimization(TriangleMesh& mesh,
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {
-        PrintDebug("[TextureMapOptimization] :: Non-Rigid Optimization\n");
+        PrintDebug("[ColorMapOptimization] :: Non-Rigid Optimization\n");
         auto warping_uv_ = MakeWarpingFields(images_gray, option);
         auto warping_uv_init_ = MakeWarpingFields(images_gray, option);
         OptimizeImageCoorNonrigid(mesh, images_gray,
@@ -666,7 +666,7 @@ void TextureMapOptimization(TriangleMesh& mesh,
         SetGeometryColorAverage(mesh, images_rgbd, warping_uv_, camera,
                 visiblity_vertex_to_image);
     } else {
-        PrintDebug("[TextureMapOptimization] :: Rigid Optimization\n");
+        PrintDebug("[ColorMapOptimization] :: Rigid Optimization\n");
         OptimizeImageCoorRigid(mesh, images_gray, images_dx, images_dy, camera,
                 visiblity_vertex_to_image, visiblity_image_to_vertex,
                 proxy_intensity, option);

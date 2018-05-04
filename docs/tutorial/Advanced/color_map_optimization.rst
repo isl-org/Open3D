@@ -7,6 +7,8 @@ Consider color mapping to the geometry reconstructed from depth cameras. As colo
 
 .. code-block:: python
 
+    # src/Python/Tutorial/Advanced/color_map_optimization.py
+
     from py3d import *
     from trajectory_io import *
     import os, sys
