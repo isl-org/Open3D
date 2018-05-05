@@ -12,7 +12,7 @@ If Open3D is successfully compiled with Python binding, it will create a Python 
     import numpy as np
 
     def example_help_function():
-        import open3d as open3d
+        import open3d
         help(open3d)
         help(open3d.PointCloud)
         help(open3d.read_point_cloud)
@@ -60,7 +60,7 @@ It is recommended to use Python built-in ``help`` function to get definitions an
 .. code-block:: python
 
     def example_help_function():
-        import open3d as open3d
+        import open3d
         help(open3d)
         help(open3d.PointCloud)
         help(open3d.read_point_cloud)
