@@ -3,11 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 from setuptools import setup, find_packages
-from os import path
 
-root = path.abspath(path.dirname(__file__))
-with open(path.join(root, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
 
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
@@ -25,6 +21,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        "Operating System :: POSIX :: Linux",
         "Core features :: Basic 3D data structures",
         "Core features :: Basic 3D data processing algorithms",
         "Core features :: Scene reconstruction",
@@ -40,20 +37,21 @@ setup(
         "Resources :: License :: The MIT license",
     ],
     description = ("Open3D is an open-source library that supports rapid development of software that deals with 3D data.."),
-    distclass=BinaryDistribution,
+    # distclass=BinaryDistribution,
     install_requires=['numpy', 'matplotlib', 'opencv-python', ],
     include_package_data=True,
     keywords = "3D reconstruction pointcloud",
     license = "MIT",
-    long_description=long_description,
-    long_description_content_type='text/x-rst',
+    long_description=open('README.md').read(),
+    # long_description_content_type='text/x-rst',
     name = "open3d",
     packages=['open3d', ],
+    # packages=find_packages(),
     url = "http://www.open3d.org",
     project_urls={
         'Documentation': 'http://www.open3d.org/docs',
-        'Source': 'https://github.com/IntelVCL/Open3D',
-        'Tracker': 'https://github.com/IntelVCL/Open3D/issues',
+        'Source code': 'https://github.com/IntelVCL/Open3D',
+        'Issues': 'https://github.com/IntelVCL/Open3D/issues',
         },
     version = '0.1.0',
 )

@@ -3,7 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 # Include the README
-include ../../../*.md
+include *.md
 
 # Include the license file
-include ../../../LICENSE.txt
+include LICENSE
