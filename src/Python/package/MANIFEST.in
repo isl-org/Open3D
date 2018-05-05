@@ -6,4 +6,6 @@
 include *.md
 
 # Include the license file
-include LICENSE
+include LICENSE.txt
+
+include open3d*.so
