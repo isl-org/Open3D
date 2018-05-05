@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
-#include "py3d_core_trampoline.h"
+#include "open3d_core.h"
+#include "open3d_core_trampoline.h"
 
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Registration/Feature.h>
@@ -264,23 +264,23 @@ void pybind_registration(py::module &m)
 
     py::class_<RegistrationResult> registration_result(m, "RegistrationResult");
     py::detail::bind_default_constructor<RegistrationResult>(
-    		registration_result);
+            registration_result);
     py::detail::bind_copy_functions<RegistrationResult>(registration_result);
     registration_result
-    	.def_readwrite("transformation", &RegistrationResult::transformation_)
-    	.def_readwrite("correspondence_set",
-    			&RegistrationResult::correspondence_set_)
-    	.def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_)
-    	.def_readwrite("fitness", &RegistrationResult::fitness_)
-    	.def("__repr__", [](const RegistrationResult &rr) {
-    		return std::string("RegistrationResult with fitness = ") +
-    				std::to_string(rr.fitness_) +
-    				std::string(", inlier_rmse = ") +
-    				std::to_string(rr.inlier_rmse_) +
-    				std::string(", and correspondence_set size of ") +
-    				std::to_string(rr.correspondence_set_.size()) +
-    				std::string("\nAccess transformation to get result.");
-    	});
+        .def_readwrite("transformation", &RegistrationResult::transformation_)
+        .def_readwrite("correspondence_set",
+                &RegistrationResult::correspondence_set_)
+        .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_)
+        .def_readwrite("fitness", &RegistrationResult::fitness_)
+        .def("__repr__", [](const RegistrationResult &rr) {
+            return std::string("RegistrationResult with fitness = ") +
+                    std::to_string(rr.fitness_) +
+                    std::string(", inlier_rmse = ") +
+                    std::to_string(rr.inlier_rmse_) +
+                    std::string(", and correspondence_set size of ") +
+                    std::to_string(rr.correspondence_set_.size()) +
+                    std::string("\nAccess transformation to get result.");
+        });
 }
 
 void pybind_registration_methods(py::module &m)

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_visualization.h"
+#include "open3d_visualization.h"
 
 #include <Core/Utility/FileSystem.h>
 #include <Core/Geometry/PointCloud.h>

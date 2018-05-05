@@ -24,29 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d_core.h"
 
-#include <Python/py3d.h>
+void pybind_core_classes(py::module &m)
+{
+    pybind_console(m);
+    pybind_geometry(m);
+    pybind_pointcloud(m);
+    pybind_trianglemesh(m);
+    pybind_image(m);
+    pybind_kdtreeflann(m);
+    pybind_feature(m);
+    pybind_camera(m);
+    pybind_registration(m);
+    pybind_odometry(m);
+    pybind_globaloptimization(m);
+    pybind_integration(m);
+}
 
-void pybind_console(py::module &m);
-void pybind_geometry(py::module &m);
-void pybind_pointcloud(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_feature(py::module &m);
-void pybind_camera(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_odometry(py::module &m);
-void pybind_globaloptimization(py::module &m);
-void pybind_integration(py::module &m);
-
-void pybind_pointcloud_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_feature_methods(py::module &m);
-void pybind_camera_methods(py::module &m);
-void pybind_registration_methods(py::module &m);
-void pybind_odometry_methods(py::module &m);
-void pybind_globaloptimization_methods(py::module &m);
-void pybind_integration_methods(py::module &m);
+void pybind_core_methods(py::module &m)
+{
+    pybind_pointcloud_methods(m);
+    pybind_trianglemesh_methods(m);
+    pybind_image_methods(m);
+    pybind_feature_methods(m);
+    pybind_camera_methods(m);
+    pybind_registration_methods(m);
+    pybind_odometry_methods(m);
+    pybind_globaloptimization_methods(m);
+    pybind_integration_methods(m);
+}

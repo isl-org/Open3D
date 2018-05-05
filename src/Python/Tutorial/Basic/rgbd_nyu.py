@@ -3,7 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 #conda install pillow matplotlib
-from py3d import *
+from open3d import *
 import numpy as np
 import re
 import matplotlib.image as mpimg

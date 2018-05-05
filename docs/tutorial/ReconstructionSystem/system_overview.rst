@@ -31,7 +31,7 @@ Put all color images in the *image* folder, and all depth images in the *depth* 
 
 .. code-block:: sh
 
-    cd <your_path_to_py3d_lib>/Tutorial/ReconstructionSystem/
+    cd <your_path_to_open3d_lib>/Tutorial/ReconstructionSystem/
     python make_fragments.py [path_to_dataset] [-path_intrinsic (optional)]
     python register_fragments.py [path_to_dataset]
     python integrate_scene.py [path_to_dataset] [-path_intrinsic (optional)]

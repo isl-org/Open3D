@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#include "open3d_core.h"
 
 #include <Core/Utility/Console.h>
 using namespace three;
@@ -39,8 +39,8 @@ void pybind_console(py::module &m)
         .value("Always", VerbosityLevel::VerboseAlways)
         .export_values();
     m.def("set_verbosity_level", &SetVerbosityLevel,
-            "Set global verbosity level of Open3D (py3d)",
+            "Set global verbosity level of open3d",
             py::arg("verbosity_level"));
     m.def("get_verbosity_level", &GetVerbosityLevel,
-            "Get global verbosity level of Open3D (py3d)");
+            "Get global verbosity level of open3d");
 }

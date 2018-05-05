@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
-#include "py3d_core_trampoline.h"
+#include "open3d_core.h"
+#include "open3d_core_trampoline.h"
 
 #include <Core/Integration/TSDFVolume.h>
 #include <Core/Integration/UniformTSDFVolume.h>

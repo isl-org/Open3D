@@ -3,11 +3,11 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
-from py3d import *
+from open3d import *
 
 if __name__ == "__main__":
 
-    print("Testing kdtree in py3d ...")
+    print("Testing kdtree in open3d ...")
     print("Load a point cloud and paint it gray.")
     pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
     pcd.paint_uniform_color([0.5, 0.5, 0.5])

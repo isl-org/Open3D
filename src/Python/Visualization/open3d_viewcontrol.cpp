@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_visualization.h"
-#include "py3d_visualization_trampoline.h"
+#include "open3d_visualization.h"
+#include "open3d_visualization_trampoline.h"
 
 #include <Visualization/Visualizer/ViewControl.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>

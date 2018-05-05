@@ -3,11 +3,11 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
-from py3d import *
+from open3d import *
 
 if __name__ == "__main__":
 
-    print("Testing camera in py3d ...")
+    print("Testing camera in open3d ...")
     print(PinholeCameraIntrinsic.get_prime_sense_default())
     print(PinholeCameraIntrinsic.get_prime_sense_default().intrinsic_matrix)
     print(PinholeCameraIntrinsic())

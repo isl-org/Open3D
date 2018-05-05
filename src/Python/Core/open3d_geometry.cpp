@@ -24,35 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_visualization.h"
-#include "py3d_visualization_trampoline.h"
+#include "open3d_core.h"
+#include "open3d_core_trampoline.h"
 
-#include <Visualization/Visualizer/RenderOption.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <Core/Core.h>
 using namespace three;
 
-void pybind_renderoption(py::module &m)
+void pybind_geometry(py::module &m)
 {
-    py::class_<RenderOption, std::shared_ptr<RenderOption>>
-            renderoption(m, "RenderOption");
-    py::detail::bind_default_constructor<RenderOption>(renderoption);
-    renderoption
-        .def("__repr__", [](const RenderOption &vc) {
-            return std::string("RenderOption");
-        })
-        .def("load_from_json", [](RenderOption &ro, const std::string &filename) {
-            ReadIJsonConvertible(filename, ro);
-        }, "Function to load RenderOption from a JSON file", "filename"_a)
-        .def("save_to_json", [](RenderOption &ro, const std::string &filename) {
-            WriteIJsonConvertible(filename, ro);
-        }, "Function to save RenderOption to a JSON file", "filename"_a)
-        .def_readwrite("background_color", &RenderOption::background_color_)
-        .def_readwrite("light_on", &RenderOption::light_on_)
-        .def_readwrite("point_size", &RenderOption::point_size_)
-        .def_readwrite("point_show_normal", &RenderOption::point_show_normal_)
-        .def_readwrite("show_coordinate_frame", &RenderOption::show_coordinate_frame_);
-}
+    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
+            geometry(m, "Geometry");
+    geometry
+        .def("clear", &Geometry::Clear)
+        .def("is_empty", &Geometry::IsEmpty)
+        .def("get_geometry_type", &Geometry::GetGeometryType)
+        .def("dimension", &Geometry::Dimension);
+    py::enum_<Geometry::GeometryType>(geometry, "Type", py::arithmetic())
+        .value("Unspecified", Geometry::GeometryType::Unspecified)
+        .value("PointCloud", Geometry::GeometryType::PointCloud)
+        .value("LineSet", Geometry::GeometryType::LineSet)
+        .value("TriangleMesh", Geometry::GeometryType::TriangleMesh)
+        .value("Image", Geometry::GeometryType::Image)
+        .export_values();
 
-void pybind_renderoption_method(py::module &m)
-{
+    py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
+            std::shared_ptr<Geometry3D>, Geometry> geometry3d(m, "Geometry3D");
+    geometry3d
+        .def("get_min_bound", &Geometry3D::GetMinBound)
+        .def("get_max_bound", &Geometry3D::GetMaxBound)
+        .def("transform", &Geometry3D::Transform);
+
+    py::class_<Geometry2D, PyGeometry2D<Geometry2D>,
+            std::shared_ptr<Geometry2D>, Geometry> geometry2d(m, "Geometry2D");
+    geometry2d
+        .def("get_min_bound", &Geometry2D::GetMinBound)
+        .def("get_max_bound", &Geometry2D::GetMaxBound);
 }

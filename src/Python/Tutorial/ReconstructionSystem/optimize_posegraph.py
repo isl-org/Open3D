@@ -4,7 +4,7 @@
 
 import sys
 sys.path.append("../Utility")
-from py3d import *
+from open3d import *
 from common import *
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,

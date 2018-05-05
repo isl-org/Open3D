@@ -7,7 +7,7 @@ import argparse
 import math
 import sys
 sys.path.append("../Utility")
-from py3d import *
+from open3d import *
 from common import *
 from opencv import *
 from optimize_posegraph import *

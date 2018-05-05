@@ -7,7 +7,7 @@ import argparse
 import math
 import sys
 sys.path.append("../Utility")
-from py3d import *
+from open3d import *
 from common import *
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic):

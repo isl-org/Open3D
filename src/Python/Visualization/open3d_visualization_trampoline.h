@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Python/py3d.h>
+#include <Python/open3d.h>
 #include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/ViewControl.h>
 

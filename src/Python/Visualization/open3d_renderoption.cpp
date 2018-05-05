@@ -24,6 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d_visualization.h"
+#include "open3d_visualization_trampoline.h"
 
-#include <Python/py3d.h>
+#include <Visualization/Visualizer/RenderOption.h>
+#include <IO/ClassIO/IJsonConvertibleIO.h>
+using namespace three;
+
+void pybind_renderoption(py::module &m)
+{
+    py::class_<RenderOption, std::shared_ptr<RenderOption>>
+            renderoption(m, "RenderOption");
+    py::detail::bind_default_constructor<RenderOption>(renderoption);
+    renderoption
+        .def("__repr__", [](const RenderOption &vc) {
+            return std::string("RenderOption");
+        })
+        .def("load_from_json", [](RenderOption &ro, const std::string &filename) {
+            ReadIJsonConvertible(filename, ro);
+        }, "Function to load RenderOption from a JSON file", "filename"_a)
+        .def("save_to_json", [](RenderOption &ro, const std::string &filename) {
+            WriteIJsonConvertible(filename, ro);
+        }, "Function to save RenderOption to a JSON file", "filename"_a)
+        .def_readwrite("background_color", &RenderOption::background_color_)
+        .def_readwrite("light_on", &RenderOption::light_on_)
+        .def_readwrite("point_size", &RenderOption::point_size_)
+        .def_readwrite("point_show_normal", &RenderOption::point_show_normal_)
+        .def_readwrite("show_coordinate_frame", &RenderOption::show_coordinate_frame_);
+}
+
+void pybind_renderoption_method(py::module &m)
+{
+}

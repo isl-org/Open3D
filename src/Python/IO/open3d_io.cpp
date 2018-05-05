@@ -24,33 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py3d_core.h"
+#include "open3d_io.h"
 
-void pybind_core_classes(py::module &m)
+void pybind_io_classes(py::module &m)
 {
-    pybind_console(m);
-    pybind_geometry(m);
-    pybind_pointcloud(m);
-    pybind_trianglemesh(m);
-    pybind_image(m);
-    pybind_kdtreeflann(m);
-    pybind_feature(m);
-    pybind_camera(m);
-    pybind_registration(m);
-    pybind_odometry(m);
-    pybind_globaloptimization(m);
-    pybind_integration(m);
 }
 
-void pybind_core_methods(py::module &m)
+void pybind_io_methods(py::module &m)
 {
-    pybind_pointcloud_methods(m);
-    pybind_trianglemesh_methods(m);
-    pybind_image_methods(m);
-    pybind_feature_methods(m);
-    pybind_camera_methods(m);
-    pybind_registration_methods(m);
-    pybind_odometry_methods(m);
-    pybind_globaloptimization_methods(m);
-    pybind_integration_methods(m);
 }
