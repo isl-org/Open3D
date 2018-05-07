@@ -8,6 +8,7 @@ setup(
     author = 'IntelVCL',
     author_email = 'info@open3d.org',
     classifiers=[
+        # https://pypi.org/pypi?%3Aaction=list_classifiers
         "Development Status :: 3 - Alpha",
         "Environment :: X11 Applications",
         "Intended Audience :: Developers",
@@ -19,7 +20,8 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: C",
         "Programming Language :: C++",
-        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
         "Topic :: Education",
         "Topic :: Multimedia :: Graphics :: 3D Modeling",
         "Topic :: Multimedia :: Graphics :: 3D Rendering",
