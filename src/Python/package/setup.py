@@ -4,10 +4,6 @@
 
 from setuptools import setup, find_packages
 
-
-# Arguments marked as "Required" below must be included for upload to PyPI.
-# Fields marked as "Optional" may be commented out.
-
 setup(
     author = 'IntelVCL',
     author_email = 'info@open3d.org',
