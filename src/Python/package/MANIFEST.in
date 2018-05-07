@@ -2,10 +2,6 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# Include the README
-include *.md
-
-# Include the license file
+include README.md
 include LICENSE.txt
-
 include open3d*.so
