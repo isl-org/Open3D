@@ -101,7 +101,7 @@ Running Open3D tutorials
 ========================================
 
 Importing open3d module
-----------------------
+-----------------------
 
 For quick sanity check, try importing the library from the python interactive shell:
 
