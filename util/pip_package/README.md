@@ -26,11 +26,12 @@ Please cite our work if you use Open3D.
 * 3D visualization
 * Python binding
 
-## Supported compilers
+## Supported platforms
 
-* GCC 4.8 and later on Linux
-* XCode 8.0 and later on OS X
-* Visual Studio 2015 and later on Windows
+We're in the process of redesigning the package.
+Currently tested on:
+
+* Ubuntu 16.04
 
 ## Resources
 
