@@ -43,7 +43,7 @@ setup(
     include_package_data=True,
     keywords = "3D reconstruction pointcloud",
     license = "MIT",
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     name = "open3d",
     packages=['open3d', ],
     url = "http://www.open3d.org",
@@ -52,5 +52,5 @@ setup(
         'Source code': 'https://github.com/IntelVCL/Open3D',
         'Issues': 'https://github.com/IntelVCL/Open3D/issues',
         },
-    version = '0.1.0',
+    version = '0.1.2',
 )

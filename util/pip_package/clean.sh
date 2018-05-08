@@ -1,1 +1,1 @@
-rm -r build/ dist/ open3d.egg-info/
+rm -r build/ dist/ *.egg-info/
