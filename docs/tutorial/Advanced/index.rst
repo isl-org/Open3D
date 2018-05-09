@@ -9,5 +9,6 @@ Advanced
     multiway_registration
     rgbd_integration
     customized_visualization
+    non_blocking_visualization
     interactive_visualization
     headless_rendering
