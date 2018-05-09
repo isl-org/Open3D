@@ -10,7 +10,6 @@ setup(
     classifiers=[
         # https://pypi.org/pypi?%3Aaction=list_classifiers
         "Development Status :: 3 - Alpha",
-        "Environment :: MacOS X",
         "Environment :: Win32 (MS Windows)",
         "Environment :: X11 Applications",
         "Intended Audience :: Developers",
@@ -54,5 +53,5 @@ setup(
         'Source code': 'https://github.com/IntelVCL/Open3D',
         'Issues': 'https://github.com/IntelVCL/Open3D/issues',
         },
-    version = '0.1.3',
+    version = '0.1.4',
 )
