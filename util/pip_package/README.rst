@@ -31,7 +31,9 @@ Supported platforms
 We're in the process of redesigning the package.
 Currently tested on:
 
-* Ubuntu 16.04
+* Ubuntu 16.04 with Python 2.7 and 3.5
+* Windows 10 with Python 2.7 and 3.5
+* MacOS High Sierra 10.13.4 with Python 2.7
 
 Resources
 ======================
