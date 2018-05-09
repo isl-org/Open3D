@@ -349,9 +349,13 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation)
 {
+    PointCloud pcd = source;
+    if (transformation.isIdentity() == false) {
+        pcd.Transform(transformation);
+    }
     RegistrationResult result;
     KDTreeFlann target_kdtree(target);
-    result = GetRegistrationResultAndCorrespondences(source, target,
+    result = GetRegistrationResultAndCorrespondences(pcd, target,
             target_kdtree, max_correspondence_distance, transformation);
 
     // write q^*
