@@ -4,13 +4,24 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.0")
     cmake_policy(SET CMP0054 OLD)
 endif()
 
-set(Open3D_MAJOR_VERSION 0)
-set(Open3D_MINOR_VERSION 1)
-set(Open3D_PATCH_VERSION 0)
-set(Open3D_VERSION
-    ${Open3D_MAJOR_VERSION}.${Open3D_MINOR_VERSION}.${Open3D_PATCH_VERSION})
-
 project(Open3D)
+
+# central location for specifying the Open3D version
+set(OPEN3D_VERSION_MAJOR 0)
+set(OPEN3D_VERSION_MINOR 1)
+set(OPEN3D_VERSION_PATCH 5)
+set(OPEN3D_VERSION
+    "\"${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}.${OPEN3D_VERSION_PATCH}\"")
+
+# Open3D info
+set(OPEN3D_WEBSITE "\"www.open3d.org\"")
+set(OPEN3D_CODE    "\"github.com/IntelVCL/Open3D\"")
+set(OPEN3D_DOCS    "\"www.open3d.org/docs\"")
+
+# configure a header file to pass the version settings to the source code
+configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
+               "${PROJECT_SOURCE_DIR}/open3d_config.h")
+
 if(WIN32)
 elseif(CYGWIN)
 elseif(APPLE)
@@ -123,6 +134,7 @@ include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${JSONCPP_INCLUDE_DIRS})
 link_directories(${GLFW_LIBRARY_DIRS})
 link_directories(${JSONCPP_LIBRARY_DIRS})
+include_directories(${PROJECT_SOURCE_DIR})
 
 # Open3D libraries
 add_subdirectory(Core)
