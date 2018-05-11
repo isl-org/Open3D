@@ -91,6 +91,8 @@ bool ReadLogFile(const std::string &filename,
 
 void PrintHelp()
 {
+    printf("Open3D %s\n", OPEN3D_VERSION);
+    printf("\n");
     printf("Usage:\n");
     printf("    > ViewPCDMatch [options]\n");
     printf("      View pairwise matching result of point clouds.\n");

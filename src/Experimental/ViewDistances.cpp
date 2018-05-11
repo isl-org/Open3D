@@ -30,6 +30,8 @@
 
 void PrintHelp()
 {
+    printf("Open3D %s\n", OPEN3D_VERSION);
+    printf("\n");
     printf("Usage:\n");
     printf("    > ViewDistances source_file [options]\n");
     printf("      View color coded distances of a point cloud.\n");

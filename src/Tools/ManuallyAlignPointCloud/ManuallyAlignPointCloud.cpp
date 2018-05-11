@@ -52,6 +52,8 @@ void PrintTransformation(const Eigen::Matrix4d &transformation)
 
 void PrintHelp()
 {
+    printf("Open3D %s\n", OPEN3D_VERSION);
+    printf("\n");
     printf("Usage:\n");
     printf("    > ManuallyAlignPointCloud source_file target_file [options]\n");
     printf("      Manually align point clouds in source_file and target_file.\n");

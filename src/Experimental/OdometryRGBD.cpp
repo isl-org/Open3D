@@ -35,6 +35,8 @@ void PrintHelp(char* argv[])
 {
     using namespace three;
 
+    PrintInfo("Open3D %s\n", OPEN3D_VERSION);
+    PrintInfo("\n");
     PrintInfo("Usage:\n");
     PrintInfo("> %s [color_source] [source_target] [color_target] [depth_target] [options]\n", argv[0]);
     PrintInfo("   Given RGBD image pair, estimate 6D odometry.\n");
