@@ -56,6 +56,10 @@ void pybind_visualizer(py::module &m)
         .def("run", &Visualizer::Run, "Function to activate the window")
         .def("close", &Visualizer::Close,
                 "Function to notify the window to be closed")
+        .def("reset_view_point", &Visualizer::ResetViewPoint, "Function to reset view point")
+        .def("update_geometry", &Visualizer::UpdateGeometry, "Function to update geometry")
+        .def("update_renderer", &Visualizer::UpdateRender, "Function to inform render needed to be updated")
+        .def("poll_events", &Visualizer::PollEvents, "Function to poll events")
         .def("add_geometry", &Visualizer::AddGeometry,
                 "Function to add geometry to the scene and create corresponding shaders",
                 "geometry"_a)
