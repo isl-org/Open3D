@@ -43,7 +43,7 @@ setup(
     description = ("Open3D is an open-source library that supports rapid development of software that deals with 3D data.."),
     install_requires=['numpy', 'matplotlib', 'opencv-python', ],
     include_package_data=True,
-    keywords = "3D reconstruction pointcloud",
+    keywords = "3D reconstruction point cloud mesh RGB-D visualization",
     license = "MIT",
     long_description=open('README.rst').read(),
     name = "open3d",
