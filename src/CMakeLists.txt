@@ -1,22 +1,21 @@
+# References:
+# https://cmake.org/cmake/help/v3.0/
+# https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
+
 cmake_minimum_required(VERSION 3.0.0)
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.0")
     cmake_policy(SET CMP0054 OLD)
 endif()
 
-project(Open3D)
-
 # central location for specifying the Open3D version
-set(OPEN3D_VERSION_MAJOR 0)
-set(OPEN3D_VERSION_MINOR 1)
-set(OPEN3D_VERSION_PATCH 5)
-set(OPEN3D_VERSION
-    "\"${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}.${OPEN3D_VERSION_PATCH}\"")
+project(Open3D
+        VERSION 0.1.5.0)
 
-# Open3D info
-set(OPEN3D_WEBSITE "\"www.open3d.org\"")
-set(OPEN3D_CODE    "\"github.com/IntelVCL/Open3D\"")
-set(OPEN3D_DOCS    "\"www.open3d.org/docs\"")
+# set additional info
+set(Open3D_HOME "www.open3d.org")
+set(Open3D_CODE "github.com/IntelVCL/Open3D")
+set(Open3D_DOCS "www.open3d.org/docs")
 
 # configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
@@ -25,6 +24,7 @@ configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
 if(WIN32)
 elseif(CYGWIN)
 elseif(APPLE)
+    # set (CMAKE_INSTALL_PREFIX ~/Library/)
 elseif(UNIX)
     set (CMAKE_INSTALL_PREFIX ~/.local/)
 endif(WIN32)
