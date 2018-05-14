@@ -40,7 +40,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
     ],
-    description = ("Open3D is an open-source library that supports rapid development of software that deals with 3D data.."),
+    description = ("Open3D is an open-source library that supports rapid development of software that deals with 3D data."),
     install_requires=['numpy', 'matplotlib', 'opencv-python', ],
     include_package_data=True,
     keywords = "3D reconstruction point cloud mesh RGB-D visualization",
