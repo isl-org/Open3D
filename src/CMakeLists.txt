@@ -30,7 +30,7 @@ elseif(UNIX)
     set (CMAKE_INSTALL_PREFIX ~/.local/)
 endif(WIN32)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${Open3D_SOURCE_DIR}/CMake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -56,15 +56,15 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 # set include directories
 include_directories(
-    ${Open3D_SOURCE_DIR}
-    ${Open3D_SOURCE_DIR}/External
-    ${Open3D_SOURCE_DIR}/External/librealsense/include
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/External
+    ${PROJECT_SOURCE_DIR}/External/librealsense/include
     )
 
 # if dynamic link is added, use if (WIN32) macro
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${Open3D_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Set OS-specific things here
 if(WIN32)
