@@ -187,7 +187,8 @@ Batch processing
         if path_intrinsic:
             intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
         else:
-            intrinsic = PinholeCameraIntrinsic.prime_sense_default
+            intrinsic = PinholeCameraIntrinsic(
+                    PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
         make_folder(path_dataset + folder_fragment)
         [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
