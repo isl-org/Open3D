@@ -13,9 +13,10 @@ project(Open3D
         VERSION 0.1.5.0)
 
 # set additional info
-set(Open3D_HOME "www.open3d.org")
-set(Open3D_CODE "github.com/IntelVCL/Open3D")
-set(Open3D_DOCS "www.open3d.org/docs")
+set(PROJECT_HOME    "http://www.open3d.org")
+set(PROJECT_DOCS    "http://www.open3d.org/docs")
+set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
+set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
