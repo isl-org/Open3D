@@ -42,7 +42,6 @@ install:
     if ($env:PYTHON) {
       if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
       $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
-      pip install --disable-pip-version-check --user --upgrade pip wheel numpy
     }
 build_script:
 - mkdir build
