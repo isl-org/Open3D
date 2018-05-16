@@ -143,19 +143,19 @@ add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
-add_library(Open3D $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
+add_library(${PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
 
 # headless rendering
 if (Open3D_HEADLESS_RENDERING)
     find_package(OSMesa REQUIRED)
     include_directories(${OSMESA_INCLUDE_DIR})
-    target_link_libraries(Open3D ${OSMESA_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} ${OSMESA_LIBRARY})
 else ()
     find_package(OpenGL REQUIRED)
-    target_link_libraries(Open3D ${OPENGL_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
-target_link_libraries(Open3D
+target_link_libraries(${PROJECT_NAME}
                       ${GLFW_LIBRARIES}
                       ${GLEW_LIBRARIES}
                       ${JPEG_LIBRARIES}
@@ -165,13 +165,13 @@ target_link_libraries(Open3D
                       tinyfiledialogs)
 
 # install
-install(TARGETS Open3D
+install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 file(GLOB HEADERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Open3D)
+install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
 
 # Tests
 message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")
