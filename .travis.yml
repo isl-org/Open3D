@@ -77,7 +77,7 @@ before_install:
   # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
   # does not recognize sudo apt-get install libglfw3-dev
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
+      ./util/scripts/install-deps-ubuntu.sh;
       ./util/scripts/make-documentation.sh;
       ./util/scripts/install-gtest.sh;
     fi
@@ -97,7 +97,7 @@ script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake -DBUILD_SHARED_LIBS=$SHARED -DOpen3D_BUILD_UNIT_TESTS=ON ../src/
+  - cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_GLFW ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make install

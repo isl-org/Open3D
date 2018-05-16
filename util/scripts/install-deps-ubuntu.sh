@@ -10,8 +10,10 @@ sudo apt-get install \
 		libglfw3-dev \
 		libjsoncpp-dev \
 		libeigen3-dev \
+		libpng-dev \
 		libpng16-dev \
 		libjpeg-dev \
+		pybind11-dev \
 		python-dev \
 		python3-dev \
 		python-tk \
