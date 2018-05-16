@@ -97,7 +97,7 @@ script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_GLFW ../src/
+  - cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_GLFW=ON ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make install
