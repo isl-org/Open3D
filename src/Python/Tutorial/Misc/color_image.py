@@ -6,12 +6,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from py3d import *
+from open3d import *
 #conda install pillow matplotlib
 
 if __name__ == "__main__":
 
-    print("Testing image in py3d ...")
+    print("Testing image in open3d ...")
     print("Convert an image to numpy and draw it with matplotlib.")
     x = read_image("../../TestData/image.PNG")
     print(x)

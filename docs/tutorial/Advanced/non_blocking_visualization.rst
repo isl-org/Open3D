@@ -42,7 +42,7 @@ The full script implementing this idea is displayed below.
 
     # src/Python/Tutorial/Advanced/non_blocking_visualization.py
 
-    from py3d import *
+    from open3d import *
     import numpy as np
     import copy
 

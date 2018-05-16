@@ -5,7 +5,7 @@
 import numpy as np
 import argparse
 import sys
-from py3d import *
+from open3d import *
 sys.path.append("../Utility")
 from common import *
 from make_fragments import *

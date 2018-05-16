@@ -11,7 +11,7 @@ This tutorial introduces user interaction features of visualizer window.
 
     import numpy as np
     import copy
-    from py3d import *
+    from open3d import *
 
     def demo_crop_geometry():
         print("Demo for manual geometry cropping")

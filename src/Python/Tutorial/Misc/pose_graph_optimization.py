@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from py3d import *
+from open3d import *
 import numpy as np
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     print(option)
     print("")
 
-    print("Optimizing Fragment PoseGraph using py3d ...")
+    print("Optimizing Fragment PoseGraph using open3d ...")
     data_path = "../../TestData/GraphOptimization/"
     pose_graph_fragment = read_pose_graph(data_path +
             "pose_graph_example_fragment.json")
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             "pose_graph_example_fragment_optimized.json", pose_graph_fragment)
     print("")
 
-    print("Optimizing Global PoseGraph using py3d ...")
+    print("Optimizing Global PoseGraph using open3d ...")
     pose_graph_global = read_pose_graph(data_path +
             "pose_graph_example_global.json")
     print(pose_graph_global)

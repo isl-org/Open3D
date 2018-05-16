@@ -3,7 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import copy
-from py3d import *
+from open3d import *
 from os import listdir, makedirs
 from os.path import exists, isfile, join, splitext
 
