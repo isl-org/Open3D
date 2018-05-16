@@ -3,15 +3,44 @@
 Non-blocking visualization
 -------------------------------------
 
-``draw_geometries()`` is useful for quick overview of static geometries. However, this function holds process until the visualization window is closed. This is not optimal when visualized geometry is needed to be updated without closing the window. This tutorial introduces useful methods in ``Visualizer`` class for this need.
+``draw_geometries()`` is a useful function for quick overview of static geometries. However, this function holds process until a visualization window is closed. This is not optimal when geometry is updated and need to be visualized without closing the window. This tutorial introduces an example to customize the rendering loop.
+
+Review draw_geometries
+````````````````````````````````````````````````````
+
+``draw_geometries()`` has the following rendering-loop (see ``Visualizer::Run()`` for the c++ implementation):
+
+.. code-block:: bash
+
+    while(true):
+        if (geometry has changed):
+            re-bind geometry to shaders
+        if (view parameters have changed):
+            re-render the scene
+        if (any user mouse/keyboard input):
+            respond to it and set flags for re-rendering
+
+Note that both binding geometry and rendering are costly operations, thus they are executed in a lazy way. There are two flags control them individually. Function ``update_geometry()`` and ``update_renderer()`` set these flags to dirty individually. After rebinding/rendering, these flags are cleared once again.
+
+This rendering loop can be readily customized. For example, a custom loop can be made in this way to visualize ICP registration:
+
+.. code-block:: python
+
+    vis = Visualizer()
+    vis.create_window()
+    for i in range(icp_iteration):
+        # do ICP single iteration
+        # transform geometry using ICP
+        vis.update_geometry()
+        vis.reset_view_point(True)
+        vis.poll_events()
+        vis.update_renderer()
+
+The full script implementing this idea is displayed below.
 
 .. code-block:: python
 
     # src/Python/Tutorial/Advanced/non_blocking_visualization.py
-
-    # Open3D: www.open3d.org
-    # The MIT License (MIT)
-    # See license file or visit www.open3d.org for details
 
     from py3d import *
     import numpy as np
@@ -52,11 +81,12 @@ Non-blocking visualization
             vis.update_geometry()
             vis.reset_view_point(True)
             vis.poll_events()
+            vis.update_renderer()
             if save_image:
                 vis.capture_screen_image("temp_%04d.jpg" % i)
         vis.destroy_window()
 
-This script visualizes a live view of point cloud registration.
+The following sections explain this script.
 
 Prepare example data
 ````````````````````````````````````````````````````
@@ -80,10 +110,10 @@ Prepare example data
     source.transform(flip_transform)
     target.transform(flip_transform)
 
-For ICP registration, this script reads two point clouds, downsample them. The source point cloud is transformed for misalignment. Both point clouds are flipped for better visualization.
+This part reads two point clouds and downsamples them. The source point cloud is intentionally transformed for the misalignment. Both point clouds are flipped for better visualization.
 
 
-Mimic draw_geometries() with Visualizer class
+Initialize Visualizer class
 ````````````````````````````````````````````````````
 
 .. code-block:: python
@@ -93,7 +123,7 @@ Mimic draw_geometries() with Visualizer class
     vis.add_geometry(source)
     vis.add_geometry(target)
 
-These lines make an instance of visualizer class, opens a visualizer window, and add two geometries to the visualizer.
+These lines make an instance of visualizer class, open a visualizer window, and add two geometries to the visualizer.
 
 Transform geometry and visualize it
 ````````````````````````````````````````````````````
@@ -112,13 +142,14 @@ Transform geometry and visualize it
         vis.update_geometry()
         vis.reset_view_point(True)
         vis.poll_events()
+        vis.update_renderer()
         if save_image:
             vis.capture_screen_image("temp_%04d.jpg" % i)
     vis.destroy_window()
 
-Each for-loop calls ``registration_icp``, but note that it forces only one ICP iteration using ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve pose update from a single ICP iteration. After single iteration ICP, source geometry is transformed accordingly.
+This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
 
-The next part of the script is the core of this tutorial. ``update_geometry`` informs any geometries in ``vis`` is updated. ``reset_view_point`` updates view point based on the updated geometries. By calling ``poll_events``, visualizer renders new frame. After for-loop finishes, ``destroy_window`` closes the window.
+The next part of the script is the core of this tutorial. ``update_geometry`` informs any geometries in ``vis`` are updated. ``reset_view_point`` updates the current view point based on the updated geometries. Finally, visualizer renders a new frame by calling ``poll_events`` and ``update_renderer``. After for-loop iterations, ``destroy_window`` closes the window.
 
 The result looks like below.
 
