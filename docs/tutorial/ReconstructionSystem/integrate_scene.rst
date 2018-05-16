@@ -21,7 +21,8 @@ Input arguments
         if args.path_intrinsic:
             intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
         else:
-            intrinsic = PinholeCameraIntrinsic.prime_sense_default
+            intrinsic = PinholeCameraIntrinsic(
+                    PinholeCameraIntrinsicParameters.PrimeSenseDefault)
         scalable_integrate_rgb_frames(args.path_dataset, intrinsic)
 
 The script runs with ``python integrate_scene.py [path]``. ``[path]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. The optional argument ``-path_intrinsic`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used.
