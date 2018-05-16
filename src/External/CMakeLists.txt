@@ -18,23 +18,23 @@ endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
 if (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native eigen3")
+    message(STATUS "Use native eigen3.")
 else (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use eigen3 included in Open3D")
+    message(STATUS "Build eigen3 from source.")
     set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
 endif (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 # GLEW
 if (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of GLEW")
+    message(STATUS "Use native build of GLEW.")
 else (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build GLEW from source")
+    message(STATUS "Build GLEW from source.")
     add_subdirectory(glew)
 endif (GLEW_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 # GLFW
 if (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of glfw")
+    message(STATUS "Use native glfw.")
     if (APPLE)
         find_library(COCOA_FRAMEWORK Cocoa)
         find_library(IOKIT_FRAMEWORK IOKit)
@@ -54,15 +54,15 @@ if (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
         set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
     endif (APPLE)
 else (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build glfw from source")
+    message(STATUS "Build glfw from source.")
     add_subdirectory(GLFW)
 endif (GLFW_FOUND AND OPENGL_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 # JPEG
 if (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of libjpeg")
+    message(STATUS "Use native libjpeg.")
 else (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build libjpeg from source")
+    message(STATUS "Build libjpeg from source.")
     add_subdirectory(libjpeg)
 endif (JPEG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
@@ -73,22 +73,22 @@ if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # If the two libraries are linked together, they break the build
     # https://github.com/open-source-parsers/jsoncpp/issues/597
     # https://github.com/IntelVCL/Open3D/issues/9
-    message(STATUS "Build jsoncpp from source")
+    message(STATUS "Build jsoncpp from source.")
     add_subdirectory(jsoncpp)
 else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     if (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-        message(STATUS "Use native build of jsoncpp")
+        message(STATUS "Use native jsoncpp.")
     else (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-        message(STATUS "Build jsoncpp from source")
+        message(STATUS "Build jsoncpp from source.")
         add_subdirectory(jsoncpp)
     endif (JSONCPP_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
 
 # PNG
 if (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Use native build of libpng")
+    message(STATUS "Use native libpng.")
 else (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-    message(STATUS "Build libpng from source")
+    message(STATUS "Build libpng from source.")
     add_subdirectory(zlib)
     add_subdirectory(libpng)
 endif (PNG_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
@@ -100,12 +100,12 @@ endif(Open3D_BUILD_PYTHON_BINDING)
 
 # RealSense
 if(Open3D_BUILD_LIBREALSENSE)
-    message(STATUS "Build librealsense from source")
+    message(STATUS "Build librealsense from source.")
     add_subdirectory(librealsense)
 endif(Open3D_BUILD_LIBREALSENSE)
 
 # tinyfiledialogs
-message(STATUS "Build tinyfiledialogs from source")
+message(STATUS "Build tinyfiledialogs from source.")
 add_subdirectory(tinyfiledialogs)
 
 # pop everything to root
