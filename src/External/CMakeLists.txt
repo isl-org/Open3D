@@ -21,7 +21,7 @@ if (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Use native eigen3.")
 else (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
     message(STATUS "Build eigen3 from source.")
-    set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
+    set(EIGEN3_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/External/Eigen")
 endif (EIGEN3_FOUND AND Open3D_USE_NATIVE_DEPENDENCY_BUILD)
 
 # GLEW

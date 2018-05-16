@@ -27,7 +27,7 @@ file(GLOB PY_HELPER_FILES "Helper/*.py")
 add_custom_target(PythonHelper ALL SOURCES ${PY_HELPER_FILES})
 set_target_properties(PythonHelper PROPERTIES FOLDER "Python")
 add_custom_command(TARGET PythonHelper POST_BUILD
-COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
+COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
 add_dependencies(py3d PythonHelper)
 
 if (Open3D_BUILD_PYTHON_BINDING_TESTS)
@@ -35,9 +35,9 @@ if (Open3D_BUILD_PYTHON_BINDING_TESTS)
     add_custom_target(PythonTest ALL SOURCES ${PY_TEST_FILES})
     set_target_properties(PythonTest PROPERTIES FOLDER "Python")
     add_custom_command(TARGET PythonTest POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Python/Test/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Test")
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Test/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Test")
     add_custom_command(TARGET PythonTest POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
     add_dependencies(py3d PythonTest)
 endif(Open3D_BUILD_PYTHON_BINDING_TESTS)
 
@@ -53,10 +53,10 @@ if (Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
     add_custom_target(PythonTutorial ALL SOURCES ${PY_BASIC_TUTORIAL_FILES} ${PY_ADVANCED_TUTORIAL_FILES} ${PY_APPLICATION_TUTORIAL_FILES} ${PY_RECONSTRUCTION_SYSTEM_TUTORIAL_FILES})
     set_target_properties(PythonTutorial PROPERTIES FOLDER "Python")
     add_custom_command(TARGET PythonTutorial POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Python/Tutorial/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Tutorial")
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Tutorial/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Tutorial")
     if (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
         add_custom_command(TARGET PythonTutorial POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
     endif (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
     add_dependencies(py3d PythonTutorial)
 endif(Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
