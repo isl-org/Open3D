@@ -1,4 +1,4 @@
-macro(TEST TEST_NAME)
+macro (TEST TEST_NAME)
     add_executable(${TEST_NAME} "${TEST_NAME}.cpp")
 
     set(DEPENDENCIES "${ARGN}")
@@ -9,7 +9,7 @@ macro(TEST TEST_NAME)
     set_target_properties(${TEST_NAME} PROPERTIES
             FOLDER "Test"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Test")
-endmacro(TEST)
+endmacro (TEST)
 
 TEST(TestCameraPoseTrajectory Open3D)
 TEST(TestDepthCapture         Open3D)
@@ -24,9 +24,9 @@ TEST(TestPointCloud           Open3D)
 TEST(TestPoseGraph            Open3D)
 TEST(TestProgramOptions       Open3D)
 
-if(Open3D_BUILD_LIBREALSENSE)
+if (BUILD_LIBREALSENSE)
     TEST(TestRealSense        Open3D realsense)
-endif(Open3D_BUILD_LIBREALSENSE)
+endif (BUILD_LIBREALSENSE)
 
 TEST(TestRegistrationRANSAC   Open3D)
 TEST(TestTriangleMesh         Open3D)

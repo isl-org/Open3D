@@ -32,7 +32,7 @@ set(GLFW_INSTALL OFF)
 option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into application" OFF)
 
 if (UNIX)
-    if (Open3D_HEADLESS_RENDERING)
+    if (HEADLESS_RENDERING)
     	set(GLFW_USE_OSMESA ON)
     else ()
         set(GLFW_USE_OSMESA OFF)

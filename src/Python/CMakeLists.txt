@@ -30,7 +30,7 @@ add_custom_command(TARGET PythonHelper POST_BUILD
 COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
 add_dependencies(py3d PythonHelper)
 
-if (Open3D_BUILD_PYTHON_BINDING_TESTS)
+if (BUILD_PYTHON_TESTS)
     file(GLOB PY_TEST_FILES "Test/*.py")
     add_custom_target(PythonTest ALL SOURCES ${PY_TEST_FILES})
     set_target_properties(PythonTest PROPERTIES FOLDER "Python")
@@ -39,9 +39,9 @@ if (Open3D_BUILD_PYTHON_BINDING_TESTS)
     add_custom_command(TARGET PythonTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
     add_dependencies(py3d PythonTest)
-endif(Open3D_BUILD_PYTHON_BINDING_TESTS)
+endif (BUILD_PYTHON_TESTS)
 
-if (Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
+if (BUILD_PYTHON_TUTORIALS)
     file(GLOB PY_BASIC_TUTORIAL_FILES "Tutorial/Basic/*.py")
     source_group("Basic" FILES ${PY_BASIC_TUTORIAL_FILES})
     file(GLOB PY_ADVANCED_TUTORIAL_FILES "Tutorial/Advanced/*.py")
@@ -54,12 +54,12 @@ if (Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
     set_target_properties(PythonTutorial PROPERTIES FOLDER "Python")
     add_custom_command(TARGET PythonTutorial POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Tutorial/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Tutorial")
-    if (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
+    if (NOT BUILD_PYTHON_TESTS)
         add_custom_command(TARGET PythonTutorial POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
-    endif (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
+    endif (NOT BUILD_PYTHON_TESTS)
     add_dependencies(py3d PythonTutorial)
-endif(Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
+endif (BUILD_PYTHON_TUTORIALS)
 
 # find the python site-packages location
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)

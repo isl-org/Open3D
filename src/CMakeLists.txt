@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.0.0)
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.0")
     cmake_policy(SET CMP0054 OLD)
-endif()
+endif ()
 
 # central location for specifying the Open3D version
 project(Open3D
@@ -22,37 +22,44 @@ set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
                "${PROJECT_SOURCE_DIR}/open3d_config.h")
 
-if(WIN32)
-elseif(CYGWIN)
-elseif(APPLE)
+if (WIN32)
+elseif (CYGWIN)
+elseif (APPLE)
     # set (CMAKE_INSTALL_PREFIX ~/Library/)
-elseif(UNIX)
+elseif (UNIX)
     set (CMAKE_INSTALL_PREFIX ~/.local/)
-endif(WIN32)
+endif (WIN32)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # config options
-option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" OFF)
-option(Open3D_BUILD_TESTS "Build the Open3D test programs" ON)
-option(Open3D_BUILD_UNIT_TESTS "Build the Open3D unit tests" OFF)
-option(Open3D_BUILD_EXPERIMENTAL "Build the Open3D experimental programs" ON)
-option(Open3D_BUILD_LIBREALSENSE "Build support for Intel RealSense camera" ON)
-option(Open3D_USE_OPENMP "Use OpenMP multi-threading" ON)
-option(Open3D_BUILD_PYTHON_BINDING "Build Python binding for Open3D" ON)
-option(Open3D_BUILD_PYTHON_BINDING_TESTS "Copy test files for Open3D Python binding" ON)
-option(Open3D_BUILD_PYTHON_BINDING_TUTORIALS "Copy tutorial files for Open3D Python binding" ON)
-option(Open3D_USE_NATIVE_DEPENDENCY_BUILD "Prioritize using native dependency build" ON)
-option(Open3D_HEADLESS_RENDERING "Use OSMesa for headless rendering" OFF)
+option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
+option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
+option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
+option(BUILD_TESTS               "Build the Open3D test programs"           ON)
+option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
+option(BUILD_EXPERIMENTAL        "Build the Open3D experimental programs"   ON)
+option(BUILD_EIGEN3              "Build eigen3 from source"                 OFF)
+option(BUILD_GLEW                "Build glew from source"                   OFF)
+option(BUILD_GLFW                "Build glfw from source"                   OFF)
+option(BUILD_JPEG                "Build jpeg from source"                   OFF)
+option(BUILD_JSONCPP             "Build json from source"                   OFF)
+option(BUILD_PNG                 "Build png from source"                    OFF)
+option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
+option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
+option(BUILD_PYTHON_TESTS        "Copy the python test files"               ON)
+option(BUILD_PYTHON_TUTORIALS    "Copy the python tutorial files"           ON)
+option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
+option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 
 # default built type
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif ()
 
 # set include directories
 include_directories(
@@ -67,36 +74,36 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Set OS-specific things here
-if(WIN32)
+if (WIN32)
     # can't hide the unit testing option on Windows only
     # as a precaution: disable unit testing on Windows regardless of user input
-    message(STATUS "Disable Open3D_BUILD_UNIT_TESTS since it is not fully supported on Windows.")
-    set(Open3D_BUILD_UNIT_TESTS OFF)
+    message(STATUS "Disable unit tests since this feature is not fully supported on Windows.")
+    set(BUILD_UNIT_TESTS OFF)
 
     add_definitions(-DWINDOWS)
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
     add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Windows")
-    if(MSVC)
+    if (MSVC)
         message(STATUS "Compiling with MSVC")
         add_definitions(-DNOMINMAX)
         add_definitions(-D_USE_MATH_DEFINES)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-    endif(MSVC)
-elseif(CYGWIN)
+    endif (MSVC)
+elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
     # enable c++11
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     add_definitions(-DCYGWIN)
-elseif(APPLE)
+elseif (APPLE)
     add_definitions(-DUNIX)
     # enable c++11
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     # compile speed optimization for clang
     add_definitions(-O3)
-elseif(UNIX)
+elseif (UNIX)
     add_definitions(-DUNIX)
     # enable c++11
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -107,25 +114,21 @@ elseif(UNIX)
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
     message(STATUS "Disable BUILD_LIBREALSENSE since it is not fully supported on Linux.")
-    set(Open3D_BUILD_LIBREALSENSE OFF)
-endif(WIN32)
+    set(BUILD_LIBREALSENSE OFF)
+endif ()
 
 # Set OpenMP
-message(STATUS "Open3D_USE_OPENMP=${Open3D_USE_OPENMP}")
-if (Open3D_USE_OPENMP)
+if (WITH_OPENMP)
     find_package(OpenMP)
-    if(OPENMP_FOUND)
+    if (OPENMP_FOUND)
+        message(STATUS "Using installed OpenMP")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    else()
+    else ()
         message(STATUS "OpenMP NOT found")
-    endif()
-endif()
-
-message(STATUS "Open3D_BUILD_LIBREALSENSE=${Open3D_BUILD_LIBREALSENSE}")
-message(STATUS "Open3D_BUILD_PYTHON_BINDING=${Open3D_BUILD_PYTHON_BINDING}")
-message(STATUS "Open3D_BUILD_PYTHON_BINDING_TESTS=${Open3D_BUILD_PYTHON_BINDING_TESTS}")
+    endif ()
+endif ()
 
 # Handling dependencies
 add_subdirectory(External)
@@ -146,7 +149,7 @@ add_subdirectory(Visualization)
 add_library(${PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
 
 # headless rendering
-if (Open3D_HEADLESS_RENDERING)
+if (ENABLE_HEADLESS_RENDERING)
     find_package(OSMesa REQUIRED)
     include_directories(${OSMESA_INCLUDE_DIR})
     target_link_libraries(${PROJECT_NAME} ${OSMESA_LIBRARY})
@@ -174,35 +177,32 @@ file(GLOB HEADERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
 
 # Tests
-message(STATUS "Open3D_BUILD_TESTS=${Open3D_BUILD_TESTS}")
-if(Open3D_BUILD_TESTS)
+if (BUILD_TESTS)
     add_subdirectory(Test)
-endif(Open3D_BUILD_TESTS)
+endif ()
 
 # Unit tests
-message(STATUS "Open3D_BUILD_UNIT_TESTS=${Open3D_BUILD_UNIT_TESTS}")
-if(Open3D_BUILD_UNIT_TESTS)
+if (BUILD_UNIT_TESTS)
     add_subdirectory(UnitTest)
-endif(Open3D_BUILD_UNIT_TESTS)
+endif ()
 
 # Experimental
-message(STATUS "Open3D_BUILD_EXPERIMENTAL=${Open3D_BUILD_EXPERIMENTAL}")
-if(Open3D_BUILD_EXPERIMENTAL)
+if (BUILD_EXPERIMENTAL)
     message(STATUS "Build experimental projects")
     add_subdirectory(Experimental)
-endif(Open3D_BUILD_EXPERIMENTAL)
+endif ()
 
 # Python binding
-if (Open3D_BUILD_PYTHON_BINDING)
+if (BUILD_PYTHON_MODULE AND BUILD_PYBIND11)
     add_subdirectory(Python)
-endif(Open3D_BUILD_PYTHON_BINDING)
+endif ()
 
 # uninstall target
-if(NOT TARGET uninstall)
+if (NOT TARGET uninstall)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
                    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
                    IMMEDIATE @ONLY)
 
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
                       ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif()
+endif ()
