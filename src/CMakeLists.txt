@@ -25,7 +25,7 @@ configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
 if (WIN32)
 elseif (CYGWIN)
 elseif (APPLE)
-    # set (CMAKE_INSTALL_PREFIX ~/Library/)
+    set (CMAKE_INSTALL_PREFIX ~/Library/)
 elseif (UNIX)
     set (CMAKE_INSTALL_PREFIX ~/.local/)
 endif (WIN32)
