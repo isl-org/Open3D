@@ -1,11 +1,14 @@
+language: ruby
 env:
   global:
     - SHARED=OFF
 
-matrix:
+notifications:
+  email:
+    on_success: never
+    on_failure: always
 
-  notifications:
-    email: false # turn off email notifications for build failure
+matrix:
 
   include:
     # Default environment of Ubuntu 14.04
