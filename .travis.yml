@@ -77,8 +77,6 @@ before_install:
   # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
   # does not recognize sudo apt-get install libglfw3-dev
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      # ./util/scripts/install-deps-ubuntu.sh;
-      # sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libglfw3-dev libjsoncpp-dev libeigen3-dev libpng-dev libpng16-dev libjpeg-dev pybind11-dev;
       sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev libpng-dev libjpeg-dev;
       ./util/scripts/make-documentation.sh;
       ./util/scripts/install-gtest.sh;
