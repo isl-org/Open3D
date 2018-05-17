@@ -113,13 +113,13 @@ elseif (UNIX)
     add_definitions(-O3)
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
-    message(STATUS "Disable BUILD_LIBREALSENSE since it is not fully supported on Linux.")
+    message(STATUS "Disable RealSense since it is not fully supported on Linux.")
     set(BUILD_LIBREALSENSE OFF)
 endif ()
 
 # Set OpenMP
 if (WITH_OPENMP)
-    find_package(OpenMP)
+    find_package(OpenMP QUIET)
     if (OPENMP_FOUND)
         message(STATUS "Using installed OpenMP ${OpenMP_VERSION}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")

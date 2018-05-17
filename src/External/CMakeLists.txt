@@ -1,14 +1,14 @@
-find_package(GLEW)
-find_package(PkgConfig)
-find_package(OpenGL)
-find_package(pybind11)
+find_package(PkgConfig QUIET)
+find_package(OpenGL    QUIET)
+find_package(pybind11  QUIET)
 
 if (PKGCONFIG_FOUND)
-    pkg_check_modules(EIGEN3 eigen3>=3.2.7)
-    pkg_search_module(JPEG libjpeg)
-    pkg_search_module(PNG libpng>=1.6.0)
-    pkg_search_module(GLFW glfw3)
-    pkg_search_module(JSONCPP jsoncpp>=1.7.0)
+    pkg_search_module(EIGEN3    eigen3>=3.2.7   QUIET)
+    pkg_search_module(JPEG      libjpeg         QUIET)
+    pkg_search_module(GLFW      glfw3           QUIET)
+    pkg_search_module(GLEW      glew            QUIET)
+    pkg_search_module(JSONCPP   jsoncpp>=1.7.0  QUIET)
+    pkg_search_module(PNG       libpng>=1.6.0   QUIET)
 endif (PKGCONFIG_FOUND)
 
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
