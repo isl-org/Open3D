@@ -375,7 +375,7 @@ endif()
 #--------------------------------------------------------------------
 # MODIFICATION BY Open3D: overwrite some GLFW cmake variables
 #--------------------------------------------------------------------
-set(GLFW_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/External/GLFW/include")
+set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(GLFW_LIBRARIES "glfw")
 set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
