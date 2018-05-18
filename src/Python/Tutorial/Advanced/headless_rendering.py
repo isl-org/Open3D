@@ -3,7 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import os
-from py3d import *
+from open3d import *
 import numpy as np
 import matplotlib.pyplot as plt
 

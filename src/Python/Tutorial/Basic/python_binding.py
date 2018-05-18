@@ -5,13 +5,13 @@
 import numpy as np
 
 def example_help_function():
-    import py3d as py3d
-    help(py3d)
-    help(py3d.PointCloud)
-    help(py3d.read_point_cloud)
+    import open3d
+    help(open3d)
+    help(open3d.PointCloud)
+    help(open3d.read_point_cloud)
 
 def example_import_function():
-    from py3d import read_point_cloud
+    from open3d import read_point_cloud
     pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
     print(pcd)
 

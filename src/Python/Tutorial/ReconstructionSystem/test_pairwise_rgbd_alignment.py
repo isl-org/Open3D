@@ -5,7 +5,7 @@
 import numpy as np
 import argparse
 import sys
-from py3d import *
+from open3d import *
 sys.path.append("../Utility")
 from common import *
 from make_fragments import *
@@ -65,5 +65,6 @@ if __name__ == "__main__":
     if args.path_intrinsic:
         intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
     else:
-        intrinsic = PinholeCameraIntrinsic.get_prime_sense_default()
+        intrinsic = PinholeCameraIntrinsic(
+                PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     test_single_pair(args.source_id, args.target_id, intrinsic, with_opencv)

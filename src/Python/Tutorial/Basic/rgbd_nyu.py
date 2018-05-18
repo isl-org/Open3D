@@ -3,7 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 #conda install pillow matplotlib
-from py3d import *
+from open3d import *
 import numpy as np
 import re
 import matplotlib.image as mpimg
@@ -46,8 +46,8 @@ if __name__ == "__main__":
     plt.title('NYU depth image')
     plt.imshow(rgbd_image.depth)
     plt.show()
-    pcd = create_point_cloud_from_rgbd_image(rgbd_image,
-            PinholeCameraIntrinsic.get_prime_sense_default())
+    pcd = create_point_cloud_from_rgbd_image(rgbd_image, PinholeCameraIntrinsic(
+            PinholeCameraIntrinsicParameters.PrimeSenseDefault))
     # Flip it, otherwise the pointcloud will be upside down
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     draw_geometries([pcd])

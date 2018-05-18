@@ -7,7 +7,7 @@ import argparse
 import math
 import sys
 sys.path.append("../Utility")
-from py3d import *
+from open3d import *
 from common import *
 from opencv import *
 from optimize_posegraph import *
@@ -117,7 +117,8 @@ def process_fragments(path_dataset, path_intrinsic):
     if path_intrinsic:
         intrinsic = read_pinhole_camera_intrinsic(path_intrinsic)
     else:
-        intrinsic = PinholeCameraIntrinsic.get_prime_sense_default()
+        intrinsic = PinholeCameraIntrinsic(
+                PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
     make_folder(path_dataset + folder_fragment)
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)

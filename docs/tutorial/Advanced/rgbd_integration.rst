@@ -9,7 +9,7 @@ Open3D implements a scalable RGBD image integration algorithm. The algorithm is 
 
     # src/Python/Tutorial/Advanced/rgbd_integration.py
 
-    from py3d import *
+    from open3d import *
     from trajectory_io import *
     import numpy as np
 
@@ -23,7 +23,8 @@ Open3D implements a scalable RGBD image integration algorithm. The algorithm is 
             depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
             rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                     depth_trunc = 4.0, convert_rgb_to_intensity = False)
-            volume.integrate(rgbd, PinholeCameraIntrinsic.prime_sense_default,
+            volume.integrate(rgbd, PinholeCameraIntrinsic(
+                    PinholeCameraIntrinsicParameters.PrimeSenseDefault),
                     np.linalg.inv(camera_poses[i].pose))
 
         print("Extract a triangle mesh from the volume and visualize it.")
@@ -74,7 +75,8 @@ TSDF volume integration
         depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                 depth_trunc = 4.0, convert_rgb_to_intensity = False)
-        volume.integrate(rgbd, PinholeCameraIntrinsic.prime_sense_default,
+        volume.integrate(rgbd, PinholeCameraIntrinsic(
+                PinholeCameraIntrinsicParameters.PrimeSenseDefault),
                 np.linalg.inv(camera_poses[i].pose))
 
 Open3D provides two types of TSDF volumes: ``UniformTSDFVolume`` and ``ScalableTSDFVolume``. The latter is recommended since it uses a hierarchical structure and thus supports larger scenes.
