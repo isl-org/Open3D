@@ -16,3 +16,6 @@ _build/
 doxygen/
 .vs/
 src/open3d_config.h
+util/pip_package/setup.py
+open3d*.so
+open3d*.pyd
