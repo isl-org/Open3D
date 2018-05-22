@@ -72,7 +72,7 @@ def register_point_cloud_icp(source, target,
             TransformationEstimationPointToPlane())
     print(result_icp)
     information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.03, result_icp.transformation)
+            source, target, 0.07, result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
@@ -103,7 +103,7 @@ def register_colored_point_cloud_icp(source, target,
         current_transformation = result_icp.transformation
 
     information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.03, result_icp.transformation)
+            source, target, 0.07, result_icp.transformation)
     if draw_result:
         draw_registration_result_original_color(source, target,
                 result_icp.transformation)
