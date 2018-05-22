@@ -28,7 +28,7 @@ configure_file("${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py.in"
                "${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py")
 
 if (WIN32)
-    set (CMAKE_INSTALL_PREFIX "C:\Open3D")
+    set (CMAKE_INSTALL_PREFIX "C:\\Open3D")
 elseif (CYGWIN)
     set (CMAKE_INSTALL_PREFIX "~/.local/")
 elseif (APPLE)
