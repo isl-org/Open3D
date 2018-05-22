@@ -38,12 +38,8 @@ add_library(Visualization OBJECT
 add_dependencies(Visualization ShaderFileTarget)
 
 #install headers
-file(GLOB HEADERS_ROOT       "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-file(GLOB HEADERS_SHADER     "${CMAKE_CURRENT_SOURCE_DIR}/Shader/*.h")
-file(GLOB HEADERS_UTILITY    "${CMAKE_CURRENT_SOURCE_DIR}/Utility/*.h")
-file(GLOB HEADERS_VISUALIZER "${CMAKE_CURRENT_SOURCE_DIR}/Visualizer/*.h")
-
-install(FILES ${HEADERS_ROOT}       DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/Visualization)
-install(FILES ${HEADERS_SHADER}     DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/Visualization/Shader)
-install(FILES ${HEADERS_UTILITY}    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/Visualization/Utility)
-install(FILES ${HEADERS_VISUALIZER} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/Visualization/Visualizer)
+install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+        PATTERN     "*.cpp" EXCLUDE
+        PATTERN     "*.txt" EXCLUDE
+        PATTERN     "*.glsl" EXCLUDE)

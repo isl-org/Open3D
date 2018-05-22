@@ -5,7 +5,7 @@ mkdir -p build
 cd build
 
 # you can specify a custom install location
-cmake ../src -DCMAKE_INSTALL_PREFIX=~/.local #-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF
+cmake ../src -DCMAKE_INSTALL_PREFIX=~/open3d_install #-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF
 
 make -j
 
