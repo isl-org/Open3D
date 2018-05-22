@@ -24,7 +24,7 @@ pybind11_add_module(${PACKAGE_NAME}
     ${PY_VISUALIZATION_SOURCE_FILES} ${PY_VISUALIZATION_HEADER_FILES}
 )
 
-target_link_libraries(${PACKAGE_NAME} PRIVATE ${PROJECT_NAME})
+target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 
 file(GLOB PY_HELPER_FILES "Helper/*.py")
 add_custom_target(PythonHelper ALL SOURCES ${PY_HELPER_FILES})

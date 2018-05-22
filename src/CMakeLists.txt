@@ -9,8 +9,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.0")
 endif ()
 
 # central location for specifying the Open3D version
-project(Open3D
-        VERSION 0.1.5.0)
+project(Open3D VERSION 0.1.5.0)
 
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
@@ -157,19 +156,19 @@ add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
-add_library(${PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
+add_library(${CMAKE_PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
 
 # headless rendering
 if (ENABLE_HEADLESS_RENDERING)
     find_package(OSMesa REQUIRED)
     include_directories(${OSMESA_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME} ${OSMESA_LIBRARY})
+    target_link_libraries(${CMAKE_PROJECT_NAME} ${OSMESA_LIBRARY})
 else ()
     find_package(OpenGL REQUIRED)
-    target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
+    target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${GLFW_LIBRARIES}
                       ${GLEW_LIBRARIES}
                       ${JPEG_LIBRARIES}
@@ -179,13 +178,13 @@ target_link_libraries(${PROJECT_NAME}
                       tinyfiledialogs)
 
 # install
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${CMAKE_PROJECT_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 file(GLOB HEADERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
+install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME})
 
 # Tests
 if (BUILD_TESTS)
