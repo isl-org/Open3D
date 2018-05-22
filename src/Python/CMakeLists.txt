@@ -24,22 +24,12 @@ pybind11_add_module(${PACKAGE_NAME}
     ${PY_VISUALIZATION_SOURCE_FILES} ${PY_VISUALIZATION_HEADER_FILES}
 )
 
-# current change ----------------------------------
-# target_link_libraries(py3d PRIVATE ${PROJECT_NAME})
-# incomming change --------------------------------
-# target_link_libraries(${PACKAGE_NAME} PRIVATE Core IO Visualization)
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${PROJECT_NAME})
 
 file(GLOB PY_HELPER_FILES "Helper/*.py")
 add_custom_target(PythonHelper ALL SOURCES ${PY_HELPER_FILES})
 set_target_properties(PythonHelper PROPERTIES FOLDER "Python")
 add_custom_command(TARGET PythonHelper POST_BUILD
-# current change ----------------------------------
-# COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
-# add_dependencies(py3d PythonHelper)
-# incomming change --------------------------------
-# COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
-# add_dependencies(${PACKAGE_NAME} PythonHelper)
 COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Helper/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}")
 add_dependencies(${PACKAGE_NAME} PythonHelper)
 
@@ -50,14 +40,6 @@ if (BUILD_PYTHON_TESTS)
     add_custom_command(TARGET PythonTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Test/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Test")
     add_custom_command(TARGET PythonTest POST_BUILD
-# current change ----------------------------------
-#         COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
-#     add_dependencies(py3d PythonTest)
-# endif (BUILD_PYTHON_TESTS)
-# incomming change --------------------------------
-#         COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
-#     add_dependencies(${PACKAGE_NAME} PythonTest)
-# endif(Open3D_BUILD_PYTHON_BINDING_TESTS)
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
     add_dependencies(${PACKAGE_NAME} PythonTest)
 endif (BUILD_PYTHON_TESTS)
@@ -77,16 +59,6 @@ if (BUILD_PYTHON_TUTORIALS)
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Tutorial/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Tutorial")
     if (NOT BUILD_PYTHON_TESTS)
         add_custom_command(TARGET PythonTutorial POST_BUILD
-# current change ----------------------------------
-#             COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
-#     endif (NOT BUILD_PYTHON_TESTS)
-#     add_dependencies(py3d PythonTutorial)
-# endif (BUILD_PYTHON_TUTORIALS)
-# incomming change --------------------------------
-#             COMMAND ${CMAKE_COMMAND} -E copy_directory "${Open3D_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
-#     endif (NOT Open3D_BUILD_PYTHON_BINDING_TESTS)
-#     add_dependencies(${PACKAGE_NAME} PythonTutorial)
-# endif(Open3D_BUILD_PYTHON_BINDING_TUTORIALS)
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
     endif (NOT BUILD_PYTHON_TESTS)
     add_dependencies(${PACKAGE_NAME} PythonTutorial)
