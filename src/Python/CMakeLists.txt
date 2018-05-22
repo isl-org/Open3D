@@ -64,6 +64,11 @@ if (BUILD_PYTHON_TUTORIALS)
     add_dependencies(${PACKAGE_NAME} PythonTutorial)
 endif (BUILD_PYTHON_TUTORIALS)
 
+set_target_properties(${PACKAGE_NAME} PROPERTIES
+                      FOLDER "Python"
+                      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python"
+                      ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/Python")
+
 # find the python site-packages location
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
