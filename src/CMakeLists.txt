@@ -82,14 +82,6 @@ if (WIN32)
     message(STATUS "Disable unit tests since this feature is not fully supported on Windows.")
     set(BUILD_UNIT_TESTS OFF)
 
-    # build external dependencies from source
-    set(BUILD_EIGEN3  ON)
-    set(BUILD_GLEW    ON)
-    set(BUILD_GLFW    ON)
-    set(BUILD_JPEG    ON)
-    set(BUILD_JSONCPP ON)
-    set(BUILD_PNG     ON)
-
     add_definitions(-DWINDOWS)
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
     add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
