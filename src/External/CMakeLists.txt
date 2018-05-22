@@ -11,12 +11,23 @@ if (PKGCONFIG_FOUND)
     pkg_search_module(PNG       libpng>=1.6.0   QUIET)
 endif (PKGCONFIG_FOUND)
 
+macro(INSTALL_HEADERS source)
+    install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/External"
+            PATTERN     "*.c"           EXCLUDE
+            PATTERN     "*.cmake"       EXCLUDE
+            PATTERN     "*.in"          EXCLUDE
+            PATTERN     "*.cpp"         EXCLUDE
+            PATTERN     "*.txt"         EXCLUDE)
+endmacro()
+
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
 if (EIGEN3_FOUND AND NOT BUILD_EIGEN3)
     message(STATUS "Using installed eigen3 ${EIGEN3_VERSION}")
 else ()
     message(STATUS "Building eigen3 from source")
     set(EIGEN3_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/External/Eigen")
+    INSTALL_HEADERS(Eigen)
 endif ()
 
 # GLEW
@@ -25,6 +36,7 @@ if (GLEW_FOUND AND NOT BUILD_GLEW)
 else ()
     message(STATUS "Building GLEW from source")
     add_subdirectory(glew)
+    INSTALL_HEADERS(glew)
 endif ()
 
 # GLFW
@@ -51,6 +63,7 @@ if (GLFW_FOUND AND OPENGL_FOUND AND NOT BUILD_GLFW)
 else ()
     message(STATUS "Building glfw from source")
     add_subdirectory(GLFW)
+    INSTALL_HEADERS(GLFW)
 endif ()
 
 # JPEG
@@ -59,6 +72,7 @@ if (JPEG_FOUND AND NOT BUILD_JPEG)
 else ()
     message(STATUS "Building libjpeg from source")
     add_subdirectory(libjpeg)
+    INSTALL_HEADERS(libjpeg)
 endif ()
 
 # JSON
@@ -76,6 +90,7 @@ else ()
     else ()
         message(STATUS "Building jsoncpp from source")
         add_subdirectory(jsoncpp)
+        INSTALL_HEADERS(jsoncpp)
     endif ()
 endif ()
 
@@ -86,6 +101,8 @@ else ()
     message(STATUS "Building libpng from source")
     add_subdirectory(zlib)
     add_subdirectory(libpng)
+    INSTALL_HEADERS(zlib)
+    INSTALL_HEADERS(libpng)
 endif ()
 
 # PyBind
@@ -102,12 +119,14 @@ endif ()
 if (BUILD_LIBREALSENSE)
     message(STATUS "Building librealsense from source")
     add_subdirectory(librealsense)
+    INSTALL_HEADERS(librealsense)
 endif ()
 
 # tinyfiledialogs
 if (BUILD_TINYFILEDIALOGS)
     message(STATUS "Building tinyfiledialogs from source")
     add_subdirectory(tinyfiledialogs)
+    INSTALL_HEADERS(tinyfiledialogs)
 endif ()
 
 # pop everything to root
