@@ -7,7 +7,7 @@ import argparse
 import math
 import sys
 sys.path.append("../Utility")
-from py3d import *
+from open3d import *
 from common import *
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic):
@@ -57,5 +57,6 @@ if __name__ == "__main__":
     if args.path_intrinsic:
         intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
     else:
-        intrinsic = PinholeCameraIntrinsic.get_prime_sense_default()
+        intrinsic = PinholeCameraIntrinsic(
+                PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     scalable_integrate_rgb_frames(args.path_dataset, intrinsic)

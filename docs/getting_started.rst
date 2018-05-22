@@ -38,7 +38,7 @@ Install Python binding module by running the following script.
     cd util/scripts
     ./install.sh
 
-.. tip:: To uninstall the ``py3d`` module, use ``uninstall.sh``.
+.. tip:: To uninstall the ``open3d`` module, use ``uninstall.sh``.
 
 .. _getting_started_compilation_osx:
 
@@ -100,8 +100,8 @@ Simply deleting ``[PATH_TO_OPEN3D_PYTHON_MODULE].pyd`` to uninstall the module.
 Running Open3D tutorials
 ========================================
 
-Importing py3d module
-----------------------
+Importing open3d module
+-----------------------
 
 For quick sanity check, try importing the library from the python interactive shell:
 
@@ -109,7 +109,7 @@ For quick sanity check, try importing the library from the python interactive sh
 
     python
 
-    >>> import py3d
+    >>> import open3d
 
 .. error:: If there is an issue, check whether the Python version detected by cmake (see log from cmake) and the Python version for command line environment (type python -V). They should match. If it is not, please follow :ref:`python_binding` in docs. In addition, `python binding issue  <https://github.com/IntelVCL/Open3D/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22python+binding%22+>`_ on Github repository has helpful notes from Open3D users.
 

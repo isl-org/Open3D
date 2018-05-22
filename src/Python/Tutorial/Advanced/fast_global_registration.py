@@ -2,7 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from py3d import *
+from open3d import *
 from global_registration import *
 import numpy as np
 import copy

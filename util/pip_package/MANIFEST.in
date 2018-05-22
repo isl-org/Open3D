@@ -1,0 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+include README.rst
+include LICENSE.txt
+include open3d/win32/open3d*.pyd
+include open3d/linux/open3d*.so
+include open3d/macos/open3d*.so

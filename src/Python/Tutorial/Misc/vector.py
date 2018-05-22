@@ -4,11 +4,11 @@
 
 import copy
 import numpy as np
-from py3d import *
+from open3d import *
 
 if __name__ == "__main__":
 
-    print("Testing vector in py3d ...")
+    print("Testing vector in open3d ...")
 
     print("")
     print("Testing IntVector ...")

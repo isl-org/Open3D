@@ -40,7 +40,8 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
         PinholeCameraTrajectory &trajectory)
 {
     if (trajectory.intrinsic_.IsValid() == false) {
-        trajectory.intrinsic_ = PinholeCameraIntrinsic::GetPrimeSenseDefault();
+        trajectory.intrinsic_ = PinholeCameraIntrinsic(
+                PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
     trajectory.extrinsic_.clear();
     FILE * f = fopen(filename.c_str(), "r");

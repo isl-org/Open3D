@@ -4,11 +4,11 @@
 
 import copy
 import numpy as np
-from py3d import *
+from open3d import *
 
 if __name__ == "__main__":
 
-    print("Testing mesh in py3d ...")
+    print("Testing mesh in open3d ...")
     mesh = read_triangle_mesh("../../TestData/knot.ply")
     print(mesh)
     print(np.asarray(mesh.vertices))
