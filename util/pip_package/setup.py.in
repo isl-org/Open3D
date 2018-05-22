@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     author = 'IntelVCL',
-    author_email = 'info@open3d.org',
+    author_email = '@PROJECT_EMAIL@',
     classifiers=[
         # https://pypi.org/pypi?%3Aaction=list_classifiers
         "Development Status :: 3 - Alpha",
@@ -46,13 +46,15 @@ setup(
     keywords = "3D reconstruction point cloud mesh RGB-D visualization",
     license = "MIT",
     long_description=open('README.rst').read(),
+    # this is the name of the package on PyPi, can be changed to whatever
+    # other options: open3d-python, py3d, open3d-official, open3d-original
     name = "open3d",
-    packages=['open3d', ],
-    url = "http://www.open3d.org",
+    packages=['@PROJECT_NAME@', ],
+    url = "@PROJECT_HOME@",
     project_urls={
-        'Documentation': 'http://www.open3d.org/docs',
-        'Source code': 'https://github.com/IntelVCL/Open3D',
-        'Issues': 'https://github.com/IntelVCL/Open3D/issues',
+        'Documentation': '@PROJECT_DOCS@',
+        'Source code': '@PROJECT_CODE@',
+        'Issues': '@PROJECT_ISSUES@',
         },
-    version = '0.1.5',
+    version = '@PROJECT_VERSION@',
 )

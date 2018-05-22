@@ -13,6 +13,7 @@ project(Open3D
         VERSION 0.1.5.0)
 
 # set additional info
+set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
 set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
@@ -21,6 +22,10 @@ set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 # configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
                "${PROJECT_SOURCE_DIR}/open3d_config.h")
+
+# configure a setup.py for the pip packaging
+configure_file("${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py.in"
+               "${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py")
 
 if (WIN32)
 elseif (CYGWIN)
