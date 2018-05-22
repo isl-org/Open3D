@@ -22,17 +22,14 @@ def preprocess_point_cloud(pcd):
 
 def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh):
-    result_ransac = registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, 0.075,
-            TransformationEstimationPointToPoint(False), 4,
-            [CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            CorrespondenceCheckerBasedOnDistance(0.075),
-            CorrespondenceCheckerBasedOnNormal(0.52359878)],
-            RANSACConvergenceCriteria(4000000, 2000))
-    if (result_ransac.transformation.trace() == 4.0):
+    result = registration_fast_based_on_feature_matching(
+            source, target, source_fpfh, target_fpfh,
+            FastGlobalRegistrationOption(
+            maximum_correspondence_distance = 0.07))
+    if (result.transformation.trace() == 4.0):
         return (False, np.identity(4))
     else:
-        return (True, result_ransac)
+        return (True, result)
 
 
 def compute_initial_registration(s, t, source_down, target_down,
