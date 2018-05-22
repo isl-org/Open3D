@@ -27,15 +27,11 @@ configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
 configure_file("${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py.in"
                "${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py")
 
-if (WIN32)
-    set (CMAKE_INSTALL_PREFIX "C:\\Open3D")
-elseif (CYGWIN)
-    set (CMAKE_INSTALL_PREFIX "~/.local/")
-elseif (APPLE)
-    set (CMAKE_INSTALL_PREFIX "~/Library/")
-elseif (UNIX)
-    set (CMAKE_INSTALL_PREFIX "~/.local/")
-endif (WIN32)
+# don't set the CMAKE_INSTALL_PREFIX here
+# let the user pick either the OS-specific default path or a custom path
+# Windows test location: "C:\\Open3D"
+# macOS test location:   "~/Library/"
+# Linux test location:   "~/.local/"
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMake)
 

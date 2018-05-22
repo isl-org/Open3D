@@ -4,14 +4,12 @@ echo building...
 mkdir -p build
 cd build
 
-cmake ../src #-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF
-
 # you can specify a custom install location
-# cmake ../src/ -DCMAKE_INSTALL_PREFIX=~/Open3D_install
+cmake ../src -DCMAKE_INSTALL_PREFIX=~/.local #-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF
 
 make -j
 
-# this will copy the static libs and corresponding headers to ~/.local/lib & ~/.local/include
+# this will copy the libs and headers to ~/.local/lib & ~/.local/include
 # make install
 
 echo
