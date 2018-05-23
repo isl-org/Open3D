@@ -30,7 +30,7 @@ Supported compilers
 
 * GCC 4.8 and later on Linux
 * XCode 8.0 and later on OS X
-* Visual Studio 2015 and later on Windows
+* Visual Studio 2015 update 3 and later on Windows
 
 Resources
 ======================
