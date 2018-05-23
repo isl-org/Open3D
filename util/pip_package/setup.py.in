@@ -49,7 +49,7 @@ setup(
     # this is the name of the package on PyPi, can be changed to whatever
     # other options: open3d-python, py3d, open3d-official, open3d-original
     name = "open3d",
-    packages=['@PROJECT_NAME@', ],
+    packages=['open3d', ],
     url = "@PROJECT_HOME@",
     project_urls={
         'Documentation': '@PROJECT_DOCS@',
