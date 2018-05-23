@@ -19,3 +19,5 @@ src/open3d_config.h
 util/pip_package/setup.py
 open3d*.so
 open3d*.pyd
+__init__.pyc
+__pycache__
