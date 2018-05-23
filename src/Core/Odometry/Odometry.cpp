@@ -270,19 +270,19 @@ Eigen::Matrix6d CreateInfomationMatrix(
             double y = *PointerAt<float>(*xyz_t, u_t, v_t, 1);
             double z = *PointerAt<float>(*xyz_t, u_t, v_t, 2);
             G_r_private.setZero();
-            G_r_private(0) = 1.0;
-            G_r_private(4) = 2.0 * z;
-            G_r_private(5) = -2.0 * y;
+            G_r_private(1) = z;
+            G_r_private(2) = -y;
+            G_r_private(3) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
             G_r_private.setZero();
-            G_r_private(1) = 1.0;
-            G_r_private(3) = -2.0 * z;
-            G_r_private(5) = 2.0 * x;
+            G_r_private(0) = -z;
+            G_r_private(2) = x;
+            G_r_private(4) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
             G_r_private.setZero();
-            G_r_private(2) = 1.0;
-            G_r_private(3) = 2.0 * y;
-            G_r_private(4) = -2.0 * x;
+            G_r_private(0) = y;
+            G_r_private(1) = -x;
+            G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
 #ifdef _OPENMP
