@@ -21,3 +21,5 @@ open3d*.so
 open3d*.pyd
 __init__.pyc
 __pycache__
+._*
+.DS_Store
