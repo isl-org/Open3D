@@ -30,7 +30,6 @@
 #include <tuple>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-#include <iostream>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Timer.h>
 #include <Core/Registration/PoseGraph.h>
@@ -53,7 +52,7 @@ namespace {
 const std::vector<Eigen::Matrix4d> jacobian_operator = {
     (Eigen::Matrix4d() << /* for alpha */
     0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0).finished(),
-    (Eigen::Matrix4d() << /* for beta *
+    (Eigen::Matrix4d() << /* for beta */
     0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0).finished(),
     (Eigen::Matrix4d() << /* for gamma */
     0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished(),
@@ -537,25 +536,24 @@ void GlobalOptimizationLevenbergMarquardt::
         timer_iter.Start();
         int lm_count = 0;
         do {
-			Eigen::MatrixXd H_LM = H + current_lambda * H_I;
-			Eigen::VectorXd delta(H_LM.cols());
+            Eigen::MatrixXd H_LM = H + current_lambda * H_I;
+            Eigen::VectorXd delta(H_LM.cols());
 
-			//Using a sparse solver
-			Eigen::SparseMatrix<double> H_LM_sparse = H_LM.sparseView();
-			Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> chol;
-			chol.compute(H_LM_sparse);
+            //Using a sparse solver
+            Eigen::SparseMatrix<double> H_LM_sparse = H_LM.sparseView();
+            Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> chol;
+            chol.compute(H_LM_sparse);
 
-			if (chol.info() == Eigen::Success){
-				delta = chol.solve(b);
-				if (chol.info() != Eigen::Success){
-					std::cout << "[GlobalOptimizationLM] sparse solver couldn't solve !! switching to dense solver" << std::endl;
-					delta = H_LM.ldlt().solve(b);
-					}
-			}
-			else{
-				std::cout << "[GlobalOptimizationLM] Cholesky Decomposition Failed !! switching to dense solver" << std::endl;
-				delta = H_LM.ldlt().solve(b);
-			}
+            if (chol.info() == Eigen::Success) {
+                delta = chol.solve(b);
+                if (chol.info() != Eigen::Success) {
+                    PrintInfo("[GlobalOptimizationLM] sparse solver couldn't solve !! switching to dense solver");
+                    delta = H_LM.ldlt().solve(b);
+                    }
+            } else {
+                PrintInfo("[GlobalOptimizationLM] Cholesky Decomposition Failed !! switching to dense solver");
+                delta = H_LM.ldlt().solve(b);
+            }
 
             stop = stop || CheckRelativeIncrement(delta, x, criteria);
             if (!stop) {
