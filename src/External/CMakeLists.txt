@@ -145,17 +145,11 @@ else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
 endif ()
 
-set(dirent_INCLUDE_DIRS "")
+# other include folders
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
-
-set(flann_INCLUDE_DIRS "")
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann" flann_INCLUDE_DIRS)
-
-set(liblzf_INCLUDE_DIRS "")
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann"  flann_INCLUDE_DIRS)
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
-
-set(rply_INCLUDE_DIRS "")
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply" rply_INCLUDE_DIRS)
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
 # pop everything to root
 set(EIGEN3_INCLUDE_DIRS  ${EIGEN3_INCLUDE_DIRS}  PARENT_SCOPE)

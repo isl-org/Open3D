@@ -32,8 +32,8 @@ add_library(Visualization OBJECT
 
 add_dependencies(Visualization ShaderFileTarget)
 
-set(CORE_INCLUDE_DIRS "")
 Directories(${CMAKE_CURRENT_SOURCE_DIR} VISUALIZATION_INCLUDE_DIRS)
+set(VISUALIZATION_INCLUDE_DIRS ${VISUALIZATION_INCLUDE_DIRS} PARENT_SCOPE)
 
 target_include_directories(Visualization PUBLIC ${VISUALIZATION_INCLUDE_DIRS})
 

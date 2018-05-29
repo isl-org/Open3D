@@ -9,8 +9,8 @@ add_library(IO OBJECT
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
 
-set(CORE_INCLUDE_DIRS "")
 Directories(${CMAKE_CURRENT_SOURCE_DIR} IO_INCLUDE_DIRS)
+set(IO_INCLUDE_DIRS ${IO_INCLUDE_DIRS} PARENT_SCOPE)
 
 target_include_directories(IO PUBLIC ${IO_INCLUDE_DIRS})
 target_include_directories(IO PUBLIC ${JPEG_INCLUDE_DIR})
