@@ -63,6 +63,22 @@ if (NOT CMAKE_BUILD_TYPE)
         FORCE)
 endif ()
 
+# recursively parse and return the entire directory tree.
+# the result is placed in output
+function(Directories root output)
+    set(data "")
+    list(APPEND data ${root})
+    file(GLOB_RECURSE children LIST_DIRECTORIES true "${root}/" *)
+    list(SORT children)
+    foreach(child ${children})
+        if (IS_DIRECTORY ${child})
+            list(APPEND data ${child})
+            # message(${child})
+        endif()
+    endforeach()
+    set (${output} ${data} PARENT_SCOPE)
+endfunction()
+
 # set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}

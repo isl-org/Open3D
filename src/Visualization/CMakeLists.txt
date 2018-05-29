@@ -25,17 +25,22 @@ set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 # build
 file(GLOB_RECURSE VISUALIZATION_ALL_SOURCE_FILES "*.cpp")
 
-include_directories(".")
-include_directories("/Shader")
-include_directories("/Utility")
-include_directories("/Visualizer")
-
 # create object library
 add_library(Visualization OBJECT
 	        ${SHADER_FILES}
             ${VISUALIZATION_ALL_SOURCE_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
+
+set(CORE_INCLUDE_DIRS "")
+Directories(${CMAKE_CURRENT_SOURCE_DIR} VISUALIZATION_INCLUDE_DIRS)
+target_include_directories(Visualization PUBLIC ${VISUALIZATION_INCLUDE_DIRS})
+
+message("")
+foreach(child ${VISUALIZATION_INCLUDE_DIRS})
+    message("${child}")
+endforeach()
+message("")
 
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"

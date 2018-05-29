@@ -1,16 +1,18 @@
 # build
 file(GLOB_RECURSE CORE_ALL_SOURCE_FILES "*.cpp")
 
-include_directories(".")
-include_directories("/Camera")
-include_directories("/Geometry")
-include_directories("/Integration")
-include_directories("/Odometry")
-include_directories("/Registration")
-include_directories("/Utility")
-
 # create object library
 add_library(Core OBJECT ${CORE_ALL_SOURCE_FILES})
+
+set(CORE_INCLUDE_DIRS "")
+Directories(${CMAKE_CURRENT_SOURCE_DIR} CORE_INCLUDE_DIRS)
+target_include_directories(Core PUBLIC ${CORE_INCLUDE_DIRS})
+
+message("")
+foreach(child ${CORE_INCLUDE_DIRS})
+    message("${child}")
+endforeach()
+message("")
 
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
