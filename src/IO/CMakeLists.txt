@@ -13,17 +13,17 @@ set(CORE_INCLUDE_DIRS "")
 Directories(${CMAKE_CURRENT_SOURCE_DIR} IO_INCLUDE_DIRS)
 target_include_directories(IO PUBLIC ${IO_INCLUDE_DIRS})
 
-include_directories(${JPEG_INCLUDE_DIR})
-include_directories(${PNG_INCLUDE_DIRS})
-include_directories(${rply_INCLUDE_DIRS})
-include_directories(${liblzf_INCLUDE_DIRS})
-include_directories(${dirent_INCLUDE_DIRS})
+# include_directories(${JPEG_INCLUDE_DIR})
+# include_directories(${PNG_INCLUDE_DIRS})
+# include_directories(${rply_INCLUDE_DIRS})
+# include_directories(${liblzf_INCLUDE_DIRS})
+# include_directories(${dirent_INCLUDE_DIRS})
 
-# target_include_directories(IO PUBLIC ${JPEG_INCLUDE_DIR})
-# target_include_directories(IO PUBLIC ${PNG_INCLUDE_DIRS})
-# target_include_directories(IO PUBLIC ${rply_INCLUDE_DIRS})
-# target_include_directories(IO PUBLIC ${liblzf_INCLUDE_DIRS})
-# target_include_directories(IO PUBLIC ${dirent_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${JPEG_INCLUDE_DIR})
+target_include_directories(IO PUBLIC ${PNG_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${rply_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${liblzf_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${dirent_INCLUDE_DIRS})
 
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
