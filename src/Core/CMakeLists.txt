@@ -6,6 +6,7 @@ add_library(Core OBJECT ${CORE_ALL_SOURCE_FILES})
 
 set(CORE_INCLUDE_DIRS "")
 Directories(${CMAKE_CURRENT_SOURCE_DIR} CORE_INCLUDE_DIRS)
+
 target_include_directories(Core PUBLIC ${CORE_INCLUDE_DIRS})
 
 #install headers

@@ -34,6 +34,7 @@ add_dependencies(Visualization ShaderFileTarget)
 
 set(CORE_INCLUDE_DIRS "")
 Directories(${CMAKE_CURRENT_SOURCE_DIR} VISUALIZATION_INCLUDE_DIRS)
+
 target_include_directories(Visualization PUBLIC ${VISUALIZATION_INCLUDE_DIRS})
 
 #install headers
