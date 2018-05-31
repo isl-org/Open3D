@@ -27,7 +27,7 @@ file(GLOB_RECURSE VISUALIZATION_ALL_SOURCE_FILES "*.cpp")
 
 # create object library
 add_library(Visualization OBJECT
-	        ${SHADER_FILES}
+            ${SHADER_FILES}
             ${VISUALIZATION_ALL_SOURCE_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
