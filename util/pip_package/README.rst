@@ -28,12 +28,13 @@ Core features
 Supported platforms
 ======================
 
-We're in the process of redesigning the package.
-Currently tested on:
+The package has been tested on:
 
 * Ubuntu 16.04 with Python 2.7 and 3.5
-* Windows 10 with Python 2.7 and 3.5
+* Windows 10 with Python 2.7 x86 and 3.5 x86
 * MacOS High Sierra 10.13.4 with Python 2.7
+
+.. warning:: 64bit Python is not supported on Windows 10 at this time.
 
 Resources
 ======================
