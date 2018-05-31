@@ -21,6 +21,9 @@ macro(INSTALL_HEADERS source)
             PATTERN     "*.txt"         EXCLUDE)
 endmacro()
 
+# dirent
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
+
 # Eigen 3.2.7 version is required for pybind11 included in Open3D
 if (BUILD_EIGEN3)
     message(STATUS "Building EIGEN3 from source")
@@ -31,6 +34,9 @@ elseif (EIGEN3_FOUND)
 else ()
     message(SEND_ERROR "EIGEN3 dependency not met.")
 endif ()
+
+# flann
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann"  flann_INCLUDE_DIRS)
 
 # GLEW
 if (BUILD_GLEW)
@@ -72,6 +78,10 @@ else ()
     message(SEND_ERROR "GLFW dependency not met.")
 endif ()
 
+# fix inconsistency in GLFW_INCLUDE_DIRS
+# a space instead of a semicolon is sometimes used to separate two different include directories
+string(REPLACE " /" ";/" GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS})
+
 # JPEG
 if (BUILD_JPEG)
     message(STATUS "Building LIBJPEG from source")
@@ -83,7 +93,7 @@ else ()
     message(SEND_ERROR "LIBJPEG dependency not met.")
 endif ()
 
-# JSON
+# JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
     # It is a known bug that g++ on OSX only supports libstdc++
     # The jsoncpp installed by brew by default is compiled with libc++
@@ -103,6 +113,9 @@ else ()
         message(SEND_ERROR "JSONCPP dependency not met.")
     endif ()
 endif ()
+
+# liblzf
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
 
 # PNG
 if (BUILD_PNG)
@@ -133,6 +146,7 @@ endif ()
 if (BUILD_LIBREALSENSE)
     message(STATUS "Building LIBREALSENSE from source")
     add_subdirectory(librealsense)
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense" librealsense_INCLUDE_DIRS)
     INSTALL_HEADERS(librealsense)
 endif ()
 
@@ -140,32 +154,49 @@ endif ()
 if (BUILD_TINYFILEDIALOGS)
     message(STATUS "Building TINYFILEDIALOGS from source")
     add_subdirectory(tinyfiledialogs)
+    set(tinyfiledialogs_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyfiledialogs")
     INSTALL_HEADERS(tinyfiledialogs)
 else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
 endif ()
 
-# other include folders
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann"  flann_INCLUDE_DIRS)
-Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
+# rply
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
 # pop everything to root
-set(EIGEN3_INCLUDE_DIRS  ${EIGEN3_INCLUDE_DIRS}  PARENT_SCOPE)
-set(GLEW_INCLUDE_DIRS    ${GLEW_INCLUDE_DIRS}    PARENT_SCOPE)
-set(GLEW_LIBRARIES       ${GLEW_LIBRARIES}       PARENT_SCOPE)
-set(GLFW_INCLUDE_DIRS    ${GLFW_INCLUDE_DIRS}    PARENT_SCOPE)
-set(GLFW_LIBRARIES       ${GLFW_LIBRARIES}       PARENT_SCOPE)
-set(GLFW_LIBRARY_DIRS    ${GLFW_LIBRARY_DIRS}    PARENT_SCOPE)
-set(JPEG_INCLUDE_DIR     ${JPEG_INCLUDE_DIR}     PARENT_SCOPE)
-set(JPEG_LIBRARIES       ${JPEG_LIBRARIES}       PARENT_SCOPE)
-set(JSONCPP_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS} PARENT_SCOPE)
-set(JSONCPP_LIBRARIES    ${JSONCPP_LIBRARIES}    PARENT_SCOPE)
-set(JSONCPP_LIBRARY_DIRS ${JSONCPP_LIBRARY_DIRS} PARENT_SCOPE)
-set(PNG_INCLUDE_DIRS     ${PNG_INCLUDE_DIRS}     PARENT_SCOPE)
-set(PNG_LIBRARIES        ${PNG_LIBRARIES}        PARENT_SCOPE)
-set(dirent_INCLUDE_DIRS  ${dirent_INCLUDE_DIRS}  PARENT_SCOPE)
-set(flann_INCLUDE_DIRS   ${flann_INCLUDE_DIRS}   PARENT_SCOPE)
-set(liblzf_INCLUDE_DIRS  ${liblzf_INCLUDE_DIRS}  PARENT_SCOPE)
-set(rply_INCLUDE_DIRS    ${rply_INCLUDE_DIRS}    PARENT_SCOPE)
+set(dirent_INCLUDE_DIRS             ${dirent_INCLUDE_DIRS}          PARENT_SCOPE)
+set(EIGEN3_INCLUDE_DIRS             ${EIGEN3_INCLUDE_DIRS}          PARENT_SCOPE)
+set(flann_INCLUDE_DIRS              ${flann_INCLUDE_DIRS}           PARENT_SCOPE)
+set(GLEW_INCLUDE_DIRS               ${GLEW_INCLUDE_DIRS}            PARENT_SCOPE)
+set(GLEW_LIBRARIES                  ${GLEW_LIBRARIES}               PARENT_SCOPE)
+set(GLFW_INCLUDE_DIRS               ${GLFW_INCLUDE_DIRS}            PARENT_SCOPE)
+set(GLFW_LIBRARIES                  ${GLFW_LIBRARIES}               PARENT_SCOPE)
+set(GLFW_LIBRARY_DIRS               ${GLFW_LIBRARY_DIRS}            PARENT_SCOPE)
+set(JPEG_INCLUDE_DIR                ${JPEG_INCLUDE_DIR}             PARENT_SCOPE)
+set(JPEG_LIBRARIES                  ${JPEG_LIBRARIES}               PARENT_SCOPE)
+set(JSONCPP_INCLUDE_DIRS            ${JSONCPP_INCLUDE_DIRS}         PARENT_SCOPE)
+set(JSONCPP_LIBRARIES               ${JSONCPP_LIBRARIES}            PARENT_SCOPE)
+set(JSONCPP_LIBRARY_DIRS            ${JSONCPP_LIBRARY_DIRS}         PARENT_SCOPE)
+set(liblzf_INCLUDE_DIRS             ${liblzf_INCLUDE_DIRS}          PARENT_SCOPE)
+set(librealsense_INCLUDE_DIRS       ${librealsense_INCLUDE_DIRS}    PARENT_SCOPE)
+set(PNG_INCLUDE_DIRS                ${PNG_INCLUDE_DIRS}             PARENT_SCOPE)
+set(PNG_LIBRARIES                   ${PNG_LIBRARIES}                PARENT_SCOPE)
+set(rply_INCLUDE_DIRS               ${rply_INCLUDE_DIRS}            PARENT_SCOPE)
+set(tinyfiledialogs_INCLUDE_DIRS    ${tinyfiledialogs_INCLUDE_DIRS} PARENT_SCOPE)
+
+set(EXTERNAL_INCLUDE_DIRS "")
+list(APPEND EXTERNAL_INCLUDE_DIRS
+     ${dirent_INCLUDE_DIRS}
+     ${EIGEN3_INCLUDE_DIRS}
+     ${flann_INCLUDE_DIRS}
+     ${GLEW_INCLUDE_DIRS}
+     ${GLFW_INCLUDE_DIRS}
+     ${JPEG_INCLUDE_DIR}
+     ${JSONCPP_INCLUDE_DIRS}
+     ${liblzf_INCLUDE_DIRS}
+     ${librealsense_INCLUDE_DIRS}
+     ${PNG_INCLUDE_DIRS}
+     ${rply_INCLUDE_DIRS}
+     ${tinyfiledialogs_INCLUDE_DIRS})
+
+set(EXTERNAL_INCLUDE_DIRS           ${EXTERNAL_INCLUDE_DIRS}        PARENT_SCOPE)

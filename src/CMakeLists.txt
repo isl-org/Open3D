@@ -26,6 +26,14 @@ configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
 configure_file("${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py.in"
                "${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py")
 
+if(WIN32 AND NOT CYGWIN)
+    set(DEF_INSTALL_CMAKE_DIR CMake)
+else()
+    set(DEF_INSTALL_CMAKE_DIR lib/CMake/Open3D)
+endif()
+set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
+    "Installation directory for CMake files")
+
 # don't set the CMAKE_INSTALL_PREFIX here
 # let the user pick either the OS-specific default path or a custom path
 # Windows test location: "C:\\Open3D"
@@ -76,6 +84,28 @@ function(Directories root output)
         endif()
     endforeach()
     set (${output} ${data} PARENT_SCOPE)
+endfunction()
+
+# input:  a list of absolute paths in the current source dir
+# output: a list of absolute paths in the install dir
+function(SourcePath2InstallPath input output)
+    foreach(child ${input})
+
+        set(relative_path "")
+        set(install_path "")
+
+        # extract path relative to the project source dir
+        file(RELATIVE_PATH relative_path ${CMAKE_CURRENT_SOURCE_DIR} ${child})
+
+        # construct absolute path in the install dir
+        get_filename_component(install_path "${relative_path}"
+                               REALPATH
+                               BASE_DIR "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}")
+
+        # save
+        list(APPEND converted ${install_path})
+    endforeach()
+    set (${output} ${converted} PARENT_SCOPE)
 endfunction()
 
 # set include directories
@@ -184,15 +214,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${PNG_LIBRARIES}
                       tinyfiledialogs)
 
-# install
-install(TARGETS ${CMAKE_PROJECT_NAME}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
-file(GLOB HEADERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME})
-
 # Tests
 if (BUILD_TESTS)
     add_subdirectory(Test)
@@ -213,6 +234,49 @@ endif ()
 if (BUILD_PYTHON_MODULE AND BUILD_PYBIND11)
     add_subdirectory(Python)
 endif ()
+
+# build a list of include folders
+SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS)
+SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS)
+SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS)
+SourcePath2InstallPath("${EXTERNAL_INCLUDE_DIRS}"      INSTALL_EXTERNAL_INCLUDE_DIRS)
+
+list(APPEND CONFIG_Open3D_INCLUDE_DIRS
+     ${INSTALL_CORE_INCLUDE_DIRS}
+     ${INSTALL_IO_INCLUDE_DIRS}
+     ${INSTALL_VISUALIZATION_INCLUDE_DIRS}
+     ${INSTALL_EXTERNAL_INCLUDE_DIRS})
+list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
+list(SORT CONFIG_Open3D_INCLUDE_DIRS)
+
+message("")
+foreach(child ${CONFIG_Open3D_INCLUDE_DIRS})
+    message(${child})
+endforeach()
+message("")
+
+# find_package Open3D
+configure_file(Open3DConfig.cmake.in
+               "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake" @ONLY)
+
+# find_package Open3D Version
+configure_file(Open3DConfigVersion.cmake.in
+               "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake" @ONLY)
+
+# install
+install(TARGETS ${CMAKE_PROJECT_NAME}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+file(GLOB HEADERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME})
+
+# Install the Open3DConfig.cmake and Open3DConfigVersion.cmake
+install(FILES
+        "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
+        "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
+        DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
 
 # uninstall target
 if (NOT TARGET uninstall)
