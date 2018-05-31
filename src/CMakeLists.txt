@@ -242,6 +242,7 @@ SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INC
 SourcePath2InstallPath("${EXTERNAL_INCLUDE_DIRS}"      INSTALL_EXTERNAL_INCLUDE_DIRS)
 
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
+     "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
      ${INSTALL_CORE_INCLUDE_DIRS}
      ${INSTALL_IO_INCLUDE_DIRS}
      ${INSTALL_VISUALIZATION_INCLUDE_DIRS}
@@ -249,11 +250,8 @@ list(APPEND CONFIG_Open3D_INCLUDE_DIRS
 list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 
-message("")
-foreach(child ${CONFIG_Open3D_INCLUDE_DIRS})
-    message(${child})
-endforeach()
-message("")
+# set the Open3D library directory
+set(CONFIG_Open3D_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
 
 # find_package Open3D
 configure_file(Open3DConfig.cmake.in
