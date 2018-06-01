@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/lib
+includedir=${prefix}/include
+includedir2=${prefix}/include/open3d
+
+Name: open3d
+Description: lib for the open3d
+Version: @Open3D_VERSION_MAJOR@.@Open3D_VERSION_MINOR@
+Libs: -L${libdir} -lopen3d_Core -lopen3d_IO -lopen3d_Visualization
+Cflags: -I${includedir} -I${includedir2}
+

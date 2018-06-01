@@ -138,3 +138,31 @@ endif(EXISTS "${Open3D_SOURCE_DIR}/Experimental/CMakeLists.txt")
 if (Open3D_BUILD_PYTHON_BINDING)
     add_subdirectory(Python)
 endif(Open3D_BUILD_PYTHON_BINDING)
+
+
+# config
+CONFIGURE_FILE(open3d.pc.in "${PROJECT_BINARY_DIR}/open3d.pc" @ONLY)
+
+
+# install
+install(DIRECTORY ./
+  DESTINATION include/open3d
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN "*.txt" EXCLUDE
+  PATTERN "Core/*"
+  PATTERN "IO/*"
+  PATTERN "Visualization/*"
+  PATTERN "CMake/*" EXCLUDE
+  PATTERN "Experimental/*" EXCLUDE
+  PATTERN "External/*" EXCLUDE
+  PATTERN "Python/*" EXCLUDE
+  PATTERN "Test/*" EXCLUDE
+  PATTERN "Tools/*" EXCLUDE
+  PATTERN "UnitTest/*" EXCLUDE
+)
+
+INSTALL(FILES "${PROJECT_BINARY_DIR}/open3d.pc" DESTINATION lib/pkgconfig)
+
+# uninstall
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
+add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
