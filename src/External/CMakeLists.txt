@@ -16,9 +16,11 @@ macro(INSTALL_HEADERS source)
             DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/External"
             PATTERN     "*.c"           EXCLUDE
             PATTERN     "*.cmake"       EXCLUDE
-            PATTERN     "*.in"          EXCLUDE
             PATTERN     "*.cpp"         EXCLUDE
-            PATTERN     "*.txt"         EXCLUDE)
+            PATTERN     "*.in"          EXCLUDE
+            PATTERN     "*.m"           EXCLUDE
+            PATTERN     "*.txt"         EXCLUDE
+            PATTERN     ".gitignore"    EXCLUDE)
 endmacro()
 
 # dirent
