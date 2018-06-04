@@ -1,8 +1,0 @@
-C++
-===================================================================
-
-This page explains how to create a CMake based C++ project using the Open3D C++ interface.
-
-.. toctree::
-
-    cplusplus_interface
