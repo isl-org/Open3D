@@ -19,7 +19,7 @@ For installing from source see :ref:`getting_started_compilation`.
 Create C++ project
 ==================
 
-.. warning:: The following is supported on Ubuntu only at this time.
+.. warning:: The following is supported at this time only on Ubuntu with all dependencies installed.
 
 Let's create a basic C++ project based on CMake and Open3D installed libraries and headers.
 
