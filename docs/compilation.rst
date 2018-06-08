@@ -3,7 +3,7 @@
 Compilation Options
 ###################
 
-This page shows advanced options to customize your Open3D build.For quick start, see :ref:`getting_started_compilation`.
+This page shows advanced options to customize your Open3D build. For quick start, see :ref:`getting_started_compilation`.
 
 .. _python_binding:
 
