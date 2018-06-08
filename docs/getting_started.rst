@@ -31,15 +31,10 @@ Run the following commands to install the dependencies and use CMake to build th
     cmake ../src -DCMAKE_INSTALL_PREFIX=<open3d_install_directory>
     make -j
 
-The ``CMAKE_INSTALL_PREFIX`` argument is optional.
+The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install Open3D to a user location.
+In the absence of this argument Open3D will be installed to a system location (sudo required).
 
-.. tip:: In order to build the Open3D Python module with a particular Python version in mind set the either the ``PYBIND11_PYTHON_VERSION`` or the ``PYTHON_EXECUTABLE`` cmake option.
-
-.. code-block:: bash
-
-    cmake ../src -DPYBIND11_PYTHON_VERSION=2.7
-    # or
-    cmake ../src -DPYTHON_EXECUTABLE=/usr/bin/python
+.. tip:: In order to build the Open3D Python module with a particular Python version in mind see :ref:`python_binding`.
 
 Install/uninstall the Open3D libraries, headers and Python module by running:
 

@@ -157,6 +157,7 @@ if (BUILD_TINYFILEDIALOGS)
     message(STATUS "Building TINYFILEDIALOGS from source")
     add_subdirectory(tinyfiledialogs)
     set(tinyfiledialogs_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyfiledialogs")
+    set(tinyfiledialogs_LIBRARIES tinyfiledialogs)
     INSTALL_HEADERS(tinyfiledialogs)
 else ()
     message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
@@ -185,6 +186,7 @@ set(PNG_INCLUDE_DIRS                ${PNG_INCLUDE_DIRS}             PARENT_SCOPE
 set(PNG_LIBRARIES                   ${PNG_LIBRARIES}                PARENT_SCOPE)
 set(rply_INCLUDE_DIRS               ${rply_INCLUDE_DIRS}            PARENT_SCOPE)
 set(tinyfiledialogs_INCLUDE_DIRS    ${tinyfiledialogs_INCLUDE_DIRS} PARENT_SCOPE)
+set(tinyfiledialogs_LIBRARIES       ${tinyfiledialogs_LIBRARIES}    PARENT_SCOPE)
 
 set(EXTERNAL_INCLUDE_DIRS "")
 list(APPEND EXTERNAL_INCLUDE_DIRS

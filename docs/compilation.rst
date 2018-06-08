@@ -3,7 +3,7 @@
 Compilation Options
 ###################
 
-This page shows advanced options to customize your Open3D build. For quick start, see :ref:`getting_started_compilation`.
+This page shows advanced options to customize your Open3D build.For quick start, see :ref:`getting_started_compilation`.
 
 .. _python_binding:
 
@@ -53,7 +53,7 @@ The following is an example of how to force building from source a number of dep
 
 .. tip:: This can save a lot of time on Windows where it can be particularly difficult to install the Open3D dependencies.
 
-.. note:: Enabling these build options may increase the compilation time substantially.
+.. note:: Enabling these build options may increase the compilation time.
 
 OpenMP
 ======

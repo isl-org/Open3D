@@ -25,10 +25,14 @@ Let's create a basic C++ project based on CMake and Open3D installed libraries a
 
 1. Get the code from :download:`TestVisualizer.cpp <../../_static/C++/TestVisualizer.cpp>`
 2. Get the CMake config file from :download:`CMakeLists.txt <../../_static/C++/CMakeLists.txt>`
-3. mkdir -p build
-4. cd build
-5. cmake ..
-6. make -j
+3. Build the project using the following commands:
+
+.. code-block:: bash
+
+    mkdir -p build
+    cd build
+    cmake ..
+    make -j
 
 Highlights
 ``````````

@@ -212,7 +212,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${JSONCPP_LIBRARIES}
                       ${OMP_LIBRARIES}
                       ${PNG_LIBRARIES}
-                      tinyfiledialogs)
+                      ${tinyfiledialogs_LIBRARIES})
 
 # Tests
 if (BUILD_TESTS)
