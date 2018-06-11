@@ -75,6 +75,13 @@ Open3D implements multiway registration via pose graph optimization. The backend
             pcds[point_id].transform(pose_graph.nodes[point_id].pose)
         draw_geometries(pcds)
 
+        print("Make a combined point cloud")
+        pcd_combined = PointCloud()
+        for point_id in range(n_pcds):
+            pcd_combined += pcds[point_id]
+        downpcd_combined = voxel_down_sample(pcd_combined, voxel_size = 0.02)
+        write_point_cloud("multiway_registration.pcd", downpcd_combined)
+
 Input
 ````````````````````
 
@@ -209,3 +216,17 @@ Ouputs:
     :width: 400px
 
 Although this tutorial demonstrates multiway registration for point clouds. The same procedure can be applied to RGBD images. See :ref:`reconstruction_system_make_fragments` for an example.
+
+.. _make_a_combined_point_cloud:
+
+Make a combined point cloud
+``````````````````````````````````````
+
+.. code-block:: python
+
+    print("Make a combined point cloud")
+    pcd_combined = PointCloud()
+    for point_id in range(n_pcds):
+        pcd_combined += pcds[point_id]
+    downpcd_combined = voxel_down_sample(pcd_combined, voxel_size = 0.02)
+    write_point_cloud("multiway_registration.pcd", downpcd_combined)
