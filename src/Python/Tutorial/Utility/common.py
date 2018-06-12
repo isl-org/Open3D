@@ -60,6 +60,12 @@ def make_folder(path_folder):
 #######################
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
+def draw_pcd(pcd):
+    pcd_temp = copy.deepcopy(pcd)
+    pcd_temp.transform(flip_transform)
+    draw_geometries([pcd_temp])
+
+
 def draw_registration_result(source, target, transformation):
     source_temp = copy.deepcopy(source)
     target_temp = copy.deepcopy(target)
