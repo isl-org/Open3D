@@ -237,7 +237,7 @@ std::vector<Eigen::Matrix3d>
     return pyramid_camera_matrix;
 }
 
-Eigen::Matrix6d CreateInfomationMatrix(
+Eigen::Matrix6d CreateInformationMatrix(
         const Eigen::Matrix4d &extrinsic,
         const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Image &depth_s, const Image &depth_t,
@@ -528,7 +528,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 
     if (is_success) {
         Eigen::Matrix4d trans_output = extrinsic;
-        Eigen::MatrixXd info_output = CreateInfomationMatrix(extrinsic,
+        Eigen::MatrixXd info_output = CreateInformationMatrix(extrinsic,
                 pinhole_camera_intrinsic, source_processed->depth_,
                 target_processed->depth_, option);
         return std::make_tuple(true, trans_output, info_output);
