@@ -100,7 +100,7 @@ script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/Open3D_install ../src/
+  - cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make install
@@ -109,3 +109,7 @@ script:
   # - if [ "$SHARED" == "OFF" ]; then
   #     cd lib/Tutorial/Basic/ && python file_io.py
   #   fi
+  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST -DCMAKE_PREFIX_PATH="~/open3d_install/lib/CMake"`
+  - if [ "$test" == "Open3D found." ]; then echo "PASSED find_package(Open3D)."; else echo "FAILED find_package(Open3D)."; exit 1; fi
+
+
