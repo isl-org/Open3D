@@ -28,7 +28,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
-set(GLFW_INSTALL OFF)
+set(GLFW_INSTALL ON)
 option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into application" OFF)
 
 if (UNIX)
@@ -399,14 +399,15 @@ if (GLFW_INSTALL)
     install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
             DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
 
+    # Open3D NOTE: need to keep this off in order for the Open3D make uninstall to work 
     # Only generate this target if no higher-level project already has
-    if (NOT TARGET uninstall)
-        configure_file(cmake_uninstall.cmake.in
-                       cmake_uninstall.cmake IMMEDIATE @ONLY)
+    # if (NOT TARGET uninstall)
+    #     configure_file(cmake_uninstall.cmake.in
+    #                    cmake_uninstall.cmake IMMEDIATE @ONLY)
 
-        add_custom_target(uninstall
-                          "${CMAKE_COMMAND}" -P
-                          "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
-        set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
-    endif()
+    #     add_custom_target(uninstall
+    #                       "${CMAKE_COMMAND}" -P
+    #                       "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
+    #     set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
+    # endif()
 endif()

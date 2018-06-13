@@ -51,12 +51,12 @@ option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_TESTS               "Build the Open3D test programs"           ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EXPERIMENTAL        "Build the Open3D experimental programs"   ON)
-option(BUILD_EIGEN3              "Build eigen3 from source"                 OFF)
-option(BUILD_GLEW                "Build glew from source"                   OFF)
-option(BUILD_GLFW                "Build glfw from source"                   OFF)
-option(BUILD_JPEG                "Build jpeg from source"                   OFF)
-option(BUILD_JSONCPP             "Build json from source"                   OFF)
-option(BUILD_PNG                 "Build png from source"                    OFF)
+option(BUILD_EIGEN3              "Build eigen3 from source"                 ON)
+option(BUILD_GLEW                "Build glew from source"                   ON)
+option(BUILD_GLFW                "Build glfw from source"                   ON)
+option(BUILD_JPEG                "Build jpeg from source"                   ON)
+option(BUILD_JSONCPP             "Build json from source"                   ON)
+option(BUILD_PNG                 "Build png from source"                    ON)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(BUILD_PYTHON_TESTS        "Copy the python test files"               ON)
@@ -241,6 +241,7 @@ SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS)
 SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS)
 SourcePath2InstallPath("${EXTERNAL_INCLUDE_DIRS}"      INSTALL_EXTERNAL_INCLUDE_DIRS)
 
+# set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
      "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
      ${INSTALL_CORE_INCLUDE_DIRS}
@@ -250,8 +251,17 @@ list(APPEND CONFIG_Open3D_INCLUDE_DIRS
 list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 
-# set the Open3D library directory
-set(CONFIG_Open3D_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
+# set Open3D libraries
+list(APPEND CONFIG_Open3D_LIBRARIES
+     "${CMAKE_PROJECT_NAME}"
+     ${EXTERNAL_LIBRARIES}
+     ${OMP_LIBRARIES})
+
+# set Open3D library directories
+list(APPEND CONFIG_Open3D_LIBRARY_DIRS
+    "${CMAKE_INSTALL_PREFIX}/lib"
+    ${EXTERNAL_LIBRARY_DIRS}
+    ${OMP_LIBRARY_DIRS})
 
 # find_package Open3D
 configure_file(Open3DConfig.cmake.in

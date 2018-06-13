@@ -166,6 +166,40 @@ endif ()
 # rply
 Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
+# set EXTERNAL_INCLUDE_DIRS
+list(APPEND EXTERNAL_INCLUDE_DIRS
+     ${dirent_INCLUDE_DIRS}
+     ${EIGEN3_INCLUDE_DIRS}
+     ${flann_INCLUDE_DIRS}
+     ${GLEW_INCLUDE_DIRS}
+     ${GLFW_INCLUDE_DIRS}
+     ${JPEG_INCLUDE_DIR}
+     ${JSONCPP_INCLUDE_DIRS}
+     ${liblzf_INCLUDE_DIRS}
+     ${librealsense_INCLUDE_DIRS}
+     ${PNG_INCLUDE_DIRS}
+     ${rply_INCLUDE_DIRS}
+     ${tinyfiledialogs_INCLUDE_DIRS})
+
+# set EXTERNAL_LIBRARIES
+list(APPEND EXTERNAL_LIBRARIES
+     ${GLEW_LIBRARIES}
+     ${GLFW_LIBRARIES}
+     ${JPEG_LIBRARIES}
+     ${JSONCPP_LIBRARIES}
+     ${PNG_LIBRARIES}
+     ${tinyfiledialogs_LIBRARIES})
+
+# set EXTERNAL_LIBRARY_DIRS
+list(APPEND EXTERNAL_LIBRARY_DIRS
+     ${GLEW_LIBRARY_DIRS}
+     ${GLFW_LIBRARY_DIRS}
+     ${JPEG_LIBRARY_DIRS}
+     ${JSONCPP_LIBRARY_DIRS}
+     ${librealsense_LIBRARY_DIRS}
+     ${PNG_LIBRARY_DIRS}
+     ${tinyfiledialogs_LIBRARY_DIRS})
+
 # pop everything to root
 set(dirent_INCLUDE_DIRS             ${dirent_INCLUDE_DIRS}          PARENT_SCOPE)
 set(EIGEN3_INCLUDE_DIRS             ${EIGEN3_INCLUDE_DIRS}          PARENT_SCOPE)
@@ -188,19 +222,6 @@ set(rply_INCLUDE_DIRS               ${rply_INCLUDE_DIRS}            PARENT_SCOPE
 set(tinyfiledialogs_INCLUDE_DIRS    ${tinyfiledialogs_INCLUDE_DIRS} PARENT_SCOPE)
 set(tinyfiledialogs_LIBRARIES       ${tinyfiledialogs_LIBRARIES}    PARENT_SCOPE)
 
-set(EXTERNAL_INCLUDE_DIRS "")
-list(APPEND EXTERNAL_INCLUDE_DIRS
-     ${dirent_INCLUDE_DIRS}
-     ${EIGEN3_INCLUDE_DIRS}
-     ${flann_INCLUDE_DIRS}
-     ${GLEW_INCLUDE_DIRS}
-     ${GLFW_INCLUDE_DIRS}
-     ${JPEG_INCLUDE_DIR}
-     ${JSONCPP_INCLUDE_DIRS}
-     ${liblzf_INCLUDE_DIRS}
-     ${librealsense_INCLUDE_DIRS}
-     ${PNG_INCLUDE_DIRS}
-     ${rply_INCLUDE_DIRS}
-     ${tinyfiledialogs_INCLUDE_DIRS})
-
 set(EXTERNAL_INCLUDE_DIRS           ${EXTERNAL_INCLUDE_DIRS}        PARENT_SCOPE)
+set(EXTERNAL_LIBRARIES              ${EXTERNAL_LIBRARIES}           PARENT_SCOPE)
+set(EXTERNAL_LIBRARY_DIRS           ${EXTERNAL_LIBRARIES}           PARENT_SCOPE)
