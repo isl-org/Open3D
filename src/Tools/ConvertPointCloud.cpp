@@ -31,6 +31,8 @@
 
 void PrintHelp()
 {
+    printf("Open3D %s\n", OPEN3D_VERSION);
+    printf("\n");
     printf("Usage:\n");
     printf("    > ConvertPointCloud source_file target_file [options]\n");
     printf("    > ConvertPointCloud source_directory target_directory [options]\n");

@@ -4,6 +4,11 @@
 
 include README.rst
 include LICENSE.txt
+
 include open3d/win32/open3d*.pyd
 include open3d/linux/open3d*.so
 include open3d/macos/open3d*.so
+
+include open3d/win32/__init__.py
+include open3d/linux/__init__.py
+include open3d/macos/__init__.py

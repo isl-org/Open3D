@@ -33,3 +33,5 @@
 #include "ClassIO/IJsonConvertibleIO.h"
 #include "ClassIO/FeatureIO.h"
 #include "ClassIO/PoseGraphIO.h"
+
+#include "../open3d_config.h"

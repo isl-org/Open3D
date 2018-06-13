@@ -1,36 +1,16 @@
-file(GLOB CORE_ALL_HEADER_FILES "*.h")
-file(GLOB CORE_ALL_SOURCE_FILES "*.cpp")
-file(GLOB CORE_UTILITY_HEADER_FILES "Utility/*.h")
-source_group("Header Files\\Utility" FILES ${CORE_UTILITY_HEADER_FILES})
-file(GLOB CORE_UTILITY_SOURCE_FILES "Utility/*.cpp")
-source_group("Source Files\\Utility" FILES ${CORE_UTILITY_SOURCE_FILES})
-file(GLOB CORE_GEOMETRY_HEADER_FILES "Geometry/*.h")
-source_group("Header Files\\Geometry" FILES ${CORE_GEOMETRY_HEADER_FILES})
-file(GLOB CORE_GEOMETRY_SOURCE_FILES "Geometry/*.cpp")
-source_group("Source Files\\Geometry" FILES ${CORE_GEOMETRY_SOURCE_FILES})
-file(GLOB CORE_CAMERA_HEADER_FILES "Camera/*.h")
-source_group("Header Files\\Camera" FILES ${CORE_CAMERA_HEADER_FILES})
-file(GLOB CORE_CAMERA_SOURCE_FILES "Camera/*.cpp")
-source_group("Source Files\\Camera" FILES ${CORE_CAMERA_SOURCE_FILES})
-file(GLOB CORE_REGISTRATION_HEADER_FILES "Registration/*.h")
-source_group("Header Files\\Registration" FILES ${CORE_REGISTRATION_HEADER_FILES})
-file(GLOB CORE_REGISTRATION_SOURCE_FILES "Registration/*.cpp")
-source_group("Source Files\\Registration" FILES ${CORE_REGISTRATION_SOURCE_FILES})
-file(GLOB CORE_ODOMETRY_HEADER_FILES "Odometry/*.h")
-source_group("Header Files\\Odometry" FILES ${CORE_ODOMETRY_HEADER_FILES})
-file(GLOB CORE_ODOMETRY_SOURCE_FILES "Odometry/*.cpp")
-source_group("Source Files\\Odometry" FILES ${CORE_ODOMETRY_SOURCE_FILES})
-file(GLOB CORE_INTEGRATION_HEADER_FILES "Integration/*.h")
-source_group("Header Files\\Integration" FILES ${CORE_INTEGRATION_HEADER_FILES})
-file(GLOB CORE_INTEGRATION_SOURCE_FILES "Integration/*.cpp")
-source_group("Source Files\\Integration" FILES ${CORE_INTEGRATION_SOURCE_FILES})
-add_library(Core 
-    ${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES}
-    ${CORE_UTILITY_HEADER_FILES} ${CORE_UTILITY_SOURCE_FILES}
-    ${CORE_GEOMETRY_HEADER_FILES} ${CORE_GEOMETRY_SOURCE_FILES}
-    ${CORE_CAMERA_HEADER_FILES} ${CORE_CAMERA_SOURCE_FILES}
-    ${CORE_REGISTRATION_HEADER_FILES} ${CORE_REGISTRATION_SOURCE_FILES}
-    ${CORE_ODOMETRY_HEADER_FILES} ${CORE_ODOMETRY_SOURCE_FILES}
-    ${CORE_INTEGRATION_HEADER_FILES} ${CORE_INTEGRATION_SOURCE_FILES}
-)
-target_link_libraries(Core ${JSONCPP_LIBRARIES})
+# build
+file(GLOB_RECURSE CORE_ALL_SOURCE_FILES "*.cpp")
+
+# create object library
+add_library(Core OBJECT ${CORE_ALL_SOURCE_FILES})
+
+Directories(${CMAKE_CURRENT_SOURCE_DIR} CORE_INCLUDE_DIRS)
+set(CORE_INCLUDE_DIRS ${CORE_INCLUDE_DIRS} PARENT_SCOPE)
+
+target_include_directories(Core PUBLIC ${CORE_INCLUDE_DIRS})
+
+#install headers
+install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+        PATTERN     "*.cpp" EXCLUDE
+        PATTERN     "*.txt" EXCLUDE)

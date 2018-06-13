@@ -32,6 +32,8 @@
 
 void PrintHelp()
 {
+    printf("Open3D %s\n", OPEN3D_VERSION);
+    printf("\n");
     printf("Usage:\n");
     printf("    > IntegrateRGBD [options]\n");
     printf("      Integrate RGBD stream and extract geometry.\n");

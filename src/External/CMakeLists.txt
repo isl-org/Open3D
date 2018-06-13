@@ -1,151 +1,206 @@
-if (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-	message(STATUS "Finding dependencies of Open3D")
-	message(STATUS "Dependencies are built from source if they are not found in the system")
-	find_package(GLEW)
-	if (GLEW_FOUND)
-	    message(STATUS "Use native build of GLEW")
-	else (GLEW_FOUND)
-		message(STATUS "Build GLEW from source")
-		add_subdirectory(glew)
-	endif (GLEW_FOUND)
+find_package(PkgConfig QUIET)
+find_package(OpenGL    QUIET)
+find_package(pybind11  QUIET)
 
-	find_package(PkgConfig)
-	if (PKGCONFIG_FOUND)
+if (PKGCONFIG_FOUND)
+    pkg_search_module(EIGEN3    eigen3>=3.2.7   QUIET)
+    pkg_search_module(JPEG      libjpeg         QUIET)
+    pkg_search_module(GLFW      glfw3           QUIET)
+    pkg_search_module(GLEW      glew            QUIET)
+    pkg_search_module(JSONCPP   jsoncpp>=1.7.0  QUIET)
+    pkg_search_module(PNG       libpng>=1.6.0   QUIET)
+endif (PKGCONFIG_FOUND)
 
-		# Eigen 3.2.7 version is required for pybind11 included in Open3D
-		pkg_check_modules(EIGEN3 eigen3>=3.2.7)
-		if (EIGEN3_FOUND)
-			message(STATUS "Use native eigen3")
-		else (EIGEN3_FOUND)
-			message(STATUS "Use eigen3 included in Open3D")
-			set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
-		endif (EIGEN3_FOUND)
+macro(INSTALL_HEADERS source)
+    install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/${source}"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/External"
+            PATTERN     "*.c"           EXCLUDE
+            PATTERN     "*.cmake"       EXCLUDE
+            PATTERN     "*.cpp"         EXCLUDE
+            PATTERN     "*.in"          EXCLUDE
+            PATTERN     "*.m"           EXCLUDE
+            PATTERN     "*.txt"         EXCLUDE
+            PATTERN     ".gitignore"    EXCLUDE)
+endmacro()
 
-		pkg_search_module(JPEG libjpeg)
-		if (JPEG_FOUND)
-				message(STATUS "Use native build of libjpeg")
-		else (JPEG_FOUND)
-			message(STATUS "Build libjpeg from source")
-			add_subdirectory(libjpeg)
-		endif (JPEG_FOUND)
+# dirent
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/dirent" dirent_INCLUDE_DIRS)
 
-		pkg_search_module(PNG libpng>=1.6.0)
-		if (PNG_FOUND)
-		    message(STATUS "Use native build of libpng")
-		else (PNG_FOUND)
-			message(STATUS "Build libpng from source")
-			add_subdirectory(zlib)
-			add_subdirectory(libpng)
-		endif (PNG_FOUND)
+# Eigen 3.2.7 version is required for pybind11 included in Open3D
+if (BUILD_EIGEN3)
+    message(STATUS "Building EIGEN3 from source")
+    set(EIGEN3_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/External/Eigen")
+    INSTALL_HEADERS(Eigen)
+elseif (EIGEN3_FOUND)
+    message(STATUS "Using installed EIGEN3 ${EIGEN3_VERSION}")
+else ()
+    message(SEND_ERROR "EIGEN3 dependency not met.")
+endif ()
 
-		pkg_search_module(GLFW glfw3)
-		find_package(OpenGL)
-		if (GLFW_FOUND AND OPENGL_FOUND)
-			message(STATUS "Use native build of glfw")
-			if (APPLE)
-				find_library(COCOA_FRAMEWORK Cocoa)
-			    find_library(IOKIT_FRAMEWORK IOKit)
-			    find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
-			    find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-			    mark_as_advanced(COCOA_FRAMEWORK
-			                     IOKIT_FRAMEWORK
-			                     CORE_FOUNDATION_FRAMEWORK
-			                     CORE_VIDEO_FRAMEWORK)
-			    list(APPEND GLFW_LIBRARIES "${COCOA_FRAMEWORK}"
-			                               "${OPENGL_gl_LIBRARY}"
-			                               "${IOKIT_FRAMEWORK}"
-			                               "${CORE_FOUNDATION_FRAMEWORK}"
-			                               "${CORE_VIDEO_FRAMEWORK}")
-			else (APPLE)
-				set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
-				set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
-			endif (APPLE)
-		else (GLFW_FOUND AND OPENGL_FOUND)
-			message(STATUS "Build glfw from source")
-			add_subdirectory(GLFW)
-		endif (GLFW_FOUND AND OPENGL_FOUND)
+# flann
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/flann"  flann_INCLUDE_DIRS)
 
-		if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-			# It is a known bug that g++ on OSX only supports libstdc++
-			# The jsoncpp installed by brew by default is compiled with libc++
-			# If the two libraries are linked together, they break the build
-			# https://github.com/open-source-parsers/jsoncpp/issues/597
-			# https://github.com/IntelVCL/Open3D/issues/9
-			message(STATUS "Build jsoncpp from source")
-			add_subdirectory(jsoncpp)
-		else ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-			pkg_search_module(JSONCPP jsoncpp>=1.8.0)
-			if (JSONCPP_FOUND)
-		    	message(STATUS "Use native build of jsoncpp")
-			else (JSONCPP_FOUND)
-				message(STATUS "Build jsoncpp from source")
-				add_subdirectory(jsoncpp)
-			endif (JSONCPP_FOUND)
-		endif ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
-	else (PKGCONFIG_FOUND)
-		message(STATUS "Use eigen3 included in Open3D")
-		set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
-		message(STATUS "Build libjpeg from source")
-		add_subdirectory(libjpeg)
-		message(STATUS "Build libpng from source")
-		add_subdirectory(zlib)
-		add_subdirectory(libpng)
-		message(STATUS "Build glfw from source")
-		add_subdirectory(GLFW)
-		message(STATUS "Build jsoncpp from source")
-		add_subdirectory(jsoncpp)
-	endif (PKGCONFIG_FOUND)
+# GLEW
+if (BUILD_GLEW)
+    message(STATUS "Building GLEW from source")
+    add_subdirectory(glew)
+    INSTALL_HEADERS(glew)
+elseif (GLEW_FOUND)
+    message(STATUS "Using installed GLEW ${GLEW_VERSION}")
+else ()
+    message(SEND_ERROR "GLEW dependency not met.")
+endif ()
 
-	message(STATUS "Build tinyfiledialogs from source")
-	add_subdirectory(tinyfiledialogs)
+# GLFW
+if (BUILD_GLFW)
+    message(STATUS "Building GLFW from source")
+    add_subdirectory(GLFW)
+    INSTALL_HEADERS(GLFW)
+elseif (GLFW_FOUND AND OPENGL_FOUND)
+    message(STATUS "Using installed GLFW ${GLFW_VERSION}")
+    if (APPLE)
+        find_library(COCOA_FRAMEWORK Cocoa)
+        find_library(IOKIT_FRAMEWORK IOKit)
+        find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+        find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
+        mark_as_advanced(COCOA_FRAMEWORK
+                         IOKIT_FRAMEWORK
+                         CORE_FOUNDATION_FRAMEWORK
+                         CORE_VIDEO_FRAMEWORK)
+        list(APPEND GLFW_LIBRARIES "${COCOA_FRAMEWORK}"
+                                    "${OPENGL_gl_LIBRARY}"
+                                    "${IOKIT_FRAMEWORK}"
+                                    "${CORE_FOUNDATION_FRAMEWORK}"
+                                    "${CORE_VIDEO_FRAMEWORK}")
+    else ()
+        set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
+        set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
+    endif ()
+else ()
+    message(SEND_ERROR "GLFW dependency not met.")
+endif ()
 
-	if(Open3D_BUILD_LIBREALSENSE)
-		message(STATUS "Build librealsense from source")
-		add_subdirectory(librealsense)
-	endif(Open3D_BUILD_LIBREALSENSE)
+# fix inconsistency in GLFW_INCLUDE_DIRS
+# a space instead of a semicolon is sometimes used to separate two different include directories
+string(REPLACE " /" ";/" GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS})
 
-	if (Open3D_BUILD_PYTHON_BINDING)
-		add_subdirectory(pybind11)
-	endif(Open3D_BUILD_PYTHON_BINDING)
+# JPEG
+if (BUILD_JPEG)
+    message(STATUS "Building LIBJPEG from source")
+    add_subdirectory(libjpeg)
+    INSTALL_HEADERS(libjpeg)
+elseif (JPEG_FOUND)
+    message(STATUS "Using installed LIBJPEG ${JPEG_VERSION}")
+else ()
+    message(SEND_ERROR "LIBJPEG dependency not met.")
+endif ()
 
-else (Open3D_USE_NATIVE_DEPENDENCY_BUILD)
-	message(STATUS "Use eigen3 included in Open3D")
-	set(EIGEN3_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/Eigen")
-	message(STATUS "Build GLEW from source")
-	add_subdirectory(glew)
-	message(STATUS "Build libjpeg from source")
-	add_subdirectory(libjpeg)
-	message(STATUS "Build libpng from source")
-	add_subdirectory(zlib)
-	add_subdirectory(libpng)
-	message(STATUS "Build glfw from source")
-	add_subdirectory(GLFW)
-	message(STATUS "Build jsoncpp from source")
-	add_subdirectory(jsoncpp)
-	message(STATUS "Build tinyfiledialogs from source")
-	add_subdirectory(tinyfiledialogs)
+# JSONCPP
+if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+    # It is a known bug that g++ on OSX only supports libstdc++
+    # The jsoncpp installed by brew by default is compiled with libc++
+    # If the two libraries are linked together, they break the build
+    # https://github.com/open-source-parsers/jsoncpp/issues/597
+    # https://github.com/IntelVCL/Open3D/issues/9
+    message(STATUS "Building JSONCPP from source")
+    add_subdirectory(jsoncpp)
+else ()
+    if (BUILD_JSONCPP)
+        message(STATUS "Building JSONCPP from source")
+        add_subdirectory(jsoncpp)
+        INSTALL_HEADERS(jsoncpp)
+    elseif (JSONCPP_FOUND)
+        message(STATUS "Using installed JSONCPP ${JSONCPP_VERSION}")
+    else ()
+        message(SEND_ERROR "JSONCPP dependency not met.")
+    endif ()
+endif ()
 
-	if(Open3D_BUILD_LIBREALSENSE)
-		message(STATUS "Build librealsense from source")
-		add_subdirectory(librealsense)
-	endif(Open3D_BUILD_LIBREALSENSE)
+# liblzf
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/liblzf" liblzf_INCLUDE_DIRS)
 
-	if (Open3D_BUILD_PYTHON_BINDING)
-		add_subdirectory(pybind11)
-	endif(Open3D_BUILD_PYTHON_BINDING)
-endif(Open3D_USE_NATIVE_DEPENDENCY_BUILD)
+# PNG
+if (BUILD_PNG)
+    message(STATUS "Building LIBPNG from source")
+    add_subdirectory(zlib)
+    add_subdirectory(libpng)
+    INSTALL_HEADERS(zlib)
+    INSTALL_HEADERS(libpng)
+elseif (PNG_FOUND)
+    message(STATUS "Using installed LIBPNG ${PNG_VERSION}")
+else ()
+    message(SEND_ERROR "LIBPNG dependency not met.")
+endif ()
+
+# PyBind
+# http://pybind11.readthedocs.io/en/stable/compiling.html
+# https://github.com/pybind/pybind11/blob/master/tools/pybind11Config.cmake.in
+if (BUILD_PYBIND11)
+    message(STATUS "Building PYBIND11 from source")
+    add_subdirectory(pybind11)
+elseif (pybind11_FOUND)
+    message(STATUS "Using installed PYBIND11 ${pybind11_VERSION}")
+elseif (BUILD_PYTHON_MODULE)
+    message(SEND_ERROR "PYBIND11 dependency not met.")
+endif ()
+
+# RealSense
+if (BUILD_LIBREALSENSE)
+    message(STATUS "Building LIBREALSENSE from source")
+    add_subdirectory(librealsense)
+    Directories("${CMAKE_CURRENT_SOURCE_DIR}/librealsense" librealsense_INCLUDE_DIRS)
+    INSTALL_HEADERS(librealsense)
+endif ()
+
+# tinyfiledialogs
+if (BUILD_TINYFILEDIALOGS)
+    message(STATUS "Building TINYFILEDIALOGS from source")
+    add_subdirectory(tinyfiledialogs)
+    set(tinyfiledialogs_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyfiledialogs")
+    set(tinyfiledialogs_LIBRARIES tinyfiledialogs)
+    INSTALL_HEADERS(tinyfiledialogs)
+else ()
+    message(SEND_ERROR "TINYFILEDIALOGS dependency not met.")
+endif ()
+
+# rply
+Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
 # pop everything to root
-set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} PARENT_SCOPE)
-set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIRS} PARENT_SCOPE)
-set(GLEW_LIBRARIES ${GLEW_LIBRARIES} PARENT_SCOPE)
-set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
-set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
-set(GLFW_LIBRARY_DIRS ${GLFW_LIBRARY_DIRS} PARENT_SCOPE)
-set(JPEG_INCLUDE_DIR ${JPEG_INCLUDE_DIR} PARENT_SCOPE)
-set(JPEG_LIBRARIES ${JPEG_LIBRARIES} PARENT_SCOPE)
-set(PNG_INCLUDE_DIRS ${PNG_INCLUDE_DIRS} PARENT_SCOPE)
-set(PNG_LIBRARIES ${PNG_LIBRARIES} PARENT_SCOPE)
-set(JSONCPP_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS} PARENT_SCOPE)
-set(JSONCPP_LIBRARIES ${JSONCPP_LIBRARIES} PARENT_SCOPE)
-set(JSONCPP_LIBRARY_DIRS ${JSONCPP_LIBRARY_DIRS} PARENT_SCOPE)
+set(dirent_INCLUDE_DIRS             ${dirent_INCLUDE_DIRS}          PARENT_SCOPE)
+set(EIGEN3_INCLUDE_DIRS             ${EIGEN3_INCLUDE_DIRS}          PARENT_SCOPE)
+set(flann_INCLUDE_DIRS              ${flann_INCLUDE_DIRS}           PARENT_SCOPE)
+set(GLEW_INCLUDE_DIRS               ${GLEW_INCLUDE_DIRS}            PARENT_SCOPE)
+set(GLEW_LIBRARIES                  ${GLEW_LIBRARIES}               PARENT_SCOPE)
+set(GLFW_INCLUDE_DIRS               ${GLFW_INCLUDE_DIRS}            PARENT_SCOPE)
+set(GLFW_LIBRARIES                  ${GLFW_LIBRARIES}               PARENT_SCOPE)
+set(GLFW_LIBRARY_DIRS               ${GLFW_LIBRARY_DIRS}            PARENT_SCOPE)
+set(JPEG_INCLUDE_DIR                ${JPEG_INCLUDE_DIR}             PARENT_SCOPE)
+set(JPEG_LIBRARIES                  ${JPEG_LIBRARIES}               PARENT_SCOPE)
+set(JSONCPP_INCLUDE_DIRS            ${JSONCPP_INCLUDE_DIRS}         PARENT_SCOPE)
+set(JSONCPP_LIBRARIES               ${JSONCPP_LIBRARIES}            PARENT_SCOPE)
+set(JSONCPP_LIBRARY_DIRS            ${JSONCPP_LIBRARY_DIRS}         PARENT_SCOPE)
+set(liblzf_INCLUDE_DIRS             ${liblzf_INCLUDE_DIRS}          PARENT_SCOPE)
+set(librealsense_INCLUDE_DIRS       ${librealsense_INCLUDE_DIRS}    PARENT_SCOPE)
+set(PNG_INCLUDE_DIRS                ${PNG_INCLUDE_DIRS}             PARENT_SCOPE)
+set(PNG_LIBRARIES                   ${PNG_LIBRARIES}                PARENT_SCOPE)
+set(rply_INCLUDE_DIRS               ${rply_INCLUDE_DIRS}            PARENT_SCOPE)
+set(tinyfiledialogs_INCLUDE_DIRS    ${tinyfiledialogs_INCLUDE_DIRS} PARENT_SCOPE)
+set(tinyfiledialogs_LIBRARIES       ${tinyfiledialogs_LIBRARIES}    PARENT_SCOPE)
+
+set(EXTERNAL_INCLUDE_DIRS "")
+list(APPEND EXTERNAL_INCLUDE_DIRS
+     ${dirent_INCLUDE_DIRS}
+     ${EIGEN3_INCLUDE_DIRS}
+     ${flann_INCLUDE_DIRS}
+     ${GLEW_INCLUDE_DIRS}
+     ${GLFW_INCLUDE_DIRS}
+     ${JPEG_INCLUDE_DIR}
+     ${JSONCPP_INCLUDE_DIRS}
+     ${liblzf_INCLUDE_DIRS}
+     ${librealsense_INCLUDE_DIRS}
+     ${PNG_INCLUDE_DIRS}
+     ${rply_INCLUDE_DIRS}
+     ${tinyfiledialogs_INCLUDE_DIRS})
+
+set(EXTERNAL_INCLUDE_DIRS           ${EXTERNAL_INCLUDE_DIRS}        PARENT_SCOPE)
