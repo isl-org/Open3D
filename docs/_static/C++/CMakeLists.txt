@@ -17,8 +17,6 @@ if (PKGCONFIG_FOUND)
     pkg_search_module(PNG       libpng>=1.6.0   QUIET)
 endif (PKGCONFIG_FOUND)
 
-option(Open3D_USE_NATIVE_DEPENDENCY_BUILD "Prioritize Found dependency build" ON)
-
 # Set OS-specific things here
 if(WIN32)
 elseif(CYGWIN)
