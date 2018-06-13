@@ -24,7 +24,7 @@ file(GLOB CORE_INTEGRATION_HEADER_FILES "Integration/*.h")
 source_group("Header Files\\Integration" FILES ${CORE_INTEGRATION_HEADER_FILES})
 file(GLOB CORE_INTEGRATION_SOURCE_FILES "Integration/*.cpp")
 source_group("Source Files\\Integration" FILES ${CORE_INTEGRATION_SOURCE_FILES})
-add_library(Core 
+add_library(Core
     ${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES}
     ${CORE_UTILITY_HEADER_FILES} ${CORE_UTILITY_SOURCE_FILES}
     ${CORE_GEOMETRY_HEADER_FILES} ${CORE_GEOMETRY_SOURCE_FILES}
@@ -34,3 +34,8 @@ add_library(Core
     ${CORE_INTEGRATION_HEADER_FILES} ${CORE_INTEGRATION_SOURCE_FILES}
 )
 target_link_libraries(Core ${JSONCPP_LIBRARIES})
+
+set_target_properties(Core PROPERTIES PREFIX "libopen3d_")
+install(TARGETS Core
+  LIBRARY DESTINATION lib
+)

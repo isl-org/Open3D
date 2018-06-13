@@ -35,7 +35,7 @@ source_group("Header Files\\Visualizer" FILES ${VISUALIZATION_VISUALIZER_HEADER_
 file(GLOB VISUALIZATION_VISUALIZER_SOURCE_FILES "Visualizer/*.cpp")
 source_group("Source Files\\Visualizer" FILES ${VISUALIZATION_VISUALIZER_SOURCE_FILES})
 
-add_library(Visualization 
+add_library(Visualization
     ${SHADER_FILES}
     ${VISUALIZATION_ALL_HEADER_FILES} ${VISUALIZATION_ALL_SOURCE_FILES}
     ${VISUALIZATION_UTILITY_HEADER_FILES} ${VISUALIZATION_UTILITY_SOURCE_FILES}
@@ -52,3 +52,8 @@ else ()
     find_package(OpenGL REQUIRED)
     target_link_libraries(Visualization ${OPENGL_LIBRARIES})
 endif ()
+
+set_target_properties(Visualization PROPERTIES PREFIX "libopen3d_")
+install(TARGETS Visualization
+  LIBRARY DESTINATION lib
+)
