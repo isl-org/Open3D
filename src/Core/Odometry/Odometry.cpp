@@ -261,7 +261,7 @@ Eigen::Matrix6d CreateInformationMatrix(
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp for nowait
 #endif
         for (auto row = 0; row < correspondence->size(); row++) {
             int u_t = (*correspondence)[row](2);
