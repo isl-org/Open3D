@@ -56,6 +56,8 @@ if (BUILD_GLFW)
     message(STATUS "Building GLFW from source")
     add_subdirectory(GLFW)
     INSTALL_HEADERS(GLFW)
+    list(APPEND GLFW_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
+    list(APPEND GLFW_LIBRARIES    ${OPENGL_gl_LIBRARY})
 elseif (GLFW_FOUND AND OPENGL_FOUND)
     message(STATUS "Using installed GLFW ${GLFW_VERSION}")
     if (APPLE)
@@ -73,8 +75,8 @@ elseif (GLFW_FOUND AND OPENGL_FOUND)
                                     "${CORE_FOUNDATION_FRAMEWORK}"
                                     "${CORE_VIDEO_FRAMEWORK}")
     else ()
-        set(GLFW_INCLUDE_DIRS "${GLFW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR}")
-        set(GLFW_LIBRARIES "${GLFW_LIBRARIES} ${OPENGL_gl_LIBRARY}")
+        list(APPEND GLFW_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
+        list(APPEND GLFW_LIBRARIES    ${OPENGL_gl_LIBRARY})
     endif ()
 else ()
     message(SEND_ERROR "GLFW dependency not met.")
@@ -126,6 +128,7 @@ if (BUILD_PNG)
     add_subdirectory(libpng)
     INSTALL_HEADERS(zlib)
     INSTALL_HEADERS(libpng)
+    list(APPEND PNG_LIBRARIES zlib)
 elseif (PNG_FOUND)
     message(STATUS "Using installed LIBPNG ${PNG_VERSION}")
 else ()
@@ -168,7 +171,7 @@ Directories("${CMAKE_CURRENT_SOURCE_DIR}/rply"   rply_INCLUDE_DIRS)
 
 # set EXTERNAL_INCLUDE_DIRS
 list(APPEND EXTERNAL_INCLUDE_DIRS
-     ${dirent_INCLUDE_DIRS}
+     # ${dirent_INCLUDE_DIRS} # fails on Linux, seems to require Windows headers
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
      ${GLEW_INCLUDE_DIRS}
@@ -190,38 +193,5 @@ list(APPEND EXTERNAL_LIBRARIES
      ${PNG_LIBRARIES}
      ${tinyfiledialogs_LIBRARIES})
 
-# set EXTERNAL_LIBRARY_DIRS
-list(APPEND EXTERNAL_LIBRARY_DIRS
-     ${GLEW_LIBRARY_DIRS}
-     ${GLFW_LIBRARY_DIRS}
-     ${JPEG_LIBRARY_DIRS}
-     ${JSONCPP_LIBRARY_DIRS}
-     ${librealsense_LIBRARY_DIRS}
-     ${PNG_LIBRARY_DIRS}
-     ${tinyfiledialogs_LIBRARY_DIRS})
-
-# pop everything to root
-set(dirent_INCLUDE_DIRS             ${dirent_INCLUDE_DIRS}          PARENT_SCOPE)
-set(EIGEN3_INCLUDE_DIRS             ${EIGEN3_INCLUDE_DIRS}          PARENT_SCOPE)
-set(flann_INCLUDE_DIRS              ${flann_INCLUDE_DIRS}           PARENT_SCOPE)
-set(GLEW_INCLUDE_DIRS               ${GLEW_INCLUDE_DIRS}            PARENT_SCOPE)
-set(GLEW_LIBRARIES                  ${GLEW_LIBRARIES}               PARENT_SCOPE)
-set(GLFW_INCLUDE_DIRS               ${GLFW_INCLUDE_DIRS}            PARENT_SCOPE)
-set(GLFW_LIBRARIES                  ${GLFW_LIBRARIES}               PARENT_SCOPE)
-set(GLFW_LIBRARY_DIRS               ${GLFW_LIBRARY_DIRS}            PARENT_SCOPE)
-set(JPEG_INCLUDE_DIR                ${JPEG_INCLUDE_DIR}             PARENT_SCOPE)
-set(JPEG_LIBRARIES                  ${JPEG_LIBRARIES}               PARENT_SCOPE)
-set(JSONCPP_INCLUDE_DIRS            ${JSONCPP_INCLUDE_DIRS}         PARENT_SCOPE)
-set(JSONCPP_LIBRARIES               ${JSONCPP_LIBRARIES}            PARENT_SCOPE)
-set(JSONCPP_LIBRARY_DIRS            ${JSONCPP_LIBRARY_DIRS}         PARENT_SCOPE)
-set(liblzf_INCLUDE_DIRS             ${liblzf_INCLUDE_DIRS}          PARENT_SCOPE)
-set(librealsense_INCLUDE_DIRS       ${librealsense_INCLUDE_DIRS}    PARENT_SCOPE)
-set(PNG_INCLUDE_DIRS                ${PNG_INCLUDE_DIRS}             PARENT_SCOPE)
-set(PNG_LIBRARIES                   ${PNG_LIBRARIES}                PARENT_SCOPE)
-set(rply_INCLUDE_DIRS               ${rply_INCLUDE_DIRS}            PARENT_SCOPE)
-set(tinyfiledialogs_INCLUDE_DIRS    ${tinyfiledialogs_INCLUDE_DIRS} PARENT_SCOPE)
-set(tinyfiledialogs_LIBRARIES       ${tinyfiledialogs_LIBRARIES}    PARENT_SCOPE)
-
-set(EXTERNAL_INCLUDE_DIRS           ${EXTERNAL_INCLUDE_DIRS}        PARENT_SCOPE)
-set(EXTERNAL_LIBRARIES              ${EXTERNAL_LIBRARIES}           PARENT_SCOPE)
-set(EXTERNAL_LIBRARY_DIRS           ${EXTERNAL_LIBRARIES}           PARENT_SCOPE)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} PARENT_SCOPE)
+set(EXTERNAL_LIBRARIES    ${EXTERNAL_LIBRARIES}    PARENT_SCOPE)
