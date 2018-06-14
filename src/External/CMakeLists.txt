@@ -82,10 +82,6 @@ else ()
     message(SEND_ERROR "GLFW dependency not met.")
 endif ()
 
-# fix inconsistency in GLFW_INCLUDE_DIRS
-# a space instead of a semicolon is sometimes used to separate two different include directories
-string(REPLACE " /" ";/" GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS})
-
 # JPEG
 if (BUILD_JPEG)
     message(STATUS "Building LIBJPEG from source")
