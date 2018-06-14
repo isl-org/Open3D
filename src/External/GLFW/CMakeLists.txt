@@ -385,29 +385,31 @@ set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 # Install files other than the library
 # The library is installed by src/CMakeLists.txt
 #--------------------------------------------------------------------
-if (GLFW_INSTALL)
-    install(DIRECTORY include/GLFW DESTINATION include
-            FILES_MATCHING PATTERN glfw3.h PATTERN glfw3native.h)
+# MODIFICATION BY Open3D: disable GLFW header install
+#--------------------------------------------------------------------
+# if (GLFW_INSTALL)
+#     install(DIRECTORY include/GLFW DESTINATION include
+#             FILES_MATCHING PATTERN glfw3.h PATTERN glfw3native.h)
 
-    install(FILES "${GLFW_BINARY_DIR}/src/glfw3Config.cmake"
-                  "${GLFW_BINARY_DIR}/src/glfw3ConfigVersion.cmake"
-            DESTINATION "${GLFW_CONFIG_PATH}")
+#     install(FILES "${GLFW_BINARY_DIR}/src/glfw3Config.cmake"
+#                   "${GLFW_BINARY_DIR}/src/glfw3ConfigVersion.cmake"
+#             DESTINATION "${GLFW_CONFIG_PATH}")
 
-    install(EXPORT glfwTargets FILE glfw3Targets.cmake
-            EXPORT_LINK_INTERFACE_LIBRARIES
-            DESTINATION "${GLFW_CONFIG_PATH}")
-    install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
-            DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
+#     install(EXPORT glfwTargets FILE glfw3Targets.cmake
+#             EXPORT_LINK_INTERFACE_LIBRARIES
+#             DESTINATION "${GLFW_CONFIG_PATH}")
+#     install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
+#             DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
 
-    # Open3D NOTE: need to keep this off in order for the Open3D make uninstall to work 
-    # Only generate this target if no higher-level project already has
-    # if (NOT TARGET uninstall)
-    #     configure_file(cmake_uninstall.cmake.in
-    #                    cmake_uninstall.cmake IMMEDIATE @ONLY)
+#     Open3D NOTE: need to keep this off in order for the Open3D make uninstall to work 
+#     Only generate this target if no higher-level project already has
+#     if (NOT TARGET uninstall)
+#         configure_file(cmake_uninstall.cmake.in
+#                        cmake_uninstall.cmake IMMEDIATE @ONLY)
 
-    #     add_custom_target(uninstall
-    #                       "${CMAKE_COMMAND}" -P
-    #                       "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
-    #     set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
-    # endif()
-endif()
+#         add_custom_target(uninstall
+#                           "${CMAKE_COMMAND}" -P
+#                           "${GLFW_BINARY_DIR}/cmake_uninstall.cmake")
+#         set_target_properties(uninstall PROPERTIES FOLDER "GLFW3")
+#     endif()
+# endif()
