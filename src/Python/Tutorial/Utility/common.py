@@ -75,6 +75,7 @@ def draw_registration_result(source, target, transformation):
     source_temp.transform(flip_transform)
     target_temp.transform(flip_transform)
     draw_geometries([source_temp, target_temp])
+    
 
 
 def draw_registration_result_original_color(source, target, transformation):

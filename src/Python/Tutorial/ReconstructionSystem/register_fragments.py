@@ -25,7 +25,7 @@ def register_point_cloud_fpfh(source, target,
     result = registration_fast_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
             FastGlobalRegistrationOption(
-            maximum_correspondence_distance = 0.03))
+            maximum_correspondence_distance = 0.07))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4))
     else:
@@ -69,7 +69,7 @@ def register_point_cloud_icp(source, target,
             TransformationEstimationPointToPlane())
     print(result_icp)
     information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.03, result_icp.transformation)
+            source, target, 0.07, result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
@@ -100,7 +100,7 @@ def register_colored_point_cloud_icp(source, target,
         current_transformation = result_icp.transformation
 
     information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.03, result_icp.transformation)
+            source, target, 0.07, result_icp.transformation)
     if draw_result:
         draw_registration_result_original_color(source, target,
                 result_icp.transformation)
@@ -120,12 +120,14 @@ def local_refinement(source, target, source_down, target_down,
         print("register_point_cloud_icp")
         (transformation, information) = \
                 register_point_cloud_icp(
-                source_down, target_down, transformation_init)
-
+                source, target, transformation_init)
+    success_local = False
+    if information[5,5] / min(len(source.points),len(target.points)) > 0.3:
+        success_local = True
     if draw_result:
         draw_registration_result_original_color(
                 source_down, target_down, transformation)
-    return (transformation, information)
+    return (success_local, transformation, information)
 
 
 def update_odometry_posegrph(s, t, transformation, information,
@@ -162,19 +164,18 @@ def register_point_cloud(path_dataset, ply_file_names,
             target = read_point_cloud(ply_file_names[t])
             (source_down, source_fpfh) = preprocess_point_cloud(source)
             (target_down, target_fpfh) = preprocess_point_cloud(target)
-
             (success_global, transformation_init) = \
                     compute_initial_registration(
                     s, t, source_down, target_down,
-                    source_fpfh, target_fpfh, path_dataset)
+                    source_fpfh, target_fpfh, path_dataset, draw_result)
             if not success_global:
                 continue
-
-            (transformation_icp, information_icp) = \
+            (success_local, transformation_icp, information_icp) = \
                     local_refinement(source, target,
                     source_down, target_down, transformation_init,
                     registration_type, draw_result)
-
+            if not success_local:
+                continue
             (odometry, pose_graph) = update_odometry_posegrph(s, t,
                     transformation_icp, information_icp,
                     odometry, pose_graph)
