@@ -185,6 +185,7 @@ include_directories(${GLFW_INCLUDE_DIRS})
 include_directories(${JSONCPP_INCLUDE_DIRS})
 link_directories(${GLFW_LIBRARY_DIRS})
 link_directories(${JSONCPP_LIBRARY_DIRS})
+link_directories(${PNG_LIBRARY_DIRS})
 include_directories(${PROJECT_SOURCE_DIR})
 
 # Open3D libraries
