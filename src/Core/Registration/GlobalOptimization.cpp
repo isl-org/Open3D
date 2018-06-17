@@ -149,9 +149,7 @@ double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
     double residual = 0.0;
     for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
         const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
-        double line_process_iter = 1.0;
-        if (te.uncertain_)
-            line_process_iter = te.confidence_;
+        double line_process_iter = te.confidence_;
         Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
         residual += line_process_iter * e.transpose() * te.information_ * e +
                 line_process_weight * pow(sqrt(line_process_iter) - 1, 2.0);
@@ -210,10 +208,7 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeLinearSystem(
         Eigen::Matrix6d JtT_Info =
                 Jt.transpose() * t.information_;
         Eigen::Vector6d eT_Info = e.transpose() * t.information_;
-
-        double line_process_iter = 1.0;
-        if (t.uncertain_)
-            line_process_iter = t.confidence_;
+        double line_process_iter = t.confidence_;
 
         int id_i = t.source_node_id_ * 6;
         int id_j = t.target_node_id_ * 6;

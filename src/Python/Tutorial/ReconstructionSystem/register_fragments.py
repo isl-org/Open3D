@@ -138,7 +138,7 @@ def update_odometry_posegrph(s, t, transformation, information,
     return (odometry, pose_graph)
 
 
-def register_point_cloud(path_dataset, ply_file_names, draw_result = True):
+def register_point_cloud(path_dataset, ply_file_names, draw_result = False):
     pose_graph = PoseGraph()
     odometry = np.identity(4)
     pose_graph.nodes.append(PoseGraphNode(odometry))
