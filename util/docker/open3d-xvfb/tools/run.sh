@@ -10,8 +10,8 @@ mkdir -p ~/Open3D_docker
 mkdir -p ~/Open3D_docker/build/lib/Tutorial/Advanced
 # cd ~/Open3D_docker/build/lib/Tutorial/Advanced
 
-# copy the script for running the headless sample inside a container terminal
-cp -f ../setup/headless_sample.sh ~/Open3D_docker/build/lib/Tutorial/Advanced
+# copy the script for running the docker sample inside a container terminal
+cp -f ../setup/docker_sample.sh ~/Open3D_docker/build/lib/Tutorial/Advanced
 chmod a+x ~/Open3D_docker/build/lib/Tutorial/Advanced/docker_sample.sh
 
 # this is the Open3D build script
