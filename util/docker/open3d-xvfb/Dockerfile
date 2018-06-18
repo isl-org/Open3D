@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # ENV http_proxy  ""
 # ENV HTTP_PROXY  ""
@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # install Open3D dependencies
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends\
+    apt-get install -y --no-install-recommends \
     apt-utils \
     build-essential \
     cmake \
@@ -33,10 +33,12 @@ RUN apt-get update && \
     lxde \
     mesa-utils \
     ne \
+    python3 \
     python3-dev \
     python3-pip \
     python3-tk \
-    python3.5-dbg \
+    python3-dbg \
+    pybind11-dev \
     software-properties-common \
     x11vnc \
     xorg-dev \
@@ -59,6 +61,6 @@ COPY ./setup/.xinitrc .
 RUN chmod a+x .xinitrc
 COPY ./setup/entrypoint.sh .
 
-WORKDIR $HOME/Open3D/build/lib/Tutorial/Advanced
+WORKDIR $HOME/open3d
 
 CMD ["bash", "/root/entrypoint.sh"]

@@ -18,10 +18,10 @@ git checkout master
 docker container run \
        --rm \
        -d \
-       -v ~/open3d_docker:/root/Open3D \
+       -v ~/open3d_docker:/root/open3d \
        -p 5920:5900 \
        -h $NAME \
        --name $NAME \
        $NAME
 
-docker container exec -it -w /root/Open3D $NAME bash ./build.sh
+docker container exec -it -w /root/open3d $NAME bash -c 'mkdir -p build && cd build && cmake ../src -DBUILD_PYBIND11=OFF -DCMAKE_INSTALL_PREFIX=~/open3d_install && make -j && make install && bash'
