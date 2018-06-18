@@ -184,9 +184,9 @@ At the end the image will be ~1GB in size.
 
 Running the Open3D Docker container will perform the following steps:
 
-- git clone Open3D master to ``~/Open3D_docker``
-- copy the ``docker_sample.sh`` to ``~/Open3D_docker/build/lib/Tutorial/Advanced``
-- run and detach the Open3D container with the host path ``~/Open3D_docker`` mounted inside the container at ``/root/Open3D``
+- git clone Open3D master to ``~/open3d_docker``
+- copy the ``docker_sample.sh`` to ``~/open3d_docker/build/lib/Tutorial/Advanced``
+- run and detach the Open3D container with the host path ``~/open3d_docker`` mounted inside the container at ``/root/Open3D``
 - attach a terminal to the Open3D container for command line input from the host side
 
 The Open3D container is automatically removed when stopped.
@@ -223,7 +223,7 @@ Limitations
 - the resolution is set to 1280x1024x8 when remoting into an Open3D container.
   Open3D windows are larger than this. The resolution will be increased in the future.
 - there are some rendering issues. When running the ``headless_sample.py`` sample from the docker terminal depth images are rendered and saved correctly to the disk however color images saved to the disk are black.
-- for now running the Open3D docker container clones Open3D master to ``~/Open3D_docker``.
+- for now running the Open3D docker container clones Open3D master to ``~/open3d_docker``.
   We are considering the following options:
 
     - let the user specify the destination
