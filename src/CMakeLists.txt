@@ -232,7 +232,7 @@ if (BUILD_EXPERIMENTAL)
 endif ()
 
 # Python binding
-if (BUILD_PYTHON_MODULE AND BUILD_PYBIND11)
+if (BUILD_PYTHON_MODULE)
     add_subdirectory(Python)
 endif ()
 
