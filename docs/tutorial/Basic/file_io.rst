@@ -9,9 +9,7 @@ This tutorial shows how basic geometries are read and written by Open3D.
 
     # src/Python/Tutorial/Basic/io.py
 
-    import sys
-    sys.path.append("../..")
-    from py3d import *
+    from open3d import *
 
     if __name__ == "__main__":
 

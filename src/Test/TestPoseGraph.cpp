@@ -38,6 +38,8 @@ int main(int argc, char **argv)
 	SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
 	if (argc != 2) {
+		PrintInfo("Open3D %s\n", OPEN3D_VERSION);
+		PrintInfo("\n");
 		PrintInfo("Usage:\n");
 		PrintInfo("    > TestPoseGraph [posegraph_for_optimization].json\n");
 		PrintInfo("    The program will :\n");

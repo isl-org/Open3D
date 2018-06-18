@@ -8,12 +8,12 @@ Open3D is an open-source library that supports rapid development of software tha
 If you use Open3D in an academic project, please cite our paper:
 ::
 
-	@article{Zhou2018,
-		author    = {Qian-Yi Zhou and Jaesik Park and Vladlen Koltun},
-		title     = {{Open3D}: {A} Modern Library for {3D} Data Processing},
-		journal   = {arXiv:1801.09847},
-		year      = {2018},
-	}
+    @article{Zhou2018,
+        author    = {Qian-Yi Zhou and Jaesik Park and Vladlen Koltun},
+        title     = {{Open3D}: {A} Modern Library for {3D} Data Processing},
+        journal   = {arXiv:1801.09847},
+        year      = {2018},
+    }
 
 Core features
 ======================
@@ -30,7 +30,7 @@ Supported compilers
 
 * GCC 4.8 and later on Linux
 * XCode 8.0 and later on OS X
-* Visual Studio 2015 and later on Windows
+* Visual Studio 2015 update 3 and later on Windows
 
 Resources
 ======================

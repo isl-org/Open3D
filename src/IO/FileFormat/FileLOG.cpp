@@ -37,88 +37,89 @@
 namespace three{
 
 bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
-		PinholeCameraTrajectory &trajectory)
+        PinholeCameraTrajectory &trajectory)
 {
-	if (trajectory.intrinsic_.IsValid() == false) {
-		trajectory.intrinsic_ = PinholeCameraIntrinsic::PrimeSenseDefault;
-	}
-	trajectory.extrinsic_.clear();
-	FILE * f = fopen(filename.c_str(), "r");
-	if (f == NULL) {
-		PrintWarning("Read LOG failed: unable to open file: %s\n", filename.c_str());
-		return false;
-	}
-	char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-	int i, j, k;
-	Eigen::Matrix4d trans;
-	while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
-		if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
-			if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
+    if (trajectory.intrinsic_.IsValid() == false) {
+        trajectory.intrinsic_ = PinholeCameraIntrinsic(
+                PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    }
+    trajectory.extrinsic_.clear();
+    FILE * f = fopen(filename.c_str(), "r");
+    if (f == NULL) {
+        PrintWarning("Read LOG failed: unable to open file: %s\n", filename.c_str());
+        return false;
+    }
+    char line_buffer[DEFAULT_IO_BUFFER_SIZE];
+    int i, j, k;
+    Eigen::Matrix4d trans;
+    while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
+        if (strlen(line_buffer) > 0 && line_buffer[0] != '#') {
+            if (sscanf(line_buffer, "%d %d %d", &i, &j, &k) != 3) {
+                PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
-				return false;
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
+                return false;
+            }
+            if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+                PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0,0), &trans(0,1),
-						&trans(0,2), &trans(0,3));
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
+                return false;
+            } else {
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0,0), &trans(0,1),
+                        &trans(0,2), &trans(0,3));
+            }
+            if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+                PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1,0), &trans(1,1),
-						&trans(1,2), &trans(1,3));
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
+                return false;
+            } else {
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1,0), &trans(1,1),
+                        &trans(1,2), &trans(1,3));
+            }
+            if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+                PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2,0), &trans(2,1),
-						&trans(2,2), &trans(2,3));
-			}
-			if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
-				PrintWarning("Read LOG failed: unrecognized format.\n");
+                return false;
+            } else {
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2,0), &trans(2,1),
+                        &trans(2,2), &trans(2,3));
+            }
+            if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
+                PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
-				return false;
-			} else {
-				sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
-						&trans(3,2), &trans(3,3));
-			}
-			trajectory.extrinsic_.push_back(trans.inverse());
-		}
-	}
-	fclose(f);
-	return true;
+                return false;
+            } else {
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
+                        &trans(3,2), &trans(3,3));
+            }
+            trajectory.extrinsic_.push_back(trans.inverse());
+        }
+    }
+    fclose(f);
+    return true;
 }
 
 bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
-		const PinholeCameraTrajectory &trajectory)
+        const PinholeCameraTrajectory &trajectory)
 {
-	FILE * f = fopen( filename.c_str(), "w" );
-	if (f == NULL) {
-		PrintWarning("Write LOG failed: unable to open file: %s\n", filename.c_str());
-		return false;
-	}
-	for (size_t i = 0; i < trajectory.extrinsic_.size(); i++ ) {
-		const auto &trans = trajectory.extrinsic_[i];
-		fprintf(f, "%d %d %d\n", (int)i, (int)i, (int)i + 1);
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0,0), trans(0,1), trans(0,2),
-				trans(0,3) );
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(1,0), trans(1,1), trans(1,2),
-				trans(1,3) );
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(2,0), trans(2,1), trans(2,2),
-				trans(2,3) );
-		fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(3,0), trans(3,1), trans(3,2),
-				trans(3,3) );
-	}
-	fclose( f );
-	return true;
+    FILE * f = fopen( filename.c_str(), "w" );
+    if (f == NULL) {
+        PrintWarning("Write LOG failed: unable to open file: %s\n", filename.c_str());
+        return false;
+    }
+    for (size_t i = 0; i < trajectory.extrinsic_.size(); i++ ) {
+        const auto &trans = trajectory.extrinsic_[i];
+        fprintf(f, "%d %d %d\n", (int)i, (int)i, (int)i + 1);
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0,0), trans(0,1), trans(0,2),
+                trans(0,3) );
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(1,0), trans(1,1), trans(1,2),
+                trans(1,3) );
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(2,0), trans(2,1), trans(2,2),
+                trans(2,3) );
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(3,0), trans(3,1), trans(3,2),
+                trans(3,3) );
+    }
+    fclose( f );
+    return true;
 }
 
-}	// namespace three
+}    // namespace three

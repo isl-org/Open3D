@@ -9,10 +9,8 @@ This tutorial demonstrates basic usage of a point cloud.
 
     # src/Python/Tutorial/Basic/pointcloud.py
 
-    import sys
     import numpy as np
-    sys.path.append("../..")
-    from py3d import *
+    from open3d import *
 
     if __name__ == "__main__":
 

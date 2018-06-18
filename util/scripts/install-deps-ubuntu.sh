@@ -2,7 +2,6 @@
 
 set -ev
 
-# install OpenGL, for GLFW
 sudo apt-get install \
 		xorg-dev \
 		libglu1-mesa-dev \
@@ -12,7 +11,9 @@ sudo apt-get install \
 		libjsoncpp-dev \
 		libeigen3-dev \
 		libpng-dev \
+		libpng16-dev \
 		libjpeg-dev \
+		pybind11-dev \
 		python-dev \
 		python3-dev \
 		python-tk \

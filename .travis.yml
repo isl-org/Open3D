@@ -1,17 +1,22 @@
+language: ruby
+env:
+  global:
+    - SHARED=OFF
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always
+
 matrix:
-
-  notifications:
-    email: false # turn off email notifications for build failure
-
-  language:
-    - python
-    - cpp
 
   include:
     # Default environment of Ubuntu 14.04
     - os: linux
       dist: trusty
       sudo: true
+      language: python
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -22,12 +27,30 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
 
+    - os: linux
+      dist: trusty
+      sudo: required
+      language: python
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.8
+            - g++-4.8
+            - cmake-data # to use cmake 3.0 or more recent
+            - cmake
+      env: SHARED=ON
+
     # Similar environment of Ubuntu 16.04 (gcc 5.4)
     # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
     # another option is to use docker.
     - os: linux
       dist: trusty
-      sudo: true
+      sudo: required
+      language: python
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -43,6 +66,10 @@ matrix:
     - os: osx
       osx_image: xcode8
 
+    - os: osx
+      osx_image: xcode8
+      env: SHARED=ON
+
     # Default environment of MacOS Sierra
     # compiled using clang shipped with xcode8.3
     - os: osx
@@ -52,26 +79,37 @@ before_install:
   # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
   # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
   # does not recognize sudo apt-get install libglfw3-dev
-  # Travis CI has pyenv with Python 3.6
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get install -y xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev;
-      pyenv global 3.6;
+      sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev libpng-dev libjpeg-dev;
       ./util/scripts/make-documentation.sh;
+      ./util/scripts/install-gtest.sh;
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew install python;
       ./util/scripts/install-deps-osx.sh;
+      ./util/scripts/install-gtest.sh;
     fi
+
   # for reference, display cmake and python version
   - python -V
   - cmake --version
+  # - pip install numpy
 
 script:
   # Build commands
   - mkdir build
   - cd build
-  - cmake ../src/
+  - cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install ../src/
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
-  - make
+  - make install
+  - python -V
+  # The following script has issues on SHARED = "ON"
+  # - if [ "$SHARED" == "OFF" ]; then
+  #     cd lib/Tutorial/Basic/ && python file_io.py
+  #   fi
+  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST -DCMAKE_PREFIX_PATH="~/open3d_install/lib/CMake"`
+  - if [ "$test" == "Open3D found." ]; then echo "PASSED find_package(Open3D)."; else echo "FAILED find_package(Open3D)."; exit 1; fi
+
+

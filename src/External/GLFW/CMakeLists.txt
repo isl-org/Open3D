@@ -32,7 +32,7 @@ set(GLFW_INSTALL OFF)
 option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into application" OFF)
 
 if (UNIX)
-    if (Open3D_HEADLESS_RENDERING)
+    if (HEADLESS_RENDERING)
     	set(GLFW_USE_OSMESA ON)
     else ()
         set(GLFW_USE_OSMESA OFF)
@@ -375,7 +375,7 @@ endif()
 #--------------------------------------------------------------------
 # MODIFICATION BY Open3D: overwrite some GLFW cmake variables
 #--------------------------------------------------------------------
-set(GLFW_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/GLFW/include")
+set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(GLFW_LIBRARIES "glfw")
 set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)

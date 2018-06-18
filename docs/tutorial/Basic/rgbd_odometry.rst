@@ -7,9 +7,9 @@ An RGBD odometry finds the camera movement between two consecutive RGBD image pa
 
 .. code-block:: python
 
-    import sys
-    sys.path.append("../..")
-    from py3d import *
+    # src/Python/Tutorial/Basic/rgbd_odometry.rst
+
+    from open3d import *
     import numpy as np
 
     if __name__ == "__main__":
@@ -165,4 +165,4 @@ Outputs:
      [  0.00000000e+00   0.00000000e+00   0.00000000e+00   1.00000000e+00]]
 
 .. image:: ../../_static/Basic/rgbd_odometry/hybrid_term.png
-	:width: 400px
+    :width: 400px

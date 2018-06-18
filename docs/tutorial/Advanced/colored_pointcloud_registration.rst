@@ -9,11 +9,9 @@ This tutorial demonstrates an ICP variant that uses both geometry and color for 
 
     # src/Python/Tutorial/Advanced/colored_pointcloud_registration.py
 
-    import sys
     import numpy as np
     import copy
-    sys.path.append("../..")
-    from py3d import *
+    from open3d import *
 
 
     def draw_registration_result_original_color(source, target, transformation):

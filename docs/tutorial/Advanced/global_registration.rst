@@ -9,9 +9,7 @@ Both :ref:`icp_registration` and :ref:`colored_point_registration` are known as 
 
     # src/Python/Tutorial/Advanced/global_registration.py
 
-    import sys
-    sys.path.append("../..")
-    from py3d import *
+    from open3d import *
     import numpy as np
     import copy
 
@@ -23,53 +21,73 @@ Both :ref:`icp_registration` and :ref:`colored_point_registration` are known as 
         source_temp.transform(transformation)
         draw_geometries([source_temp, target_temp])
 
-    if __name__ == "__main__":
-
-        print("1. Load two point clouds and disturb initial pose.")
+    def prepare_dataset(voxel_size):
+        print(":: Load two point clouds and disturb initial pose.")
         source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
         target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-        trans_init = np.asarray([[0.0, 1.0, 0.0, 0.0],
+        trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
                                 [1.0, 0.0, 0.0, 0.0],
-                                [0.0, 0.0, 1.0, 0.0],
+                                [0.0, 1.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0, 1.0]])
         source.transform(trans_init)
         draw_registration_result(source, target, np.identity(4))
 
-        print("2. Downsample with a voxel size 0.05.")
-        source_down = voxel_down_sample(source, 0.05)
-        target_down = voxel_down_sample(target, 0.05)
+        print(":: Downsample with a voxel size %.3f." % voxel_size)
+        source_down = voxel_down_sample(source, voxel_size)
+        target_down = voxel_down_sample(target, voxel_size)
 
-        print("3. Estimate normal with search radius 0.1.")
+        radius_normal = voxel_size * 2
+        print(":: Estimate normal with search radius %.3f." % radius_normal)
         estimate_normals(source_down, KDTreeSearchParamHybrid(
-                radius = 0.1, max_nn = 30))
+                radius = radius_normal, max_nn = 30))
         estimate_normals(target_down, KDTreeSearchParamHybrid(
-                radius = 0.1, max_nn = 30))
+                radius = radius_normal, max_nn = 30))
 
-        print("4. Compute FPFH feature with search radius 0.25")
+        radius_feature = voxel_size * 5
+        print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
         source_fpfh = compute_fpfh_feature(source_down,
-                KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
+                KDTreeSearchParamHybrid(radius = radius_feature, max_nn = 100))
         target_fpfh = compute_fpfh_feature(target_down,
-                KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
+                KDTreeSearchParamHybrid(radius = radius_feature, max_nn = 100))
+        return source, target, source_down, target_down, source_fpfh, target_fpfh
 
-        print("5. RANSAC registration on downsampled point clouds.")
-        print("   Since the downsampling voxel size is 0.05, we use a liberal")
-        print("   distance threshold 0.075.")
-        result_ransac = registration_ransac_based_on_feature_matching(
+    def execute_global_registration(
+            source_down, target_down, source_fpfh, target_fpfh, voxel_size):
+        distance_threshold = voxel_size * 1.5
+        print(":: RANSAC registration on downsampled point clouds.")
+        print("   Since the downsampling voxel size is %.3f," % voxel_size)
+        print("   we use a liberal distance threshold %.3f." % distance_threshold)
+        result = registration_ransac_based_on_feature_matching(
                 source_down, target_down, source_fpfh, target_fpfh, 0.075,
                 TransformationEstimationPointToPoint(False), 4,
                 [CorrespondenceCheckerBasedOnEdgeLength(0.9),
                 CorrespondenceCheckerBasedOnDistance(0.075)],
                 RANSACConvergenceCriteria(4000000, 500))
+        return result
+
+    def refine_registration(source, target, source_fpfh, target_fpfh, voxel_size):
+        distance_threshold = voxel_size * 0.4
+        print(":: Point-to-plane ICP registration is applied on original point")
+        print("   clouds to refine the alignment. This time we use a strict")
+        print("   distance threshold %.3f." % distance_threshold)
+        result = registration_icp(source, target, distance_threshold,
+                result_ransac.transformation,
+                TransformationEstimationPointToPlane())
+        return result
+
+    if __name__ == "__main__":
+        voxel_size = 0.05 # means 5cm for the dataset
+        source, target, source_down, target_down, source_fpfh, target_fpfh = \
+                prepare_dataset(voxel_size)
+
+        result_ransac = execute_global_registration(source_down, target_down,
+                source_fpfh, target_fpfh, voxel_size)
         print(result_ransac)
         draw_registration_result(source_down, target_down,
                 result_ransac.transformation)
 
-        print("6. Point-to-plane ICP registration is applied on original point")
-        print("   clouds to refine the alignment. This time we use a strict")
-        print("   distance threshold 0.02.")
-        result_icp = registration_icp(source, target, 0.02,
-                result_ransac.transformation,
-                TransformationEstimationPointToPlane())
+        result_icp = refine_registration(source, target,
+                source_fpfh, target_fpfh, voxel_size)
         print(result_icp)
         draw_registration_result(source, target, result_icp.transformation)
 
@@ -78,12 +96,14 @@ Input
 
 .. code-block:: python
 
-    print("1. Load two point clouds and disturb initial pose.")
+    # in prepare_dataset function
+
+    print(":: Load two point clouds and disturb initial pose.")
     source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
     target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-    trans_init = np.asarray([[0.0, 1.0, 0.0, 0.0],
+    trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
                             [1.0, 0.0, 0.0, 0.0],
-                            [0.0, 0.0, 1.0, 0.0],
+                            [0.0, 1.0, 0.0, 0.0],
                             [0.0, 0.0, 0.0, 1.0]])
     source.transform(trans_init)
     draw_registration_result(source, target, np.identity(4))
@@ -100,21 +120,25 @@ Extract geometric feature
 
 .. code-block:: python
 
-    print("2. Downsample with a voxel size 0.05.")
-    source_down = voxel_down_sample(source, 0.05)
-    target_down = voxel_down_sample(target, 0.05)
+    # in prepare_dataset function
 
-    print("3. Estimate normal with search radius 0.1.")
+    print(":: Downsample with a voxel size %.3f." % voxel_size)
+    source_down = voxel_down_sample(source, voxel_size)
+    target_down = voxel_down_sample(target, voxel_size)
+
+    radius_normal = voxel_size * 2
+    print(":: Estimate normal with search radius %.3f." % radius_normal)
     estimate_normals(source_down, KDTreeSearchParamHybrid(
-            radius = 0.1, max_nn = 30))
+            radius = radius_normal, max_nn = 30))
     estimate_normals(target_down, KDTreeSearchParamHybrid(
-            radius = 0.1, max_nn = 30))
+            radius = radius_normal, max_nn = 30))
 
-    print("4. Compute FPFH feature with search radius 0.25")
+    radius_feature = voxel_size * 5
+    print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
     source_fpfh = compute_fpfh_feature(source_down,
-            KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
+            KDTreeSearchParamHybrid(radius = radius_feature, max_nn = 100))
     target_fpfh = compute_fpfh_feature(target_down,
-            KDTreeSearchParamHybrid(radius = 0.25, max_nn = 100))
+            KDTreeSearchParamHybrid(radius = radius_feature, max_nn = 100))
 
 We down sample the point cloud, estimate normals, then compute a FPFH feature for each point. The FPFH feature is a 33-dimensional vector that describes the local geometric property of a point. A nearest neighbor query in the 33-dimensinal space can return points with similar local geometric structures. See [Rasu2009]_ for details.
 
@@ -125,20 +149,18 @@ RANSAC
 
 .. code-block:: python
 
-    print("5. RANSAC registration on down-sampled point clouds.")
-    print("   Since the downsampling voxel size is 0.05, we use a liberal")
-    print("   distance threshold 0.075.")
-    result_ransac = registration_ransac_based_on_feature_matching(
-            source_down, target_down, source_fpfh, target_fpfh,
-            fpfh, max_correspondence_distance = 0.075,
-            TransformationEstimationPointToPoint(False),
-            ransac_n = 4,
+    # in execute_global_registration function
+
+    distance_threshold = voxel_size * 1.5
+    print(":: RANSAC registration on downsampled point clouds.")
+    print("   Since the downsampling voxel size is %.3f," % voxel_size)
+    print("   we use a liberal distance threshold %.3f." % distance_threshold)
+    result = registration_ransac_based_on_feature_matching(
+            source_down, target_down, source_fpfh, target_fpfh, 0.075,
+            TransformationEstimationPointToPoint(False), 4,
             [CorrespondenceCheckerBasedOnEdgeLength(0.9),
             CorrespondenceCheckerBasedOnDistance(0.075)],
-            RANSACConvergenceCriteria(max_iteration = 4000000, max_validation = 500))
-    print(result_ransac)
-    draw_registration_result(source_down, target_down,
-            result_ransac.transformation)
+            RANSACConvergenceCriteria(4000000, 500))
 
 We use RANSAC for global registration. In each RANSAC iteration, ``ransac_n`` random points are picked from the source point cloud. Their corresponding points in the target point cloud are detected by querying the nearest neighbor in the 33-dimensional FPFH feature space. A pruning step takes fast pruning algorithms  to quickly reject false matches early.
 
@@ -155,6 +177,8 @@ We set the RANSAC parameters based on the empirical value provided by [Choi2015]
 .. image:: ../../_static/Advanced/global_registration/ransac.png
     :width: 400px
 
+.. Note:: Open3D provides faster implementation for global registration. Please refer :ref:`fast_global_registration`.
+
 .. _local_refinement:
 
 Local refinement
@@ -164,14 +188,15 @@ For performance reason, the global registration is only performed on a heavily d
 
 .. code-block:: python
 
-    print("6. Point-to-plane ICP registration is applied on original point")
+    # in refine_registration function
+
+    distance_threshold = voxel_size * 0.4
+    print(":: Point-to-plane ICP registration is applied on original point")
     print("   clouds to refine the alignment. This time we use a strict")
-    print("   distance threshold 0.02.")
-    result_icp = registration_icp(source, target, 0.02,
+    print("   distance threshold %.3f." % distance_threshold)
+    result = registration_icp(source, target, distance_threshold,
             result_ransac.transformation,
             TransformationEstimationPointToPlane())
-    print(result_icp)
-    draw_registration_result(source, target, result_icp.transformation)
 
 Outputs a tight alignment. This summarizes a complete pairwise registration workflow.
 

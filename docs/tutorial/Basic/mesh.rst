@@ -9,14 +9,12 @@ Open3D has a data structure for triangle mesh.
 
     # src/Python/Tutorial/Basic/mesh.py
 
-        import sys
         import numpy as np
-        sys.path.append("../..")
-        from py3d import *
+        from open3d import *
 
         if __name__ == "__main__":
 
-        print("Testing mesh in py3d ...")
+        print("Testing mesh in open3d ...")
         mesh = read_triangle_mesh("../../TestData/knot.ply")
         print(mesh)
         print(np.asarray(mesh.vertices))
@@ -56,7 +54,7 @@ Print vertices and triangles
 
 .. code-block:: python
 
-    print("Testing mesh in py3d ...")
+    print("Testing mesh in open3d ...")
     mesh = read_triangle_mesh("../../TestData/knot.ply")
     print(mesh)
     print(np.asarray(mesh.vertices))
