@@ -5,14 +5,20 @@ Docker
 
 The following document describes a Docker CE based solution for utilizing Open3D.
 Utilizing this approach the user can:
+
 - sandbox Open3D from other applications on a machine
 - operate Open3D on a headless machine using VNC or the terminal
 - edit the Open3D code on the host side but run it inside an Open3D container
 
-This recipe was developed and tested on Ubuntu 16.04. Other distributions might need slightly different instructions.
+This recipe was developed and tested on Ubuntu 18.04. Other distributions might need slightly different instructions.
 
 Docker installation
 ===================
+
+
+.. warning:: | The information below may become outdated.
+             | For the latest and most accurate installation guide see the official documentation at `Docker-CE install <https://docs.docker.com/install/>`_.
+
 
 The prefered installation mode is to use the official `Docker repository <https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-repository>`_.
 
@@ -129,7 +135,8 @@ This will eliminate the need to use sudo in order to run docker commands.
 
     $ sudo usermod -aG docker <user_name>
 
-.. warning:: The docker group grants privileges equivalent to the root user. For details on how this impacts security in your system, see `Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
+.. warning:: | The docker group grants privileges equivalent to the root user.
+             | For details on how this impacts security in your system, see `Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
 
 Usage notes
 ===========
@@ -170,8 +177,6 @@ We provide a number of Docker tools for convenience:
   Build the Open3D docker image.
 - ``delete.sh``
   Delete the Open3D image.
-- ``it.sh``
-  Start the Open3D docker container and display container stdout.
 - ``prune.sh``
   Delete hanging containers and images.
 - ``run.sh``
@@ -197,11 +202,14 @@ Prunning images/containers is useful when modifying/testing a new image.
 
 VNC
 ```
+
+VNC can be used to remote into a running docker container.
+
 A running Open3D container listens to port 5920 on the host.
-The ``it.sh``, ``run.sh`` and ``attach.sh`` scripts redirect host port 5920 to container port 5900.
+The ``run.sh`` script redirects host port 5920 to container port 5900.
 
 This allows remoting into the container using VNC to ``<host ip>:5920``.
-The default password is ``1234`` and can be changed in ``Open3D/issue_17/util/docker/open3d-xvfb/setup/entrypoint.sh``.
+The default password is ``1234`` and can be changed in ``Open3D/issue_17/util/docker/open3d-xvfb/setup/entrypoint.sh`` (requires rebuilding the Open3D Docker image with ``build.sh``).
 Once connected you can use Open3D as usual.
 
 Running in terminal
@@ -218,13 +226,14 @@ $ ./docker_sample.sh
 Limitations
 ```````````
 
-- the ``lxde`` based interface employed in this Docker image needs more configuring.
-  Some things won't work as expected. For example ``lxterminal`` crashes.
-- the resolution is set to 1280x1024x8 when remoting into an Open3D container.
-  Open3D windows are larger than this. The resolution will be increased in the future.
-- there are some rendering issues. When running the ``headless_sample.py`` sample from the docker terminal depth images are rendered and saved correctly to the disk however color images saved to the disk are black.
-- for now running the Open3D docker container clones Open3D master to ``~/open3d_docker``.
-  We are considering the following options:
+- | the ``lxde`` based interface employed in this Docker image needs more configuring.
+  | Some things won't work as expected. For example ``lxterminal`` may crash occasionally.
+- | the resolution is set to 1280x1024x8 when remoting into an Open3D container.
+  | Open3D windows are larger than this. The resolution will be increased in the future.
+- | there are some rendering issues.
+  | When running the ``headless_sample.py`` sample from the docker terminal depth images are rendered and saved correctly to the disk however color images saved to the disk are black.
+- | for now running the Open3D docker container clones Open3D master to ``~/open3d_docker``.
+  | We are considering the following options:
 
     - let the user specify the destination
     - reuse the current location of Open3D.

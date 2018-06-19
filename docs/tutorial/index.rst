@@ -15,3 +15,4 @@ For the C++ interface see :ref:`cplusplus_interface_tutorial`.
   ReconstructionSystem/index
   C++/cplusplus_interface
   reference
+  docker/docker
