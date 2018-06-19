@@ -117,10 +117,9 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 {
     const Eigen::Matrix3d K = intrinsic_matrix;
     const Eigen::Matrix3d K_inv = K.inverse();
-    const Eigen::Matrix4d extrinsic_inv = extrinsic.inverse();
-    const Eigen::Matrix3d R = extrinsic_inv.block<3, 3>(0, 0);
+    const Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
     const Eigen::Matrix3d KRK_inv = K * R * K_inv;
-    Eigen::Vector3d Kt = K * extrinsic_inv.block<3, 1>(0, 3);
+    Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 
     std::shared_ptr<Image> correspondence_map;
     std::shared_ptr<Image> depth_buffer;
@@ -138,24 +137,24 @@ std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
-    for (int v_t = 0; v_t < depth_t.height_; v_t++) {
-        for (int u_t = 0; u_t < depth_t.width_; u_t++) {
-            double d_t = *PointerAt<float>(depth_t, u_t, v_t);
-            if (!std::isnan(d_t)) {
-                Eigen::Vector3d uv_in_t =
-                        d_t * KRK_inv * Eigen::Vector3d(u_t, v_t, 1.0) + Kt;
-                double transformed_d_t = uv_in_t(2);
-                int u_s = (int)(uv_in_t(0) / transformed_d_t + 0.5);
-                int v_s = (int)(uv_in_t(1) / transformed_d_t + 0.5);
-                if (u_s >= 0 && u_s < depth_t.width_ &&
-                    v_s >= 0 && v_s < depth_t.height_) {
-                    double d_s = *PointerAt<float>(depth_s, u_s, v_s);
-                    if (!std::isnan(d_s) && std::abs(transformed_d_t - d_s)
-                        <= option.max_depth_diff_) {
+    for (int v_s = 0; v_s < depth_s.height_; v_s++) {
+        for (int u_s = 0; u_s < depth_s.width_; u_s++) {
+            double d_s = *PointerAt<float>(depth_s, u_s, v_s);
+            if (!std::isnan(d_s)) {
+                Eigen::Vector3d uv_in_s =
+                    d_s * KRK_inv * Eigen::Vector3d(u_s, v_s, 1.0) + Kt;
+                double transformed_d_s = uv_in_s(2);
+                int u_t = (int)(uv_in_s(0) / transformed_d_s + 0.5);
+                int v_t = (int)(uv_in_s(1) / transformed_d_s + 0.5);
+                if (u_t >= 0 && u_t < depth_t.width_ &&
+                        v_t >= 0 && v_t < depth_t.height_) {
+                    double d_t = *PointerAt<float>(depth_t, u_t, v_t);
+                    if (!std::isnan(d_t) && std::abs(transformed_d_s - d_t)
+                            <= option.max_depth_diff_) {
                         AddElementToCorrespondenceMap(
                                 *correspondence_map_private,
                                 *depth_buffer_private,
-                                u_s, v_s, u_t, v_t, (float)transformed_d_t);
+                                u_s, v_s, u_t, v_t, (float)d_s);
                     }
                 }
             }
@@ -237,7 +236,7 @@ std::vector<Eigen::Matrix3d>
     return pyramid_camera_matrix;
 }
 
-Eigen::Matrix6d CreateInfomationMatrix(
+Eigen::Matrix6d CreateInformationMatrix(
         const Eigen::Matrix4d &extrinsic,
         const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Image &depth_s, const Image &depth_t,
@@ -261,7 +260,7 @@ Eigen::Matrix6d CreateInfomationMatrix(
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp for nowait
 #endif
         for (auto row = 0; row < correspondence->size(); row++) {
             int u_t = (*correspondence)[row](2);
@@ -528,7 +527,7 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
 
     if (is_success) {
         Eigen::Matrix4d trans_output = extrinsic;
-        Eigen::MatrixXd info_output = CreateInfomationMatrix(extrinsic,
+        Eigen::MatrixXd info_output = CreateInformationMatrix(extrinsic,
                 pinhole_camera_intrinsic, source_processed->depth_,
                 target_processed->depth_, option);
         return std::make_tuple(true, trans_output, info_output);

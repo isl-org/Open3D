@@ -198,20 +198,26 @@ void pybind_globaloptimization(py::module &m)
                 max_correspondence_distance_)
         .def_readwrite("edge_prune_threshold",
                 &GlobalOptimizationOption::edge_prune_threshold_)
+        .def_readwrite("preference_loop_closure",
+                &GlobalOptimizationOption::preference_loop_closure_)
         .def_readwrite("reference_node",
                 &GlobalOptimizationOption::reference_node_)
         .def(py::init([](double max_correspondence_distance,
-                double edge_prune_threshold, int reference_node) {
+                double edge_prune_threshold, double preference_loop_closure,
+                int reference_node) {
             return new GlobalOptimizationOption(max_correspondence_distance,
-                edge_prune_threshold, reference_node);
+                edge_prune_threshold, preference_loop_closure, reference_node);
         }), "max_correspondence_distance"_a = 0.03,
-                "edge_prune_threshold"_a = 0.25, "reference_node"_a = -1)
+                "edge_prune_threshold"_a = 0.25, 
+                "preference_loop_closure"_a = 1.0, "reference_node"_a = -1)
         .def("__repr__", [](const GlobalOptimizationOption &goo) {
             return std::string("GlobalOptimizationOption") +
                 std::string("\n> max_correspondence_distance : ") +
                 std::to_string(goo.max_correspondence_distance_) +
                 std::string("\n> edge_prune_threshold : ") +
                 std::to_string(goo.edge_prune_threshold_) +
+                std::string("\n> preference_loop_closure : ") +
+                std::to_string(goo.preference_loop_closure_) +
                 std::string("\n> reference_node : ") +
                 std::to_string(goo.reference_node_);
     });
