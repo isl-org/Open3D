@@ -22,17 +22,14 @@ def preprocess_point_cloud(pcd):
 
 def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh):
-    result_ransac = registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, 0.075,
-            TransformationEstimationPointToPoint(False), 4,
-            [CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            CorrespondenceCheckerBasedOnDistance(0.075),
-            CorrespondenceCheckerBasedOnNormal(0.52359878)],
-            RANSACConvergenceCriteria(4000000, 2000))
-    if (result_ransac.transformation.trace() == 4.0):
+    result = registration_fast_based_on_feature_matching(
+            source, target, source_fpfh, target_fpfh,
+            FastGlobalRegistrationOption(
+            maximum_correspondence_distance = 0.07))
+    if (result.transformation.trace() == 4.0):
         return (False, np.identity(4))
     else:
-        return (True, result_ransac)
+        return (True, result)
 
 
 def compute_initial_registration(s, t, source_down, target_down,
@@ -65,27 +62,16 @@ def compute_initial_registration(s, t, source_down, target_down,
     return (True, transformation)
 
 
-def register_point_cloud_icp(source, target,
-        init_transformation = np.identity(4)):
-    result_icp = registration_icp(source, target, 0.02,
-            init_transformation,
-            TransformationEstimationPointToPlane())
-    print(result_icp)
-    information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.03, result_icp.transformation)
-    return (result_icp.transformation, information_matrix)
-
-
 # colored pointcloud registration
 # This is implementation of following paper
 # J. Park, Q.-Y. Zhou, V. Koltun,
 # Colored Point Cloud Registration Revisited, ICCV 2017
 def register_colored_point_cloud_icp(source, target,
-        init_transformation = np.identity(4), draw_result = False):
-    voxel_radius = [ 0.05, 0.025, 0.0125 ]
-    max_iter = [ 50, 30, 14 ]
+        init_transformation = np.identity(4),
+        voxel_radius = [ 0.05, 0.025, 0.0125 ], max_iter = [ 50, 30, 14 ],
+        draw_result = False):
     current_transformation = init_transformation
-    for scale in range(3): # multi-scale approach
+    for scale in range(len(max_iter)): # multi-scale approach
         iter = max_iter[scale]
         radius = voxel_radius[scale]
         print("radius %f" % radius)
@@ -103,32 +89,35 @@ def register_colored_point_cloud_icp(source, target,
         current_transformation = result_icp.transformation
 
     information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.03, result_icp.transformation)
+            source, target, 0.07, result_icp.transformation)
     if draw_result:
         draw_registration_result_original_color(source, target,
                 result_icp.transformation)
     return (result_icp.transformation, information_matrix)
 
 
-def local_refinement(source, target, source_down, target_down,
-        transformation_init, registration_type = "color",
-        draw_result = False):
+def local_refinement(s, t, source, target,
+        transformation_init, draw_result = False):
 
-    if (registration_type == "color"):
+    if t == s + 1: # odometry case
+        print("register_point_cloud_icp")
+        (transformation, information) = \
+                register_colored_point_cloud_icp(
+                source, target, transformation_init,
+                voxel_radius = [ 0.0125 ], max_iter = [ 30 ])
+    else: # loop closure case
         print("register_colored_point_cloud")
         (transformation, information) = \
                 register_colored_point_cloud_icp(
                 source, target, transformation_init)
-    else:
-        print("register_point_cloud_icp")
-        (transformation, information) = \
-                register_point_cloud_icp(
-                source_down, target_down, transformation_init)
 
+    success_local = False
+    if information[5,5] / min(len(source.points),len(target.points)) > 0.3:
+        success_local = True
     if draw_result:
         draw_registration_result_original_color(
-                source_down, target_down, transformation)
-    return (transformation, information)
+                source, target, transformation)
+    return (success_local, transformation, information)
 
 
 def update_odometry_posegrph(s, t, transformation, information,
@@ -149,8 +138,7 @@ def update_odometry_posegrph(s, t, transformation, information,
     return (odometry, pose_graph)
 
 
-def register_point_cloud(path_dataset, ply_file_names,
-        registration_type = "color", draw_result = False):
+def register_point_cloud(path_dataset, ply_file_names, draw_result = False):
     pose_graph = PoseGraph()
     odometry = np.identity(4)
     pose_graph.nodes.append(PoseGraphNode(odometry))
@@ -165,19 +153,17 @@ def register_point_cloud(path_dataset, ply_file_names,
             target = read_point_cloud(ply_file_names[t])
             (source_down, source_fpfh) = preprocess_point_cloud(source)
             (target_down, target_fpfh) = preprocess_point_cloud(target)
-
             (success_global, transformation_init) = \
                     compute_initial_registration(
                     s, t, source_down, target_down,
-                    source_fpfh, target_fpfh, path_dataset)
+                    source_fpfh, target_fpfh, path_dataset, draw_result)
             if not success_global:
                 continue
-
-            (transformation_icp, information_icp) = \
-                    local_refinement(source, target,
-                    source_down, target_down, transformation_init,
-                    registration_type, draw_result)
-
+            (success_local, transformation_icp, information_icp) = \
+                    local_refinement(s, t, source, target,
+                    transformation_init, draw_result)
+            if not success_local:
+                continue
             (odometry, pose_graph) = update_odometry_posegrph(s, t,
                     transformation_icp, information_icp,
                     odometry, pose_graph)

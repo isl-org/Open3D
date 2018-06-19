@@ -57,7 +57,7 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
     pts_s_int = np.int32(pts_s + 0.5)
     pts_t_int = np.int32(pts_t + 0.5)
     [E, mask] = cv2.findEssentialMat(pts_s_int, pts_t_int, focal=focal_input,
-            pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.995, threshold=1.0)
+            pp=(pp_x, pp_y), method=cv2.RANSAC, prob=0.999, threshold=1.0)
     if mask is None:
         return success, trans
 
@@ -131,7 +131,7 @@ def draw_correspondences(img_s, img_t, pts_s, pts_t, mask, title):
 
 def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
     max_iter = 1000
-    max_distance = 0.03
+    max_distance = 0.05
     n_sample = 5
     n_points = pts_xyz_s.shape[1]
     Transform_good = np.identity(4)
