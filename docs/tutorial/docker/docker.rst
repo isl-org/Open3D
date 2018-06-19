@@ -80,6 +80,11 @@ Optional steps
 Proxy settings
 ``````````````
 
+
+
+Docker-CE
+`````````
+
 In order to solve the hello-world issue above follow the `Docker proxy settings <https://docs.docker.com/config/daemon/systemd/#httphttps-proxy>`_.
 
 Create a systemd drop-in directory for the docker service:
@@ -112,6 +117,78 @@ Verify that the configuration has been loaded:
 
     $ systemctl show --property=Environment docker
 
+Docker container
+````````````````
+
+The docker container proxy settings must be set in order to enable features like `apt install` in your container.
+This can be accomplished either in the Dockerfile itself or by using a global mechanism like chameleonsocks.
+
+**Dockerfile**
+
+Take a look at the first few lines of the example :download:`Dockerfile <../../_static/docker/Dockerfile>`:
+
+.. literalinclude:: ../../_static/docker/Dockerfile
+   :language: docker
+   :lineno-start: 3
+   :lines: 3-10
+   :linenos:
+
+Uncommenting and settings these environment variables does the job.
+
+**chameleonsocks**
+
+Another way to set the proxy settings of the container is to use `chameleonsocks <https://github.com/crops/chameleonsocks>`_ which is a mechanism to redirect SOCKS or HTTP proxies.
+
+`chameleonsocks` has the advantage that the Dockerfile doesn't need changing based on network configuration circumstances.
+However it can conflict with other proxy settings on your host system. When that happens stopping the `chameleonsocks` container addresses the conflicts.
+
+.. code-block:: sh
+
+    $ cd ~
+    $ mkdir chameleonsocks
+    $ cd chameleonsocks
+    $ https_proxy=<https://server:port \
+      wget https://raw.githubusercontent.com/crops/chameleonsocks/master/chameleonsocks.sh && \
+      chmod 755 chameleonsocks.sh
+
+In order to properly set the proxy settings edit the proxy settings inside the `chameleonsocks.sh` file:
+
+.. code-block:: sh
+
+    # This is the domain name or ip address of your proxy server. It must
+    # be defined or nothing will work. Do not specify a protocol type
+    # such as http:// or https://.
+    : ${PROXY:=server}
+    # This is the port number of your proxy server
+    : ${PORT:=port}
+    # Possible PROXY_TYPE values: socks4, socks5, http-connect, http-relay
+    : ${PROXY_TYPE:=socks5}
+    # a file containing local company specific exceptions
+    : ${EXCEPTIONS:=chameleon.exceptions}
+    # Autoproxy url, this is often something like
+    # http://autoproxy.server.com or http://wpad.server.com/wpad.out
+    # ONLY additional exceptions are pulled from here. not the proxy
+    : ${PAC_URL=http://wpad.server.com/wpad.dat}
+
+Create the `chameleon.exceptions` file:
+
+.. code-block:: sh
+
+    $ touch chameleon.exceptions
+    $ ne chameleon.exceptions
+
+    server.com
+    .server.com
+    localhost
+    127.0.0.1
+
+Install `chameleonsocks`:
+
+.. code-block:: sh
+
+    $ ./chameleonsocks.sh --install
+
+NOTE: the `chameleonsocks.exceptions` file disappears after the install step above.
 
 DNS servers
 ```````````
