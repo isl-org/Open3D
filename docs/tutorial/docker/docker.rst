@@ -148,15 +148,13 @@ The Docker files can be found under ``Open3D/util/docker/open3d-xvfb``::
 
     - Dockerfile
     - setup
-        - build.sh
         - entrypoint.s
-        - headless_sample.py
-        - headless_sample.sh
+        - docker_sample.sh
     - tools
         - attach.sh
         - build.sh
         - delete.sh
-        - it.sh
+        - name.sh
         - prune.sh
         - run.sh
         - stop.sh
@@ -172,15 +170,15 @@ Tools
 We provide a number of Docker tools for convenience:
 
 - ``attach.sh``
-  Start the Open3D docker container and attach to it using a terminal interface.
+  Attach a terminal to a running Open3D docker container.
 - ``build.sh``
   Build the Open3D docker image.
 - ``delete.sh``
   Delete the Open3D image.
 - ``prune.sh``
-  Delete hanging containers and images.
+  Delete **all** stopped containers and **all** dangling images.
 - ``run.sh``
-  Run the Open3D container. Checkout Open3D and build.
+  Run the Open3D container. Checkout Open3D, build and install.
 - ``stop.sh``
   Stop the Open3D container.
 
@@ -190,13 +188,15 @@ At the end the image will be ~1GB in size.
 Running the Open3D Docker container will perform the following steps:
 
 - git clone Open3D master to ``~/open3d_docker``
-- copy the ``docker_sample.sh`` to ``~/open3d_docker/build/lib/Tutorial/Advanced``
-- run and detach the Open3D container with the host path ``~/open3d_docker`` mounted inside the container at ``/root/Open3D``
+- run the container in interactive mode with the host path ``~/open3d_docker`` mounted inside the container at ``/root/Open3D``
+- build Open3D and install inside the docker container.
 - attach a terminal to the Open3D container for command line input from the host side
+
+In order to disconnect from a running container type ``exit`` at the terminal.
 
 The Open3D container is automatically removed when stopped.
 None of the Open3D files are removed as they in fact reside on the host due to the Docker bind mounting functionality.
-In order to keep the container around remove the ``-rm`` option in ``it.sh`` and/or ``run.sh``.
+In order to keep the container around (and not have to rebuild Open3D every time) remove the ``-rm`` option in ``run.sh``.
 
 Prunning images/containers is useful when modifying/testing a new image.
 
@@ -218,10 +218,15 @@ Running in terminal
 It is also possible to run Open3D from a host side terminal attached to a running Open3D Docker container.
 An example on how this can be perfomed::
 
-$ cd <Open3D path>/utilities/docker/open3d-xvfb/tools
-$ ./build.sh
-$ ./attach.sh
-$ ./docker_sample.sh
+.. code-block:: sh
+
+    # on the host
+    sudo cp ~/open3d_docker/util/docker/open3d-xvfb/setup/docker_sample.sh ~/open3d_docker/build/lib/Tutorial/Advanced
+    cd ~/open3d_docker/utilities/docker/open3d-xvfb/tools
+    ./attach.sh
+    # on the container
+    cd ~/open3d/build/lib/Tutorial/Advanced
+    sh docker_sample.sh
 
 Limitations
 ```````````
@@ -231,7 +236,7 @@ Limitations
 - | the resolution is set to 1280x1024x8 when remoting into an Open3D container.
   | Open3D windows are larger than this. The resolution will be increased in the future.
 - | there are some rendering issues.
-  | When running the ``headless_sample.py`` sample from the docker terminal depth images are rendered and saved correctly to the disk however color images saved to the disk are black.
+  | Some images may be saved incorrectly to the disk. For example, when running the ``headless_sample.py`` sample from the docker terminal on the host the color images saved to the disk are black.
 - | for now running the Open3D docker container clones Open3D master to ``~/open3d_docker``.
   | We are considering the following options:
 
