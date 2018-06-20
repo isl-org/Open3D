@@ -12,12 +12,7 @@ add_library(IO OBJECT
 Directories(${CMAKE_CURRENT_SOURCE_DIR} IO_INCLUDE_DIRS)
 set(IO_INCLUDE_DIRS ${IO_INCLUDE_DIRS} PARENT_SCOPE)
 
-target_include_directories(IO PUBLIC ${IO_INCLUDE_DIRS})
-target_include_directories(IO PUBLIC ${JPEG_INCLUDE_DIR})
-target_include_directories(IO PUBLIC ${PNG_INCLUDE_DIRS})
-target_include_directories(IO PUBLIC ${rply_INCLUDE_DIRS})
-target_include_directories(IO PUBLIC ${liblzf_INCLUDE_DIRS})
-target_include_directories(IO PUBLIC ${dirent_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${EXTERNAL_INCLUDE_DIRS})
 
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"

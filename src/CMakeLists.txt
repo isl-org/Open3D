@@ -34,12 +34,6 @@ endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
     "Installation directory for CMake files")
 
-# don't set the CMAKE_INSTALL_PREFIX here
-# let the user pick either the OS-specific default path or a custom path
-# Windows test location: "C:\\Open3D"
-# macOS test location:   "~/Library/"
-# Linux test location:   "~/.local/"
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -172,6 +166,10 @@ if (WITH_OPENMP)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+
+        set(Config_Open3D_C_FLAGS          ${OpenMP_C_FLAGS})
+        set(Config_Open3D_CXX_FLAGS        ${OpenMP_CXX_FLAGS})
+        set(Config_Open3D_EXE_LINKER_FLAGS ${OpenMP_EXE_LINKER_FLAGS})
     else ()
         message(STATUS "OpenMP NOT found")
     endif ()
@@ -179,14 +177,8 @@ endif ()
 
 # Handling dependencies
 add_subdirectory(External)
-include_directories(${EIGEN3_INCLUDE_DIRS})
-include_directories(${GLEW_INCLUDE_DIRS})
-include_directories(${GLFW_INCLUDE_DIRS})
-include_directories(${JSONCPP_INCLUDE_DIRS})
-link_directories(${GLFW_LIBRARY_DIRS})
-link_directories(${JSONCPP_LIBRARY_DIRS})
-link_directories(${PNG_LIBRARY_DIRS})
 include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${EXTERNAL_INCLUDE_DIRS})
 
 # Open3D libraries
 add_subdirectory(Core)
@@ -207,13 +199,8 @@ else ()
 endif ()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-                      ${GLFW_LIBRARIES}
-                      ${GLEW_LIBRARIES}
-                      ${JPEG_LIBRARIES}
-                      ${JSONCPP_LIBRARIES}
-                      ${OMP_LIBRARIES}
-                      ${PNG_LIBRARIES}
-                      ${tinyfiledialogs_LIBRARIES})
+                      ${EXTERNAL_LIBRARIES}
+                      ${OMP_LIBRARIES})
 
 # Tests
 if (BUILD_TESTS)
@@ -242,6 +229,7 @@ SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS)
 SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS)
 SourcePath2InstallPath("${EXTERNAL_INCLUDE_DIRS}"      INSTALL_EXTERNAL_INCLUDE_DIRS)
 
+# set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
      "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
      ${INSTALL_CORE_INCLUDE_DIRS}
@@ -251,8 +239,16 @@ list(APPEND CONFIG_Open3D_INCLUDE_DIRS
 list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 
-# set the Open3D library directory
-set(CONFIG_Open3D_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
+# set Open3D libraries
+list(APPEND CONFIG_Open3D_LIBRARIES
+     "${CMAKE_PROJECT_NAME}"
+     ${EXTERNAL_LIBRARIES}
+     ${OMP_LIBRARIES})
+
+# set Open3D library directories
+list(APPEND CONFIG_Open3D_LIBRARY_DIRS
+    "${CMAKE_INSTALL_PREFIX}/lib"
+    ${OMP_LIBRARY_DIRS})
 
 # find_package Open3D
 configure_file(Open3DConfig.cmake.in

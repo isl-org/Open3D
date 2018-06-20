@@ -109,6 +109,7 @@ script:
   # - if [ "$SHARED" == "OFF" ]; then
   #     cd lib/Tutorial/Basic/ && python file_io.py
   #   fi
+  # test find_package(Open3D)
   - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST -DCMAKE_PREFIX_PATH="~/open3d_install/lib/CMake"`
   - if [ "$test" == "Open3D found." ]; then echo "PASSED find_package(Open3D)."; else echo "FAILED find_package(Open3D)."; exit 1; fi
 
