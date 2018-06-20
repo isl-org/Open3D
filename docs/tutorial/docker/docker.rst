@@ -12,17 +12,16 @@ Utilizing this approach the user can:
 
 This recipe was developed and tested on Ubuntu 18.04. Other distributions might need slightly different instructions.
 
-Docker installation
+.. _docker_installation:
+
+Ubuntu installation
 ===================
 
-
-.. warning:: | The information below may become outdated.
-             | For the latest and most accurate installation guide see the official documentation at `Docker-CE install <https://docs.docker.com/install/>`_.
-
+.. warning:: For the latest and most accurate installation guide see the official documentation at `Docker-CE install <https://docs.docker.com/install/>`_.
 
 The prefered installation mode is to use the official `Docker repository <https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-repository>`_.
 
-Install dependencies
+Install dependencies:
 
 .. code-block:: sh
 
@@ -72,18 +71,32 @@ Verify the installation:
 The verification will timeout if running behind a proxy:
 ``Unable to find image 'hello-world:latest' locally``
 
-Optional steps
-==============
+In order to address this problem see the :ref:`docker_proxy_settings_daemon` proxy settings.
+
+**Optional steps**
 
 `Docker Post-installation steps for Linux <https://docs.docker.com/install/linux/linux-postinstall>`_
 
+**Add user to “docker” group**
+
+This will eliminate the need to use sudo in order to run docker commands.
+
+.. code-block:: sh
+
+    $ sudo usermod -aG docker <user_name>
+
+.. warning:: | The docker group grants privileges equivalent to the root user.
+             | For details on how this impacts security in your system, see `Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
+
+.. _docker_proxy_settings:
+
 Proxy settings
-``````````````
+==============
 
+.. _docker_proxy_settings_daemon:
 
-
-Docker-CE
-`````````
+Docker daemon
+`````````````
 
 In order to solve the hello-world issue above follow the `Docker proxy settings <https://docs.docker.com/config/daemon/systemd/#httphttps-proxy>`_.
 
@@ -117,11 +130,13 @@ Verify that the configuration has been loaded:
 
     $ systemctl show --property=Environment docker
 
+.. _docker_proxy_settings_container:
+
 Docker container
 ````````````````
 
 The docker container proxy settings must be set in order to enable features like `apt install` in your container.
-This can be accomplished either in the Dockerfile itself or by using a global mechanism like chameleonsocks.
+This can be accomplished either in the Dockerfile itself or by using a global mechanism like `chameleonsocks`.
 
 **Dockerfile**
 
@@ -203,23 +218,15 @@ edit ``/etc/docker/daemon.json`` on the host:
         "dns": ["xxx.xxx.xxx.xxx", "xxx.xxx.xxx.xxx"]
     }
 
-Add user to “docker” group
-``````````````````````````
-
-This will eliminate the need to use sudo in order to run docker commands.
-
-.. code-block:: sh
-
-    $ sudo usermod -aG docker <user_name>
-
-.. warning:: | The docker group grants privileges equivalent to the root user.
-             | For details on how this impacts security in your system, see `Docker Daemon Attack Surface <https://docs.docker.com/engine/security/security/#docker-daemon-attack-surface>`_.
+.. _docker_usage_notes:
 
 Usage notes
 ===========
 
+.. _docker_files:
+
 Docker files
-````````````````
+````````````
 
 The Docker files can be found under ``Open3D/util/docker/open3d-xvfb``::
 
@@ -236,13 +243,11 @@ The Docker files can be found under ``Open3D/util/docker/open3d-xvfb``::
         - run.sh
         - stop.sh
 
-Dockerfile
-++++++++++
+**Dockerfile**
 
 ``Dockerfile`` is the Docker script used to build the Open3D image.
 
-Tools
-+++++
+**Tools**
 
 We provide a number of Docker tools for convenience:
 
@@ -259,6 +264,20 @@ We provide a number of Docker tools for convenience:
 - ``stop.sh``
   Stop the Open3D container.
 
+A typical flow of events when working with docker looks like this:
+
+.. code-block:: sh
+
+    $ cd <open3d_path>/util/docker/open3d_xvfb/tools
+    $ ./build.sh
+    $ ./run.sh
+    root@open3d-xvfb:~/open3d/build# <do some stuff>
+    root@open3d-xvfb:~/open3d/build# exit
+    $ ./attach.sh
+    root@open3d-xvfb:~/open3d# <do some stuff>
+    root@open3d-xvfb:~/open3d# exit
+    $ ./stop.sh
+
 Building the Open3D Docker image will take approximately 10-15 minutes to complete.
 At the end the image will be ~1GB in size.
 
@@ -270,15 +289,19 @@ Running the Open3D Docker container will perform the following steps:
 - attach a terminal to the Open3D container for command line input from the host side
 
 In order to disconnect from a running container type ``exit`` at the terminal.
+You can still attach to a running container at a later time.
 
 The Open3D container is automatically removed when stopped.
 None of the Open3D files are removed as they in fact reside on the host due to the Docker bind mounting functionality.
-In order to keep the container around (and not have to rebuild Open3D every time) remove the ``-rm`` option in ``run.sh``.
+In order to keep the container around (and not have to rebuild the Open3D binaries every time) remove the ``-rm`` option in ``run.sh``.
 
 Prunning images/containers is useful when modifying/testing a new image.
+It cleans up the docker workspace and frees up disk space.
 
-VNC
-```
+.. _docker_remote_access:
+
+Remote access
+`````````````
 
 VNC can be used to remote into a running docker container.
 
@@ -289,34 +312,40 @@ This allows remoting into the container using VNC to ``<host ip>:5920``.
 The default password is ``1234`` and can be changed in ``Open3D/issue_17/util/docker/open3d-xvfb/setup/entrypoint.sh`` (requires rebuilding the Open3D Docker image with ``build.sh``).
 Once connected you can use Open3D as usual.
 
-Running in terminal
-```````````````````
+.. _docker_host_terminal:
 
-It is also possible to run Open3D from a host side terminal attached to a running Open3D Docker container.
-An example on how this can be perfomed::
+Running at the host terminal
+````````````````````````````
+
+It is also possible to run Open3D from a host terminal attached to a running Open3D Docker container.
+An example on how this can be perfomed:
 
 .. code-block:: sh
 
-    # on the host
-    sudo cp ~/open3d_docker/util/docker/open3d-xvfb/setup/docker_sample.sh ~/open3d_docker/build/lib/Tutorial/Advanced
-    cd ~/open3d_docker/utilities/docker/open3d-xvfb/tools
-    ./attach.sh
-    # on the container
-    cd ~/open3d/build/lib/Tutorial/Advanced
-    sh docker_sample.sh
+    # at the host terminal
+    $ sudo cp ~/open3d_docker/util/docker/open3d-xvfb/setup/docker_sample.sh \
+              ~/open3d_docker/build/lib/Tutorial/Advanced
+    $ cd ~/open3d_docker/utilities/docker/open3d-xvfb/tools
+    $ ./attach.sh
+
+    # at the container terminal
+    $ cd ~/open3d/build/lib/Tutorial/Advanced
+    $ sh docker_sample.sh
+
+.. _docker_limitations:
 
 Limitations
-```````````
+===========
 
-- | the ``lxde`` based interface employed in this Docker image needs more configuring.
-  | Some things won't work as expected. For example ``lxterminal`` may crash occasionally.
-- | the resolution is set to 1280x1024x8 when remoting into an Open3D container.
-  | Open3D windows are larger than this. The resolution will be increased in the future.
+- | the ``lxde`` user interface needs more configuring.
+  | Some things won't work as expected. For example the ``UXTerm`` doesn't start and ``lxterminal`` may crash occasionally.
+- | the container screen resolution is set to 1280x1024x8.
+  | The resolution will be increased in the future.
 - | there are some rendering issues.
-  | Some images may be saved incorrectly to the disk. For example, when running the ``headless_sample.py`` sample from the docker terminal on the host the color images saved to the disk are black.
-- | for now running the Open3D docker container clones Open3D master to ``~/open3d_docker``.
-  | We are considering the following options:
+  | Some images may be saved incorrectly to the disk. For example, when running the ``headless_sample.py`` sample the color images saved to the disk are black.
+- | ``run.sh`` clones Open3D to a hardcoded location: ``~/open3d_docker``
+  | We are considering the following alternatives:
 
     - let the user specify the destination
-    - reuse the current location of Open3D.
+    - reuse the current location of Open3D
 
