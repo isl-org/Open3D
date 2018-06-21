@@ -3,11 +3,11 @@
 # See license file or visit www.open3d.org for details
 
 import importlib
-from sys import platform
+import sys
 
-if platform == "linux" or platform == "linux2":
+if sys.platform == "linux" or sys.platform == "linux2":
     from open3d.linux import *
-elif platform == "darwin":
+elif sys.platform == "darwin":
     from open3d.macos import *
-elif platform == "win32":
+elif sys.platform == "win32":
     from open3d.win32 import *
