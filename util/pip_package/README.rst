@@ -34,8 +34,6 @@ The package has been tested on:
 * Windows 10 with Python 2.7 and 3.5
 * MacOS High Sierra 10.13.4 with Python 2.7
 
-.. warning:: 64bit Python is not supported on Windows 10 at this time.
-
 Resources
 ======================
 
