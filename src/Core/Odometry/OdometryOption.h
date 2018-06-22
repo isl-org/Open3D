@@ -39,7 +39,7 @@ public:
             { 20, 10, 5 } /* {smaller image size to original image size} */,
             double max_depth_diff = 0.03,
             double min_depth = 0.0,
-            double max_depth = 4.0) :
+            double max_depth = 3.0) :
             minimum_correspondence_ratio_(minimum_correspondence_ratio),
             iteration_number_per_pyramid_level_
             (iteration_number_per_pyramid_level),

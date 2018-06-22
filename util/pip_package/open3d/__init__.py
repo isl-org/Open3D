@@ -3,14 +3,11 @@
 # See license file or visit www.open3d.org for details
 
 import importlib
-from sys import platform
-from sys import path
+import sys
 
-if platform == "linux" or platform == "linux2":
-    path.append("linux")
-elif platform == "darwin":
-    path.append("macos")
-elif platform == "win32":
-    path.append("win32")
-
-from open3d import *
+if sys.platform == "linux" or sys.platform == "linux2":
+    from open3d.linux import *
+elif sys.platform == "darwin":
+    from open3d.macos import *
+elif sys.platform == "win32":
+    from open3d.win32 import *

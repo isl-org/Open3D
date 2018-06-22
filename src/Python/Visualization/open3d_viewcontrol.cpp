@@ -55,7 +55,11 @@ void pybind_viewcontrol(py::module &m)
                 "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
         .def("translate", &ViewControl::Translate,
                 "Function to process translation",
-                "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0);
+                "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
+        .def("get_field_of_view", &ViewControl::GetFieldOfView,
+                "Function to get field of view")
+        .def("change_field_of_view", &ViewControl::ChangeFieldOfView,
+                "Function to change field of view", "step"_a = 0.45);
 }
 
 void pybind_viewcontrol_method(py::module &m)

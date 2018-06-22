@@ -30,6 +30,8 @@
 void PrintHelp()
 {
 	using namespace three;
+	PrintInfo("Open3D %s\n", OPEN3D_VERSION);
+	PrintInfo("\n");
 	PrintInfo("Usage :\n");
 	PrintInfo("    > TestProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
 }

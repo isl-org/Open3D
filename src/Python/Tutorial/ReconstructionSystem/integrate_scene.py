@@ -10,7 +10,7 @@ sys.path.append("../Utility")
 from open3d import *
 from common import *
 
-def scalable_integrate_rgb_frames(path_dataset, intrinsic):
+def scalable_integrate_rgb_frames(path_dataset, intrinsic, draw_result = False):
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
     n_frames_per_fragment = 100
@@ -40,7 +40,8 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic):
 
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
-    draw_geometries([mesh])
+    if draw_result:
+        draw_geometries([mesh])
 
     mesh_name = path_dataset + template_global_mesh
     write_triangle_mesh(mesh_name, mesh, False, True)

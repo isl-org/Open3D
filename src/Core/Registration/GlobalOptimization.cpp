@@ -29,6 +29,7 @@
 #include <vector>
 #include <tuple>
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Timer.h>
 #include <Core/Registration/PoseGraph.h>
@@ -148,9 +149,7 @@ double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
     double residual = 0.0;
     for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
         const PoseGraphEdge &te = pose_graph.edges_[iter_edge];
-        double line_process_iter = 1.0;
-        if (te.uncertain_)
-            line_process_iter = te.confidence_;
+        double line_process_iter = te.confidence_;
         Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
         residual += line_process_iter * e.transpose() * te.information_ * e +
                 line_process_weight * pow(sqrt(line_process_iter) - 1, 2.0);
@@ -209,10 +208,7 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ComputeLinearSystem(
         Eigen::Matrix6d JtT_Info =
                 Jt.transpose() * t.information_;
         Eigen::Vector6d eT_Info = e.transpose() * t.information_;
-
-        double line_process_iter = 1.0;
-        if (t.uncertain_)
-            line_process_iter = t.confidence_;
+        double line_process_iter = t.confidence_;
 
         int id_i = t.source_node_id_ * 6;
         int id_j = t.target_node_id_ * 6;
@@ -337,13 +333,13 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
     double average_number_of_correspondences = 0.0;
     for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
         double number_of_correspondences =
-                pose_graph.edges_[iter_edge].information_(0,0);
+                pose_graph.edges_[iter_edge].information_(5,5);
         average_number_of_correspondences += number_of_correspondences;
     }
     if (n_edges > 0) {
         // see Section 5 in [Choi et al 2015]
         average_number_of_correspondences /= (double)n_edges;
-        double line_process_weight = 2.0 *
+        double line_process_weight = option.preference_loop_closure_ *
                 pow(option.max_correspondence_distance_, 2) *
                 average_number_of_correspondences;
         return line_process_weight;
@@ -536,7 +532,23 @@ void GlobalOptimizationLevenbergMarquardt::
         int lm_count = 0;
         do {
             Eigen::MatrixXd H_LM = H + current_lambda * H_I;
-            Eigen::VectorXd delta = H_LM.ldlt().solve(b);
+            Eigen::VectorXd delta(H_LM.cols());
+
+            //Using a sparse solver
+            Eigen::SparseMatrix<double> H_LM_sparse = H_LM.sparseView();
+            Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> chol;
+            chol.compute(H_LM_sparse);
+
+            if (chol.info() == Eigen::Success) {
+                delta = chol.solve(b);
+                if (chol.info() != Eigen::Success) {
+                    PrintInfo("[GlobalOptimizationLM] sparse solver couldn't solve !! switching to dense solver");
+                    delta = H_LM.ldlt().solve(b);
+                    }
+            } else {
+                PrintInfo("[GlobalOptimizationLM] Cholesky Decomposition Failed !! switching to dense solver");
+                delta = H_LM.ldlt().solve(b);
+            }
 
             stop = stop || CheckRelativeIncrement(delta, x, criteria);
             if (!stop) {
