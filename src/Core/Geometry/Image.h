@@ -141,6 +141,9 @@ std::shared_ptr<Image> FilterHorizontalImage(
 /// Function to 2x image downsample using simple 2x2 averaging
 std::shared_ptr<Image> DownsampleImage(const Image &input);
 
+/// Function to dilate 8bit mask map
+std::shared_ptr<Image> DilateImage(const Image &input);
+
 /// Function to linearly transform pixel intensities
 /// image_new = scale * image + offset
 void LinearTransformImage(Image &input,

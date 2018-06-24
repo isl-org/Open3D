@@ -638,6 +638,40 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
     return std::move(std::make_tuple(images_gray, images_dx, images_dy));
 }
 
+std::vector<std::shared_ptr<Image>> MakeDepthMasks(
+        const std::vector<RGBDImage>& images_rgbd,
+        const ColorMapOptmizationOption& option)
+{
+    size_t n_images = images_rgbd.size();
+    std::vector<std::shared_ptr<Image>> images_mask;
+    for (int i=0; i<n_images; i++) {
+        int width = images_rgbd[i].depth_.width_;
+        int height = images_rgbd[i].depth_.height_;
+        auto depth_image = CreateFloatImageFromImage(images_rgbd[i].depth_);
+        auto depth_image_gradient_dx = FilterImage(*depth_image,
+                Image::FilterType::Sobel3Dx);
+        auto depth_image_gradient_dy = FilterImage(*depth_image,
+                Image::FilterType::Sobel3Dy);
+        auto mask = std::make_shared<Image>();
+        mask->PrepareImage(width, height, 1, 1);
+        for (int v=0; v<height; v++) {
+            for (int u=0; u<width; u++) {
+                double dx = *PointerAt<float>(*depth_image_gradient_dx, u, v);
+                double dy = *PointerAt<float>(*depth_image_gradient_dy, u, v);
+                double mag = sqrt(dx * dx + dy * dy);
+                if (mag > option.depth_threshold_for_discontinuity_check_) {
+                    *PointerAt<unsigned char>(*mask, u, v) = 255;
+                } else {
+                    *PointerAt<unsigned char>(*mask, u, v) = 0;
+                }
+            }
+        }
+        auto mask_dilated = DilateImage(*mask);
+        images_mask.push_back(mask_dilated);
+    }
+    return std::move(images_mask);
+}
+
 }    // unnamed namespace
 
 void ColorMapOptimization(TriangleMesh& mesh,
@@ -652,6 +686,9 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::shared_ptr<Image>> images_dy;
     std::tie(images_gray, images_dx, images_dy) =
             MakeGradientImages(images_rgbd);
+
+    PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
+    auto images_mask = MakeDepthMasks(images_rgbd, option);
 
     PrintDebug("[ColorMapOptimization] :: VisibilityCheck\n");
     std::vector<std::vector<int>> visiblity_vertex_to_image;

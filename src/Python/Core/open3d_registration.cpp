@@ -36,7 +36,6 @@
 #include <Core/Registration/Registration.h>
 #include <Core/Registration/FastGlobalRegistration.h>
 #include <Core/Registration/ColoredICP.h>
-#include <Core/Registration/ColorMapOptimization.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 
 using namespace three;
@@ -330,9 +329,4 @@ void pybind_registration_methods(py::module &m)
             "Function for computing information matrix from RegistrationResult",
             "source"_a, "target"_a, "max_correspondence_distance"_a,
             "transformation_result"_a);
-    m.def("color_map_optimization",
-			&ColorMapOptimization,
-			"Function for color mapping of reconstructed scenes via optimization",
-			"mesh"_a, "imgs_rgbd"_a, "camera"_a,
-            "option"_a = ColorMapOptmizationOption());
 }

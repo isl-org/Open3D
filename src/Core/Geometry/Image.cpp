@@ -303,4 +303,35 @@ std::shared_ptr<Image> FlipImage(const Image &input)
     return output;
 }
 
+std::shared_ptr<Image> DilateImage(const Image &input)
+{
+    auto output = std::make_shared<Image>();
+    if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 1) {
+        PrintWarning("[FilpImage] Unsupported image format.\n");
+        return output;
+    }
+    output->PrepareImage(input.height_, input.width_, 1, 1);
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int y = 0; y < input.height_; y++) {
+        for (int x = 0; x < input.width_; x++) {
+            for (int yy = -1; yy <= 1; yy++) {
+                for (int xx = -1; xx <= 1; xx++) {
+                    unsigned char* pi;
+                    if (input.TestImageBoundary(x+xx, y+yy))
+                        pi = PointerAt<unsigned char>(input, x+xx, y+yy);
+                    if (*pi == 255) {
+                        *PointerAt<unsigned char>(*output, x+xx, y+yy, 0) = 255;
+                        xx = 1;
+                        yy = 1;
+                    }
+                }
+            }
+        }
+    }
+    return output;
+}
+
 }    // namespace three
