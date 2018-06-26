@@ -47,6 +47,8 @@ PinholeCameraIntrinsic::PinholeCameraIntrinsic(
 {
     if (param == PinholeCameraIntrinsicParameters::PrimeSenseDefault)
         SetIntrinsics(640, 480, 525.0, 525.0, 319.5, 239.5);
+    else if (param == PinholeCameraIntrinsicParameters::Kinect2Default)
+        SetIntrinsics(512, 424, 254.878, 205.395, 365.456, 365.456);
 }
 
 PinholeCameraIntrinsic::~PinholeCameraIntrinsic()
