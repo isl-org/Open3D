@@ -392,6 +392,33 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                 view_control.ToggleLocking();
                 InvalidateSelectionPolygon();
                 InvalidatePicking();
+            } else if (editing_geometry_ptr_ &&
+                    editing_geometry_ptr_->GetGeometryType() ==
+                    Geometry::GeometryType::TriangleMesh) {
+                glfwMakeContextCurrent(window_);
+                TriangleMesh &mesh = (TriangleMesh &)*editing_geometry_ptr_;
+                mesh = *selection_polygon_ptr_->CropTriangleMesh(mesh,
+                        view_control);
+                editing_geometry_renderer_ptr_->UpdateGeometry();
+                const char *filename;
+                const char *pattern[1] = {"*.ply"};
+                std::string default_filename = default_directory_ +
+                        "cropped.ply";
+                if (use_dialog_) {
+                    filename = tinyfd_saveFileDialog("Mesh file",
+                            default_filename.c_str(), 1, pattern,
+                            "Polygon File Format (*.ply)");
+                } else {
+                    filename = default_filename.c_str();
+                }
+                if (filename == NULL) {
+                    PrintInfo("No filename is given. Abort saving.\n");
+                } else {
+                    SaveCroppingResult(filename);
+                }
+                view_control.ToggleLocking();
+                InvalidateSelectionPolygon();
+                InvalidatePicking();
             }
         } else {
             Visualizer::KeyPressCallback(window, key, scancode, action, mods);

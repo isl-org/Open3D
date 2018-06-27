@@ -33,10 +33,12 @@ void PrintHelp()
     printf("Open3D %s\n", OPEN3D_VERSION);
     printf("\n");
     printf("Usage:\n");
-    printf("    > ManuallyCropPointCloud pointcloud_file [options]\n");
-    printf("      Manually crop point clouds in pointcloud_file.\n");
+    printf("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
+    printf("      Manually crop geometry in speficied file.\n");
     printf("\n");
     printf("Options:\n");
+    printf("    --pointcloud,             : Read geometry as point cloud.\n");
+    printf("    --mesh,                   : Read geometry as mesh.\n");
     printf("    --help, -h                : Print help information.\n");
     printf("    --verbose n               : Set verbose level (0-4).\n");
     printf("    --voxel_size d            : Set downsample voxel size.\n");
@@ -52,24 +54,33 @@ int main(int argc, char **argv)
         PrintHelp();
         return 0;
     }
-    
+
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
     double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
             -1.0);
     bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
 
-    auto pcd_ptr = CreatePointCloudFromFile(argv[1]);
-    if (pcd_ptr->IsEmpty()) {
-        PrintWarning("Failed to read the point cloud.\n");
-        return 0;
-    }
     VisualizerWithEditing vis(voxel_size, with_dialog,
             filesystem::GetFileParentDirectory(argv[1]));
     vis.CreateWindow("Crop Point Cloud", 1920, 1080, 100, 100);
-    vis.AddGeometry(pcd_ptr);
-    if (pcd_ptr->points_.size() > 5000000) {
-        vis.GetRenderOption().point_size_ = 1.0;
+    if (ProgramOptionExists(argc, argv, "--pointcloud")) {
+        auto pcd_ptr = CreatePointCloudFromFile(argv[2]);
+        if (pcd_ptr->IsEmpty()) {
+            PrintWarning("Failed to read the point cloud.\n");
+            return 0;
+        }
+        vis.AddGeometry(pcd_ptr);
+        if (pcd_ptr->points_.size() > 5000000) {
+            vis.GetRenderOption().point_size_ = 1.0;
+        }
+    } else if (ProgramOptionExists(argc, argv, "--mesh")) {
+        auto mesh_ptr = CreateMeshFromFile(argv[2]);
+        if (mesh_ptr->IsEmpty()) {
+            PrintWarning("Failed to read the mesh.\n");
+            return 0;
+        }
+        vis.AddGeometry(mesh_ptr);
     }
     vis.Run();
     vis.DestroyWindow();

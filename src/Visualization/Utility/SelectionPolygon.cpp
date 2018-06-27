@@ -27,6 +27,7 @@
 #include "SelectionPolygon.h"
 
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/TriangleMesh.h>
 #include <Core/Utility/Console.h>
 #include <Visualization/Visualizer/ViewControl.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
@@ -127,6 +128,23 @@ std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
     }
 }
 
+std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
+        const TriangleMesh &input, const ViewControl &view)
+{
+    if (IsEmpty()) {
+        return std::make_shared<TriangleMesh>();
+    }
+    switch (polygon_type_) {
+    case SectionPolygonType::Rectangle:
+        return CropTriangleMeshInRectangle(input, view);
+    case SectionPolygonType::Polygon:
+        return CropTriangleMeshInPolygon(input, view);
+    case SectionPolygonType::Unfilled:
+    default:
+        return std::shared_ptr<TriangleMesh>();
+    }
+}
+
 std::shared_ptr<SelectionPolygonVolume> SelectionPolygon::
         CreateSelectionPolygonVolume(const ViewControl &view)
 {
@@ -180,6 +198,18 @@ std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInPolygon(
         const PointCloud &input, const ViewControl &view)
 {
     return SelectDownSample(input, CropInPolygon(input.points_, view));
+}
+
+std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInRectangle(
+        const TriangleMesh &input, const ViewControl &view)
+{
+    return SelectDownSample(input, CropInRectangle(input.vertices_, view));
+}
+
+std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInPolygon(
+        const TriangleMesh &input, const ViewControl &view)
+{
+    return SelectDownSample(input, CropInPolygon(input.vertices_, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(

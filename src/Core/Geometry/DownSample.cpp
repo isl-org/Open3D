@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "PointCloud.h"
+#include "TriangleMesh.h"
 
 #include <unordered_map>
 
@@ -100,6 +101,69 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
     }
     PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
             (int)input.points_.size(), (int)output->points_.size());
+    return output;
+}
+
+std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
+        const std::vector<size_t> &indices)
+{
+    auto output = std::make_shared<TriangleMesh>();
+    bool has_normals = input.HasVertexNormals();
+    bool has_colors = input.HasVertexColors();
+    // For each vertex, list what faces are observed. use vector
+    std::vector<std::vector<int>> vertex_to_face_temp(input.vertices_.size());
+    int triangle_id = 0;
+    for (auto trangle : input.triangles_) {
+        vertex_to_face_temp[trangle[0]].push_back(triangle_id);
+        vertex_to_face_temp[trangle[1]].push_back(triangle_id);
+        vertex_to_face_temp[trangle[2]].push_back(triangle_id);
+        triangle_id++;
+    }
+    // for each vertex, remove list if it is non-selected vertices
+    std::vector<std::vector<int>> vertex_to_face(input.vertices_.size());
+    for (auto vertex_id : indices) {
+        vertex_to_face[vertex_id] = vertex_to_face_temp[vertex_id];
+    }
+    // make a list of face index, and add vertex id if that face is from remaining point
+    std::vector<std::vector<int>> triangle_idx(input.triangles_.size());
+    int vertex_id = 0;
+    for (auto face_ids : vertex_to_face) {
+        for (auto face_id : face_ids)
+            triangle_idx[face_id].push_back(vertex_id);
+        vertex_id++;
+    }
+    std::vector<bool> mask_observed_vertex(input.vertices_.size());
+    for (auto vertex_ids : triangle_idx) {
+        if (vertex_ids.size() == 3)
+            for (int i=0; i<3; i++)
+                mask_observed_vertex[vertex_ids[i]] = true;
+    }
+    // rename vertex id
+    std::vector<int> new_vertex_id(input.vertices_.size());
+    for (int i=0, cnt=0; i<mask_observed_vertex.size(); i++) {
+        if (mask_observed_vertex[i])
+            new_vertex_id[i] = cnt++;
+    }
+    // push face that has 3 elements.
+    for (auto vertex_ids : triangle_idx) {
+        if (vertex_ids.size() == 3) {
+            Eigen::Vector3i new_face;
+            for (int i=0; i<3; i++)
+                new_face[i] = new_vertex_id[vertex_ids[i]];
+            output->triangles_.push_back(new_face);
+        }
+    }
+    // push marked vertex.
+    for (size_t i : indices) {
+        output->vertices_.push_back(input.vertices_[i]);
+        if (has_normals) output->vertex_normals_.push_back(
+                input.vertex_normals_[i]);
+        if (has_colors) output->vertex_colors_.push_back(
+                input.vertex_colors_[i]);
+    }
+    PrintDebug("Triangle mesh sampled from %d vertices and %d triangles to %d vertices and %d triangles.\n",
+            (int)input.vertices_.size(), (int)input.triangles_.size(),
+            (int)output->vertices_.size(), (int)output->triangles_.size());
     return output;
 }
 

@@ -120,6 +120,12 @@ public:
     std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
+/// Function to select points from \param input pointcloud into
+/// \return output pointcloud
+/// Points with indices in \param indices are selected.
+std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
+        const std::vector<size_t> &indices);
+
 /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
 /// The sphere with \param radius will be centered at (0, 0, 0).
 /// Its axis is aligned with z-axis.

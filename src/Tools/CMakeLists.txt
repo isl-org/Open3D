@@ -13,6 +13,6 @@ endmacro(TOOL)
 
 TOOL(ConvertPointCloud      ${CMAKE_PROJECT_NAME})
 TOOL(EncodeShader)
-TOOL(ManuallyCropPointCloud ${CMAKE_PROJECT_NAME})
+TOOL(ManuallyCropGeometry   ${CMAKE_PROJECT_NAME})
 TOOL(MergeMesh              ${CMAKE_PROJECT_NAME})
 TOOL(ViewGeometry           ${CMAKE_PROJECT_NAME})
