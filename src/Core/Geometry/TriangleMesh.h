@@ -120,9 +120,9 @@ public:
     std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
-/// Function to select points from \param input pointcloud into
-/// \return output pointcloud
-/// Points with indices in \param indices are selected.
+/// Function to select points from \param input TriangleMesh into
+/// \return output TriangleMesh
+/// Vertices with indices in \param indices are selected.
 std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
         const std::vector<size_t> &indices);
 

@@ -34,6 +34,7 @@
 #include <Core/Utility/FileSystem.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 #include <IO/ClassIO/PointCloudIO.h>
+#include <IO/ClassIO/TriangleMeshIO.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 #include <Visualization/Utility/SelectionPolygon.h>
@@ -625,8 +626,13 @@ void VisualizerWithEditing::SaveCroppingResult(
     }
     std::string volume_filename = filesystem::GetFileNameWithoutExtension(
             filename) + ".json";
-    WritePointCloud(ply_filename,
-            (const PointCloud &)(*geometry_ptrs_[0]));
+    if (geometry_ptrs_[0]->GetGeometryType() ==
+            Geometry::GeometryType::PointCloud)
+        WritePointCloud(ply_filename, (const PointCloud &)(*geometry_ptrs_[0]));
+    else if (geometry_ptrs_[0]->GetGeometryType() ==
+            Geometry::GeometryType::TriangleMesh)
+        WriteTriangleMesh(ply_filename,
+                (const TriangleMesh &)(*geometry_ptrs_[0]));
     WriteIJsonConvertible(volume_filename,
             *selection_polygon_ptr_->CreateSelectionPolygonVolume(
             GetViewControl()));
