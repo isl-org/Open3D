@@ -65,6 +65,8 @@ public:
 
 public:
     double lambda_geometric_;
+
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::ColoredICP;
 };

@@ -84,6 +84,8 @@ public:
 
 public:
     bool with_scaling_ = false;
+
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPoint;
 };
@@ -104,7 +106,7 @@ public:
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-public:
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
 };
