@@ -37,6 +37,14 @@ class PointCloud;
 
 typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
+enum class TransformationEstimationType
+{
+    Unspecified = 0,
+    PointToPoint = 1,
+    PointToPlane = 2,
+    ColoredICP = 3,
+};
+
 /// Base class that estimates a transformation between two point clouds
 /// The virtual function ComputeTransformation() must be implemented in
 /// subclasses.
@@ -47,6 +55,8 @@ public:
     virtual ~TransformationEstimation() {}
 
 public:
+    virtual TransformationEstimationType
+            GetTransformationEstimationType() const = 0;
     virtual double ComputeRMSE(const PointCloud &source,
             const PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
@@ -64,6 +74,8 @@ public:
     ~TransformationEstimationPointToPoint() override {}
 
 public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override { return type_; };
     double ComputeRMSE(const PointCloud &source, const PointCloud &target,
             const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
@@ -72,6 +84,8 @@ public:
 
 public:
     bool with_scaling_ = false;
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::PointToPoint;
 };
 
 /// Estimate a transformation for point to plane distance
@@ -82,11 +96,17 @@ public:
     ~TransformationEstimationPointToPlane() override {}
 
 public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override { return type_; };
     double ComputeRMSE(const PointCloud &source, const PointCloud &target,
             const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
+
+public:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::PointToPlane;
 };
 
 

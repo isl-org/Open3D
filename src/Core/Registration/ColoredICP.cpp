@@ -46,6 +46,8 @@ public:
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
 public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override { return type_; };
     TransformationEstimationForColoredICP(
             double lambda_geometric = 0.968) :
             lambda_geometric_(lambda_geometric) {
@@ -63,6 +65,8 @@ public:
 
 public:
     double lambda_geometric_;
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::ColoredICP;
 };
 
 std::shared_ptr<PointCloudForColoredICP>
