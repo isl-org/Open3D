@@ -36,6 +36,9 @@
 #include <IO/ClassIO/TriangleMeshIO.h>
 #include <Core/Utility/Eigen.h>
 
+// for debugging
+#include <IO/ClassIO/ImageIO.h>
+
 namespace three {
 
 namespace {
@@ -107,6 +110,7 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         MakeVertexAndImageVisibility(const TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<Image>& images_mask,
         const PinholeCameraTrajectory& camera,
         const ColorMapOptmizationOption& option)
 {
@@ -132,6 +136,8 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
                 continue;
             float d_sensor = *PointerAt<float>(images_rgbd[c].depth_, u, v);
             if (d_sensor > option.maximum_allowable_depth_)
+                continue;
+            if (*PointerAt<unsigned char>(images_mask[c], u, v) == 255)
                 continue;
             if (abs(d - d_sensor) <
                     option.depth_threshold_for_visiblity_check_) {
@@ -638,13 +644,14 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
     return std::move(std::make_tuple(images_gray, images_dx, images_dy));
 }
 
-std::vector<std::shared_ptr<Image>> MakeDepthMasks(
+std::vector<Image> MakeDepthMasks(
         const std::vector<RGBDImage>& images_rgbd,
         const ColorMapOptmizationOption& option)
 {
     size_t n_images = images_rgbd.size();
-    std::vector<std::shared_ptr<Image>> images_mask;
+    std::vector<Image> images_mask;
     for (int i=0; i<n_images; i++) {
+        PrintDebug("[MakeDepthMasks] Image %d/%d\n", i, n_images);
         int width = images_rgbd[i].depth_.width_;
         int height = images_rgbd[i].depth_.height_;
         auto depth_image = CreateFloatImageFromImage(images_rgbd[i].depth_);
@@ -666,8 +673,14 @@ std::vector<std::shared_ptr<Image>> MakeDepthMasks(
                 }
             }
         }
-        auto mask_dilated = DilateImage(*mask);
-        images_mask.push_back(mask_dilated);
+        auto mask_dilated = DilateImage(*mask,
+                option.half_dilation_kernel_size_for_discontinuity_map_);
+        images_mask.push_back(*mask_dilated);
+
+        char filename[255];
+        sprintf(filename, "image_%03d.png", i);
+        WriteImage(filename, *mask_dilated);
+
     }
     return std::move(images_mask);
 }
@@ -694,7 +707,8 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
-            MakeVertexAndImageVisibility(mesh, images_rgbd, camera, option);
+            MakeVertexAndImageVisibility(mesh, images_rgbd,
+            images_mask, camera, option);
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {

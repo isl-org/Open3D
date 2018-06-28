@@ -45,7 +45,8 @@ public:
             double maximum_iteration = 500,
             double maximum_allowable_depth = 2.5,
             double depth_threshold_for_visiblity_check = 0.03,
-            double depth_threshold_for_discontinuity_check = 0.1) :
+            double depth_threshold_for_discontinuity_check = 0.1,
+            int half_dilation_kernel_size_for_discontinuity_map = 3) :
             non_rigid_camera_coordinate_(non_rigid_camera_coordinate),
             number_of_vertical_anchors_(number_of_vertical_anchors),
             non_rigid_anchor_point_weight_(non_rigid_anchor_point_weight),
@@ -54,7 +55,9 @@ public:
             depth_threshold_for_visiblity_check_(
             depth_threshold_for_visiblity_check),
             depth_threshold_for_discontinuity_check_(
-            depth_threshold_for_discontinuity_check) {}
+            depth_threshold_for_discontinuity_check),
+            half_dilation_kernel_size_for_discontinuity_map_(
+            half_dilation_kernel_size_for_discontinuity_map) {}
 	~ColorMapOptmizationOption() {}
 
 public:
@@ -65,6 +68,7 @@ public:
     double maximum_allowable_depth_;
     double depth_threshold_for_visiblity_check_;
     double depth_threshold_for_discontinuity_check_;
+    int half_dilation_kernel_size_for_discontinuity_map_;
 };
 
 /// This is implementation of following paper
