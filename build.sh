@@ -10,6 +10,6 @@ cmake ../src -DCMAKE_INSTALL_PREFIX=~/open3d_install #-DPYTHON_EXECUTABLE=/usr/b
 make -j
 
 # this will copy the libs and headers to ~/open3d_install/lib & ~/open3d_install/include
-# make install
+make install
 
 echo

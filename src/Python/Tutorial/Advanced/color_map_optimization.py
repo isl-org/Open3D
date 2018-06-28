@@ -2,13 +2,13 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from py3d import *
+from open3d import *
 from trajectory_io import *
 import os, sys
 sys.path.append("../Utility")
 from common import *
 
-path = "[set_this_path_to_fountain_dataset]"
+path = "/Users/jaesikpa/Downloads/fountain_small/"
 debug_mode = False
 
 if __name__ == "__main__":

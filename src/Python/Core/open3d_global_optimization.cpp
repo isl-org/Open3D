@@ -51,7 +51,7 @@ public:
     }
 };
 
-void pybind_globaloptimization(py::module &m)
+void pybind_global_optimization(py::module &m)
 {
     py::class_<PoseGraphNode, std::shared_ptr<PoseGraphNode>>
             pose_graph_node(m, "PoseGraphNode");
@@ -208,7 +208,7 @@ void pybind_globaloptimization(py::module &m)
             return new GlobalOptimizationOption(max_correspondence_distance,
                 edge_prune_threshold, preference_loop_closure, reference_node);
         }), "max_correspondence_distance"_a = 0.03,
-                "edge_prune_threshold"_a = 0.25, 
+                "edge_prune_threshold"_a = 0.25,
                 "preference_loop_closure"_a = 1.0, "reference_node"_a = -1)
         .def("__repr__", [](const GlobalOptimizationOption &goo) {
             return std::string("GlobalOptimizationOption") +
@@ -223,7 +223,7 @@ void pybind_globaloptimization(py::module &m)
     });
 }
 
-void pybind_globaloptimization_methods(py::module &m)
+void pybind_global_optimization_methods(py::module &m)
 {
     m.def("read_pose_graph", [](const std::string &filename) {
             PoseGraph pose_graph;
