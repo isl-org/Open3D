@@ -146,8 +146,16 @@ RegistrationResult RegistrationICP(const PointCloud &source,
         const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/)
 {
     if (max_correspondence_distance <= 0.0) {
+        PrintError("Error: Invalid max_correspondence_distance.\n");
         return RegistrationResult(init);
     }
+    if (estimation.GetTransformationEstimationType() ==
+            TransformationEstimationType::PointToPlane &&
+            (!source.HasNormals() || !target.HasNormals())) {
+        PrintError("Error: TransformationEstimationPointToPlane requires pre-computed normal vectors.\n");
+        return RegistrationResult(init);
+    }
+
     Eigen::Matrix4d transformation = init;
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
