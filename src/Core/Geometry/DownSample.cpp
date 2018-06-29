@@ -108,8 +108,9 @@ std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
         const std::vector<size_t> &indices)
 {
     auto output = std::make_shared<TriangleMesh>();
-    bool has_normals = input.HasVertexNormals();
-    bool has_colors = input.HasVertexColors();
+    bool has_triangle_normals = input.HasTriangleNormals();
+    bool has_vertex_normals = input.HasVertexNormals();
+    bool has_vertex_colors = input.HasVertexColors();
     // For each vertex, list face indices.
     std::vector<std::vector<int>> vertex_to_triangle_temp(input.vertices_.size());
     int triangle_id = 0;
@@ -141,7 +142,7 @@ std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
     }
     // Rename vertex id based on selected points
     std::vector<int> new_vertex_id(input.vertices_.size());
-    for (int i=0, cnt=0; i<mask_observed_vertex.size(); i++) {
+    for (auto i=0, cnt=0; i<mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i])
             new_vertex_id[i] = cnt++;
     }
@@ -153,19 +154,22 @@ std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
             for (int i=0; i<3; i++)
                 new_face(i) = new_vertex_id[input.triangles_[triangle_id][i]];
             output->triangles_.push_back(new_face);
+            if (has_triangle_normals) output->triangle_normals_.push_back(
+                    input.triangle_normals_[triangle_id]);
         }
         triangle_id++;
     }
     // Push marked vertex.
-    for (int i=0; i<mask_observed_vertex.size(); i++) {
+    for (auto i=0; i<mask_observed_vertex.size(); i++) {
         if (mask_observed_vertex[i]) {
             output->vertices_.push_back(input.vertices_[i]);
-            if (has_normals) output->vertex_normals_.push_back(
+            if (has_vertex_normals) output->vertex_normals_.push_back(
                     input.vertex_normals_[i]);
-            if (has_colors) output->vertex_colors_.push_back(
+            if (has_vertex_colors) output->vertex_colors_.push_back(
                     input.vertex_colors_[i]);
         }
     }
+    output->Purge();
     PrintDebug("Triangle mesh sampled from %d vertices and %d triangles to %d vertices and %d triangles.\n",
             (int)input.vertices_.size(), (int)input.triangles_.size(),
             (int)output->vertices_.size(), (int)output->triangles_.size());
