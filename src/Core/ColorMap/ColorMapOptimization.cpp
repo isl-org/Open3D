@@ -114,9 +114,8 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         const PinholeCameraTrajectory& camera,
         const ColorMapOptmizationOption& option)
 {
-    int n_camera = camera.extrinsic_.size();
-    int n_vertex = mesh.vertices_.size();
-    const double MAX_DEPTH = 10000000.0;
+    auto n_camera = camera.extrinsic_.size();
+    auto n_vertex = mesh.vertices_.size();
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     visiblity_vertex_to_image.resize(n_vertex);
@@ -125,8 +124,6 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
 #pragma omp parallel for schedule(static)
 #endif
     for (int c = 0; c < n_camera; c++) {
-        int h = images_rgbd[c].depth_.height_;
-        int w = images_rgbd[c].depth_.width_;
         int viscnt = 0;
         for (int vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
@@ -164,7 +161,7 @@ std::vector<ImageWarpingField> MakeWarpingFields(
         const ColorMapOptmizationOption& option)
 {
     std::vector<ImageWarpingField> fields;
-    for (size_t i = 0; i < images.size(); i++) {
+    for (auto i = 0; i < images.size(); i++) {
         int width = images[i]->width_;
         int height = images[i]->height_;
         fields.push_back(ImageWarpingField(width, height,
@@ -222,14 +219,15 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         std::vector<double>& proxy_intensity)
 {
-    int n_vertex = mesh.vertices_.size();
+    auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < n_vertex; i++) {
+    for (auto i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
-        for (int iter = 0; iter < visiblity_vertex_to_image[i].size(); iter++) {
+        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+                iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
@@ -253,14 +251,15 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         std::vector<double>& proxy_intensity)
 {
-    int n_vertex = mesh.vertices_.size();
+    auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
 #pragma omp parallel for num_threads( 8 )
-    for (int i = 0; i < n_vertex; i++) {
+    for (auto i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
-        for (int iter = 0; iter < visiblity_vertex_to_image[i].size(); iter++) {
+        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+                iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
@@ -290,8 +289,8 @@ void OptimizeImageCoorNonrigid(
         std::vector<double>& proxy_intensity,
         const ColorMapOptmizationOption& option)
 {
-    int n_vertex = mesh.vertices_.size();
-    int n_camera = camera.extrinsic_.size();
+    auto n_vertex = mesh.vertices_.size();
+    auto n_camera = camera.extrinsic_.size();
     Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
     intr.block<3,3>(0,0) = camera.intrinsic_.intrinsic_matrix_;
     intr(3, 3) = 1.0;
@@ -320,8 +319,8 @@ void OptimizeImageCoorNonrigid(
             pose = camera.extrinsic_[i];
             double anchor_step = warping_fields[i].anchor_step_;
             double anchor_w = warping_fields[i].anchor_w_;
-            double anchor_h = warping_fields[i].anchor_h_;
-            for (int iter = 0; iter < visiblity_image_to_vertex[i].size(); iter++) {
+            for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
+                    iter++) {
                 int j = visiblity_image_to_vertex[i][iter];
                 Eigen::Vector3d V = mesh.vertices_[j];
                 Eigen::Vector4d G = pose * Eigen::Vector4d(V(0), V(1), V(2), 1);
@@ -428,7 +427,6 @@ void OptimizeImageCoorNonrigid(
                 aff_mat.translation() =
                         Eigen::Vector3d(result(3), result(4), result(5));
                 pose = aff_mat.matrix() * pose;
-
                 for (int j = 0; j < nonrigidval; j++) {
                     warping_fields[i].flow_(j) += result(6 + j);
                 }
@@ -457,8 +455,7 @@ void OptimizeImageCoorRigid(
         const ColorMapOptmizationOption& option)
 {
     int total_num_ = 0;
-    int n_vertex = mesh.vertices_.size();
-    int n_camera = camera.extrinsic_.size();
+    auto n_camera = camera.extrinsic_.size();
     Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
     intr.block<3,3>(0,0) = camera.intrinsic_.intrinsic_matrix_;
     intr(3, 3) = 1.0;
@@ -482,7 +479,8 @@ void OptimizeImageCoorRigid(
             int this_num = 0;
             Eigen::Matrix4d pose;
             pose = camera.extrinsic_[i];
-            for (int iter = 0; iter < visiblity_image_to_vertex[i].size(); iter++) {
+            for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
+                    iter++) {
                 int j = visiblity_image_to_vertex[i][iter];
                 Eigen::Vector3d V = mesh.vertices_[j];
                 Eigen::Vector4d G = pose * Eigen::Vector4d(V(0), V(1), V(2), 1);
@@ -552,17 +550,17 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image)
 {
-    int n_vertex = mesh.vertices_.size();
+    auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
-        for (int iter = 0; iter < visiblity_vertex_to_image[i].size(); iter++) {
+        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+                iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
-            float u, v;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
                     images_rgbd[j].color_, warping_fields[j],
@@ -592,14 +590,15 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image)
 {
-    int n_vertex = mesh.vertices_.size();
+    auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
-        for (int iter = 0; iter < visiblity_vertex_to_image[i].size(); iter++) {
+        for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
+                iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
@@ -628,7 +627,7 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
         std::vector<std::shared_ptr<Image>>> MakeGradientImages(
         const std::vector<RGBDImage>& images_rgbd)
 {
-    size_t n_images = images_rgbd.size();
+    auto n_images = images_rgbd.size();
     std::vector<std::shared_ptr<Image>> images_gray;
     std::vector<std::shared_ptr<Image>> images_dx;
     std::vector<std::shared_ptr<Image>> images_dy;
@@ -649,7 +648,7 @@ std::vector<Image> MakeDepthMasks(
         const std::vector<RGBDImage>& images_rgbd,
         const ColorMapOptmizationOption& option)
 {
-    size_t n_images = images_rgbd.size();
+    auto n_images = images_rgbd.size();
     std::vector<Image> images_mask;
     for (int i=0; i<n_images; i++) {
         PrintDebug("[MakeDepthMasks] Image %d/%d\n", i, n_images);
