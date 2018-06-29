@@ -132,12 +132,13 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
             double u, v, d;
             std::tie(u, v, d) = Project3DPointAndGetUVDepth(X, camera, c);
-            if (d < 0.0 || u < 0 || u > w || v < 0 || v > h)
+            int u_d = round(u), v_d = round(v);
+            if (d < 0.0 || !images_rgbd[c].depth_.TestImageBoundary(u_d, v_d))
                 continue;
-            float d_sensor = *PointerAt<float>(images_rgbd[c].depth_, u, v);
+            float d_sensor = *PointerAt<float>(images_rgbd[c].depth_, u_d, v_d);
             if (d_sensor > option.maximum_allowable_depth_)
                 continue;
-            if (*PointerAt<unsigned char>(images_mask[c], u, v) == 255)
+            if (*PointerAt<unsigned char>(images_mask[c], u_d, v_d) == 255)
                 continue;
             if (abs(d - d_sensor) <
                     option.depth_threshold_for_visiblity_check_) {

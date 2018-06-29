@@ -62,7 +62,7 @@ Eigen::Vector2d Image::GetMaxBound() const
 }
 
 bool Image::TestImageBoundary(double u, double v,
-        double inner_margin = 0.0) const
+        double inner_margin/* = 0.0 */) const
 {
     return (u >= inner_margin && u < width_ - inner_margin &&
         v >= inner_margin && v < height_ - inner_margin);
