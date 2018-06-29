@@ -67,6 +67,10 @@ void pybind_camera(py::module &m)
         "PinholeCameraIntrinsicParameters", py::arithmetic())
         .value("PrimeSenseDefault",
         PinholeCameraIntrinsicParameters::PrimeSenseDefault)
+        .value("Kinect2DepthCameraDefault",
+        PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault)
+        .value("Kinect2ColorCameraDefault",
+        PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault)
         .export_values();
 
     py::class_<PinholeCameraTrajectory> pinhole_traj(m,
