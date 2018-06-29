@@ -80,6 +80,12 @@ void pybind_trianglemesh_methods(py::module &m)
         return WriteTriangleMesh(filename, mesh, write_ascii, compressed);
     }, "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
             "write_ascii"_a = false, "compressed"_a = false);
+    m.def("select_down_sample", &SelectDownSample,
+            "Function to select mesh from input triangle mesh into output triangle mesh",
+            "input"_a, "indices"_a);
+    m.def("crop_triangle_mesh", &CropTriangleMesh,
+            "Function to crop input triangle mesh into output triangle mesh",
+            "input"_a, "min_bound"_a, "max_bound"_a);
     m.def("create_mesh_sphere", &CreateMeshSphere,
             "Factory function to create a sphere mesh",
             "radius"_a = 1.0, "resolution"_a = 20);

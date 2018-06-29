@@ -253,4 +253,24 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
     return SelectDownSample(input, indices);
 }
 
+std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
+        const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound)
+{
+    if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
+            min_bound(2) > max_bound(2)) {
+        PrintDebug("[CropTriangleMesh] Illegal boundary clipped all points.\n");
+        return std::make_shared<TriangleMesh>();
+    }
+    std::vector<size_t> indices;
+    for (size_t i = 0; i < input.vertices_.size(); i++) {
+        const auto &point = input.vertices_[i];
+        if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
+                point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
+                point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
+            indices.push_back(i);
+        }
+    }
+    return SelectDownSample(input, indices);
+}
+
 }    // namespace three
