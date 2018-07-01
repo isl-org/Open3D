@@ -61,6 +61,13 @@ Eigen::Vector2d Image::GetMaxBound() const
     return Eigen::Vector2d(width_, height_);
 }
 
+bool Image::TestImageBoundary(double u, double v,
+        double inner_margin/* = 0.0 */) const
+{
+    return (u >= inner_margin && u < width_ - inner_margin &&
+        v >= inner_margin && v < height_ - inner_margin);
+}
+
 std::pair<bool, double> Image::FloatValueAt(double u, double v) const
 {
     if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4) ||
@@ -291,6 +298,39 @@ std::shared_ptr<Image> FlipImage(const Image &input)
             float* pi = PointerAt<float>(input, x, y, 0);
             float* po = PointerAt<float>(*output, y, x, 0);
             *po = *pi;
+        }
+    }
+    return output;
+}
+
+std::shared_ptr<Image> DilateImage(const Image &input,
+        int half_kernel_size/* = 1 */)
+{
+    auto output = std::make_shared<Image>();
+    if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 1) {
+        PrintWarning("[DilateImage] Unsupported image format.\n");
+        return output;
+    }
+    output->PrepareImage(input.width_, input.height_, 1, 1);
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int y = 0; y < input.height_; y++) {
+        for (int x = 0; x < input.width_; x++) {
+            for (int yy = -half_kernel_size; yy <= half_kernel_size; yy++) {
+                for (int xx = -half_kernel_size; xx <= half_kernel_size; xx++) {
+                    unsigned char* pi;
+                    if (input.TestImageBoundary(x+xx, y+yy)) {
+                        pi = PointerAt<unsigned char>(input, x+xx, y+yy);
+                        if (*pi == 255) {
+                            *PointerAt<unsigned char>(*output, x, y, 0) = 255;
+                            xx = half_kernel_size;
+                            yy = half_kernel_size;
+                        }
+                    }
+                }
+            }
         }
     }
     return output;

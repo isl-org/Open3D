@@ -13,7 +13,8 @@ Reference
 .. [Rasu2009] R. Rusu, N. Blodow, and M. Beetz, Fast Point Feature Histograms (FPFH) for 3D registration, ICRA, 2009.
 .. [Rusinkiewicz2001] S. Rusinkiewicz and M. Levoy. Efficient variants of the ICP algorithm. In 3-D Digital Imaging and Modeling, 2001.
 .. [Silberman2012] N. Silberman, D. Hoiem, P. Kohli and R. Fergus, Indoor Segmentation and Support Inference from RGBD Images, ECCV, 2012.
-.. [Song2015] S. Song, S. Lichtenberg, and J. Xiao,    SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite, CVPR, 2015.
+.. [Song2015] S. Song, S. Lichtenberg, and J. Xiao, SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite, CVPR, 2015.
 .. [Steinbrucker2011] F. Steinbrucker, J. Sturm, and D. Cremers, Real-time visual odometry from dense RGB-D images, In ICCV Workshops, 2011.
 .. [Strum2012] J. Sturm, N. Engelhard, F. Endres, W. Burgard and D. Cremers, A Benchmark for the Evaluation of RGB-D SLAM Systems, IROS, 2012.
+.. [Zhou2014] Q.-Y. Zhou, and V. Koltun, Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras, SIGGRAPH, 2014.
 .. [Zhou2016] Q.-Y. Zhou, J. Park, and V. Koltun, Fast Global Registration, ECCV, 2016.
