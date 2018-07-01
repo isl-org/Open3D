@@ -120,6 +120,18 @@ public:
     std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
+/// Function to select points from \param input TriangleMesh into
+/// \return output TriangleMesh
+/// Vertices with indices in \param indices are selected.
+std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
+        const std::vector<size_t> &indices);
+
+/// Function to crop \param input tringlemesh into output tringlemesh
+/// All points with coordinates less than \param min_bound or larger than
+/// \param max_bound are clipped.
+std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
+        const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound);
+
 /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
 /// The sphere with \param radius will be centered at (0, 0, 0).
 /// Its axis is aligned with z-axis.

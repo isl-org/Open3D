@@ -34,6 +34,7 @@
 #include <Core/Utility/FileSystem.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 #include <IO/ClassIO/PointCloudIO.h>
+#include <IO/ClassIO/TriangleMeshIO.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 #include <Visualization/Utility/SelectionPolygon.h>
@@ -392,6 +393,33 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                 view_control.ToggleLocking();
                 InvalidateSelectionPolygon();
                 InvalidatePicking();
+            } else if (editing_geometry_ptr_ &&
+                    editing_geometry_ptr_->GetGeometryType() ==
+                    Geometry::GeometryType::TriangleMesh) {
+                glfwMakeContextCurrent(window_);
+                TriangleMesh &mesh = (TriangleMesh &)*editing_geometry_ptr_;
+                mesh = *selection_polygon_ptr_->CropTriangleMesh(mesh,
+                        view_control);
+                editing_geometry_renderer_ptr_->UpdateGeometry();
+                const char *filename;
+                const char *pattern[1] = {"*.ply"};
+                std::string default_filename = default_directory_ +
+                        "cropped.ply";
+                if (use_dialog_) {
+                    filename = tinyfd_saveFileDialog("Mesh file",
+                            default_filename.c_str(), 1, pattern,
+                            "Polygon File Format (*.ply)");
+                } else {
+                    filename = default_filename.c_str();
+                }
+                if (filename == NULL) {
+                    PrintInfo("No filename is given. Abort saving.\n");
+                } else {
+                    SaveCroppingResult(filename);
+                }
+                view_control.ToggleLocking();
+                InvalidateSelectionPolygon();
+                InvalidatePicking();
             }
         } else {
             Visualizer::KeyPressCallback(window, key, scancode, action, mods);
@@ -598,8 +626,13 @@ void VisualizerWithEditing::SaveCroppingResult(
     }
     std::string volume_filename = filesystem::GetFileNameWithoutExtension(
             filename) + ".json";
-    WritePointCloud(ply_filename,
-            (const PointCloud &)(*geometry_ptrs_[0]));
+    if (geometry_ptrs_[0]->GetGeometryType() ==
+            Geometry::GeometryType::PointCloud)
+        WritePointCloud(ply_filename, (const PointCloud &)(*geometry_ptrs_[0]));
+    else if (geometry_ptrs_[0]->GetGeometryType() ==
+            Geometry::GeometryType::TriangleMesh)
+        WriteTriangleMesh(ply_filename,
+                (const TriangleMesh &)(*geometry_ptrs_[0]));
     WriteIJsonConvertible(volume_filename,
             *selection_polygon_ptr_->CreateSelectionPolygonVolume(
             GetViewControl()));
