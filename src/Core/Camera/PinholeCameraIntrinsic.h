@@ -33,7 +33,8 @@ namespace three {
 
 enum class PinholeCameraIntrinsicParameters {
     PrimeSenseDefault = 0,
-    Kinect2Default = 1,
+    Kinect2DepthCameraDefault = 1,
+    Kinect2ColorCameraDefault = 2,
 };
 
 class PinholeCameraIntrinsic : public IJsonConvertible
