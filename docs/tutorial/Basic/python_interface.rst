@@ -21,10 +21,16 @@ Open3D prebuilt binaries can be found at `open3d-python <https://pypi.org/projec
     # or
     python3 -m pip install --user open3d-python
 
+Open3D is supported on Ubuntu/macOS/Windows only on a standard/native Python distribution, **not Anaconda**. ``pip install open3d-python`` was tested and found to be working out of the box with:
+
+* Windows, python installed from https://www.python.org/downloads/, 2.7 & 3.5 32bit and 64bit
+* MacOS, system python 2.7
+* Ubuntu, system python 2.7 and python 3.5 installed through apt.
+
 Install open3d from source
 ==========================
 
-For installing from source see :ref:`getting_started_compilation`.
+For installing from source, see :ref:`getting_started_compilation`.
 
 If Open3D is successfully compiled with Python binding, it will create a Python library with the name ``open3d``.
 Typically, you will find a file ``open3d.so`` in ``build/lib/Python`` directory.
