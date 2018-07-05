@@ -9,7 +9,18 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.0")
 endif ()
 
 # central location for specifying the Open3D version
-project(Open3D VERSION 0.2.0.0)
+file(STRINGS "../version.txt" OPEN3D_VERSION_READ)
+foreach(ver ${OPEN3D_VERSION_READ})
+  if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
+    set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
+  endif()
+endforeach()
+string(CONCAT OPEN3D_VERSION "${OPEN3D_VERSION_MAJOR}"
+                             ".${OPEN3D_VERSION_MINOR}"
+                             ".${OPEN3D_VERSION_PATCH}"
+                             ".${OPEN3D_VERSION_TWEAK}")
+project(Open3D VERSION ${OPEN3D_VERSION})
+message(STATUS "Open3D ${PROJECT_VERSION}")
 
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
