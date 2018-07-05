@@ -72,7 +72,7 @@ Visualizer::~Visualizer()
     glfwTerminate();    // to be safe
 }
 
-bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
+bool Visualizer::CreateVisualizerWindow(const std::string &window_name/* = "Open3D"*/,
         const int width/* = 640*/, const int height/* = 480*/,
         const int left/* = 50*/, const int top/* = 50*/)
 {
@@ -200,7 +200,7 @@ bool Visualizer::CreateWindow(const std::string &window_name/* = "Open3D"*/,
     return true;
 }
 
-void Visualizer::DestroyWindow()
+void Visualizer::DestroyVisualizerWindow()
 {
     is_initialized_ = false;
     glfwDestroyWindow(window_);

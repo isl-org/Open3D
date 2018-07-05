@@ -96,10 +96,10 @@ int main(int argc, char *argv[])
 	mesh_ptr->ComputeVertexNormals();
 	PrintWarning("Press S to capture a depth image.\n");
 	VisualizerWithDepthCapture visualizer;
-	visualizer.CreateWindow("Depth Capture", 640, 480, 200, 200);
+	visualizer.CreateVisualizerWindow("Depth Capture", 640, 480, 200, 200);
 	visualizer.AddGeometry(mesh_ptr);
 	visualizer.Run();
-	visualizer.DestroyWindow();
+	visualizer.DestroyVisualizerWindow();
 
 	if (!filesystem::FileExists("depth.png") ||
 			!filesystem::FileExists("camera.json")) {
@@ -115,18 +115,18 @@ int main(int argc, char *argv[])
 	auto pointcloud_ptr = CreatePointCloudFromDepthImage(
 			*image_ptr, camera.intrinsic_, camera.extrinsic_[0]);
 	VisualizerWithDepthCapture visualizer1;
-	visualizer1.CreateWindow("Depth Validation", 640, 480, 200, 200);
+	visualizer1.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
 	visualizer1.AddGeometry(pointcloud_ptr);
 	visualizer1.Run();
-	visualizer1.DestroyWindow();
+	visualizer1.DestroyVisualizerWindow();
 
 	PrintWarning("Press L to validate the depth image.\n");
 	PrintWarning("Press P to load the capturing camera pose.\n");
 	VisualizerWithDepthCapture visualizer2;
-	visualizer2.CreateWindow("Depth Validation", 640, 480, 200, 200);
+	visualizer2.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
 	visualizer2.AddGeometry(mesh_ptr);
 	visualizer2.Run();
-	visualizer2.DestroyWindow();
+	visualizer2.DestroyVisualizerWindow();
 
 	PrintInfo("End of the test.\n");
 

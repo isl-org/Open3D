@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
     VisualizerWithEditing vis(voxel_size, with_dialog,
             filesystem::GetFileParentDirectory(argv[1]));
-    vis.CreateWindow("Crop Point Cloud", 1920, 1080, 100, 100);
+    vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);
     if (ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd_ptr = CreatePointCloudFromFile(argv[2]);
         if (pcd_ptr->IsEmpty()) {
@@ -83,6 +83,6 @@ int main(int argc, char **argv)
         vis.AddGeometry(mesh_ptr);
     }
     vis.Run();
-    vis.DestroyWindow();
+    vis.DestroyVisualizerWindow();
     return 1;
 }

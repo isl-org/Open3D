@@ -192,19 +192,19 @@ int main(int argc, char **argv)
             max_corres_distance, with_scaling, with_dialog,
             default_polygon_filename, default_directory);
     
-    vis_source.CreateWindow("Source Point Cloud", 1280, 720, 10, 100);
+    vis_source.CreateVisualizerWindow("Source Point Cloud", 1280, 720, 10, 100);
     vis_source.AddGeometry(source_ptr);
     if (source_ptr->points_.size() > 5000000) {
         vis_source.GetRenderOption().point_size_ = 1.0;
     }
     vis_source.BuildUtilities();
-    vis_target.CreateWindow("Target Point Cloud", 1280, 720, 10, 880);
+    vis_target.CreateVisualizerWindow("Target Point Cloud", 1280, 720, 10, 880);
     vis_target.AddGeometry(target_ptr);
     if (target_ptr->points_.size() > 5000000) {
         vis_target.GetRenderOption().point_size_ = 1.0;
     }
     vis_target.BuildUtilities();
-    vis_main.CreateWindow("Alignment", 1280, 1440, 1300, 100);
+    vis_main.CreateVisualizerWindow("Alignment", 1280, 1440, 1300, 100);
     vis_main.AddSourceAndTarget(source_ptr, target_ptr);
     vis_main.BuildUtilities();
 
@@ -212,8 +212,8 @@ int main(int argc, char **argv)
             vis_main.PollEvents()) {
     }
     
-    vis_source.DestroyWindow();
-    vis_target.DestroyWindow();
-    vis_main.DestroyWindow();
+    vis_source.DestroyVisualizerWindow();
+    vis_target.DestroyVisualizerWindow();
+    vis_main.DestroyVisualizerWindow();
     return 1;
 }
