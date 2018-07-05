@@ -9,7 +9,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.0")
 endif ()
 
 # central location for specifying the Open3D version
-project(Open3D VERSION 0.1.5.5)
+project(Open3D VERSION 0.2.0.0)
 
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
