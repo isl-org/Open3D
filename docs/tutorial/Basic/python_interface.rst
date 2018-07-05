@@ -21,7 +21,7 @@ Open3D prebuilt binaries can be found at `open3d-python <https://pypi.org/projec
     # or
     python3 -m pip install --user open3d-python
 
-Open3D is supported on Ubuntu/macOS/Windows only on a standard/native Python distribution, **not AnaConda**. ``pip install open3d-python`` was tested and found to be working out of the box with:
+Open3D is supported on Ubuntu/macOS/Windows only on a standard/native Python distribution, **not Anaconda**. ``pip install open3d-python`` was tested and found to be working out of the box with:
 
 * Windows, python installed from https://www.python.org/downloads/, 2.7 & 3.5 32bit and 64bit
 * MacOS, system python 2.7
