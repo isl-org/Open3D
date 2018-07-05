@@ -42,7 +42,7 @@ bool DrawGeometries(
         int left/* = 50*/, int top/* = 50*/)
 {
     Visualizer visualizer;
-    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
             false) {
         PrintWarning("[DrawGeometries] Failed creating OpenGL window.\n");
         return false;
@@ -55,7 +55,7 @@ bool DrawGeometries(
         }
     }
     visualizer.Run();
-    visualizer.DestroyWindow();
+    visualizer.DestroyVisualizerWindow();
     return true;
 }
 
@@ -67,7 +67,7 @@ bool DrawGeometriesWithCustomAnimation(
         const std::string &json_filename/* = ""*/)
 {
     VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
             false) {
         PrintWarning("[DrawGeometriesWithCustomAnimation] Failed creating OpenGL window.\n");
         return false;
@@ -90,7 +90,7 @@ bool DrawGeometriesWithCustomAnimation(
         visualizer.UpdateWindowTitle();
     }
     visualizer.Run();
-    visualizer.DestroyWindow();
+    visualizer.DestroyVisualizerWindow();
     return true;
 }
 
@@ -102,7 +102,7 @@ bool DrawGeometriesWithAnimationCallback(
         int left/* = 50*/, int top/* = 50*/)
 {
     Visualizer visualizer;
-    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
             false) {
         PrintWarning("[DrawGeometriesWithAnimationCallback] Failed creating OpenGL window.\n");
         return false;
@@ -116,7 +116,7 @@ bool DrawGeometriesWithAnimationCallback(
     }
     visualizer.RegisterAnimationCallback(callback_func);
     visualizer.Run();
-    visualizer.DestroyWindow();
+    visualizer.DestroyVisualizerWindow();
     return true;
 }
 
@@ -128,7 +128,7 @@ bool DrawGeometriesWithKeyCallbacks(
         int left/* = 50*/, int top/* = 50*/)
 {
     VisualizerWithKeyCallback visualizer;
-    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
             false) {
         PrintWarning("[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL window.\n");
         return false;
@@ -145,7 +145,7 @@ bool DrawGeometriesWithKeyCallbacks(
                 key_func_pair.second);
     }
     visualizer.Run();
-    visualizer.DestroyWindow();
+    visualizer.DestroyVisualizerWindow();
     return true;
 }
 
@@ -156,7 +156,7 @@ bool DrawGeometriesWithEditing(
         int left/* = 50*/, int top/* = 50*/)
 {
     VisualizerWithEditing visualizer;
-    if (visualizer.CreateWindow(window_name, width, height, left, top) == 
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
             false) {
         PrintWarning("[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
         return false;
@@ -169,7 +169,7 @@ bool DrawGeometriesWithEditing(
         }
     }
     visualizer.Run();
-    visualizer.DestroyWindow();
+    visualizer.DestroyVisualizerWindow();
     return true;
 }
 
