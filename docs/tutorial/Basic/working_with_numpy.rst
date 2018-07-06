@@ -71,7 +71,7 @@ In this manner, any similar data structure such as ``open3d.PointCloud.colors`` 
 
 .. _from_open3d_pointcloud_to_numpy:
 
-From NumPy to open3d.PointCloud
+From open3d.PointCloud to NumPy
 ===============================
 
 .. code-block:: python
