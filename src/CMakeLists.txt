@@ -190,6 +190,7 @@ endif ()
 add_subdirectory(External)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${EXTERNAL_INCLUDE_DIRS})
+link_directories(${EXTERNAL_LIBRARY_DIRS})
 
 # Open3D libraries
 add_subdirectory(Core)
@@ -259,6 +260,7 @@ list(APPEND CONFIG_Open3D_LIBRARIES
 # set Open3D library directories
 list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     "${CMAKE_INSTALL_PREFIX}/lib"
+    ${EXTERNAL_LIBRARY_DIRS}
     ${OMP_LIBRARY_DIRS})
 
 # find_package Open3D
