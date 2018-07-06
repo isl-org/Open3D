@@ -36,5 +36,5 @@ if __name__ == "__main__":
 
     # save z_norm as an image (change [0,1] range to [0,255] range with uint8 type)
     img = Image((z_norm*255).astype(np.uint8))
-    write_image("test.png", img)
+    write_image("../../TestData/sync.png", img)
     draw_geometries([img])

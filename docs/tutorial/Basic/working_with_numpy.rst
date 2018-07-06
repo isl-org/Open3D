@@ -44,13 +44,13 @@ The following tutorial generates a variant of sync function using NumPy and visu
 
         # save z_norm as an image (change [0,1] range to [0,255] range with uint8 type)
         img = Image((z_norm*255).astype(np.uint8))
-        write_image("test.png", img)
+        write_image("../../TestData/sync.png", img)
         draw_geometries([img])
 
 
 The first part of the script generates a :math:`n \times 3` matrix ``xyz``.
 Each column has :math:`x, y, z` value of a function :math:`z = \frac{sin (x^2+y^2)}{(x^2+y^2)}`.
-:math:`z_norm` is normalized map with [0,1] range.
+:math:`z_{norm}` is normalized map of :math:`z` for [0,1] range.
 
 .. _from_numpy_to_open3d_pointcloud:
 
@@ -112,7 +112,7 @@ The tutorial script prints two identical matrices
 
 and visualizes the function:
 
-.. image:: ../../_static/Basic/working_with_numpy/sync.png
+.. image:: ../../_static/Basic/working_with_numpy/sync_3d.png
     :width: 400px
 
 
@@ -128,5 +128,11 @@ visualize the image using ``draw_geometries``, and save the image as a png forma
 
     # save z_norm as an image (change [0,1] range to [0,255] range with uint8 type)
     img = Image((z_norm*255).astype(np.uint8))
-    write_image("test.png", img)
+    write_image("../../TestData/sync.png", img)
     draw_geometries([img])
+
+.. image:: ../../_static/Basic/working_with_numpy/sync_image.png
+    :width: 400px
+
+.. Note:: The conversion supports ``uint8``, ``uint16``, or ``float32`` with c_type storage (default NumPy behavior),
+          dim=2`` (width * height) or dim=3 (width * height * channel).
