@@ -43,11 +43,11 @@ void pybind_visualizer(py::module &m)
         .def("__repr__", [](const Visualizer &vis) {
             return std::string("Visualizer with name ") + vis.GetWindowName();
         })
-        .def("create_window", &Visualizer::CreateWindow,
+        .def("create_window", &Visualizer::CreateVisualizerWindow,
                 "Function to create a window and initialize GLFW",
                 "window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
                 "left"_a = 50, "right"_a = 50)
-        .def("destroy_window", &Visualizer::DestroyWindow,
+        .def("destroy_window", &Visualizer::DestroyVisualizerWindow,
                 "Function to destroy a window")
         .def("register_animation_callback",
                 &Visualizer::RegisterAnimationCallback,

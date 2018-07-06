@@ -62,6 +62,7 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector2d GetMinBound() const override;
     Eigen::Vector2d GetMaxBound() const override;
+    bool TestImageBoundary(double u, double v, double inner_margin = 0.0) const;
 
 public:
     virtual bool HasData() const {
@@ -139,6 +140,10 @@ std::shared_ptr<Image> FilterHorizontalImage(
 
 /// Function to 2x image downsample using simple 2x2 averaging
 std::shared_ptr<Image> DownsampleImage(const Image &input);
+
+/// Function to dilate 8bit mask map
+std::shared_ptr<Image> DilateImage(const Image &input,
+        int half_kernel_size = 1);
 
 /// Function to linearly transform pixel intensities
 /// image_new = scale * image + offset

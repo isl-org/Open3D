@@ -1,26 +1,21 @@
-include_directories(${JPEG_INCLUDE_DIR} ${PNG_INCLUDE_DIRS})
+# build
+file(GLOB_RECURSE IO_ALL_SOURCE_FILES "*.cpp")
+file(GLOB         RPLY_SOURCE_FILES "../External/rply/*.c")
+file(GLOB         LIBLZF_SOURCE_FILES "../External/liblzf/*.c")
 
-file(GLOB IO_ALL_HEADER_FILES "*.h")
-file(GLOB IO_ALL_SOURCE_FILES "*.cpp")
-file(GLOB IO_RPLY_FILES "../External/rply/*.h" "../External/rply/*.c")
-source_group("External\\RPly" FILES ${IO_RPLY_FILES})
-file(GLOB IO_LIBLZF_FILES "../External/liblzf/*.h" "../External/liblzf/*.c")
-source_group("External\\liblzf" FILES ${IO_LIBLZF_FILES})
-file(GLOB IO_DIRENT_FILES "../External/dirent/*.h")
-source_group("External\\dirent" FILES ${IO_DIRENT_FILES})
-file(GLOB IO_CLASSIO_HEADER_FILES "ClassIO/*.h")
-source_group("Header Files\\ClassIO" FILES ${IO_CLASSIO_HEADER_FILES})
-file(GLOB IO_CLASSIO_SOURCE_FILES "ClassIO/*.cpp")
-source_group("Source Files\\ClassIO" FILES ${IO_CLASSIO_SOURCE_FILES})
-file(GLOB IO_FILEFORMAT_HEADER_FILES "FileFormat/*.h")
-source_group("Header Files\\FileFormat" FILES ${IO_FILEFORMAT_HEADER_FILES})
-file(GLOB IO_FILEFORMAT_SOURCE_FILES "FileFormat/*.cpp")
-source_group("Source Files\\FileFormat" FILES ${IO_FILEFORMAT_SOURCE_FILES})
+# create object library
+add_library(IO OBJECT
+            ${IO_ALL_SOURCE_FILES}
+            ${RPLY_SOURCE_FILES}
+            ${LIBLZF_SOURCE_FILES})
 
-add_library(IO 
-    ${IO_ALL_HEADER_FILES} ${IO_ALL_SOURCE_FILES}
-    ${IO_RPLY_FILES} ${IO_LIBLZF_FILES} ${IO_DIRENT_FILES}
-    ${IO_CLASSIO_HEADER_FILES} ${IO_CLASSIO_SOURCE_FILES}
-    ${IO_FILEFORMAT_HEADER_FILES} ${IO_FILEFORMAT_SOURCE_FILES}
-)
-target_link_libraries(IO Core tinyfiledialogs ${JPEG_LIBRARIES} ${PNG_LIBRARIES})
+Directories(${CMAKE_CURRENT_SOURCE_DIR} IO_INCLUDE_DIRS)
+set(IO_INCLUDE_DIRS ${IO_INCLUDE_DIRS} PARENT_SCOPE)
+
+target_include_directories(IO PUBLIC ${EXTERNAL_INCLUDE_DIRS})
+
+#install headers
+install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+        PATTERN     "*.cpp" EXCLUDE
+        PATTERN     "*.txt" EXCLUDE)

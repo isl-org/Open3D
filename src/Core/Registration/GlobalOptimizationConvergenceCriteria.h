@@ -34,15 +34,19 @@ public:
     GlobalOptimizationOption(
             double max_correspondence_distance = 0.075,
             double edge_prune_threshold = 0.25,
+            double preference_loop_closure = 1.0,
             int reference_node = -1) :
             max_correspondence_distance_(max_correspondence_distance),
             edge_prune_threshold_(edge_prune_threshold),
+            preference_loop_closure_(preference_loop_closure),
             reference_node_(reference_node) {
         max_correspondence_distance_ = max_correspondence_distance < 0.0
                 ? 0.075 : max_correspondence_distance;
         edge_prune_threshold_ =
                 edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
                 ? 0.25 : edge_prune_threshold;
+        preference_loop_closure_ = preference_loop_closure < 0.0
+                ? 1.0 : preference_loop_closure;
     };
     ~GlobalOptimizationOption() {};
 
@@ -55,7 +59,11 @@ public:
     /// According to [Choi et al 2015],
     /// line_process weight < edge_prune_threshold_ (0.25) is pruned.
     double edge_prune_threshold_;
-    /// This node is unchanged after optimization
+    /// Balancing parameter to decide which one is more reliable: odometry vs loop-closure.
+    /// [0,1] -> try to unchange odometry edges, [1) -> try to utilize loop-closure.
+    /// Recommendation: 0.1 for RGBD Odometry, 2.0 for fragment registration
+    double preference_loop_closure_;
+    /// The pose of this node is unchanged after optimization
     int reference_node_;
 };
 

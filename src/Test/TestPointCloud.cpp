@@ -166,11 +166,11 @@ int main(int argc, char *argv[])
 	pointcloud_transformed_ptr->Transform(
 			trans_to_origin.inverse() * transformation * trans_to_origin);
 
-	visualizer.CreateWindow("Open3D", 1600, 900);
+	visualizer.CreateVisualizerWindow("Open3D", 1600, 900);
 	visualizer.AddGeometry(pointcloud_ptr);
 	visualizer.AddGeometry(pointcloud_transformed_ptr);
 	visualizer.Run();
-	visualizer.DestroyWindow();
+	visualizer.DestroyVisualizerWindow();
 
 	// 4. test operations
 	*pointcloud_transformed_ptr += *pointcloud_ptr;

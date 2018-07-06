@@ -1,0 +1,15 @@
+# https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/How-to-create-a-ProjectConfig.cmake-file
+# https://cmake.org/cmake/help/v3.0/command/find_package.html?highlight=find_package
+# Config file for the Open3D package
+# It defines the following variables
+#  Open3D_INCLUDE_DIRS
+#  Open3D_LIBRARIES
+#  Open3D_LIBRARY_DIRS
+
+set(Open3D_INCLUDE_DIRS "@CONFIG_Open3D_INCLUDE_DIRS@")
+set(Open3D_LIBRARIES    "@CONFIG_Open3D_LIBRARIES@")
+set(Open3D_LIBRARY_DIRS "@CONFIG_Open3D_LIBRARY_DIRS@")
+
+set(Open3D_C_FLAGS          "@Config_Open3D_C_FLAGS@")
+set(Open3D_CXX_FLAGS        "@Config_Open3D_CXX_FLAGS@")
+set(Open3D_EXE_LINKER_FLAGS "@Config_Open3D_EXE_LINKER_FLAGS@")

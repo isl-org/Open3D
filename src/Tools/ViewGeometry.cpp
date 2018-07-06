@@ -30,6 +30,8 @@
 
 void PrintHelp()
 {
+    printf("Open3D %s\n", OPEN3D_VERSION);
+    printf("\n");
     printf("Usage:\n");
     printf("    > ViewGeometry [options]\n");
     printf("      Open a window to view geometry.\n");
@@ -100,7 +102,7 @@ int main(int argc, char **argv)
             "--show_frame");
 
     VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateWindow(window_name, width, height, left, top) ==
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
             false) {
         PrintWarning("Failed creating OpenGL window.\n");
         return 0;
@@ -148,7 +150,7 @@ int main(int argc, char **argv)
 
     if (visualizer.HasGeometry() == false) {
         PrintWarning("No geometry to render!\n");
-        visualizer.DestroyWindow();
+        visualizer.DestroyVisualizerWindow();
         return 0;
     }
 
@@ -195,7 +197,7 @@ int main(int argc, char **argv)
     } else {
         visualizer.Run();
     }
-    visualizer.DestroyWindow();
+    visualizer.DestroyVisualizerWindow();
 
     return 1;
 }

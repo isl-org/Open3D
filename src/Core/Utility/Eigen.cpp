@@ -33,20 +33,25 @@ namespace three{
 
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
-        const Eigen::MatrixXd &A, const Eigen::VectorXd &b)
+        const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
+        bool check_det/* = true */)
 {
-    bool solution_exist = true;
-    // note: computing determinant for large scale matrix would be bottleneck.
-    double det = A.determinant();
-    if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
-        solution_exist = false;
-
-    if (solution_exist) {
-        // Robust Cholesky decomposition of a matrix with pivoting.
-        Eigen::MatrixXd x = A.ldlt().solve(b);
-        return std::make_tuple(solution_exist, std::move(x));
+    if (check_det) {
+        bool solution_exist = true;
+        double det = A.determinant();
+        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
+            solution_exist = false;
+        if (solution_exist) {
+            // Robust Cholesky decomposition of a matrix with pivoting.
+            Eigen::MatrixXd x = A.ldlt().solve(b);
+            return std::make_tuple(solution_exist, std::move(x));
+        } else {
+            return std::make_tuple(false,
+                    std::move(Eigen::VectorXd::Zero(b.rows())));
+        }
     } else {
-        return std::make_tuple(false, std::move(Eigen::VectorXd::Zero(b.rows())));
+        Eigen::MatrixXd x = A.ldlt().solve(b);
+        return std::make_tuple(true, std::move(x));
     }
 }
 

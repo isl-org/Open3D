@@ -42,6 +42,11 @@ class PyTransformationEstimation : public TransformationEstimationBase
 {
 public:
     using TransformationEstimationBase::TransformationEstimationBase;
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        PYBIND11_OVERLOAD_PURE(TransformationEstimationType,
+                TransformationEstimationBase, void);
+    }
     double ComputeRMSE(const PointCloud &source, const PointCloud &target,
             const CorrespondenceSet &corres) const override {
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase,

@@ -49,10 +49,10 @@ if __name__ == "__main__":
             print("PoseGraphEdge %d-%d" % \
                     (edge.source_node_id, edge.target_node_id))
             source = read_point_cloud(ply_file_names[edge.source_node_id])
-            source_down = voxel_down_sample(source, 0.05)
+            source.transform(pose_graph.nodes[edge.source_node_id].pose)
             target = read_point_cloud(ply_file_names[edge.target_node_id])
-            target_down = voxel_down_sample(target, 0.05)
-            draw_registration_result(source, target, edge.transformation)
+            target.transform(pose_graph.nodes[edge.target_node_id].pose)
+            draw_registration_result(source, target, np.identity(4))
 
     # visualize all the trajectories
     pcds = []

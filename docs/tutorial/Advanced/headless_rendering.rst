@@ -49,7 +49,8 @@ The next step is to make a virtual environment for Python.
 
 This script installs and activates ``py3env``. Necessary modules, ``numpy`` and ``matplotlib`` are installed on ``py3env``.
 
-.. Error:: Anaconda users are recommended to use this configuration as ``conda install matplotlib`` installs additional modules that is not based on OSMesa. This will make **segmentation fault error** at the runtime.
+.. Error:: Anaconda users are recommended to use this configuration as ``conda install matplotlib`` installs additional modules that is not based on OSMesa.
+           This will make **segmentation fault error** at the runtime.
 
 
 Build Open3D with OSMesa
@@ -64,17 +65,20 @@ Let's move to build folder.
 
 In the next step, there are two cmake flags need to be specified.
 
-- ``-DOpen3D_HEADLESS_RENDERING=ON``: this flag informs glew and glfw should use **OSMesa**.
-- ``-DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF``: note that headless rendering is only working with **glew 2.1** and **glfw 3.3-dev** version. In most of the case, these versions are not installed in vanilla Ubuntu systems. Instead of using naive build, this flag lets Open3D build glew 2.1 and glfw 3.3-dev from source.
+- ``-DENABLE_HEADLESS_RENDERING=ON``: this flag informs glew and glfw should use **OSMesa**.
+- ``-DBUILD_GLEW=ON -DBUILD_GLFW=ON``: note that headless rendering is only working with **glew 2.1** and **glfw 3.3-dev** version.
+  In most of the case, these versions are not installed in vanilla Ubuntu systems.
+  Use these CMake options to force building glew 2.1 and glfw 3.3-dev from source.
 
 As a result, the cmake command is the following
 
 .. code-block:: shell
 
-    (py3env) $ cmake -DOpen3D_HEADLESS_RENDERING=ON \
-            -DOpen3D_USE_NATIVE_DEPENDENCY_BUILD=OFF \
-            -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
-            ../src
+    (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON \
+                     -DBUILD_GLEW=ON \
+                     -DBUILD_GLFW=ON \
+                     -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
+                     ../src
 
 Note that ``-DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3`` is the same path what was used for :ref:`install_virtualenv`.
 
@@ -111,6 +115,8 @@ This should print the following:
 
 Rendered images are at ~/Open3D/build/lib/TestData/depth and image folder.
 
-.. Note:: ``headless_rendering.py`` saves png files. This may take some time. Try tweak the script for your purpose.
+.. Note:: | ``headless_rendering.py`` saves png files.
+          | This may take some time. Try tweaking the script for your purpose.
 
-.. Error:: If glew and glfw did not correctly linked with OSMesa, it may crash with following error. **GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW**
+.. Error:: | If glew and glfw did not correctly linked with OSMesa, it may crash with following error.
+           | **GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW**

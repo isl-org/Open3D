@@ -35,6 +35,7 @@
 namespace three {
 
 class PointCloud;
+class TriangleMesh;
 class ViewControl;
 class SelectionPolygonVolume;
 
@@ -63,6 +64,8 @@ public:
     void FillPolygon(int width, int height);
     std::shared_ptr<PointCloud> CropPointCloud(
             const PointCloud &input, const ViewControl &view);
+    std::shared_ptr<TriangleMesh> CropTriangleMesh(
+            const TriangleMesh &input, const ViewControl &view);
     std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
             const ViewControl &view);
 
@@ -71,6 +74,10 @@ private:
             const PointCloud &input, const ViewControl &view);
     std::shared_ptr<PointCloud> CropPointCloudInPolygon(
             const PointCloud &input, const ViewControl &view);
+    std::shared_ptr<TriangleMesh> CropTriangleMeshInRectangle(
+            const TriangleMesh &input, const ViewControl &view);
+    std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
+            const TriangleMesh &input, const ViewControl &view);
     std::vector<size_t> CropInRectangle(
             const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
     std::vector<size_t> CropInPolygon(

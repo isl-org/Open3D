@@ -28,8 +28,7 @@ Core features
 Supported platforms
 ======================
 
-We're in the process of redesigning the package.
-Currently tested on:
+The package has been tested on:
 
 * Ubuntu 16.04 with Python 2.7 and 3.5
 * Windows 10 with Python 2.7 and 3.5

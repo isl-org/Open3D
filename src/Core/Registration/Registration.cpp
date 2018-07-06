@@ -146,8 +146,16 @@ RegistrationResult RegistrationICP(const PointCloud &source,
         const ICPConvergenceCriteria &criteria/* = ICPConvergenceCriteria()*/)
 {
     if (max_correspondence_distance <= 0.0) {
+        PrintError("Error: Invalid max_correspondence_distance.\n");
         return RegistrationResult(init);
     }
+    if (estimation.GetTransformationEstimationType() ==
+            TransformationEstimationType::PointToPlane &&
+            (!source.HasNormals() || !target.HasNormals())) {
+        PrintError("Error: TransformationEstimationPointToPlane requires pre-computed normal vectors.\n");
+        return RegistrationResult(init);
+    }
+
     Eigen::Matrix4d transformation = init;
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
@@ -369,7 +377,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static)
+#pragma omp for nowait
 #endif
         for (auto c = 0; c < result.correspondence_set_.size(); c++) {
             int t = result.correspondence_set_[c](1);

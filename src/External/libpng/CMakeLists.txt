@@ -9,7 +9,7 @@ set(PNGLIB_RELEASE 18)
 set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_RELEASE})
 
 # needed packages
-include_directories("${Open3D_SOURCE_DIR}/External/zlib")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../zlib")
 
 if(NOT WIN32)
   find_library(M_LIBRARY
@@ -77,7 +77,13 @@ set_target_properties(${PNG_LIBRARY} PROPERTIES
         FOLDER "External"
     )
 
-set(PNG_INCLUDE_DIRS "${Open3D_SOURCE_DIR}/External/libpng")
+set(PNG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PNG_LIBRARIES "png")
 set(PNG_INCLUDE_DIRS ${PNG_INCLUDE_DIRS} PARENT_SCOPE)
 set(PNG_LIBRARIES ${PNG_LIBRARIES} PARENT_SCOPE)
+
+# install
+install(TARGETS ${PNG_LIBRARY}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
