@@ -124,7 +124,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         int viscnt = 0;
         for (int vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
-            double u, v, d;
+            float u, v, d;
             std::tie(u, v, d) = Project3DPointAndGetUVDepth(X, camera, c);
             int u_d = int(round(u)), v_d = int(round(v));
             if (d < 0.0 || !images_rgbd[c].depth_.TestImageBoundary(u_d, v_d))
@@ -134,7 +134,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
                 continue;
             if (*PointerAt<unsigned char>(images_mask[c], u_d, v_d) == 255)
                 continue;
-            if (abs(d - d_sensor) <
+            if (std::fabs(d - d_sensor) <
                     option.depth_threshold_for_visiblity_check_) {
 #ifdef _OPENMP
 #pragma omp critical
