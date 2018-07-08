@@ -30,16 +30,11 @@ If you do not want Python binding, you may turn off the following compilation op
 Dependencies
 ============
 
-Open3D dependencies are included in ``src/External`` folder.
-The user has the option to force building the dependencies from source or to let CMake search for installed packages.
-If a build option is turned OFF and CMake can't find its corresponding package the configuration step will fail.
+For each dependent library, there is a corresponding CMake build option ``BUILD_<LIBRARY_NAME>``. If the option is ``ON``, the dependent library is forced to be compiled from the source code included in ``src/External`` folder. If it is ``OFF``, CMake will try to find system installed libraries and use it. If CMake fails to find the dependent library, it falls back to compiling the library from source code.
 
-Example error message:
+.. tip:: On Ubuntu and OSX it is recommended to link Open3D to system installed libraries. The dependencies can be installed via scripts ``util/scripts/install-deps-ubuntu.sh`` and ``util/scripts/install-deps-osx.sh``. On Windows it is recommended to compile everything from source since Windows lacks a package management software.
 
-| ``CMake Error at External/CMakeLists.txt:32 (message):``
-| ``EIGEN3 dependency not met.``
-
-The following is an example of how to force building from source a number of dependencies:
+The following is an example of forcing building dependencies from source code:
 
 .. code-block:: bash
 
@@ -50,8 +45,6 @@ The following is an example of how to force building from source a number of dep
           -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
           ../src
-
-.. tip:: This can save a lot of time on Windows where it can be particularly difficult to install the Open3D dependencies.
 
 .. note:: Enabling these build options may increase the compilation time.
 
