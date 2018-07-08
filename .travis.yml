@@ -80,7 +80,7 @@ before_install:
   # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
   # does not recognize sudo apt-get install libglfw3-dev
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get install xorg-dev libglu1-mesa-dev libgl1-mesa-glx libglew-dev libjsoncpp-dev libeigen3-dev libpng-dev libjpeg-dev;
+      ./util/scripts/install-deps-ubuntu.sh
       ./util/scripts/make-documentation.sh;
       ./util/scripts/install-gtest.sh;
     fi
@@ -112,5 +112,3 @@ script:
   # test find_package(Open3D)
   - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST -DCMAKE_PREFIX_PATH="~/open3d_install/lib/CMake"`
   - if [ "$test" == "Open3D found." ]; then echo "PASSED find_package(Open3D)."; else echo "FAILED find_package(Open3D)."; exit 1; fi
-
-
