@@ -4,7 +4,7 @@ set -ev
 
 sudo apt-get update
 
-sudo apt-get install \
+sudo apt-get --yes install \
 		xorg-dev \
 		libglu1-mesa-dev \
 		libgl1-mesa-glx \
@@ -19,4 +19,4 @@ sudo apt-get install \
 		python-tk \
 		python3-tk
 
-sudo apt-get install libpng16-dev
+sudo apt-get --yes install libpng16-dev
