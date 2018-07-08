@@ -2,19 +2,15 @@
 
 set -ev
 
-sudo apt-get install \
-		xorg-dev \
-		libglu1-mesa-dev \
-		libgl1-mesa-glx \
-		libglew-dev \
-		libglfw3-dev \
-		libjsoncpp-dev \
-		libeigen3-dev \
-		libpng-dev \
-		libpng16-dev \
-		libjpeg-dev \
-		pybind11-dev \
-		python-dev \
-		python3-dev \
-		python-tk \
-		python3-tk
+sudo apt-get update
+
+sudo apt-get --yes install xorg-dev libglu1-mesa-dev libgl1-mesa-glx || true
+sudo apt-get --yes install libglew-dev || true
+sudo apt-get --yes install libglfw3-dev || true
+sudo apt-get --yes install libjsoncpp-dev || true
+sudo apt-get --yes install libeigen3-dev || true
+sudo apt-get --yes install libpng-dev || true
+sudo apt-get --yes install libpng16-dev || true
+sudo apt-get --yes install libjpeg-dev || true
+sudo apt-get --yes install python-dev python-tk || true
+sudo apt-get --yes install python3-dev python3-tk || true

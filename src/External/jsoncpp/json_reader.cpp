@@ -4,6 +4,11 @@
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
+#if defined(_MSC_VER) && _MSC_VER >= 1400 // VC++ 8.0
+// Disable warning about strdup being deprecated.
+#pragma warning(disable : 4996)
+#endif
+
 #if !defined(JSON_IS_AMALGAMATION)
 #include <json/assertions.h>
 #include <json/reader.h>
@@ -38,11 +43,6 @@
 
 #if defined(__QNXNTO__)
 #define sscanf std::sscanf
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER >= 1400 // VC++ 8.0
-// Disable warning about strdup being deprecated.
-#pragma warning(disable : 4996)
 #endif
 
 // Define JSONCPP_DEPRECATED_STACK_LIMIT as an appropriate integer at compile time to change the stack limit
