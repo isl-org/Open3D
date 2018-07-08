@@ -20,5 +20,6 @@ for pkg in cmake libusb glew glfw3 libpng libjpeg pkg-config jsoncpp eigen; do
     else
         echo "Package '$pkg' is being installed ..."
         brew install $pkg
+        brew upgrade $pkg
     fi
 done
