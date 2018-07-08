@@ -4,7 +4,7 @@ set -ev
 
 sudo apt-get update
 
-sudo apt-get --yes install libglu1-mesa-dev libgl1-mesa-glx
+sudo apt-get --yes install xorg-dev libglu1-mesa-dev libgl1-mesa-glx
 sudo apt-get --yes install libglew-dev
 sudo apt-get --yes install libglfw3-dev
 sudo apt-get --yes install libjsoncpp-dev
