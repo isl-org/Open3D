@@ -24,7 +24,6 @@ If you do not want Python binding, you may turn off the following compilation op
 
 - ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
-- ``BUILD_PYTHON_TESTS``
 - ``BUILD_PYTHON_TUTORIALS``
 
 Dependencies
