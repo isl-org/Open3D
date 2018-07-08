@@ -55,7 +55,7 @@ Consider color mapping to the geometry reconstructed from depth cameras. As colo
             # Q.-Y. Zhou and V. Koltun,
             # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
             # SIGGRAPH 2014
-            option.maximum_iteration = 500
+            option.maximum_iteration = 300
             option.non_rigid_camera_coordinate = True
             color_map_optimization(mesh, rgbd_images, camera, option)
             draw_geometries([mesh])
@@ -121,25 +121,25 @@ The next step is to optimize camera poses to get a sharp color map.
 
 .. code-block:: python
 
-    option.maximum_iteration = 500
+    option.maximum_iteration = 300
     option.non_rigid_camera_coordinate = True
     color_map_optimization(mesh, rgbd_images, camera, option)
     draw_geometries([mesh])
     write_triangle_mesh(os.path.join(path, "scene",
         "color_map_after_optimization.ply"), mesh)
 
-The script sets ``maximum_iteration = 500`` for actual iterations. The optimization displays the following energy profile.
+The script sets ``maximum_iteration = 300`` for actual iterations. The optimization displays the following energy profile.
 
 .. code-block:: shell
 
     [ColorMapOptimization] :: Rigid Optimization
-    [Iteration 0001] Residual error : 25777.372725 (avg : 0.004998)
-    [Iteration 0002] Residual error : 25620.681829 (avg : 0.004967)
-    [Iteration 0003] Residual error : 25463.806101 (avg : 0.004937)
+    [Iteration 0001] Residual error : 21639.276499 (avg : 0.004615)
+    [Iteration 0002] Residual error : 21461.765357 (avg : 0.004577)
+    [Iteration 0003] Residual error : 21284.579715 (avg : 0.004540)
     :
-    [Iteration 0498] Residual error : 11550.014763 (avg : 0.002255)
-    [Iteration 0499] Residual error : 11549.850827 (avg : 0.002255)
-    [Iteration 0500] Residual error : 11550.062068 (avg : 0.002255)
+    [Iteration 0298] Residual error : 8891.042884 (avg : 0.001903)
+    [Iteration 0299] Residual error : 8890.037077 (avg : 0.001903)
+    [Iteration 0300] Residual error : 8888.970765 (avg : 0.001903)
 
 Residual error implies inconsistency of image intensities. Lower residual leads better color map quality. By default, ``ColorMapOptmizationOption`` enables rigid optimization. It optimizes 6-dimentional pose of every cameras.
 
@@ -163,13 +163,13 @@ before calling ``color_map_optimization``. Besides 6-dimentional camera poses, n
 .. code-block:: shell
 
     [ColorMapOptimization] :: Non-Rigid Optimization
-    [Iteration 0001] Residual error : 25777.372725, reg : 0.000000
-    [Iteration 0002] Residual error : 25330.445704, reg : 13.005639
-    [Iteration 0003] Residual error : 24885.912182, reg : 40.000765
+    [Iteration 0001] Residual error : 21639.276499, reg : 0.000000
+    [Iteration 0002] Residual error : 21187.225206, reg : 13.918495
+    [Iteration 0003] Residual error : 20745.248996, reg : 42.234724
     :
-    [Iteration 0498] Residual error : 7585.606850, reg : 3294.124184
-    [Iteration 0499] Residual error : 7585.274846, reg : 3294.887659
-    [Iteration 0500] Residual error : 7583.972930, reg : 3294.634065
+    [Iteration 0298] Residual error : 5589.018747, reg : 2745.364742
+    [Iteration 0299] Residual error : 5587.180145, reg : 2746.619137
+    [Iteration 0300] Residual error : 5585.066255, reg : 2747.902979
 
 Results of non-rigid optimization follow.
 

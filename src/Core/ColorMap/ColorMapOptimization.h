@@ -42,7 +42,7 @@ public:
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
             double non_rigid_anchor_point_weight = 0.316,
-            double maximum_iteration = 500,
+            double maximum_iteration = 300,
             double maximum_allowable_depth = 2.5,
             double depth_threshold_for_visiblity_check = 0.03,
             double depth_threshold_for_discontinuity_check = 0.1,

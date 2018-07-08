@@ -178,10 +178,10 @@ std::tuple<bool, T> QueryImageIntensity(
 		int u_round = int(round(u));
 		int v_round = int(round(v));
         if (ch == -1) {
-            return std::make_tuple(true, 
+            return std::make_tuple(true,
 					*PointerAt<T>(img, u_round, v_round));
         } else {
-            return std::make_tuple(true, 
+            return std::make_tuple(true,
 					*PointerAt<T>(img, u_round, v_round, ch));
         }
     } else {
@@ -201,8 +201,8 @@ std::tuple<bool, T> QueryImageIntensity(
         Eigen::Vector2d uv_shift = field.GetImageWarpingField(u, v);
         if (img.TestImageBoundary(uv_shift(0), uv_shift(1),
                 IMAGE_BOUNDARY_MARGIN)) {
-			int u_shift = int(uv_shift(0));
-			int v_shift = int(uv_shift(1));
+			int u_shift = int(round(uv_shift(0)));
+			int v_shift = int(round(uv_shift(1)));
             if (ch == -1) {
                 return std::make_tuple(true,
                         *PointerAt<T>(img, u_shift, v_shift));
@@ -350,7 +350,7 @@ void OptimizeImageCoorNonrigid(
                         IMAGE_BOUNDARY_MARGIN))
                     continue;
 				bool valid; double gray, dIdfx, dIdfy;
-				std::tie(valid, gray) = images_gray[i]->FloatValueAt(uu, vv); 
+				std::tie(valid, gray) = images_gray[i]->FloatValueAt(uu, vv);
 				std::tie(valid, dIdfx) = images_dx[i]->FloatValueAt(uu, vv);
 				std::tie(valid, dIdfy) = images_dy[i]->FloatValueAt(uu, vv);
                 Eigen::Vector2d dIdf(dIdfx, dIdfy);
