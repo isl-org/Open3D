@@ -97,11 +97,8 @@ matrix:
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
 
 before_install:
-  # ISSUE: we may want to use '/scripts/install-deps-ubuntu.sh' in the future.
-  # At this moment, travis-ci supports up to ubuntu 14.04 and this environment
-  # does not recognize sudo apt-get install libglfw3-dev
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      ./util/scripts/install-deps-ubuntu.sh
+      ./util/scripts/install-deps-ubuntu.sh;
       ./util/scripts/make-documentation.sh;
       ./util/scripts/install-gtest.sh;
     fi
