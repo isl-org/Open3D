@@ -21,11 +21,6 @@
 
 #define JSON_ASSERT_UNREACHABLE assert(false)
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400 // VC++ 8.0
-// Disable warning about strdup being deprecated.
-#pragma warning(disable : 4996)
-#endif
-
 namespace Json {
 
 // This is a walkaround to avoid the static initialization of Value::null.
