@@ -36,9 +36,6 @@
 #include <IO/ClassIO/TriangleMeshIO.h>
 #include <Core/Utility/Eigen.h>
 
-// for debugging
-#include <IO/ClassIO/ImageIO.h>
-
 namespace three {
 
 namespace {
@@ -53,8 +50,8 @@ public:
     void InitializeWarpingFields(int width, int height,
             int number_of_vertical_anchors) {
         anchor_h_ = number_of_vertical_anchors;
-        anchor_step_ = (double)height / (anchor_h_ - 1);
-        anchor_w_ = std::ceil((double)width / anchor_step_) + 1;
+        anchor_step_ = double(height) / (anchor_h_ - 1);
+        anchor_w_ = int(std::ceil(double(width) / anchor_step_) + 1);
         flow_ = Eigen::VectorXd(anchor_w_ * anchor_h_ * 2);
         for (int i = 0; i <= (anchor_w_ - 1); i++) {
             for (int j = 0; j <= (anchor_h_ - 1); j++) {
@@ -101,9 +98,9 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
     std::pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
     Eigen::Vector4d Vt = camera.extrinsic_[camid] *
             Eigen::Vector4d(X(0), X(1), X(2), 1);
-    float u = (Vt(0) * f.first) / Vt(2) + p.first;
-    float v = (Vt(1) * f.second) / Vt(2) + p.second;
-    float z = Vt(2);
+    float u = float((Vt(0) * f.first) / Vt(2) + p.first);
+    float v = float((Vt(1) * f.second) / Vt(2) + p.second);
+    float z = float(Vt(2));
     return std::make_tuple(u, v, z);
 }
 
@@ -127,9 +124,9 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         int viscnt = 0;
         for (int vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
-            double u, v, d;
+            float u, v, d;
             std::tie(u, v, d) = Project3DPointAndGetUVDepth(X, camera, c);
-            int u_d = round(u), v_d = round(v);
+            int u_d = int(round(u)), v_d = int(round(v));
             if (d < 0.0 || !images_rgbd[c].depth_.TestImageBoundary(u_d, v_d))
                 continue;
             float d_sensor = *PointerAt<float>(images_rgbd[c].depth_, u_d, v_d);
@@ -137,7 +134,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
                 continue;
             if (*PointerAt<unsigned char>(images_mask[c], u_d, v_d) == 255)
                 continue;
-            if (abs(d - d_sensor) <
+            if (std::fabs(d - d_sensor) <
                     option.depth_threshold_for_visiblity_check_) {
 #ifdef _OPENMP
 #pragma omp critical
@@ -178,10 +175,14 @@ std::tuple<bool, T> QueryImageIntensity(
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
     if (img.TestImageBoundary(u, v, IMAGE_BOUNDARY_MARGIN)) {
+        int u_round = int(round(u));
+        int v_round = int(round(v));
         if (ch == -1) {
-            return std::make_tuple(true, *PointerAt<T>(img, u, v));
+            return std::make_tuple(true,
+                    *PointerAt<T>(img, u_round, v_round));
         } else {
-            return std::make_tuple(true, *PointerAt<T>(img, u, v, ch));
+            return std::make_tuple(true,
+                    *PointerAt<T>(img, u_round, v_round, ch));
         }
     } else {
         return std::make_tuple(false, 0);
@@ -200,12 +201,14 @@ std::tuple<bool, T> QueryImageIntensity(
         Eigen::Vector2d uv_shift = field.GetImageWarpingField(u, v);
         if (img.TestImageBoundary(uv_shift(0), uv_shift(1),
                 IMAGE_BOUNDARY_MARGIN)) {
+            int u_shift = int(round(uv_shift(0)));
+            int v_shift = int(round(uv_shift(1)));
             if (ch == -1) {
                 return std::make_tuple(true,
-                        *PointerAt<T>(img, uv_shift(0), uv_shift(1)));
+                        *PointerAt<T>(img, u_shift, v_shift));
             } else {
                 return std::make_tuple(true,
-                        *PointerAt<T>(img, uv_shift(0), uv_shift(1), ch));
+                        *PointerAt<T>(img, u_shift, v_shift, ch));
             }
         }
     }
@@ -318,7 +321,7 @@ void OptimizeImageCoorNonrigid(
             Eigen::Matrix4d pose;
             pose = camera.extrinsic_[i];
             double anchor_step = warping_fields[i].anchor_step_;
-            double anchor_w = warping_fields[i].anchor_w_;
+            int anchor_w = warping_fields[i].anchor_w_;
             for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
                     iter++) {
                 int j = visiblity_image_to_vertex[i][iter];
@@ -341,14 +344,16 @@ void OptimizeImageCoorNonrigid(
                     + (1 - p) * (q)* grids[1]
                     + (p)* (1 - q) * grids[2]
                     + (p)* (q)* grids[3];
-                float uu = uuvv(0);
-                float vv = uuvv(1);
+                double uu = uuvv(0);
+                double vv = uuvv(1);
                 if (!images_gray[i]->TestImageBoundary(uu, vv,
                         IMAGE_BOUNDARY_MARGIN))
                     continue;
-                double gray = *PointerAt<float>(*images_gray[i], uu, vv);
-                Eigen::Vector2d dIdf(*PointerAt<float>(*images_dx[i], uu, vv),
-                        *PointerAt<float>(*images_dy[i], uu, vv));
+                bool valid; double gray, dIdfx, dIdfy;
+                std::tie(valid, gray) = images_gray[i]->FloatValueAt(uu, vv);
+                std::tie(valid, dIdfx) = images_dx[i]->FloatValueAt(uu, vv);
+                std::tie(valid, dIdfy) = images_dy[i]->FloatValueAt(uu, vv);
+                Eigen::Vector2d dIdf(dIdfx, dIdfy);
                 Eigen::Vector2d dfdx = ((grids[2] - grids[0]) * (1 - q) +
                         (grids[3] - grids[1]) * q) / anchor_step;
                 Eigen::Vector2d dfdy = ((grids[1] - grids[0]) * (1 - p) +
@@ -485,16 +490,17 @@ void OptimizeImageCoorRigid(
                 Eigen::Vector3d V = mesh.vertices_[j];
                 Eigen::Vector4d G = pose * Eigen::Vector4d(V(0), V(1), V(2), 1);
                 Eigen::Vector4d L = intr * G;
-                float u = L(0) / L(2);
-                float v = L(1) / L(2);
+                double u = L(0) / L(2);
+                double v = L(1) / L(2);
                 if (!images_gray[i]->TestImageBoundary(u, v,
                         IMAGE_BOUNDARY_MARGIN))
                     continue;
-                double gray = *PointerAt<float>(*images_gray[i], u, v);
+                bool valid; double gray, dIdx, dIdy;
+                std::tie(valid, gray) = images_gray[i]->FloatValueAt(u, v);
+                std::tie(valid, dIdx) = images_dx[i]->FloatValueAt(u, v);
+                std::tie(valid, dIdy) = images_dy[i]->FloatValueAt(u, v);
                 if (gray == -1.0)
                     continue;
-                double dIdx = *PointerAt<float>(*images_dx[i], u, v);
-                double dIdy = *PointerAt<float>(*images_dy[i], u, v);
                 double invz = 1. / G(2);
                 double v0 = dIdx * fx * invz;
                 double v1 = dIdy * fy * invz;
@@ -676,11 +682,6 @@ std::vector<Image> MakeDepthMasks(
         auto mask_dilated = DilateImage(*mask,
                 option.half_dilation_kernel_size_for_discontinuity_map_);
         images_mask.push_back(*mask_dilated);
-
-        char filename[255];
-        sprintf(filename, "image_%03d.png", i);
-        WriteImage(filename, *mask_dilated);
-
     }
     return std::move(images_mask);
 }
