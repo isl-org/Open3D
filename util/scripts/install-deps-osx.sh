@@ -14,7 +14,7 @@ else
     brew update
 fi
 
-for pkg in cmake libusb glew glfw3 libpng libjpeg pkg-config jsoncpp eigen; do
+for pkg in cmake libusb glew glfw3 libpng jpeg pkg-config jsoncpp eigen; do
     if brew list -1 | grep -q "^${pkg}\$"; then
         echo "Package '$pkg' has already been installed."
     else
