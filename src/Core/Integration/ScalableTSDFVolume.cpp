@@ -170,11 +170,17 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
                                     p(i) = (p0(i) * r1 + p1(i) * r0) /
                                             (r0 + r1);
                                     pointcloud->points_.push_back(p);
-                                    if (color_type_ !=
-                                            TSDFVolumeColorType::None) {
+                                    if (color_type_ ==
+                                            TSDFVolumeColorType::RGB8Bit) {
                                         pointcloud->colors_.push_back(
                                                 ((c0 * r1 + c1 * r0) /
                                                 (r0 + r1) / 255.0f).
+                                                cast<double>());
+                                    } else if (color_type_ ==
+                                            TSDFVolumeColorType::Gray32Bit) {
+                                        pointcloud->colors_.push_back(
+                                                ((c0 * r1 + c1 * r0) /
+                                                (r0 + r1)).
                                                 cast<double>());
                                     }
                                     // has_normal
@@ -220,9 +226,13 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                 idx1(2) < volume_unit_resolution_) {
                                 w[i] = volume0.weight_[volume0.IndexOf(idx1)];
                                 f[i] = volume0.tsdf_[volume0.IndexOf(idx1)];
-                                if (color_type_ != TSDFVolumeColorType::None)
+                                if (color_type_ == TSDFVolumeColorType::RGB8Bit)
                                     c[i] = volume0.color_[volume0.IndexOf(
-                                            idx1)].cast<double>() / 255.0;;
+                                            idx1)].cast<double>() / 255.0;
+                                else if (color_type_ ==
+                                        TSDFVolumeColorType::Gray32Bit)
+                                    c[i] = volume0.color_[volume0.IndexOf(
+                                            idx1)].cast<double>();
                             } else {
                                 for (int j = 0; j < 3; j++) {
                                     if (idx1(j) >= volume_unit_resolution_) {
@@ -239,10 +249,14 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                     w[i] = volume1.weight_[volume1.IndexOf(
                                             idx1)];
                                     f[i] = volume1.tsdf_[volume1.IndexOf(idx1)];
-                                    if (color_type_ !=
-                                            TSDFVolumeColorType::None)
+                                    if (color_type_ ==
+                                            TSDFVolumeColorType::RGB8Bit)
                                         c[i] = volume1.color_[volume1.IndexOf(
                                                 idx1)].cast<double>() / 255.0;
+                                    else if (color_type_ ==
+                                            TSDFVolumeColorType::Gray32Bit)
+                                        c[i] = volume1.color_[volume1.IndexOf(
+                                                idx1)].cast<double>();
                                 }
                             }
                             if (w[i] == 0.0f) {

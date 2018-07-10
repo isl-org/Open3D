@@ -332,7 +332,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                         TSDFVolumeColorType::Gray32Bit) {
                                     const float *intensity = PointerAt<float>(
                                             image.color_, u, v, 0);
-                                    PrintError("intensity : %f\n", *intensity);
+                                    // PrintError("intensity : %f\n", *intensity);
                                     p_color[0] = (p_color[0] *
                                             (*p_weight) + *intensity) /
                                             (*p_weight + 1.0f);
