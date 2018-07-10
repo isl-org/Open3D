@@ -63,7 +63,6 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
         const PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic)
 {
-    PrintError("color_type_ : %d\n", color_type_);
     // This function goes through the voxels, and scan convert the relative
     // depth/color value into the voxel.
     // The following implementation is a highly optimized version.
