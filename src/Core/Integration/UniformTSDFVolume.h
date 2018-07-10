@@ -33,7 +33,8 @@ namespace three {
 class UniformTSDFVolume : public TSDFVolume {
 public:
     UniformTSDFVolume(double length, int resolution, double sdf_trunc,
-            bool with_color, const Eigen::Vector3d &origin = Eigen::Vector3d::Zero());
+            TSDFVolumeColorType color_type,
+            const Eigen::Vector3d &origin = Eigen::Vector3d::Zero());
     ~UniformTSDFVolume() override;
 
 public:

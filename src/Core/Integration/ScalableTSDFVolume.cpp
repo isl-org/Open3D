@@ -36,9 +36,9 @@
 namespace three{
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
-        bool with_color, int volume_unit_resolution/* = 16*/,
+        TSDFVolumeColorType color_type, int volume_unit_resolution/* = 16*/,
         int depth_sampling_stride/* = 4*/) :
-        TSDFVolume(voxel_length, sdf_trunc, with_color),
+        TSDFVolume(voxel_length, sdf_trunc, color_type),
         volume_unit_resolution_(volume_unit_resolution),
         volume_unit_length_(voxel_length * volume_unit_resolution),
         depth_sampling_stride_(depth_sampling_stride)
@@ -62,11 +62,19 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
             (image.depth_.bytes_per_channel_ != 4) ||
             (image.depth_.width_ != intrinsic.width_) ||
             (image.depth_.height_ != intrinsic.height_) ||
-            (with_color_ && image.color_.num_of_channels_ != 3) ||
-            (with_color_ && image.color_.bytes_per_channel_ != 1) ||
-            (with_color_ && image.color_.width_ != intrinsic.width_) ||
-            (with_color_ && image.color_.height_ != intrinsic.height_)) {
-        PrintWarning("[ScalableTSDFVolume::Integrate] Unsupported image format. Please check if you have called CreateRGBDImageFromColorAndDepth() with convert_rgb_to_intensity=false.\n");
+            (color_type_ == TSDFVolumeColorType::RGB8Bit &&
+                    image.color_.num_of_channels_ != 3) ||
+            (color_type_ == TSDFVolumeColorType::RGB8Bit &&
+                    image.color_.bytes_per_channel_ != 1) ||
+            (color_type_ == TSDFVolumeColorType::Gray32Bit &&
+                    image.color_.num_of_channels_ != 1) ||
+            (color_type_ == TSDFVolumeColorType::Gray32Bit &&
+                    image.color_.bytes_per_channel_ != 4) ||
+            (color_type_ != TSDFVolumeColorType::None &&
+                    image.color_.width_ != intrinsic.width_) ||
+            (color_type_ != TSDFVolumeColorType::None &&
+                    image.color_.height_ != intrinsic.height_)) {
+        PrintWarning("[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
         return;
     }
     auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
@@ -114,7 +122,7 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
                         Eigen::Vector3i idx0(x, y, z);
                         w0 = volume0.weight_[volume0.IndexOf(idx0)];
                         f0 = volume0.tsdf_[volume0.IndexOf(idx0)];
-                        if (with_color_)
+                        if (color_type_ != TSDFVolumeColorType::None)
                             c0 = volume0.color_[volume0.IndexOf(idx0)];
                         if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
                             Eigen::Vector3d p0 = Eigen::Vector3d(
@@ -131,7 +139,8 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
                                 if (idx1(i) < volume0.resolution_) {
                                     w1 = volume0.weight_[volume0.IndexOf(idx1)];
                                     f1 = volume0.tsdf_[volume0.IndexOf(idx1)];
-                                    if (with_color_)
+                                    if (color_type_ !=
+                                            TSDFVolumeColorType::None)
                                         c1 = volume0.color_[
                                                 volume0.IndexOf(idx1)];
                                 } else {
@@ -147,7 +156,8 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
                                                 idx1)];
                                         f1 = volume1.tsdf_[volume1.IndexOf(
                                             idx1)];
-                                        if (with_color_)
+                                        if (color_type_ !=
+                                                TSDFVolumeColorType::None)
                                             c1 = volume1.color_[
                                                 volume1.IndexOf(idx1)];
                                     }
@@ -160,7 +170,8 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
                                     p(i) = (p0(i) * r1 + p1(i) * r0) /
                                             (r0 + r1);
                                     pointcloud->points_.push_back(p);
-                                    if (with_color_) {
+                                    if (color_type_ !=
+                                            TSDFVolumeColorType::None) {
                                         pointcloud->colors_.push_back(
                                                 ((c0 * r1 + c1 * r0) /
                                                 (r0 + r1) / 255.0f).
@@ -209,7 +220,7 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                 idx1(2) < volume_unit_resolution_) {
                                 w[i] = volume0.weight_[volume0.IndexOf(idx1)];
                                 f[i] = volume0.tsdf_[volume0.IndexOf(idx1)];
-                                if (with_color_)
+                                if (color_type_ != TSDFVolumeColorType::None)
                                     c[i] = volume0.color_[volume0.IndexOf(
                                             idx1)].cast<double>() / 255.0;;
                             } else {
@@ -228,7 +239,8 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                     w[i] = volume1.weight_[volume1.IndexOf(
                                             idx1)];
                                     f[i] = volume1.tsdf_[volume1.IndexOf(idx1)];
-                                    if (with_color_)
+                                    if (color_type_ !=
+                                            TSDFVolumeColorType::None)
                                         c[i] = volume1.color_[volume1.IndexOf(
                                                 idx1)].cast<double>() / 255.0;
                                 }
@@ -272,7 +284,8 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                     pt(edge_index(3)) += f0 * voxel_length_ /
                                             (f0 + f1);
                                     mesh->vertices_.push_back(pt);
-                                    if (with_color_) {
+                                    if (color_type_ !=
+                                            TSDFVolumeColorType::None) {
                                         const auto &c0 = c[edge_to_vert[i][0]];
                                         const auto &c1 = c[edge_to_vert[i][1]];
                                         mesh->vertex_colors_.push_back(
@@ -318,7 +331,7 @@ std::shared_ptr<UniformTSDFVolume> ScalableTSDFVolume::OpenVolumeUnit(
     auto &unit = volume_units_[index];
     if (!unit.volume_) {
         unit.volume_.reset(new UniformTSDFVolume(volume_unit_length_,
-                volume_unit_resolution_, sdf_trunc_, with_color_,
+                volume_unit_resolution_, sdf_trunc_, color_type_,
                 index.cast<double>() * volume_unit_length_));
         unit.index_ = index;
     }

@@ -84,7 +84,7 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
         fragment_id, n_fragments, pose_graph_name, intrinsic):
     pose_graph = read_pose_graph(pose_graph_name)
     volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0,
-            sdf_trunc = 0.04, with_color = True)
+            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8Bit)
 
     for i in range(len(pose_graph.nodes)):
         i_abs = fragment_id * n_frames_per_fragment + i
