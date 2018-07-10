@@ -32,10 +32,10 @@ template_global_posegraph_optimized = folder_scene + \
 template_global_mesh = folder_scene + "integrated.ply"
 
 
-def sorted_alphanum(file_list_unorderd):
+def sorted_alphanum(file_list_ordered):
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(file_list_unorderd, key=alphanum_key)
+    return sorted(file_list_ordered, key=alphanum_key)
 
 
 def get_file_list(path, extension=None):
