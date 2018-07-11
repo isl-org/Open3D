@@ -62,13 +62,13 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
             (image.depth_.bytes_per_channel_ != 4) ||
             (image.depth_.width_ != intrinsic.width_) ||
             (image.depth_.height_ != intrinsic.height_) ||
-            (color_type_ == TSDFVolumeColorType::RGB8Bit &&
+            (color_type_ == TSDFVolumeColorType::RGB8 &&
                     image.color_.num_of_channels_ != 3) ||
-            (color_type_ == TSDFVolumeColorType::RGB8Bit &&
+            (color_type_ == TSDFVolumeColorType::RGB8 &&
                     image.color_.bytes_per_channel_ != 1) ||
-            (color_type_ == TSDFVolumeColorType::Gray32Bit &&
+            (color_type_ == TSDFVolumeColorType::Gray32 &&
                     image.color_.num_of_channels_ != 1) ||
-            (color_type_ == TSDFVolumeColorType::Gray32Bit &&
+            (color_type_ == TSDFVolumeColorType::Gray32 &&
                     image.color_.bytes_per_channel_ != 4) ||
             (color_type_ != TSDFVolumeColorType::None &&
                     image.color_.width_ != intrinsic.width_) ||
@@ -171,13 +171,13 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud()
                                             (r0 + r1);
                                     pointcloud->points_.push_back(p);
                                     if (color_type_ ==
-                                            TSDFVolumeColorType::RGB8Bit) {
+                                            TSDFVolumeColorType::RGB8) {
                                         pointcloud->colors_.push_back(
                                                 ((c0 * r1 + c1 * r0) /
                                                 (r0 + r1) / 255.0f).
                                                 cast<double>());
                                     } else if (color_type_ ==
-                                            TSDFVolumeColorType::Gray32Bit) {
+                                            TSDFVolumeColorType::Gray32) {
                                         pointcloud->colors_.push_back(
                                                 ((c0 * r1 + c1 * r0) /
                                                 (r0 + r1)).
@@ -226,11 +226,11 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                 idx1(2) < volume_unit_resolution_) {
                                 w[i] = volume0.weight_[volume0.IndexOf(idx1)];
                                 f[i] = volume0.tsdf_[volume0.IndexOf(idx1)];
-                                if (color_type_ == TSDFVolumeColorType::RGB8Bit)
+                                if (color_type_ == TSDFVolumeColorType::RGB8)
                                     c[i] = volume0.color_[volume0.IndexOf(
                                             idx1)].cast<double>() / 255.0;
                                 else if (color_type_ ==
-                                        TSDFVolumeColorType::Gray32Bit)
+                                        TSDFVolumeColorType::Gray32)
                                     c[i] = volume0.color_[volume0.IndexOf(
                                             idx1)].cast<double>();
                             } else {
@@ -250,11 +250,11 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
                                             idx1)];
                                     f[i] = volume1.tsdf_[volume1.IndexOf(idx1)];
                                     if (color_type_ ==
-                                            TSDFVolumeColorType::RGB8Bit)
+                                            TSDFVolumeColorType::RGB8)
                                         c[i] = volume1.color_[volume1.IndexOf(
                                                 idx1)].cast<double>() / 255.0;
                                     else if (color_type_ ==
-                                            TSDFVolumeColorType::Gray32Bit)
+                                            TSDFVolumeColorType::Gray32)
                                         c[i] = volume1.color_[volume1.IndexOf(
                                                 idx1)].cast<double>();
                                 }

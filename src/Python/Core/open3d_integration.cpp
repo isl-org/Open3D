@@ -61,10 +61,10 @@ void pybind_integration(py::module &m)
         "TSDFVolumeColorType", py::arithmetic())
         .value("None",
         TSDFVolumeColorType::None)
-        .value("RGB8Bit",
-        TSDFVolumeColorType::RGB8Bit)
-        .value("Gray32Bit",
-        TSDFVolumeColorType::Gray32Bit)
+        .value("RGB8",
+        TSDFVolumeColorType::RGB8)
+        .value("Gray32",
+        TSDFVolumeColorType::Gray32)
         .export_values();
 
     py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>>

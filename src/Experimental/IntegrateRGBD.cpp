@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     int index = 0;
     int save_index = 0;
     ScalableTSDFVolume volume(length / (double)resolution,
-            length * sdf_trunc_percentage, TSDFVolumeColorType::RGB8Bit);
+            length * sdf_trunc_percentage, TSDFVolumeColorType::RGB8);
     FPSTimer timer("Process RGBD stream",
             (int)camera_trajectory->extrinsic_.size());
     Image depth, color;

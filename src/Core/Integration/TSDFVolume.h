@@ -35,8 +35,8 @@ namespace three {
 
 enum class TSDFVolumeColorType {
     None = 0,
-    RGB8Bit = 1,
-    Gray32Bit = 2,
+    RGB8 = 1,
+    Gray32 = 2,
 };
 
 /// Interface class of the Truncated Signed Distance Function (TSDF) volume

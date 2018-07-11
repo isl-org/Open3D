@@ -16,7 +16,7 @@ Open3D implements a scalable RGBD image integration algorithm. The algorithm is 
     if __name__ == "__main__":
         camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
         volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
-                sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8Bit)
+                sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
         for i in range(len(camera_poses)):
             print("Integrate {:d}-th image into the volume.".format(i))
@@ -68,7 +68,7 @@ TSDF volume integration
 .. code-block:: python
 
     volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
-            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8Bit)
+            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
@@ -82,7 +82,7 @@ TSDF volume integration
 
 Open3D provides two types of TSDF volumes: ``UniformTSDFVolume`` and ``ScalableTSDFVolume``. The latter is recommended since it uses a hierarchical structure and thus supports larger scenes.
 
-``ScalableTSDFVolume`` has several parameters. ``voxel_length = 4.0 / 512.0`` means a single voxel size for TSDF volume is  :math:`\frac{4.0m}{512.0} = 7.8125mm`. Lowering this value makes a high-resolution TSDF volume, but the integration result can be susceptible to depth noise. ``sdf_trunc = 0.04`` specifies truncation value for signed distance function (SDF). When ``color_type = TSDFVolumeColorType.RGB8Bit``, 8 bit RGB color is also integrated as part of the TSDF volume. Float type intensity can be integrated with ``color_type = TSDFVolumeColorType.Gray32Bit`` and ``convert_rgb_to_intensity = True``. The color integration is inspired by `PCL <http://pointclouds.org/>`_.
+``ScalableTSDFVolume`` has several parameters. ``voxel_length = 4.0 / 512.0`` means a single voxel size for TSDF volume is  :math:`\frac{4.0m}{512.0} = 7.8125mm`. Lowering this value makes a high-resolution TSDF volume, but the integration result can be susceptible to depth noise. ``sdf_trunc = 0.04`` specifies truncation value for signed distance function (SDF). When ``color_type = TSDFVolumeColorType.RGB8``, 8 bit RGB color is also integrated as part of the TSDF volume. Float type intensity can be integrated with ``color_type = TSDFVolumeColorType.Gray32`` and ``convert_rgb_to_intensity = True``. The color integration is inspired by `PCL <http://pointclouds.org/>`_.
 
 .. _extract_a_mesh:
 

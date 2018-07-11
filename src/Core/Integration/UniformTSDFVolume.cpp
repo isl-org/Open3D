@@ -70,13 +70,13 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
             (image.depth_.bytes_per_channel_ != 4) ||
             (image.depth_.width_ != intrinsic.width_) ||
             (image.depth_.height_ != intrinsic.height_) ||
-            (color_type_ == TSDFVolumeColorType::RGB8Bit &&
+            (color_type_ == TSDFVolumeColorType::RGB8 &&
                     image.color_.num_of_channels_ != 3) ||
-            (color_type_ == TSDFVolumeColorType::RGB8Bit &&
+            (color_type_ == TSDFVolumeColorType::RGB8 &&
                     image.color_.bytes_per_channel_ != 1) ||
-            (color_type_ == TSDFVolumeColorType::Gray32Bit &&
+            (color_type_ == TSDFVolumeColorType::Gray32 &&
                     image.color_.num_of_channels_ != 1) ||
-            (color_type_ == TSDFVolumeColorType::Gray32Bit &&
+            (color_type_ == TSDFVolumeColorType::Gray32 &&
                     image.color_.bytes_per_channel_ != 4) ||
             (color_type_ != TSDFVolumeColorType::None &&
                     image.color_.width_ != intrinsic.width_) ||
@@ -122,13 +122,13 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
                                 p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
                                 pointcloud->points_.push_back(p + origin_);
                                 if (color_type_ ==
-                                        TSDFVolumeColorType::RGB8Bit) {
+                                        TSDFVolumeColorType::RGB8) {
                                     pointcloud->colors_.push_back(
                                             ((color_[IndexOf(idx0)] * r1 +
                                             color_[IndexOf(idx1)] * r0) /
                                             (r0 + r1) / 255.0f).cast<double>());
                                 } else if (color_type_ ==
-                                        TSDFVolumeColorType::Gray32Bit) {
+                                        TSDFVolumeColorType::Gray32) {
                                     pointcloud->colors_.push_back(
                                             ((color_[IndexOf(idx0)] * r1 +
                                             color_[IndexOf(idx1)] * r0) /
@@ -171,10 +171,10 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
                         if (f[i] < 0.0f) {
                             cube_index |= (1 << i);
                         }
-                        if (color_type_ == TSDFVolumeColorType::RGB8Bit) {
+                        if (color_type_ == TSDFVolumeColorType::RGB8) {
                             c[i] = color_[IndexOf(idx)].cast<double>() / 255.0;
                         } else if (color_type_ ==
-                                TSDFVolumeColorType::Gray32Bit) {
+                                TSDFVolumeColorType::Gray32) {
                             c[i] = color_[IndexOf(idx)].cast<double>();
                         }
                     }
@@ -315,7 +315,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                 *p_tsdf = ((*p_tsdf) * (*p_weight) + tsdf) /
                                         (*p_weight + 1.0f);
                                 if (color_type_ ==
-                                        TSDFVolumeColorType::RGB8Bit) {
+                                        TSDFVolumeColorType::RGB8) {
                                     const uint8_t *rgb = PointerAt<uint8_t>(
                                             image.color_, u, v, 0);
                                     p_color[0] = (p_color[0] *
@@ -328,7 +328,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                             (*p_weight) + rgb[2]) /
                                             (*p_weight + 1.0f);
                                 } else if (color_type_ ==
-                                        TSDFVolumeColorType::Gray32Bit) {
+                                        TSDFVolumeColorType::Gray32) {
                                     const float *intensity = PointerAt<float>(
                                             image.color_, u, v, 0);
                                     // PrintError("intensity : %f\n", *intensity);
