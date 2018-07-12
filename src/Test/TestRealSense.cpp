@@ -106,9 +106,9 @@ int main(int argc, char **args)
 	PrintInfo("\n\n");
 
 	Visualizer depth_vis, color_vis;
-	if (depth_vis.CreateWindow("Depth", 640, 480, 15, 50) == false ||
+	if (depth_vis.CreateVisualizerWindow("Depth", 640, 480, 15, 50) == false ||
 			depth_vis.AddGeometry(depth_image_ptr) == false ||
-			color_vis.CreateWindow("Color", 1920, 1080, 675, 50) == false ||
+			color_vis.CreateVisualizerWindow("Color", 1920, 1080, 675, 50) == false ||
 			color_vis.AddGeometry(color_image_ptr) == false) {
 		return 0;
 	}
