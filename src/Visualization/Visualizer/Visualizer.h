@@ -101,7 +101,7 @@ public:
 
     /// Function to add geometry to the scene and create corresponding shaders
     /// 1. After calling this function, the Visualizer owns the geometry object.
-    /// 2. This function MUST be called after CreateWindow().
+    /// 2. This function MUST be called after CreateVisualizerWindow().
     /// 3. This function returns FALSE when the geometry is of an unsupported
     /// type.
     /// 4. If an added geometry is changed, the behavior of Visualizer is
