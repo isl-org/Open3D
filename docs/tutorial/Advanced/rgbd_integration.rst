@@ -102,3 +102,5 @@ Outputs:
 
 .. image:: ../../_static/Advanced/rgbd_integration/integrated.png
     :width: 400px
+
+.. Note:: TSDF volume works like weighted average filter in 3D space. If more frames are integrated, the volume produces smoother and nicer mesh. Please check :ref:`reconstruction_system_make_fragments` for more examples.
