@@ -33,6 +33,12 @@
 
 namespace three {
 
+enum class TSDFVolumeColorType {
+    None = 0,
+    RGB8 = 1,
+    Gray32 = 2,
+};
+
 /// Interface class of the Truncated Signed Distance Function (TSDF) volume
 /// This volume is usually used to integrate surface data (e.g., a series of
 /// RGB-D images) into a Mesh or PointCloud. The basic technique is presented in
@@ -43,9 +49,10 @@ namespace three {
 class TSDFVolume
 {
 public:
-    TSDFVolume(double voxel_length, double sdf_trunc, bool with_color) :
+    TSDFVolume(double voxel_length, double sdf_trunc,
+            TSDFVolumeColorType color_type) :
             voxel_length_(voxel_length), sdf_trunc_(sdf_trunc),
-            with_color_(with_color) {}
+            color_type_(color_type) {}
     virtual ~TSDFVolume() {}
 
 public:
@@ -68,7 +75,7 @@ public:
 public:
     double voxel_length_;
     double sdf_trunc_;
-    bool with_color_;
+    TSDFVolumeColorType color_type_;
 };
 
 }    // namespace three

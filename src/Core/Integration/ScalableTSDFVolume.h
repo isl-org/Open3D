@@ -63,8 +63,9 @@ public:
         Eigen::Vector3i index_;
     };
 public:
-    ScalableTSDFVolume(double voxel_length, double sdf_trunc, bool with_color,
-            int volume_unit_resolution = 16, int depth_sampling_stride = 4);
+    ScalableTSDFVolume(double voxel_length, double sdf_trunc,
+            TSDFVolumeColorType color_type, int volume_unit_resolution = 16,
+            int depth_sampling_stride = 4);
     ~ScalableTSDFVolume() override;
 
 public:

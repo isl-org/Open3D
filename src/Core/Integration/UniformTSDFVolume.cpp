@@ -35,12 +35,13 @@
 namespace three{
 
 UniformTSDFVolume::UniformTSDFVolume(double length, int resolution,
-        double sdf_trunc, bool with_color,
+        double sdf_trunc, TSDFVolumeColorType color_type,
         const Eigen::Vector3d &origin/* = Eigen::Vector3d::Zero()*/) :
-        TSDFVolume(length / (double)resolution, sdf_trunc, with_color),
+        TSDFVolume(length / (double)resolution, sdf_trunc, color_type),
         origin_(origin), length_(length), resolution_(resolution),
         voxel_num_(resolution * resolution * resolution),
-        tsdf_(voxel_num_, 0.0f), color_(with_color ? voxel_num_ : 0,
+        tsdf_(voxel_num_, 0.0f),
+        color_(color_type != TSDFVolumeColorType::None ? voxel_num_ : 0,
         Eigen::Vector3f::Zero()), weight_(voxel_num_, 0.0f)
 {
 }
@@ -53,7 +54,7 @@ void UniformTSDFVolume::Reset()
 {
     std::memset(tsdf_.data(), 0, voxel_num_ * 4);
     std::memset(weight_.data(), 0, voxel_num_ * 4);
-    if (with_color_) {
+    if (color_type_ != TSDFVolumeColorType::None) {
         std::memset(color_.data(), 0, voxel_num_ * 12);
     }
 }
@@ -69,11 +70,19 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
             (image.depth_.bytes_per_channel_ != 4) ||
             (image.depth_.width_ != intrinsic.width_) ||
             (image.depth_.height_ != intrinsic.height_) ||
-            (with_color_ && image.color_.num_of_channels_ != 3) ||
-            (with_color_ && image.color_.bytes_per_channel_ != 1) ||
-            (with_color_ && image.color_.width_ != intrinsic.width_) ||
-            (with_color_ && image.color_.height_ != intrinsic.height_)) {
-        PrintWarning("[UniformTSDFVolume::Integrate] Unsupported image format. Please check if you have called CreateRGBDImageFromColorAndDepth() with convert_rgb_to_intensity=false.\n");
+            (color_type_ == TSDFVolumeColorType::RGB8 &&
+                    image.color_.num_of_channels_ != 3) ||
+            (color_type_ == TSDFVolumeColorType::RGB8 &&
+                    image.color_.bytes_per_channel_ != 1) ||
+            (color_type_ == TSDFVolumeColorType::Gray32 &&
+                    image.color_.num_of_channels_ != 1) ||
+            (color_type_ == TSDFVolumeColorType::Gray32 &&
+                    image.color_.bytes_per_channel_ != 4) ||
+            (color_type_ != TSDFVolumeColorType::None &&
+                    image.color_.width_ != intrinsic.width_) ||
+            (color_type_ != TSDFVolumeColorType::None &&
+                    image.color_.height_ != intrinsic.height_)) {
+        PrintWarning("[UniformTSDFVolume::Integrate] Unsupported image format.\n");
         return;
     }
     auto depth2cameradistance = CreateDepthToCameraDistanceMultiplierFloatImage(
@@ -112,11 +121,18 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud()
                                 Eigen::Vector3d p = p0;
                                 p(i) = (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
                                 pointcloud->points_.push_back(p + origin_);
-                                if (with_color_) {
+                                if (color_type_ ==
+                                        TSDFVolumeColorType::RGB8) {
                                     pointcloud->colors_.push_back(
                                             ((color_[IndexOf(idx0)] * r1 +
                                             color_[IndexOf(idx1)] * r0) /
                                             (r0 + r1) / 255.0f).cast<double>());
+                                } else if (color_type_ ==
+                                        TSDFVolumeColorType::Gray32) {
+                                    pointcloud->colors_.push_back(
+                                            ((color_[IndexOf(idx0)] * r1 +
+                                            color_[IndexOf(idx1)] * r0) /
+                                            (r0 + r1)).cast<double>());
                                 }
                                 // has_normal
                                 pointcloud->normals_.push_back(GetNormalAt(p));
@@ -155,8 +171,11 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
                         if (f[i] < 0.0f) {
                             cube_index |= (1 << i);
                         }
-                        if (with_color_) {
+                        if (color_type_ == TSDFVolumeColorType::RGB8) {
                             c[i] = color_[IndexOf(idx)].cast<double>() / 255.0;
+                        } else if (color_type_ ==
+                                TSDFVolumeColorType::Gray32) {
+                            c[i] = color_[IndexOf(idx)].cast<double>();
                         }
                     }
                 }
@@ -183,7 +202,7 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh()
                             double f1 = std::abs((double)f[edge_to_vert[i][1]]);
                             pt(edge_index(3)) += f0 * voxel_length_ / (f0 + f1);
                             mesh->vertices_.push_back(pt + origin_);
-                            if (with_color_) {
+                            if (color_type_ != TSDFVolumeColorType::None) {
                                 const auto &c0 = c[edge_to_vert[i][0]];
                                 const auto &c1 = c[edge_to_vert[i][1]];
                                 mesh->vertex_colors_.push_back(
@@ -295,7 +314,8 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                         sdf * sdf_trunc_inv_f);
                                 *p_tsdf = ((*p_tsdf) * (*p_weight) + tsdf) /
                                         (*p_weight + 1.0f);
-                                if (with_color_) {
+                                if (color_type_ ==
+                                        TSDFVolumeColorType::RGB8) {
                                     const uint8_t *rgb = PointerAt<uint8_t>(
                                             image.color_, u, v, 0);
                                     p_color[0] = (p_color[0] *
@@ -306,6 +326,20 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                             (*p_weight + 1.0f);
                                     p_color[2] = (p_color[2] *
                                             (*p_weight) + rgb[2]) /
+                                            (*p_weight + 1.0f);
+                                } else if (color_type_ ==
+                                        TSDFVolumeColorType::Gray32) {
+                                    const float *intensity = PointerAt<float>(
+                                            image.color_, u, v, 0);
+                                    // PrintError("intensity : %f\n", *intensity);
+                                    p_color[0] = (p_color[0] *
+                                            (*p_weight) + *intensity) /
+                                            (*p_weight + 1.0f);
+                                    p_color[1] = (p_color[1] *
+                                            (*p_weight) + *intensity) /
+                                            (*p_weight + 1.0f);
+                                    p_color[2] = (p_color[2] *
+                                            (*p_weight) + *intensity) /
                                             (*p_weight + 1.0f);
                                 }
                                 *p_weight += 1.0f;

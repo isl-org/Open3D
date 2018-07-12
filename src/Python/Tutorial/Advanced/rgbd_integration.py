@@ -9,7 +9,7 @@ import numpy as np
 if __name__ == "__main__":
     camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
     volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
-            sdf_trunc = 0.04, with_color = True)
+            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
