@@ -119,6 +119,12 @@ Compute odometry from two RGBD image pairs
 
 This code block calls two different RGBD odometry methods. The first one is [Steinbrucker2011]_. It minimizes photo consistency of aligned images. The second one is [Park2017]_. In addition to photo consistency, it implements constraint for geometry. Both functions run in similar speed. But [Park2017]_ is more accurate in our test on benchmark datasets. It is recommended.
 
+Several parameters in ``OdometryOption()``:
+
+* ``minimum_correspondence_ratio`` : After alignment, measure the overlapping ratio of two RGBD images. If overlapping region of two RGBD image is smaller than specified ratio, the odometry module regards that this is a failure case.
+* ``max_depth_diff`` : In depth image domain, if two aligned pixels have a depth difference less than specified value, they are considered as a correspondence. Larger value induce more aggressive search, but it is prone to unstable result.
+* ``min_depth`` and ``max_depth`` : Pixels that has smaller or larger than specified depth values are ignored.
+
 .. _visualize_rgbd_image:
 
 Visualize RGBD image pairs

@@ -7,7 +7,7 @@ Consider color mapping to the geometry reconstructed from depth cameras. As colo
 
 .. code-block:: python
 
-    from py3d import *
+    from open3d import *
     from trajectory_io import *
     import os, sys
     sys.path.append("../Utility")
