@@ -40,7 +40,7 @@ if __name__ == "__main__":
      # Colored Point Cloud Registration Revisited, ICCV 2017
     voxel_radius = [ 0.04, 0.02, 0.01 ];
     max_iter = [ 50, 30, 14 ];
-    current_transformation = np.identity(4)
+    current_transformation = result_icp.transformation
     print("3. Colored point cloud registration")
     for scale in range(3):
         iter = max_iter[scale]
