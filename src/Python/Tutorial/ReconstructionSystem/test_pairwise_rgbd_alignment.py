@@ -31,7 +31,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
     # perform RGB-D odometry
     [success, trans, info] = compute_rgbd_odometry(
             source_rgbd_image, target_rgbd_image, intrinsic,
-            odo_init, RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
+            odo_init, RGBDOdometryJacobianFromHybridTerm(), OdometryOption(max_depth_diff = 0.07))
 
     source = create_point_cloud_from_rgbd_image(source_rgbd_image, intrinsic)
     target = create_point_cloud_from_rgbd_image(target_rgbd_image, intrinsic)
@@ -67,4 +67,9 @@ if __name__ == "__main__":
     else:
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    test_single_pair(args.source_id, args.target_id, intrinsic, with_opencv)
+    # for i in range(389,400): # this is a corner case
+    for i in range(600,700): # this is a corner case
+        print(i)
+        print(i+1)
+        test_single_pair(i, i+1, intrinsic, with_opencv)
+    # test_single_pair(args.source_id, args.target_id, intrinsic, with_opencv)

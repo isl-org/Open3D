@@ -34,10 +34,12 @@ def register_point_cloud_pairwise(path_dataset, ply_file_names,
         draw_registration_result(source_down, target_down,
                 transformation_init)
 
-    (transformation_icp, information_icp) = \
-            local_refinement(source, target,
+    (success_local, transformation_icp, information_icp) = \
+            local_refinement(source_id, target_id,
             source_down, target_down, transformation_init,
-            registration_type, draw_result)
+            draw_result)
+    print("success %d" % success_local)
+    print(transformation_icp)
     if draw_result:
         draw_registration_result_original_color(source_down, target_down,
                 transformation_icp)

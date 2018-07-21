@@ -21,9 +21,9 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
     color_t = read_image(color_files[t])
     depth_t = read_image(depth_files[t])
     source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s,
-            depth_trunc = 3.0, convert_rgb_to_intensity = True)
+            depth_trunc = 2.0, convert_rgb_to_intensity = True)
     target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t,
-            depth_trunc = 3.0, convert_rgb_to_intensity = True)
+            depth_trunc = 2.0, convert_rgb_to_intensity = True)
 
     if abs(s-t) is not 1:
         if with_opencv:
@@ -94,7 +94,7 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
         color = read_image(color_files[i_abs])
         depth = read_image(depth_files[i_abs])
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-                depth_trunc = 3.0, convert_rgb_to_intensity = False)
+                depth_trunc = 2.0, convert_rgb_to_intensity = False)
         pose = pose_graph.nodes[i].pose
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
 

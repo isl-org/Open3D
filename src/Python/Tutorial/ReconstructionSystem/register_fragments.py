@@ -42,7 +42,6 @@ def compute_initial_registration(s, t, source_down, target_down,
         n_nodes = len(pose_graph_frag.nodes)
         transformation = np.linalg.inv(
                 pose_graph_frag.nodes[n_nodes-1].pose)
-        print(pose_graph_frag.nodes[0].pose)
         print(transformation)
     else: # loop closure case
         print("register_point_cloud_fpfh")
@@ -82,14 +81,17 @@ def register_colored_point_cloud_icp(source, target,
         print(np.asarray(source_down.normals))
         estimate_normals(target_down, KDTreeSearchParamHybrid(
                 radius = radius * 2, max_nn = 30))
-        result_icp = registration_colored_icp(source_down, target_down,
-                radius, current_transformation,
-                ICPConvergenceCriteria(relative_fitness = 1e-6,
-                relative_rmse = 1e-6, max_iteration = iter))
+        # result_icp = registration_colored_icp(source_down, target_down,
+        #         radius, current_transformation,
+        #         ICPConvergenceCriteria(relative_fitness = 1e-6,
+        #         relative_rmse = 1e-6, max_iteration = iter))
+        result_icp = registration_icp(source_down, target_down, 0.03,
+                current_transformation,
+                TransformationEstimationPointToPoint())
         current_transformation = result_icp.transformation
 
     information_matrix = get_information_matrix_from_point_clouds(
-            source, target, 0.07, result_icp.transformation)
+            source, target, 0.03, result_icp.transformation)
     if draw_result:
         draw_registration_result_original_color(source, target,
                 result_icp.transformation)
@@ -98,7 +100,6 @@ def register_colored_point_cloud_icp(source, target,
 
 def local_refinement(s, t, source, target,
         transformation_init, draw_result = False):
-
     if t == s + 1: # odometry case
         print("register_point_cloud_icp")
         (transformation, information) = \
