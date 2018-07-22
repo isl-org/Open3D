@@ -29,6 +29,7 @@
 #include <Eigen/Eigenvalues>
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/KDTreeFlann.h>
+#include <queue>
 
 namespace three{
 
@@ -152,6 +153,86 @@ bool EstimateNormals(PointCloud &cloud,
         }
     }
 
+    return true;
+}
+
+bool OrientNormalsUsingMST(PointCloud &cloud,
+       const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
+{
+    if (cloud.HasNormals() == false) {
+        PrintDebug("[OrientNormalsUsingMST] No normals in the PointCloud. Call EstimateNormals() first.\n");
+    }
+    if (!cloud.points_.size()) {
+        PrintDebug("[OrientNormalsUsingMST] No points in PointCloud\n");
+        return false;
+    }
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(cloud);
+
+    // Define useful types for MST
+    struct Node {
+        Node(int parent_index_ = -1, double cost_ = std::numeric_limits<double>::infinity(),
+             bool done_ = false) : parent_index(parent_index_), cost(cost_), done(done_) {}
+
+        int parent_index;
+        double cost;
+        bool done;
+    };
+    typedef std::vector<Node> Nodes;
+
+    // Define graph (nodes) and priority queue
+    Nodes nodes(cloud.points_.size());
+
+    auto cmp = [&nodes](const int id1, const int id2) {
+        return nodes[id1].cost > nodes[id2].cost;
+    };
+    std::priority_queue<int, std::vector<int>, decltype(cmp)> next(cmp);
+
+    // Algorithm based on Prim's MST
+    nodes[0] = Node(0, 0);
+    next.push(0);
+    int num_nodes_done = 0; // used to check if all points are visited
+    while (!next.empty()) {
+        int index = next.top();
+        next.pop();
+
+        auto& node = nodes[index];
+        if(!node.done) {
+            auto &normal = cloud.normals_[index];
+            const auto &parent_normal = cloud.normals_[node.parent_index];
+            if(normal.dot(parent_normal) < 0.0) {
+                normal *= -1.0;
+            }
+            node.done = true;
+            num_nodes_done++;
+
+            std::vector<int> neigh_indices;
+            std::vector<double> distance2;
+            if (kdtree.Search(cloud.points_[index], search_param, neigh_indices, distance2)) {
+                for (const auto& neigh_index : neigh_indices) {
+                    if (!nodes[neigh_index].done) {
+                        const auto &child_normal = cloud.normals_[neigh_index];
+                        double cost = 1.0 - std::abs(normal.dot(child_normal));
+                        if (cost < nodes[neigh_index].cost) {
+                            nodes[neigh_index].parent_index = index;
+                            nodes[neigh_index].cost = cost;
+                            next.push(neigh_index);
+                        }
+                    }
+                }
+            } else {
+                PrintDebug("[OrientNormalsUsingMST] Graph gets disconnected. "
+                           "Surface is assumed to consist of a single connected component");
+                return false;
+            }
+        }
+    }
+
+    // kdtree can cyclically traverse a subset of the points making the surface disconnected
+    if (num_nodes_done < cloud.points_.size()) {
+        PrintDebug("[OrientNormalsUsingMST] Some points have not been visited.");
+        return false;
+    }
     return true;
 }
 

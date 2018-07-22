@@ -146,6 +146,13 @@ bool EstimateNormals(PointCloud &cloud,
         const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
 /// Function to orient the normals of a point cloud
+/// \param cloud is the input point cloud. It must have normals and points.
+/// Surface is assumed to consist of a single connected component
+/// \param search_param The KDTree search parameters
+bool OrientNormalsUsingMST(PointCloud &cloud,
+        const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+
+/// Function to orient the normals of a point cloud
 /// \param cloud is the input point cloud. It must have normals.
 /// Normals are oriented with respect to \param orientation_reference
 bool OrientNormalsToAlignWithDirection(PointCloud &cloud,
