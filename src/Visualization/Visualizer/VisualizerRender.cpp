@@ -245,7 +245,7 @@ std::shared_ptr<Image> Visualizer::CaptureDepthFloatBuffer(
     std::vector<float> float_buffer(depth_image.height_);
     float *p = (float *)depth_image.data_.data();
     for (int j = 0; j < depth_image.width_; j++) {
-        glReadPixels(j, 0, 1, depth_image.width_,
+        glReadPixels(j, 0, 1, depth_image.height_,
                 GL_DEPTH_COMPONENT, GL_FLOAT,
                 float_buffer.data());
         for (int i = 0; i < depth_image.height_; i++) {
