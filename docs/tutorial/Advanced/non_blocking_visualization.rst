@@ -32,7 +32,6 @@ This rendering loop can be readily customized. For example, a custom loop can be
         # do ICP single iteration
         # transform geometry using ICP
         vis.update_geometry()
-        vis.reset_view_point(True)
         vis.poll_events()
         vis.update_renderer()
 
@@ -79,7 +78,6 @@ The full script implementing this idea is displayed below.
                     ICPConvergenceCriteria(max_iteration = 1))
             source.transform(reg_p2l.transformation)
             vis.update_geometry()
-            vis.reset_view_point(True)
             vis.poll_events()
             vis.update_renderer()
             if save_image:
@@ -140,7 +138,6 @@ Transform geometry and visualize it
                 ICPConvergenceCriteria(max_iteration = 1))
         source.transform(reg_p2l.transformation)
         vis.update_geometry()
-        vis.reset_view_point(True)
         vis.poll_events()
         vis.update_renderer()
         if save_image:
@@ -149,7 +146,7 @@ Transform geometry and visualize it
 
 This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
 
-The next part of the script is the core of this tutorial. ``update_geometry`` informs any geometries in ``vis`` are updated. ``reset_view_point`` updates the current view point based on the updated geometries. Finally, visualizer renders a new frame by calling ``poll_events`` and ``update_renderer``. After for-loop iterations, ``destroy_window`` closes the window.
+The next part of the script is the core of this tutorial. ``update_geometry`` informs any geometries in ``vis`` are updated. Finally, visualizer renders a new frame by calling ``poll_events`` and ``update_renderer``. After for-loop iterations, ``destroy_window`` closes the window.
 
 The result looks like below.
 
