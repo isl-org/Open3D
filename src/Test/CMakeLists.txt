@@ -28,6 +28,7 @@ if (BUILD_LIBREALSENSE)
     TEST(TestRealSense        Open3D realsense)
 endif (BUILD_LIBREALSENSE)
 
+TEST(TestRGBDOdometry         Open3D)
 TEST(TestRegistrationRANSAC   Open3D)
 TEST(TestTriangleMesh         Open3D)
 TEST(TestVisualizer           Open3D)
