@@ -39,7 +39,6 @@ if __name__ == "__main__":
                 ICPConvergenceCriteria(max_iteration = 1))
         source.transform(reg_p2l.transformation)
         vis.update_geometry()
-        vis.reset_view_point(True)
         vis.poll_events()
         vis.update_renderer()
         if save_image:
