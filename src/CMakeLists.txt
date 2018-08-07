@@ -151,7 +151,10 @@ elseif (CYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
     # enable c++11
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fvisibility=hidden")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    if (NOT BUILD_SHARED_LIBS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+    endif (NOT BUILD_SHARED_LIBS)
     # compile speed optimization for clang
     add_definitions(-O3)
 elseif (UNIX)
