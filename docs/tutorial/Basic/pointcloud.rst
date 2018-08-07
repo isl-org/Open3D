@@ -28,6 +28,11 @@ This tutorial demonstrates basic usage of a point cloud.
         estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(
                 radius = 0.1, max_nn = 30))
         draw_geometries([downpcd])
+
+        print("Print a normal vector of the 0th point")
+        print(downpcd.normals[0])
+        print("Print the normal vectors of the first 10 points")
+        print(np.asarray(downpcd.normals)[:10,:])
         print("")
 
         print("Load a polygon volume and use it to crop the original point cloud")
@@ -119,6 +124,46 @@ Use ``draw_geometries`` to visualize the point cloud and press :kbd:`n` to see p
 
 .. image:: ../../_static/Basic/pointcloud/downsampled_normal.png
     :width: 400px
+
+
+Access estimated vertex normal
+=====================================
+
+Estimated normal vectors can be retrieved by ``normals`` variable of ``downpcd``.
+
+.. code-block:: python
+
+    print("Print a normal vector of the 0th point")
+    print(downpcd.normals[0])
+
+.. code-block:: sh
+
+    Print a normal vector of 0th point
+    [-0.27566603 -0.89197839 -0.35830543]
+
+To check out other variables, please use ``help(downpcd)``.
+Normal vectors can be transformed as a numpy array using ``np.asarray``.
+
+.. code-block:: python
+
+    print("Print the normal vectors of the first 10 points")
+    print(np.asarray(downpcd.normals)[:10,:])
+
+.. code-block:: sh
+
+    Print the first 100 normal vectors
+    [[-0.27566603 -0.89197839 -0.35830543]
+     [-0.00694405 -0.99478075 -0.10179902]
+     [-0.00399871 -0.99965423 -0.02598917]
+     [-0.46344316 -0.68643798 -0.56037785]
+     [-0.43476205 -0.62438493 -0.64894177]
+     [-0.51440078 -0.56093481 -0.6486478 ]
+     [-0.27498453 -0.67317361 -0.68645524]
+     [-0.00327304 -0.99977409 -0.02100143]
+     [-0.01464332 -0.99960281 -0.02407874]]
+
+Check :ref:`working_with_numpy` for more examples regarding numpy array.
+
 
 .. _crop_point_cloud:
 
