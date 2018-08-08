@@ -195,6 +195,12 @@ include_directories(${EXTERNAL_INCLUDE_DIRS})
 link_directories(${EXTERNAL_LIBRARY_DIRS})
 
 # Open3D libraries
+macro(ADD_SOURCE_GROUP MODULE_NAME)
+    file(GLOB MODULE_HEADER_FILES "${MODULE_NAME}/*.h")
+    source_group("Header Files\\${MODULE_NAME}" FILES ${MODULE_HEADER_FILES})
+    file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
+    source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
+endmacro(ADD_SOURCE_GROUP)
 add_subdirectory(Core)
 add_subdirectory(Tools)
 add_subdirectory(IO)

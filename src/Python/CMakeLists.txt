@@ -3,20 +3,13 @@ find_package(PythonInterp REQUIRED)
 
 set(PACKAGE_NAME open3d)
 
-file(GLOB PY_ALL_HEADER_FILES "*.h")
-file(GLOB PY_ALL_SOURCE_FILES "*.cpp")
-file(GLOB PY_CORE_HEADER_FILES "Core/*.h")
-source_group("Header Files\\Core" FILES ${PY_CORE_HEADER_FILES})
-file(GLOB PY_CORE_SOURCE_FILES "Core/*.cpp")
-source_group("Source Files\\Core" FILES ${PY_CORE_SOURCE_FILES})
-file(GLOB PY_IO_HEADER_FILES "IO/*.h")
-source_group("Header Files\\IO" FILES ${PY_IO_HEADER_FILES})
-file(GLOB PY_IO_SOURCE_FILES "IO/*.cpp")
-source_group("Source Files\\IO" FILES ${PY_IO_SOURCE_FILES})
-file(GLOB PY_VISUALIZATION_HEADER_FILES "Visualization/*.h")
-source_group("Header Files\\Visualization" FILES ${PY_VISUALIZATION_HEADER_FILES})
-file(GLOB PY_VISUALIZATION_SOURCE_FILES "Visualization/*.cpp")
-source_group("Source Files\\Visualization" FILES ${PY_VISUALIZATION_SOURCE_FILES})
+file(GLOB_RECURSE PY_ALL_HEADER_FILES "*.h")
+file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
+
+ADD_SOURCE_GROUP(Core)
+ADD_SOURCE_GROUP(IO)
+ADD_SOURCE_GROUP(Tutorial)
+ADD_SOURCE_GROUP(Visualization)
 pybind11_add_module(${PACKAGE_NAME}
     ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
     ${PY_CORE_SOURCE_FILES} ${PY_CORE_HEADER_FILES}
