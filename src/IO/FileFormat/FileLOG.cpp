@@ -34,7 +34,7 @@
 // http://redwood-data.org/indoor/fileformat.html
 // https://github.com/qianyizh/ElasticReconstruction/blob/f986e81a46201e28c0408a5f6303b4d3cdac7423/GraphOptimizer/helper.h
 
-namespace three{
+namespace open3d{
 
 bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
         PinholeCameraTrajectory &trajectory)
@@ -122,4 +122,4 @@ bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

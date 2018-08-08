@@ -29,7 +29,7 @@
 #include <Core/Geometry/Geometry.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace glsl {
 
@@ -175,6 +175,6 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index)
     return true;
 }
 
-}    // namespace three::glsl
+}    // namespace open3d::glsl
 
-}    // namespace three
+}    // namespace open3d

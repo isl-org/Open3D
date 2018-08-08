@@ -29,7 +29,7 @@
 #include <Eigen/Dense>
 #include <Core/Geometry/PointCloud.h>
 
-namespace three{
+namespace open3d{
 
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
         const PointCloud &cloud0, const PointCloud &cloud1,
@@ -42,4 +42,4 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
     return lineset_ptr;
 }
 
-}    // namespace three
+}    // namespace open3d

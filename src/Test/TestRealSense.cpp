@@ -30,7 +30,7 @@
 #include <Core/Core.h>
 #include <Visualization/Visualization.h>
 
-using namespace three;
+using namespace open3d;
 
 int main(int argc, char **args)
 {

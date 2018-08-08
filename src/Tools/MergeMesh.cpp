@@ -44,8 +44,8 @@ void PrintHelp()
 
 int main(int argc, char **argv)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
     if (argc <= 2 || ProgramOptionExists(argc, argv, "--help")) {

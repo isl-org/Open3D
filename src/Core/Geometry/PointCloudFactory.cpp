@@ -32,7 +32,7 @@
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -138,4 +138,4 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
     return std::make_shared<PointCloud>();
 }
 
-}    // namespace three
+}    // namespace open3d

@@ -30,7 +30,7 @@
 #include <rply/rply.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -474,4 +474,4 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

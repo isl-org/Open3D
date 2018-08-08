@@ -29,7 +29,7 @@
 #include <string>
 #include <Core/Registration/Feature.h>
 
-namespace three {
+namespace open3d {
 
 /// The general entrance for reading a Feature from a file
 /// \return If the read function is successful.
@@ -43,4 +43,4 @@ bool ReadFeatureFromBIN(const std::string &filename, Feature &feature);
 
 bool WriteFeatureToBIN(const std::string &filename, const Feature &feature);
 
-}    // namespace three
+}    // namespace open3d

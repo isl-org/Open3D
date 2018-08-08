@@ -32,7 +32,7 @@
 #include <Core/ColorMap/ColorMapOptimization.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 
-using namespace three;
+using namespace open3d;
 
 void pybind_colormap_optimization(py::module &m)
 {

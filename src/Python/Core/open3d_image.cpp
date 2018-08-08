@@ -30,7 +30,7 @@
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
 #include <IO/ClassIO/ImageIO.h>
-using namespace three;
+using namespace open3d;
 
 void pybind_image(py::module &m)
 {

@@ -35,7 +35,7 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Eigen.h>
 
-namespace three {
+namespace open3d {
 
 namespace {
 
@@ -374,4 +374,4 @@ RegistrationResult FastGlobalRegistration(
             transformation, pcd_mean_vec, scale_global).inverse());
 }
 
-}  // namespace three
+}  // namespace open3d

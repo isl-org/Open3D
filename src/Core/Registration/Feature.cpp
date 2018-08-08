@@ -31,7 +31,7 @@
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
-namespace three {
+namespace open3d {
 
 namespace {
 
@@ -156,4 +156,4 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
     return feature;
 }
 
-}    // namespace three
+}    // namespace open3d

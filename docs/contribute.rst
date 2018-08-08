@@ -51,7 +51,7 @@ We generally follow the `Google C++ Style Guide <https://google.github.io/styleg
 
 * Use tab for indent. In IDE it should be 4 spaces wide. Use two indents for a forced line break (usually due to the 80 character length limit).
 * Use ``#pragma once`` for header guard.
-* All Open3D classes and functions are nested in namespace ``three``.
+* All Open3D classes and functions are nested in namespace ``open3d``.
 * Avoid using naked pointers. Use ``std::shared_ptr`` and ``std::unique_ptr`` instead.
 * C++11 features are recommended.
 

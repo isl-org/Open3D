@@ -32,14 +32,14 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintInfo("Usage :\n");
     PrintInfo("    > TestTriangleMesh sphere\n");
     PrintInfo("    > TestTriangleMesh merge <file1> <file2>\n");
     PrintInfo("    > TestTriangleMesh normal <file1> <file2>\n");
 }
 
-void PaintMesh(three::TriangleMesh &mesh, const Eigen::Vector3d &color)
+void PaintMesh(open3d::TriangleMesh &mesh, const Eigen::Vector3d &color)
 {
     mesh.vertex_colors_.resize(mesh.vertices_.size());
     for (size_t i = 0; i < mesh.vertices_.size(); i++) {
@@ -49,7 +49,7 @@ void PaintMesh(three::TriangleMesh &mesh, const Eigen::Vector3d &color)
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 

@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <Core/Utility/IJsonConvertible.h>
 
-namespace three {
+namespace open3d {
 
 enum class PinholeCameraIntrinsicParameters {
     PrimeSenseDefault = 0,
@@ -76,4 +76,4 @@ public:
     Eigen::Matrix3d intrinsic_matrix_;
 };
 
-}   // namespace three
+}   // namespace open3d

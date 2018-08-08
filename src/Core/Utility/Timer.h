@@ -28,7 +28,7 @@
 
 #include <string>
 
-namespace three {
+namespace open3d {
 
 class Timer
 {
@@ -80,4 +80,4 @@ private:
     int event_total_count_;
 };
 
-}    // namespace three
+}    // namespace open3d

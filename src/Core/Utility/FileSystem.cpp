@@ -42,7 +42,7 @@
 #include <limits.h>
 #endif
 
-namespace three{
+namespace open3d{
 
 namespace filesystem {
 
@@ -222,6 +222,6 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
     return true;
 }
 
-}    // namespace three::filesystem
+}    // namespace open3d::filesystem
 
-}    // namespace three
+}    // namespace open3d

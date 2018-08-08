@@ -30,7 +30,7 @@
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
-namespace three{
+namespace open3d{
 
 void PointCloud::Clear()
 {
@@ -218,4 +218,4 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     return nn_dis;
 }
 
-}    // namespace three
+}    // namespace open3d

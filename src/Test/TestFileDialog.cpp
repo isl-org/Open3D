@@ -29,14 +29,14 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintInfo("Usage :\n");
     PrintInfo("    > TestFileDialog [save|load]\n");
 }
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
     if (argc == 1) {
         PrintHelp();
         return 1;

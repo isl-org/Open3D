@@ -36,7 +36,7 @@
 #include <IO/ClassIO/TriangleMeshIO.h>
 #include <Core/Utility/Eigen.h>
 
-namespace three {
+namespace open3d {
 
 namespace {
 
@@ -732,4 +732,4 @@ void ColorMapOptimization(TriangleMesh& mesh,
     }
 }
 
-}    // namespace three
+}    // namespace open3d
