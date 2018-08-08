@@ -33,6 +33,7 @@ add_library(Visualization OBJECT
             ${VISUALIZATION_ALL_SOURCE_FILES})
 
 ADD_SOURCE_GROUP(Shader)
+source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(Visualizer)
 
