@@ -21,6 +21,11 @@ if __name__ == "__main__":
     estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(
             radius = 0.1, max_nn = 30))
     draw_geometries([downpcd])
+
+    print("Print a normal vector of the 0th point")
+    print(downpcd.normals[0])
+    print("Print the normal vectors of the first 10 points")
+    print(np.asarray(downpcd.normals)[:10,:])
     print("")
 
     print("Load a polygon volume and use it to crop the original point cloud")
