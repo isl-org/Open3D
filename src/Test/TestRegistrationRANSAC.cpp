@@ -34,21 +34,21 @@
 
 #include <Core/Utility/Timer.h>
 
-using namespace three;
+using namespace open3d;
 
 std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
         PreprocessPointCloud(const char* file_name)
 {
-    auto pcd = three::CreatePointCloudFromFile(file_name);
+    auto pcd = open3d::CreatePointCloudFromFile(file_name);
     auto pcd_down = VoxelDownSample(*pcd, 0.05);
-    EstimateNormals(*pcd_down, three::KDTreeSearchParamHybrid(0.1, 30));
+    EstimateNormals(*pcd_down, open3d::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = ComputeFPFHFeature(
-            *pcd_down, three::KDTreeSearchParamHybrid(0.25, 100));
+            *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
-void VisualizeRegistration(const three::PointCloud &source,
-        const three::PointCloud &target, const Eigen::Matrix4d &Transformation)
+void VisualizeRegistration(const open3d::PointCloud &source,
+        const open3d::PointCloud &target, const Eigen::Matrix4d &Transformation)
 {
     std::shared_ptr<PointCloud> source_transformed_ptr(new PointCloud);
     std::shared_ptr<PointCloud> target_ptr(new PointCloud);
@@ -60,7 +60,7 @@ void VisualizeRegistration(const three::PointCloud &source,
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 

@@ -33,7 +33,7 @@
 #include <functional>
 #include <Core/Geometry/Geometry.h>
 
-namespace three {
+namespace open3d {
 
 class Visualizer;
 
@@ -70,4 +70,4 @@ bool DrawGeometriesWithEditing(
         const std::string &window_name = "Open3D", 
         int width = 640, int height = 480, int left = 50, int top = 50);
 
-}    // namespace three
+}    // namespace open3d

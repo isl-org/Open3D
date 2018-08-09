@@ -31,7 +31,7 @@
 
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace three {
+namespace open3d {
 
 class PinholeCameraTrajectory : public IJsonConvertible
 {
@@ -48,4 +48,4 @@ public:
     std::vector<Eigen::Matrix4d> extrinsic_;
 };
 
-}    // namespace three
+}    // namespace open3d

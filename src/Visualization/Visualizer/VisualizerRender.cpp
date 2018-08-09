@@ -36,7 +36,7 @@
 
 #include <Visualization/Utility/GLHelper.h>
 
-namespace three{
+namespace open3d{
 
 bool Visualizer::InitOpenGL()
 {
@@ -466,4 +466,4 @@ void Visualizer::CaptureRenderOption(const std::string &filename/* = ""*/)
     WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 
-}    // namespace three
+}    // namespace open3d

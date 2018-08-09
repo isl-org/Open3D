@@ -30,7 +30,7 @@
 
 #include "AlignmentSession.h"
 
-namespace three {
+namespace open3d {
 
 class VisualizerForAlignment : public Visualizer
 {
@@ -78,4 +78,4 @@ protected:
     std::string default_directory_;
 };
 
-}        // namespace three
+}        // namespace open3d

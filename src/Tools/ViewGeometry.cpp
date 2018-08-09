@@ -30,7 +30,7 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
     PrintInfo("    > ViewGeometry [options]\n");
@@ -65,8 +65,8 @@ void PrintHelp()
 
 int main(int argc, char **argv)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);

@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <Core/Registration/Registration.h>
 
-namespace three {
+namespace open3d {
 
 class PointCloud;
 class RegistrationResult;
@@ -44,4 +44,4 @@ RegistrationResult RegistrationColoredICP(const PointCloud &source,
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
         double lambda_geometric = 0.968);
 
-}    // namespace three
+}    // namespace open3d

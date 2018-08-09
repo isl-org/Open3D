@@ -35,7 +35,7 @@
 #include <iostream>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -245,4 +245,4 @@ RegistrationResult RegistrationColoredICP(const PointCloud &source,
             TransformationEstimationForColoredICP(lambda_geometric), criteria);
 }
 
-}    // namespace three
+}    // namespace open3d

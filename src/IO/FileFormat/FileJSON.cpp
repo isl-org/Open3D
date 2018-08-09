@@ -31,7 +31,7 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -110,4 +110,4 @@ bool WriteIJsonConvertibleToJSONString(std::string &json_string,
     return success;
 }
 
-}    // namespace three
+}    // namespace open3d

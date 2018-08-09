@@ -33,7 +33,7 @@
 
 void PrintHelp(char* argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
@@ -49,7 +49,7 @@ void PrintHelp(char* argv[])
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

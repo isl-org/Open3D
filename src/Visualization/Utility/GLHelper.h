@@ -31,7 +31,7 @@
 #include <Eigen/Core>
 #include <GLFW/glfw3.h>
 
-namespace three {
+namespace open3d {
 
 namespace GLHelper {
 
@@ -58,4 +58,4 @@ int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 
 }    // namespace GLHelper
 
-}    // namespace three
+}    // namespace open3d

@@ -32,9 +32,9 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintPointCloud(const three::PointCloud &pointcloud)
+void PrintPointCloud(const open3d::PointCloud &pointcloud)
 {
-    using namespace three;
+    using namespace open3d;
 
     bool pointcloud_has_normal = pointcloud.HasNormals();
     PrintInfo("Pointcloud has %d points.\n",
@@ -63,7 +63,7 @@ void PrintPointCloud(const three::PointCloud &pointcloud)
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         ScopeTimer timer("FPFH estimation with Radius 0.25");
         //for (int i = 0; i < 20; i++) {
             ComputeFPFHFeature(*pcd,
-                    three::KDTreeSearchParamRadius(0.25));
+                    open3d::KDTreeSearchParamRadius(0.25));
         //}
     }
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
         ScopeTimer timer("Normal estimation with KNN20");
         for (int i = 0; i < 20; i++) {
             EstimateNormals(*pcd,
-                    three::KDTreeSearchParamKNN(20));
+                    open3d::KDTreeSearchParamKNN(20));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         ScopeTimer timer("Normal estimation with Radius 0.01666");
         for (int i = 0; i < 20; i++) {
             EstimateNormals(*pcd,
-                    three::KDTreeSearchParamRadius(0.01666));
+                    open3d::KDTreeSearchParamRadius(0.01666));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
         for (int i = 0; i < 20; i++) {
             EstimateNormals(*pcd,
-                    three::KDTreeSearchParamHybrid(0.01666, 60));
+                    open3d::KDTreeSearchParamHybrid(0.01666, 60));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -184,9 +184,9 @@ int main(int argc, char *argv[])
     DrawGeometriesWithKeyCallbacks({pointcloud_ptr},
             {{GLFW_KEY_SPACE, [&](Visualizer *vis) {
                 //EstimateNormals(*pointcloud_ptr,
-                //        three::KDTreeSearchParamKNN(20));
+                //        open3d::KDTreeSearchParamKNN(20));
                 EstimateNormals(*pointcloud_ptr,
-                        three::KDTreeSearchParamRadius(0.05));
+                        open3d::KDTreeSearchParamRadius(0.05));
                 PrintInfo("Done.\n");
                 return true;
             }}},

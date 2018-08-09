@@ -31,7 +31,7 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
     PrintInfo("    > ConvertPointCloud source_file target_file [options]\n");
@@ -68,8 +68,8 @@ void PrintHelp()
 void convert(int argc, char **argv, const std::string &file_in,
         const std::string &file_out)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
     auto pointcloud_ptr = CreatePointCloudFromFile(file_in.c_str());
     size_t point_num_in = pointcloud_ptr->points_.size();
     bool processed = false;
@@ -178,8 +178,8 @@ void convert(int argc, char **argv, const std::string &file_in,
 
 int main(int argc, char **argv)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
 
     if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

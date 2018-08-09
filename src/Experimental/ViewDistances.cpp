@@ -30,7 +30,7 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
     PrintInfo("    > ViewDistances source_file [options]\n");
@@ -48,7 +48,7 @@ void PrintHelp()
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

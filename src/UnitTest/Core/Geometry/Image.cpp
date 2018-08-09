@@ -35,10 +35,10 @@ TEST(Image, Default)
 
 TEST(Image, DefaultConstructor)
 {
-    three::Image image;
+    open3d::Image image;
 
     // inherited from Geometry2D
-    EXPECT_EQ(three::Geometry::GeometryType::Image, image.GetGeometryType());
+    EXPECT_EQ(open3d::Geometry::GeometryType::Image, image.GetGeometryType());
     EXPECT_EQ(2, image.Dimension());
 
     // public member variables

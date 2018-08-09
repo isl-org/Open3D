@@ -32,7 +32,7 @@
 #include <Visualization/Visualizer/ViewControl.h>
 #include <Visualization/Visualizer/RenderOption.h>
 
-namespace three {
+namespace open3d {
 
 namespace glsl {
     
@@ -106,6 +106,6 @@ private:
     std::string shader_name_ = "ShaderWrapper";
 };
 
-}    // namespace three::glsl
+}    // namespace open3d::glsl
 
-}    // namespace three
+}    // namespace open3d

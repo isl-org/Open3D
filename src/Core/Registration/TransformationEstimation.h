@@ -31,7 +31,7 @@
 #include <string>
 #include <Eigen/Core>
 
-namespace three {
+namespace open3d {
 
 class PointCloud;
 
@@ -112,4 +112,4 @@ private:
 };
 
 
-}    // namespace three
+}    // namespace open3d

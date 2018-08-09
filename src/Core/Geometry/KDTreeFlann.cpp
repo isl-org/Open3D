@@ -36,7 +36,7 @@
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 KDTreeFlann::KDTreeFlann()
 {
@@ -208,7 +208,7 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data)
 }
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(const Eigen::Vector3d &query,
-        const three::KDTreeSearchParam &param, std::vector<int> &indices,
+        const open3d::KDTreeSearchParam &param, std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::Vector3d>(
         const Eigen::Vector3d &query, int knn, std::vector<int> &indices,
@@ -221,7 +221,7 @@ template int KDTreeFlann::SearchHybrid<Eigen::Vector3d>(
         std::vector<int> &indices, std::vector<double> &distance2) const;
 
 template int KDTreeFlann::Search<Eigen::VectorXd>(const Eigen::VectorXd &query,
-        const three::KDTreeSearchParam &param, std::vector<int> &indices,
+        const open3d::KDTreeSearchParam &param, std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::VectorXd>(
         const Eigen::VectorXd &query, int knn, std::vector<int> &indices,
@@ -233,7 +233,7 @@ template int KDTreeFlann::SearchHybrid<Eigen::VectorXd>(
         const Eigen::VectorXd &query, double radius, int max_nn,
         std::vector<int> &indices, std::vector<double> &distance2) const;
 
-}    // namespace three
+}    // namespace open3d
 
 #ifdef _MSC_VER
 #pragma warning(pop)

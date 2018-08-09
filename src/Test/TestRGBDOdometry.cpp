@@ -31,7 +31,7 @@
 #include <Core/Utility/Helper.h>
 #include <Visualization/Visualization.h>
 
-using namespace three;
+using namespace open3d;
 
 void PrintHelp()
 {

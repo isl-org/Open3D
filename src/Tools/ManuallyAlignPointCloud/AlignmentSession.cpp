@@ -28,7 +28,7 @@
 
 #include <json/json.h>
 
-namespace three {
+namespace open3d {
 
 bool AlignmentSession::ConvertToJsonValue(Json::Value &value) const
 {
@@ -88,4 +88,4 @@ bool AlignmentSession::ConvertFromJsonValue(const Json::Value &value)
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <Core/Geometry/Geometry.h>
 
-namespace three {
+namespace open3d {
 
 class Geometry3D : public Geometry
 {
@@ -47,4 +47,4 @@ public:
     virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
 };
 
-}    // namespace three
+}    // namespace open3d

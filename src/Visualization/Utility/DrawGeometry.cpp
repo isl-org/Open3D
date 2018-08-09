@@ -33,7 +33,7 @@
 #include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
 #include <Visualization/Visualizer/ViewControlWithEditing.h>
 
-namespace three{
+namespace open3d{
 
 bool DrawGeometries(
         const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
@@ -173,4 +173,4 @@ bool DrawGeometriesWithEditing(
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d
