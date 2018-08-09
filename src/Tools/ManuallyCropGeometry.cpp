@@ -30,8 +30,7 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
+    PrintOpen3DVersion();
     printf("Usage:\n");
     printf("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
     printf("      Manually crop geometry in speficied file.\n");

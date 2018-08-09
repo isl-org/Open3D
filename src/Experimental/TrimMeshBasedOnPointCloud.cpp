@@ -29,8 +29,7 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
+    PrintOpen3DVersion();
     printf("Usage:\n");
     printf("    > TrimMeshBasedOnPointCloud [options]\n");
     printf("      Trim a mesh baesd on distance to a point cloud.\n");

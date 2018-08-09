@@ -30,8 +30,7 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
+    PrintOpen3DVersion();
     printf("Usage:\n");
     printf("    > ViewGeometry [options]\n");
     printf("      Open a window to view geometry.\n");

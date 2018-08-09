@@ -29,8 +29,7 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
+    PrintOpen3DVersion();
     printf("Usage:\n");
     printf("    > MergeMesh source_directory target_file [option]\n");
     printf("      Merge mesh files under <source_directory>.\n");

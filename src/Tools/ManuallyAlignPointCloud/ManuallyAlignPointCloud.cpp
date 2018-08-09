@@ -52,8 +52,7 @@ void PrintTransformation(const Eigen::Matrix4d &transformation)
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
+    PrintOpen3DVersion();
     printf("Usage:\n");
     printf("    > ManuallyAlignPointCloud source_file target_file [options]\n");
     printf("      Manually align point clouds in source_file and target_file.\n");
@@ -84,7 +83,7 @@ int main(int argc, char **argv)
         PrintHelp();
         return 0;
     }
-    
+
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
     double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
@@ -107,7 +106,7 @@ int main(int argc, char **argv)
         PrintWarning("Failed to read one of the point clouds.\n");
         return 0;
     }
-    
+
     if (!alignment_filename.empty()) {
         AlignmentSession session;
         if (ReadIJsonConvertible(alignment_filename, session) == false) {
@@ -186,12 +185,12 @@ int main(int argc, char **argv)
         fclose(f);
         return 1;
     }
-    
+
     VisualizerWithEditing vis_source, vis_target;
     VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
             max_corres_distance, with_scaling, with_dialog,
             default_polygon_filename, default_directory);
-    
+
     vis_source.CreateVisualizerWindow("Source Point Cloud", 1280, 720, 10, 100);
     vis_source.AddGeometry(source_ptr);
     if (source_ptr->points_.size() > 5000000) {
@@ -211,7 +210,7 @@ int main(int argc, char **argv)
     while (vis_source.PollEvents() && vis_target.PollEvents() &&
             vis_main.PollEvents()) {
     }
-    
+
     vis_source.DestroyVisualizerWindow();
     vis_target.DestroyVisualizerWindow();
     vis_main.DestroyVisualizerWindow();

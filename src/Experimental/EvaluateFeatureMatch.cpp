@@ -83,8 +83,7 @@ public:
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
+    PrintOpen3DVersion();
     printf("Usage:\n");
     printf("    > EvaluateFeatureMatch [options]\n");
     printf("      Evaluate feature matching quality of point clouds.\n");

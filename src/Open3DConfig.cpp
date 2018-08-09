@@ -24,20 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Open3DConfig.h"
+#include <Core/Utility/Console.h>
 
-#include "Utility/BoundingBox.h"
-#include "Utility/SelectionPolygon.h"
-#include "Utility/SelectionPolygonVolume.h"
-#include "Utility/DrawGeometry.h"
-
-#include "Visualizer/Visualizer.h"
-#include "Visualizer/VisualizerWithCustomAnimation.h"
-#include "Visualizer/VisualizerWithEditing.h"
-#include "Visualizer/VisualizerWithKeyCallback.h"
-
-#include "Visualizer/ViewControl.h"
-#include "Visualizer/ViewControlWithCustomAnimation.h"
-#include "Visualizer/ViewControlWithEditing.h"
-
-#include "../Open3DConfig.h"
+void PrintOpen3DVersion() {
+    using namespace three;
+    PrintInfo("Open3D ver. %s\n", OPEN3D_VERSION);
+}
