@@ -30,12 +30,14 @@
 
 using namespace std;
 
-static int default_width = 1920;
-static int default_height = 1080;
-static int default_num_of_channels = 3;
-static int default_bytes_per_channel = 1;
+static const int default_width = 1920;
+static const int default_height = 1080;
+static const int default_num_of_channels = 3;
+static const int default_bytes_per_channel = 1;
 
+// ----------------------------------------------------------------------------
 // test the default constructor scenario
+// ----------------------------------------------------------------------------
 TEST(Image, DefaultConstructor)
 {
     three::Image image;
@@ -60,7 +62,9 @@ TEST(Image, DefaultConstructor)
     EXPECT_EQ(0, image.BytesPerLine());
 }
 
-// test PrepareImage
+// ----------------------------------------------------------------------------
+// test PrepareImage aka image creation
+// ----------------------------------------------------------------------------
 TEST(Image, CreateImage)
 {
     three::Image image;
@@ -83,7 +87,9 @@ TEST(Image, CreateImage)
     EXPECT_EQ(default_width * default_num_of_channels * default_bytes_per_channel, image.BytesPerLine());
 }
 
+// ----------------------------------------------------------------------------
 // test Clear
+// ----------------------------------------------------------------------------
 TEST(Image, Clear)
 {
     three::Image image;
@@ -108,112 +114,177 @@ TEST(Image, Clear)
     EXPECT_EQ(0, image.BytesPerLine());
 }
 
+union
+{
+    float f;
+    uint8_t b[4];
+} convert;
+
+// ----------------------------------------------------------------------------
+// test FloatValueAt, bilinear(?) interpolation
+// ----------------------------------------------------------------------------
+TEST(Image, FloatValueAt)
+{
+    three::Image image;
+
+    int local_num_of_channels = 1;
+    int local_bytes_per_channel = 4;
+
+    image.PrepareImage(default_width, default_height, local_num_of_channels, local_bytes_per_channel);
+
+    size_t size = image.data_.size() / sizeof(float);
+    float(&im)[size] = *reinterpret_cast<float(*)[size]>(&image.data_[0]);
+
+    im[0 * default_width + 1] = 4;
+    im[0 * default_width + 2] = 4;
+    im[1 * default_width + 1] = 4;
+    im[1 * default_width + 2] = 4;
+
+    EXPECT_EQ(4.0, image.FloatValueAt(1.0, 1.0).second);
+    EXPECT_EQ(4.0, image.FloatValueAt(1.5, 1.5).second);
+}
+
+// ----------------------------------------------------------------------------
 // member data is not private and as such can lead to errors
+// ----------------------------------------------------------------------------
 TEST(Image, MemberData)
 {
     three::Image image;
 
     image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
 
-    image.width_ = 320;
-    EXPECT_EQ(320 * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
+    int temp_width = 320;
+    int temp_height = 240;
+    int temp_num_of_channels = 1;
+    int temp_bytes_per_channel = 3;
+
+    image.width_ = temp_width;
+    EXPECT_EQ(temp_width * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
 
     image.width_ = default_width;
-    image.height_ = 240;
-    EXPECT_EQ(default_width * 240 * default_num_of_channels * default_bytes_per_channel, image.data_.size());
+    image.height_ = temp_height;
+    EXPECT_EQ(default_width * temp_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
 
     image.height_ = default_height;
-    image.num_of_channels_ = 1;
-    EXPECT_EQ(default_width * default_height * 1 * default_bytes_per_channel, image.data_.size());
+    image.num_of_channels_ = temp_num_of_channels;
+    EXPECT_EQ(default_width * default_height * temp_num_of_channels * default_bytes_per_channel, image.data_.size());
 
     image.num_of_channels_ = default_num_of_channels;
-    image.bytes_per_channel_ = 3;
-    EXPECT_EQ(default_width * default_height * default_num_of_channels * 3, image.data_.size());
+    image.bytes_per_channel_ = temp_bytes_per_channel;
+    EXPECT_EQ(default_width * default_height * default_num_of_channels * temp_bytes_per_channel, image.data_.size());
 
     image.bytes_per_channel_ = default_bytes_per_channel;
     image.data_ = vector<uint8_t>();
     EXPECT_EQ(default_width * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, PointerAt)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, ConvertDepthToFloatImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, FlipImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, FilterImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, FilterHorizontalImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, DownsampleImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, DilateImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, LinearTransformImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, ClipIntensityImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, CreateImageFromFloatImage)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, FilterImagePyramid)
 {
     NotImplemented();
 }
 
+// ----------------------------------------------------------------------------
 //
+// ----------------------------------------------------------------------------
 TEST(Image, CreateImagePyramid)
 {
     NotImplemented();
@@ -246,10 +317,16 @@ Ideally all Open3D types should be defined in a central location (aka types file
 Ideally no definitions inside the header, only declarations (and template defs)
 - Image::HasData(...) and Image::IsEmpty(...) are the same
 Ideally keep just one.
-- Image::FloatValueAt doesn't look like it has exception handling
+- PointerAt doesn't look like it has exception handling.
 Ideally all methods should provide some kind of exception handling; at the very least throw exceptions on invalid cases.
+- PointerAt should be part of Image::
+- Image::FloatValueAt doesn't look like it has exception handling.
+Instead it uses 'if' to check the inputs. While this works fine it is generally slower then throwing an exception.
+Also, only clipping is used for out of bounds coordinates. There are other accepted methods for dealing with out of bounds (mirroring, wrapping, etc.), do we want to add those as well?
+- Image::FloatValueAt returns double not float... even though PointerAt returns float
+- Image::FloatValueAt doesn't need to return a pair of bool and the computed value
 - Image::BytesPerLine() can be cached
-This method is a shortcut for width_ * num_of_channels_ * bytes_per_channel_.
+This method is a shortcut for width_ * num_of_channels_ * bytes_per_channel_ which doesn't change often.
 - Image:: public data
 Ideally make all data private. Add getters/setters as appropriate.
 - Image:: needs constructor that creates an image
@@ -259,4 +336,6 @@ Ideally make all data private. Add getters/setters as appropriate.
 - ImageFactory.cpp not needed.
 Can't have global methods.
 Find another place for the code, maybe in Image or PinholeCameraIntrinsic.
+- The hardcoded filters Gaussian3/5/7 and Sobel31/32 can/should be const arrays instead of vectors.
+
 */
