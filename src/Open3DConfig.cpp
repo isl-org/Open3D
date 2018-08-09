@@ -27,7 +27,10 @@
 #include "Open3DConfig.h"
 #include <Core/Utility/Console.h>
 
+namespace three{
+
 void PrintOpen3DVersion() {
-    using namespace three;
-    PrintInfo("Open3D ver. %s\n", OPEN3D_VERSION);
+    PrintInfo("Open3D %s\n", OPEN3D_VERSION);
+}
+
 }

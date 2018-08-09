@@ -30,18 +30,19 @@
 
 void PrintHelp()
 {
+    using namespace three;
     PrintOpen3DVersion();
-    printf("Usage:\n");
-    printf("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
-    printf("      Manually crop geometry in speficied file.\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("    --pointcloud,             : Read geometry as point cloud.\n");
-    printf("    --mesh,                   : Read geometry as mesh.\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4).\n");
-    printf("    --voxel_size d            : Set downsample voxel size.\n");
-    printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
+    PrintInfo("      Manually crop geometry in speficied file.\n");
+    PrintInfo("\n");
+    PrintInfo("Options:\n");
+    PrintInfo("    --pointcloud,             : Read geometry as point cloud.\n");
+    PrintInfo("    --mesh,                   : Read geometry as mesh.\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
+    PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
 }
 
 int main(int argc, char **argv)

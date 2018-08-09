@@ -29,16 +29,17 @@
 
 void PrintHelp()
 {
+    using namespace three;
     PrintOpen3DVersion();
-    printf("Usage:\n");
-    printf("    > MergeMesh source_directory target_file [option]\n");
-    printf("      Merge mesh files under <source_directory>.\n");
-    printf("\n");
-    printf("Options (listed in the order of execution priority):\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4).\n");
-    printf("    --purge                   : Clear duplicated and non-manifold vertices and\n");
-    printf("                                triangles.\n");
+    PrintInfo("Usage:\n");
+    PrintInfo("    > MergeMesh source_directory target_file [option]\n");
+    PrintInfo("      Merge mesh files under <source_directory>.\n");
+    PrintInfo("\n");
+    PrintInfo("Options (listed in the order of execution priority):\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    PrintInfo("    --purge                   : Clear duplicated and non-manifold vertices and\n");
+    PrintInfo("                                triangles.\n");
  }
 
 int main(int argc, char **argv)

@@ -91,16 +91,17 @@ bool ReadLogFile(const std::string &filename,
 
 void PrintHelp()
 {
+    using namespace three;
     PrintOpen3DVersion();
-    printf("Usage:\n");
-    printf("    > ViewPCDMatch [options]\n");
-    printf("      View pairwise matching result of point clouds.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    printf("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
-    printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ViewPCDMatch [options]\n");
+    PrintInfo("      View pairwise matching result of point clouds.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
+    PrintInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
 }
 
 int main(int argc, char *argv[])

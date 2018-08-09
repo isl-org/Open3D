@@ -39,5 +39,3 @@
 #include "Visualizer/ViewControl.h"
 #include "Visualizer/ViewControlWithCustomAnimation.h"
 #include "Visualizer/ViewControlWithEditing.h"
-
-#include "../Open3DConfig.h"

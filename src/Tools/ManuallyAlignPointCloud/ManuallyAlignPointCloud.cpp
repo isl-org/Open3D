@@ -52,26 +52,27 @@ void PrintTransformation(const Eigen::Matrix4d &transformation)
 
 void PrintHelp()
 {
-    PrintOpen3DVersion();
-    printf("Usage:\n");
-    printf("    > ManuallyAlignPointCloud source_file target_file [options]\n");
-    printf("      Manually align point clouds in source_file and target_file.\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4).\n");
-    printf("    --voxel_size d            : Set downsample voxel size.\n");
-    printf("    --max_corres_distance d   : Set max correspondence distance.\n");
-    printf("    --without_scaling         : Disable scaling in transformations.\n");
-    printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
-    printf("    --without_gui_icp file    : The program runs as a console command. No window\n");
-    printf("                                will be created. The program reads an alignment\n");
-    printf("                                from file. It does cropping, downsample, ICP,\n");
-    printf("                                then saves the alignment session into file.\n");
-    printf("    --without_gui_eval file   : The program runs as a console command. No window\n");
-    printf("                                will be created. The program reads an alignment\n");
-    printf("                                from file. It does cropping, downsample,\n");
-    printf("                                evaluation, then saves everything.\n");
+    using namespace three;
+    // PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ManuallyAlignPointCloud source_file target_file [options]\n");
+    PrintInfo("      Manually align point clouds in source_file and target_file.\n");
+    PrintInfo("\n");
+    PrintInfo("Options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
+    PrintInfo("    --max_corres_distance d   : Set max correspondence distance.\n");
+    PrintInfo("    --without_scaling         : Disable scaling in transformations.\n");
+    PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    PrintInfo("    --without_gui_icp file    : The program runs as a console command. No window\n");
+    PrintInfo("                                will be created. The program reads an alignment\n");
+    PrintInfo("                                from file. It does cropping, downsample, ICP,\n");
+    PrintInfo("                                then saves the alignment session into file.\n");
+    PrintInfo("    --without_gui_eval file   : The program runs as a console command. No window\n");
+    PrintInfo("                                will be created. The program reads an alignment\n");
+    PrintInfo("                                from file. It does cropping, downsample,\n");
+    PrintInfo("                                evaluation, then saves everything.\n");
 }
 
 int main(int argc, char **argv)
