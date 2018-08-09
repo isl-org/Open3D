@@ -30,7 +30,7 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 const int ViewTrajectory::INTERVAL_MAX = 59;
 const int ViewTrajectory::INTERVAL_MIN = 0;
@@ -193,4 +193,4 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value)
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

@@ -34,7 +34,7 @@
 #include <Visualization/Utility/PointCloudPicker.h>
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 
-namespace three{
+namespace open3d{
 
 namespace glsl {
 
@@ -302,6 +302,6 @@ bool PointCloudPickerRenderer::UpdateGeometry()
     return true;
 }
 
-}    // namespace three::glsl
+}    // namespace open3d::glsl
 
-}    // namespace three
+}    // namespace open3d

@@ -30,7 +30,7 @@
 #include <Visualization/Visualizer/ViewControl.h>
 #include <Visualization/Visualizer/ViewTrajectory.h>
 
-namespace three {
+namespace open3d {
 
 class ViewControlWithCustomAnimation : public ViewControl
 {
@@ -105,4 +105,4 @@ protected:
     double current_keyframe_ = 0.0;
 };
 
-}    // namespace three
+}    // namespace open3d

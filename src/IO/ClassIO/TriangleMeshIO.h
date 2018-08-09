@@ -29,7 +29,7 @@
 #include <string>
 #include <Core/Geometry/TriangleMesh.h>
 
-namespace three {
+namespace open3d {
 
 /// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
 /// Return an empty mesh if fail to read the file.
@@ -54,4 +54,4 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
         const TriangleMesh &mesh, bool write_ascii = false,
         bool compressed = false);
 
-}    // namespace three
+}    // namespace open3d

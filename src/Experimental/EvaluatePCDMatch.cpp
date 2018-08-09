@@ -53,7 +53,7 @@ bool ReadLogFile(const std::string &filename,
         std::vector<std::pair<int, int>> &pair_ids,
         std::vector<Eigen::Matrix4d> &transformations)
 {
-    using namespace three;
+    using namespace open3d;
     pair_ids.clear();
     transformations.clear();
     FILE * f = fopen(filename.c_str(), "r");
@@ -108,7 +108,7 @@ bool ReadLogFile(const std::string &filename,
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

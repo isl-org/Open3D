@@ -29,7 +29,7 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintInfo("Open3D %s\n", OPEN3D_VERSION);
     PrintInfo("\n");
     PrintInfo("Usage :\n");
@@ -38,7 +38,7 @@ void PrintHelp()
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
     if (argc == 1 || ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
         return 1;

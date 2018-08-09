@@ -29,7 +29,7 @@
 #include <Core/Utility/Console.h>
 #include <json/json.h>
 
-namespace three{
+namespace open3d{
 
 const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_MIN = 0.000625;
 const double RenderOptionWithEditing::PICKER_SPHERE_SIZE_MAX = 0.08;
@@ -73,4 +73,4 @@ bool RenderOptionWithEditing::ConvertFromJsonValue(const Json::Value &value)
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

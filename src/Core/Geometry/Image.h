@@ -33,7 +33,7 @@
 #include <Core/Geometry/Geometry2D.h>
 #include <Core/Utility/Console.h>
 
-namespace three {
+namespace open3d {
 
 class PinholeCameraIntrinsic;
 
@@ -170,4 +170,4 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 ImagePyramid CreateImagePyramid(const Image& image,
         size_t num_of_levels, bool with_gaussian_filter = true);
 
-}    // namespace three
+}    // namespace open3d

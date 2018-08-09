@@ -35,7 +35,7 @@
 #include <Core/Registration/FastGlobalRegistration.h>
 #include <Core/Registration/ColoredICP.h>
 
-using namespace three;
+using namespace open3d;
 
 template <class TransformationEstimationBase = TransformationEstimation>
 class PyTransformationEstimation : public TransformationEstimationBase

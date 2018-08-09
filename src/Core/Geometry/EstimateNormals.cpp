@@ -30,7 +30,7 @@
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -203,4 +203,4 @@ bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

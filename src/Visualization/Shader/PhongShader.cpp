@@ -31,7 +31,7 @@
 #include <Visualization/Shader/Shader.h>
 #include <Visualization/Utility/ColorMap.h>
 
-namespace three{
+namespace open3d{
 
 namespace glsl {
 
@@ -360,4 +360,4 @@ bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 
 }    // namespace glsl
 
-}    // namespace three
+}    // namespace open3d

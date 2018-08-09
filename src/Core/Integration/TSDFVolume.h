@@ -31,7 +31,7 @@
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace three {
+namespace open3d {
 
 enum class TSDFVolumeColorType {
     None = 0,
@@ -78,4 +78,4 @@ public:
     TSDFVolumeColorType color_type_;
 };
 
-}    // namespace three
+}    // namespace open3d

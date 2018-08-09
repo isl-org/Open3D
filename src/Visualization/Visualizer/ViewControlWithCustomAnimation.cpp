@@ -28,7 +28,7 @@
 
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 
-namespace three{
+namespace open3d{
 
 void ViewControlWithCustomAnimation::Reset()
 {
@@ -353,4 +353,4 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
     }
 }
 
-}    // namespace three
+}    // namespace open3d

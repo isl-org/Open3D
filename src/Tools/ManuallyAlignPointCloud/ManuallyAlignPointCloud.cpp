@@ -34,7 +34,7 @@
 
 void PrintTransformation(const Eigen::Matrix4d &transformation)
 {
-    using namespace three;
+    using namespace open3d;
     PrintInfo("Current transformation is:\n");
     PrintInfo("\t%.6f %.6f %.6f %.6f\n",
             transformation(0, 0), transformation(0, 1),
@@ -77,7 +77,7 @@ void PrintHelp()
 
 int main(int argc, char **argv)
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

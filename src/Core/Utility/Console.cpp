@@ -42,7 +42,7 @@
 
 #include <Core/Utility/Helper.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -322,4 +322,4 @@ bool ProgramOptionExistsAny(int argc, char **argv,
     return false;
 }
 
-}    // namespace three
+}    // namespace open3d

@@ -28,7 +28,7 @@
 
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace three{
+namespace open3d{
 
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
         const PinholeCameraIntrinsic &intrinsic)
@@ -181,4 +181,4 @@ ImagePyramid CreateImagePyramid(
     return pyramid_image;
 }
 
-}    // namespace three
+}    // namespace open3d

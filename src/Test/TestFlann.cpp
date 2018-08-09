@@ -34,7 +34,7 @@
 
 int main(int argc, char **argv)
 {
-    using namespace three;
+    using namespace open3d;
     using namespace flann;
 
     if (argc < 2) {

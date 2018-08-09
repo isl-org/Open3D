@@ -29,7 +29,7 @@
 
 #include <Visualization/Visualizer/ViewControl.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
-using namespace three;
+using namespace open3d;
 
 void pybind_viewcontrol(py::module &m)
 {

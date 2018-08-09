@@ -32,7 +32,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-namespace three {
+namespace open3d {
 
 class PointCloud;
 class Feature;
@@ -77,4 +77,4 @@ RegistrationResult FastGlobalRegistration(
         const FastGlobalRegistrationOption &option =
         FastGlobalRegistrationOption());
 
-}    // namespace three
+}    // namespace open3d

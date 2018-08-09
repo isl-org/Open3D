@@ -29,7 +29,7 @@
 #include <string>
 #include <Core/Geometry/Image.h>
 
-namespace three {
+namespace open3d {
 
 /// Factory function to create an image from a file (ImageFactory.cpp)
 /// Return an empty image if fail to read the file.
@@ -58,4 +58,4 @@ bool ReadImageFromJPG(const std::string &filename, Image &image);
 bool WriteImageToJPG(const std::string &filename, const Image &image,
         int quality = 90);
 
-}    // namespace three
+}    // namespace open3d

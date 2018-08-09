@@ -32,7 +32,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-using namespace three;
+using namespace open3d;
 
 class VisualizerWithDepthCapture : public VisualizerWithCustomAnimation
 {

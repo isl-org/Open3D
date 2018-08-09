@@ -30,7 +30,7 @@
 #include <memory>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -98,4 +98,4 @@ bool WriteFeatureToBIN(const std::string &filename, const Feature &feature)
     return success;
 }
 
-}    // namespace three
+}    // namespace open3d

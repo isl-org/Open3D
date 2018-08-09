@@ -42,7 +42,7 @@
 #include <Visualization/Utility/PointCloudPicker.h>
 #include <Visualization/Utility/GLHelper.h>
 
-namespace three{
+namespace open3d{
 
 bool VisualizerWithEditing::AddGeometry(std::shared_ptr<const Geometry>
         geometry_ptr)
@@ -638,4 +638,4 @@ void VisualizerWithEditing::SaveCroppingResult(
             GetViewControl()));
 }
 
-}    // namespace three
+}    // namespace open3d

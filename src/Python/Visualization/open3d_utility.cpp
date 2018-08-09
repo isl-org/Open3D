@@ -32,7 +32,7 @@
 #include <Visualization/Utility/DrawGeometry.h>
 #include <Visualization/Visualizer/Visualizer.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
-using namespace three;
+using namespace open3d;
 
 void pybind_utility(py::module &m)
 {
