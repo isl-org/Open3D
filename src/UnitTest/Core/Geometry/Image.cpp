@@ -108,7 +108,7 @@ TEST(Image, Clear)
     EXPECT_EQ(0, image.BytesPerLine());
 }
 
-// member data is not private and as such can lead to errors 
+// member data is not private and as such can lead to errors
 TEST(Image, MemberData)
 {
     three::Image image;
@@ -135,6 +135,90 @@ TEST(Image, MemberData)
     EXPECT_EQ(default_width * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
 }
 
+//
+TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, CreateFloatImageFromImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, PointerAt)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, ConvertDepthToFloatImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, FlipImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, FilterImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, FilterHorizontalImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, DownsampleImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, DilateImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, LinearTransformImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, ClipIntensityImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, CreateImageFromFloatImage)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, FilterImagePyramid)
+{
+    NotImplemented();
+}
+
+//
+TEST(Image, CreateImagePyramid)
+{
+    NotImplemented();
+}
+
 // NOTES
 /*
 - Image:: not enough comments; for example, what is the intent of Image::TestImageBoundary(...)?
@@ -143,7 +227,7 @@ After that specializations can be defined in the source file.
 - dependency on the Eigen library for its datatypes
 Ideally we would use our own types and provide a method to convert to Eigen types if necessary.
 This would open the posibility to replace Eigen at any time with another library, possibly GPU supported.
-- still using the namespace three; open3d would be more appropriate given the extensive branding process we've gone through. 
+- still using the namespace three; open3d would be more appropriate given the extensive branding process we've gone through.
 - lots of functions declared/defined in the root of the global namespace, outside the Image class
 - public data members
 - base class Geometry/2D/3D has nothing to do with geometry
@@ -172,4 +256,7 @@ Ideally make all data private. Add getters/setters as appropriate.
 - Image:: needs copy constructor, equal operator, assignment operator, etc.
 (from const reference, from const pointer)
 - Image::PrepareImage should be Image::Create
+- ImageFactory.cpp not needed.
+Can't have global methods.
+Find another place for the code, maybe in Image or PinholeCameraIntrinsic.
 */
