@@ -2,12 +2,12 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+import copy, time
+import numpy as np
+
 from open3d import *
 from global_registration import *
-import numpy as np
-import copy
 
-import time
 
 def execute_fast_global_registration(source_down, target_down,
         source_fpfh, target_fpfh, voxel_size):
@@ -19,6 +19,7 @@ def execute_fast_global_registration(source_down, target_down,
             FastGlobalRegistrationOption(
             maximum_correspondence_distance = distance_threshold))
     return result
+
 
 if __name__ == "__main__":
 

@@ -4,7 +4,7 @@
 
 from open3d import *
 import numpy as np
-import copy
+import copy, os
 
 def draw_registration_result(source, target, transformation):
     source_temp = copy.deepcopy(source)
@@ -31,8 +31,9 @@ def preprocess_point_cloud(pcd, voxel_size):
 
 def prepare_dataset(voxel_size):
     print(":: Load two point clouds and disturb initial pose.")
-    source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    data_dir = "../../../Test/TestData/ICP"
+    source = read_point_cloud(os.path.join(data_dir, "cloud_bin_0.pcd"))
+    target = read_point_cloud(os.path.join(data_dir, "cloud_bin_1.pcd"))
     trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
                             [1.0, 0.0, 0.0, 0.0],
                             [0.0, 1.0, 0.0, 0.0],
