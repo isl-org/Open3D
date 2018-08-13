@@ -127,21 +127,30 @@ TEST(Image, FloatValueAt)
 {
     three::Image image;
 
-    int local_num_of_channels = 1;
-    int local_bytes_per_channel = 4;
+    const int local_width = 10;
+    const int local_height = 10;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
 
-    image.PrepareImage(default_width, default_height, local_num_of_channels, local_bytes_per_channel);
+    image.PrepareImage(local_width, local_height, local_num_of_channels, local_bytes_per_channel);
 
-    size_t size = image.data_.size() / sizeof(float);
-    float(&im)[size] = *reinterpret_cast<float(*)[size]>(&image.data_[0]);
+    float* im = reinterpret_cast<float*>(&image.data_[0]);
 
-    im[0 * default_width + 1] = 4;
-    im[0 * default_width + 2] = 4;
-    im[1 * default_width + 1] = 4;
-    im[1 * default_width + 2] = 4;
+    im[0 * local_width + 0] = 4;
+    im[0 * local_width + 1] = 4;
+    im[1 * local_width + 0] = 4;
+    im[1 * local_width + 1] = 4;
 
+    EXPECT_EQ(4.0, image.FloatValueAt(0.0, 0.0).second);
+    EXPECT_EQ(4.0, image.FloatValueAt(0.0, 1.0).second);
+    EXPECT_EQ(4.0, image.FloatValueAt(1.0, 0.0).second);
     EXPECT_EQ(4.0, image.FloatValueAt(1.0, 1.0).second);
-    EXPECT_EQ(4.0, image.FloatValueAt(1.5, 1.5).second);
+
+    EXPECT_EQ(4.0, image.FloatValueAt(0.5, 0.5).second);
+
+    EXPECT_EQ(2.0, image.FloatValueAt(0.0, 1.5).second);
+    EXPECT_EQ(2.0, image.FloatValueAt(1.5, 0.0).second);
+    EXPECT_EQ(1.0, image.FloatValueAt(1.5, 1.5).second);
 }
 
 // ----------------------------------------------------------------------------
