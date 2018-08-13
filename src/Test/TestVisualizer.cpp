@@ -38,8 +38,7 @@ int main(int argc, char *argv[])
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
     if (argc < 3) {
-        PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-        PrintInfo("\n");
+        PrintOpen3DVersion();
         PrintInfo("Usage:\n");
         PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
         PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
