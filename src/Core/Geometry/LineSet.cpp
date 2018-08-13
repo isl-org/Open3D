@@ -26,7 +26,7 @@
 
 #include "LineSet.h"
 
-namespace three{
+namespace open3d{
 
 void LineSet::Clear()
 {
@@ -143,4 +143,4 @@ LineSet LineSet::operator+(const LineSet &lineset) const
     return (LineSet(*this) += lineset);
 }
 
-}    // namespace three
+}    // namespace open3d

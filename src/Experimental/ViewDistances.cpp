@@ -30,25 +30,25 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > ViewDistances source_file [options]\n");
-    printf("      View color coded distances of a point cloud.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    printf("    --max_distance d          : Set max distance. Must be positive.\n");
-    printf("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
-    printf("    --nn_distance             : Compute the NN distance.\n");
-    printf("    --write_color_back        : Write color back to source_file.\n");
-    printf("    --without_gui             : Without GUI.\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ViewDistances source_file [options]\n");
+    PrintInfo("      View color coded distances of a point cloud.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    PrintInfo("    --max_distance d          : Set max distance. Must be positive.\n");
+    PrintInfo("    --mahalanobis_distance    : Compute the Mahalanobis distance.\n");
+    PrintInfo("    --nn_distance             : Compute the NN distance.\n");
+    PrintInfo("    --write_color_back        : Write color back to source_file.\n");
+    PrintInfo("    --without_gui             : Without GUI.\n");
 }
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

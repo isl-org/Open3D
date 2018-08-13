@@ -34,12 +34,11 @@
 
 int main(int argc, char **argv)
 {
-    using namespace three;
+    using namespace open3d;
     using namespace flann;
 
     if (argc < 2) {
-        PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-        PrintInfo("\n");
+        PrintOpen3DVersion();
         PrintInfo("Usage:\n");
         PrintInfo("    > TestFlann [filename]\n");
         return 0;
@@ -139,7 +138,7 @@ int main(int argc, char **argv)
     PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {
         PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
-        new_cloud_ptr->colors_[new_indices_vec[i]] = 
+        new_cloud_ptr->colors_[new_indices_vec[i]] =
                 Eigen::Vector3d(0.0, 0.0, 1.0);
     }
     new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);

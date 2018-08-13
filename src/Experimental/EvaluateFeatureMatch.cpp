@@ -83,25 +83,25 @@ public:
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > EvaluateFeatureMatch [options]\n");
-    printf("      Evaluate feature matching quality of point clouds.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    printf("    --dir directory           : The directory storing all data files. By default it is the parent directory of the log file + pcd/.\n");
-    printf("    --threshold t             : Threshold to determine if a match is good or not. Default: 0.075.\n");
-    printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > EvaluateFeatureMatch [options]\n");
+    PrintInfo("      Evaluate feature matching quality of point clouds.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
+    PrintInfo("    --dir directory           : The directory storing all data files. By default it is the parent directory of the log file + pcd/.\n");
+    PrintInfo("    --threshold t             : Threshold to determine if a match is good or not. Default: 0.075.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
 }
 
 bool ReadLogFile(const std::string &filename,
         std::vector<std::pair<int, int>> &pair_ids,
         std::vector<Eigen::Matrix4d> &transformations)
 {
-    using namespace three;
+    using namespace open3d;
     pair_ids.clear();
     transformations.clear();
     FILE * f = fopen(filename.c_str(), "r");
@@ -163,7 +163,7 @@ void WriteBinaryResult(const std::string &filename, std::vector<double> &data)
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

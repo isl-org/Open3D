@@ -29,7 +29,7 @@
 
 #include <Core/Geometry/TriangleMesh.h>
 #include <IO/ClassIO/TriangleMeshIO.h>
-using namespace three;
+using namespace open3d;
 
 void pybind_trianglemesh(py::module &m)
 {

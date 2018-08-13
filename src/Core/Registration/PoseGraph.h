@@ -32,7 +32,7 @@
 #include <Core/Utility/IJsonConvertible.h>
 #include <Core/Utility/Eigen.h>
 
-namespace three {
+namespace open3d {
 
 class PoseGraphNode : public IJsonConvertible
 {
@@ -100,4 +100,4 @@ public:
     std::vector<PoseGraphEdge> edges_;
 };
 
-}    // namespace three
+}    // namespace open3d

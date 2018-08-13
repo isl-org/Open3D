@@ -32,7 +32,7 @@
 #include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -273,4 +273,4 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
     return SelectDownSample(input, indices);
 }
 
-}    // namespace three
+}    // namespace open3d

@@ -60,12 +60,12 @@ std::string MakeString(const std::string &line)
             str += c;
         }
     }
-    
+
     size_t r_pos = str.find('\r');
     if (r_pos != std::string::npos) {
         str = str.substr(0, r_pos);
     }
-    
+
     size_t n_pos = str.find('\n');
     if (n_pos != std::string::npos) {
         str = str.substr(0, n_pos);
@@ -76,7 +76,7 @@ std::string MakeString(const std::string &line)
 
 void WriteStringHeader(const std::string &string_name, FILE *file)
 {
-    fprintf(file, "namespace three {\n\n");
+    fprintf(file, "namespace open3d {\n\n");
     fprintf(file, "namespace glsl {\n\n");
     fprintf(file, "const char * const %s = \n", string_name.c_str());
 }
@@ -84,8 +84,8 @@ void WriteStringHeader(const std::string &string_name, FILE *file)
 void WriteStringFooter(FILE *file)
 {
     fprintf(file, ";\n");
-    fprintf(file, "\n}  // namespace three::glsl\n");
-    fprintf(file, "\n}  // namespace three\n");
+    fprintf(file, "\n}  // namespace open3d::glsl\n");
+    fprintf(file, "\n}  // namespace open3d\n");
     fprintf(file, "\n");
 }
 
@@ -95,7 +95,7 @@ int main(int argc, char **args)
         PrintHelp();
         return 0;
     }
-    
+
     if (argc == 2) {
         FILE *file_out = fopen(args[1], "w");
         if (file_out == 0) {
@@ -104,18 +104,18 @@ int main(int argc, char **args)
         WriteFileHeader(file_out);
         fclose(file_out);
     }
-    
+
     if (argc >= 3) {
         FILE *file_out = fopen(args[1], "a");
         if (file_out == 0) {
             printf("Cannot open file %s\n", args[1]);
         }
-        
+
         FILE *file_in = fopen(args[2], "r");
         if (file_in == 0) {
             printf("Cannot open file %s\n", args[2]);
         }
-        
+
         const std::string file_in_name(args[2]);
         size_t dot_pos = file_in_name.find_last_of(".");
         if (dot_pos == std::string::npos || dot_pos == 0) {
@@ -127,7 +127,7 @@ int main(int argc, char **args)
         if (last_slash_idx != std::string::npos) {
             string_name = string_name.substr(last_slash_idx + 1);
         }
-        
+
         WriteStringHeader(string_name, file_out);
         char buffer[1024];
         while (fgets(buffer, sizeof(buffer), file_in)) {
@@ -135,10 +135,10 @@ int main(int argc, char **args)
             fprintf(file_out, "\"%s\\n\"\n", line.c_str());
         }
         WriteStringFooter(file_out);
-        
+
         fclose(file_in);
         fclose(file_out);
     }
-    
+
     return 0;
 }

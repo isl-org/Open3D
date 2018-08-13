@@ -34,7 +34,7 @@
 #include <Visualization/Utility/SelectionPolygonVolume.h>
 #include <Visualization/Utility/GLHelper.h>
 
-namespace three{
+namespace open3d{
 
 void SelectionPolygon::Clear()
 {
@@ -276,4 +276,4 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     return output_index;
 }
 
-}    // namespace three
+}    // namespace open3d

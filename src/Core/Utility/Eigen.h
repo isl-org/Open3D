@@ -38,7 +38,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 }    // namespace Eigen
 
-namespace three {
+namespace open3d {
 
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:
@@ -87,4 +87,4 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
         std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
         int iteration_num);
 
-}    // namespace three
+}    // namespace open3d

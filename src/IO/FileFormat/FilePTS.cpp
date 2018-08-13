@@ -30,7 +30,7 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Helper.h>
 
-namespace three{
+namespace open3d{
 
 bool ReadPointCloudFromPTS(const std::string &filename, PointCloud &pointcloud)
 {
@@ -117,4 +117,4 @@ bool WritePointCloudToPTS(const std::string &filename,
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

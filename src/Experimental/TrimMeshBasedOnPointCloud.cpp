@@ -29,24 +29,24 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > TrimMeshBasedOnPointCloud [options]\n");
-    printf("      Trim a mesh baesd on distance to a point cloud.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    printf("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.\n");
-    printf("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
-    printf("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
-    printf("    --distance d              : Maximum distance. MUST HAVE.\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > TrimMeshBasedOnPointCloud [options]\n");
+    PrintInfo("      Trim a mesh baesd on distance to a point cloud.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    PrintInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.\n");
+    PrintInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
+    PrintInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
+    PrintInfo("    --distance d              : Maximum distance. MUST HAVE.\n");
 }
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc < 4 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

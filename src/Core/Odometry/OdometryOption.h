@@ -28,7 +28,7 @@
 
 #include <string>
 
-namespace three {
+namespace open3d {
 
 class OdometryOption
 {

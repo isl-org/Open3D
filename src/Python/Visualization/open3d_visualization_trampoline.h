@@ -30,7 +30,7 @@
 #include <Visualization/Visualizer/Visualizer.h>
 #include <Visualization/Visualizer/ViewControl.h>
 
-using namespace three;
+using namespace open3d;
 
 template <class VisualizerBase = Visualizer> class PyVisualizer :
         public VisualizerBase

@@ -30,43 +30,43 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > ViewGeometry [options]\n");
-    printf("      Open a window to view geometry.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --mesh file               : Add a triangle mesh from file.\n");
-    printf("    --pointcloud file         : Add a point cloud from file.\n");
-    printf("    --image file              : Add an image from file.\n");
-    printf("    --depth file              : Add a point cloud converted from a depth image.\n");
-    printf("    --depth_camera file       : Use with --depth, read a json file that stores\n");
-    printf("                                the camera parameters.\n");
-    printf("    --show_frame              : Add a coordinate frame.\n");
-    printf("    --verbose n               : Set verbose level (0-4).\n");
-    printf("\n");
-    printf("Animation options:\n");
-    printf("    --render_option file      : Read a json file of rendering settings.\n");
-    printf("    --view_trajectory file    : Read a json file of view trajectory.\n");
-    printf("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
-    printf("    --auto_recording [i|d]    : Automatically plays the animation, record\n");
-    printf("                                images (i) or depth images (d). Exits when\n");
-    printf("                                animation ends.\n");
-    printf("\n");
-    printf("Window options:\n");
-    printf("    --window_name name        : Set window name.\n");
-    printf("    --height n                : Set window height.\n");
-    printf("    --width n                 : Set window width.\n");
-    printf("    --top n                   : Set window top edge.\n");
-    printf("    --left n                  : Set window left edge.\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ViewGeometry [options]\n");
+    PrintInfo("      Open a window to view geometry.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --mesh file               : Add a triangle mesh from file.\n");
+    PrintInfo("    --pointcloud file         : Add a point cloud from file.\n");
+    PrintInfo("    --image file              : Add an image from file.\n");
+    PrintInfo("    --depth file              : Add a point cloud converted from a depth image.\n");
+    PrintInfo("    --depth_camera file       : Use with --depth, read a json file that stores\n");
+    PrintInfo("                                the camera parameters.\n");
+    PrintInfo("    --show_frame              : Add a coordinate frame.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    PrintInfo("\n");
+    PrintInfo("Animation options:\n");
+    PrintInfo("    --render_option file      : Read a json file of rendering settings.\n");
+    PrintInfo("    --view_trajectory file    : Read a json file of view trajectory.\n");
+    PrintInfo("    --camera_trajectory file  : Read a json file of camera trajectory.\n");
+    PrintInfo("    --auto_recording [i|d]    : Automatically plays the animation, record\n");
+    PrintInfo("                                images (i) or depth images (d). Exits when\n");
+    PrintInfo("                                animation ends.\n");
+    PrintInfo("\n");
+    PrintInfo("Window options:\n");
+    PrintInfo("    --window_name name        : Set window name.\n");
+    PrintInfo("    --height n                : Set window height.\n");
+    PrintInfo("    --width n                 : Set window width.\n");
+    PrintInfo("    --top n                   : Set window top edge.\n");
+    PrintInfo("    --left n                  : Set window left edge.\n");
 }
 
 int main(int argc, char **argv)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);

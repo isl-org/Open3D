@@ -34,14 +34,13 @@
 
 int main(int argc, char **argv)
 {
-    using namespace three;
+    using namespace open3d;
     using namespace flann;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
     if (argc < 2) {
-        PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-        PrintInfo("\n");
+        PrintOpen3DVersion();
         PrintInfo("Usage:\n");
         PrintInfo("    > TestFlann [filename]\n");
         PrintInfo("    The program will :\n");

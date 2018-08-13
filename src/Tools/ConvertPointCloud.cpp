@@ -31,45 +31,45 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > ConvertPointCloud source_file target_file [options]\n");
-    printf("    > ConvertPointCloud source_directory target_directory [options]\n");
-    printf("      Read point cloud from source file and convert it to target file.\n");
-    printf("\n");
-    printf("Options (listed in the order of execution priority):\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4).\n");
-    printf("    --clip_x_min x0           : Clip points with x coordinate < x0.\n");
-    printf("    --clip_x_max x1           : Clip points with x coordinate > x1.\n");
-    printf("    --clip_y_min y0           : Clip points with y coordinate < y0.\n");
-    printf("    --clip_y_max y1           : Clip points with y coordinate > y1.\n");
-    printf("    --clip_z_min z0           : Clip points with z coordinate < z0.\n");
-    printf("    --clip_z_max z1           : Clip points with z coordinate > z1.\n");
-    printf("    --filter_mahalanobis d    : Filter out points with Mahalanobis distance > d.\n");
-    printf("    --uniform_sample_every K  : Downsample the point cloud uniformly. Keep only\n");
-    printf("                              : one point for every K points.\n");
-    printf("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
-    printf("    --estimate_normals radius : Estimate normals using a search neighborhood of\n");
-    printf("                                radius. The normals are oriented w.r.t. the\n");
-    printf("                                original normals of the pointcloud if they\n");
-    printf("                                exist. Otherwise, they are oriented towards -Z\n");
-    printf("                                direction.\n");
-    printf("    --estimate_normals_knn k  : Estimate normals using a search with k nearest\n");
-    printf("                                neighbors. The normals are oriented w.r.t. the\n");
-    printf("                                original normals of the pointcloud if they\n");
-    printf("                                exist. Otherwise, they are oriented towards -Z\n");
-    printf("                                direction.\n");
-    printf("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
-    printf("    --camera_location [x,y,z] : Orient the normals w.r.t camera location [x,y,z].\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ConvertPointCloud source_file target_file [options]\n");
+    PrintInfo("    > ConvertPointCloud source_directory target_directory [options]\n");
+    PrintInfo("      Read point cloud from source file and convert it to target file.\n");
+    PrintInfo("\n");
+    PrintInfo("Options (listed in the order of execution priority):\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    PrintInfo("    --clip_x_min x0           : Clip points with x coordinate < x0.\n");
+    PrintInfo("    --clip_x_max x1           : Clip points with x coordinate > x1.\n");
+    PrintInfo("    --clip_y_min y0           : Clip points with y coordinate < y0.\n");
+    PrintInfo("    --clip_y_max y1           : Clip points with y coordinate > y1.\n");
+    PrintInfo("    --clip_z_min z0           : Clip points with z coordinate < z0.\n");
+    PrintInfo("    --clip_z_max z1           : Clip points with z coordinate > z1.\n");
+    PrintInfo("    --filter_mahalanobis d    : Filter out points with Mahalanobis distance > d.\n");
+    PrintInfo("    --uniform_sample_every K  : Downsample the point cloud uniformly. Keep only\n");
+    PrintInfo("                              : one point for every K points.\n");
+    PrintInfo("    --voxel_sample voxel_size : Downsample the point cloud with a voxel.\n");
+    PrintInfo("    --estimate_normals radius : Estimate normals using a search neighborhood of\n");
+    PrintInfo("                                radius. The normals are oriented w.r.t. the\n");
+    PrintInfo("                                original normals of the pointcloud if they\n");
+    PrintInfo("                                exist. Otherwise, they are oriented towards -Z\n");
+    PrintInfo("                                direction.\n");
+    PrintInfo("    --estimate_normals_knn k  : Estimate normals using a search with k nearest\n");
+    PrintInfo("                                neighbors. The normals are oriented w.r.t. the\n");
+    PrintInfo("                                original normals of the pointcloud if they\n");
+    PrintInfo("                                exist. Otherwise, they are oriented towards -Z\n");
+    PrintInfo("                                direction.\n");
+    PrintInfo("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
+    PrintInfo("    --camera_location [x,y,z] : Orient the normals w.r.t camera location [x,y,z].\n");
 }
 
 void convert(int argc, char **argv, const std::string &file_in,
         const std::string &file_out)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
     auto pointcloud_ptr = CreatePointCloudFromFile(file_in.c_str());
     size_t point_num_in = pointcloud_ptr->points_.size();
     bool processed = false;
@@ -178,8 +178,8 @@ void convert(int argc, char **argv, const std::string &file_in,
 
 int main(int argc, char **argv)
 {
-    using namespace three;
-    using namespace three::filesystem;
+    using namespace open3d;
+    using namespace open3d::filesystem;
 
     if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

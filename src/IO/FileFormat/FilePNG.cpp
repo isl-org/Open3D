@@ -29,7 +29,7 @@
 #include <png.h>
 #include <Core/Utility/Console.h>
 
-namespace three{
+namespace open3d{
 
 namespace {
 
@@ -92,4 +92,4 @@ bool WriteImageToPNG(const std::string &filename, const Image &image,
     return true;
 }
 
-}    // namespace three
+}    // namespace open3d

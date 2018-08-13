@@ -29,16 +29,15 @@
 
 void PrintHelp()
 {
-    using namespace three;
-    PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-    PrintInfo("\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
     PrintInfo("Usage :\n");
     PrintInfo("    > TestProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
 }
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
     if (argc == 1 || ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
         return 1;

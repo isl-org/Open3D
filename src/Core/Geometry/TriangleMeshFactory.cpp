@@ -26,7 +26,7 @@
 
 #include "TriangleMesh.h"
 
-namespace three{
+namespace open3d{
 
 std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
         int resolution/* = 20*/)
@@ -226,4 +226,4 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
     return mesh_frame;
 }
 
-}    // namespace three
+}    // namespace open3d

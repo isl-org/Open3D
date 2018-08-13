@@ -31,7 +31,7 @@
 
 void PrintHelp()
 {
-    using namespace three;
+    using namespace open3d;
     PrintInfo("Usage :\n");
     PrintInfo("    > TestFileSystem ls [dir]\n");
     PrintInfo("    > TestFileSystem mkdir [dir]\n");
@@ -42,7 +42,7 @@ void PrintHelp()
 
 int main(int argc, char **args)
 {
-    using namespace three::filesystem;
+    using namespace open3d::filesystem;
 
     std::string directory, function;
     if (argc <= 1) {

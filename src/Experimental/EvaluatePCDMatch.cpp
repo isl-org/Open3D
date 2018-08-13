@@ -33,27 +33,27 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > ViewPCDMatch [options]\n");
-    printf("      View pairwise matching result of point clouds.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --log file                : A log file of the pairwise matching results. Must have.\n");
-    printf("    --gt file                 : A log file of the ground truth pairwise matching results. Must have.\n");
-    printf("    --threshold t             : Distance threshold. Must have.\n");
-    printf("    --threshold_rmse t        : Distance threshold to decide if a match is good or not. Default: 2t.\n");
-    printf("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
-    printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ViewPCDMatch [options]\n");
+    PrintInfo("      View pairwise matching result of point clouds.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --log file                : A log file of the pairwise matching results. Must have.\n");
+    PrintInfo("    --gt file                 : A log file of the ground truth pairwise matching results. Must have.\n");
+    PrintInfo("    --threshold t             : Distance threshold. Must have.\n");
+    PrintInfo("    --threshold_rmse t        : Distance threshold to decide if a match is good or not. Default: 2t.\n");
+    PrintInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
 }
 
 bool ReadLogFile(const std::string &filename,
         std::vector<std::pair<int, int>> &pair_ids,
         std::vector<Eigen::Matrix4d> &transformations)
 {
-    using namespace three;
+    using namespace open3d;
     pair_ids.clear();
     transformations.clear();
     FILE * f = fopen(filename.c_str(), "r");
@@ -108,7 +108,7 @@ bool ReadLogFile(const std::string &filename,
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

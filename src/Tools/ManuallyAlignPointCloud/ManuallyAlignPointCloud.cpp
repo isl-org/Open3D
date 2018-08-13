@@ -34,7 +34,7 @@
 
 void PrintTransformation(const Eigen::Matrix4d &transformation)
 {
-    using namespace three;
+    using namespace open3d;
     PrintInfo("Current transformation is:\n");
     PrintInfo("\t%.6f %.6f %.6f %.6f\n",
             transformation(0, 0), transformation(0, 1),
@@ -52,39 +52,39 @@ void PrintTransformation(const Eigen::Matrix4d &transformation)
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > ManuallyAlignPointCloud source_file target_file [options]\n");
-    printf("      Manually align point clouds in source_file and target_file.\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --verbose n               : Set verbose level (0-4).\n");
-    printf("    --voxel_size d            : Set downsample voxel size.\n");
-    printf("    --max_corres_distance d   : Set max correspondence distance.\n");
-    printf("    --without_scaling         : Disable scaling in transformations.\n");
-    printf("    --without_dialog          : Disable dialogs. Default files will be used.\n");
-    printf("    --without_gui_icp file    : The program runs as a console command. No window\n");
-    printf("                                will be created. The program reads an alignment\n");
-    printf("                                from file. It does cropping, downsample, ICP,\n");
-    printf("                                then saves the alignment session into file.\n");
-    printf("    --without_gui_eval file   : The program runs as a console command. No window\n");
-    printf("                                will be created. The program reads an alignment\n");
-    printf("                                from file. It does cropping, downsample,\n");
-    printf("                                evaluation, then saves everything.\n");
+    using namespace open3d;
+    // PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > ManuallyAlignPointCloud source_file target_file [options]\n");
+    PrintInfo("      Manually align point clouds in source_file and target_file.\n");
+    PrintInfo("\n");
+    PrintInfo("Options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
+    PrintInfo("    --max_corres_distance d   : Set max correspondence distance.\n");
+    PrintInfo("    --without_scaling         : Disable scaling in transformations.\n");
+    PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    PrintInfo("    --without_gui_icp file    : The program runs as a console command. No window\n");
+    PrintInfo("                                will be created. The program reads an alignment\n");
+    PrintInfo("                                from file. It does cropping, downsample, ICP,\n");
+    PrintInfo("                                then saves the alignment session into file.\n");
+    PrintInfo("    --without_gui_eval file   : The program runs as a console command. No window\n");
+    PrintInfo("                                will be created. The program reads an alignment\n");
+    PrintInfo("                                from file. It does cropping, downsample,\n");
+    PrintInfo("                                evaluation, then saves everything.\n");
 }
 
 int main(int argc, char **argv)
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 0;
     }
-    
+
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
     double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
         PrintWarning("Failed to read one of the point clouds.\n");
         return 0;
     }
-    
+
     if (!alignment_filename.empty()) {
         AlignmentSession session;
         if (ReadIJsonConvertible(alignment_filename, session) == false) {
@@ -186,12 +186,12 @@ int main(int argc, char **argv)
         fclose(f);
         return 1;
     }
-    
+
     VisualizerWithEditing vis_source, vis_target;
     VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
             max_corres_distance, with_scaling, with_dialog,
             default_polygon_filename, default_directory);
-    
+
     vis_source.CreateVisualizerWindow("Source Point Cloud", 1280, 720, 10, 100);
     vis_source.AddGeometry(source_ptr);
     if (source_ptr->points_.size() > 5000000) {
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
     while (vis_source.PollEvents() && vis_target.PollEvents() &&
             vis_main.PollEvents()) {
     }
-    
+
     vis_source.DestroyVisualizerWindow();
     vis_target.DestroyVisualizerWindow();
     vis_main.DestroyVisualizerWindow();

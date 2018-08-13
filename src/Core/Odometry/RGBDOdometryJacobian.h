@@ -33,7 +33,7 @@
 #include <Core/Odometry/OdometryOption.h>
 #include <Core/Utility/Eigen.h>
 
-namespace three {
+namespace open3d {
 
 class Image;
 
@@ -108,4 +108,4 @@ public:
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
-}    // namespace three
+}    // namespace open3d

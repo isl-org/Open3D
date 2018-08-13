@@ -28,7 +28,7 @@
 
 #include <vector>
 
-namespace three {
+namespace open3d {
 
 class TriangleMesh;
 class RGBDImage;
@@ -80,4 +80,4 @@ void ColorMapOptimization(TriangleMesh& mesh,
         PinholeCameraTrajectory& camera,
         const ColorMapOptmizationOption& option =
         ColorMapOptmizationOption());
-}	// namespace three
+}	// namespace open3d

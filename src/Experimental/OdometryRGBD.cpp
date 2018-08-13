@@ -33,10 +33,9 @@
 
 void PrintHelp(char* argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
-    PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-    PrintInfo("\n");
+    PrintOpen3DVersion();
     PrintInfo("Usage:\n");
     PrintInfo("> %s [color_source] [source_target] [color_target] [depth_target] [options]\n", argv[0]);
     PrintInfo("   Given RGBD image pair, estimate 6D odometry.\n");
@@ -50,7 +49,7 @@ void PrintHelp(char* argv[])
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

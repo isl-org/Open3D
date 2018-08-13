@@ -30,8 +30,8 @@ set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
 set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
-               "${PROJECT_SOURCE_DIR}/open3d_config.h")
+configure_file("${PROJECT_SOURCE_DIR}/Open3DConfig.h.in"
+               "${PROJECT_SOURCE_DIR}/Open3DConfig.h")
 
 # configure a setup.py for the pip packaging
 configure_file("${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py.in"
@@ -152,6 +152,9 @@ elseif (APPLE)
     add_definitions(-DUNIX)
     # enable c++11
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    if (NOT BUILD_SHARED_LIBS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+    endif (NOT BUILD_SHARED_LIBS)
     # compile speed optimization for clang
     add_definitions(-O3)
 elseif (UNIX)
@@ -192,12 +195,23 @@ include_directories(${EXTERNAL_INCLUDE_DIRS})
 link_directories(${EXTERNAL_LIBRARY_DIRS})
 
 # Open3D libraries
+macro(ADD_SOURCE_GROUP MODULE_NAME)
+    file(GLOB MODULE_HEADER_FILES "${MODULE_NAME}/*.h")
+    source_group("Header Files\\${MODULE_NAME}" FILES ${MODULE_HEADER_FILES})
+    file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
+    source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
+endmacro(ADD_SOURCE_GROUP)
 add_subdirectory(Core)
 add_subdirectory(Tools)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
-add_library(${CMAKE_PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
+# note: adding at least one real source file to any target that references
+# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
+add_library(${CMAKE_PROJECT_NAME} Open3DConfig.h Open3DConfig.cpp
+            $<TARGET_OBJECTS:Core>
+            $<TARGET_OBJECTS:IO>
+            $<TARGET_OBJECTS:Visualization>)
 
 # headless rendering
 if (ENABLE_HEADLESS_RENDERING)

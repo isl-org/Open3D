@@ -32,29 +32,29 @@
 
 void PrintHelp()
 {
-    printf("Open3D %s\n", OPEN3D_VERSION);
-    printf("\n");
-    printf("Usage:\n");
-    printf("    > IntegrateRGBD [options]\n");
-    printf("      Integrate RGBD stream and extract geometry.\n");
-    printf("\n");
-    printf("Basic options:\n");
-    printf("    --help, -h                : Print help information.\n");
-    printf("    --match file              : The match file of an RGBD stream. Must have.\n");
-    printf("    --log file                : The log trajectory file. Must have.\n");
-    printf("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
-    printf("    --save_mesh               : Save a mesh created by marching cubes.\n");
-    printf("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
-    printf("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
-    printf("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
-    printf("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
-    printf("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
-    printf("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    using namespace open3d;
+    PrintOpen3DVersion();
+    PrintInfo("Usage:\n");
+    PrintInfo("    > IntegrateRGBD [options]\n");
+    PrintInfo("      Integrate RGBD stream and extract geometry.\n");
+    PrintInfo("\n");
+    PrintInfo("Basic options:\n");
+    PrintInfo("    --help, -h                : Print help information.\n");
+    PrintInfo("    --match file              : The match file of an RGBD stream. Must have.\n");
+    PrintInfo("    --log file                : The log trajectory file. Must have.\n");
+    PrintInfo("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
+    PrintInfo("    --save_mesh               : Save a mesh created by marching cubes.\n");
+    PrintInfo("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
+    PrintInfo("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
+    PrintInfo("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
+    PrintInfo("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
+    PrintInfo("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
+    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
 }
 
 int main(int argc, char *argv[])
 {
-    using namespace three;
+    using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {

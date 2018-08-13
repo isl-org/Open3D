@@ -29,7 +29,7 @@
 
 #include <Visualization/Visualizer/RenderOption.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
-using namespace three;
+using namespace open3d;
 
 void pybind_renderoption(py::module &m)
 {

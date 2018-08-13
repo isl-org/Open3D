@@ -40,4 +40,4 @@
 #include "Visualizer/ViewControlWithCustomAnimation.h"
 #include "Visualizer/ViewControlWithEditing.h"
 
-#include "../open3d_config.h"
+#include "../Open3DConfig.h"
