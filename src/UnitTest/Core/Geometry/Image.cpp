@@ -67,7 +67,7 @@ TEST(Image, DefaultConstructor)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImage)
 {
-    three::Image image;
+    open3d::Image image;
 
     image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
 
@@ -92,7 +92,7 @@ TEST(Image, CreateImage)
 // ----------------------------------------------------------------------------
 TEST(Image, Clear)
 {
-    three::Image image;
+    open3d::Image image;
 
     image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
 
@@ -119,7 +119,7 @@ TEST(Image, Clear)
 // ----------------------------------------------------------------------------
 TEST(Image, FloatValueAt)
 {
-    three::Image image;
+    open3d::Image image;
 
     const int local_width = 10;
     const int local_height = 10;
@@ -152,7 +152,7 @@ TEST(Image, FloatValueAt)
 // ----------------------------------------------------------------------------
 TEST(Image, MemberData)
 {
-    three::Image image;
+    open3d::Image image;
 
     image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
 
@@ -202,7 +202,7 @@ TEST(Image, CreateFloatImageFromImage)
 // ----------------------------------------------------------------------------
 TEST(Image, PointerAt)
 {
-    three::Image image;
+    open3d::Image image;
 
     const int local_width = 10;
     const int local_height = 10;
@@ -218,10 +218,10 @@ TEST(Image, PointerAt)
     im[1 * local_width + 0] = 2.0;
     im[1 * local_width + 1] = 3.0;
 
-    EXPECT_EQ(0.0, *three::PointerAt<float>(image, 0, 0));
-    EXPECT_EQ(1.0, *three::PointerAt<float>(image, 1, 0));
-    EXPECT_EQ(2.0, *three::PointerAt<float>(image, 0, 1));
-    EXPECT_EQ(3.0, *three::PointerAt<float>(image, 1, 1));
+    EXPECT_EQ(0.0, *open3d::PointerAt<float>(image, 0, 0));
+    EXPECT_EQ(1.0, *open3d::PointerAt<float>(image, 1, 0));
+    EXPECT_EQ(2.0, *open3d::PointerAt<float>(image, 0, 1));
+    EXPECT_EQ(3.0, *open3d::PointerAt<float>(image, 1, 1));
 }
 
 // ----------------------------------------------------------------------------
@@ -320,7 +320,6 @@ After that specializations can be defined in the source file.
 - dependency on the Eigen library for its datatypes
 Ideally we would use our own types and provide a method to convert to Eigen types if necessary.
 This would open the posibility to replace Eigen at any time with another library, possibly GPU supported.
-- still using the namespace three; open3d would be more appropriate given the extensive branding process we've gone through.
 - lots of functions declared/defined in the root of the global namespace, outside the Image class
 - public data members
 - base class Geometry/2D/3D has nothing to do with geometry
