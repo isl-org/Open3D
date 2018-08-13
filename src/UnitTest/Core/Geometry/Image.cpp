@@ -114,12 +114,6 @@ TEST(Image, Clear)
     EXPECT_EQ(0, image.BytesPerLine());
 }
 
-union
-{
-    float f;
-    uint8_t b[4];
-} convert;
-
 // ----------------------------------------------------------------------------
 // test FloatValueAt, bilinear(?) interpolation
 // ----------------------------------------------------------------------------
@@ -208,7 +202,26 @@ TEST(Image, CreateFloatImageFromImage)
 // ----------------------------------------------------------------------------
 TEST(Image, PointerAt)
 {
-    NotImplemented();
+    three::Image image;
+
+    const int local_width = 10;
+    const int local_height = 10;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4; 
+
+    image.PrepareImage(local_width, local_height, local_num_of_channels, local_bytes_per_channel);
+
+    float* im = reinterpret_cast<float*>(&image.data_[0]);
+
+    im[0 * local_width + 0] = 0.0;
+    im[0 * local_width + 1] = 1.0;
+    im[1 * local_width + 0] = 2.0;
+    im[1 * local_width + 1] = 3.0;
+
+    EXPECT_EQ(0.0, *three::PointerAt<float>(image, 0, 0));
+    EXPECT_EQ(1.0, *three::PointerAt<float>(image, 1, 0));
+    EXPECT_EQ(2.0, *three::PointerAt<float>(image, 0, 1));
+    EXPECT_EQ(3.0, *three::PointerAt<float>(image, 1, 1));
 }
 
 // ----------------------------------------------------------------------------
@@ -329,6 +342,7 @@ Ideally keep just one.
 - PointerAt doesn't look like it has exception handling.
 Ideally all methods should provide some kind of exception handling; at the very least throw exceptions on invalid cases.
 - PointerAt should be part of Image::
+It really only accepts Image as the first argument.
 - Image::FloatValueAt doesn't look like it has exception handling.
 Instead it uses 'if' to check the inputs. While this works fine it is generally slower then throwing an exception.
 Also, only clipping is used for out of bounds coordinates. There are other accepted methods for dealing with out of bounds (mirroring, wrapping, etc.), do we want to add those as well?
