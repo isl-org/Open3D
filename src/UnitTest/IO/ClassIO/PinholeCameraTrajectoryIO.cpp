@@ -26,7 +26,42 @@
 
 #include "UnitTest.h"
 
-TEST(PinholeCameraTrajectoryIO, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectoryIO, CreatePinholeCameraTrajectoryFromFile)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectoryIO, ReadPinholeCameraTrajectory)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectoryIO, WritePinholeCameraTrajectory)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectoryIO, ReadPinholeCameraTrajectoryFromLOG)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectoryIO, WritePinholeCameraTrajectoryToLOG)
 {
     NotImplemented();
 }

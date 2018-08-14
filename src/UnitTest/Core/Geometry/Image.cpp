@@ -235,7 +235,7 @@ TEST(Image, ConvertDepthToFloatImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FlipImage)
+TEST(Image, DISABLED_FlipImage)
 {
     NotImplemented();
 }
