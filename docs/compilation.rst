@@ -16,7 +16,7 @@ When this fails, or when there are multiple versions of Python and it finds the 
 
 .. code-block:: bash
 
-    cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-python-executable> ../src
+    cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-python-executable> ..
 
 .. Note:: Python binding issues can also refer to `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_.
 
@@ -43,7 +43,7 @@ The following is an example of forcing building dependencies from source code:
           -DBUILD_JPEG=ON    \
           -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
-          ../src
+          ..
 
 .. note:: Enabling these build options may increase the compilation time.
 
@@ -60,7 +60,7 @@ For example, starting from a clean build directory, run
 .. code-block:: bash
 
     brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ../src
+    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
     make -j
 
 .. note:: This workaround has some compatibility issues with the source code of GLFW included in ``src/External``.
@@ -88,7 +88,7 @@ By default unit tests are turned off. In order to enable them follow the next st
     cd <path_to_Open3D>
     mkdir build
     cd build
-    cmake ../src -DBUILD_UNIT_TESTS=ON
+    cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
 
 In order to perform the unit tests:
