@@ -2,17 +2,17 @@
 file(GLOB SHADER_FILES "Shader/GLSL/*.glsl")
 
 add_custom_command(
-    OUTPUT ${PROJECT_SOURCE_DIR}/Visualization/Shader/Shader.h
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/Visualization/Shader/Shader.h
     COMMAND EncodeShader Shader.h
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Visualization/Shader/
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/Visualization/Shader/
     DEPENDS ${SHADER_FILES} EncodeShader
 )
 
 foreach(file ${SHADER_FILES})
     add_custom_command(
-        OUTPUT ${PROJECT_SOURCE_DIR}/Visualization/Shader/Shader.h
+        OUTPUT ${PROJECT_SOURCE_DIR}/src/Visualization/Shader/Shader.h
         COMMAND EncodeShader Shader.h ${file}
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Visualization/Shader/
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/Visualization/Shader/
         DEPENDS ${SHADER_FILES} EncodeShader
         APPEND
     )
