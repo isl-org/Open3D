@@ -19,7 +19,7 @@ foreach(file ${SHADER_FILES})
 endforeach(file)
 
 add_custom_target(ShaderFileTarget ALL
-                  DEPENDS ${PROJECT_SOURCE_DIR}/Visualization/Shader/Shader.h)
+                  DEPENDS ${PROJECT_SOURCE_DIR}/src/Visualization/Shader/Shader.h)
 set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
 
 # build

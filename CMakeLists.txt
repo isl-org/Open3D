@@ -9,7 +9,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.1")
 endif()
 
 # central location for specifying the Open3D version
-file(STRINGS "../version.txt" OPEN3D_VERSION_READ)
+file(STRINGS "version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
   if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
     set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
@@ -30,12 +30,12 @@ set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
 set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/open3d_config.h.in"
-               "${PROJECT_SOURCE_DIR}/open3d_config.h")
+configure_file("${PROJECT_SOURCE_DIR}/src/open3d_config.h.in"
+               "${PROJECT_SOURCE_DIR}/src/open3d_config.h")
 
 # configure a setup.py for the pip packaging
-configure_file("${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py.in"
-               "${PROJECT_SOURCE_DIR}/../util/pip_package/setup.py")
+configure_file("${PROJECT_SOURCE_DIR}/util/pip_package/setup.py.in"
+               "${PROJECT_SOURCE_DIR}/util/pip_package/setup.py")
 
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
@@ -56,15 +56,15 @@ option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_TESTS               "Build the Open3D test programs"           ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EXPERIMENTAL        "Build the Open3D experimental programs"   ON)
-option(BUILD_EIGEN3              "Build eigen3 from source"                 OFF)
-option(BUILD_GLEW                "Build glew from source"                   OFF)
-option(BUILD_GLFW                "Build glfw from source"                   OFF)
-option(BUILD_JPEG                "Build jpeg from source"                   OFF)
-option(BUILD_JSONCPP             "Build json from source"                   OFF)
-option(BUILD_PNG                 "Build png from source"                    OFF)
+option(BUILD_EIGEN3              "Build eigen3 from source"                 ON)
+option(BUILD_GLEW                "Build glew from source"                   ON)
+option(BUILD_GLFW                "Build glfw from source"                   ON)
+option(BUILD_JPEG                "Build jpeg from source"                   ON)
+option(BUILD_JSONCPP             "Build json from source"                   ON)
+option(BUILD_PNG                 "Build png from source"                    ON)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
-option(BUILD_PYTHON_TUTORIALS    "Copy the python tutorial files"           ON)
+#option(BUILD_PYTHON_TUTORIALS    "Copy the python tutorial files"           ON)
 option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 
@@ -114,9 +114,9 @@ endfunction()
 
 # set include directories
 include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/External
-    ${PROJECT_SOURCE_DIR}/External/librealsense/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src/External
+    ${PROJECT_SOURCE_DIR}/src/External/librealsense/include
     )
 
 # if dynamic link is added, use if (WIN32) macro
@@ -189,7 +189,7 @@ if (WITH_OPENMP)
 endif ()
 
 # Handling dependencies
-add_subdirectory(External)
+add_subdirectory(src/External)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${EXTERNAL_INCLUDE_DIRS})
 link_directories(${EXTERNAL_LIBRARY_DIRS})
@@ -201,10 +201,10 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
     file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
     source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
 endmacro(ADD_SOURCE_GROUP)
-add_subdirectory(Core)
-add_subdirectory(Tools)
-add_subdirectory(IO)
-add_subdirectory(Visualization)
+add_subdirectory(src/Core)
+add_subdirectory(examples/Cpp/Tools)
+add_subdirectory(src/IO)
+add_subdirectory(src/Visualization)
 
 add_library(${CMAKE_PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
 
@@ -224,23 +224,23 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 # Tests
 if (BUILD_TESTS)
-    add_subdirectory(Test)
+    add_subdirectory(examples/Cpp/Test)
 endif ()
 
 # Unit tests
 if (BUILD_UNIT_TESTS)
-    add_subdirectory(UnitTest)
+    add_subdirectory(src/UnitTest)
 endif ()
 
 # Experimental
 if (BUILD_EXPERIMENTAL)
     message(STATUS "Build experimental projects")
-    add_subdirectory(Experimental)
+    add_subdirectory(examples/Cpp/Experimental)
 endif ()
 
 # Python binding
 if (BUILD_PYTHON_MODULE)
-    add_subdirectory(Python)
+    add_subdirectory(src/Python)
 endif ()
 
 # build a list of include folders
@@ -272,11 +272,11 @@ list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     ${OMP_LIBRARY_DIRS})
 
 # find_package Open3D
-configure_file(Open3DConfig.cmake.in
+configure_file(src/Open3DConfig.cmake.in
                "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake" @ONLY)
 
 # find_package Open3D Version
-configure_file(Open3DConfigVersion.cmake.in
+configure_file(src/Open3DConfigVersion.cmake.in
                "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake" @ONLY)
 
 # install
@@ -296,7 +296,7 @@ install(FILES
 
 # uninstall target
 if (NOT TARGET uninstall)
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/cmake_uninstall.cmake.in"
                    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
                    IMMEDIATE @ONLY)
 
