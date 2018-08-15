@@ -1,8 +1,8 @@
 # build
 file(GLOB_RECURSE IO_ALL_SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE IO_ALL_HEADER_FILES "*.h")
-file(GLOB         RPLY_SOURCE_FILES "../External/rply/*.c")
-file(GLOB         LIBLZF_SOURCE_FILES "../External/liblzf/*.c")
+file(GLOB         RPLY_SOURCE_FILES "../../External/rply/*.c")
+file(GLOB         LIBLZF_SOURCE_FILES "../../External/liblzf/*.c")
 
 # create object library
 add_library(IO OBJECT

@@ -115,8 +115,8 @@ endfunction()
 # set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/src/External
-    ${PROJECT_SOURCE_DIR}/src/External/librealsense/include
+    ${PROJECT_SOURCE_DIR}/External
+    ${PROJECT_SOURCE_DIR}/External/librealsense/include
     )
 
 # if dynamic link is added, use if (WIN32) macro
@@ -189,7 +189,7 @@ if (WITH_OPENMP)
 endif ()
 
 # Handling dependencies
-add_subdirectory(src/External)
+add_subdirectory(External)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${EXTERNAL_INCLUDE_DIRS})
 link_directories(${EXTERNAL_LIBRARY_DIRS})
