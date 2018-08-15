@@ -7,7 +7,7 @@ from open3d import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-testdata_dir = "../../../Test/TestData"
+testdata_dir = "../../TestData"
 
 def custom_draw_geometry(pcd):
     # The following code achieves the same effect as:

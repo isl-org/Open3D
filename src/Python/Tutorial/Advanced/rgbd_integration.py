@@ -10,7 +10,7 @@ from open3d import *
 from trajectory_io import *
 
 if __name__ == "__main__":
-    data_dir = "../../../Test/TestData/RGBD"
+    data_dir = "../../TestData/RGBD"
     camera_poses = read_trajectory(os.path.join(data_dir, "odometry.log"))
     volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)

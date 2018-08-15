@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     print("Read a trajectory and combine all the RGB-D images.")
     pcds = []
-    data_dir = "../../../Test/TestData/RGBD"
+    data_dir = "../../TestData/RGBD"
     trajectory = read_pinhole_camera_trajectory(os.path.join(data_dir, "trajectory.log"))
     write_pinhole_camera_trajectory("test.json", trajectory)
     print(trajectory)

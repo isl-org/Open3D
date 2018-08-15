@@ -13,7 +13,7 @@ max_correspondence_distance_fine = voxel_size * 1.5
 
 
 def load_point_clouds(voxel_size = 0.0):
-    data_dir = "../../../Test/TestData/ICP"
+    data_dir = "../../TestData/ICP"
     pcds = []
     for i in range(3):
         pcd = read_point_cloud(os.path.join(data_dir, "cloud_bin_%d.pcd" % i))

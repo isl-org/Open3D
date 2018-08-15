@@ -7,7 +7,7 @@ import copy, os
 from open3d import *
 
 
-data_dir = "../../../Test/TestData/ICP"
+data_dir = "../../TestData/ICP"
 
 def demo_crop_geometry():
     print("Demo for manual geometry cropping")

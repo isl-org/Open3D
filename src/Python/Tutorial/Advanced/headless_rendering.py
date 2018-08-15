@@ -7,7 +7,7 @@ from open3d import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-testdata_dir = "../../../Test/TestData"
+testdata_dir = "../../TestData"
 def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.index = -1
     custom_draw_geometry_with_camera_trajectory.trajectory =\

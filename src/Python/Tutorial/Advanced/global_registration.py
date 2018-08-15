@@ -31,7 +31,7 @@ def preprocess_point_cloud(pcd, voxel_size):
 
 def prepare_dataset(voxel_size):
     print(":: Load two point clouds and disturb initial pose.")
-    data_dir = "../../../Test/TestData/ICP"
+    data_dir = "../../TestData/ICP"
     source = read_point_cloud(os.path.join(data_dir, "cloud_bin_0.pcd"))
     target = read_point_cloud(os.path.join(data_dir, "cloud_bin_1.pcd"))
     trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
