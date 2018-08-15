@@ -5,7 +5,7 @@ Customized visualization
 
 The usage of Open3D convenient visualization functions ``draw_geometries`` and ``draw_geometries_with_custom_animation`` is straightforward. Everything can be done with the GUI. Press :kbd:`h` inside the visualizer window to see helper information. Details see :ref:`visualization`.
 
-This tutorial focuses on more advanced functionalities to customize the behavior of the visualizer window. Please refer src/Python/Tutorial/Advanced/customized_visualization.py to try the following examples.
+This tutorial focuses on more advanced functionalities to customize the behavior of the visualizer window. Please refer examples/Python/Tutorial/Advanced/customized_visualization.py to try the following examples.
 
 
 Mimic draw_geometries() with Visualizer class

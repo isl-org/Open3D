@@ -39,7 +39,7 @@ The full script implementing this idea is displayed below.
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Advanced/non_blocking_visualization.py
+    # examples/Python/Tutorial/Advanced/non_blocking_visualization.py
 
     from open3d import *
     import numpy as np
