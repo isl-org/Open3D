@@ -39,6 +39,8 @@
 #define NUM_START 1
 #define NUM_END 10
 
+using namespace open3d;
+
 void simple_task()
 {
     int n_a_rows = 2000;
@@ -86,9 +88,9 @@ void TestMatrixMultiplication(int argc, char** argv)
     }
 
 #ifdef _OPENMP
-    printf("OpenMP is supported.\n");
+    PrintInfo("OpenMP is supported.\n");
 #else
-    printf("OpenMP is not supported.\n");
+    PrintInfo("OpenMP is not supported.\n");
 #endif
 
 #ifdef _OPENMP
@@ -110,21 +112,21 @@ void TestMatrixMultiplication(int argc, char** argv)
     }
 
     if (nThreads == NUM_THREADS) {
-        printf("%d OpenMP threads were used.\n", NUM_THREADS);
+        PrintInfo("%d OpenMP threads were used.\n", NUM_THREADS);
         nRet = 0;
     } else {
-        printf("Expected %d OpenMP threads, but %d were used.\n",
+        PrintInfo("Expected %d OpenMP threads, but %d were used.\n",
                 NUM_THREADS, nThreads);
         nRet = 1;
     }
 
     if (nSum != nSumCalc) {
-        printf("The sum of %d through %d should be %d, "
+        PrintInfo("The sum of %d through %d should be %d, "
                 "but %d was reported!\n",
                 NUM_START, NUM_END, nSumCalc, nSum);
         nRet = 1;
     } else {
-        printf("The sum of %d through %d is %d\n",
+        PrintInfo("The sum of %d through %d is %d\n",
                 NUM_START, NUM_END, nSum);
     }
 

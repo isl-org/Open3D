@@ -35,8 +35,7 @@ using namespace open3d;
 
 void PrintHelp()
 {
-    PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-    PrintInfo("\n");
+    PrintOpen3DVersion();
     PrintInfo("Usage :\n");
     PrintInfo("    > TestRGBDOdometry [color1] [depth1] [color2] [depth2]\n");
 }

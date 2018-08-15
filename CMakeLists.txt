@@ -30,8 +30,8 @@ set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
 set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/src/open3d_config.h.in"
-               "${PROJECT_SOURCE_DIR}/src/open3d_config.h")
+configure_file("${PROJECT_SOURCE_DIR}/src/Open3DConfig.h.in"
+               "${PROJECT_SOURCE_DIR}/src/Open3DConfig.h")
 
 # configure a setup.py for the pip packaging
 configure_file("${PROJECT_SOURCE_DIR}/util/pip_package/setup.py.in"
@@ -206,7 +206,12 @@ add_subdirectory(examples/Cpp/Tools)
 add_subdirectory(src/IO)
 add_subdirectory(src/Visualization)
 
-add_library(${CMAKE_PROJECT_NAME} $<TARGET_OBJECTS:Core> $<TARGET_OBJECTS:IO> $<TARGET_OBJECTS:Visualization>)
+# note: adding at least one real source file to any target that references
+# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
+add_library(${CMAKE_PROJECT_NAME} src/Open3DConfig.h src/Open3DConfig.cpp
+            $<TARGET_OBJECTS:Core>
+            $<TARGET_OBJECTS:IO>
+            $<TARGET_OBJECTS:Visualization>)
 
 # headless rendering
 if (ENABLE_HEADLESS_RENDERING)
