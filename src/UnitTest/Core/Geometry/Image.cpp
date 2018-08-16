@@ -241,53 +241,265 @@ TEST(Image, DISABLED_CreateDepthToCameraDistanceMultiplierFloatImage)
 // 1: 1/2/4
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
+void CreateFloatImageFromImage(const int& num_of_channels,
+                               const int& bytes_per_channel,
+                               const vector<uint8_t>& ref,
+                               const open3d::Image::ColorToIntensityConversionType& type)
+{
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int float_num_of_channels = 1;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       num_of_channels,
+                       bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    // display float image data
+    // for (size_t i = 0; i < floatImage->data_.size(); i++)
+    //     {
+    //         if ((i % 10 == 0) && (i != 0))
+    //             cout << "\\" << endl;
+    //         cout << setw(4) << (float)floatImage->data_[i] << ",";
+    //     }
+    // cout << endl;
+
+    EXPECT_FALSE(floatImage->IsEmpty());
+    EXPECT_EQ(local_width, floatImage->width_);
+    EXPECT_EQ(local_height, floatImage->height_);
+    EXPECT_EQ(float_num_of_channels, floatImage->num_of_channels_);
+    EXPECT_EQ(sizeof(float), floatImage->bytes_per_channel_);
+    for (size_t i = 0; i < floatImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], floatImage->data_[i]);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 1
+// bytes per channel: 1
+// ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_1_1)
 {
     open3d::Image image;
 
     // reference data used to validate the creation of the float image
-    vector<uint8_t> ref;
+    vector<uint8_t> ref = { 215, 214,  86,  63, 201, 200, 200,  62, 200, 199,\
+                             71,  63, 204, 203,  75,  63, 233, 232, 104,  63,\
+                            201, 200,  72,  62, 171, 170, 170,  62, 196, 195,\
+                             67,  63, 141, 140, 140,  62, 142, 141,  13,  63,\
+                            243, 242, 242,  62, 161, 160,  32,  63, 187, 186,\
+                            186,  62, 131, 130,   2,  63, 243, 242, 114,  63,\
+                            234, 233, 105,  63, 163, 162,  34,  63, 183, 182,\
+                             54,  63, 145, 144,  16,  62, 155, 154,  26,  63,\
+                            129, 128, 128,  60, 245, 244, 116,  62, 137, 136,\
+                              8,  62, 206, 205,  77,  63, 157, 156,  28,  62 };
 
-    // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 1;
+    CreateFloatImageFromImage(1, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+}
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 1
+// bytes per channel: 2
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_1_2)
+{
+    open3d::Image image;
 
-    randInit(image.data_);
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = {    0, 152,   5,  70,   0,  27, 126,  71,   0,  55,\
+                               2,  71,   0, 213,  28,  71,   0,  75,  34,  71,\
+                               0,  10, 251,  70,   0, 240, 149,  70,   0, 196,\
+                               6,  71,   0, 136, 205,  70,   0, 198, 145,  70,\
+                               0,  89,  77,  71,   0,  80, 143,  69,   0, 242,\
+                               6,  71,   0,  84,  68,  70,   0, 169,  99,  71,\
+                               0, 192, 130,  69,   0,  10, 232,  70,   0,  64,\
+                             112,  70,   0, 247, 102,  71,   0, 176, 135,  70,\
+                               0,  18, 191,  70,   0, 193,   2,  71,   0, 170,\
+                               7,  71,   0,  20, 222,  70,   0, 237, 109,  71 };
 
-    ref = { 215, 214,  86,  63, 201, 200, 200,  62, 200, 199,\
-             71,  63, 204, 203,  75,  63, 233, 232, 104,  63,\
-            201, 200,  72,  62, 171, 170, 170,  62, 196, 195,\
-             67,  63, 141, 140, 140,  62, 142, 141,  13,  63,\
-            243, 242, 242,  62, 161, 160,  32,  63, 187, 186,\
-            186,  62, 131, 130,   2,  63, 243, 242, 114,  63,\
-            234, 233, 105,  63, 163, 162,  34,  63, 183, 182,\
-             54,  63, 145, 144,  16,  62, 155, 154,  26,  63,\
-            129, 128, 128,  60, 245, 244, 116,  62, 137, 136,\
-              8,  62, 206, 205,  77,  63, 157, 156,  28,  62 };
+    CreateFloatImageFromImage(1, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+}
 
-    auto floatImage = open3d::CreateFloatImageFromImage(image);
-    for (size_t i = 0; i < floatImage->data_.size(); i++)
-        {
-            if ((i % 10 == 0) && (i != 0))
-                cout << "\\" << endl;
-            cout << setw(4) << (float)floatImage->data_[i] << ",";
-        }
-    cout << endl;
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 1
+// bytes per channel: 4
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_1_4)
+{
+    open3d::Image image;
 
-    EXPECT_FALSE(floatImage->IsEmpty());
-    EXPECT_EQ(local_width, floatImage->width_);
-    EXPECT_EQ(local_height, floatImage->height_);
-    EXPECT_EQ(local_num_of_channels, floatImage->num_of_channels_);
-    EXPECT_EQ(sizeof(float), floatImage->bytes_per_channel_);
-    for (size_t i = 0; i < floatImage->data_.size(); i++)
-        EXPECT_EQ(ref[i], floatImage->data_[i]);
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = { 183,  72, 188, 163,  90, 175,  42, 112, 224, 211,\
+                             84,  58, 227,  89, 175, 243, 150, 167, 218, 112,\
+                            235, 101, 207, 174, 232, 123,  55, 242, 234,  37,\
+                            224, 163, 110, 157,  71, 200,  78, 113,  57,  47,\
+                             70, 141, 106,  43, 231,  26,  32, 126, 193, 251,\
+                            238, 174,  97, 191,  94,  75,  59, 149,  62,  38,\
+                            186,  31, 202,  41, 189,  19, 242,  13, 132,  44,\
+                             61, 203, 186, 167, 246, 163, 193,  23,  34, 132,\
+                             19,  17,  52, 117, 209, 146, 192,  13,  40, 254,\
+                             52, 226,  31, 254,  13, 221,  18,   1, 235, 151 };
+
+    CreateFloatImageFromImage(1, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 3
+// bytes per channel: 1
+// ColorToIntensityConversionType: Weighted
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_3_1_Weighted)
+{
+    open3d::Image image;
+
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = { 100, 255,  67,  62,   4,  56,  75,  63,  30, 208,\
+                             13,  63,  27, 109, 165,  62, 193,  67,   4,  63,\
+                            223,  72,  69,  63,  13,  39, 150,  62, 161, 135,\
+                             99,  63, 255, 179, 103,  63,  56, 210, 107,  63,\
+                             77,  67, 172,  62, 200, 214, 195,  62, 154, 172,\
+                            239,  62, 224,  37, 220,  62, 111, 249,  58,  62,\
+                            228, 207,   1,  63,  37, 228,   3,  63, 212,  84,\
+                            170,  62,  53, 206,  71,  63, 160, 100,  37,  63,\
+                            153,  84, 137,  62,  58,  46, 236,  62, 201,  65,\
+                            235,  62,  36,  11, 199,  62, 104,  69, 170,  62  };
+
+    CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 3
+// bytes per channel: 1
+// ColorToIntensityConversionType: Equal
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_3_1_Equal)
+{
+    open3d::Image image;
+
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = {  37, 222,  28,  63,  67,  75, 247,  62,  57, 133,\
+                            252,  62, 135,  30,  45,  63, 209,  42, 207,  62,\
+                            242,   9, 142,  62,  27, 250, 137,  62,  87, 134,\
+                              3,  63, 172, 150, 232,  62, 154, 208, 153,  62,\
+                             31, 193, 198,  62,  10,  59, 131,  62, 184, 116,\
+                            105,  63,  16,  12, 182,  62,  48, 173,  44,  63,\
+                            138, 213,  76,  63, 161,  33,  23,  63,  96, 147,\
+                            102,  63,  50, 218,   0,  63,  10, 170,  36,  63,\
+                             66,  33,  49,  63,   9, 120, 138,  62, 246,  85,\
+                            187,  62, 229,  25,  56,  63, 127,  44, 116,  62 };
+
+    CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 3
+// bytes per channel: 2
+// ColorToIntensityConversionType: Weighted
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_3_2_Weighted)
+{
+    open3d::Image image;
+
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = { 130, 144, 170,  70, 147, 191,  21,  71,  76,  43,\
+                            144,  70,  39, 255, 178,  70,  93, 239,  28,  71,\
+                            196,  97,  33,  71,  73, 238, 241,  70, 127,  36,\
+                             93,  71,  28, 124,   0,  71, 182, 133,  29,  71,\
+                            206, 181, 178,  70, 118, 115, 165,  70, 152,  24,\
+                            175,  70, 248,  56, 209,  70, 185, 167,  17,  71,\
+                             73,  66,  29,  71, 206, 235, 252,  70,  39, 186,\
+                            213,  70,  96, 201,  96,  70, 166, 114, 198,  70,\
+                             40,  16, 226,  70,  41, 121, 163,  70,  60, 255,\
+                             36,  71, 139,  94,  18,  71, 175, 119, 234,  70 };
+
+    CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 3
+// bytes per channel: 2
+// ColorToIntensityConversionType: Equal
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_3_2_Equal)
+{
+    open3d::Image image;
+
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = {  14,  69, 211,  69,  87,  14, 122,  70, 132, 220,\
+                            193,  70, 147, 187,  58,  71, 115,  16,  82,  71,\
+                            166, 203,  55,  71, 164, 243,  15,  71,   0, 192,\
+                             59,  71, 166, 116,  56,  71,  34,  11, 227,  70,\
+                             16,  14,  18,  71, 238, 210,  19,  71, 187,  78,\
+                            190,  70, 133,  97,  33,  71,  34, 225,  23,  70,\
+                             34, 250, 234,  70, 171, 124, 200,  70,  38, 153,\
+                             21,  71, 176, 217, 250,  70, 204,  50,  82,  71,\
+                            135, 240,  88,  71, 188,  77, 255,  70,  15,   8,\
+                             12,  71,  75, 129,  12,  71,  69,  63, 154,  70 };
+
+    CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 3
+// bytes per channel: 4
+// ColorToIntensityConversionType: Weighted
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_3_4_Weighted)
+{
+    open3d::Image image;
+
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = {  50, 221, 220, 122,   7,  25, 180, 239,  18, 255,\
+                            189, 182,  28,  59,  66, 233, 205, 215,  47,  89,\
+                            135, 136, 248, 225,  74, 190, 207, 229, 153,  20,\
+                             88, 149,  29,  64, 149, 206, 229,   4, 109,  51,\
+                            117, 110, 124, 217, 137, 106,  43,  86,  94, 169,\
+                             83, 209, 170, 212, 155, 119, 184, 101, 140,  68,\
+                            145, 248,  68,  86, 166, 152, 142, 165,  77,   2,\
+                            239,  99,  17, 108,  73,  77, 124, 183, 203, 235,\
+                            125,   1, 139, 208, 203, 196,  14, 216,  65, 173,\
+                            104, 215, 133,  61,  57, 121, 158, 138,  61, 196 };
+
+    CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+}
+
+// ----------------------------------------------------------------------------
+// Tests one of the following configuration:
+// channels: 3
+// bytes per channel: 4
+// ColorToIntensityConversionType: Equal
+// ----------------------------------------------------------------------------
+TEST(Image, CreateFloatImageFromImage_3_4_Equal)
+{
+    open3d::Image image;
+
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = { 145, 227, 199, 110,  27, 234, 201,  98,  13, 245,\
+                             74, 117,  64,  93, 208, 218,  19, 100, 163, 243,\
+                            194, 245, 203, 117, 100, 223, 161, 115, 159, 244,\
+                             59, 223,   6,   2, 149, 106, 243, 174, 111,  79,\
+                             45, 249, 167, 196, 177, 141, 146, 103, 180, 154,\
+                             85, 235,  92,  62, 123, 182, 162, 190, 102,  91,\
+                            180, 148,  90,  97, 158,  31, 130,  70,  17,  25,\
+                            136,  98,  47, 202,   3, 127,  79, 211,  16, 200,\
+                            125, 201,   4, 198,  33,  89, 126,  60, 107, 179,\
+                            232, 113, 198,   8,  44, 219, 146, 174,  55, 241 };
+
+    CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
