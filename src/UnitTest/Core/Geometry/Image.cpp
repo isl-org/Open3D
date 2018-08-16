@@ -597,11 +597,97 @@ TEST(Image, DISABLED_ClipIntensityImage)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Tests one of the following configurations
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_CreateImageFromFloatImage)
+template<typename T>
+void CreateImageFromFloatImage(const vector<T>& ref)
 {
-    NotImplemented();
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 10;
+    const int local_height = 10;
+    const int local_num_of_channels = 1;
+    const int bytes_per_channel = sizeof(T);
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       sizeof(float));
+
+    randInit(image.data_);
+
+    auto outImage = open3d::CreateImageFromFloatImage<T>(image);
+
+    // display float image data
+    // for (size_t i = 0; i < outImage->data_.size(); i++)
+    //     {
+    //         if ((i % 10 == 0) && (i != 0))
+    //             cout << "\\" << endl;
+    //         cout << setw(4) << (float)outImage->data_[i] << ",";
+    //     }
+    // cout << endl;
+
+    EXPECT_FALSE(outImage->IsEmpty());
+    EXPECT_EQ(local_width, outImage->width_);
+    EXPECT_EQ(local_height, outImage->height_);
+    EXPECT_EQ(local_num_of_channels, outImage->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, outImage->bytes_per_channel_);
+    for (size_t i = 0; i < outImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outImage->data_[i]);
+}
+
+template void CreateImageFromFloatImage<uint8_t>(const vector<uint8_t> &ref);
+template void CreateImageFromFloatImage<uint16_t>(const vector<uint16_t> &ref);
+
+// ----------------------------------------------------------------------------
+// Tests the case output image bytes_per_channel = 1.
+// ----------------------------------------------------------------------------
+TEST(Image, CreateImageFromFloatImage_8bit)
+{
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = {   0,   0, 150, 201,   0,   0,   0,  16,   0,   0,\
+                              0,   0,   0, 254,   0,   0,   0,   0, 120,   0,\
+                              0, 215,   0,   0,   0,   0,   0,   0,   0, 252,\
+                              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                              0,   0,   0,   0,   0,   0,   0,   0, 163,  55,\
+                              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                              0,   0, 177,   0,   0,   0,   0,   0,   0,   0,\
+                              0,   0,   0,   0,   0, 253, 218,   0,  67,   0,\
+                              0,   0,   0, 243,   0,  96,   0,   0,   0,   0,\
+                            179,   0, 240,   0,   0,   0,   0,   0,   0,   0 };
+
+    CreateImageFromFloatImage(ref);
+}
+
+// ----------------------------------------------------------------------------
+// Tests the case output image bytes_per_channel = 2.
+// ----------------------------------------------------------------------------
+TEST(Image, CreateImageFromFloatImage_16bit)
+{
+    // reference data used to validate the creation of the float image
+    vector<uint16_t> ref = {   0,   0,   0,   0,   0,   0,  60,   2,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0, 112,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0, 180, 198,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0, 186, 255,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                             250, 255,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,  92, 253,   0,   0,\
+                               8, 248,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               1,   0,   0,   0, 172,   2,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                              47,  90,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0,\
+                               0,   0,   0,   0,   0,   0,   0,   0, 128,  11,\
+                               0,   0,   0,   0,   0,   0,   0,   0,   0,   0 };
+
+    CreateImageFromFloatImage(ref);
 }
 
 // ----------------------------------------------------------------------------
