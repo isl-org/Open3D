@@ -120,3 +120,4 @@ Rendered images are at ~/Open3D/build/lib/TestData/depth and image folder.
 
 .. Error:: | If glew and glfw did not correctly linked with OSMesa, it may crash with following error.
            | **GLFW Error: X11: The DISPLAY environment variable is missing. Failed to initialize GLFW**
+           | Try ``cmake`` with ``-DBUILD_GLEW=ON`` and ``-DBUILD_GLFW=ON`` flags.
