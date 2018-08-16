@@ -287,8 +287,6 @@ void CreateFloatImageFromImage(const int& num_of_channels,
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_1_1)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = { 215, 214,  86,  63, 201, 200, 200,  62, 200, 199,\
                              71,  63, 204, 203,  75,  63, 233, 232, 104,  63,\
@@ -311,8 +309,6 @@ TEST(Image, CreateFloatImageFromImage_1_1)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_1_2)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {    0, 152,   5,  70,   0,  27, 126,  71,   0,  55,\
                                2,  71,   0, 213,  28,  71,   0,  75,  34,  71,\
@@ -335,8 +331,6 @@ TEST(Image, CreateFloatImageFromImage_1_2)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_1_4)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = { 183,  72, 188, 163,  90, 175,  42, 112, 224, 211,\
                              84,  58, 227,  89, 175, 243, 150, 167, 218, 112,\
@@ -360,8 +354,6 @@ TEST(Image, CreateFloatImageFromImage_1_4)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_3_1_Weighted)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = { 100, 255,  67,  62,   4,  56,  75,  63,  30, 208,\
                              13,  63,  27, 109, 165,  62, 193,  67,   4,  63,\
@@ -385,8 +377,6 @@ TEST(Image, CreateFloatImageFromImage_3_1_Weighted)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_3_1_Equal)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {  37, 222,  28,  63,  67,  75, 247,  62,  57, 133,\
                             252,  62, 135,  30,  45,  63, 209,  42, 207,  62,\
@@ -410,8 +400,6 @@ TEST(Image, CreateFloatImageFromImage_3_1_Equal)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_3_2_Weighted)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = { 130, 144, 170,  70, 147, 191,  21,  71,  76,  43,\
                             144,  70,  39, 255, 178,  70,  93, 239,  28,  71,\
@@ -435,8 +423,6 @@ TEST(Image, CreateFloatImageFromImage_3_2_Weighted)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_3_2_Equal)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {  14,  69, 211,  69,  87,  14, 122,  70, 132, 220,\
                             193,  70, 147, 187,  58,  71, 115,  16,  82,  71,\
@@ -460,8 +446,6 @@ TEST(Image, CreateFloatImageFromImage_3_2_Equal)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_3_4_Weighted)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = {  50, 221, 220, 122,   7,  25, 180, 239,  18, 255,\
                             189, 182,  28,  59,  66, 233, 205, 215,  47,  89,\
@@ -485,8 +469,6 @@ TEST(Image, CreateFloatImageFromImage_3_4_Weighted)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateFloatImageFromImage_3_4_Equal)
 {
-    open3d::Image image;
-
     // reference data used to validate the creation of the float image
     vector<uint8_t> ref = { 145, 227, 199, 110,  27, 234, 201,  98,  13, 245,\
                              74, 117,  64,  93, 208, 218,  19, 100, 163, 243,\
@@ -535,9 +517,54 @@ TEST(Image, PointerAt)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_ConvertDepthToFloatImage)
+TEST(Image, ConvertDepthToFloatImage)
 {
-    NotImplemented();
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = {  22, 236,  15,  57, 203,   3,  56,  58, 153, 156,\
+                            114,  57,  38,  66,  28,  58,   5, 150,   3,  55,\
+                            200, 211,  85,  58,  73, 185, 246,  57, 225, 185,\
+                              8,  58, 147, 161,  78,  58,   5, 150,   3,  57,\
+                            230, 180,  44,  57, 227, 132,  74,  58, 153, 156,\
+                            114,  58, 110, 250,  17,  58, 118,  37, 152,  57,\
+                            173, 135, 129,  57, 183, 125,  73,  57,   5, 150,\
+                              3,  56, 136,  70, 230,  56, 211,  46,  62,  58,\
+                              2, 102,  33,  58,  40,  13,  94,  57, 151, 209,\
+                             48,  58,  29, 178, 117,  58, 147, 161,  78,  58 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 1;
+    const int float_num_of_channels = 1;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::ConvertDepthToFloatImage(image);
+
+    // display float image data
+    // for (size_t i = 0; i < floatImage->data_.size(); i++)
+    //     {
+    //         if ((i % 10 == 0) && (i != 0))
+    //             cout << "\\" << endl;
+    //         cout << setw(4) << (float)floatImage->data_[i] << ",";
+    //     }
+    // cout << endl;
+
+    EXPECT_FALSE(floatImage->IsEmpty());
+    EXPECT_EQ(local_width, floatImage->width_);
+    EXPECT_EQ(local_height, floatImage->height_);
+    EXPECT_EQ(float_num_of_channels, floatImage->num_of_channels_);
+    EXPECT_EQ(sizeof(float), floatImage->bytes_per_channel_);
+    for (size_t i = 0; i < floatImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], floatImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
