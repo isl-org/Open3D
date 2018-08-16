@@ -56,15 +56,14 @@ option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_TESTS               "Build the Open3D test programs"           ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EXPERIMENTAL        "Build the Open3D experimental programs"   ON)
-option(BUILD_EIGEN3              "Build eigen3 from source"                 ON)
-option(BUILD_GLEW                "Build glew from source"                   ON)
-option(BUILD_GLFW                "Build glfw from source"                   ON)
-option(BUILD_JPEG                "Build jpeg from source"                   ON)
-option(BUILD_JSONCPP             "Build json from source"                   ON)
-option(BUILD_PNG                 "Build png from source"                    ON)
+option(BUILD_EIGEN3              "Build eigen3 from source"                 OFF)
+option(BUILD_GLEW                "Build glew from source"                   OFF)
+option(BUILD_GLFW                "Build glfw from source"                   OFF)
+option(BUILD_JPEG                "Build jpeg from source"                   OFF)
+option(BUILD_JSONCPP             "Build json from source"                   OFF)
+option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
-#option(BUILD_PYTHON_TUTORIALS    "Copy the python tutorial files"           ON)
 option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 
@@ -130,7 +129,6 @@ if (WIN32)
     # as a precaution: disable unit testing on Windows regardless of user input
     message(STATUS "Disable unit tests since this feature is not fully supported on Windows.")
     set(BUILD_UNIT_TESTS OFF)
-
     add_definitions(-DWINDOWS)
     add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)		# suppress C4996 warning
     add_definitions(-DGLEW_STATIC)		# enable GLEW for windows
@@ -201,10 +199,7 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
     file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
     source_group("Source Files\\${MODULE_NAME}" FILES ${MODULE_SOURCE_FILES})
 endmacro(ADD_SOURCE_GROUP)
-add_subdirectory(src/Core)
-add_subdirectory(examples/Cpp/Tools)
-add_subdirectory(src/IO)
-add_subdirectory(src/Visualization)
+add_subdirectory(src)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
@@ -227,26 +222,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${EXTERNAL_LIBRARIES}
                       ${OMP_LIBRARIES})
 
-# Tests
-if (BUILD_TESTS)
-    add_subdirectory(examples/Cpp/Test)
-endif ()
-
-# Unit tests
-if (BUILD_UNIT_TESTS)
-    add_subdirectory(src/UnitTest)
-endif ()
-
-# Experimental
-if (BUILD_EXPERIMENTAL)
-    message(STATUS "Build experimental projects")
-    add_subdirectory(examples/Cpp/Experimental)
-endif ()
-
-# Python binding
-if (BUILD_PYTHON_MODULE)
-    add_subdirectory(src/Python)
-endif ()
+# Examples
+add_subdirectory(examples)
 
 # build a list of include folders
 SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS)
