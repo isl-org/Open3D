@@ -570,9 +570,54 @@ TEST(Image, ConvertDepthToFloatImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_FlipImage)
+TEST(Image, FlipImage)
 {
-    NotImplemented();
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref = { 214, 175,  83, 159, 124, 227, 204, 214, 123, 177,\
+                            226,  31,  95,  22, 243, 245,  39,  68, 237,  24,\
+                            154,  25,  83,   3,   0,   0,   0,   0,   0,   0,\
+                              0,   0,   0,   0,   0,   0,  87, 242,  88, 246,\
+                            119,   9,  36,  20, 105, 163,  24,  31, 160, 164,\
+                             70, 191,   0,   0,   0,   0,   0,   0,   0,   0,\
+                              0,   0,   0,   0,   0,   0,   0,   0, 217, 134,\
+                            101, 234,  80, 212,  13, 230,   0,   0,   0,   0,\
+                            102,  12,  31,  60,   0,   0,   0,   0,   0,   0,\
+                              0,   0,   0,   0,   0,   0, 155, 180, 219,  12 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+    const int flip_bytes_per_channel = 1;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto flipImage = open3d::ConvertDepthToFloatImage(image);
+
+    // display flip image data
+    // for (size_t i = 0; i < flipImage->data_.size(); i++)
+    //     {
+    //         if ((i % 10 == 0) && (i != 0))
+    //             cout << "\\" << endl;
+    //         cout << setw(4) << (float)flipImage->data_[i] << ",";
+    //     }
+    // cout << endl;
+
+    EXPECT_FALSE(flipImage->IsEmpty());
+    EXPECT_EQ(local_width, flipImage->width_);
+    EXPECT_EQ(local_height, flipImage->height_);
+    EXPECT_EQ(flip_bytes_per_channel, flipImage->num_of_channels_);
+    EXPECT_EQ(sizeof(float), flipImage->bytes_per_channel_);
+    for (size_t i = 0; i < flipImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], flipImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
