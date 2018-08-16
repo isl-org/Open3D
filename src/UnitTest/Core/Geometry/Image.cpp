@@ -69,22 +69,31 @@ TEST(Image, CreateImage)
 {
     open3d::Image image;
 
-    image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
+    image.PrepareImage(default_width,
+                       default_height,
+                       default_num_of_channels,
+                       default_bytes_per_channel);
 
     // public member variables
     EXPECT_EQ(default_width, image.width_);
     EXPECT_EQ(default_height, image.height_);
     EXPECT_EQ(default_num_of_channels, image.num_of_channels_);
     EXPECT_EQ(default_bytes_per_channel, image.bytes_per_channel_);
-    EXPECT_EQ(default_width * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(default_width *
+              default_height *
+              default_num_of_channels *
+              default_bytes_per_channel, image.data_.size());
 
     // public members
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
     EXPECT_EQ(Eigen::Vector2d(0, 0), image.GetMinBound());
-    EXPECT_EQ(Eigen::Vector2d(default_width, default_height), image.GetMaxBound());
+    EXPECT_EQ(Eigen::Vector2d(default_width,
+                              default_height), image.GetMaxBound());
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
-    EXPECT_EQ(default_width * default_num_of_channels * default_bytes_per_channel, image.BytesPerLine());
+    EXPECT_EQ(default_width *
+              default_num_of_channels *
+              default_bytes_per_channel, image.BytesPerLine());
 }
 
 // ----------------------------------------------------------------------------
@@ -94,7 +103,10 @@ TEST(Image, Clear)
 {
     open3d::Image image;
 
-    image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
+    image.PrepareImage(default_width,
+                       default_height,
+                       default_num_of_channels,
+                       default_bytes_per_channel);
 
     image.Clear();
 
@@ -126,7 +138,10 @@ TEST(Image, FloatValueAt)
     const int local_num_of_channels = 1;
     const int local_bytes_per_channel = 4;
 
-    image.PrepareImage(local_width, local_height, local_num_of_channels, local_bytes_per_channel);
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
 
     float* im = reinterpret_cast<float*>(&image.data_[0]);
 
@@ -154,7 +169,10 @@ TEST(Image, MemberData)
 {
     open3d::Image image;
 
-    image.PrepareImage(default_width, default_height, default_num_of_channels, default_bytes_per_channel);
+    image.PrepareImage(default_width,
+                       default_height,
+                       default_num_of_channels,
+                       default_bytes_per_channel);
 
     int temp_width = 320;
     int temp_height = 240;
@@ -162,23 +180,38 @@ TEST(Image, MemberData)
     int temp_bytes_per_channel = 3;
 
     image.width_ = temp_width;
-    EXPECT_EQ(temp_width * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(temp_width *
+              default_height *
+              default_num_of_channels *
+              default_bytes_per_channel, image.data_.size());
 
     image.width_ = default_width;
     image.height_ = temp_height;
-    EXPECT_EQ(default_width * temp_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(default_width *
+              temp_height *
+              default_num_of_channels *
+              default_bytes_per_channel, image.data_.size());
 
     image.height_ = default_height;
     image.num_of_channels_ = temp_num_of_channels;
-    EXPECT_EQ(default_width * default_height * temp_num_of_channels * default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(default_width *
+              default_height *
+              temp_num_of_channels *
+              default_bytes_per_channel, image.data_.size());
 
     image.num_of_channels_ = default_num_of_channels;
     image.bytes_per_channel_ = temp_bytes_per_channel;
-    EXPECT_EQ(default_width * default_height * default_num_of_channels * temp_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(default_width *
+              default_height *
+              default_num_of_channels *
+              temp_bytes_per_channel, image.data_.size());
 
     image.bytes_per_channel_ = default_bytes_per_channel;
     image.data_ = vector<uint8_t>();
-    EXPECT_EQ(default_width * default_height * default_num_of_channels * default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(default_width *
+              default_height *
+              default_num_of_channels *
+              default_bytes_per_channel, image.data_.size());
 }
 
 // ----------------------------------------------------------------------------
@@ -192,9 +225,18 @@ TEST(Image, DISABLED_CreateDepthToCameraDistanceMultiplierFloatImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_CreateFloatImageFromImage)
+TEST(Image, CreateFloatImageFromImage)
 {
-    NotImplemented();
+    open3d::Image image;
+
+    image.PrepareImage(default_width,
+                       default_height,
+                       default_num_of_channels,
+                       default_bytes_per_channel);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    EXPECT_FALSE(image.IsEmpty());
 }
 
 // ----------------------------------------------------------------------------
@@ -209,7 +251,10 @@ TEST(Image, PointerAt)
     const int local_num_of_channels = 1;
     const int local_bytes_per_channel = 4; 
 
-    image.PrepareImage(local_width, local_height, local_num_of_channels, local_bytes_per_channel);
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
 
     float* im = reinterpret_cast<float*>(&image.data_[0]);
 
@@ -267,7 +312,7 @@ TEST(Image, DISABLED_DownsampleImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DilateImage)
+TEST(Image, DISABLED_DilateImage)
 {
     NotImplemented();
 }
