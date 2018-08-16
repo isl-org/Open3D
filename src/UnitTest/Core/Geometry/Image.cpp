@@ -621,11 +621,109 @@ TEST(Image, FlipImage)
 }
 
 // ----------------------------------------------------------------------------
+// Tests one of the following configurations
+// channels: bytes per channel
+// 1: 1/2/4
+// 3: 1/2/4 with either Equal or Weighted type
+// ----------------------------------------------------------------------------
+void FilterImage(const vector<uint8_t>& ref,
+                 const open3d::Image::FilterType& filter)
+{
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    auto outputImage = open3d::FilterImage(*floatImage, filter);
+
+    // display output image data
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        {
+            if ((i % 10 == 0) && (i != 0))
+                cout << "\\" << endl;
+            cout << setw(4) << (float)outputImage->data_[i] << ",";
+        }
+    cout << endl;
+
+    EXPECT_FALSE(outputImage->IsEmpty());
+    EXPECT_EQ(local_width, outputImage->width_);
+    EXPECT_EQ(local_height, outputImage->height_);
+    EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outputImage->data_[i]);
+}
+
+// ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_FilterImage)
+TEST(Image, FilterImage_Gaussian3)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = {  23, 132,  43, 121, 229, 116, 101, 120,  21,  34,\
+                            236, 115, 176, 196, 134,  98, 178, 246,  53,  62,\
+                             23, 132, 171, 121, 229, 116, 229, 120,  21,  34,\
+                            108, 116, 181, 176, 133, 103,  83, 109,   5, 103,\
+                             23, 132,  43, 121, 217, 116, 101, 120, 220, 249,\
+                            194, 118, 229,  73,  63, 119,  22,  74, 191, 118,\
+                            242, 103,   1, 235, 195, 197, 194, 238,  84,  73,\
+                             63, 119, 229,  73, 191, 119,  22,  74,  63, 119,\
+                            235,  27, 194, 235,  30, 117,  68, 238,  84,  73,\
+                            191, 118, 229,  73,  63, 119,  22,  74, 191, 118 };
+
+    FilterImage(ref, open3d::Image::FilterType::Gaussian3);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(Image, FilterImage_Gaussian5)
+{
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = { 185, 235,  13, 120,  30, 210, 174, 120, 132, 184,\
+                            207, 120, 233, 158, 112, 120,  12, 209,  90, 119,\
+                            122, 102, 243, 119, 107, 216, 193, 120, 205, 254,\
+                              4, 121, 100,  17, 169, 120, 201,  28, 164, 119,\
+                            171,  99, 126, 120,  54,  68, 123, 121,  26,  93,\
+                            187, 121,  14,   6, 121, 121,  50, 135, 120, 120,\
+                             80,  29, 115, 121, 191, 103, 117, 122, 174,  62,\
+                            184, 122, 239, 178, 117, 122, 239, 178, 117, 121,\
+                             32, 213,   3, 122, 170,  23,   5, 123,  64, 217,\
+                             71, 123,   4,  65,   5, 123,   4,  65,   5, 122 };
+
+    FilterImage(ref, open3d::Image::FilterType::Gaussian5);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(Image, FilterImage_Gaussian7)
+{
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = { 167, 206,  54, 243, 177,  62, 130, 245, 193,  88,\
+                            137, 246, 103,  60,  44, 247, 114, 153, 152, 247,\
+                            228, 189, 182, 243,  36,  92,  91, 246, 130, 154,\
+                            109, 247, 213,  43,  22, 248,   4, 100, 133, 248,\
+                            235, 228, 234, 243, 215,  71, 215, 246, 239,  74,\
+                            236, 247, 152, 234, 149, 248, 181,  83,   5, 249,\
+                            217, 171, 182, 243, 206, 135,   8, 247, 169,  77,\
+                             23, 248,  68, 132, 192, 248, 184,  92,  43, 249,\
+                              9, 168,  54, 243, 142, 203, 210, 246, 231, 217,\
+                            234, 247, 216, 162, 149, 248, 198,  65,   5, 249 };
+
+    FilterImage(ref, open3d::Image::FilterType::Gaussian7);
 }
 
 // ----------------------------------------------------------------------------
@@ -784,5 +882,5 @@ Ideally make all data private. Add getters/setters as appropriate.
 Can't have global methods.
 Find another place for the code, maybe in Image or PinholeCameraIntrinsic.
 - The hardcoded filters Gaussian3/5/7 and Sobel31/32 can/should be const arrays instead of vectors.
-
+- use the const ref pattern for all function arguments where appropriate  
 */
