@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileXYZRGB, ReadPointCloudFromXYZRGB)
+TEST(FileXYZRGB, DISABLED_ReadPointCloudFromXYZRGB)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileXYZRGB, ReadPointCloudFromXYZRGB)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileXYZRGB, WritePointCloudToXYZRGB)
+TEST(FileXYZRGB, DISABLED_WritePointCloudToXYZRGB)
 {
     NotImplemented();
 }

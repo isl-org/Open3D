@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, Constructor)
+TEST(GeometryRenderer, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(GeometryRenderer, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, Destructor)
+TEST(GeometryRenderer, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(GeometryRenderer, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, MemberData)
+TEST(GeometryRenderer, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(GeometryRenderer, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, Render)
+TEST(GeometryRenderer, DISABLED_Render)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(GeometryRenderer, Render)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, AddGeometry)
+TEST(GeometryRenderer, DISABLED_AddGeometry)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(GeometryRenderer, AddGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, UpdateGeometry)
+TEST(GeometryRenderer, DISABLED_UpdateGeometry)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(GeometryRenderer, UpdateGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, HasGeometry)
+TEST(GeometryRenderer, DISABLED_HasGeometry)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(GeometryRenderer, HasGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, IsVisible)
+TEST(GeometryRenderer, DISABLED_IsVisible)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(GeometryRenderer, IsVisible)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, SetVisible)
+TEST(GeometryRenderer, DISABLED_SetVisible)
 {
     NotImplemented();
 }

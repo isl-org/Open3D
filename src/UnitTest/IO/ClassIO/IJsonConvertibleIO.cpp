@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertibleIO, ReadIJsonConvertible)
+TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertible)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(IJsonConvertibleIO, ReadIJsonConvertible)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertibleIO, WriteIJsonConvertible)
+TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertible)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(IJsonConvertibleIO, WriteIJsonConvertible)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertibleIO, ReadIJsonConvertibleFromJSON)
+TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSON)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(IJsonConvertibleIO, ReadIJsonConvertibleFromJSON)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertibleIO, WriteIJsonConvertibleToJSON)
+TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSON)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(IJsonConvertibleIO, WriteIJsonConvertibleToJSON)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertibleIO, ReadIJsonConvertibleFromJSONString)
+TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSONString)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(IJsonConvertibleIO, ReadIJsonConvertibleFromJSONString)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertibleIO, WriteIJsonConvertibleToJSONString)
+TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSONString)
 {
     NotImplemented();
 }

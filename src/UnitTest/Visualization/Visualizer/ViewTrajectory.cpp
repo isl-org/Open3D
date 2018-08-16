@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, Constructor)
+TEST(ViewTrajectory, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ViewTrajectory, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, Destructor)
+TEST(ViewTrajectory, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ViewTrajectory, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, MemberData)
+TEST(ViewTrajectory, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ViewTrajectory, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, ComputeInterpolationCoefficients)
+TEST(ViewTrajectory, DISABLED_ComputeInterpolationCoefficients)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ViewTrajectory, ComputeInterpolationCoefficients)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, ChangeInterval)
+TEST(ViewTrajectory, DISABLED_ChangeInterval)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ViewTrajectory, ChangeInterval)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, NumOfFrames)
+TEST(ViewTrajectory, DISABLED_NumOfFrames)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ViewTrajectory, NumOfFrames)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, Reset)
+TEST(ViewTrajectory, DISABLED_Reset)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ViewTrajectory, Reset)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, GetInterpolatedFrame)
+TEST(ViewTrajectory, DISABLED_GetInterpolatedFrame)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(ViewTrajectory, GetInterpolatedFrame)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, ConvertToJsonValue)
+TEST(ViewTrajectory, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(ViewTrajectory, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewTrajectory, ConvertFromJsonValue)
+TEST(ViewTrajectory, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }

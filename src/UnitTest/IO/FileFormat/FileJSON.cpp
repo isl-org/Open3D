@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJSON, ReadIJsonConvertibleFromJSONStream)
+TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONStream)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileJSON, ReadIJsonConvertibleFromJSONStream)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJSON, WriteIJsonConvertibleToJSONStream)
+TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONStream)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FileJSON, WriteIJsonConvertibleToJSONStream)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJSON, ReadIJsonConvertibleFromJSON)
+TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSON)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FileJSON, ReadIJsonConvertibleFromJSON)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJSON, WriteIJsonConvertibleToJSON)
+TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSON)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(FileJSON, WriteIJsonConvertibleToJSON)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJSON, ReadIJsonConvertibleFromJSONString)
+TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONString)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(FileJSON, ReadIJsonConvertibleFromJSONString)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJSON, WriteIJsonConvertibleToJSONString)
+TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONString)
 {
     NotImplemented();
 }

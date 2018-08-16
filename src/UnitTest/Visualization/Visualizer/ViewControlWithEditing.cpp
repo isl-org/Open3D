@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, Reset)
+TEST(ViewControlWithEditing, DISABLED_Reset)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ViewControlWithEditing, Reset)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, ChangeFieldOfView)
+TEST(ViewControlWithEditing, DISABLED_ChangeFieldOfView)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ViewControlWithEditing, ChangeFieldOfView)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, Scale)
+TEST(ViewControlWithEditing, DISABLED_Scale)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ViewControlWithEditing, Scale)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, Rotate)
+TEST(ViewControlWithEditing, DISABLED_Rotate)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ViewControlWithEditing, Rotate)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, Translate)
+TEST(ViewControlWithEditing, DISABLED_Translate)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ViewControlWithEditing, Translate)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, SetEditingMode)
+TEST(ViewControlWithEditing, DISABLED_SetEditingMode)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ViewControlWithEditing, SetEditingMode)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, GetStatusString)
+TEST(ViewControlWithEditing, DISABLED_GetStatusString)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ViewControlWithEditing, GetStatusString)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, GetEditingMode)
+TEST(ViewControlWithEditing, DISABLED_GetEditingMode)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(ViewControlWithEditing, GetEditingMode)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, ToggleEditingX)
+TEST(ViewControlWithEditing, DISABLED_ToggleEditingX)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(ViewControlWithEditing, ToggleEditingX)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, ToggleEditingY)
+TEST(ViewControlWithEditing, DISABLED_ToggleEditingY)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(ViewControlWithEditing, ToggleEditingY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, ToggleEditingZ)
+TEST(ViewControlWithEditing, DISABLED_ToggleEditingZ)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(ViewControlWithEditing, ToggleEditingZ)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, ToggleLocking)
+TEST(ViewControlWithEditing, DISABLED_ToggleLocking)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(ViewControlWithEditing, ToggleLocking)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, IsLocked)
+TEST(ViewControlWithEditing, DISABLED_IsLocked)
 {
     NotImplemented();
 }

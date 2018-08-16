@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ReadVertexCallback)
+TEST(FilePLY, DISABLED_ReadVertexCallback)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FilePLY, ReadVertexCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, AdvanceConsoleProgress)
+TEST(FilePLY, DISABLED_AdvanceConsoleProgress)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FilePLY, AdvanceConsoleProgress)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ReadNormalCallback)
+TEST(FilePLY, DISABLED_ReadNormalCallback)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FilePLY, ReadNormalCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ReadColorCallback)
+TEST(FilePLY, DISABLED_ReadColorCallback)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(FilePLY, ReadColorCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ReadFaceCallBack)
+TEST(FilePLY, DISABLED_ReadFaceCallBack)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(FilePLY, ReadFaceCallBack)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ReadPointCloudFromPLY)
+TEST(FilePLY, DISABLED_ReadPointCloudFromPLY)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(FilePLY, ReadPointCloudFromPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, WritePointCloudToPLY)
+TEST(FilePLY, DISABLED_WritePointCloudToPLY)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(FilePLY, WritePointCloudToPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ReadTriangleMeshFromPLY)
+TEST(FilePLY, DISABLED_ReadTriangleMeshFromPLY)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(FilePLY, ReadTriangleMeshFromPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, WriteTriangleMeshToPLY)
+TEST(FilePLY, DISABLED_WriteTriangleMeshToPLY)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(FilePLY, WriteTriangleMeshToPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePLY, ResetConsoleProgress)
+TEST(FilePLY, DISABLED_ResetConsoleProgress)
 {
     NotImplemented();
 }

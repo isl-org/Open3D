@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, Constructor)
+TEST(PointCloud, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(PointCloud, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, Destructor)
+TEST(PointCloud, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(PointCloud, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, MemberData)
+TEST(PointCloud, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(PointCloud, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, Clear)
+TEST(PointCloud, DISABLED_Clear)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(PointCloud, Clear)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, IsEmpty)
+TEST(PointCloud, DISABLED_IsEmpty)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(PointCloud, IsEmpty)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, GetMinBound)
+TEST(PointCloud, DISABLED_GetMinBound)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(PointCloud, GetMinBound)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, GetMaxBound)
+TEST(PointCloud, DISABLED_GetMaxBound)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(PointCloud, GetMaxBound)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, Transform)
+TEST(PointCloud, DISABLED_Transform)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(PointCloud, Transform)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, HasPoints)
+TEST(PointCloud, DISABLED_HasPoints)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(PointCloud, HasPoints)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, HasNormals)
+TEST(PointCloud, DISABLED_HasNormals)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(PointCloud, HasNormals)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, HasColors)
+TEST(PointCloud, DISABLED_HasColors)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(PointCloud, HasColors)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, NormalizeNormals)
+TEST(PointCloud, DISABLED_NormalizeNormals)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(PointCloud, NormalizeNormals)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, PaintUniformColor)
+TEST(PointCloud, DISABLED_PaintUniformColor)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(PointCloud, PaintUniformColor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CreatePointCloudFromFile)
+TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(PointCloud, CreatePointCloudFromFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CreatePointCloudFromDepthImage)
+TEST(PointCloud, DISABLED_CreatePointCloudFromDepthImage)
 {
     NotImplemented();
 }
@@ -149,7 +149,7 @@ TEST(PointCloud, CreatePointCloudFromDepthImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CreatePointCloudFromRGBDImage)
+TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImage)
 {
     NotImplemented();
 }
@@ -157,7 +157,7 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, SelectDownSample)
+TEST(PointCloud, DISABLED_SelectDownSample)
 {
     NotImplemented();
 }
@@ -165,7 +165,7 @@ TEST(PointCloud, SelectDownSample)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, VoxelDownSample)
+TEST(PointCloud, DISABLED_VoxelDownSample)
 {
     NotImplemented();
 }
@@ -173,7 +173,7 @@ TEST(PointCloud, VoxelDownSample)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, UniformDownSample)
+TEST(PointCloud, DISABLED_UniformDownSample)
 {
     NotImplemented();
 }
@@ -181,7 +181,7 @@ TEST(PointCloud, UniformDownSample)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CropPointCloud)
+TEST(PointCloud, DISABLED_CropPointCloud)
 {
     NotImplemented();
 }
@@ -189,7 +189,7 @@ TEST(PointCloud, CropPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, EstimateNormals)
+TEST(PointCloud, DISABLED_EstimateNormals)
 {
     NotImplemented();
 }
@@ -197,7 +197,7 @@ TEST(PointCloud, EstimateNormals)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, KDTreeSearchParamKNN)
+TEST(PointCloud, DISABLED_KDTreeSearchParamKNN)
 {
     NotImplemented();
 }
@@ -205,7 +205,7 @@ TEST(PointCloud, KDTreeSearchParamKNN)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, OrientNormalsToAlignWithDirection)
+TEST(PointCloud, DISABLED_OrientNormalsToAlignWithDirection)
 {
     NotImplemented();
 }
@@ -213,7 +213,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, OrientNormalsTowardsCameraLocation)
+TEST(PointCloud, DISABLED_OrientNormalsTowardsCameraLocation)
 {
     NotImplemented();
 }
@@ -221,7 +221,7 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, ComputePointCloudToPointCloudDistance)
+TEST(PointCloud, DISABLED_ComputePointCloudToPointCloudDistance)
 {
     NotImplemented();
 }
@@ -229,7 +229,7 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, ComputePointCloudMeanAndCovariance)
+TEST(PointCloud, DISABLED_ComputePointCloudMeanAndCovariance)
 {
     NotImplemented();
 }
@@ -237,7 +237,7 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, ComputePointCloudMahalanobisDistance)
+TEST(PointCloud, DISABLED_ComputePointCloudMahalanobisDistance)
 {
     NotImplemented();
 }
@@ -245,7 +245,7 @@ TEST(PointCloud, ComputePointCloudMahalanobisDistance)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
+TEST(PointCloud, DISABLED_ComputePointCloudNearestNeighborDistance)
 {
     NotImplemented();
 }
@@ -253,7 +253,7 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CreatePointCloudFromFloatDepthImage)
+TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 {
     NotImplemented();
 }
@@ -261,7 +261,7 @@ TEST(PointCloud, CreatePointCloudFromFloatDepthImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, PointerAt)
+TEST(PointCloud, DISABLED_PointerAt)
 {
     NotImplemented();
 }
@@ -269,7 +269,7 @@ TEST(PointCloud, PointerAt)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CreatePointCloudFromRGBDImageT)
+TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 {
     NotImplemented();
 }
@@ -277,7 +277,7 @@ TEST(PointCloud, CreatePointCloudFromRGBDImageT)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudFactory, CreatePointCloudFromDepthImage)
+TEST(PointCloudFactory, DISABLED_CreatePointCloudFromDepthImage)
 {
     NotImplemented();
 }
@@ -285,7 +285,7 @@ TEST(PointCloudFactory, CreatePointCloudFromDepthImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, ConvertDepthToFloatImage)
+TEST(PointCloud, DISABLED_ConvertDepthToFloatImage)
 {
     NotImplemented();
 }
@@ -293,7 +293,7 @@ TEST(PointCloud, ConvertDepthToFloatImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudFactory, CreatePointCloudFromRGBDImage)
+TEST(PointCloudFactory, DISABLED_CreatePointCloudFromRGBDImage)
 {
     NotImplemented();
 }

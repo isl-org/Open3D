@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Eigen, TransformVector6dToMatrix4d)
+TEST(Eigen, DISABLED_TransformVector6dToMatrix4d)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(Eigen, TransformVector6dToMatrix4d)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Eigen, TransformMatrix4dToVector6d)
+TEST(Eigen, DISABLED_TransformMatrix4dToVector6d)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(Eigen, TransformMatrix4dToVector6d)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Eigen, SolveLinearSystem)
+TEST(Eigen, DISABLED_SolveLinearSystem)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(Eigen, SolveLinearSystem)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix)
+TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrix)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray)
+TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrixArray)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Eigen, ComputeJTJandJTr)
+TEST(Eigen, DISABLED_ComputeJTJandJTr)
 {
     NotImplemented();
 }

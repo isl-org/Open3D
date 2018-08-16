@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, Constructor)
+TEST(ShaderWrapper, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ShaderWrapper, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, Destructor)
+TEST(ShaderWrapper, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ShaderWrapper, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, MemberData)
+TEST(ShaderWrapper, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ShaderWrapper, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, Render)
+TEST(ShaderWrapper, DISABLED_Render)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ShaderWrapper, Render)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, InvalidateGeometry)
+TEST(ShaderWrapper, DISABLED_InvalidateGeometry)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ShaderWrapper, InvalidateGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, PrintShaderWarning)
+TEST(ShaderWrapper, DISABLED_PrintShaderWarning)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ShaderWrapper, PrintShaderWarning)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, Compile)
+TEST(ShaderWrapper, DISABLED_Compile)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ShaderWrapper, Compile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, Release)
+TEST(ShaderWrapper, DISABLED_Release)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(ShaderWrapper, Release)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, BindGeometry)
+TEST(ShaderWrapper, DISABLED_BindGeometry)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(ShaderWrapper, BindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, RenderGeometry)
+TEST(ShaderWrapper, DISABLED_RenderGeometry)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(ShaderWrapper, RenderGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, UnbindGeometry)
+TEST(ShaderWrapper, DISABLED_UnbindGeometry)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(ShaderWrapper, UnbindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, ValidateShader)
+TEST(ShaderWrapper, DISABLED_ValidateShader)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(ShaderWrapper, ValidateShader)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, ValidateProgram)
+TEST(ShaderWrapper, DISABLED_ValidateProgram)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(ShaderWrapper, ValidateProgram)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, CompileShaders)
+TEST(ShaderWrapper, DISABLED_CompileShaders)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(ShaderWrapper, CompileShaders)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, ReleaseProgram)
+TEST(ShaderWrapper, DISABLED_ReleaseProgram)
 {
     NotImplemented();
 }
@@ -149,7 +149,7 @@ TEST(ShaderWrapper, ReleaseProgram)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, SetShaderName)
+TEST(ShaderWrapper, DISABLED_SetShaderName)
 {
     NotImplemented();
 }

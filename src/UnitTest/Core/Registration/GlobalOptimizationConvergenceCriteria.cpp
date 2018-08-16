@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, GlobalOptimizationOption)
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(GlobalOptimizationConvergenceCriteria, GlobalOptimizationOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, Destructor)
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(GlobalOptimizationConvergenceCriteria, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, Constructor)
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(GlobalOptimizationConvergenceCriteria, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, MemberData)
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_MemberData)
 {
     NotImplemented();
 }

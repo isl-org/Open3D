@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, Constructor)
+TEST(RGBDOdometryJacobian, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(RGBDOdometryJacobian, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, Destructor)
+TEST(RGBDOdometryJacobian, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(RGBDOdometryJacobian, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, MemberData)
+TEST(RGBDOdometryJacobian, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(RGBDOdometryJacobian, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, ComputeJacobianAndResidual)
+TEST(RGBDOdometryJacobian, DISABLED_ComputeJacobianAndResidual)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(RGBDOdometryJacobian, ComputeJacobianAndResidual)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, RGBDOdometryJacobianFromColorTerm)
+TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromColorTerm)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(RGBDOdometryJacobian, RGBDOdometryJacobianFromColorTerm)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, RGBDOdometryJacobianFromHybridTerm)
+TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromHybridTerm)
 {
     NotImplemented();
 }

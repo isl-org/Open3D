@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, CheckHeader)
+TEST(FilePCD, DISABLED_CheckHeader)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FilePCD, CheckHeader)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, ReadPCDHeader)
+TEST(FilePCD, DISABLED_ReadPCDHeader)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FilePCD, ReadPCDHeader)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, SplitString)
+TEST(FilePCD, DISABLED_SplitString)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FilePCD, SplitString)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, UnpackBinaryPCDElement)
+TEST(FilePCD, DISABLED_UnpackBinaryPCDElement)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(FilePCD, UnpackBinaryPCDElement)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, UnpackBinaryPCDColor)
+TEST(FilePCD, DISABLED_UnpackBinaryPCDColor)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(FilePCD, UnpackBinaryPCDColor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, UnpackASCIIPCDElement)
+TEST(FilePCD, DISABLED_UnpackASCIIPCDElement)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(FilePCD, UnpackASCIIPCDElement)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, UnpackASCIIPCDColor)
+TEST(FilePCD, DISABLED_UnpackASCIIPCDColor)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(FilePCD, UnpackASCIIPCDColor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, ReadPCDData)
+TEST(FilePCD, DISABLED_ReadPCDData)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(FilePCD, ReadPCDData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, RemoveNanData)
+TEST(FilePCD, DISABLED_RemoveNanData)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(FilePCD, RemoveNanData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, GenerateHeader)
+TEST(FilePCD, DISABLED_GenerateHeader)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(FilePCD, GenerateHeader)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, WritePCDHeader)
+TEST(FilePCD, DISABLED_WritePCDHeader)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(FilePCD, WritePCDHeader)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, ConvertRGBToFloat)
+TEST(FilePCD, DISABLED_ConvertRGBToFloat)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(FilePCD, ConvertRGBToFloat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, WritePCDData)
+TEST(FilePCD, DISABLED_WritePCDData)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(FilePCD, WritePCDData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, ReadPointCloudFromPCD)
+TEST(FilePCD, DISABLED_ReadPointCloudFromPCD)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(FilePCD, ReadPointCloudFromPCD)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePCD, WritePointCloudToPCD)
+TEST(FilePCD, DISABLED_WritePointCloudToPCD)
 {
     NotImplemented();
 }

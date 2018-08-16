@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, Render)
+TEST(VisualizerCallback, DISABLED_Render)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(VisualizerCallback, Render)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, PrintDebug)
+TEST(VisualizerCallback, DISABLED_PrintDebug)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(VisualizerCallback, PrintDebug)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, ResetViewPoint)
+TEST(VisualizerCallback, DISABLED_ResetViewPoint)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(VisualizerCallback, ResetViewPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, CopyViewStatusToClipboard)
+TEST(VisualizerCallback, DISABLED_CopyViewStatusToClipboard)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(VisualizerCallback, CopyViewStatusToClipboard)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, CopyViewStatusFromClipboard)
+TEST(VisualizerCallback, DISABLED_CopyViewStatusFromClipboard)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(VisualizerCallback, CopyViewStatusFromClipboard)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, Close)
+TEST(VisualizerCallback, DISABLED_Close)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(VisualizerCallback, Close)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, PrintVisualizerHelp)
+TEST(VisualizerCallback, DISABLED_PrintVisualizerHelp)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(VisualizerCallback, PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, CaptureScreenImage)
+TEST(VisualizerCallback, DISABLED_CaptureScreenImage)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(VisualizerCallback, CaptureScreenImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, CaptureDepthImage)
+TEST(VisualizerCallback, DISABLED_CaptureDepthImage)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(VisualizerCallback, CaptureDepthImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, CaptureRenderOption)
+TEST(VisualizerCallback, DISABLED_CaptureRenderOption)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(VisualizerCallback, CaptureRenderOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, UpdateGeometry)
+TEST(VisualizerCallback, DISABLED_UpdateGeometry)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(VisualizerCallback, UpdateGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, SetGlobalColorMap)
+TEST(VisualizerCallback, DISABLED_SetGlobalColorMap)
 {
     NotImplemented();
 }

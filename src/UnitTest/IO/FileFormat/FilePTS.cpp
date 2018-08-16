@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePTS, ReadPointCloudFromPTS)
+TEST(FilePTS, DISABLED_ReadPointCloudFromPTS)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FilePTS, ReadPointCloudFromPTS)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePTS, ResetConsoleProgress)
+TEST(FilePTS, DISABLED_ResetConsoleProgress)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FilePTS, ResetConsoleProgress)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePTS, SplitString)
+TEST(FilePTS, DISABLED_SplitString)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FilePTS, SplitString)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePTS, AdvanceConsoleProgress)
+TEST(FilePTS, DISABLED_AdvanceConsoleProgress)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(FilePTS, AdvanceConsoleProgress)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePTS, WritePointCloudToPTS)
+TEST(FilePTS, DISABLED_WritePointCloudToPTS)
 {
     NotImplemented();
 }

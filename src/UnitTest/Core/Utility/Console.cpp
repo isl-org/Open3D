@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, SetVerbosityLevel)
+TEST(Console, DISABLED_SetVerbosityLevel)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(Console, SetVerbosityLevel)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, GetVerbosityLevel)
+TEST(Console, DISABLED_GetVerbosityLevel)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(Console, GetVerbosityLevel)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, PrintError)
+TEST(Console, DISABLED_PrintError)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(Console, PrintError)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, PrintWarning)
+TEST(Console, DISABLED_PrintWarning)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(Console, PrintWarning)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, PrintInfo)
+TEST(Console, DISABLED_PrintInfo)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(Console, PrintInfo)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, PrintDebug)
+TEST(Console, DISABLED_PrintDebug)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(Console, PrintDebug)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, PrintAlways)
+TEST(Console, DISABLED_PrintAlways)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(Console, PrintAlways)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, ResetConsoleProgress)
+TEST(Console, DISABLED_ResetConsoleProgress)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(Console, ResetConsoleProgress)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, AdvanceConsoleProgress)
+TEST(Console, DISABLED_AdvanceConsoleProgress)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(Console, AdvanceConsoleProgress)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, GetCurrentTimeStamp)
+TEST(Console, DISABLED_GetCurrentTimeStamp)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(Console, GetCurrentTimeStamp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, GetProgramOptionAsString)
+TEST(Console, DISABLED_GetProgramOptionAsString)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(Console, GetProgramOptionAsString)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, GetProgramOptionAsInt)
+TEST(Console, DISABLED_GetProgramOptionAsInt)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(Console, GetProgramOptionAsInt)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, GetProgramOptionAsDouble)
+TEST(Console, DISABLED_GetProgramOptionAsDouble)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(Console, GetProgramOptionAsDouble)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, GetProgramOptionAsEigenVectorXd)
+TEST(Console, DISABLED_GetProgramOptionAsEigenVectorXd)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(Console, GetProgramOptionAsEigenVectorXd)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, ProgramOptionExists)
+TEST(Console, DISABLED_ProgramOptionExists)
 {
     NotImplemented();
 }
@@ -149,7 +149,7 @@ TEST(Console, ProgramOptionExists)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Console, ProgramOptionExistsAny)
+TEST(Console, DISABLED_ProgramOptionExistsAny)
 {
     NotImplemented();
 }

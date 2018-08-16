@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, Constructor)
+TEST(RenderOptionWithEditing, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(RenderOptionWithEditing, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, Destructor)
+TEST(RenderOptionWithEditing, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(RenderOptionWithEditing, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, MemberData)
+TEST(RenderOptionWithEditing, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(RenderOptionWithEditing, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, ConvertToJsonValue)
+TEST(RenderOptionWithEditing, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(RenderOptionWithEditing, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, ConvertFromJsonValue)
+TEST(RenderOptionWithEditing, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(RenderOptionWithEditing, ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, IncreaseSphereSize)
+TEST(RenderOptionWithEditing, DISABLED_IncreaseSphereSize)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(RenderOptionWithEditing, IncreaseSphereSize)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DecreaseSphereSize)
+TEST(RenderOptionWithEditing, DISABLED_DecreaseSphereSize)
 {
     NotImplemented();
 }

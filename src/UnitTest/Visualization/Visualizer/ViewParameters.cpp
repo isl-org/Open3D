@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, Constructor)
+TEST(ViewParameters, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ViewParameters, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, Destructor)
+TEST(ViewParameters, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ViewParameters, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, MemberData)
+TEST(ViewParameters, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ViewParameters, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, ConvertToVector17d)
+TEST(ViewParameters, DISABLED_ConvertToVector17d)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ViewParameters, ConvertToVector17d)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, ConvertFromVector17d)
+TEST(ViewParameters, DISABLED_ConvertFromVector17d)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ViewParameters, ConvertFromVector17d)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, ConvertToJsonValue)
+TEST(ViewParameters, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ViewParameters, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, ConvertFromJsonValue)
+TEST(ViewParameters, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }

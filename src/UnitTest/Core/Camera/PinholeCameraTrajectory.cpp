@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, Constructor)
+TEST(PinholeCameraTrajectory, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(PinholeCameraTrajectory, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, Destructor)
+TEST(PinholeCameraTrajectory, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(PinholeCameraTrajectory, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, MemberData)
+TEST(PinholeCameraTrajectory, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(PinholeCameraTrajectory, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, ConvertToJsonValue)
+TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(PinholeCameraTrajectory, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, ConvertFromJsonValue)
+TEST(PinholeCameraTrajectory, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, ColorMapOptmizationOption)
+TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ColorMapOptmization, ColorMapOptmizationOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, Destructor)
+TEST(ColorMapOptmization, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ColorMapOptmization, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, Constructor)
+TEST(ColorMapOptmization, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ColorMapOptmization, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, MemberData)
+TEST(ColorMapOptmization, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ColorMapOptmization, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, ColorMapOptmization)
+TEST(ColorMapOptmization, DISABLED_ColorMapOptmization)
 {
     NotImplemented();
 }

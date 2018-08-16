@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FastGlobalRegistration, FastGlobalRegistrationOption)
+TEST(FastGlobalRegistration, DISABLED_FastGlobalRegistrationOption)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FastGlobalRegistration, FastGlobalRegistrationOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FastGlobalRegistration, Destructor)
+TEST(FastGlobalRegistration, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FastGlobalRegistration, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FastGlobalRegistration, Constructor)
+TEST(FastGlobalRegistration, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FastGlobalRegistration, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FastGlobalRegistration, MemberData)
+TEST(FastGlobalRegistration, DISABLED_MemberData)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileExtensionInLowerCase)
+TEST(FileSystem, DISABLED_GetFileExtensionInLowerCase)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileSystem, GetFileExtensionInLowerCase)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileNameWithoutExtension)
+TEST(FileSystem, DISABLED_GetFileNameWithoutExtension)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FileSystem, GetFileNameWithoutExtension)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileNameWithoutDirectory)
+TEST(FileSystem, DISABLED_GetFileNameWithoutDirectory)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FileSystem, GetFileNameWithoutDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileParentDirectory)
+TEST(FileSystem, DISABLED_GetFileParentDirectory)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(FileSystem, GetFileParentDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetRegularizedDirectoryName)
+TEST(FileSystem, DISABLED_GetRegularizedDirectoryName)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(FileSystem, GetRegularizedDirectoryName)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetWorkingDirectory)
+TEST(FileSystem, DISABLED_GetWorkingDirectory)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(FileSystem, GetWorkingDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, ChangeWorkingDirectory)
+TEST(FileSystem, DISABLED_ChangeWorkingDirectory)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(FileSystem, ChangeWorkingDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DirectoryExists)
+TEST(FileSystem, DISABLED_DirectoryExists)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(FileSystem, DirectoryExists)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, MakeDirectory)
+TEST(FileSystem, DISABLED_MakeDirectory)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(FileSystem, MakeDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, MakeDirectoryHierarchy)
+TEST(FileSystem, DISABLED_MakeDirectoryHierarchy)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(FileSystem, MakeDirectoryHierarchy)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DeleteDirectory)
+TEST(FileSystem, DISABLED_DeleteDirectory)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(FileSystem, DeleteDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, FileExists)
+TEST(FileSystem, DISABLED_FileExists)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(FileSystem, FileExists)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, RemoveFile)
+TEST(FileSystem, DISABLED_RemoveFile)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(FileSystem, RemoveFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, ListFilesInDirectory)
+TEST(FileSystem, DISABLED_ListFilesInDirectory)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(FileSystem, ListFilesInDirectory)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileSystem, ListFilesInDirectoryWithExtension)
+TEST(FileSystem, DISABLED_ListFilesInDirectoryWithExtension)
 {
     NotImplemented();
 }

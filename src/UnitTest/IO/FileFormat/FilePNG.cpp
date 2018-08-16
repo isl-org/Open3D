@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePNG, SetPNGImageFromImage)
+TEST(FilePNG, DISABLED_SetPNGImageFromImage)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FilePNG, SetPNGImageFromImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePNG, ReadImageFromPNG)
+TEST(FilePNG, DISABLED_ReadImageFromPNG)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FilePNG, ReadImageFromPNG)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FilePNG, WriteImageToPNG)
+TEST(FilePNG, DISABLED_WriteImageToPNG)
 {
     NotImplemented();
 }

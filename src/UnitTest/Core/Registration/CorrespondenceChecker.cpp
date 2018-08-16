@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, Constructor)
+TEST(CorrespondenceChecker, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(CorrespondenceChecker, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, Destructor)
+TEST(CorrespondenceChecker, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(CorrespondenceChecker, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, MemberData)
+TEST(CorrespondenceChecker, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(CorrespondenceChecker, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, Check)
+TEST(CorrespondenceChecker, DISABLED_Check)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(CorrespondenceChecker, Check)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, CorrespondenceCheckerBasedOnEdgeLength)
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(CorrespondenceChecker, CorrespondenceCheckerBasedOnEdgeLength)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, CorrespondenceCheckerBasedOnDistance)
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(CorrespondenceChecker, CorrespondenceCheckerBasedOnDistance)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, CorrespondenceCheckerBasedOnNormal)
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, Constructor)
+TEST(ImageShader, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ImageShader, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, Destructor)
+TEST(ImageShader, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ImageShader, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, MemberData)
+TEST(ImageShader, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ImageShader, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, Compile)
+TEST(ImageShader, DISABLED_Compile)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ImageShader, Compile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, Release)
+TEST(ImageShader, DISABLED_Release)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ImageShader, Release)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, BindGeometry)
+TEST(ImageShader, DISABLED_BindGeometry)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ImageShader, BindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, RenderGeometry)
+TEST(ImageShader, DISABLED_RenderGeometry)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ImageShader, RenderGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, UnbindGeometry)
+TEST(ImageShader, DISABLED_UnbindGeometry)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(ImageShader, UnbindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, PrepareRendering)
+TEST(ImageShader, DISABLED_PrepareRendering)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(ImageShader, PrepareRendering)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, PrepareBinding)
+TEST(ImageShader, DISABLED_PrepareBinding)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(ImageShader, PrepareBinding)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageShader, ImageShaderForImage)
+TEST(ImageShader, DISABLED_ImageShaderForImage)
 {
     NotImplemented();
 }

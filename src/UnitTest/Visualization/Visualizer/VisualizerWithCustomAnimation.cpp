@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, Constructor)
+TEST(VisualizerWithCustomAnimation, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(VisualizerWithCustomAnimation, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, Destructor)
+TEST(VisualizerWithCustomAnimation, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(VisualizerWithCustomAnimation, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, MemberData)
+TEST(VisualizerWithCustomAnimation, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(VisualizerWithCustomAnimation, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, PrintVisualizerHelp)
+TEST(VisualizerWithCustomAnimation, DISABLED_PrintVisualizerHelp)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(VisualizerWithCustomAnimation, PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, UpdateWindowTitle)
+TEST(VisualizerWithCustomAnimation, DISABLED_UpdateWindowTitle)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(VisualizerWithCustomAnimation, UpdateWindowTitle)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, Play)
+TEST(VisualizerWithCustomAnimation, DISABLED_Play)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(VisualizerWithCustomAnimation, Play)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, RegisterRecordingImageFormat)
+TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingImageFormat)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(VisualizerWithCustomAnimation, RegisterRecordingImageFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, RegisterRecordingDepthFormat)
+TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingDepthFormat)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(VisualizerWithCustomAnimation, RegisterRecordingDepthFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, InitViewControl)
+TEST(VisualizerWithCustomAnimation, DISABLED_InitViewControl)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(VisualizerWithCustomAnimation, InitViewControl)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, MouseMoveCallback)
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseMoveCallback)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(VisualizerWithCustomAnimation, MouseMoveCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, MouseScrollCallback)
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseScrollCallback)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(VisualizerWithCustomAnimation, MouseScrollCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, MouseButtonCallback)
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseButtonCallback)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(VisualizerWithCustomAnimation, MouseButtonCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, KeyPressCallback)
+TEST(VisualizerWithCustomAnimation, DISABLED_KeyPressCallback)
 {
     NotImplemented();
 }

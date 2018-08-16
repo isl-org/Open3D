@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, Constructor)
+TEST(OdometryOption, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(OdometryOption, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, Destructor)
+TEST(OdometryOption, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(OdometryOption, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, MemberData)
+TEST(OdometryOption, DISABLED_MemberData)
 {
     NotImplemented();
 }

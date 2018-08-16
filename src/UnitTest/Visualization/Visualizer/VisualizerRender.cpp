@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, PrintError)
+TEST(VisualizerRender, DISABLED_PrintError)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(VisualizerRender, PrintError)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, CreateMeshCoordinateFrame)
+TEST(VisualizerRender, DISABLED_CreateMeshCoordinateFrame)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(VisualizerRender, CreateMeshCoordinateFrame)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, PrintInfo)
+TEST(VisualizerRender, DISABLED_PrintInfo)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(VisualizerRender, PrintInfo)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, Render)
+TEST(VisualizerRender, DISABLED_Render)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(VisualizerRender, Render)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, GetCurrentTimeStamp)
+TEST(VisualizerRender, DISABLED_GetCurrentTimeStamp)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(VisualizerRender, GetCurrentTimeStamp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, PrintDebug)
+TEST(VisualizerRender, DISABLED_PrintDebug)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(VisualizerRender, PrintDebug)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, WriteImage)
+TEST(VisualizerRender, DISABLED_WriteImage)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(VisualizerRender, WriteImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, WriteIJsonConvertible)
+TEST(VisualizerRender, DISABLED_WriteIJsonConvertible)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(VisualizerRender, WriteIJsonConvertible)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerRender, WritePointCloud)
+TEST(VisualizerRender, DISABLED_WritePointCloud)
 {
     NotImplemented();
 }

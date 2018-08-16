@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, Constructor)
+TEST(Visualizer, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(Visualizer, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, Destructor)
+TEST(Visualizer, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(Visualizer, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, MemberData)
+TEST(Visualizer, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(Visualizer, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CreateVisualizerWindow)
+TEST(Visualizer, DISABLED_CreateVisualizerWindow)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(Visualizer, CreateVisualizerWindow)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, DestroyVisualizerWindow)
+TEST(Visualizer, DISABLED_DestroyVisualizerWindow)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(Visualizer, DestroyVisualizerWindow)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, RegisterAnimationCallback)
+TEST(Visualizer, DISABLED_RegisterAnimationCallback)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(Visualizer, RegisterAnimationCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, Run)
+TEST(Visualizer, DISABLED_Run)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(Visualizer, Run)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, Close)
+TEST(Visualizer, DISABLED_Close)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(Visualizer, Close)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, WaitEvents)
+TEST(Visualizer, DISABLED_WaitEvents)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(Visualizer, WaitEvents)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, PollEvents)
+TEST(Visualizer, DISABLED_PollEvents)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(Visualizer, PollEvents)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, AddGeometry)
+TEST(Visualizer, DISABLED_AddGeometry)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(Visualizer, AddGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, UpdateGeometry)
+TEST(Visualizer, DISABLED_UpdateGeometry)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(Visualizer, UpdateGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, HasGeometry)
+TEST(Visualizer, DISABLED_HasGeometry)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(Visualizer, HasGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, UpdateRender)
+TEST(Visualizer, DISABLED_UpdateRender)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(Visualizer, UpdateRender)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, PrintVisualizerHelp)
+TEST(Visualizer, DISABLED_PrintVisualizerHelp)
 {
     NotImplemented();
 }
@@ -149,7 +149,7 @@ TEST(Visualizer, PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, UpdateWindowTitle)
+TEST(Visualizer, DISABLED_UpdateWindowTitle)
 {
     NotImplemented();
 }
@@ -157,7 +157,7 @@ TEST(Visualizer, UpdateWindowTitle)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, BuildUtilities)
+TEST(Visualizer, DISABLED_BuildUtilities)
 {
     NotImplemented();
 }
@@ -165,7 +165,7 @@ TEST(Visualizer, BuildUtilities)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CaptureScreenFloatBuffer)
+TEST(Visualizer, DISABLED_CaptureScreenFloatBuffer)
 {
     NotImplemented();
 }
@@ -173,7 +173,7 @@ TEST(Visualizer, CaptureScreenFloatBuffer)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CaptureScreenImage)
+TEST(Visualizer, DISABLED_CaptureScreenImage)
 {
     NotImplemented();
 }
@@ -181,7 +181,7 @@ TEST(Visualizer, CaptureScreenImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CaptureDepthFloatBuffer)
+TEST(Visualizer, DISABLED_CaptureDepthFloatBuffer)
 {
     NotImplemented();
 }
@@ -189,7 +189,7 @@ TEST(Visualizer, CaptureDepthFloatBuffer)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CaptureDepthImage)
+TEST(Visualizer, DISABLED_CaptureDepthImage)
 {
     NotImplemented();
 }
@@ -197,7 +197,7 @@ TEST(Visualizer, CaptureDepthImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CaptureDepthPointCloud)
+TEST(Visualizer, DISABLED_CaptureDepthPointCloud)
 {
     NotImplemented();
 }
@@ -205,7 +205,7 @@ TEST(Visualizer, CaptureDepthPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CaptureRenderOption)
+TEST(Visualizer, DISABLED_CaptureRenderOption)
 {
     NotImplemented();
 }
@@ -213,7 +213,7 @@ TEST(Visualizer, CaptureRenderOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, ResetViewPoint)
+TEST(Visualizer, DISABLED_ResetViewPoint)
 {
     NotImplemented();
 }
@@ -221,7 +221,7 @@ TEST(Visualizer, ResetViewPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, InitOpenGL)
+TEST(Visualizer, DISABLED_InitOpenGL)
 {
     NotImplemented();
 }
@@ -229,7 +229,7 @@ TEST(Visualizer, InitOpenGL)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, InitViewControl)
+TEST(Visualizer, DISABLED_InitViewControl)
 {
     NotImplemented();
 }
@@ -237,7 +237,7 @@ TEST(Visualizer, InitViewControl)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, InitRenderOption)
+TEST(Visualizer, DISABLED_InitRenderOption)
 {
     NotImplemented();
 }
@@ -245,7 +245,7 @@ TEST(Visualizer, InitRenderOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, Render)
+TEST(Visualizer, DISABLED_Render)
 {
     NotImplemented();
 }
@@ -253,7 +253,7 @@ TEST(Visualizer, Render)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CopyViewStatusToClipboard)
+TEST(Visualizer, DISABLED_CopyViewStatusToClipboard)
 {
     NotImplemented();
 }
@@ -261,7 +261,7 @@ TEST(Visualizer, CopyViewStatusToClipboard)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, CopyViewStatusFromClipboard)
+TEST(Visualizer, DISABLED_CopyViewStatusFromClipboard)
 {
     NotImplemented();
 }
@@ -269,7 +269,7 @@ TEST(Visualizer, CopyViewStatusFromClipboard)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, WindowRefreshCallback)
+TEST(Visualizer, DISABLED_WindowRefreshCallback)
 {
     NotImplemented();
 }
@@ -277,7 +277,7 @@ TEST(Visualizer, WindowRefreshCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, WindowResizeCallback)
+TEST(Visualizer, DISABLED_WindowResizeCallback)
 {
     NotImplemented();
 }
@@ -285,7 +285,7 @@ TEST(Visualizer, WindowResizeCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, MouseMoveCallback)
+TEST(Visualizer, DISABLED_MouseMoveCallback)
 {
     NotImplemented();
 }
@@ -293,7 +293,7 @@ TEST(Visualizer, MouseMoveCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, MouseScrollCallback)
+TEST(Visualizer, DISABLED_MouseScrollCallback)
 {
     NotImplemented();
 }
@@ -301,7 +301,7 @@ TEST(Visualizer, MouseScrollCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, MouseButtonCallback)
+TEST(Visualizer, DISABLED_MouseButtonCallback)
 {
     NotImplemented();
 }
@@ -309,7 +309,7 @@ TEST(Visualizer, MouseButtonCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, KeyPressCallback)
+TEST(Visualizer, DISABLED_KeyPressCallback)
 {
     NotImplemented();
 }
@@ -317,7 +317,7 @@ TEST(Visualizer, KeyPressCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Visualizer, WindowCloseCallback)
+TEST(Visualizer, DISABLED_WindowCloseCallback)
 {
     NotImplemented();
 }

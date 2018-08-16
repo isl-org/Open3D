@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileLOG, ReadPinholeCameraTrajectoryFromLOG)
+TEST(FileLOG, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileLOG, ReadPinholeCameraTrajectoryFromLOG)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileLOG, PinholeCameraIntrinsic)
+TEST(FileLOG, DISABLED_PinholeCameraIntrinsic)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FileLOG, PinholeCameraIntrinsic)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileLOG, WritePinholeCameraTrajectoryToLOG)
+TEST(FileLOG, DISABLED_WritePinholeCameraTrajectoryToLOG)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, Constructor)
+TEST(VisualizerWithEditing, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(VisualizerWithEditing, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, Destructor)
+TEST(VisualizerWithEditing, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(VisualizerWithEditing, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, MemberData)
+TEST(VisualizerWithEditing, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(VisualizerWithEditing, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, AddGeometry)
+TEST(VisualizerWithEditing, DISABLED_AddGeometry)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(VisualizerWithEditing, AddGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, PrintVisualizerHelp)
+TEST(VisualizerWithEditing, DISABLED_PrintVisualizerHelp)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(VisualizerWithEditing, PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, UpdateWindowTitle)
+TEST(VisualizerWithEditing, DISABLED_UpdateWindowTitle)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(VisualizerWithEditing, UpdateWindowTitle)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, BuildUtilities)
+TEST(VisualizerWithEditing, DISABLED_BuildUtilities)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(VisualizerWithEditing, BuildUtilities)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, PickPoint)
+TEST(VisualizerWithEditing, DISABLED_PickPoint)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(VisualizerWithEditing, PickPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, InitViewControl)
+TEST(VisualizerWithEditing, DISABLED_InitViewControl)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(VisualizerWithEditing, InitViewControl)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, InitRenderOption)
+TEST(VisualizerWithEditing, DISABLED_InitRenderOption)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(VisualizerWithEditing, InitRenderOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, WindowResizeCallback)
+TEST(VisualizerWithEditing, DISABLED_WindowResizeCallback)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(VisualizerWithEditing, WindowResizeCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, MouseMoveCallback)
+TEST(VisualizerWithEditing, DISABLED_MouseMoveCallback)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(VisualizerWithEditing, MouseMoveCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, MouseScrollCallback)
+TEST(VisualizerWithEditing, DISABLED_MouseScrollCallback)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(VisualizerWithEditing, MouseScrollCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, MouseButtonCallback)
+TEST(VisualizerWithEditing, DISABLED_MouseButtonCallback)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(VisualizerWithEditing, MouseButtonCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, KeyPressCallback)
+TEST(VisualizerWithEditing, DISABLED_KeyPressCallback)
 {
     NotImplemented();
 }
@@ -149,7 +149,7 @@ TEST(VisualizerWithEditing, KeyPressCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, InvalidateSelectionPolygon)
+TEST(VisualizerWithEditing, DISABLED_InvalidateSelectionPolygon)
 {
     NotImplemented();
 }
@@ -157,7 +157,7 @@ TEST(VisualizerWithEditing, InvalidateSelectionPolygon)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, InvalidatePicking)
+TEST(VisualizerWithEditing, DISABLED_InvalidatePicking)
 {
     NotImplemented();
 }
@@ -165,7 +165,7 @@ TEST(VisualizerWithEditing, InvalidatePicking)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, SaveCroppingResult)
+TEST(VisualizerWithEditing, DISABLED_SaveCroppingResult)
 {
     NotImplemented();
 }

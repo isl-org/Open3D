@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileBIN, ReadMatrixXdFromBINFile)
+TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileBIN, ReadMatrixXdFromBINFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileBIN, WriteMatrixXdToBINFile)
+TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FileBIN, WriteMatrixXdToBINFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileBIN, ReadFeatureFromBIN)
+TEST(FileBIN, DISABLED_ReadFeatureFromBIN)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FileBIN, ReadFeatureFromBIN)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileBIN, WriteFeatureToBIN)
+TEST(FileBIN, DISABLED_WriteFeatureToBIN)
 {
     NotImplemented();
 }

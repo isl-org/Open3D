@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, Constructor)
+TEST(RGBDImage, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(RGBDImage, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, Destructor)
+TEST(RGBDImage, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(RGBDImage, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, MemberData)
+TEST(RGBDImage, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(RGBDImage, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
+TEST(RGBDImage, DISABLED_CreateRGBDImageFromColorAndDepth)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
+TEST(RGBDImage, DISABLED_CreateRGBDImageFromRedwoodFormat)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
+TEST(RGBDImage, DISABLED_CreateRGBDImageFromTUMFormat)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
+TEST(RGBDImage, DISABLED_CreateRGBDImageFromSUNFormat)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
+TEST(RGBDImage, DISABLED_CreateRGBDImageFromNYUFormat)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, FilterRGBDImagePyramid)
+TEST(RGBDImage, DISABLED_FilterRGBDImagePyramid)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(RGBDImage, FilterRGBDImagePyramid)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateRGBDImagePyramid)
+TEST(RGBDImage, DISABLED_CreateRGBDImagePyramid)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImageFactory, CreateRGBDImageFromColorAndDepth)
+TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromColorAndDepth)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(RGBDImageFactory, CreateRGBDImageFromColorAndDepth)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, ConvertDepthToFloatImage)
+TEST(RGBDImage, DISABLED_ConvertDepthToFloatImage)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(RGBDImage, ConvertDepthToFloatImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, CreateFloatImageFromImage)
+TEST(RGBDImage, DISABLED_CreateFloatImageFromImage)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(RGBDImage, CreateFloatImageFromImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImageFactory, CreateRGBDImageFromRedwoodFormat)
+TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromRedwoodFormat)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(RGBDImageFactory, CreateRGBDImageFromRedwoodFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImageFactory, CreateRGBDImageFromTUMFormat)
+TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromTUMFormat)
 {
     NotImplemented();
 }
@@ -149,7 +149,7 @@ TEST(RGBDImageFactory, CreateRGBDImageFromTUMFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImageFactory, CreateRGBDImageFromSUNFormat)
+TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromSUNFormat)
 {
     NotImplemented();
 }
@@ -157,7 +157,7 @@ TEST(RGBDImageFactory, CreateRGBDImageFromSUNFormat)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, PointerAt)
+TEST(RGBDImage, DISABLED_PointerAt)
 {
     NotImplemented();
 }
@@ -165,7 +165,7 @@ TEST(RGBDImage, PointerAt)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RGBDImageFactory, CreateRGBDImageFromNYUFormat)
+TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromNYUFormat)
 {
     NotImplemented();
 }

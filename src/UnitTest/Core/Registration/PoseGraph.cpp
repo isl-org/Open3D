@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, Constructor)
+TEST(PoseGraph, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(PoseGraph, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, Destructor)
+TEST(PoseGraph, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(PoseGraph, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, MemberData)
+TEST(PoseGraph, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(PoseGraph, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, PoseGraphNode)
+TEST(PoseGraph, DISABLED_PoseGraphNode)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(PoseGraph, PoseGraphNode)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, ConvertToJsonValue)
+TEST(PoseGraph, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(PoseGraph, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, ConvertFromJsonValue)
+TEST(PoseGraph, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(PoseGraph, ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, PoseGraphEdge)
+TEST(PoseGraph, DISABLED_PoseGraphEdge)
 {
     NotImplemented();
 }

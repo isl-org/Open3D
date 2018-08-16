@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, CreateImageFromFile)
+TEST(ImageIO, DISABLED_CreateImageFromFile)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ImageIO, CreateImageFromFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, ReadImage)
+TEST(ImageIO, DISABLED_ReadImage)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ImageIO, ReadImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, WriteImage)
+TEST(ImageIO, DISABLED_WriteImage)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ImageIO, WriteImage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, ReadImageFromPNG)
+TEST(ImageIO, DISABLED_ReadImageFromPNG)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ImageIO, ReadImageFromPNG)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, WriteImageToPNG)
+TEST(ImageIO, DISABLED_WriteImageToPNG)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ImageIO, WriteImageToPNG)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, ReadImageFromJPG)
+TEST(ImageIO, DISABLED_ReadImageFromJPG)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ImageIO, ReadImageFromJPG)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ImageIO, WriteImageToJPG)
+TEST(ImageIO, DISABLED_WriteImageToJPG)
 {
     NotImplemented();
 }

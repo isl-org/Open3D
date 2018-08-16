@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, Constructor)
+TEST(ColorMap, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ColorMap, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, Destructor)
+TEST(ColorMap, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ColorMap, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, MemberData)
+TEST(ColorMap, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ColorMap, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, GetColor)
+TEST(ColorMap, DISABLED_GetColor)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ColorMap, GetColor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, Interpolate)
+TEST(ColorMap, DISABLED_Interpolate)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ColorMap, Interpolate)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, JetBase)
+TEST(ColorMap, DISABLED_JetBase)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ColorMap, JetBase)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, GetGlobalColorMap)
+TEST(ColorMap, DISABLED_GetGlobalColorMap)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ColorMap, GetGlobalColorMap)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColorMap, SetGlobalColorMap)
+TEST(ColorMap, DISABLED_SetGlobalColorMap)
 {
     NotImplemented();
 }

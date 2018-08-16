@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColoredICP, RegistrationColoredICP)
+TEST(ColoredICP, DISABLED_RegistrationColoredICP)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ColoredICP, RegistrationColoredICP)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ColoredICP, ICPConvergenceCriteria)
+TEST(ColoredICP, DISABLED_ICPConvergenceCriteria)
 {
     NotImplemented();
 }

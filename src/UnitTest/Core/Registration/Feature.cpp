@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Feature, Resize)
+TEST(Feature, DISABLED_Resize)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(Feature, Resize)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Feature, Dimension)
+TEST(Feature, DISABLED_Dimension)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(Feature, Dimension)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Feature, Num)
+TEST(Feature, DISABLED_Num)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(Feature, Num)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Feature, ComputeFPFHFeature)
+TEST(Feature, DISABLED_ComputeFPFHFeature)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(Feature, ComputeFPFHFeature)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Feature, KDTreeSearchParamKNN)
+TEST(Feature, DISABLED_KDTreeSearchParamKNN)
 {
     NotImplemented();
 }

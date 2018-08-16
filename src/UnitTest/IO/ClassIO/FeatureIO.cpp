@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, ReadFeature)
+TEST(FeatureIO, DISABLED_ReadFeature)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FeatureIO, ReadFeature)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, WriteFeature)
+TEST(FeatureIO, DISABLED_WriteFeature)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(FeatureIO, WriteFeature)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, ReadFeatureFromBIN)
+TEST(FeatureIO, DISABLED_ReadFeatureFromBIN)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(FeatureIO, ReadFeatureFromBIN)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FeatureIO, WriteFeatureToBIN)
+TEST(FeatureIO, DISABLED_WriteFeatureToBIN)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, FastEigen3x3)
+TEST(EstimateNormals, DISABLED_FastEigen3x3)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(EstimateNormals, FastEigen3x3)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, ComputeNormal)
+TEST(EstimateNormals, DISABLED_ComputeNormal)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(EstimateNormals, ComputeNormal)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, EstimateNormalsConstructor)
+TEST(EstimateNormals, DISABLED_EstimateNormalsConstructor)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(EstimateNormals, EstimateNormalsConstructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, KDTreeSearchParamKNN)
+TEST(EstimateNormals, DISABLED_KDTreeSearchParamKNN)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(EstimateNormals, KDTreeSearchParamKNN)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, OrientNormalsToAlignWithDirection)
+TEST(EstimateNormals, DISABLED_OrientNormalsToAlignWithDirection)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(EstimateNormals, OrientNormalsToAlignWithDirection)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, OrientNormalsTowardsCameraLocation)
+TEST(EstimateNormals, DISABLED_OrientNormalsTowardsCameraLocation)
 {
     NotImplemented();
 }

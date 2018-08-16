@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, Constructor)
+TEST(SimpleShader, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(SimpleShader, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, Destructor)
+TEST(SimpleShader, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(SimpleShader, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, MemberData)
+TEST(SimpleShader, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(SimpleShader, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, Compile)
+TEST(SimpleShader, DISABLED_Compile)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(SimpleShader, Compile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, Release)
+TEST(SimpleShader, DISABLED_Release)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(SimpleShader, Release)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, BindGeometry)
+TEST(SimpleShader, DISABLED_BindGeometry)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(SimpleShader, BindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, RenderGeometry)
+TEST(SimpleShader, DISABLED_RenderGeometry)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(SimpleShader, RenderGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, UnbindGeometry)
+TEST(SimpleShader, DISABLED_UnbindGeometry)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(SimpleShader, UnbindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, PrepareRendering)
+TEST(SimpleShader, DISABLED_PrepareRendering)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(SimpleShader, PrepareRendering)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, PrepareBinding)
+TEST(SimpleShader, DISABLED_PrepareBinding)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(SimpleShader, PrepareBinding)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, SimpleShaderForPointCloud)
+TEST(SimpleShader, DISABLED_SimpleShaderForPointCloud)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(SimpleShader, SimpleShaderForPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, SimpleShaderForLineSet)
+TEST(SimpleShader, DISABLED_SimpleShaderForLineSet)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(SimpleShader, SimpleShaderForLineSet)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleShader, SimpleShaderForTriangleMesh)
+TEST(SimpleShader, DISABLED_SimpleShaderForTriangleMesh)
 {
     NotImplemented();
 }

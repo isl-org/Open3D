@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, Constructor)
+TEST(TransformationEstimation, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(TransformationEstimation, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, Destructor)
+TEST(TransformationEstimation, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(TransformationEstimation, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, MemberData)
+TEST(TransformationEstimation, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(TransformationEstimation, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, GetTransformationEstimationType)
+TEST(TransformationEstimation, DISABLED_GetTransformationEstimationType)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(TransformationEstimation, GetTransformationEstimationType)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, ComputeRMSE)
+TEST(TransformationEstimation, DISABLED_ComputeRMSE)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(TransformationEstimation, ComputeRMSE)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, ComputeTransformation)
+TEST(TransformationEstimation, DISABLED_ComputeTransformation)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(TransformationEstimation, ComputeTransformation)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, TransformationEstimationPointToPoint)
+TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPoint)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(TransformationEstimation, TransformationEstimationPointToPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, TransformationEstimationPointToPlane)
+TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPlane)
 {
     NotImplemented();
 }

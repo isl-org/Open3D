@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJPG, ReadImageFromJPG)
+TEST(FileJPG, DISABLED_ReadImageFromJPG)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileJPG, ReadImageFromJPG)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileJPG, WriteImageToJPG)
+TEST(FileJPG, DISABLED_WriteImageToJPG)
 {
     NotImplemented();
 }

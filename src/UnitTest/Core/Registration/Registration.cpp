@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, ICPConvergenceCriteria)
+TEST(Registration, DISABLED_ICPConvergenceCriteria)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(Registration, ICPConvergenceCriteria)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, Destructor)
+TEST(Registration, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(Registration, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, Constructor)
+TEST(Registration, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(Registration, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, MemberData)
+TEST(Registration, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(Registration, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, RANSACConvergenceCriteria)
+TEST(Registration, DISABLED_RANSACConvergenceCriteria)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(Registration, RANSACConvergenceCriteria)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, RegistrationResult)
+TEST(Registration, DISABLED_RegistrationResult)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(Registration, RegistrationResult)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, EvaluateRegistration)
+TEST(Registration, DISABLED_EvaluateRegistration)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(Registration, EvaluateRegistration)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, RegistrationICP)
+TEST(Registration, DISABLED_RegistrationICP)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(Registration, RegistrationICP)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, TransformationEstimationPointToPoint)
+TEST(Registration, DISABLED_TransformationEstimationPointToPoint)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(Registration, TransformationEstimationPointToPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, RegistrationRANSACBasedOnCorrespondence)
+TEST(Registration, DISABLED_RegistrationRANSACBasedOnCorrespondence)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(Registration, RegistrationRANSACBasedOnCorrespondence)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, RegistrationRANSACBasedOnFeatureMatching)
+TEST(Registration, DISABLED_RegistrationRANSACBasedOnFeatureMatching)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(Registration, RegistrationRANSACBasedOnFeatureMatching)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Registration, GetInformationMatrixFromPointClouds)
+TEST(Registration, DISABLED_GetInformationMatrixFromPointClouds)
 {
     NotImplemented();
 }

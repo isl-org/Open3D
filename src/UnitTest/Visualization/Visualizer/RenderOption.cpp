@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, Constructor)
+TEST(RenderOption, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(RenderOption, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, Destructor)
+TEST(RenderOption, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(RenderOption, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, MemberData)
+TEST(RenderOption, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(RenderOption, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ConvertToJsonValue)
+TEST(RenderOption, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(RenderOption, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ConvertFromJsonValue)
+TEST(RenderOption, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(RenderOption, ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ToggleLightOn)
+TEST(RenderOption, DISABLED_ToggleLightOn)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(RenderOption, ToggleLightOn)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ToggleInterpolationOption)
+TEST(RenderOption, DISABLED_ToggleInterpolationOption)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(RenderOption, ToggleInterpolationOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ChangePointSize)
+TEST(RenderOption, DISABLED_ChangePointSize)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(RenderOption, ChangePointSize)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, TogglePointShowNormal)
+TEST(RenderOption, DISABLED_TogglePointShowNormal)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(RenderOption, TogglePointShowNormal)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ToggleShadingOption)
+TEST(RenderOption, DISABLED_ToggleShadingOption)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(RenderOption, ToggleShadingOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ToggleMeshShowBackFace)
+TEST(RenderOption, DISABLED_ToggleMeshShowBackFace)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(RenderOption, ToggleMeshShowBackFace)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ToggleMeshShowWireframe)
+TEST(RenderOption, DISABLED_ToggleMeshShowWireframe)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(RenderOption, ToggleMeshShowWireframe)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(RenderOption, ToggleImageStretchOption)
+TEST(RenderOption, DISABLED_ToggleImageStretchOption)
 {
     NotImplemented();
 }

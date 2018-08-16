@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, Constructor)
+TEST(VisualizerWithKeyCallback, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(VisualizerWithKeyCallback, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, Destructor)
+TEST(VisualizerWithKeyCallback, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(VisualizerWithKeyCallback, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, MemberData)
+TEST(VisualizerWithKeyCallback, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(VisualizerWithKeyCallback, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, PrintVisualizerHelp)
+TEST(VisualizerWithKeyCallback, DISABLED_PrintVisualizerHelp)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(VisualizerWithKeyCallback, PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, RegisterKeyCallback)
+TEST(VisualizerWithKeyCallback, DISABLED_RegisterKeyCallback)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(VisualizerWithKeyCallback, RegisterKeyCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, KeyPressCallback)
+TEST(VisualizerWithKeyCallback, DISABLED_KeyPressCallback)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(VisualizerWithKeyCallback, KeyPressCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, PrintKeyToString)
+TEST(VisualizerWithKeyCallback, DISABLED_PrintKeyToString)
 {
     NotImplemented();
 }

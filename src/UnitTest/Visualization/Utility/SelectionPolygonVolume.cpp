@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, Constructor)
+TEST(SelectionPolygonVolume, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(SelectionPolygonVolume, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, Destructor)
+TEST(SelectionPolygonVolume, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(SelectionPolygonVolume, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, MemberData)
+TEST(SelectionPolygonVolume, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(SelectionPolygonVolume, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, ConvertToJsonValue)
+TEST(SelectionPolygonVolume, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(SelectionPolygonVolume, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, ConvertFromJsonValue)
+TEST(SelectionPolygonVolume, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(SelectionPolygonVolume, ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, CropPointCloud)
+TEST(SelectionPolygonVolume, DISABLED_CropPointCloud)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(SelectionPolygonVolume, CropPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, CropPointCloudInPolygon)
+TEST(SelectionPolygonVolume, DISABLED_CropPointCloudInPolygon)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(SelectionPolygonVolume, CropPointCloudInPolygon)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, CropInPolygon)
+TEST(SelectionPolygonVolume, DISABLED_CropInPolygon)
 {
     NotImplemented();
 }

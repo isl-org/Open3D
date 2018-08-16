@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Odometry, ComputeRGBDOdometry)
+TEST(Odometry, DISABLED_ComputeRGBDOdometry)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(Odometry, ComputeRGBDOdometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Odometry, PinholeCameraIntrinsic)
+TEST(Odometry, DISABLED_PinholeCameraIntrinsic)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(Odometry, PinholeCameraIntrinsic)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Odometry, RGBDOdometryJacobianFromHybridTerm)
+TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(Odometry, RGBDOdometryJacobianFromHybridTerm)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(Odometry, OdometryOption)
+TEST(Odometry, DISABLED_OdometryOption)
 {
     NotImplemented();
 }

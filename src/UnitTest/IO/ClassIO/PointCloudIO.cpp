@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, CreatePointCloudFromFile)
+TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(PointCloudIO, CreatePointCloudFromFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloud)
+TEST(PointCloudIO, DISABLED_ReadPointCloud)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(PointCloudIO, ReadPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloud)
+TEST(PointCloudIO, DISABLED_WritePointCloud)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(PointCloudIO, WritePointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloudFromXYZ)
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZ)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(PointCloudIO, ReadPointCloudFromXYZ)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloudToXYZ)
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZ)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(PointCloudIO, WritePointCloudToXYZ)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloudFromXYZN)
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZN)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(PointCloudIO, ReadPointCloudFromXYZN)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloudToXYZN)
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZN)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(PointCloudIO, WritePointCloudToXYZN)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloudFromXYZRGB)
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZRGB)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(PointCloudIO, ReadPointCloudFromXYZRGB)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloudToXYZRGB)
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZRGB)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(PointCloudIO, WritePointCloudToXYZRGB)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloudFromPLY)
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPLY)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(PointCloudIO, ReadPointCloudFromPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloudToPLY)
+TEST(PointCloudIO, DISABLED_WritePointCloudToPLY)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(PointCloudIO, WritePointCloudToPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloudFromPCD)
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPCD)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(PointCloudIO, ReadPointCloudFromPCD)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloudToPCD)
+TEST(PointCloudIO, DISABLED_WritePointCloudToPCD)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(PointCloudIO, WritePointCloudToPCD)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, ReadPointCloudFromPTS)
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPTS)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(PointCloudIO, ReadPointCloudFromPTS)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, WritePointCloudToPTS)
+TEST(PointCloudIO, DISABLED_WritePointCloudToPTS)
 {
     NotImplemented();
 }

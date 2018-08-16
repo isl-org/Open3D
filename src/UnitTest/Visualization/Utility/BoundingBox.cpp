@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, Constructor)
+TEST(BoundingBox, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(BoundingBox, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, Destructor)
+TEST(BoundingBox, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(BoundingBox, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, MemberData)
+TEST(BoundingBox, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(BoundingBox, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, Reset)
+TEST(BoundingBox, DISABLED_Reset)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(BoundingBox, Reset)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, FitInGeometry)
+TEST(BoundingBox, DISABLED_FitInGeometry)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(BoundingBox, FitInGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, GetCenter)
+TEST(BoundingBox, DISABLED_GetCenter)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(BoundingBox, GetCenter)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, GetSize)
+TEST(BoundingBox, DISABLED_GetSize)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(BoundingBox, GetSize)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, GetXPercentage)
+TEST(BoundingBox, DISABLED_GetXPercentage)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(BoundingBox, GetXPercentage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, GetYPercentage)
+TEST(BoundingBox, DISABLED_GetYPercentage)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(BoundingBox, GetYPercentage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, GetZPercentage)
+TEST(BoundingBox, DISABLED_GetZPercentage)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(BoundingBox, GetZPercentage)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(BoundingBox, GetPrintInfo)
+TEST(BoundingBox, DISABLED_GetPrintInfo)
 {
     NotImplemented();
 }

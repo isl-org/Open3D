@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileXYZ, ReadPointCloudFromXYZ)
+TEST(FileXYZ, DISABLED_ReadPointCloudFromXYZ)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(FileXYZ, ReadPointCloudFromXYZ)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(FileXYZ, WritePointCloudToXYZ)
+TEST(FileXYZ, DISABLED_WritePointCloudToXYZ)
 {
     NotImplemented();
 }

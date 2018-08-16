@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, Constructor)
+TEST(SimpleBlackShader, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(SimpleBlackShader, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, Destructor)
+TEST(SimpleBlackShader, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(SimpleBlackShader, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, MemberData)
+TEST(SimpleBlackShader, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(SimpleBlackShader, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, Compile)
+TEST(SimpleBlackShader, DISABLED_Compile)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(SimpleBlackShader, Compile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, Release)
+TEST(SimpleBlackShader, DISABLED_Release)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(SimpleBlackShader, Release)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, BindGeometry)
+TEST(SimpleBlackShader, DISABLED_BindGeometry)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(SimpleBlackShader, BindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, RenderGeometry)
+TEST(SimpleBlackShader, DISABLED_RenderGeometry)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(SimpleBlackShader, RenderGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, UnbindGeometry)
+TEST(SimpleBlackShader, DISABLED_UnbindGeometry)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(SimpleBlackShader, UnbindGeometry)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, PrepareRendering)
+TEST(SimpleBlackShader, DISABLED_PrepareRendering)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(SimpleBlackShader, PrepareRendering)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, PrepareBinding)
+TEST(SimpleBlackShader, DISABLED_PrepareBinding)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(SimpleBlackShader, PrepareBinding)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, SimpleBlackShaderForPointCloudNormal)
+TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForPointCloudNormal)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(SimpleBlackShader, SimpleBlackShaderForPointCloudNormal)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, SimpleBlackShaderForTriangleMeshWireFrame)
+TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForTriangleMeshWireFrame)
 {
     NotImplemented();
 }

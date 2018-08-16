@@ -184,7 +184,7 @@ TEST(Image, MemberData)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
+TEST(Image, DISABLED_CreateDepthToCameraDistanceMultiplierFloatImage)
 {
     NotImplemented();
 }
@@ -192,7 +192,7 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage)
+TEST(Image, DISABLED_CreateFloatImageFromImage)
 {
     NotImplemented();
 }
@@ -227,7 +227,7 @@ TEST(Image, PointerAt)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, ConvertDepthToFloatImage)
+TEST(Image, DISABLED_ConvertDepthToFloatImage)
 {
     NotImplemented();
 }
@@ -243,7 +243,7 @@ TEST(Image, DISABLED_FlipImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImage)
+TEST(Image, DISABLED_FilterImage)
 {
     NotImplemented();
 }
@@ -251,7 +251,7 @@ TEST(Image, FilterImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterHorizontalImage)
+TEST(Image, DISABLED_FilterHorizontalImage)
 {
     NotImplemented();
 }
@@ -259,7 +259,7 @@ TEST(Image, FilterHorizontalImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DownsampleImage)
+TEST(Image, DISABLED_DownsampleImage)
 {
     NotImplemented();
 }
@@ -275,7 +275,7 @@ TEST(Image, DilateImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, LinearTransformImage)
+TEST(Image, DISABLED_LinearTransformImage)
 {
     NotImplemented();
 }
@@ -283,7 +283,7 @@ TEST(Image, LinearTransformImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, ClipIntensityImage)
+TEST(Image, DISABLED_ClipIntensityImage)
 {
     NotImplemented();
 }
@@ -291,7 +291,7 @@ TEST(Image, ClipIntensityImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, CreateImageFromFloatImage)
+TEST(Image, DISABLED_CreateImageFromFloatImage)
 {
     NotImplemented();
 }
@@ -299,7 +299,7 @@ TEST(Image, CreateImageFromFloatImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, FilterImagePyramid)
+TEST(Image, DISABLED_FilterImagePyramid)
 {
     NotImplemented();
 }
@@ -307,7 +307,7 @@ TEST(Image, FilterImagePyramid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, CreateImagePyramid)
+TEST(Image, DISABLED_CreateImagePyramid)
 {
     NotImplemented();
 }

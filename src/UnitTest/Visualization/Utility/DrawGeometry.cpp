@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DrawGeometries)
+TEST(DrawGeometry, DISABLED_DrawGeometries)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(DrawGeometry, DrawGeometries)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DrawGeometriesWithCustomAnimation)
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithCustomAnimation)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(DrawGeometry, DrawGeometriesWithCustomAnimation)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DrawGeometriesWithAnimationCallback)
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithAnimationCallback)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(DrawGeometry, DrawGeometriesWithAnimationCallback)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DrawGeometriesWithKeyCallbacks)
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithKeyCallbacks)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(DrawGeometry, DrawGeometriesWithKeyCallbacks)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DrawGeometriesWithEditing)
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithEditing)
 {
     NotImplemented();
 }

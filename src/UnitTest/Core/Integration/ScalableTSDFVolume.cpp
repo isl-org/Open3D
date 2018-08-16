@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, VolumeUnit)
+TEST(ScalableTSDFVolume, DISABLED_VolumeUnit)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ScalableTSDFVolume, VolumeUnit)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, Constructor)
+TEST(ScalableTSDFVolume, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ScalableTSDFVolume, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, Destructor)
+TEST(ScalableTSDFVolume, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ScalableTSDFVolume, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, MemberData)
+TEST(ScalableTSDFVolume, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ScalableTSDFVolume, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, Reset)
+TEST(ScalableTSDFVolume, DISABLED_Reset)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ScalableTSDFVolume, Reset)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, Integrate)
+TEST(ScalableTSDFVolume, DISABLED_Integrate)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ScalableTSDFVolume, Integrate)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, ExtractPointCloud)
+TEST(ScalableTSDFVolume, DISABLED_ExtractPointCloud)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ScalableTSDFVolume, ExtractPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, ExtractTriangleMesh)
+TEST(ScalableTSDFVolume, DISABLED_ExtractTriangleMesh)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(ScalableTSDFVolume, ExtractTriangleMesh)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, ExtractVoxelPointCloud)
+TEST(ScalableTSDFVolume, DISABLED_ExtractVoxelPointCloud)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(ScalableTSDFVolume, ExtractVoxelPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, LocateVolumeUnit)
+TEST(ScalableTSDFVolume, DISABLED_LocateVolumeUnit)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(ScalableTSDFVolume, LocateVolumeUnit)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, OpenVolumeUnit)
+TEST(ScalableTSDFVolume, DISABLED_OpenVolumeUnit)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(ScalableTSDFVolume, OpenVolumeUnit)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, GetNormalAt)
+TEST(ScalableTSDFVolume, DISABLED_GetNormalAt)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(ScalableTSDFVolume, GetNormalAt)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, GetTSDFAt)
+TEST(ScalableTSDFVolume, DISABLED_GetTSDFAt)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TriangleMeshIO, CreateMeshFromFile)
+TEST(TriangleMeshIO, DISABLED_CreateMeshFromFile)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(TriangleMeshIO, CreateMeshFromFile)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TriangleMeshIO, ReadTriangleMesh)
+TEST(TriangleMeshIO, DISABLED_ReadTriangleMesh)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(TriangleMeshIO, ReadTriangleMesh)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TriangleMeshIO, WriteTriangleMesh)
+TEST(TriangleMeshIO, DISABLED_WriteTriangleMesh)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(TriangleMeshIO, WriteTriangleMesh)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TriangleMeshIO, ReadTriangleMeshFromPLY)
+TEST(TriangleMeshIO, DISABLED_ReadTriangleMeshFromPLY)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(TriangleMeshIO, ReadTriangleMeshFromPLY)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TriangleMeshIO, WriteTriangleMeshToPLY)
+TEST(TriangleMeshIO, DISABLED_WriteTriangleMeshToPLY)
 {
     NotImplemented();
 }

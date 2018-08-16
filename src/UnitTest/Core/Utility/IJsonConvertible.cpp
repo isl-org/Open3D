@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, Constructor)
+TEST(IJsonConvertible, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(IJsonConvertible, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, Destructor)
+TEST(IJsonConvertible, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(IJsonConvertible, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, MemberData)
+TEST(IJsonConvertible, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(IJsonConvertible, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, ConvertToJsonValue)
+TEST(IJsonConvertible, DISABLED_ConvertToJsonValue)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(IJsonConvertible, ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, ConvertFromJsonValue)
+TEST(IJsonConvertible, DISABLED_ConvertFromJsonValue)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(IJsonConvertible, ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenVector3dFromJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(IJsonConvertible, EigenVector3dFromJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenVector3dToJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(IJsonConvertible, EigenVector3dToJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenVector4dFromJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(IJsonConvertible, EigenVector4dFromJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenVector4dToJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(IJsonConvertible, EigenVector4dToJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix3dFromJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(IJsonConvertible, EigenMatrix3dFromJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix3dToJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(IJsonConvertible, EigenMatrix3dToJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix4dFromJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(IJsonConvertible, EigenMatrix4dFromJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix4dToJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(IJsonConvertible, EigenMatrix4dToJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix6dFromJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray)
 {
     NotImplemented();
 }
@@ -141,7 +141,7 @@ TEST(IJsonConvertible, EigenMatrix6dFromJsonArray)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix6dToJsonArray)
+TEST(IJsonConvertible, DISABLED_EigenMatrix6dToJsonArray)
 {
     NotImplemented();
 }

@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, Constructor)
+TEST(LineSet, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(LineSet, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, Destructor)
+TEST(LineSet, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(LineSet, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, MemberData)
+TEST(LineSet, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(LineSet, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, Clear)
+TEST(LineSet, DISABLED_Clear)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(LineSet, Clear)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, IsEmpty)
+TEST(LineSet, DISABLED_IsEmpty)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(LineSet, IsEmpty)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, GetMinBound)
+TEST(LineSet, DISABLED_GetMinBound)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(LineSet, GetMinBound)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, GetMaxBound)
+TEST(LineSet, DISABLED_GetMaxBound)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(LineSet, GetMaxBound)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, Transform)
+TEST(LineSet, DISABLED_Transform)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(LineSet, Transform)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, HasPoints)
+TEST(LineSet, DISABLED_HasPoints)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(LineSet, HasPoints)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, HasLines)
+TEST(LineSet, DISABLED_HasLines)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(LineSet, HasLines)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, HasColors)
+TEST(LineSet, DISABLED_HasColors)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(LineSet, HasColors)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, GetLineCoordinate)
+TEST(LineSet, DISABLED_GetLineCoordinate)
 {
     NotImplemented();
 }
@@ -125,7 +125,7 @@ TEST(LineSet, GetLineCoordinate)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
+TEST(LineSet, DISABLED_CreateLineSetFromPointCloudCorrespondences)
 {
     NotImplemented();
 }
@@ -133,7 +133,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSetFactory, CreateLineSetFromPointCloudCorrespondences)
+TEST(LineSetFactory, DISABLED_CreateLineSetFromPointCloudCorrespondences)
 {
     NotImplemented();
 }

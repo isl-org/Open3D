@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, Constructor)
+TEST(UniformTSDFVolume, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(UniformTSDFVolume, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, Destructor)
+TEST(UniformTSDFVolume, DISABLED_Destructor)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(UniformTSDFVolume, Destructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, MemberData)
+TEST(UniformTSDFVolume, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(UniformTSDFVolume, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, Reset)
+TEST(UniformTSDFVolume, DISABLED_Reset)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(UniformTSDFVolume, Reset)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, Integrate)
+TEST(UniformTSDFVolume, DISABLED_Integrate)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(UniformTSDFVolume, Integrate)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, ExtractPointCloud)
+TEST(UniformTSDFVolume, DISABLED_ExtractPointCloud)
 {
     NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(UniformTSDFVolume, ExtractPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, ExtractTriangleMesh)
+TEST(UniformTSDFVolume, DISABLED_ExtractTriangleMesh)
 {
     NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(UniformTSDFVolume, ExtractTriangleMesh)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, ExtractVoxelPointCloud)
+TEST(UniformTSDFVolume, DISABLED_ExtractVoxelPointCloud)
 {
     NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(UniformTSDFVolume, ExtractVoxelPointCloud)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, IntegrateWithDepthToCameraDistanceMultiplier)
+TEST(UniformTSDFVolume, DISABLED_IntegrateWithDepthToCameraDistanceMultiplier)
 {
     NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(UniformTSDFVolume, IntegrateWithDepthToCameraDistanceMultiplier)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, IndexOf)
+TEST(UniformTSDFVolume, DISABLED_IndexOf)
 {
     NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(UniformTSDFVolume, IndexOf)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, GetNormalAt)
+TEST(UniformTSDFVolume, DISABLED_GetNormalAt)
 {
     NotImplemented();
 }
@@ -117,7 +117,7 @@ TEST(UniformTSDFVolume, GetNormalAt)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(UniformTSDFVolume, GetTSDFAt)
+TEST(UniformTSDFVolume, DISABLED_GetTSDFAt)
 {
     NotImplemented();
 }

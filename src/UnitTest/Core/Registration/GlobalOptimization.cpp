@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimization, Constructor)
+TEST(GlobalOptimization, DISABLED_Constructor)
 {
     NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(GlobalOptimization, Constructor)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimization, MemberData)
+TEST(GlobalOptimization, DISABLED_MemberData)
 {
     NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(GlobalOptimization, MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimization, GlobalOptimizationLevenbergMarquardt)
+TEST(GlobalOptimization, DISABLED_GlobalOptimizationLevenbergMarquardt)
 {
     NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(GlobalOptimization, GlobalOptimizationLevenbergMarquardt)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimization, GlobalOptimizationConvergenceCriteria)
+TEST(GlobalOptimization, DISABLED_GlobalOptimizationConvergenceCriteria)
 {
     NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(GlobalOptimization, GlobalOptimizationConvergenceCriteria)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimization, GlobalOptimizationOption)
+TEST(GlobalOptimization, DISABLED_GlobalOptimizationOption)
 {
     NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(GlobalOptimization, GlobalOptimizationOption)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimization, CreatePoseGraphWithoutInvalidEdges)
+TEST(GlobalOptimization, DISABLED_CreatePoseGraphWithoutInvalidEdges)
 {
     NotImplemented();
 }
