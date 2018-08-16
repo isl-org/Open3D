@@ -236,16 +236,23 @@ TEST(Image, DISABLED_CreateDepthToCameraDistanceMultiplierFloatImage)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Tests one of the following configurations
+// channels: bytes per channel
+// 1: 1/2/4
+// 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
-TEST(Image, CreateFloatImageFromImage)
+TEST(Image, CreateFloatImageFromImage_1_1)
 {
     open3d::Image image;
 
-    int local_width = 10;
-    int local_height = 10;
-    int local_num_of_channels = 1;
-    int local_bytes_per_channel = 1;
+    // reference data used to validate the creation of the float image
+    vector<uint8_t> ref;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 1;
 
     image.PrepareImage(local_width,
                        local_height,
@@ -253,56 +260,17 @@ TEST(Image, CreateFloatImageFromImage)
                        local_bytes_per_channel);
 
     randInit(image.data_);
-    // for (size_t i = 0; i < image.data_.size(); i++)
-    //     {
-    //         if (i % local_width == 0)
-    //             cout << endl;
-    //         cout << setw(5) << (float)image.data_[i];
-    //     }
-    // cout << endl;
-    // cout << endl;
 
-    vector<uint8_t> ref = {
-        215, 214,  86,  63, 201, 200, 200,  62, 200, 199,\
-         71,  63, 204, 203,  75,  63, 233, 232, 104,  63,\
-        201, 200,  72,  62, 171, 170, 170,  62, 196, 195,\
-         67,  63, 141, 140, 140,  62, 142, 141,  13,  63,\
-        243, 242, 242,  62, 161, 160,  32,  63, 187, 186,\
-        186,  62, 131, 130,   2,  63, 243, 242, 114,  63,\
-        234, 233, 105,  63, 163, 162,  34,  63, 183, 182,\
-         54,  63, 145, 144,  16,  62, 155, 154,  26,  63,\
-        129, 128, 128,  60, 245, 244, 116,  62, 137, 136,\
-          8,  62, 206, 205,  77,  63, 157, 156,  28,  62,\
-        205, 204, 204,  62, 133, 132,   4,  62, 217, 216,\
-        216,  61, 255, 254, 126,  63, 221, 220,  92,  62,\
-        131, 130,   2,  63, 214, 213,  85,  63, 157, 156,\
-         28,  63, 151, 150, 150,  62, 163, 162,  34,  63,\
-        134, 133,   5,  63, 251, 250, 250,  62, 249, 248,\
-        120,  63, 149, 148, 148,  62, 197, 196,  68,  63,\
-        135, 134,   6,  63, 197, 196,  68,  63, 205, 204,\
-        204,  62, 228, 227,  99,  63, 145, 144, 144,  62,\
-        179, 178, 178,  62, 206, 205,  77,  63, 235, 234,\
-        106,  63, 137, 136, 136,  61, 243, 242, 114,  63,\
-        135, 134,   6,  63, 169, 168, 168,  61, 197, 196,\
-         68,  62, 170, 169,  41,  63, 228, 227,  99,  63,\
-        177, 176, 176,  62, 129, 128, 128,  61, 161, 160,\
-        160,  60, 233, 232, 232,  62, 129, 128, 128,  61,\
-        241, 240, 112,  62, 248, 247, 119,  63, 231, 230,\
-        102,  63, 217, 216,  88,  63, 135, 134, 134,  62,\
-        138, 137,   9,  63, 191, 190, 190,  62, 194, 193,\
-         65,  63, 131, 130,   2,  63, 171, 170,  42,  63,\
-        136, 135,   7,  63, 161, 160,  32,  61, 223, 222,\
-        222,  62, 238, 237, 109,  63, 238, 237, 109,  63,\
-        184, 183,  55,  63, 145, 144, 144,  62, 189, 188,\
-         60,  63, 164, 163,  35,  63, 181, 180, 180,  62,\
-        176, 175,  47,  63, 169, 168,  40,  62, 225, 224,\
-        224,  62, 225, 224,  96,  63, 212, 211,  83,  63,\
-        169, 168, 168,  62, 233, 232, 104,  62, 228, 227,\
-         99,  63, 179, 178, 178,  62, 176, 175,  47,  63,\
-        244, 243, 115,  63, 151, 150,  22,  63, 168, 167,\
-         39,  63, 219, 218,  90,  63, 225, 224, 224,  62,\
-        236, 235, 107,  63, 203, 202, 202,  62, 208, 207,\
-         79,  63, 175, 174,  46,  63, 233, 232, 104,  63, };
+    ref = { 215, 214,  86,  63, 201, 200, 200,  62, 200, 199,\
+             71,  63, 204, 203,  75,  63, 233, 232, 104,  63,\
+            201, 200,  72,  62, 171, 170, 170,  62, 196, 195,\
+             67,  63, 141, 140, 140,  62, 142, 141,  13,  63,\
+            243, 242, 242,  62, 161, 160,  32,  63, 187, 186,\
+            186,  62, 131, 130,   2,  63, 243, 242, 114,  63,\
+            234, 233, 105,  63, 163, 162,  34,  63, 183, 182,\
+             54,  63, 145, 144,  16,  62, 155, 154,  26,  63,\
+            129, 128, 128,  60, 245, 244, 116,  62, 137, 136,\
+              8,  62, 206, 205,  77,  63, 157, 156,  28,  62 };
 
     auto floatImage = open3d::CreateFloatImageFromImage(image);
     for (size_t i = 0; i < floatImage->data_.size(); i++)
@@ -317,7 +285,7 @@ TEST(Image, CreateFloatImageFromImage)
     EXPECT_EQ(local_width, floatImage->width_);
     EXPECT_EQ(local_height, floatImage->height_);
     EXPECT_EQ(local_num_of_channels, floatImage->num_of_channels_);
-    EXPECT_EQ(4, floatImage->bytes_per_channel_);
+    EXPECT_EQ(sizeof(float), floatImage->bytes_per_channel_);
     for (size_t i = 0; i < floatImage->data_.size(); i++)
         EXPECT_EQ(ref[i], floatImage->data_[i]);
 }
