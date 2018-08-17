@@ -1079,9 +1079,77 @@ TEST(Image, DISABLED_FilterImagePyramid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_CreateImagePyramid)
+TEST(Image, CreateImagePyramid)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<vector<uint8_t>> ref = {
+        {  19,  29, 207,  27, 152,  87, 229,  66, 220, 254,\
+          123,  68, 158,  39, 212, 132, 245,  58,  22,  97,\
+          103,  29, 190, 147, 151,  41, 176, 142, 197, 104,\
+            2, 217, 133, 209, 244,  30,  42, 219,  97,   7,\
+          218, 220,  75, 122,   5,  33, 254, 250,  92,  22,\
+           92, 195,  51,  28,  87, 203,  70,   8,  90,  13,\
+          113,  93, 231, 246,  47, 221,  22,  89, 185, 119,\
+           97, 149,  84, 173,  16,  90, 206,  16,  86,  43,\
+           38, 179, 239,  90, 208,  71,  38,  24,  80, 129,\
+           37, 193, 222,  14, 185,  15, 235, 207, 105, 165,\
+           71, 202,  59, 156, 120,  76, 247,  72,  92,  78,\
+          116, 130,   2, 100, 221, 210, 172,   5, 235, 252,\
+          134,  17, 191, 102,  31, 121, 117,  12,  74, 222,\
+          178, 145, 170, 238,  47,  36,  59,  39, 108, 151,\
+          117, 224,  27, 120 },
+        { 222, 181, 146, 215, 151, 138,  23, 120,  28,  81,\
+          133, 249,  68,  72,  64,  89,  71, 152,  59, 119,\
+          104,  43, 246, 250, 133,  17, 191, 101, 183, 197,\
+          179,  88,  81, 246, 175, 251 }
+    };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 6;
+    const int local_height = 6;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+    const int local_num_of_levels = 2;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    auto pyramid = open3d::CreateImagePyramid(*floatImage, local_num_of_levels);
+
+    int expected_width = local_width;
+    int expected_height = local_width;
+    for (size_t p = 0; p < pyramid.size(); p++)
+    {
+        auto outputImage = pyramid[p];
+
+        // display output image data
+        // for (size_t i = 0; i < outputImage->data_.size(); i++)
+        //     {
+        //         if ((i % 10 == 0) && (i != 0))
+        //             cout << "\\" << endl;
+        //         cout << setw(4) << (float)outputImage->data_[i] << ",";
+        //     }
+        // cout << endl;
+
+        EXPECT_FALSE(outputImage->IsEmpty());
+        EXPECT_EQ(expected_width, outputImage->width_);
+        EXPECT_EQ(expected_height, outputImage->height_);
+        EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+        EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+        for (size_t i = 0; i < outputImage->data_.size(); i++)
+            EXPECT_EQ(ref[p][i], outputImage->data_[i]);
+
+        expected_width /= 2;
+        expected_height /= 2;
+    }
 }
 
 // NOTES
