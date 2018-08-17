@@ -157,12 +157,12 @@ def register_point_cloud(path_dataset, ply_file_names, draw_result = False):
                     compute_initial_registration(
                     s, t, source_down, target_down,
                     source_fpfh, target_fpfh, path_dataset, draw_result)
-            if not success_global:
+            if (t - s) != 1 and not success_global:
                 continue
             (success_local, transformation_icp, information_icp) = \
                     local_refinement(s, t, source, target,
                     transformation_init, draw_result)
-            if not success_local:
+            if (t - s) != 1 and not success_local:
                 continue
             (odometry, pose_graph) = update_odometry_posegrph(s, t,
                     transformation_icp, information_icp,

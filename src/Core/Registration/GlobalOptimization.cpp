@@ -369,6 +369,38 @@ void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
     }
 }
 
+bool ValidatePoseGraph(const PoseGraph &pose_graph)
+{
+    int n_nodes = (int)pose_graph.nodes_.size();
+    int n_edges = (int)pose_graph.edges_.size();
+    for (int i = 0; i < n_nodes-1; i++) {
+        bool valid = false;
+        for (int j = 0; j < n_edges; j++) {
+            const PoseGraphEdge &t = pose_graph.edges_[j];
+            if (t.source_node_id_ == i &&
+                    t.target_node_id_ - t.source_node_id_ == 1)
+                valid = true;
+        }
+        if (!valid) {
+            PrintError("Invalid PoseGraph - adjacent nodes are disconnected.\n");
+            return false;
+        }
+    }
+    for (int j = 0; j < n_edges; j++) {
+        bool valid = false;
+        const PoseGraphEdge &t = pose_graph.edges_[j];
+        if (t.source_node_id_ >= 0 && t.source_node_id_ < n_nodes &&
+            t.target_node_id_ >= 0 && t.target_node_id_ < n_nodes)
+            valid = true;
+        if (!valid) {
+            PrintError("Invalid PoseGraph - an edge references an invalide node.\n");
+            return false;
+        }
+    }
+    PrintInfo("Validating PoseGraph - finished.\n");
+    return true;
+}
+
 }    // unnamed namespace
 
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
@@ -615,6 +647,8 @@ void GlobalOptimization(
         const GlobalOptimizationOption &option
         /* = GlobalOptimizationOption() */)
 {
+    if (!ValidatePoseGraph(pose_graph))
+        return;
     std::shared_ptr<PoseGraph> pose_graph_pre =
             std::make_shared<PoseGraph>();
     *pose_graph_pre = pose_graph;
