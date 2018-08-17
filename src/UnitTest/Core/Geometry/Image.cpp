@@ -27,6 +27,7 @@
 #include "UnitTest.h"
 
 #include "Core/Geometry/Image.h"
+#include "Core/Camera/PinholeCameraIntrinsic.h"
 
 using namespace std;
 
@@ -230,9 +231,30 @@ TEST(Image, MemberData)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_CreateDepthToCameraDistanceMultiplierFloatImage)
+TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    // vector<uint8_t> ref = { };
+
+    open3d::PinholeCameraIntrinsic intrinsic = 
+        open3d::PinholeCameraIntrinsic(
+            open3d::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+
+    auto image = CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
+
+    // test image dimensions
+    const int local_width = 640;
+    const int local_height = 480;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+
+    EXPECT_FALSE(image->IsEmpty());
+    EXPECT_EQ(local_width, image->width_);
+    EXPECT_EQ(local_height, image->height_);
+    EXPECT_EQ(local_num_of_channels, image->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, image->bytes_per_channel_);
+    // for (size_t i = 0; i < image->data_.size(); i++)
+    //     EXPECT_EQ(ref[i], image->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -241,10 +263,11 @@ TEST(Image, DISABLED_CreateDepthToCameraDistanceMultiplierFloatImage)
 // 1: 1/2/4
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
-void CreateFloatImageFromImage(const int& num_of_channels,
-                               const int& bytes_per_channel,
-                               const vector<uint8_t>& ref,
-                               const open3d::Image::ColorToIntensityConversionType& type)
+void CreateFloatImageFromImage(
+    const int& num_of_channels,
+    const int& bytes_per_channel,
+    const vector<uint8_t>& ref,
+    const open3d::Image::ColorToIntensityConversionType& type)
 {
     open3d::Image image;
 
