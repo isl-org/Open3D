@@ -884,6 +884,17 @@ TEST(Image, DilateImage)
                             255, 255, 255, 255, 255,   0,   0,   0,   0,   0,\
                             255, 255, 255, 255,   0,   0,   0,   0, 255, 255,\
                             255, 255, 255,   0,   0,   0,   0,   0, 255, 255 };
+    // the ref data if we keep the original pixels after dilation
+    // vector<uint8_t> ref = { 255, 255,  35, 191, 165, 170,  27, 255, 255, 255,\
+    //                         255, 255,  76,  29, 151, 250, 255, 255, 255, 255,\
+    //                         154,   1,  12, 107, 133, 255, 255, 255, 255, 255,\
+    //                          91, 235, 235, 127, 255, 255, 255, 255, 255, 225,\
+    //                         113, 167,  82, 255, 255, 255, 255, 255, 126,  72,\
+    //                          76,  26, 255, 255, 255, 255, 255, 131,  38,  51,\
+    //                         161, 255, 255, 255, 255, 255,  33,  45, 148, 113,\
+    //                         255, 255, 255, 255, 255, 222,  78, 127, 214, 204,\
+    //                         255, 255, 255, 255, 125, 110, 224, 100, 255, 255,\
+    //                         255, 255, 255, 184,  35, 142, 134,  68, 255, 255 };
 
     open3d::Image image;
 
@@ -1047,6 +1058,11 @@ Can't have global methods.
 Find another place for the code, maybe in Image or PinholeCameraIntrinsic.
 - The hardcoded filters Gaussian3/5/7 and Sobel31/32 can/should be const arrays instead of vectors.
 - use the const ref pattern for all function arguments where appropriate
-- Image::FilterImage, Image::FlipImage optimization opportunity.
+- \FilterImage, FlipImage optimization opportunity.
 For convolution it's cheaper to flip the filter rather than the image.
+- DilateImage doesn't preserve the original image.
+Instead it makes 0 all values not equal to 255 and then performs dilation.
+Is this the intended behavior? Asking because the input image is not binary but gray so that would imply
+that we technically should keep the original pixels if they're not dilated.
+If we want to generate a mask we should first create a binary image and then dilate on that. 
 */
