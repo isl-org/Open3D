@@ -769,9 +769,57 @@ TEST(Image, FilterImage_Sobel3Dy)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_FilterHorizontalImage)
+TEST(Image, FilterHorizontalImage)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = { 197, 212, 103,  82, 189, 134,   3, 238, 135, 214,\
+                            214, 239,  68,  45,  62, 240, 216, 244, 181, 239,\
+                              6, 122,  96,  18,  28,  35, 230,  18, 173,  39,\
+                             27, 115, 173,  39, 155, 115, 173,  39,  27, 115,\
+                             72, 216, 128, 226, 114,  83,  24, 253, 114,  83,\
+                            152, 253, 114,  83,  24, 253,  60,  40, 144,  42,\
+                             50, 134, 214, 206,  33,   4,  15, 206, 174,  13,\
+                            100, 185, 242, 113,  93, 101, 118,  21,  38, 102,\
+                            201, 245,  45,  11, 107, 152, 150,  16, 113, 166,\
+                            224, 157, 113, 166,  96, 158, 113, 166, 224, 157 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
+
+    auto outputImage = open3d::FilterHorizontalImage(*floatImage, Gaussian3);
+
+    // display output image data
+    // for (size_t i = 0; i < outputImage->data_.size(); i++)
+    //     {
+    //         if ((i % 10 == 0) && (i != 0))
+    //             cout << "\\" << endl;
+    //         cout << setw(4) << (float)outputImage->data_[i] << ",";
+    //     }
+    // cout << endl;
+
+    EXPECT_FALSE(outputImage->IsEmpty());
+    EXPECT_EQ(local_width, outputImage->width_);
+    EXPECT_EQ(local_height, outputImage->height_);
+    EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outputImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -922,5 +970,7 @@ Ideally make all data private. Add getters/setters as appropriate.
 Can't have global methods.
 Find another place for the code, maybe in Image or PinholeCameraIntrinsic.
 - The hardcoded filters Gaussian3/5/7 and Sobel31/32 can/should be const arrays instead of vectors.
-- use the const ref pattern for all function arguments where appropriate  
+- use the const ref pattern for all function arguments where appropriate
+- Image::FilterImage, Image::FlipImage optimization opportunity.
+For convolution it's cheaper to flip the filter rather than the image.
 */
