@@ -26,7 +26,17 @@ if __name__ == "__main__":
     print("We draw a few primitives using + operator of mesh.")
     draw_geometries([mesh_sphere + mesh_cylinder + mesh_frame])
 
-    print("Let\'s draw lines")
-    
+    print("Let\'s draw a cubic consists of 8 points and 12 lines")
+    points = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
+              [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
+    colors = [[1,0,0] for i in range(12)]
+    lines = [[0,1],[0,2],[1,3],[2,3],
+             [4,5],[4,6],[5,7],[6,7],
+             [0,4],[1,5],[2,6],[3,7]]
+    line_set = LineSet()
+    line_set.colors = Vector3dVector(colors)
+    line_set.lines = Vector2iVector(lines)
+    line_set.point_set = Vector3dVector(points)
+    draw_geometries([line_set])
 
     print("")
