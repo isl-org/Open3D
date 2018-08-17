@@ -871,9 +871,47 @@ TEST(Image, DownsampleImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_DilateImage)
+TEST(Image, DilateImage)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = { 255, 255,   0,   0,   0,   0,   0, 255, 255, 255,\
+                            255, 255,   0,   0,   0,   0, 255, 255, 255, 255,\
+                              0,   0,   0,   0,   0, 255, 255, 255, 255, 255,\
+                              0,   0,   0,   0, 255, 255, 255, 255, 255,   0,\
+                              0,   0,   0, 255, 255, 255, 255, 255,   0,   0,\
+                              0,   0, 255, 255, 255, 255, 255,   0,   0,   0,\
+                              0, 255, 255, 255, 255, 255,   0,   0,   0,   0,\
+                            255, 255, 255, 255, 255,   0,   0,   0,   0,   0,\
+                            255, 255, 255, 255,   0,   0,   0,   0, 255, 255,\
+                            255, 255, 255,   0,   0,   0,   0,   0, 255, 255 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 10;
+    const int local_height = 10;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 1;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+    for (size_t i = 0; i < image.data_.size(); i++)
+        if (i % 9 == 0)
+            image.data_[i] = 255;
+
+    auto outputImage = open3d::DilateImage(image);
+
+    EXPECT_FALSE(outputImage->IsEmpty());
+    EXPECT_EQ(local_width, outputImage->width_);
+    EXPECT_EQ(local_height, outputImage->height_);
+    EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outputImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
