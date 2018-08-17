@@ -825,9 +825,47 @@ TEST(Image, FilterHorizontalImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_DownsampleImage)
+TEST(Image, DownsampleImage)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = {  14, 215, 190,  56,  52, 246,  60, 113, 234,  61,\
+                             44, 103, 184, 214, 134,  90 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    auto outputImage = open3d::DownsampleImage(*floatImage);
+
+    // display output image data
+    // for (size_t i = 0; i < outputImage->data_.size(); i++)
+    //     {
+    //         if ((i % 10 == 0) && (i != 0))
+    //             cout << "\\" << endl;
+    //         cout << setw(4) << (float)outputImage->data_[i] << ",";
+    //     }
+    // cout << endl;
+
+    EXPECT_FALSE(outputImage->IsEmpty());
+    EXPECT_EQ((int)(local_width / 2), outputImage->width_);
+    EXPECT_EQ((int)(local_height / 2), outputImage->height_);
+    EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outputImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
