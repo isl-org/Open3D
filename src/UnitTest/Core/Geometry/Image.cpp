@@ -928,17 +928,91 @@ TEST(Image, DilateImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_LinearTransformImage)
+TEST(Image, LinearTransformImage)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = { 120,  93, 188, 208,   3,  75,  74, 127, 154, 153,\
+                             25,  62, 154, 153,  25,  62, 154, 153,  25,  62,\
+                            133, 147,  25,  62, 155,  11, 228, 103, 239, 208,\
+                             23,  72, 154, 153,  25,  62,  32, 128,  18, 249,\
+                             66,  66, 195, 251, 154, 153,  25,  62, 176, 245,\
+                            254,  61,  24, 100,  81,  60,  96, 145,  49,  62,\
+                            154, 153,  25,  62,  95,  77,  38, 228, 182, 137,\
+                             25,  62,  46,  10,  79, 218, 154, 153,  25,  62,\
+                             62, 190,  94, 109, 208,  15,  24,  62, 149, 153,\
+                             25,  62, 187, 207, 224,  80, 154, 153,  25,  62 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto outputImage = open3d::CreateFloatImageFromImage(image);
+
+    open3d::LinearTransformImage(*outputImage, 2.3, 0.15);
+
+    EXPECT_FALSE(outputImage->IsEmpty());
+    EXPECT_EQ(local_width, outputImage->width_);
+    EXPECT_EQ(local_height, outputImage->height_);
+    EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outputImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_ClipIntensityImage)
+TEST(Image, ClipIntensityImage)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<uint8_t> ref = { 195, 245, 168,  62, 195, 245, 168,  62, 143, 194,\
+                             53,  63, 195, 245, 168,  62, 195, 245, 168,  62,\
+                            143, 194,  53,  63, 195, 245, 168,  62, 195, 245,\
+                            168,  62, 195, 245, 168,  62, 195, 245, 168,  62,\
+                            143, 194,  53,  63, 195, 245, 168,  62, 195, 245,\
+                            168,  62, 143, 194,  53,  63, 195, 245, 168,  62,\
+                            143, 194,  53,  63, 195, 245, 168,  62, 195, 245,\
+                            168,  62, 143, 194,  53,  63, 195, 245, 168,  62,\
+                            195, 245, 168,  62, 195, 245, 168,  62, 195, 245,\
+                            168,  62, 195, 245, 168,  62, 143, 194,  53,  63 };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto outputImage = open3d::CreateFloatImageFromImage(image);
+
+    open3d::ClipIntensityImage(*outputImage, 0.33, 0.71);
+
+    EXPECT_FALSE(outputImage->IsEmpty());
+    EXPECT_EQ(local_width, outputImage->width_);
+    EXPECT_EQ(local_height, outputImage->height_);
+    EXPECT_EQ(local_num_of_channels, outputImage->num_of_channels_);
+    EXPECT_EQ(local_bytes_per_channel, outputImage->bytes_per_channel_);
+    for (size_t i = 0; i < outputImage->data_.size(); i++)
+        EXPECT_EQ(ref[i], outputImage->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1065,4 +1139,5 @@ Instead it makes 0 all values not equal to 255 and then performs dilation.
 Is this the intended behavior? Asking because the input image is not binary but gray so that would imply
 that we technically should keep the original pixels if they're not dilated.
 If we want to generate a mask we should first create a binary image and then dilate on that. 
+- LinearTransformImage/ClipIntensityImage don't follow the same pattern of returning an Image as most of the other methods.
 */
