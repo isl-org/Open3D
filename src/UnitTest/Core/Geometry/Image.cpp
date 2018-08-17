@@ -1071,9 +1071,77 @@ TEST(Image, CreateImageFromFloatImage_16bit)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Image, DISABLED_FilterImagePyramid)
+TEST(Image, FilterImagePyramid)
 {
-    NotImplemented();
+    // reference data used to validate the filtering of an image
+    vector<vector<uint8_t>> ref = {
+        { 197, 104,   2, 215, 197, 104, 130, 215, 197, 104,\
+            2, 215, 218, 220,  75, 120, 172,  16, 201, 247,\
+           40,  29, 165, 249, 197, 104, 130, 215, 197, 104,\
+            2, 216, 113,  93, 231, 244,  31,  14, 202, 120,\
+          103, 223,  74, 248,  40,  29,  37, 250, 229, 182,\
+          200,  88, 207, 183,  11,  89, 113,  93, 103, 245,\
+          238, 161,  68, 120, 152,  75, 208, 247,  40,  29,\
+          165, 249, 254,   3,  89,  89, 232,   4, 156,  89,\
+          113,  93, 231, 244, 113,  93, 103, 245,  34,  20,\
+          235, 250,  65,  68, 176, 251,  36,  77, 143, 101,\
+          135,  17, 191, 100,  38, 179, 111,  89, 107, 177,\
+          239,  88, 180, 222, 106, 251,   7,  39,  48, 252,\
+          182, 243,  86, 102,  36,  77, 143, 101, 120,  76,\
+          119,  71, 243,  99, 221, 208, 219,  27, 234, 250,\
+          228, 148, 175, 251 },
+        { 235, 194, 250, 118, 240, 103,  29, 249,  34, 179,\
+          255, 249, 187,  86, 117, 118, 222, 197,  23, 250,\
+           38,  14, 230, 250,  71, 152,  59, 117, 141,  44,\
+          147, 250, 116, 253,  92, 251 }
+    };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 6;
+    const int local_height = 6;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 4;
+    const int local_num_of_levels = 2;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    randInit(image.data_);
+
+    auto floatImage = open3d::CreateFloatImageFromImage(image);
+
+    auto pyramid = open3d::CreateImagePyramid(*floatImage, local_num_of_levels);
+
+    auto outputPyramid = open3d::FilterImagePyramid(pyramid, open3d::Image::FilterType::Gaussian3);
+
+    EXPECT_EQ(pyramid.size(), outputPyramid.size());
+
+    for (size_t p = 0; p < pyramid.size(); p++)
+    {
+        auto inputImage = pyramid[p];
+        auto outputImage = outputPyramid[p];
+
+        // display output image data
+        // for (size_t i = 0; i < outputImage->data_.size(); i++)
+        //     {
+        //         if ((i % 10 == 0) && (i != 0))
+        //             cout << "\\" << endl;
+        //         cout << setw(4) << (float)outputImage->data_[i] << ",";
+        //     }
+        // cout << endl;
+
+        EXPECT_FALSE(outputImage->IsEmpty());
+        EXPECT_EQ(inputImage->width_, outputImage->width_);
+        EXPECT_EQ(inputImage->height_, outputImage->height_);
+        EXPECT_EQ(inputImage->num_of_channels_, outputImage->num_of_channels_);
+        EXPECT_EQ(inputImage->bytes_per_channel_, outputImage->bytes_per_channel_);
+        for (size_t i = 0; i < outputImage->data_.size(); i++)
+            EXPECT_EQ(ref[p][i], outputImage->data_[i]);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -1083,25 +1151,25 @@ TEST(Image, CreateImagePyramid)
 {
     // reference data used to validate the filtering of an image
     vector<vector<uint8_t>> ref = {
-        {  19,  29, 207,  27, 152,  87, 229,  66, 220, 254,\
-          123,  68, 158,  39, 212, 132, 245,  58,  22,  97,\
-          103,  29, 190, 147, 151,  41, 176, 142, 197, 104,\
-            2, 217, 133, 209, 244,  30,  42, 219,  97,   7,\
-          218, 220,  75, 122,   5,  33, 254, 250,  92,  22,\
-           92, 195,  51,  28,  87, 203,  70,   8,  90,  13,\
-          113,  93, 231, 246,  47, 221,  22,  89, 185, 119,\
-           97, 149,  84, 173,  16,  90, 206,  16,  86,  43,\
-           38, 179, 239,  90, 208,  71,  38,  24,  80, 129,\
-           37, 193, 222,  14, 185,  15, 235, 207, 105, 165,\
-           71, 202,  59, 156, 120,  76, 247,  72,  92,  78,\
-          116, 130,   2, 100, 221, 210, 172,   5, 235, 252,\
-          134,  17, 191, 102,  31, 121, 117,  12,  74, 222,\
-          178, 145, 170, 238,  47,  36,  59,  39, 108, 151,\
-          117, 224,  27, 120 },
-        { 222, 181, 146, 215, 151, 138,  23, 120,  28,  81,\
-          133, 249,  68,  72,  64,  89,  71, 152,  59, 119,\
-          104,  43, 246, 250, 133,  17, 191, 101, 183, 197,\
-          179,  88,  81, 246, 175, 251 }
+        {  70, 248,  76, 242, 253,  56, 240, 133,  74, 177,\
+          235, 106,  44,  98, 118, 118,  65,  41,   9, 236,\
+           25,  56,  17,  84,  95, 126, 236, 213,  96,   8,\
+           79, 166,   2, 155, 154,   0, 211, 140, 134,  31,\
+           62, 114, 137, 106, 213,   1, 224,  23,  43, 233,\
+            5,  68,  35,  22, 153, 131, 149, 134,  89, 245,\
+          143, 168, 157, 145,  69,  56, 146,  26, 196,  25,\
+           57,   3, 140, 195, 110,  98, 196,  80, 122, 239,\
+           58, 127,  53,  94, 150, 206, 225,  44,  85,  60,\
+           34, 228, 228, 191, 119,  42, 248,  11,  69, 190,\
+           36, 126, 193, 177,  66,  49,  21,   7, 129, 143,\
+          247, 188,  16,  45,  27, 167, 251, 252, 211,  82,\
+           57, 246,  56,  31, 183, 175,  74, 177, 186, 143,\
+          112, 223,  15,  51, 146,  81, 100, 167,  89, 229,\
+           56,  81, 162,  73 },
+        {  69,  98, 134, 242,  81, 151,  46, 117,  21,  98,\
+          118, 116,  35,  72,  35, 243,  69, 189, 244, 243,\
+          140,  20,  78, 104, 147, 188,  59, 237, 253,  80,\
+          122, 236,  95, 216,  42, 228 }
     };
 
     open3d::Image image;
@@ -1206,6 +1274,6 @@ For convolution it's cheaper to flip the filter rather than the image.
 Instead it makes 0 all values not equal to 255 and then performs dilation.
 Is this the intended behavior? Asking because the input image is not binary but gray so that would imply
 that we technically should keep the original pixels if they're not dilated.
-If we want to generate a mask we should first create a binary image and then dilate on that. 
+If we want to generate a mask we should first create a binary image and then dilate on that.
 - LinearTransformImage/ClipIntensityImage don't follow the same pattern of returning an Image as most of the other methods.
 */
