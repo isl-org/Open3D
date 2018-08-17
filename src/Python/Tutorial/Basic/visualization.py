@@ -11,7 +11,7 @@ if __name__ == "__main__":
     pcd = read_point_cloud("../../TestData/fragment.ply")
     draw_geometries([pcd])
 
-    print('Lets draw some primitives')
+    print("Let\'s draw some primitives")
     mesh_sphere = create_mesh_sphere(radius = 1.0)
     mesh_sphere.compute_vertex_normals()
     mesh_sphere.paint_uniform_color([0.1, 0.1, 0.7])
@@ -25,5 +25,8 @@ if __name__ == "__main__":
 
     print("We draw a few primitives using + operator of mesh.")
     draw_geometries([mesh_sphere + mesh_cylinder + mesh_frame])
+
+    print("Let\'s draw lines")
+    
 
     print("")

@@ -31,6 +31,7 @@
 void pybind_console(py::module &m);
 void pybind_geometry(py::module &m);
 void pybind_pointcloud(py::module &m);
+void pybind_lineset(py::module &m);
 void pybind_trianglemesh(py::module &m);
 void pybind_image(py::module &m);
 void pybind_kdtreeflann(py::module &m);
@@ -43,6 +44,7 @@ void pybind_integration(py::module &m);
 void pybind_colormap_optimization(py::module &m);
 
 void pybind_pointcloud_methods(py::module &m);
+void pybind_lineset_methods(py::module &m);
 void pybind_trianglemesh_methods(py::module &m);
 void pybind_image_methods(py::module &m);
 void pybind_feature_methods(py::module &m);

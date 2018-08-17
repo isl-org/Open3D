@@ -44,16 +44,16 @@ void pybind_lineset(py::module &m)
         })
         .def(py::self + py::self)
         .def(py::self += py::self)
-        .def("has_points", &PointCloud::HasPoints)
-        .def("has_lines", &PointCloud::HasLines)
-        .def("has_colors", &PointCloud::HasColors)
-        .def("normalize_normals", &PointCloud::GetLineCoordinate)
-        .def_readwrite("point_set", &PointCloud::point_set_)
-        .def_readwrite("lines", &PointCloud::lines_)
-        .def_readwrite("colors", &PointCloud::colors_);
+        .def("has_points", &LineSet::HasPoints)
+        .def("has_lines", &LineSet::HasLines)
+        .def("has_colors", &LineSet::HasColors)
+        .def("normalize_normals", &LineSet::GetLineCoordinate)
+        .def_readwrite("point_set", &LineSet::point_set_)
+        .def_readwrite("lines", &LineSet::lines_)
+        .def_readwrite("colors", &LineSet::colors_);
 }
 
-void pybind_pointcloud_methods(py::module &m)
+void pybind_lineset_methods(py::module &m)
 {
     
 }
