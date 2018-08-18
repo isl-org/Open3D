@@ -54,7 +54,7 @@ public:
 
 public:
     bool HasPoints() const {
-        return point_set_[0].size() > 0 && point_set_[1].size() > 0;
+        return points_[0].size() > 0 && points_[1].size() > 0;
     }
 
     bool HasLines() const {
@@ -67,12 +67,12 @@ public:
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
             size_t i) const {
-        return std::make_pair(point_set_[lines_[i][0]],
-                point_set_[lines_[i][1]]);
+        return std::make_pair(points_[lines_[i][0]],
+                points_[lines_[i][1]]);
     }
 
 public:
-    std::vector<Eigen::Vector3d> point_set_;
+    std::vector<Eigen::Vector3d> points_;
     std::vector<Eigen::Vector2i> lines_;
     std::vector<Eigen::Vector3d> colors_;
 };

@@ -38,11 +38,11 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
     auto lineset_ptr = std::make_shared<LineSet>();
     size_t point0_size = cloud0.points_.size();
     size_t point1_size = cloud1.points_.size();
-    lineset_ptr->point_set_.resize(point0_size + point1_size);
+    lineset_ptr->points_.resize(point0_size + point1_size);
     for (size_t i = 0; i < point0_size; i++)
-        lineset_ptr->point_set_[i] = cloud0.points_[i];
+        lineset_ptr->points_[i] = cloud0.points_[i];
     for (size_t i = 0; i < point1_size; i++)
-        lineset_ptr->point_set_[point0_size + i] = cloud1.points_[i];
+        lineset_ptr->points_[point0_size + i] = cloud1.points_[i];
     
     size_t corr_size = correspondences.size();
     lineset_ptr->lines_.resize(corr_size);

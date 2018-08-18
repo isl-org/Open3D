@@ -48,7 +48,7 @@ void pybind_lineset(py::module &m)
         .def("has_lines", &LineSet::HasLines)
         .def("has_colors", &LineSet::HasColors)
         .def("normalize_normals", &LineSet::GetLineCoordinate)
-        .def_readwrite("point_set", &LineSet::point_set_)
+        .def_readwrite("points", &LineSet::points_)
         .def_readwrite("lines", &LineSet::lines_)
         .def_readwrite("colors", &LineSet::colors_);
 }
