@@ -88,6 +88,13 @@ public:
     std::vector<Eigen::Vector3d> colors_;
 };
 
+class PointCloudWithHighResCubicID
+{
+public:
+    PointCloud point_cloud;
+    Eigen::MatrixXi cubic_id;
+};
+
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
 /// Return an empty pointcloud if fail to read the file.
 std::shared_ptr<PointCloud> CreatePointCloudFromFile(
@@ -125,6 +132,13 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
 /// Normals and colors are averaged if they exist.
 std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
         double voxel_size);
+
+/// Function to downsample using VoxelDownSample, but specialized for
+/// Surface convolution project. Experimental function.
+std::shared_ptr<PointCloudWithHighResCubicID> VoxelDownSampleForSurfaceConv(
+        const PointCloud &input, double voxel_size,
+        const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
+        bool approximate_class = false);
 
 /// Function to downsample \param input pointcloud into output pointcloud uniformly
 /// \param every_k_points indicates the sample rate.
