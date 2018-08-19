@@ -33,7 +33,7 @@ def register_point_cloud_fpfh(source, target,
 
 
 def compute_initial_registration(s, t, source_down, target_down,
-        source_fpfh, target_fpfh, path_dataset, draw_result = False):
+        source_fpfh, target_fpfh, path_dataset, draw_result):
 
     if t == s + 1: # odometry case
         print("Using RGBD odometry")
@@ -42,7 +42,6 @@ def compute_initial_registration(s, t, source_down, target_down,
         n_nodes = len(pose_graph_frag.nodes)
         transformation = np.linalg.inv(
                 pose_graph_frag.nodes[n_nodes-1].pose)
-        print(pose_graph_frag.nodes[0].pose)
         print(transformation)
     else: # loop closure case
         print("register_point_cloud_fpfh")
@@ -86,6 +85,9 @@ def register_colored_point_cloud_icp(source, target,
                 radius, current_transformation,
                 ICPConvergenceCriteria(relative_fitness = 1e-6,
                 relative_rmse = 1e-6, max_iteration = iter))
+        # result_icp = registration_icp(source_down, target_down, 0.07,
+        #         current_transformation,
+        #         TransformationEstimationPointToPoint())
         current_transformation = result_icp.transformation
 
     information_matrix = get_information_matrix_from_point_clouds(
@@ -97,8 +99,7 @@ def register_colored_point_cloud_icp(source, target,
 
 
 def local_refinement(s, t, source, target,
-        transformation_init, draw_result = False):
-
+        transformation_init, draw_result):
     if t == s + 1: # odometry case
         print("register_point_cloud_icp")
         (transformation, information) = \
@@ -153,22 +154,17 @@ def register_point_cloud(path_dataset, ply_file_names, draw_result = False):
             target = read_point_cloud(ply_file_names[t])
             (source_down, source_fpfh) = preprocess_point_cloud(source)
             (target_down, target_fpfh) = preprocess_point_cloud(target)
-            if t == s + 1:
-                (_, transformation_icp, information_icp) = \
-                        local_refinement(s, t, source, target,
-                        np.identity(4), draw_result)
-            else:
-                (success_global, transformation_init) = \
-                        compute_initial_registration(
-                        s, t, source_down, target_down,
-                        source_fpfh, target_fpfh, path_dataset, draw_result)
-                if not success_global:
-                    continue
-                (success_local, transformation_icp, information_icp) = \
-                        local_refinement(s, t, source, target,
-                        transformation_init, draw_result)
-                if not success_local:
-                    continue
+            (success_global, transformation_init) = \
+                    compute_initial_registration(
+                    s, t, source_down, target_down,
+                    source_fpfh, target_fpfh, path_dataset, draw_result)
+            if t != s + 1 and not success_global:
+                continue
+            (success_local, transformation_icp, information_icp) = \
+                    local_refinement(s, t, source, target,
+                    transformation_init, draw_result)
+            if t != s + 1 and not success_local:
+                continue
             (odometry, pose_graph) = update_odometry_posegrph(s, t,
                     transformation_icp, information_icp,
                     odometry, pose_graph)

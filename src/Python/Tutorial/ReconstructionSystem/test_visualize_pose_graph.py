@@ -44,8 +44,9 @@ if __name__ == "__main__":
     # visualize all the edges
     for edge in pose_graph.edges:
         print("%d-%d" % (edge.source_node_id, edge.target_node_id))
-        if edge.source_node_id == args.source_id and \
-                 edge.target_node_id == args.target_id:
+        # if edge.source_node_id == args.source_id and \
+        #          edge.target_node_id == args.target_id:
+        if edge.target_node_id - edge.source_node_id == 1:
             print("PoseGraphEdge %d-%d" % \
                     (edge.source_node_id, edge.target_node_id))
             source = read_point_cloud(ply_file_names[edge.source_node_id])
@@ -54,12 +55,12 @@ if __name__ == "__main__":
             target.transform(pose_graph.nodes[edge.target_node_id].pose)
             draw_registration_result(source, target, np.identity(4))
 
-    # visualize all the trajectories
-    pcds = []
-    for i in range(len(pose_graph.nodes)):
-        pcd = read_point_cloud(ply_file_names[i])
-        pcd_down = voxel_down_sample(pcd, 0.05)
-        pcd.transform(pose_graph.nodes[i].pose)
-        print(np.linalg.inv(pose_graph.nodes[i].pose))
-        pcds.append(pcd)
-    draw_geometries(pcds)
+    # # visualize all the trajectories
+    # pcds = []
+    # for i in range(len(pose_graph.nodes)):
+    #     pcd = read_point_cloud(ply_file_names[i])
+    #     pcd_down = voxel_down_sample(pcd, 0.05)
+    #     pcd.transform(pose_graph.nodes[i].pose)
+    #     print(np.linalg.inv(pose_graph.nodes[i].pose))
+    #     pcds.append(pcd)
+    # draw_geometries(pcds)

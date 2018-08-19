@@ -21,9 +21,9 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
     color_t = read_image(color_files[t])
     depth_t = read_image(depth_files[t])
     source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s,
-            depth_trunc = 3.0, convert_rgb_to_intensity = True)
+            depth_trunc = 4.0, convert_rgb_to_intensity = True)
     target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t,
-            depth_trunc = 3.0, convert_rgb_to_intensity = True)
+            depth_trunc = 4.0, convert_rgb_to_intensity = True)
 
     if abs(s-t) is not 1:
         if with_opencv:
@@ -86,6 +86,13 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
     volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
+    pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
+            "../../TestData/camera.json")
+    pcds = []
+    # print(pinhole_camera_intrinsic.intrinsic_matrix)
+    # print(PinholeCameraIntrinsic(
+    # PinholeCameraIntrinsicParameters.PrimeSenseDefault).intrinsic_matrix)
+
     for i in range(len(pose_graph.nodes)):
         i_abs = fragment_id * n_frames_per_fragment + i
         print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
@@ -94,9 +101,20 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
         color = read_image(color_files[i_abs])
         depth = read_image(depth_files[i_abs])
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-                depth_trunc = 3.0, convert_rgb_to_intensity = False)
+                depth_trunc = 4.0, convert_rgb_to_intensity = False)
         pose = pose_graph.nodes[i].pose
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
+
+        # # for debugging
+        # pcd_i = create_point_cloud_from_rgbd_image(rgbd,
+        #         PinholeCameraIntrinsic(
+        #         PinholeCameraIntrinsicParameters.PrimeSenseDefault),
+        #         np.linalg.inv(pose_graph.nodes[i].pose))
+        # pcd_i_down = voxel_down_sample(pcd_i, 0.05)
+        # pcds.append(pcd_i_down)
+
+    # draw_geometries(pcds)
+
 
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
@@ -126,6 +144,7 @@ def process_fragments(path_dataset, path_intrinsic):
     n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
     for fragment_id in range(n_fragments):
+    # for fragment_id in [22]:
         sid = fragment_id * n_frames_per_fragment
         eid = min(sid + n_frames_per_fragment, n_files)
         make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
