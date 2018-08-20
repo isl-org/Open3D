@@ -7,6 +7,7 @@ if __name__ == "__main__":
     parser.add_argument("config", help="path to the config file")
     args = parser.parse_args()
 
+    # check folder structure
     if args.config is not None:
         config = json.load(open(args.config))
         path_depth = os.path.join(config["path_dataset"], "depth")
@@ -19,7 +20,6 @@ if __name__ == "__main__":
 
     if config["run_make_fragments"]:
         import make_fragments
-        from optimize_posegraph import *
         make_fragments.run(config)
     if config["run_register_fragments"]:
         import register_fragments

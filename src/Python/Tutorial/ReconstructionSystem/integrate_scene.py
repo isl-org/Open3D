@@ -10,7 +10,8 @@ sys.path.append("../Utility")
 from open3d import *
 from common import *
 
-def scalable_integrate_rgb_frames(path_dataset, intrinsic, draw_result = False):
+
+def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
     n_frames_per_fragment = 100
@@ -33,31 +34,26 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, draw_result = False):
             color = read_image(color_files[frame_id_abs])
             depth = read_image(depth_files[frame_id_abs])
             rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-                    depth_trunc = 3.0, convert_rgb_to_intensity = False)
+                    depth_trunc = config["max_depth"],
+                    convert_rgb_to_intensity = False)
             pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
                     pose_graph_rgbd.nodes[frame_id].pose)
             volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
 
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
-    if draw_result:
+    if config["debug_mode"]:
         draw_geometries([mesh])
 
     mesh_name = path_dataset + template_global_mesh
     write_triangle_mesh(mesh_name, mesh, False, True)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=
-            "integrate the whole RGBD sequence using estimated camera pose")
-    parser.add_argument("path_dataset", help="path to the dataset")
-    parser.add_argument("-path_intrinsic",
-            help="path to the RGBD camera intrinsic")
-    args = parser.parse_args()
-
-    if args.path_intrinsic:
-        intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
+def run(config):
+    print("integrate the whole RGBD sequence using estimated camera pose.")
+    if config["path_intrinsic"]:
+        intrinsic = read_pinhole_camera_intrinsic(config["path_intrinsic"])
     else:
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    scalable_integrate_rgb_frames(args.path_dataset, intrinsic)
+    scalable_integrate_rgb_frames(config["path_dataset"], intrinsic, config)
