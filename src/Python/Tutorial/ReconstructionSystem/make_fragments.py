@@ -28,6 +28,8 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
             depth_trunc = config["max_depth"], convert_rgb_to_intensity = True)
     target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t,
             depth_trunc = config["max_depth"], convert_rgb_to_intensity = True)
+    option = OdometryOption()
+    option.max_depth_diff = config["max_depth_diff"]
 
     if abs(s-t) is not 1:
         if with_opencv:
@@ -36,15 +38,14 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
             if success_5pt:
                 [success, trans, info] = compute_rgbd_odometry(
                         source_rgbd_image, target_rgbd_image, intrinsic,
-                        odo_init, RGBDOdometryJacobianFromHybridTerm(),
-                        OdometryOption())
+                        odo_init, RGBDOdometryJacobianFromHybridTerm(), option)
                 return [success, trans, info]
         return [False, np.identity(4), np.identity(6)]
     else:
         odo_init = np.identity(4)
         [success, trans, info] = compute_rgbd_odometry(
                 source_rgbd_image, target_rgbd_image, intrinsic, odo_init,
-                RGBDOdometryJacobianFromHybridTerm(), OdometryOption())
+                RGBDOdometryJacobianFromHybridTerm(), option)
         return [success, trans, info]
 
 
@@ -89,7 +90,7 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
 def integrate_rgb_frames_for_fragment(color_files, depth_files,
         fragment_id, n_fragments, pose_graph_name, intrinsic, config):
     pose_graph = read_pose_graph(pose_graph_name)
-    volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0,
+    volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
     # pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
@@ -150,8 +151,8 @@ def process_fragments(config):
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
-    # for fragment_id in range(n_fragments):
-    for fragment_id in [0]:
+    for fragment_id in range(n_fragments):
+    # for fragment_id in [0]:
         sid = fragment_id * n_frames_per_fragment
         eid = min(sid + n_frames_per_fragment, n_files)
         make_posegraph_for_fragment(config["path_dataset"], sid, eid,

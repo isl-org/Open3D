@@ -38,5 +38,5 @@ def optimize_posegraph_for_scene(path_dataset, config):
     pose_graph_optmized_name = path_dataset + \
             template_global_posegraph_optimized
     run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
-            max_correspondence_distance = config["max_point_diff"],
+            max_correspondence_distance = config["voxel_size"] * 1.4,
             preference_loop_closure = 2.0)

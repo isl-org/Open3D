@@ -16,7 +16,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     n_files = len(color_files)
     n_frames_per_fragment = 100
     n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
-    volume = ScalableTSDFVolume(voxel_length = 3.0 / 512.0,
+    volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
     pose_graph_fragment = read_pose_graph(

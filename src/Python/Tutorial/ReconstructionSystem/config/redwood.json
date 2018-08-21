@@ -5,9 +5,5 @@
     "max_depth": 4.0,
     "voxel_size": 0.05,
     "max_depth_diff": 0.07,
-    "max_point_diff": 0.07,
-    "run_make_fragments": false,
-    "run_register_fragments": true,
-    "run_integrate_scene": true,
-    "debug_mode": false
+    "tsdf_cubic_size": 3.0
 }
