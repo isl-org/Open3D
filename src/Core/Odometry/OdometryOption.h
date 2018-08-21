@@ -40,7 +40,6 @@ public:
             double max_depth_diff = 0.03,
             double min_depth = 0.0,
             double max_depth = 4.0) :
-            minimum_correspondence_ratio_(minimum_correspondence_ratio),
             iteration_number_per_pyramid_level_
             (iteration_number_per_pyramid_level),
             max_depth_diff_(max_depth_diff), min_depth_(min_depth),
@@ -48,7 +47,6 @@ public:
     ~OdometryOption() {}
 
 public:
-    double minimum_correspondence_ratio_;
     std::vector<int> iteration_number_per_pyramid_level_;
     double max_depth_diff_;
     double min_depth_;

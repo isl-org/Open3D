@@ -383,12 +383,6 @@ std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
     auto correspondence = ComputeCorrespondence(
             pinhole_camera_intrinsic.intrinsic_matrix_, odo_init,
             *source_depth, *target_depth, option);
-    int corresps_count_required = (int)((double)source_gray->height_ *
-            (double)source_gray->width_ *
-            option.minimum_correspondence_ratio_ + 0.5);
-    if (correspondence->size() < corresps_count_required) {
-        PrintWarning("[InitializeRGBDPair] Bad initial pose\n");
-    }
     NormalizeIntensity(*source_gray, *target_gray, *correspondence);
 
     auto source_out = PackRGBDImage(*source_gray, *source_depth);
@@ -408,17 +402,8 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 {
     auto correspondence = ComputeCorrespondence(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
-    int corresps_count_required = (int)((double)source.color_.height_ *
-            (double)source.color_.width_ *
-            option.minimum_correspondence_ratio_ + 0.5);
     int corresps_count = (int)correspondence->size();
-    if (corresps_count < corresps_count_required) {
-        PrintWarning("[ComputeOdometry] Too fewer correspondences (%d found / %d required (%.2f))\n",
-                corresps_count, corresps_count_required,
-                option.minimum_correspondence_ratio_);
-        return std::make_tuple(false, Eigen::Matrix4d::Identity());
-    }
-
+    
     auto f_lambda = [&]
             (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
         jacobian_method.ComputeJacobianAndResidual(i, J_r, r,
