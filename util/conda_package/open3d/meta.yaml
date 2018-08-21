@@ -1,0 +1,24 @@
+package:
+  name: open3d
+  version: "0.2.0"
+
+source:
+  path: ../../pip_package
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy
+    - matplotlib
+
+test:
+  imports:
+    - open3d
+
+about:
+  home: http://www.open3d.org/
+  license: MIT
+  license_file: LICENSE.txt

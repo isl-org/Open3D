@@ -15,6 +15,7 @@ src/Visualization/Shader/Shader.h
 _build/
 doxygen/
 .vs/
+.vscode/
 src/Open3DConfig.h
 util/pip_package/setup.py
 open3d*.so
