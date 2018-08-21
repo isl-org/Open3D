@@ -23,11 +23,10 @@ def preprocess_point_cloud(pcd, config):
 
 def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh, config):
-    maximum_correspondence_distance = config["voxel_size"] * 1.4
     result = registration_fast_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
             FastGlobalRegistrationOption(
-            maximum_correspondence_distance = maximum_correspondence_distance))
+            maximum_correspondence_distance = config["voxel_size"] * 1.4))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4))
     else:
@@ -49,7 +48,7 @@ def compute_initial_registration(s, t, source_down, target_down,
         print("register_point_cloud_fpfh")
         (success_ransac, result_ransac) = register_point_cloud_fpfh(
                 source_down, target_down,
-                source_fpfh, target_fpfh)
+                source_fpfh, target_fpfh, config)
         if not success_ransac:
             print("No resonable solution. Skip this pair")
             return (False, np.identity(4))
@@ -77,7 +76,6 @@ def register_colored_point_cloud_icp(source, target, voxel_size, max_iter,
         target_down = voxel_down_sample(target, voxel_size[scale])
         estimate_normals(source_down, KDTreeSearchParamHybrid(
                 radius = voxel_size[scale] * 2.0, max_nn = 30))
-        print(np.asarray(source_down.normals))
         estimate_normals(target_down, KDTreeSearchParamHybrid(
                 radius = voxel_size[scale] * 2.0, max_nn = 30))
         result_icp = registration_colored_icp(source_down, target_down,
@@ -149,10 +147,10 @@ def register_point_cloud(path_dataset, ply_file_names, config):
     info = np.identity(6)
 
     n_files = len(ply_file_names)
-    # for s in range(n_files):
-    #     for t in range(s + 1, n_files):
-    for s in range(n_files-1):
-        for t in [s + 1]:
+    for s in range(n_files):
+        for t in range(s + 1, n_files):
+    # for s in range(n_files-1):
+    #     for t in [s + 1]:
             print("reading %s ..." % ply_file_names[s])
             source = read_point_cloud(ply_file_names[s])
             print("reading %s ..." % ply_file_names[t])
@@ -183,5 +181,5 @@ def run(config):
     set_verbosity_level(VerbosityLevel.Debug)
     ply_file_names = get_file_list(config["path_dataset"] + folder_fragment, ".ply")
     make_folder(config["path_dataset"] + folder_scene)
-    # register_point_cloud(config["path_dataset"], ply_file_names, config)
+    register_point_cloud(config["path_dataset"], ply_file_names, config)
     optimize_posegraph_for_scene(config["path_dataset"], config)
