@@ -154,11 +154,11 @@ def process_fragments(config):
     for fragment_id in range(n_fragments):
         sid = fragment_id * n_frames_per_fragment
         eid = min(sid + n_frames_per_fragment, n_files)
-        make_posegraph_for_fragment(config["path_dataset"], sid, eid,
-                color_files, depth_files, fragment_id,
-                n_fragments, intrinsic, with_opencv, config)
-        optimize_posegraph_for_fragment(
-                config["path_dataset"], fragment_id, config)
+        # make_posegraph_for_fragment(config["path_dataset"], sid, eid,
+        #         color_files, depth_files, fragment_id,
+        #         n_fragments, intrinsic, with_opencv, config)
+        # optimize_posegraph_for_fragment(
+        #         config["path_dataset"], fragment_id, config)
         make_mesh_for_fragment(
                 config["path_dataset"], color_files, depth_files,
                 fragment_id, n_fragments, intrinsic, config)

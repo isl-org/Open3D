@@ -5,10 +5,10 @@
 import numpy as np
 import argparse
 import sys
-sys.path.append("../Utility")
+sys.path.append("../../Utility")
 from open3d import *
 from common import *
-from optimize_posegraph import *
+# from optimize_posegraph import *
 
 
 def list_posegraph_files(folder_posegraph):
@@ -41,12 +41,12 @@ if __name__ == "__main__":
     n_edges = len(pose_graph.edges)
     print("Global PoseGraph having %d nodes and %d edges" % (n_nodes, n_edges))
 
-    # visualize all the edges
+    # visualize alignment of adjacent edges
     for edge in pose_graph.edges:
         print("%d-%d" % (edge.source_node_id, edge.target_node_id))
-        # if edge.source_node_id == args.source_id and \
-        #          edge.target_node_id == args.target_id:
-        if edge.target_node_id - edge.source_node_id == 1:
+        if edge.target_node_id - edge.source_node_id == 1 or \
+                (args.source_id == edge.source_node_id and \
+                args.target_id == edge.target_node_id):
             print("PoseGraphEdge %d-%d" % \
                     (edge.source_node_id, edge.target_node_id))
             source = read_point_cloud(ply_file_names[edge.source_node_id])
@@ -55,12 +55,12 @@ if __name__ == "__main__":
             target.transform(pose_graph.nodes[edge.target_node_id].pose)
             draw_registration_result(source, target, np.identity(4))
 
-    # # visualize all the trajectories
-    # pcds = []
-    # for i in range(len(pose_graph.nodes)):
-    #     pcd = read_point_cloud(ply_file_names[i])
-    #     pcd_down = voxel_down_sample(pcd, 0.05)
-    #     pcd.transform(pose_graph.nodes[i].pose)
-    #     print(np.linalg.inv(pose_graph.nodes[i].pose))
-    #     pcds.append(pcd)
-    # draw_geometries(pcds)
+    # display all fragments as a point cloud
+    pcds = []
+    for i in range(len(pose_graph.nodes)):
+        pcd = read_point_cloud(ply_file_names[i])
+        pcd_down = voxel_down_sample(pcd, 0.05)
+        pcd.transform(pose_graph.nodes[i].pose)
+        print(np.linalg.inv(pose_graph.nodes[i].pose))
+        pcds.append(pcd)
+    draw_geometries(pcds)

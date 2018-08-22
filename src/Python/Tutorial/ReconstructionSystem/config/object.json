@@ -3,7 +3,7 @@
     "path_dataset": "/Users/jaesikpa/Downloads/00021/",
     "path_intrinsic": "",
     "max_depth": 2.0,
-    "voxel_size": 0.03,
+    "voxel_size": 0.02,
     "max_depth_diff": 0.03,
     "tsdf_cubic_size": 2.0
 }

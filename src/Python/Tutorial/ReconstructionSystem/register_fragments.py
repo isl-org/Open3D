@@ -78,13 +78,13 @@ def register_colored_point_cloud_icp(source, target, voxel_size, max_iter,
                 radius = voxel_size[scale] * 2.0, max_nn = 30))
         estimate_normals(target_down, KDTreeSearchParamHybrid(
                 radius = voxel_size[scale] * 2.0, max_nn = 30))
-        result_icp = registration_colored_icp(source_down, target_down,
-                voxel_size[scale], current_transformation,
-                ICPConvergenceCriteria(relative_fitness = 1e-6,
-                relative_rmse = 1e-6, max_iteration = iter))
-        # result_icp = registration_icp(source_down, target_down, 0.07,
-        #         current_transformation,
-        #         TransformationEstimationPointToPoint())
+        # result_icp = registration_colored_icp(source_down, target_down,
+        #         voxel_size[scale], current_transformation,
+        #         ICPConvergenceCriteria(relative_fitness = 1e-6,
+        #         relative_rmse = 1e-6, max_iteration = iter))
+        result_icp = registration_icp(source_down, target_down, 0.07,
+                current_transformation,
+                TransformationEstimationPointToPlane())
         current_transformation = result_icp.transformation
 
     maximum_correspondence_distance = config["voxel_size"] * 1.4
@@ -103,14 +103,16 @@ def local_refinement(s, t, source, target, transformation_init, config):
         print("register_point_cloud_icp")
         (transformation, information) = \
                 register_colored_point_cloud_icp(
-                source, target, [voxel_size / 4.0], [30],
+                # source, target, [voxel_size / 4.0], [30],
+                source, target, [voxel_size], [30],
                 config, transformation_init)
     else: # loop closure case
         print("register_colored_point_cloud")
         (transformation, information) = \
                 register_colored_point_cloud_icp(
                 source, target,
-                [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
+                # [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
+                [voxel_size], [30],
                 config, transformation_init)
 
     success_local = False
@@ -140,7 +142,28 @@ def update_odometry_posegrph(s, t, transformation, information,
     return (odometry, pose_graph)
 
 
-def register_point_cloud(path_dataset, ply_file_names, config):
+def register_point_cloud_pair(ply_file_names, s, t, config):
+    print("reading %s ..." % ply_file_names[s])
+    source = read_point_cloud(ply_file_names[s])
+    print("reading %s ..." % ply_file_names[t])
+    target = read_point_cloud(ply_file_names[t])
+    (source_down, source_fpfh) = preprocess_point_cloud(source, config)
+    (target_down, target_fpfh) = preprocess_point_cloud(target, config)
+    (success_global, transformation_init) = \
+            compute_initial_registration(
+            s, t, source_down, target_down,
+            source_fpfh, target_fpfh, config["path_dataset"], config)
+    if t != s + 1 and not success_global:
+        return (False, np.identity(4), np.identity(6))
+    (success_local, transformation_icp, information_icp) = \
+            local_refinement(s, t, source, target,
+            transformation_init, config)
+    if t != s + 1 and not success_local:
+        return (False, np.identity(4), np.identity(6))
+    return (True, transformation_icp, information_icp)
+
+
+def make_posegraph_for_scene(ply_file_names, config):
     pose_graph = PoseGraph()
     odometry = np.identity(4)
     pose_graph.nodes.append(PoseGraphNode(odometry))
@@ -149,31 +172,15 @@ def register_point_cloud(path_dataset, ply_file_names, config):
     n_files = len(ply_file_names)
     for s in range(n_files):
         for t in range(s + 1, n_files):
-    # for s in range(n_files-1):
-    #     for t in [s + 1]:
-            print("reading %s ..." % ply_file_names[s])
-            source = read_point_cloud(ply_file_names[s])
-            print("reading %s ..." % ply_file_names[t])
-            target = read_point_cloud(ply_file_names[t])
-            (source_down, source_fpfh) = preprocess_point_cloud(source, config)
-            (target_down, target_fpfh) = preprocess_point_cloud(target, config)
-            (success_global, transformation_init) = \
-                    compute_initial_registration(
-                    s, t, source_down, target_down,
-                    source_fpfh, target_fpfh, path_dataset, config)
-            if t != s + 1 and not success_global:
-                continue
-            (success_local, transformation_icp, information_icp) = \
-                    local_refinement(s, t, source, target,
-                    transformation_init, config)
-            if t != s + 1 and not success_local:
-                continue
-            (odometry, pose_graph) = update_odometry_posegrph(s, t,
-                    transformation_icp, information_icp,
-                    odometry, pose_graph)
-            print(pose_graph)
-
-    write_pose_graph(path_dataset + template_global_posegraph, pose_graph)
+            (success, transformation_icp, information_icp) = \
+                    register_point_cloud_pair(ply_file_names, s, t, config)
+            if success:
+                (odometry, pose_graph) = update_odometry_posegrph(s, t,
+                        transformation_icp, information_icp,
+                        odometry, pose_graph)
+                print(pose_graph)
+    write_pose_graph(config["path_dataset"] + \
+            template_global_posegraph, pose_graph)
 
 
 def run(config):
@@ -181,5 +188,5 @@ def run(config):
     set_verbosity_level(VerbosityLevel.Debug)
     ply_file_names = get_file_list(config["path_dataset"] + folder_fragment, ".ply")
     make_folder(config["path_dataset"] + folder_scene)
-    register_point_cloud(config["path_dataset"], ply_file_names, config)
+    make_posegraph_for_scene(ply_file_names, config)
     optimize_posegraph_for_scene(config["path_dataset"], config)

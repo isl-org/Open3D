@@ -3,8 +3,9 @@
 # See license file or visit www.open3d.org for details
 
 import argparse
+import os
 import sys
-sys.path.append("../Utility")
+sys.path.append("../../Utility")
 from open3d import *
 from common import *
 
@@ -17,7 +18,8 @@ if __name__ == "__main__":
             help="starting ID of fragment")
     args = parser.parse_args()
 
-    fragment_files = get_file_list(args.path_dataset + '/', extension='.ply')
+    fragment_files = get_file_list(
+            os.path.join(args.path_dataset, "fragments/"), extension='.ply')
     for i in range(args.start_id, len(fragment_files)):
         print(fragment_files[i])
         mesh = read_triangle_mesh(fragment_files[i])
