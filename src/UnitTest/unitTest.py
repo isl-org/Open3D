@@ -12,7 +12,7 @@ import sys
 
 def build_argparser():
     parser = ArgumentParser(description = 'A simple command line tool for creating test cases from header/source files.')
-    parser.add_argument("-f",  "--file", help = "Path to a .h file.",                   type = str, required = True)
+    parser.add_argument("-f",  "--file", help = "Path to a .h/cpp file to parse.",      type = str, required = True)
     parser.add_argument("-s",  "--show", help = "Show the unit test templates or not.", type = int, required = False, default = 1)
 
     return parser
