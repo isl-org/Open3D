@@ -27,7 +27,7 @@ name = filename.split('.')[0]
 print name
 print
 
-with open(args.name) as f:
+with open(args.file) as f:
     lines = f.readlines()
 
 lines = [line.strip() for line in lines]
