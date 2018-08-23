@@ -4,15 +4,30 @@
 A simple command line tool for creating test cases from header/source files.
 """
 
-import sys
+from argparse import ArgumentParser
+import os
 from pprint import pprint
+import sys
 
 
-print sys.argv[1]
-name = sys.argv[1].split('.')[0]
-# print name
+def build_argparser():
+    parser = ArgumentParser(description = 'A simple command line tool for creating test cases from header/source files.')
+    parser.add_argument("-f",  "--file", help = "Path to a .h file.",                   type = str, required = True)
+    parser.add_argument("-s",  "--show", help = "Show the unit test templates or not.", type = int, required = False, default = 1)
 
-with open(sys.argv[1]) as f:
+    return parser
+
+args = build_argparser().parse_args()
+
+# print(dir(args))
+
+filename = os.path.basename(args.file)
+
+name = filename.split('.')[0]
+print name
+print
+
+with open(args.name) as f:
     lines = f.readlines()
 
 lines = [line.strip() for line in lines]
@@ -58,7 +73,8 @@ lines = [line for line in lines if line != '']
 lines = [line for line in lines if line[0].isupper()]
 lines = [line for line in lines if ':' not in line]
 
-pprint(lines)
+for line in lines:
+    print(line)
 print
 
 template = "\n\
@@ -71,6 +87,7 @@ TEST(%s, %s)\n\
 }\n\
 "
 
-for line in lines:
-    print(template % (name, line)),
-print
+if args.show:
+    for line in lines:
+        print(template % (name, line)),
+    print
