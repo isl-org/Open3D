@@ -3,6 +3,7 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
+import json
 import argparse
 import sys
 sys.path.append("../../Utility")
@@ -24,17 +25,27 @@ def list_posegraph_files(folder_posegraph):
 # test wide baseline matching
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="visualize pose graph")
-    parser.add_argument("path_dataset", help="path to the dataset")
-    parser.add_argument("-source_id", type=int, help="ID of source fragment")
-    parser.add_argument("-target_id", type=int, help="ID of target fragment")
+    parser.add_argument("config", help="path to the config file")
+    parser.add_argument("--source_id", type=int, help="ID of source fragment")
+    parser.add_argument("--target_id", type=int, help="ID of target fragment")
+    parser.add_argument("--visualize_pairs", help="visualize pairs", action="store_true")
+    parser.add_argument("--adjacent", help="visualize adjacent pairs", action="store_true")
+    parser.add_argument("--visualize_all_nodes", help="visualize nodes in form of point clouds", action="store_true")
     args = parser.parse_args()
 
-    ply_file_names = get_file_list(args.path_dataset + folder_fragment, ".ply")
-    list_posegraph_files(args.path_dataset + folder_fragment)
-    list_posegraph_files(args.path_dataset + folder_scene)
+    if args.config is not None:
+        config = json.load(open(args.config))
 
-    global_pose_graph_name = args.path_dataset + \
-            template_global_posegraph_optimized
+    if (not args.visualize_pairs and not args.visualize_all_nodes):
+        parser.print_help()
+        sys.exit(1)
+
+    ply_file_names = get_file_list(config["path_dataset"] + folder_fragment, ".ply")
+    list_posegraph_files(config["path_dataset"] + folder_fragment)
+    list_posegraph_files(config["path_dataset"] + folder_scene)
+
+    global_pose_graph_name = config["path_dataset"] + \
+            template_global_posegraph
     print(global_pose_graph_name)
     pose_graph = read_pose_graph(global_pose_graph_name)
     n_nodes = len(pose_graph.nodes)
@@ -42,25 +53,34 @@ if __name__ == "__main__":
     print("Global PoseGraph having %d nodes and %d edges" % (n_nodes, n_edges))
 
     # visualize alignment of adjacent edges
-    for edge in pose_graph.edges:
-        print("%d-%d" % (edge.source_node_id, edge.target_node_id))
-        if edge.target_node_id - edge.source_node_id == 1 or \
-                (args.source_id == edge.source_node_id and \
-                args.target_id == edge.target_node_id):
-            print("PoseGraphEdge %d-%d" % \
-                    (edge.source_node_id, edge.target_node_id))
-            source = read_point_cloud(ply_file_names[edge.source_node_id])
-            source.transform(pose_graph.nodes[edge.source_node_id].pose)
-            target = read_point_cloud(ply_file_names[edge.target_node_id])
-            target.transform(pose_graph.nodes[edge.target_node_id].pose)
-            draw_registration_result(source, target, np.identity(4))
+    if (args.visualize_pairs):
+        for edge in pose_graph.edges:
+            print("%d-%d" % (edge.source_node_id, edge.target_node_id))
+            if (args.adjacent and \
+                    edge.target_node_id - edge.source_node_id == 1) or \
+                    (args.source_id == edge.source_node_id and \
+                    args.target_id == edge.target_node_id) or \
+                    (args.visualize_pairs):
+                print("PoseGraphEdge %d-%d" % \
+                        (edge.source_node_id, edge.target_node_id))
+                source = read_point_cloud(ply_file_names[edge.source_node_id])
+                source_down = voxel_down_sample(source, config["voxel_size"])
+                source_down.transform(
+                        pose_graph.nodes[edge.source_node_id].pose)
+                target = read_point_cloud(ply_file_names[edge.target_node_id])
+                target_down = voxel_down_sample(source, config["voxel_size"])
+                target_down.transform(
+                        pose_graph.nodes[edge.target_node_id].pose)
+                draw_registration_result(
+                        source_down, target_down, np.identity(4))
 
     # display all fragments as a point cloud
-    pcds = []
-    for i in range(len(pose_graph.nodes)):
-        pcd = read_point_cloud(ply_file_names[i])
-        pcd_down = voxel_down_sample(pcd, 0.05)
-        pcd.transform(pose_graph.nodes[i].pose)
-        print(np.linalg.inv(pose_graph.nodes[i].pose))
-        pcds.append(pcd)
-    draw_geometries(pcds)
+    if (args.visualize_all_nodes):
+        pcds = []
+        for i in range(len(pose_graph.nodes)):
+            pcd = read_point_cloud(ply_file_names[i])
+            pcd_down = voxel_down_sample(pcd, 0.05)
+            pcd.transform(pose_graph.nodes[i].pose)
+            print(np.linalg.inv(pose_graph.nodes[i].pose))
+            pcds.append(pcd)
+        draw_geometries(pcds)
