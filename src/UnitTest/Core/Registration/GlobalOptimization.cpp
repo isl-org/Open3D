@@ -26,7 +26,50 @@
 
 #include "UnitTest.h"
 
-TEST(GlobalOptimization, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimization, DISABLED_Constructor)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimization, DISABLED_MemberData)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimization, DISABLED_GlobalOptimizationLevenbergMarquardt)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimization, DISABLED_GlobalOptimizationConvergenceCriteria)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimization, DISABLED_GlobalOptimizationOption)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimization, DISABLED_CreatePoseGraphWithoutInvalidEdges)
 {
     NotImplemented();
 }
