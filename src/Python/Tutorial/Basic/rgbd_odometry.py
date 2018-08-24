@@ -7,7 +7,7 @@ import numpy as np
 
 if __name__ == "__main__":
     pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-            "../../TestData/camera.json")
+            "../../TestData/camera_primesense.json")
     print(pinhole_camera_intrinsic.intrinsic_matrix)
 
     source_color = read_image("../../TestData/RGBD/color/00000.jpg")

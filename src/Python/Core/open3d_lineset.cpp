@@ -24,33 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d_core.h"
+#include "open3d_core_trampoline.h"
 
-#include <Python/open3d.h>
+#include <Core/Geometry/LineSet.h>
+using namespace open3d;
 
-void pybind_console(py::module &m);
-void pybind_geometry(py::module &m);
-void pybind_pointcloud(py::module &m);
-void pybind_lineset(py::module &m);
-void pybind_trianglemesh(py::module &m);
-void pybind_image(py::module &m);
-void pybind_kdtreeflann(py::module &m);
-void pybind_feature(py::module &m);
-void pybind_camera(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_odometry(py::module &m);
-void pybind_global_optimization(py::module &m);
-void pybind_integration(py::module &m);
-void pybind_colormap_optimization(py::module &m);
+void pybind_lineset(py::module &m)
+{
+    py::class_<LineSet, PyGeometry3D<LineSet>,
+            std::shared_ptr<LineSet>, Geometry3D> lineset(m,
+            "LineSet");
+    py::detail::bind_default_constructor<LineSet>(lineset);
+    py::detail::bind_copy_functions<LineSet>(lineset);
+    lineset
+        .def("__repr__", [](const LineSet &lineset) {
+            return std::string("LineSet with ") +
+                    std::to_string(lineset.lines_.size()) + " lines.";
+        })
+        .def(py::self + py::self)
+        .def(py::self += py::self)
+        .def("has_points", &LineSet::HasPoints)
+        .def("has_lines", &LineSet::HasLines)
+        .def("has_colors", &LineSet::HasColors)
+        .def("normalize_normals", &LineSet::GetLineCoordinate)
+        .def_readwrite("points", &LineSet::points_)
+        .def_readwrite("lines", &LineSet::lines_)
+        .def_readwrite("colors", &LineSet::colors_);
+}
 
-void pybind_pointcloud_methods(py::module &m);
-void pybind_lineset_methods(py::module &m);
-void pybind_trianglemesh_methods(py::module &m);
-void pybind_image_methods(py::module &m);
-void pybind_feature_methods(py::module &m);
-void pybind_camera_methods(py::module &m);
-void pybind_registration_methods(py::module &m);
-void pybind_odometry_methods(py::module &m);
-void pybind_global_optimization_methods(py::module &m);
-void pybind_integration_methods(py::module &m);
-void pybind_colormap_optimization_methods(py::module &m);
+void pybind_lineset_methods(py::module &m)
+{
+    
+}
