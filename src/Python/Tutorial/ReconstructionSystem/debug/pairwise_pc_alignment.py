@@ -4,6 +4,7 @@
 
 import numpy as np
 import argparse
+import os
 import sys
 sys.path.append("..")
 sys.path.append("../../Utility")
@@ -18,13 +19,11 @@ if __name__ == "__main__":
     parser.add_argument("config", help="reading json file for initial pose")
     parser.add_argument("source_id", type=int, help="ID of source point cloud")
     parser.add_argument("target_id", type=int, help="ID of target point cloud")
-    parser.add_argument("--debug_mode",
-            help="turn on debug mode", action="store_true")
     args = parser.parse_args()
 
     config = json.load(open(args.config))
     config['debug_mode'] = True
     ply_file_names = get_file_list(
-            config["path_dataset"] + "/fragments/", ".ply")
+            os.path.join(config["path_dataset"], folder_fragment), ".ply")
     register_point_cloud_pair(ply_file_names,
             args.source_id, args.target_id, config)

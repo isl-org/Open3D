@@ -6,19 +6,19 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
     parser.add_argument("config", help="path to the config file")
-    parser.add_argument("--make_fragments",
+    parser.add_argument("--make",
             help="Step 1) making fragments from RGBD sequence", action="store_true")
-    parser.add_argument("--register_fragments",
+    parser.add_argument("--register",
             help="Step 2) register fragments", action="store_true")
-    parser.add_argument("--integrate_scene",
+    parser.add_argument("--integrate",
             help="Step 3) integrate the whole RGBD sequence", action="store_true")
     parser.add_argument("--debug_mode",
             help="turn on debug mode", action="store_true")
     args = parser.parse_args()
 
-    if not args.make_fragments and \
-            not args.register_fragments and \
-            not args.integrate_scene:
+    if not args.make and \
+            not args.register and \
+            not args.integrate:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
@@ -38,12 +38,12 @@ if __name__ == "__main__":
     else:
         config['debug_mode'] = False
 
-    if args.make_fragments:
+    if args.make:
         import make_fragments
         make_fragments.run(config)
-    if args.register_fragments:
+    if args.register:
         import register_fragments
         register_fragments.run(config)
-    if args.integrate_scene:
+    if args.integrate:
         import integrate_scene
         integrate_scene.run(config)

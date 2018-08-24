@@ -23,6 +23,7 @@ def preprocess_point_cloud(pcd, config):
 
 def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh, config):
+    distance_threshold = config["voxel_size"] * 1.5
     result = registration_fast_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
             FastGlobalRegistrationOption(
@@ -62,11 +63,7 @@ def compute_initial_registration(s, t, source_down, target_down,
     return (True, transformation)
 
 
-# colored pointcloud registration
-# This is implementation of following paper
-# J. Park, Q.-Y. Zhou, V. Koltun,
-# Colored Point Cloud Registration Revisited, ICCV 2017
-def register_colored_point_cloud_icp(source, target, voxel_size, max_iter,
+def multiscale_icp(source, target, voxel_size, max_iter,
         config, init_transformation = np.identity(4)):
     current_transformation = init_transformation
     for scale in range(len(max_iter)): # multi-scale approach
@@ -78,13 +75,20 @@ def register_colored_point_cloud_icp(source, target, voxel_size, max_iter,
                 radius = voxel_size[scale] * 2.0, max_nn = 30))
         estimate_normals(target_down, KDTreeSearchParamHybrid(
                 radius = voxel_size[scale] * 2.0, max_nn = 30))
-        # result_icp = registration_colored_icp(source_down, target_down,
-        #         voxel_size[scale], current_transformation,
-        #         ICPConvergenceCriteria(relative_fitness = 1e-6,
-        #         relative_rmse = 1e-6, max_iteration = iter))
-        result_icp = registration_icp(source_down, target_down, 0.07,
-                current_transformation,
-                TransformationEstimationPointToPlane())
+        if config["icp_method"] == "point_to_point":
+            result_icp = registration_icp(source_down, target_down,
+                    voxel_size[scale] * 1.4, current_transformation,
+                    TransformationEstimationPointToPlane(),
+                    ICPConvergenceCriteria(max_iteration = iter))
+        else:
+            # colored pointcloud registration
+            # This is implementation of following paper
+            # J. Park, Q.-Y. Zhou, V. Koltun,
+            # Colored Point Cloud Registration Revisited, ICCV 2017
+            result_icp = registration_colored_icp(source_down, target_down,
+                    voxel_size[scale], current_transformation,
+                    ICPConvergenceCriteria(relative_fitness = 1e-6,
+                    relative_rmse = 1e-6, max_iteration = iter))
         current_transformation = result_icp.transformation
 
     maximum_correspondence_distance = config["voxel_size"] * 1.4
@@ -102,17 +106,17 @@ def local_refinement(s, t, source, target, transformation_init, config):
     if t == s + 1: # odometry case
         print("register_point_cloud_icp")
         (transformation, information) = \
-                register_colored_point_cloud_icp(
-                # source, target, [voxel_size / 4.0], [30],
-                source, target, [voxel_size], [30],
+                multiscale_icp(
+                source, target, [voxel_size / 4.0], [30],
+                # source, target, [voxel_size], [30],
                 config, transformation_init)
     else: # loop closure case
         print("register_colored_point_cloud")
         (transformation, information) = \
-                register_colored_point_cloud_icp(
+                multiscale_icp(
                 source, target,
-                # [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
-                [voxel_size], [30],
+                [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
+                # [voxel_size], [30],
                 config, transformation_init)
 
     success_local = False
@@ -126,7 +130,6 @@ def local_refinement(s, t, source, target, transformation_init, config):
 
 def update_odometry_posegrph(s, t, transformation, information,
         odometry, pose_graph):
-
     print("Update PoseGraph")
     if t == s + 1: # odometry case
         odometry = np.dot(transformation, odometry)
@@ -179,14 +182,15 @@ def make_posegraph_for_scene(ply_file_names, config):
                         transformation_icp, information_icp,
                         odometry, pose_graph)
                 print(pose_graph)
-    write_pose_graph(config["path_dataset"] + \
-            template_global_posegraph, pose_graph)
+    write_pose_graph(os.path.join(config["path_dataset"],
+            template_global_posegraph), pose_graph)
 
 
 def run(config):
     print("register fragments.")
     set_verbosity_level(VerbosityLevel.Debug)
-    ply_file_names = get_file_list(config["path_dataset"] + folder_fragment, ".ply")
-    make_folder(config["path_dataset"] + folder_scene)
+    ply_file_names = get_file_list(os.path.join(
+            config["path_dataset"], folder_fragment), ".ply")
+    make_folder(os.path.join(config["path_dataset"], folder_scene))
     make_posegraph_for_scene(ply_file_names, config)
     optimize_posegraph_for_scene(config["path_dataset"], config)

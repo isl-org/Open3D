@@ -17,17 +17,21 @@ with_opencv = initialize_opencv()
 if with_opencv:
     from opencv_pose_estimation import pose_estimation
 
+def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
+    color = read_image(color_file)
+    depth = read_image(depth_file)
+    rgbd_image = create_rgbd_image_from_color_and_depth(color, depth,
+            depth_trunc = config["max_depth"],
+            convert_rgb_to_intensity = convert_rgb_to_intensity)
+    return rgbd_image
+
+
 def register_one_rgbd_pair(s, t, color_files, depth_files,
         intrinsic, with_opencv, config):
-    # read images
-    color_s = read_image(color_files[s])
-    depth_s = read_image(depth_files[s])
-    color_t = read_image(color_files[t])
-    depth_t = read_image(depth_files[t])
-    source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s,
-            depth_trunc = config["max_depth"], convert_rgb_to_intensity = True)
-    target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t,
-            depth_trunc = config["max_depth"], convert_rgb_to_intensity = True)
+    source_rgbd_image = read_rgbd_image(
+            color_files[s], depth_files[s], True, config)
+    target_rgbd_image = read_rgbd_image(
+            color_files[t], depth_files[t], True, config)
 
     option = OdometryOption()
     option.max_depth_diff = config["max_depth_diff"]
@@ -93,13 +97,6 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
     volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
-    # pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-    #         "../../TestData/camera.json")
-    # pcds = []
-    # print(pinhole_camera_intrinsic.intrinsic_matrix)
-    # print(PinholeCameraIntrinsic(
-    # PinholeCameraIntrinsicParameters.PrimeSenseDefault).intrinsic_matrix)
-
     for i in range(len(pose_graph.nodes)):
         i_abs = fragment_id * n_frames_per_fragment + i
         print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
@@ -112,28 +109,16 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
                 convert_rgb_to_intensity = False)
         pose = pose_graph.nodes[i].pose
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
-
-        # # for debugging
-        # pcd_i = create_point_cloud_from_rgbd_image(rgbd,
-        #         PinholeCameraIntrinsic(
-        #         PinholeCameraIntrinsicParameters.PrimeSenseDefault),
-        #         np.linalg.inv(pose_graph.nodes[i].pose))
-        # pcd_i_down = voxel_down_sample(pcd_i, 0.05)
-        # pcds.append(pcd_i_down)
-
-    # draw_geometries(pcds)
-
-
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
     return mesh
 
-# looks redundant
 def make_mesh_for_fragment(path_dataset, color_files, depth_files,
         fragment_id, n_fragments, intrinsic, config):
     mesh = integrate_rgb_frames_for_fragment(
             color_files, depth_files, fragment_id, n_fragments,
-            path_dataset + template_fragment_posegraph_optimized % fragment_id,
+            os.path.join(path_dataset,
+            template_fragment_posegraph_optimized % fragment_id),
             intrinsic, config)
     mesh_name = path_dataset + template_fragment_mesh % fragment_id
     write_triangle_mesh(mesh_name, mesh, False, True)
@@ -146,7 +131,7 @@ def process_fragments(config):
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
-    make_folder(config["path_dataset"] + folder_fragment)
+    make_folder(os.path.join(config["path_dataset"], folder_fragment))
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
@@ -154,11 +139,11 @@ def process_fragments(config):
     for fragment_id in range(n_fragments):
         sid = fragment_id * n_frames_per_fragment
         eid = min(sid + n_frames_per_fragment, n_files)
-        # make_posegraph_for_fragment(config["path_dataset"], sid, eid,
-        #         color_files, depth_files, fragment_id,
-        #         n_fragments, intrinsic, with_opencv, config)
-        # optimize_posegraph_for_fragment(
-        #         config["path_dataset"], fragment_id, config)
+        make_posegraph_for_fragment(config["path_dataset"], sid, eid,
+                color_files, depth_files, fragment_id,
+                n_fragments, intrinsic, with_opencv, config)
+        optimize_posegraph_for_fragment(
+                config["path_dataset"], fragment_id, config)
         make_mesh_for_fragment(
                 config["path_dataset"], color_files, depth_files,
                 fragment_id, n_fragments, intrinsic, config)

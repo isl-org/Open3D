@@ -6,70 +6,52 @@ import numpy as np
 import argparse
 import sys
 from open3d import *
-sys.path.append("../Utility")
+sys.path.append("..")
+sys.path.append("../../Utility")
+import json
 from common import *
 from make_fragments import *
 
 
-def register_one_rgbd_pair(s, t, color_files, depth_files,
-        intrinsic, with_opencv):
-    # read images
-    color_s = read_image(color_files[s])
-    depth_s = read_image(depth_files[s])
-    color_t = read_image(color_files[t])
-    depth_t = read_image(depth_files[t])
-    source_rgbd_image = create_rgbd_image_from_color_and_depth(color_s, depth_s)
-    target_rgbd_image = create_rgbd_image_from_color_and_depth(color_t, depth_t)
-
-    # initialize_camera_pose
-    if abs(s-t) is not 1 and with_opencv:
-        success_5pt, odo_init = pose_estimation(
-                source_rgbd_image, target_rgbd_image, intrinsic, False)
-    else:
-        odo_init = np.identity(4)
-
-    # perform RGB-D odometry
-    [success, trans, info] = compute_rgbd_odometry(
-            source_rgbd_image, target_rgbd_image, intrinsic,
-            odo_init, RGBDOdometryJacobianFromHybridTerm(), OdometryOption(max_depth_diff = 0.07))
-
+def test_single_pair(s, t, color_files, depth_files,
+        intrinsic, with_opencv, config):
+    set_verbosity_level(VerbosityLevel.Debug)
+    [success, trans, info] = register_one_rgbd_pair(s, t,
+            color_files, depth_files, intrinsic, with_opencv, config)
+    print(trans)
+    print(info)
+    print(intrinsic)
+    source_rgbd_image = read_rgbd_image(
+            color_files[s], depth_files[s], False, config)
+    target_rgbd_image = read_rgbd_image(
+            color_files[t], depth_files[t], False, config)
     source = create_point_cloud_from_rgbd_image(source_rgbd_image, intrinsic)
     target = create_point_cloud_from_rgbd_image(target_rgbd_image, intrinsic)
-    return [source, target, trans, info]
+    print(source)
+    draw_geometries([source])
+    # bug - it does not show anything
+    # draw_registration_result_original_color(source, target, trans)
+    # draw_geometries_flip([source, target])
 
 
-def test_single_pair(s, t, intrinsic, with_opencv):
-    set_verbosity_level(VerbosityLevel.Debug)
-    [source, target, trans, info] = register_one_rgbd_pair(s, t,
-            color_files, depth_files, intrinsic, with_opencv)
-
-    # integration
-    source.transform(trans) # for 5pt
-    draw_geometries([source, target])
-
-
-# test wide baseline matching
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="mathching two RGBD images")
-    parser.add_argument("path_dataset", help="path to the dataset")
+    parser.add_argument("config", help="path to the config file")
     parser.add_argument("source_id", type=int, help="ID of source RGBD image")
     parser.add_argument("target_id", type=int, help="ID of target RGBD image")
-    parser.add_argument("-path_intrinsic", help="path to the RGBD camera intrinsic")
+    parser.add_argument("--path_intrinsic", help="path to the RGBD camera intrinsic")
     args = parser.parse_args()
+    config = json.load(open(args.config))
 
     with_opencv = initialize_opencv()
     if with_opencv:
         from opencv_pose_estimation import pose_estimation
 
-    [color_files, depth_files] = get_rgbd_file_lists(args.path_dataset)
+    [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     if args.path_intrinsic:
         intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
     else:
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    # for i in range(389,400): # this is a corner case
-    for i in range(600,700): # this is a corner case
-        print(i)
-        print(i+1)
-        test_single_pair(i, i+1, intrinsic, with_opencv)
-    # test_single_pair(args.source_id, args.target_id, intrinsic, with_opencv)
+    test_single_pair(args.source_id, args.target_id, color_files, depth_files,
+            intrinsic, with_opencv, config)
