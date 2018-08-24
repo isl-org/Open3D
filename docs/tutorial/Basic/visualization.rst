@@ -17,7 +17,7 @@ Visualization
         pcd = read_point_cloud("../../TestData/fragment.ply")
         draw_geometries([pcd])
 
-        print('Lets draw some primitives')
+        print("Let\'s draw some primitives")
         mesh_sphere = create_mesh_sphere(radius = 1.0)
         mesh_sphere.compute_vertex_normals()
         mesh_sphere.paint_uniform_color([0.1, 0.1, 0.7])
@@ -31,6 +31,19 @@ Visualization
 
         print("We draw a few primitives using + operator of mesh.")
         draw_geometries([mesh_sphere + mesh_cylinder + mesh_frame])
+
+        print("Let\'s draw a cubic that consists of 8 points and 12 lines")
+        points = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
+                  [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
+        lines = [[0,1],[0,2],[1,3],[2,3],
+                 [4,5],[4,6],[5,7],[6,7],
+                 [0,4],[1,5],[2,6],[3,7]]
+        colors = [[1, 0, 0] for i in range(len(lines))]
+        line_set = LineSet()
+        line_set.points = Vector3dVector(points)
+        line_set.lines = Vector2iVector(lines)
+        line_set.colors = Vector3dVector(colors)
+        draw_geometries([line_set])
 
         print("")
 
@@ -120,7 +133,7 @@ Geometry primitives
 
 .. code-block:: python
 
-    print('Lets draw some primitives')
+    print("Let\'s draw some primitives")
     mesh_sphere = create_mesh_sphere(radius = 1.0)
     mesh_sphere.compute_vertex_normals()
     mesh_sphere.paint_uniform_color([0.1, 0.1, 0.7])
@@ -148,4 +161,29 @@ Draw multiple geometries
 ``draw_geometries`` takes a list of geometries and renders them all together. Alternatively, ``TriangleMesh`` supports a ``+`` operator to combine multiple meshes into one. We recommend the first approach since it supports a combination of different geometries (e.g., a mesh can be rendered in tandem with a point cloud).
 
 .. image:: ../../_static/Basic/visualization/premitive.png
+    :width: 400px
+
+.. _draw_line_set:
+
+Draw line set
+=====================================
+
+.. code-block:: python
+
+    print("Let\'s draw a cubic that consists of 8 points and 12 lines")
+    points = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
+              [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
+    lines = [[0,1],[0,2],[1,3],[2,3],
+             [4,5],[4,6],[5,7],[6,7],
+             [0,4],[1,5],[2,6],[3,7]]
+    colors = [[1, 0, 0] for i in range(len(lines))]
+    line_set = LineSet()
+    line_set.points = Vector3dVector(points)
+    line_set.lines = Vector2iVector(lines)
+    line_set.colors = Vector3dVector(colors)
+    draw_geometries([line_set])
+
+To draw lines, it is necessary to define ``LineSet`` and create a set of points and a set of edges. An edge is a pair of point indices. The above example creates custom ``points`` and edges (denoted as ``lines``) to make a cubic. Color is optional - red color ``[1,0,0]`` is assigned to each edge in this example. This script visualizes the following cubic.
+
+.. image:: ../../_static/Basic/visualization/lineset.png
     :width: 400px

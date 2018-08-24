@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     if (argc < 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestFlann [filename]\n");
+        PrintInfo("    > TestLineSet [filename]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1. load the pointcloud in [filename].\n");
         PrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
         PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
         PrintInfo("    6. convert to LineSet and render it.\n");
-        PrintInfo("    6. distance below 0.05 are rendered as red, others as black.\n");
+        PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
         return 0;
     }
 
