@@ -7,7 +7,7 @@ macro(EXPERIMENT EXPERIMENT_NAME)
     endforeach()
 
     set_target_properties(${EXPERIMENT_NAME} PROPERTIES
-            FOLDER "Experimental"
+            FOLDER "examples/Cpp/Experimental"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Experimental")
 endmacro(EXPERIMENT)
 

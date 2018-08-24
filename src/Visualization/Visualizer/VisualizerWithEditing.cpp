@@ -26,7 +26,7 @@
 
 #include "VisualizerWithEditing.h"
 
-#include <External/tinyfiledialogs/tinyfiledialogs.h>
+#include <3rdparty/tinyfiledialogs/tinyfiledialogs.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/LineSet.h>
 #include <Core/Geometry/TriangleMesh.h>

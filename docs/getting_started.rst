@@ -82,7 +82,7 @@ Install/uninstall the Open3D libraries, headers and Python module by running:
 Windows
 -----------
 
-On Windows, only **Visual Studio 2015 update 3** and newer are supported since Open3D relies heavily on C++11 language features. For easy compilation, we have included source code of all dependent libraries in the ``src/External`` folder.
+On Windows, only **Visual Studio 2015 update 3** and newer are supported since Open3D relies heavily on C++11 language features. For easy compilation, we have included source code of all dependent libraries in the ``3rdparty`` folder.
 
 You can use the CMake GUI as shown in the following figure. Specify the directories, click ``Configure`` and choose the correct Visual Studio version (e.g., ``Visual Studio 14 2015 Win64``), then click ``Generate``. This will create an ``Open3D.sln`` file in your build directory.
 

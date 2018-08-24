@@ -62,7 +62,7 @@ endif(WIN32)
 
 set_target_properties(${REALSENSE_LIBRARY} PROPERTIES
         OUTPUT_NAME ${REALSENSE_LIBRARY}
-        FOLDER "External"
+        FOLDER "3rdparty"
     )
 
 # install

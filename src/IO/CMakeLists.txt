@@ -17,7 +17,7 @@ ADD_SOURCE_GROUP(FileFormat)
 Directories(${CMAKE_CURRENT_SOURCE_DIR} IO_INCLUDE_DIRS)
 set(IO_INCLUDE_DIRS ${IO_INCLUDE_DIRS} PARENT_SCOPE)
 
-target_include_directories(IO PUBLIC ${EXTERNAL_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${3RDPARTY_INCLUDE_DIRS})
 
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"

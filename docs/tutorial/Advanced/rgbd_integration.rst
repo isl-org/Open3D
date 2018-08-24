@@ -47,7 +47,7 @@ This tutorial uses function ``read_trajectory`` to read a camera trajectory from
 
 .. code-block:: sh
 
-    # src/test/TestData/RGBD/odometry.log
+    # examples/TestData/RGBD/odometry.log
     0   0   1
     1   0   0   2
     0   1   0   2
