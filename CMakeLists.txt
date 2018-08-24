@@ -114,8 +114,8 @@ endfunction()
 # set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/External
-    ${PROJECT_SOURCE_DIR}/External/librealsense/include
+    ${PROJECT_SOURCE_DIR}/3rdparty
+    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
     )
 
 # if dynamic link is added, use if (WIN32) macro
@@ -187,10 +187,10 @@ if (WITH_OPENMP)
 endif ()
 
 # Handling dependencies
-add_subdirectory(External)
+add_subdirectory(3rdparty)
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${EXTERNAL_INCLUDE_DIRS})
-link_directories(${EXTERNAL_LIBRARY_DIRS})
+include_directories(${3RDPARTY_INCLUDE_DIRS})
+link_directories(${3RDPARTY_LIBRARY_DIRS})
 
 # Open3D libraries
 macro(ADD_SOURCE_GROUP MODULE_NAME)
@@ -219,7 +219,7 @@ else ()
 endif ()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-                      ${EXTERNAL_LIBRARIES}
+                      ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
 
 # Examples
@@ -229,7 +229,7 @@ add_subdirectory(examples)
 SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS)
 SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS)
 SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS)
-SourcePath2InstallPath("${EXTERNAL_INCLUDE_DIRS}"      INSTALL_EXTERNAL_INCLUDE_DIRS)
+SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS}"      INSTALL_3RDPARTY_INCLUDE_DIRS)
 
 # set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
@@ -237,20 +237,20 @@ list(APPEND CONFIG_Open3D_INCLUDE_DIRS
      ${INSTALL_CORE_INCLUDE_DIRS}
      ${INSTALL_IO_INCLUDE_DIRS}
      ${INSTALL_VISUALIZATION_INCLUDE_DIRS}
-     ${INSTALL_EXTERNAL_INCLUDE_DIRS})
+     ${INSTALL_3RDPARTY_INCLUDE_DIRS})
 list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 
 # set Open3D libraries
 list(APPEND CONFIG_Open3D_LIBRARIES
      "${CMAKE_PROJECT_NAME}"
-     ${EXTERNAL_LIBRARIES}
+     ${3RDPARTY_LIBRARIES}
      ${OMP_LIBRARIES})
 
 # set Open3D library directories
 list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     "${CMAKE_INSTALL_PREFIX}/lib"
-    ${EXTERNAL_LIBRARY_DIRS}
+    ${3RDPARTY_LIBRARY_DIRS}
     ${OMP_LIBRARY_DIRS})
 
 # find_package Open3D
