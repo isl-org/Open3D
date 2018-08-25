@@ -2,8 +2,10 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from open3d import *
+import os
 import numpy as np
+from open3d import *
+
 
 voxel_size = 0.02
 max_correspondence_distance_coarse = voxel_size * 15
@@ -11,9 +13,10 @@ max_correspondence_distance_fine = voxel_size * 1.5
 
 
 def load_point_clouds(voxel_size = 0.0):
+    data_dir = "../../TestData/ICP"
     pcds = []
     for i in range(3):
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_%d.pcd" % i)
+        pcd = read_point_cloud(os.path.join(data_dir, "cloud_bin_%d.pcd" % i))
         pcd_down = voxel_down_sample(pcd, voxel_size = voxel_size)
         pcds.append(pcd_down)
     return pcds

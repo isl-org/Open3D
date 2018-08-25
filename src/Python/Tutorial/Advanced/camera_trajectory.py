@@ -2,6 +2,7 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+import os
 import numpy as np
 from open3d import *
 
@@ -21,16 +22,17 @@ if __name__ == "__main__":
     print(np.asarray(y.intrinsic_matrix))
 
     print("Read a trajectory and combine all the RGB-D images.")
-    pcds = [];
-    trajectory = read_pinhole_camera_trajectory("../../TestData/RGBD/trajectory.log")
+    pcds = []
+    data_dir = "../../TestData/RGBD"
+    trajectory = read_pinhole_camera_trajectory(os.path.join(data_dir, "trajectory.log"))
     write_pinhole_camera_trajectory("test.json", trajectory)
     print(trajectory)
     print(trajectory.extrinsic)
     print(np.asarray(trajectory.extrinsic))
     for i in range(5):
-        im1 = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
-        im2 = read_image("../../TestData/RGBD/color/{:05d}.jpg".format(i))
-        im = create_rgbd_image_from_color_and_depth(im2, im1, 1000.0, 5.0, False)
+        color = read_image(os.path.join(data_dir, "color/{:05d}.jpg".format(i)))
+        depth = read_image(os.path.join(data_dir, "depth/{:05d}.png".format(i)))
+        im = create_rgbd_image_from_color_and_depth(color, depth, 1000.0, 5.0, False)
         pcd = create_point_cloud_from_rgbd_image(im,
                 trajectory.intrinsic, trajectory.extrinsic[i])
         pcds.append(pcd)

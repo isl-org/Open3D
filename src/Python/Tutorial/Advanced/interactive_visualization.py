@@ -3,8 +3,11 @@
 # See license file or visit www.open3d.org for details
 
 import numpy as np
-import copy
+import copy, os
 from open3d import *
+
+
+data_dir = "../../TestData/ICP"
 
 def demo_crop_geometry():
     print("Demo for manual geometry cropping")
@@ -14,7 +17,7 @@ def demo_crop_geometry():
     print("   or use ctrl + left click for polygon selection")
     print("4) Press 'C' to get a selected geometry and to save it")
     print("5) Press 'F' to switch to freeview mode")
-    pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
+    pcd = read_point_cloud(os.path.join(data_dir, "cloud_bin_0.pcd"))
     draw_geometries_with_editing([pcd])
 
 def draw_registration_result(source, target, transformation):
@@ -40,8 +43,8 @@ def pick_points(pcd):
 
 def demo_manual_registration():
     print("Demo for manual ICP")
-    source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = read_point_cloud("../../TestData/ICP/cloud_bin_2.pcd")
+    source = read_point_cloud(os.path.join(data_dir, "cloud_bin_0.pcd"))
+    target = read_point_cloud(os.path.join(data_dir, "cloud_bin_2.pcd"))
     print("Visualization of two point clouds before manual alignment")
     draw_registration_result(source, target, np.identity(4))
 

@@ -2,14 +2,16 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from open3d import *
+import copy, os
 import numpy as np
-import copy
+from open3d import *
+
 
 if __name__ == "__main__":
     set_verbosity_level(VerbosityLevel.Debug)
-    source_raw = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target_raw = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
+    data_dir = "../../TestData/ICP"
+    source_raw = read_point_cloud(os.path.join(data_dir, "cloud_bin_0.pcd"))
+    target_raw = read_point_cloud(os.path.join(data_dir, "cloud_bin_1.pcd"))
     source = voxel_down_sample(source_raw, voxel_size = 0.02)
     target = voxel_down_sample(target_raw, voxel_size = 0.02)
     trans = [[0.862, 0.011, -0.507,  0.0],
