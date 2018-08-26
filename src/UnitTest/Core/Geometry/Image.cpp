@@ -233,9 +233,6 @@ TEST(Image, MemberData)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 {
-    // reference data used to validate the filtering of an image
-    // vector<uint8_t> ref = { };
-
     open3d::PinholeCameraIntrinsic intrinsic = 
         open3d::PinholeCameraIntrinsic(
             open3d::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
@@ -253,8 +250,6 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
     EXPECT_EQ(local_height, image->height_);
     EXPECT_EQ(local_num_of_channels, image->num_of_channels_);
     EXPECT_EQ(local_bytes_per_channel, image->bytes_per_channel_);
-    // for (size_t i = 0; i < image->data_.size(); i++)
-    //     EXPECT_EQ(ref[i], image->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -284,15 +279,6 @@ void CreateFloatImageFromImage(
     randInit(image.data_);
 
     auto floatImage = open3d::CreateFloatImageFromImage(image);
-
-    // display float image data
-    // for (size_t i = 0; i < floatImage->data_.size(); i++)
-    //     {
-    //         if ((i % 10 == 0) && (i != 0))
-    //             cout << "\\" << endl;
-    //         cout << setw(4) << (float)floatImage->data_[i] << ",";
-    //     }
-    // cout << endl;
 
     EXPECT_FALSE(floatImage->IsEmpty());
     EXPECT_EQ(local_width, floatImage->width_);
@@ -572,15 +558,6 @@ TEST(Image, ConvertDepthToFloatImage)
 
     auto floatImage = open3d::ConvertDepthToFloatImage(image);
 
-    // display float image data
-    // for (size_t i = 0; i < floatImage->data_.size(); i++)
-    //     {
-    //         if ((i % 10 == 0) && (i != 0))
-    //             cout << "\\" << endl;
-    //         cout << setw(4) << (float)floatImage->data_[i] << ",";
-    //     }
-    // cout << endl;
-
     EXPECT_FALSE(floatImage->IsEmpty());
     EXPECT_EQ(local_width, floatImage->width_);
     EXPECT_EQ(local_height, floatImage->height_);
@@ -625,15 +602,6 @@ TEST(Image, FlipImage)
 
     auto flipImage = open3d::ConvertDepthToFloatImage(image);
 
-    // display flip image data
-    // for (size_t i = 0; i < flipImage->data_.size(); i++)
-    //     {
-    //         if ((i % 10 == 0) && (i != 0))
-    //             cout << "\\" << endl;
-    //         cout << setw(4) << (float)flipImage->data_[i] << ",";
-    //     }
-    // cout << endl;
-
     EXPECT_FALSE(flipImage->IsEmpty());
     EXPECT_EQ(local_width, flipImage->width_);
     EXPECT_EQ(local_height, flipImage->height_);
@@ -670,15 +638,6 @@ void FilterImage(const vector<uint8_t>& ref,
     auto floatImage = open3d::CreateFloatImageFromImage(image);
 
     auto outputImage = open3d::FilterImage(*floatImage, filter);
-
-    // display output image data
-    // for (size_t i = 0; i < outputImage->data_.size(); i++)
-    //     {
-    //         if ((i % 10 == 0) && (i != 0))
-    //             cout << "\\" << endl;
-    //         cout << setw(4) << (float)outputImage->data_[i] << ",";
-    //     }
-    // cout << endl;
 
     EXPECT_FALSE(outputImage->IsEmpty());
     EXPECT_EQ(local_width, outputImage->width_);
@@ -827,15 +786,6 @@ TEST(Image, FilterHorizontalImage)
 
     auto outputImage = open3d::FilterHorizontalImage(*floatImage, Gaussian3);
 
-    // display output image data
-    // for (size_t i = 0; i < outputImage->data_.size(); i++)
-    //     {
-    //         if ((i % 10 == 0) && (i != 0))
-    //             cout << "\\" << endl;
-    //         cout << setw(4) << (float)outputImage->data_[i] << ",";
-    //     }
-    // cout << endl;
-
     EXPECT_FALSE(outputImage->IsEmpty());
     EXPECT_EQ(local_width, outputImage->width_);
     EXPECT_EQ(local_height, outputImage->height_);
@@ -873,15 +823,6 @@ TEST(Image, DownsampleImage)
 
     auto outputImage = open3d::DownsampleImage(*floatImage);
 
-    // display output image data
-    // for (size_t i = 0; i < outputImage->data_.size(); i++)
-    //     {
-    //         if ((i % 10 == 0) && (i != 0))
-    //             cout << "\\" << endl;
-    //         cout << setw(4) << (float)outputImage->data_[i] << ",";
-    //     }
-    // cout << endl;
-
     EXPECT_FALSE(outputImage->IsEmpty());
     EXPECT_EQ((int)(local_width / 2), outputImage->width_);
     EXPECT_EQ((int)(local_height / 2), outputImage->height_);
@@ -907,17 +848,6 @@ TEST(Image, DilateImage)
                             255, 255, 255, 255, 255,   0,   0,   0,   0,   0,\
                             255, 255, 255, 255,   0,   0,   0,   0, 255, 255,\
                             255, 255, 255,   0,   0,   0,   0,   0, 255, 255 };
-    // the ref data if we keep the original pixels after dilation
-    // vector<uint8_t> ref = { 255, 255,  35, 191, 165, 170,  27, 255, 255, 255,\
-    //                         255, 255,  76,  29, 151, 250, 255, 255, 255, 255,\
-    //                         154,   1,  12, 107, 133, 255, 255, 255, 255, 255,\
-    //                          91, 235, 235, 127, 255, 255, 255, 255, 255, 225,\
-    //                         113, 167,  82, 255, 255, 255, 255, 255, 126,  72,\
-    //                          76,  26, 255, 255, 255, 255, 255, 131,  38,  51,\
-    //                         161, 255, 255, 255, 255, 255,  33,  45, 148, 113,\
-    //                         255, 255, 255, 255, 255, 222,  78, 127, 214, 204,\
-    //                         255, 255, 255, 255, 125, 110, 224, 100, 255, 255,\
-    //                         255, 255, 255, 184,  35, 142, 134,  68, 255, 255 };
 
     open3d::Image image;
 
@@ -1148,15 +1078,6 @@ TEST(Image, FilterImagePyramid)
         auto inputImage = pyramid[p];
         auto outputImage = outputPyramid[p];
 
-        // display output image data
-        // for (size_t i = 0; i < outputImage->data_.size(); i++)
-        //     {
-        //         if ((i % 10 == 0) && (i != 0))
-        //             cout << "\\" << endl;
-        //         cout << setw(4) << (float)outputImage->data_[i] << ",";
-        //     }
-        // cout << endl;
-
         EXPECT_FALSE(outputImage->IsEmpty());
         EXPECT_EQ(inputImage->width_, outputImage->width_);
         EXPECT_EQ(inputImage->height_, outputImage->height_);
@@ -1220,15 +1141,6 @@ TEST(Image, CreateImagePyramid)
     for (size_t p = 0; p < pyramid.size(); p++)
     {
         auto outputImage = pyramid[p];
-
-        // display output image data
-        // for (size_t i = 0; i < outputImage->data_.size(); i++)
-        //     {
-        //         if ((i % 10 == 0) && (i != 0))
-        //             cout << "\\" << endl;
-        //         cout << setw(4) << (float)outputImage->data_[i] << ",";
-        //     }
-        // cout << endl;
 
         EXPECT_FALSE(outputImage->IsEmpty());
         EXPECT_EQ(expected_width, outputImage->width_);
