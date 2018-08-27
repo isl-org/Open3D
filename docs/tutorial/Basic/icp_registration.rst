@@ -5,65 +5,22 @@ ICP registration
 
 This tutorial demonstrates the ICP (Iterative Closest Point) registration algorithm. It  has been a mainstay of geometric registration in both research and industry for many years. The input are two point clouds and an initial transformation that roughly aligns the source point cloud to the target point cloud. The output is a refined transformation that tightly aligns the two point clouds. A helper function ``draw_registration_result`` visualizes the alignment during the registration process. In this tutorial, we show two ICP variants, the point-to-point ICP and the point-to-plane ICP [Rusinkiewicz2001]_.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/icp_registration.py
-
-    def draw_registration_result(source, target, transformation):
-        source_temp = copy.deepcopy(source)
-        target_temp = copy.deepcopy(target)
-        source_temp.paint_uniform_color([1, 0.706, 0])
-        target_temp.paint_uniform_color([0, 0.651, 0.929])
-        source_temp.transform(transformation)
-        draw_geometries([source_temp, target_temp])
-
-    if __name__ == "__main__":
-        source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-        threshold = 0.02
-        trans_init = np.asarray(
-                    [[0.862, 0.011, -0.507,  0.5],
-                    [-0.139, 0.967, -0.215,  0.7],
-                    [0.487, 0.255,  0.835, -1.4],
-                    [0.0, 0.0, 0.0, 1.0]])
-        draw_registration_result(source, target, trans_init)
-        print("Initial alignment")
-        evaluation = evaluate_registration(source, target,
-                threshold, trans_init)
-        print(evaluation)
-
-        print("Apply point-to-point ICP")
-        reg_p2p = registration_icp(source, target, threshold, trans_init,
-                TransformationEstimationPointToPoint())
-        print(reg_p2p)
-        print("Transformation is:")
-        print(reg_p2p.transformation)
-        print("")
-        draw_registration_result(source, target, reg_p2p.transformation)
-
-        print("Apply point-to-plane ICP")
-        reg_p2l = registration_icp(source, target, threshold, trans_init,
-                TransformationEstimationPointToPlane())
-        print(reg_p2l)
-        print("Transformation is:")
-        print(reg_p2l.transformation)
-        print("")
-        draw_registration_result(source, target, reg_p2l.transformation)
+.. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _visualize_registration:
 
 Helper visualization function
 =====================================
 
-.. code-block:: python
-
-    def draw_registration_result(source, target, transformation):
-        source_temp = copy.deepcopy(source)
-        target_temp = copy.deepcopy(target)
-        source_temp.paint_uniform_color([1, 0.706, 0])
-        target_temp.paint_uniform_color([0, 0.651, 0.929])
-        source_temp.transform(transformation)
-        draw_geometries([source_temp, target_temp])
+.. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
+   :language: python
+   :lineno-start: 11
+   :lines: 11-17
+   :linenos:
 
 This function visualizes a target point cloud, and a source point cloud transformed with an alignment transformation. The target point cloud and the source point cloud are painted with cyan and yellow colors respectively. The more and tighter the two point clouds overlap with each other, the better the alignment result is.
 
@@ -72,17 +29,11 @@ This function visualizes a target point cloud, and a source point cloud transfor
 Input
 ===================
 
-.. code-block:: python
-
-    source = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-    threshold = 0.02
-    trans_init = np.asarray(
-                [[0.862, 0.011, -0.507,  0.5],
-                [-0.139, 0.967, -0.215,  0.7],
-                [0.487, 0.255,  0.835, -1.4],
-                [0.0, 0.0, 0.0, 1.0]])
-    draw_registration_result(source, target, trans_init)
+.. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
+   :language: python
+   :lineno-start: 20
+   :lines: 20-28
+   :linenos:
 
 This script reads a source point cloud and a target point cloud from two files. A rough transformation is given.
 
@@ -91,12 +42,11 @@ This script reads a source point cloud and a target point cloud from two files. 
 .. image:: ../../_static/Basic/icp/initial.png
     :width: 400px
 
-.. code-block:: python
-
-    print("Initial alignment")
-    evaluation = evaluate_registration(source, target,
-            threshold, trans_init)
-    print(evaluation)
+.. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
+   :language: python
+   :lineno-start: 29
+   :lines: 29-32
+   :linenos:
 
 Function ``evaluate_registration`` calculates two main metrics. ``fitness`` measures the overlapping area (# of inlier correspondences / # of points in target). Higher the better. ``inlier_rmse`` measures the RMSE of all inlier correspondences. Lower the better.
 
@@ -124,16 +74,11 @@ We first show a point-to-point ICP algorithm [BeslAndMcKay1992]_ using an object
 
 .. math:: E(\mathbf{T}) = \sum_{(\mathbf{p},\mathbf{q})\in\mathcal{K}}\|\mathbf{p} - \mathbf{T}\mathbf{q}\|^{2}.
 
-.. code-block:: python
-
-    print("Apply point-to-point ICP")
-    reg_p2p = registration_icp(source, target, threshold, trans_init,
-            TransformationEstimationPointToPoint())
-    print(reg_p2p)
-    print("Transformation is:")
-    print(reg_p2p.transformation)
-    print("")
-    draw_registration_result(source, target, reg_p2p.transformation)
+.. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
+   :language: python
+   :lineno-start: 34
+   :lines: 34-41
+   :linenos:
 
 Class ``TransformationEstimationPointToPoint`` provides functions to compute the residuals and Jacobian matrices of the point-to-point ICP objective. Function ``registration_icp`` takes it as a parameter and runs point-to-point ICP to obtain results.
 
@@ -152,7 +97,7 @@ Class ``TransformationEstimationPointToPoint`` provides functions to compute the
      [ 0.52191123  0.2616952   0.81146378 -1.50303533]
      [ 0.          0.          0.          1.        ]]
 
-The ``fitness`` score increases from 0.174723 to 0.372450. The ``inlier_rmse`` reduces from 0.011771 to 0.007760. By default, ``registration_icp`` runs until convergence or reaches a maximum number of iterations (30 by default). It can be changed to allow more computation time and further improve the results.
+The ``fitness`` score increases from 0.174723 to 0.372450. The ``inlier_rmse`` reduces from 0.011771 to 0.007760. By default, ``registration_icp`` runs until convergence or reaches a maximum number of iterations (30 by default). It can be changed to allow more computation time and to improve the results further.
 
 .. code-block:: python
 
@@ -190,16 +135,11 @@ The point-to-plane ICP algorithm [ChenAndMedioni1992]_ uses a different objectiv
 
 where :math:`\mathbf{n}_{\mathbf{p}}` is the normal of point :math:`\mathbf{p}`. [Rusinkiewicz2001]_ has shown that the point-to-plane ICP algorithm has a faster convergence speed than the point-to-point ICP algorithm.
 
-.. code-block:: python
-
-    print("Apply point-to-plane ICP")
-    reg_p2l = registration_icp(source, target, threshold, trans_init,
-            TransformationEstimationPointToPlane())
-    print(reg_p2l)
-    print("Transformation is:")
-    print(reg_p2l.transformation)
-    print("")
-    draw_registration_result(source, target, reg_p2l.transformation)
+.. literalinclude:: ../../../examples/Python/Basic/icp_registration.py
+   :language: python
+   :lineno-start: 43
+   :lines: 43-50
+   :linenos:
 
 ``registration_icp`` is called with a different parameter ``TransformationEstimationPointToPlane``. Internally, this class implements functions to compute the residuals and Jacobian matrices of the point-to-plane ICP objective.
 

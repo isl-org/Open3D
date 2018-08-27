@@ -5,56 +5,11 @@ RGBD odometry
 
 An RGBD odometry finds the camera movement between two consecutive RGBD image pairs. The input are two instances of ``RGBDImage``. The output is the motion in the form of a rigid body transformation. Open3D has implemented two RGBD odometries: [Steinbrucker2011]_ and [Park2017]_.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/rgbd_odometry.rst
-
-    from open3d import *
-    import numpy as np
-
-    if __name__ == "__main__":
-        pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-                "../../TestData/camera_primesense.json")
-        print(pinhole_camera_intrinsic.intrinsic_matrix)
-
-        source_color = read_image("../../TestData/RGBD/color/00000.jpg")
-        source_depth = read_image("../../TestData/RGBD/depth/00000.png")
-        target_color = read_image("../../TestData/RGBD/color/00001.jpg")
-        target_depth = read_image("../../TestData/RGBD/depth/00001.png")
-        source_rgbd_image = create_rgbd_image_from_color_and_depth(
-                source_color, source_depth);
-        target_rgbd_image = create_rgbd_image_from_color_and_depth(
-                target_color, target_depth);
-        target_pcd = create_point_cloud_from_rgbd_image(
-                target_rgbd_image, pinhole_camera_intrinsic)
-
-        option = OdometryOption()
-        odo_init = np.identity(4)
-        print(option)
-
-        [success_color_term, trans_color_term, info] = compute_rgbd_odometry(
-                source_rgbd_image, target_rgbd_image,
-                pinhole_camera_intrinsic, odo_init,
-                RGBDOdometryJacobianFromColorTerm(), option)
-        [success_hybrid_term, trans_hybrid_term, info] = compute_rgbd_odometry(
-                source_rgbd_image, target_rgbd_image,
-                pinhole_camera_intrinsic, odo_init,
-                RGBDOdometryJacobianFromHybridTerm(), option)
-
-        if success_color_term:
-            print("Using RGB-D Odometry")
-            print(trans_color_term)
-            source_pcd_color_term = create_point_cloud_from_rgbd_image(
-                    source_rgbd_image, pinhole_camera_intrinsic)
-            source_pcd_color_term.transform(trans_color_term)
-            draw_geometries([target_pcd, source_pcd_color_term])
-        if success_hybrid_term:
-            print("Using Hybrid RGB-D Odometry")
-            print(trans_hybrid_term)
-            source_pcd_hybrid_term = create_point_cloud_from_rgbd_image(
-                    source_rgbd_image, pinhole_camera_intrinsic)
-            source_pcd_hybrid_term.transform(trans_hybrid_term)
-            draw_geometries([target_pcd, source_pcd_hybrid_term])
+.. literalinclude:: ../../../examples/Python/Basic/rgbd_odometry.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 
 .. _reading_camera_intrinsic:
@@ -64,11 +19,11 @@ Read camera intrinsic
 
 We first read the camera intrinsic matrix from a json file.
 
-.. code-block:: python
-
-    pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-            "../../TestData/camera_primesense.json")
-    print(pinhole_camera_intrinsic.intrinsic_matrix)
+.. literalinclude:: ../../../examples/Python/Basic/rgbd_odometry.py
+   :language: python
+   :lineno-start: 11
+   :lines: 11-13
+   :linenos:
 
 This yields:
 
@@ -86,16 +41,11 @@ This yields:
 Read RGBD image
 =====================================
 
-.. code-block:: python
-
-    source_color = read_image("../../TestData/RGBD/color/00000.jpg")
-    source_depth = read_image("../../TestData/RGBD/depth/00000.png")
-    target_color = read_image("../../TestData/RGBD/color/00001.jpg")
-    target_depth = read_image("../../TestData/RGBD/depth/00001.png")
-    source_rgbd_image = create_rgbd_image_from_color_and_depth(
-            source_color, source_depth)
-    target_rgbd_image = create_rgbd_image_from_color_and_depth(
-            target_color, target_depth)
+.. literalinclude:: ../../../examples/Python/Basic/rgbd_odometry.py
+   :language: python
+   :lineno-start: 15
+   :lines: 15-24
+   :linenos:
 
 This code block reads two pairs of RGBD images in the Redwood format. We refer to :ref:`rgbd_redwood` for a comprehensive explanation.
 
@@ -106,16 +56,11 @@ This code block reads two pairs of RGBD images in the Redwood format. We refer t
 Compute odometry from two RGBD image pairs
 ==================================================
 
-.. code-block:: python
-
-    [success, trans_color_term, info] = compute_rgbd_odometry(
-            source_rgbd_image, target_rgbd_image,
-            pinhole_camera_intrinsic, odo_init,
-            RGBDOdometryJacobianFromColorTerm(), option)
-    [success, trans_hybrid_term, info] = compute_rgbd_odometry(
-            source_rgbd_image, target_rgbd_image,
-            pinhole_camera_intrinsic, odo_init,
-            RGBDOdometryJacobianFromHybridTerm(), option)
+.. literalinclude:: ../../../examples/Python/Basic/rgbd_odometry.py
+   :language: python
+   :lineno-start: 30
+   :lines: 30-37
+   :linenos:
 
 This code block calls two different RGBD odometry methods. The first one is [Steinbrucker2011]_. It minimizes photo consistency of aligned images. The second one is [Park2017]_. In addition to photo consistency, it implements constraint for geometry. Both functions run in similar speed. But [Park2017]_ is more accurate in our test on benchmark datasets. It is recommended.
 
@@ -130,22 +75,11 @@ Several parameters in ``OdometryOption()``:
 Visualize RGBD image pairs
 =====================================
 
-.. code-block:: python
-
-    if success_color_term:
-        print("Using RGB-D Odometry")
-        print(trans_color_term)
-        source_pcd_color_term = create_point_cloud_from_rgbd_image(
-                source_rgbd_image, pinhole_camera_intrinsic)
-        source_pcd_color_term.transform(trans_color_term)
-        draw_geometries([target_pcd, source_pcd_color_term])
-    if success_hybrid_term:
-        print("Using Hybrid RGB-D Odometry")
-        print(trans_hybrid_term)
-        source_pcd_hybrid_term = create_point_cloud_from_rgbd_image(
-                source_rgbd_image, pinhole_camera_intrinsic)
-        source_pcd_hybrid_term.transform(trans_hybrid_term)
-        draw_geometries([target_pcd, source_pcd_hybrid_term])
+.. literalinclude:: ../../../examples/Python/Basic/rgbd_odometry.py
+   :language: python
+   :lineno-start: 39
+   :lines: 39-52
+   :linenos:
 
 The RGBD image pairs are converted into point clouds and rendered together. Note that the point cloud representing the first (source) RGBD image is transformed with the transformation estimated by the odometry. After this transformation, both point clouds are aligned.
 
