@@ -11,7 +11,7 @@ This script compares the running time of RANSAC based :ref:`global_registration`
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Advanced/fast_global_registration.py
+    # examples/Python/Tutorial/Advanced/fast_global_registration.py
 
     from open3d import *
     from global_registration import *

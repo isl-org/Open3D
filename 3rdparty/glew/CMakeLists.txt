@@ -37,7 +37,7 @@ endif ()
 add_library(${GLEW_LIBRARY} STATIC ${glew_sources} ${glew_headers})
 set_target_properties(${GLEW_LIBRARY} PROPERTIES
 		OUTPUT_NAME ${GLEW_LIBRARY}
-		FOLDER "External"
+		FOLDER "3rdparty"
 )
 
 set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")

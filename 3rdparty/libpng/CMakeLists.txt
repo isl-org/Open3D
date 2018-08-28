@@ -74,7 +74,7 @@ add_library(${PNG_LIBRARY} STATIC ${libpng_sources})
 target_link_libraries(${PNG_LIBRARY} ${ZLIB_LIBRARY} ${M_LIBRARY})
 set_target_properties(${PNG_LIBRARY} PROPERTIES
         OUTPUT_NAME ${PNG_LIBRARY}
-        FOLDER "External"
+        FOLDER "3rdparty"
     )
 
 set(PNG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}")

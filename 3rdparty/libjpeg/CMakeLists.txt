@@ -24,7 +24,7 @@ endif(WIN32)
 add_library(${JPEG_LIBRARY} STATIC ${libjpeg_sources} ${libjpeg_headers})
 set_target_properties(${JPEG_LIBRARY} PROPERTIES
         OUTPUT_NAME ${JPEG_LIBRARY}
-        FOLDER "External"
+        FOLDER "3rdparty"
     )
 
 set(JPEG_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -16,7 +16,7 @@ SET(jsoncpp_sources
 add_library(${JSON_LIBRARY} STATIC ${jsoncpp_sources})
 set_target_properties(${JSON_LIBRARY} PROPERTIES
         OUTPUT_NAME ${JSON_LIBRARY}
-        FOLDER "External"
+        FOLDER "3rdparty"
     )
 
 set(JSONCPP_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
