@@ -47,6 +47,6 @@ target_include_directories(Visualization PUBLIC ${VISUALIZATION_INCLUDE_DIRS})
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+        PATTERN     "Shader/GLSL" EXCLUDE
         PATTERN     "*.cpp" EXCLUDE
-        PATTERN     "*.txt" EXCLUDE
-        PATTERN     "*.glsl" EXCLUDE)
+        PATTERN     "*.txt" EXCLUDE)
