@@ -258,7 +258,7 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 // 1: 1/2/4
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
-void CreateFloatImageFromImage(
+void TEST_CreateFloatImageFromImage(
     const int& num_of_channels,
     const int& bytes_per_channel,
     const vector<uint8_t>& ref,
@@ -308,7 +308,7 @@ TEST(Image, CreateFloatImageFromImage_1_1)
                             129, 128, 128,  60, 245, 244, 116,  62, 137, 136,\
                               8,  62, 206, 205,  77,  63, 157, 156,  28,  62 };
 
-    CreateFloatImageFromImage(1, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -330,7 +330,7 @@ TEST(Image, CreateFloatImageFromImage_1_2)
                                0,  18, 191,  70,   0, 193,   2,  71,   0, 170,\
                                7,  71,   0,  20, 222,  70,   0, 237, 109,  71 };
 
-    CreateFloatImageFromImage(1, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -352,7 +352,7 @@ TEST(Image, CreateFloatImageFromImage_1_4)
                              19,  17,  52, 117, 209, 146, 192,  13,  40, 254,\
                              52, 226,  31, 254,  13, 221,  18,   1, 235, 151 };
 
-    CreateFloatImageFromImage(1, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -375,7 +375,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Weighted)
                             153,  84, 137,  62,  58,  46, 236,  62, 201,  65,\
                             235,  62,  36,  11, 199,  62, 104,  69, 170,  62  };
 
-    CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -398,7 +398,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Equal)
                              66,  33,  49,  63,   9, 120, 138,  62, 246,  85,\
                             187,  62, 229,  25,  56,  63, 127,  44, 116,  62 };
 
-    CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -421,7 +421,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Weighted)
                              40,  16, 226,  70,  41, 121, 163,  70,  60, 255,\
                              36,  71, 139,  94,  18,  71, 175, 119, 234,  70 };
 
-    CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -444,7 +444,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Equal)
                             135, 240,  88,  71, 188,  77, 255,  70,  15,   8,\
                              12,  71,  75, 129,  12,  71,  69,  63, 154,  70 };
 
-    CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -467,7 +467,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Weighted)
                             125,   1, 139, 208, 203, 196,  14, 216,  65, 173,\
                             104, 215, 133,  61,  57, 121, 158, 138,  61, 196 };
 
-    CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -490,7 +490,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal)
                             125, 201,   4, 198,  33,  89, 126,  60, 107, 179,\
                             232, 113, 198,   8,  44, 219, 146, 174,  55, 241 };
 
-    CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -617,7 +617,7 @@ TEST(Image, FlipImage)
 // 1: 1/2/4
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
-void FilterImage(const vector<uint8_t>& ref,
+void TEST_FilterImage(const vector<uint8_t>& ref,
                  const open3d::Image::FilterType& filter)
 {
     open3d::Image image;
@@ -665,7 +665,7 @@ TEST(Image, FilterImage_Gaussian3)
                             235,  27, 194, 235,  30, 117,  68, 238,  84,  73,\
                             191, 118, 229,  73,  63, 119,  22,  74, 191, 118 };
 
-    FilterImage(ref, open3d::Image::FilterType::Gaussian3);
+    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian3);
 }
 
 // ----------------------------------------------------------------------------
@@ -685,7 +685,7 @@ TEST(Image, FilterImage_Gaussian5)
                              32, 213,   3, 122, 170,  23,   5, 123,  64, 217,\
                              71, 123,   4,  65,   5, 123,   4,  65,   5, 122 };
 
-    FilterImage(ref, open3d::Image::FilterType::Gaussian5);
+    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian5);
 }
 
 // ----------------------------------------------------------------------------
@@ -705,7 +705,7 @@ TEST(Image, FilterImage_Gaussian7)
                               9, 168,  54, 243, 142, 203, 210, 246, 231, 217,\
                             234, 247, 216, 162, 149, 248, 198,  65,   5, 249 };
 
-    FilterImage(ref, open3d::Image::FilterType::Gaussian7);
+    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian7);
 }
 
 // ----------------------------------------------------------------------------
@@ -725,7 +725,7 @@ TEST(Image, FilterImage_Sobel3Dx)
                             117, 116,  62, 239, 117, 116,  62, 239, 150, 144,\
                             236,  86, 163, 236, 214, 253, 163, 236, 214, 253 };
 
-    FilterImage(ref, open3d::Image::FilterType::Sobel3Dx);
+    TEST_FilterImage(ref, open3d::Image::FilterType::Sobel3Dx);
 }
 
 // ----------------------------------------------------------------------------
@@ -745,7 +745,7 @@ TEST(Image, FilterImage_Sobel3Dy)
                             151, 204, 100, 250, 101, 136, 152, 249, 208,  33,\
                             164, 106, 116, 199, 179, 213, 116, 199,  51, 213 };
 
-    FilterImage(ref, open3d::Image::FilterType::Sobel3Dy);
+    TEST_FilterImage(ref, open3d::Image::FilterType::Sobel3Dy);
 }
 
 // ----------------------------------------------------------------------------
@@ -972,7 +972,7 @@ TEST(Image, ClipIntensityImage)
 // Tests one of the following configurations
 // ----------------------------------------------------------------------------
 template<typename T>
-void CreateImageFromFloatImage()
+void TEST_CreateImageFromFloatImage()
 {
     open3d::Image image;
 
@@ -1002,15 +1002,15 @@ void CreateImageFromFloatImage()
         EXPECT_EQ(image.data_[i], outImage->data_[i]);
 }
 
-template void CreateImageFromFloatImage<uint8_t>();
-template void CreateImageFromFloatImage<uint16_t>();
+template void TEST_CreateImageFromFloatImage<uint8_t>();
+template void TEST_CreateImageFromFloatImage<uint16_t>();
 
 // ----------------------------------------------------------------------------
 // Tests the case output image bytes_per_channel = 1.
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImageFromFloatImage_8bit)
 {
-    CreateImageFromFloatImage<uint8_t>();
+    TEST_CreateImageFromFloatImage<uint8_t>();
 }
 
 // ----------------------------------------------------------------------------
@@ -1018,7 +1018,7 @@ TEST(Image, CreateImageFromFloatImage_8bit)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImageFromFloatImage_16bit)
 {
-    CreateImageFromFloatImage<uint16_t>();
+    TEST_CreateImageFromFloatImage<uint16_t>();
 }
 
 // ----------------------------------------------------------------------------
