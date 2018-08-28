@@ -41,17 +41,19 @@ if __name__ == "__main__":
     parser.add_argument("target_id", type=int, help="ID of target RGBD image")
     parser.add_argument("--path_intrinsic", help="path to the RGBD camera intrinsic")
     args = parser.parse_args()
-    config = json.load(open(args.config))
 
-    with_opencv = initialize_opencv()
-    if with_opencv:
-        from opencv_pose_estimation import pose_estimation
+    with open(args.config) as json_file:
+        config = json.load(json_file)
 
-    [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
-    if args.path_intrinsic:
-        intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
-    else:
-        intrinsic = PinholeCameraIntrinsic(
-                PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    test_single_pair(args.source_id, args.target_id, color_files, depth_files,
-            intrinsic, with_opencv, config)
+        with_opencv = initialize_opencv()
+        if with_opencv:
+            from opencv_pose_estimation import pose_estimation
+
+        [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
+        if args.path_intrinsic:
+            intrinsic = read_pinhole_camera_intrinsic(args.path_intrinsic)
+        else:
+            intrinsic = PinholeCameraIntrinsic(
+                    PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+        test_single_pair(args.source_id, args.target_id,
+                color_files, depth_files, intrinsic, with_opencv, config)

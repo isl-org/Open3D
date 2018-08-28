@@ -18,13 +18,14 @@ if __name__ == "__main__":
     parser.add_argument("--start_id", type=int, default=0,
             help="starting ID of fragment")
     args = parser.parse_args()
-    config = json.load(open(args.config))
-
-    fragment_files = get_file_list(
-            os.path.join(config["path_dataset"], folder_fragment),
-            extension='.ply')
-    for i in range(args.start_id, len(fragment_files)):
-        print(fragment_files[i])
-        mesh = read_triangle_mesh(fragment_files[i])
-        mesh.compute_vertex_normals()
-        draw_geometries_flip([mesh])
+    
+    with open(args.config) as json_file:
+        config = json.load(json_file)
+        fragment_files = get_file_list(
+                os.path.join(config["path_dataset"], folder_fragment),
+                extension='.ply')
+        for i in range(args.start_id, len(fragment_files)):
+            print(fragment_files[i])
+            mesh = read_triangle_mesh(fragment_files[i])
+            mesh.compute_vertex_normals()
+            draw_geometries_flip([mesh])

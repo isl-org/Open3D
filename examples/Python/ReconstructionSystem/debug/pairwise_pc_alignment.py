@@ -21,9 +21,10 @@ if __name__ == "__main__":
     parser.add_argument("target_id", type=int, help="ID of target point cloud")
     args = parser.parse_args()
 
-    config = json.load(open(args.config))
-    config['debug_mode'] = True
-    ply_file_names = get_file_list(
-            os.path.join(config["path_dataset"], folder_fragment), ".ply")
-    register_point_cloud_pair(ply_file_names,
-            args.source_id, args.target_id, config)
+    with open(args.config) as json_file:
+        config = json.load(json_file)
+        config['debug_mode'] = True
+        ply_file_names = get_file_list(
+                os.path.join(config["path_dataset"], folder_fragment), ".ply")
+        register_point_cloud_pair(ply_file_names,
+                args.source_id, args.target_id, config)

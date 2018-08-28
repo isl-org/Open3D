@@ -24,13 +24,14 @@ if __name__ == "__main__":
 
     # check folder structure
     if args.config is not None:
-        config = json.load(open(args.config))
-        path_depth = os.path.join(config["path_dataset"], "depth")
-        path_image = os.path.join(config["path_dataset"], "image")
-        assert os.path.exists(path_depth), \
-                "Path %s is not exist!" % path_depth
-        assert os.path.exists(path_image), \
-                "Path %s is not exist!" % path_image
+        with open(args.config) as json_file:
+            config = json.load(json_file)
+            path_depth = os.path.join(config["path_dataset"], "depth")
+            path_image = os.path.join(config["path_dataset"], "image")
+            assert os.path.exists(path_depth), \
+                    "Path %s is not exist!" % path_depth
+            assert os.path.exists(path_image), \
+                    "Path %s is not exist!" % path_image
     assert config is not None
 
     if args.debug_mode:

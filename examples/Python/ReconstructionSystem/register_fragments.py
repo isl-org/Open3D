@@ -5,7 +5,6 @@
 # examples/Python/Tutorial/ReconstructionSystem/register_fragments.py
 
 import numpy as np
-import argparse
 import sys
 sys.path.append("../Utility")
 from open3d import *
