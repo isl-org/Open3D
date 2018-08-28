@@ -46,7 +46,7 @@ For trouble shooting, see :ref:`python_binding`.
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/python_binding.py
+    # examples/Python/Tutorial/Basic/python_binding.py
 
     import numpy as np
 

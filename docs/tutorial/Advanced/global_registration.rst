@@ -7,7 +7,7 @@ Both :ref:`icp_registration` and :ref:`colored_point_registration` are known as 
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Advanced/global_registration.py
+    # examples/Python/Tutorial/Advanced/global_registration.py
 
     from open3d import *
     import numpy as np

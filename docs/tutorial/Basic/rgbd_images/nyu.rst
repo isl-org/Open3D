@@ -6,7 +6,7 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the NYU dataset <https
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/rgbd_nyu.py
+    # examples/Python/Tutorial/Basic/rgbd_nyu.py
 
     #conda install pillow matplotlib
     from open3d import *

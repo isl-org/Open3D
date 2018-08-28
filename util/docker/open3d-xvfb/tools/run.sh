@@ -27,4 +27,4 @@ docker container run \
        --name $NAME \
        $NAME
 
-docker container exec -it -w $Open3D_DOCK $NAME bash -c 'mkdir -p build && cd build && cmake ../src -DCMAKE_INSTALL_PREFIX=~/open3d_install && make -j && make install && bash'
+docker container exec -it -w $Open3D_DOCK $NAME bash -c 'mkdir -p build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=~/open3d_install && make -j && make install && bash'

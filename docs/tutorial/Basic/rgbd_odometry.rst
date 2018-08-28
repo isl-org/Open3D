@@ -7,14 +7,14 @@ An RGBD odometry finds the camera movement between two consecutive RGBD image pa
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/rgbd_odometry.rst
+    # examples/Python/Tutorial/Basic/rgbd_odometry.rst
 
     from open3d import *
     import numpy as np
 
     if __name__ == "__main__":
         pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-                "../../TestData/camera.json")
+                "../../TestData/camera_primesense.json")
         print(pinhole_camera_intrinsic.intrinsic_matrix)
 
         source_color = read_image("../../TestData/RGBD/color/00000.jpg")
@@ -67,16 +67,16 @@ We first read the camera intrinsic matrix from a json file.
 .. code-block:: python
 
     pinhole_camera_intrinsic = read_pinhole_camera_intrinsic(
-            "../../TestData/camera.json")
+            "../../TestData/camera_primesense.json")
     print(pinhole_camera_intrinsic.intrinsic_matrix)
 
 This yields:
 
 .. code-block:: sh
 
-    [[ 415.69219382    0.          319.5       ]
-     [   0.          415.69219382  239.5       ]
-     [   0.            0.            1.        ]]
+    [[ 525.     0.   319.5]
+     [   0.   525.   239.5]
+     [   0.     0.     1. ]]
 
 
 .. Note:: Lots of small data structures in Open3D can be read from / written into ``json`` files. This includes camera intrinsics, camera trajectory, pose graph, etc.

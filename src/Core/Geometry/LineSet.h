@@ -38,9 +38,6 @@ class PointCloud;
 class LineSet : public Geometry3D
 {
 public:
-    typedef std::pair<int, int> LineSegment;
-
-public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
     ~LineSet() override {}
 
@@ -57,7 +54,7 @@ public:
 
 public:
     bool HasPoints() const {
-        return point_set_[0].size() > 0 && point_set_[1].size() > 0;
+        return points_[0].size() > 0 && points_[1].size() > 0;
     }
 
     bool HasLines() const {
@@ -70,13 +67,13 @@ public:
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
             size_t i) const {
-        return std::make_pair(point_set_[0][lines_[i].first],
-                point_set_[1][lines_[i].second]);
+        return std::make_pair(points_[lines_[i][0]],
+                points_[lines_[i][1]]);
     }
 
 public:
-    std::vector<Eigen::Vector3d> point_set_[2];
-    std::vector<LineSegment> lines_;
+    std::vector<Eigen::Vector3d> points_;
+    std::vector<Eigen::Vector2i> lines_;
     std::vector<Eigen::Vector3d> colors_;
 };
 

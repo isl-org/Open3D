@@ -7,7 +7,7 @@ Open3D has a data structure for triangle mesh.
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/mesh.py
+    # examples/Python/Tutorial/Basic/mesh.py
 
         import numpy as np
         from open3d import *
