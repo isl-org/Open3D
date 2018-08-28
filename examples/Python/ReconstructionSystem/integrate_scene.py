@@ -5,7 +5,6 @@
 # examples/Python/Tutorial/ReconstructionSystem/integrate_scene.py
 
 import numpy as np
-import argparse
 import math
 import sys
 sys.path.append("../Utility")
