@@ -95,7 +95,7 @@ add_library(${ZLIB_LIBRARY} STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVA
 set_target_properties(${ZLIB_LIBRARY} PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 set_target_properties(${ZLIB_LIBRARY} PROPERTIES
         OUTPUT_NAME ${ZLIB_LIBRARY}
-        FOLDER "External"
+        FOLDER "3rdparty"
     )
 
 set(ZLIB_LIBRARY ${ZLIB_LIBRARY} PARENT_SCOPE)

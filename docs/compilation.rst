@@ -16,7 +16,7 @@ When this fails, or when there are multiple versions of Python and it finds the 
 
 .. code-block:: bash
 
-    cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-python-executable> ../src
+    cmake -DPYTHON_EXECUTABLE:FILEPATH=<path-to-python-executable> ..
 
 .. Note:: Python binding issues can also refer to `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_.
 
@@ -29,7 +29,7 @@ If you do not want Python binding, you may turn off the following compilation op
 Dependencies
 ============
 
-For each dependent library, there is a corresponding CMake build option ``BUILD_<LIBRARY_NAME>``. If the option is ``ON``, the dependent library is forced to be compiled from the source code included in ``src/External`` folder. If it is ``OFF``, CMake will try to find system installed libraries and use it. If CMake fails to find the dependent library, it falls back to compiling the library from source code.
+For each dependent library, there is a corresponding CMake build option ``BUILD_<LIBRARY_NAME>``. If the option is ``ON``, the dependent library is forced to be compiled from the source code included in ``3rdparty`` folder. If it is ``OFF``, CMake will try to find system installed libraries and use it. If CMake fails to find the dependent library, it falls back to compiling the library from source code.
 
 .. tip:: On Ubuntu and OSX it is recommended to link Open3D to system installed libraries. The dependencies can be installed via scripts ``util/scripts/install-deps-ubuntu.sh`` and ``util/scripts/install-deps-osx.sh``. On Windows it is recommended to compile everything from source since Windows lacks a package management software.
 
@@ -43,7 +43,7 @@ The following is an example of forcing building dependencies from source code:
           -DBUILD_JPEG=ON    \
           -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON     \
-          ../src
+          ..
 
 .. note:: Enabling these build options may increase the compilation time.
 
@@ -60,10 +60,10 @@ For example, starting from a clean build directory, run
 .. code-block:: bash
 
     brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ../src
+    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
     make -j
 
-.. note:: This workaround has some compatibility issues with the source code of GLFW included in ``src/External``.
+.. note:: This workaround has some compatibility issues with the source code of GLFW included in ``3rdparty``.
           Make sure Open3D is linked against GLFW installed on the OS.
 
 Unit testing
@@ -88,7 +88,7 @@ By default unit tests are turned off. In order to enable them follow the next st
     cd <path_to_Open3D>
     mkdir build
     cd build
-    cmake ../src -DBUILD_UNIT_TESTS=ON
+    cmake -DBUILD_UNIT_TESTS=ON ..
     make -j
 
 In order to perform the unit tests:

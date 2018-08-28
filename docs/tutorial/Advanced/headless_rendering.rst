@@ -78,7 +78,7 @@ As a result, the cmake command is the following
                      -DBUILD_GLEW=ON \
                      -DBUILD_GLFW=ON \
                      -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
-                     ../src
+                     ..
 
 Note that ``-DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3`` is the same path that was used for :ref:`install_virtualenv`.
 

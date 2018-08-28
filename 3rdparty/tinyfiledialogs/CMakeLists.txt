@@ -12,7 +12,7 @@ file(GLOB tinyfiledialogs_headers tinyfiledialogs.h)
 add_library(${FILEDIALOG_LIBRARY} STATIC ${tinyfiledialogs_sources} ${tinyfiledialogs_headers})
 set_target_properties(${FILEDIALOG_LIBRARY} PROPERTIES
         OUTPUT_NAME ${FILEDIALOG_LIBRARY}
-        FOLDER "External"
+        FOLDER "3rdparty"
     )
 
 # install

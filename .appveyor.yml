@@ -46,7 +46,7 @@ install:
 build_script:
 - mkdir build
 - cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON ../src
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON ..
 - cmake --build . --config %CONFIG% --target INSTALL
 # The following script has issues on SHARED = "ON"
 # - cd lib/Release/Tutorial/Basic && python file_io.py

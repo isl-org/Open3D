@@ -7,7 +7,7 @@ Open3D uses `FLANN <https://www.cs.ubc.ca/research/flann/>`_ to build KDTrees fo
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/kdtree.py
+    # examples/Python/Tutorial/Basic/kdtree.py
 
     import numpy as np
     from open3d import *

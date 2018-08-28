@@ -8,7 +8,7 @@ The following tutorial generates a variant of sync function using NumPy and visu
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/working_with_numpy.py
+    # examples/Python/Tutorial/Basic/working_with_numpy.py
 
     import copy
     import numpy as np

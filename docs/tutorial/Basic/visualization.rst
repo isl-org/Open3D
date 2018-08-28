@@ -5,7 +5,7 @@ Visualization
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/visualization.py
+    # examples/Python/Tutorial/Basic/visualization.py
 
     import copy
     import numpy as np
