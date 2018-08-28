@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/Advanced/fast_global_registration.py
+
 from open3d import *
 from global_registration import *
 import numpy as np

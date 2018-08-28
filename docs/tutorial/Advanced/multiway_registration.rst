@@ -7,112 +7,20 @@ Multiway registration is the process to align multiple pieces of geometry in a g
 
 Open3D implements multiway registration via pose graph optimization. The backend implements the technique presented in [Choi2015]_.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Advanced/multiway_registration.py
-
-    from open3d import *
-    import numpy as np
-
-    voxel_size = 0.02
-    max_correspondence_distance_coarse = voxel_size * 15
-    max_correspondence_distance_fine = voxel_size * 1.5
-
-
-    def load_point_clouds(voxel_size = 0.0):
-        pcds = []
-        for i in range(3):
-            pcd = read_point_cloud("../../TestData/ICP/cloud_bin_%d.pcd" % i)
-            pcd_down = voxel_down_sample(pcd, voxel_size = voxel_size)
-            pcds.append(pcd_down)
-        return pcds
-
-
-    def pairwise_registration(source, target):
-        print("Apply point-to-plane ICP")
-        icp_coarse = registration_icp(source, target,
-                max_correspondence_distance_coarse, np.identity(4),
-                TransformationEstimationPointToPlane())
-        icp_fine = registration_icp(source, target,
-                max_correspondence_distance_fine, icp_coarse.transformation,
-                TransformationEstimationPointToPlane())
-        transformation_icp = icp_fine.transformation
-        information_icp = get_information_matrix_from_point_clouds(
-                source, target, max_correspondence_distance_fine,
-                icp_fine.transformation)
-        return transformation_icp, information_icp
-
-
-    def full_registration(pcds,
-            max_correspondence_distance_coarse, max_correspondence_distance_fine):
-        pose_graph = PoseGraph()
-        odometry = np.identity(4)
-        pose_graph.nodes.append(PoseGraphNode(odometry))
-        n_pcds = len(pcds)
-        for source_id in range(n_pcds):
-            for target_id in range(source_id + 1, n_pcds):
-                transformation_icp, information_icp = pairwise_registration(
-                        pcds[source_id], pcds[target_id])
-                print("Build PoseGraph")
-                if target_id == source_id + 1: # odometry case
-                    odometry = np.dot(transformation_icp, odometry)
-                    pose_graph.nodes.append(PoseGraphNode(np.linalg.inv(odometry)))
-                    pose_graph.edges.append(PoseGraphEdge(source_id, target_id,
-                            transformation_icp, information_icp, uncertain = False))
-                else: # loop closure case
-                    pose_graph.edges.append(PoseGraphEdge(source_id, target_id,
-                            transformation_icp, information_icp, uncertain = True))
-        return pose_graph
-
-
-    if __name__ == "__main__":
-
-        set_verbosity_level(VerbosityLevel.Debug)
-        pcds_down = load_point_clouds(voxel_size)
-        draw_geometries(pcds_down)
-
-        print("Full registration ...")
-        pose_graph = full_registration(pcds_down,
-                max_correspondence_distance_coarse,
-                max_correspondence_distance_fine)
-
-        print("Optimizing PoseGraph ...")
-        option = GlobalOptimizationOption(
-                max_correspondence_distance = max_correspondence_distance_fine,
-                edge_prune_threshold = 0.25,
-                reference_node = 0)
-        global_optimization(pose_graph,
-                GlobalOptimizationLevenbergMarquardt(),
-                GlobalOptimizationConvergenceCriteria(), option)
-
-        print("Transform points and display")
-        for point_id in range(len(pcds_down)):
-            print(pose_graph.nodes[point_id].pose)
-            pcds_down[point_id].transform(pose_graph.nodes[point_id].pose)
-        draw_geometries(pcds_down)
-
-        print("Make a combined point cloud")
-        pcds = load_point_clouds(voxel_size)
-        pcd_combined = PointCloud()
-        for point_id in range(len(pcds)):
-            pcds[point_id].transform(pose_graph.nodes[point_id].pose)
-            pcd_combined += pcds[point_id]
-        pcd_combined_down = voxel_down_sample(pcd_combined, voxel_size = voxel_size)
-        write_point_cloud("multiway_registration.pcd", pcd_combined_down)
-        draw_geometries([pcd_combined_down])
+.. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 Input
 ````````````````````
 
-.. code-block:: python
-
-    def load_point_clouds(voxel_size = 0.0):
-        pcds = []
-        for i in range(3):
-            pcd = read_point_cloud("../../TestData/ICP/cloud_bin_%d.pcd" % i)
-            pcd_down = voxel_down_sample(pcd, voxel_size = voxel_size)
-            pcds.append(pcd_down)
-        return pcds
+.. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
+   :language: python
+   :lineno-start: 15
+   :lines: 15-21
+   :linenos:
 
 The first part of the tutorial script reads three point clouds from files. The point clouds are downsampled and visualized together. They are misaligned.
 
@@ -121,46 +29,11 @@ The first part of the tutorial script reads three point clouds from files. The p
 
 .. _build_a_posegraph:
 
-Build a pose graph
-``````````````````````````````````````
-
-.. code-block:: python
-
-    def pairwise_registration(source, target):
-        print("Apply point-to-plane ICP")
-        icp_coarse = registration_icp(source, target,
-                max_correspondence_distance_coarse, np.identity(4),
-                TransformationEstimationPointToPlane())
-        icp_fine = registration_icp(source, target,
-                max_correspondence_distance_fine, icp_coarse.transformation,
-                TransformationEstimationPointToPlane())
-        transformation_icp = icp_fine.transformation
-        information_icp = get_information_matrix_from_point_clouds(
-                source, target, max_correspondence_distance_fine,
-                icp_fine.transformation)
-        return transformation_icp, information_icp
-
-
-    def full_registration(pcds,
-            max_correspondence_distance_coarse, max_correspondence_distance_fine):
-        pose_graph = PoseGraph()
-        odometry = np.identity(4)
-        pose_graph.nodes.append(PoseGraphNode(odometry))
-        n_pcds = len(pcds)
-        for source_id in range(n_pcds):
-            for target_id in range(source_id + 1, n_pcds):
-                transformation_icp, information_icp = pairwise_registration(
-                        pcds[source_id], pcds[target_id])
-                print("Build PoseGraph")
-                if target_id == source_id + 1: # odometry case
-                    odometry = np.dot(transformation_icp, odometry)
-                    pose_graph.nodes.append(PoseGraphNode(np.linalg.inv(odometry)))
-                    pose_graph.edges.append(PoseGraphEdge(source_id, target_id,
-                            transformation_icp, information_icp, uncertain = False))
-                else: # loop closure case
-                    pose_graph.edges.append(PoseGraphEdge(source_id, target_id,
-                            transformation_icp, information_icp, uncertain = True))
-        return pose_graph
+.. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
+   :language: python
+   :lineno-start: 24
+   :lines: 24-58
+   :linenos:
 
 A pose graph has two key elements: nodes and edges. A node is a piece of geometry :math:`\mathbf{P}_{i}` associated with a pose matrix :math:`\mathbf{T}_{i}` which transforms :math:`\mathbf{P}_{i}` into the global space. The set :math:`\{\mathbf{T}_{i}\}` are the unknown variables to be optimized. ``PoseGraph.nodes`` is a list of ``PoseGraphNode``. We set the global space to be the space of :math:`\mathbf{P}_{0}`. Thus :math:`\mathbf{T}_{0}` is identity matrix. The other pose matrices are initialized by accumulating transformation between neighboring nodes. The neighboring nodes usually have large overlap and can be registered with :ref:`point_to_plane_icp`.
 
@@ -175,19 +48,11 @@ The script creates a pose graph with three nodes and three edges. Among the edge
 
 .. _optimize_a_posegraph:
 
-Optimize a pose graph
-``````````````````````````````````````
-
-.. code-block:: python
-
-    print("Optimizing PoseGraph ...")
-    option = GlobalOptimizationOption(
-            max_correspondence_distance = max_correspondence_distance_fine,
-            edge_prune_threshold = 0.25,
-            reference_node = 0)
-    global_optimization(pose_graph,
-            GlobalOptimizationLevenbergMarquardt(),
-            GlobalOptimizationConvergenceCriteria(), option)
+.. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
+   :language: python
+   :lineno-start: 72
+   :lines: 72-79
+   :linenos:
 
 Open3D uses function ``global_optimization`` to perform pose graph optimization. Two types of optimization methods can be chosen: ``GlobalOptimizationGaussNewton`` or ``GlobalOptimizationLevenbergMarquardt``. The latter is recommended since it has better convergence property. Class ``GlobalOptimizationConvergenceCriteria`` can be used to set the maximum number of iterations and various optimization parameters.
 
@@ -220,13 +85,11 @@ The global optimization performs twice on the pose graph. The first pass optimiz
 Visualize optimization
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    print("Transform points and display")
-    for point_id in range(len(pcds_down)):
-        print(pose_graph.nodes[point_id].pose)
-        pcds_down[point_id].transform(pose_graph.nodes[point_id].pose)
-    draw_geometries(pcds_down)
+.. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
+   :language: python
+   :lineno-start: 81
+   :lines: 81-85
+   :linenos:
 
 Ouputs:
 
@@ -240,17 +103,11 @@ The transformed point clouds are listed and visualized using ``draw_geometries``
 Make a combined point cloud
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    print("Make a combined point cloud")
-    pcds = load_point_clouds(voxel_size)
-    pcd_combined = PointCloud()
-    for point_id in range(len(pcds)):
-        pcds[point_id].transform(pose_graph.nodes[point_id].pose)
-        pcd_combined += pcds[point_id]
-    pcd_combined_down = voxel_down_sample(pcd_combined, voxel_size = voxel_size)
-    write_point_cloud("multiway_registration.pcd", pcd_combined_down)
-    draw_geometries([pcd_combined_down])
+.. literalinclude:: ../../../examples/Python/Advanced/multiway_registration.py
+   :language: python
+   :lineno-start: 87
+   :lines: 87-95
+   :linenos:
 
 .. image:: ../../_static/Advanced/multiway_registration/combined.png
     :width: 400px

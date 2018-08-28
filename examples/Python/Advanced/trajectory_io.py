@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/Advanced/trajectory_io.py
+
 import numpy as np
 
 class CameraPose:

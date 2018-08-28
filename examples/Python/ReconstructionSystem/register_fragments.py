@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/ReconstructionSystem/register_fragments.py
+
 import numpy as np
 import argparse
 import sys
@@ -128,7 +130,7 @@ def local_refinement(s, t, source, target, transformation_init, config):
     return (success_local, transformation, information)
 
 
-def update_odometry_posegrph(s, t, transformation, information,
+def update_posegrph_for_scene(s, t, transformation, information,
         odometry, pose_graph):
     print("Update PoseGraph")
     if t == s + 1: # odometry case
@@ -178,7 +180,7 @@ def make_posegraph_for_scene(ply_file_names, config):
             (success, transformation_icp, information_icp) = \
                     register_point_cloud_pair(ply_file_names, s, t, config)
             if success:
-                (odometry, pose_graph) = update_odometry_posegrph(s, t,
+                (odometry, pose_graph) = update_posegrph_for_scene(s, t,
                         transformation_icp, information_icp,
                         odometry, pose_graph)
                 print(pose_graph)

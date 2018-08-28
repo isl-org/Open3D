@@ -44,38 +44,22 @@ Import open3d module
 This tutorial shows how to import ``open3d`` module and print out help information.
 For trouble shooting, see :ref:`python_binding`.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/python_binding.py
-
-    import numpy as np
-
-    def example_help_function():
-        import open3d
-        help(open3d)
-        help(open3d.PointCloud)
-        help(open3d.read_point_cloud)
-
-    def example_import_function():
-        from open3d import read_point_cloud
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        print(pcd)
-
-    if __name__ == "__main__":
-        example_help_function()
-        example_import_function()
+.. literalinclude:: ../../../examples/Python/Basic/python_binding.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 This scripts has two functions: ``example_help_function`` and ``example_import_all``
 that show very basic usage of Open3D Python module.
 
 .. note:: Depending on environment, the name of Python library may not be ``open3d.so``. Regardless of the file name, ``import open3d`` should work.
 
-.. code-block:: python
-
-    def example_import_function():
-        from open3d import read_point_cloud
-        pcd = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        print(pcd)
+.. literalinclude:: ../../../examples/Python/Basic/python_binding.py
+   :language: python
+   :lineno-start: 9
+   :lines: 9-12
+   :linenos:
 
 This imports ``read_point_cloud`` function from ``open3d`` module. It reads a point cloud file and returns an instance of ``PointCloud`` class. ``print(pcd)`` prints brief information of the point cloud:
 
@@ -91,13 +75,11 @@ Using built-in help function
 
 It is recommended to use Python built-in ``help`` function to get definitions and instructions of Open3D functions and classes. For example,
 
-.. code-block:: python
-
-    def example_help_function():
-        import open3d
-        help(open3d)
-        help(open3d.PointCloud)
-        help(open3d.read_point_cloud)
+.. literalinclude:: ../../../examples/Python/Basic/python_binding.py
+   :language: python
+   :lineno-start: 14
+   :lines: 14-18
+   :linenos:
 
 
 Browse open3d

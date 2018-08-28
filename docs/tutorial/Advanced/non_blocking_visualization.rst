@@ -37,76 +37,22 @@ This rendering loop can be readily customized. For example, a custom loop can be
 
 The full script implementing this idea is displayed below.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Advanced/non_blocking_visualization.py
-
-    from open3d import *
-    import numpy as np
-    import copy
-
-    if __name__ == "__main__":
-        set_verbosity_level(VerbosityLevel.Debug)
-        source_raw = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-        target_raw = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-        source = voxel_down_sample(source_raw, voxel_size = 0.02)
-        target = voxel_down_sample(target_raw, voxel_size = 0.02)
-        trans = [[0.862, 0.011, -0.507,  0.0],
-                [-0.139, 0.967, -0.215,  0.7],
-                [0.487, 0.255,  0.835, -1.4],
-                [0.0, 0.0, 0.0, 1.0]]
-        source.transform(trans)
-
-        flip_transform = [[1, 0, 0, 0],
-                [0, -1, 0, 0],
-                [0, 0, -1, 0],
-                [0, 0, 0, 1]]
-        source.transform(flip_transform)
-        target.transform(flip_transform)
-
-        vis = Visualizer()
-        vis.create_window()
-        vis.add_geometry(source)
-        vis.add_geometry(target)
-        threshold = 0.05
-        icp_iteration = 100
-        save_image = False
-
-        for i in range(icp_iteration):
-            reg_p2l = registration_icp(source, target, threshold,
-                    np.identity(4), TransformationEstimationPointToPlane(),
-                    ICPConvergenceCriteria(max_iteration = 1))
-            source.transform(reg_p2l.transformation)
-            vis.update_geometry()
-            vis.poll_events()
-            vis.update_renderer()
-            if save_image:
-                vis.capture_screen_image("temp_%04d.jpg" % i)
-        vis.destroy_window()
+.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 The following sections explain this script.
 
 Prepare example data
 ````````````````````````````````````````````````````
-.. code-block:: python
 
-    set_verbosity_level(VerbosityLevel.Debug)
-    source_raw = read_point_cloud("../../TestData/ICP/cloud_bin_0.pcd")
-    target_raw = read_point_cloud("../../TestData/ICP/cloud_bin_1.pcd")
-    source = voxel_down_sample(source_raw, voxel_size = 0.02)
-    target = voxel_down_sample(target_raw, voxel_size = 0.02)
-    trans = [[0.862, 0.011, -0.507,  0.0],
-            [-0.139, 0.967, -0.215,  0.7],
-            [0.487, 0.255,  0.835, -1.4],
-            [0.0, 0.0, 0.0, 1.0]]
-    source.transform(trans)
-
-    flip_transform = [[1, 0, 0, 0],
-            [0, -1, 0, 0],
-            [0, 0, -1, 0],
-            [0, 0, 0, 1]]
-    source.transform(flip_transform)
-    target.transform(flip_transform)
+.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+   :language: python
+   :lineno-start: 13
+   :lines: 13-28
+   :linenos:
 
 This part reads two point clouds and downsamples them. The source point cloud is intentionally transformed for the misalignment. Both point clouds are flipped for better visualization.
 
@@ -114,35 +60,22 @@ This part reads two point clouds and downsamples them. The source point cloud is
 Initialize Visualizer class
 ````````````````````````````````````````````````````
 
-.. code-block:: python
-
-    vis = Visualizer()
-    vis.create_window()
-    vis.add_geometry(source)
-    vis.add_geometry(target)
+.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+   :language: python
+   :lineno-start: 30
+   :lines: 30-33
+   :linenos:
 
 These lines make an instance of the visualizer class, open a visualizer window, and add two geometries to the visualizer.
 
 Transform geometry and visualize it
 ````````````````````````````````````````````````````
 
-.. code-block:: python
-
-    threshold = 0.05
-    icp_iteration = 100
-    save_image = False
-
-    for i in range(icp_iteration):
-        reg_p2l = registration_icp(source, target, threshold,
-                np.identity(4), TransformationEstimationPointToPlane(),
-                ICPConvergenceCriteria(max_iteration = 1))
-        source.transform(reg_p2l.transformation)
-        vis.update_geometry()
-        vis.poll_events()
-        vis.update_renderer()
-        if save_image:
-            vis.capture_screen_image("temp_%04d.jpg" % i)
-    vis.destroy_window()
+.. literalinclude:: ../../../examples/Python/Advanced/non_blocking_visualization.py
+   :language: python
+   :lineno-start: 38
+   :lines: 38-48
+   :linenos:
 
 This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
 

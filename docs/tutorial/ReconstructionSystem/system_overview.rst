@@ -31,7 +31,15 @@ Put all color images in the *image* folder, and all depth images in the *depth* 
 
 .. code-block:: sh
 
-    cd <your_path_to_open3d_lib>/Tutorial/ReconstructionSystem/
-    python make_fragments.py [path_to_dataset] [-path_intrinsic (optional)]
-    python register_fragments.py [path_to_dataset]
-    python integrate_scene.py [path_to_dataset] [-path_intrinsic (optional)]
+    cd examples/Python/ReconstructionSystem/
+    python run_system.py [config_file] [--make] [--register] [--integrate]
+
+``config_file`` has parameters and file paths. For example, ReconstructionSystem/config/redwood.json has the following script.
+
+.. literalinclude:: ../../../examples/Python/ReconstructionSystem/config/redwood.json
+   :language: json
+   :lineno-start: 1
+   :lines: 1-
+   :linenos:
+
+We assume the color images and the depth images are synchronized and registered. ``"path_intrinsic"`` specifies path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used. For your own dataset, use an appropriate camera intrinsic and visualize a depth image (likewise :ref:`rgbd_redwood`) prior to use the system.
