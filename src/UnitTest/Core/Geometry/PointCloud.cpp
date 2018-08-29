@@ -217,25 +217,81 @@ TEST(PointCloud, Transform)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_HasPoints)
+TEST(PointCloud, HasPoints)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    EXPECT_TRUE(pc.HasPoints());
 }
 
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_HasNormals)
+TEST(PointCloud, HasNormals)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    Eigen::Vector3d n0 = { 0.150, 0.230, 0.400 };
+    Eigen::Vector3d n1 = { 0.250, 0.230, 0.400 };
+    Eigen::Vector3d n2 = { 0.150, 0.130, 0.400 };
+    Eigen::Vector3d n3 = { 0.150, 0.230, 0.300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    pc.normals_.push_back(n0);
+    pc.normals_.push_back(n1);
+    pc.normals_.push_back(n2);
+    pc.normals_.push_back(n3);
+
+    EXPECT_TRUE(pc.HasNormals());
 }
 
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_HasColors)
+TEST(PointCloud, HasColors)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    Eigen::Vector3d c0 = { 150, 230, 200 };
+    Eigen::Vector3d c1 = { 250, 230, 200 };
+    Eigen::Vector3d c2 = { 150, 130, 200 };
+    Eigen::Vector3d c3 = { 150, 230, 100 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    pc.colors_.push_back(c0);
+    pc.colors_.push_back(c1);
+    pc.colors_.push_back(c2);
+    pc.colors_.push_back(c3);
+
+    EXPECT_TRUE(pc.HasColors());
 }
 
 // ----------------------------------------------------------------------------
