@@ -27,6 +27,8 @@
 #include "UnitTest.h"
 #include "Core/Geometry/PointCloud.h"
 
+using namespace std;
+
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
@@ -153,9 +155,63 @@ TEST(PointCloud, GetMaxBound)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_Transform)
+TEST(PointCloud, Transform)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    Eigen::Vector3d n0 = { 0.150, 0.230, 0.400 };
+    Eigen::Vector3d n1 = { 0.250, 0.230, 0.400 };
+    Eigen::Vector3d n2 = { 0.150, 0.130, 0.400 };
+    Eigen::Vector3d n3 = { 0.150, 0.230, 0.300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    pc.normals_.push_back(n0);
+    pc.normals_.push_back(n1);
+    pc.normals_.push_back(n2);
+    pc.normals_.push_back(n3);
+
+    Eigen::Matrix4d transformation;
+    transformation << 0.10, 0.20, 0.30, 0.40,
+                      0.50, 0.60, 0.70, 0.80,
+                      0.90, 0.10, 0.11, 0.12,
+                      0.13, 0.14, 0.15, 0.16;
+
+    pc.Transform(transformation);
+
+    EXPECT_DOUBLE_EQ(181.40, (pc.points_[0][0, 0]));
+    EXPECT_DOUBLE_EQ(493.80, (pc.points_[0][0, 1]));
+    EXPECT_DOUBLE_EQ(202.12, (pc.points_[0][0, 2]));
+    EXPECT_DOUBLE_EQ(191.4,  (pc.points_[1][0, 0]));
+    EXPECT_DOUBLE_EQ(543.8,  (pc.points_[1][0, 1]));
+    EXPECT_DOUBLE_EQ(292.12, (pc.points_[1][0, 2]));
+    EXPECT_DOUBLE_EQ(161.4,  (pc.points_[2][0, 0]));
+    EXPECT_DOUBLE_EQ(433.8,  (pc.points_[2][0, 1]));
+    EXPECT_DOUBLE_EQ(192.12, (pc.points_[2][0, 2]));
+    EXPECT_DOUBLE_EQ(151.4,  (pc.points_[3][0, 0]));
+    EXPECT_DOUBLE_EQ(423.8,  (pc.points_[3][0, 1]));
+    EXPECT_DOUBLE_EQ(191.12, (pc.points_[3][0, 2]));
+
+    EXPECT_DOUBLE_EQ(0.181, (pc.normals_[0][0, 0]));
+    EXPECT_DOUBLE_EQ(0.493, (pc.normals_[0][0, 1]));
+    EXPECT_DOUBLE_EQ(0.202, (pc.normals_[0][0, 2]));
+    EXPECT_DOUBLE_EQ(0.191, (pc.normals_[1][0, 0]));
+    EXPECT_DOUBLE_EQ(0.543, (pc.normals_[1][0, 1]));
+    EXPECT_DOUBLE_EQ(0.292, (pc.normals_[1][0, 2]));
+    EXPECT_DOUBLE_EQ(0.161, (pc.normals_[2][0, 0]));
+    EXPECT_DOUBLE_EQ(0.433, (pc.normals_[2][0, 1]));
+    EXPECT_DOUBLE_EQ(0.192, (pc.normals_[2][0, 2]));
+    EXPECT_DOUBLE_EQ(0.151, (pc.normals_[3][0, 0]));
+    EXPECT_DOUBLE_EQ(0.423, (pc.normals_[3][0, 1]));
+    EXPECT_DOUBLE_EQ(0.191, (pc.normals_[3][0, 2]));
 }
 
 // ----------------------------------------------------------------------------
