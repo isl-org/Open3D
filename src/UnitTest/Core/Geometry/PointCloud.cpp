@@ -30,7 +30,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Constructor)
 {
@@ -55,7 +55,7 @@ TEST(PointCloud, Constructor)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_MemberData)
 {
@@ -63,7 +63,7 @@ TEST(PointCloud, DISABLED_MemberData)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Clear)
 {
@@ -93,7 +93,7 @@ TEST(PointCloud, Clear)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, IsEmpty)
 {
@@ -113,7 +113,7 @@ TEST(PointCloud, IsEmpty)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, GetMinBound)
 {
@@ -133,7 +133,7 @@ TEST(PointCloud, GetMinBound)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, GetMaxBound)
 {
@@ -153,7 +153,7 @@ TEST(PointCloud, GetMaxBound)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Transform)
 {
@@ -215,7 +215,7 @@ TEST(PointCloud, Transform)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, HasPoints)
 {
@@ -235,7 +235,7 @@ TEST(PointCloud, HasPoints)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, HasNormals)
 {
@@ -265,7 +265,7 @@ TEST(PointCloud, HasNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, HasColors)
 {
@@ -295,15 +295,40 @@ TEST(PointCloud, HasColors)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_NormalizeNormals)
+TEST(PointCloud, NormalizeNormals)
 {
-    NotImplemented();
+    Eigen::Vector3d n0 = { 0.150, 0.230, 0.400 };
+    Eigen::Vector3d n1 = { 0.250, 0.230, 0.400 };
+    Eigen::Vector3d n2 = { 0.150, 0.130, 0.400 };
+    Eigen::Vector3d n3 = { 0.150, 0.230, 0.300 };
+
+    open3d::PointCloud pc;
+
+    pc.normals_.push_back(n0);
+    pc.normals_.push_back(n1);
+    pc.normals_.push_back(n2);
+    pc.normals_.push_back(n3);
+
+    pc.NormalizeNormals();
+
+    EXPECT_DOUBLE_EQ(0.30916336798746480, (pc.normals_[0][0, 0]));
+    EXPECT_DOUBLE_EQ(0.47405049758077938, (pc.normals_[0][0, 1]));
+    EXPECT_DOUBLE_EQ(0.82443564796657287, (pc.normals_[0][0, 2]));
+    EXPECT_DOUBLE_EQ(0.47638495872919123, (pc.normals_[1][0, 0]));
+    EXPECT_DOUBLE_EQ(0.43827416203085595, (pc.normals_[1][0, 1]));
+    EXPECT_DOUBLE_EQ(0.76221593396670595, (pc.normals_[1][0, 2]));
+    EXPECT_DOUBLE_EQ(0.33591444676679194, (pc.normals_[2][0, 0]));
+    EXPECT_DOUBLE_EQ(0.29112585386455303, (pc.normals_[2][0, 1]));
+    EXPECT_DOUBLE_EQ(0.89577185804477866, (pc.normals_[2][0, 2]));
+    EXPECT_DOUBLE_EQ(0.36882767970367752, (pc.normals_[3][0, 0]));
+    EXPECT_DOUBLE_EQ(0.56553577554563894, (pc.normals_[3][0, 1]));
+    EXPECT_DOUBLE_EQ(0.73765535940735505, (pc.normals_[3][0, 2]));
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_PaintUniformColor)
 {
@@ -311,7 +336,7 @@ TEST(PointCloud, DISABLED_PaintUniformColor)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 {
@@ -319,7 +344,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromDepthImage)
 {
@@ -327,7 +352,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromDepthImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImage)
 {
@@ -335,7 +360,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_SelectDownSample)
 {
@@ -343,7 +368,7 @@ TEST(PointCloud, DISABLED_SelectDownSample)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_VoxelDownSample)
 {
@@ -351,7 +376,7 @@ TEST(PointCloud, DISABLED_VoxelDownSample)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_UniformDownSample)
 {
@@ -359,7 +384,7 @@ TEST(PointCloud, DISABLED_UniformDownSample)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CropPointCloud)
 {
@@ -367,7 +392,7 @@ TEST(PointCloud, DISABLED_CropPointCloud)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_EstimateNormals)
 {
@@ -375,7 +400,7 @@ TEST(PointCloud, DISABLED_EstimateNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_KDTreeSearchParamKNN)
 {
@@ -383,7 +408,7 @@ TEST(PointCloud, DISABLED_KDTreeSearchParamKNN)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_OrientNormalsToAlignWithDirection)
 {
@@ -391,7 +416,7 @@ TEST(PointCloud, DISABLED_OrientNormalsToAlignWithDirection)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_OrientNormalsTowardsCameraLocation)
 {
@@ -399,7 +424,7 @@ TEST(PointCloud, DISABLED_OrientNormalsTowardsCameraLocation)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudToPointCloudDistance)
 {
@@ -407,7 +432,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudToPointCloudDistance)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudMeanAndCovariance)
 {
@@ -415,7 +440,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudMeanAndCovariance)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudMahalanobisDistance)
 {
@@ -423,7 +448,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudMahalanobisDistance)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudNearestNeighborDistance)
 {
@@ -431,7 +456,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudNearestNeighborDistance)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 {
@@ -439,7 +464,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_PointerAt)
 {
@@ -447,7 +472,7 @@ TEST(PointCloud, DISABLED_PointerAt)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 {
@@ -455,7 +480,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloudFactory, DISABLED_CreatePointCloudFromDepthImage)
 {
@@ -463,7 +488,7 @@ TEST(PointCloudFactory, DISABLED_CreatePointCloudFromDepthImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ConvertDepthToFloatImage)
 {
@@ -471,7 +496,7 @@ TEST(PointCloud, DISABLED_ConvertDepthToFloatImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PointCloudFactory, DISABLED_CreatePointCloudFromRGBDImage)
 {
