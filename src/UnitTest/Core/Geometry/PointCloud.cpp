@@ -32,21 +32,24 @@
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Constructor)
 {
-    open3d::PointCloud pointCloud;
+    open3d::PointCloud pc;
 
     // inherited from Geometry2D
-    EXPECT_EQ(open3d::Geometry::GeometryType::PointCloud, pointCloud.GetGeometryType());
-    EXPECT_EQ(3, pointCloud.Dimension());
+    EXPECT_EQ(open3d::Geometry::GeometryType::PointCloud, pc.GetGeometryType());
+    EXPECT_EQ(3, pc.Dimension());
 
     // public member variables
-    EXPECT_EQ(0, pointCloud.points_.size());
-    EXPECT_EQ(0, pointCloud.normals_.size());
-    EXPECT_EQ(0, pointCloud.colors_.size());
+    EXPECT_EQ(0, pc.points_.size());
+    EXPECT_EQ(0, pc.normals_.size());
+    EXPECT_EQ(0, pc.colors_.size());
 
     // public members
-    EXPECT_TRUE(pointCloud.IsEmpty());
-    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pointCloud.GetMinBound());
-    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pointCloud.GetMaxBound());
+    EXPECT_TRUE(pc.IsEmpty());
+    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMinBound());
+    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMaxBound());
+    EXPECT_FALSE(pc.HasPoints());
+    EXPECT_FALSE(pc.HasNormals());
+    EXPECT_FALSE(pc.HasColors());
 }
 
 // ----------------------------------------------------------------------------
@@ -60,33 +63,91 @@ TEST(PointCloud, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_Clear)
+TEST(PointCloud, Clear)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    EXPECT_TRUE(pc.HasPoints());
+
+    pc.Clear();
+
+    // public members
+    EXPECT_TRUE(pc.IsEmpty());
+    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMinBound());
+    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMaxBound());
+    EXPECT_FALSE(pc.HasPoints());
+    EXPECT_FALSE(pc.HasNormals());
+    EXPECT_FALSE(pc.HasColors());
 }
 
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_IsEmpty)
+TEST(PointCloud, IsEmpty)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    EXPECT_FALSE(pc.IsEmpty());
 }
 
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_GetMinBound)
+TEST(PointCloud, GetMinBound)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    EXPECT_EQ(Eigen::Vector3d(150, 130, 300), pc.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_GetMaxBound)
+TEST(PointCloud, GetMaxBound)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    EXPECT_EQ(Eigen::Vector3d(250, 230, 400), pc.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
