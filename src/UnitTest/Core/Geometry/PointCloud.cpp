@@ -25,13 +25,28 @@
 // ----------------------------------------------------------------------------
 
 #include "UnitTest.h"
+#include "Core/Geometry/PointCloud.h"
 
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_Constructor)
+TEST(PointCloud, Constructor)
 {
-    NotImplemented();
+    open3d::PointCloud pointCloud;
+
+    // inherited from Geometry2D
+    EXPECT_EQ(open3d::Geometry::GeometryType::PointCloud, pointCloud.GetGeometryType());
+    EXPECT_EQ(3, pointCloud.Dimension());
+
+    // public member variables
+    EXPECT_EQ(0, pointCloud.points_.size());
+    EXPECT_EQ(0, pointCloud.normals_.size());
+    EXPECT_EQ(0, pointCloud.colors_.size());
+
+    // public members
+    EXPECT_TRUE(pointCloud.IsEmpty());
+    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pointCloud.GetMinBound());
+    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pointCloud.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
