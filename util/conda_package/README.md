@@ -25,8 +25,13 @@ cd build_macos_27
 conda create -n clean_build_env2.7 python=2.7
 source activate clean_build_env2.7
 
-# Build
-cmake .. -DPYTHON_EXECUTABLE=`which python2.7`
+# On Mac/Ubuntu, we need to build all dependencies as static libs from source
+# On Windows, this is enabled by default
+cmake -DWITH_OPENMP=ON -DBUILD_EXPERIMENTAL=ON -DBUILD_EIGEN3=ON \
+      -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON \
+      -DBUILD_PNG=ON -DBUILD_PYBIND11=ON -DBUILD_PYTHON_MODULE=ON \
+      -DBUILD_TINYFILEDIALOGS=ON \
+      -DPYTHON_EXECUTABLE=`which python2.7` ..
 make -j
 
 # Copy shared library to the corresponding platform folder
@@ -49,7 +54,8 @@ When configuring the projects, instead of `Visual Studio 15 2017 Win64`, we
 use
 
 ```
-cmake -DPYTHON_EXECUTABLE=C:\path_to_the_32bit_python_env\python.exe -G "Visual Studio 15 2017" ..
+cmake -DPYTHON_EXECUTABLE=C:\path_to_the_32bit_python_env\python.exe \
+      -G "Visual Studio 15 2017" ..
 ```
 
 After copying the file, the directory shall contain the following files:
