@@ -48,6 +48,13 @@ See `this link <https://conda.io/docs/user-guide/install/index.html>`_ for refer
 Note: We don't recommend using ``pip install`` to install ``Open3D`` in a
 Conda environment. This may lead to undefined behavior.
 
+Note: Depending on your operating system and Conda configuration, you might need
+to activate Conda environments with:
+
+* ``conda activate new_env3.6``
+* ``source activate new_env3.6``
+* ``activate new_env3.6``
+
 Conda distribution is tested on the following configurations:
 
 * Windows 10: Python 2.7, 3.5, 3.6
