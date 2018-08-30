@@ -439,6 +439,119 @@ TEST(PointCloud, OperatorAppend)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+TEST(PointCloud, OperatorADD)
+{
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    Eigen::Vector3d p4 = {  75, 115, 200 };
+    Eigen::Vector3d p5 = { 125, 115, 200 };
+    Eigen::Vector3d p6 = {  75,  65, 200 };
+    Eigen::Vector3d p7 = {  75, 115, 150 };
+
+    vector<Eigen::Vector3d> p;
+    p.push_back(p0);
+    p.push_back(p1);
+    p.push_back(p2);
+    p.push_back(p3);
+    p.push_back(p4);
+    p.push_back(p3);
+    p.push_back(p4);
+    p.push_back(p5);
+    p.push_back(p6);
+    p.push_back(p7);
+
+    Eigen::Vector3d n0 = { 0.150, 0.230, 0.400 };
+    Eigen::Vector3d n1 = { 0.250, 0.230, 0.400 };
+    Eigen::Vector3d n2 = { 0.150, 0.130, 0.400 };
+    Eigen::Vector3d n3 = { 0.150, 0.230, 0.300 };
+
+    Eigen::Vector3d n4 = { 0.075, 0.115, 0.200 };
+    Eigen::Vector3d n5 = { 0.125, 0.115, 0.200 };
+    Eigen::Vector3d n6 = { 0.075, 0.065, 0.200 };
+    Eigen::Vector3d n7 = { 0.075, 0.115, 0.150 };
+
+    vector<Eigen::Vector3d> n;
+    n.push_back(n0);
+    n.push_back(n1);
+    n.push_back(n2);
+    n.push_back(n3);
+    n.push_back(n4);
+    n.push_back(n3);
+    n.push_back(n4);
+    n.push_back(n5);
+    n.push_back(n6);
+    n.push_back(n7);
+
+    open3d::PointCloud pc0;
+    open3d::PointCloud pc1;
+
+    pc0.points_.push_back(p0);
+    pc0.points_.push_back(p1);
+    pc0.points_.push_back(p2);
+    pc0.points_.push_back(p3);
+    pc0.points_.push_back(p4);
+
+    pc1.points_.push_back(p3);
+    pc1.points_.push_back(p4);
+    pc1.points_.push_back(p5);
+    pc1.points_.push_back(p6);
+    pc1.points_.push_back(p7);
+
+    pc0.normals_.push_back(n0);
+    pc0.normals_.push_back(n1);
+    pc0.normals_.push_back(n2);
+    pc0.normals_.push_back(n3);
+    pc0.normals_.push_back(n4);
+
+    pc1.normals_.push_back(n3);
+    pc1.normals_.push_back(n4);
+    pc1.normals_.push_back(n5);
+    pc1.normals_.push_back(n6);
+    pc1.normals_.push_back(n7);
+
+    pc0.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
+    pc1.PaintUniformColor(Eigen::Vector3d( 53, 233, 171));
+
+    open3d::PointCloud pc = pc0 + pc1;
+
+    EXPECT_EQ(5, pc0.points_.size());
+    EXPECT_EQ(5, pc0.normals_.size());
+    EXPECT_EQ(5, pc0.colors_.size());
+
+    EXPECT_EQ(p.size(), pc.points_.size());
+    for (size_t i = 0; i < 10; i++)
+        EXPECT_EQ(p[i], pc.points_[i]);
+
+    EXPECT_EQ(n.size(), pc.normals_.size());
+    for (size_t i = 0; i < 10; i++)
+    {
+        EXPECT_DOUBLE_EQ((n[i][0, 0]), (pc.normals_[i][0, 0]));
+        EXPECT_DOUBLE_EQ((n[i][0, 1]), (pc.normals_[i][0, 1]));
+        EXPECT_DOUBLE_EQ((n[i][0, 2]), (pc.normals_[i][0, 2]));
+    }
+
+    EXPECT_EQ(p.size(), pc.colors_.size());
+    for (size_t i = 0; i < 5; i++)
+    {
+        EXPECT_DOUBLE_EQ(233, (pc.colors_[i][0, 0]));
+        EXPECT_DOUBLE_EQ(171, (pc.colors_[i][0, 1]));
+        EXPECT_DOUBLE_EQ( 53, (pc.colors_[i][0, 2]));
+    }
+
+    for (size_t i = 5; i < 10; i++)
+    {
+        EXPECT_DOUBLE_EQ( 53, (pc.colors_[i][0, 0]));
+        EXPECT_DOUBLE_EQ(233, (pc.colors_[i][0, 1]));
+        EXPECT_DOUBLE_EQ(171, (pc.colors_[i][0, 2]));
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(PointCloud, PaintUniformColor)
 {
     Eigen::Vector3d p0 = { 150, 230, 400 };
