@@ -330,9 +330,32 @@ TEST(PointCloud, NormalizeNormals)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_PaintUniformColor)
+TEST(PointCloud, PaintUniformColor)
 {
-    NotImplemented();
+    Eigen::Vector3d p0 = { 150, 230, 400 };
+    Eigen::Vector3d p1 = { 250, 230, 400 };
+    Eigen::Vector3d p2 = { 150, 130, 400 };
+    Eigen::Vector3d p3 = { 150, 230, 300 };
+
+    open3d::PointCloud pc;
+
+    pc.points_.push_back(p0);
+    pc.points_.push_back(p1);
+    pc.points_.push_back(p2);
+    pc.points_.push_back(p3);
+
+    EXPECT_FALSE(pc.HasColors());
+
+    pc.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
+
+    EXPECT_TRUE(pc.HasColors());
+
+    for (size_t i = 0; i < pc.colors_.size(); i++)
+    {
+        EXPECT_DOUBLE_EQ(233, (pc.normals_[i][0, 0]));
+        EXPECT_DOUBLE_EQ(171, (pc.normals_[i][0, 1]));
+        EXPECT_DOUBLE_EQ( 53, (pc.normals_[i][0, 2]));
+    }
 }
 
 // ----------------------------------------------------------------------------
