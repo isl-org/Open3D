@@ -352,9 +352,9 @@ TEST(PointCloud, PaintUniformColor)
 
     for (size_t i = 0; i < pc.colors_.size(); i++)
     {
-        EXPECT_DOUBLE_EQ(233, (pc.normals_[i][0, 0]));
-        EXPECT_DOUBLE_EQ(171, (pc.normals_[i][0, 1]));
-        EXPECT_DOUBLE_EQ( 53, (pc.normals_[i][0, 2]));
+        EXPECT_DOUBLE_EQ(233, (pc.colors_[i][0, 0]));
+        EXPECT_DOUBLE_EQ(171, (pc.colors_[i][0, 1]));
+        EXPECT_DOUBLE_EQ( 53, (pc.colors_[i][0, 2]));
     }
 }
 
