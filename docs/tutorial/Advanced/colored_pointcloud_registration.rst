@@ -5,103 +5,33 @@ Colored point cloud registration
 
 This tutorial demonstrates an ICP variant that uses both geometry and color for registration. It implements the algorithm of [Park2017]_. The color information locks the alignment along the tangent plane. Thus this algorithm is more accurate and more robust than prior point cloud registration algorithms, while the running speed is comparable to that of ICP registration. This tutorial uses notations from :ref:`icp_registration`.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Advanced/colored_pointcloud_registration.py
-
-    import numpy as np
-    import copy
-    from open3d import *
-
-
-    def draw_registration_result_original_color(source, target, transformation):
-        source_temp = copy.deepcopy(source)
-        source_temp.transform(transformation)
-        draw_geometries([source_temp, target])
-
-
-    if __name__ == "__main__":
-
-        print("1. Load two point clouds and show initial pose")
-        source = read_point_cloud("../../TestData/ColoredICP/frag_115.ply")
-        target = read_point_cloud("../../TestData/ColoredICP/frag_116.ply")
-
-        # draw initial alignment
-        current_transformation = np.identity(4)
-        draw_registration_result_original_color(
-                source, target, current_transformation)
-
-        # point to plane ICP
-        current_transformation = np.identity(4);
-        print("2. Point-to-plane ICP registration is applied on original point")
-        print("   clouds to refine the alignment. Distance threshold 0.02.")
-        result_icp = registration_icp(source, target, 0.02,
-                current_transformation, TransformationEstimationPointToPlane())
-        print(result_icp)
-        draw_registration_result_original_color(
-                source, target, result_icp.transformation)
-
-        # colored pointcloud registration
-         # This is implementation of following paper
-         # J. Park, Q.-Y. Zhou, V. Koltun,
-         # Colored Point Cloud Registration Revisited, ICCV 2017
-        voxel_radius = [ 0.04, 0.02, 0.01 ];
-        max_iter = [ 50, 30, 14 ];
-        current_transformation = np.identity(4)
-        print("3. Colored point cloud registration")
-        for scale in range(3):
-            iter = max_iter[scale]
-            radius = voxel_radius[scale]
-            print([iter,radius,scale])
-
-            print("3-1. Downsample with a voxel size %.2f" % radius)
-            source_down = voxel_down_sample(source, radius)
-            target_down = voxel_down_sample(target, radius)
-
-            print("3-2. Estimate normal.")
-            estimate_normals(source_down, KDTreeSearchParamHybrid(
-                    radius = radius * 2, max_nn = 30))
-            estimate_normals(target_down, KDTreeSearchParamHybrid(
-                    radius = radius * 2, max_nn = 30))
-
-            print("3-3. Applying colored point cloud registration")
-            result_icp = registration_colored_icp(source_down, target_down,
-                    radius, current_transformation,
-                    ICPConvergenceCriteria(relative_fitness = 1e-6,
-                    relative_rmse = 1e-6, max_iteration = iter))
-            current_transformation = result_icp.transformation
-            print(result_icp)
-        draw_registration_result_original_color(
-                source, target, result_icp.transformation)
-
+.. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _visualize_color_alignment:
 
 Helper visualization function
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    def draw_registration_result_original_color(source, target, transformation):
-        source_temp = copy.deepcopy(source)
-        source_temp.transform(transformation)
-        draw_geometries([source_temp, target])
+.. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
+   :language: python
+   :lineno-start: 12
+   :lines: 12-15
+   :linenos:
 
 In order to demonstrate the alignment between colored point clouds, ``draw_registration_result_original_color`` renders point clouds with their original color.
 
 Input
 ```````````````
 
-.. code-block:: python
-
-    print("1. Load two point clouds and show initial pose")
-    source = read_point_cloud("../../TestData/ColoredICP/frag_115.ply")
-    target = read_point_cloud("../../TestData/ColoredICP/frag_116.ply")
-
-    # draw initial alignment
-    current_transformation = np.identity(4)
-    draw_registration_result_original_color(
-            source, target, current_transformation)
+.. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
+   :language: python
+   :lineno-start: 20
+   :lines: 20-27
+   :linenos:
 
 This script reads a source point cloud and a target point cloud from two files. An identity matrix is used as initialization.
 
@@ -117,17 +47,11 @@ This script reads a source point cloud and a target point cloud from two files. 
 Point-to-plane ICP
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    # point to plane ICP
-    current_transformation = np.identity(4);
-    print("2. Point-to-plane ICP registration is applied on original point")
-    print("   clouds to refine the alignment. Distance threshold 0.02.")
-    result_icp = registration_icp(source, target, 0.02,
-            current_transformation, TransformationEstimationPointToPlane())
-    print(result_icp)
-    draw_registration_result_original_color(
-            source, target, result_icp.transformation)
+.. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
+   :language: python
+   :lineno-start: 29
+   :lines: 29-37
+   :linenos:
 
 We first run :ref:`point_to_plane_icp` as a baseline approach. The visualization below shows misaligned green triangle textures. This is because geometric constraint does not prevent two planar surfaces from slipping.
 
@@ -163,40 +87,11 @@ where :math:`C_{\mathbf{p}}(\cdot)` is a precomputed function continuously defin
 
 To further improve efficiency, [Park2017]_ proposes a multi-scale registration scheme. This has been implemented in the following script.
 
-.. code-block:: python
-
-    # colored pointcloud registration
-    # This is implementation of following paper
-    # J. Park, Q.-Y. Zhou, V. Koltun,
-    # Colored Point Cloud Registration Revisited, ICCV 2017
-    voxel_radius = [ 0.04, 0.02, 0.01 ];
-    max_iter = [ 50, 30, 14 ];
-    current_transformation = np.identity(4)
-    print("3. Colored point cloud registration")
-    for scale in range(3):
-        iter = max_iter[scale]
-        radius = voxel_radius[scale]
-        print([iter,radius,scale])
-
-        print("3-1. Downsample with a voxel size %.2f" % radius)
-        source_down = voxel_down_sample(source, radius)
-        target_down = voxel_down_sample(target, radius)
-
-        print("3-2. Estimate normal.")
-        estimate_normals(source_down, KDTreeSearchParamHybrid(
-                radius = radius * 2, max_nn = 30))
-        estimate_normals(target_down, KDTreeSearchParamHybrid(
-                radius = radius * 2, max_nn = 30))
-
-        print("3-3. Applying colored point cloud registration")
-        result_icp = registration_colored_icp(source_down, target_down,
-                radius, current_transformation,
-                ICPConvergenceCriteria(relative_fitness = 1e-6,
-                relative_rmse = 1e-6, max_iteration = iter))
-        current_transformation = result_icp.transformation
-        print(result_icp)
-        draw_registration_result_original_color(
-                source, target, result_icp.transformation)
+.. literalinclude:: ../../../examples/Python/Advanced/colored_pointcloud_registration.py
+   :language: python
+   :lineno-start: 39
+   :lines: 39-70
+   :linenos:
 
 In total, 3 layers of multi-resolution point clouds are created with :ref:`voxel_downsampling`. Normals are computed with :ref:`vertex_normal_estimation`. The core registration function ``registration_colored_icp`` is called for each layer, from coarse to fine.  ``lambda_geometric`` is an optional argument for ``registration_colored_icp`` that determines :math:`\lambda \in [0,1]` in the overall energy :math:`\lambda E_{G} + (1-\lambda) E_{C}`.
 

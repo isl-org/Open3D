@@ -1,6 +1,7 @@
 echo
 echo cleaning open3d_install...
 
+cd ../../
 cd build
 make uninstall
 cd ..

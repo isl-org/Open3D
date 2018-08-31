@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/Basic/visualization.py
+
 import numpy as np
 from open3d import *
 
@@ -38,5 +40,3 @@ if __name__ == "__main__":
     line_set.lines = Vector2iVector(lines)
     line_set.colors = Vector3dVector(colors)
     draw_geometries([line_set])
-
-    print("")

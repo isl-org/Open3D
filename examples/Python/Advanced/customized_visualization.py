@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/Advanced/customized_visualization.py
+
 import os
 from open3d import *
 import numpy as np
