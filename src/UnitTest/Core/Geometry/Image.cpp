@@ -179,7 +179,7 @@ TEST(Image, FloatValueAt)
 // ----------------------------------------------------------------------------
 // member data is not private and as such can lead to errors
 // ----------------------------------------------------------------------------
-TEST(Image, MemberData)
+TEST(Image, DISABLED_MemberData)
 {
     open3d::Image image;
 
