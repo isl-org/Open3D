@@ -111,7 +111,7 @@ From ``docs`` folder, run
 
 Documentation for C++ API is made with `Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_.
 Follow the `Doxygen installation instruction <http://www.stack.nl/~dimitri/doxygen/manual/install.html>`_.
-From Open3D root folder, run
+From Open3D ``docs`` folder, run
 
 .. code-block:: bash
 
