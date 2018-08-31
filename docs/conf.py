@@ -59,7 +59,7 @@ author = u'Qianyi Zhou and Jaesik Park'
 # built documents.
 #
 # The short X.Y version.
-version_list = [line.rstrip('\n').split(' ')[1] for line in open('../version.txt')]
+version_list = [line.rstrip('\n').split(' ')[1] for line in open('../src/version.txt')]
 open3d_version = '.'.join(version_list)
 version = open3d_version
 # The full version, including alpha/beta/rc tags.
