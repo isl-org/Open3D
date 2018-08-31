@@ -39,7 +39,7 @@ static const int default_bytes_per_channel = 1;
 // ----------------------------------------------------------------------------
 // Initialize a uint8_t vector with random values in the [0:255] range.
 // ----------------------------------------------------------------------------
-void randInit(vector<uint8_t>& v)
+void RandInit(vector<uint8_t>& v)
 {
     uint8_t vmin = 0;
     uint8_t vmax = 255;
