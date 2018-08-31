@@ -711,14 +711,6 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_PointerAt)
-{
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 {
     NotImplemented();
