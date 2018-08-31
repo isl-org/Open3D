@@ -1,15 +1,9 @@
-# Tests
-if (BUILD_TESTS)
-    add_subdirectory(Cpp/Test)
+# CPP examples
+if (BUILD_CPP_EXAMPLES)
+    add_subdirectory(Cpp)
 endif ()
 
-# Experimental
-if (BUILD_EXPERIMENTAL)
-    message(STATUS "Build experimental projects")
-    add_subdirectory(Cpp/Experimental)
-endif ()
-
-# Python binding
+# Python examples
 if (BUILD_PYTHON_MODULE)
     add_subdirectory(Python)
 endif ()
