@@ -6,7 +6,7 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the Redwood dataset <h
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/rgbd_redwood.py
+    # examples/Python/Tutorial/Basic/rgbd_redwood.py
 
     #conda install pillow matplotlib
     from open3d import *

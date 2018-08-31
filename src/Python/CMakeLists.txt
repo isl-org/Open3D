@@ -19,24 +19,6 @@ pybind11_add_module(${PACKAGE_NAME}
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 
-if (BUILD_PYTHON_TUTORIALS)
-    file(GLOB PY_BASIC_TUTORIAL_FILES "Tutorial/Basic/*.py")
-    source_group("Basic" FILES ${PY_BASIC_TUTORIAL_FILES})
-    file(GLOB PY_ADVANCED_TUTORIAL_FILES "Tutorial/Advanced/*.py")
-    source_group("Advanced" FILES ${PY_ADVANCED_TUTORIAL_FILES})
-    file(GLOB PY_APPLICATION_TUTORIAL_FILES "Tutorial/Application/*.py")
-    source_group("Application" FILES ${PY_APPLICATION_TUTORIAL_FILES})
-    file(GLOB PY_RECONSTRUCTION_SYSTEM_TUTORIAL_FILES "Tutorial/ReconstructionSystem/*.py")
-    source_group("ReconstructionSystem" FILES ${PY_RECONSTRUCTION_SYSTEM_TUTORIAL_FILES})
-    add_custom_target(PythonTutorial ALL SOURCES ${PY_BASIC_TUTORIAL_FILES} ${PY_ADVANCED_TUTORIAL_FILES} ${PY_APPLICATION_TUTORIAL_FILES} ${PY_RECONSTRUCTION_SYSTEM_TUTORIAL_FILES})
-    set_target_properties(PythonTutorial PROPERTIES FOLDER "Python")
-    add_custom_command(TARGET PythonTutorial POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Python/Tutorial/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/Tutorial")
-    add_custom_command(TARGET PythonTutorial POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Test/TestData/" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/TestData")
-    add_dependencies(${PACKAGE_NAME} PythonTutorial)
-endif (BUILD_PYTHON_TUTORIALS)
-
 set_target_properties(${PACKAGE_NAME} PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python"
