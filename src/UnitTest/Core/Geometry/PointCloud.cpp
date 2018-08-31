@@ -719,23 +719,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudFactory, DISABLED_CreatePointCloudFromDepthImage)
-{
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ConvertDepthToFloatImage)
-{
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PointCloudFactory, DISABLED_CreatePointCloudFromRGBDImage)
 {
     NotImplemented();
 }
