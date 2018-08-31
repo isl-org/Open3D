@@ -56,6 +56,22 @@ void pybind_pointcloud(py::module &m)
         .def_readwrite("points", &PointCloud::points_)
         .def_readwrite("normals", &PointCloud::normals_)
         .def_readwrite("colors", &PointCloud::colors_);
+
+    py::class_<PointCloudWithHighResCubicID,
+            std::shared_ptr<PointCloudWithHighResCubicID>>
+            pointcloud_with_highres_cubicid(m, "PointCloudWithHighResCubicID");
+    py::detail::bind_default_constructor<PointCloudWithHighResCubicID>(
+            pointcloud_with_highres_cubicid);
+    py::detail::bind_copy_functions<PointCloudWithHighResCubicID>(
+            pointcloud_with_highres_cubicid);
+    pointcloud_with_highres_cubicid
+        .def_readwrite("point_cloud",
+            &PointCloudWithHighResCubicID::point_cloud)
+        .def_readwrite("cubic_id", &PointCloudWithHighResCubicID::cubic_id)
+        .def("__repr__", [](const PointCloudWithHighResCubicID &m) {
+            return std::string("PointCloudWithHighResCubicID with ") +
+                    "point_cloud and cubic_id";
+        });
 }
 
 void pybind_pointcloud_methods(py::module &m)
@@ -93,8 +109,8 @@ void pybind_pointcloud_methods(py::module &m)
     m.def("voxel_down_sample", &VoxelDownSample,
             "Function to downsample input pointcloud into output pointcloud with a voxel",
             "input"_a, "voxel_size"_a);
-    m.def("voxel_down_sample_for_surface_conv", &VoxelDownSampleForSurfaceConv,
-          "Function to downsample using VoxelDownSample, but specialized for SurfaceConv project",
+    m.def("voxel_down_sample_and_trace", &VoxelDownSampleAndTrace,
+          "Function to downsample using VoxelDownSample also records point cloud index before downsampling",
           "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
           "approximate_class"_a = false);
     m.def("uniform_down_sample", &UniformDownSample,

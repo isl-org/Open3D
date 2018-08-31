@@ -85,7 +85,7 @@ public:
     Eigen::Vector3d normal_;
     Eigen::Vector3d color_;
 };
-    
+
 class point_cubic_id
 {
 public:
@@ -93,7 +93,7 @@ public:
     int cubic_id;
 };
 
-class AccumulatedPointForSurfaceConv : public AccumulatedPoint
+class AccumulatedPointForTrace : public AccumulatedPoint
 {
 public:
     void AddPoint(const PointCloud &cloud, size_t index,
@@ -124,7 +124,7 @@ public:
         original_id.push_back(new_id);
         num_of_points_++;
     }
-    
+
     Eigen::Vector3d GetMaxClass()
     {
         int max_class = -1;
@@ -139,12 +139,12 @@ public:
         }
         return Eigen::Vector3d(max_class, max_class, max_class);
     }
-    
+
     std::vector<point_cubic_id> GetOriginalID()
     {
         return original_id;
     }
-    
+
 private:
     // original point cloud id in higher resolution + its cubic id
     std::vector<point_cubic_id> original_id;
@@ -283,8 +283,8 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
             (int)input.points_.size(), (int)output->points_.size());
     return output;
 }
-    
-std::shared_ptr<PointCloudWithHighResCubicID> VoxelDownSampleForSurfaceConv(
+
+std::shared_ptr<PointCloudWithHighResCubicID> VoxelDownSampleAndTrace(
         const PointCloud &input, double voxel_size,
         const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
         bool approximate_class)
@@ -304,7 +304,7 @@ std::shared_ptr<PointCloudWithHighResCubicID> VoxelDownSampleForSurfaceConv(
         PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
         return output;
     }
-    std::unordered_map<Eigen::Vector3i, AccumulatedPointForSurfaceConv,
+    std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
     hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
     int cubic_id_temp[3] = {1, 2, 4};
     for (size_t i = 0; i < input.points_.size(); i++) {
