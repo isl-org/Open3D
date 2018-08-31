@@ -5,43 +5,22 @@ RGBD integration
 
 Open3D implements a scalable RGBD image integration algorithm. The algorithm is based on the technique presented in [Curless1996]_ and [Newcombe2011]_. In order to support large scenes, we use a hierarchical hashing structure introduced in `Integrater in ElasticReconstruction <https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate>`_.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Advanced/rgbd_integration.py
-
-    from open3d import *
-    from trajectory_io import *
-    import numpy as np
-
-    if __name__ == "__main__":
-        camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
-        volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
-                sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
-
-        for i in range(len(camera_poses)):
-            print("Integrate {:d}-th image into the volume.".format(i))
-            color = read_image("../../TestData/RGBD/color/{:05d}.jpg".format(i))
-            depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
-            rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-                    depth_trunc = 4.0, convert_rgb_to_intensity = False)
-            volume.integrate(rgbd, PinholeCameraIntrinsic(
-                    PinholeCameraIntrinsicParameters.PrimeSenseDefault),
-                    np.linalg.inv(camera_poses[i].pose))
-
-        print("Extract a triangle mesh from the volume and visualize it.")
-        mesh = volume.extract_triangle_mesh()
-        mesh.compute_vertex_normals()
-        draw_geometries([mesh])
-
+.. literalinclude:: ../../../examples/Python/Advanced/rgbd_integration.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _log_file_format:
 
 Read trajectory from .log file
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    camera_poses = read_trajectory("../../TestData/RGBD/odometry.log")
+.. literalinclude:: ../../../examples/Python/Advanced/rgbd_integration.py
+   :language: python
+   :lineno-start: 12
+   :lines: 12
+   :linenos:
 
 This tutorial uses function ``read_trajectory`` to read a camera trajectory from `a .log file <http://redwood-data.org/indoor/fileformat.html>`_. A sample .log file is as follows.
 
@@ -65,20 +44,11 @@ This tutorial uses function ``read_trajectory`` to read a camera trajectory from
 TSDF volume integration
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    volume = ScalableTSDFVolume(voxel_length = 4.0 / 512.0,
-            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
-
-    for i in range(len(camera_poses)):
-        print("Integrate {:d}-th image into the volume.".format(i))
-        color = read_image("../../TestData/RGBD/color/{:05d}.jpg".format(i))
-        depth = read_image("../../TestData/RGBD/depth/{:05d}.png".format(i))
-        rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-                depth_trunc = 4.0, convert_rgb_to_intensity = False)
-        volume.integrate(rgbd, PinholeCameraIntrinsic(
-                PinholeCameraIntrinsicParameters.PrimeSenseDefault),
-                np.linalg.inv(camera_poses[i].pose))
+.. literalinclude:: ../../../examples/Python/Advanced/rgbd_integration.py
+   :language: python
+   :lineno-start: 13
+   :lines: 13-24
+   :linenos:
 
 Open3D provides two types of TSDF volumes: ``UniformTSDFVolume`` and ``ScalableTSDFVolume``. The latter is recommended since it uses a hierarchical structure and thus supports larger scenes.
 
@@ -91,12 +61,11 @@ Extract a mesh
 
 Mesh extraction uses the marching cubes algorithm [LorensenAndCline1987]_.
 
-.. code-block:: python
-
-    print("Extract a triangle mesh from the volume and visualize it.")
-    mesh = volume.extract_triangle_mesh()
-    mesh.compute_vertex_normals()
-    draw_geometries([mesh])
+.. literalinclude:: ../../../examples/Python/Advanced/rgbd_integration.py
+   :language: python
+   :lineno-start: 26
+   :lines: 26-29
+   :linenos:
 
 Outputs:
 

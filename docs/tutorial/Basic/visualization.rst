@@ -3,61 +3,22 @@
 Visualization
 -------------------------------------
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/visualization.py
-
-    import copy
-    import numpy as np
-    from open3d import *
-
-    if __name__ == "__main__":
-
-        print("Load a ply point cloud, print it, and render it")
-        pcd = read_point_cloud("../../TestData/fragment.ply")
-        draw_geometries([pcd])
-
-        print("Let\'s draw some primitives")
-        mesh_sphere = create_mesh_sphere(radius = 1.0)
-        mesh_sphere.compute_vertex_normals()
-        mesh_sphere.paint_uniform_color([0.1, 0.1, 0.7])
-        mesh_cylinder = create_mesh_cylinder(radius = 0.3, height = 4.0)
-        mesh_cylinder.compute_vertex_normals()
-        mesh_cylinder.paint_uniform_color([0.1, 0.9, 0.1])
-        mesh_frame = create_mesh_coordinate_frame(size = 0.6, origin = [-2, -2, -2])
-
-        print("We draw a few primitives using collection.")
-        draw_geometries([mesh_sphere, mesh_cylinder, mesh_frame])
-
-        print("We draw a few primitives using + operator of mesh.")
-        draw_geometries([mesh_sphere + mesh_cylinder + mesh_frame])
-
-        print("Let\'s draw a cubic that consists of 8 points and 12 lines")
-        points = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
-                  [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
-        lines = [[0,1],[0,2],[1,3],[2,3],
-                 [4,5],[4,6],[5,7],[6,7],
-                 [0,4],[1,5],[2,6],[3,7]]
-        colors = [[1, 0, 0] for i in range(len(lines))]
-        line_set = LineSet()
-        line_set.points = Vector3dVector(points)
-        line_set.lines = Vector2iVector(lines)
-        line_set.colors = Vector3dVector(colors)
-        draw_geometries([line_set])
-
-        print("")
-
+.. literalinclude:: ../../../examples/Python/Basic/visualization.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _function_draw_geometries:
 
 Function draw_geometries
 =====================================
 
-.. code-block:: python
-
-    print("Load a ply point cloud, print it, and render it")
-    pcd = read_point_cloud("../../TestData/fragment.ply")
-    draw_geometries([pcd])
+.. literalinclude:: ../../../examples/Python/Basic/visualization.py
+   :language: python
+   :lineno-start: 12
+   :lines: 12-14
+   :linenos:
 
 Open3D provides a convenient visualization function ``draw_geometries`` which takes a list of geometry objects (``PointCloud``, ``TriangleMesh``, or ``Image``), and renders them together. We have implemented many functions in the visualizer, such as rotation, translation, and scaling via mouse operations, changing rendering style, and screen capture. Press :kbd:`h` inside the window to print out a comprehensive list of functions.
 
@@ -131,16 +92,11 @@ The color map can also be adjusted by, for example, pressing :kbd:`shift+4`. Thi
 Geometry primitives
 =====================================
 
-.. code-block:: python
-
-    print("Let\'s draw some primitives")
-    mesh_sphere = create_mesh_sphere(radius = 1.0)
-    mesh_sphere.compute_vertex_normals()
-    mesh_sphere.paint_uniform_color([0.1, 0.1, 0.7])
-    mesh_cylinder = create_mesh_cylinder(radius = 0.3, height = 4.0)
-    mesh_cylinder.compute_vertex_normals()
-    mesh_cylinder.paint_uniform_color([0.1, 0.9, 0.1])
-    mesh_frame = create_mesh_coordinate_frame(size = 0.6, origin = [-2, -2, -2])
+.. literalinclude:: ../../../examples/Python/Basic/visualization.py
+   :language: python
+   :lineno-start: 16
+   :lines: 16-23
+   :linenos:
 
 This script generates a sphere and a cylinder using ``create_mesh_sphere`` and
 ``create_mesh_cylinder``.  The sphere is painted in blue. The cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh` and :ref:`surface_normal_estimation`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
@@ -150,13 +106,11 @@ This script generates a sphere and a cylinder using ``create_mesh_sphere`` and
 Draw multiple geometries
 =====================================
 
-.. code-block:: python
-
-    print("We draw a few primitives using collection.")
-    draw_geometries([mesh_sphere, mesh_cylinder, mesh_frame])
-
-    print("We draw a few primitives using + operator of mesh.")
-    draw_geometries([mesh_sphere + mesh_cylinder + mesh_frame])
+.. literalinclude:: ../../../examples/Python/Basic/visualization.py
+   :language: python
+   :lineno-start: 25
+   :lines: 25-29
+   :linenos:
 
 ``draw_geometries`` takes a list of geometries and renders them all together. Alternatively, ``TriangleMesh`` supports a ``+`` operator to combine multiple meshes into one. We recommend the first approach since it supports a combination of different geometries (e.g., a mesh can be rendered in tandem with a point cloud).
 
@@ -168,20 +122,11 @@ Draw multiple geometries
 Draw line set
 =====================================
 
-.. code-block:: python
-
-    print("Let\'s draw a cubic that consists of 8 points and 12 lines")
-    points = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
-              [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
-    lines = [[0,1],[0,2],[1,3],[2,3],
-             [4,5],[4,6],[5,7],[6,7],
-             [0,4],[1,5],[2,6],[3,7]]
-    colors = [[1, 0, 0] for i in range(len(lines))]
-    line_set = LineSet()
-    line_set.points = Vector3dVector(points)
-    line_set.lines = Vector2iVector(lines)
-    line_set.colors = Vector3dVector(colors)
-    draw_geometries([line_set])
+.. literalinclude:: ../../../examples/Python/Basic/visualization.py
+   :language: python
+   :lineno-start: 31
+   :lines: 31-42
+   :linenos:
 
 To draw lines, it is necessary to define ``LineSet`` and create a set of points and a set of edges. An edge is a pair of point indices. The above example creates custom ``points`` and edges (denoted as ``lines``) to make a cubic. Color is optional - red color ``[1,0,0]`` is assigned to each edge in this example. This script visualizes the following cubic.
 
