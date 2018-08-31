@@ -70,8 +70,8 @@ TEST(Image, DefaultConstructor)
     // public members
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
-    EXPECT_EQ(Eigen::Vector2d(0, 0), image.GetMinBound());
-    EXPECT_EQ(Eigen::Vector2d(0, 0), image.GetMaxBound());
+    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMinBound());
+    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMaxBound());
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
 }
@@ -134,8 +134,8 @@ TEST(Image, Clear)
     // public members
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
-    EXPECT_EQ(Eigen::Vector2d(0, 0), image.GetMinBound());
-    EXPECT_EQ(Eigen::Vector2d(0, 0), image.GetMaxBound());
+    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMinBound());
+    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMaxBound());
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
 }
@@ -164,16 +164,16 @@ TEST(Image, FloatValueAt)
     im[1 * local_width + 0] = 4.0f;
     im[1 * local_width + 1] = 4.0f;
 
-    EXPECT_EQ(4.0, image.FloatValueAt(0.0, 0.0).second);
-    EXPECT_EQ(4.0, image.FloatValueAt(0.0, 1.0).second);
-    EXPECT_EQ(4.0, image.FloatValueAt(1.0, 0.0).second);
-    EXPECT_EQ(4.0, image.FloatValueAt(1.0, 1.0).second);
+    EXPECT_EQ(4.0f, image.FloatValueAt(0.0, 0.0).second);
+    EXPECT_EQ(4.0f, image.FloatValueAt(0.0, 1.0).second);
+    EXPECT_EQ(4.0f, image.FloatValueAt(1.0, 0.0).second);
+    EXPECT_EQ(4.0f, image.FloatValueAt(1.0, 1.0).second);
 
-    EXPECT_EQ(4.0, image.FloatValueAt(0.5, 0.5).second);
+    EXPECT_EQ(4.0f, image.FloatValueAt(0.5, 0.5).second);
 
-    EXPECT_EQ(2.0, image.FloatValueAt(0.0, 1.5).second);
-    EXPECT_EQ(2.0, image.FloatValueAt(1.5, 0.0).second);
-    EXPECT_EQ(1.0, image.FloatValueAt(1.5, 1.5).second);
+    EXPECT_EQ(2.0f, image.FloatValueAt(0.0, 1.5).second);
+    EXPECT_EQ(2.0f, image.FloatValueAt(1.5, 0.0).second);
+    EXPECT_EQ(1.0f, image.FloatValueAt(1.5, 1.5).second);
 }
 
 // ----------------------------------------------------------------------------
@@ -512,15 +512,15 @@ TEST(Image, PointerAt)
 
     float* im = reinterpret_cast<float*>(&image.data_[0]);
 
-    im[0 * local_width + 0] = 0.0;
-    im[0 * local_width + 1] = 1.0;
-    im[1 * local_width + 0] = 2.0;
-    im[1 * local_width + 1] = 3.0;
+    im[0 * local_width + 0] = 0.0f;
+    im[0 * local_width + 1] = 1.0f;
+    im[1 * local_width + 0] = 2.0f;
+    im[1 * local_width + 1] = 3.0f;
 
-    EXPECT_EQ(0.0, *open3d::PointerAt<float>(image, 0, 0));
-    EXPECT_EQ(1.0, *open3d::PointerAt<float>(image, 1, 0));
-    EXPECT_EQ(2.0, *open3d::PointerAt<float>(image, 0, 1));
-    EXPECT_EQ(3.0, *open3d::PointerAt<float>(image, 1, 1));
+    EXPECT_EQ(0.0f, *open3d::PointerAt<float>(image, 0, 0));
+    EXPECT_EQ(1.0f, *open3d::PointerAt<float>(image, 1, 0));
+    EXPECT_EQ(2.0f, *open3d::PointerAt<float>(image, 0, 1));
+    EXPECT_EQ(3.0f, *open3d::PointerAt<float>(image, 1, 1));
 }
 
 // ----------------------------------------------------------------------------
