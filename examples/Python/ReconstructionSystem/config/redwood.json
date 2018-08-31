@@ -1,0 +1,10 @@
+{
+    "name": "Redwood Dataset: http://redwood-data.org/indoor/dataset.html",
+    "path_dataset": "/Users/jaesikpa/Downloads/011_frag/",
+    "path_intrinsic": "",
+    "max_depth": 4.0,
+    "voxel_size": 0.05,
+    "max_depth_diff": 0.07,
+    "tsdf_cubic_size": 3.0,
+    "icp_method": "color"
+}

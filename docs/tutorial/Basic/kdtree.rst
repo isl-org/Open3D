@@ -5,48 +5,22 @@ KDTree
 
 Open3D uses `FLANN <https://www.cs.ubc.ca/research/flann/>`_ to build KDTrees for fast retrieval of nearest neighbors.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/kdtree.py
-
-    import numpy as np
-    from open3d import *
-
-    if __name__ == "__main__":
-
-        print("Testing kdtree in open3d ...")
-        print("Load a point cloud and paint it gray.")
-        pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
-        pcd.paint_uniform_color([0.5, 0.5, 0.5])
-        pcd_tree = KDTreeFlann(pcd)
-
-        print("Paint the 1500th point red.")
-        pcd.colors[1500] = [1, 0, 0]
-
-        print("Find its 200 nearest neighbors, paint blue.")
-        [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[1500], 200)
-        np.asarray(pcd.colors)[idx[1:], :] = [0, 0, 1]
-
-        print("Find its neighbors with distance less than 0.2, paint green.")
-        [k, idx, _] = pcd_tree.search_radius_vector_3d(pcd.points[1500], 0.2)
-        np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
-
-        print("Visualize the point cloud.")
-        draw_geometries([pcd])
-        print("")
+.. literalinclude:: ../../../examples/Python/Basic/kdtree.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _build_kdtree_from_pointcloud:
 
 Build KDTree from point cloud
 =====================================
 
-.. code-block:: python
-
-    print("Testing kdtree in open3d ...")
-    print("Load a point cloud and paint it gray.")
-    pcd = read_point_cloud("../../TestData/Feature/cloud_bin_0.pcd")
-    pcd.paint_uniform_color([0.5, 0.5, 0.5])
-    pcd_tree = KDTreeFlann(pcd)
+.. literalinclude:: ../../../examples/Python/Basic/kdtree.py
+   :language: python
+   :lineno-start: 12
+   :lines: 12-16
+   :linenos:
 
 This script reads a point cloud and builds a KDTree. This is a preprocessing step for the following nearest neighbor queries.
 
@@ -55,21 +29,22 @@ This script reads a point cloud and builds a KDTree. This is a preprocessing ste
 Find neighboring points
 =====================================
 
-.. code-block:: python
-
-    print("Paint the 1500th point red.")
-    pcd.colors[1500] = [1, 0, 0]
+.. literalinclude:: ../../../examples/Python/Basic/kdtree.py
+   :language: python
+   :lineno-start: 18
+   :lines: 18-19
+   :linenos:
 
 We pick the 1500-th point as the anchor point and paint it red.
 
 Using search_knn_vector_3d
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    print("Find its 200 nearest neighbors, paint blue.")
-    [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[1500], 200)
-    np.asarray(pcd.colors)[idx[1:], :] = [0, 0, 1]
+.. literalinclude:: ../../../examples/Python/Basic/kdtree.py
+   :language: python
+   :lineno-start: 21
+   :lines: 21-23
+   :linenos:
 
 Function ``search_knn_vector_3d`` returns a list of indices of the k nearest neighbors of the anchor point. These neighboring points are painted with blue color. Note that we convert ``pcd.colors`` to a numpy array to make batch access to the point colors, and broadcast a blue color [0, 0, 1] to all the selected points. We skip the first index since it is the anchor point itself.
 
@@ -77,19 +52,19 @@ Function ``search_knn_vector_3d`` returns a list of indices of the k nearest nei
 Using search_radius_vector_3d
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    print("Find its neighbors with distance less than 0.2, paint green.")
-    [k, idx, _] = pcd_tree.search_radius_vector_3d(pcd.points[1500], 0.2)
-    np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
+.. literalinclude:: ../../../examples/Python/Basic/kdtree.py
+   :language: python
+   :lineno-start: 25
+   :lines: 25-27
+   :linenos:
 
 Similarly, we can use ``search_radius_vector_3d`` to query all points with distances to the anchor point less than a given radius. We paint these points with green color.
 
-.. code-block:: python
-
-    print("Visualize the point cloud.")
-    draw_geometries([pcd])
-    print("")
+.. literalinclude:: ../../../examples/Python/Basic/kdtree.py
+   :language: python
+   :lineno-start: 29
+   :lines: 29-31
+   :linenos:
 
 The visualization looks like:
 

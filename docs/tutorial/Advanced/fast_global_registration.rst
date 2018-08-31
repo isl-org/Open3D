@@ -9,57 +9,20 @@ As there is no model proposal and evaluation involved for each iteration, the ap
 
 This script compares the running time of RANSAC based :ref:`global_registration` and implementation of [Zhou2016]_.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Advanced/fast_global_registration.py
-
-    from open3d import *
-    from global_registration import *
-    import numpy as np
-    import copy
-
-    import time
-
-    def execute_fast_global_registration(source_down, target_down,
-            source_fpfh, target_fpfh, voxel_size):
-        distance_threshold = voxel_size * 0.5
-        print(":: Apply fast global registration with distance threshold %.3f" \
-                % distance_threshold)
-        result = registration_fast_based_on_feature_matching(
-                source_down, target_down, source_fpfh, target_fpfh,
-                FastGlobalRegistrationOption(
-                maximum_correspondence_distance = distance_threshold))
-        return result
-
-    if __name__ == "__main__":
-
-        voxel_size = 0.05 # means 5cm for the dataset
-        source, target, source_down, target_down, source_fpfh, target_fpfh = \
-                prepare_dataset(voxel_size)
-
-        start = time.time()
-        result_ransac = execute_global_registration(source_down, target_down,
-                source_fpfh, target_fpfh, voxel_size)
-        print(result_ransac)
-        print("Global registration took %.3f sec.\n" % (time.time() - start))
-        draw_registration_result(source_down, target_down,
-                result_ransac.transformation)
-
-        start = time.time()
-        result_fast = execute_fast_global_registration(source_down, target_down,
-                source_fpfh, target_fpfh, voxel_size)
-        print("Fast global registration took %.3f sec.\n" % (time.time() - start))
-        draw_registration_result(source_down, target_down,
-                result_fast.transformation)
+.. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 Input
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    voxel_size = 0.05 # means 5cm for the dataset
-    source, target, source_down, target_down, source_fpfh, target_fpfh = \
-            prepare_dataset(voxel_size)
+.. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
+   :language: python
+   :lineno-start: 27
+   :lines: 27-29
+   :linenos:
 
 For the pair comparison, the script reuses the ``prepare_dataset`` function defined in :ref:`global_registration`.
 It produces a pair of downsampled point clouds as well as FPFH features.
@@ -67,15 +30,11 @@ It produces a pair of downsampled point clouds as well as FPFH features.
 Baseline
 ``````````````````````````````````````
 
-.. code-block:: python
-
-    start = time.time()
-    result_ransac = execute_global_registration(source_down, target_down,
-            source_fpfh, target_fpfh, voxel_size)
-    print(result_ransac)
-    print("Global registration took %.3f sec.\n" % (time.time() - start))
-    draw_registration_result(source_down, target_down,
-            result_ransac.transformation)
+.. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
+   :language: python
+   :lineno-start: 31
+   :lines: 31-37
+   :linenos:
 
 This script calls RANSAC based :ref:`global_registration` as a baseline. After registration it displays the following result.
 
@@ -91,17 +50,11 @@ Fast global registration
 
 With the same input used for a baseline, the next script calls the implementation of [Zhou2016]_.
 
-.. code-block:: python
-
-    # in execute_fast_global_registration function
-
-    distance_threshold = voxel_size * 0.5
-    print(":: Apply fast global registration with distance threshold %.3f" \
-            % distance_threshold)
-    result = registration_fast_based_on_feature_matching(
-            source_down, target_down, source_fpfh, target_fpfh,
-            FastGlobalRegistrationOption(
-            maximum_correspondence_distance = distance_threshold))
+.. literalinclude:: ../../../examples/Python/Advanced/fast_global_registration.py
+   :language: python
+   :lineno-start: 14
+   :lines: 14-22
+   :linenos:
 
 This script displays the following result.
 

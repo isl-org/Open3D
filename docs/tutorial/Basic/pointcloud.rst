@@ -5,46 +5,11 @@ Point cloud
 
 This tutorial demonstrates basic usage of a point cloud.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/pointcloud.py
-
-    import numpy as np
-    from open3d import *
-
-    if __name__ == "__main__":
-
-        print("Load a ply point cloud, print it, and render it")
-        pcd = read_point_cloud("../../TestData/fragment.ply")
-        print(pcd)
-        print(np.asarray(pcd.points))
-        draw_geometries([pcd])
-
-        print("Downsample the point cloud with a voxel of 0.05")
-        downpcd = voxel_down_sample(pcd, voxel_size = 0.05)
-        draw_geometries([downpcd])
-
-        print("Recompute the normal of the downsampled point cloud")
-        estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(
-                radius = 0.1, max_nn = 30))
-        draw_geometries([downpcd])
-
-        print("Print a normal vector of the 0th point")
-        print(downpcd.normals[0])
-        print("Print the normal vectors of the first 10 points")
-        print(np.asarray(downpcd.normals)[:10,:])
-        print("")
-
-        print("Load a polygon volume and use it to crop the original point cloud")
-        vol = read_selection_polygon_volume("../../TestData/Crop/cropped.json")
-        chair = vol.crop_point_cloud(pcd)
-        draw_geometries([chair])
-        print("")
-
-        print("Paint chair")
-        chair.paint_uniform_color([1, 0.706, 0])
-        draw_geometries([chair])
-        print("")
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _visualize_point_cloud:
 
@@ -53,13 +18,11 @@ Visualize point cloud
 
 The first part of the tutorial reads a point cloud and visualizes it.
 
-.. code-block:: python
-
-    print("Load a ply point cloud, print it, and render it")
-    pcd = read_point_cloud("../../TestData/fragment.ply")
-    print(pcd)
-    print(np.asarray(pcd.points))
-    draw_geometries([pcd])
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 12
+   :lines: 12-16
+   :linenos:
 
 ``read_point_cloud`` reads a point cloud from a file. It tries to decode the file based on the extension name. The supported extension names are: ``pcd``, ``ply``, ``xyz``, ``xyzrgb``, ``xyzn``, ``pts``.
 
@@ -88,11 +51,11 @@ Voxel downsampling uses a regular voxel grid to create a uniformly downsampled p
 1. Points are bucketed into voxels.
 2. Each occupied voxel generates exact one point by averaging all points inside.
 
-.. code-block:: python
-
-    print("Downsample the point cloud with a voxel of 0.05")
-    downpcd = voxel_down_sample(pcd, voxel_size = 0.05)
-    draw_geometries([downpcd])
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 18
+   :lines: 18-20
+   :linenos:
 
 This is the downsampled point cloud:
 
@@ -106,13 +69,11 @@ Vertex normal estimation
 
 Another basic operation for point cloud is point normal estimation.
 
-.. code-block:: python
-
-    print("Recompute the normal of the downsampled point cloud")
-    estimate_normals(downpcd, search_param = KDTreeSearchParamHybrid(
-            radius = 0.1, max_nn = 30))
-    draw_geometries([downpcd])
-    print("")
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 22
+   :lines: 22-25
+   :linenos:
 
 ``estimate_normals`` computes normal for every point. The function finds adjacent points and calculate the principal axis of the adjacent points using covariance analysis.
 
@@ -131,10 +92,11 @@ Access estimated vertex normal
 
 Estimated normal vectors can be retrieved by ``normals`` variable of ``downpcd``.
 
-.. code-block:: python
-
-    print("Print a normal vector of the 0th point")
-    print(downpcd.normals[0])
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 27
+   :lines: 27-28
+   :linenos:
 
 .. code-block:: sh
 
@@ -144,10 +106,11 @@ Estimated normal vectors can be retrieved by ``normals`` variable of ``downpcd``
 To check out other variables, please use ``help(downpcd)``.
 Normal vectors can be transformed as a numpy array using ``np.asarray``.
 
-.. code-block:: python
-
-    print("Print the normal vectors of the first 10 points")
-    print(np.asarray(downpcd.normals)[:10,:])
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 29
+   :lines: 29-30
+   :linenos:
 
 .. code-block:: sh
 
@@ -170,13 +133,11 @@ Check :ref:`working_with_numpy` for more examples regarding numpy array.
 Crop point cloud
 =====================================
 
-.. code-block:: python
-
-    print("We load a polygon volume and use it to crop the original point cloud")
-    vol = read_selection_polygon_volume("../../TestData/Crop/cropped.json")
-    chair = vol.crop_point_cloud(pcd)
-    draw_geometries([chair])
-    print("")
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 33
+   :lines: 33-37
+   :linenos:
 
 ``read_selection_polygon_volume`` reads a json file that specifies polygon selection area.
 ``vol.crop_point_cloud(pcd)`` filters out points. Only the chair remains.
@@ -189,12 +150,11 @@ Crop point cloud
 Paint point cloud
 =====================================
 
-.. code-block:: python
-
-    print("Paint chair")
-    chair.paint_uniform_color([1, 0.706, 0])
-    draw_geometries([chair])
-    print("")
+.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
+   :language: python
+   :lineno-start: 39
+   :lines: 39-42
+   :linenos:
 
 ``paint_uniform_color`` paints all the points to a uniform color. The color is in RGB space, [0, 1] range.
 
