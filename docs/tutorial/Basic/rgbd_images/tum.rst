@@ -6,7 +6,7 @@ This tutorial reads and visualizes an ``RGBDImage`` from `the TUM dataset <https
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/rgbd_tum.py
+    # examples/Python/Tutorial/Basic/rgbd_tum.py
 
     #conda install pillow matplotlib
     from open3d import *

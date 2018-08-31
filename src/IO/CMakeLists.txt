@@ -1,8 +1,8 @@
 # build
 file(GLOB_RECURSE IO_ALL_SOURCE_FILES "*.cpp")
 file(GLOB_RECURSE IO_ALL_HEADER_FILES "*.h")
-file(GLOB         RPLY_SOURCE_FILES "../External/rply/*.c")
-file(GLOB         LIBLZF_SOURCE_FILES "../External/liblzf/*.c")
+file(GLOB         RPLY_SOURCE_FILES "../../3rdparty/rply/*.c")
+file(GLOB         LIBLZF_SOURCE_FILES "../../3rdparty/liblzf/*.c")
 
 # create object library
 add_library(IO OBJECT
@@ -17,7 +17,7 @@ ADD_SOURCE_GROUP(FileFormat)
 Directories(${CMAKE_CURRENT_SOURCE_DIR} IO_INCLUDE_DIRS)
 set(IO_INCLUDE_DIRS ${IO_INCLUDE_DIRS} PARENT_SCOPE)
 
-target_include_directories(IO PUBLIC ${EXTERNAL_INCLUDE_DIRS})
+target_include_directories(IO PUBLIC ${3RDPARTY_INCLUDE_DIRS})
 
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"

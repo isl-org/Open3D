@@ -29,7 +29,7 @@
 #include <cstdio>
 #include <sstream>
 #include <cstdint>
-#include <External/liblzf/lzf.h>
+#include <3rdparty/liblzf/lzf.h>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Helper.h>
 

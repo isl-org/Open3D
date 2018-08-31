@@ -7,7 +7,7 @@ This tutorial introduces user interaction features of visualizer window.
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Advanced/interactive_visualization.py
+    # examples/Python/Tutorial/Advanced/interactive_visualization.py
 
     import numpy as np
     import copy

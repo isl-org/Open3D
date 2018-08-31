@@ -7,7 +7,7 @@ This tutorial demonstrates the ICP (Iterative Closest Point) registration algori
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/icp_registration.py
+    # examples/Python/Tutorial/Basic/icp_registration.py
 
     def draw_registration_result(source, target, transformation):
         source_temp = copy.deepcopy(source)

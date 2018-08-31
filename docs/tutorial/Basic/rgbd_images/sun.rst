@@ -6,7 +6,7 @@ This tutorial reads and visualizes an ``RGBDImage`` of `the SUN dataset <http://
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Basic/rgbd_sun.py
+    # examples/Python/Tutorial/Basic/rgbd_sun.py
 
     #conda install pillow matplotlib
     from open3d import *

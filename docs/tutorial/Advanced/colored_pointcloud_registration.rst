@@ -7,7 +7,7 @@ This tutorial demonstrates an ICP variant that uses both geometry and color for 
 
 .. code-block:: python
 
-    # src/Python/Tutorial/Advanced/colored_pointcloud_registration.py
+    # examples/Python/Tutorial/Advanced/colored_pointcloud_registration.py
 
     import numpy as np
     import copy
