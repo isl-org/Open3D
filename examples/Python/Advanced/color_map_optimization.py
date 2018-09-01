@@ -30,7 +30,7 @@ if __name__ == "__main__":
                 convert_rgb_to_intensity = False)
         if debug_mode:
             pcd = create_point_cloud_from_rgbd_image(rgbd_image,
-                    PinholeCameraIntrinsic.get_prime_sense_default())
+                    PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters.PrimeSenseDefault))
             draw_geometries([pcd])
         rgbd_images.append(rgbd_image)
 
