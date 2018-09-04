@@ -31,12 +31,16 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 void UnitTest::NotImplemented()
 {
-    cout << "\033[0;32m" << "[          ] " << "\033[0;0m";
-    cout << "\033[0;31m" << "Not implemented." << "\033[0;0m" << endl;
+    cout << "\033[0;32m"
+         << "[          ] "
+         << "\033[0;0m";
+    cout << "\033[0;31m"
+         << "Not implemented."
+         << "\033[0;0m" << endl;
 
     // FAIL();
     // ADD_FAILURE();
@@ -46,8 +50,10 @@ void UnitTest::NotImplemented()
 // ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3d with random values in the [vmin:vmax] range.
 // ----------------------------------------------------------------------------
-template<>
-Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax)
+template <>
+Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
+    const Eigen::Vector3d &vmin,
+    const Eigen::Vector3d &vmax)
 {
     Eigen::Vector3d v;
 
@@ -65,8 +71,11 @@ Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, con
 // ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3d vector with random values in the [vmin:vmax] range.
 // ----------------------------------------------------------------------------
-template<>
-void UnitTest::Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax)
+template <>
+void UnitTest::Rand(
+    std::vector<Eigen::Vector3d> &v,
+    const Eigen::Vector3d &vmin,
+    const Eigen::Vector3d &vmax)
 {
     srand(0);
 
@@ -86,8 +95,11 @@ void UnitTest::Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin
 // ----------------------------------------------------------------------------
 // Initialize a uint8_t vector with random values in the [vmin:vmax] range.
 // ----------------------------------------------------------------------------
-template<>
-void UnitTest::Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax)
+template <>
+void UnitTest::Rand(
+    std::vector<uint8_t> &v,
+    const uint8_t &vmin,
+    const uint8_t &vmax)
 {
     srand(0);
 
