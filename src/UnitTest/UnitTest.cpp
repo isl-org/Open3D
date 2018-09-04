@@ -116,8 +116,23 @@ void UnitTest::Rand(
 template <>
 void UnitTest::Print(const vector<Eigen::Vector3d> &v)
 {
+    int precision = 6;
+    int width = 11;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
     for (size_t i = 0; i < v.size(); i++)
-        printf("%10.6f, %10.6f, %10.6f\n", v[i][0, 0], v[i][0, 1], v[i][0, 2]);
+    {
+        cout << "(";
+        cout << setw(width) << v[i][0, 0] << ",";
+        cout << setw(width) << v[i][0, 1] << ",";
+        cout << setw(width) << v[i][0, 2];
+        cout << " ),";
+        cout << endl;
+    }
+
+    printf("\n");
 }
 
 // ----------------------------------------------------------------------------
@@ -126,6 +141,26 @@ void UnitTest::Print(const vector<Eigen::Vector3d> &v)
 template <>
 void UnitTest::Print(const vector<uint8_t> &v)
 {
+    int width = 5;
+
+    // display float image data
+    cout << "{";
     for (size_t i = 0; i < v.size(); i++)
-        printf("%d\n", v[i]);
+    {
+        if ((i % 10 == 0) && (i != 0))
+            cout << "\\" << endl;
+
+        if (i == 0)
+            cout << setw(width - 1) << (int)v[i];
+        else
+            cout << setw(width) << (int)v[i];
+
+        if (i != (v.size() - 1))
+            cout << ",";
+    }
+    cout << " }";
+    cout << endl;
+
+
+    printf("\n");
 }
