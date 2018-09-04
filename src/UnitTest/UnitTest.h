@@ -32,6 +32,9 @@
 
 namespace UnitTest
 {
+    const double THRESHOLD_DOUBLE = 1e-6;
+    const double THRESHOLD_FLAOT  = 1e-3F;
+
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
@@ -48,24 +51,28 @@ namespace UnitTest
 
     // Initialize a vector with random values.
     template<class T>
-    void Rand(std::vector<T>& v, const T& vmin, const T& vmax)
-    {
-        return v;
-    }
+    void Rand(std::vector<T>& v, const T& vmin, const T& vmax) {}
 
     template<>
     void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
     template<>
     void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax);
+    template<>
+    void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax);
 
     // Initialize a vector with random values.
     template<class T>
     void Print(const std::vector<T>& v)
     {
-        return v;
+        for (size_t i = 0; i < v.size(); i++)
+            std::cout << v[i];
+        std::cout << std::endl;
     }
+
     template<>
     void Print(const std::vector<Eigen::Vector3d> &v);
     template<>
     void Print(const std::vector<uint8_t> &v);
+    template<>
+    void Print(const std::vector<size_t> &v);
 }

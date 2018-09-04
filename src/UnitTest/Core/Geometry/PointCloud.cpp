@@ -27,6 +27,7 @@
 #include "UnitTest.h"
 #include "Core/Geometry/PointCloud.h"
 
+#include <algorithm>
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -609,6 +610,35 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImage)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, SelectDownSample)
 {
+    vector<Eigen::Vector3d> ref =
+    {
+        { 347.115873, 184.622468, 609.105862 },\
+        { 416.501281, 169.607086, 906.803934 },\
+        { 434.513296,   3.231460, 344.942955 },\
+        { 598.481300, 833.243294, 233.891705 },\
+        { 593.211455, 666.556591, 288.777775 },\
+        {  20.023049, 457.701737,  63.095838 },\
+        { 910.972031, 482.490657, 215.824959 },\
+        { 471.483429, 592.539919, 944.318096 },\
+        { 165.974166, 440.104528, 880.075236 },\
+        { 204.328611, 889.955644, 125.468476 },\
+        { 950.104032,  52.529262, 521.563380 },\
+        { 530.807988, 757.293832, 304.295150 },\
+        { 619.596484, 281.059412, 786.002098 },\
+        { 134.902412, 520.210070,  78.232142 },\
+        { 436.496997, 958.636962, 918.930388 },\
+        { 593.211455, 666.556591, 288.777775 },\
+        { 992.228461, 576.971113, 877.613778 },\
+        { 229.136980, 700.619965, 316.867137 },\
+        { 400.228622, 891.529452, 283.314746 },\
+        { 359.095369, 552.485022, 579.429994 },\
+        { 798.440033, 911.647358, 197.551369 },\
+        { 437.637597, 931.835056, 930.809795 },\
+        { 771.357698, 526.744979, 769.913836 },\
+        { 675.475980, 482.950280, 481.935823 },\
+        { 352.458347, 807.724520, 919.026474 } \
+    };
+
     int size = 100;
     open3d::PointCloud pc;
 
@@ -617,7 +647,23 @@ TEST(PointCloud, SelectDownSample)
 
     pc.points_.resize(size);
     UnitTest::Rand(pc.points_, vmin, vmax);
-    UnitTest::Print(pc.points_);
+
+    vector<size_t> indices(size / 4);
+    UnitTest::Rand<size_t>(indices, 0, size);
+
+    // remove duplicates
+    std::vector<size_t>::iterator it;
+    it = unique(indices.begin(), indices.end());
+    indices.resize(distance(indices.begin(), it));
+
+    auto output_pc = open3d::SelectDownSample(pc, indices);
+
+    for (size_t i = 0; i < indices.size(); i++)
+    {
+        EXPECT_NEAR(ref[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref[i](0, 1), output_pc->points_[i](0, 1), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref[i](0, 2), output_pc->points_[i](0, 2), UnitTest::THRESHOLD_DOUBLE);
+    }
 }
 
 // ----------------------------------------------------------------------------

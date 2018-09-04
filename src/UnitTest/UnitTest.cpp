@@ -111,6 +111,23 @@ void UnitTest::Rand(
 }
 
 // ----------------------------------------------------------------------------
+// Initialize a size_t vector with random values in the [vmin:vmax] range.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Rand(
+    vector<size_t> &v,
+    const size_t &vmin,
+    const size_t &vmax)
+{
+    srand(0);
+
+    float factor = (float)(vmax - vmin) / RAND_MAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+        v[i] = vmin + (size_t)(rand() * factor);
+}
+
+// ----------------------------------------------------------------------------
 // Print a uint8_t vector.
 // ----------------------------------------------------------------------------
 template <>
@@ -122,17 +139,23 @@ void UnitTest::Print(const vector<Eigen::Vector3d> &v)
     cout << fixed;
     cout << setprecision(precision);
 
+    cout << "{";
+    cout << endl;
     for (size_t i = 0; i < v.size(); i++)
     {
-        cout << "(";
+        cout << "    {";
         cout << setw(width) << v[i][0, 0] << ",";
         cout << setw(width) << v[i][0, 1] << ",";
         cout << setw(width) << v[i][0, 2];
-        cout << " ),";
+        cout << " }";
+        if (i == (v.size() - 1))
+            cout << " \\";
+        else
+            cout << ",\\";
         cout << endl;
     }
-
-    printf("\n");
+    cout << "}";
+    cout << endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -142,12 +165,12 @@ template <>
 void UnitTest::Print(const vector<uint8_t> &v)
 {
     int width = 5;
+    int cols = 10;
 
-    // display float image data
     cout << "{";
     for (size_t i = 0; i < v.size(); i++)
     {
-        if ((i % 10 == 0) && (i != 0))
+        if ((i % cols == 0) && (i != 0))
             cout << "\\" << endl;
 
         if (i == 0)
@@ -160,7 +183,31 @@ void UnitTest::Print(const vector<uint8_t> &v)
     }
     cout << " }";
     cout << endl;
+}
 
+// ----------------------------------------------------------------------------
+// Print a size_t vector.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Print(const vector<size_t> &v)
+{
+    int width = 6;
+    int cols = 10;
 
-    printf("\n");
+    cout << "{";
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        if ((i % cols == 0) && (i != 0))
+            cout << "\\" << endl;
+
+        if (i == 0)
+            cout << setw(width - 1) << v[i];
+        else
+            cout << setw(width) << v[i];
+
+        if (i != (v.size() - 1))
+            cout << ",";
+    }
+    cout << " }";
+    cout << endl;
 }
