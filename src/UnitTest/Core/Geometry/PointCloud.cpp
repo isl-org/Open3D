@@ -68,17 +68,20 @@ TEST(PointCloud, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Clear)
 {
-    Eigen::Vector3d p0 = { 150, 230, 400 };
-    Eigen::Vector3d p1 = { 250, 230, 400 };
-    Eigen::Vector3d p2 = { 150, 130, 400 };
-    Eigen::Vector3d p3 = { 150, 230, 300 };
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     open3d::PointCloud pc;
 
-    pc.points_.push_back(p0);
-    pc.points_.push_back(p1);
-    pc.points_.push_back(p2);
-    pc.points_.push_back(p3);
+    pc.points_.resize(size);
+    pc.normals_.resize(size);
+    pc.colors_.resize(size);
+
+    UnitTest::Rand(pc.points_, vmin, vmax);
+    UnitTest::Rand(pc.normals_, vmin, vmax);
+    UnitTest::Rand(pc.colors_, vmin, vmax);
 
     EXPECT_TRUE(pc.HasPoints());
 
@@ -105,6 +108,8 @@ TEST(PointCloud, IsEmpty)
 
     open3d::PointCloud pc;
 
+    EXPECT_TRUE(pc.IsEmpty());
+
     pc.points_.push_back(p0);
     pc.points_.push_back(p1);
     pc.points_.push_back(p2);
@@ -118,19 +123,22 @@ TEST(PointCloud, IsEmpty)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, GetMinBound)
 {
-    Eigen::Vector3d p0 = { 150, 230, 400 };
-    Eigen::Vector3d p1 = { 250, 230, 400 };
-    Eigen::Vector3d p2 = { 150, 130, 400 };
-    Eigen::Vector3d p3 = { 150, 230, 300 };
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     open3d::PointCloud pc;
 
-    pc.points_.push_back(p0);
-    pc.points_.push_back(p1);
-    pc.points_.push_back(p2);
-    pc.points_.push_back(p3);
+    pc.points_.resize(size);
 
-    EXPECT_EQ(Eigen::Vector3d(150, 130, 300), pc.GetMinBound());
+    UnitTest::Rand(pc.points_, vmin, vmax);
+
+    Eigen::Vector3d minBound = pc.GetMinBound();
+
+    EXPECT_NEAR(20.023, minBound(0, 0), UnitTest::THRESHOLD_FLOAT);
+    EXPECT_NEAR(3.23146, minBound(1, 0), UnitTest::THRESHOLD_FLOAT);
+    EXPECT_NEAR(3.57857, minBound(2, 0), UnitTest::THRESHOLD_FLOAT);
 }
 
 // ----------------------------------------------------------------------------
