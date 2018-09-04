@@ -158,35 +158,45 @@ TEST(PointCloud, GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Transform)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d> ref_points =
     {
-        { 181.400000, 493.800000, 202.120000 },\
-        { 191.400000, 543.800000, 292.120000 },\
-        { 161.400000, 433.800000, 192.120000 },\
-        { 151.400000, 423.800000, 191.120000 } \
+        { 398.225124,1205.693071, 881.868153 },\
+        { 321.838886,1085.294390, 831.611417 },\
+        { 270.900608, 823.791432, 409.198658 },\
+        { 339.937683,1004.432856, 615.608467 },\
+        { 425.227547,1157.793590, 484.511386 },\
+        { 434.350931,1342.432421, 967.169396 },\
+        { 140.844202, 447.193004, 190.052250 },\
+        { 293.388019, 767.506059, 320.900694 },\
+        { 135.193922, 410.559494, 195.502569 },\
+        { 276.542855, 807.338946, 221.948633 } \
     };
 
-    Eigen::Vector3d p0 = { 150, 230, 400 };
-    Eigen::Vector3d p1 = { 250, 230, 400 };
-    Eigen::Vector3d p2 = { 150, 130, 400 };
-    Eigen::Vector3d p3 = { 150, 230, 300 };
+    vector<Eigen::Vector3d> ref_normals =
+    {
+        { 397.825124,1204.893071, 881.748153 },\
+        { 321.438886,1084.494390, 831.491417 },\
+        { 270.500608, 822.991432, 409.078658 },\
+        { 339.537683,1003.632856, 615.488467 },\
+        { 424.827547,1156.993590, 484.391386 },\
+        { 433.950931,1341.632421, 967.049396 },\
+        { 140.444202, 446.393004, 189.932250 },\
+        { 292.988019, 766.706059, 320.780694 },\
+        { 134.793922, 409.759494, 195.382569 },\
+        { 276.142855, 806.538946, 221.828633 } \
+    };
 
-    Eigen::Vector3d n0 = { 0.150, 0.230, 0.400 };
-    Eigen::Vector3d n1 = { 0.250, 0.230, 0.400 };
-    Eigen::Vector3d n2 = { 0.150, 0.130, 0.400 };
-    Eigen::Vector3d n3 = { 0.150, 0.230, 0.300 };
-
+    int size = 10;
     open3d::PointCloud pc;
 
-    pc.points_.push_back(p0);
-    pc.points_.push_back(p1);
-    pc.points_.push_back(p2);
-    pc.points_.push_back(p3);
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    pc.normals_.push_back(n0);
-    pc.normals_.push_back(n1);
-    pc.normals_.push_back(n2);
-    pc.normals_.push_back(n3);
+    pc.points_.resize(size);
+    UnitTest::Rand(pc.points_, vmin, vmax);
+
+    pc.normals_.resize(size);
+    UnitTest::Rand(pc.normals_, vmin, vmax);
 
     Eigen::Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40,
@@ -196,13 +206,15 @@ TEST(PointCloud, Transform)
 
     pc.Transform(transformation);
 
-    UnitTest::Print(pc.points_);
-
     for (size_t i = 0; i < pc.points_.size(); i++)
     {
-        EXPECT_NEAR(ref[i](0, 0), pc.points_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref[i](0, 1), pc.points_[i](0, 1), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref[i](0, 2), pc.points_[i](0, 2), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_points[i](0, 0), pc.points_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_points[i](0, 1), pc.points_[i](0, 1), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_points[i](0, 2), pc.points_[i](0, 2), UnitTest::THRESHOLD_DOUBLE);
+
+        EXPECT_NEAR(ref_normals[i](0, 0), pc.normals_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_normals[i](0, 1), pc.normals_[i](0, 1), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_normals[i](0, 2), pc.normals_[i](0, 2), UnitTest::THRESHOLD_DOUBLE);
     }
 }
 
