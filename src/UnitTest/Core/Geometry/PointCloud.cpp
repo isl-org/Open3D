@@ -158,6 +158,14 @@ TEST(PointCloud, GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Transform)
 {
+    vector<Eigen::Vector3d> ref =
+    {
+        { 181.400000, 493.800000, 202.120000 },\
+        { 191.400000, 543.800000, 292.120000 },\
+        { 161.400000, 433.800000, 192.120000 },\
+        { 151.400000, 423.800000, 191.120000 } \
+    };
+
     Eigen::Vector3d p0 = { 150, 230, 400 };
     Eigen::Vector3d p1 = { 250, 230, 400 };
     Eigen::Vector3d p2 = { 150, 130, 400 };
@@ -188,31 +196,14 @@ TEST(PointCloud, Transform)
 
     pc.Transform(transformation);
 
-    EXPECT_DOUBLE_EQ(181.40, (pc.points_[0][0, 0]));
-    EXPECT_DOUBLE_EQ(493.80, (pc.points_[0][0, 1]));
-    EXPECT_DOUBLE_EQ(202.12, (pc.points_[0][0, 2]));
-    EXPECT_DOUBLE_EQ(191.40, (pc.points_[1][0, 0]));
-    EXPECT_DOUBLE_EQ(543.80, (pc.points_[1][0, 1]));
-    EXPECT_DOUBLE_EQ(292.12, (pc.points_[1][0, 2]));
-    EXPECT_DOUBLE_EQ(161.40, (pc.points_[2][0, 0]));
-    EXPECT_DOUBLE_EQ(433.80, (pc.points_[2][0, 1]));
-    EXPECT_DOUBLE_EQ(192.12, (pc.points_[2][0, 2]));
-    EXPECT_DOUBLE_EQ(151.40, (pc.points_[3][0, 0]));
-    EXPECT_DOUBLE_EQ(423.80, (pc.points_[3][0, 1]));
-    EXPECT_DOUBLE_EQ(191.12, (pc.points_[3][0, 2]));
+    UnitTest::Print(pc.points_);
 
-    EXPECT_DOUBLE_EQ(0.181, (pc.normals_[0][0, 0]));
-    EXPECT_DOUBLE_EQ(0.493, (pc.normals_[0][0, 1]));
-    EXPECT_DOUBLE_EQ(0.202, (pc.normals_[0][0, 2]));
-    EXPECT_DOUBLE_EQ(0.191, (pc.normals_[1][0, 0]));
-    EXPECT_DOUBLE_EQ(0.543, (pc.normals_[1][0, 1]));
-    EXPECT_DOUBLE_EQ(0.292, (pc.normals_[1][0, 2]));
-    EXPECT_DOUBLE_EQ(0.161, (pc.normals_[2][0, 0]));
-    EXPECT_DOUBLE_EQ(0.433, (pc.normals_[2][0, 1]));
-    EXPECT_DOUBLE_EQ(0.192, (pc.normals_[2][0, 2]));
-    EXPECT_DOUBLE_EQ(0.151, (pc.normals_[3][0, 0]));
-    EXPECT_DOUBLE_EQ(0.423, (pc.normals_[3][0, 1]));
-    EXPECT_DOUBLE_EQ(0.191, (pc.normals_[3][0, 2]));
+    for (size_t i = 0; i < pc.points_.size(); i++)
+    {
+        EXPECT_NEAR(ref[i](0, 0), pc.points_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref[i](0, 1), pc.points_[i](0, 1), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref[i](0, 2), pc.points_[i](0, 2), UnitTest::THRESHOLD_DOUBLE);
+    }
 }
 
 // ----------------------------------------------------------------------------
