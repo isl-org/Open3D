@@ -44,22 +44,7 @@ void UnitTest::NotImplemented()
 }
 
 // ----------------------------------------------------------------------------
-// Initialize a uint8_t vector with random values in the [0:255] range.
-// ----------------------------------------------------------------------------
-void UnitTest::RandInit(vector<uint8_t>& v)
-{
-    srand(0);
-
-    uint8_t vmin = 0;
-    uint8_t vmax = 255;
-    float factor = (float)(vmax - vmin) / RAND_MAX;
-
-    for (size_t i = 0; i < v.size(); i++)
-        v[i] = vmin + (uint8_t)(rand() * factor);
-}
-
-// ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d with random values in the [0:1000] range.
+// Initialize an Eigen::Vector3d with random values in the [vmin:vmax] range.
 // ----------------------------------------------------------------------------
 template<>
 Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax)
@@ -90,11 +75,11 @@ void UnitTest::Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin
     double factor2 = (double)((vmax[0, 2]) - (vmin[0, 2])) / RAND_MAX;
 
     for (size_t i = 0; i < v.size(); i++)
-        {
-            v[i][0, 0] = vmin[0, 0] + (double)(rand() * factor0);
-            v[i][0, 1] = vmin[0, 1] + (double)(rand() * factor1);
-            v[i][0, 2] = vmin[0, 2] + (double)(rand() * factor2);
-        }
+    {
+        v[i][0, 0] = vmin[0, 0] + (double)(rand() * factor0);
+        v[i][0, 1] = vmin[0, 1] + (double)(rand() * factor1);
+        v[i][0, 2] = vmin[0, 2] + (double)(rand() * factor2);
+    }
 }
 
 // ----------------------------------------------------------------------------

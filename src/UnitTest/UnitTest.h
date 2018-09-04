@@ -35,9 +35,6 @@ namespace UnitTest
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
-    // Initialize a uint8_t vector with random values in the [0:255] range.
-    void RandInit(std::vector<uint8_t>& v);
-
     // Return a random value.
     template<class T>
     T Rand(const T& vmin, const T& vmax)
