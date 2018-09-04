@@ -70,15 +70,16 @@ void UnitTest::Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin
 {
     srand(0);
 
-    double factor0 = (double)((vmax[0, 0]) - (vmin[0, 0])) / RAND_MAX;
-    double factor1 = (double)((vmax[0, 1]) - (vmin[0, 1])) / RAND_MAX;
-    double factor2 = (double)((vmax[0, 2]) - (vmin[0, 2])) / RAND_MAX;
+    Eigen::Vector3d factor;
+    factor[0, 0] = (vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
+    factor[0, 1] = (vmax[0, 1] - vmin[0, 1]) / RAND_MAX;
+    factor[0, 2] = (vmax[0, 2] - vmin[0, 2]) / RAND_MAX;
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        v[i][0, 0] = vmin[0, 0] + (double)(rand() * factor0);
-        v[i][0, 1] = vmin[0, 1] + (double)(rand() * factor1);
-        v[i][0, 2] = vmin[0, 2] + (double)(rand() * factor2);
+        v[i][0, 0] = vmin[0, 0] + rand() * factor[0, 0];
+        v[i][0, 1] = vmin[0, 1] + rand() * factor[0, 1];
+        v[i][0, 2] = vmin[0, 2] + rand() * factor[0, 2];
     }
 }
 
