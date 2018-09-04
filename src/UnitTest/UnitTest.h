@@ -46,7 +46,6 @@ namespace UnitTest
     template<>
     Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
 
-
     // Initialize a vector with random values.
     template<class T>
     void Rand(std::vector<T>& v, const T& vmin, const T& vmax)
@@ -58,4 +57,15 @@ namespace UnitTest
     void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
     template<>
     void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax);
+
+    // Initialize a vector with random values.
+    template<class T>
+    void Print(const std::vector<T>& v)
+    {
+        return v;
+    }
+    template<>
+    void Print(const std::vector<Eigen::Vector3d> &v);
+    template<>
+    void Print(const std::vector<uint8_t> &v);
 }

@@ -617,13 +617,7 @@ TEST(PointCloud, SelectDownSample)
 
     pc.points_.resize(size);
     UnitTest::Rand(pc.points_, vmin, vmax);
-    for (int i = 0; i < size; i++)
-    {
-        Eigen::Vector3d p = pc.points_[i];
-
-        printf("%g\t%g\t%g\n", p[0, 0], p[0, 1], p[0, 2]);
-    }
-
+    UnitTest::Print(pc.points_);
 }
 
 // ----------------------------------------------------------------------------

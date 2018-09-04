@@ -74,7 +74,7 @@ Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Rand(
-    std::vector<Eigen::Vector3d> &v,
+    vector<Eigen::Vector3d> &v,
     const Eigen::Vector3d &vmin,
     const Eigen::Vector3d &vmax)
 {
@@ -98,7 +98,7 @@ void UnitTest::Rand(
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Rand(
-    std::vector<uint8_t> &v,
+    vector<uint8_t> &v,
     const uint8_t &vmin,
     const uint8_t &vmax)
 {
@@ -108,4 +108,24 @@ void UnitTest::Rand(
 
     for (size_t i = 0; i < v.size(); i++)
         v[i] = vmin + (uint8_t)(rand() * factor);
+}
+
+// ----------------------------------------------------------------------------
+// Print a uint8_t vector.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Print(const vector<Eigen::Vector3d> &v)
+{
+    for (size_t i = 0; i < v.size(); i++)
+        printf("%10.6f, %10.6f, %10.6f\n", v[i][0, 0], v[i][0, 1], v[i][0, 2]);
+}
+
+// ----------------------------------------------------------------------------
+// Print a uint8_t vector.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Print(const vector<uint8_t> &v)
+{
+    for (size_t i = 0; i < v.size(); i++)
+        printf("%d\n", v[i]);
 }
