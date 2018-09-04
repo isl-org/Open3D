@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_SetViewMatrices)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ViewControl, DISABLED_SetViewMatrices)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertToViewParameters)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ViewControl, DISABLED_ConvertToViewParameters)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertFromViewParameters)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ViewControl, DISABLED_ConvertFromViewParameters)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertToPinholeCameraParameters)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ViewControl, DISABLED_ConvertToPinholeCameraParameters)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertFromPinholeCameraParameters)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ViewControl, DISABLED_ConvertFromPinholeCameraParameters)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetProjectionType)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(ViewControl, DISABLED_GetProjectionType)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_SetProjectionParameters)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(ViewControl, DISABLED_SetProjectionParameters)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(ViewControl, DISABLED_Reset)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ChangeFieldOfView)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(ViewControl, DISABLED_ChangeFieldOfView)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ChangeWindowSize)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(ViewControl, DISABLED_ChangeWindowSize)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Scale)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(ViewControl, DISABLED_Scale)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Rotate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(ViewControl, DISABLED_Rotate)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Translate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(ViewControl, DISABLED_Translate)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ResetBoundingBox)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(ViewControl, DISABLED_ResetBoundingBox)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_FitInGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ TEST(ViewControl, DISABLED_FitInGeometry)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetFieldOfView)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ TEST(ViewControl, DISABLED_GetFieldOfView)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetMVPMatrix)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ TEST(ViewControl, DISABLED_GetMVPMatrix)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetProjectionMatrix)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ TEST(ViewControl, DISABLED_GetProjectionMatrix)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetViewMatrix)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -183,7 +183,7 @@ TEST(ViewControl, DISABLED_GetViewMatrix)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetModelMatrix)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ TEST(ViewControl, DISABLED_GetModelMatrix)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetEye)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ TEST(ViewControl, DISABLED_GetEye)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetLookat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -207,7 +207,7 @@ TEST(ViewControl, DISABLED_GetLookat)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetUp)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ TEST(ViewControl, DISABLED_GetUp)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetFront)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -223,7 +223,7 @@ TEST(ViewControl, DISABLED_GetFront)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetRight)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ TEST(ViewControl, DISABLED_GetRight)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetWindowWidth)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -239,7 +239,7 @@ TEST(ViewControl, DISABLED_GetWindowWidth)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetWindowHeight)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -247,7 +247,7 @@ TEST(ViewControl, DISABLED_GetWindowHeight)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetZNear)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -255,5 +255,5 @@ TEST(ViewControl, DISABLED_GetZNear)
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetZFar)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

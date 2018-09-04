@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(KDTreeFlann, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(KDTreeFlann, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(KDTreeFlann, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SetMatrixData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(KDTreeFlann, DISABLED_SetMatrixData)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SetGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(KDTreeFlann, DISABLED_SetGeometry)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SetFeature)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(KDTreeFlann, DISABLED_SetFeature)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_Search)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(KDTreeFlann, DISABLED_Search)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SearchKNN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(KDTreeFlann, DISABLED_SearchKNN)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SearchRadius)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(KDTreeFlann, DISABLED_SearchRadius)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SearchHybrid)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,5 +111,5 @@ TEST(KDTreeFlann, DISABLED_SearchHybrid)
 // ----------------------------------------------------------------------------
 TEST(KDTreeFlann, DISABLED_SetRawData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

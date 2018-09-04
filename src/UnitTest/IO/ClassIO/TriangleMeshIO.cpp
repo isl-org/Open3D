@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshIO, DISABLED_CreateMeshFromFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(TriangleMeshIO, DISABLED_CreateMeshFromFile)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshIO, DISABLED_ReadTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(TriangleMeshIO, DISABLED_ReadTriangleMesh)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshIO, DISABLED_WriteTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(TriangleMeshIO, DISABLED_WriteTriangleMesh)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshIO, DISABLED_ReadTriangleMeshFromPLY)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(TriangleMeshIO, DISABLED_ReadTriangleMeshFromPLY)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshIO, DISABLED_WriteTriangleMeshToPLY)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

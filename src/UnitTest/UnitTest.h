@@ -27,5 +27,38 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <Eigen/Core>
+#include <vector>
 
-void NotImplemented();
+namespace UnitTest
+{
+    // Mechanism for reporting unit tests for which there is no implementation yet.
+    void NotImplemented();
+
+    // Initialize a uint8_t vector with random values in the [0:255] range.
+    void RandInit(std::vector<uint8_t>& v);
+
+    // Return a random value.
+    template<class T>
+    T Rand(const T& vmin, const T& vmax)
+    {
+        T t;
+
+        return t;
+    }
+    template<>
+    Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
+
+
+    // Initialize a vector with random values.
+    template<class T>
+    void Rand(std::vector<T>& v, const T& vmin, const T& vmax)
+    {
+        return v;
+    }
+
+    template<>
+    void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
+    template<>
+    void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax);
+}

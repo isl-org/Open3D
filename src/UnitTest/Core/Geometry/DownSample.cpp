@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_AccumulatedPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(DownSample, DISABLED_AccumulatedPoint)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_AddPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(DownSample, DISABLED_AddPoint)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_GetAveragePoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(DownSample, DISABLED_GetAveragePoint)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_GetAverageNormal)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(DownSample, DISABLED_GetAverageNormal)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_GetAverageColor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(DownSample, DISABLED_GetAverageColor)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_SelectDownSample)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(DownSample, DISABLED_SelectDownSample)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_VoxelDownSample)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(DownSample, DISABLED_VoxelDownSample)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_UniformDownSample)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(DownSample, DISABLED_UniformDownSample)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_CropPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,5 +103,5 @@ TEST(DownSample, DISABLED_CropPointCloud)
 // ----------------------------------------------------------------------------
 TEST(DownSample, DISABLED_CropTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

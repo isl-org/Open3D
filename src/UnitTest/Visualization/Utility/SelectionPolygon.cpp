@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(SelectionPolygon, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(SelectionPolygon, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(SelectionPolygon, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_Clear)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(SelectionPolygon, DISABLED_Clear)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_IsEmpty)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(SelectionPolygon, DISABLED_IsEmpty)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_GetMinBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(SelectionPolygon, DISABLED_GetMinBound)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_GetMaxBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(SelectionPolygon, DISABLED_GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_FillPolygon)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(SelectionPolygon, DISABLED_FillPolygon)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(SelectionPolygon, DISABLED_CropPointCloud)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(SelectionPolygon, DISABLED_CropTriangleMesh)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CreateSelectionPolygonVolume)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(SelectionPolygon, DISABLED_CreateSelectionPolygonVolume)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropPointCloudInRectangle)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(SelectionPolygon, DISABLED_CropPointCloudInRectangle)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropPointCloudInPolygon)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(SelectionPolygon, DISABLED_CropPointCloudInPolygon)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropTriangleMeshInRectangle)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(SelectionPolygon, DISABLED_CropTriangleMeshInRectangle)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropTriangleMeshInPolygon)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ TEST(SelectionPolygon, DISABLED_CropTriangleMeshInPolygon)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropInRectangle)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -159,5 +159,5 @@ TEST(SelectionPolygon, DISABLED_CropInRectangle)
 // ----------------------------------------------------------------------------
 TEST(SelectionPolygon, DISABLED_CropInPolygon)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

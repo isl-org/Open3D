@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PinholeCameraTrajectory, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(PinholeCameraTrajectory, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(PinholeCameraTrajectory, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

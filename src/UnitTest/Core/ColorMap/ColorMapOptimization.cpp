@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ColorMapOptmization, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ColorMapOptmization, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(ColorMapOptmization, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_ColorMapOptmization)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

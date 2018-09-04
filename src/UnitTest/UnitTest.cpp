@@ -25,11 +25,15 @@
 // ----------------------------------------------------------------------------
 
 #include <UnitTest.h>
+#include <Eigen/Core>
 #include <iostream>
 
 using namespace std;
 
-void NotImplemented()
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+void UnitTest::NotImplemented()
 {
     cout << "\033[0;32m" << "[          ] " << "\033[0;0m";
     cout << "\033[0;31m" << "Not implemented." << "\033[0;0m" << endl;
@@ -37,4 +41,72 @@ void NotImplemented()
     // FAIL();
     // ADD_FAILURE();
     GTEST_NONFATAL_FAILURE_("Not implemented");
+}
+
+// ----------------------------------------------------------------------------
+// Initialize a uint8_t vector with random values in the [0:255] range.
+// ----------------------------------------------------------------------------
+void UnitTest::RandInit(vector<uint8_t>& v)
+{
+    srand(0);
+
+    uint8_t vmin = 0;
+    uint8_t vmax = 255;
+    float factor = (float)(vmax - vmin) / RAND_MAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+        v[i] = vmin + (uint8_t)(rand() * factor);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector3d with random values in the [0:1000] range.
+// ----------------------------------------------------------------------------
+template<>
+Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax)
+{
+    Eigen::Vector3d v;
+
+    double factor0 = (double)((vmax[0, 0]) - (vmin[0, 0])) / RAND_MAX;
+    double factor1 = (double)((vmax[0, 1]) - (vmin[0, 1])) / RAND_MAX;
+    double factor2 = (double)((vmax[0, 2]) - (vmin[0, 2])) / RAND_MAX;
+
+    v[0, 0] = vmin[0, 0] + (double)(rand() * factor0);
+    v[0, 1] = vmin[0, 1] + (double)(rand() * factor1);
+    v[0, 2] = vmin[0, 2] + (double)(rand() * factor2);
+
+    return v;
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector3d vector with random values in the [vmin:vmax] range.
+// ----------------------------------------------------------------------------
+template<>
+void UnitTest::Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax)
+{
+    srand(0);
+
+    double factor0 = (double)((vmax[0, 0]) - (vmin[0, 0])) / RAND_MAX;
+    double factor1 = (double)((vmax[0, 1]) - (vmin[0, 1])) / RAND_MAX;
+    double factor2 = (double)((vmax[0, 2]) - (vmin[0, 2])) / RAND_MAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+        {
+            v[i][0, 0] = vmin[0, 0] + (double)(rand() * factor0);
+            v[i][0, 1] = vmin[0, 1] + (double)(rand() * factor1);
+            v[i][0, 2] = vmin[0, 2] + (double)(rand() * factor2);
+        }
+}
+
+// ----------------------------------------------------------------------------
+// Initialize a uint8_t vector with random values in the [vmin:vmax] range.
+// ----------------------------------------------------------------------------
+template<>
+void UnitTest::Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax)
+{
+    srand(0);
+
+    float factor = (float)(vmax - vmin) / RAND_MAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+        v[i] = vmin + (uint8_t)(rand() * factor);
 }

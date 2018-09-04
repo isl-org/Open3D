@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FileJPG, DISABLED_ReadImageFromJPG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,6 +39,6 @@ TEST(FileJPG, DISABLED_ReadImageFromJPG)
 // ----------------------------------------------------------------------------
 TEST(FileJPG, DISABLED_WriteImageToJPG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FilePNG, DISABLED_SetPNGImageFromImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FilePNG, DISABLED_SetPNGImageFromImage)
 // ----------------------------------------------------------------------------
 TEST(FilePNG, DISABLED_ReadImageFromPNG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,5 +47,5 @@ TEST(FilePNG, DISABLED_ReadImageFromPNG)
 // ----------------------------------------------------------------------------
 TEST(FilePNG, DISABLED_WriteImageToPNG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

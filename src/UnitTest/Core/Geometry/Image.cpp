@@ -37,19 +37,6 @@ static const int default_num_of_channels = 3;
 static const int default_bytes_per_channel = 1;
 
 // ----------------------------------------------------------------------------
-// Initialize a uint8_t vector with random values in the [0:255] range.
-// ----------------------------------------------------------------------------
-void RandInit(vector<uint8_t>& v)
-{
-    uint8_t vmin = 0;
-    uint8_t vmax = 255;
-    float factor = (float)(vmax - vmin) / RAND_MAX;
-
-    for (size_t i = 0; i < v.size(); i++)
-        v[i] = vmin + (uint8_t)(std::rand() * factor);
-}
-
-// ----------------------------------------------------------------------------
 // test the default constructor scenario
 // ----------------------------------------------------------------------------
 TEST(Image, DefaultConstructor)
@@ -276,7 +263,7 @@ void TEST_CreateFloatImageFromImage(
                        num_of_channels,
                        bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 
@@ -554,7 +541,7 @@ TEST(Image, ConvertDepthToFloatImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::ConvertDepthToFloatImage(image);
 
@@ -598,7 +585,7 @@ TEST(Image, FlipImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto flip_image = open3d::ConvertDepthToFloatImage(image);
 
@@ -633,7 +620,7 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 
@@ -778,7 +765,7 @@ TEST(Image, FilterHorizontalImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 
@@ -817,7 +804,7 @@ TEST(Image, DownsampleImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 
@@ -862,7 +849,7 @@ TEST(Image, DilateImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
     for (size_t i = 0; i < image.data_.size(); i++)
         if (i % 9 == 0)
             image.data_[i] = 255;
@@ -908,7 +895,7 @@ TEST(Image, LinearTransformImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto output_image = open3d::CreateFloatImageFromImage(image);
 
@@ -953,7 +940,7 @@ TEST(Image, ClipIntensityImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto output_image = open3d::CreateFloatImageFromImage(image);
 
@@ -987,7 +974,7 @@ void TEST_CreateImageFromFloatImage()
                        local_num_of_channels,
                        bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 
@@ -1063,7 +1050,7 @@ TEST(Image, FilterImagePyramid)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 
@@ -1130,7 +1117,7 @@ TEST(Image, CreateImagePyramid)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    RandInit(image.data_);
+    UnitTest::RandInit(image.data_);
 
     auto float_image = open3d::CreateFloatImageFromImage(image);
 

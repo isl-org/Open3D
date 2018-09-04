@@ -59,7 +59,7 @@ TEST(PointCloud, Constructor)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -585,7 +585,7 @@ TEST(PointCloud, OperatorADD)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -593,7 +593,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromDepthImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -601,15 +601,29 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromDepthImage)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_SelectDownSample)
+TEST(PointCloud, SelectDownSample)
 {
-    NotImplemented();
+    int size = 100;
+    open3d::PointCloud pc;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    pc.points_.resize(size);
+    UnitTest::Rand(pc.points_, vmin, vmax);
+    for (int i = 0; i < size; i++)
+    {
+        Eigen::Vector3d p = pc.points_[i];
+
+        printf("%g\t%g\t%g\n", p[0, 0], p[0, 1], p[0, 2]);
+    }
+
 }
 
 // ----------------------------------------------------------------------------
@@ -617,7 +631,7 @@ TEST(PointCloud, DISABLED_SelectDownSample)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_VoxelDownSample)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -625,7 +639,7 @@ TEST(PointCloud, DISABLED_VoxelDownSample)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_UniformDownSample)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -633,7 +647,7 @@ TEST(PointCloud, DISABLED_UniformDownSample)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CropPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -641,7 +655,7 @@ TEST(PointCloud, DISABLED_CropPointCloud)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_EstimateNormals)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -649,7 +663,7 @@ TEST(PointCloud, DISABLED_EstimateNormals)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_KDTreeSearchParamKNN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -657,7 +671,7 @@ TEST(PointCloud, DISABLED_KDTreeSearchParamKNN)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_OrientNormalsToAlignWithDirection)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -665,7 +679,7 @@ TEST(PointCloud, DISABLED_OrientNormalsToAlignWithDirection)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_OrientNormalsTowardsCameraLocation)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -673,7 +687,7 @@ TEST(PointCloud, DISABLED_OrientNormalsTowardsCameraLocation)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudToPointCloudDistance)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -681,7 +695,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudToPointCloudDistance)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudMeanAndCovariance)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -689,7 +703,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudMeanAndCovariance)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudMahalanobisDistance)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -697,7 +711,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudMahalanobisDistance)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ComputePointCloudNearestNeighborDistance)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -705,7 +719,7 @@ TEST(PointCloud, DISABLED_ComputePointCloudNearestNeighborDistance)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -713,7 +727,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -721,5 +735,5 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_ConvertDepthToFloatImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

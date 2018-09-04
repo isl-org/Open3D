@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_SetVerbosityLevel)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Console, DISABLED_SetVerbosityLevel)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_GetVerbosityLevel)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Console, DISABLED_GetVerbosityLevel)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_PrintError)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Console, DISABLED_PrintError)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_PrintWarning)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(Console, DISABLED_PrintWarning)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_PrintInfo)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(Console, DISABLED_PrintInfo)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_PrintDebug)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(Console, DISABLED_PrintDebug)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_PrintAlways)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(Console, DISABLED_PrintAlways)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_ResetConsoleProgress)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(Console, DISABLED_ResetConsoleProgress)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_AdvanceConsoleProgress)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(Console, DISABLED_AdvanceConsoleProgress)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_GetCurrentTimeStamp)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(Console, DISABLED_GetCurrentTimeStamp)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_GetProgramOptionAsString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(Console, DISABLED_GetProgramOptionAsString)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_GetProgramOptionAsInt)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(Console, DISABLED_GetProgramOptionAsInt)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_GetProgramOptionAsDouble)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(Console, DISABLED_GetProgramOptionAsDouble)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_GetProgramOptionAsEigenVectorXd)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(Console, DISABLED_GetProgramOptionAsEigenVectorXd)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_ProgramOptionExists)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,5 +151,5 @@ TEST(Console, DISABLED_ProgramOptionExists)
 // ----------------------------------------------------------------------------
 TEST(Console, DISABLED_ProgramOptionExistsAny)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

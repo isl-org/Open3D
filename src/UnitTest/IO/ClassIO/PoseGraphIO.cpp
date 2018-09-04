@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PoseGraphIO, DISABLED_CreatePoseGraphFromFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PoseGraphIO, DISABLED_CreatePoseGraphFromFile)
 // ----------------------------------------------------------------------------
 TEST(PoseGraphIO, DISABLED_ReadPoseGraph)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,5 +47,5 @@ TEST(PoseGraphIO, DISABLED_ReadPoseGraph)
 // ----------------------------------------------------------------------------
 TEST(PoseGraphIO, DISABLED_WritePoseGraph)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
