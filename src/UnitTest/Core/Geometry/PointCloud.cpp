@@ -1084,9 +1084,43 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_ComputePointCloudToPointCloudDistance)
+TEST(PointCloud, ComputePointCloudToPointCloudDistance)
 {
-    UnitTest::NotImplemented();
+    vector<double> ref =
+        { 155.013456,  126.672493,  114.606722,  190.747153,  133.079840,\
+          121.137276,  106.805907,  226.190750,  131.745147,  172.069584,\
+          247.822223,  119.390962,   21.209580,   68.624498,  136.386737,\
+          149.981320,  206.445708,  191.876431,  140.127314,  131.657386,\
+          183.471289,  221.094822,  178.447628,  126.081556,   29.338770,\
+          111.453558,  102.236849,  304.969947,   40.823263,  227.787078,\
+          169.129676,  197.146871,  167.494524,  174.795150,  142.910946,\
+          263.053174,  122.803815,  238.740548,  116.243401,  180.230879,\
+           91.863637,   96.241462,   24.547707,  174.705689,   65.612463,\
+          148.994593,  158.758879,  345.655903,  251.182091,  182.235820 };
+
+    int size = 100;
+
+    open3d::PointCloud pc0;
+    open3d::PointCloud pc1;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    vector<Eigen::Vector3d> points(size);
+    UnitTest::Rand(points, vmin, vmax);
+
+    for (int i = 0; i < (size / 2); i++)
+    {
+        pc0.points_.push_back(points[         0 + i]);
+        pc1.points_.push_back(points[(size / 2) + i]);
+    }
+
+    vector<double> distance = open3d::ComputePointCloudToPointCloudDistance(pc0, pc1);
+
+    for (size_t i = 0; i < distance.size(); i++)
+    {
+        EXPECT_NEAR(ref[i], distance[i], UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------

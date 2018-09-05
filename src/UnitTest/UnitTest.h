@@ -75,4 +75,6 @@ namespace UnitTest
     void Print(const std::vector<uint8_t> &v);
     template<>
     void Print(const std::vector<size_t> &v);
+    template<>
+    void Print(const std::vector<double> &v);
 }

@@ -211,3 +211,34 @@ void UnitTest::Print(const vector<size_t> &v)
     cout << " }";
     cout << endl;
 }
+
+// ----------------------------------------------------------------------------
+// Print a double vector.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Print(const vector<double> &v)
+{
+    int precision = 6;
+    int width = 12;
+    int cols = 5;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
+    cout << "{";
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        if ((i % cols == 0) && (i != 0))
+            cout << "\\" << endl;
+
+        if (i == 0)
+            cout << setw(width - 1) << v[i];
+        else
+            cout << setw(width) << v[i];
+
+        if (i != (v.size() - 1))
+            cout << ",";
+    }
+    cout << " }";
+    cout << endl;
+}
