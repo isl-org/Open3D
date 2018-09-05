@@ -613,22 +613,6 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_CreatePointCloudFromDepthImage)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImage)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, SelectDownSample)
 {
     vector<Eigen::Vector3d> ref =
@@ -1253,7 +1237,7 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, CreatePointCloudFromFloatDepthImage)
+TEST(PointCloud, CreatePointCloudFromDepthImage)
 {
     vector<Eigen::Vector3d> ref =
     {
