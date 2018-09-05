@@ -26,6 +26,8 @@
 
 #include "UnitTest.h"
 #include "Core/Geometry/PointCloud.h"
+#include "Core/Geometry/Image.h"
+#include "Core/Camera/PinholeCameraIntrinsic.h"
 
 #include <algorithm>
 using namespace std;
@@ -1250,9 +1252,64 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
+TEST(PointCloud, CreatePointCloudFromFloatDepthImage)
 {
-    UnitTest::NotImplemented();
+    vector<Eigen::Vector3d> ref =
+    {
+        { -15.709662, -11.776101,  25.813999 },\
+        { -31.647980, -23.798088,  52.167000 },\
+        {  -7.881257,  -5.945074,  13.032000 },\
+        { -30.145872, -22.811805,  50.005001 },\
+        { -21.734044, -16.498585,  36.166000 },\
+        { -25.000724, -18.662512,  41.081001 },\
+        { -20.246287, -15.160878,  33.373001 },\
+        { -36.219190, -27.207171,  59.889999 },\
+        { -28.185984, -21.239675,  46.754002 },\
+        { -23.713580, -17.926114,  39.459999 },\
+        {  -9.505886,  -7.066190,  15.620000 },\
+        { -31.858493, -23.756333,  52.514000 },\
+        { -15.815128, -11.830214,  26.150999 },\
+        {  -4.186843,  -3.141786,   6.945000 },\
+        {  -8.614051,  -6.484428,  14.334000 },\
+        { -33.263298, -24.622128,  54.658001 },\
+        { -11.742641,  -8.719418,  19.356001 },\
+        { -20.688904, -15.410790,  34.209999 },\
+        { -38.349551, -28.656141,  63.612999 },\
+        { -30.197857, -22.636429,  50.250000 },\
+        { -30.617229, -22.567629,  50.310001 },\
+        { -35.316494, -26.113137,  58.214001 },\
+        { -13.822439, -10.252549,  22.856001 },\
+        { -36.237141, -26.963181,  60.109001 },\
+        { -37.240419, -27.797524,  61.969002 } \
+    };
+
+    open3d::Image image;
+
+    // test image dimensions
+    const int local_width = 5;
+    const int local_height = 5;
+    const int local_num_of_channels = 1;
+    const int local_bytes_per_channel = 2;
+
+    image.PrepareImage(local_width,
+                       local_height,
+                       local_num_of_channels,
+                       local_bytes_per_channel);
+
+    UnitTest::Rand<uint8_t>(image.data_, 0, 255);
+
+    open3d::PinholeCameraIntrinsic intrinsic =
+        open3d::PinholeCameraIntrinsic(
+            open3d::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+
+    auto output_pc = open3d::CreatePointCloudFromDepthImage(image, intrinsic);
+
+    for (size_t i = 0; i < output_pc->points_.size(); i++)
+    {
+        EXPECT_NEAR(ref[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i](1, 0), output_pc->points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i](2, 0), output_pc->points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
