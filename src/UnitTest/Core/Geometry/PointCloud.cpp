@@ -27,6 +27,7 @@
 #include "UnitTest.h"
 #include "Core/Geometry/PointCloud.h"
 #include "Core/Geometry/Image.h"
+#include <Core/Geometry/RGBDImage.h>
 #include "Core/Camera/PinholeCameraIntrinsic.h"
 
 #include <algorithm>
@@ -1313,9 +1314,211 @@ TEST(PointCloud, CreatePointCloudFromFloatDepthImage)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Test CreatePointCloudFromRGBDImage for the following configurations:
+// index | color_num_of_channels | color_bytes_per_channel
+//     1 |          3            |            1
+//     0 |          1            |            4
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
+void TEST_CreatePointCloudFromRGBDImage(
+    const int& color_num_of_channels,
+    const int& color_bytes_per_channel,
+    const vector<Eigen::Vector3d>& ref_points,
+    const vector<Eigen::Vector3d>& ref_colors)
 {
-    UnitTest::NotImplemented();
+    open3d::Image image;
+    open3d::Image color;
+
+    const int size = 5;
+
+    // test image dimensions
+    const int image_width = size;
+    const int image_height = size;
+    const int image_num_of_channels = 1;
+    const int image_bytes_per_channel = 1;
+
+    const int color_width = size;
+    const int color_height = size;
+
+    image.PrepareImage(image_width,
+                       image_height,
+                       image_num_of_channels,
+                       image_bytes_per_channel);
+
+    color.PrepareImage(color_width,
+                       color_height,
+                       color_num_of_channels,
+                       color_bytes_per_channel);
+
+    UnitTest::Rand<uint8_t>(image.data_, 100, 150);
+    UnitTest::Rand<uint8_t>(color.data_, 130, 200);
+
+    auto depth = open3d::ConvertDepthToFloatImage(image);
+
+    open3d::RGBDImage rgbd_image(color, *depth);
+
+    open3d::PinholeCameraIntrinsic intrinsic =
+        open3d::PinholeCameraIntrinsic(
+            open3d::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+
+    auto output_pc = open3d::CreatePointCloudFromRGBDImage(rgbd_image, intrinsic);
+
+    for (size_t i = 0; i < output_pc->points_.size(); i++)
+    {
+        EXPECT_NEAR(ref_points[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](1, 0), output_pc->points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](2, 0), output_pc->points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref_colors[i](0, 0), output_pc->colors_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_colors[i](1, 0), output_pc->colors_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_colors[i](2, 0), output_pc->colors_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Test CreatePointCloudFromRGBDImage for the following configuration:
+// color_num_of_channels = 3
+// color_bytes_per_channel = 1
+// ----------------------------------------------------------------------------
+TEST(PointCloud, CreatePointCloudFromRGBDImage_3_1)
+{
+    vector<Eigen::Vector3d> ref_points =
+    {
+        {  -0.000339,  -0.000254,   0.000557 },\
+        {  -0.000283,  -0.000213,   0.000467 },\
+        {  -0.000330,  -0.000249,   0.000545 },\
+        {  -0.000329,  -0.000249,   0.000545 },\
+        {  -0.000342,  -0.000259,   0.000569 },\
+        {  -0.000260,  -0.000194,   0.000427 },\
+        {  -0.000276,  -0.000207,   0.000455 },\
+        {  -0.000327,  -0.000246,   0.000541 },\
+        {  -0.000267,  -0.000201,   0.000443 },\
+        {  -0.000299,  -0.000226,   0.000498 },\
+        {  -0.000294,  -0.000218,   0.000482 },\
+        {  -0.000312,  -0.000232,   0.000514 },\
+        {  -0.000280,  -0.000209,   0.000463 },\
+        {  -0.000296,  -0.000222,   0.000490 },\
+        {  -0.000346,  -0.000261,   0.000576 },\
+        {  -0.000346,  -0.000256,   0.000569 },\
+        {  -0.000312,  -0.000231,   0.000514 },\
+        {  -0.000320,  -0.000238,   0.000529 },\
+        {  -0.000253,  -0.000189,   0.000420 },\
+        {  -0.000306,  -0.000230,   0.000510 },\
+        {  -0.000239,  -0.000176,   0.000392 },\
+        {  -0.000266,  -0.000197,   0.000439 },\
+        {  -0.000251,  -0.000186,   0.000416 },\
+        {  -0.000331,  -0.000246,   0.000549 },\
+        {  -0.000252,  -0.000188,   0.000420 } \
+    };
+
+    vector<Eigen::Vector3d> ref_colors =
+    {
+        {   0.737255,   0.615686,   0.721569 },\
+        {   0.725490,   0.756863,   0.560784 },\
+        {   0.600000,   0.717647,   0.584314 },\
+        {   0.658824,   0.639216,   0.682353 },\
+        {   0.607843,   0.647059,   0.768627 },\
+        {   0.760784,   0.682353,   0.705882 },\
+        {   0.545098,   0.674510,   0.513725 },\
+        {   0.576471,   0.545098,   0.729412 },\
+        {   0.549020,   0.619608,   0.545098 },\
+        {   0.537255,   0.780392,   0.568627 },\
+        {   0.647059,   0.737255,   0.674510 },\
+        {   0.588235,   0.682353,   0.650980 },\
+        {   0.643137,   0.776471,   0.588235 },\
+        {   0.717647,   0.650980,   0.717647 },\
+        {   0.619608,   0.752941,   0.584314 },\
+        {   0.603922,   0.729412,   0.760784 },\
+        {   0.525490,   0.768627,   0.650980 },\
+        {   0.533333,   0.560784,   0.690196 },\
+        {   0.752941,   0.603922,   0.525490 },\
+        {   0.513725,   0.635294,   0.525490 },\
+        {   0.572549,   0.772549,   0.756863 },\
+        {   0.741176,   0.580392,   0.654902 },\
+        {   0.611765,   0.717647,   0.647059 },\
+        {   0.690196,   0.654902,   0.517647 },\
+        {   0.627451,   0.764706,   0.764706 } \
+    };
+    const int color_num_of_channels = 3;
+    const int color_bytes_per_channel = 1;
+
+    TEST_CreatePointCloudFromRGBDImage(
+        color_num_of_channels,
+        color_bytes_per_channel,
+        ref_points,
+        ref_colors);
+}
+
+// ----------------------------------------------------------------------------
+// Test CreatePointCloudFromRGBDImage for the following configuration:
+// color_num_of_channels = 1
+// color_bytes_per_channel = 4
+// ----------------------------------------------------------------------------
+TEST(PointCloud, CreatePointCloudFromRGBDImage_1_4)
+{
+    vector<Eigen::Vector3d> ref_points =
+    {
+        {  -0.000339,  -0.000254,   0.000557 },\
+        {  -0.000283,  -0.000213,   0.000467 },\
+        {  -0.000330,  -0.000249,   0.000545 },\
+        {  -0.000329,  -0.000249,   0.000545 },\
+        {  -0.000342,  -0.000259,   0.000569 },\
+        {  -0.000260,  -0.000194,   0.000427 },\
+        {  -0.000276,  -0.000207,   0.000455 },\
+        {  -0.000327,  -0.000246,   0.000541 },\
+        {  -0.000267,  -0.000201,   0.000443 },\
+        {  -0.000299,  -0.000226,   0.000498 },\
+        {  -0.000294,  -0.000218,   0.000482 },\
+        {  -0.000312,  -0.000232,   0.000514 },\
+        {  -0.000280,  -0.000209,   0.000463 },\
+        {  -0.000296,  -0.000222,   0.000490 },\
+        {  -0.000346,  -0.000261,   0.000576 },\
+        {  -0.000346,  -0.000256,   0.000569 },\
+        {  -0.000312,  -0.000231,   0.000514 },\
+        {  -0.000320,  -0.000238,   0.000529 },\
+        {  -0.000253,  -0.000189,   0.000420 },\
+        {  -0.000306,  -0.000230,   0.000510 },\
+        {  -0.000239,  -0.000176,   0.000392 },\
+        {  -0.000266,  -0.000197,   0.000439 },\
+        {  -0.000251,  -0.000186,   0.000416 },\
+        {  -0.000331,  -0.000246,   0.000549 },\
+        {  -0.000252,  -0.000188,   0.000420 } \
+    };
+
+    vector<Eigen::Vector3d> ref_colors =
+    {
+        {  -0.000352,  -0.000352,  -0.000352 },\
+        {  -0.000018,  -0.000018,  -0.000018 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        { -98.323448, -98.323448, -98.323448 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.001065,  -0.001065,  -0.001065 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.020211,  -0.020211,  -0.020211 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.000018,  -0.000018,  -0.000018 },\
+        {  -4.959918,  -4.959918,  -4.959918 },\
+        { -93.301918, -93.301918, -93.301918 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.094615,  -0.094615,  -0.094615 },\
+        {  -0.000019,  -0.000019,  -0.000019 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        {  -1.254324,  -1.254324,  -1.254324 },\
+        {  -4.581266,  -4.581266,  -4.581266 },\
+        {  -0.000000,  -0.000000,  -0.000000 },\
+        { -80.372437, -80.372437, -80.372437 },\
+        { -22.216608, -22.216608, -22.216608 } \
+    };
+
+    const int color_num_of_channels = 1;
+    const int color_bytes_per_channel = 4;
+
+    TEST_CreatePointCloudFromRGBDImage(
+        color_num_of_channels,
+        color_bytes_per_channel,
+        ref_points,
+        ref_colors);
 }
