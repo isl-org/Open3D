@@ -32,8 +32,8 @@
 
 namespace UnitTest
 {
-    const double THRESHOLD_DOUBLE = 1e-6;
-    const double THRESHOLD_FLOAT  = 1e-3f;
+    const double THRESHOLD_1E_6 = 1e-6;
+    const double THRESHOLD_1E_3 = 1e-3f;
 
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();

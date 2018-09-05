@@ -48,8 +48,8 @@ TEST(PointCloud, Constructor)
 
     // public members
     EXPECT_TRUE(pc.IsEmpty());
-    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMinBound());
-    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMaxBound());
+    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMinBound());
+    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMaxBound());
     EXPECT_FALSE(pc.HasPoints());
     EXPECT_FALSE(pc.HasNormals());
     EXPECT_FALSE(pc.HasColors());
@@ -89,8 +89,8 @@ TEST(PointCloud, Clear)
 
     // public members
     EXPECT_TRUE(pc.IsEmpty());
-    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMinBound());
-    EXPECT_EQ(Eigen::Vector3d(0, 0, 0), pc.GetMaxBound());
+    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMinBound());
+    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMaxBound());
     EXPECT_FALSE(pc.HasPoints());
     EXPECT_FALSE(pc.HasNormals());
     EXPECT_FALSE(pc.HasColors());
@@ -135,9 +135,9 @@ TEST(PointCloud, GetMinBound)
 
     Eigen::Vector3d minBound = pc.GetMinBound();
 
-    EXPECT_NEAR(20.0230, minBound(0, 0), UnitTest::THRESHOLD_FLOAT);
-    EXPECT_NEAR(3.23146, minBound(1, 0), UnitTest::THRESHOLD_FLOAT);
-    EXPECT_NEAR(3.57857, minBound(2, 0), UnitTest::THRESHOLD_FLOAT);
+    EXPECT_NEAR(20.0230, minBound(0, 0), UnitTest::THRESHOLD_1E_3);
+    EXPECT_NEAR(3.23146, minBound(1, 0), UnitTest::THRESHOLD_1E_3);
+    EXPECT_NEAR(3.57857, minBound(2, 0), UnitTest::THRESHOLD_1E_3);
 }
 
 // ----------------------------------------------------------------------------
@@ -158,9 +158,9 @@ TEST(PointCloud, GetMaxBound)
 
     Eigen::Vector3d maxBound = pc.GetMaxBound();
 
-    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_FLOAT);
-    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_FLOAT);
-    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_FLOAT);
+    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_1E_3);
+    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_1E_3);
+    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_1E_3);
 }
 
 // ----------------------------------------------------------------------------
@@ -218,13 +218,13 @@ TEST(PointCloud, Transform)
 
     for (size_t i = 0; i < pc.points_.size(); i++)
     {
-        EXPECT_NEAR(ref_points[i](0, 0), pc.points_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref_points[i](1, 0), pc.points_[i](1, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref_points[i](2, 0), pc.points_[i](2, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_points[i](0, 0), pc.points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](1, 0), pc.points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](2, 0), pc.points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
 
-        EXPECT_NEAR(ref_normals[i](0, 0), pc.normals_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref_normals[i](1, 0), pc.normals_[i](1, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref_normals[i](2, 0), pc.normals_[i](2, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref_normals[i](0, 0), pc.normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_normals[i](1, 0), pc.normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_normals[i](2, 0), pc.normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 }
 
@@ -339,9 +339,9 @@ TEST(PointCloud, NormalizeNormals)
 
     for (size_t i = 0; i < pc.normals_.size(); i++)
     {
-        EXPECT_NEAR(ref[i](0, 0), pc.normals_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref[i](1, 0), pc.normals_[i](1, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref[i](2, 0), pc.normals_[i](2, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref[i](0, 0), pc.normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i](1, 0), pc.normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i](2, 0), pc.normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 }
 
@@ -362,8 +362,6 @@ TEST(PointCloud, PaintUniformColor)
     pc.points_.resize(size);
 
     UnitTest::Rand(pc.points_, vmin, vmax);
-
-    UnitTest::Print(pc.points_);
 
     EXPECT_FALSE(pc.HasColors());
 
@@ -680,18 +678,117 @@ TEST(PointCloud, SelectDownSample)
 
     for (size_t i = 0; i < indices.size(); i++)
     {
-        EXPECT_NEAR(ref[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref[i](1, 0), output_pc->points_[i](1, 0), UnitTest::THRESHOLD_DOUBLE);
-        EXPECT_NEAR(ref[i](2, 0), output_pc->points_[i](2, 0), UnitTest::THRESHOLD_DOUBLE);
+        EXPECT_NEAR(ref[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i](1, 0), output_pc->points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i](2, 0), output_pc->points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_VoxelDownSample)
+TEST(PointCloud, VoxelDownSample)
 {
-    UnitTest::NotImplemented();
+    vector<Eigen::Vector3d> ref_points =
+    {
+        { 352.458347, 807.724520, 919.026474 },\
+        { 400.228622, 891.529452, 283.314746 },\
+        { 771.357698, 526.744979, 769.913836 },\
+        { 296.031618, 637.552268, 524.287190 },\
+        {  86.055848, 192.213846, 663.226927 },\
+        { 512.932394, 839.112235, 612.639833 },\
+        { 493.582987, 972.775024, 292.516784 },\
+        { 335.222756, 768.229595, 277.774711 },\
+        {  69.755276, 949.327075, 525.995350 },\
+        { 364.784473, 513.400910, 952.229725 },\
+        { 553.969956, 477.397052, 628.870925 },\
+        { 798.440033, 911.647358, 197.551369 },\
+        { 890.232603, 348.892935,  64.171321 },\
+        { 141.602555, 606.968876,  16.300572 },\
+        {  20.023049, 457.701737,  63.095838 },\
+        { 840.187717, 394.382927, 783.099224 },\
+        { 156.679089, 400.944394, 129.790447 },\
+        { 916.195068, 635.711728, 717.296929 },\
+        { 242.886771, 137.231577, 804.176754 },\
+        { 108.808802, 998.924518, 218.256905 } \
+    };
+
+    vector<Eigen::Vector3d> ref_normals =
+    {
+        {   0.276810,   0.634363,   0.721776 },\
+        {   0.393351,   0.876209,   0.278446 },\
+        {   0.637242,   0.435160,   0.636049 },\
+        {   0.337582,   0.727038,   0.597875 },\
+        {   0.123668,   0.276225,   0.953103 },\
+        {   0.442687,   0.724197,   0.528740 },\
+        {   0.437042,   0.861341,   0.259008 },\
+        {   0.379636,   0.870011,   0.314576 },\
+        {   0.064140,   0.872907,   0.483653 },\
+        {   0.319521,   0.449696,   0.834074 },\
+        {   0.574357,   0.494966,   0.652014 },\
+        {   0.650271,   0.742470,   0.160891 },\
+        {   0.928961,   0.364071,   0.066963 },\
+        {   0.227116,   0.973517,   0.026144 },\
+        {   0.043296,   0.989703,   0.136434 },\
+        {   0.691871,   0.324763,   0.644860 },\
+        {   0.348477,   0.891758,   0.288673 },\
+        {   0.690989,   0.479450,   0.540981 },\
+        {   0.285349,   0.161223,   0.944766 },\
+        {   0.105818,   0.971468,   0.212258 } \
+    };
+
+    vector<Eigen::Vector3d> ref_colors =
+    {
+        {  89.876879, 205.969753, 234.351751 },\
+        { 102.058299, 227.340010,  72.245260 },\
+        { 196.696213, 134.319970, 196.328028 },\
+        {  75.488063, 162.575828, 133.693233 },\
+        {  21.944241,  49.014531, 169.122866 },\
+        { 130.797761, 213.973620, 156.223157 },\
+        { 125.863662, 248.057631,  74.591780 },\
+        {  85.481803, 195.898547,  70.832551 },\
+        {  17.787595, 242.078404, 134.128814 },\
+        {  93.020041, 130.917232, 242.818580 },\
+        { 141.262339, 121.736248, 160.362086 },\
+        { 203.602209, 232.470076,  50.375599 },\
+        { 227.009314,  88.967698,  16.363687 },\
+        {  36.108652, 154.777063,   4.156646 },\
+        {   5.105877, 116.713943,  16.089439 },\
+        { 214.247868, 100.567646, 199.690302 },\
+        {  39.953168, 102.240821,  33.096564 },\
+        { 233.629742, 162.106491, 182.910717 },\
+        {  61.936127,  34.994052, 205.065072 },\
+        {  27.746245, 254.725752,  55.655511 } \
+    };
+
+    int size = 20;
+    open3d::PointCloud pc;
+
+    pc.points_.resize(size);
+    pc.normals_.resize(size);
+    pc.colors_.resize(size);
+
+    UnitTest::Rand(pc.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0));
+    UnitTest::Rand(pc.normals_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(10.0, 10.0, 10.0));
+    UnitTest::Rand(pc.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(255.0, 255.0, 255.0));
+
+    double voxel_size = 0.5;
+    auto output_pc = open3d::VoxelDownSample(pc, voxel_size);
+
+    for (size_t i = 0; i < output_pc->points_.size(); i++)
+    {
+        EXPECT_NEAR(ref_points[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](1, 0), output_pc->points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](2, 0), output_pc->points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref_normals[i](0, 0), output_pc->normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_normals[i](1, 0), output_pc->normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_normals[i](2, 0), output_pc->normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref_colors[i](0, 0), output_pc->colors_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_colors[i](1, 0), output_pc->colors_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_colors[i](2, 0), output_pc->colors_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
