@@ -146,19 +146,22 @@ TEST(PointCloud, GetMinBound)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, GetMaxBound)
 {
-    Eigen::Vector3d p0 = { 150, 230, 400 };
-    Eigen::Vector3d p1 = { 250, 230, 400 };
-    Eigen::Vector3d p2 = { 150, 130, 400 };
-    Eigen::Vector3d p3 = { 150, 230, 300 };
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
     open3d::PointCloud pc;
 
-    pc.points_.push_back(p0);
-    pc.points_.push_back(p1);
-    pc.points_.push_back(p2);
-    pc.points_.push_back(p3);
+    pc.points_.resize(size);
 
-    EXPECT_EQ(Eigen::Vector3d(250, 230, 400), pc.GetMaxBound());
+    UnitTest::Rand(pc.points_, vmin, vmax);
+
+    Eigen::Vector3d maxBound = pc.GetMaxBound();
+
+    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_FLOAT);
+    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_FLOAT);
+    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_FLOAT);
 }
 
 // ----------------------------------------------------------------------------
