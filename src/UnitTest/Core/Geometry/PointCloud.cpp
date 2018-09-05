@@ -946,14 +946,6 @@ TEST(PointCloud, EstimateNormals)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_KDTreeSearchParamKNN)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_OrientNormalsToAlignWithDirection)
 {
     UnitTest::NotImplemented();
@@ -1011,14 +1003,6 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFloatDepthImage)
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, DISABLED_CreatePointCloudFromRGBDImageT)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_ConvertDepthToFloatImage)
 {
     UnitTest::NotImplemented();
 }
