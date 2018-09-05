@@ -41,35 +41,3 @@ TEST(EstimateNormals, DISABLED_ComputeNormal)
 {
     UnitTest::NotImplemented();
 }
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_EstimateNormalsConstructor)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_KDTreeSearchParamKNN)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_OrientNormalsToAlignWithDirection)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_OrientNormalsTowardsCameraLocation)
-{
-    UnitTest::NotImplemented();
-}
