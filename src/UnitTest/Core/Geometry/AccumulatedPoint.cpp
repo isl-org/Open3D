@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DownSample, DISABLED_AccumulatedPoint)
+TEST(AccumulatedPoint, DISABLED_Constructor)
 {
     UnitTest::NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(DownSample, DISABLED_AccumulatedPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DownSample, DISABLED_AddPoint)
+TEST(AccumulatedPoint, DISABLED_AddPoint)
 {
     UnitTest::NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(DownSample, DISABLED_AddPoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DownSample, DISABLED_GetAveragePoint)
+TEST(AccumulatedPoint, DISABLED_GetAveragePoint)
 {
     UnitTest::NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(DownSample, DISABLED_GetAveragePoint)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DownSample, DISABLED_GetAverageNormal)
+TEST(AccumulatedPoint, DISABLED_GetAverageNormal)
 {
     UnitTest::NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(DownSample, DISABLED_GetAverageNormal)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(DownSample, DISABLED_GetAverageColor)
+TEST(AccumulatedPoint, DISABLED_GetAverageColor)
 {
     UnitTest::NotImplemented();
 }
