@@ -139,9 +139,20 @@ TEST(TriangleMesh, Clear)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_IsEmpty)
+TEST(TriangleMesh, IsEmpty)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    EXPECT_TRUE(tm.IsEmpty());
+
+    tm.vertices_.resize(size);
+
+    EXPECT_FALSE(tm.IsEmpty());
 }
 
 // ----------------------------------------------------------------------------
