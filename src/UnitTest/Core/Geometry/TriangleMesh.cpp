@@ -158,17 +158,45 @@ TEST(TriangleMesh, IsEmpty)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_GetMinBound)
+TEST(TriangleMesh, GetMinBound)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    tm.vertices_.resize(size);
+    UnitTest::Rand(tm.vertices_,         dmin, dmax);
+
+    Eigen::Vector3d minBound = tm.GetMinBound();
+
+    EXPECT_NEAR( 20.023049, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.231460, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.578574, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_GetMaxBound)
+TEST(TriangleMesh, GetMaxBound)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    tm.vertices_.resize(size);
+    UnitTest::Rand(tm.vertices_,         dmin, dmax);
+
+    Eigen::Vector3d maxBound = tm.GetMaxBound();
+
+    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
