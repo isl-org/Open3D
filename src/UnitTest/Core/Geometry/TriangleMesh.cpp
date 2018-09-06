@@ -1082,9 +1082,214 @@ TEST(TriangleMesh, PaintUniformColor)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_SelectDownSample)
+TEST(TriangleMesh, SelectDownSample)
 {
-    UnitTest::NotImplemented();
+    vector<Eigen::Vector3d> ref_vertices =
+    {
+        { 840.187717, 394.382927, 783.099224 },\
+        { 798.440033, 911.647358, 197.551369 },\
+        { 335.222756, 768.229595, 277.774711 },\
+        { 553.969956, 477.397052, 628.870925 },\
+        { 364.784473, 513.400910, 952.229725 },\
+        { 916.195068, 635.711728, 717.296929 },\
+        { 141.602555, 606.968876,  16.300572 },\
+        { 242.886771, 137.231577, 804.176754 },\
+        { 156.679089, 400.944394, 129.790447 },\
+        { 108.808802, 998.924518, 218.256905 },\
+        { 512.932394, 839.112235, 612.639833 },\
+        { 296.031618, 637.552268, 524.287190 },\
+        { 493.582987, 972.775024, 292.516784 },\
+        { 771.357698, 526.744979, 769.913836 },\
+        { 352.458347, 807.724520, 919.026474 },\
+        {  69.755276, 949.327075, 525.995350 },\
+        {  86.055848, 192.213846, 663.226927 },\
+        {  20.023049, 457.701737,  63.095838 },\
+        { 238.279954, 970.634132, 902.208073 },\
+        { 850.919787, 266.665749, 539.760341 },\
+        { 375.206976, 760.248736, 512.535364 },\
+        { 667.723761, 531.606434,  39.280343 },\
+        { 437.637597, 931.835056, 930.809795 } \
+    };
+
+    vector<Eigen::Vector3d> ref_vertex_normals =
+    {
+        { 840.187717, 394.382927, 783.099224 },\
+        { 798.440033, 911.647358, 197.551369 },\
+        { 335.222756, 768.229595, 277.774711 },\
+        { 553.969956, 477.397052, 628.870925 },\
+        { 364.784473, 513.400910, 952.229725 },\
+        { 916.195068, 635.711728, 717.296929 },\
+        { 141.602555, 606.968876,  16.300572 },\
+        { 242.886771, 137.231577, 804.176754 },\
+        { 156.679089, 400.944394, 129.790447 },\
+        { 108.808802, 998.924518, 218.256905 },\
+        { 512.932394, 839.112235, 612.639833 },\
+        { 296.031618, 637.552268, 524.287190 },\
+        { 493.582987, 972.775024, 292.516784 },\
+        { 771.357698, 526.744979, 769.913836 },\
+        { 352.458347, 807.724520, 919.026474 },\
+        {  69.755276, 949.327075, 525.995350 },\
+        {  86.055848, 192.213846, 663.226927 },\
+        {  20.023049, 457.701737,  63.095838 },\
+        { 238.279954, 970.634132, 902.208073 },\
+        { 850.919787, 266.665749, 539.760341 },\
+        { 375.206976, 760.248736, 512.535364 },\
+        { 667.723761, 531.606434,  39.280343 },\
+        { 437.637597, 931.835056, 930.809795 } \
+    };
+
+    vector<Eigen::Vector3d> ref_vertex_colors =
+    {
+        { 840.187717, 394.382927, 783.099224 },\
+        { 798.440033, 911.647358, 197.551369 },\
+        { 335.222756, 768.229595, 277.774711 },\
+        { 553.969956, 477.397052, 628.870925 },\
+        { 364.784473, 513.400910, 952.229725 },\
+        { 916.195068, 635.711728, 717.296929 },\
+        { 141.602555, 606.968876,  16.300572 },\
+        { 242.886771, 137.231577, 804.176754 },\
+        { 156.679089, 400.944394, 129.790447 },\
+        { 108.808802, 998.924518, 218.256905 },\
+        { 512.932394, 839.112235, 612.639833 },\
+        { 296.031618, 637.552268, 524.287190 },\
+        { 493.582987, 972.775024, 292.516784 },\
+        { 771.357698, 526.744979, 769.913836 },\
+        { 352.458347, 807.724520, 919.026474 },\
+        {  69.755276, 949.327075, 525.995350 },\
+        {  86.055848, 192.213846, 663.226927 },\
+        {  20.023049, 457.701737,  63.095838 },\
+        { 238.279954, 970.634132, 902.208073 },\
+        { 850.919787, 266.665749, 539.760341 },\
+        { 375.206976, 760.248736, 512.535364 },\
+        { 667.723761, 531.606434,  39.280343 },\
+        { 437.637597, 931.835056, 930.809795 } \
+    };
+
+    vector<Eigen::Vector3d> ref_triangles =
+    {
+        {    19,     9,    17 },\
+        {    17,    20,     4 },\
+        {     8,    17,     6 },\
+        {    13,    11,    14 },\
+        {     9,    12,    21 },\
+        {    20,    14,    16 },\
+        {     3,    14,     0 },\
+        {     6,     3,    18 },\
+        {     2,    22,     5 },\
+        {    12,    18,    14 },\
+        {     7,    14,    13 },\
+        {    12,    22,     7 },\
+        {    10,    20,     7 },\
+        {     8,    18,    20 },\
+        {     1,    21,    13 },\
+        {     2,     4,    15 },\
+        {    20,     8,     1 },\
+        {     0,    11,     1 },\
+        {     5,    22,    20 },\
+        {    19,     6,    13 },\
+        {     9,    17,    12 },\
+        {    15,    13,     0 } \
+    };
+
+    vector<Eigen::Vector3d> ref_triangle_normals =
+    {
+        { 840.187717, 394.382927, 783.099224 },\
+        { 798.440033, 911.647358, 197.551369 },\
+        { 335.222756, 768.229595, 277.774711 },\
+        { 553.969956, 477.397052, 628.870925 },\
+        { 364.784473, 513.400910, 952.229725 },\
+        { 916.195068, 635.711728, 717.296929 },\
+        { 141.602555, 606.968876,  16.300572 },\
+        { 242.886771, 137.231577, 804.176754 },\
+        { 108.808802, 998.924518, 218.256905 },\
+        { 512.932394, 839.112235, 612.639833 },\
+        { 296.031618, 637.552268, 524.287190 },\
+        { 493.582987, 972.775024, 292.516784 },\
+        { 400.228622, 891.529452, 283.314746 },\
+        { 352.458347, 807.724520, 919.026474 },\
+        {  69.755276, 949.327075, 525.995350 },\
+        {  86.055848, 192.213846, 663.226927 },\
+        { 890.232603, 348.892935,  64.171321 },\
+        {  20.023049, 457.701737,  63.095838 },\
+        { 238.279954, 970.634132, 902.208073 },\
+        { 850.919787, 266.665749, 539.760341 },\
+        { 375.206976, 760.248736, 512.535364 },\
+        { 667.723761, 531.606434,  39.280343 } \
+    };
+
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size, size, size);
+
+    open3d::TriangleMesh tm;
+
+    tm.vertices_.resize(size);
+    tm.vertex_normals_.resize(size);
+    tm.vertex_colors_.resize(size);
+    tm.triangles_.resize(size);
+    tm.triangle_normals_.resize(size);
+
+    UnitTest::Rand(tm.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax, 1);
+    UnitTest::Rand(tm.vertex_colors_,    dmin, dmax, 2);
+    UnitTest::Rand(tm.triangles_,        imin, imax, 3);
+    UnitTest::Rand(tm.triangle_normals_, dmin, dmax, 4);
+
+    vector<size_t> indices(size / 4);
+    UnitTest::Rand<size_t>(indices, 0, size, 0);
+
+    auto output_tm = open3d::SelectDownSample(tm, indices);
+
+    UnitTest::Print(tm.vertices_);
+    UnitTest::Print(tm.vertex_normals_);
+    UnitTest::Print(tm.vertex_colors_);
+    UnitTest::Print(tm.triangles_);
+    UnitTest::Print(tm.triangle_normals_);
+
+    EXPECT_EQ(size / 4, output_tm->vertices_.size());
+    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
+    {
+        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(size / 4, output_tm->vertex_normals_.size());
+    for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
+    {
+        EXPECT_NEAR(ref_vertex_normals[i](0, 0), output_tm->vertex_normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertex_normals[i](1, 0), output_tm->vertex_normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertex_normals[i](2, 0), output_tm->vertex_normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(size / 4, output_tm->vertex_colors_.size());
+    for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
+    {
+        EXPECT_NEAR(ref_vertex_colors[i](0, 0), output_tm->vertex_colors_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertex_colors[i](1, 0), output_tm->vertex_colors_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertex_colors[i](2, 0), output_tm->vertex_colors_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    // NOTE: why is this offset required only for triangles?
+    EXPECT_EQ(size / 4, output_tm->triangles_.size());
+    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
+    {
+        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(size / 4, output_tm->triangle_normals_.size());
+    for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
+    {
+        EXPECT_NEAR(ref_triangle_normals[i](0, 0), output_tm->triangle_normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_triangle_normals[i](1, 0), output_tm->triangle_normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_triangle_normals[i](2, 0), output_tm->triangle_normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
