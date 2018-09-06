@@ -346,41 +346,101 @@ TEST(TriangleMesh, DISABLED_RemoveNonManifoldTriangles)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_HasVertices)
+TEST(TriangleMesh, HasVertices)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    EXPECT_FALSE(tm.HasVertices());
+
+    tm.vertices_.resize(size);
+
+    EXPECT_TRUE(tm.HasVertices());
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_HasTriangles)
+TEST(TriangleMesh, HasTriangles)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    EXPECT_FALSE(tm.HasTriangles());
+
+    tm.vertices_.resize(size);
+    tm.triangles_.resize(size);
+
+    EXPECT_TRUE(tm.HasTriangles());
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_HasVertexNormals)
+TEST(TriangleMesh, HasVertexNormals)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    EXPECT_FALSE(tm.HasVertexNormals());
+
+    tm.vertices_.resize(size);
+    tm.vertex_normals_.resize(size);
+
+    EXPECT_TRUE(tm.HasVertexNormals());
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_HasVertexColors)
+TEST(TriangleMesh, HasVertexColors)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    EXPECT_FALSE(tm.HasVertexColors());
+
+    tm.vertices_.resize(size);
+    tm.vertex_colors_.resize(size);
+
+    EXPECT_TRUE(tm.HasVertexColors());
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_HasTriangleNormals)
+TEST(TriangleMesh, HasTriangleNormals)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    EXPECT_FALSE(tm.HasTriangleNormals());
+
+    tm.vertices_.resize(size);
+    tm.triangles_.resize(size);
+    tm.triangle_normals_.resize(size);
+
+    EXPECT_TRUE(tm.HasTriangleNormals());
 }
 
 // ----------------------------------------------------------------------------
