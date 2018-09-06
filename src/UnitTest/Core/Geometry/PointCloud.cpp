@@ -437,9 +437,6 @@ TEST(PointCloud, OperatorAppend)
     c.insert(c.end(), pc0.colors_.begin(), pc0.colors_.end());
     c.insert(c.end(), pc1.colors_.begin(), pc1.colors_.end());
 
-    pc0.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
-    pc1.PaintUniformColor(Eigen::Vector3d( 53, 233, 171));
-
     open3d::PointCloud pc(pc0);
     pc += pc1;
 
@@ -517,9 +514,6 @@ TEST(PointCloud, OperatorADD)
     vector<Eigen::Vector3d> c;
     c.insert(c.end(), pc0.colors_.begin(), pc0.colors_.end());
     c.insert(c.end(), pc1.colors_.begin(), pc1.colors_.end());
-
-    pc0.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
-    pc1.PaintUniformColor(Eigen::Vector3d( 53, 233, 171));
 
     open3d::PointCloud pc = pc0 + pc1;
 
