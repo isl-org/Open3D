@@ -419,9 +419,11 @@ TEST(PointCloud, OperatorAppend)
 
     UnitTest::Rand(pc0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     UnitTest::Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    UnitTest::Rand(pc0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
     UnitTest::Rand(pc1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     UnitTest::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    UnitTest::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Eigen::Vector3d> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
@@ -431,36 +433,50 @@ TEST(PointCloud, OperatorAppend)
     n.insert(n.end(), pc0.normals_.begin(), pc0.normals_.end());
     n.insert(n.end(), pc1.normals_.begin(), pc1.normals_.end());
 
+    vector<Eigen::Vector3d> c;
+    c.insert(c.end(), pc0.colors_.begin(), pc0.colors_.end());
+    c.insert(c.end(), pc1.colors_.begin(), pc1.colors_.end());
+
     pc0.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
     pc1.PaintUniformColor(Eigen::Vector3d( 53, 233, 171));
 
-    open3d::PointCloud pc = pc0 + pc1;
+    open3d::PointCloud pc(pc0);
+    pc += pc1;
 
     EXPECT_EQ(2 * size, pc.points_.size());
-    for (size_t i = 0; i < 2 * size; i++)
-        EXPECT_EQ(p[i], pc.points_[i]);
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(pc0.points_[i](0, 0), pc.points_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.points_[i](1, 0), pc.points_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.points_[i](2, 0), pc.points_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(pc1.points_[i](0, 0), pc.points_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.points_[i](1, 0), pc.points_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.points_[i](2, 0), pc.points_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 
     EXPECT_EQ(2 * size, pc.normals_.size());
-    for (size_t i = 0; i < 2 * size; i++)
+    for (size_t i = 0; i < size; i++)
     {
-        EXPECT_DOUBLE_EQ(n[i](0, 0), pc.normals_[i](0, 0));
-        EXPECT_DOUBLE_EQ(n[i](1, 0), pc.normals_[i](1, 0));
-        EXPECT_DOUBLE_EQ(n[i](2, 0), pc.normals_[i](2, 0));
+        EXPECT_NEAR(pc0.normals_[i](0, 0), pc.normals_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.normals_[i](1, 0), pc.normals_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.normals_[i](2, 0), pc.normals_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(pc1.normals_[i](0, 0), pc.normals_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.normals_[i](1, 0), pc.normals_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.normals_[i](2, 0), pc.normals_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 
     EXPECT_EQ(2 * size, pc.colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_DOUBLE_EQ(233, pc.colors_[i](0, 0));
-        EXPECT_DOUBLE_EQ(171, pc.colors_[i](1, 0));
-        EXPECT_DOUBLE_EQ( 53, pc.colors_[i](2, 0));
-    }
+        EXPECT_NEAR(pc0.colors_[i](0, 0), pc.colors_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.colors_[i](1, 0), pc.colors_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.colors_[i](2, 0), pc.colors_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
 
-    for (size_t i = size; i < 2 * size; i++)
-    {
-        EXPECT_DOUBLE_EQ( 53, pc.colors_[i](0, 0));
-        EXPECT_DOUBLE_EQ(233, pc.colors_[i](1, 0));
-        EXPECT_DOUBLE_EQ(171, pc.colors_[i](2, 0));
+        EXPECT_NEAR(pc1.colors_[i](0, 0), pc.colors_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.colors_[i](1, 0), pc.colors_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.colors_[i](2, 0), pc.colors_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 }
 
@@ -484,9 +500,11 @@ TEST(PointCloud, OperatorADD)
 
     UnitTest::Rand(pc0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     UnitTest::Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    UnitTest::Rand(pc0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
 
     UnitTest::Rand(pc1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
     UnitTest::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    UnitTest::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Eigen::Vector3d> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
@@ -496,36 +514,49 @@ TEST(PointCloud, OperatorADD)
     n.insert(n.end(), pc0.normals_.begin(), pc0.normals_.end());
     n.insert(n.end(), pc1.normals_.begin(), pc1.normals_.end());
 
+    vector<Eigen::Vector3d> c;
+    c.insert(c.end(), pc0.colors_.begin(), pc0.colors_.end());
+    c.insert(c.end(), pc1.colors_.begin(), pc1.colors_.end());
+
     pc0.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
     pc1.PaintUniformColor(Eigen::Vector3d( 53, 233, 171));
 
-    pc0 += pc1;
+    open3d::PointCloud pc = pc0 + pc1;
 
-    EXPECT_EQ(2 * size, pc0.points_.size());
-    for (size_t i = 0; i < 2 * size; i++)
-        EXPECT_EQ(p[i], pc0.points_[i]);
-
-    EXPECT_EQ(2 * size, pc0.normals_.size());
-    for (size_t i = 0; i < 2 * size; i++)
-    {
-        EXPECT_DOUBLE_EQ(n[i](0, 0), pc0.normals_[i](0, 0));
-        EXPECT_DOUBLE_EQ(n[i](1, 0), pc0.normals_[i](1, 0));
-        EXPECT_DOUBLE_EQ(n[i](2, 0), pc0.normals_[i](2, 0));
-    }
-
-    EXPECT_EQ(2 * size, pc0.colors_.size());
+    EXPECT_EQ(2 * size, pc.points_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_DOUBLE_EQ(233, pc0.colors_[i](0, 0));
-        EXPECT_DOUBLE_EQ(171, pc0.colors_[i](1, 0));
-        EXPECT_DOUBLE_EQ( 53, pc0.colors_[i](2, 0));
+        EXPECT_NEAR(pc0.points_[i](0, 0), pc.points_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.points_[i](1, 0), pc.points_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.points_[i](2, 0), pc.points_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(pc1.points_[i](0, 0), pc.points_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.points_[i](1, 0), pc.points_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.points_[i](2, 0), pc.points_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 
-    for (size_t i = size; i < 2 * size; i++)
+    EXPECT_EQ(2 * size, pc.normals_.size());
+    for (size_t i = 0; i < size; i++)
     {
-        EXPECT_DOUBLE_EQ( 53, pc0.colors_[i](0, 0));
-        EXPECT_DOUBLE_EQ(233, pc0.colors_[i](1, 0));
-        EXPECT_DOUBLE_EQ(171, pc0.colors_[i](2, 0));
+        EXPECT_NEAR(pc0.normals_[i](0, 0), pc.normals_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.normals_[i](1, 0), pc.normals_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.normals_[i](2, 0), pc.normals_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(pc1.normals_[i](0, 0), pc.normals_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.normals_[i](1, 0), pc.normals_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.normals_[i](2, 0), pc.normals_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, pc.colors_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(pc0.colors_[i](0, 0), pc.colors_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.colors_[i](1, 0), pc.colors_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc0.colors_[i](2, 0), pc.colors_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(pc1.colors_[i](0, 0), pc.colors_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.colors_[i](1, 0), pc.colors_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(pc1.colors_[i](2, 0), pc.colors_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
     }
 }
 
