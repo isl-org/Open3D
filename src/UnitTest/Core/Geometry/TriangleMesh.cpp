@@ -327,14 +327,6 @@ TEST(TriangleMesh, OperatorAppend)
     UnitTest::Rand(tm1.triangles_,        imin, imax, 0);
     UnitTest::Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
-    vector<Eigen::Vector3d> v;
-    v.insert(v.end(), tm0.vertices_.begin(), tm0.vertices_.end());
-    v.insert(v.end(), tm1.vertices_.begin(), tm1.vertices_.end());
-
-    vector<Eigen::Vector3d> vn;
-    vn.insert(vn.end(), tm0.vertex_normals_.begin(), tm0.vertex_normals_.end());
-    vn.insert(vn.end(), tm1.vertex_normals_.begin(), tm1.vertex_normals_.end());
-
     open3d::TriangleMesh tm(tm0);
     tm += tm1;
 
@@ -434,14 +426,6 @@ TEST(TriangleMesh, OperatorADD)
     UnitTest::Rand(tm1.vertex_colors_,    dmin, dmax, 1);
     UnitTest::Rand(tm1.triangles_,        imin, imax, 0);
     UnitTest::Rand(tm1.triangle_normals_, dmin, dmax, 0);
-
-    vector<Eigen::Vector3d> v;
-    v.insert(v.end(), tm0.vertices_.begin(), tm0.vertices_.end());
-    v.insert(v.end(), tm1.vertices_.begin(), tm1.vertices_.end());
-
-    vector<Eigen::Vector3d> vn;
-    vn.insert(vn.end(), tm0.vertex_normals_.begin(), tm0.vertex_normals_.end());
-    vn.insert(vn.end(), tm1.vertex_normals_.begin(), tm1.vertex_normals_.end());
 
     open3d::TriangleMesh tm = tm0 + tm1;
 
