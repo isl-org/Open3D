@@ -290,17 +290,216 @@ TEST(TriangleMesh, Transform)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_OperatorAppend)
+TEST(TriangleMesh, OperatorAppend)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(100, 100, 100);
+
+    open3d::TriangleMesh tm0;
+    open3d::TriangleMesh tm1;
+
+    tm0.vertices_.resize(size);
+    tm0.vertex_normals_.resize(size);
+    tm0.vertex_colors_.resize(size);
+    tm0.triangles_.resize(size);
+    tm0.triangle_normals_.resize(size);
+
+    tm1.vertices_.resize(size);
+    tm1.vertex_normals_.resize(size);
+    tm1.vertex_colors_.resize(size);
+    tm1.triangles_.resize(size);
+    tm1.triangle_normals_.resize(size);
+
+    UnitTest::Rand(tm0.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm0.vertex_normals_,   dmin, dmax, 0);
+    UnitTest::Rand(tm0.vertex_colors_,    dmin, dmax, 0);
+    UnitTest::Rand(tm0.triangles_,        imin, imax, 0);
+    UnitTest::Rand(tm0.triangle_normals_, dmin, dmax, 0);
+
+    UnitTest::Rand(tm1.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm1.vertex_normals_,   dmin, dmax, 0);
+    UnitTest::Rand(tm1.vertex_colors_,    dmin, dmax, 1);
+    UnitTest::Rand(tm1.triangles_,        imin, imax, 0);
+    UnitTest::Rand(tm1.triangle_normals_, dmin, dmax, 0);
+
+    vector<Eigen::Vector3d> v;
+    v.insert(v.end(), tm0.vertices_.begin(), tm0.vertices_.end());
+    v.insert(v.end(), tm1.vertices_.begin(), tm1.vertices_.end());
+
+    vector<Eigen::Vector3d> vn;
+    vn.insert(vn.end(), tm0.vertex_normals_.begin(), tm0.vertex_normals_.end());
+    vn.insert(vn.end(), tm1.vertex_normals_.begin(), tm1.vertex_normals_.end());
+
+    open3d::TriangleMesh tm(tm0);
+    tm += tm1;
+
+    EXPECT_EQ(2 * size, tm.vertices_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.vertices_[i](0, 0), tm.vertices_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertices_[i](1, 0), tm.vertices_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertices_[i](2, 0), tm.vertices_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertices_[i](0, 0), tm.vertices_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertices_[i](1, 0), tm.vertices_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertices_[i](2, 0), tm.vertices_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, tm.vertex_normals_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.vertex_normals_[i](0, 0), tm.vertex_normals_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_normals_[i](1, 0), tm.vertex_normals_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_normals_[i](2, 0), tm.vertex_normals_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_normals_[i](0, 0), tm.vertex_normals_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_normals_[i](1, 0), tm.vertex_normals_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_normals_[i](2, 0), tm.vertex_normals_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, tm.vertex_colors_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.vertex_colors_[i](0, 0), tm.vertex_colors_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_colors_[i](1, 0), tm.vertex_colors_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_colors_[i](2, 0), tm.vertex_colors_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_colors_[i](0, 0), tm.vertex_colors_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_colors_[i](1, 0), tm.vertex_colors_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_colors_[i](2, 0), tm.vertex_colors_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    // NOTE: why is this offset required only for triangles?
+    EXPECT_EQ(2 * size, tm.triangles_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.triangles_[i](0, 0) +    0, tm.triangles_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangles_[i](1, 0) +    0, tm.triangles_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangles_[i](2, 0) +    0, tm.triangles_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangles_[i](0, 0) + size, tm.triangles_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangles_[i](1, 0) + size, tm.triangles_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangles_[i](2, 0) + size, tm.triangles_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, tm.triangle_normals_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.triangle_normals_[i](0, 0), tm.triangle_normals_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangle_normals_[i](1, 0), tm.triangle_normals_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangle_normals_[i](2, 0), tm.triangle_normals_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangle_normals_[i](0, 0), tm.triangle_normals_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangle_normals_[i](1, 0), tm.triangle_normals_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangle_normals_[i](2, 0), tm.triangle_normals_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloud, DISABLED_OperatorADD)
+TEST(TriangleMesh, OperatorADD)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(100, 100, 100);
+
+    open3d::TriangleMesh tm0;
+    open3d::TriangleMesh tm1;
+
+    tm0.vertices_.resize(size);
+    tm0.vertex_normals_.resize(size);
+    tm0.vertex_colors_.resize(size);
+    tm0.triangles_.resize(size);
+    tm0.triangle_normals_.resize(size);
+
+    tm1.vertices_.resize(size);
+    tm1.vertex_normals_.resize(size);
+    tm1.vertex_colors_.resize(size);
+    tm1.triangles_.resize(size);
+    tm1.triangle_normals_.resize(size);
+
+    UnitTest::Rand(tm0.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm0.vertex_normals_,   dmin, dmax, 0);
+    UnitTest::Rand(tm0.vertex_colors_,    dmin, dmax, 0);
+    UnitTest::Rand(tm0.triangles_,        imin, imax, 0);
+    UnitTest::Rand(tm0.triangle_normals_, dmin, dmax, 0);
+
+    UnitTest::Rand(tm1.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm1.vertex_normals_,   dmin, dmax, 0);
+    UnitTest::Rand(tm1.vertex_colors_,    dmin, dmax, 1);
+    UnitTest::Rand(tm1.triangles_,        imin, imax, 0);
+    UnitTest::Rand(tm1.triangle_normals_, dmin, dmax, 0);
+
+    vector<Eigen::Vector3d> v;
+    v.insert(v.end(), tm0.vertices_.begin(), tm0.vertices_.end());
+    v.insert(v.end(), tm1.vertices_.begin(), tm1.vertices_.end());
+
+    vector<Eigen::Vector3d> vn;
+    vn.insert(vn.end(), tm0.vertex_normals_.begin(), tm0.vertex_normals_.end());
+    vn.insert(vn.end(), tm1.vertex_normals_.begin(), tm1.vertex_normals_.end());
+
+    open3d::TriangleMesh tm = tm0 + tm1;
+
+    EXPECT_EQ(2 * size, tm.vertices_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.vertices_[i](0, 0), tm.vertices_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertices_[i](1, 0), tm.vertices_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertices_[i](2, 0), tm.vertices_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertices_[i](0, 0), tm.vertices_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertices_[i](1, 0), tm.vertices_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertices_[i](2, 0), tm.vertices_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, tm.vertex_normals_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.vertex_normals_[i](0, 0), tm.vertex_normals_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_normals_[i](1, 0), tm.vertex_normals_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_normals_[i](2, 0), tm.vertex_normals_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_normals_[i](0, 0), tm.vertex_normals_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_normals_[i](1, 0), tm.vertex_normals_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_normals_[i](2, 0), tm.vertex_normals_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, tm.vertex_colors_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.vertex_colors_[i](0, 0), tm.vertex_colors_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_colors_[i](1, 0), tm.vertex_colors_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.vertex_colors_[i](2, 0), tm.vertex_colors_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_colors_[i](0, 0), tm.vertex_colors_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_colors_[i](1, 0), tm.vertex_colors_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.vertex_colors_[i](2, 0), tm.vertex_colors_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    // NOTE: why is this offset required only for triangles?
+    EXPECT_EQ(2 * size, tm.triangles_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.triangles_[i](0, 0) +    0, tm.triangles_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangles_[i](1, 0) +    0, tm.triangles_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangles_[i](2, 0) +    0, tm.triangles_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangles_[i](0, 0) + size, tm.triangles_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangles_[i](1, 0) + size, tm.triangles_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangles_[i](2, 0) + size, tm.triangles_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, tm.triangle_normals_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(tm0.triangle_normals_[i](0, 0), tm.triangle_normals_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangle_normals_[i](1, 0), tm.triangle_normals_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm0.triangle_normals_[i](2, 0), tm.triangle_normals_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangle_normals_[i](0, 0), tm.triangle_normals_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangle_normals_[i](1, 0), tm.triangle_normals_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(tm1.triangle_normals_[i](2, 0), tm.triangle_normals_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
