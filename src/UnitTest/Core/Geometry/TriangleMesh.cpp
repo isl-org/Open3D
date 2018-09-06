@@ -28,6 +28,8 @@
 
 #include "Core/Geometry/TriangleMesh.h"
 
+using namespace std;
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
@@ -202,9 +204,87 @@ TEST(TriangleMesh, GetMaxBound)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_Transform)
+TEST(TriangleMesh, Transform)
 {
-    UnitTest::NotImplemented();
+    vector<Eigen::Vector3d> ref_vertices =
+    {
+        { 398.225124,1205.693071, 881.868153 },\
+        { 321.838886,1085.294390, 831.611417 },\
+        { 270.900608, 823.791432, 409.198658 },\
+        { 339.937683,1004.432856, 615.608467 },\
+        { 425.227547,1157.793590, 484.511386 },\
+        { 434.350931,1342.432421, 967.169396 },\
+        { 140.844202, 447.193004, 190.052250 },\
+        { 293.388019, 767.506059, 320.900694 },\
+        { 135.193922, 410.559494, 195.502569 },\
+        { 276.542855, 807.338946, 221.948633 } \
+    };
+
+    vector<Eigen::Vector3d> ref_vertex_normals =
+    {
+        { 397.825124,1204.893071, 881.748153 },\
+        { 321.438886,1084.494390, 831.491417 },\
+        { 270.500608, 822.991432, 409.078658 },\
+        { 339.537683,1003.632856, 615.488467 },\
+        { 424.827547,1156.993590, 484.391386 },\
+        { 433.950931,1341.632421, 967.049396 },\
+        { 140.444202, 446.393004, 189.932250 },\
+        { 292.988019, 766.706059, 320.780694 },\
+        { 134.793922, 409.759494, 195.382569 },\
+        { 276.142855, 806.538946, 221.828633 } \
+    };
+
+    vector<Eigen::Vector3d> ref_triangle_normals =
+    {
+        { 397.825124,1204.893071, 881.748153 },\
+        { 321.438886,1084.494390, 831.491417 },\
+        { 270.500608, 822.991432, 409.078658 },\
+        { 339.537683,1003.632856, 615.488467 },\
+        { 424.827547,1156.993590, 484.391386 },\
+        { 433.950931,1341.632421, 967.049396 },\
+        { 140.444202, 446.393004, 189.932250 },\
+        { 292.988019, 766.706059, 320.780694 },\
+        { 134.793922, 409.759494, 195.382569 },\
+        { 276.142855, 806.538946, 221.828633 } \
+    };
+
+    int size = 10;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    open3d::TriangleMesh tm;
+
+    tm.vertices_.resize(size);
+    tm.vertex_normals_.resize(size);
+    tm.triangle_normals_.resize(size);
+
+    UnitTest::Rand(tm.vertices_,         dmin, dmax);
+    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax);
+    UnitTest::Rand(tm.triangle_normals_, dmin, dmax);
+
+    Eigen::Matrix4d transformation;
+    transformation << 0.10, 0.20, 0.30, 0.40,
+                      0.50, 0.60, 0.70, 0.80,
+                      0.90, 0.10, 0.11, 0.12,
+                      0.13, 0.14, 0.15, 0.16;
+
+    tm.Transform(transformation);
+
+    for (size_t i = 0; i < tm.vertices_.size(); i++)
+    {
+        EXPECT_NEAR(ref_vertices[i](0, 0), tm.vertices_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertices[i](1, 0), tm.vertices_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertices[i](2, 0), tm.vertices_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref_vertex_normals[i](0, 0), tm.vertex_normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertex_normals[i](1, 0), tm.vertex_normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_vertex_normals[i](2, 0), tm.vertex_normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref_triangle_normals[i](0, 0), tm.triangle_normals_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_triangle_normals[i](1, 0), tm.triangle_normals_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_triangle_normals[i](2, 0), tm.triangle_normals_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
