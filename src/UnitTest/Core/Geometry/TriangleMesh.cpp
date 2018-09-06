@@ -96,11 +96,11 @@ TEST(TriangleMesh, Clear)
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    UnitTest::Rand(tm.vertices_,         dmin, dmax);
-    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax);
-    UnitTest::Rand(tm.vertex_colors_,    dmin, dmax);
-    UnitTest::Rand(tm.triangles_,        imin, imax);
-    UnitTest::Rand(tm.triangle_normals_, dmin, dmax);
+    UnitTest::Rand(tm.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax, 0);
+    UnitTest::Rand(tm.vertex_colors_,    dmin, dmax, 0);
+    UnitTest::Rand(tm.triangles_,        imin, imax, 0);
+    UnitTest::Rand(tm.triangle_normals_, dmin, dmax, 0);
 
     Eigen::Vector3d minBound = tm.GetMinBound();
     Eigen::Vector3d maxBound = tm.GetMaxBound();
@@ -170,7 +170,7 @@ TEST(TriangleMesh, GetMinBound)
     open3d::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    UnitTest::Rand(tm.vertices_,         dmin, dmax);
+    UnitTest::Rand(tm.vertices_, dmin, dmax, 0);
 
     Eigen::Vector3d minBound = tm.GetMinBound();
 
@@ -192,7 +192,7 @@ TEST(TriangleMesh, GetMaxBound)
     open3d::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    UnitTest::Rand(tm.vertices_,         dmin, dmax);
+    UnitTest::Rand(tm.vertices_, dmin, dmax, 0);
 
     Eigen::Vector3d maxBound = tm.GetMaxBound();
 
@@ -259,9 +259,9 @@ TEST(TriangleMesh, Transform)
     tm.vertex_normals_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    UnitTest::Rand(tm.vertices_,         dmin, dmax);
-    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax);
-    UnitTest::Rand(tm.triangle_normals_, dmin, dmax);
+    UnitTest::Rand(tm.vertices_,         dmin, dmax, 0);
+    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax, 0);
+    UnitTest::Rand(tm.triangle_normals_, dmin, dmax, 0);
 
     Eigen::Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40,
@@ -302,6 +302,7 @@ TEST(PointCloud, DISABLED_OperatorADD)
 {
     UnitTest::NotImplemented();
 }
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------

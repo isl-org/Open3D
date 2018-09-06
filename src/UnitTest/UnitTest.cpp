@@ -76,9 +76,10 @@ template <>
 void UnitTest::Rand(
     vector<Eigen::Vector3i> &v,
     const Eigen::Vector3i &vmin,
-    const Eigen::Vector3i &vmax)
+    const Eigen::Vector3i &vmax,
+    const int& seed)
 {
-    srand(0);
+    srand(seed);
 
     Eigen::Vector3d factor;
     factor[0, 0] = (double)(vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
@@ -100,9 +101,10 @@ template <>
 void UnitTest::Rand(
     vector<Eigen::Vector3d> &v,
     const Eigen::Vector3d &vmin,
-    const Eigen::Vector3d &vmax)
+    const Eigen::Vector3d &vmax,
+    const int& seed)
 {
-    srand(0);
+    srand(seed);
 
     Eigen::Vector3d factor;
     factor[0, 0] = (vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
@@ -124,9 +126,10 @@ template <>
 void UnitTest::Rand(
     vector<uint8_t> &v,
     const uint8_t &vmin,
-    const uint8_t &vmax)
+    const uint8_t &vmax,
+    const int& seed)
 {
-    srand(0);
+    srand(seed);
 
     float factor = (float)(vmax - vmin) / RAND_MAX;
 
@@ -141,9 +144,10 @@ template <>
 void UnitTest::Rand(
     vector<size_t> &v,
     const size_t &vmin,
-    const size_t &vmax)
+    const size_t &vmax,
+    const int& seed)
 {
-    srand(0);
+    srand(seed);
 
     float factor = (float)(vmax - vmin) / RAND_MAX;
 

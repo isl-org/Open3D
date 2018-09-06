@@ -51,16 +51,16 @@ namespace UnitTest
 
     // Initialize a vector with random values.
     template<class T>
-    void Rand(std::vector<T>& v, const T& vmin, const T& vmax) {}
+    void Rand(std::vector<T>& v, const T& vmin, const T& vmax, const int& seed) {}
 
     template<>
-    void Rand(std::vector<Eigen::Vector3i>& v, const Eigen::Vector3i& vmin, const Eigen::Vector3i& vmax);
+    void Rand(std::vector<Eigen::Vector3i>& v, const Eigen::Vector3i& vmin, const Eigen::Vector3i& vmax, const int& seed);
     template<>
-    void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
+    void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax, const int& seed);
     template<>
-    void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax);
+    void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax, const int& seed);
     template<>
-    void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax);
+    void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax, const int& seed);
 
     // Display a single element.
     template<class T>
