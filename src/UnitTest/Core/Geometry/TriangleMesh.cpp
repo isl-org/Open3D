@@ -26,12 +26,35 @@
 
 #include "UnitTest.h"
 
+#include "Core/Geometry/TriangleMesh.h"
+
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_Constructor)
+TEST(TriangleMesh, Constructor)
 {
-    UnitTest::NotImplemented();
+    open3d::TriangleMesh tm;
+
+    // inherited from Geometry2D
+    EXPECT_EQ(open3d::Geometry::GeometryType::TriangleMesh, tm.GetGeometryType());
+    EXPECT_EQ(3, tm.Dimension());
+
+    // public member variables
+    EXPECT_EQ(0, tm.vertices_.size());
+    EXPECT_EQ(0, tm.vertex_normals_.size());
+    EXPECT_EQ(0, tm.vertex_colors_.size());
+    EXPECT_EQ(0, tm.triangles_.size());
+    EXPECT_EQ(0, tm.triangle_normals_.size());
+
+    // public members
+    EXPECT_TRUE(tm.IsEmpty());
+    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
+    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
+    EXPECT_FALSE(tm.HasVertices());
+    EXPECT_FALSE(tm.HasVertexNormals());
+    EXPECT_FALSE(tm.HasVertexColors());
+    EXPECT_FALSE(tm.HasTriangles());
+    EXPECT_FALSE(tm.HasTriangleNormals());
 }
 
 // ----------------------------------------------------------------------------
