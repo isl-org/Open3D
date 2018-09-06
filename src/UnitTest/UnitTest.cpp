@@ -70,6 +70,30 @@ Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
 }
 
 // ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector3i vector with random values in the [vmin:vmax] range.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Rand(
+    vector<Eigen::Vector3i> &v,
+    const Eigen::Vector3i &vmin,
+    const Eigen::Vector3i &vmax)
+{
+    srand(0);
+
+    Eigen::Vector3d factor;
+    factor[0, 0] = (double)(vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
+    factor[0, 1] = (double)(vmax[0, 1] - vmin[0, 1]) / RAND_MAX;
+    factor[0, 2] = (double)(vmax[0, 2] - vmin[0, 2]) / RAND_MAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        v[i][0, 0] = vmin[0, 0] + rand() * factor[0, 0];
+        v[i][0, 1] = vmin[0, 1] + rand() * factor[0, 1];
+        v[i][0, 2] = vmin[0, 2] + rand() * factor[0, 2];
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3d vector with random values in the [vmin:vmax] range.
 // ----------------------------------------------------------------------------
 template <>
@@ -128,7 +152,66 @@ void UnitTest::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Print a uint8_t vector.
+// Print an Eigen::Vector3i.
+// ----------------------------------------------------------------------------
+template<>
+void UnitTest::Print(const Eigen::Vector3i &v)
+{
+    int width = 6;
+
+    cout << setw(width) << v(0, 0) << ",";
+    cout << setw(width) << v(1, 0) << ",";
+    cout << setw(width) << v(2, 0);
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
+// Print an Eigen::Vector3d.
+// ----------------------------------------------------------------------------
+template<>
+void UnitTest::Print(const Eigen::Vector3d &v)
+{
+    int precision = 6;
+    int width = 11;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
+    cout << setw(width) << v(0, 0) << ",";
+    cout << setw(width) << v(1, 0) << ",";
+    cout << setw(width) << v(2, 0);
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
+// Print a vector of Eigen::Vector3i.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Print(const vector<Eigen::Vector3i> &v)
+{
+    int width = 6;
+
+    cout << "{";
+    cout << endl;
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        cout << "    {";
+        cout << setw(width) << v[i](0, 0) << ",";
+        cout << setw(width) << v[i](1, 0) << ",";
+        cout << setw(width) << v[i](2, 0);
+        cout << " }";
+        if (i == (v.size() - 1))
+            cout << " \\";
+        else
+            cout << ",\\";
+        cout << endl;
+    }
+    cout << "}";
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
+// Print a vector of Eigen::Vector3d.
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Print(const vector<Eigen::Vector3d> &v)

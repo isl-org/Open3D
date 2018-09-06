@@ -29,7 +29,7 @@
 #include "Core/Geometry/TriangleMesh.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, Constructor)
 {
@@ -58,7 +58,7 @@ TEST(TriangleMesh, Constructor)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Destructor)
 {
@@ -66,7 +66,7 @@ TEST(TriangleMesh, DISABLED_Destructor)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_MemberData)
 {
@@ -74,15 +74,70 @@ TEST(TriangleMesh, DISABLED_MemberData)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_Clear)
+TEST(TriangleMesh, Clear)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(100, 100, 100);
+
+    open3d::TriangleMesh tm;
+
+    tm.vertices_.resize(size);
+    tm.vertex_normals_.resize(size);
+    tm.vertex_colors_.resize(size);
+    tm.triangles_.resize(size);
+    tm.triangle_normals_.resize(size);
+
+    UnitTest::Rand(tm.vertices_,         dmin, dmax);
+    UnitTest::Rand(tm.vertex_normals_,   dmin, dmax);
+    UnitTest::Rand(tm.vertex_colors_,    dmin, dmax);
+    UnitTest::Rand(tm.triangles_,        imin, imax);
+    UnitTest::Rand(tm.triangle_normals_, dmin, dmax);
+
+    Eigen::Vector3d minBound = tm.GetMinBound();
+    Eigen::Vector3d maxBound = tm.GetMaxBound();
+
+    EXPECT_FALSE(tm.IsEmpty());
+    EXPECT_NEAR( 20.023049, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.231460, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.578574, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_TRUE(tm.HasVertices());
+    EXPECT_TRUE(tm.HasVertexNormals());
+    EXPECT_TRUE(tm.HasVertexColors());
+    EXPECT_TRUE(tm.HasTriangles());
+    EXPECT_TRUE(tm.HasTriangleNormals());
+
+    tm.Clear();
+
+    minBound = tm.GetMinBound();
+    maxBound = tm.GetMaxBound();
+
+    // public members
+    EXPECT_TRUE(tm.IsEmpty());
+    EXPECT_NEAR(0.0, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_FALSE(tm.HasVertices());
+    EXPECT_FALSE(tm.HasVertexNormals());
+    EXPECT_FALSE(tm.HasVertexColors());
+    EXPECT_FALSE(tm.HasTriangles());
+    EXPECT_FALSE(tm.HasTriangleNormals());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_IsEmpty)
 {
@@ -90,7 +145,7 @@ TEST(TriangleMesh, DISABLED_IsEmpty)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_GetMinBound)
 {
@@ -98,7 +153,7 @@ TEST(TriangleMesh, DISABLED_GetMinBound)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_GetMaxBound)
 {
@@ -106,7 +161,7 @@ TEST(TriangleMesh, DISABLED_GetMaxBound)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Transform)
 {
@@ -114,7 +169,7 @@ TEST(TriangleMesh, DISABLED_Transform)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_ComputeTriangleNormals)
 {
@@ -122,7 +177,7 @@ TEST(TriangleMesh, DISABLED_ComputeTriangleNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_ComputeVertexNormals)
 {
@@ -130,7 +185,7 @@ TEST(TriangleMesh, DISABLED_ComputeVertexNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Purge)
 {
@@ -138,7 +193,7 @@ TEST(TriangleMesh, DISABLED_Purge)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveDuplicatedVertices)
 {
@@ -146,7 +201,7 @@ TEST(TriangleMesh, DISABLED_RemoveDuplicatedVertices)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveDuplicatedTriangles)
 {
@@ -154,7 +209,7 @@ TEST(TriangleMesh, DISABLED_RemoveDuplicatedTriangles)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveNonManifoldVertices)
 {
@@ -162,7 +217,7 @@ TEST(TriangleMesh, DISABLED_RemoveNonManifoldVertices)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveNonManifoldTriangles)
 {
@@ -170,7 +225,7 @@ TEST(TriangleMesh, DISABLED_RemoveNonManifoldTriangles)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasVertices)
 {
@@ -178,7 +233,7 @@ TEST(TriangleMesh, DISABLED_HasVertices)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasTriangles)
 {
@@ -186,7 +241,7 @@ TEST(TriangleMesh, DISABLED_HasTriangles)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasVertexNormals)
 {
@@ -194,7 +249,7 @@ TEST(TriangleMesh, DISABLED_HasVertexNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasVertexColors)
 {
@@ -202,7 +257,7 @@ TEST(TriangleMesh, DISABLED_HasVertexColors)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasTriangleNormals)
 {
@@ -210,7 +265,7 @@ TEST(TriangleMesh, DISABLED_HasTriangleNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_NormalizeNormals)
 {
@@ -218,7 +273,7 @@ TEST(TriangleMesh, DISABLED_NormalizeNormals)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_PaintUniformColor)
 {
@@ -226,7 +281,7 @@ TEST(TriangleMesh, DISABLED_PaintUniformColor)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_SelectDownSample)
 {
@@ -234,7 +289,7 @@ TEST(TriangleMesh, DISABLED_SelectDownSample)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CropTriangleMesh)
 {
@@ -242,7 +297,7 @@ TEST(TriangleMesh, DISABLED_CropTriangleMesh)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshSphere)
 {
@@ -250,7 +305,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshSphere)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshCylinder)
 {
@@ -258,7 +313,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshCylinder)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshCone)
 {
@@ -266,7 +321,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshCone)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshArrow)
 {
@@ -274,7 +329,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshArrow)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshCoordinateFrame)
 {
@@ -282,7 +337,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshCoordinateFrame)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshSphere)
 {
@@ -290,7 +345,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshSphere)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshCylinder)
 {
@@ -298,7 +353,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshCylinder)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshCone)
 {
@@ -306,7 +361,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshCone)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshArrow)
 {
@@ -314,7 +369,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshArrow)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshCoordinateFrame)
 {

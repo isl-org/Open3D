@@ -86,14 +86,33 @@ TEST(PointCloud, Clear)
     UnitTest::Rand(pc.normals_, vmin, vmax);
     UnitTest::Rand(pc.colors_, vmin, vmax);
 
+    Eigen::Vector3d minBound = pc.GetMinBound();
+    Eigen::Vector3d maxBound = pc.GetMaxBound();
+
+    EXPECT_FALSE(pc.IsEmpty());
+    EXPECT_NEAR( 20.023049, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.231460, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.578574, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
     EXPECT_TRUE(pc.HasPoints());
+    EXPECT_TRUE(pc.HasNormals());
+    EXPECT_TRUE(pc.HasColors());
 
     pc.Clear();
 
+    minBound = pc.GetMinBound();
+    maxBound = pc.GetMaxBound();
+
     // public members
     EXPECT_TRUE(pc.IsEmpty());
-    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMinBound());
-    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMaxBound());
+    EXPECT_NEAR(0.0, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
     EXPECT_FALSE(pc.HasPoints());
     EXPECT_FALSE(pc.HasNormals());
     EXPECT_FALSE(pc.HasColors());
@@ -138,9 +157,9 @@ TEST(PointCloud, GetMinBound)
 
     Eigen::Vector3d minBound = pc.GetMinBound();
 
-    EXPECT_NEAR(20.0230, minBound(0, 0), UnitTest::THRESHOLD_1E_3);
-    EXPECT_NEAR(3.23146, minBound(1, 0), UnitTest::THRESHOLD_1E_3);
-    EXPECT_NEAR(3.57857, minBound(2, 0), UnitTest::THRESHOLD_1E_3);
+    EXPECT_NEAR( 20.023049, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.231460, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  3.578574, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -161,9 +180,9 @@ TEST(PointCloud, GetMaxBound)
 
     Eigen::Vector3d maxBound = pc.GetMaxBound();
 
-    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_1E_3);
-    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_1E_3);
-    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_1E_3);
+    EXPECT_NEAR(997.798999, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(998.924518, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(999.993571, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
