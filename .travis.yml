@@ -123,6 +123,7 @@ script:
     else
       cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
     fi
+  - ./build/bin/unitTests
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make install
