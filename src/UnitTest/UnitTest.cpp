@@ -195,11 +195,11 @@ void UnitTest::Print(const vector<Eigen::Vector3i> &v)
 {
     int width = 6;
 
-    cout << "{";
+    cout << "    {";
     cout << endl;
     for (size_t i = 0; i < v.size(); i++)
     {
-        cout << "    {";
+        cout << "        {";
         cout << setw(width) << v[i](0, 0) << ",";
         cout << setw(width) << v[i](1, 0) << ",";
         cout << setw(width) << v[i](2, 0);
@@ -210,7 +210,7 @@ void UnitTest::Print(const vector<Eigen::Vector3i> &v)
             cout << ",\\";
         cout << endl;
     }
-    cout << "}";
+    cout << "    };";
     cout << endl;
 }
 
@@ -226,11 +226,11 @@ void UnitTest::Print(const vector<Eigen::Vector3d> &v)
     cout << fixed;
     cout << setprecision(precision);
 
-    cout << "{";
+    cout << "    {";
     cout << endl;
     for (size_t i = 0; i < v.size(); i++)
     {
-        cout << "    {";
+        cout << "        {";
         cout << setw(width) << v[i](0, 0) << ",";
         cout << setw(width) << v[i](1, 0) << ",";
         cout << setw(width) << v[i](2, 0);
@@ -241,7 +241,7 @@ void UnitTest::Print(const vector<Eigen::Vector3d> &v)
             cout << ",\\";
         cout << endl;
     }
-    cout << "}";
+    cout << "    };";
     cout << endl;
 }
 
@@ -254,11 +254,15 @@ void UnitTest::Print(const vector<uint8_t> &v)
     int width = 5;
     int cols = 10;
 
-    cout << "{";
+    cout << "    {";
     for (size_t i = 0; i < v.size(); i++)
     {
         if ((i % cols == 0) && (i != 0))
-            cout << "\\" << endl;
+            {
+                cout << "\\";
+                cout << endl;
+                cout << "    ";
+            }
 
         if (i == 0)
             cout << setw(width - 1) << (int)v[i];
@@ -268,7 +272,7 @@ void UnitTest::Print(const vector<uint8_t> &v)
         if (i != (v.size() - 1))
             cout << ",";
     }
-    cout << " }";
+    cout << " };";
     cout << endl;
 }
 
@@ -281,11 +285,15 @@ void UnitTest::Print(const vector<size_t> &v)
     int width = 6;
     int cols = 10;
 
-    cout << "{";
+    cout << "    {";
     for (size_t i = 0; i < v.size(); i++)
     {
         if ((i % cols == 0) && (i != 0))
-            cout << "\\" << endl;
+            {
+                cout << "\\";
+                cout << endl;
+                cout << "    ";
+            }
 
         if (i == 0)
             cout << setw(width - 1) << v[i];
@@ -295,7 +303,7 @@ void UnitTest::Print(const vector<size_t> &v)
         if (i != (v.size() - 1))
             cout << ",";
     }
-    cout << " }";
+    cout << " };";
     cout << endl;
 }
 
@@ -312,11 +320,15 @@ void UnitTest::Print(const vector<double> &v)
     cout << fixed;
     cout << setprecision(precision);
 
-    cout << "{";
+    cout << "    {";
     for (size_t i = 0; i < v.size(); i++)
     {
         if ((i % cols == 0) && (i != 0))
-            cout << "\\" << endl;
+            {
+                cout << "\\";
+                cout << endl;
+                cout << "    ";
+            }
 
         if (i == 0)
             cout << setw(width - 1) << v[i];
@@ -326,6 +338,6 @@ void UnitTest::Print(const vector<double> &v)
         if (i != (v.size() - 1))
             cout << ",";
     }
-    cout << " }";
+    cout << " };";
     cout << endl;
 }
