@@ -70,8 +70,16 @@ TEST(Image, DefaultConstructor)
     // public members
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
-    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMinBound());
-    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMaxBound());
+
+    Eigen::Vector2d minBound = image.GetMinBound();
+    Eigen::Vector2d maxBound = image.GetMaxBound();
+
+    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
+
+    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
+
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
 }
@@ -101,9 +109,16 @@ TEST(Image, CreateImage)
     // public members
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
-    EXPECT_EQ(Eigen::Vector2d(0, 0), image.GetMinBound());
-    EXPECT_EQ(Eigen::Vector2d(default_width,
-                              default_height), image.GetMaxBound());
+
+    Eigen::Vector2d minBound = image.GetMinBound();
+    Eigen::Vector2d maxBound = image.GetMaxBound();
+
+    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
+
+    EXPECT_FLOAT_EQ(default_width,  maxBound(0, 0));
+    EXPECT_FLOAT_EQ(default_height, maxBound(1, 0));
+
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(default_width *
               default_num_of_channels *
@@ -134,8 +149,16 @@ TEST(Image, Clear)
     // public members
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
-    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMinBound());
-    EXPECT_EQ(Eigen::Vector2d(0.0f, 0.0f), image.GetMaxBound());
+
+    Eigen::Vector2d minBound = image.GetMinBound();
+    Eigen::Vector2d maxBound = image.GetMaxBound();
+
+    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
+
+    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
+
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
 }
