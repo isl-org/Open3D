@@ -131,7 +131,6 @@ def local_refinement(s, t, source, target, transformation_init, config):
 
 def update_posegrph_for_scene(s, t, transformation, information,
         odometry, pose_graph):
-    print("Update PoseGraph")
     if t == s + 1: # odometry case
         odometry = np.dot(transformation, odometry)
         odometry_inv = np.linalg.inv(odometry)
@@ -167,6 +166,16 @@ def register_point_cloud_pair(ply_file_names, s, t, config):
     return (True, transformation_icp, information_icp)
 
 
+# other types instead of class?
+class matching_result:
+    def __init__(self, s, t):
+        self.s = s
+        self.t = t
+        self.success = False
+        self.transformation = np.identity(4)
+        self.infomation = np.identity(6)
+
+
 def make_posegraph_for_scene(ply_file_names, config):
     pose_graph = PoseGraph()
     odometry = np.identity(4)
@@ -174,15 +183,43 @@ def make_posegraph_for_scene(ply_file_names, config):
     info = np.identity(6)
 
     n_files = len(ply_file_names)
+    matching_results = {}
     for s in range(n_files):
         for t in range(s + 1, n_files):
-            (success, transformation_icp, information_icp) = \
-                    register_point_cloud_pair(ply_file_names, s, t, config)
-            if success:
-                (odometry, pose_graph) = update_posegrph_for_scene(s, t,
-                        transformation_icp, information_icp,
-                        odometry, pose_graph)
-                print(pose_graph)
+            matching_results[s * n_files + t] = matching_result(s, t)
+
+    if config["python_multi_threading"]:
+        from joblib import Parallel, delayed
+        import multiprocessing
+        import subprocess
+        MAX_THREAD = 144 # configured for vcl-cpu cluster
+        cmd = 'export OMP_PROC_BIND=true ; export GOMP_CPU_AFFINITY="0-%d"' % MAX_THREAD # have effect
+        p = subprocess.call(cmd, shell=True)
+        num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=MAX_THREAD)(
+                delayed(register_point_cloud_pair)(ply_file_names,
+                matching_results[r].s, matching_results[r].t, config)
+                for r in matching_results)
+        print(results)
+        for i, r in enumerate(matching_results):
+            matching_results[r].success = results[i][0]
+            matching_results[r].transformation = results[i][1]
+            matching_results[r].information = results[i][2]
+    else:
+        for r in matching_results:
+            (matching_results[r].success, matching_results[r].transformation,
+                    matching_results[r].information) = \
+                    register_point_cloud_pair(ply_file_names,
+                    matching_results[r].s, matching_results[r].t, config)
+
+    for r in matching_results:
+        if matching_results[r].success:
+            (odometry, pose_graph) = update_posegrph_for_scene(
+                    matching_results[r].s, matching_results[r].t,
+                    matching_results[r].transformation,
+                    matching_results[r].information,
+                    odometry, pose_graph)
+            print(pose_graph)
     write_pose_graph(os.path.join(config["path_dataset"],
             template_global_posegraph), pose_graph)
 
