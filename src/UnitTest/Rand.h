@@ -29,6 +29,7 @@
 #include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <vector>
+#include <string>
 
 namespace UnitTest
 {
@@ -40,6 +41,8 @@ namespace UnitTest
 
         return t;
     }
+
+    // Initialize an Eigen::Vector3d with random values in the [vmin:vmax] range.
     template<>
     Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
 
@@ -47,12 +50,19 @@ namespace UnitTest
     template<class T>
     void Rand(std::vector<T>& v, const T& vmin, const T& vmax, const int& seed) {}
 
+    // Initialize an Eigen::Vector3i vector with random values in the [vmin:vmax] range.
     template<>
     void Rand(std::vector<Eigen::Vector3i>& v, const Eigen::Vector3i& vmin, const Eigen::Vector3i& vmax, const int& seed);
+
+    // Initialize an Eigen::Vector3d vector with random values in the [vmin:vmax] range.
     template<>
     void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax, const int& seed);
+
+    // Initialize a uint8_t vector with random values in the [vmin:vmax] range.
     template<>
     void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax, const int& seed);
+
+    // Initialize a size_t vector with random values in the [vmin:vmax] range.
     template<>
     void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax, const int& seed);
 }

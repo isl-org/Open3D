@@ -43,8 +43,11 @@ namespace UnitTest
         std::cout << std::endl;
     }
 
+    // Print an Eigen::Vector3i.
     template<>
     void Print(const Eigen::Vector3i &v);
+
+    // Print an Eigen::Vector3d.
     template<>
     void Print(const Eigen::Vector3d &v);
 
@@ -57,14 +60,23 @@ namespace UnitTest
         std::cout << std::endl;
     }
 
+    // Print a vector of Eigen::Vector3i.
     template<>
     void Print(const std::vector<Eigen::Vector3i> &v);
+
+    // Print a vector of Eigen::Vector3d.
     template<>
     void Print(const std::vector<Eigen::Vector3d> &v);
+
+    // Print a uint8_t vector.
     template<>
     void Print(const std::vector<uint8_t> &v);
+
+    // Print a size_t vector.
     template<>
     void Print(const std::vector<size_t> &v);
+
+    // Print a double vector.
     template<>
     void Print(const std::vector<double> &v);
 }
