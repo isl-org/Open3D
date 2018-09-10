@@ -26,7 +26,6 @@
 
 #include "Rand.h"
 
-#include <Eigen/Core>
 #include <iostream>
 
 using namespace std;
