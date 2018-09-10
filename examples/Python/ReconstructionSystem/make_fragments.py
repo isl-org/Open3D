@@ -125,31 +125,47 @@ def make_mesh_for_fragment(path_dataset, color_files, depth_files,
     write_triangle_mesh(mesh_name, mesh, False, True)
 
 
-def process_fragments(config):
+def process_single_fragment(fragment_id, color_files, depth_files,
+        n_files, n_fragments, config):
     if config["path_intrinsic"]:
         intrinsic = read_pinhole_camera_intrinsic(config["path_intrinsic"])
     else:
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+    sid = fragment_id * n_frames_per_fragment
+    eid = min(sid + n_frames_per_fragment, n_files)
 
+    make_posegraph_for_fragment(config["path_dataset"], sid, eid,
+            color_files, depth_files, fragment_id,
+            n_fragments, intrinsic, with_opencv, config)
+    optimize_posegraph_for_fragment(
+            config["path_dataset"], fragment_id, config)
+    make_mesh_for_fragment(
+            config["path_dataset"], color_files, depth_files,
+            fragment_id, n_fragments, intrinsic, config)
+
+
+def run(config):
+    print("making fragments from RGBD sequence.")
     make_folder(os.path.join(config["path_dataset"], folder_fragment))
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
 
-    for fragment_id in range(n_fragments):
-        sid = fragment_id * n_frames_per_fragment
-        eid = min(sid + n_frames_per_fragment, n_files)
-        make_posegraph_for_fragment(config["path_dataset"], sid, eid,
-                color_files, depth_files, fragment_id,
-                n_fragments, intrinsic, with_opencv, config)
-        optimize_posegraph_for_fragment(
-                config["path_dataset"], fragment_id, config)
-        make_mesh_for_fragment(
-                config["path_dataset"], color_files, depth_files,
-                fragment_id, n_fragments, intrinsic, config)
-
-
-def run(config):
-    print("making fragments from RGBD sequence.")
-    process_fragments(config)
+    if config["python_multi_threading"]:
+        from joblib import Parallel, delayed
+        import multiprocessing
+        import subprocess
+        MAX_THREAD = 144 # configured for vcl-cpu cluster
+        cmd = 'export OMP_PROC_BIND=true ; export GOMP_CPU_AFFINITY="0-%d"' % MAX_THREAD # have effect
+        p = subprocess.call(cmd, shell=True)
+        num_cores = multiprocessing.cpu_count()
+        Parallel(n_jobs=MAX_THREAD)(delayed(process_single_fragment)(
+                fragment_id, color_files, depth_files,
+                n_files, n_fragments, config)
+                for fragment_id in range(n_fragments))
+    else:
+        for fragment_id in range(n_fragments):
+            process_single_fragment(
+                    fragment_id, color_files, depth_files,
+                    n_files, n_fragments, config)
