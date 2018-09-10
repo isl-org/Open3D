@@ -24,29 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
+#pragma once
 
-#include "Print.h"
-#include "Rand.h"
-#include "Raw.h"
+#include <iostream>
 
+#include <vector>
 #include <string>
-using namespace std;
 
-int main(int argc, char **argv)
+namespace UnitTest
 {
-    UnitTest::Raw rawData(1);
-
-    vector<uint8_t> raw(1024);
-    for (size_t i = 0; i < raw.size(); i++)
+    // Class for "generating" data.
+    class Raw
     {
-        raw[i] = rawData.Next();
-    }
-    UnitTest::Print(raw);
+    public:
+        Raw() : index(0) {}
+        Raw(const int &offset) : index(offset) {}
+    private:
+        // step through the data
+        static const int STEP = 5;
 
-    // testing::InitGoogleTest(&argc, argv);
+        // size of the raw data
+        static const int SIZE = 1024;
 
-    // return RUN_ALL_TESTS();
+        // index into the raw data
+        int index;
 
-    return 0;
-}
+        // raw data
+        static std::vector<uint8_t> data;
+
+    public:
+        // Get the next value.
+        uint8_t Next();
+    };
+} // namespace UnitTest
