@@ -24,26 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest.h"
+#pragma once
 
+#include <gtest/gtest.h>
 #include <Eigen/Core>
-#include <iostream>
+#include <vector>
 
-using namespace std;
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void UnitTest::NotImplemented()
+namespace UnitTest
 {
-    cout << "\033[0;32m"
-         << "[          ] "
-         << "\033[0;0m";
-    cout << "\033[0;31m"
-         << "Not implemented."
-         << "\033[0;0m" << endl;
+    const double THRESHOLD_1E_6 = 1e-6;
+    const double THRESHOLD_1E_3 = 1e-3f;
 
-    // FAIL();
-    // ADD_FAILURE();
-    GTEST_NONFATAL_FAILURE_("Not implemented");
+    // Display a single element.
+    template<class T>
+    void Print(const T& v)
+    {
+        std::cout << v;
+        std::cout << std::endl;
+    }
+
+    template<>
+    void Print(const Eigen::Vector3i &v);
+    template<>
+    void Print(const Eigen::Vector3d &v);
+
+    // Display a vector.
+    template<class T>
+    void Print(const std::vector<T>& v)
+    {
+        for (size_t i = 0; i < v.size(); i++)
+            std::cout << v[i];
+        std::cout << std::endl;
+    }
+
+    template<>
+    void Print(const std::vector<Eigen::Vector3i> &v);
+    template<>
+    void Print(const std::vector<Eigen::Vector3d> &v);
+    template<>
+    void Print(const std::vector<uint8_t> &v);
+    template<>
+    void Print(const std::vector<size_t> &v);
+    template<>
+    void Print(const std::vector<double> &v);
 }

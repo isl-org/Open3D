@@ -30,68 +30,11 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "Rand.h"
+#include "Print.h"
+
 namespace UnitTest
 {
-    const double THRESHOLD_1E_6 = 1e-6;
-    const double THRESHOLD_1E_3 = 1e-3f;
-
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
-
-    // Return a random value.
-    template<class T>
-    T Rand(const T& vmin, const T& vmax)
-    {
-        T t;
-
-        return t;
-    }
-    template<>
-    Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
-
-    // Initialize a vector with random values.
-    template<class T>
-    void Rand(std::vector<T>& v, const T& vmin, const T& vmax, const int& seed) {}
-
-    template<>
-    void Rand(std::vector<Eigen::Vector3i>& v, const Eigen::Vector3i& vmin, const Eigen::Vector3i& vmax, const int& seed);
-    template<>
-    void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax, const int& seed);
-    template<>
-    void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax, const int& seed);
-    template<>
-    void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax, const int& seed);
-
-    // Display a single element.
-    template<class T>
-    void Print(const T& v)
-    {
-        std::cout << v;
-        std::cout << std::endl;
-    }
-
-    template<>
-    void Print(const Eigen::Vector3i &v);
-    template<>
-    void Print(const Eigen::Vector3d &v);
-
-    // Display a vector.
-    template<class T>
-    void Print(const std::vector<T>& v)
-    {
-        for (size_t i = 0; i < v.size(); i++)
-            std::cout << v[i];
-        std::cout << std::endl;
-    }
-
-    template<>
-    void Print(const std::vector<Eigen::Vector3i> &v);
-    template<>
-    void Print(const std::vector<Eigen::Vector3d> &v);
-    template<>
-    void Print(const std::vector<uint8_t> &v);
-    template<>
-    void Print(const std::vector<size_t> &v);
-    template<>
-    void Print(const std::vector<double> &v);
 }

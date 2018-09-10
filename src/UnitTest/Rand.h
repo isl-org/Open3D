@@ -24,26 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest.h"
+#pragma once
 
+#include <gtest/gtest.h>
 #include <Eigen/Core>
-#include <iostream>
+#include <vector>
 
-using namespace std;
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void UnitTest::NotImplemented()
+namespace UnitTest
 {
-    cout << "\033[0;32m"
-         << "[          ] "
-         << "\033[0;0m";
-    cout << "\033[0;31m"
-         << "Not implemented."
-         << "\033[0;0m" << endl;
+    // Return a random value.
+    template<class T>
+    T Rand(const T& vmin, const T& vmax)
+    {
+        T t;
 
-    // FAIL();
-    // ADD_FAILURE();
-    GTEST_NONFATAL_FAILURE_("Not implemented");
+        return t;
+    }
+    template<>
+    Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
+
+    // Initialize a vector with random values.
+    template<class T>
+    void Rand(std::vector<T>& v, const T& vmin, const T& vmax, const int& seed) {}
+
+    template<>
+    void Rand(std::vector<Eigen::Vector3i>& v, const Eigen::Vector3i& vmin, const Eigen::Vector3i& vmax, const int& seed);
+    template<>
+    void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax, const int& seed);
+    template<>
+    void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax, const int& seed);
+    template<>
+    void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax, const int& seed);
 }
