@@ -35,16 +35,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    UnitTest::Raw rawData(2);
+    testing::InitGoogleTest(&argc, argv);
 
-    vector<uint8_t> raw(1024);
-    for (size_t i = 0; i < raw.size(); i++)
-        raw[i] = rawData.Next<uint8_t>();
-    UnitTest::Print(raw);
-
-    // testing::InitGoogleTest(&argc, argv);
-
-    // return RUN_ALL_TESTS();
-
-    return 0;
+    return RUN_ALL_TESTS();
 }

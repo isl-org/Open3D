@@ -31,29 +31,6 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d.
-// Output range: [vmin:vmax].
-// ----------------------------------------------------------------------------
-template <>
-Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
-    const Eigen::Vector3d &vmin,
-    const Eigen::Vector3d &vmax)
-{
-    Eigen::Vector3d v;
-
-    Eigen::Vector3d factor;
-    factor[0, 0] = (vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
-    factor[0, 1] = (vmax[0, 1] - vmin[0, 1]) / RAND_MAX;
-    factor[0, 2] = (vmax[0, 2] - vmin[0, 2]) / RAND_MAX;
-
-    v[0, 0] = vmin[0, 0] + rand() * factor[0, 0];
-    v[0, 1] = vmin[0, 1] + rand() * factor[0, 1];
-    v[0, 2] = vmin[0, 2] + rand() * factor[0, 2];
-
-    return v;
-}
-
-// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------

@@ -31,22 +31,6 @@
 
 namespace UnitTest
 {
-    // Return a random value.
-    // Output range: [vmin:vmax].
-    template<class T>
-    T Rand(const T& vmin, const T& vmax)
-    {
-        T t;
-
-        return t;
-    }
-
-    // Initialize an Eigen::Vector3d.
-    // Output range: [vmin:vmax].
-    template<>
-    Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin,
-        const Eigen::Vector3d& vmax);
-
     // Initialize a vector.
     // Output range: [vmin:vmax].
     template<class T>
