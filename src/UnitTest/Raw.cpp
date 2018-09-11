@@ -149,5 +149,5 @@ int UnitTest::Raw::Next()
     converter.bytes[2] = data[index]; index = (index + 1) % SIZE;
     converter.bytes[3] = data[index]; index = (index + 1) % SIZE;
 
-    return converter.value;
+    return converter.value % SIZE;
 }

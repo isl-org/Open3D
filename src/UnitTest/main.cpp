@@ -37,11 +37,9 @@ int main(int argc, char **argv)
 {
     UnitTest::Raw rawData(0);
 
-    vector<uint8_t> raw(1024);
+    vector<int> raw(1024);
     for (size_t i = 0; i < raw.size(); i++)
-    {
-        raw[i] = rawData.Next<uint8_t>();
-    }
+        raw[i] = rawData.Next<int>();
     UnitTest::Print(raw);
 
     // testing::InitGoogleTest(&argc, argv);
