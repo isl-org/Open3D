@@ -82,6 +82,10 @@ namespace UnitTest
     template<>
     void Print(const std::vector<size_t> &v);
 
+    // Print a float vector.
+    template<>
+    void Print(const std::vector<float> &v);
+
     // Print a double vector.
     template<>
     void Print(const std::vector<double> &v);
