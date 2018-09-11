@@ -9,9 +9,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #   Open3D_CXX_FLAGS
 #   Open3D_EXE_LINKER_FLAGS
 if(WIN32)
-    include(${CMAKE_INSTALL_PREFIX}/CMake/Open3DConfig.cmake)
+    find_package(Open3D HINTS ${CMAKE_INSTALL_PREFIX}/CMake)
 else()
-    include(${CMAKE_INSTALL_PREFIX}/lib/CMake/Open3D/Open3DConfig.cmake)
+    find_package(Open3D HINTS ${CMAKE_INSTALL_PREFIX}/lib/CMake)
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${Open3D_C_FLAGS}")
