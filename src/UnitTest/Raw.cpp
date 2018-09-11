@@ -124,15 +124,15 @@ vector<uint8_t> UnitTest::Raw::data =
       224,  251,  132,   72 };
 
 // ----------------------------------------------------------------------------
-// Get the next value. 
+// Get the next value.
 // ----------------------------------------------------------------------------
 uint8_t UnitTest::Raw::Next()
 {
-    uint8_t output = *((uint8_t*)&data[index % SIZE]);
+    Converter<uint8_t>::Type converter;
 
-    index += STEP * sizeof(uint8_t);
+    converter.bytes[0] = data[index];
 
-    index %= SIZE;
+    index = (index + 1) % SIZE;
 
-    return output;
+    return converter.value;
 }

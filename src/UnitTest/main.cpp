@@ -35,7 +35,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    UnitTest::Raw rawData(1);
+    UnitTest::Raw rawData(0);
 
     vector<uint8_t> raw(1024);
     for (size_t i = 0; i < raw.size(); i++)

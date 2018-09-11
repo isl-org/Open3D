@@ -33,6 +33,15 @@
 
 namespace UnitTest
 {
+    template<class T> struct Converter
+    {
+        typedef union _Type
+        {
+            T value;
+            uint8_t bytes[sizeof(T)];
+        } Type;
+    };
+
     // Class for "generating" data.
     class Raw
     {
@@ -40,9 +49,6 @@ namespace UnitTest
         Raw() : index(0) {}
         Raw(const int &offset) : index(offset) {}
     private:
-        // step through the data
-        static const int STEP = 5;
-
         // size of the raw data
         static const int SIZE = 1024;
 
