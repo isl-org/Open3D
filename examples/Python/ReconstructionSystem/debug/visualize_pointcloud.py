@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--path_intrinsic", help="path to the RGBD camera intrinsic")
     parser.add_argument("--fragment", help="visualize nodes in form of point clouds") # need to take fragment
     parser.add_argument("--scene", help="visualize nodes in form of point clouds", action="store_true")
+    parser.add_argument("--before_optimized", help="visualize posegraph edges that is not optimized", action="store_true")
     args = parser.parse_args()
     if not args.fragment and not args.scene:
         parser.print_help(sys.stderr)
@@ -28,9 +29,13 @@ if __name__ == "__main__":
     with open(args.config) as json_file:
         config = json.load(json_file)
         if (args.scene):
-            pose_graph = read_pose_graph(
-                    os.path.join(config["path_dataset"],
-                    template_global_posegraph_optimized))
+            if (args.before_optimized):
+                global_pose_graph_name = os.path.join(config["path_dataset"],
+                        template_global_posegraph)
+            else:
+                global_pose_graph_name = os.path.join(config["path_dataset"],
+                        template_global_posegraph_optimized)
+            pose_graph = read_pose_graph(global_pose_graph_name)
             ply_file_names = get_file_list(
                     os.path.join(config["path_dataset"],
                      folder_fragment), ".ply")

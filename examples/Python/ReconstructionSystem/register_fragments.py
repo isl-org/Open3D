@@ -116,7 +116,6 @@ def local_refinement(s, t, source, target, transformation_init, config):
         (transformation, information) = \
                 multiscale_icp(
                 source, target, [voxel_size / 4.0], [30],
-                # source, target, [voxel_size], [30],
                 config, transformation_init)
     else: # loop closure case
         print("register_colored_point_cloud")
@@ -124,7 +123,6 @@ def local_refinement(s, t, source, target, transformation_init, config):
                 multiscale_icp(
                 source, target,
                 [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
-                # [voxel_size], [30],
                 config, transformation_init)
 
     success_local = False
@@ -170,6 +168,9 @@ def register_point_cloud_pair(ply_file_names, s, t, config):
             transformation_init, config)
     if t != s + 1 and not success_local:
         return (False, np.identity(4), np.identity(6))
+    if config["debug_mode"]:
+        print(transformation_icp)
+        print(information_icp)
     return (True, transformation_icp, information_icp)
 
 

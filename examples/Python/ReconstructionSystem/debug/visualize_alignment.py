@@ -29,6 +29,8 @@ if __name__ == "__main__":
     parser.add_argument("--target_id", type=int, help="ID of target fragment")
     parser.add_argument("--adjacent", help="visualize adjacent pairs", action="store_true")
     parser.add_argument("--all", help="visualize all pairs", action="store_true")
+    parser.add_argument("--list_posegraphs", help="list number of node and edges of all pose graphs in the dataset folder", action="store_true")
+    parser.add_argument("--before_optimized", help="visualize posegraph edges that is not optimized", action="store_true")
     args = parser.parse_args()
 
     with open(args.config) as json_file:
@@ -36,13 +38,19 @@ if __name__ == "__main__":
 
         ply_file_names = get_file_list(
                 os.path.join(config["path_dataset"], folder_fragment), ".ply")
-        list_posegraph_files(
-                os.path.join(config["path_dataset"], folder_fragment))
-        list_posegraph_files(
-                os.path.join(config["path_dataset"], folder_scene))
+        if (args.list_posegraphs):
+            list_posegraph_files(
+                    os.path.join(config["path_dataset"], folder_fragment))
+            list_posegraph_files(
+                    os.path.join(config["path_dataset"], folder_scene))
 
-        global_pose_graph_name = os.path.join(config["path_dataset"],
-                template_global_posegraph_optimized)
+        if (args.before_optimized):
+            global_pose_graph_name = os.path.join(config["path_dataset"],
+                    template_global_posegraph)
+        else:
+            global_pose_graph_name = os.path.join(config["path_dataset"],
+                    template_global_posegraph_optimized)
+        print("Reading posegraph")
         print(global_pose_graph_name)
         pose_graph = read_pose_graph(global_pose_graph_name)
         n_nodes = len(pose_graph.nodes)
@@ -61,11 +69,7 @@ if __name__ == "__main__":
                     args.all:
                 source = read_point_cloud(ply_file_names[edge.source_node_id])
                 source_down = voxel_down_sample(source, config["voxel_size"])
-                source_down.transform(
-                        pose_graph.nodes[edge.source_node_id].pose)
                 target = read_point_cloud(ply_file_names[edge.target_node_id])
                 target_down = voxel_down_sample(target, config["voxel_size"])
-                target_down.transform(
-                        pose_graph.nodes[edge.target_node_id].pose)
                 draw_registration_result(
-                        source_down, target_down, np.identity(4))
+                        source_down, target_down, edge.transformation)
