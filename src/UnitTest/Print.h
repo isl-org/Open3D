@@ -58,7 +58,7 @@ namespace UnitTest
     void Print(const std::vector<T>& v)
     {
         for (size_t i = 0; i < v.size(); i++)
-            std::cout << v[i];
+            std::cout << v[i] << std::endl;
         std::cout << std::endl;
     }
 
@@ -73,6 +73,10 @@ namespace UnitTest
     // Print a uint8_t vector.
     template<>
     void Print(const std::vector<uint8_t> &v);
+
+    // Print an int vector.
+    template<>
+    void Print(const std::vector<int> &v);
 
     // Print a size_t vector.
     template<>

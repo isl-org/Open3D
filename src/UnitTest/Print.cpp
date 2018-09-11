@@ -152,6 +152,37 @@ void UnitTest::Print(const vector<uint8_t> &v)
 }
 
 // ----------------------------------------------------------------------------
+// Print a int vector.
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Print(const vector<int> &v)
+{
+    int width = 6;
+    int cols = 10;
+
+    cout << "    {";
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        if ((i % cols == 0) && (i != 0))
+            {
+                cout << "\\";
+                cout << endl;
+                cout << "    ";
+            }
+
+        if (i == 0)
+            cout << setw(width - 1) << v[i];
+        else
+            cout << setw(width) << v[i];
+
+        if (i != (v.size() - 1))
+            cout << ",";
+    }
+    cout << " };";
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
 // Print a size_t vector.
 // ----------------------------------------------------------------------------
 template <>
