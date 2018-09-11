@@ -31,7 +31,8 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d with random values in the [vmin:vmax] range.
+// Initialize an Eigen::Vector3d.
+// Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 template <>
 Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
@@ -53,7 +54,8 @@ Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3i vector with random values in the [vmin:vmax] range.
+// Initialize an Eigen::Vector3i vector.
+// Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Rand(
@@ -78,7 +80,8 @@ void UnitTest::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d vector with random values in the [vmin:vmax] range.
+// Initialize an Eigen::Vector3d vector.
+// Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Rand(
@@ -103,7 +106,8 @@ void UnitTest::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize a uint8_t vector with random values in the [vmin:vmax] range.
+// Initialize a uint8_t vector.
+// Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Rand(
@@ -121,7 +125,8 @@ void UnitTest::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize a size_t vector with random values in the [vmin:vmax] range.
+// Initialize a size_t vector.
+// Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 template <>
 void UnitTest::Rand(
