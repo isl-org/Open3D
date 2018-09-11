@@ -74,7 +74,6 @@ function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
 endfunction()
 
 # build a list of include folders
-message("${3RDPARTY_INCLUDE_DIRS}")
 SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS          ${CMAKE_CURRENT_SOURCE_DIR})
 SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS            ${CMAKE_CURRENT_SOURCE_DIR})
 SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
