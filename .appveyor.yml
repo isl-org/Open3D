@@ -58,7 +58,7 @@ build_script:
 - mkdir build
 - cd build
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} ..
-- cmake --build . --config Release
+- cmake --build . --config %CONFIG%
 - Release\ExampleLinking
 
 # The following script has issues on SHARED = "ON"
