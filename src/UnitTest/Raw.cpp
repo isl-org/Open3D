@@ -130,43 +130,47 @@ vector<uint8_t> UnitTest::Raw::data =
 template<>
 uint8_t UnitTest::Raw::Next()
 {
-    Converter<uint8_t>::Type converter;
+    uint8_t output = data[index];
+    index = (index + 1) % SIZE;
 
-    converter.bytes[0] = data[index]; index = (index + 1) % SIZE;
-
-    return converter.value;
+    return output;
 }
 
 // ----------------------------------------------------------------------------
 // Get the next int value.
-// Output range: [-1023, +1023].
+// Output range: [0, 255].
 // ----------------------------------------------------------------------------
 template<>
 int UnitTest::Raw::Next()
 {
-    Converter<int>::Type converter;
+    int output = (int)data[index];
+    index = (index + 1) % SIZE;
 
-    converter.bytes[0] = data[index]; index = (index + 1) % SIZE;
-    converter.bytes[1] = data[index]; index = (index + 1) % SIZE;
-    converter.bytes[2] = data[index]; index = (index + 1) % SIZE;
-    converter.bytes[3] = data[index]; index = (index + 1) % SIZE;
-
-    return converter.value % SIZE;
+    return output;
 }
 
 // ----------------------------------------------------------------------------
 // Get the next float value.
-// Output range: [-0.(9), +0.(9)].
+// Output range: [0, 1].
 // ----------------------------------------------------------------------------
 template<>
 float UnitTest::Raw::Next()
 {
-    Converter<int>::Type converter;
+    float output = (float)data[index] / 255;
+    index = (index + 1) % SIZE;
 
-    converter.bytes[0] = data[index]; index = (index + 1) % SIZE;
-    converter.bytes[1] = data[index]; index = (index + 1) % SIZE;
-    converter.bytes[2] = data[index]; index = (index + 1) % SIZE;
-    converter.bytes[3] = data[index]; index = (index + 1) % SIZE;
+    return output;
+}
 
-    return float(converter.value % SIZE) / SIZE;
+// ----------------------------------------------------------------------------
+// Get the next double value.
+// Output range: [0, 1].
+// ----------------------------------------------------------------------------
+template<>
+double UnitTest::Raw::Next()
+{
+    double output = (double)data[index] / 255;
+    index = (index + 1) % SIZE;
+
+    return output;
 }

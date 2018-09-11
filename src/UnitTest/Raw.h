@@ -33,15 +33,6 @@
 
 namespace UnitTest
 {
-    template<class T> struct Converter
-    {
-        typedef union _Type
-        {
-            T value;
-            uint8_t bytes[sizeof(T)];
-        } Type;
-    };
-
     // Class for "generating" data.
     class Raw
     {
@@ -70,12 +61,17 @@ namespace UnitTest
     uint8_t Raw::Next();
 
     // Get the next int value.
-    // Output range: [-1023, +1023].
+    // Output range: [0, 255].
     template<>
     int Raw::Next();
 
     // Get the next float value.
-    // Output range: [-0.(9), +0.(9)].
+    // Output range: [0, 1].
     template<>
     float Raw::Next();
+
+    // Get the next double value.
+    // Output range: [0, 1].
+    template<>
+    double Raw::Next();
 } // namespace UnitTest
