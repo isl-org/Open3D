@@ -38,10 +38,15 @@ namespace UnitTest
     {
     public:
         Raw() : index(0) {}
-        Raw(const int &offset) : index(offset) {}
+        Raw(const int &seed) :
+            index(abs(seed) % SIZE),
+            step((seed <= 0) ? 1 : seed) {}
     private:
         // size of the raw data
-        static const int SIZE = 1024;
+        static const int SIZE = 1021;
+
+        // step through the raw data
+        int step;
 
         // index into the raw data
         int index;

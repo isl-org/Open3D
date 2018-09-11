@@ -35,11 +35,11 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    UnitTest::Raw rawData(0);
+    UnitTest::Raw rawData(2);
 
-    vector<double> raw(1024);
+    vector<uint8_t> raw(1024);
     for (size_t i = 0; i < raw.size(); i++)
-        raw[i] = rawData.Next<double>();
+        raw[i] = rawData.Next<uint8_t>();
     UnitTest::Print(raw);
 
     // testing::InitGoogleTest(&argc, argv);

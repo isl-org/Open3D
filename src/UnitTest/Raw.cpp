@@ -120,8 +120,7 @@ vector<uint8_t> UnitTest::Raw::data =
         0,  229,   73,  206,  165,  175,   44,   11,  244,  197,   28,  219,\
        52,  253,  136,  170,  118,  211,  227,  181,  103,   49,  213,   39,\
       171,   82,   88,  135,  116,  163,  182,  117,  137,    1,   68,   48,\
-      176,  113,   60,  166,   55,   89,  131,  108,   87,   12,   24,  206,\
-      224,  251,  132,   72 };
+      176,  113,   60,  166,   55,   89,  131,  108,   87,   12,   24,  206, 224 };
 
 // ----------------------------------------------------------------------------
 // Get the next uint8_t value.
@@ -131,7 +130,7 @@ template<>
 uint8_t UnitTest::Raw::Next()
 {
     uint8_t output = data[index];
-    index = (index + 1) % SIZE;
+    index = (index + step) % SIZE;
 
     return output;
 }
@@ -144,7 +143,7 @@ template<>
 int UnitTest::Raw::Next()
 {
     int output = (int)data[index];
-    index = (index + 1) % SIZE;
+    index = (index + step) % SIZE;
 
     return output;
 }
@@ -157,7 +156,7 @@ template<>
 float UnitTest::Raw::Next()
 {
     float output = (float)data[index] / 255;
-    index = (index + 1) % SIZE;
+    index = (index + step) % SIZE;
 
     return output;
 }
@@ -170,7 +169,7 @@ template<>
 double UnitTest::Raw::Next()
 {
     double output = (double)data[index] / 255;
-    index = (index + 1) % SIZE;
+    index = (index + step) % SIZE;
 
     return output;
 }
