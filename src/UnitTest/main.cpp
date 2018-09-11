@@ -37,9 +37,9 @@ int main(int argc, char **argv)
 {
     UnitTest::Raw rawData(0);
 
-    vector<int> raw(1024);
+    vector<float> raw(1024);
     for (size_t i = 0; i < raw.size(); i++)
-        raw[i] = rawData.Next<int>();
+        raw[i] = rawData.Next<float>();
     UnitTest::Print(raw);
 
     // testing::InitGoogleTest(&argc, argv);

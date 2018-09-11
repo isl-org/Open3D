@@ -125,6 +125,7 @@ vector<uint8_t> UnitTest::Raw::data =
 
 // ----------------------------------------------------------------------------
 // Get the next uint8_t value.
+// Output range: [0, 255].
 // ----------------------------------------------------------------------------
 template<>
 uint8_t UnitTest::Raw::Next()
@@ -138,6 +139,7 @@ uint8_t UnitTest::Raw::Next()
 
 // ----------------------------------------------------------------------------
 // Get the next int value.
+// Output range: [-1023, +1023].
 // ----------------------------------------------------------------------------
 template<>
 int UnitTest::Raw::Next()
@@ -150,4 +152,21 @@ int UnitTest::Raw::Next()
     converter.bytes[3] = data[index]; index = (index + 1) % SIZE;
 
     return converter.value % SIZE;
+}
+
+// ----------------------------------------------------------------------------
+// Get the next float value.
+// Output range: [-0.(9), +0.(9)].
+// ----------------------------------------------------------------------------
+template<>
+float UnitTest::Raw::Next()
+{
+    Converter<int>::Type converter;
+
+    converter.bytes[0] = data[index]; index = (index + 1) % SIZE;
+    converter.bytes[1] = data[index]; index = (index + 1) % SIZE;
+    converter.bytes[2] = data[index]; index = (index + 1) % SIZE;
+    converter.bytes[3] = data[index]; index = (index + 1) % SIZE;
+
+    return float(converter.value % SIZE) / SIZE;
 }

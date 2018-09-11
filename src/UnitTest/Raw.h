@@ -61,12 +61,21 @@ namespace UnitTest
     public:
         // Get the next value.
         template<class T>
-        T Next() {}
+        T Next() { return T(0); }
     };
 
+    // Get the next uint8_t value.
+    // Output range: [0, 255].
     template<>
     uint8_t Raw::Next();
 
+    // Get the next int value.
+    // Output range: [-1023, +1023].
     template<>
     int Raw::Next();
+
+    // Get the next float value.
+    // Output range: [-0.(9), +0.(9)].
+    template<>
+    float Raw::Next();
 } // namespace UnitTest
