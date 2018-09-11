@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     vector<uint8_t> raw(1024);
     for (size_t i = 0; i < raw.size(); i++)
     {
-        raw[i] = rawData.Next();
+        raw[i] = rawData.Next<uint8_t>();
     }
     UnitTest::Print(raw);
 

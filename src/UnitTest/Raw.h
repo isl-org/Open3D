@@ -60,6 +60,13 @@ namespace UnitTest
 
     public:
         // Get the next value.
-        uint8_t Next();
+        template<class T>
+        T Next() {}
     };
+
+    template<>
+    uint8_t Raw::Next();
+
+    template<>
+    int Raw::Next();
 } // namespace UnitTest
