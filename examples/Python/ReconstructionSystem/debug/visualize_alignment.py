@@ -28,6 +28,7 @@ if __name__ == "__main__":
     parser.add_argument("--source_id", type=int, help="ID of source fragment")
     parser.add_argument("--target_id", type=int, help="ID of target fragment")
     parser.add_argument("--adjacent", help="visualize adjacent pairs", action="store_true")
+    parser.add_argument("--all", help="visualize all pairs", action="store_true")
     args = parser.parse_args()
 
     with open(args.config) as json_file:
@@ -56,7 +57,8 @@ if __name__ == "__main__":
                     edge.target_node_id - edge.source_node_id == 1)) or \
                     (not args.adjacent and
                     (args.source_id == edge.source_node_id and \
-                    args.target_id == edge.target_node_id)):
+                    args.target_id == edge.target_node_id)) or \
+                    args.all:
                 source = read_point_cloud(ply_file_names[edge.source_node_id])
                 source_down = voxel_down_sample(source, config["voxel_size"])
                 source_down.transform(

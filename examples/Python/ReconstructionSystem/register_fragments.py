@@ -25,10 +25,17 @@ def preprocess_point_cloud(pcd, config):
 def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh, config):
     distance_threshold = config["voxel_size"] * 1.5
-    result = registration_fast_based_on_feature_matching(
+    # result = registration_fast_based_on_feature_matching(
+    #         source, target, source_fpfh, target_fpfh,
+    #         FastGlobalRegistrationOption(
+    #         maximum_correspondence_distance = config["voxel_size"] * 1.4))
+    result = registration_ransac_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
-            FastGlobalRegistrationOption(
-            maximum_correspondence_distance = config["voxel_size"] * 1.4))
+            distance_threshold,
+            TransformationEstimationPointToPoint(False), 4,
+            [CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            CorrespondenceCheckerBasedOnDistance(distance_threshold)],
+            RANSACConvergenceCriteria(4000000, 500))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4))
     else:
