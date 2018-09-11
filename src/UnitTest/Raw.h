@@ -37,7 +37,7 @@ namespace UnitTest
     class Raw
     {
     public:
-        Raw() : index(0) {}
+        Raw() : index(0), step(1) {}
         Raw(const int &seed) :
             index(abs(seed) % SIZE),
             step((seed <= 0) ? 1 : seed) {}
@@ -45,14 +45,15 @@ namespace UnitTest
         // size of the raw data
         static const int SIZE = 1021;
 
+        // raw data
+        static std::vector<uint8_t> data;
+
+    private:
         // step through the raw data
         int step;
 
         // index into the raw data
         int index;
-
-        // raw data
-        static std::vector<uint8_t> data;
 
     public:
         // Get the next value.

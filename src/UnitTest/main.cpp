@@ -35,7 +35,11 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    testing::InitGoogleTest(&argc, argv);
+    vector<uint8_t> v(256);
+    UnitTest::Rand<uint8_t>(v, 100, 200, 0);
+    UnitTest::Print(v);
 
-    return RUN_ALL_TESTS();
+    // testing::InitGoogleTest(&argc, argv);
+
+    // return RUN_ALL_TESTS();
 }

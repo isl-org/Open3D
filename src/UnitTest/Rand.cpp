@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Rand.h"
+#include "Raw.h"
 
 #include <iostream>
 
@@ -93,12 +94,12 @@ void UnitTest::Rand(
     const uint8_t &vmax,
     const int& seed)
 {
-    srand(seed);
+    UnitTest::Raw raw(seed);
 
-    float factor = (float)(vmax - vmin) / RAND_MAX;
+    float factor = (float)(vmax - vmin) / 255;
 
     for (size_t i = 0; i < v.size(); i++)
-        v[i] = vmin + (uint8_t)(rand() * factor);
+        v[i] = vmin + (uint8_t)(raw.Next<uint8_t>() * factor);
 }
 
 // ----------------------------------------------------------------------------
