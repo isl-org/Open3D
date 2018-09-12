@@ -48,6 +48,13 @@ namespace UnitTest
         // raw data
         static std::vector<uint8_t> data;
 
+    public:
+        // low end of the range
+        static const uint8_t VMIN = 0;
+
+        // high end of the range
+        static const uint8_t VMAX = 255;
+
     private:
         // step through the raw data
         int step;

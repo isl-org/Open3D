@@ -35,8 +35,11 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    vector<size_t> v(256);
-    UnitTest::Rand<size_t>(v, 100, 200, 0);
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(100.0, 100.0, 100.0);
+
+    vector<Eigen::Vector3d> v(256);
+    UnitTest::Rand<Eigen::Vector3d>(v, vmin, vmax, 0);
     UnitTest::Print(v);
 
     // testing::InitGoogleTest(&argc, argv);

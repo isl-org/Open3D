@@ -168,7 +168,7 @@ size_t UnitTest::Raw::Next()
 template<>
 float UnitTest::Raw::Next()
 {
-    float output = (float)data[index] / 255;
+    float output = (float)data[index] / VMAX;
     index = (index + step) % SIZE;
 
     return output;
@@ -181,7 +181,7 @@ float UnitTest::Raw::Next()
 template<>
 double UnitTest::Raw::Next()
 {
-    double output = (double)data[index] / 255;
+    double output = (double)data[index] / VMAX;
     index = (index + step) % SIZE;
 
     return output;
