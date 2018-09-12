@@ -14,6 +14,7 @@ if(WIN32)
     find_package(Open3D HINTS ${CMAKE_INSTALL_PREFIX}/CMake)
 else()
     find_package(Open3D HINTS ${CMAKE_INSTALL_PREFIX}/lib/CMake)
+    list(APPEND Open3D_LIBRARIES dl)
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${Open3D_C_FLAGS}")
@@ -40,7 +41,7 @@ if (Open3D_FOUND)
 
     add_executable(TestVisualizer TestVisualizer.cpp)
 
-    target_link_libraries(TestVisualizer ${Open3D_LIBRARIES} dl)
+    target_link_libraries(TestVisualizer ${Open3D_LIBRARIES})
 
     target_include_directories(TestVisualizer PUBLIC ${Open3D_INCLUDE_DIRS})
 
