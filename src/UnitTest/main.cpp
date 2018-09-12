@@ -35,8 +35,8 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    vector<uint8_t> v(256);
-    UnitTest::Rand<uint8_t>(v, 100, 200, 0);
+    vector<size_t> v(256);
+    UnitTest::Rand<size_t>(v, 100, 200, 0);
     UnitTest::Print(v);
 
     // testing::InitGoogleTest(&argc, argv);

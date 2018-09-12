@@ -71,6 +71,11 @@ namespace UnitTest
     template<>
     int Raw::Next();
 
+    // Get the next size_t value.
+    // Output range: [0, 255].
+    template<>
+    size_t Raw::Next();
+
     // Get the next float value.
     // Output range: [0, 1].
     template<>

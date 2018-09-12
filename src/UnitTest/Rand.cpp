@@ -113,10 +113,10 @@ void UnitTest::Rand(
     const size_t &vmax,
     const int& seed)
 {
-    srand(seed);
+    UnitTest::Raw raw(seed);
 
-    float factor = (float)(vmax - vmin) / RAND_MAX;
+    float factor = (float)(vmax - vmin) / 255;
 
     for (size_t i = 0; i < v.size(); i++)
-        v[i] = vmin + (size_t)(rand() * factor);
+        v[i] = vmin + (size_t)(raw.Next<size_t>() * factor);
 }
