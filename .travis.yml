@@ -126,6 +126,7 @@ script:
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   - make install
+  - ./bin/unitTests
   - python -V
   # The following script has issues on SHARED = "ON"
   # - if [ "$SHARED" == "OFF" ]; then
