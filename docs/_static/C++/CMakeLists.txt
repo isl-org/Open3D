@@ -40,7 +40,7 @@ if (Open3D_FOUND)
 
     add_executable(TestVisualizer TestVisualizer.cpp)
 
-    target_link_libraries(TestVisualizer ${Open3D_LIBRARIES})
+    target_link_libraries(TestVisualizer ${Open3D_LIBRARIES} dl)
 
     target_include_directories(TestVisualizer PUBLIC ${Open3D_INCLUDE_DIRS})
 
