@@ -35,11 +35,11 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(100.0, 100.0, 100.0);
+    Eigen::Vector3i vmin(0, 0, 0);
+    Eigen::Vector3i vmax(100, 100, 100);
 
-    vector<Eigen::Vector3d> v(256);
-    UnitTest::Rand<Eigen::Vector3d>(v, vmin, vmax, 0);
+    vector<Eigen::Vector3i> v(256);
+    UnitTest::Rand<Eigen::Vector3i>(v, vmin, vmax, 0);
     UnitTest::Print(v);
 
     // testing::InitGoogleTest(&argc, argv);
