@@ -51,8 +51,18 @@ TEST(PointCloud, Constructor)
 
     // public members
     EXPECT_TRUE(pc.IsEmpty());
-    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMinBound());
-    EXPECT_EQ(Eigen::Vector3d(0.0, 0.0, 0.0), pc.GetMaxBound());
+
+    Eigen::Vector3d minBound = pc.GetMinBound();
+    Eigen::Vector3d maxBound = pc.GetMaxBound();
+
+    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(2, 0));
+
+    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
+    EXPECT_FLOAT_EQ(0.0, maxBound(2, 0));
+
     EXPECT_FALSE(pc.HasPoints());
     EXPECT_FALSE(pc.HasNormals());
     EXPECT_FALSE(pc.HasColors());
