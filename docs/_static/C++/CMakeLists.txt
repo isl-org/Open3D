@@ -14,6 +14,7 @@ if(WIN32)
     find_package(Open3D HINTS ${CMAKE_INSTALL_PREFIX}/CMake)
 else()
     find_package(Open3D HINTS ${CMAKE_INSTALL_PREFIX}/lib/CMake)
+    list(APPEND Open3D_LIBRARIES dl)
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${Open3D_C_FLAGS}")
