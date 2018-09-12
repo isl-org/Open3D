@@ -42,7 +42,7 @@ if __name__ == "__main__":
             pcds = []
             for i in range(len(pose_graph.nodes)):
                 pcd = read_point_cloud(ply_file_names[i])
-                pcd_down = voxel_down_sample(pcd, config["voxel_size"] * 2.0)
+                pcd_down = voxel_down_sample(pcd, config["voxel_size"])
                 pcd_down.transform(pose_graph.nodes[i].pose)
                 print(np.linalg.inv(pose_graph.nodes[i].pose))
                 pcds.append(pcd_down)

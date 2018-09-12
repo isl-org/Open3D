@@ -662,12 +662,14 @@ void GlobalOptimization(
             std::make_shared<PoseGraph>();
     *pose_graph_pre = pose_graph;
     method.OptimizePoseGraph(*pose_graph_pre, criteria, option);
-    auto pose_graph_pruned = CreatePoseGraphWithoutInvalidEdges(
+    auto pose_graph_pre_pruned = CreatePoseGraphWithoutInvalidEdges(
             *pose_graph_pre, option);
-    method.OptimizePoseGraph(*pose_graph_pruned, criteria, option);
-    CompensateReferencePoseGraphNode(*pose_graph_pruned,
+    method.OptimizePoseGraph(*pose_graph_pre_pruned, criteria, option);
+    auto pose_graph_pre_pruned_2 = CreatePoseGraphWithoutInvalidEdges(
+            *pose_graph_pre_pruned, option);
+    CompensateReferencePoseGraphNode(*pose_graph_pre_pruned_2,
             pose_graph, option.reference_node_);
-    pose_graph = *pose_graph_pruned;
+    pose_graph = *pose_graph_pre_pruned_2;
 }
 
 }    // namespace open3d

@@ -67,6 +67,7 @@ if __name__ == "__main__":
                     (args.source_id == edge.source_node_id and \
                     args.target_id == edge.target_node_id)) or \
                     args.all:
+                print("    confidence : %.3f" % edge.confidence)
                 source = read_point_cloud(ply_file_names[edge.source_node_id])
                 source_down = voxel_down_sample(source, config["voxel_size"])
                 target = read_point_cloud(ply_file_names[edge.target_node_id])

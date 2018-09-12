@@ -40,8 +40,11 @@ def register_point_cloud_fpfh(source, target,
                 RANSACConvergenceCriteria(4000000, 500))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4))
-    else:
-        return (True, result)
+    information = get_information_matrix_from_point_clouds(
+            source, target, distance_threshold, result.transformation)
+    if information[5,5] / min(len(source.points),len(target.points)) < 0.3:
+        return (False, np.identity(4))
+    return (True, result)
 
 
 def compute_initial_registration(s, t, source_down, target_down,
