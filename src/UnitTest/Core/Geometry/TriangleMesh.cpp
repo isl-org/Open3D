@@ -620,6 +620,9 @@ TEST(TriangleMesh, ComputeVertexNormals)
 
     tm.ComputeVertexNormals();
 
+    UnitTest::Print(ref);
+    UnitTest::Print(tm.vertex_normals_);
+
     EXPECT_EQ(ref.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
     {
