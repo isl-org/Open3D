@@ -55,12 +55,12 @@ build_script:
 - cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config %CONFIG% --target INSTALL
 
 # Test cmake install
-- cd ..\examples\Linking
+- cd ..\docs\_static\C++
 - mkdir build
 - cd build
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% ..
 - cmake --build . --config %CONFIG%
-- Release\ExampleLinking
+- Release\TestVisualizer
 
 # The following script has issues on SHARED = "ON"
 # - cd lib/Release/Tutorial/Basic && python file_io.py

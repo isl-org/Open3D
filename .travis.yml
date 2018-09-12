@@ -136,9 +136,9 @@ script:
   - if [ "$test" == "Open3D found." ]; then echo "PASSED find_package(Open3D)."; else echo "FAILED find_package(Open3D)."; exit 1; fi
 
   # Test building example with installed Open3D
-  - cd ../examples/Linking
+  - cd ../docs/_static/C++
   - mkdir build
   - cd build
   - cmake -DCMAKE_INSTALL_PREFIX=~/open3d_install ..
   - make
-  - ./ExampleLinking
+  - ./TestVisualizer

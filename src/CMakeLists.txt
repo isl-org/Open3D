@@ -37,6 +37,7 @@ else ()
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
+# message(FATAL_ERROR ${3RDPARTY_LIBRARIES})
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
@@ -94,6 +95,36 @@ list(APPEND CONFIG_Open3D_LIBRARIES
      "${CMAKE_PROJECT_NAME}"
      ${3RDPARTY_LIBRARIES}
      ${OMP_LIBRARIES})
+
+# hot-fix for glfw vs glfw3 issue for Windows
+# TODO: we shall revisit this for a better fix
+# glfw is the target_name i.e. there is add_library(glfw) in glfw's cmake
+# glfw3.lib (or libglfw3.a) is the library name of the compiled glfw
+macro(LIST_REPLACE values old_value new_value)
+    # find index
+    set(index 0)
+    foreach(value in values)
+        if (${value} EQUAL ${old_value})
+            break()
+        endif()
+        math(EXPR index "${index} + 1")
+    endforeach()
+
+    # we'll need to check if old_value is found
+    list(LENGTH values list_size)
+    if (NOT ${list_size} EQUAL ${index})
+        message("Replacing ${old_value} with ${new_value}")
+        list(INSERT ${values} ${index} ${new_value})
+        math(EXPR index "${index} + 1")
+        list (REMOVE_AT ${values} ${index})
+    endif()
+endmacro(LIST_REPLACE)
+
+if (WIN32)
+    message(STATUS ${CONFIG_Open3D_LIBRARIES})
+    LIST_REPLACE(CONFIG_Open3D_LIBRARIES "glfw" "glfw3")
+    message(STATUS ${CONFIG_Open3D_LIBRARIES})
+endif()
 
 # set Open3D library directories
 list(APPEND CONFIG_Open3D_LIBRARY_DIRS
