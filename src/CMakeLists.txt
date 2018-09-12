@@ -37,37 +37,48 @@ else ()
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
+# message(FATAL_ERROR ${3RDPARTY_LIBRARIES})
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
 
-# input:  a list of absolute paths in the current source dir
-# output: a list of absolute paths in the install dir
-function(SourcePath2InstallPath input output)
-    foreach(child ${input})
+# input_dirs: a list of absolute paths in the source dir
+# output_dirs: a list of absolute paths in the install dir
+# input_base_dir: the base dir of input_dirs
+function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
+    foreach(input_dir ${input_dirs})
+        # We need to handle case where input_dir is not child subdirectory of
+        # input_base_dir. This could happen for pre-installed headers, e.g.
+        #   input_dir == /usr/include/libpng16
+        #   input_base_dir = /path-to-repo/Open3D
+        if(${input_dir} MATCHES "^${input_base_dir}/.*")
+            # extract path relative to the project source dir
+            set(relative_path "")
+            file(RELATIVE_PATH relative_path ${input_base_dir} ${input_dir})
 
-        set(relative_path "")
-        set(install_path "")
+            # construct absolute path in the install dir
+            set(install_path "")
+            get_filename_component(install_path
+                                   "${relative_path}"
+                                   REALPATH
+                                   BASE_DIR "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}")
 
-        # extract path relative to the project source dir
-        file(RELATIVE_PATH relative_path ${CMAKE_CURRENT_SOURCE_DIR} ${child})
-
-        # construct absolute path in the install dir
-        get_filename_component(install_path "${relative_path}"
-                               REALPATH
-                               BASE_DIR "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}")
-
-        # save
-        list(APPEND converted ${install_path})
+            # save
+            list(APPEND converted ${install_path})
+        else()
+            # When input_dir is not child subdirectory of input_base_dir,
+            # we simply use the input_dir.
+            list(APPEND converted ${input_dir})
+        endif()
     endforeach()
-    set (${output} ${converted} PARENT_SCOPE)
+    set (${output_dirs} ${converted} PARENT_SCOPE)
 endfunction()
 
 # build a list of include folders
-SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS)
-SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS)
-SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS)
-SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS}"      INSTALL_3RDPARTY_INCLUDE_DIRS)
+SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS          ${CMAKE_CURRENT_SOURCE_DIR})
+SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS            ${CMAKE_CURRENT_SOURCE_DIR})
+SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS}"      INSTALL_3RDPARTY_INCLUDE_DIRS      ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
@@ -84,6 +95,36 @@ list(APPEND CONFIG_Open3D_LIBRARIES
      "${CMAKE_PROJECT_NAME}"
      ${3RDPARTY_LIBRARIES}
      ${OMP_LIBRARIES})
+
+# hot-fix for glfw vs glfw3 issue for Windows
+# TODO: we shall revisit this for a better fix
+# glfw is the target_name i.e. there is add_library(glfw) in glfw's cmake
+# glfw3.lib (or libglfw3.a) is the library name of the compiled glfw
+macro(LIST_REPLACE values old_value new_value)
+    # find index
+    set(index 0)
+    foreach(value in values)
+        if (${value} EQUAL ${old_value})
+            break()
+        endif()
+        math(EXPR index "${index} + 1")
+    endforeach()
+
+    # we'll need to check if old_value is found
+    list(LENGTH values list_size)
+    if (NOT ${list_size} EQUAL ${index})
+        message("Replacing ${old_value} with ${new_value}")
+        list(INSERT ${values} ${index} ${new_value})
+        math(EXPR index "${index} + 1")
+        list (REMOVE_AT ${values} ${index})
+    endif()
+endmacro(LIST_REPLACE)
+
+if (WIN32)
+    message(STATUS ${CONFIG_Open3D_LIBRARIES})
+    LIST_REPLACE(CONFIG_Open3D_LIBRARIES "glfw" "glfw3")
+    message(STATUS ${CONFIG_Open3D_LIBRARIES})
+endif()
 
 # set Open3D library directories
 list(APPEND CONFIG_Open3D_LIBRARY_DIRS
