@@ -121,8 +121,11 @@ def make_mesh_for_fragment(path_dataset, color_files, depth_files,
             os.path.join(path_dataset,
             template_fragment_posegraph_optimized % fragment_id),
             intrinsic, config)
-    mesh_name = path_dataset + template_fragment_mesh % fragment_id
-    write_triangle_mesh(mesh_name, mesh, False, True)
+    pcd = PointCloud()
+    pcd.points = mesh.vertices
+    pcd.colors = mesh.vertex_colors
+    pcd_name = path_dataset + template_fragment_mesh % fragment_id
+    write_point_cloud(pcd_name, pcd, False, True)
 
 
 def process_single_fragment(fragment_id, color_files, depth_files,
