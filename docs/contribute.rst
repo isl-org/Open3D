@@ -49,7 +49,7 @@ Consistent coding style is an important factor of code readability. Some princip
 
 We generally follow the `Google C++ Style Guide <https://google.github.io/styleguide/cppguide.html>`_, with a few modifications:
 
-* Use tab for indent. In IDE it should be 4 spaces wide. Use two indents for a forced line break (usually due to the 80 character length limit).
+* Use 4 spaces for indent. Use two indents for a forced line break (usually due to the 80 character length limit).
 * Use ``#pragma once`` for header guard.
 * All Open3D classes and functions are nested in namespace ``open3d``.
 * Avoid using naked pointers. Use ``std::shared_ptr`` and ``std::unique_ptr`` instead.
