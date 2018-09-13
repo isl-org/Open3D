@@ -634,29 +634,6 @@ TEST(PointCloud, SelectDownSample)
 }
 
 // ----------------------------------------------------------------------------
-// Less than or Equal for sorting Eigen::Vector3d elements.
-// ----------------------------------------------------------------------------
-bool LE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
-{
-    if (v0(0, 0) < v1(0, 0))
-        return true;
-
-    if (v0(0, 0) == v1(0, 0))
-    {
-        if (v0(1, 0) < v1(1, 0))
-            return true;
-
-        if (v0(1, 0) == v1(1, 0))
-        {
-            if (v0(2, 0) <= v1(2, 0))
-                return true;
-        }
-    }
-
-    return false;
-}
-
-// ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, VoxelDownSample)
@@ -749,9 +726,9 @@ TEST(PointCloud, VoxelDownSample)
 
     // sometimes the order of these Eigen::Vector3d values can be mixed-up
     // sort these vectors in order to match the expected order.
-    sort(output_pc->points_.begin(), output_pc->points_.end(), LE);
-    sort(output_pc->normals_.begin(), output_pc->normals_.end(), LE);
-    sort(output_pc->colors_.begin(), output_pc->colors_.end(), LE);
+    UnitTest::Sort::Do(output_pc->points_);
+    UnitTest::Sort::Do(output_pc->normals_);
+    UnitTest::Sort::Do(output_pc->colors_);
 
     UnitTest::Print(ref_points);
     UnitTest::Print(output_pc->points_);
