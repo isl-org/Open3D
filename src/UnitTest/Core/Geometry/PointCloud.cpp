@@ -638,8 +638,20 @@ TEST(PointCloud, SelectDownSample)
 // ----------------------------------------------------------------------------
 bool LE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
-    if (v0(0, 0) <= v1(0, 0))
+    if (v0(0, 0) < v1(0, 0))
         return true;
+
+    if (v0(0, 0) == v1(0, 0))
+    {
+        if (v0(1, 0) < v1(1, 0))
+            return true;
+
+        if (v0(1, 0) == v1(1, 0))
+        {
+            if (v0(2, 0) <= v1(2, 0))
+                return true;
+        }
+    }
 
     return false;
 }
