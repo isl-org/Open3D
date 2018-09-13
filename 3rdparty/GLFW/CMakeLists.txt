@@ -370,7 +370,9 @@ endif()
 # MODIFICATION BY Open3D: overwrite some GLFW cmake variables
 #--------------------------------------------------------------------
 set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(GLFW_LIBRARIES "glfw")
+# glfw_LIBRARIES is collected by the official GLFW cmake
+set(GLFW_LIBRARIES "${glfw_LIBRARIES}")
+list(APPEND GLFW_LIBRARIES glfw)
 set(GLFW_INCLUDE_DIRS ${GLFW_INCLUDE_DIRS} PARENT_SCOPE)
 set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 #--------------------------------------------------------------------
@@ -395,7 +397,7 @@ set(GLFW_LIBRARIES ${GLFW_LIBRARIES} PARENT_SCOPE)
 #     install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
 #             DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
 
-#     Open3D NOTE: need to keep this off in order for the Open3D make uninstall to work 
+#     Open3D NOTE: need to keep this off in order for the Open3D make uninstall to work
 #     Only generate this target if no higher-level project already has
 #     if (NOT TARGET uninstall)
 #         configure_file(cmake_uninstall.cmake.in

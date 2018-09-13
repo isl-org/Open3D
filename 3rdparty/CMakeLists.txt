@@ -85,6 +85,8 @@ elseif (GLFW_FOUND AND OPENGL_FOUND)
         list(APPEND GLFW_LIBRARIES    ${OPENGL_gl_LIBRARY})
     endif ()
 else ()
+    # Notify PARENT_SCOPE that GLFW was built, to deal with glfw(3) naming issue
+    set(BUILD_GLFW ON PARENT_SCOPE)
     message(STATUS "Unable to find GLFW installed in the system")
     message(STATUS "Building GLFW from source")
     add_subdirectory(GLFW)
