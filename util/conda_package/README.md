@@ -124,7 +124,7 @@ source activate test_env3.6
 
 # Install the Conda packages
 conda install numpy # For local conda packages, we need to install deps manually
-conda install Open3D/util/conda_package/dist/osx-64/open3d-0.2.0-py36_0.tar.bz2
+conda install Open3D/util/conda_package/dist/osx-64/open3d-0.3.0-py36_0.tar.bz2
 
 # Try importing
 python -c "from open3d import *"
@@ -141,7 +141,7 @@ source activate build_env
 conda install anaconda-client
 
 # Example: upload macOS python3.6 package
-anaconda upload dist/osx-64/open3d-0.2.0-py36_0.tar.bz2
+anaconda upload dist/osx-64/open3d-0.3.0-py36_0.tar.bz2
 ```
 
 Now we can try installing it by:
