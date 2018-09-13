@@ -21,7 +21,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
     pose_graph_fragment = read_pose_graph(os.path.join(
-            path_dataset, template_global_posegraph_optimized))
+            path_dataset, template_refined_posegraph_optimized))
 
     for fragment_id in range(len(pose_graph_fragment.nodes)):
         pose_graph_rgbd = read_pose_graph(os.path.join(path_dataset,
