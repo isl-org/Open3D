@@ -753,6 +753,13 @@ TEST(PointCloud, VoxelDownSample)
     sort(output_pc->normals_.begin(), output_pc->normals_.end(), LE);
     sort(output_pc->colors_.begin(), output_pc->colors_.end(), LE);
 
+    UnitTest::Print(ref_points);
+    UnitTest::Print(output_pc->points_);
+    UnitTest::Print(ref_normals);
+    UnitTest::Print(output_pc->normals_);
+    UnitTest::Print(ref_colors);
+    UnitTest::Print(output_pc->colors_);
+
     for (size_t i = 0; i < output_pc->points_.size(); i++)
     {
         EXPECT_NEAR(ref_points[i](0, 0), output_pc->points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
