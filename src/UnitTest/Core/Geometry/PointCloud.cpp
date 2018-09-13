@@ -735,16 +735,11 @@ TEST(PointCloud, VoxelDownSample)
     double voxel_size = 0.5;
     auto output_pc = open3d::VoxelDownSample(pc, voxel_size);
 
+    // sometimes the order of these Eigen::Vector3d values can be mixed-up
+    // sort these vectors in order to match the expected order.
     sort(output_pc->points_.begin(), output_pc->points_.end(), LE);
     sort(output_pc->normals_.begin(), output_pc->normals_.end(), LE);
     sort(output_pc->colors_.begin(), output_pc->colors_.end(), LE);
-
-    UnitTest::Print(ref_points);
-    UnitTest::Print(output_pc->points_);
-    UnitTest::Print(ref_normals);
-    UnitTest::Print(output_pc->normals_);
-    UnitTest::Print(ref_colors);
-    UnitTest::Print(output_pc->colors_);
 
     for (size_t i = 0; i < output_pc->points_.size(); i++)
     {
