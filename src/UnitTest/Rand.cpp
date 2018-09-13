@@ -45,15 +45,15 @@ void UnitTest::Rand(
     UnitTest::Raw raw(seed);
 
     Eigen::Vector3d factor;
-    factor[0, 0] = (double)(vmax[0, 0] - vmin[0, 0]) / UnitTest::Raw::VMAX;
-    factor[0, 1] = (double)(vmax[0, 1] - vmin[0, 1]) / UnitTest::Raw::VMAX;
-    factor[0, 2] = (double)(vmax[0, 2] - vmin[0, 2]) / UnitTest::Raw::VMAX;
+    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / UnitTest::Raw::VMAX;
+    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / UnitTest::Raw::VMAX;
+    factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / UnitTest::Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        v[i][0, 0] = vmin[0, 0] + (int)(raw.Next<int>() * factor[0, 0]);
-        v[i][0, 1] = vmin[0, 1] + (int)(raw.Next<int>() * factor[0, 1]);
-        v[i][0, 2] = vmin[0, 2] + (int)(raw.Next<int>() * factor[0, 2]);
+        v[i](0, 0) = vmin(0, 0) + (int)(raw.Next<int>() * factor(0, 0));
+        v[i](1, 0) = vmin(1, 0) + (int)(raw.Next<int>() * factor(1, 0));
+        v[i](2, 0) = vmin(2, 0) + (int)(raw.Next<int>() * factor(2, 0));
     }
 }
 
@@ -71,15 +71,15 @@ void UnitTest::Rand(
     UnitTest::Raw raw(seed);
 
     Eigen::Vector3d factor;
-    factor[0, 0] = (vmax[0, 0] - vmin[0, 0]);
-    factor[0, 1] = (vmax[0, 1] - vmin[0, 1]);
-    factor[0, 2] = (vmax[0, 2] - vmin[0, 2]);
+    factor(0, 0) = vmax(0, 0) - vmin(0, 0);
+    factor(1, 0) = vmax(1, 0) - vmin(1, 0);
+    factor(2, 0) = vmax(2, 0) - vmin(2, 0);
 
     for (size_t i = 0; i < v.size(); i++)
     {
-        v[i][0, 0] = vmin[0, 0] + raw.Next<double>() * factor[0, 0];
-        v[i][0, 1] = vmin[0, 1] + raw.Next<double>() * factor[0, 1];
-        v[i][0, 2] = vmin[0, 2] + raw.Next<double>() * factor[0, 2];
+        v[i](0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
+        v[i](1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
+        v[i](2, 0) = vmin(2, 0) + raw.Next<double>() * factor(2, 0);
     }
 }
 
