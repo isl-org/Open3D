@@ -31,10 +31,10 @@ if __name__ == "__main__":
         if (args.scene):
             if (args.before_optimized):
                 global_pose_graph_name = os.path.join(config["path_dataset"],
-                        template_global_posegraph)
+                        template_refined_posegraph)
             else:
                 global_pose_graph_name = os.path.join(config["path_dataset"],
-                        template_global_posegraph_optimized)
+                        template_refined_posegraph_optimized)
             pose_graph = read_pose_graph(global_pose_graph_name)
             ply_file_names = get_file_list(
                     os.path.join(config["path_dataset"],
@@ -42,7 +42,7 @@ if __name__ == "__main__":
             pcds = []
             for i in range(len(pose_graph.nodes)):
                 pcd = read_point_cloud(ply_file_names[i])
-                pcd_down = voxel_down_sample(pcd, config["voxel_size"])
+                pcd_down = voxel_down_sample(pcd, config["voxel_size"]/2.0)
                 pcd_down.transform(pose_graph.nodes[i].pose)
                 print(np.linalg.inv(pose_graph.nodes[i].pose))
                 pcds.append(pcd_down)

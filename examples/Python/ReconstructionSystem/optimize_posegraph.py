@@ -45,3 +45,13 @@ def optimize_posegraph_for_scene(path_dataset, config):
             max_correspondence_distance = config["voxel_size"] * 1.4,
             preference_loop_closure = \
             config["preference_loop_closure_registration"])
+
+
+def optimize_posegraph_for_refined_scene(path_dataset, config):
+    pose_graph_name = os.path.join(path_dataset, template_refined_posegraph)
+    pose_graph_optmized_name = os.path.join(path_dataset,
+            template_refined_posegraph_optimized)
+    run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
+            max_correspondence_distance = config["voxel_size"] * 1.4,
+            preference_loop_closure = \
+            config["preference_loop_closure_registration"])

@@ -32,6 +32,10 @@ template_global_posegraph = os.path.join(
         folder_scene, "global_registration.json")
 template_global_posegraph_optimized = os.path.join(folder_scene,
         "global_registration_optimized.json")
+template_refined_posegraph = os.path.join(
+        folder_scene, "refined_registration.json")
+template_refined_posegraph_optimized = os.path.join(folder_scene,
+        "refined_registration_optimized.json")
 template_global_mesh = os.path.join(folder_scene, "integrated.ply")
 
 
