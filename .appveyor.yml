@@ -33,7 +33,12 @@ matrix:
       CPP: 14
 install:
 - ps: |
-    if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
+    if ($env:PLATFORM -eq "x64") {
+      $env:CMAKE_ARCH = "x64"
+      $env:CMAKE_INSTALL_PREFIX = "C:\Program Files\Open3D"
+    } else {
+      $env:CMAKE_INSTALL_PREFIX = "C:\Program Files (x86)\Open3D"
+    }
     if ($env:APPVEYOR_JOB_NAME -like "*Visual Studio 2017*") {
       $env:CMAKE_GENERATOR = "Visual Studio 15 2017"
     } else {
@@ -46,8 +51,17 @@ install:
 build_script:
 - mkdir build
 - cd build
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON ..
-- cmake --build . --config %CONFIG% --target INSTALL
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_EIGEN3=ON -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON -DBUILD_PNG=ON ..
+- cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config %CONFIG% --target INSTALL
+
+# Test cmake install
+- cd ..\docs\_static\C++
+- mkdir build
+- cd build
+- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%" -DCMAKE_INSTALL_PREFIX="%CMAKE_INSTALL_PREFIX%" -DBUILD_SHARED_LIBS=%SHARED% ..
+- cmake --build . --config %CONFIG%
+- Release\TestVisualizer
+
 # The following script has issues on SHARED = "ON"
 # - cd lib/Release/Tutorial/Basic && python file_io.py
 artifacts:
