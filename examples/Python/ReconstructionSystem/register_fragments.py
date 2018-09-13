@@ -10,6 +10,7 @@ sys.path.append("../Utility")
 from open3d import *
 from common import *
 from optimize_posegraph import *
+from refine_registration import *
 
 
 def preprocess_point_cloud(pcd, config):
@@ -24,7 +25,7 @@ def preprocess_point_cloud(pcd, config):
 
 def register_point_cloud_fpfh(source, target,
         source_fpfh, target_fpfh, config):
-    distance_threshold = config["voxel_size"] * 1.5
+    distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
         result = registration_fast_based_on_feature_matching(
                 source, target, source_fpfh, target_fpfh,
@@ -55,11 +56,11 @@ def compute_initial_registration(s, t, source_down, target_down,
         pose_graph_frag = read_pose_graph(path_dataset +
                 template_fragment_posegraph_optimized % s)
         n_nodes = len(pose_graph_frag.nodes)
-        transformation = np.linalg.inv(
+        transformation_init = np.linalg.inv(
                 pose_graph_frag.nodes[n_nodes-1].pose)
-        distance_threshold = config["voxel_size"] * 1.5
-        information = get_information_matrix_from_point_clouds(
-                source_down, target_down, distance_threshold, transformation)
+        (transformation, information) = \
+                multiscale_icp(source_down, target_down,
+                [config["voxel_size"]], [50], config, transformation_init)
     else: # loop closure case
         (success, transformation, information) = register_point_cloud_fpfh(
                 source_down, target_down,
