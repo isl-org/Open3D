@@ -614,13 +614,16 @@ TEST(TriangleMesh, ComputeVertexNormals)
     open3d::TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    tm.triangles_.resize(size);
+    // tm.triangles_.resize(size);
     UnitTest::Rand(tm.vertices_, dmin, dmax, 0);
-    UnitTest::Rand(tm.triangles_, imin, imax, 1);
+    // UnitTest::Rand(tm.triangles_, imin, imax, 1);
+
+    for (int i = 0; i < size; i++)
+        tm.triangles_.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeVertexNormals();
 
-    UnitTest::Print(ref);
+    // UnitTest::Print(ref);
     UnitTest::Print(tm.vertex_normals_);
 
     EXPECT_EQ(ref.size(), tm.vertex_normals_.size());
