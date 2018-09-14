@@ -25,8 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "UnitTest.h"
+#include "Raw.h"
 
 #include "Core/Geometry/LineSet.h"
+#include "Core/Geometry/PointCloud.h"
 
 using namespace std;
 
@@ -256,7 +258,10 @@ TEST(LineSet, Transform)
         EXPECT_NEAR(ref_points[i](0, 0), ls.points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
         EXPECT_NEAR(ref_points[i](1, 0), ls.points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
         EXPECT_NEAR(ref_points[i](2, 0), ls.points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 
+    for (size_t i = 0; i < ls.lines_.size(); i++)
+    {
         EXPECT_EQ(ref_lines[i](0, 0), ls.lines_[i](0, 0));
         EXPECT_EQ(ref_lines[i](1, 0), ls.lines_[i](1, 0));
     }
@@ -515,7 +520,89 @@ TEST(LineSet, GetLineCoordinate)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_CreateLineSetFromPointCloudCorrespondences)
+TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
 {
-    UnitTest::NotImplemented();
+    int size = 10;
+
+    vector<Eigen::Vector3d> ref_points =
+    {
+        {  839.215686,  392.156863,  780.392157 },\
+        {  796.078431,  909.803922,  196.078431 },\
+        {  333.333333,  764.705882,  274.509804 },\
+        {  552.941176,  474.509804,  627.450980 },\
+        {  364.705882,  509.803922,  949.019608 },\
+        {  913.725490,  635.294118,  713.725490 },\
+        {  141.176471,  603.921569,   15.686275 },\
+        {  239.215686,  133.333333,  803.921569 },\
+        {  152.941176,  400.000000,  129.411765 },\
+        {  105.882353,  996.078431,  215.686275 },\
+        {  839.215686,  392.156863,  780.392157 },\
+        {  796.078431,  909.803922,  196.078431 },\
+        {  333.333333,  764.705882,  274.509804 },\
+        {  552.941176,  474.509804,  627.450980 },\
+        {  364.705882,  509.803922,  949.019608 },\
+        {  913.725490,  635.294118,  713.725490 },\
+        {  141.176471,  603.921569,   15.686275 },\
+        {  239.215686,  133.333333,  803.921569 },\
+        {  152.941176,  400.000000,  129.411765 },\
+        {  105.882353,  996.078431,  215.686275 } \
+    };
+
+    vector<Eigen::Vector2i> ref_lines =
+    {
+        {     8,    13 },\
+        {     7,    17 },\
+        {     9,    11 },\
+        {     3,    17 },\
+        {     2,    15 },\
+        {     4,    16 },\
+        {     3,    15 },\
+        {     9,    19 },\
+        {     6,    17 },\
+        {     1,    16 } \
+    };
+
+    open3d::PointCloud pc0;
+    open3d::PointCloud pc1;
+    vector<pair<int, int>> correspondence(size);
+
+    pc0.points_.resize(size);
+    pc0.normals_.resize(size);
+    pc0.colors_.resize(size);
+
+    pc1.points_.resize(size);
+    pc1.normals_.resize(size);
+    pc1.colors_.resize(size);
+
+    UnitTest::Rand(pc0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    UnitTest::Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    UnitTest::Rand(pc0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+
+    UnitTest::Rand(pc1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    UnitTest::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    UnitTest::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+
+    UnitTest::Raw raw;
+    for (int i = 0; i < size; i++)
+    {
+        int first = size * raw.Next<int>() / UnitTest::Raw::VMAX;
+        int second = size * raw.Next<int>() / UnitTest::Raw::VMAX;
+
+        correspondence[i] = pair<int, int>(first, second);
+    }
+
+    auto ls = open3d::CreateLineSetFromPointCloudCorrespondences(pc0, pc1, correspondence);
+
+    for (size_t i = 0; i < ls->points_.size(); i++)
+    {
+        EXPECT_NEAR(ref_points[i](0, 0), ls->points_[i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](1, 0), ls->points_[i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i](2, 0), ls->points_[i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    for (size_t i = 0; i < ls->lines_.size(); i++)
+    {
+        EXPECT_EQ(ref_lines[i](0, 0), ls->lines_[i](0, 0));
+        EXPECT_EQ(ref_lines[i](1, 0), ls->lines_[i](1, 0));
+    }
 }
