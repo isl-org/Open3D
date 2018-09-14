@@ -265,9 +265,77 @@ TEST(LineSet, Transform)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_OperatorAppend)
+TEST(LineSet, OperatorAppend)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls0;
+    open3d::LineSet ls1;
+
+    ls0.points_.resize(size);
+    ls0.lines_.resize(size);
+    ls0.colors_.resize(size);
+
+    ls1.points_.resize(size);
+    ls1.lines_.resize(size);
+    ls1.colors_.resize(size);
+
+    UnitTest::Rand(ls0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    UnitTest::Rand(ls0.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
+    UnitTest::Rand(ls0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+
+    UnitTest::Rand(ls1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    UnitTest::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
+    UnitTest::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+
+    vector<Eigen::Vector3d> p;
+    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
+    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
+
+    vector<Eigen::Vector2i> n;
+    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
+    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
+
+    vector<Eigen::Vector3d> c;
+    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
+    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
+
+    open3d::LineSet ls(ls0);
+    ls += ls1;
+
+    EXPECT_EQ(2 * size, ls.points_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(ls0.points_[i](0, 0), ls.points_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls0.points_[i](1, 0), ls.points_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls0.points_[i](2, 0), ls.points_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ls1.points_[i](0, 0), ls.points_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls1.points_[i](1, 0), ls.points_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls1.points_[i](2, 0), ls.points_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
+
+    EXPECT_EQ(2 * size, ls.lines_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_EQ(ls0.lines_[i](0, 0), ls.lines_[i](0, 0));
+        EXPECT_EQ(ls0.lines_[i](1, 0), ls.lines_[i](1, 0));
+
+        EXPECT_EQ(ls1.lines_[i](0, 0), ls.lines_[i](0, 0));
+        EXPECT_EQ(ls1.lines_[i](1, 0), ls.lines_[i](1, 0));
+    }
+
+    EXPECT_EQ(2 * size, ls.colors_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(ls0.colors_[i](0, 0), ls.colors_[   0 + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls0.colors_[i](1, 0), ls.colors_[   0 + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls0.colors_[i](2, 0), ls.colors_[   0 + i](2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ls1.colors_[i](0, 0), ls.colors_[size + i](0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls1.colors_[i](1, 0), ls.colors_[size + i](1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ls1.colors_[i](2, 0), ls.colors_[size + i](2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
