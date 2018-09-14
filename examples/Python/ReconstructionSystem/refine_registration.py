@@ -66,7 +66,7 @@ def multiscale_icp(source, target, voxel_size, max_iter,
                     relative_rmse = 1e-6, max_iteration = iter))
         current_transformation = result_icp.transformation
 
-    maximum_correspondence_distance = config["voxel_size"] * 1.4
+    maximum_correspondence_distance = voxel_size[-1]
     information_matrix = get_information_matrix_from_point_clouds(
             source, target, maximum_correspondence_distance,
             result_icp.transformation)
