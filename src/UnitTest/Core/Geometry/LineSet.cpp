@@ -298,9 +298,19 @@ TEST(LineSet, HasLines)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_HasColors)
+TEST(LineSet, HasColors)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls;
+
+    EXPECT_FALSE(ls.HasColors());
+
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+    ls.colors_.resize(size);
+
+    EXPECT_TRUE(ls.HasColors());
 }
 
 // ----------------------------------------------------------------------------
