@@ -129,9 +129,22 @@ TEST(LineSet, Clear)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_IsEmpty)
+TEST(LineSet, IsEmpty)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    open3d::LineSet ls;
+
+    EXPECT_TRUE(ls.IsEmpty());
+
+    ls.points_.resize(size);
+
+    UnitTest::Rand(ls.points_, vmin, vmax, 0);
+
+    EXPECT_FALSE(ls.IsEmpty());
 }
 
 // ----------------------------------------------------------------------------
