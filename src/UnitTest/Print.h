@@ -62,6 +62,10 @@ namespace UnitTest
         std::cout << std::endl;
     }
 
+    // Print a vector of Eigen::Vector2i.
+    template<>
+    void Print(const std::vector<Eigen::Vector2i> &v);
+
     // Print a vector of Eigen::Vector3i.
     template<>
     void Print(const std::vector<Eigen::Vector3i> &v);
