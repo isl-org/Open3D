@@ -137,6 +137,14 @@ std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
 std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
         const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound);
 
+/// Function to remove points that have less than \param nb_points in a sphere of 
+/// radius \param search_radius
+/// All points with coordinates less than \param min_bound or larger than
+/// \param max_bound are clipped.
+std::shared_ptr<PointCloud> RemoveRadiusOutliers(const PointCloud &input,
+        size_t nb_points , double search_radius);
+
+
 /// Function to compute the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
 /// Normals are oriented with respect to the input point cloud if normals exist

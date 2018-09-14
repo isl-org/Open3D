@@ -99,6 +99,9 @@ void pybind_pointcloud_methods(py::module &m)
     m.def("crop_point_cloud", &CropPointCloud,
             "Function to crop input pointcloud into output pointcloud",
             "input"_a, "min_bound"_a, "max_bound"_a);
+    m.def("radius_outlier_removal", &RemoveRadiusOutliers,
+            "Function to remove points that have less than nb_points in a given sphere of radius radius",
+            "input"_a, "nb_points"_a, "radius"_a);
     m.def("estimate_normals", &EstimateNormals,
             "Function to compute the normals of a point cloud",
             "cloud"_a, "search_param"_a = KDTreeSearchParamKNN());

@@ -31,6 +31,7 @@
 
 #include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
+#include <Core/Geometry/KDTreeFlann.h>
 
 namespace open3d{
 
@@ -247,6 +248,35 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
         if (point(0) >= min_bound(0) && point(0) <= max_bound(0) &&
                 point(1) >= min_bound(1) && point(1) <= max_bound(1) &&
                 point(2) >= min_bound(2) && point(2) <= max_bound(2)) {
+            indices.push_back(i);
+        }
+    }
+    return SelectDownSample(input, indices);
+}
+
+std::shared_ptr<PointCloud> RemoveRadiusOutliers(const PointCloud &input,
+        size_t nb_points , double search_radius)
+{
+    if (nb_points < 1 || search_radius <= 0)  {
+        PrintDebug("[RemoveRadiusOutliers] Illegal input parameters, number of points and radius must be positive\n");
+    }
+    PrintDebug("[CropPointCloud] Illegal boundary clipped all points.\n");
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(input);
+    std::vector<bool> mask = std::vector<bool>(input.points_.size());   
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (size_t i = 0; i < input.points_.size(); i++) {
+        std::vector<int> tmp_indices;
+        std::vector<double> dist;
+        int nb_neighbours = kdtree.SearchRadius(input.points_[i],search_radius,tmp_indices,dist);
+        mask[i] = (nb_neighbours > nb_points);
+    }
+
+    std::vector<size_t> indices;
+    for (size_t i = 0; i < mask.size(); i++) {
+        if (mask[i]){
             indices.push_back(i);
         }
     }
