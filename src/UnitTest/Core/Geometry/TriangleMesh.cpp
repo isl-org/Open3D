@@ -72,14 +72,6 @@ TEST(TriangleMesh, Constructor)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TriangleMesh, DISABLED_Destructor)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_MemberData)
 {
     UnitTest::NotImplemented();
@@ -154,9 +146,6 @@ TEST(TriangleMesh, Clear)
 TEST(TriangleMesh, IsEmpty)
 {
     int size = 100;
-
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     open3d::TriangleMesh tm;
 
@@ -859,9 +848,6 @@ TEST(TriangleMesh, HasVertices)
 {
     int size = 100;
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
-
     open3d::TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasVertices());
@@ -877,9 +863,6 @@ TEST(TriangleMesh, HasVertices)
 TEST(TriangleMesh, HasTriangles)
 {
     int size = 100;
-
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     open3d::TriangleMesh tm;
 
@@ -898,9 +881,6 @@ TEST(TriangleMesh, HasVertexNormals)
 {
     int size = 100;
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
-
     open3d::TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -918,9 +898,6 @@ TEST(TriangleMesh, HasVertexColors)
 {
     int size = 100;
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
-
     open3d::TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasVertexColors());
@@ -937,9 +914,6 @@ TEST(TriangleMesh, HasVertexColors)
 TEST(TriangleMesh, HasTriangleNormals)
 {
     int size = 100;
-
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
     open3d::TriangleMesh tm;
 
