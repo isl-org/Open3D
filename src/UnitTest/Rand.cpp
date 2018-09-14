@@ -32,6 +32,30 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector2i vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Rand(
+    vector<Eigen::Vector2i> &v,
+    const Eigen::Vector2i &vmin,
+    const Eigen::Vector2i &vmax,
+    const int& seed)
+{
+    UnitTest::Raw raw(seed);
+
+    Eigen::Vector2d factor;
+    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / UnitTest::Raw::VMAX;
+    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / UnitTest::Raw::VMAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        v[i](0, 0) = vmin(0, 0) + (int)(raw.Next<int>() * factor(0, 0));
+        v[i](1, 0) = vmin(1, 0) + (int)(raw.Next<int>() * factor(1, 0));
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------

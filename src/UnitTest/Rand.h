@@ -39,6 +39,14 @@ namespace UnitTest
         const T& vmax,
         const int& seed) {}
 
+    // Initialize an Eigen::Vector2i vector.
+    // Output range: [vmin:vmax].
+    template<>
+    void Rand(std::vector<Eigen::Vector2i>& v,
+        const Eigen::Vector2i& vmin,
+        const Eigen::Vector2i& vmax,
+        const int& seed);
+
     // Initialize an Eigen::Vector3i vector.
     // Output range: [vmin:vmax].
     template<>

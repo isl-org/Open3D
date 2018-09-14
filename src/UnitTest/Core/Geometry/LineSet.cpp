@@ -74,9 +74,56 @@ TEST(LineSet, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_Clear)
+TEST(LineSet, Clear)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector2i imin(0, 0);
+    Eigen::Vector2i imax(1000, 1000);
+
+    open3d::LineSet ls;
+
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+    ls.colors_.resize(size);
+
+    UnitTest::Rand(ls.points_, dmin, dmax, 0);
+    UnitTest::Rand(ls.lines_, imin, imax, 0);
+    UnitTest::Rand(ls.colors_, dmin, dmax, 0);
+
+    Eigen::Vector3d minBound = ls.GetMinBound();
+    Eigen::Vector3d maxBound = ls.GetMaxBound();
+
+    EXPECT_FALSE(ls.IsEmpty());
+    EXPECT_NEAR( 19.607843, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  0.000000, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  0.000000, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(996.078431, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(996.078431, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(996.078431, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_TRUE(ls.HasPoints());
+    EXPECT_TRUE(ls.HasLines());
+    EXPECT_TRUE(ls.HasColors());
+
+    ls.Clear();
+
+    minBound = ls.GetMinBound();
+    maxBound = ls.GetMaxBound();
+
+    // public members
+    EXPECT_TRUE(ls.IsEmpty());
+    EXPECT_NEAR(0.0, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_FALSE(ls.HasPoints());
+    EXPECT_FALSE(ls.HasLines());
+    EXPECT_FALSE(ls.HasColors());
 }
 
 // ----------------------------------------------------------------------------
