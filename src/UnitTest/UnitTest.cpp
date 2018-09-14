@@ -35,4 +35,6 @@ void NotImplemented()
     cout << "\033[0;31m" << "Not implemented." << "\033[0;0m" << endl;
 
     // FAIL();
+    // ADD_FAILURE();
+    GTEST_NONFATAL_FAILURE_("Not implemented");
 }

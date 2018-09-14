@@ -13,6 +13,7 @@ open3d*.pyd
 __pycache__
 ._*
 .DS_Store
+.vscode
 .idea
 util/pip_package/dist/
 util/conda_package/dist/
