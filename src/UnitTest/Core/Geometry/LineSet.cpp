@@ -269,16 +269,11 @@ TEST(LineSet, HasPoints)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
-
     open3d::LineSet ls;
 
     EXPECT_FALSE(ls.HasPoints());
 
     ls.points_.resize(size);
-
-    UnitTest::Rand(ls.points_, vmin, vmax, 0);
 
     EXPECT_TRUE(ls.HasPoints());
 }
@@ -286,9 +281,18 @@ TEST(LineSet, HasPoints)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_HasLines)
+TEST(LineSet, HasLines)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls;
+
+    EXPECT_FALSE(ls.HasLines());
+
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+
+    EXPECT_TRUE(ls.HasLines());
 }
 
 // ----------------------------------------------------------------------------
