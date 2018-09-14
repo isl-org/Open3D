@@ -53,6 +53,10 @@ void pybind_colormap_optimization(py::module &m)
          &ColorMapOptmizationOption::maximum_allowable_depth_)
          .def_readwrite("depth_threshold_for_visiblity_check",
          &ColorMapOptmizationOption::depth_threshold_for_visiblity_check_)
+         .def_readwrite("depth_threshold_for_discontinuity_check",
+         &ColorMapOptmizationOption::depth_threshold_for_discontinuity_check_)
+         .def_readwrite("half_dilation_kernel_size_for_discontinuity_map",
+         &ColorMapOptmizationOption::half_dilation_kernel_size_for_discontinuity_map_)
         .def("__repr__", [](const ColorMapOptmizationOption &to) {
             return std::string("ColorMapOptmizationOption with") +
                     std::string("\n- non_rigid_camera_coordinate : ") +
@@ -66,7 +70,11 @@ void pybind_colormap_optimization(py::module &m)
                     std::string("\n- maximum_allowable_depth : ") +
                     std::to_string(to.maximum_allowable_depth_) +
                     std::string("\n- depth_threshold_for_visiblity_check : ") +
-                    std::to_string(to.depth_threshold_for_visiblity_check_);
+                    std::to_string(to.depth_threshold_for_visiblity_check_) +
+                    std::string("\n- depth_threshold_for_discontinuity_check : ") +
+                    std::to_string(to.depth_threshold_for_discontinuity_check_) +
+                    std::string("\n- half_dilation_kernel_size_for_discontinuity_map : ") +
+                    std::to_string(to.half_dilation_kernel_size_for_discontinuity_map_);
         });
 }
 
