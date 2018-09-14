@@ -316,9 +316,49 @@ TEST(LineSet, HasColors)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_GetLineCoordinate)
+TEST(LineSet, GetLineCoordinate)
 {
-    UnitTest::NotImplemented();
+    vector<vector<Eigen::Vector3d>> ref_points =
+    {
+        { {  239.215686,  133.333333,  803.921569 }, {  552.941176,  474.509804,  627.450980 } },\
+        { {  239.215686,  133.333333,  803.921569 }, {  239.215686,  133.333333,  803.921569 } },\
+        { {  152.941176,  400.000000,  129.411765 }, {  796.078431,  909.803922,  196.078431 } },\
+        { {  552.941176,  474.509804,  627.450980 }, {  141.176471,  603.921569,   15.686275 } },\
+        { {  333.333333,  764.705882,  274.509804 }, {  364.705882,  509.803922,  949.019608 } },\
+        { {  364.705882,  509.803922,  949.019608 }, {  913.725490,  635.294118,  713.725490 } },\
+        { {  552.941176,  474.509804,  627.450980 }, {  364.705882,  509.803922,  949.019608 } },\
+        { {  152.941176,  400.000000,  129.411765 }, {  152.941176,  400.000000,  129.411765 } },\
+        { {  913.725490,  635.294118,  713.725490 }, {  141.176471,  603.921569,   15.686275 } },\
+        { {  796.078431,  909.803922,  196.078431 }, {  913.725490,  635.294118,  713.725490 } } \
+    };
+
+    int size = 10;
+    open3d::LineSet ls;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector2i imin(0, 0);
+    Eigen::Vector2i imax(size - 1, size - 1);
+
+    ls.points_.resize(size);
+    UnitTest::Rand(ls.points_, dmin, dmax, 0);
+
+    ls.lines_.resize(size);
+    UnitTest::Rand(ls.lines_, imin, imax, 0);
+
+    for (size_t i = 0; i < ls.lines_.size(); i++)
+    {
+        auto result = ls.GetLineCoordinate(i);
+
+        EXPECT_NEAR(ref_points[i][0](0, 0), result.first(0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i][0](1, 0), result.first(1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i][0](2, 0), result.first(2, 0), UnitTest::THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref_points[i][1](0, 0), result.second(0, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i][1](1, 0), result.second(1, 0), UnitTest::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_points[i][1](2, 0), result.second(2, 0), UnitTest::THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
