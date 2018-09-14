@@ -173,9 +173,24 @@ TEST(LineSet, GetMinBound)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_GetMaxBound)
+TEST(LineSet, GetMaxBound)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    open3d::LineSet ls;
+
+    ls.points_.resize(size);
+
+    UnitTest::Rand(ls.points_, vmin, vmax, 0);
+
+    Eigen::Vector3d maxBound = ls.GetMaxBound();
+
+    EXPECT_NEAR(996.078431, maxBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(996.078431, maxBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(996.078431, maxBound(2, 0), UnitTest::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
