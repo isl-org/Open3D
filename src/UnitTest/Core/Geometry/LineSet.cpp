@@ -150,9 +150,24 @@ TEST(LineSet, IsEmpty)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_GetMinBound)
+TEST(LineSet, GetMinBound)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    open3d::LineSet ls;
+
+    ls.points_.resize(size);
+
+    UnitTest::Rand(ls.points_, vmin, vmax, 0);
+
+    Eigen::Vector3d minBound = ls.GetMinBound();
+
+    EXPECT_NEAR( 19.607843, minBound(0, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  0.000000, minBound(1, 0), UnitTest::THRESHOLD_1E_6);
+    EXPECT_NEAR(  0.000000, minBound(2, 0), UnitTest::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
