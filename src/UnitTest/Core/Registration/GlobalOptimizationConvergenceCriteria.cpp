@@ -26,7 +26,34 @@
 
 #include "UnitTest.h"
 
-TEST(ImageFactory, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Destructor)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Constructor)
+{
+    NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_MemberData)
 {
     NotImplemented();
 }
