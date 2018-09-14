@@ -26,12 +26,41 @@
 
 #include "UnitTest.h"
 
+#include "Core/Geometry/LineSet.h"
+
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_Constructor)
+TEST(LineSet, Constructor)
 {
-    UnitTest::NotImplemented();
+    open3d::LineSet ls;
+
+    // inherited from Geometry2D
+    EXPECT_EQ(open3d::Geometry::GeometryType::LineSet, ls.GetGeometryType());
+    EXPECT_EQ(3, ls.Dimension());
+
+    // public member variables
+    EXPECT_EQ(0, ls.points_.size());
+    EXPECT_EQ(0, ls.lines_.size());
+    EXPECT_EQ(0, ls.colors_.size());
+
+    // public members
+    EXPECT_TRUE(ls.IsEmpty());
+
+    Eigen::Vector3d minBound = ls.GetMinBound();
+    Eigen::Vector3d maxBound = ls.GetMaxBound();
+
+    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
+    EXPECT_FLOAT_EQ(0.0, minBound(2, 0));
+
+    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
+    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
+    EXPECT_FLOAT_EQ(0.0, maxBound(2, 0));
+
+    EXPECT_FALSE(ls.HasPoints());
+    EXPECT_FALSE(ls.HasLines());
+    EXPECT_FALSE(ls.HasColors());
 }
 
 // ----------------------------------------------------------------------------
