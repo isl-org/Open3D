@@ -519,11 +519,3 @@ TEST(LineSet, DISABLED_CreateLineSetFromPointCloudCorrespondences)
 {
     UnitTest::NotImplemented();
 }
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(LineSetFactory, DISABLED_CreateLineSetFromPointCloudCorrespondences)
-{
-    UnitTest::NotImplemented();
-}
