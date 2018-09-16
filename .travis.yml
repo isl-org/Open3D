@@ -125,7 +125,8 @@ script:
     fi
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
-  - make install -j$(nproc)
+  # also set the time limit to 30 mins, this is a fix to issue #557
+  - travis_wait 30 make install -j$(nproc)
   - ./bin/unitTests
   - python -V
   # The following script has issues on SHARED = "ON"
