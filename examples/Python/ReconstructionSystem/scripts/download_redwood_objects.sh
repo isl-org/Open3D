@@ -1,10 +1,10 @@
 #!/bin/sh
-unzip_redwood_scene()
+process_redwood_object()
 {
     DATA_NUM=$1
     DATA_NAME=$2
-    mkdir ../dataset/redwood_objects/$DATA_NUM
     unzip --qq $DATA_NUM.zip -d ../dataset/redwood_objects/$DATA_NAME
+    python synchronize_frames.py ${PWD}/../dataset/redwood_objects/$DATA_NAME
 }
 
 ./gdrive_download.sh 1iMxjIZMFcoL3s9FzzqM0K-tM2ehO74D0
@@ -15,11 +15,11 @@ unzip_redwood_scene()
 ./gdrive_download.sh 1TqkWcdzQZG50ZV9nXdZYZmR_aLH-WYkr
 
 mkdir ../dataset/redwood_objects
-unzip_redwood_scene "00021" "chair"
-unzip_redwood_scene "00577" "sofa"
-unzip_redwood_scene "01833" "car"
-unzip_redwood_scene "05984" "motorcycle"
-unzip_redwood_scene "06127" "plant"
-unzip_redwood_scene "06822" "truck"
+process_redwood_object "00021" "chair"
+process_redwood_object "00577" "sofa"
+process_redwood_object "01833" "car"
+process_redwood_object "05984" "motorcycle"
+process_redwood_object "06127" "plant"
+process_redwood_object "06822" "truck"
 
 rm *.zip
