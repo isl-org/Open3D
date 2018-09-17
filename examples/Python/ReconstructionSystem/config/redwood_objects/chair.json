@@ -8,7 +8,7 @@
     "preference_loop_closure_odometry": 0.1,
     "preference_loop_closure_registration": 5.0,
     "tsdf_cubic_size": 2.0,
-    "icp_method": "color",
+    "icp_method": "point_to_point",
     "global_registration": "ransac",
     "python_multi_threading": true
 }
