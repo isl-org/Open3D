@@ -1,6 +1,6 @@
 {
     "name": "Indoor Lidar-RGBD Dataset: http://redwood-data.org/indoor_lidar_rgbd/download.html",
-    "path_dataset": "dataset/tutorial/",
+    "path_dataset": "dataset/indoor_lidar_rgbd/apartment/",
     "path_intrinsic": "",
     "max_depth": 3.0,
     "voxel_size": 0.05,
