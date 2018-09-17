@@ -26,16 +26,56 @@
 
 #include "UnitTest.h"
 
+#include <Core/Geometry/Image.h>
+#include <Core/Geometry/RGBDImage.h>
+
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, DISABLED_Constructor)
+TEST(RGBDImage, Constructor)
 {
-    UnitTest::NotImplemented();
+    open3d::Image image;
+    open3d::Image color;
+
+    const int size = 5;
+
+    // test image dimensions
+    const int image_width = size;
+    const int image_height = size;
+    const int image_num_of_channels = 1;
+    const int image_bytes_per_channel = 1;
+
+    const int color_width = size;
+    const int color_height = size;
+    const int color_num_of_channels = 3;
+    const int color_bytes_per_channel = 1;
+
+    color.PrepareImage(color_width,
+                       color_height,
+                       color_num_of_channels,
+                       color_bytes_per_channel);
+
+    image.PrepareImage(image_width,
+                       image_height,
+                       image_num_of_channels,
+                       image_bytes_per_channel);
+
+    UnitTest::Rand<uint8_t>(image.data_, 100, 150, 0);
+    UnitTest::Rand<uint8_t>(color.data_, 130, 200, 0);
+
+    auto depth = open3d::ConvertDepthToFloatImage(image);
+
+    open3d::RGBDImage rgbdImage(color, *depth);
+
+    for (size_t i = 0; i < color.data_.size(); i++)
+        EXPECT_EQ(color.data_[i], rgbdImage.color_.data_[i]);
+
+    for (size_t i = 0; i < depth->data_.size(); i++)
+        EXPECT_EQ(depth->data_[i], rgbdImage.depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_Destructor)
 {
@@ -43,7 +83,7 @@ TEST(RGBDImage, DISABLED_Destructor)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_MemberData)
 {
@@ -51,7 +91,7 @@ TEST(RGBDImage, DISABLED_MemberData)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromColorAndDepth)
 {
@@ -59,7 +99,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromColorAndDepth)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromRedwoodFormat)
 {
@@ -67,7 +107,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromRedwoodFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromTUMFormat)
 {
@@ -75,7 +115,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromTUMFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromSUNFormat)
 {
@@ -83,7 +123,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromSUNFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromNYUFormat)
 {
@@ -91,7 +131,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromNYUFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_FilterRGBDImagePyramid)
 {
@@ -99,7 +139,7 @@ TEST(RGBDImage, DISABLED_FilterRGBDImagePyramid)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImagePyramid)
 {
@@ -107,7 +147,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImagePyramid)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromColorAndDepth)
 {
@@ -115,7 +155,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromColorAndDepth)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_ConvertDepthToFloatImage)
 {
@@ -123,7 +163,7 @@ TEST(RGBDImage, DISABLED_ConvertDepthToFloatImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateFloatImageFromImage)
 {
@@ -131,7 +171,7 @@ TEST(RGBDImage, DISABLED_CreateFloatImageFromImage)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromRedwoodFormat)
 {
@@ -139,7 +179,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromRedwoodFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromTUMFormat)
 {
@@ -147,7 +187,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromTUMFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromSUNFormat)
 {
@@ -155,7 +195,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromSUNFormat)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_PointerAt)
 {
@@ -163,7 +203,7 @@ TEST(RGBDImage, DISABLED_PointerAt)
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromNYUFormat)
 {
