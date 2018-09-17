@@ -56,7 +56,10 @@ def get_file_list(path, extension=None):
 
 
 def get_rgbd_file_lists(path_dataset):
-    path_color = os.path.join(path_dataset, "image/")
+    if os.path.exists(os.path.join(path_dataset, "image/")):
+        path_color = os.path.join(path_dataset, "image/")
+    else:
+        path_color = os.path.join(path_dataset, "rgb/")
     path_depth = os.path.join(path_dataset, "depth/")
     color_files = get_file_list(path_color, ".jpg") + \
             get_file_list(path_color, ".png")
