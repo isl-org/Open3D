@@ -208,27 +208,3 @@ TEST(RGBDImage, DISABLED_CreateRGBDImagePyramid)
 {
     UnitTest::NotImplemented();
 }
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromColorAndDepth)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RGBDImage, DISABLED_ConvertDepthToFloatImage)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RGBDImage, DISABLED_CreateFloatImageFromImage)
-{
-    UnitTest::NotImplemented();
-}
