@@ -1,6 +1,6 @@
 {
     "name": "Single object scans http://redwood-data.org/3dscan/index.html",
-    "path_dataset": "dataset/redwood_objects/00021/",
+    "path_dataset": "dataset/redwood_objects/chair/",
     "path_intrinsic": "",
     "max_depth": 2.0,
     "voxel_size": 0.02,
