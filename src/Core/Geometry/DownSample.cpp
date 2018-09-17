@@ -322,13 +322,13 @@ std::tuple<std::vector<size_t>,std::vector<double>> RemoveStatisticalOutliers(co
 
     double cloud_mean = std::accumulate(avg_distances.begin(), avg_distances.end(), 0.0, 
         [](double const & x, double const & y) { return y > 0 ?  x + y : x; });
-    cloud_mean /= valid_distances;
+    cloud_mean /= (valid_distances - 1);  // Bessel's correction
     double sq_sum = std::inner_product(avg_distances.begin(), avg_distances.end(), avg_distances.begin(), 0.0,
             [](double const & x, double const & y) { return x + y; },
             [cloud_mean](double const & x, double const & y) { 
                 return x > 0 ? (x - cloud_mean)*(y - cloud_mean) : 0; 
             });
-    double std_dev = std::sqrt(sq_sum/ avg_distances.size());
+    double std_dev = std::sqrt(sq_sum/ (valid_distances - 1));
 
     for (size_t i = 0; i < avg_distances.size(); i++) {
         if (avg_distances[i] > 0 && 
