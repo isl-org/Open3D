@@ -12,7 +12,14 @@ from common import *
 def run_synchronization(args):
     assert len(sys.argv) == 2
     folder_path = sys.argv[1]
-    color_files, depth_files = get_rgbd_file_lists(folder_path)
+    depth_files = [name for name in os.listdir(os.path.join(folder_path, "depth"))
+            if name.lower().endswith('.png')]
+    if os.path.exists(os.path.join(folder_path, "image")):
+        color_files = [name for name in os.listdir(os.path.join(folder_path, "image"))
+                if name.lower().endswith('.jpg')]
+    else:
+        color_files = [name for name in os.listdir(os.path.join(folder_path, "rgb"))
+                if name.lower().endswith('.jpg')]
     if args.debug_mode:
         print(depth_files)
         print(color_files)
