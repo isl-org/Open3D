@@ -102,6 +102,9 @@ void pybind_pointcloud_methods(py::module &m)
     m.def("radius_outlier_removal", &RemoveRadiusOutliers,
             "Function to remove points that have less than nb_points in a given sphere of radius radius",
             "input"_a, "nb_points"_a, "radius"_a);
+    m.def("statistical_outlier_removal", &RemoveStatisticalOutliers,
+            "Function to remove points that are furtehr away from their neighbours in average",
+            "input"_a, "nb_neighbours"_a, "std_ratio"_a);
     m.def("estimate_normals", &EstimateNormals,
             "Function to compute the normals of a point cloud",
             "cloud"_a, "search_param"_a = KDTreeSearchParamKNN());

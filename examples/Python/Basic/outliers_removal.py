@@ -6,3 +6,6 @@ cloud = o3d.PointCloud()
 cloud.points = o3d.Vector3dVector(pts)
 new_cloud = o3d.radius_outlier_removal(cloud,10,0.2)
 print(new_cloud)
+
+distance = o3d.statistical_outlier_removal(cloud,10,2)
+print(distance)

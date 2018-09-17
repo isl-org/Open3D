@@ -28,6 +28,7 @@
 #include "TriangleMesh.h"
 
 #include <unordered_map>
+#include <numeric>
 
 #include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
@@ -259,8 +260,8 @@ std::shared_ptr<PointCloud> RemoveRadiusOutliers(const PointCloud &input,
 {
     if (nb_points < 1 || search_radius <= 0)  {
         PrintDebug("[RemoveRadiusOutliers] Illegal input parameters, number of points and radius must be positive\n");
+        return std::make_shared<PointCloud>();
     }
-    PrintDebug("[CropPointCloud] Illegal boundary clipped all points.\n");
     KDTreeFlann kdtree;
     kdtree.SetGeometry(input);
     std::vector<bool> mask = std::vector<bool>(input.points_.size());   
@@ -281,6 +282,61 @@ std::shared_ptr<PointCloud> RemoveRadiusOutliers(const PointCloud &input,
         }
     }
     return SelectDownSample(input, indices);
+}
+
+std::tuple<std::vector<size_t>,std::vector<double>> RemoveStatisticalOutliers(const PointCloud &input,
+        size_t nb_neighbours , double std_ratio)
+{
+    if (nb_neighbours < 1 || std_ratio <= 0)  {
+        PrintDebug("[RemoveStatisticalOutliers] Illegal input parameters, number of neighbours"  
+            "and standard deviation ratio must be positive\n");
+        return std::make_tuple(std::vector<size_t>(),std::vector<double>());
+    }
+    if (input.points_.size() == 0) {
+        return std::make_tuple(std::vector<size_t>(),std::vector<double>());
+    }
+
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(input);
+    std::vector<double> avg_distances = std::vector<double>(input.points_.size());   
+    std::vector<size_t> indices;
+    size_t valid_distances = 0;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (size_t i = 0; i < input.points_.size(); i++) {
+        std::vector<int> tmp_indices;
+        std::vector<double> dist;
+        kdtree.SearchKNN(input.points_[i],nb_neighbours,tmp_indices,dist);
+        double mean = -1;
+        if (dist.size() > 0) {
+            valid_distances++;
+            mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
+        }
+        avg_distances[i] = mean;
+    }
+
+     if (valid_distances == 0) {
+        return std::make_tuple(std::vector<size_t>(),std::vector<double>());
+    }
+
+    double cloud_mean = std::accumulate(avg_distances.begin(), avg_distances.end(), 0.0, 
+        [](double const & x, double const & y) { return y > 0 ?  x + y : x; });
+    cloud_mean /= valid_distances;
+    double sq_sum = std::inner_product(avg_distances.begin(), avg_distances.end(), avg_distances.begin(), 0.0,
+            [](double const & x, double const & y) { return x + y; },
+            [cloud_mean](double const & x, double const & y) { 
+                return x > 0 ? (x - cloud_mean)*(y - cloud_mean) : 0; 
+            });
+    double std_dev = std::sqrt(sq_sum/ avg_distances.size());
+
+    for (size_t i = 0; i < avg_distances.size(); i++) {
+        if (avg_distances[i] > 0 && 
+            std::abs(avg_distances[i] - cloud_mean) < std_ratio*std_dev) {
+            indices.push_back(i);
+        }
+    }
+    return std::make_tuple(indices,avg_distances);
 }
 
 std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
