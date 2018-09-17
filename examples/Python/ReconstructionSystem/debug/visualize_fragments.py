@@ -6,7 +6,7 @@ import argparse
 import json
 import os
 import sys
-sys.path.append("../../Utility")
+sys.path.append("../Utility")
 from open3d import *
 from common import *
 

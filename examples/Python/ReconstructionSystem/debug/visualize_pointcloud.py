@@ -8,8 +8,8 @@ from open3d import *
 import sys
 import os
 import math
-sys.path.append("../../Utility")
-sys.path.append("../")
+sys.path.append(".")
+sys.path.append("../Utility")
 from common import *
 from make_fragments import *
 

@@ -6,8 +6,8 @@ import numpy as np
 import argparse
 import os
 import sys
-sys.path.append("..")
-sys.path.append("../../Utility")
+sys.path.append(".")
+sys.path.append("../Utility")
 import json
 from open3d import *
 from common import *

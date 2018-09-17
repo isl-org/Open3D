@@ -6,8 +6,8 @@ import numpy as np
 import argparse
 import sys
 from open3d import *
-sys.path.append("..")
-sys.path.append("../../Utility")
+sys.path.append(".")
+sys.path.append("../Utility")
 import json
 from common import *
 from make_fragments import *
