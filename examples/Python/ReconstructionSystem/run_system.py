@@ -30,7 +30,10 @@ if __name__ == "__main__":
         with open(args.config) as json_file:
             config = json.load(json_file)
             path_depth = os.path.join(config["path_dataset"], "depth")
-            path_image = os.path.join(config["path_dataset"], "image")
+            if os.path.exists(os.path.join(config["path_dataset"], "image/")):
+                path_image = os.path.join(config["path_dataset"], "image/")
+            else:
+                path_image = os.path.join(config["path_dataset"], "rgb/")
             assert os.path.exists(path_depth), \
                     "Path %s is not exist!" % path_depth
             assert os.path.exists(path_image), \
