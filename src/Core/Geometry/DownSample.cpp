@@ -276,7 +276,7 @@ std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> RemoveRadiusOutliers
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t i = 0; i < input.points_.size(); i++) {
+    for (auto i = 0; i < input.points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         int nb_neighbours = kdtree.SearchRadius(input.points_[i],search_radius,tmp_indices,dist);
@@ -312,7 +312,7 @@ std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>  RemoveStatisticalOu
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (size_t i = 0; i < input.points_.size(); i++) {
+    for (auto i = 0; i < input.points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         kdtree.SearchKNN(input.points_[i],nb_neighbours,tmp_indices,dist);
