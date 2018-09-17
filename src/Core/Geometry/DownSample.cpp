@@ -91,15 +91,23 @@ private:
 }    // unnamed namespace
 
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
-        const std::vector<size_t> &indices)
+        const std::vector<size_t> &indices, bool invert /* = false */)
 {
     auto output = std::make_shared<PointCloud>();
     bool has_normals = input.HasNormals();
     bool has_colors = input.HasColors();
-    for (size_t i : indices) {
-        output->points_.push_back(input.points_[i]);
-        if (has_normals) output->normals_.push_back(input.normals_[i]);
-        if (has_colors) output->colors_.push_back(input.colors_[i]);
+
+    std::vector<bool> mask = std::vector<bool>(input.points_.size(), invert);
+    for  (size_t i : indices) {
+        mask[i] = !invert;
+    }
+
+    for (size_t i = 0; i < input.points_.size(); i++) {
+        if (mask[i]) {
+            output->points_.push_back(input.points_[i]);
+            if (has_normals) output->normals_.push_back(input.normals_[i]);
+            if (has_colors) output->colors_.push_back(input.colors_[i]);
+        }
     }
     PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
             (int)input.points_.size(), (int)output->points_.size());

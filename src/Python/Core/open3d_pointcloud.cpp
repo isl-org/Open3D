@@ -89,7 +89,7 @@ void pybind_pointcloud_methods(py::module &m)
             "extrinsic"_a = Eigen::Matrix4d::Identity());
     m.def("select_down_sample", &SelectDownSample,
             "Function to select points from input pointcloud into output pointcloud",
-            "input"_a, "indices"_a);
+            "input"_a, "indices"_a, "invert"_a = true);
     m.def("voxel_down_sample", &VoxelDownSample,
             "Function to downsample input pointcloud into output pointcloud with a voxel",
             "input"_a, "voxel_size"_a);

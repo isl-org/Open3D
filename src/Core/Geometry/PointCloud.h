@@ -117,7 +117,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
 /// \return output pointcloud
 /// Points with indices in \param indices are selected.
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
-        const std::vector<size_t> &indices);
+        const std::vector<size_t> &indices, bool invert = false);
 
 /// Function to downsample \param input pointcloud into output pointcloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value
