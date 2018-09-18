@@ -153,27 +153,35 @@ template <>
 void UnitTest::Print(const vector<uint8_t> &v)
 {
     int width = 5;
-    int cols = 10;
+    size_t cols = 10;
+    size_t rows = (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols)  + 1;
 
-    cout << "    {";
-    for (size_t i = 0; i < v.size(); i++)
+    cout << setw(4) << "";
+    cout << "{";
+    cout << endl;
+
+    for (size_t r = 0; r < rows; r++)
     {
-        if ((i % cols == 0) && (i != 0))
-            {
-                cout << "\\";
-                cout << endl;
-                cout << "    ";
-            }
+        cout << setw(4) << "";
+        cout << setw(4) << "";
 
-        if (i == 0)
-            cout << setw(width - 1) << (int)v[i];
-        else
+        for (size_t c = 0; c < cols; c++)
+        {
+            int i = r * cols + c;
+
             cout << setw(width) << (int)v[i];
 
-        if (i != (v.size() - 1))
-            cout << ",";
+            if (i < (v.size() - 1))
+                cout << ",";
+            else
+                break;
+        }
+
+        cout << endl;
     }
-    cout << " };";
+
+    cout << setw(4) << "";
+    cout << "};";
     cout << endl;
 }
 
