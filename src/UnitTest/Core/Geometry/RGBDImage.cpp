@@ -507,22 +507,18 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
     UnitTest::Rand<float>(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
     UnitTest::Rand<uint8_t>(color.data_, 130, 200, 0);
 
+    size_t num_of_levels = 2;
     auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
-    auto rgbdImagePyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, 2);
+    auto rgbdImagePyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, num_of_levels);
 
-    EXPECT_EQ(ref_color[0].size(), rgbdImagePyramid[0]->color_.data_.size());
-    for (size_t i = 0; i < ref_color[0].size(); i++)
-        EXPECT_EQ(ref_color[0][i], rgbdImagePyramid[0]->color_.data_[i]);
+    for (size_t j = 0; j < num_of_levels; j++)
+    {
+        EXPECT_EQ(ref_color[j].size(), rgbdImagePyramid[j]->color_.data_.size());
+        for (size_t i = 0; i < ref_color[j].size(); i++)
+            EXPECT_EQ(ref_color[j][i], rgbdImagePyramid[j]->color_.data_[i]);
 
-    EXPECT_EQ(ref_color[1].size(), rgbdImagePyramid[1]->color_.data_.size());
-    for (size_t i = 0; i < ref_color[1].size(); i++)
-        EXPECT_EQ(ref_color[1][i], rgbdImagePyramid[1]->color_.data_[i]);
-
-    EXPECT_EQ(ref_depth[0].size(), rgbdImagePyramid[0]->depth_.data_.size());
-    for (size_t i = 0; i < ref_depth[0].size(); i++)
-        EXPECT_EQ(ref_depth[0][i], rgbdImagePyramid[0]->depth_.data_[i]);
-
-    EXPECT_EQ(ref_depth[1].size(), rgbdImagePyramid[1]->depth_.data_.size());
-    for (size_t i = 0; i < ref_depth[1].size(); i++)
-        EXPECT_EQ(ref_depth[1][i], rgbdImagePyramid[1]->depth_.data_[i]);
+        EXPECT_EQ(ref_depth[j].size(), rgbdImagePyramid[j]->depth_.data_.size());
+        for (size_t i = 0; i < ref_depth[j].size(); i++)
+            EXPECT_EQ(ref_depth[j][i], rgbdImagePyramid[j]->depth_.data_[i]);
+    }
 }
