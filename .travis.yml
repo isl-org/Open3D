@@ -140,13 +140,6 @@ script:
 
   # Reconfig and install in a specified CMAKE_INSTALL_PREFIX
   - sudo make uninstall
-  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST`
-  - if [ "$test" == "Open3D found." ]; then
-      echo "Uninstallation was not successful.";
-      exit 1;
-    else
-      echo "Uninstallation was successful.";
-    fi
   - if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
       cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON
             -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
