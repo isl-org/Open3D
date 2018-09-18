@@ -81,10 +81,8 @@ void UnitTest::Print(const vector<Eigen::Vector2i> &v)
         cout << setw(width) << v[i](0, 0) << ",";
         cout << setw(width) << v[i](1, 0);
         cout << " }";
-        if (i == (v.size() - 1))
-            cout << " \\";
-        else
-            cout << ",\\";
+        if (i < (v.size() - 1))
+            cout << ",";
         cout << endl;
     }
     cout << "    };";
@@ -108,10 +106,8 @@ void UnitTest::Print(const vector<Eigen::Vector3i> &v)
         cout << setw(width) << v[i](1, 0) << ",";
         cout << setw(width) << v[i](2, 0);
         cout << " }";
-        if (i == (v.size() - 1))
-            cout << " \\";
-        else
-            cout << ",\\";
+        if (i < (v.size() - 1))
+            cout << ",";
         cout << endl;
     }
     cout << "    };";
@@ -139,10 +135,8 @@ void UnitTest::Print(const vector<Eigen::Vector3d> &v)
         cout << setw(width) << v[i](1, 0) << ",";
         cout << setw(width) << v[i](2, 0);
         cout << " }";
-        if (i == (v.size() - 1))
-            cout << " \\";
-        else
-            cout << ",\\";
+        if (i < (v.size() - 1))
+            cout << ",";
         cout << endl;
     }
     cout << "    };";
@@ -211,7 +205,7 @@ void UnitTest::Print(const vector<int> &v)
         {
             int i = r * cols + c;
 
-            cout << setw(width) << (int)v[i];
+            cout << setw(width) << v[i];
 
             if (i < (v.size() - 1))
                 cout << ",";
@@ -250,7 +244,7 @@ void UnitTest::Print(const vector<size_t> &v)
         {
             int i = r * cols + c;
 
-            cout << setw(width) << (int)v[i];
+            cout << setw(width) << v[i];
 
             if (i < (v.size() - 1))
                 cout << ",";
@@ -293,7 +287,7 @@ void UnitTest::Print(const vector<float> &v)
         {
             int i = r * cols + c;
 
-            cout << setw(width) << (int)v[i];
+            cout << setw(width) << v[i];
 
             if (i < (v.size() - 1))
                 cout << ",";
@@ -336,7 +330,7 @@ void UnitTest::Print(const vector<double> &v)
         {
             int i = r * cols + c;
 
-            cout << setw(width) << (int)v[i];
+            cout << setw(width) << v[i];
 
             if (i < (v.size() - 1))
                 cout << ",";
