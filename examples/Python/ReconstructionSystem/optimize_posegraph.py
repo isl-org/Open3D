@@ -7,7 +7,7 @@
 import sys
 sys.path.append("../Utility")
 from open3d import *
-from common import *
+from file import *
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
         max_correspondence_distance, preference_loop_closure):

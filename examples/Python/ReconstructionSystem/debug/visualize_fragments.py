@@ -8,7 +8,8 @@ import os
 import sys
 sys.path.append("../Utility")
 from open3d import *
-from common import *
+from file import *
+from visualization import *
 
 
 # test wide baseline matching

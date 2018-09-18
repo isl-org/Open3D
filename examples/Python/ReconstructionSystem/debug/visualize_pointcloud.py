@@ -10,7 +10,8 @@ import os
 import math
 sys.path.append(".")
 sys.path.append("../Utility")
-from common import *
+from file import *
+from visualization import *
 from make_fragments import *
 
 # test wide baseline matching

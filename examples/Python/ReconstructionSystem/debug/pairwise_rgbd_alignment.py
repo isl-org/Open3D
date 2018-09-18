@@ -9,7 +9,7 @@ from open3d import *
 sys.path.append(".")
 sys.path.append("../Utility")
 import json
-from common import *
+from file import *
 from make_fragments import *
 
 

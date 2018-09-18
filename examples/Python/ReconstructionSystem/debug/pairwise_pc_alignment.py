@@ -10,7 +10,7 @@ sys.path.append(".")
 sys.path.append("../Utility")
 import json
 from open3d import *
-from common import *
+from file import *
 from register_fragments import *
 
 

@@ -8,7 +8,8 @@ import numpy as np
 import sys
 sys.path.append("../Utility")
 from open3d import *
-from common import *
+from file import *
+from visualization import *
 from optimize_posegraph import *
 from refine_registration import *
 

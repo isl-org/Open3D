@@ -9,7 +9,7 @@ import math
 import sys
 sys.path.append("../Utility")
 from open3d import *
-from common import *
+from file import *
 
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):

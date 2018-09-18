@@ -9,7 +9,8 @@ import os
 import sys
 sys.path.append("../Utility")
 from open3d import *
-from common import *
+from file import *
+from visualization import *
 
 
 def list_posegraph_files(folder_posegraph):
@@ -49,7 +50,7 @@ if __name__ == "__main__":
                     template_global_posegraph)
         else:
             global_pose_graph_name = os.path.join(config["path_dataset"],
-                    template_global_posegraph_optimized)
+                    template_refined_posegraph_optimized)
         print("Reading posegraph")
         print(global_pose_graph_name)
         pose_graph = read_pose_graph(global_pose_graph_name)

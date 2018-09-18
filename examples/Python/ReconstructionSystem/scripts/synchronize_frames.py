@@ -3,28 +3,16 @@ import os
 import sys
 import shutil
 import argparse
-import re
+sys.path.append("../../Utility")
+from file import *
 # original code is written by Andrew. W. Chen
 # input: openni style unsynchronized color and depth images
 # output: synchronized color and depth images
 
-def sorted_alphanum(file_list_ordered):
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(file_list_ordered, key=alphanum_key)
 
 def run_synchronization(args):
     folder_path = args.dataset
-    depth_files = [name for name in os.listdir(os.path.join(folder_path, "depth"))
-            if name.lower().endswith('.png')]
-    if os.path.exists(os.path.join(folder_path, "image")):
-        color_files = [name for name in os.listdir(os.path.join(folder_path, "image"))
-                if name.lower().endswith('.jpg')]
-    else:
-        color_files = [name for name in os.listdir(os.path.join(folder_path, "rgb"))
-                if name.lower().endswith('.jpg')]
-    color_files = sorted_alphanum(color_files)
-    depth_files = sorted_alphanum(depth_files)
+    color_files, depth_files = get_rgbd_file_lists(folder_path)
     if args.debug_mode:
         print(depth_files)
         print(color_files)
@@ -67,7 +55,7 @@ def run_synchronization(args):
     for i, assn in enumerate(associations):
         temp_name = os.path.join(folder_path, "temp",
                 os.path.basename(depth_files[assn]))
-        new_name = os.path.join(folder_path, "depth/%06d.png" % (i+1)) 
+        new_name = os.path.join(folder_path, "depth/%06d.png" % (i+1))
         if args.debug_mode:
             print(temp_name)
             print(new_name)
