@@ -439,9 +439,81 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDImage, DISABLED_FilterRGBDImagePyramid)
+TEST(RGBDImage, FilterRGBDImagePyramid)
 {
-    UnitTest::NotImplemented();
+    vector<vector<uint8_t>> ref_color = {
+    {  49,   63,   46,   63,  234,  198,   45,   63,  152,  189,\
+       39,   63,  151,  141,   36,   63,  165,  233,   38,   63,\
+       44,   66,   47,   63,   54,  137,   40,   63,   10,  229,\
+       34,   63,   34,   30,   36,   63,  102,   55,   42,   63,\
+      230,  110,   48,   63,  133,   79,   41,   63,   33,   69,\
+       37,   63,  126,   99,   38,   63,  234,  215,   40,   63,\
+       91,   21,   49,   63,   92,   34,   42,   63,   75,  230,\
+       36,   63,  181,   45,   37,   63,  210,  213,   37,   63,\
+       82,   65,   49,   63,   72,  187,   41,   63,  106,  229,\
+       37,   63,  255,  106,   40,   63,   94,  171,   45,   63 },
+    { 159,    3,   43,   63,  135,  253,   38,   63,  128,   50,\
+       43,   63,    2,   65,   39,   63 } };
+
+    vector<vector<uint8_t>> ref_depth = {
+    { 228,  189,   30,   54,  192,   99,   17,   54,  198,  205,\
+       42,   54,  153,  171,   64,   54,  176,  195,   77,   54,\
+       66,  211,  223,   53,  111,   11,  255,   53,  106,   58,\
+       18,   54,  104,  198,   25,   54,  118,  205,   48,   54,\
+       82,   42,   10,   54,   88,   83,   15,   54,  196,  207,\
+        4,   54,  116,  199,    5,   54,  250,   89,   46,   54,\
+      145,  132,   21,   54,  180,   25,   12,   54,   87,  127,\
+      249,   53,   81,   86,  244,   53,  187,   58,   12,   54,\
+      141,   83,  139,   53,   25,   66,  157,   53,  230,  195,\
+      201,   53,   95,  144,  239,   53,   89,  221,  188,   53 },
+    {   4,   63,    9,   54,  112,  194,   22,   54,  170,  235,\
+       23,   54,  208,   54,    8,   54 } };
+
+    open3d::Image depth;
+    open3d::Image color;
+
+    const int size = 5;
+
+    // test image dimensions
+    const int depth_width = size;
+    const int depth_height = size;
+    const int depth_num_of_channels = 1;
+    const int depth_bytes_per_channel = 4;
+
+    const int color_width = size;
+    const int color_height = size;
+    const int color_num_of_channels = 3;
+    const int color_bytes_per_channel = 1;
+
+    color.PrepareImage(color_width,
+                       color_height,
+                       color_num_of_channels,
+                       color_bytes_per_channel);
+
+    depth.PrepareImage(depth_width,
+                       depth_height,
+                       depth_num_of_channels,
+                       depth_bytes_per_channel);
+
+    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
+    UnitTest::Rand<float>(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    UnitTest::Rand<uint8_t>(color.data_, 130, 200, 0);
+
+    size_t num_of_levels = 2;
+    auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
+    auto pyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, num_of_levels);
+    auto filteredPyramid = open3d::FilterRGBDImagePyramid(pyramid, open3d::Image::FilterType::Gaussian3);
+
+    for (size_t j = 0; j < num_of_levels; j++)
+    {
+        EXPECT_EQ(ref_color[j].size(), filteredPyramid[j]->color_.data_.size());
+        for (size_t i = 0; i < ref_color[j].size(); i++)
+            EXPECT_EQ(ref_color[j][i], filteredPyramid[j]->color_.data_[i]);
+
+        EXPECT_EQ(ref_depth[j].size(), filteredPyramid[j]->depth_.data_.size());
+        for (size_t i = 0; i < ref_depth[j].size(); i++)
+            EXPECT_EQ(ref_depth[j][i], filteredPyramid[j]->depth_.data_[i]);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -509,16 +581,16 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
 
     size_t num_of_levels = 2;
     auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
-    auto rgbdImagePyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, num_of_levels);
+    auto pyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, num_of_levels);
 
     for (size_t j = 0; j < num_of_levels; j++)
     {
-        EXPECT_EQ(ref_color[j].size(), rgbdImagePyramid[j]->color_.data_.size());
+        EXPECT_EQ(ref_color[j].size(), pyramid[j]->color_.data_.size());
         for (size_t i = 0; i < ref_color[j].size(); i++)
-            EXPECT_EQ(ref_color[j][i], rgbdImagePyramid[j]->color_.data_[i]);
+            EXPECT_EQ(ref_color[j][i], pyramid[j]->color_.data_[i]);
 
-        EXPECT_EQ(ref_depth[j].size(), rgbdImagePyramid[j]->depth_.data_.size());
+        EXPECT_EQ(ref_depth[j].size(), pyramid[j]->depth_.data_.size());
         for (size_t i = 0; i < ref_depth[j].size(); i++)
-            EXPECT_EQ(ref_depth[j][i], rgbdImagePyramid[j]->depth_.data_[i]);
+            EXPECT_EQ(ref_depth[j][i], pyramid[j]->depth_.data_[i]);
     }
 }
