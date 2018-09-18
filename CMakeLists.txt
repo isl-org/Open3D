@@ -40,7 +40,7 @@ configure_file("${PROJECT_SOURCE_DIR}/util/pip_package/setup.py.in"
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
 else()
-    set(DEF_INSTALL_CMAKE_DIR lib/CMake/Open3D)
+    set(DEF_INSTALL_CMAKE_DIR lib/cmake/Open3D)
 endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
     "Installation directory for CMake files")
