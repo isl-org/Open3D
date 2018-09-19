@@ -6,11 +6,12 @@
 
 import numpy as np
 import math
+from open3d import *
 import sys
 sys.path.append("../Utility")
-from open3d import *
 from file import *
 from opencv import *
+from common_variables import *
 from optimize_posegraph import *
 
 

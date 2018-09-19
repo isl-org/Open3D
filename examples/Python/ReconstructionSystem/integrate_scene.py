@@ -7,9 +7,10 @@
 import numpy as np
 import math
 import sys
-sys.path.append("../Utility")
 from open3d import *
+sys.path.append("../Utility")
 from file import *
+from common_variables import *
 
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):

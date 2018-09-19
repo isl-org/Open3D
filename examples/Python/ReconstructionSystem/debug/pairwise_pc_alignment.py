@@ -5,12 +5,12 @@
 import numpy as np
 import argparse
 import os
-import sys
-sys.path.append(".")
-sys.path.append("../Utility")
 import json
+import sys
 from open3d import *
+sys.path.append("../Utility")
 from file import *
+sys.path.append(".")
 from register_fragments import *
 
 

@@ -6,10 +6,12 @@ import argparse
 import json
 import os
 import sys
-sys.path.append("../Utility")
 from open3d import *
+sys.path.append("../Utility")
 from file import *
 from visualization import *
+sys.path.append(".")
+from common_variables import *
 
 
 # test wide baseline matching

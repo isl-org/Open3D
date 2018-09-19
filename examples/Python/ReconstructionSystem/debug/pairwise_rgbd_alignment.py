@@ -4,12 +4,12 @@
 
 import numpy as np
 import argparse
+import json
 import sys
 from open3d import *
-sys.path.append(".")
 sys.path.append("../Utility")
-import json
 from file import *
+sys.path.append(".")
 from make_fragments import *
 
 
@@ -39,7 +39,8 @@ if __name__ == "__main__":
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("source_id", type=int, help="ID of source RGBD image")
     parser.add_argument("target_id", type=int, help="ID of target RGBD image")
-    parser.add_argument("--path_intrinsic", help="path to the RGBD camera intrinsic")
+    parser.add_argument("--path_intrinsic",
+            help="path to the RGBD camera intrinsic")
     args = parser.parse_args()
 
     with open(args.config) as json_file:

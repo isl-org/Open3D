@@ -7,10 +7,12 @@ import json
 import argparse
 import os
 import sys
-sys.path.append("../Utility")
 from open3d import *
+sys.path.append("../Utility")
 from file import *
 from visualization import *
+sys.path.append(".")
+from common_variables import *
 
 
 def list_posegraph_files(folder_posegraph):
@@ -28,10 +30,16 @@ if __name__ == "__main__":
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("--source_id", type=int, help="ID of source fragment")
     parser.add_argument("--target_id", type=int, help="ID of target fragment")
-    parser.add_argument("--adjacent", help="visualize adjacent pairs", action="store_true")
-    parser.add_argument("--all", help="visualize all pairs", action="store_true")
-    parser.add_argument("--list_posegraphs", help="list number of node and edges of all pose graphs in the dataset folder", action="store_true")
-    parser.add_argument("--before_optimized", help="visualize posegraph edges that is not optimized", action="store_true")
+    parser.add_argument("--adjacent", help="visualize adjacent pairs",
+            action="store_true")
+    parser.add_argument("--all", help="visualize all pairs",
+            action="store_true")
+    parser.add_argument("--list_posegraphs",
+            help="list number of node and edges of all pose graphs",
+            action="store_true")
+    parser.add_argument("--before_optimized",
+            help="visualize posegraph edges that is not optimized",
+            action="store_true")
     args = parser.parse_args()
 
     with open(args.config) as json_file:
@@ -70,8 +78,16 @@ if __name__ == "__main__":
                     args.all:
                 print("    confidence : %.3f" % edge.confidence)
                 source = read_point_cloud(ply_file_names[edge.source_node_id])
-                source_down = voxel_down_sample(source, config["voxel_size"])
                 target = read_point_cloud(ply_file_names[edge.target_node_id])
+                source_down = voxel_down_sample(source, config["voxel_size"])
                 target_down = voxel_down_sample(target, config["voxel_size"])
+                print("original registration")
                 draw_registration_result(
                         source_down, target_down, edge.transformation)
+                print("optimized registration")
+                source_down.transform(
+                        pose_graph.nodes[edge.source_node_id].pose)
+                target_down.transform(
+                        pose_graph.nodes[edge.target_node_id].pose)
+                draw_registration_result(
+                        source_down, target_down, np.identity(4))

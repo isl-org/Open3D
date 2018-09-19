@@ -5,9 +5,11 @@
 # examples/Python/Tutorial/ReconstructionSystem/optimize_posegraph.py
 
 import sys
-sys.path.append("../Utility")
 from open3d import *
+sys.path.append("../Utility")
 from file import *
+from common_variables import *
+
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
         max_correspondence_distance, preference_loop_closure):

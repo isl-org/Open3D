@@ -2,12 +2,11 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-from open3d import *
-import copy
+# examples/Python/Tutorial/Utility/visualization.py
 
-#######################
-# visualization related
-#######################
+import copy
+from open3d import *
+
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
 def draw_geometries_flip(pcds):

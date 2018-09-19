@@ -5,22 +5,13 @@
 # examples/Python/Tutorial/ReconstructionSystem/register_fragments.py
 
 import numpy as np
+from open3d import *
 import sys
 sys.path.append("../Utility")
-from open3d import *
 from file import *
 from visualization import *
+from common_variables import *
 from optimize_posegraph import *
-
-
-def preprocess_point_cloud(pcd, config):
-    voxel_size = config["voxel_size"]
-    pcd_down = voxel_down_sample(pcd, voxel_size)
-    estimate_normals(pcd_down,
-            KDTreeSearchParamHybrid(radius = voxel_size * 2.0, max_nn = 30))
-    pcd_fpfh = compute_fpfh_feature(pcd_down,
-            KDTreeSearchParamHybrid(radius = voxel_size * 5.0, max_nn = 100))
-    return (pcd_down, pcd_fpfh)
 
 
 def update_posegrph_for_scene(s, t, transformation, information,
@@ -42,7 +33,7 @@ def update_posegrph_for_scene(s, t, transformation, information,
 def multiscale_icp(source, target, voxel_size, max_iter,
         config, init_transformation = np.identity(4)):
     current_transformation = init_transformation
-    for scale in range(len(max_iter)): # multi-scale approach
+    for i, scale in enumerate(range(len(max_iter))): # multi-scale approach
         iter = max_iter[scale]
         print("voxel_size %f" % voxel_size[scale])
         source_down = voxel_down_sample(source, voxel_size[scale])
@@ -66,11 +57,11 @@ def multiscale_icp(source, target, voxel_size, max_iter,
                     ICPConvergenceCriteria(relative_fitness = 1e-6,
                     relative_rmse = 1e-6, max_iteration = iter))
         current_transformation = result_icp.transformation
+        if i == len(max_iter)-1:
+            information_matrix = get_information_matrix_from_point_clouds(
+                    source, target, voxel_size[scale] * 1.4,
+                    result_icp.transformation)
 
-    maximum_correspondence_distance = voxel_size[-1]
-    information_matrix = get_information_matrix_from_point_clouds(
-            source, target, maximum_correspondence_distance,
-            result_icp.transformation)
     if config["debug_mode"]:
         draw_registration_result_original_color(source, target,
                 result_icp.transformation)
@@ -95,8 +86,6 @@ def register_point_cloud_pair(ply_file_names, s, t, transformation_init, config)
     source = read_point_cloud(ply_file_names[s])
     print("reading %s ..." % ply_file_names[t])
     target = read_point_cloud(ply_file_names[t])
-    (source_down, source_fpfh) = preprocess_point_cloud(source, config)
-    (target_down, target_fpfh) = preprocess_point_cloud(target, config)
     (transformation, information) = \
             local_refinement(source, target, transformation_init, config)
     if config["debug_mode"]:

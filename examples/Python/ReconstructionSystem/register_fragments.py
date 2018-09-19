@@ -5,11 +5,12 @@
 # examples/Python/Tutorial/ReconstructionSystem/register_fragments.py
 
 import numpy as np
+from open3d import *
 import sys
 sys.path.append("../Utility")
-from open3d import *
 from file import *
 from visualization import *
+from common_variables import *
 from optimize_posegraph import *
 from refine_registration import *
 

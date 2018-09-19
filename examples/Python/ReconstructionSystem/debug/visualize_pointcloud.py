@@ -4,15 +4,16 @@
 
 import argparse
 import json
-from open3d import *
-import sys
 import os
 import math
-sys.path.append(".")
+import sys
+from open3d import *
 sys.path.append("../Utility")
 from file import *
 from visualization import *
+sys.path.append(".")
 from make_fragments import *
+
 
 # test wide baseline matching
 if __name__ == "__main__":

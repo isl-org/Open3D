@@ -174,7 +174,7 @@ Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph)
 }
 
 /// The information matrix used here is consistent with [Choi et al 2015].
-/// It is [p_x | I]^T[p_x | I]. \zeta is [\alpha \beta \gamma a b c]
+/// It is [-p_x | I]^T[-p_x | I]. \zeta is [\alpha \beta \gamma a b c]
 /// Another definition of information matrix used for [Kümmerle et al 2011] is
 /// [I | p_x] ^ T[I | p_x]  so \zeta is [a b c \alpha \beta \gamma].
 ///
