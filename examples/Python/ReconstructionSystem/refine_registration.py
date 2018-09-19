@@ -59,7 +59,7 @@ def multiscale_icp(source, target, voxel_size, max_iter,
         current_transformation = result_icp.transformation
         if i == len(max_iter)-1:
             information_matrix = get_information_matrix_from_point_clouds(
-                    source, target, voxel_size[scale] * 1.4,
+                    source_down, target_down, voxel_size[scale] * 1.4,
                     result_icp.transformation)
 
     if config["debug_mode"]:
