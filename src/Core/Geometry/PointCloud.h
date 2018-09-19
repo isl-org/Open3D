@@ -139,11 +139,14 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
 
 /// Function to remove points that have less than \param nb_points in a sphere of 
 /// radius \param search_radius
-std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> RemoveRadiusOutliers(const PointCloud &input,
+std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> 
+        RemoveRadiusOutliers(const PointCloud &input,
         size_t nb_points , double search_radius);
 
-/// Function to remove points that are further away from their \param nb_neighbour neighbours in average.
-std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>  RemoveStatisticalOutliers(const PointCloud &input,
+/// Function to remove points that are further away from their
+/// \param nb_neighbour neighbours in average.
+std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> 
+        RemoveStatisticalOutliers(const PointCloud &input, 
         size_t nb_neighbours , double std_ratio);
 
 /// Function to compute the normals of a point cloud

@@ -263,11 +263,13 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
     return SelectDownSample(input, indices);
 }
 
-std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> RemoveRadiusOutliers(const PointCloud &input,
+std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> 
+        RemoveRadiusOutliers(const PointCloud &input,
         size_t nb_points , double search_radius)
 {
     if (nb_points < 1 || search_radius <= 0)  {
-        PrintDebug("[RemoveRadiusOutliers] Illegal input parameters, number of points and radius must be positive\n");
+        PrintDebug("[RemoveRadiusOutliers] Illegal input parameters,"
+                "number of points and radius must be positive\n");
         return std::make_tuple(std::make_shared<PointCloud>(),std::vector<size_t>());
     }
     KDTreeFlann kdtree;
@@ -279,7 +281,8 @@ std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> RemoveRadiusOutliers
     for (auto i = 0; i < input.points_.size(); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
-        int nb_neighbours = kdtree.SearchRadius(input.points_[i],search_radius,tmp_indices,dist);
+        int nb_neighbours = 
+                kdtree.SearchRadius(input.points_[i],search_radius,tmp_indices,dist);
         mask[i] = (nb_neighbours > nb_points);
     }
 
@@ -292,7 +295,8 @@ std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>> RemoveRadiusOutliers
     return std::make_tuple(SelectDownSample(input, indices),indices);
 }
 
-std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>  RemoveStatisticalOutliers(const PointCloud &input,
+std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>  
+        RemoveStatisticalOutliers(const PointCloud &input,
         size_t nb_neighbours , double std_ratio)
 {
     if (nb_neighbours < 1 || std_ratio <= 0)  {
@@ -331,7 +335,8 @@ std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>  RemoveStatisticalOu
     double cloud_mean = std::accumulate(avg_distances.begin(), avg_distances.end(), 0.0, 
         [](double const & x, double const & y) { return y > 0 ?  x + y : x; });
     cloud_mean /= valid_distances; 
-    double sq_sum = std::inner_product(avg_distances.begin(), avg_distances.end(), avg_distances.begin(), 0.0,
+    double sq_sum = std::inner_product(
+            avg_distances.begin(), avg_distances.end(), avg_distances.begin(), 0.0,
             [](double const & x, double const & y) { return x + y; },
             [cloud_mean](double const & x, double const & y) { 
                 return x > 0 ? (x - cloud_mean)*(y - cloud_mean) : 0; 
