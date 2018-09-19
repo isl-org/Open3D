@@ -4,11 +4,6 @@
 
 # examples/Python/Tutorial/ReconstructionSystem/common_variables.py
 
-# some global parameters
-n_frames_per_fragment = 100
-n_keyframes_per_n_frame = 5
-
-# global variable for output file names
 folder_fragment = "fragments/"
 template_fragment_posegraph = "fragments/fragment_%03d.json"
 template_fragment_posegraph_optimized = \

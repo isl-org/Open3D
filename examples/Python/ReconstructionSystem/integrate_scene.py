@@ -16,8 +16,8 @@ from common_variables import *
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     [color_files, depth_files] = get_rgbd_file_lists(path_dataset)
     n_files = len(color_files)
-    n_frames_per_fragment = 100
-    n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
+    n_fragments = int(math.ceil(float(n_files) / \
+            config['n_frames_per_fragment']))
     volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
@@ -29,7 +29,8 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
                 template_fragment_posegraph_optimized % fragment_id))
 
         for frame_id in range(len(pose_graph_rgbd.nodes)):
-            frame_id_abs = fragment_id * n_frames_per_fragment + frame_id
+            frame_id_abs = fragment_id * \
+                    config['n_frames_per_fragment'] + frame_id
             print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
                     % (fragment_id, n_fragments-1, frame_id_abs, frame_id+1,
                     len(pose_graph_rgbd.nodes)))

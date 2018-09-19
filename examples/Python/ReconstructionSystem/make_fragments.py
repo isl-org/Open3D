@@ -79,8 +79,8 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
                                 uncertain = False))
 
             # keyframe loop closure
-            if s % n_keyframes_per_n_frame == 0 \
-                    and t % n_keyframes_per_n_frame == 0:
+            if s % config['n_keyframes_per_n_frame'] == 0 \
+                    and t % config['n_keyframes_per_n_frame'] == 0:
                 print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
                         % (fragment_id, n_fragments-1, s, t))
                 [success, trans, info] = register_one_rgbd_pair(s, t,
@@ -101,7 +101,7 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
     for i in range(len(pose_graph.nodes)):
-        i_abs = fragment_id * n_frames_per_fragment + i
+        i_abs = fragment_id * config['n_frames_per_fragment'] + i
         print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
                 % (fragment_id, n_fragments-1,
                 i_abs, i+1, len(pose_graph.nodes)))
@@ -137,8 +137,8 @@ def process_single_fragment(fragment_id, color_files, depth_files,
     else:
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    sid = fragment_id * n_frames_per_fragment
-    eid = min(sid + n_frames_per_fragment, n_files)
+    sid = fragment_id * config['n_frames_per_fragment']
+    eid = min(sid + config['n_frames_per_fragment'], n_files)
 
     make_posegraph_for_fragment(config["path_dataset"], sid, eid,
             color_files, depth_files, fragment_id,
@@ -155,7 +155,8 @@ def run(config):
     make_folder(os.path.join(config["path_dataset"], folder_fragment))
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
-    n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
+    n_fragments = int(math.ceil(float(n_files) / \
+            config['n_frames_per_fragment']))
 
     if config["python_multi_threading"]:
         from joblib import Parallel, delayed

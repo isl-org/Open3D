@@ -42,6 +42,30 @@ if __name__ == "__main__":
     else:
         config['debug_mode'] = False
 
+    # set default parameters if not specified
+    if not config['n_frames_per_fragment']:
+        config['n_frames_per_fragment'] = 100
+    if not config['n_keyframes_per_n_frame']:
+        config['n_keyframes_per_n_frame'] = 5
+    if not config['max_depth']:
+        config['max_depth'] = 3.0
+    if not config['voxel_size']:
+        config['voxel_size'] = 0.05
+    if not config['max_depth_diff']:
+        config['max_depth_diff'] = 0.07
+    if not config['preference_loop_closure_odometry']:
+        config['preference_loop_closure_odometry'] = 0.1
+    if not config['preference_loop_closure_registration']:
+        config['preference_loop_closure_registration'] = 5.0
+    if not config['tsdf_cubic_size']:
+        config['tsdf_cubic_size'] = 3.0
+    if not config['icp_method']:
+        config['icp_method'] = "color"
+    if not config['global_registration']:
+        config['global_registration'] = "ransac",
+    if not config['python_multi_threading']
+        config['python_multi_threading'] = True
+
     if args.make:
         import make_fragments
         make_fragments.run(config)

@@ -62,9 +62,10 @@ if __name__ == "__main__":
             [color_files, depth_files] = \
                     get_rgbd_file_lists(config["path_dataset"])
             n_files = len(color_files)
-            n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
-            sid = int(args.fragment) * n_frames_per_fragment
-            eid = min(sid + n_frames_per_fragment, n_files)
+            n_fragments = int(math.ceil(float(n_files) / \
+                    config['n_frames_per_fragment']))
+            sid = int(args.fragment) * config['n_frames_per_fragment']
+            eid = min(sid + config['n_frames_per_fragment'], n_files)
             pose_graph = read_pose_graph(os.path.join(config["path_dataset"],
                     template_fragment_posegraph_optimized % int(args.fragment)))
 
