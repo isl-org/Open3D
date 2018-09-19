@@ -10,7 +10,7 @@ import os, sys
 sys.path.append("../Utility")
 from file import *
 
-path = "/Users/jaesikpa/Downloads/fountain_small/"
+path = "[path_to_fountain_dataset]"
 debug_mode = False
 
 if __name__ == "__main__":
