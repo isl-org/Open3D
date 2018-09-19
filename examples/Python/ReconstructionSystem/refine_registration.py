@@ -105,7 +105,7 @@ class matching_result:
 
 
 def make_posegraph_for_scene(ply_file_names, config):
-    pose_graph = read_pose_graph(os.path.join(config["path_dataset"],
+    pose_graph = read_pose_graph(join(config["path_dataset"],
             template_global_posegraph_optimized))
 
     n_files = len(ply_file_names)
@@ -155,14 +155,14 @@ def make_posegraph_for_scene(ply_file_names, config):
                 matching_results[r].information,
                 odometry, pose_graph_new)
     print(pose_graph_new)
-    write_pose_graph(os.path.join(config["path_dataset"],
+    write_pose_graph(join(config["path_dataset"],
             template_refined_posegraph), pose_graph_new)
 
 
 def run(config):
     print("refine rough registration of fragments.")
     set_verbosity_level(VerbosityLevel.Debug)
-    ply_file_names = get_file_list(os.path.join(
+    ply_file_names = get_file_list(join(
             config["path_dataset"], folder_fragment), ".ply")
     make_posegraph_for_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)

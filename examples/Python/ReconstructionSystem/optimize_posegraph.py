@@ -29,9 +29,9 @@ def run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
 
 
 def optimize_posegraph_for_fragment(path_dataset, fragment_id, config):
-    pose_graph_name = os.path.join(
-            path_dataset, template_fragment_posegraph % fragment_id)
-    pose_graph_optmized_name = os.path.join(path_dataset,
+    pose_graph_name = join(path_dataset,
+            template_fragment_posegraph % fragment_id)
+    pose_graph_optmized_name = join(path_dataset,
             template_fragment_posegraph_optimized % fragment_id)
     run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
             max_correspondence_distance = config["max_depth_diff"],
@@ -40,8 +40,8 @@ def optimize_posegraph_for_fragment(path_dataset, fragment_id, config):
 
 
 def optimize_posegraph_for_scene(path_dataset, config):
-    pose_graph_name = os.path.join(path_dataset, template_global_posegraph)
-    pose_graph_optmized_name = os.path.join(path_dataset,
+    pose_graph_name = join(path_dataset, template_global_posegraph)
+    pose_graph_optmized_name = join(path_dataset,
             template_global_posegraph_optimized)
     run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
             max_correspondence_distance = config["voxel_size"] * 1.4,
@@ -50,8 +50,8 @@ def optimize_posegraph_for_scene(path_dataset, config):
 
 
 def optimize_posegraph_for_refined_scene(path_dataset, config):
-    pose_graph_name = os.path.join(path_dataset, template_refined_posegraph)
-    pose_graph_optmized_name = os.path.join(path_dataset,
+    pose_graph_name = join(path_dataset, template_refined_posegraph)
+    pose_graph_optmized_name = join(path_dataset,
             template_refined_posegraph_optimized)
     run_posegraph_optimization(pose_graph_name, pose_graph_optmized_name,
             max_correspondence_distance = config["voxel_size"] * 1.4,

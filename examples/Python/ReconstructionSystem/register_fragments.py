@@ -165,15 +165,15 @@ def make_posegraph_for_scene(ply_file_names, config):
                     matching_results[r].transformation,
                     matching_results[r].information,
                     odometry, pose_graph)
-    write_pose_graph(os.path.join(config["path_dataset"],
+    write_pose_graph(join(config["path_dataset"],
             template_global_posegraph), pose_graph)
 
 
 def run(config):
     print("register fragments.")
     set_verbosity_level(VerbosityLevel.Debug)
-    ply_file_names = get_file_list(os.path.join(
+    ply_file_names = get_file_list(join(
             config["path_dataset"], folder_fragment), ".ply")
-    make_folder(os.path.join(config["path_dataset"], folder_scene))
+    make_clean_folder(join(config["path_dataset"], folder_scene))
     make_posegraph_for_scene(ply_file_names, config)
     optimize_posegraph_for_scene(config["path_dataset"], config)

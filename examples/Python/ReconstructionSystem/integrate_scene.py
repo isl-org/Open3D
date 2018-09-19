@@ -21,11 +21,11 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
             sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
 
-    pose_graph_fragment = read_pose_graph(os.path.join(
+    pose_graph_fragment = read_pose_graph(join(
             path_dataset, template_refined_posegraph_optimized))
 
     for fragment_id in range(len(pose_graph_fragment.nodes)):
-        pose_graph_rgbd = read_pose_graph(os.path.join(path_dataset,
+        pose_graph_rgbd = read_pose_graph(join(path_dataset,
                 template_fragment_posegraph_optimized % fragment_id))
 
         for frame_id in range(len(pose_graph_rgbd.nodes)):
@@ -48,7 +48,7 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     if config["debug_mode"]:
         draw_geometries([mesh])
 
-    mesh_name = os.path.join(path_dataset, template_global_mesh)
+    mesh_name = join(path_dataset, template_global_mesh)
     write_triangle_mesh(mesh_name, mesh, False, True)
 
 

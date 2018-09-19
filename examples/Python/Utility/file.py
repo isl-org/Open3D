@@ -4,10 +4,10 @@
 
 # examples/Python/Tutorial/Utility/file.py
 
-import re
-import os
 from os import listdir, makedirs
 from os.path import exists, isfile, join, splitext
+import shutil
+import re
 
 
 def sorted_alphanum(file_list_ordered):
@@ -27,11 +27,11 @@ def get_file_list(path, extension=None):
 
 
 def get_rgbd_folders(path_dataset):
-    if os.path.exists(os.path.join(path_dataset, "image/")):
-        path_color = os.path.join(path_dataset, "image/")
+    if exists(join(path_dataset, "image/")):
+        path_color = join(path_dataset, "image/")
     else:
-        path_color = os.path.join(path_dataset, "rgb/")
-    path_depth = os.path.join(path_dataset, "depth/")
+        path_color = join(path_dataset, "rgb/")
+    path_depth = join(path_dataset, "depth/")
     return path_color, path_depth
 
 
@@ -43,14 +43,17 @@ def get_rgbd_file_lists(path_dataset):
     return color_files, depth_files
 
 
-def make_folder(path_folder):
+def make_clean_folder(path_folder):
     if not exists(path_folder):
+        makedirs(path_folder)
+    else:
+        shutil.rmtree(path_folder)
         makedirs(path_folder)
 
 
 def check_folder_structure(path_dataset):
     path_color, path_depth = get_rgbd_folders(path_dataset)
-    assert os.path.exists(path_depth), \
+    assert exists(path_depth), \
             "Path %s is not exist!" % path_depth
-    assert os.path.exists(path_color), \
+    assert exists(path_color), \
             "Path %s is not exist!" % path_color

@@ -97,9 +97,14 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
 def integrate_rgb_frames_for_fragment(color_files, depth_files,
         fragment_id, n_fragments, pose_graph_name, intrinsic, config):
     pose_graph = read_pose_graph(pose_graph_name)
-    volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
-            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
+    volume = UniformTSDFVolume(length = config['tsdf_cubic_size'],
+            resolution = 512, sdf_trunc = 0.04,
+            color_type = TSDFVolumeColorType.RGB8)
 
+    transform_for_cubic = np.eye(4)
+    transform_for_cubic[:3,3] = [config['tsdf_cubic_size']/2.0,
+                                 config['tsdf_cubic_size']/2.0,
+                                 -config['min_depth']]
     for i in range(len(pose_graph.nodes)):
         i_abs = fragment_id * config['n_frames_per_fragment'] + i
         print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
@@ -110,9 +115,10 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                 depth_trunc = config["max_depth"],
                 convert_rgb_to_intensity = False)
-        pose = pose_graph.nodes[i].pose
+        pose = np.dot(pose_graph.nodes[i].pose, transform_for_cubic)
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
     mesh = volume.extract_triangle_mesh()
+    mesh.transform(np.linalg.inv(transform_for_cubic))
     mesh.compute_vertex_normals()
     return mesh
 
@@ -120,7 +126,7 @@ def make_mesh_for_fragment(path_dataset, color_files, depth_files,
         fragment_id, n_fragments, intrinsic, config):
     mesh = integrate_rgb_frames_for_fragment(
             color_files, depth_files, fragment_id, n_fragments,
-            os.path.join(path_dataset,
+            join(path_dataset,
             template_fragment_posegraph_optimized % fragment_id),
             intrinsic, config)
     pcd = PointCloud()
@@ -152,7 +158,7 @@ def process_single_fragment(fragment_id, color_files, depth_files,
 
 def run(config):
     print("making fragments from RGBD sequence.")
-    make_folder(os.path.join(config["path_dataset"], folder_fragment))
+    make_clean_folder(join(config["path_dataset"], folder_fragment))
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / \

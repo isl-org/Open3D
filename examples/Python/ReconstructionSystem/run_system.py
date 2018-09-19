@@ -43,27 +43,29 @@ if __name__ == "__main__":
         config['debug_mode'] = False
 
     # set default parameters if not specified
-    if not config['n_frames_per_fragment']:
+    if 'n_frames_per_fragment' not in config:
         config['n_frames_per_fragment'] = 100
-    if not config['n_keyframes_per_n_frame']:
+    if 'n_keyframes_per_n_frame' not in config:
         config['n_keyframes_per_n_frame'] = 5
-    if not config['max_depth']:
+    if 'min_depth' not in config:
+        config['min_depth'] = 0.3
+    if 'max_depth' not in config:
         config['max_depth'] = 3.0
-    if not config['voxel_size']:
+    if 'voxel_size' not in config:
         config['voxel_size'] = 0.05
-    if not config['max_depth_diff']:
+    if 'max_depth_diff' not in config:
         config['max_depth_diff'] = 0.07
-    if not config['preference_loop_closure_odometry']:
+    if 'preference_loop_closure_odometry' not in config:
         config['preference_loop_closure_odometry'] = 0.1
-    if not config['preference_loop_closure_registration']:
+    if 'preference_loop_closure_registration' not in config:
         config['preference_loop_closure_registration'] = 5.0
-    if not config['tsdf_cubic_size']:
+    if 'tsdf_cubic_size' not in config:
         config['tsdf_cubic_size'] = 3.0
-    if not config['icp_method']:
+    if 'icp_method' not in config:
         config['icp_method'] = "color"
-    if not config['global_registration']:
+    if 'global_registration' not in config:
         config['global_registration'] = "ransac",
-    if not config['python_multi_threading']
+    if 'python_multi_threading' not in config:
         config['python_multi_threading'] = True
 
     if args.make:
