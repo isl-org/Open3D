@@ -120,16 +120,14 @@ def make_posegraph_for_scene(ply_file_names, config):
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
-        MAX_THREAD = 144 # configured for vcl-cpu cluster
+        MAX_THREAD = min(multiprocessing.cpu_count(), len(pose_graph.edges))
         cmd = 'export OMP_PROC_BIND=true ; export GOMP_CPU_AFFINITY="0-%d"' % MAX_THREAD # have effect
         p = subprocess.call(cmd, shell=True)
-        num_cores = multiprocessing.cpu_count()
         results = Parallel(n_jobs=MAX_THREAD)(
                 delayed(register_point_cloud_pair)(ply_file_names,
                 matching_results[r].s, matching_results[r].t,
                 matching_results[r].transformation, config)
                 for r in matching_results)
-        print(results)
         for i, r in enumerate(matching_results):
             matching_results[r].transformation = results[i][0]
             matching_results[r].information = results[i][1]

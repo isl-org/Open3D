@@ -5,6 +5,7 @@ import argparse
 sys.path.append("../Utility")
 from file import *
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
     parser.add_argument("config", help="path to the config file")

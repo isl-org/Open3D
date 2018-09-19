@@ -115,12 +115,13 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                 depth_trunc = config["max_depth"],
                 convert_rgb_to_intensity = False)
-        pose = np.dot(pose_graph.nodes[i].pose, transform_for_cubic)
+        pose = np.dot(transform_for_cubic, pose_graph.nodes[i].pose)
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
     mesh = volume.extract_triangle_mesh()
     mesh.transform(np.linalg.inv(transform_for_cubic))
     mesh.compute_vertex_normals()
     return mesh
+
 
 def make_mesh_for_fragment(path_dataset, color_files, depth_files,
         fragment_id, n_fragments, intrinsic, config):
@@ -168,10 +169,9 @@ def run(config):
         from joblib import Parallel, delayed
         import multiprocessing
         import subprocess
-        MAX_THREAD = 144 # configured for vcl-cpu cluster
+        MAX_THREAD = min(multiprocessing.cpu_count(), n_fragments)
         cmd = 'export OMP_PROC_BIND=true ; export GOMP_CPU_AFFINITY="0-%d"' % MAX_THREAD # have effect
         p = subprocess.call(cmd, shell=True)
-        num_cores = multiprocessing.cpu_count()
         Parallel(n_jobs=MAX_THREAD)(delayed(process_single_fragment)(
                 fragment_id, color_files, depth_files,
                 n_files, n_fragments, config)
