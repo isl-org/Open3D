@@ -27,17 +27,17 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColoredICP, DISABLED_RegistrationColoredICP)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColoredICP, DISABLED_ICPConvergenceCriteria)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

@@ -27,41 +27,41 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_Destructor)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_Constructor)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_MemberData)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_ColorMapOptmization)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

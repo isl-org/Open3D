@@ -27,97 +27,97 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Constructor)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Destructor)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_MemberData)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Reset)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Integrate)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_ExtractPointCloud)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_ExtractTriangleMesh)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_ExtractVoxelPointCloud)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_IntegrateWithDepthToCameraDistanceMultiplier)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_IndexOf)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_GetNormalAt)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

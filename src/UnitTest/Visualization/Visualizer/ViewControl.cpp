@@ -27,233 +27,233 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_SetViewMatrices)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertToViewParameters)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertFromViewParameters)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertToPinholeCameraParameters)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ConvertFromPinholeCameraParameters)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetProjectionType)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_SetProjectionParameters)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Reset)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ChangeFieldOfView)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ChangeWindowSize)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Scale)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Rotate)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_Translate)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_ResetBoundingBox)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_FitInGeometry)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetFieldOfView)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetMVPMatrix)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetProjectionMatrix)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetViewMatrix)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetModelMatrix)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetEye)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetLookat)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetUp)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetFront)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetRight)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetWindowWidth)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetWindowHeight)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetZNear)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(ViewControl, DISABLED_GetZFar)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

@@ -37,7 +37,7 @@ static const int TAB_SIZE = 4;
 // Print an Eigen::Vector3i.
 // ----------------------------------------------------------------------------
 template<>
-void UnitTest::Print(const Eigen::Vector3i &v)
+void unit_test::Print(const Eigen::Vector3i &v)
 {
     int width = 6;
 
@@ -51,7 +51,7 @@ void UnitTest::Print(const Eigen::Vector3i &v)
 // Print an Eigen::Vector3d.
 // ----------------------------------------------------------------------------
 template<>
-void UnitTest::Print(const Eigen::Vector3d &v)
+void unit_test::Print(const Eigen::Vector3d &v)
 {
     int precision = 6;
     int width = 11;
@@ -69,7 +69,7 @@ void UnitTest::Print(const Eigen::Vector3d &v)
 // Print a vector of Eigen::Vector2i.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<Eigen::Vector2i> &v)
+void unit_test::Print(const vector<Eigen::Vector2i> &v)
 {
     int width = 6;
 
@@ -93,7 +93,7 @@ void UnitTest::Print(const vector<Eigen::Vector2i> &v)
 // Print a vector of Eigen::Vector3i.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<Eigen::Vector3i> &v)
+void unit_test::Print(const vector<Eigen::Vector3i> &v)
 {
     int width = 6;
 
@@ -118,7 +118,7 @@ void UnitTest::Print(const vector<Eigen::Vector3i> &v)
 // Print a vector of Eigen::Vector3d.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<Eigen::Vector3d> &v)
+void unit_test::Print(const vector<Eigen::Vector3d> &v)
 {
     int precision = 6;
     int width = 12;
@@ -147,7 +147,7 @@ void UnitTest::Print(const vector<Eigen::Vector3d> &v)
 // Print a uint8_t vector.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<uint8_t> &v)
+void unit_test::Print(const vector<uint8_t> &v)
 {
     int width = 5;
     size_t cols = 10;
@@ -186,7 +186,7 @@ void UnitTest::Print(const vector<uint8_t> &v)
 // Print a int vector.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<int> &v)
+void unit_test::Print(const vector<int> &v)
 {
     int width = 6;
     size_t cols = 10;
@@ -225,7 +225,7 @@ void UnitTest::Print(const vector<int> &v)
 // Print a size_t vector.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<size_t> &v)
+void unit_test::Print(const vector<size_t> &v)
 {
     int width = 6;
     size_t cols = 10;
@@ -264,7 +264,7 @@ void UnitTest::Print(const vector<size_t> &v)
 // Print a float vector.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<float> &v)
+void unit_test::Print(const vector<float> &v)
 {
     int precision = 6;
     int width = 12;
@@ -307,7 +307,7 @@ void UnitTest::Print(const vector<float> &v)
 // Print a double vector.
 // ----------------------------------------------------------------------------
 template <>
-void UnitTest::Print(const vector<double> &v)
+void unit_test::Print(const vector<double> &v)
 {
     int precision = 6;
     int width = 12;

@@ -34,7 +34,7 @@
 #include "Rand.h"
 #include "Sort.h"
 
-namespace UnitTest
+namespace unit_test
 {
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();

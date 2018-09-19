@@ -32,7 +32,7 @@
 
 #include <Eigen/Core>
 
-namespace UnitTest
+namespace unit_test
 {
     const double THRESHOLD_1E_6 = 1e-6;
     const double THRESHOLD_1E_3 = 1e-3f;

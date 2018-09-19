@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-namespace UnitTest
+namespace unit_test
 {
     namespace Sort
     {
@@ -40,4 +40,4 @@ namespace UnitTest
         // method needed because std::sort failed on TravisCI/macOS (works fine on Linux)
         void Do(std::vector<Eigen::Vector3d>& v);
     }
-} // namespace UnitTest
+} // namespace unit_test

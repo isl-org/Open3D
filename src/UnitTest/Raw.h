@@ -31,7 +31,7 @@
 #include <vector>
 #include <string>
 
-namespace UnitTest
+namespace unit_test
 {
     // Class for "generating" data.
     class Raw
@@ -92,4 +92,4 @@ namespace UnitTest
     // Output range: [0, 1].
     template<>
     double Raw::Next();
-} // namespace UnitTest
+} // namespace unit_test

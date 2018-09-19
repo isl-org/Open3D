@@ -29,7 +29,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-namespace UnitTest
+namespace unit_test
 {
     // Initialize an array.
     // Output range: [vmin:vmax].
