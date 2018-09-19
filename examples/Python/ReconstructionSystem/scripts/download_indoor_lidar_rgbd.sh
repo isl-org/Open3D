@@ -10,7 +10,7 @@ process_scene()
 
 mkdir ../dataset/indoor_lidar_rgbd
 process_scene "rgbd_apartment" "1TqoIE1Q1M30q8FBQ_dMcZj9JR6G0ztI5"
-process_scene "rgbd_boardroom" "1SN318pHOQn7ioSABJLY6SQ1O7gVMDvB2"
-process_scene "rgbd_lobby" "1gRDVGgPR--cKKHkrlaXVzc1Zj9VhC3Dr"
-process_scene "rgbd_loft" "1MhjCJuznp3pG6zxHrIbmcjPjXhvlBStu"
-process_scene "rgbd_bedroom" "1OOmymidV5nhmGSdk1Y7yI_9fXxLHNPjX"
+process_scene "rgbd_bedroom" "1SN318pHOQn7ioSABJLY6SQ1O7gVMDvB2"
+process_scene "rgbd_boardroom" "1gRDVGgPR--cKKHkrlaXVzc1Zj9VhC3Dr"
+process_scene "rgbd_lobby" "1MhjCJuznp3pG6zxHrIbmcjPjXhvlBStu"
+process_scene "rgbd_loft" "1OOmymidV5nhmGSdk1Y7yI_9fXxLHNPjX"
