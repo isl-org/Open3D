@@ -31,36 +31,8 @@
 
 namespace unit_test
 {
-    // Initialize an array.
-    // Output range: [vmin:vmax].
-    template<class T>
-    void Rand(T* const v,
-        const size_t& size,
-        const T& vmin,
-        const T& vmax,
-        const int& seed) {}
-
-    // Initialize an array of float.
-    // Output range: [vmin:vmax].
-    template <>
-    void Rand(
-        float* const v,
-        const size_t& size,
-        const float &vmin,
-        const float &vmax,
-        const int& seed);
-
-    // Initialize a vector.
-    // Output range: [vmin:vmax].
-    template<class T>
-    void Rand(std::vector<T>& v,
-        const T& vmin,
-        const T& vmax,
-        const int& seed) {}
-
     // Initialize an Eigen::Vector2i vector.
     // Output range: [vmin:vmax].
-    template<>
     void Rand(std::vector<Eigen::Vector2i>& v,
         const Eigen::Vector2i& vmin,
         const Eigen::Vector2i& vmax,
@@ -68,7 +40,6 @@ namespace unit_test
 
     // Initialize an Eigen::Vector3i vector.
     // Output range: [vmin:vmax].
-    template<>
     void Rand(std::vector<Eigen::Vector3i>& v,
         const Eigen::Vector3i& vmin,
         const Eigen::Vector3i& vmax,
@@ -76,7 +47,6 @@ namespace unit_test
 
     // Initialize an Eigen::Vector3d vector.
     // Output range: [vmin:vmax].
-    template<>
     void Rand(std::vector<Eigen::Vector3d>& v,
         const Eigen::Vector3d& vmin,
         const Eigen::Vector3d& vmax,
@@ -84,7 +54,6 @@ namespace unit_test
 
     // Initialize a uint8_t vector.
     // Output range: [vmin:vmax].
-    template<>
     void Rand(std::vector<uint8_t>& v,
         const uint8_t& vmin,
         const uint8_t& vmax,
@@ -92,15 +61,22 @@ namespace unit_test
 
     // Initialize a size_t vector.
     // Output range: [vmin:vmax].
-    template<>
     void Rand(std::vector<size_t>& v,
         const size_t& vmin,
         const size_t& vmax,
         const int& seed);
 
+    // Initialize an array of float.
+    // Output range: [vmin:vmax].
+    void Rand(
+        float* const v,
+        const size_t& size,
+        const float &vmin,
+        const float &vmax,
+        const int& seed);
+
     // Initialize a float vector.
     // Output range: [vmin:vmax].
-    template<>
     void Rand(std::vector<float>& v,
         const float& vmin,
         const float& vmax,

@@ -602,7 +602,7 @@ TEST(PointCloud, SelectDownSample)
     unit_test::Rand(pc.points_, vmin, vmax, 0);
 
     vector<size_t> indices(size / 4);
-    unit_test::Rand<size_t>(indices, 0, size, 0);
+    unit_test::Rand(indices, 0, size, 0);
 
     // remove duplicates
     std::vector<size_t>::iterator it;
@@ -1252,7 +1252,7 @@ TEST(PointCloud, CreatePointCloudFromDepthImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand<uint8_t>(image.data_, 0, 255, 0);
+    unit_test::Rand(image.data_, 0, 255, 0);
 
     open3d::PinholeCameraIntrinsic intrinsic =
         open3d::PinholeCameraIntrinsic(
@@ -1305,8 +1305,8 @@ void TEST_CreatePointCloudFromRGBDImage(
                        color_num_of_channels,
                        color_bytes_per_channel);
 
-    unit_test::Rand<uint8_t>(image.data_, 100, 150, 0);
-    unit_test::Rand<uint8_t>(color.data_, 130, 200, 0);
+    unit_test::Rand(image.data_, 100, 150, 0);
+    unit_test::Rand(color.data_, 130, 200, 0);
 
     auto depth = open3d::ConvertDepthToFloatImage(image);
 

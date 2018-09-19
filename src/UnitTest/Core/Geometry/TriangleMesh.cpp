@@ -1239,7 +1239,7 @@ TEST(TriangleMesh, SelectDownSample)
     unit_test::Rand(tm.triangle_normals_, dmin, dmax, 4);
 
     vector<size_t> indices(size / 40);
-    unit_test::Rand<size_t>(indices, 0, size - 1, 0);
+    unit_test::Rand(indices, 0, size - 1, 0);
 
     auto output_tm = open3d::SelectDownSample(tm, indices);
 

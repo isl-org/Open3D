@@ -32,31 +32,9 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// Initialize an array of float.
-// Output range: [vmin:vmax].
-// ----------------------------------------------------------------------------
-template <>
-void unit_test::Rand(
-    float* const v,
-    const size_t& size,
-    const float &vmin,
-    const float &vmax,
-    const int& seed)
-{
-    unit_test::Raw raw(seed);
-
-    float factor = (vmax - vmin) / unit_test::Raw::VMAX;
-
-    for (size_t i = 0; i < size; i++)
-        v[i] = vmin + raw.Next<float>() * factor;
-}
-
-
-// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-template <>
 void unit_test::Rand(
     vector<Eigen::Vector2i> &v,
     const Eigen::Vector2i &vmin,
@@ -80,7 +58,6 @@ void unit_test::Rand(
 // Initialize an Eigen::Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-template <>
 void unit_test::Rand(
     vector<Eigen::Vector3i> &v,
     const Eigen::Vector3i &vmin,
@@ -106,7 +83,6 @@ void unit_test::Rand(
 // Initialize an Eigen::Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-template <>
 void unit_test::Rand(
     vector<Eigen::Vector3d> &v,
     const Eigen::Vector3d &vmin,
@@ -132,7 +108,6 @@ void unit_test::Rand(
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-template <>
 void unit_test::Rand(
     vector<uint8_t> &v,
     const uint8_t &vmin,
@@ -151,7 +126,6 @@ void unit_test::Rand(
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-template <>
 void unit_test::Rand(
     vector<size_t> &v,
     const size_t &vmin,
@@ -167,10 +141,28 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
+// Initialize an array of float.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    float* const v,
+    const size_t& size,
+    const float &vmin,
+    const float &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    float factor = (vmax - vmin) / unit_test::Raw::VMAX;
+
+    for (size_t i = 0; i < size; i++)
+        v[i] = vmin + raw.Next<float>() * factor;
+}
+
+// ----------------------------------------------------------------------------
 // Initialize a float vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-template <>
 void unit_test::Rand(
     vector<float> &v,
     const float &vmin,
