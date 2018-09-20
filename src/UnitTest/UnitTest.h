@@ -43,6 +43,15 @@ namespace unit_test
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
-    // Compare vector components using EXPECT_NEAR.
-    void ExpectNear(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
+    // Compact comparison of Eigen::Vector2d components.
+    void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
+    void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
+
+    // Compact comparison of Eigen::Vector3d components.
+    void ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+    void ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+
+    // Compact comparison of Eigen::Vector2i components.
+    void ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1);
+    void ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1);
 }
