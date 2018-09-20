@@ -58,14 +58,8 @@ TEST(Image, DefaultConstructor)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    Eigen::Vector2d minBound = image.GetMinBound();
-    Eigen::Vector2d maxBound = image.GetMaxBound();
-
-    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
-
-    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
+    unit_test::ExpectNear(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectNear(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -97,14 +91,8 @@ TEST(Image, CreateImage)
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
-    Eigen::Vector2d minBound = image.GetMinBound();
-    Eigen::Vector2d maxBound = image.GetMaxBound();
-
-    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
-
-    EXPECT_FLOAT_EQ(default_width,  maxBound(0, 0));
-    EXPECT_FLOAT_EQ(default_height, maxBound(1, 0));
+    unit_test::ExpectNear(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectNear(Eigen::Vector2d(default_width, default_height), image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(default_width *
@@ -137,14 +125,8 @@ TEST(Image, Clear)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    Eigen::Vector2d minBound = image.GetMinBound();
-    Eigen::Vector2d maxBound = image.GetMaxBound();
-
-    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
-
-    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
+    unit_test::ExpectNear(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectNear(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -174,16 +156,14 @@ TEST(Image, FloatValueAt)
     im[1 * local_width + 0] = 4.0f;
     im[1 * local_width + 1] = 4.0f;
 
-    EXPECT_FLOAT_EQ(4.0f, image.FloatValueAt(0.0, 0.0).second);
-    EXPECT_FLOAT_EQ(4.0f, image.FloatValueAt(0.0, 1.0).second);
-    EXPECT_FLOAT_EQ(4.0f, image.FloatValueAt(1.0, 0.0).second);
-    EXPECT_FLOAT_EQ(4.0f, image.FloatValueAt(1.0, 1.0).second);
-
-    EXPECT_FLOAT_EQ(4.0f, image.FloatValueAt(0.5, 0.5).second);
-
-    EXPECT_FLOAT_EQ(2.0f, image.FloatValueAt(0.0, 1.5).second);
-    EXPECT_FLOAT_EQ(2.0f, image.FloatValueAt(1.5, 0.0).second);
-    EXPECT_FLOAT_EQ(1.0f, image.FloatValueAt(1.5, 1.5).second);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -554,10 +534,10 @@ TEST(Image, PointerAt)
     im[1 * local_width + 0] = 2.0f;
     im[1 * local_width + 1] = 3.0f;
 
-    EXPECT_FLOAT_EQ(0.0f, *open3d::PointerAt<float>(image, 0, 0));
-    EXPECT_FLOAT_EQ(1.0f, *open3d::PointerAt<float>(image, 1, 0));
-    EXPECT_FLOAT_EQ(2.0f, *open3d::PointerAt<float>(image, 0, 1));
-    EXPECT_FLOAT_EQ(3.0f, *open3d::PointerAt<float>(image, 1, 1));
+    EXPECT_NEAR(0.0f, *open3d::PointerAt<float>(image, 0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, *open3d::PointerAt<float>(image, 1, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, *open3d::PointerAt<float>(image, 0, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(3.0f, *open3d::PointerAt<float>(image, 1, 1), unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------

@@ -47,3 +47,12 @@ void unit_test::NotImplemented()
     // ADD_FAILURE();
     GTEST_NONFATAL_FAILURE_("Not implemented");
 }
+
+// ----------------------------------------------------------------------------
+// Compare vector components using EXPECT_NEAR.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectNear(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1)
+{
+    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
+}
