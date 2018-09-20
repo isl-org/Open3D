@@ -351,12 +351,12 @@ TEST(PointCloud, PaintUniformColor)
 
     EXPECT_FALSE(pc.HasColors());
 
-    pc.PaintUniformColor(Eigen::Vector3d(233, 171, 53));
+    pc.PaintUniformColor(Eigen::Vector3d(233.0, 171.0, 53.0));
 
     EXPECT_TRUE(pc.HasColors());
 
     for (size_t i = 0; i < pc.colors_.size(); i++)
-        unit_test::ExpectEQ(233, 171, 53, pc.colors_[i]);
+        unit_test::ExpectEQ(233.0, 171.0, 53.0, pc.colors_[i]);
 }
 
 // ----------------------------------------------------------------------------
