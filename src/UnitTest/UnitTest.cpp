@@ -49,7 +49,7 @@ void unit_test::NotImplemented()
 }
 
 // ----------------------------------------------------------------------------
-// Compact comparison of Eigen::Vector2d components.
+// Equal test over Eigen::Vector2d components.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1)
 {
@@ -63,7 +63,7 @@ void unit_test::ExpectEQ(const double& v00, const double& v01, const Eigen::Vect
 }
 
 // ----------------------------------------------------------------------------
-// Compact comparison of Eigen::Vector3d components.
+// Equal test over Eigen::Vector3d components.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
@@ -79,7 +79,23 @@ void unit_test::ExpectEQ(const double& v00, const double& v01, const double& v02
 }
 
 // ----------------------------------------------------------------------------
-// Compact comparison of Eigen::Vector2i components.
+// Equal test over Eigen::Matrix3d components.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
+{
+    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 0), v1(2, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(0, 1), v1(0, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 1), v1(1, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 1), v1(2, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(0, 2), v1(0, 2), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 2), v1(1, 2), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 2), v1(2, 2), unit_test::THRESHOLD_1E_6);
+}
+
+// ----------------------------------------------------------------------------
+// Equal test over Eigen::Vector2i components.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1)
 {
@@ -90,4 +106,36 @@ void unit_test::ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& 
 {
     EXPECT_EQ(v00, v1(0, 0));
     EXPECT_EQ(v01, v1(1, 0));
+}
+
+// ----------------------------------------------------------------------------
+// Less than or Equal test over Eigen::Vector3d components.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
+{
+    EXPECT_LE(v0(0, 0), v1(0, 0));
+    EXPECT_LE(v0(1, 0), v1(1, 0));
+    EXPECT_LE(v0(2, 0), v1(2, 0));
+}
+void unit_test::ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
+{
+    EXPECT_LE(v00, v1(0, 0));
+    EXPECT_LE(v01, v1(1, 0));
+    EXPECT_LE(v02, v1(2, 0));
+}
+
+// ----------------------------------------------------------------------------
+// Greater than or Equal test over Eigen::Vector3d components.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
+{
+    EXPECT_GE(v0(0, 0), v1(0, 0));
+    EXPECT_GE(v0(1, 0), v1(1, 0));
+    EXPECT_GE(v0(2, 0), v1(2, 0));
+}
+void unit_test::ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
+{
+    EXPECT_GE(v00, v1(0, 0));
+    EXPECT_GE(v01, v1(1, 0));
+    EXPECT_GE(v02, v1(2, 0));
 }

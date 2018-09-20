@@ -43,15 +43,26 @@ namespace unit_test
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
-    // Compact comparison of Eigen::Vector2d components.
+    // Equal test over Eigen::Vector2d components.
     void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
     void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
 
-    // Compact comparison of Eigen::Vector3d components.
+    // Equal test over Eigen::Vector3d components.
     void ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 
-    // Compact comparison of Eigen::Vector2i components.
+    // Equal test over Eigen::Matrix3d components.
+    void ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1);
+
+    // Equal test over Eigen::Vector2i components.
     void ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1);
     void ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1);
+
+    // Less than or Equal test over Eigen::Vector3d components.
+    void ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+    void ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+
+    // Greater than or Equal test over Eigen::Vector3d components.
+    void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+    void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 }
