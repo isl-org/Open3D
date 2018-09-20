@@ -35,27 +35,30 @@ def multiscale_icp(source, target, voxel_size, max_iter,
     current_transformation = init_transformation
     for i, scale in enumerate(range(len(max_iter))): # multi-scale approach
         iter = max_iter[scale]
+        distance_threshold = config["voxel_size"] * 1.4
         print("voxel_size %f" % voxel_size[scale])
         source_down = voxel_down_sample(source, voxel_size[scale])
         target_down = voxel_down_sample(target, voxel_size[scale])
-        estimate_normals(source_down, KDTreeSearchParamHybrid(
-                radius = voxel_size[scale] * 2.0, max_nn = 30))
-        estimate_normals(target_down, KDTreeSearchParamHybrid(
-                radius = voxel_size[scale] * 2.0, max_nn = 30))
         if config["icp_method"] == "point_to_point":
             result_icp = registration_icp(source_down, target_down,
-                    voxel_size[scale] * 1.4, current_transformation,
-                    TransformationEstimationPointToPlane(),
+                    distance_threshold, current_transformation,
+                    TransformationEstimationPointToPoint(),
                     ICPConvergenceCriteria(max_iteration = iter))
-        elif config["icp_method"] == "color":
-            # colored pointcloud registration
-            # This is implementation of following paper
-            # J. Park, Q.-Y. Zhou, V. Koltun,
-            # Colored Point Cloud Registration Revisited, ICCV 2017
-            result_icp = registration_colored_icp(source_down, target_down,
-                    voxel_size[scale], current_transformation,
-                    ICPConvergenceCriteria(relative_fitness = 1e-6,
-                    relative_rmse = 1e-6, max_iteration = iter))
+        else:
+            estimate_normals(source_down, KDTreeSearchParamHybrid(
+                    radius = voxel_size[scale] * 2.0, max_nn = 30))
+            estimate_normals(target_down, KDTreeSearchParamHybrid(
+                    radius = voxel_size[scale] * 2.0, max_nn = 30))
+            if config["icp_method"] == "point_to_plane":
+                result_icp = registration_icp(source_down, target_down,
+                        distance_threshold, current_transformation,
+                        TransformationEstimationPointToPlane(),
+                        ICPConvergenceCriteria(max_iteration = iter))
+            if config["icp_method"] == "color":
+                result_icp = registration_colored_icp(source_down, target_down,
+                        voxel_size[scale], current_transformation,
+                        ICPConvergenceCriteria(relative_fitness = 1e-6,
+                        relative_rmse = 1e-6, max_iteration = iter))
         current_transformation = result_icp.transformation
         if i == len(max_iter)-1:
             information_matrix = get_information_matrix_from_point_clouds(
