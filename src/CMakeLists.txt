@@ -90,6 +90,19 @@ list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 
 # set Open3D libraries
+# If Open3D is a shared library
+#     - Built-from-source 3rd-party libraries is embedded in Open3D
+#     - Built-from-source 3rd-party libraries will NOT be installed
+#     - A user app needs to link
+#           1) Open3D
+#           2) Pre-installed 3rd-party libraries
+# If Open3D is a static library
+#     - Built-from-source 3rd-party libraries is NOT embedded in Open3D
+#     - Built-from-source 3rd-party libraries will be installed
+#     - A user app needs to link
+#           1) Open3D
+#           2) Pre-installed 3rd-party libraries
+#           3) Built-from-source 3rd-party libraries
 list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OMP_LIBRARIES})
 if (BUILD_SHARED_LIBS)
     list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
