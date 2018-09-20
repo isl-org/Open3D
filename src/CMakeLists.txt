@@ -37,7 +37,6 @@ else ()
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
-# message(FATAL_ERROR ${3RDPARTY_LIBRARIES})
 target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${3RDPARTY_LIBRARIES}
                       ${OMP_LIBRARIES})
@@ -91,10 +90,12 @@ list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 
 # set Open3D libraries
-list(APPEND CONFIG_Open3D_LIBRARIES
-     "${CMAKE_PROJECT_NAME}"
-     ${3RDPARTY_LIBRARIES}
-     ${OMP_LIBRARIES})
+list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OMP_LIBRARIES})
+if (BUILD_SHARED_LIBS)
+    list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
+else ()
+    list(APPEND CONFIG_Open3D_LIBRARIES ${3RDPARTY_LIBRARIES})
+endif ()
 
 # hot-fix for glfw vs glfw3 issue for Windows
 # TODO: we shall revisit this for a better fix
