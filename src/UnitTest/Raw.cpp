@@ -35,7 +35,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Raw data with SIZE = 1021 elements.
 // ----------------------------------------------------------------------------
-vector<uint8_t> unit_test::Raw::data =
+vector<uint8_t> unit_test::Raw::data_ =
     {
         214,  100,  199,  203,  232,   50,   85,  195,   70,  141,  121,  160,
          93,  130,  242,  233,  162,  182,   36,  154,    4,   61,   34,  205,
@@ -131,7 +131,7 @@ vector<uint8_t> unit_test::Raw::data =
 template<>
 uint8_t unit_test::Raw::Next()
 {
-    uint8_t output = data[index];
+    uint8_t output = data_[index];
     index = (index + step) % SIZE;
 
     return output;
@@ -144,7 +144,7 @@ uint8_t unit_test::Raw::Next()
 template<>
 int unit_test::Raw::Next()
 {
-    int output = (int)data[index];
+    int output = (int)data_[index];
     index = (index + step) % SIZE;
 
     return output;
@@ -157,7 +157,7 @@ int unit_test::Raw::Next()
 template<>
 size_t unit_test::Raw::Next()
 {
-    size_t output = (size_t)data[index];
+    size_t output = (size_t)data_[index];
     index = (index + step) % SIZE;
 
     return output;
@@ -170,7 +170,7 @@ size_t unit_test::Raw::Next()
 template<>
 float unit_test::Raw::Next()
 {
-    float output = (float)data[index] / VMAX;
+    float output = (float)data_[index] / VMAX;
     index = (index + step) % SIZE;
 
     return output;
@@ -183,7 +183,7 @@ float unit_test::Raw::Next()
 template<>
 double unit_test::Raw::Next()
 {
-    double output = (double)data[index] / VMAX;
+    double output = (double)data_[index] / VMAX;
     index = (index + step) % SIZE;
 
     return output;
