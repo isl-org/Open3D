@@ -97,14 +97,8 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
 def integrate_rgb_frames_for_fragment(color_files, depth_files,
         fragment_id, n_fragments, pose_graph_name, intrinsic, config):
     pose_graph = read_pose_graph(pose_graph_name)
-    volume = UniformTSDFVolume(length = config['tsdf_cubic_size'],
-            resolution = 512, sdf_trunc = 0.04,
-            color_type = TSDFVolumeColorType.RGB8)
-
-    transform_for_cubic = np.eye(4)
-    transform_for_cubic[:3,3] = [config['tsdf_cubic_size']/2.0,
-                                 config['tsdf_cubic_size']/2.0,
-                                 -config['min_depth']]
+    volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
+        sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
     for i in range(len(pose_graph.nodes)):
         i_abs = fragment_id * config['n_frames_per_fragment'] + i
         print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
@@ -115,10 +109,9 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
         rgbd = create_rgbd_image_from_color_and_depth(color, depth,
                 depth_trunc = config["max_depth"],
                 convert_rgb_to_intensity = False)
-        pose = np.dot(transform_for_cubic, pose_graph.nodes[i].pose)
+        pose = pose_graph.nodes[i].pose
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))
     mesh = volume.extract_triangle_mesh()
-    mesh.transform(np.linalg.inv(transform_for_cubic))
     mesh.compute_vertex_normals()
     return mesh
 
