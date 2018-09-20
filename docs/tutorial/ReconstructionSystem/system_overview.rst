@@ -8,7 +8,9 @@ The system has three main steps:
 **Step 1**. :ref:`reconstruction_system_make_fragments`: build local geometric surfaces (referred to as
 fragments) from short subsequences of the input RGBD sequence. This part uses :ref:`rgbd_odometry`, :ref:`multiway_registration`, and :ref:`rgbd_integration`.
 
-**Step 2**. :ref:`reconstruction_system_register_fragments`: the fragments are aligned in a global space. This part uses :ref:`global_registration`, :ref:`icp_registration`, and :ref:`multiway_registration`.
+**Step 2**. :ref:`reconstruction_system_register_fragments`: the fragments are aligned in a global space to detect loop closure. This part uses :ref:`global_registration`, :ref:`icp_registration`, and :ref:`multiway_registration`.
+
+**Step 3**. :ref:`reconstruction_system_refine_registration`: the rough alignments are aligned more tightly. This part uses :ref:`icp_registration`, and :ref:`multiway_registration`.
 
 **Step 3**. :ref:`reconstruction_system_integrate_scene`: integrate RGB-D images to generate a mesh model for
 the scene. This part uses :ref:`rgbd_integration`.
@@ -32,11 +34,11 @@ Put all color images in the *image* folder, and all depth images in the *depth* 
 .. code-block:: sh
 
     cd examples/Python/ReconstructionSystem/
-    python run_system.py [config_file] [--make] [--register] [--integrate]
+    python run_system.py [config_file] [--make] [--register] [--refine] [--integrate]
 
 ``config_file`` has parameters and file paths. For example, ReconstructionSystem/config/redwood.json has the following script.
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/config/redwood.json
+.. literalinclude:: ../../../examples/Python/ReconstructionSystem/config/tutorial.json
    :language: json
    :lineno-start: 1
    :lines: 1-

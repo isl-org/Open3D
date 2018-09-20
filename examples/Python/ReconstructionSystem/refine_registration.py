@@ -107,7 +107,7 @@ class matching_result:
         self.infomation = np.identity(6)
 
 
-def make_posegraph_for_scene(ply_file_names, config):
+def make_posegraph_for_refined_scene(ply_file_names, config):
     pose_graph = read_pose_graph(join(config["path_dataset"],
             template_global_posegraph_optimized))
 
@@ -136,15 +136,11 @@ def make_posegraph_for_scene(ply_file_names, config):
             matching_results[r].information = results[i][1]
     else:
         for r in matching_results:
-            print("Before")
-            print(matching_results[r].transformation)
             (matching_results[r].transformation,
                     matching_results[r].information) = \
                     register_point_cloud_pair(ply_file_names,
                     matching_results[r].s, matching_results[r].t,
                     matching_results[r].transformation, config)
-            print("After")
-            print(matching_results[r].transformation)
 
     pose_graph_new = PoseGraph()
     odometry = np.identity(4)
@@ -165,5 +161,5 @@ def run(config):
     set_verbosity_level(VerbosityLevel.Debug)
     ply_file_names = get_file_list(join(
             config["path_dataset"], folder_fragment), ".ply")
-    make_posegraph_for_scene(ply_file_names, config)
+    make_posegraph_for_refined_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)

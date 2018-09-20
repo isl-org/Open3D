@@ -116,7 +116,7 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
     return mesh
 
 
-def make_mesh_for_fragment(path_dataset, color_files, depth_files,
+def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
         fragment_id, n_fragments, intrinsic, config):
     mesh = integrate_rgb_frames_for_fragment(
             color_files, depth_files, fragment_id, n_fragments,
@@ -145,7 +145,7 @@ def process_single_fragment(fragment_id, color_files, depth_files,
             n_fragments, intrinsic, with_opencv, config)
     optimize_posegraph_for_fragment(
             config["path_dataset"], fragment_id, config)
-    make_mesh_for_fragment(
+    make_pointcloud_for_fragment(
             config["path_dataset"], color_files, depth_files,
             fragment_id, n_fragments, intrinsic, config)
 

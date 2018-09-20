@@ -8,13 +8,7 @@ The final step of the system is to integrate all RGBD images into a single TSDF 
 Input arguments
 ``````````````````````````````````````
 
-.. literalinclude:: ../../../examples/Python/ReconstructionSystem/integrate_scene.py
-   :language: python
-   :lineno-start: 53
-   :lines: 53-60
-   :linenos:
-
-The script runs with ``python run_system.py [config] --integrate``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used.
+The script runs with ``python run_system.py [config] --integrate``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* in which frames are synchronized and aligned. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that has a camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
 
 Integrate RGBD frames
 ``````````````````````````````````````
@@ -22,7 +16,7 @@ Integrate RGBD frames
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/integrate_scene.py
    :language: python
    :lineno-start: 15
-   :lines: 15-50
+   :lines: 5,16-52
    :linenos:
 
 This function first reads the alignment results from both :ref:`reconstruction_system_make_fragments` and :ref:`reconstruction_system_register_fragments`, then computes the pose of each RGBD image in the global space. After that, RGBD images are integrated using :ref:`rgbd_integration`.
