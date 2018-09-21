@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import argparse
+import time, datetime
 sys.path.append("../Utility")
 from file import *
 
@@ -69,15 +70,33 @@ if __name__ == "__main__":
     if 'python_multi_threading' not in config:
         config['python_multi_threading'] = True
 
+    times = [0,0,0,0]
     if args.make:
+        start_time = time.time()
         import make_fragments
         make_fragments.run(config)
+        times[0] = time.time() - start_time
     if args.register:
+        start_time = time.time()
         import register_fragments
         register_fragments.run(config)
+        times[1] = time.time() - start_time
     if args.refine:
+        start_time = time.time()
         import refine_registration
         refine_registration.run(config)
+        times[2] = time.time() - start_time
     if args.integrate:
+        start_time = time.time()
         import integrate_scene
         integrate_scene.run(config)
+        times[3] = time.time() - start_time
+
+    print("=======================")
+    print("Elapsed time (in h:m:s)")
+    print("=======================")
+    print("- Making fragments    %s" % datetime.timedelta(seconds=times[0]))
+    print("- Register fragments  %s" % datetime.timedelta(seconds=times[1]))
+    print("- Refine registration %s" % datetime.timedelta(seconds=times[2]))
+    print("- Integrate frames    %s" % datetime.timedelta(seconds=times[3]))
+    print("- Total               %s" % datetime.timedelta(seconds=sum(times)))
