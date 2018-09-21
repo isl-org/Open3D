@@ -89,3 +89,4 @@ if __name__ == "__main__":
     print("- Refine registration %s" % datetime.timedelta(seconds=times[2]))
     print("- Integrate frames    %s" % datetime.timedelta(seconds=times[3]))
     print("- Total               %s" % datetime.timedelta(seconds=sum(times)))
+    sys.stdout.flush()
