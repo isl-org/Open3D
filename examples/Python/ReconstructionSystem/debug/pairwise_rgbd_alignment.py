@@ -9,7 +9,9 @@ import sys
 from open3d import *
 sys.path.append("../Utility")
 from file import *
+from visualization import *
 sys.path.append(".")
+from initialize_config import *
 from make_fragments import *
 
 
@@ -27,11 +29,7 @@ def test_single_pair(s, t, color_files, depth_files,
             color_files[t], depth_files[t], False, config)
     source = create_point_cloud_from_rgbd_image(source_rgbd_image, intrinsic)
     target = create_point_cloud_from_rgbd_image(target_rgbd_image, intrinsic)
-    print(source)
-    draw_geometries([source])
-    # bug - it does not show anything
-    # draw_registration_result_original_color(source, target, trans)
-    # draw_geometries_flip([source, target])
+    draw_geometries_flip([source, target])
 
 
 if __name__ == "__main__":
@@ -45,6 +43,7 @@ if __name__ == "__main__":
 
     with open(args.config) as json_file:
         config = json.load(json_file)
+        initialize_config(config)
 
         with_opencv = initialize_opencv()
         if with_opencv:

@@ -8,7 +8,6 @@ import sys
 from open3d import *
 sys.path.append("../Utility")
 from file import *
-from common_variables import *
 
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
@@ -30,9 +29,9 @@ def run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
 
 def optimize_posegraph_for_fragment(path_dataset, fragment_id, config):
     pose_graph_name = join(path_dataset,
-            template_fragment_posegraph % fragment_id)
+            config["template_fragment_posegraph"] % fragment_id)
     pose_graph_optimized_name = join(path_dataset,
-            template_fragment_posegraph_optimized % fragment_id)
+            config["template_fragment_posegraph_optimized"] % fragment_id)
     run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
             max_correspondence_distance = config["max_depth_diff"],
             preference_loop_closure = \
@@ -40,9 +39,9 @@ def optimize_posegraph_for_fragment(path_dataset, fragment_id, config):
 
 
 def optimize_posegraph_for_scene(path_dataset, config):
-    pose_graph_name = join(path_dataset, template_global_posegraph)
+    pose_graph_name = join(path_dataset, config["template_global_posegraph"])
     pose_graph_optimized_name = join(path_dataset,
-            template_global_posegraph_optimized)
+            config["template_global_posegraph_optimized"])
     run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
             max_correspondence_distance = config["voxel_size"] * 1.4,
             preference_loop_closure = \
@@ -50,9 +49,9 @@ def optimize_posegraph_for_scene(path_dataset, config):
 
 
 def optimize_posegraph_for_refined_scene(path_dataset, config):
-    pose_graph_name = join(path_dataset, template_refined_posegraph)
+    pose_graph_name = join(path_dataset, config["template_refined_posegraph"])
     pose_graph_optimized_name = join(path_dataset,
-            template_refined_posegraph_optimized)
+            config["template_refined_posegraph_optimized"])
     run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
             max_correspondence_distance = config["voxel_size"] * 1.4,
             preference_loop_closure = \

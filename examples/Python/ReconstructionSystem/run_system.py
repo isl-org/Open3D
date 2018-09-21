@@ -1,3 +1,9 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/Tutorial/ReconstructionSystem/run_system.py
+
 import os
 import sys
 import json
@@ -5,6 +11,8 @@ import argparse
 import time, datetime
 sys.path.append("../Utility")
 from file import *
+sys.path.append(".")
+from initialize_config import *
 
 
 if __name__ == "__main__":
@@ -36,6 +44,7 @@ if __name__ == "__main__":
     if args.config is not None:
         with open(args.config) as json_file:
             config = json.load(json_file)
+            initialize_config(config)
             check_folder_structure(config["path_dataset"])
     assert config is not None
 
@@ -44,31 +53,11 @@ if __name__ == "__main__":
     else:
         config['debug_mode'] = False
 
-    # set default parameters if not specified
-    if 'n_frames_per_fragment' not in config:
-        config['n_frames_per_fragment'] = 100
-    if 'n_keyframes_per_n_frame' not in config:
-        config['n_keyframes_per_n_frame'] = 5
-    if 'min_depth' not in config:
-        config['min_depth'] = 0.3
-    if 'max_depth' not in config:
-        config['max_depth'] = 3.0
-    if 'voxel_size' not in config:
-        config['voxel_size'] = 0.05
-    if 'max_depth_diff' not in config:
-        config['max_depth_diff'] = 0.07
-    if 'preference_loop_closure_odometry' not in config:
-        config['preference_loop_closure_odometry'] = 0.1
-    if 'preference_loop_closure_registration' not in config:
-        config['preference_loop_closure_registration'] = 5.0
-    if 'tsdf_cubic_size' not in config:
-        config['tsdf_cubic_size'] = 3.0
-    if 'icp_method' not in config:
-        config['icp_method'] = "color"
-    if 'global_registration' not in config:
-        config['global_registration'] = "ransac",
-    if 'python_multi_threading' not in config:
-        config['python_multi_threading'] = True
+    print("====================================")
+    print("Configuration")
+    print("====================================")
+    for key, val in config.items():
+        print("%40s : %s" % (key, str(val)))
 
     times = [0,0,0,0]
     if args.make:
@@ -92,9 +81,9 @@ if __name__ == "__main__":
         integrate_scene.run(config)
         times[3] = time.time() - start_time
 
-    print("=======================")
+    print("====================================")
     print("Elapsed time (in h:m:s)")
-    print("=======================")
+    print("====================================")
     print("- Making fragments    %s" % datetime.timedelta(seconds=times[0]))
     print("- Register fragments  %s" % datetime.timedelta(seconds=times[1]))
     print("- Refine registration %s" % datetime.timedelta(seconds=times[2]))

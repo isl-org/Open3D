@@ -10,7 +10,6 @@ import sys
 sys.path.append("../Utility")
 from file import *
 from visualization import *
-from common_variables import *
 from optimize_posegraph import *
 from refine_registration import *
 
@@ -56,7 +55,7 @@ def compute_initial_registration(s, t, source_down, target_down,
     if t == s + 1: # odometry case
         print("Using RGBD odometry")
         pose_graph_frag = read_pose_graph(path_dataset +
-                template_fragment_posegraph_optimized % s)
+                config["template_fragment_posegraph_optimized"] % s)
         n_nodes = len(pose_graph_frag.nodes)
         transformation_init = np.linalg.inv(
                 pose_graph_frag.nodes[n_nodes-1].pose)
@@ -165,14 +164,14 @@ def make_posegraph_for_scene(ply_file_names, config):
                     matching_results[r].information,
                     odometry, pose_graph)
     write_pose_graph(join(config["path_dataset"],
-            template_global_posegraph), pose_graph)
+            config["template_global_posegraph"]), pose_graph)
 
 
 def run(config):
     print("register fragments.")
     set_verbosity_level(VerbosityLevel.Debug)
     ply_file_names = get_file_list(join(
-            config["path_dataset"], folder_fragment), ".ply")
-    make_clean_folder(join(config["path_dataset"], folder_scene))
+            config["path_dataset"], config["folder_fragment"]), ".ply")
+    make_clean_folder(join(config["path_dataset"], config["folder_scene"]))
     make_posegraph_for_scene(ply_file_names, config)
     optimize_posegraph_for_scene(config["path_dataset"], config)

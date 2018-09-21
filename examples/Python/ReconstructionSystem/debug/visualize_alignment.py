@@ -12,7 +12,7 @@ sys.path.append("../Utility")
 from file import *
 from visualization import *
 sys.path.append(".")
-from common_variables import *
+from initialize_config import *
 
 
 def list_posegraph_files(folder_posegraph):
@@ -44,27 +44,29 @@ if __name__ == "__main__":
 
     with open(args.config) as json_file:
         config = json.load(json_file)
+        initialize_config(config)
 
-        ply_file_names = get_file_list(
-                os.path.join(config["path_dataset"], folder_fragment), ".ply")
+        ply_file_names = get_file_list(join(config["path_dataset"],
+                config["folder_fragment"]), ".ply")
         if (args.list_posegraphs):
-            list_posegraph_files(
-                    os.path.join(config["path_dataset"], folder_fragment))
-            list_posegraph_files(
-                    os.path.join(config["path_dataset"], folder_scene))
+            list_posegraph_files(join(config["path_dataset"],
+                    config["folder_fragment"]))
+            list_posegraph_files(join(config["path_dataset"],
+                    config["folder_scene"]))
 
         if (args.before_optimized):
-            global_pose_graph_name = os.path.join(config["path_dataset"],
-                    template_global_posegraph)
+            global_pose_graph_name = join(config["path_dataset"],
+                    config["template_global_posegraph"])
         else:
-            global_pose_graph_name = os.path.join(config["path_dataset"],
-                    template_refined_posegraph_optimized)
+            global_pose_graph_name = join(config["path_dataset"],
+                    config["template_refined_posegraph_optimized"])
         print("Reading posegraph")
         print(global_pose_graph_name)
         pose_graph = read_pose_graph(global_pose_graph_name)
         n_nodes = len(pose_graph.nodes)
         n_edges = len(pose_graph.edges)
-        print("Global PoseGraph having %d nodes and %d edges" % (n_nodes, n_edges))
+        print("Global PoseGraph having %d nodes and %d edges" % \
+                (n_nodes, n_edges))
 
         # visualize alignment of posegraph edges
         for edge in pose_graph.edges:

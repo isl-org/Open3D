@@ -10,7 +10,6 @@ import sys
 sys.path.append("../Utility")
 from file import *
 from visualization import *
-from common_variables import *
 from optimize_posegraph import *
 
 
@@ -109,7 +108,7 @@ class matching_result:
 
 def make_posegraph_for_refined_scene(ply_file_names, config):
     pose_graph = read_pose_graph(join(config["path_dataset"],
-            template_global_posegraph_optimized))
+            config["template_global_posegraph_optimized"]))
 
     n_files = len(ply_file_names)
     matching_results = {}
@@ -154,13 +153,13 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
                 odometry, pose_graph_new)
     print(pose_graph_new)
     write_pose_graph(join(config["path_dataset"],
-            template_refined_posegraph), pose_graph_new)
+            config["template_refined_posegraph"]), pose_graph_new)
 
 
 def run(config):
     print("refine rough registration of fragments.")
     set_verbosity_level(VerbosityLevel.Debug)
     ply_file_names = get_file_list(join(
-            config["path_dataset"], folder_fragment), ".ply")
+            config["path_dataset"], config["folder_fragment"]), ".ply")
     make_posegraph_for_refined_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)

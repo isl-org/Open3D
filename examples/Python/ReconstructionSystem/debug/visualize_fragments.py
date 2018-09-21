@@ -11,7 +11,7 @@ sys.path.append("../Utility")
 from file import *
 from visualization import *
 sys.path.append(".")
-from common_variables import *
+from initialize_config import *
 
 
 # test wide baseline matching
@@ -26,8 +26,9 @@ if __name__ == "__main__":
 
     with open(args.config) as json_file:
         config = json.load(json_file)
+        initialize_config(config)
         fragment_files = get_file_list(
-                os.path.join(config["path_dataset"], folder_fragment),
+                join(config["path_dataset"], config["folder_fragment"]),
                 extension='.ply')
         for i in range(args.start_id, len(fragment_files)):
             print(fragment_files[i])

@@ -11,7 +11,6 @@ import sys
 sys.path.append("../Utility")
 from file import *
 from opencv import *
-from common_variables import *
 from optimize_posegraph import *
 
 
@@ -56,8 +55,8 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
         return [success, trans, info]
 
 
-def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
-        fragment_id, n_fragments, intrinsic, with_opencv, config):
+def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
+        depth_files, fragment_id, n_fragments, intrinsic, with_opencv, config):
     set_verbosity_level(VerbosityLevel.Error)
     pose_graph = PoseGraph()
     trans_odometry = np.identity(4)
@@ -90,8 +89,8 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
                     pose_graph.edges.append(
                             PoseGraphEdge(s-sid, t-sid, trans, info,
                                     uncertain = True))
-    write_pose_graph(path_dataset + template_fragment_posegraph % fragment_id,
-            pose_graph)
+    write_pose_graph(join(path_dataset,
+            config["template_fragment_posegraph"] % fragment_id), pose_graph)
 
 
 def integrate_rgb_frames_for_fragment(color_files, depth_files,
@@ -121,12 +120,12 @@ def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
     mesh = integrate_rgb_frames_for_fragment(
             color_files, depth_files, fragment_id, n_fragments,
             join(path_dataset,
-            template_fragment_posegraph_optimized % fragment_id),
+            config["template_fragment_posegraph_optimized"] % fragment_id),
             intrinsic, config)
     pcd = PointCloud()
     pcd.points = mesh.vertices
     pcd.colors = mesh.vertex_colors
-    pcd_name = path_dataset + template_fragment_mesh % fragment_id
+    pcd_name = path_dataset + config["template_fragment_pointcloud"] % fragment_id
     write_point_cloud(pcd_name, pcd, False, True)
 
 
@@ -152,7 +151,7 @@ def process_single_fragment(fragment_id, color_files, depth_files,
 
 def run(config):
     print("making fragments from RGBD sequence.")
-    make_clean_folder(join(config["path_dataset"], folder_fragment))
+    make_clean_folder(join(config["path_dataset"], config["folder_fragment"]))
     [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
     n_files = len(color_files)
     n_fragments = int(math.ceil(float(n_files) / \
