@@ -16,8 +16,8 @@ Fine-grained registration
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
    :language: python
-   :lineno-start: 32
-   :lines: 5,33-71
+   :lineno-start: 30
+   :lines: 5,31-69
    :linenos:
 
 Two options are given for the fine-grained registration. The ``color`` is recommended since it uses color information to prevent drift. Details see [Park2017]_.
@@ -28,8 +28,8 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
    :language: python
-   :lineno-start: 16
-   :lines: 5,17-30
+   :lineno-start: 14
+   :lines: 5,15-28
    :linenos:
 
 This script uses the technique demonstrated in :ref:`multiway_registration`. Function ``update_posegrph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragments and its pose which transforms the geometry to the global space.
@@ -38,8 +38,8 @@ Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called 
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/optimize_posegraph.py
    :language: python
-   :lineno-start: 51
-   :lines: 5,52-59
+   :lineno-start: 49
+   :lines: 5,50-58
    :linenos:
 
 Main registration loop
@@ -49,8 +49,8 @@ The function ``make_posegraph_for_refined_scene`` below calls all the functions 
 
 .. literalinclude:: ../../../examples/Python/ReconstructionSystem/refine_registration.py
    :language: python
-   :lineno-start: 109
-   :lines: 5,110-156
+   :lineno-start: 107
+   :lines: 5,108-154
    :linenos:
 
 The main workflow is: pairwise local refinement -> multiway registration.
@@ -62,7 +62,7 @@ The following is messages from pose graph optimization.
 
 .. code-block:: sh
 
-    [GlobalOptimizationLM] Optimizing PoseGraph having 14 nodes and 35 edges. 
+    [GlobalOptimizationLM] Optimizing PoseGraph having 14 nodes and 35 edges.
     Line process weight : 789.730200
     [Initial     ] residual : 1.208286e+04, lambda : 1.706306e+01
     [Iteration 00] residual : 2.410383e+03, valid edges : 22, time : 0.000 sec.
