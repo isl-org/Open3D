@@ -162,8 +162,6 @@ def run(config):
         import multiprocessing
         import subprocess
         MAX_THREAD = min(multiprocessing.cpu_count(), n_fragments)
-        cmd = 'export OMP_PROC_BIND=true ; export GOMP_CPU_AFFINITY="0-%d"' % MAX_THREAD # have effect
-        p = subprocess.call(cmd, shell=True)
         Parallel(n_jobs=MAX_THREAD)(delayed(process_single_fragment)(
                 fragment_id, color_files, depth_files,
                 n_files, n_fragments, config)

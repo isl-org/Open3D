@@ -139,8 +139,6 @@ def make_posegraph_for_scene(ply_file_names, config):
         import subprocess
         MAX_THREAD = min(multiprocessing.cpu_count(),
                 max(len(matching_results), 1))
-        cmd = 'export OMP_PROC_BIND=true ; export GOMP_CPU_AFFINITY="0-%d"' % MAX_THREAD # have effect
-        p = subprocess.call(cmd, shell=True)
         results = Parallel(n_jobs=MAX_THREAD)(
                 delayed(register_point_cloud_pair)(ply_file_names,
                 matching_results[r].s, matching_results[r].t, config)
