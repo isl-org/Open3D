@@ -21,18 +21,18 @@ cd .. && mkdir dataset/redwood_simulated && cd dataset/redwood_simulated
 
 download_redwood_scene "livingroom1"
 unzip_redwood_scene "livingroom1" "clean"
-unzip_redwood_scene "livingroom1" "simulated"
+# unzip_redwood_scene "livingroom1" "simulated"
 
 download_redwood_scene "livingroom2"
 unzip_redwood_scene "livingroom2" "clean"
-unzip_redwood_scene "livingroom2" "simulated"
+# unzip_redwood_scene "livingroom2" "simulated"
 
 download_redwood_scene "office1"
 unzip_redwood_scene "office1" "clean"
-unzip_redwood_scene "office1" "simulated"
+# unzip_redwood_scene "office1" "simulated"
 
 download_redwood_scene "office2"
 unzip_redwood_scene "office2" "clean"
-unzip_redwood_scene "office2" "simulated"
+# unzip_redwood_scene "office2" "simulated"
 
 rm *.zip
