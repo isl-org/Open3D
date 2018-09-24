@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(KDTreeFlann, DISABLED_Constructor)
+TEST(KDTreeFlann, DISABLED_Defualt_Constructor)
 {
     unit_test::NotImplemented();
 }
@@ -37,7 +37,23 @@ TEST(KDTreeFlann, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(KDTreeFlann, DISABLED_Destructor)
+TEST(KDTreeFlann, DISABLED_MatrixXd_Constructor)
+{
+    unit_test::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(KDTreeFlann, DISABLED_Geometry_Constructor)
+{
+    unit_test::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(KDTreeFlann, DISABLED_Feature_Constructor)
 {
     unit_test::NotImplemented();
 }
