@@ -143,9 +143,50 @@ TEST(KDTreeFlann, SearchKNN_TriangleMesh)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(KDTreeFlann, DISABLED_SearchRadius)
+TEST(KDTreeFlann, SearchRadius)
 {
-    unit_test::NotImplemented();
+    vector<int> ref_indices =
+    {
+            27,    48,     4,    77,    90,     7,    54,    17,    76,    38,
+            39,    60,    15,    84,    11,    57,     3,    32,    99,    36,
+            52
+    };
+
+    vector<double> ref_distance2 =
+    {
+            0.000000,    4.684353,    4.996539,    9.191849,   10.034604,
+           10.466745,   10.649751,   11.434066,   12.089195,   13.345638,
+           13.696270,   14.016148,   16.851978,   17.073435,   18.254518,
+           20.019994,   21.496347,   23.077277,   23.692427,   23.809303,
+           24.104578
+    };
+
+    int size = 100;
+
+    open3d::PointCloud pc;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(10.0, 10.0, 10.0);
+
+    pc.points_.resize(size);
+    unit_test::Rand(pc.points_, vmin, vmax, 0);
+
+    open3d::KDTreeFlann kdtree(pc);
+
+    Eigen::Vector3d query = { 1.647059, 4.392157, 8.784314 };
+    double radius = 5.0;
+    vector<int> indices;
+    vector<double> distance2;
+
+    int result = kdtree.SearchRadius<Eigen::Vector3d>(query, radius, indices, distance2);
+
+    EXPECT_EQ(ref_indices.size(), indices.size());
+    for (size_t i = 0; i < ref_indices.size(); i++)
+        EXPECT_EQ(ref_indices[i], indices[i]);
+
+    EXPECT_EQ(ref_distance2.size(), distance2.size());
+    for (size_t i = 0; i < ref_distance2.size(); i++)
+        EXPECT_NEAR(ref_distance2[i], distance2[i], unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
