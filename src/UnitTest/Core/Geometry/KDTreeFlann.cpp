@@ -81,6 +81,8 @@ TEST(KDTreeFlann, SearchKNN)
 
     int result = kdtree.SearchKNN(query, knn, indices, distance2);
 
+    EXPECT_EQ(result, 30);
+
     EXPECT_EQ(ref_indices.size(), indices.size());
     for (size_t i = 0; i < ref_indices.size(); i++)
         EXPECT_EQ(ref_indices[i], indices[i]);
@@ -130,6 +132,8 @@ TEST(KDTreeFlann, SearchRadius)
 
     int result = kdtree.SearchRadius<Eigen::Vector3d>(query, radius, indices, distance2);
 
+    EXPECT_EQ(result, 21);
+
     EXPECT_EQ(ref_indices.size(), indices.size());
     for (size_t i = 0; i < ref_indices.size(); i++)
         EXPECT_EQ(ref_indices[i], indices[i]);
@@ -176,6 +180,8 @@ TEST(KDTreeFlann, SearchHybrid)
     vector<double> distance2;
 
     int result = kdtree.SearchHybrid<Eigen::Vector3d>(query, radius, max_nn, indices, distance2);
+
+    EXPECT_EQ(result, 15);
 
     EXPECT_EQ(ref_indices.size(), indices.size());
     for (size_t i = 0; i < ref_indices.size(); i++)
