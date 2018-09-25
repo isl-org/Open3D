@@ -17,3 +17,4 @@ __pycache__
 .idea
 util/pip_package/dist/
 util/conda_package/dist/
+*.egg-info/

@@ -88,11 +88,6 @@ public:
     std::vector<Eigen::Vector3d> colors_;
 };
 
-/// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
-/// Return an empty pointcloud if fail to read the file.
-std::shared_ptr<PointCloud> CreatePointCloudFromFile(
-        const std::string &filename);
-
 /// Factory function to create a pointcloud from a depth image and a camera
 /// model (PointCloudFactory.cpp)
 /// The input depth image can be either a float image, or a uint16_t image. In

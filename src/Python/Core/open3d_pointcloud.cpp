@@ -60,11 +60,12 @@ void pybind_pointcloud(py::module &m)
 
 void pybind_pointcloud_methods(py::module &m)
 {
-    m.def("read_point_cloud", [](const std::string &filename) {
+    m.def("read_point_cloud", [](const std::string &filename,
+            const std::string &format) {
         PointCloud pcd;
-        ReadPointCloud(filename, pcd);
+        ReadPointCloud(filename, pcd, format);
         return pcd;
-    }, "Function to read PointCloud from file", "filename"_a);
+    }, "Function to read PointCloud from file", "filename"_a, "format"_a = "auto");
     m.def("write_point_cloud", [](const std::string &filename,
             const PointCloud &pointcloud, bool write_ascii, bool compressed) {
         return WritePointCloud(filename, pointcloud, write_ascii, compressed);
