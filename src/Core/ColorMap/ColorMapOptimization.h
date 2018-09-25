@@ -26,6 +26,10 @@
 
 #pragma once
 
+#include "ColorMapOptimizationOption.h"
+#include "ImageWarpingField.h"
+
+#include <memory>
 #include <vector>
 
 namespace open3d {
@@ -35,41 +39,90 @@ class RGBDImage;
 class Image;
 class PinholeCameraTrajectory;
 
-class ColorMapOptmizationOption
-{
-public:
-	ColorMapOptmizationOption(
-            bool non_rigid_camera_coordinate = false,
-            int number_of_vertical_anchors = 16,
-            double non_rigid_anchor_point_weight = 0.316,
-            double maximum_iteration = 300,
-            double maximum_allowable_depth = 2.5,
-            double depth_threshold_for_visiblity_check = 0.03,
-            double depth_threshold_for_discontinuity_check = 0.1,
-            int half_dilation_kernel_size_for_discontinuity_map = 3) :
-            non_rigid_camera_coordinate_(non_rigid_camera_coordinate),
-            number_of_vertical_anchors_(number_of_vertical_anchors),
-            non_rigid_anchor_point_weight_(non_rigid_anchor_point_weight),
-            maximum_iteration_(maximum_iteration),
-            maximum_allowable_depth_(maximum_allowable_depth),
-            depth_threshold_for_visiblity_check_(
-            depth_threshold_for_visiblity_check),
-            depth_threshold_for_discontinuity_check_(
-            depth_threshold_for_discontinuity_check),
-            half_dilation_kernel_size_for_discontinuity_map_(
-            half_dilation_kernel_size_for_discontinuity_map) {}
-	~ColorMapOptmizationOption() {}
+// const double IMAGE_BOUNDARY_MARGIN = 10;
 
-public:
-    bool non_rigid_camera_coordinate_;
-    int number_of_vertical_anchors_;
-    double non_rigid_anchor_point_weight_;
-    double maximum_iteration_;
-    double maximum_allowable_depth_;
-    double depth_threshold_for_visiblity_check_;
-    double depth_threshold_for_discontinuity_check_;
-    int half_dilation_kernel_size_for_discontinuity_map_;
-};
+std::tuple<float, float, float> Project3DPointAndGetUVDepth(
+        const Eigen::Vector3d X,
+        const PinholeCameraTrajectory& camera, int camid);
+
+std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
+        MakeVertexAndImageVisibility(const TriangleMesh& mesh,
+        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<Image>& images_mask,
+        const PinholeCameraTrajectory& camera,
+        const ColorMapOptmizationOption& option);
+
+std::vector<ImageWarpingField> MakeWarpingFields(
+        const std::vector<std::shared_ptr<Image>>& images,
+        const ColorMapOptmizationOption& option);
+
+template<typename T>
+std::tuple<bool, T> QueryImageIntensity(
+        const Image& img, const Eigen::Vector3d& V,
+        const PinholeCameraTrajectory& camera, int camid, int ch = -1);
+
+template<typename T>
+std::tuple<bool, T> QueryImageIntensity(
+        const Image& img, const ImageWarpingField& field,
+        const Eigen::Vector3d& V,
+        const PinholeCameraTrajectory& camera, int camid, int ch = -1);
+
+void SetProxyIntensityForVertex(const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<ImageWarpingField>& warping_field,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        std::vector<double>& proxy_intensity);
+
+void SetProxyIntensityForVertex(const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        std::vector<double>& proxy_intensity);
+
+void OptimizeImageCoorNonrigid(
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<std::shared_ptr<Image>>& images_dx,
+        const std::vector<std::shared_ptr<Image>>& images_dy,
+        std::vector<ImageWarpingField>& warping_fields,
+        const std::vector<ImageWarpingField>& warping_fields_init,
+        PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visiblity_image_to_vertex,
+        std::vector<double>& proxy_intensity,
+        const ColorMapOptmizationOption& option);
+
+void OptimizeImageCoorRigid(
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<std::shared_ptr<Image>>& images_dx,
+        const std::vector<std::shared_ptr<Image>>& images_dy,
+        PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visiblity_image_to_vertex,
+        std::vector<double>& proxy_intensity,
+        const ColorMapOptmizationOption& option);
+
+void SetGeometryColorAverage(TriangleMesh& mesh,
+        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<ImageWarpingField>& warping_fields,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image);
+
+void SetGeometryColorAverage(TriangleMesh& mesh,
+        const std::vector<RGBDImage>& images_rgbd,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image);
+
+std::tuple<std::vector<std::shared_ptr<Image>>,
+        std::vector<std::shared_ptr<Image>>,
+        std::vector<std::shared_ptr<Image>>> MakeGradientImages(
+        const std::vector<RGBDImage>& images_rgbd);
+
+std::vector<Image> MakeDepthMasks(
+        const std::vector<RGBDImage>& images_rgbd,
+        const ColorMapOptmizationOption& option);
 
 /// This is implementation of following paper
 /// Q.-Y. Zhou and V. Koltun,
@@ -80,4 +133,5 @@ void ColorMapOptimization(TriangleMesh& mesh,
         PinholeCameraTrajectory& camera,
         const ColorMapOptmizationOption& option =
         ColorMapOptmizationOption());
+
 }	// namespace open3d
