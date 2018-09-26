@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(RenderOption, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(RenderOption, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(RenderOption, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(RenderOption, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(RenderOption, DISABLED_ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ToggleLightOn)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(RenderOption, DISABLED_ToggleLightOn)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ToggleInterpolationOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(RenderOption, DISABLED_ToggleInterpolationOption)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ChangePointSize)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(RenderOption, DISABLED_ChangePointSize)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_TogglePointShowNormal)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(RenderOption, DISABLED_TogglePointShowNormal)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ToggleShadingOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(RenderOption, DISABLED_ToggleShadingOption)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ToggleMeshShowBackFace)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(RenderOption, DISABLED_ToggleMeshShowBackFace)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ToggleMeshShowWireframe)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,5 +127,5 @@ TEST(RenderOption, DISABLED_ToggleMeshShowWireframe)
 // ----------------------------------------------------------------------------
 TEST(RenderOption, DISABLED_ToggleImageStretchOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FileBIN, DISABLED_ReadMatrixXdFromBINFile)
 // ----------------------------------------------------------------------------
 TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(FileBIN, DISABLED_WriteMatrixXdToBINFile)
 // ----------------------------------------------------------------------------
 TEST(FileBIN, DISABLED_ReadFeatureFromBIN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,5 +55,5 @@ TEST(FileBIN, DISABLED_ReadFeatureFromBIN)
 // ----------------------------------------------------------------------------
 TEST(FileBIN, DISABLED_WriteFeatureToBIN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

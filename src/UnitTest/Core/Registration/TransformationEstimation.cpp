@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(TransformationEstimation, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(TransformationEstimation, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(TransformationEstimation, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_GetTransformationEstimationType)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(TransformationEstimation, DISABLED_GetTransformationEstimationType)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_ComputeRMSE)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(TransformationEstimation, DISABLED_ComputeRMSE)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_ComputeTransformation)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(TransformationEstimation, DISABLED_ComputeTransformation)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,5 +87,5 @@ TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPoint)
 // ----------------------------------------------------------------------------
 TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPlane)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_ComputeRGBDOdometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Odometry, DISABLED_ComputeRGBDOdometry)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_PinholeCameraIntrinsic)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Odometry, DISABLED_PinholeCameraIntrinsic)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,5 +55,5 @@ TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_OdometryOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

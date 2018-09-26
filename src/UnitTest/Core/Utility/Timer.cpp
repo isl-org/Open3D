@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Timer, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Timer, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Timer, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_GetSystemTimeInMilliseconds)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(Timer, DISABLED_GetSystemTimeInMilliseconds)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_Start)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(Timer, DISABLED_Start)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_Stop)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(Timer, DISABLED_Stop)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_Print)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(Timer, DISABLED_Print)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_GetDuration)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(Timer, DISABLED_GetDuration)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_ScopeTimer)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(Timer, DISABLED_ScopeTimer)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_FPSTimer)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,5 +111,5 @@ TEST(Timer, DISABLED_FPSTimer)
 // ----------------------------------------------------------------------------
 TEST(Timer, DISABLED_Signal)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

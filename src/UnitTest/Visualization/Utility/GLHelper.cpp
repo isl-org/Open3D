@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(GLHelper, DISABLED_LookAt)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(GLHelper, DISABLED_LookAt)
 // ----------------------------------------------------------------------------
 TEST(GLHelper, DISABLED_Perspective)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(GLHelper, DISABLED_Perspective)
 // ----------------------------------------------------------------------------
 TEST(GLHelper, DISABLED_Ortho)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(GLHelper, DISABLED_Ortho)
 // ----------------------------------------------------------------------------
 TEST(GLHelper, DISABLED_Project)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(GLHelper, DISABLED_Project)
 // ----------------------------------------------------------------------------
 TEST(GLHelper, DISABLED_Unproject)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,5 +71,5 @@ TEST(GLHelper, DISABLED_Unproject)
 // ----------------------------------------------------------------------------
 TEST(GLHelper, DISABLED_ColorCodeToPickIndex)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

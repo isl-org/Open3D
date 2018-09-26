@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_SetIntrinsics)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_SetIntrinsics)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_GetFocalLength)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_GetFocalLength)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_GetPrincipalPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_GetPrincipalPoint)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_GetSkew)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_GetSkew)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_IsValid)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_IsValid)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,5 +103,5 @@ TEST(PinholeCameraIntrinsic, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

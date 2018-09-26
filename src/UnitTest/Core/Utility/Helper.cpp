@@ -31,5 +31,5 @@
 // ----------------------------------------------------------------------------
 TEST(Helper, DISABLED_SplitString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

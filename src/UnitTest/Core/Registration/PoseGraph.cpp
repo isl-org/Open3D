@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PoseGraph, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(PoseGraph, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(PoseGraph, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_PoseGraphNode)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(PoseGraph, DISABLED_PoseGraphNode)
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(PoseGraph, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,5 +79,5 @@ TEST(PoseGraph, DISABLED_ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 TEST(PoseGraph, DISABLED_PoseGraphEdge)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

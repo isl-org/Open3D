@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONStream)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONStream)
 // ----------------------------------------------------------------------------
 TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONStream)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONStream)
 // ----------------------------------------------------------------------------
 TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSON)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSON)
 // ----------------------------------------------------------------------------
 TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSON)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSON)
 // ----------------------------------------------------------------------------
 TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,6 +71,6 @@ TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONString)
 // ----------------------------------------------------------------------------
 TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 

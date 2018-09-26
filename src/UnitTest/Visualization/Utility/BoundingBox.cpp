@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(BoundingBox, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(BoundingBox, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(BoundingBox, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(BoundingBox, DISABLED_Reset)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_FitInGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(BoundingBox, DISABLED_FitInGeometry)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_GetCenter)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(BoundingBox, DISABLED_GetCenter)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_GetSize)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(BoundingBox, DISABLED_GetSize)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_GetXPercentage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(BoundingBox, DISABLED_GetXPercentage)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_GetYPercentage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(BoundingBox, DISABLED_GetYPercentage)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_GetZPercentage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,5 +111,5 @@ TEST(BoundingBox, DISABLED_GetZPercentage)
 // ----------------------------------------------------------------------------
 TEST(BoundingBox, DISABLED_GetPrintInfo)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
