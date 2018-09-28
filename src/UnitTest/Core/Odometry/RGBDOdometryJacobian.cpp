@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobian, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(RGBDOdometryJacobian, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobian, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(RGBDOdometryJacobian, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobian, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(RGBDOdometryJacobian, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobian, DISABLED_ComputeJacobianAndResidual)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(RGBDOdometryJacobian, DISABLED_ComputeJacobianAndResidual)
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromColorTerm)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,5 +71,5 @@ TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromColorTerm)
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromHybridTerm)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

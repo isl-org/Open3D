@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,5 +39,5 @@ TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN)
 // ----------------------------------------------------------------------------
 TEST(FileXYZN, DISABLED_WritePointCloudToXYZN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FilePTS, DISABLED_ReadPointCloudFromPTS)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FilePTS, DISABLED_ReadPointCloudFromPTS)
 // ----------------------------------------------------------------------------
 TEST(FilePTS, DISABLED_ResetConsoleProgress)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(FilePTS, DISABLED_ResetConsoleProgress)
 // ----------------------------------------------------------------------------
 TEST(FilePTS, DISABLED_SplitString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(FilePTS, DISABLED_SplitString)
 // ----------------------------------------------------------------------------
 TEST(FilePTS, DISABLED_AdvanceConsoleProgress)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(FilePTS, DISABLED_AdvanceConsoleProgress)
 // ----------------------------------------------------------------------------
 TEST(FilePTS, DISABLED_WritePointCloudToPTS)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

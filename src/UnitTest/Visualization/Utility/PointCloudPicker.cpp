@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PointCloudPicker, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(PointCloudPicker, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(PointCloudPicker, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_Clear)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(PointCloudPicker, DISABLED_Clear)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_IsEmpty)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(PointCloudPicker, DISABLED_IsEmpty)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_GetMinBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(PointCloudPicker, DISABLED_GetMinBound)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_GetMaxBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(PointCloudPicker, DISABLED_GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_Transform)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,5 +95,5 @@ TEST(PointCloudPicker, DISABLED_Transform)
 // ----------------------------------------------------------------------------
 TEST(PointCloudPicker, DISABLED_SetPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

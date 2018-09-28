@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(IJsonConvertible, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(IJsonConvertible, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(IJsonConvertible, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(IJsonConvertible, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(IJsonConvertible, DISABLED_ConvertFromJsonValue)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,5 +143,5 @@ TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertible, DISABLED_EigenMatrix6dToJsonArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

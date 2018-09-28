@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_PrintVisualizerHelp)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_UpdateWindowTitle)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_UpdateWindowTitle)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_Play)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_Play)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingImageFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingImageFormat)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingDepthFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingDepthFormat)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_InitViewControl)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_InitViewControl)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_MouseMoveCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_MouseMoveCallback)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_MouseScrollCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(VisualizerWithCustomAnimation, DISABLED_MouseScrollCallback)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_MouseButtonCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,5 +127,5 @@ TEST(VisualizerWithCustomAnimation, DISABLED_MouseButtonCallback)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithCustomAnimation, DISABLED_KeyPressCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

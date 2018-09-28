@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Eigen, DISABLED_TransformVector6dToMatrix4d)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Eigen, DISABLED_TransformVector6dToMatrix4d)
 // ----------------------------------------------------------------------------
 TEST(Eigen, DISABLED_TransformMatrix4dToVector6d)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Eigen, DISABLED_TransformMatrix4dToVector6d)
 // ----------------------------------------------------------------------------
 TEST(Eigen, DISABLED_SolveLinearSystem)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Eigen, DISABLED_SolveLinearSystem)
 // ----------------------------------------------------------------------------
 TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrix)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrix)
 // ----------------------------------------------------------------------------
 TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrixArray)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,5 +71,5 @@ TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrixArray)
 // ----------------------------------------------------------------------------
 TEST(Eigen, DISABLED_ComputeJTJandJTr)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

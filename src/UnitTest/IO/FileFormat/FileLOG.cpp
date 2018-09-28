@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FileLOG, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FileLOG, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
 // ----------------------------------------------------------------------------
 TEST(FileLOG, DISABLED_PinholeCameraIntrinsic)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,5 +47,5 @@ TEST(FileLOG, DISABLED_PinholeCameraIntrinsic)
 // ----------------------------------------------------------------------------
 TEST(FileLOG, DISABLED_WritePinholeCameraTrajectoryToLOG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PhongShader, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(PhongShader, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(PhongShader, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_Compile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(PhongShader, DISABLED_Compile)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_Release)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(PhongShader, DISABLED_Release)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_BindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(PhongShader, DISABLED_BindGeometry)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_RenderGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(PhongShader, DISABLED_RenderGeometry)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_UnbindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(PhongShader, DISABLED_UnbindGeometry)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_PrepareRendering)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(PhongShader, DISABLED_PrepareRendering)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_PrepareBinding)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(PhongShader, DISABLED_PrepareBinding)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_SetLighting)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(PhongShader, DISABLED_SetLighting)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_PhongShaderForPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,5 +127,5 @@ TEST(PhongShader, DISABLED_PhongShaderForPointCloud)
 // ----------------------------------------------------------------------------
 TEST(PhongShader, DISABLED_PhongShaderForTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

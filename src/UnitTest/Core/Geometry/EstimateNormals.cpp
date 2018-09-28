@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(EstimateNormals, DISABLED_FastEigen3x3)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,37 +39,5 @@ TEST(EstimateNormals, DISABLED_FastEigen3x3)
 // ----------------------------------------------------------------------------
 TEST(EstimateNormals, DISABLED_ComputeNormal)
 {
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_EstimateNormalsConstructor)
-{
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_KDTreeSearchParamKNN)
-{
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_OrientNormalsToAlignWithDirection)
-{
-    NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_OrientNormalsTowardsCameraLocation)
-{
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -26,7 +26,7 @@ set(GLFW_INSTALL ON)
 option(GLFW_VULKAN_STATIC "Use the Vulkan loader statically linked into application" OFF)
 
 if (UNIX)
-    if (HEADLESS_RENDERING)
+    if (ENABLE_HEADLESS_RENDERING)
     	set(GLFW_USE_OSMESA ON)
     else ()
         set(GLFW_USE_OSMESA OFF)

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ImageShader, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ImageShader, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ImageShader, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_Compile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ImageShader, DISABLED_Compile)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_Release)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ImageShader, DISABLED_Release)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_BindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(ImageShader, DISABLED_BindGeometry)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_RenderGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(ImageShader, DISABLED_RenderGeometry)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_UnbindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(ImageShader, DISABLED_UnbindGeometry)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_PrepareRendering)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(ImageShader, DISABLED_PrepareRendering)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_PrepareBinding)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,5 +111,5 @@ TEST(ImageShader, DISABLED_PrepareBinding)
 // ----------------------------------------------------------------------------
 TEST(ImageShader, DISABLED_ImageShaderForImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

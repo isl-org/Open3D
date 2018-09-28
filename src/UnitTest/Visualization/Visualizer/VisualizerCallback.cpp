@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_Render)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(VisualizerCallback, DISABLED_Render)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_PrintDebug)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(VisualizerCallback, DISABLED_PrintDebug)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_ResetViewPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(VisualizerCallback, DISABLED_ResetViewPoint)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_CopyViewStatusToClipboard)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(VisualizerCallback, DISABLED_CopyViewStatusToClipboard)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_CopyViewStatusFromClipboard)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(VisualizerCallback, DISABLED_CopyViewStatusFromClipboard)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_Close)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(VisualizerCallback, DISABLED_Close)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_PrintVisualizerHelp)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(VisualizerCallback, DISABLED_PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_CaptureScreenImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(VisualizerCallback, DISABLED_CaptureScreenImage)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_CaptureDepthImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(VisualizerCallback, DISABLED_CaptureDepthImage)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_CaptureRenderOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(VisualizerCallback, DISABLED_CaptureRenderOption)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_UpdateGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,5 +119,5 @@ TEST(VisualizerCallback, DISABLED_UpdateGeometry)
 // ----------------------------------------------------------------------------
 TEST(VisualizerCallback, DISABLED_SetGlobalColorMap)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(VisualizerWithKeyCallback, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(VisualizerWithKeyCallback, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(VisualizerWithKeyCallback, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_PrintVisualizerHelp)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(VisualizerWithKeyCallback, DISABLED_PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_RegisterKeyCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(VisualizerWithKeyCallback, DISABLED_RegisterKeyCallback)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_KeyPressCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,5 +79,5 @@ TEST(VisualizerWithKeyCallback, DISABLED_KeyPressCallback)
 // ----------------------------------------------------------------------------
 TEST(VisualizerWithKeyCallback, DISABLED_PrintKeyToString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

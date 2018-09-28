@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertible)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertible)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertible)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertible)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSON)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSON)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSON)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSON)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSONString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,5 +71,5 @@ TEST(IJsonConvertibleIO, DISABLED_ReadIJsonConvertibleFromJSONString)
 // ----------------------------------------------------------------------------
 TEST(IJsonConvertibleIO, DISABLED_WriteIJsonConvertibleToJSONString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
