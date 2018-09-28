@@ -15,10 +15,10 @@ if __name__ == "__main__":
 
     path = "[path_to_reconstruction_system_output]"
     out_path = "[path_to_sampled_frames_are_located]"
-    make_folder(out_path)
-    make_folder(os.path.join(out_path, "depth/"))
-    make_folder(os.path.join(out_path, "image/"))
-    make_folder(os.path.join(out_path, "scene/"))
+    make_clean_folder(out_path)
+    make_clean_folder(os.path.join(out_path, "depth/"))
+    make_clean_folder(os.path.join(out_path, "image/"))
+    make_clean_folder(os.path.join(out_path, "scene/"))
     sampling_rate = 30
 
     depth_image_path = get_file_list(

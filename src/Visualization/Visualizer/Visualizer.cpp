@@ -74,7 +74,7 @@ Visualizer::~Visualizer()
 
 bool Visualizer::CreateVisualizerWindow(const std::string &window_name/* = "Open3D"*/,
         const int width/* = 640*/, const int height/* = 480*/,
-        const int left/* = 50*/, const int top/* = 50*/)
+        const int left/* = 50*/, const int top/* = 50*/, const bool visible/* = true*/)
 {
     window_name_ = window_name;
     if (window_) {    // window already created
@@ -101,6 +101,7 @@ bool Visualizer::CreateVisualizerWindow(const std::string &window_name/* = "Open
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
     if (!window_) {

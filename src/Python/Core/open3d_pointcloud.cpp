@@ -60,11 +60,12 @@ void pybind_pointcloud(py::module &m)
 
 void pybind_pointcloud_methods(py::module &m)
 {
-    m.def("read_point_cloud", [](const std::string &filename) {
+    m.def("read_point_cloud", [](const std::string &filename,
+            const std::string &format) {
         PointCloud pcd;
-        ReadPointCloud(filename, pcd);
+        ReadPointCloud(filename, pcd, format);
         return pcd;
-    }, "Function to read PointCloud from file", "filename"_a);
+    }, "Function to read PointCloud from file", "filename"_a, "format"_a = "auto");
     m.def("write_point_cloud", [](const std::string &filename,
             const PointCloud &pointcloud, bool write_ascii, bool compressed) {
         return WritePointCloud(filename, pointcloud, write_ascii, compressed);
@@ -89,7 +90,7 @@ void pybind_pointcloud_methods(py::module &m)
             "extrinsic"_a = Eigen::Matrix4d::Identity());
     m.def("select_down_sample", &SelectDownSample,
             "Function to select points from input pointcloud into output pointcloud",
-            "input"_a, "indices"_a);
+            "input"_a, "indices"_a, "invert"_a = false);
     m.def("voxel_down_sample", &VoxelDownSample,
             "Function to downsample input pointcloud into output pointcloud with a voxel",
             "input"_a, "voxel_size"_a);
@@ -99,6 +100,14 @@ void pybind_pointcloud_methods(py::module &m)
     m.def("crop_point_cloud", &CropPointCloud,
             "Function to crop input pointcloud into output pointcloud",
             "input"_a, "min_bound"_a, "max_bound"_a);
+    m.def("radius_outlier_removal", &RemoveRadiusOutliers,
+            "Function to remove points that have less than nb_points"
+            " in a given sphere of a given radius",
+            "input"_a, "nb_points"_a, "radius"_a);
+    m.def("statistical_outlier_removal", &RemoveStatisticalOutliers,
+            "Function to remove points that are further away from their "
+            "neighbours in average",
+            "input"_a, "nb_neighbors"_a, "std_ratio"_a);
     m.def("estimate_normals", &EstimateNormals,
             "Function to compute the normals of a point cloud",
             "cloud"_a, "search_param"_a = KDTreeSearchParamKNN());
