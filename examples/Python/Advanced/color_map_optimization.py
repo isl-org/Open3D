@@ -8,7 +8,7 @@ from open3d import *
 from trajectory_io import *
 import os, sys
 sys.path.append("../Utility")
-from common import *
+from file import *
 
 path = "[path_to_fountain_dataset]"
 debug_mode = False
