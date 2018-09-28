@@ -29,6 +29,8 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/TriangleMesh.h>
+
 
 namespace open3d{
 
@@ -96,6 +98,21 @@ std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
 {
     return SelectDownSample(input, CropInPolygon(input.points_));
 }
+
+std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMesh(
+        const TriangleMesh &input) const
+{
+    if (orthogonal_axis_ == "" || bounding_polygon_.empty())
+        return std::make_shared<TriangleMesh>();
+    return CropTriangleMeshInPolygon(input);
+}
+
+std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
+        const TriangleMesh &input) const
+{
+    return SelectDownSample(input, CropInPolygon(input.vertices_));
+}
+
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
         const std::vector<Eigen::Vector3d> &input) const
