@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(CorrespondenceChecker, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(CorrespondenceChecker, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(CorrespondenceChecker, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_Check)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(CorrespondenceChecker, DISABLED_Check)
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength)
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,5 +79,5 @@ TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance)
 // ----------------------------------------------------------------------------
 TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

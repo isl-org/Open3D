@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_CreateImageFromFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ImageIO, DISABLED_CreateImageFromFile)
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_ReadImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ImageIO, DISABLED_ReadImage)
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_WriteImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ImageIO, DISABLED_WriteImage)
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_ReadImageFromPNG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ImageIO, DISABLED_ReadImageFromPNG)
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_WriteImageToPNG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ImageIO, DISABLED_WriteImageToPNG)
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_ReadImageFromJPG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,5 +79,5 @@ TEST(ImageIO, DISABLED_ReadImageFromJPG)
 // ----------------------------------------------------------------------------
 TEST(ImageIO, DISABLED_WriteImageToJPG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

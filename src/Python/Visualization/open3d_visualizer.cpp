@@ -46,7 +46,7 @@ void pybind_visualizer(py::module &m)
         .def("create_window", &Visualizer::CreateVisualizerWindow,
                 "Function to create a window and initialize GLFW",
                 "window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
-                "left"_a = 50, "right"_a = 50)
+                "left"_a = 50, "right"_a = 50, "visible"_a = true)
         .def("destroy_window", &Visualizer::DestroyVisualizerWindow,
                 "Function to destroy a window")
         .def("register_animation_callback",

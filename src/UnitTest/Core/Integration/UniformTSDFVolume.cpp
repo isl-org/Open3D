@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(UniformTSDFVolume, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(UniformTSDFVolume, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(UniformTSDFVolume, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(UniformTSDFVolume, DISABLED_Reset)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_Integrate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(UniformTSDFVolume, DISABLED_Integrate)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_ExtractPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(UniformTSDFVolume, DISABLED_ExtractPointCloud)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_ExtractTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(UniformTSDFVolume, DISABLED_ExtractTriangleMesh)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_ExtractVoxelPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(UniformTSDFVolume, DISABLED_ExtractVoxelPointCloud)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_IntegrateWithDepthToCameraDistanceMultiplier)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(UniformTSDFVolume, DISABLED_IntegrateWithDepthToCameraDistanceMultiplier)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_IndexOf)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(UniformTSDFVolume, DISABLED_IndexOf)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_GetNormalAt)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,5 +119,5 @@ TEST(UniformTSDFVolume, DISABLED_GetNormalAt)
 // ----------------------------------------------------------------------------
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

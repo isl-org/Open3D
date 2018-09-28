@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(NormalShader, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(NormalShader, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(NormalShader, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_Compile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(NormalShader, DISABLED_Compile)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_Release)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(NormalShader, DISABLED_Release)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_BindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(NormalShader, DISABLED_BindGeometry)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_RenderGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(NormalShader, DISABLED_RenderGeometry)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_UnbindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(NormalShader, DISABLED_UnbindGeometry)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_PrepareRendering)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(NormalShader, DISABLED_PrepareRendering)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_PrepareBinding)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(NormalShader, DISABLED_PrepareBinding)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_NormalShaderForPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,5 +119,5 @@ TEST(NormalShader, DISABLED_NormalShaderForPointCloud)
 // ----------------------------------------------------------------------------
 TEST(NormalShader, DISABLED_NormalShaderForTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

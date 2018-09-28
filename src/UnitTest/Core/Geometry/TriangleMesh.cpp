@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(TriangleMesh, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(TriangleMesh, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(TriangleMesh, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Clear)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(TriangleMesh, DISABLED_Clear)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_IsEmpty)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(TriangleMesh, DISABLED_IsEmpty)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_GetMinBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(TriangleMesh, DISABLED_GetMinBound)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_GetMaxBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(TriangleMesh, DISABLED_GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Transform)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(TriangleMesh, DISABLED_Transform)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_ComputeTriangleNormals)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(TriangleMesh, DISABLED_ComputeTriangleNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_ComputeVertexNormals)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(TriangleMesh, DISABLED_ComputeVertexNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_Purge)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(TriangleMesh, DISABLED_Purge)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveDuplicatedVertices)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(TriangleMesh, DISABLED_RemoveDuplicatedVertices)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveDuplicatedTriangles)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(TriangleMesh, DISABLED_RemoveDuplicatedTriangles)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveNonManifoldVertices)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(TriangleMesh, DISABLED_RemoveNonManifoldVertices)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_RemoveNonManifoldTriangles)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ TEST(TriangleMesh, DISABLED_RemoveNonManifoldTriangles)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasVertices)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ TEST(TriangleMesh, DISABLED_HasVertices)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasTriangles)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ TEST(TriangleMesh, DISABLED_HasTriangles)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasVertexNormals)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ TEST(TriangleMesh, DISABLED_HasVertexNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasVertexColors)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -183,7 +183,7 @@ TEST(TriangleMesh, DISABLED_HasVertexColors)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_HasTriangleNormals)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ TEST(TriangleMesh, DISABLED_HasTriangleNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_NormalizeNormals)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ TEST(TriangleMesh, DISABLED_NormalizeNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_PaintUniformColor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -207,7 +207,7 @@ TEST(TriangleMesh, DISABLED_PaintUniformColor)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_SelectDownSample)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ TEST(TriangleMesh, DISABLED_SelectDownSample)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CropTriangleMesh)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -223,7 +223,7 @@ TEST(TriangleMesh, DISABLED_CropTriangleMesh)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshSphere)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshSphere)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshCylinder)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -239,7 +239,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshCylinder)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshCone)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -247,7 +247,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshCone)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshArrow)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -255,7 +255,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshArrow)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, DISABLED_CreateMeshCoordinateFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ TEST(TriangleMesh, DISABLED_CreateMeshCoordinateFrame)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshSphere)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -271,7 +271,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshSphere)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshCylinder)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -279,7 +279,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshCylinder)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshCone)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshCone)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshArrow)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -295,5 +295,5 @@ TEST(TriangleMeshFactory, DISABLED_CreateMeshArrow)
 // ----------------------------------------------------------------------------
 TEST(TriangleMeshFactory, DISABLED_CreateMeshCoordinateFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,5 +55,5 @@ TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimizationConvergenceCriteria, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

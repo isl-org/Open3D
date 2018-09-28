@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ViewControlWithEditing, DISABLED_Reset)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_ChangeFieldOfView)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ViewControlWithEditing, DISABLED_ChangeFieldOfView)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_Scale)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ViewControlWithEditing, DISABLED_Scale)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_Rotate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ViewControlWithEditing, DISABLED_Rotate)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_Translate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ViewControlWithEditing, DISABLED_Translate)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_SetEditingMode)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(ViewControlWithEditing, DISABLED_SetEditingMode)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_GetStatusString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(ViewControlWithEditing, DISABLED_GetStatusString)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_GetEditingMode)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(ViewControlWithEditing, DISABLED_GetEditingMode)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_ToggleEditingX)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(ViewControlWithEditing, DISABLED_ToggleEditingX)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_ToggleEditingY)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(ViewControlWithEditing, DISABLED_ToggleEditingY)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_ToggleEditingZ)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(ViewControlWithEditing, DISABLED_ToggleEditingZ)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_ToggleLocking)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,5 +127,5 @@ TEST(ViewControlWithEditing, DISABLED_ToggleLocking)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithEditing, DISABLED_IsLocked)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

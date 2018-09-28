@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Feature, DISABLED_Resize)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Feature, DISABLED_Resize)
 // ----------------------------------------------------------------------------
 TEST(Feature, DISABLED_Dimension)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Feature, DISABLED_Dimension)
 // ----------------------------------------------------------------------------
 TEST(Feature, DISABLED_Num)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Feature, DISABLED_Num)
 // ----------------------------------------------------------------------------
 TEST(Feature, DISABLED_ComputeFPFHFeature)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(Feature, DISABLED_ComputeFPFHFeature)
 // ----------------------------------------------------------------------------
 TEST(Feature, DISABLED_KDTreeSearchParamKNN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

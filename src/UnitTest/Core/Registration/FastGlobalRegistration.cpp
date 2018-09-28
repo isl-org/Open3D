@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_FastGlobalRegistrationOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FastGlobalRegistration, DISABLED_FastGlobalRegistrationOption)
 // ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(FastGlobalRegistration, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,5 +55,5 @@ TEST(FastGlobalRegistration, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(FastGlobalRegistration, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

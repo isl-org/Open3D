@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(SimpleBlackShader, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(SimpleBlackShader, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(SimpleBlackShader, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_Compile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(SimpleBlackShader, DISABLED_Compile)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_Release)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(SimpleBlackShader, DISABLED_Release)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_BindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(SimpleBlackShader, DISABLED_BindGeometry)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_RenderGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(SimpleBlackShader, DISABLED_RenderGeometry)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_UnbindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(SimpleBlackShader, DISABLED_UnbindGeometry)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_PrepareRendering)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(SimpleBlackShader, DISABLED_PrepareRendering)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_PrepareBinding)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(SimpleBlackShader, DISABLED_PrepareBinding)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForPointCloudNormal)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,5 +119,5 @@ TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForPointCloudNormal)
 // ----------------------------------------------------------------------------
 TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForTriangleMeshWireFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

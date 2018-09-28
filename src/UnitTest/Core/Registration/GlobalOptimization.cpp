@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(GlobalOptimization, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(GlobalOptimization, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationLevenbergMarquardt)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(GlobalOptimization, DISABLED_GlobalOptimizationLevenbergMarquardt)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationConvergenceCriteria)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(GlobalOptimization, DISABLED_GlobalOptimizationConvergenceCriteria)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_GlobalOptimizationOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,5 +71,5 @@ TEST(GlobalOptimization, DISABLED_GlobalOptimizationOption)
 // ----------------------------------------------------------------------------
 TEST(GlobalOptimization, DISABLED_CreatePoseGraphWithoutInvalidEdges)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
