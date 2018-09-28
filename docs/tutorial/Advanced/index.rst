@@ -3,6 +3,7 @@ Advanced
 
 .. toctree::
 
+    pointcloud_outlier_removal
     colored_pointcloud_registration
     global_registration
     fast_global_registration
