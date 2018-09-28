@@ -1,23 +1,41 @@
+# Open3D: www.open3d.org
+# The MIT License (MIT)
+# See license file or visit www.open3d.org for details
+
+# examples/Python/Tutorial/ReconstructionSystem/run_system.py
+
 import os
 import sys
 import json
 import argparse
+import time, datetime
+sys.path.append("../Utility")
+from file import *
+sys.path.append(".")
+from initialize_config import *
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("--make",
-            help="Step 1) making fragments from RGBD sequence", action="store_true")
+            help="Step 1) make fragments from RGBD sequence",
+            action="store_true")
     parser.add_argument("--register",
-            help="Step 2) register fragments", action="store_true")
+            help="Step 2) register all fragments to detect loop closure",
+            action="store_true")
+    parser.add_argument("--refine",
+            help="Step 3) refine rough registrations", action="store_true")
     parser.add_argument("--integrate",
-            help="Step 3) integrate the whole RGBD sequence", action="store_true")
-    parser.add_argument("--debug_mode",
-            help="turn on debug mode", action="store_true")
+            help="Step 4) integrate the whole RGBD sequence to make final mesh",
+            action="store_true")
+    parser.add_argument("--debug_mode", help="turn on debug mode",
+            action="store_true")
     args = parser.parse_args()
 
     if not args.make and \
             not args.register and \
+            not args.refine and \
             not args.integrate:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -26,12 +44,8 @@ if __name__ == "__main__":
     if args.config is not None:
         with open(args.config) as json_file:
             config = json.load(json_file)
-            path_depth = os.path.join(config["path_dataset"], "depth")
-            path_image = os.path.join(config["path_dataset"], "image")
-            assert os.path.exists(path_depth), \
-                    "Path %s is not exist!" % path_depth
-            assert os.path.exists(path_image), \
-                    "Path %s is not exist!" % path_image
+            initialize_config(config)
+            check_folder_structure(config["path_dataset"])
     assert config is not None
 
     if args.debug_mode:
@@ -39,12 +53,40 @@ if __name__ == "__main__":
     else:
         config['debug_mode'] = False
 
+    print("====================================")
+    print("Configuration")
+    print("====================================")
+    for key, val in config.items():
+        print("%40s : %s" % (key, str(val)))
+
+    times = [0,0,0,0]
     if args.make:
+        start_time = time.time()
         import make_fragments
         make_fragments.run(config)
+        times[0] = time.time() - start_time
     if args.register:
+        start_time = time.time()
         import register_fragments
         register_fragments.run(config)
+        times[1] = time.time() - start_time
+    if args.refine:
+        start_time = time.time()
+        import refine_registration
+        refine_registration.run(config)
+        times[2] = time.time() - start_time
     if args.integrate:
+        start_time = time.time()
         import integrate_scene
         integrate_scene.run(config)
+        times[3] = time.time() - start_time
+
+    print("====================================")
+    print("Elapsed time (in h:m:s)")
+    print("====================================")
+    print("- Making fragments    %s" % datetime.timedelta(seconds=times[0]))
+    print("- Register fragments  %s" % datetime.timedelta(seconds=times[1]))
+    print("- Refine registration %s" % datetime.timedelta(seconds=times[2]))
+    print("- Integrate frames    %s" % datetime.timedelta(seconds=times[3]))
+    print("- Total               %s" % datetime.timedelta(seconds=sum(times)))
+    sys.stdout.flush()
