@@ -6,12 +6,13 @@
 
 import numpy as np
 import math
+from open3d import *
 import sys
 sys.path.append("../Utility")
-from open3d import *
-from common import *
+from file import *
 from opencv import *
 from optimize_posegraph import *
+
 
 # check opencv python package
 with_opencv = initialize_opencv()
@@ -54,8 +55,8 @@ def register_one_rgbd_pair(s, t, color_files, depth_files,
         return [success, trans, info]
 
 
-def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files,
-        fragment_id, n_fragments, intrinsic, with_opencv, config):
+def make_posegraph_for_fragment(path_dataset, sid, eid, color_files,
+        depth_files, fragment_id, n_fragments, intrinsic, with_opencv, config):
     set_verbosity_level(VerbosityLevel.Error)
     pose_graph = PoseGraph()
     trans_odometry = np.identity(4)
@@ -77,8 +78,8 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
                                 uncertain = False))
 
             # keyframe loop closure
-            if s % n_keyframes_per_n_frame == 0 \
-                    and t % n_keyframes_per_n_frame == 0:
+            if s % config['n_keyframes_per_n_frame'] == 0 \
+                    and t % config['n_keyframes_per_n_frame'] == 0:
                 print("Fragment %03d / %03d :: RGBD matching between frame : %d and %d"
                         % (fragment_id, n_fragments-1, s, t))
                 [success, trans, info] = register_one_rgbd_pair(s, t,
@@ -88,18 +89,17 @@ def make_posegraph_for_fragment(path_dataset, sid, eid, color_files, depth_files
                     pose_graph.edges.append(
                             PoseGraphEdge(s-sid, t-sid, trans, info,
                                     uncertain = True))
-    write_pose_graph(path_dataset + template_fragment_posegraph % fragment_id,
-            pose_graph)
+    write_pose_graph(join(path_dataset,
+            config["template_fragment_posegraph"] % fragment_id), pose_graph)
 
 
 def integrate_rgb_frames_for_fragment(color_files, depth_files,
         fragment_id, n_fragments, pose_graph_name, intrinsic, config):
     pose_graph = read_pose_graph(pose_graph_name)
     volume = ScalableTSDFVolume(voxel_length = config["tsdf_cubic_size"]/512.0,
-            sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
-
+        sdf_trunc = 0.04, color_type = TSDFVolumeColorType.RGB8)
     for i in range(len(pose_graph.nodes)):
-        i_abs = fragment_id * n_frames_per_fragment + i
+        i_abs = fragment_id * config['n_frames_per_fragment'] + i
         print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
                 % (fragment_id, n_fragments-1,
                 i_abs, i+1, len(pose_graph.nodes)))
@@ -114,42 +114,60 @@ def integrate_rgb_frames_for_fragment(color_files, depth_files,
     mesh.compute_vertex_normals()
     return mesh
 
-def make_mesh_for_fragment(path_dataset, color_files, depth_files,
+
+def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
         fragment_id, n_fragments, intrinsic, config):
     mesh = integrate_rgb_frames_for_fragment(
             color_files, depth_files, fragment_id, n_fragments,
-            os.path.join(path_dataset,
-            template_fragment_posegraph_optimized % fragment_id),
+            join(path_dataset,
+            config["template_fragment_posegraph_optimized"] % fragment_id),
             intrinsic, config)
-    mesh_name = path_dataset + template_fragment_mesh % fragment_id
-    write_triangle_mesh(mesh_name, mesh, False, True)
+    pcd = PointCloud()
+    pcd.points = mesh.vertices
+    pcd.colors = mesh.vertex_colors
+    pcd_name = path_dataset + config["template_fragment_pointcloud"] % fragment_id
+    write_point_cloud(pcd_name, pcd, False, True)
 
 
-def process_fragments(config):
+def process_single_fragment(fragment_id, color_files, depth_files,
+        n_files, n_fragments, config):
     if config["path_intrinsic"]:
         intrinsic = read_pinhole_camera_intrinsic(config["path_intrinsic"])
     else:
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+    sid = fragment_id * config['n_frames_per_fragment']
+    eid = min(sid + config['n_frames_per_fragment'], n_files)
 
-    make_folder(os.path.join(config["path_dataset"], folder_fragment))
-    [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
-    n_files = len(color_files)
-    n_fragments = int(math.ceil(float(n_files) / n_frames_per_fragment))
-
-    for fragment_id in range(n_fragments):
-        sid = fragment_id * n_frames_per_fragment
-        eid = min(sid + n_frames_per_fragment, n_files)
-        make_posegraph_for_fragment(config["path_dataset"], sid, eid,
-                color_files, depth_files, fragment_id,
-                n_fragments, intrinsic, with_opencv, config)
-        optimize_posegraph_for_fragment(
-                config["path_dataset"], fragment_id, config)
-        make_mesh_for_fragment(
-                config["path_dataset"], color_files, depth_files,
-                fragment_id, n_fragments, intrinsic, config)
+    make_posegraph_for_fragment(config["path_dataset"], sid, eid,
+            color_files, depth_files, fragment_id,
+            n_fragments, intrinsic, with_opencv, config)
+    optimize_posegraph_for_fragment(
+            config["path_dataset"], fragment_id, config)
+    make_pointcloud_for_fragment(
+            config["path_dataset"], color_files, depth_files,
+            fragment_id, n_fragments, intrinsic, config)
 
 
 def run(config):
     print("making fragments from RGBD sequence.")
-    process_fragments(config)
+    make_clean_folder(join(config["path_dataset"], config["folder_fragment"]))
+    [color_files, depth_files] = get_rgbd_file_lists(config["path_dataset"])
+    n_files = len(color_files)
+    n_fragments = int(math.ceil(float(n_files) / \
+            config['n_frames_per_fragment']))
+
+    if config["python_multi_threading"]:
+        from joblib import Parallel, delayed
+        import multiprocessing
+        import subprocess
+        MAX_THREAD = min(multiprocessing.cpu_count(), n_fragments)
+        Parallel(n_jobs=MAX_THREAD)(delayed(process_single_fragment)(
+                fragment_id, color_files, depth_files,
+                n_files, n_fragments, config)
+                for fragment_id in range(n_fragments))
+    else:
+        for fragment_id in range(n_fragments):
+            process_single_fragment(
+                    fragment_id, color_files, depth_files,
+                    n_files, n_fragments, config)
