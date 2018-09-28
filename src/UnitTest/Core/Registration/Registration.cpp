@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_ICPConvergenceCriteria)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Registration, DISABLED_ICPConvergenceCriteria)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Registration, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Registration, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(Registration, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_RANSACConvergenceCriteria)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(Registration, DISABLED_RANSACConvergenceCriteria)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_RegistrationResult)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(Registration, DISABLED_RegistrationResult)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_EvaluateRegistration)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(Registration, DISABLED_EvaluateRegistration)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_RegistrationICP)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(Registration, DISABLED_RegistrationICP)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_TransformationEstimationPointToPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(Registration, DISABLED_TransformationEstimationPointToPoint)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_RegistrationRANSACBasedOnCorrespondence)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(Registration, DISABLED_RegistrationRANSACBasedOnCorrespondence)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_RegistrationRANSACBasedOnFeatureMatching)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,5 +119,5 @@ TEST(Registration, DISABLED_RegistrationRANSACBasedOnFeatureMatching)
 // ----------------------------------------------------------------------------
 TEST(Registration, DISABLED_GetInformationMatrixFromPointClouds)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

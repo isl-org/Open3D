@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_CreatePinholeCameraTrajectoryFromFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(PinholeCameraTrajectoryIO, DISABLED_CreatePinholeCameraTrajectoryFromFile)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectory)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectory)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectory)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectory)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectoryToLOG)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

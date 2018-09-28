@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FeatureIO, DISABLED_ReadFeature)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FeatureIO, DISABLED_ReadFeature)
 // ----------------------------------------------------------------------------
 TEST(FeatureIO, DISABLED_WriteFeature)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(FeatureIO, DISABLED_WriteFeature)
 // ----------------------------------------------------------------------------
 TEST(FeatureIO, DISABLED_ReadFeatureFromBIN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,5 +55,5 @@ TEST(FeatureIO, DISABLED_ReadFeatureFromBIN)
 // ----------------------------------------------------------------------------
 TEST(FeatureIO, DISABLED_WriteFeatureToBIN)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(GeometryRenderer, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(GeometryRenderer, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(GeometryRenderer, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_Render)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(GeometryRenderer, DISABLED_Render)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_AddGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(GeometryRenderer, DISABLED_AddGeometry)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_UpdateGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(GeometryRenderer, DISABLED_UpdateGeometry)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_HasGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(GeometryRenderer, DISABLED_HasGeometry)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_IsVisible)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,5 +95,5 @@ TEST(GeometryRenderer, DISABLED_IsVisible)
 // ----------------------------------------------------------------------------
 TEST(GeometryRenderer, DISABLED_SetVisible)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(DrawGeometry, DISABLED_DrawGeometries)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(DrawGeometry, DISABLED_DrawGeometries)
 // ----------------------------------------------------------------------------
 TEST(DrawGeometry, DISABLED_DrawGeometriesWithCustomAnimation)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(DrawGeometry, DISABLED_DrawGeometriesWithCustomAnimation)
 // ----------------------------------------------------------------------------
 TEST(DrawGeometry, DISABLED_DrawGeometriesWithAnimationCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(DrawGeometry, DISABLED_DrawGeometriesWithAnimationCallback)
 // ----------------------------------------------------------------------------
 TEST(DrawGeometry, DISABLED_DrawGeometriesWithKeyCallbacks)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,5 +63,5 @@ TEST(DrawGeometry, DISABLED_DrawGeometriesWithKeyCallbacks)
 // ----------------------------------------------------------------------------
 TEST(DrawGeometry, DISABLED_DrawGeometriesWithEditing)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ImageMaskShader, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ImageMaskShader, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ImageMaskShader, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_Compile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ImageMaskShader, DISABLED_Compile)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_Release)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ImageMaskShader, DISABLED_Release)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_BindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(ImageMaskShader, DISABLED_BindGeometry)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_RenderGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(ImageMaskShader, DISABLED_RenderGeometry)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_UnbindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(ImageMaskShader, DISABLED_UnbindGeometry)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_PrepareRendering)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(ImageMaskShader, DISABLED_PrepareRendering)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_PrepareBinding)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,5 +111,5 @@ TEST(ImageMaskShader, DISABLED_PrepareBinding)
 // ----------------------------------------------------------------------------
 TEST(ImageMaskShader, DISABLED_ImageMaskShaderForImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

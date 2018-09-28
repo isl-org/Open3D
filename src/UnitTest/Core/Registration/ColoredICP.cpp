@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ColoredICP, DISABLED_RegistrationColoredICP)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,5 +39,5 @@ TEST(ColoredICP, DISABLED_RegistrationColoredICP)
 // ----------------------------------------------------------------------------
 TEST(ColoredICP, DISABLED_ICPConvergenceCriteria)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

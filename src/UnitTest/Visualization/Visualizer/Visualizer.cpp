@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Visualizer, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Visualizer, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Visualizer, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CreateVisualizerWindow)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(Visualizer, DISABLED_CreateVisualizerWindow)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_DestroyVisualizerWindow)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(Visualizer, DISABLED_DestroyVisualizerWindow)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_RegisterAnimationCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(Visualizer, DISABLED_RegisterAnimationCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_Run)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(Visualizer, DISABLED_Run)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_Close)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(Visualizer, DISABLED_Close)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_WaitEvents)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(Visualizer, DISABLED_WaitEvents)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_PollEvents)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(Visualizer, DISABLED_PollEvents)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_AddGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(Visualizer, DISABLED_AddGeometry)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_UpdateGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(Visualizer, DISABLED_UpdateGeometry)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_HasGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(Visualizer, DISABLED_HasGeometry)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_UpdateRender)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(Visualizer, DISABLED_UpdateRender)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_PrintVisualizerHelp)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ TEST(Visualizer, DISABLED_PrintVisualizerHelp)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_UpdateWindowTitle)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ TEST(Visualizer, DISABLED_UpdateWindowTitle)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_BuildUtilities)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ TEST(Visualizer, DISABLED_BuildUtilities)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CaptureScreenFloatBuffer)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ TEST(Visualizer, DISABLED_CaptureScreenFloatBuffer)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CaptureScreenImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -183,7 +183,7 @@ TEST(Visualizer, DISABLED_CaptureScreenImage)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CaptureDepthFloatBuffer)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ TEST(Visualizer, DISABLED_CaptureDepthFloatBuffer)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CaptureDepthImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ TEST(Visualizer, DISABLED_CaptureDepthImage)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CaptureDepthPointCloud)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -207,7 +207,7 @@ TEST(Visualizer, DISABLED_CaptureDepthPointCloud)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CaptureRenderOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ TEST(Visualizer, DISABLED_CaptureRenderOption)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_ResetViewPoint)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -223,7 +223,7 @@ TEST(Visualizer, DISABLED_ResetViewPoint)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_InitOpenGL)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ TEST(Visualizer, DISABLED_InitOpenGL)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_InitViewControl)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -239,7 +239,7 @@ TEST(Visualizer, DISABLED_InitViewControl)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_InitRenderOption)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -247,7 +247,7 @@ TEST(Visualizer, DISABLED_InitRenderOption)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_Render)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -255,7 +255,7 @@ TEST(Visualizer, DISABLED_Render)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CopyViewStatusToClipboard)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ TEST(Visualizer, DISABLED_CopyViewStatusToClipboard)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_CopyViewStatusFromClipboard)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -271,7 +271,7 @@ TEST(Visualizer, DISABLED_CopyViewStatusFromClipboard)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_WindowRefreshCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -279,7 +279,7 @@ TEST(Visualizer, DISABLED_WindowRefreshCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_WindowResizeCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ TEST(Visualizer, DISABLED_WindowResizeCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_MouseMoveCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -295,7 +295,7 @@ TEST(Visualizer, DISABLED_MouseMoveCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_MouseScrollCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -303,7 +303,7 @@ TEST(Visualizer, DISABLED_MouseScrollCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_MouseButtonCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -311,7 +311,7 @@ TEST(Visualizer, DISABLED_MouseButtonCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_KeyPressCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -319,5 +319,5 @@ TEST(Visualizer, DISABLED_KeyPressCallback)
 // ----------------------------------------------------------------------------
 TEST(Visualizer, DISABLED_WindowCloseCallback)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

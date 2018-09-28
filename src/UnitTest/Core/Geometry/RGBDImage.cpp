@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(RGBDImage, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(RGBDImage, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(RGBDImage, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromColorAndDepth)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromColorAndDepth)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromRedwoodFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromRedwoodFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromTUMFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromTUMFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromSUNFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromSUNFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImageFromNYUFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImageFromNYUFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_FilterRGBDImagePyramid)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(RGBDImage, DISABLED_FilterRGBDImagePyramid)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateRGBDImagePyramid)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(RGBDImage, DISABLED_CreateRGBDImagePyramid)
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromColorAndDepth)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromColorAndDepth)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_ConvertDepthToFloatImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(RGBDImage, DISABLED_ConvertDepthToFloatImage)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_CreateFloatImageFromImage)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(RGBDImage, DISABLED_CreateFloatImageFromImage)
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromRedwoodFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromRedwoodFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromTUMFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromTUMFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromSUNFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromSUNFormat)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_PointerAt)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -167,5 +167,5 @@ TEST(RGBDImage, DISABLED_PointerAt)
 // ----------------------------------------------------------------------------
 TEST(RGBDImageFactory, DISABLED_CreateRGBDImageFromNYUFormat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

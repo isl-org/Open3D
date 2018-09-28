@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_Reset)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_ChangeFieldOfView)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_ChangeFieldOfView)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_Scale)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_Scale)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_Rotate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_Rotate)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_Translate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_Translate)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_SetAnimationMode)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_SetAnimationMode)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_AddKeyFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_AddKeyFrame)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_UpdateKeyFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_UpdateKeyFrame)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_DeleteKeyFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_DeleteKeyFrame)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_AddSpinKeyFrames)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_AddSpinKeyFrames)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_ClearAllKeyFrames)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_ClearAllKeyFrames)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_NumOfKeyFrames)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_NumOfKeyFrames)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_NumOfFrames)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_NumOfFrames)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_ToggleTrajectoryLoop)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_ToggleTrajectoryLoop)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_ChangeTrajectoryInterval)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_ChangeTrajectoryInterval)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_GetTrajectoryInterval)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_GetTrajectoryInterval)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_GetStatusString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_GetStatusString)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_Step)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_Step)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_GoToFirst)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -183,7 +183,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_GoToFirst)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_GoToLast)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_GoToLast)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_CaptureTrajectory)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_CaptureTrajectory)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_LoadTrajectoryFromJsonFile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -207,7 +207,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_LoadTrajectoryFromJsonFile)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_LoadTrajectoryFromCameraTrajectory)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_LoadTrajectoryFromCameraTrajectory
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_IsPreviewing)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -223,7 +223,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_IsPreviewing)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_IsPlaying)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_IsPlaying)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_IsPlayingEnd)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -239,7 +239,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_IsPlayingEnd)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_IsValidPinholeCameraTrajectory)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -247,7 +247,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_IsValidPinholeCameraTrajectory)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_CurrentFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -255,7 +255,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_CurrentFrame)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_CurrentKeyframe)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ TEST(ViewControlWithCustomAnimation, DISABLED_CurrentKeyframe)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_RegularizeFrameIndex)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -271,5 +271,5 @@ TEST(ViewControlWithCustomAnimation, DISABLED_RegularizeFrameIndex)
 // ----------------------------------------------------------------------------
 TEST(ViewControlWithCustomAnimation, DISABLED_SetViewControlFromTrajectory)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

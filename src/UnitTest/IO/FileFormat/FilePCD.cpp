@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_CheckHeader)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(FilePCD, DISABLED_CheckHeader)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_ReadPCDHeader)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(FilePCD, DISABLED_ReadPCDHeader)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_SplitString)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(FilePCD, DISABLED_SplitString)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_UnpackBinaryPCDElement)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(FilePCD, DISABLED_UnpackBinaryPCDElement)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_UnpackBinaryPCDColor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(FilePCD, DISABLED_UnpackBinaryPCDColor)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_UnpackASCIIPCDElement)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(FilePCD, DISABLED_UnpackASCIIPCDElement)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_UnpackASCIIPCDColor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(FilePCD, DISABLED_UnpackASCIIPCDColor)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_ReadPCDData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(FilePCD, DISABLED_ReadPCDData)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_RemoveNanData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(FilePCD, DISABLED_RemoveNanData)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_GenerateHeader)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(FilePCD, DISABLED_GenerateHeader)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_WritePCDHeader)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(FilePCD, DISABLED_WritePCDHeader)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_ConvertRGBToFloat)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(FilePCD, DISABLED_ConvertRGBToFloat)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_WritePCDData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ TEST(FilePCD, DISABLED_WritePCDData)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_ReadPointCloudFromPCD)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -143,6 +143,6 @@ TEST(FilePCD, DISABLED_ReadPointCloudFromPCD)
 // ----------------------------------------------------------------------------
 TEST(FilePCD, DISABLED_WritePointCloudToPCD)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 

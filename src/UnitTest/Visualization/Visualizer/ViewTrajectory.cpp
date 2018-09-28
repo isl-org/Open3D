@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ViewTrajectory, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ViewTrajectory, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ViewTrajectory, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_ComputeInterpolationCoefficients)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ViewTrajectory, DISABLED_ComputeInterpolationCoefficients)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_ChangeInterval)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ViewTrajectory, DISABLED_ChangeInterval)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_NumOfFrames)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(ViewTrajectory, DISABLED_NumOfFrames)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(ViewTrajectory, DISABLED_Reset)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_GetInterpolatedFrame)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(ViewTrajectory, DISABLED_GetInterpolatedFrame)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,5 +103,5 @@ TEST(ViewTrajectory, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(ViewTrajectory, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

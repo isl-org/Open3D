@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(ViewParameters, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(ViewParameters, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(ViewParameters, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_ConvertToVector17d)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(ViewParameters, DISABLED_ConvertToVector17d)
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_ConvertFromVector17d)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(ViewParameters, DISABLED_ConvertFromVector17d)
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_ConvertToJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,5 +79,5 @@ TEST(ViewParameters, DISABLED_ConvertToJsonValue)
 // ----------------------------------------------------------------------------
 TEST(ViewParameters, DISABLED_ConvertFromJsonValue)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

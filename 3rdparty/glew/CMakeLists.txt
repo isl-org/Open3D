@@ -3,7 +3,7 @@ project(glew C)
 cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
-if (HEADLESS_RENDERING)
+if (ENABLE_HEADLESS_RENDERING)
 	set(GLEW_OSMESA ON)
 else ()
 	set(GLEW_OSMESA OFF)

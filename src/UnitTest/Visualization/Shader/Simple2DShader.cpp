@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(Simple2DShader, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(Simple2DShader, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(Simple2DShader, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_Compile)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(Simple2DShader, DISABLED_Compile)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_Release)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(Simple2DShader, DISABLED_Release)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_BindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(Simple2DShader, DISABLED_BindGeometry)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_RenderGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(Simple2DShader, DISABLED_RenderGeometry)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_UnbindGeometry)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(Simple2DShader, DISABLED_UnbindGeometry)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_PrepareRendering)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(Simple2DShader, DISABLED_PrepareRendering)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_PrepareBinding)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,5 +111,5 @@ TEST(Simple2DShader, DISABLED_PrepareBinding)
 // ----------------------------------------------------------------------------
 TEST(Simple2DShader, DISABLED_Simple2DShaderForSelectionPolygon)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(OdometryOption, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(OdometryOption, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(OdometryOption, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,5 +47,5 @@ TEST(OdometryOption, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(OdometryOption, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }

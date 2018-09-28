@@ -31,7 +31,7 @@
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ TEST(LineSet, DISABLED_Constructor)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_Destructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ TEST(LineSet, DISABLED_Destructor)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_MemberData)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ TEST(LineSet, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_Clear)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TEST(LineSet, DISABLED_Clear)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_IsEmpty)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ TEST(LineSet, DISABLED_IsEmpty)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_GetMinBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEST(LineSet, DISABLED_GetMinBound)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_GetMaxBound)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ TEST(LineSet, DISABLED_GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_Transform)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ TEST(LineSet, DISABLED_Transform)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_HasPoints)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ TEST(LineSet, DISABLED_HasPoints)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_HasLines)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ TEST(LineSet, DISABLED_HasLines)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_HasColors)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ TEST(LineSet, DISABLED_HasColors)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_GetLineCoordinate)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ TEST(LineSet, DISABLED_GetLineCoordinate)
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_CreateLineSetFromPointCloudCorrespondences)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -135,5 +135,5 @@ TEST(LineSet, DISABLED_CreateLineSetFromPointCloudCorrespondences)
 // ----------------------------------------------------------------------------
 TEST(LineSetFactory, DISABLED_CreateLineSetFromPointCloudCorrespondences)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
 }
