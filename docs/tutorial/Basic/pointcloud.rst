@@ -160,35 +160,3 @@ Paint point cloud
 
 .. image:: ../../_static/Basic/pointcloud/crop_color.png
     :width: 400px
-
-
-.. _outlier_removal:
-
-Remove outliers
-=====================================
-
-When collecting data from scanning devices, it happens that the point cloud contains noise 
-and artefact that one would like to remove.
-
-.. literalinclude:: ../../../examples/Python/Basic/pointcloud.py
-   :language: python
-   :lineno-start: 59
-   :lines: 59-65
-   :linenos:
-
-Open3D currently supports two outlier removal mechanisms:
-
-- ``statistical_outlier_removal`` removes points that are further away from their neighbours compared to the average for the point cloud. It takes two input parameters:
-
-    + ``nb_neighbours`` allows you to specify how many neighbours are taken into account in order to calculate the average distance for a given point.
-    + ``std_ratio`` allows to set the threshold level based on the standard deviation of the average distances across the point cloud. The lower this number the more aggressive the filter will be.
-
-- ``radius_outlier_removal`` removes points that have few neighbours in a given sphere around them. Two parameters can be used to tune the filter to your data:
-
-    + ``nb_points`` lets you pick the minimum amount of points that the sphere should contain
-    + ``radius`` defines the radius of the sphere that will be used for counting the neighbours.
-
-
-
-.. image:: ../../_static/Basic/pointcloud/outlier_removal.png
-    :width: 400px
