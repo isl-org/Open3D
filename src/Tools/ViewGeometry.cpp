@@ -131,18 +131,17 @@ int main(int argc, char **argv)
         }
     }
     if (!depth_filename.empty()) {
-        PinholeCameraTrajectory intrinsic;
+        PinholeCameraParameters parameters;
         if (depth_parameter_filename.empty() ||
-                !ReadIJsonConvertible(depth_parameter_filename, intrinsic)) {
+                !ReadIJsonConvertible(depth_parameter_filename, parameters)) {
             PrintWarning("Failed to read intrinsic parameters for depth image.\n");
             PrintWarning("Use default value for Primesense camera.\n");
-            intrinsic.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
+            parameters.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
                     239.5);
         }
         auto image_ptr = CreateImageFromFile(depth_filename);
         auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
-                intrinsic.intrinsic_, intrinsic.extrinsic_.empty() ?
-                Eigen::Matrix4d::Identity() : intrinsic.extrinsic_[0]);
+                parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             PrintWarning("Failed adding depth image.\n");
         }

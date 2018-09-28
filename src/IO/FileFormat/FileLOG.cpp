@@ -39,11 +39,22 @@ namespace open3d{
 bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
         PinholeCameraTrajectory &trajectory)
 {
-    if (trajectory.intrinsic_.IsValid() == false) {
-        trajectory.intrinsic_ = PinholeCameraIntrinsic(
+    PinholeCameraIntrinsic intrinsic;
+    bool default_intrinsic = false;
+    if (trajectory.parameters_.size() >= 1) {
+        if (trajectory.parameters_[0].intrinsic_.IsValid() == false) {
+            default_intrinsic = true;
+        } else {
+            intrinsic = trajectory.parameters_[0].intrinsic_;
+        }
+    } else {
+        default_intrinsic = true;
+    }
+    if (default_intrinsic) {
+        intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
-    trajectory.extrinsic_.clear();
+    trajectory.parameters_.clear();
     FILE * f = fopen(filename.c_str(), "r");
     if (f == NULL) {
         PrintWarning("Read LOG failed: unable to open file: %s\n", filename.c_str());
@@ -91,7 +102,10 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
                         &trans(3,2), &trans(3,3));
             }
-            trajectory.extrinsic_.push_back(trans.inverse());
+            auto param = PinholeCameraParameters();
+            param.intrinsic_ = intrinsic;
+            param.extrinsic_ = trans.inverse();
+            trajectory.parameters_.push_back(param);
         }
     }
     fclose(f);
@@ -106,8 +120,8 @@ bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
         PrintWarning("Write LOG failed: unable to open file: %s\n", filename.c_str());
         return false;
     }
-    for (size_t i = 0; i < trajectory.extrinsic_.size(); i++ ) {
-        const auto &trans = trajectory.extrinsic_[i];
+    for (size_t i = 0; i < trajectory.parameters_.size(); i++ ) {
+        const auto &trans = trajectory.parameters_[i].extrinsic_;
         fprintf(f, "%d %d %d\n", (int)i, (int)i, (int)i + 1);
         fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0,0), trans(0,1), trans(0,2),
                 trans(0,3) );

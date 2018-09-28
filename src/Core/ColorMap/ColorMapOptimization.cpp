@@ -94,9 +94,11 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
         const PinholeCameraTrajectory& camera, int camid)
 {
-    std::pair<double, double> f = camera.intrinsic_.GetFocalLength();
-    std::pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
-    Eigen::Vector4d Vt = camera.extrinsic_[camid] *
+    std::pair<double, double> f =
+            camera.parameters_[camid].intrinsic_.GetFocalLength();
+    std::pair<double, double> p =
+            camera.parameters_[camid].intrinsic_.GetPrincipalPoint();
+    Eigen::Vector4d Vt = camera.parameters_[camid].extrinsic_ *
             Eigen::Vector4d(X(0), X(1), X(2), 1);
     float u = float((Vt(0) * f.first) / Vt(2) + p.first);
     float v = float((Vt(1) * f.second) / Vt(2) + p.second);
@@ -111,7 +113,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         const PinholeCameraTrajectory& camera,
         const ColorMapOptmizationOption& option)
 {
-    auto n_camera = camera.extrinsic_.size();
+    auto n_camera = camera.parameters_.size();
     auto n_vertex = mesh.vertices_.size();
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
@@ -293,12 +295,7 @@ void OptimizeImageCoorNonrigid(
         const ColorMapOptmizationOption& option)
 {
     auto n_vertex = mesh.vertices_.size();
-    auto n_camera = camera.extrinsic_.size();
-    Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-    intr.block<3,3>(0,0) = camera.intrinsic_.intrinsic_matrix_;
-    intr(3, 3) = 1.0;
-    double fx = intr(0, 0);
-    double fy = intr(1, 1);
+    auto n_camera = camera.parameters_.size();
     SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
             visiblity_vertex_to_image, proxy_intensity);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
@@ -318,8 +315,16 @@ void OptimizeImageCoorNonrigid(
             double rr = 0.0;
             double rr_reg = 0.0;
             int this_num = 0;
+
+            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+            intr.block<3,3>(0,0) =
+                    camera.parameters_[i].intrinsic_.intrinsic_matrix_;
+            intr(3, 3) = 1.0;
+            double fx = intr(0, 0);
+            double fy = intr(1, 1);
             Eigen::Matrix4d pose;
-            pose = camera.extrinsic_[i];
+            pose = camera.parameters_[i].extrinsic_;
+
             double anchor_step = warping_fields[i].anchor_step_;
             int anchor_w = warping_fields[i].anchor_w_;
             for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
@@ -436,7 +441,7 @@ void OptimizeImageCoorNonrigid(
                     warping_fields[i].flow_(j) += result(6 + j);
                 }
             }
-            camera.extrinsic_[i] = pose;
+            camera.parameters_[i].extrinsic_ = pose;
             residual += rr;
             residual_reg += rr_reg;
             total_num_ += this_num;
@@ -460,12 +465,7 @@ void OptimizeImageCoorRigid(
         const ColorMapOptmizationOption& option)
 {
     int total_num_ = 0;
-    auto n_camera = camera.extrinsic_.size();
-    Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-    intr.block<3,3>(0,0) = camera.intrinsic_.intrinsic_matrix_;
-    intr(3, 3) = 1.0;
-    double fx = intr(0, 0);
-    double fy = intr(1, 1);
+    auto n_camera = camera.parameters_.size();
     SetProxyIntensityForVertex(mesh, images_gray, camera,
             visiblity_vertex_to_image, proxy_intensity);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
@@ -482,8 +482,16 @@ void OptimizeImageCoorRigid(
             Jb.setZero();
             double rr = 0.0;
             int this_num = 0;
+
+            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+            intr.block<3,3>(0,0) =
+                    camera.parameters_[i].intrinsic_.intrinsic_matrix_;
+            intr(3, 3) = 1.0;
+            double fx = intr(0, 0);
+            double fy = intr(1, 1);
             Eigen::Matrix4d pose;
-            pose = camera.extrinsic_[i];
+            pose = camera.parameters_[i].extrinsic_;
+
             for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
                     iter++) {
                 int j = visiblity_image_to_vertex[i][iter];
@@ -534,7 +542,7 @@ void OptimizeImageCoorRigid(
             aff_mat.translation() =
                     Eigen::Vector3d(result(3), result(4), result(5));
             pose = aff_mat.matrix() * pose;
-            camera.extrinsic_[i] = pose;
+            camera.parameters_[i].extrinsic_ = pose;
 #ifdef _OPENMP
 #pragma omp critical
 #endif

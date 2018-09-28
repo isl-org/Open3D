@@ -185,16 +185,17 @@ int main(int argc, char *argv[])
         ptrs.push_back(mesh_sphere);
         DrawGeometries(ptrs);
 
-        for (size_t i = 0; i < trajectory.extrinsic_.size(); i += 10) {
+        for (size_t i = 0; i < trajectory.parameters_.size(); i += 10) {
             char buffer[1024];
             sprintf(buffer, "image/image_%06d.png", (int)i + 1);
             auto image = CreateImageFromFile(buffer);
             auto fimage = CreateFloatImageFromImage(*image);
-            Eigen::Vector4d pt_in_camera = trajectory.extrinsic_[i] *
+            Eigen::Vector4d pt_in_camera =
+                    trajectory.parameters_[i].extrinsic_ *
                     Eigen::Vector4d(mesh->vertices_[idx](0),
                     mesh->vertices_[idx](1), mesh->vertices_[idx](2), 1.0);
             Eigen::Vector3d pt_in_plane =
-                    trajectory.intrinsic_.intrinsic_matrix_ *
+                    trajectory.parameters_[i].intrinsic_.intrinsic_matrix_ *
                     pt_in_camera.block<3, 1>(0, 0);
             Eigen::Vector3d uv = pt_in_plane / pt_in_plane(2);
             std::cout << pt_in_camera << std::endl;

@@ -73,16 +73,28 @@ void pybind_camera(py::module &m)
         PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault)
         .export_values();
 
+    py::class_<PinholeCameraParameters> pinhole_param(m,
+            "PinholeCameraParameters");
+    py::detail::bind_default_constructor<PinholeCameraParameters>(pinhole_param);
+    py::detail::bind_copy_functions<PinholeCameraParameters>(pinhole_param);
+    pinhole_param
+        .def_readwrite("intrinsic", &PinholeCameraParameters::intrinsic_)
+        .def_readwrite("extrinsic", &PinholeCameraParameters::extrinsic_)
+        .def("__repr__", [](const PinholeCameraParameters &c) {
+            return std::string("PinholeCameraParameters class.\n") +
+                    std::string("Access its data via intrinsic and extrinsic.");
+        });
+
     py::class_<PinholeCameraTrajectory> pinhole_traj(m,
             "PinholeCameraTrajectory");
     py::detail::bind_default_constructor<PinholeCameraTrajectory>(pinhole_traj);
     py::detail::bind_copy_functions<PinholeCameraTrajectory>(pinhole_traj);
     pinhole_traj
-        .def_readwrite("intrinsic", &PinholeCameraTrajectory::intrinsic_)
-        .def_readwrite("extrinsic", &PinholeCameraTrajectory::extrinsic_)
+        .def_readwrite("parameters",
+                &PinholeCameraTrajectory::parameters_)
         .def("__repr__", [](const PinholeCameraTrajectory &c) {
             return std::string("PinholeCameraTrajectory class.\n") +
-                    std::string("Access its data via intrinsic and extrinsic.");
+                    std::string("Access its data via camera_parameters.");
         });
 }
 
@@ -98,6 +110,16 @@ void pybind_camera_methods(py::module &m)
         return WriteIJsonConvertible(filename, intrinsic);
     }, "Function to write PinholeCameraIntrinsic to file", "filename"_a,
             "intrinsic"_a);
+    m.def("read_pinhole_camera_parameters", [](const std::string &filename) {
+        PinholeCameraParameters parameters;
+        ReadIJsonConvertible(filename, parameters);
+        return parameters;
+    }, "Function to read PinholeCameraParameters from file", "filename"_a);
+    m.def("write_pinhole_camera_parameters", [](const std::string &filename,
+            const PinholeCameraParameters &parameters) {
+        return WriteIJsonConvertible(filename, parameters);
+    }, "Function to write PinholeCameraParameters to file", "filename"_a,
+            "parameters"_a);
     m.def("read_pinhole_camera_trajectory", [](const std::string &filename) {
         PinholeCameraTrajectory trajectory;
         ReadPinholeCameraTrajectory(filename, trajectory);

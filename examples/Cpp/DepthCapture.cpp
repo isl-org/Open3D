@@ -46,9 +46,9 @@ protected:
             CaptureDepthImage("depth.png");
             CaptureDepthPointCloud("depth.ply");
             PinholeCameraTrajectory camera;
-            camera.extrinsic_.resize(1);
+            camera.parameters_.resize(1);
             view_control_ptr_->ConvertToPinholeCameraParameters(
-                    camera.intrinsic_, camera.extrinsic_[0]);
+                    camera.parameters_[0]);
             WriteIJsonConvertible("camera.json", camera);
         } else if (key == GLFW_KEY_L) {
             if (filesystem::FileExists("depth.png") &&
@@ -56,8 +56,9 @@ protected:
                 PinholeCameraTrajectory camera;
                 ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = CreateImageFromFile("depth.png");
-                auto pointcloud_ptr = CreatePointCloudFromDepthImage(
-                        *image_ptr, camera.intrinsic_, camera.extrinsic_[0]);
+                auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
+                        camera.parameters_[0].intrinsic_,
+                        camera.parameters_[0].extrinsic_);
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_K) {
@@ -71,7 +72,7 @@ protected:
                 PinholeCameraTrajectory camera;
                 ReadIJsonConvertible("camera.json", camera);
                 view_control_ptr_->ConvertFromPinholeCameraParameters(
-                        camera.intrinsic_, camera.extrinsic_[0]);
+                        camera.parameters_[0]);
             }
         } else {
             VisualizerWithCustomAnimation::KeyPressCallback(
@@ -111,8 +112,9 @@ int main(int argc, char *argv[])
 
     PinholeCameraTrajectory camera;
     ReadIJsonConvertible("camera.json", camera);
-    auto pointcloud_ptr = CreatePointCloudFromDepthImage(
-            *image_ptr, camera.intrinsic_, camera.extrinsic_[0]);
+    auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
+            camera.parameters_[0].intrinsic_,
+            camera.parameters_[0].extrinsic_);
     VisualizerWithDepthCapture visualizer1;
     visualizer1.CreateVisualizerWindow("Depth Validation", 640, 480, 200, 200);
     visualizer1.AddGeometry(pointcloud_ptr);
