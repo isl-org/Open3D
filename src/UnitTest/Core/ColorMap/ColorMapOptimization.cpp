@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
+TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth)
 {
     unit_test::NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
+TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility)
 {
     unit_test::NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeWarpingFields)
+TEST(ColorMapOptimization, DISABLED_MakeWarpingFields)
 {
     unit_test::NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ColorMapOptimization, MakeWarpingFields)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, QueryImageIntensity)
+TEST(ColorMapOptimization, DISABLED_QueryImageIntensity)
 {
     unit_test::NotImplemented();
 }
@@ -61,7 +61,7 @@ TEST(ColorMapOptimization, QueryImageIntensity)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, SetProxyIntensityForVertex)
+TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex)
 {
     unit_test::NotImplemented();
 }
@@ -69,7 +69,7 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
+TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid)
 {
     unit_test::NotImplemented();
 }
@@ -77,7 +77,7 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, OptimizeImageCoorRigid)
+TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
 {
     unit_test::NotImplemented();
 }
@@ -85,7 +85,7 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, SetGeometryColorAverage)
+TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage)
 {
     unit_test::NotImplemented();
 }
@@ -93,7 +93,7 @@ TEST(ColorMapOptimization, SetGeometryColorAverage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeGradientImages)
+TEST(ColorMapOptimization, DISABLED_MakeGradientImages)
 {
     unit_test::NotImplemented();
 }
@@ -101,7 +101,7 @@ TEST(ColorMapOptimization, MakeGradientImages)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeDepthMasks)
+TEST(ColorMapOptimization, DISABLED_MakeDepthMasks)
 {
     unit_test::NotImplemented();
 }
@@ -109,7 +109,7 @@ TEST(ColorMapOptimization, MakeDepthMasks)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, ColorMapOptimization)
+TEST(ColorMapOptimization, DISABLED_ColorMapOptimization)
 {
     unit_test::NotImplemented();
 }

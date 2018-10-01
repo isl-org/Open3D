@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, Constructor)
+TEST(ColorMapOptimization, DISABLED_Constructor)
 {
     unit_test::NotImplemented();
 }

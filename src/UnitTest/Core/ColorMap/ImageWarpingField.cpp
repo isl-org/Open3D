@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageWarpingField, Constructor)
+TEST(ImageWarpingField, DISABLED_Constructor)
 {
     unit_test::NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ImageWarpingField, Constructor)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageWarpingField, InitializeWarpingFields)
+TEST(ImageWarpingField, DISABLED_InitializeWarpingFields)
 {
     unit_test::NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ImageWarpingField, InitializeWarpingFields)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageWarpingField, QueryFlow)
+TEST(ImageWarpingField, DISABLED_QueryFlow)
 {
     unit_test::NotImplemented();
 }
@@ -53,7 +53,7 @@ TEST(ImageWarpingField, QueryFlow)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageWarpingField, GetImageWarpingField)
+TEST(ImageWarpingField, DISABLED_GetImageWarpingField)
 {
     unit_test::NotImplemented();
 }
