@@ -37,14 +37,6 @@ TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(ColorMapOptmization, DISABLED_Constructor)
 {
     unit_test::NotImplemented();
