@@ -59,6 +59,13 @@ namespace unit_test
         const uint8_t& vmax,
         const int& seed);
 
+    // Initialize a int vector.
+    // Output range: [vmin:vmax].
+    void Rand(std::vector<int>& v,
+        const int& vmin,
+        const int& vmax,
+        const int& seed);
+
     // Initialize a size_t vector.
     // Output range: [vmin:vmax].
     void Rand(std::vector<size_t>& v,
@@ -80,5 +87,21 @@ namespace unit_test
     void Rand(std::vector<float>& v,
         const float& vmin,
         const float& vmax,
+        const int& seed);
+
+    // Initialize an array of double.
+    // Output range: [vmin:vmax].
+    void Rand(
+        double* const v,
+        const size_t& size,
+        const double &vmin,
+        const double &vmax,
+        const int& seed);
+
+    // Initialize a double vector.
+    // Output range: [vmin:vmax].
+    void Rand(std::vector<double>& v,
+        const double& vmin,
+        const double& vmax,
         const int& seed);
 }

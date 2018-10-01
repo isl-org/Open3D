@@ -123,6 +123,23 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
+// Initialize a int vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<int> &v,
+    const int &vmin,
+    const int &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    float factor = (float)(vmax - vmin) / unit_test::Raw::VMAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+        v[i] = vmin + (int)(raw.Next<int>() * factor);
+}
+// ----------------------------------------------------------------------------
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -167,6 +184,38 @@ void unit_test::Rand(
     vector<float> &v,
     const float &vmin,
     const float &vmax,
+    const int& seed)
+{
+    Rand(&v[0], v.size(), vmin, vmax, seed);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an array of double.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    double* const v,
+    const size_t& size,
+    const double &vmin,
+    const double &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    double factor = (vmax - vmin) / unit_test::Raw::VMAX;
+
+    for (size_t i = 0; i < size; i++)
+        v[i] = vmin + raw.Next<double>() * factor;
+}
+
+// ----------------------------------------------------------------------------
+// Initialize a double vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<double> &v,
+    const double &vmin,
+    const double &vmax,
     const int& seed)
 {
     Rand(&v[0], v.size(), vmin, vmax, seed);
