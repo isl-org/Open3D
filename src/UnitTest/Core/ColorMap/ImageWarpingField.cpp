@@ -29,7 +29,7 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
+TEST(ImageWarpingField, Constructor)
 {
     unit_test::NotImplemented();
 }
@@ -37,7 +37,7 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
+TEST(ImageWarpingField, InitializeWarpingFields)
 {
     unit_test::NotImplemented();
 }
@@ -45,7 +45,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeWarpingFields)
+TEST(ImageWarpingField, QueryFlow)
 {
     unit_test::NotImplemented();
 }
@@ -53,63 +53,7 @@ TEST(ColorMapOptimization, MakeWarpingFields)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, QueryImageIntensity)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, SetProxyIntensityForVertex)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, OptimizeImageCoorRigid)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, SetGeometryColorAverage)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeGradientImages)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, MakeDepthMasks)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, ColorMapOptimization)
+TEST(ImageWarpingField, GetImageWarpingField)
 {
     unit_test::NotImplemented();
 }
