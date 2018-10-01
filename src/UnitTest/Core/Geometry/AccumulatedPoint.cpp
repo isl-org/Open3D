@@ -56,9 +56,11 @@ TEST(AccumulatedPoint, Default)
     unit_test::Rand(pc.colors_, cmin, cmax, 0);
 
     open3d::AccumulatedPoint accpoint;
-    accpoint.AddPoint(pc, 0);
 
-    unit_test::ExpectEQ(839.215686, 392.156862, 780.392156, accpoint.GetAveragePoint());
-    unit_test::ExpectEQ(0.692861, 0.323767, 0.644296, accpoint.GetAverageNormal());
-    unit_test::ExpectEQ(214.0, 100.0, 199.0, accpoint.GetAverageColor());
+    for (size_t i = 0; i < pc.points_.size(); i++)
+        accpoint.AddPoint(pc, i);
+
+    unit_test::ExpectEQ(531.137254, 535.176470, 501.882352, accpoint.GetAveragePoint());
+    unit_test::ExpectEQ(0.586397, 0.590857, 0.554099, accpoint.GetAverageNormal());
+    unit_test::ExpectEQ(135.44, 136.47, 127.98, accpoint.GetAverageColor());
 }
