@@ -38,6 +38,13 @@ namespace unit_test
         const Eigen::Vector2i& vmax,
         const int& seed);
 
+    // Initialize an Eigen::Vector2d vector.
+    // Output range: [vmin:vmax].
+    void Rand(std::vector<Eigen::Vector2d>& v,
+        const Eigen::Vector2d& vmin,
+        const Eigen::Vector2d& vmax,
+        const int& seed);
+
     // Initialize an Eigen::Vector3i vector.
     // Output range: [vmin:vmax].
     void Rand(std::vector<Eigen::Vector3i>& v,
