@@ -38,7 +38,6 @@ namespace unit_test
 {
     // thresholds for comparing floating point values
     const double THRESHOLD_1E_6 = 1e-6;
-    const double THRESHOLD_1E_3 = 1e-3f;
 
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
