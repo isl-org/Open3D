@@ -43,6 +43,9 @@ namespace unit_test
     // Print a vector of Eigen::Vector2i.
     void Print(const std::vector<Eigen::Vector2i> &v);
 
+    // Print a vector of Eigen::Vector2d.
+    void Print(const std::vector<Eigen::Vector2d> &v);
+
     // Print a vector of Eigen::Vector3i.
     void Print(const std::vector<Eigen::Vector3i> &v);
 
