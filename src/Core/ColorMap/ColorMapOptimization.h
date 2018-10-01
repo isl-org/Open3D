@@ -50,11 +50,11 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         const std::vector<RGBDImage>& images_rgbd,
         const std::vector<Image>& images_mask,
         const PinholeCameraTrajectory& camera,
-        const ColorMapOptmizationOption& option);
+        const ColorMapOptimizationOption& option);
 
 std::vector<ImageWarpingField> MakeWarpingFields(
         const std::vector<std::shared_ptr<Image>>& images,
-        const ColorMapOptmizationOption& option);
+        const ColorMapOptimizationOption& option);
 
 template<typename T>
 std::tuple<bool, T> QueryImageIntensity(
@@ -91,7 +91,7 @@ void OptimizeImageCoorNonrigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const ColorMapOptmizationOption& option);
+        const ColorMapOptimizationOption& option);
 
 void OptimizeImageCoorRigid(
         const TriangleMesh& mesh,
@@ -102,7 +102,7 @@ void OptimizeImageCoorRigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const ColorMapOptmizationOption& option);
+        const ColorMapOptimizationOption& option);
 
 void SetGeometryColorAverage(TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
@@ -122,7 +122,7 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
 
 std::vector<Image> MakeDepthMasks(
         const std::vector<RGBDImage>& images_rgbd,
-        const ColorMapOptmizationOption& option);
+        const ColorMapOptimizationOption& option);
 
 /// This is implementation of following paper
 /// Q.-Y. Zhou and V. Koltun,
@@ -131,7 +131,7 @@ std::vector<Image> MakeDepthMasks(
 void ColorMapOptimization(TriangleMesh& mesh,
         const std::vector<RGBDImage>& imgs_rgbd,
         PinholeCameraTrajectory& camera,
-        const ColorMapOptmizationOption& option =
-        ColorMapOptmizationOption());
+        const ColorMapOptimizationOption& option =
+        ColorMapOptimizationOption());
 
 }	// namespace open3d

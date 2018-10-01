@@ -26,10 +26,14 @@
 
 #include "UnitTest.h"
 
+#include "Core/ColorMap/ColorMapOptimizationOption.h"
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_Constructor)
+TEST(ColorMapOptimization, Constructor)
 {
-    unit_test::NotImplemented();
+    open3d::ColorMapOptimizationOption option;
+
+    EXPECT_FALSE(option.non_rigid_camera_coordinate_);
 }

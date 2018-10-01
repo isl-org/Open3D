@@ -63,7 +63,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         const std::vector<RGBDImage>& images_rgbd,
         const std::vector<Image>& images_mask,
         const PinholeCameraTrajectory& camera,
-        const ColorMapOptmizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     auto n_camera = camera.extrinsic_.size();
     auto n_vertex = mesh.vertices_.size();
@@ -112,7 +112,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
 // ----------------------------------------------------------------------------
 std::vector<open3d::ImageWarpingField> open3d::MakeWarpingFields(
         const std::vector<std::shared_ptr<open3d::Image>>& images,
-        const open3d::ColorMapOptmizationOption& option)
+        const open3d::ColorMapOptimizationOption& option)
 {
     std::vector<ImageWarpingField> fields;
     for (auto i = 0; i < images.size(); i++) {
@@ -262,7 +262,7 @@ void open3d::OptimizeImageCoorNonrigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const open3d::ColorMapOptmizationOption& option)
+        const open3d::ColorMapOptimizationOption& option)
 {
     auto n_vertex = mesh.vertices_.size();
     auto n_camera = camera.extrinsic_.size();
@@ -432,7 +432,7 @@ void open3d::OptimizeImageCoorRigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const open3d::ColorMapOptmizationOption& option)
+        const open3d::ColorMapOptimizationOption& option)
 {
     int total_num_ = 0;
     auto n_camera = camera.extrinsic_.size();
@@ -639,7 +639,7 @@ std::tuple<std::vector<std::shared_ptr<open3d::Image>>,
 // ----------------------------------------------------------------------------
 std::vector<open3d::Image> open3d::MakeDepthMasks(
         const std::vector<open3d::RGBDImage>& images_rgbd,
-        const open3d::ColorMapOptmizationOption& option)
+        const open3d::ColorMapOptimizationOption& option)
 {
     auto n_images = images_rgbd.size();
     std::vector<Image> images_mask;
@@ -679,8 +679,8 @@ std::vector<open3d::Image> open3d::MakeDepthMasks(
 void open3d::ColorMapOptimization(open3d::TriangleMesh& mesh,
         const std::vector<open3d::RGBDImage>& images_rgbd,
         open3d::PinholeCameraTrajectory& camera,
-        const open3d::ColorMapOptmizationOption& option
-        /* = ColorMapOptmizationOption()*/)
+        const open3d::ColorMapOptimizationOption& option
+        /* = ColorMapOptimizationOption()*/)
 {
     PrintDebug("[ColorMapOptimization]\n");
     std::vector<std::shared_ptr<Image>> images_gray;

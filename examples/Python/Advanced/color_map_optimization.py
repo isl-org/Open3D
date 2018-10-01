@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    option = ColorMapOptmizationOption()
+    option = ColorMapOptimizationOption()
     option.maximum_iteration = 0
     color_map_optimization(mesh, rgbd_images, camera, option)
     draw_geometries([mesh])
