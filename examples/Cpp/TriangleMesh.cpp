@@ -34,9 +34,9 @@ void PrintHelp()
 {
     using namespace open3d;
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestTriangleMesh sphere\n");
-    PrintInfo("    > TestTriangleMesh merge <file1> <file2>\n");
-    PrintInfo("    > TestTriangleMesh normal <file1> <file2>\n");
+    PrintInfo("    > TriangleMesh sphere\n");
+    PrintInfo("    > TriangleMesh merge <file1> <file2>\n");
+    PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
 }
 
 void PaintMesh(open3d::TriangleMesh &mesh, const Eigen::Vector3d &color)

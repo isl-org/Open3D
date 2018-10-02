@@ -31,7 +31,7 @@ void PrintHelp()
 {
     using namespace open3d;
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestFileDialog [save|load]\n");
+    PrintInfo("    > FileDialog [save|load]\n");
 }
 
 int main(int argc, char *argv[])

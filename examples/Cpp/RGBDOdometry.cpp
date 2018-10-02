@@ -37,7 +37,7 @@ void PrintHelp()
 {
     PrintOpen3DVersion();
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestRGBDOdometry [color1] [depth1] [color2] [depth2]\n");
+    PrintInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]\n");
 }
 
 std::shared_ptr<RGBDImage> ReadRGBDImage(

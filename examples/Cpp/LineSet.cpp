@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     if (argc < 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestLineSet [filename]\n");
+        PrintInfo("    > LineSet [filename]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1. load the pointcloud in [filename].\n");
         PrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");

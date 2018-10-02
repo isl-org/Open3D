@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     if (argc < 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestDepthCapture  [filename]\n");
+        PrintInfo("    > DepthCapture  [filename]\n");
         return 0;
     }
 

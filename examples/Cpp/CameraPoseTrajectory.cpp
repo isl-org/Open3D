@@ -38,7 +38,8 @@ int main(int argc, char *argv[])
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
     if (argc != 3) {
-        PrintInfo("> TestCameraPoseTrajectory trajectory_file pcds_dir\n");
+        PrintInfo("Usage :\n");
+        PrintInfo(">    CameraPoseTrajectory trajectory_file pcds_dir\n");
         return 0;
     }
     const int NUM_OF_COLOR_PALETTE = 5;

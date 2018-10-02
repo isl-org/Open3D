@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
     if (argc < 3) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-        PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
+        PrintInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
+        PrintInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
         return 0;
     }
 

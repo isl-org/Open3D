@@ -36,7 +36,7 @@ void PrintHelp()
     using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
-    PrintInfo("    > ViewPCDMatch [options]\n");
+    PrintInfo("    > EvaluatePCDMatch [options]\n");
     PrintInfo("      View pairwise matching result of point clouds.\n");
     PrintInfo("\n");
     PrintInfo("Basic options:\n");

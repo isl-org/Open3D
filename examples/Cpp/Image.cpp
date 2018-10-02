@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     if (argc != 3) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestImage [image filename] [depth filename]\n");
+        PrintInfo("    > Image [image filename] [depth filename]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1) Read 8bit RGB and 16bit depth image\n");
         PrintInfo("    2) Convert RGB image to single channel float image\n");

@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     if (argc < 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestFlann [filename]\n");
+        PrintInfo("    > Flann [filename]\n");
         return 0;
     }
 
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     }
     cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
-    DrawGeometries({cloud_ptr}, "TestFlann", 1600, 900);
+    DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
     auto new_cloud_ptr = std::make_shared<PointCloud>();
     if (ReadPointCloud(argv[1], *new_cloud_ptr)) {
