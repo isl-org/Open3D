@@ -67,5 +67,5 @@ int main(int argc, char *argv[])
         }
     }
     PrintInfo(")\n");
-    return 1;
+    return 0;
 }

@@ -87,4 +87,5 @@ int main(int argc, char *argv[])
             OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
+    return 0;
 }

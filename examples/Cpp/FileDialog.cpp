@@ -52,5 +52,5 @@ int main(int argc, char *argv[])
                 &pattern, NULL);
         PrintInfo("%s\n", str);
     }
-    return 1;
+    return 0;
 }

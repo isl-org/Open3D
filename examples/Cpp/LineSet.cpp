@@ -51,7 +51,7 @@ int main(int argc, char **argv)
         PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
         PrintInfo("    6. convert to LineSet and render it.\n");
         PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
-        return 0;
+        return 1;
     }
 
     auto cloud_ptr = CreatePointCloudFromFile(argv[1]);

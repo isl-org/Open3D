@@ -111,5 +111,5 @@ int main(int argc, char *argv[])
     std::cout << "Estimated 6x6 information matrix : " << std::endl;
     std::cout << info_odo << std::endl;
 
-    return !is_success;
+    return int(!is_success);
 }

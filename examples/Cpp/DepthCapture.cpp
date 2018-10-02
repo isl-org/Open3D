@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
         PrintInfo("    > DepthCapture  [filename]\n");
-        return 0;
+        return 1;
     }
 
     auto mesh_ptr = CreateMeshFromFile(argv[1]);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     if (!filesystem::FileExists("depth.png") ||
             !filesystem::FileExists("camera.json")) {
         PrintWarning("Depth has not been captured.\n");
-        return 0;
+        return 1;
     }
 
     auto image_ptr = CreateImageFromFile("depth.png");
@@ -129,5 +129,5 @@ int main(int argc, char *argv[])
 
     PrintInfo("End of the test.\n");
 
-    return 1;
+    return 0;
 }

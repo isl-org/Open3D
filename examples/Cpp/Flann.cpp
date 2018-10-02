@@ -41,7 +41,7 @@ int main(int argc, char **argv)
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
         PrintInfo("    > Flann [filename]\n");
-        return 0;
+        return 1;
     }
 
     auto cloud_ptr = std::make_shared<PointCloud>();
@@ -49,12 +49,12 @@ int main(int argc, char **argv)
         PrintWarning("Successfully read %s\n", argv[1]);
     } else {
         PrintError("Failed to read %s\n\n", argv[1]);
-        return 0;
+        return 1;
     }
 
     if ((int)cloud_ptr->points_.size() < 100) {
         PrintError("Boring point cloud.\n");
-        return 0;
+        return 1;
     }
 
     if (cloud_ptr->HasColors() == false) {
@@ -102,12 +102,12 @@ int main(int argc, char **argv)
         PrintWarning("Successfully read %s\n", argv[1]);
     } else {
         PrintError("Failed to read %s\n\n", argv[1]);
-        return 0;
+        return 1;
     }
 
     if ((int)new_cloud_ptr->points_.size() < 100) {
         PrintError("Boring point cloud.\n");
-        return 0;
+        return 1;
     }
 
     if (new_cloud_ptr->HasColors() == false) {

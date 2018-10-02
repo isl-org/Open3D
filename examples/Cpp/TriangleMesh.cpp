@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
         PrintHelp();
-        return 0;
+        return 1;
     }
 
     std::string option(argv[1]);
@@ -207,4 +207,5 @@ int main(int argc, char *argv[])
             DrawGeometries({fimage}, "Test", 1920, 1080);
         }
     }
+    return 0;
 }
