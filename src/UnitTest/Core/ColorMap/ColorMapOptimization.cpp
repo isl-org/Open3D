@@ -29,6 +29,8 @@
 #include "Core/ColorMap/ColorMapOptimization.h"
 #include "Core/Camera/PinholeCameraTrajectory.h"
 #include "Core/Geometry/Image.h"
+#include "Core/Geometry/RGBDImage.h"
+#include "Core/Geometry/TriangleMesh.h"
 
 using namespace open3d;
 using namespace std;
@@ -120,9 +122,137 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility)
+TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 {
-    unit_test::NotImplemented();
+    size_t size = 10;
+
+    // test image dimensions
+    const int width = 5;
+    const int height = 5;
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 1;
+    const int depth_num_of_channels = 1;
+    const int depth_bytes_per_channel = 4;
+
+    // generate triangle mesh
+    int nrVertices = 100;
+    int nrTriangles = 30;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
+
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(nrVertices - 1, nrVertices - 1, nrVertices - 1);
+
+    TriangleMesh mesh;
+
+    mesh.vertices_.resize(nrVertices);
+    mesh.vertex_normals_.resize(nrVertices);
+    mesh.vertex_colors_.resize(nrVertices);
+    mesh.triangles_.resize(nrTriangles);
+    mesh.triangle_normals_.resize(nrTriangles);
+
+    unit_test::Rand(mesh.vertices_,         dmin, dmax, 0);
+    unit_test::Rand(mesh.vertex_normals_,   dmin, dmax, 0);
+    unit_test::Rand(mesh.vertex_colors_,    dmin, dmax, 0);
+    unit_test::Rand(mesh.triangles_,        imin, imax, 0);
+    unit_test::Rand(mesh.triangle_normals_, dmin, dmax, 0);
+
+    // generate input RGBD images
+    vector<RGBDImage> images_rgbd;
+    for (size_t i = 0; i < size; i++)
+    {
+        Image color;
+        Image depth;
+
+        color.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        depth.PrepareImage(width,
+                           height,
+                           depth_num_of_channels,
+                           depth_bytes_per_channel);
+
+        Rand(color.data_, 0, 255, i);
+
+        float* const depthData = reinterpret_cast<float*>(&depth.data_[0]);
+        Rand(depthData, width * height, 0.0f, 10.0f, i + 1 * size);
+
+        RGBDImage rgbdImage(color, depth);
+        images_rgbd.push_back(rgbdImage);
+    }
+
+    // generate input images
+    vector<Image> images_mask;
+    for (size_t i = 0; i < size; i++)
+    {
+        Image image;
+
+        image.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        Rand(image.data_, 0, 255, i);
+
+        images_mask.push_back(image);
+    }
+
+    // get a camera
+    PinholeCameraTrajectory camera;
+    camera.extrinsic_.resize(1);
+
+    int camera_width = 320;
+    int camera_height = 240;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    camera.intrinsic_.SetIntrinsics(camera_width, camera_height, fx, fy, cx, cy);
+
+    pair<double, double> f = camera.intrinsic_.GetFocalLength();
+    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
+
+    Eigen::Matrix4d pose;
+    pose << 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0;
+
+    // change the pose randomly
+    vector<double> xyz(3);
+    Rand(xyz, 0.0, 10.0, 0);
+
+    pose(0, 0) = xyz[0];
+    pose(1, 1) = xyz[1];
+    pose(2, 2) = xyz[2];
+
+    camera.extrinsic_[0] = pose;
+
+    ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
+
+    vector<vector<int>> first;
+    vector<vector<int>> second;
+    tie(first, second) = MakeVertexAndImageVisibility(mesh,
+                                                      images_rgbd,
+                                                      images_mask,
+                                                      camera,
+                                                      option);
+
+    cout << "1st size: " << first.size() << endl;
+    for (size_t i = 0; i < first.size(); i++)
+        cout << "    loop " << i << " size: " << first[i].size() << endl;
+    cout << endl;
+
+    cout << "2nd size: " << second.size() << endl;
+    for (size_t i = 0; i < second.size(); i++)
+        cout << "    loop " << i << " size: " << second[i].size() << endl;
+    cout << endl;
 }
 
 // ----------------------------------------------------------------------------
