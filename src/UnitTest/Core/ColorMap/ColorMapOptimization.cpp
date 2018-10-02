@@ -28,8 +28,11 @@
 
 #include "Core/ColorMap/ColorMapOptimization.h"
 #include "Core/Camera/PinholeCameraTrajectory.h"
+#include "Core/Geometry/Image.h"
 
+using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -71,7 +74,7 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
     };
 
     Eigen::Vector3d point = { 3.3, 4.4, 5.5 };
-    open3d::PinholeCameraTrajectory camera;
+    PinholeCameraTrajectory camera;
     camera.extrinsic_.resize(1);
 
     int width = 320;
@@ -85,8 +88,8 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 
     camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
 
-    std::pair<double, double> f = camera.intrinsic_.GetFocalLength();
-    std::pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
+    pair<double, double> f = camera.intrinsic_.GetFocalLength();
+    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
 
     for (int i = 0; i < ref_points.size(); i++)
     {
@@ -98,7 +101,7 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 
         // change the pose randomly
         vector<double> xyz(3);
-        unit_test::Rand(xyz, 0.0, 10.0, i);
+        Rand(xyz, 0.0, 10.0, i);
 
         pose(0, 0) = xyz[0];
         pose(1, 1) = xyz[1];
@@ -110,7 +113,7 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 
         float u, v, d;
         tie(u, v, d) = Project3DPointAndGetUVDepth(point, camera, camid);
-        unit_test::ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
+        ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
     }
 }
 
@@ -125,9 +128,59 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_MakeWarpingFields)
+TEST(ColorMapOptimization, MakeWarpingFields)
 {
-    unit_test::NotImplemented();
+    int ref_anchor_w = 4;
+    int ref_anchor_h = 4;
+    double ref_anchor_step = 1.666667;
+    vector<double> ref_flow =
+    {
+            0.000000,    0.000000,    1.666667,    0.000000,    3.333333,
+            0.000000,    5.000000,    0.000000,    0.000000,    1.666667,
+            1.666667,    1.666667,    3.333333,    1.666667,    5.000000,
+            1.666667,    0.000000,    3.333333,    1.666667,    3.333333,
+            3.333333,    3.333333,    5.000000,    3.333333,    0.000000,
+            5.000000,    1.666667,    5.000000,    3.333333,    5.000000,
+            5.000000,    5.000000
+    };
+
+    size_t size = 10;
+    vector<shared_ptr<Image>> images;
+
+    for (size_t i = 0; i < size; i++)
+    {
+        Image image;
+
+        // test image dimensions
+        const int width = 5;
+        const int height = 5;
+        const int num_of_channels = 1;
+        const int bytes_per_channel = 2;
+
+        image.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        Rand(image.data_, 0, 255, i);
+
+        images.push_back(make_shared<Image>(image));
+    }
+
+    ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
+
+    vector<ImageWarpingField> fields = MakeWarpingFields(images, option);
+
+    for (size_t i = 0; i < fields.size(); i++)
+    {
+        EXPECT_EQ(ref_anchor_w, fields[i].anchor_w_);
+        EXPECT_EQ(ref_anchor_h, fields[i].anchor_h_);
+        EXPECT_NEAR(ref_anchor_step, fields[i].anchor_step_, THRESHOLD_1E_6);
+
+        EXPECT_EQ(ref_flow.size(), fields[i].flow_.size());
+        for (size_t j = 0; j < fields[i].flow_.size(); j++)
+            EXPECT_NEAR(ref_flow[j], fields[i].flow_[j], THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
