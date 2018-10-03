@@ -719,3 +719,13 @@ void open3d::ColorMapOptimization(open3d::TriangleMesh& mesh,
                 visiblity_vertex_to_image);
     }
 }
+
+template
+std::tuple<bool, float> open3d::QueryImageIntensity(
+        const open3d::Image& img, const Eigen::Vector3d& V,
+        const open3d::PinholeCameraTrajectory& camera, int camid, int ch);
+
+template
+std::tuple<bool, unsigned char> open3d::QueryImageIntensity(
+        const open3d::Image& img, const Eigen::Vector3d& V,
+        const open3d::PinholeCameraTrajectory& camera, int camid, int ch);

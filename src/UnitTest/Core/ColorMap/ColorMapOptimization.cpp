@@ -348,9 +348,89 @@ TEST(ColorMapOptimization, MakeWarpingFields)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_QueryImageIntensity)
+TEST(ColorMapOptimization, QueryImageIntensity)
 {
-    unit_test::NotImplemented();
+    vector<double> ref_output =
+    {
+            0.001722,    0.002338,    0.000907,    0.001722,    0.001722,
+            0.003353,    0.000907,    0.000907,    0.000907,    0.000907,
+            0.001722,    0.001722,    0.001722,    0.003353,    0.000907,
+            0.000907,    0.000907,    0.000907,    0.003353,    0.000907,
+            0.000907,    0.003353,    0.001722,    0.000907,    0.003353,
+            0.003353,    0.003353,    0.000907,    0.001722,    0.003353,
+            0.003353,    0.000907,    0.001722,    0.003353,    0.003353,
+            0.003353,    0.001722,    0.000907,    0.000907,    0.000907,
+            0.000907,    0.001722,    0.002338,    0.001722,    0.003353,
+            0.002338,    0.000907,    0.001722,    0.000907,    0.000907,
+            0.001722,    0.000907,    0.000907,    0.001722,    0.000907,
+            0.000907,    0.003353,    0.000907,    0.000907,    0.003353,
+            0.001722,    0.000907,    0.000907,    0.001722,    0.002338,
+            0.001722,    0.003353,    0.001722,    0.001722,    0.001722,
+            0.001722,    0.001722,    0.001722,    0.000907,    0.000907,
+            0.000907,    0.001722,    0.000907,    0.001722,    0.003353,
+            0.001722,    0.001722,    0.000907,    0.000907,    0.000907,
+            0.002338,    0.003353,    0.001722,    0.001722,    0.000907,
+            0.000907,    0.000907,    0.001722,    0.000907,    0.003353,
+            0.000907,    0.002338,    0.001722,    0.003353,    0.000907
+    };
+
+    const int width = 320;
+    const int height = 240;
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 4;
+
+    Image img;
+    img.PrepareImage(width,
+                    height,
+                    num_of_channels,
+                    bytes_per_channel);
+    float* const depthFloatData = reinterpret_cast<float*>(&img.data_[0]);
+    unit_test::Rand(depthFloatData, width * height, 0.0, 1.0, 0);
+
+    // PinholeCameraTrajectory camera = GenerateCamera(width, height);
+    PinholeCameraTrajectory camera;
+    camera.extrinsic_.resize(1);
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    pair<double, double> f = camera.intrinsic_.GetFocalLength();
+    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
+
+    Eigen::Matrix4d pose;
+    pose << 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0;
+
+    pose(0, 0) = 62.5;
+    pose(1, 1) = 37.5;
+    pose(2, 2) = 1.85;
+
+    camera.extrinsic_[0] = pose;
+    int camid = 0;
+    int ch = -1;
+
+    size_t size = 100;
+
+    for (size_t i = 0; i < size; i++)
+    {
+        vector<double> vData(3);
+        Rand(vData, 10.0, 100.0, i);
+        Eigen::Vector3d V(vData[0], vData[1], vData[2]);
+
+        bool boolResult = false;
+        float floatResult = 0.0;
+        tie(boolResult, floatResult) = QueryImageIntensity<float>(img, V, camera, camid, ch);
+
+        EXPECT_TRUE(boolResult);
+        EXPECT_NEAR(ref_output[i], floatResult, THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
