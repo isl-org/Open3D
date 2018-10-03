@@ -122,6 +122,112 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+vector<RGBDImage> GenerateRGBDImages(const int& width,
+                                     const int& height,
+                                     const size_t& size)
+{
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 1;
+    const int depth_num_of_channels = 1;
+    const int depth_bytes_per_channel = 4;
+
+    // generate input RGBD images
+    vector<RGBDImage> images_rgbd;
+    for (size_t i = 0; i < size; i++)
+    {
+        Image color;
+        Image depth;
+
+        color.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        depth.PrepareImage(width,
+                           height,
+                           depth_num_of_channels,
+                           depth_bytes_per_channel);
+
+        Rand(color.data_, 0, 255, i);
+
+        Rand(depth.data_, 0, 255, i);
+
+        RGBDImage rgbdImage(color, depth);
+        images_rgbd.push_back(rgbdImage);
+    }
+
+    return move(images_rgbd);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+vector<Image> GenerateImages(const int& width,
+                             const int& height,
+                             const size_t& size)
+{
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 1;
+
+    vector<Image> images_mask;
+    for (size_t i = 0; i < size; i++)
+    {
+        Image image;
+
+        image.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        Rand(image.data_, 0, 255, i);
+
+        images_mask.push_back(image);
+    }
+
+    return images_mask;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+PinholeCameraTrajectory GenerateCamera(const int& width, const int& height)
+{
+    PinholeCameraTrajectory camera;
+    camera.extrinsic_.resize(1);
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    pair<double, double> f = camera.intrinsic_.GetFocalLength();
+    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
+
+    Eigen::Matrix4d pose;
+    pose << 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0;
+
+    // generate a random pose
+    vector<double> xyz(3);
+    Rand(xyz, 0.0, 10.0, 0);
+
+    pose(0, 0) = xyz[0];
+    pose(1, 1) = xyz[1];
+    pose(2, 2) = xyz[2];
+
+    camera.extrinsic_[0] = pose;
+
+    return camera;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 {
     vector<vector<int>> ref_second =
@@ -152,96 +258,14 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
         }
     };
 
-    size_t size = 10;
-
-    // test image dimensions
     const int width = 320;
     const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 1;
-    const int depth_num_of_channels = 1;
-    const int depth_bytes_per_channel = 4;
+    size_t size = 10;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(1.0, 40);
-
-    Eigen::Vector3d minBound = mesh->GetMinBound();
-    Eigen::Vector3d maxBound = mesh->GetMaxBound();
-
-    Print(minBound);
-    Print(maxBound);
-
-    // generate input RGBD images
-    vector<RGBDImage> images_rgbd;
-    for (size_t i = 0; i < size; i++)
-    {
-        Image color;
-        Image depth;
-
-        color.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        depth.PrepareImage(width,
-                           height,
-                           depth_num_of_channels,
-                           depth_bytes_per_channel);
-
-        Rand(color.data_, 0, 255, i);
-
-        Rand(depth.data_, 0, 255, i);
-
-        RGBDImage rgbdImage(color, depth);
-        images_rgbd.push_back(rgbdImage);
-    }
-
-    // generate input images
-    vector<Image> images_mask;
-    for (size_t i = 0; i < size; i++)
-    {
-        Image image;
-
-        image.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        Rand(image.data_, 0, 255, i);
-
-        images_mask.push_back(image);
-    }
-
-    // get a camera
-    PinholeCameraTrajectory camera;
-    camera.extrinsic_.resize(1);
-
-    double fx = 0.5;
-    double fy = 0.65;
-
-    double cx = 0.75;
-    double cy = 0.35;
-
-    camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
-
-    pair<double, double> f = camera.intrinsic_.GetFocalLength();
-    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
-
-    Eigen::Matrix4d pose;
-    pose << 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0;
-
-    // change the pose randomly
-    vector<double> xyz(3);
-    Rand(xyz, 0.0, 10.0, 0);
-
-    pose(0, 0) = xyz[0];
-    pose(1, 1) = xyz[1];
-    pose(2, 2) = xyz[2];
-
-    camera.extrinsic_[0] = pose;
-
+    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+    vector<Image> images_mask = GenerateImages(width, height, size);
+    PinholeCameraTrajectory camera = GenerateCamera(width, height);
     ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
 
     vector<vector<int>> first;
