@@ -124,39 +124,51 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 {
+    vector<vector<int>> ref_second =
+    {
+        {
+            591,   592,   593,   670,   671,   672,   673,   674,   749,   750,
+            751,   752,   753,   754,   755,   828,   829,   830,   831,   832,
+            833,   834,   835,   836,   907,   908,   909,   910,   911,   912,
+            913,   914,   915,   916,   917,   962,   963,   964,   965,   966,
+            967,   968,   986,   987,   988,   989,   990,   991,   992,   993,
+            994,   995,   996,   997,   998,  1036,  1037,  1038,  1039,  1040,
+            1041,  1042,  1043,  1044,  1045,  1046,  1047,  1048,  1049,  1050,
+            1051,  1066,  1067,  1068,  1069,  1070,  1071,  1072,  1073,  1074,
+            1075,  1076,  1077,  1078,  1113,  1114,  1115,  1116,  1117,  1118,
+            1119,  1120,  1121,  1122,  1123,  1124,  1125,  1126,  1127,  1128,
+            1129,  1130,  1131,  1132,  1133,  1134,  1145,  1146,  1147,  1148,
+            1149,  1150,  1151,  1152,  1153,  1154,  1155,  1156,  1157,  1158,
+            1190,  1191,  1192,  1193,  1194,  1195,  1196,  1197,  1198,  1199,
+            1200,  1201,  1202,  1203,  1204,  1205,  1206,  1207,  1208,  1209,
+            1210,  1211,  1212,  1213,  1214,  1215,  1216,  1224,  1225,  1226,
+            1227,  1228,  1229,  1230,  1231,  1232,  1270,  1271,  1272,  1273,
+            1274,  1275,  1276,  1277,  1278,  1279,  1280,  1281,  1284,  1285,
+            1286,  1287,  1288,  1289,  1290,  1291,  1292,  1293,  1294,  1298,
+            1299,  1300,  1301,  1302,  1303,  1362,  1370,  1371,  1372,  1373,
+            1374,  1375,  1380,  1381,  1382,  1437,  1438,  1439,  1440,  1441,
+            1442,  1444,  1445,  1446,  1447,  1448,  1455,  1456,  1457,  1458,
+            1459,  1460,  1461,  1462,  1463,  1464,  1521
+        }
+    };
+
     size_t size = 10;
 
     // test image dimensions
-    const int width = 5;
-    const int height = 5;
+    const int width = 320;
+    const int height = 240;
     const int num_of_channels = 3;
     const int bytes_per_channel = 1;
     const int depth_num_of_channels = 1;
     const int depth_bytes_per_channel = 4;
 
-    // generate triangle mesh
-    int nrVertices = 100;
-    int nrTriangles = 30;
+    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(1.0, 40);
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
+    Eigen::Vector3d minBound = mesh->GetMinBound();
+    Eigen::Vector3d maxBound = mesh->GetMaxBound();
 
-    Eigen::Vector3i imin(0, 0, 0);
-    Eigen::Vector3i imax(nrVertices - 1, nrVertices - 1, nrVertices - 1);
-
-    TriangleMesh mesh;
-
-    mesh.vertices_.resize(nrVertices);
-    mesh.vertex_normals_.resize(nrVertices);
-    mesh.vertex_colors_.resize(nrVertices);
-    mesh.triangles_.resize(nrTriangles);
-    mesh.triangle_normals_.resize(nrTriangles);
-
-    unit_test::Rand(mesh.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(mesh.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(mesh.vertex_colors_,    dmin, dmax, 0);
-    unit_test::Rand(mesh.triangles_,        imin, imax, 0);
-    unit_test::Rand(mesh.triangle_normals_, dmin, dmax, 0);
+    Print(minBound);
+    Print(maxBound);
 
     // generate input RGBD images
     vector<RGBDImage> images_rgbd;
@@ -177,8 +189,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 
         Rand(color.data_, 0, 255, i);
 
-        float* const depthData = reinterpret_cast<float*>(&depth.data_[0]);
-        Rand(depthData, width * height, 0.0f, 10.0f, i + 1 * size);
+        Rand(depth.data_, 0, 255, i);
 
         RGBDImage rgbdImage(color, depth);
         images_rgbd.push_back(rgbdImage);
@@ -204,16 +215,13 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
     PinholeCameraTrajectory camera;
     camera.extrinsic_.resize(1);
 
-    int camera_width = 320;
-    int camera_height = 240;
-
     double fx = 0.5;
     double fy = 0.65;
 
     double cx = 0.75;
     double cy = 0.35;
 
-    camera.intrinsic_.SetIntrinsics(camera_width, camera_height, fx, fy, cx, cy);
+    camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
 
     pair<double, double> f = camera.intrinsic_.GetFocalLength();
     pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
@@ -238,7 +246,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 
     vector<vector<int>> first;
     vector<vector<int>> second;
-    tie(first, second) = MakeVertexAndImageVisibility(mesh,
+    tie(first, second) = MakeVertexAndImageVisibility(*mesh,
                                                       images_rgbd,
                                                       images_mask,
                                                       camera,
@@ -246,13 +254,27 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 
     cout << "1st size: " << first.size() << endl;
     for (size_t i = 0; i < first.size(); i++)
+    {
         cout << "    loop " << i << " size: " << first[i].size() << endl;
+        unit_test::Print(first[i]);
+    }
     cout << endl;
 
     cout << "2nd size: " << second.size() << endl;
     for (size_t i = 0; i < second.size(); i++)
+    {
         cout << "    loop " << i << " size: " << second[i].size() << endl;
+        unit_test::Print(second[i]);
+    }
     cout << endl;
+
+
+    EXPECT_EQ(3122, first.size());
+
+    EXPECT_EQ(ref_second.size(), second.size());
+    EXPECT_EQ(ref_second[0].size(), second[0].size());
+    for (size_t i = 0; i < ref_second[0].size(); i++)
+        EXPECT_EQ(ref_second[0][i], second[0][i]);
 }
 
 // ----------------------------------------------------------------------------
