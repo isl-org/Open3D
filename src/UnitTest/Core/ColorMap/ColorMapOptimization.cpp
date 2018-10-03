@@ -276,23 +276,9 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
                                                       camera,
                                                       option);
 
-    cout << "1st size: " << first.size() << endl;
-    for (size_t i = 0; i < first.size(); i++)
-    {
-        cout << "    loop " << i << " size: " << first[i].size() << endl;
-        unit_test::Print(first[i]);
-    }
-    cout << endl;
-
-    cout << "2nd size: " << second.size() << endl;
-    for (size_t i = 0; i < second.size(); i++)
-    {
-        cout << "    loop " << i << " size: " << second[i].size() << endl;
-        unit_test::Print(second[i]);
-    }
-    cout << endl;
-
-
+    // first is a large vector of empty vectors.
+    // TODO: perhaps a different kind of initialization is necessary in order to
+    // fill the first vector with data that can be used for validation
     EXPECT_EQ(3122, first.size());
 
     EXPECT_EQ(ref_second.size(), second.size());
