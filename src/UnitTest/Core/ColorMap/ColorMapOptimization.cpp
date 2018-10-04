@@ -1052,9 +1052,84 @@ TEST(ColorMapOptimization, MakeGradientImages)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_MakeDepthMasks)
+TEST(ColorMapOptimization, MakeDepthMasks)
 {
-    unit_test::NotImplemented();
+    vector<vector<double>> ref_images_data =
+    {
+        {
+                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,  255,    0,    0,    0,    0
+        },
+        {
+                0,  255,  255,  255,  255,  255,  255,  255,  255,    0,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+              255,  255,  255,  255,  255,    0,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,    0,    0,    0,    0,    0
+        }
+    };
+
+    size_t size = 2;
+
+    const int width = 10;
+    const int height = 10;
+
+    // vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 1;
+    const int depth_num_of_channels = 1;
+    const int depth_bytes_per_channel = 4;
+
+    // generate input RGBD images
+    vector<RGBDImage> images_rgbd;
+    for (size_t i = 0; i < size; i++)
+    {
+        Image color;
+        Image depth;
+
+        color.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        depth.PrepareImage(width,
+                           height,
+                           depth_num_of_channels,
+                           depth_bytes_per_channel);
+
+        Rand(color.data_, 0, 255, i);
+
+        float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
+        Rand(depthFloatData, width * height, 10.0, 100.0 + 20 * (i + 1), i);
+
+        RGBDImage rgbdImage(color, depth);
+        images_rgbd.push_back(rgbdImage);
+    }
+
+    ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 1.23, 3);
+
+    vector<Image> images = MakeDepthMasks(images_rgbd, option);
+
+    EXPECT_EQ(size, images.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_EQ(width * height, images[i].data_.size());
+        for (size_t j = 0; j < images[i].data_.size(); j++)
+            EXPECT_EQ(ref_images_data[i][j], images[i].data_[j]);
+    }
 }
 
 // ----------------------------------------------------------------------------
