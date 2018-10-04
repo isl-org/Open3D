@@ -752,9 +752,93 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage)
+TEST(ColorMapOptimization, SetGeometryColorAverage)
 {
-    unit_test::NotImplemented();
+    vector<Eigen::Vector3d> ref_vertex_colors =
+    {
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.325490,    0.737255,    0.200000 },
+        {    0.290196,    0.243137,    0.909804 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.925490,    0.105882,    0.384314 },
+        {    0.674510,    0.149020,    0.031373 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.925490,    0.105882,    0.384314 },
+        {    0.674510,    0.149020,    0.031373 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.325490,    0.737255,    0.200000 },
+        {    0.290196,    0.243137,    0.909804 },
+        {    0.000000,    0.000000,    0.000000 },
+        {    0.000000,    0.000000,    0.000000 }
+    };
+
+    size_t size = 10;
+
+    const int width = 320;
+    const int height = 240;
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 4;
+
+    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+
+    // TODO: change the initialization in such a way that the fields have an
+    // effect on the outcome of QueryImageIntensity.
+    const int nr_anchors = 6;
+    vector<ImageWarpingField> fields;
+    for (size_t i = 0; i < size; i++)
+    {
+        ImageWarpingField field(width, height, nr_anchors + i);
+        fields.push_back(field);
+    }
+
+    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+
+    Eigen::Vector3d pose(30, 15, 0.3);
+    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    int camid = 0;
+
+    int n_vertex = mesh->vertices_.size();
+    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+
+    vector<double> proxy_intensity;
+
+    SetGeometryColorAverage(*mesh,
+                            images_rgbd,
+                            fields,
+                            camera,
+                            visiblity_vertex_to_image);
+
+    EXPECT_EQ(ref_vertex_colors.size(), mesh->vertex_colors_.size());
+    for(size_t i = 0; i < mesh->vertex_colors_.size(); i++)
+        ExpectEQ(ref_vertex_colors[i], mesh->vertex_colors_[i]);
 }
 
 // ----------------------------------------------------------------------------
