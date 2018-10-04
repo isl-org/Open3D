@@ -268,7 +268,7 @@ void unit_test::Rand(
 {
     unit_test::Raw raw(seed);
 
-    double factor = (vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = vmax - vmin;
 
     for (size_t i = 0; i < size; i++)
         v[i] = vmin + raw.Next<double>() * factor;
