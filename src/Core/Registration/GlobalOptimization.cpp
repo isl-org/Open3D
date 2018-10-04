@@ -375,19 +375,39 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph)
 {
     int n_nodes = (int)pose_graph.nodes_.size();
     int n_edges = (int)pose_graph.edges_.size();
-    for (int i = 0; i < n_nodes-1; i++) {
-        bool valid = false;
+
+    // Test if the connected component containing the first node is the entire graph
+    std::vector<int> nodes_to_explore{};
+    std::vector<int> component{};
+    if (n_nodes > 0) {
+        nodes_to_explore.push_back(0);
+        component.push_back(0);
+    }
+    while (!nodes_to_explore.empty()) {
+        int i = nodes_to_explore.back();
+        nodes_to_explore.pop_back();
         for (int j = 0; j < n_edges; j++) {
             const PoseGraphEdge &t = pose_graph.edges_[j];
-            if (t.source_node_id_ == i &&
-                    t.target_node_id_ - t.source_node_id_ == 1)
-                valid = true;
-        }
-        if (!valid) {
-            PrintError("Invalid PoseGraph - adjacent nodes are disconnected.\n");
-            return false;
+            int adjacent_node{-1};
+            if (t.source_node_id_ == i) {
+                adjacent_node = t.target_node_id_;
+            } else if (t.target_node_id_ == i) {
+                adjacent_node = t.source_node_id_;
+            }
+            if (adjacent_node != -1) {
+                auto find_result = std::find(component.begin(), component.end(), adjacent_node);
+                if (find_result == component.end()) {
+                    nodes_to_explore.push_back(adjacent_node);
+                    component.push_back(adjacent_node);
+                }
+            }
         }
     }
+    if (component.size() < n_nodes) {
+        PrintError("Invalid PoseGraph - graph is not connected.\n");
+        return false;
+    }
+
     for (int j = 0; j < n_edges; j++) {
         bool valid = false;
         const PoseGraphEdge &t = pose_graph.edges_[j];
