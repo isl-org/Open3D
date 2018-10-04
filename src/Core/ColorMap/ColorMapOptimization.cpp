@@ -729,3 +729,9 @@ template
 std::tuple<bool, unsigned char> open3d::QueryImageIntensity(
         const open3d::Image& img, const Eigen::Vector3d& V,
         const open3d::PinholeCameraTrajectory& camera, int camid, int ch);
+
+template
+std::tuple<bool, float> open3d::QueryImageIntensity(
+        const open3d::Image& img, const ImageWarpingField& field,
+        const Eigen::Vector3d& V,
+        const open3d::PinholeCameraTrajectory& camera, int camid, int ch);
