@@ -12,3 +12,4 @@ This tutorial demonstrates a complete pipeline to reconstruct a 3D scene from an
   register_fragments
   refine_registration
   integrate_scene
+  capture_your_own_dataset
