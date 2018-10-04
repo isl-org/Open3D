@@ -550,6 +550,13 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField)
+{
+    unit_test::NotImplemented();
+}
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid)
 {
     unit_test::NotImplemented();
