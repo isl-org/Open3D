@@ -195,4 +195,5 @@ int main(int argc, char *argv[])
     // n. test end
 
     PrintAlways("End of the test.\n");
+    return 0;
 }

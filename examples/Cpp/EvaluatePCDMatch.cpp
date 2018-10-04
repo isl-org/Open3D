@@ -36,7 +36,7 @@ void PrintHelp()
     using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
-    PrintInfo("    > ViewPCDMatch [options]\n");
+    PrintInfo("    > EvaluatePCDMatch [options]\n");
     PrintInfo("      View pairwise matching result of point clouds.\n");
     PrintInfo("\n");
     PrintInfo("Basic options:\n");
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
-        return 0;
+        return 1;
     }
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
@@ -184,5 +184,5 @@ int main(int argc, char *argv[])
             (double)positive, positive_rmse, positive);
     PrintInfo("Accuracy %.2f%% (%d / %d)\n", (double)positive * 100.0 /
             (double)pair_ids.size(), positive, (int)pair_ids.size());
-    return 1;
+    return 0;
 }
