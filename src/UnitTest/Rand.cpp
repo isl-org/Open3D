@@ -32,6 +32,49 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector3d.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+Eigen::Vector3d unit_test::Rand(
+    const Eigen::Vector3d &vmin,
+    const Eigen::Vector3d &vmax,
+    const int& seed)
+{
+    Eigen::Vector3d output;
+
+    unit_test::Raw raw(seed);
+
+    Eigen::Vector3d factor;
+    factor(0, 0) = (vmax(0, 0) - vmin(0, 0));
+    factor(1, 0) = (vmax(1, 0) - vmin(1, 0));
+    factor(2, 0) = (vmax(2, 0) - vmin(2, 0));
+
+    output(0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
+    output(1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
+    output(2, 0) = vmin(2, 0) + raw.Next<double>() * factor(2, 0);
+
+    return output;
+}
+Eigen::Vector3d unit_test::Rand(
+    const double &vmin,
+    const double &vmax,
+    const int& seed)
+{
+    Eigen::Vector3d output;
+
+    unit_test::Raw raw(seed);
+
+    double factor;
+    factor = (vmax - vmin);
+
+    output(0, 0) = vmin + raw.Next<double>() * factor;
+    output(1, 0) = vmin + raw.Next<double>() * factor;
+    output(2, 0) = vmin + raw.Next<double>() * factor;
+
+    return output;
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
