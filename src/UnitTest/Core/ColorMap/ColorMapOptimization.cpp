@@ -190,7 +190,9 @@ vector<Image> GenerateImages(const int& width,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-PinholeCameraTrajectory GenerateCamera(const int& width, const int& height)
+PinholeCameraTrajectory GenerateCamera(const int& width,
+                                       const int& height,
+                                       const Eigen::Vector3d& pose)
 {
     PinholeCameraTrajectory camera;
     camera.extrinsic_.resize(1);
@@ -206,21 +208,15 @@ PinholeCameraTrajectory GenerateCamera(const int& width, const int& height)
     pair<double, double> f = camera.intrinsic_.GetFocalLength();
     pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
 
-    Eigen::Matrix4d pose;
-    pose << 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0;
+    // not absolutely necessary but just in case
+    camera.extrinsic_[0] << 0.0, 0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0, 0.0,
+                            0.0, 0.0, 0.0, 0.0;
 
-    // generate a random pose
-    vector<double> xyz(3);
-    Rand(xyz, 0.0, 10.0, 0);
-
-    pose(0, 0) = xyz[0];
-    pose(1, 1) = xyz[1];
-    pose(2, 2) = xyz[2];
-
-    camera.extrinsic_[0] = pose;
+    camera.extrinsic_[0](0, 0) = pose(0, 0);
+    camera.extrinsic_[0](1, 1) = pose(1, 0);
+    camera.extrinsic_[0](2, 2) = pose(2, 0);
 
     return camera;
 }
@@ -265,7 +261,10 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(1.0, 40);
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
     vector<Image> images_mask = GenerateImages(width, height, size);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height);
+
+    Eigen::Vector3d pose(0.0329104, 0.0153787, 0.0306036);
+    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+
     ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
 
     vector<vector<int>> first;
