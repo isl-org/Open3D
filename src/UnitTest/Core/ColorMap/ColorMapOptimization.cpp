@@ -542,9 +542,93 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex)
+TEST(ColorMapOptimization, SetProxyIntensityForVertex)
 {
-    unit_test::NotImplemented();
+    vector<double> ref_proxy_intensity =
+    {
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,   10.120416,
+           10.113495,   10.192388,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.244983,   10.272664,
+           10.304499,   10.328028,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.262976,   10.120416,
+           10.106574,   10.181314,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.262976,   10.120416,
+           10.106574,   10.181314,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.244983,   10.272664,
+           10.304499,   10.328028,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,   10.120416,
+           10.113495,   10.192388,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000
+    };
+
+    size_t size = 10;
+
+    const int width = 320;
+    const int height = 240;
+    const int num_of_channels = 3;
+    const int bytes_per_channel = 4;
+
+    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
+
+    vector<shared_ptr<Image>> images_gray;
+    for (size_t i = 0; i < size; i++)
+    {
+        Image image;
+
+        image.PrepareImage(width,
+                           height,
+                           num_of_channels,
+                           bytes_per_channel);
+
+        float* const depthFloatData = reinterpret_cast<float*>(&image.data_[0]);
+        Rand(depthFloatData, width * height, 10.0, 100.0, 0);
+
+        images_gray.push_back(make_shared<Image>(image));
+    }
+
+    Eigen::Vector3d pose(30, 15, 0.3);
+    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    int camid = 0;
+
+    int n_vertex = mesh->vertices_.size();
+    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+
+    vector<double> proxy_intensity;
+
+    SetProxyIntensityForVertex(*mesh,
+                               images_gray,
+                               camera,
+                               visiblity_vertex_to_image,
+                               proxy_intensity);
+
+    EXPECT_EQ(ref_proxy_intensity.size(), proxy_intensity.size());
+    for(size_t i = 0; i < proxy_intensity.size(); i++)
+        EXPECT_NEAR(ref_proxy_intensity[i],
+                    proxy_intensity[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
