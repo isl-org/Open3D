@@ -43,10 +43,10 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
                                      const int& height,
                                      const size_t& size)
 {
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 1;
-    const int depth_num_of_channels = 1;
-    const int depth_bytes_per_channel = 4;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+    int depth_num_of_channels = 1;
+    int depth_bytes_per_channel = 4;
 
     // generate input RGBD images
     vector<RGBDImage> images_rgbd;
@@ -84,8 +84,8 @@ vector<Image> GenerateImages(const int& width,
                              const int& height,
                              const size_t& size)
 {
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 1;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
 
     vector<Image> images_mask;
     for (size_t i = 0; i < size; i++)
@@ -103,6 +103,22 @@ vector<Image> GenerateImages(const int& width,
     }
 
     return images_mask;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+vector<shared_ptr<Image>> GenerateSharedImages(const int& width,
+                                               const int& height,
+                                               const size_t& size)
+{
+    vector<Image> images = GenerateImages(width, height, size);
+
+    vector<shared_ptr<Image>> output;
+    for (size_t i = 0; i < size; i++)
+        output.push_back(make_shared<Image>(images[i]));
+
+    return output;
 }
 
 // ----------------------------------------------------------------------------
@@ -218,8 +234,8 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
         }
     };
 
-    const int width = 320;
-    const int height = 240;
+    int width = 320;
+    int height = 240;
     size_t size = 10;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(1.0, 20);
@@ -239,7 +255,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
                                                       camera,
                                                       option);
 
-    // first is a large vector of empty vectors.
+    // first is a large vector of (mostly) empty vectors.
     // TODO: perhaps a different kind of initialization is necessary in order
     // to fill the first vector with data that can be used for validation
     EXPECT_EQ(762, first.size());
@@ -270,27 +286,10 @@ TEST(ColorMapOptimization, MakeWarpingFields)
     };
 
     size_t size = 10;
-    vector<shared_ptr<Image>> images;
+    int width = 5;
+    int height = 5;
 
-    for (size_t i = 0; i < size; i++)
-    {
-        Image image;
-
-        // test image dimensions
-        const int width = 5;
-        const int height = 5;
-        const int num_of_channels = 1;
-        const int bytes_per_channel = 2;
-
-        image.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        Rand(image.data_, 0, 255, i);
-
-        images.push_back(make_shared<Image>(image));
-    }
+    vector<shared_ptr<Image>> images = GenerateSharedImages(width, height, size);
 
     ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
 
@@ -348,10 +347,10 @@ TEST(ColorMapOptimization, QueryImageIntensity)
         {    0.000000,    0.000000,    0.000000 }
     };
 
-    const int width = 320;
-    const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 4;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 4;
 
     Image img;
     img.PrepareImage(width,
@@ -443,10 +442,10 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
         {    0.000000,    0.000000,    0.000000 }
     };
 
-    const int width = 320;
-    const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 4;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 4;
 
     Image img;
     img.PrepareImage(width,
@@ -458,7 +457,7 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
 
     // TODO: change the initialization in such a way that the field has an
     // effect on the outcome of QueryImageIntensity.
-    const int nr_anchors = 16;
+    int nr_anchors = 16;
     open3d::ImageWarpingField field(width, height, nr_anchors);
 
     Eigen::Vector3d pose(62.5, 37.5, 1.85);
@@ -551,10 +550,10 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex)
 
     size_t size = 10;
 
-    const int width = 320;
-    const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 4;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
 
@@ -643,16 +642,16 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
 
     size_t size = 10;
 
-    const int width = 320;
-    const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 4;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
-    const int nr_anchors = 6;
+    int nr_anchors = 6;
     vector<ImageWarpingField> fields;
     for (size_t i = 0; i < size; i++)
     {
@@ -766,10 +765,10 @@ TEST(ColorMapOptimization, SetGeometryColorAverage)
 
     size_t size = 10;
 
-    const int width = 320;
-    const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 4;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
 
@@ -847,16 +846,16 @@ TEST(ColorMapOptimization, SetGeometryColorAverage_WarpingFields)
 
     size_t size = 10;
 
-    const int width = 320;
-    const int height = 240;
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 4;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
-    const int nr_anchors = 6;
+    int nr_anchors = 6;
     vector<ImageWarpingField> fields;
     for (size_t i = 0; i < size; i++)
     {
@@ -977,8 +976,8 @@ TEST(ColorMapOptimization, MakeGradientImages)
 
     size_t size = 2;
 
-    const int width = 5;
-    const int height = 5;
+    int width = 5;
+    int height = 5;
 
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
 
@@ -1048,14 +1047,14 @@ TEST(ColorMapOptimization, MakeDepthMasks)
 
     size_t size = 2;
 
-    const int width = 10;
-    const int height = 10;
+    int width = 10;
+    int height = 10;
 
     // vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
-    const int num_of_channels = 3;
-    const int bytes_per_channel = 1;
-    const int depth_num_of_channels = 1;
-    const int depth_bytes_per_channel = 4;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+    int depth_num_of_channels = 1;
+    int depth_bytes_per_channel = 4;
 
     // generate input RGBD images
     vector<RGBDImage> images_rgbd;
