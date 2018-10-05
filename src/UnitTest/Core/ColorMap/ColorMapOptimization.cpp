@@ -68,7 +68,7 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
         Rand(color.data_, 0, 255, i);
 
         float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-        Rand(depthFloatData, width * height, 0.0, 1.0, i);
+        Rand(depthFloatData, width * height, 10.0, 100.0, i);
 
         RGBDImage rgbdImage(color, depth);
         images_rgbd.push_back(rgbdImage);
@@ -232,16 +232,33 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
     vector<vector<int>> ref_second =
     {
         {
-              0,   2,   3,   4,   5,   6,   7,   8,   9,  10,
-             11,  12,  41,  42,  43,  44,  45,  46,  47,  48,
-             49,  50,  51,  52,  82,  83,  84,  85,  86,  87,
-             88,  89,  90,  91,  92, 122, 123, 124, 125, 126,
-            127, 128, 129, 130, 131, 132, 162, 163, 164, 165,
-            166, 167, 168, 169, 170, 171, 172, 202, 203, 204,
-            205, 206, 207, 208, 209, 210, 211, 212, 242, 243,
-            244, 245, 246, 247, 248, 249, 250, 251, 252, 282,
-            283, 284, 285, 286, 287, 288, 289, 290, 291, 292,
-            325, 326, 327, 328, 329, 330, 331, 332
+              1,   421,   422,   423,   424,   425,   426,   427,   428,   429,
+            430,   431,   432,   433,   460,   461,   462,   463,   464,   465,
+            466,   467,   468,   469,   470,   471,   472,   473,   474,   499,
+            500,   501,   502,   503,   504,   505,   506,   507,   508,   509,
+            510,   511,   512,   513,   514,   515,   527,   528,   536,   537,
+            538,   539,   540,   541,   542,   543,   544,   545,   546,   547,
+            548,   549,   550,   551,   552,   553,   554,   555,   556,   557,
+            562,   563,   564,   565,   566,   567,   568,   569,   570,   571,
+            572,   573,   574,   575,   576,   577,   578,   579,   580,   581,
+            582,   583,   584,   585,   586,   587,   588,   589,   590,   591,
+            592,   593,   594,   595,   596,   597,   598,   599,   600,   601,
+            602,   603,   604,   605,   606,   607,   608,   609,   610,   611,
+            612,   613,   614,   615,   616,   617,   618,   619,   620,   621,
+            622,   623,   624,   625,   626,   627,   628,   629,   630,   631,
+            632,   633,   634,   635,   636,   637,   638,   639,   640,   641,
+            642,   643,   644,   645,   646,   647,   648,   649,   650,   651,
+            652,   653,   654,   655,   656,   657,   658,   659,   660,   661,
+            662,   663,   664,   665,   666,   667,   668,   669,   670,   671,
+            672,   673,   674,   675,   676,   677,   678,   679,   680,   681,
+            682,   683,   684,   685,   686,   687,   688,   689,   690,   691,
+            692,   693,   694,   695,   696,   697,   698,   699,   700,   701,
+            702,   703,   704,   705,   706,   707,   708,   709,   710,   711,
+            712,   713,   714,   715,   716,   717,   718,   719,   720,   721,
+            722,   723,   724,   725,   726,   727,   728,   729,   730,   731,
+            732,   733,   734,   735,   736,   737,   738,   739,   740,   741,
+            742,   743,   744,   745,   746,   747,   748,   749,   750,   751,
+            752,   753,   754,   755,   756,   757,   758,   759,   760,   761
         }
     };
 
@@ -251,7 +268,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
     int bytes_per_channel = 1;
     size_t size = 10;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(1.0, 20);
+    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 20);
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
     vector<Image> images_mask = GenerateImages(width,
                                                height,
@@ -259,10 +276,10 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
                                                bytes_per_channel,
                                                size);
 
-    Eigen::Vector3d pose(3.29104, 1.53787, 0.0306036);
+    Eigen::Vector3d pose(-30, -15, -13);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
-    ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
+    ColorMapOptimizationOption option(false, 4, 0.316, 30, 15, 120, 0.1, 3);
 
     vector<vector<int>> first;
     vector<vector<int>> second;
@@ -1043,41 +1060,10 @@ TEST(ColorMapOptimization, MakeDepthMasks)
     };
 
     size_t size = 2;
-
     int width = 10;
     int height = 10;
 
-    // vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
-    int num_of_channels = 3;
-    int bytes_per_channel = 1;
-    int depth_num_of_channels = 1;
-    int depth_bytes_per_channel = 4;
-
-    // generate input RGBD images
-    vector<RGBDImage> images_rgbd;
-    for (size_t i = 0; i < size; i++)
-    {
-        Image color;
-        Image depth;
-
-        color.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        depth.PrepareImage(width,
-                           height,
-                           depth_num_of_channels,
-                           depth_bytes_per_channel);
-
-        Rand(color.data_, 0, 255, i);
-
-        float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-        Rand(depthFloatData, width * height, 10.0, 100.0, i);
-
-        RGBDImage rgbdImage(color, depth);
-        images_rgbd.push_back(rgbdImage);
-    }
+    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
 
     ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
 
@@ -1089,7 +1075,6 @@ TEST(ColorMapOptimization, MakeDepthMasks)
         EXPECT_EQ(width * height, images[i].data_.size());
         for (size_t j = 0; j < images[i].data_.size(); j++)
             EXPECT_EQ(ref_images_data[i][j], images[i].data_[j]);
-        Print(images[i].data_);
     }
 }
 
