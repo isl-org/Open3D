@@ -719,17 +719,173 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid)
+TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
 {
-    unit_test::NotImplemented();
+    vector<double> ref_proxy_intensity =
+    {
+            0.000000,    0.000000,    0.000000,   10.120416,   10.192388,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.181314,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.181314,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.192388,
+            0.000000,    0.000000
+    };
+
+    size_t size = 10;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+
+    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
+
+    vector<shared_ptr<Image>> images_dx = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
+
+    vector<shared_ptr<Image>> images_dy = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
+    int nr_anchors = 6;
+    vector<ImageWarpingField> warping_fields;
+    for (size_t i = 0; i < size; i++)
+    {
+        ImageWarpingField field(width, height, nr_anchors + i);
+        warping_fields.push_back(field);
+    }
+    vector<ImageWarpingField> warping_fields_init;
+    for (size_t i = 0; i < size; i++)
+    {
+        ImageWarpingField field(width, height, nr_anchors + i);
+        warping_fields_init.push_back(field);
+    }
+
+    Eigen::Vector3d pose(30, 15, 0.3);
+    // Eigen::Vector3d pose(-30, -15, -13);
+    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+
+    int n_vertex = mesh->vertices_.size();
+    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> visiblity_image_to_vertex(n_vertex, vector<int>(size, 0));
+
+    ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
+    // ColorMapOptimizationOption option(false, 4, 0.316, 30, 15, 120, 0.1, 3);
+
+    vector<double> proxy_intensity;
+
+    OptimizeImageCoorNonrigid(
+        *mesh,
+        images_gray,
+        images_dx,
+        images_dy,
+        warping_fields,
+        warping_fields_init,
+        camera,
+        visiblity_vertex_to_image,
+        visiblity_image_to_vertex,
+        proxy_intensity,
+        option);
+
+    EXPECT_EQ(ref_proxy_intensity.size(), proxy_intensity.size());
+    for(size_t i = 0; i < proxy_intensity.size(); i++)
+        EXPECT_NEAR(ref_proxy_intensity[i],
+                    proxy_intensity[i], THRESHOLD_1E_6);
+    Print(proxy_intensity);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
+TEST(ColorMapOptimization, OptimizeImageCoorRigid)
 {
-    unit_test::NotImplemented();
+    vector<double> ref_proxy_intensity =
+    {
+            0.000000,    0.000000,    0.000000,   10.120416,   10.192388,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.181314,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.181314,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.192388,
+            0.000000,    0.000000
+    };
+
+    size_t size = 10;
+    int width = 320;
+    int height = 240;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+
+    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
+
+    vector<shared_ptr<Image>> images_dx = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
+
+    vector<shared_ptr<Image>> images_dy = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
+
+    Eigen::Vector3d pose(30, 15, 0.3);
+    // Eigen::Vector3d pose(-30, -15, -13);
+    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+
+    int n_vertex = mesh->vertices_.size();
+    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> visiblity_image_to_vertex(n_vertex, vector<int>(size, 0));
+
+    // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
+    ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 1.95, 3);
+    // ColorMapOptimizationOption option(false, 4, 0.316, 30, 15, 120, 0.1, 3);
+
+    vector<double> proxy_intensity;
+
+    OptimizeImageCoorRigid(
+        *mesh,
+        images_gray,
+        images_dx,
+        images_dy,
+        camera,
+        visiblity_vertex_to_image,
+        visiblity_image_to_vertex,
+        proxy_intensity,
+        option);
+
+    EXPECT_EQ(ref_proxy_intensity.size(), proxy_intensity.size());
+    for(size_t i = 0; i < proxy_intensity.size(); i++)
+        EXPECT_NEAR(ref_proxy_intensity[i],
+                    proxy_intensity[i], THRESHOLD_1E_6);
+    Print(proxy_intensity);
 }
 
 // ----------------------------------------------------------------------------
