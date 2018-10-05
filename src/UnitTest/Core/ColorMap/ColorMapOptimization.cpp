@@ -767,11 +767,8 @@ TEST(ColorMapOptimization, SetGeometryColorAverage)
     };
 
     size_t size = 10;
-
     int width = 320;
     int height = 240;
-    int num_of_channels = 3;
-    int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
 
@@ -848,11 +845,8 @@ TEST(ColorMapOptimization, SetGeometryColorAverage_WarpingFields)
     };
 
     size_t size = 10;
-
     int width = 320;
     int height = 240;
-    int num_of_channels = 3;
-    int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
 
@@ -1023,10 +1017,10 @@ TEST(ColorMapOptimization, MakeDepthMasks)
     vector<vector<double>> ref_images_data =
     {
         {
-                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-                0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                0,    0,  255,  255,  255,  255,  255,  255,  255,    0,
+                0,    0,  255,  255,  255,  255,  255,  255,  255,    0,
+                0,    0,  255,  255,  255,  255,  255,  255,  255,    0,
+                0,    0,  255,  255,  255,  255,  255,  255,  255,    0,
               255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
               255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
               255,  255,  255,  255,  255,  255,    0,    0,    0,    0,
@@ -1035,14 +1029,14 @@ TEST(ColorMapOptimization, MakeDepthMasks)
               255,  255,  255,  255,  255,  255,    0,    0,    0,    0
         },
         {
-                0,  255,  255,  255,  255,  255,  255,  255,  255,    0,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
-              255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+                0,  255,  255,  255,  255,  255,  255,  255,    0,    0,
+              255,  255,  255,  255,  255,  255,  255,  255,    0,    0,
+              255,  255,  255,  255,  255,  255,  255,  255,    0,    0,
+              255,  255,  255,  255,  255,  255,  255,  255,    0,    0,
+              255,  255,  255,  255,  255,    0,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,    0,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,    0,    0,    0,    0,    0,
+              255,  255,  255,  255,  255,    0,    0,    0,    0,    0,
               255,  255,  255,  255,  255,    0,    0,    0,    0,    0,
               255,  255,  255,  255,  255,    0,    0,    0,    0,    0
         }
@@ -1079,13 +1073,13 @@ TEST(ColorMapOptimization, MakeDepthMasks)
         Rand(color.data_, 0, 255, i);
 
         float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-        Rand(depthFloatData, width * height, 10.0, 100.0 + 20 * (i + 1), i);
+        Rand(depthFloatData, width * height, 10.0, 100.0, i);
 
         RGBDImage rgbdImage(color, depth);
         images_rgbd.push_back(rgbdImage);
     }
 
-    ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 1.23, 3);
+    ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
 
     vector<Image> images = MakeDepthMasks(images_rgbd, option);
 
@@ -1095,6 +1089,7 @@ TEST(ColorMapOptimization, MakeDepthMasks)
         EXPECT_EQ(width * height, images[i].data_.size());
         for (size_t j = 0; j < images[i].data_.size(); j++)
             EXPECT_EQ(ref_images_data[i][j], images[i].data_[j]);
+        Print(images[i].data_);
     }
 }
 
