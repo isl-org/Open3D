@@ -96,7 +96,13 @@ vector<Image> GenerateImages(const int& width,
                            num_of_channels,
                            bytes_per_channel);
 
-        Rand(image.data_, 0, 255, i);
+        if (bytes_per_channel == 4)
+        {
+            float* const depthFloatData = reinterpret_cast<float*>(&image.data_[0]);
+            Rand(depthFloatData, width * height, 10.0, 100.0, i);
+        }
+        else
+            Rand(image.data_, 0, 255, i);
 
         images_mask.push_back(image);
     }
@@ -569,26 +575,16 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex)
 
     int width = 320;
     int height = 240;
-    int num_of_channels = 3;
+    int num_of_channels = 1;
     int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
 
-    vector<shared_ptr<Image>> images_gray;
-    for (size_t i = 0; i < size; i++)
-    {
-        Image image;
-
-        image.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        float* const depthFloatData = reinterpret_cast<float*>(&image.data_[0]);
-        Rand(depthFloatData, width * height, 10.0, 100.0, 0);
-
-        images_gray.push_back(make_shared<Image>(image));
-    }
+    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(width,
+                                                                 height,
+                                                                 num_of_channels,
+                                                                 bytes_per_channel,
+                                                                 size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
@@ -661,7 +657,7 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
 
     int width = 320;
     int height = 240;
-    int num_of_channels = 3;
+    int num_of_channels = 1;
     int bytes_per_channel = 4;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
@@ -676,21 +672,11 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
         fields.push_back(field);
     }
 
-    vector<shared_ptr<Image>> images_gray;
-    for (size_t i = 0; i < size; i++)
-    {
-        Image image;
-
-        image.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        float* const depthFloatData = reinterpret_cast<float*>(&image.data_[0]);
-        Rand(depthFloatData, width * height, 10.0, 100.0, 0);
-
-        images_gray.push_back(make_shared<Image>(image));
-    }
+    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(width,
+                                                                 height,
+                                                                 num_of_channels,
+                                                                 bytes_per_channel,
+                                                                 size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
