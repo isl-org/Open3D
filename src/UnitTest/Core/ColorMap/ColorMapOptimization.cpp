@@ -82,11 +82,10 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
 // ----------------------------------------------------------------------------
 vector<Image> GenerateImages(const int& width,
                              const int& height,
+                             const int& num_of_channels,
+                             const int& bytes_per_channel,
                              const size_t& size)
 {
-    int num_of_channels = 3;
-    int bytes_per_channel = 1;
-
     vector<Image> images_mask;
     for (size_t i = 0; i < size; i++)
     {
@@ -110,9 +109,15 @@ vector<Image> GenerateImages(const int& width,
 // ----------------------------------------------------------------------------
 vector<shared_ptr<Image>> GenerateSharedImages(const int& width,
                                                const int& height,
+                                               const int& num_of_channels,
+                                               const int& bytes_per_channel,
                                                const size_t& size)
 {
-    vector<Image> images = GenerateImages(width, height, size);
+    vector<Image> images = GenerateImages(width,
+                                          height,
+                                          num_of_channels,
+                                          bytes_per_channel,
+                                          size);
 
     vector<shared_ptr<Image>> output;
     for (size_t i = 0; i < size; i++)
@@ -236,11 +241,17 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
 
     int width = 320;
     int height = 240;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
     size_t size = 10;
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(1.0, 20);
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
-    vector<Image> images_mask = GenerateImages(width, height, size);
+    vector<Image> images_mask = GenerateImages(width,
+                                               height,
+                                               num_of_channels,
+                                               bytes_per_channel,
+                                               size);
 
     Eigen::Vector3d pose(3.29104, 1.53787, 0.0306036);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
@@ -288,8 +299,14 @@ TEST(ColorMapOptimization, MakeWarpingFields)
     size_t size = 10;
     int width = 5;
     int height = 5;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
 
-    vector<shared_ptr<Image>> images = GenerateSharedImages(width, height, size);
+    vector<shared_ptr<Image>> images = GenerateSharedImages(width,
+                                                            height,
+                                                            num_of_channels,
+                                                            bytes_per_channel,
+                                                            size);
 
     ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1, 3);
 
