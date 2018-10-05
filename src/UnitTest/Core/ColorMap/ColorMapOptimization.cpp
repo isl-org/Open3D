@@ -39,89 +39,6 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
-{
-    vector<Eigen::Vector3d> ref_points =
-    {
-        {    1.072613,    0.611307,   42.921570 },
-        {    0.897783,    0.859754,   43.784313 },
-        {    1.452353,    1.769294,   18.333334 },
-        {    1.181915,    0.663475,   30.411764 },
-        {    1.498387,    0.741398,   20.058823 },
-        {    0.814378,    0.620043,   50.254902 },
-        {    1.458333,    1.693333,    7.764706 },
-        {    1.709016,    2.412951,   13.156863 },
-        {    1.288462,    2.510000,    8.411765 },
-        {    2.316667,    1.043333,    5.823529 },
-        {    1.029231,    0.366000,   28.039215 },
-        {    1.390000,    0.585733,   16.176470 },
-        {    0.973200,    0.512240,   26.960785 },
-        {    0.948980,    0.437551,   42.274509 },
-        {    1.461765,    1.644902,   22.000000 },
-        {    1.535393,    1.109551,   19.196079 },
-        {    3.608824,    5.121765,    3.666667 },
-        {    3.350000,    4.361429,    4.529412 },
-        {    0.797577,    0.636344,   48.960785 },
-        {    9.990000,    8.046000,    1.078431 },
-        {    0.770000,    1.511333,   12.941176 },
-        {    0.834722,    0.595556,   46.588234 },
-        {    0.857368,    0.744105,   20.490196 },
-        {    1.111765,    0.977059,   36.666668 },
-        {    0.855405,    0.429640,   23.941177 },
-        {    0.917213,    0.730765,   39.470589 },
-        {    0.810736,    0.506319,   35.156864 },
-        {    0.942857,    3.160476,    9.058824 },
-        {    1.111137,    0.389431,   45.509804 },
-        {    0.822687,    0.615727,   48.960785 }
-    };
-
-    Eigen::Vector3d point = { 3.3, 4.4, 5.5 };
-    PinholeCameraTrajectory camera;
-    camera.extrinsic_.resize(1);
-
-    int width = 320;
-    int height = 240;
-
-    double fx = 0.5;
-    double fy = 0.65;
-
-    double cx = 0.75;
-    double cy = 0.35;
-
-    camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
-
-    pair<double, double> f = camera.intrinsic_.GetFocalLength();
-    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
-
-    for (int i = 0; i < ref_points.size(); i++)
-    {
-        Eigen::Matrix4d pose;
-        pose << 0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0;
-
-        // change the pose randomly
-        vector<double> xyz(3);
-        Rand(xyz, 0.0, 10.0, i);
-
-        pose(0, 0) = xyz[0];
-        pose(1, 1) = xyz[1];
-        pose(2, 2) = xyz[2];
-
-        camera.extrinsic_[0] = pose;
-
-        int camid = 0;
-
-        float u, v, d;
-        tie(u, v, d) = Project3DPointAndGetUVDepth(point, camera, camid);
-        ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 vector<RGBDImage> GenerateRGBDImages(const int& width,
                                      const int& height,
                                      const size_t& size)
@@ -196,7 +113,6 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
                                        const Eigen::Vector3d& pose)
 {
     PinholeCameraTrajectory camera;
-    camera.extrinsic_.resize(1);
 
     double fx = 0.5;
     double fy = 0.65;
@@ -209,7 +125,7 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
     pair<double, double> f = camera.intrinsic_.GetFocalLength();
     pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
 
-    // not absolutely necessary but just in case
+    camera.extrinsic_.resize(1);
     camera.extrinsic_[0] << 0.0, 0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0, 0.0,
@@ -220,6 +136,65 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
     camera.extrinsic_[0](2, 2) = pose(2, 0);
 
     return camera;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
+{
+    vector<Eigen::Vector3d> ref_points =
+    {
+        {    1.072613,    0.611307,   42.921570 },
+        {    0.897783,    0.859754,   43.784313 },
+        {    1.452353,    1.769294,   18.333334 },
+        {    1.181915,    0.663475,   30.411764 },
+        {    1.498387,    0.741398,   20.058823 },
+        {    0.814378,    0.620043,   50.254902 },
+        {    1.458333,    1.693333,    7.764706 },
+        {    1.709016,    2.412951,   13.156863 },
+        {    1.288462,    2.510000,    8.411765 },
+        {    2.316667,    1.043333,    5.823529 },
+        {    1.029231,    0.366000,   28.039215 },
+        {    1.390000,    0.585733,   16.176470 },
+        {    0.973200,    0.512240,   26.960785 },
+        {    0.948980,    0.437551,   42.274509 },
+        {    1.461765,    1.644902,   22.000000 },
+        {    1.535393,    1.109551,   19.196079 },
+        {    3.608824,    5.121765,    3.666667 },
+        {    3.350000,    4.361429,    4.529412 },
+        {    0.797577,    0.636344,   48.960785 },
+        {    9.990000,    8.046000,    1.078431 },
+        {    0.770000,    1.511333,   12.941176 },
+        {    0.834722,    0.595556,   46.588234 },
+        {    0.857368,    0.744105,   20.490196 },
+        {    1.111765,    0.977059,   36.666668 },
+        {    0.855405,    0.429640,   23.941177 },
+        {    0.917213,    0.730765,   39.470589 },
+        {    0.810736,    0.506319,   35.156864 },
+        {    0.942857,    3.160476,    9.058824 },
+        {    1.111137,    0.389431,   45.509804 },
+        {    0.822687,    0.615727,   48.960785 }
+    };
+
+    int width = 320;
+    int height = 240;
+
+    Eigen::Vector3d point = { 3.3, 4.4, 5.5 };
+
+    vector<Eigen::Vector3d> output;
+    for (int i = 0; i < ref_points.size(); i++)
+    {
+        // change the pose randomly
+        Eigen::Vector3d pose;
+        Rand(pose, 0.0, 10.0, i);
+        PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+        int camid = 0;
+
+        float u, v, d;
+        tie(u, v, d) = Project3DPointAndGetUVDepth(point, camera, camid);
+        ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
+    }
 }
 
 // ----------------------------------------------------------------------------
