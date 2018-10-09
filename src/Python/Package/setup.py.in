@@ -27,7 +27,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    author='IntelVCL',
+    author='Open3D Team',
     author_email='@PROJECT_EMAIL@',
     classifiers=[
         # https://pypi.org/pypi?%3Aaction=list_classifiers
