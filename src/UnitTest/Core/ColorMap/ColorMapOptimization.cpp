@@ -67,8 +67,8 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
 
         Rand(color.data_, 0, 255, i);
 
-        float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-        Rand(depthFloatData, width * height, 10.0, 100.0, i);
+        float* const depthData = reinterpret_cast<float*>(&depth.data_[0]);
+        Rand(depthData, width * height, 10.0, 100.0, i);
 
         RGBDImage rgbdImage(color, depth);
         rgbdImages.push_back(rgbdImage);
@@ -98,8 +98,8 @@ vector<Image> GenerateImages(const int& width,
 
         if (bytes_per_channel == 4)
         {
-            float* const depthFloatData = reinterpret_cast<float*>(&image.data_[0]);
-            Rand(depthFloatData, width * height, 10.0, 100.0, i);
+            float* const depthData = reinterpret_cast<float*>(&image.data_[0]);
+            Rand(depthData, width * height, 10.0, 100.0, i);
         }
         else
             Rand(image.data_, 0, 255, i);
@@ -232,33 +232,33 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
     vector<vector<int>> ref_second =
     {
         {
-              1,   421,   422,   423,   424,   425,   426,   427,   428,   429,
-            430,   431,   432,   433,   460,   461,   462,   463,   464,   465,
-            466,   467,   468,   469,   470,   471,   472,   473,   474,   499,
-            500,   501,   502,   503,   504,   505,   506,   507,   508,   509,
-            510,   511,   512,   513,   514,   515,   527,   528,   536,   537,
-            538,   539,   540,   541,   542,   543,   544,   545,   546,   547,
-            548,   549,   550,   551,   552,   553,   554,   555,   556,   557,
-            562,   563,   564,   565,   566,   567,   568,   569,   570,   571,
-            572,   573,   574,   575,   576,   577,   578,   579,   580,   581,
-            582,   583,   584,   585,   586,   587,   588,   589,   590,   591,
-            592,   593,   594,   595,   596,   597,   598,   599,   600,   601,
-            602,   603,   604,   605,   606,   607,   608,   609,   610,   611,
-            612,   613,   614,   615,   616,   617,   618,   619,   620,   621,
-            622,   623,   624,   625,   626,   627,   628,   629,   630,   631,
-            632,   633,   634,   635,   636,   637,   638,   639,   640,   641,
-            642,   643,   644,   645,   646,   647,   648,   649,   650,   651,
-            652,   653,   654,   655,   656,   657,   658,   659,   660,   661,
-            662,   663,   664,   665,   666,   667,   668,   669,   670,   671,
-            672,   673,   674,   675,   676,   677,   678,   679,   680,   681,
-            682,   683,   684,   685,   686,   687,   688,   689,   690,   691,
-            692,   693,   694,   695,   696,   697,   698,   699,   700,   701,
-            702,   703,   704,   705,   706,   707,   708,   709,   710,   711,
-            712,   713,   714,   715,   716,   717,   718,   719,   720,   721,
-            722,   723,   724,   725,   726,   727,   728,   729,   730,   731,
-            732,   733,   734,   735,   736,   737,   738,   739,   740,   741,
-            742,   743,   744,   745,   746,   747,   748,   749,   750,   751,
-            752,   753,   754,   755,   756,   757,   758,   759,   760,   761
+              1, 421, 422, 423, 424, 425, 426, 427, 428, 429,
+            430, 431, 432, 433, 460, 461, 462, 463, 464, 465,
+            466, 467, 468, 469, 470, 471, 472, 473, 474, 499,
+            500, 501, 502, 503, 504, 505, 506, 507, 508, 509,
+            510, 511, 512, 513, 514, 515, 527, 528, 536, 537,
+            538, 539, 540, 541, 542, 543, 544, 545, 546, 547,
+            548, 549, 550, 551, 552, 553, 554, 555, 556, 557,
+            562, 563, 564, 565, 566, 567, 568, 569, 570, 571,
+            572, 573, 574, 575, 576, 577, 578, 579, 580, 581,
+            582, 583, 584, 585, 586, 587, 588, 589, 590, 591,
+            592, 593, 594, 595, 596, 597, 598, 599, 600, 601,
+            602, 603, 604, 605, 606, 607, 608, 609, 610, 611,
+            612, 613, 614, 615, 616, 617, 618, 619, 620, 621,
+            622, 623, 624, 625, 626, 627, 628, 629, 630, 631,
+            632, 633, 634, 635, 636, 637, 638, 639, 640, 641,
+            642, 643, 644, 645, 646, 647, 648, 649, 650, 651,
+            652, 653, 654, 655, 656, 657, 658, 659, 660, 661,
+            662, 663, 664, 665, 666, 667, 668, 669, 670, 671,
+            672, 673, 674, 675, 676, 677, 678, 679, 680, 681,
+            682, 683, 684, 685, 686, 687, 688, 689, 690, 691,
+            692, 693, 694, 695, 696, 697, 698, 699, 700, 701,
+            702, 703, 704, 705, 706, 707, 708, 709, 710, 711,
+            712, 713, 714, 715, 716, 717, 718, 719, 720, 721,
+            722, 723, 724, 725, 726, 727, 728, 729, 730, 731,
+            732, 733, 734, 735, 736, 737, 738, 739, 740, 741,
+            742, 743, 744, 745, 746, 747, 748, 749, 750, 751,
+            752, 753, 754, 755, 756, 757, 758, 759, 760, 761
         }
     };
 
@@ -397,8 +397,8 @@ TEST(ColorMapOptimization, QueryImageIntensity)
                     height,
                     num_of_channels,
                     bytes_per_channel);
-    float* const depthFloatData = reinterpret_cast<float*>(&img.data_[0]);
-    Rand(depthFloatData, width * height, 10.0, 100.0, 0);
+    float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
+    Rand(depthData, width * height, 10.0, 100.0, 0);
 
     Eigen::Vector3d pose(62.5, 37.5, 1.85);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
@@ -492,8 +492,8 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
                     height,
                     num_of_channels,
                     bytes_per_channel);
-    float* const depthFloatData = reinterpret_cast<float*>(&img.data_[0]);
-    Rand(depthFloatData, width * height, 10.0, 100.0, 0);
+    float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
+    Rand(depthData, width * height, 10.0, 100.0, 0);
 
     // TODO: change the initialization in such a way that the field has an
     // effect on the outcome of QueryImageIntensity.
@@ -597,25 +597,26 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex)
 
     shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
 
-    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(width,
-                                                                 height,
-                                                                 num_of_channels,
-                                                                 bytes_per_channel,
-                                                                 size);
+    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
 
     vector<double> proxy_intensity;
 
     SetProxyIntensityForVertex(*mesh,
                                images_gray,
                                camera,
-                               visiblity_vertex_to_image,
+                               vertex_to_image,
                                proxy_intensity);
 
     EXPECT_EQ(ref_proxy_intensity.size(), proxy_intensity.size());
@@ -689,18 +690,19 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
         fields.push_back(field);
     }
 
-    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(width,
-                                                                 height,
-                                                                 num_of_channels,
-                                                                 bytes_per_channel,
-                                                                 size);
+    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+                                                width,
+                                                height,
+                                                num_of_channels,
+                                                bytes_per_channel,
+                                                size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
 
     vector<double> proxy_intensity;
 
@@ -708,7 +710,7 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
                                images_gray,
                                fields,
                                camera,
-                               visiblity_vertex_to_image,
+                               vertex_to_image,
                                proxy_intensity);
 
     EXPECT_EQ(ref_proxy_intensity.size(), proxy_intensity.size());
@@ -780,20 +782,20 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
-    vector<vector<int>> visiblity_image_to_vertex(size, vector<int>(n_vertex, 0));
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> image_to_vertex(size, vector<int>(n_vertex, 0));
 
-    for (size_t i = 0; i < visiblity_vertex_to_image.size(); i++)
+    for (size_t i = 0; i < vertex_to_image.size(); i++)
     {
-        Rand(visiblity_vertex_to_image[i], 0, size, i);
-        // Print(visiblity_vertex_to_image[i]);
+        Rand(vertex_to_image[i], 0, size, i);
+        // Print(vertex_to_image[i]);
     }
     cout << endl << endl;
 
-    for (size_t i = 0; i < visiblity_image_to_vertex.size(); i++)
+    for (size_t i = 0; i < image_to_vertex.size(); i++)
     {
-        Rand(visiblity_image_to_vertex[i], 0, n_vertex, i);
-        // Print(visiblity_image_to_vertex[i]);
+        Rand(image_to_vertex[i], 0, n_vertex, i);
+        // Print(image_to_vertex[i]);
     }
 
     ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
@@ -808,8 +810,8 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
         warping_fields,
         warping_fields_init,
         camera,
-        visiblity_vertex_to_image,
-        visiblity_image_to_vertex,
+        vertex_to_image,
+        image_to_vertex,
         proxy_intensity,
         option);
 
@@ -871,20 +873,20 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
-    vector<vector<int>> visiblity_image_to_vertex(size, vector<int>(n_vertex, 0));
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> image_to_vertex(size, vector<int>(n_vertex, 0));
 
-    for (size_t i = 0; i < visiblity_vertex_to_image.size(); i++)
+    for (size_t i = 0; i < vertex_to_image.size(); i++)
     {
-        Rand(visiblity_vertex_to_image[i], 0, size, i);
-        // Print(visiblity_vertex_to_image[i]);
+        Rand(vertex_to_image[i], 0, size, i);
+        // Print(vertex_to_image[i]);
     }
     cout << endl << endl;
 
-    for (size_t i = 0; i < visiblity_image_to_vertex.size(); i++)
+    for (size_t i = 0; i < image_to_vertex.size(); i++)
     {
-        Rand(visiblity_image_to_vertex[i], 0, n_vertex, i);
-        // Print(visiblity_image_to_vertex[i]);
+        Rand(image_to_vertex[i], 0, n_vertex, i);
+        // Print(image_to_vertex[i]);
     }
 
     ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
@@ -897,8 +899,8 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
         images_dx,
         images_dy,
         camera,
-        visiblity_vertex_to_image,
-        visiblity_image_to_vertex,
+        vertex_to_image,
+        image_to_vertex,
         proxy_intensity,
         option);
 
@@ -973,14 +975,14 @@ TEST(ColorMapOptimization, SetGeometryColorAverage)
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
 
     vector<double> proxy_intensity;
 
     SetGeometryColorAverage(*mesh,
                             images_rgbd,
                             camera,
-                            visiblity_vertex_to_image);
+                            vertex_to_image);
 
     EXPECT_EQ(ref_vertex_colors.size(), mesh->vertex_colors_.size());
     for(size_t i = 0; i < mesh->vertex_colors_.size(); i++)
@@ -1061,7 +1063,7 @@ TEST(ColorMapOptimization, SetGeometryColorAverage_WarpingFields)
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
-    vector<vector<int>> visiblity_vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
 
     vector<double> proxy_intensity;
 
@@ -1069,7 +1071,7 @@ TEST(ColorMapOptimization, SetGeometryColorAverage_WarpingFields)
                             images_rgbd,
                             fields,
                             camera,
-                            visiblity_vertex_to_image);
+                            vertex_to_image);
 
     EXPECT_EQ(ref_vertex_colors.size(), mesh->vertex_colors_.size());
     for(size_t i = 0; i < mesh->vertex_colors_.size(); i++)
