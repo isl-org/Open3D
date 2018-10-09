@@ -142,9 +142,6 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
 
     camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
 
-    pair<double, double> f = camera.intrinsic_.GetFocalLength();
-    pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
-
     camera.extrinsic_.resize(1);
     camera.extrinsic_[0] << 0.0, 0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0, 0.0,
@@ -776,7 +773,8 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
 
     int n_vertex = mesh->vertices_.size();
     vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
-    vector<vector<int>> image_to_vertex(size, vector<int>(n_vertex, 0));
+    vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
+                                        vector<int>(n_vertex, 0));
 
     for (size_t i = 0; i < vertex_to_image.size(); i++)
     {
@@ -867,7 +865,8 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
 
     int n_vertex = mesh->vertices_.size();
     vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
-    vector<vector<int>> image_to_vertex(size, vector<int>(n_vertex, 0));
+    vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
+                                        vector<int>(n_vertex, 0));
 
     for (size_t i = 0; i < vertex_to_image.size(); i++)
     {
