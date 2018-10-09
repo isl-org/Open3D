@@ -715,12 +715,12 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
 {
     vector<double> ref_proxy_intensity =
     {
-            0.000000,    0.000000,    0.000000,    0.000000,   10.134256,
+            0.000000,    0.000000,    0.000000,   10.319723,   10.134256,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,   10.060900,    0.000000,   10.305882,
+            0.000000,    0.000000,   10.206228,   10.059516,   10.102422,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,   10.060900,   10.243599,    0.000000,
+            0.000000,    0.000000,   10.206228,   10.059516,   10.102422,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
             0.000000,    0.000000,    0.000000,   10.319723,   10.134256,
             0.000000,    0.000000
@@ -771,23 +771,13 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
     Eigen::Vector3d pose(60, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
-    int n_vertex = mesh->vertices_.size();
+    size_t n_vertex = mesh->vertices_.size();
     vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
     vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
                                         vector<int>(n_vertex, 0));
 
-    for (size_t i = 0; i < vertex_to_image.size(); i++)
-    {
-        Rand(vertex_to_image[i], 0, size, i);
-        // Print(vertex_to_image[i]);
-    }
-    cout << endl << endl;
-
     for (size_t i = 0; i < image_to_vertex.size(); i++)
-    {
         Rand(image_to_vertex[i], 0, n_vertex, i);
-        // Print(image_to_vertex[i]);
-    }
 
     ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
 
@@ -820,14 +810,14 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
 {
     vector<double> ref_proxy_intensity =
     {
-            0.000000,    0.000000,    0.000000,    0.000000,   10.134256,
-            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,   10.204844,    0.000000,   10.033218,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,   10.204844,   10.312803,    0.000000,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,    0.000000,   10.319723,   10.134256,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
             0.000000,    0.000000
     };
 
@@ -863,23 +853,13 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
     Eigen::Vector3d pose(60, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
-    int n_vertex = mesh->vertices_.size();
+    size_t n_vertex = mesh->vertices_.size();
     vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
     vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
                                         vector<int>(n_vertex, 0));
 
-    for (size_t i = 0; i < vertex_to_image.size(); i++)
-    {
-        Rand(vertex_to_image[i], 0, size, i);
-        // Print(vertex_to_image[i]);
-    }
-    cout << endl << endl;
-
     for (size_t i = 0; i < image_to_vertex.size(); i++)
-    {
         Rand(image_to_vertex[i], 0, n_vertex, i);
-        // Print(image_to_vertex[i]);
-    }
 
     ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);
 
