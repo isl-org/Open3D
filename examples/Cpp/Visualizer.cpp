@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
     if (argc < 3) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-        PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
-        return 0;
+        PrintInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
+        PrintInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
+        return 1;
     }
 
     std::string option(argv[1]);
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         mesh_ptr->ComputeVertexNormals();
         DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         mesh_ptr->ComputeVertexNormals();
         DrawGeometriesWithAnimationCallback({mesh_ptr},
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         mesh_ptr->ComputeVertexNormals();
         DrawGeometriesWithKeyCallbacks({mesh_ptr},
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         cloud_ptr->NormalizeNormals();
         DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         cloud_ptr->NormalizeNormals();
         cloud_ptr->colors_.resize(cloud_ptr->points_.size());
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         DrawGeometries({image_ptr}, "Image", image_ptr->width_,
                 image_ptr->height_);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             PrintError("Failed to read %s\n\n", argv[2]);
-            return 0;
+            return 1;
         }
         mesh_ptr->ComputeVertexNormals();
         if (argc == 3) {
@@ -166,5 +166,5 @@ int main(int argc, char *argv[])
 
     PrintInfo("End of the test.\n");
 
-    return 1;
+    return 0;
 }
