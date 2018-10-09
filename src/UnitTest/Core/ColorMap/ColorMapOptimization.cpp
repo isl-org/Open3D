@@ -39,47 +39,6 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-vector<RGBDImage> GenerateRGBDImages(const int& width,
-                                     const int& height,
-                                     const size_t& size)
-{
-    int num_of_channels = 3;
-    int bytes_per_channel = 1;
-    int depth_num_of_channels = 1;
-    int depth_bytes_per_channel = 4;
-
-    // generate input RGBD images
-    vector<RGBDImage> rgbdImages;
-    for (size_t i = 0; i < size; i++)
-    {
-        Image color;
-        Image depth;
-
-        color.PrepareImage(width,
-                           height,
-                           num_of_channels,
-                           bytes_per_channel);
-
-        depth.PrepareImage(width,
-                           height,
-                           depth_num_of_channels,
-                           depth_bytes_per_channel);
-
-        Rand(color.data_, 0, 255, i);
-
-        float* const depthData = reinterpret_cast<float*>(&depth.data_[0]);
-        Rand(depthData, width * height, 10.0, 100.0, i);
-
-        RGBDImage rgbdImage(color, depth);
-        rgbdImages.push_back(rgbdImage);
-    }
-
-    return move(rgbdImages);
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 vector<Image> GenerateImages(const int& width,
                              const int& height,
                              const int& num_of_channels,
@@ -130,6 +89,40 @@ vector<shared_ptr<Image>> GenerateSharedImages(const int& width,
         output.push_back(make_shared<Image>(images[i]));
 
     return output;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+vector<RGBDImage> GenerateRGBDImages(const int& width,
+                                     const int& height,
+                                     const size_t& size)
+{
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+    int depth_num_of_channels = 1;
+    int depth_bytes_per_channel = 4;
+
+    vector<Image> depths = GenerateImages(width,
+                                          height,
+                                          depth_num_of_channels,
+                                          depth_bytes_per_channel,
+                                          size);
+
+    vector<Image> colors = GenerateImages(width,
+                                          height,
+                                          num_of_channels,
+                                          bytes_per_channel,
+                                          size);
+
+    vector<RGBDImage> rgbdImages;
+    for (size_t i = 0; i < size; i++)
+    {
+        RGBDImage rgbdImage(colors[i], depths[i]);
+        rgbdImages.push_back(rgbdImage);
+    }
+
+    return move(rgbdImages);
 }
 
 // ----------------------------------------------------------------------------
