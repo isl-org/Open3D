@@ -800,7 +800,6 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
     for(size_t i = 0; i < proxy_intensity.size(); i++)
         EXPECT_NEAR(ref_proxy_intensity[i],
                     proxy_intensity[i], THRESHOLD_1E_6);
-    Print(proxy_intensity);
 }
 
 // ----------------------------------------------------------------------------
@@ -810,14 +809,14 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
 {
     vector<double> ref_proxy_intensity =
     {
+            0.000000,    0.000000,    0.000000,   10.120416,   10.192388,
+            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.056747,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.056747,
             0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
-            0.000000,    0.000000,    0.000000,    0.000000,    0.000000,
+            0.000000,    0.000000,    0.000000,   10.120416,   10.192388,
             0.000000,    0.000000
     };
 
@@ -850,7 +849,7 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
                                                 bytes_per_channel,
                                                 size);
 
-    Eigen::Vector3d pose(60, 15, 0.3);
+    Eigen::Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
@@ -880,7 +879,6 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
     for(size_t i = 0; i < proxy_intensity.size(); i++)
         EXPECT_NEAR(ref_proxy_intensity[i],
                     proxy_intensity[i], THRESHOLD_1E_6);
-    Print(proxy_intensity);
 }
 
 // ----------------------------------------------------------------------------
