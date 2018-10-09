@@ -49,7 +49,7 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
     int depth_bytes_per_channel = 4;
 
     // generate input RGBD images
-    vector<RGBDImage> images_rgbd;
+    vector<RGBDImage> rgbdImages;
     for (size_t i = 0; i < size; i++)
     {
         Image color;
@@ -71,10 +71,10 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
         Rand(depthFloatData, width * height, 10.0, 100.0, i);
 
         RGBDImage rgbdImage(color, depth);
-        images_rgbd.push_back(rgbdImage);
+        rgbdImages.push_back(rgbdImage);
     }
 
-    return move(images_rgbd);
+    return move(rgbdImages);
 }
 
 // ----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ vector<Image> GenerateImages(const int& width,
                              const int& bytes_per_channel,
                              const size_t& size)
 {
-    vector<Image> images_mask;
+    vector<Image> images;
     for (size_t i = 0; i < size; i++)
     {
         Image image;
@@ -104,10 +104,10 @@ vector<Image> GenerateImages(const int& width,
         else
             Rand(image.data_, 0, 255, i);
 
-        images_mask.push_back(image);
+        images.push_back(image);
     }
 
-    return images_mask;
+    return images;
 }
 
 // ----------------------------------------------------------------------------
