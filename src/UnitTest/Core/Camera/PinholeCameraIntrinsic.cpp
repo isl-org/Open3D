@@ -27,6 +27,7 @@
 #include "UnitTest.h"
 
 #include "Core/Camera/PinholeCameraIntrinsic.h"
+#include <json/json.h>
 
 using namespace open3d;
 using namespace std;
@@ -230,41 +231,144 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_GetFocalLength)
+TEST(PinholeCameraIntrinsic, GetFocalLength)
 {
-    unit_test::NotImplemented();
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    EXPECT_EQ(width, intrinsic.width_);
+    EXPECT_EQ(height, intrinsic.height_);
+
+    pair<double, double> output = intrinsic.GetFocalLength();
+
+    EXPECT_NEAR(fx, output.first, THRESHOLD_1E_6);
+    EXPECT_NEAR(fy, output.second, THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_GetPrincipalPoint)
+TEST(PinholeCameraIntrinsic, GetPrincipalPoint)
 {
-    unit_test::NotImplemented();
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    EXPECT_EQ(width, intrinsic.width_);
+    EXPECT_EQ(height, intrinsic.height_);
+
+    pair<double, double> output = intrinsic.GetPrincipalPoint();
+
+    EXPECT_NEAR(cx, output.first, THRESHOLD_1E_6);
+    EXPECT_NEAR(cy, output.second, THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_GetSkew)
+TEST(PinholeCameraIntrinsic, GetSkew)
 {
-    unit_test::NotImplemented();
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    EXPECT_EQ(width, intrinsic.width_);
+    EXPECT_EQ(height, intrinsic.height_);
+
+    double output = intrinsic.GetSkew();
+
+    EXPECT_NEAR(0.0, output, THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_IsValid)
+TEST(PinholeCameraIntrinsic, IsValid)
 {
-    unit_test::NotImplemented();
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    EXPECT_FALSE(intrinsic.IsValid());
+
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    EXPECT_TRUE(intrinsic.IsValid());
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_ConvertToJsonValue)
+TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue)
 {
-    unit_test::NotImplemented();
+    open3d::PinholeCameraIntrinsic src;
+    open3d::PinholeCameraIntrinsic dst;
+
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    src.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    Json::Value value;
+    bool output = src.ConvertToJsonValue(value);
+
+    output = dst.ConvertFromJsonValue(value);
+
+    EXPECT_EQ(width, dst.width_);
+    EXPECT_EQ(height, dst.height_);
+
+    EXPECT_NEAR(fx, dst.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(fy, dst.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(cx, dst.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(cy, dst.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0, dst.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
