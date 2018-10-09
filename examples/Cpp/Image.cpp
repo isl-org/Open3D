@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     if (argc != 3) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestImage [image filename] [depth filename]\n");
+        PrintInfo("    > Image [image filename] [depth filename]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1) Read 8bit RGB and 16bit depth image\n");
         PrintInfo("    2) Convert RGB image to single channel float image\n");
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
         PrintInfo("    4) 3x3 Sobel filter for x-and-y-directions are applied\n");
         PrintInfo("    5) Make image pyramid that includes Gaussian blur and downsampling\n");
         PrintInfo("    6) Will save all the layers in the image pyramid\n");
-        return 0;
+        return 1;
     }
 
     const std::string filename_rgb(argv[1]);

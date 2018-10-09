@@ -40,8 +40,8 @@ int main(int argc, char **argv)
     if (argc < 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestFlann [filename]\n");
-        return 0;
+        PrintInfo("    > Flann [filename]\n");
+        return 1;
     }
 
     auto cloud_ptr = std::make_shared<PointCloud>();
@@ -49,12 +49,12 @@ int main(int argc, char **argv)
         PrintWarning("Successfully read %s\n", argv[1]);
     } else {
         PrintError("Failed to read %s\n\n", argv[1]);
-        return 0;
+        return 1;
     }
 
     if ((int)cloud_ptr->points_.size() < 100) {
         PrintError("Boring point cloud.\n");
-        return 0;
+        return 1;
     }
 
     if (cloud_ptr->HasColors() == false) {
@@ -95,19 +95,19 @@ int main(int argc, char **argv)
     }
     cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
-    DrawGeometries({cloud_ptr}, "TestFlann", 1600, 900);
+    DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
     auto new_cloud_ptr = std::make_shared<PointCloud>();
     if (ReadPointCloud(argv[1], *new_cloud_ptr)) {
         PrintWarning("Successfully read %s\n", argv[1]);
     } else {
         PrintError("Failed to read %s\n\n", argv[1]);
-        return 0;
+        return 1;
     }
 
     if ((int)new_cloud_ptr->points_.size() < 100) {
         PrintError("Boring point cloud.\n");
-        return 0;
+        return 1;
     }
 
     if (new_cloud_ptr->HasColors() == false) {
