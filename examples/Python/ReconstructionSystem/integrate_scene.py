@@ -10,6 +10,8 @@ import sys
 from open3d import *
 sys.path.append("../Utility")
 from file import *
+sys.path.append(".")
+from make_fragments import *
 
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
@@ -33,11 +35,8 @@ def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
             print("Fragment %03d / %03d :: integrate rgbd frame %d (%d of %d)."
                     % (fragment_id, n_fragments-1, frame_id_abs, frame_id+1,
                     len(pose_graph_rgbd.nodes)))
-            color = read_image(color_files[frame_id_abs])
-            depth = read_image(depth_files[frame_id_abs])
-            rgbd = create_rgbd_image_from_color_and_depth(color, depth,
-                    depth_trunc = config["max_depth"],
-                    convert_rgb_to_intensity = False)
+            rgbd = read_rgbd_image(color_files[frame_id_abs],
+                    depth_files[frame_id_abs], False, config)
             pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
                     pose_graph_rgbd.nodes[frame_id].pose)
             volume.integrate(rgbd, intrinsic, np.linalg.inv(pose))

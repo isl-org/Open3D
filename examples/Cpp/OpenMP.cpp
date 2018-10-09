@@ -393,4 +393,5 @@ int main(int argc, char **argv)
     else {
         TestMatrixMultiplication(argc, argv);
     }
+    return 0;
 }

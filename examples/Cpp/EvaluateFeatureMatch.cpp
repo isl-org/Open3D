@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
-        return 0;
+        return 1;
     }
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
@@ -304,5 +304,5 @@ int main(int argc, char *argv[])
                 total_positive * 100.0 / total_correspondence_num);
         WriteBinaryResult(pcd_dirname + feature + ".bin", true_dis);
     }
-    return 1;
+    return 0;
 }
