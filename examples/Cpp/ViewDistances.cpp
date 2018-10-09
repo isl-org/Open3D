@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
-        return 0;
+        return 1;
     }
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     auto pcd = CreatePointCloudFromFile(argv[1]);
     if (pcd->IsEmpty()) {
         PrintInfo("Empty point cloud.\n");
-        return 0;
+        return 1;
     }
     std::string binname = filesystem::GetFileNameWithoutExtension(argv[1]) +
             ".bin";
@@ -81,17 +81,17 @@ int main(int argc, char *argv[])
         FILE *f = fopen(binname.c_str(), "rb");
         if (f == NULL) {
             PrintInfo("Cannot open bin file.\n");
-            return 0;
+            return 1;
         }
         if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
                 pcd->points_.size()) {
             PrintInfo("Cannot open bin file.\n");
-            return 0;
+            return 1;
         }
     }
     if (max_distance <= 0.0) {
         PrintInfo("Max distance must be a positive value.\n");
-        return 0;
+        return 1;
     }
     pcd->colors_.resize(pcd->points_.size());
     ColorMapHot colormap;
@@ -104,5 +104,5 @@ int main(int argc, char *argv[])
     if (!ProgramOptionExists(argc, argv, "--without_gui")) {
         DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
     }
-    return 1;
+    return 0;
 }
