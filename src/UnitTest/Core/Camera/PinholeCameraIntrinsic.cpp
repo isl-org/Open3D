@@ -26,12 +26,149 @@
 
 #include "UnitTest.h"
 
+#include "Core/Camera/PinholeCameraIntrinsic.h"
+
+using namespace open3d;
+using namespace std;
+using namespace unit_test;
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_Constructor)
+TEST(PinholeCameraIntrinsic, Constructor_Default)
 {
-    unit_test::NotImplemented();
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    // public member variables
+    EXPECT_EQ(-1, intrinsic.width_);
+    EXPECT_EQ(-1, intrinsic.height_);
+
+    intrinsic.intrinsic_matrix_ << 0.0, 0.0, 0.0,
+                                   0.0, 0.0, 0.0,
+                                   0.0, 0.0, 0.0;
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault)
+{
+    open3d::PinholeCameraIntrinsic intrinsic(
+        PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+
+    // public member variables
+    EXPECT_EQ(640, intrinsic.width_);
+    EXPECT_EQ(480, intrinsic.height_);
+
+    EXPECT_NEAR(525, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(525, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(319.5, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(239.5, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault)
+{
+    open3d::PinholeCameraIntrinsic intrinsic(
+        PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault);
+
+    // public member variables
+    EXPECT_EQ(512, intrinsic.width_);
+    EXPECT_EQ(424, intrinsic.height_);
+
+    EXPECT_NEAR(254.878, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(205.395, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(365.456, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(365.456, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault)
+{
+    open3d::PinholeCameraIntrinsic intrinsic(
+        PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault);
+
+    // public member variables
+    EXPECT_EQ(1920, intrinsic.width_);
+    EXPECT_EQ(1080, intrinsic.height_);
+
+    EXPECT_NEAR(1059.9718, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(1059.9718, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(975.7193, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(545.9533, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraIntrinsic, Constructor_Init)
+{
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    open3d::PinholeCameraIntrinsic intrinsic(width,
+                                             height,
+                                             fx, fy,
+                                             cx, cy);
+
+    // public member variables
+    EXPECT_EQ(width, intrinsic.width_);
+    EXPECT_EQ(height, intrinsic.height_);
+
+    EXPECT_NEAR(fx, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(fy, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
+
+    EXPECT_NEAR(cx, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(cy, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
