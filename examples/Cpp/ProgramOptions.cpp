@@ -32,7 +32,7 @@ void PrintHelp()
     using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
+    PrintInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
 }
 
 int main(int argc, char *argv[])
@@ -67,5 +67,5 @@ int main(int argc, char *argv[])
         }
     }
     PrintInfo(")\n");
-    return 1;
+    return 0;
 }

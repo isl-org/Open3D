@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     if (argc < 4 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
-        return 0;
+        return 1;
     }
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
@@ -61,17 +61,17 @@ int main(int argc, char *argv[])
     auto distance = GetProgramOptionAsDouble(argc, argv, "--distance");
     if (distance <= 0.0) {
         PrintWarning("Illegal distance.\n");
-        return 0;
+        return 1;
     }
     if (in_mesh_file.empty() || out_mesh_file.empty() || pcd_file.empty()) {
         PrintWarning("Missing file names.\n");
-        return 0;
+        return 1;
     }
     auto mesh = CreateMeshFromFile(in_mesh_file);
     auto pcd = CreatePointCloudFromFile(pcd_file);
     if (mesh->IsEmpty() || pcd->IsEmpty()) {
         PrintWarning("Empty geometry.\n");
-        return 0;
+        return 1;
     }
 
     KDTreeFlann kdtree;
@@ -139,5 +139,5 @@ int main(int argc, char *argv[])
     PrintDebug("[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have been removed.\n",
             old_vertex_num - k, old_triangle_num - kt);
     WriteTriangleMesh(out_mesh_file, *mesh);
-    return 1;
+    return 0;
 }
