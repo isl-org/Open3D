@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     if (argc < 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestFlann [filename] [ascii|binary|compressed]\n");
+        PrintInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1. load the pointcloud in [filename].\n");
         PrintInfo("    2. visualize the point cloud.\n");
