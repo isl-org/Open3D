@@ -24,10 +24,10 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Create python pacakge. It contains
-# 1) Pure-python code and misc files, copied from src/Python/Package
-# 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
-# 3) Configured files and supporting files
+# Warning: Internal use only, consider droping this in the future
+# Use `make all-pip-wheels` to create the pip package in the build directory
+# This creates: open3d-python, py3d, open3d-original, open3d-official, open-3d
+#               pip wheels
 
 # Clean up directory
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})

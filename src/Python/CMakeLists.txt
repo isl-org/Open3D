@@ -28,6 +28,7 @@ if (NOT PYTHON_EXECUTABLE)
     # find_package(PythonInterp REQUIRED) returns the system python
     # find_program will returns the python executable in current PATH, which
     # works with virtualenv
+    # Note: make sure to run `cmake ..` within your virtual environment!
     find_program(PYTHON_IN_PATH "python")
     set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
 endif()
@@ -70,7 +71,7 @@ add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-            -DPYTHON_COMPILED_MODULE_PATH=${PYTHON_COMPILED_MODULE_DIR}/$<TARGET_FILE_NAME:${PACKAGE_NAME}>
+            -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
@@ -90,10 +91,10 @@ add_custom_target(pip-wheel
 
 # Use `make install-pip-wheel` to install pip wheel package to the current
 # python environment.
-# Note: Since `make python-package` clears PYTHON_COMPILED_MODULE_DIR every time,
-#       it is guaranteed that there is only one wheel in ${PYTHON_PACKAGE_DST_DIR}/dist/*.whl
 add_custom_target(install-pip-wheel
-    COMMAND pip install ${PYTHON_PACKAGE_DST_DIR}/dist/*.whl
+    COMMAND ${CMAKE_COMMAND}
+            -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/install_pip_wheel.cmake
     DEPENDS pip-wheel
 )
 
@@ -106,7 +107,7 @@ add_custom_target(all-pip-wheels
     COMMAND ${CMAKE_COMMAND}
         -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
         -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-        -DPYTHON_COMPILED_MODULE_PATH=${PYTHON_COMPILED_MODULE_DIR}/$<TARGET_FILE_NAME:${PACKAGE_NAME}>
+        -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
         -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
         -DPROJECT_EMAIL=${PROJECT_EMAIL}
         -DPROJECT_HOME=${PROJECT_HOME}
