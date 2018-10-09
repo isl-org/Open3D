@@ -38,7 +38,7 @@ int main(int argc, char **args)
     PrintInfo("There are %d connected RealSense devices.\n",
             ctx.get_device_count());
     if(ctx.get_device_count() == 0) {
-        return 0;
+        return 1;
     }
 
     rs::device * dev = ctx.get_device(0);
@@ -155,5 +155,5 @@ int main(int argc, char **args)
     //                    dev->get_frame_data(rs::stream::depth), 640 * 480 * 2);
     //            return true;
     //        }, "Depth", 640, 480);
-    return 1;
+    return 0;
 }

@@ -37,7 +37,7 @@ void PrintHelp()
 {
     PrintOpen3DVersion();
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestRGBDOdometry [color1] [depth1] [color2] [depth2]\n");
+    PrintInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]\n");
 }
 
 std::shared_ptr<RGBDImage> ReadRGBDImage(
@@ -87,4 +87,5 @@ int main(int argc, char *argv[])
             OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
+    return 0;
 }

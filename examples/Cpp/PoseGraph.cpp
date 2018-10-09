@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     if (argc != 2) {
         PrintOpen3DVersion();
         PrintInfo("Usage:\n");
-        PrintInfo("    > TestPoseGraph [posegraph_for_optimization].json\n");
+        PrintInfo("    > PoseGraph [posegraph_for_optimization].json\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1) Generate random PoseGraph\n");
         PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
         PrintInfo("    6) Optimize PoseGraph\n");
         PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
-        return 0;
+        return 1;
     }
 
     // test posegraph read and write

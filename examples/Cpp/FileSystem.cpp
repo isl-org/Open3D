@@ -33,11 +33,11 @@ void PrintHelp()
 {
     using namespace open3d;
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestFileSystem ls [dir]\n");
-    PrintInfo("    > TestFileSystem mkdir [dir]\n");
-    PrintInfo("    > TestFileSystem rmdir [dir]\n");
-    PrintInfo("    > TestFileSystem rmfile [file]\n");
-    PrintInfo("    > TestFileSystem fileexists [file]\n");
+    PrintInfo("    > FileSystem ls [dir]\n");
+    PrintInfo("    > FileSystem mkdir [dir]\n");
+    PrintInfo("    > FileSystem rmdir [dir]\n");
+    PrintInfo("    > FileSystem rmfile [file]\n");
+    PrintInfo("    > FileSystem fileexists [file]\n");
 }
 
 int main(int argc, char **args)
