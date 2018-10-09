@@ -174,14 +174,6 @@ TEST(PinholeCameraIntrinsic, Constructor_Init)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, DISABLED_MemberData)
 {
     unit_test::NotImplemented();
