@@ -726,7 +726,7 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
             0.000000,    0.000000
     };
 
-    size_t size = 10;
+    size_t size = 1;
     int width = 320;
     int height = 240;
     int num_of_channels = 1;
@@ -772,7 +772,8 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> vertex_to_image(n_vertex,
+                                    vector<int>(camera.extrinsic_.size(), 0));
     vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
                                         vector<int>(n_vertex, 0));
 
@@ -820,7 +821,7 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
             0.000000,    0.000000
     };
 
-    size_t size = 10;
+    size_t size = 1;
     int width = 320;
     int height = 240;
     int num_of_channels = 1;
@@ -853,7 +854,8 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(size, 0));
+    vector<vector<int>> vertex_to_image(n_vertex,
+                                    vector<int>(camera.extrinsic_.size(), 0));
     vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
                                         vector<int>(n_vertex, 0));
 
