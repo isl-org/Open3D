@@ -29,23 +29,7 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(OdometryOption, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(OdometryOption, DISABLED_MemberData)
+TEST(RGBDOdometryJacobianFromColorTerm, DISABLED_ComputeJacobianAndResidual)
 {
     unit_test::NotImplemented();
 }

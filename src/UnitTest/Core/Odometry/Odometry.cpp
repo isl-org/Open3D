@@ -33,27 +33,3 @@ TEST(Odometry, DISABLED_ComputeRGBDOdometry)
 {
     unit_test::NotImplemented();
 }
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_PinholeCameraIntrinsic)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_OdometryOption)
-{
-    unit_test::NotImplemented();
-}
