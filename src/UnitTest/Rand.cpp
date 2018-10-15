@@ -170,6 +170,29 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector4i vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<Eigen::Vector4i> &v,
+    const int &vmin,
+    const int &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        v[i](0, 0) = vmin + (int)(raw.Next<int>() * factor);
+        v[i](1, 0) = vmin + (int)(raw.Next<int>() * factor);
+        v[i](2, 0) = vmin + (int)(raw.Next<int>() * factor);
+        v[i](3, 0) = vmin + (int)(raw.Next<int>() * factor);
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
