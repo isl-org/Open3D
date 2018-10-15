@@ -28,14 +28,10 @@
 
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Odometry/RGBDOdometryJacobian.h>
 #include <Core/Utility/Eigen.h>
 #include <Core/Utility/Timer.h>
 
 namespace open3d {
-
-namespace {
 
 std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>>
         InitializeCorrespondenceMap(int width, int height)
@@ -319,7 +315,7 @@ void NormalizeIntensity(Image &image_s, Image &image_t,
     LinearTransformImage(image_t, 0.5 / mean_t, 0.0);
 }
 
-inline std::shared_ptr<RGBDImage> PackRGBDImage(
+std::shared_ptr<RGBDImage> PackRGBDImage(
     const Image &color, const Image &depth) {
     return std::make_shared<RGBDImage>(RGBDImage(color, depth));
 }
@@ -339,13 +335,13 @@ std::shared_ptr<Image> PreprocessDepth(
     return depth_processed;
 }
 
-inline bool CheckImagePair(const Image &image_s, const Image &image_t)
+bool CheckImagePair(const Image &image_s, const Image &image_t)
 {
     return (image_s.width_ == image_t.width_ &&
             image_s.height_ == image_t.height_);
 }
 
-inline bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target)
+bool CheckRGBDImagePair(const RGBDImage &source, const RGBDImage &target)
 {
     return (CheckImagePair(source.color_, target.color_) &&
             CheckImagePair(source.depth_, target.depth_) &&
@@ -403,7 +399,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     auto correspondence = ComputeCorrespondence(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
     int corresps_count = (int)correspondence->size();
-    
+
     auto f_lambda = [&]
             (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
         jacobian_method.ComputeJacobianAndResidual(i, J_r, r,
@@ -484,8 +480,6 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
     }
     return std::make_tuple(true, result_odo);
 }
-
-}    // unnamed namespace
 
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
         ComputeRGBDOdometry(const RGBDImage &source, const RGBDImage &target,
