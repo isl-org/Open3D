@@ -54,8 +54,8 @@ def compute_initial_registration(s, t, source_down, target_down,
 
     if t == s + 1: # odometry case
         print("Using RGBD odometry")
-        pose_graph_frag = read_pose_graph(path_dataset +
-                config["template_fragment_posegraph_optimized"] % s)
+        pose_graph_frag = read_pose_graph(join(path_dataset,
+                config["template_fragment_posegraph_optimized"] % s))
         n_nodes = len(pose_graph_frag.nodes)
         transformation_init = np.linalg.inv(
                 pose_graph_frag.nodes[n_nodes-1].pose)
