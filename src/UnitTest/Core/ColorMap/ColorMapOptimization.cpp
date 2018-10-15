@@ -711,7 +711,7 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
+TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid)
 {
     vector<double> ref_proxy_intensity =
     {
@@ -772,10 +772,10 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex,
-                                    vector<int>(camera.extrinsic_.size(), 0));
-    vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
-                                        vector<int>(n_vertex, 0));
+    size_t n_camera = camera.extrinsic_.size();
+
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(n_camera, 0));
+    vector<vector<int>> image_to_vertex(n_camera, vector<int>(n_vertex, 0));
 
     for (size_t i = 0; i < image_to_vertex.size(); i++)
         Rand(image_to_vertex[i], 0, n_vertex, i);
@@ -806,7 +806,7 @@ TEST(ColorMapOptimization, OptimizeImageCoorNonrigid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptimization, OptimizeImageCoorRigid)
+TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
 {
     vector<double> ref_proxy_intensity =
     {
@@ -854,10 +854,10 @@ TEST(ColorMapOptimization, OptimizeImageCoorRigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
-    vector<vector<int>> vertex_to_image(n_vertex,
-                                    vector<int>(camera.extrinsic_.size(), 0));
-    vector<vector<int>> image_to_vertex(camera.extrinsic_.size(),
-                                        vector<int>(n_vertex, 0));
+    size_t n_camera = camera.extrinsic_.size();
+
+    vector<vector<int>> vertex_to_image(n_vertex, vector<int>(n_camera, 0));
+    vector<vector<int>> image_to_vertex(n_camera, vector<int>(n_vertex, 0));
 
     for (size_t i = 0; i < image_to_vertex.size(); i++)
         Rand(image_to_vertex[i], 0, n_vertex, i);
