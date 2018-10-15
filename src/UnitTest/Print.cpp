@@ -166,6 +166,37 @@ void unit_test::Print(const vector<Eigen::Vector3d> &v)
 }
 
 // ----------------------------------------------------------------------------
+// Print a vector of Eigen::Matrix<double, 6, 1>.
+// ----------------------------------------------------------------------------
+void unit_test::Print(const vector<Eigen::Matrix<double, 6, 1>> &v)
+{
+    int precision = 6;
+    int width = 12;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
+    cout << "    {";
+    cout << endl;
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        cout << "        {";
+        cout << setw(width) << v[i](0, 0) << ",";
+        cout << setw(width) << v[i](1, 0) << ",";
+        cout << setw(width) << v[i](2, 0) << ",";
+        cout << setw(width) << v[i](3, 0) << ",";
+        cout << setw(width) << v[i](4, 0) << ",";
+        cout << setw(width) << v[i](5, 0);
+        cout << " }";
+        if (i < (v.size() - 1))
+            cout << ",";
+        cout << endl;
+    }
+    cout << "    };";
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
 // Print a uint8_t vector.
 // ----------------------------------------------------------------------------
 void unit_test::Print(const vector<uint8_t> &v)
