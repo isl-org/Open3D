@@ -241,9 +241,81 @@ TEST(Odometry, CountCorrespondence)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_ComputeCorrespondence)
+TEST(Odometry, ComputeCorrespondence)
 {
-    unit_test::NotImplemented();
+    vector<Eigen::Vector4i> ref_output =
+    {
+        {    37,     0,    59,     0 },
+        {    98,     4,   120,     4 },
+        {   159,     8,   181,     8 },
+        {    41,    17,    63,    17 },
+        {   102,    21,   124,    21 },
+        {   163,    25,   185,    25 },
+        {    45,    34,    67,    34 },
+        {   106,    38,   128,    38 },
+        {   167,    42,   189,    42 },
+        {    49,    51,    71,    51 },
+        {   110,    55,   132,    55 },
+        {   171,    59,   193,    59 },
+        {    53,    68,    75,    68 },
+        {   114,    72,   136,    72 },
+        {   175,    76,   197,    76 },
+        {    57,    85,    79,    85 },
+        {   118,    89,   140,    89 },
+        {   179,    93,   201,    93 },
+        {     0,    98,    22,    98 },
+        {    61,   102,    83,   102 },
+        {   122,   106,   144,   106 },
+        {   183,   110,   205,   110 },
+        {     4,   115,    26,   115 },
+        {    65,   119,    87,   119 },
+        {   126,   123,   148,   123 },
+        {   187,   127,   209,   127 },
+        {     8,   132,    30,   132 },
+        {    69,   136,    91,   136 },
+        {   130,   140,   152,   140 },
+        {   191,   144,   213,   144 },
+        {    12,   149,    34,   149 },
+        {    73,   153,    95,   153 },
+        {   134,   157,   156,   157 },
+        {   195,   161,   217,   161 },
+        {    16,   166,    38,   166 },
+        {    77,   170,    99,   170 },
+        {   138,   174,   160,   174 },
+        {   199,   178,   221,   178 }
+    };
+
+    int width = 240;
+    int height = 180;
+
+    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    intrinsic(0, 0) = 0.5;
+    intrinsic(1, 1) = 0.65;
+    intrinsic(0, 2) = 0.75;
+    intrinsic(1, 2) = 0.35;
+    intrinsic(2, 2) = 0.9;
+
+    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    extrinsic(0, 0) = 1.0;
+    extrinsic(1, 1) = 1.0;
+    extrinsic(2, 2) = 1.0;
+    extrinsic(0, 3) = 1.0;
+
+    shared_ptr<Image> depth_s = DepthBuffer(width, height, 0.0, 6.0, 0);
+    shared_ptr<Image> depth_t = DepthBuffer(width, height, 1.0, 5.0, 0);
+    OdometryOption option;
+    option.max_depth_diff_ = 0.978100725;
+
+    shared_ptr<vector<Eigen::Vector4i>> output =
+        ComputeCorrespondence(intrinsic,
+                              extrinsic,
+                              *depth_s,
+                              *depth_t,
+                              option);
+
+    EXPECT_EQ(ref_output.size(), output->size());
+    for (size_t i = 0; i < ref_output.size(); i++)
+        ExpectEQ(ref_output[i], (*output)[i]);
 }
 
 // ----------------------------------------------------------------------------
