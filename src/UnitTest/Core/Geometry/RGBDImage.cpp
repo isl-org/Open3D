@@ -145,8 +145,8 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
@@ -219,8 +219,8 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     auto rgbdImage = open3d::CreateRGBDImageFromRedwoodFormat(color, depth);
@@ -293,8 +293,8 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     auto rgbdImage = open3d::CreateRGBDImageFromTUMFormat(color, depth);
@@ -367,8 +367,8 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     auto rgbdImage = open3d::CreateRGBDImageFromSUNFormat(color, depth);
@@ -441,8 +441,8 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     auto rgbdImage = open3d::CreateRGBDImageFromNYUFormat(color, depth);
@@ -527,8 +527,8 @@ TEST(RGBDImage, FilterRGBDImagePyramid)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
@@ -619,8 +619,8 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const depthFloatData = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(depthFloatData, depth_width * depth_height, 0.0, 1.0, 0);
+    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     unit_test::Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;

@@ -64,10 +64,10 @@ void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step)
     int num_of_channels = image->num_of_channels_;
     int bytes_per_channel = image->bytes_per_channel_;
 
-    float* const floatData = reinterpret_cast<float*>(&image->data_[0]);
+    float* const float_data = reinterpret_cast<float*>(&image->data_[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
-            floatData[h * width + w] = floatData[h * width + (w + step) % width];
+            float_data[h * width + w] = float_data[h * width + (w + step) % width];
 }
 
 // ----------------------------------------------------------------------------
@@ -80,8 +80,8 @@ void odometry_tools::ShiftUP(shared_ptr<Image> image, const int& step)
     int num_of_channels = image->num_of_channels_;
     int bytes_per_channel = image->bytes_per_channel_;
 
-    float* const floatData = reinterpret_cast<float*>(&image->data_[0]);
+    float* const float_data = reinterpret_cast<float*>(&image->data_[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
-            floatData[h * width + w] = floatData[((h + step) % height) * width + w];
+            float_data[h * width + w] = float_data[((h + step) % height) * width + w];
 }
