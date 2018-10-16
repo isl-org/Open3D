@@ -246,21 +246,10 @@ TEST(Odometry, CountCorrespondence)
 {
     int width = 5;
     int height = 5;
-    int num_of_channels = 2;
-    int bytes_per_channel = 4;
 
-    Image image;
+    shared_ptr<Image> map = CorrespondenceMap(width, height, -1, 5, 0);
 
-    image.PrepareImage(width,
-                        height,
-                        num_of_channels,
-                        bytes_per_channel);
-
-    int* const int_data = reinterpret_cast<int*>(&image.data_[0]);
-    size_t image_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
-    Rand(int_data, image_size, -1, 5, 0);
-
-    int output = CountCorrespondence(image);
+    int output = CountCorrespondence(*map);
 
     EXPECT_EQ(19, output);
 }
