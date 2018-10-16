@@ -95,9 +95,83 @@ TEST(Odometry, InitializeCorrespondenceMap)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_AddElementToCorrespondenceMap)
+TEST(Odometry, AddElementToCorrespondenceMap)
 {
-    unit_test::NotImplemented();
+    vector<uint8_t> ref_image0 =
+    {
+          255,  255,  255,  255,  255,  255,  255,  255,    2,    0,
+            0,    0,    1,    0,    0,    0,    4,    0,    0,    0,
+            2,    0,    0,    0,    3,    0,    0,    0,    2,    0,
+            0,    0,  255,  255,  255,  255,  255,  255,  255,  255,
+            0,    0,    0,    0,    1,    0,    0,    0,    4,    0,
+            0,    0,    1,    0,    0,    0,  255,  255,  255,  255,
+          255,  255,  255,  255,    2,    0,    0,    0,    2,    0,
+            0,    0,  255,  255,  255,  255,  255,  255,  255,  255,
+            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+            0,    0,    3,    0,    0,    0,    4,    0,    0,    0,
+            1,    0,    0,    0,    1,    0,    0,    0,    4,    0,
+            0,    0,    0,    0,    0,    0,    2,    0,    0,    0,
+          255,  255,  255,  255,  255,  255,  255,  255,  255,  255,
+          255,  255,  255,  255,  255,  255,    1,    0,    0,    0,
+            4,    0,    0,    0,    2,    0,    0,    0,    3,    0,
+            0,    0,    1,    0,    0,    0,    2,    0,    0,    0,
+          255,  255,  255,  255,  255,  255,  255,  255,    1,    0,
+            0,    0,    0,    0,    0,    0,  255,  255,  255,  255,
+          255,  255,  255,  255,    0,    0,    0,    0,    3,    0,
+            0,    0,  255,  255,  255,  255,  255,  255,  255,  255
+    };
+
+    vector<uint8_t> ref_image1 =
+    {
+            0,    0,  128,  191,  243,  246,  123,   60,  235,  198,
+          163,   60,   92,  146,  201,   60,    0,    0,  128,  191,
+          243,  246,  251,   59,  190,   83,  106,   60,    0,    0,
+          128,  191,  175,   73,  229,   60,    0,    0,  128,  191,
+           32,  106,  181,   59,  130,   43,   86,   60,  148,  162,
+          177,   60,  111,  180,  250,   60,   20,  205,    6,   61,
+            0,    0,  128,  191,    0,    0,  128,  191,   73,  112,
+          152,   60,   96,  170,  245,   60,   73,  112,   24,   61,
+            0,    0,  128,  191,   17,   96,   48,   60,    0,    0,
+          128,  191,   69,    3,  194,   60,    0,    0,  128,  191
+    };
+
+    size_t size = 20;
+    int width = 5;
+    int height = 5;
+
+    shared_ptr<Image> image0;
+    shared_ptr<Image> image1;
+
+    tie(image0, image1) = InitializeCorrespondenceMap(width, height);
+
+    vector<int> u_s(size);
+    vector<int> v_s(size);
+    vector<int> u_t(size);
+    vector<int> v_t(size);
+    vector<float> transformed_d_t(size);
+
+    Rand(u_s, 0, 5, 0);
+    Rand(v_s, 0, 5, 10);
+    Rand(u_t, 0, 5, 20);
+    Rand(v_t, 0, 5, 30);
+    Rand(transformed_d_t, 0.0, 10.0, 0);
+
+    for (size_t i = 0; i < size; i++)
+        AddElementToCorrespondenceMap(*image0,
+                                      *image1,
+                                      u_s[i],
+                                      v_s[i],
+                                      u_t[i],
+                                      v_t[i],
+                                      transformed_d_t[i]);
+
+    EXPECT_EQ(ref_image0.size(), image0->data_.size());
+    for (size_t i = 0; i < ref_image0.size(); i++)
+        EXPECT_EQ(ref_image0[i], image0->data_[i]);
+
+    EXPECT_EQ(ref_image1.size(), image1->data_.size());
+    for (size_t i = 0; i < ref_image1.size(); i++)
+        EXPECT_EQ(ref_image1[i], image1->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
