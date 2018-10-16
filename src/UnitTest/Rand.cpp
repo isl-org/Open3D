@@ -215,7 +215,8 @@ void unit_test::Rand(
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<int> &v,
+    int* const v,
+    const size_t& size,
     const int &vmin,
     const int &vmax,
     const int& seed)
@@ -224,9 +225,23 @@ void unit_test::Rand(
 
     float factor = (float)(vmax - vmin) / unit_test::Raw::VMAX;
 
-    for (size_t i = 0; i < v.size(); i++)
+    for (size_t i = 0; i < size; i++)
         v[i] = vmin + (int)(raw.Next<int>() * factor);
 }
+
+// ----------------------------------------------------------------------------
+// Initialize an int vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<int> &v,
+    const int &vmin,
+    const int &vmax,
+    const int& seed)
+{
+    Rand(&v[0], v.size(), vmin, vmax, seed);
+}
+
 // ----------------------------------------------------------------------------
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
