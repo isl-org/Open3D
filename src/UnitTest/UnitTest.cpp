@@ -125,6 +125,24 @@ void unit_test::ExpectEQ(const int& v00, const int& v01, const int& v02, const E
 }
 
 // ----------------------------------------------------------------------------
+// Equal test over Eigen::Vector4i components.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const Eigen::Vector4i& v0, const Eigen::Vector4i& v1)
+{
+    EXPECT_EQ(v0(0, 0), v1(0, 0));
+    EXPECT_EQ(v0(1, 0), v1(1, 0));
+    EXPECT_EQ(v0(2, 0), v1(2, 0));
+    EXPECT_EQ(v0(3, 0), v1(3, 0));
+}
+void unit_test::ExpectEQ(const int& v00, const int& v01, const int& v02, const int& v03, const Eigen::Vector4i& v1)
+{
+    EXPECT_EQ(v00, v1(0, 0));
+    EXPECT_EQ(v01, v1(1, 0));
+    EXPECT_EQ(v02, v1(2, 0));
+    EXPECT_EQ(v03, v1(3, 0));
+}
+
+// ----------------------------------------------------------------------------
 // Less than or Equal test over Eigen::Vector3d components.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
