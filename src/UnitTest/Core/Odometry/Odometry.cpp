@@ -78,9 +78,9 @@ TEST(Odometry, InitializeCorrespondenceMap)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_AddElementToCorrespondenceMap)
+TEST(Odometry, AddElementToCorrespondenceMap)
 {
-    vector<uint8_t> ref_image0 =
+    vector<uint8_t> ref_map =
     {
           255,  255,  255,  255,  255,  255,  255,  255,    2,    0,
             0,    0,    1,    0,    0,    0,    4,    0,    0,    0,
@@ -104,7 +104,7 @@ TEST(Odometry, DISABLED_AddElementToCorrespondenceMap)
             0,    0,  255,  255,  255,  255,  255,  255,  255,  255
     };
 
-    vector<uint8_t> ref_image1 =
+    vector<uint8_t> ref_depth =
     {
             0,    0,  128,  191,  243,  246,  123,   60,  235,  198,
           163,   60,   92,  146,  201,   60,    0,    0,  128,  191,
@@ -122,10 +122,10 @@ TEST(Odometry, DISABLED_AddElementToCorrespondenceMap)
     int width = 5;
     int height = 5;
 
-    shared_ptr<Image> image0;
-    shared_ptr<Image> image1;
+    shared_ptr<Image> map;
+    shared_ptr<Image> depth;
 
-    tie(image0, image1) = InitializeCorrespondenceMap(width, height);
+    tie(map, depth) = InitializeCorrespondenceMap(width, height);
 
     vector<int> u_s(size);
     vector<int> v_s(size);
@@ -140,21 +140,21 @@ TEST(Odometry, DISABLED_AddElementToCorrespondenceMap)
     Rand(transformed_d_t, 0.0, 10.0, 0);
 
     for (size_t i = 0; i < size; i++)
-        AddElementToCorrespondenceMap(*image0,
-                                      *image1,
+        AddElementToCorrespondenceMap(*map,
+                                      *depth,
                                       u_s[i],
                                       v_s[i],
                                       u_t[i],
                                       v_t[i],
                                       transformed_d_t[i]);
 
-    EXPECT_EQ(ref_image0.size(), image0->data_.size());
-    for (size_t i = 0; i < ref_image0.size(); i++)
-        EXPECT_EQ(ref_image0[i], image0->data_[i]);
+    EXPECT_EQ(ref_map.size(), map->data_.size());
+    for (size_t i = 0; i < ref_map.size(); i++)
+        EXPECT_EQ(ref_map[i], map->data_[i]);
 
-    EXPECT_EQ(ref_image1.size(), image1->data_.size());
-    for (size_t i = 0; i < ref_image1.size(); i++)
-        EXPECT_EQ(ref_image1[i], image1->data_[i]);
+    EXPECT_EQ(ref_depth.size(), depth->data_.size());
+    for (size_t i = 0; i < ref_depth.size(); i++)
+        EXPECT_EQ(ref_depth[i], depth->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -162,7 +162,7 @@ TEST(Odometry, DISABLED_AddElementToCorrespondenceMap)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_MergeCorrespondenceMaps)
 {
-    vector<uint8_t> ref_image0 =
+    vector<uint8_t> ref_map =
     {
            91,   69,   89,   89,   95,   59,   66,   88,   63,   77,
            73,   81,   68,   75,   97,   95,   81,   85,   57,   80,
@@ -186,7 +186,7 @@ TEST(Odometry, DISABLED_MergeCorrespondenceMaps)
            78,   93,   87,   81,   51,   87,   91,   96,   93,   91
     };
 
-    vector<uint8_t> ref_image1 =
+    vector<uint8_t> ref_depth =
     {
            52,   27,   34,   65,  247,  251,   32,   65,  105,  245,
            33,   65,  125,  255,   33,   65,  143,   72,   34,   65,
@@ -205,38 +205,38 @@ TEST(Odometry, DISABLED_MergeCorrespondenceMaps)
     int num_of_channels = 2;
     int bytes_per_channel = 4;
 
-    shared_ptr<Image> image0;
-    shared_ptr<Image> image1;
+    shared_ptr<Image> map;
+    shared_ptr<Image> depth;
 
-    // shared_ptr<Image> image0_part;
-    shared_ptr<Image> image1_part;
+    // shared_ptr<Image> map_part;
+    shared_ptr<Image> depth_part;
 
-    tie(image0, image1) = InitializeCorrespondenceMap(width, height);
-    // tie(image0_part, image1_part) = InitializeCorrespondenceMap(width, height);
+    tie(map, depth) = InitializeCorrespondenceMap(width, height);
+    // tie(map_part, depth_part) = InitializeCorrespondenceMap(width, height);
 
-    Image image0_part;
+    Image map_part;
 
-    image0_part.PrepareImage(width,
+    map_part.PrepareImage(width,
                         height,
                         num_of_channels,
                         bytes_per_channel);
 
-    int* const intData = reinterpret_cast<int*>(&image0_part.data_[0]);
-    size_t image0_part_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
-    Rand(intData, image0_part_size, -1, 5, 0);
+    int* const intData = reinterpret_cast<int*>(&map_part.data_[0]);
+    size_t map_part_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
+    Rand(intData, map_part_size, -1, 5, 0);
 
-    MergeCorrespondenceMaps(*image0, *image1, image0_part, *image1_part);
+    MergeCorrespondenceMaps(*map, *depth, map_part, *depth_part);
 
-    Print(image0->data_);
-    Print(image1->data_);
+    Print(map->data_);
+    Print(depth->data_);
 
-    EXPECT_EQ(ref_image0.size(), image0->data_.size());
-    for (size_t i = 0; i < ref_image0.size(); i++)
-        EXPECT_EQ(ref_image0[i], image0->data_[i]);
+    EXPECT_EQ(ref_map.size(), map->data_.size());
+    for (size_t i = 0; i < ref_map.size(); i++)
+        EXPECT_EQ(ref_map[i], map->data_[i]);
 
-    EXPECT_EQ(ref_image1.size(), image1->data_.size());
-    for (size_t i = 0; i < ref_image1.size(); i++)
-        EXPECT_EQ(ref_image1[i], image1->data_[i]);
+    EXPECT_EQ(ref_depth.size(), depth->data_.size());
+    for (size_t i = 0; i < ref_depth.size(); i++)
+        EXPECT_EQ(ref_depth[i], depth->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
