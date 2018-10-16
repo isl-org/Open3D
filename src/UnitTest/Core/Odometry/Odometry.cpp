@@ -247,9 +247,27 @@ TEST(Odometry, MergeCorrespondenceMaps)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_CountCorrespondence)
+TEST(Odometry, CountCorrespondence)
 {
-    unit_test::NotImplemented();
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 2;
+    int bytes_per_channel = 4;
+
+    Image image;
+
+    image.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+
+    int* const intData = reinterpret_cast<int*>(&image.data_[0]);
+    size_t image_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
+    Rand(intData, image_size, -1, 5, 0);
+
+    int output = CountCorrespondence(image);
+
+    EXPECT_EQ(19, output);
 }
 
 // ----------------------------------------------------------------------------
