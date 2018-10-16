@@ -32,21 +32,54 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
+// ----------------------------------------------------------------------------
+// Create dummy correspondence map object.
+// ----------------------------------------------------------------------------
 Image CorrespondenceMap(const int& width,
                         const int& height,
-                        const int& num_of_channels,
-                        const int& bytes_per_channel)
+                        const int& vmin,
+                        const int& vmax,
+                        const int& seed)
 {
+    int num_of_channels = 2;
+    int bytes_per_channel = 4;
+
     Image image;
 
     image.PrepareImage(width,
-                        height,
-                        num_of_channels,
-                        bytes_per_channel);
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
 
-    int* const intData = reinterpret_cast<int*>(&image.data_[0]);
-    size_t image_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
-    Rand(intData, image_size, -1, 5, 0);
+    int* const int_data = reinterpret_cast<int*>(&image.data_[0]);
+    size_t image_size = image.data_.size() / sizeof(int);
+    Rand(int_data, image_size, vmin, vmax, seed);
+
+    return image;
+}
+
+// ----------------------------------------------------------------------------
+// Create dummy depth buffer object.
+// ----------------------------------------------------------------------------
+Image DepthBuffer(const int& width,
+                  const int& height,
+                  const float& vmin,
+                  const float& vmax,
+                  const int& seed)
+{
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    Image image;
+
+    image.PrepareImage(width,
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
+
+    float* const float_data = reinterpret_cast<float*>(&image.data_[0]);
+    size_t image_size = image.data_.size() / sizeof(float);
+    Rand(float_data, image_size, vmin, vmax, seed);
 
     return image;
 }
@@ -221,9 +254,9 @@ TEST(Odometry, DISABLED_MergeCorrespondenceMaps)
                         num_of_channels,
                         bytes_per_channel);
 
-    int* const intData = reinterpret_cast<int*>(&map_part.data_[0]);
+    int* const int_data = reinterpret_cast<int*>(&map_part.data_[0]);
     size_t map_part_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
-    Rand(intData, map_part_size, -1, 5, 0);
+    Rand(int_data, map_part_size, -1, 5, 0);
 
     MergeCorrespondenceMaps(*map, *depth, map_part, *depth_part);
 
@@ -256,9 +289,9 @@ TEST(Odometry, CountCorrespondence)
                         num_of_channels,
                         bytes_per_channel);
 
-    int* const intData = reinterpret_cast<int*>(&image.data_[0]);
+    int* const int_data = reinterpret_cast<int*>(&image.data_[0]);
     size_t image_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
-    Rand(intData, image_size, -1, 5, 0);
+    Rand(int_data, image_size, -1, 5, 0);
 
     int output = CountCorrespondence(image);
 
