@@ -35,7 +35,7 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 // Create dummy correspondence map object.
 // ----------------------------------------------------------------------------
-Image CorrespondenceMap(const int& width,
+shared_ptr<Image> CorrespondenceMap(const int& width,
                         const int& height,
                         const int& vmin,
                         const int& vmax,
@@ -55,13 +55,13 @@ Image CorrespondenceMap(const int& width,
     size_t image_size = image.data_.size() / sizeof(int);
     Rand(int_data, image_size, vmin, vmax, seed);
 
-    return image;
+    return make_shared<Image>(image);
 }
 
 // ----------------------------------------------------------------------------
 // Create dummy depth buffer object.
 // ----------------------------------------------------------------------------
-Image DepthBuffer(const int& width,
+shared_ptr<Image> DepthBuffer(const int& width,
                   const int& height,
                   const float& vmin,
                   const float& vmax,
@@ -81,7 +81,7 @@ Image DepthBuffer(const int& width,
     size_t image_size = image.data_.size() / sizeof(float);
     Rand(float_data, image_size, vmin, vmax, seed);
 
-    return image;
+    return make_shared<Image>(image);
 }
 
 // ----------------------------------------------------------------------------
@@ -193,83 +193,50 @@ TEST(Odometry, AddElementToCorrespondenceMap)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_MergeCorrespondenceMaps)
+TEST(Odometry, MergeCorrespondenceMaps)
 {
-    vector<uint8_t> ref_map =
+    vector<int> ref_map =
     {
-           91,   69,   89,   89,   95,   59,   66,   88,   63,   77,
-           73,   81,   68,   75,   97,   95,   81,   85,   57,   80,
-           50,   61,   56,   90,   57,   70,   56,   55,   99,   60,
-           75,   91,   80,   64,   81,   76,   74,   98,   64,   88,
-           76,   88,   70,   94,   64,   67,   90,   95,   53,   97,
-           76,   54,   59,   83,   94,   67,   53,   50,   72,   53,
-           61,   98,   95,   92,   63,   76,   68,   87,   75,   83,
-           76,   51,   71,   96,   96,   85,   64,   86,   81,   67,
-           84,   58,   71,   93,   91,   66,   61,   94,   67,   84,
-           97,   79,   82,   92,   71,   96,   69,   90,   84,   95,
-           74,   60,   97,   95,   57,   93,   81,   71,   80,   63,
-           89,   65,   72,   61,   59,   63,   77,   70,   58,   95,
-           55,   56,   74,   87,   99,   96,   84,   69,   87,   68,
-           64,   61,   79,   62,   57,   86,   56,   89,   58,   87,
-           53,   97,   52,   75,   58,   61,   89,   86,   82,   98,
-           81,   87,   54,   56,   75,   53,   53,   60,   72,   90,
-           78,   87,   52,   57,   99,   60,   94,   56,   99,   52,
-           93,   53,   50,   96,   79,   58,   58,   69,   95,   90,
-           67,   77,   78,   72,   84,   54,   76,   87,   65,   99,
-           78,   93,   87,   81,   51,   87,   91,   96,   93,   91
+             4,     1,     3,     3,     4,     0,     1,     3,     0,     2,
+             1,     2,     1,     2,     4,     4,     2,     3,    -1,    -1,
+            -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,     4,     0,
+             2,     4,     2,     0,     2,     2,     1,     4,     0,     3,
+             2,     3,     1,     4,     0,     1,     3,     4,    -1,    -1
     };
 
-    vector<uint8_t> ref_depth =
+    vector<float> ref_depth =
     {
-           52,   27,   34,   65,  247,  251,   32,   65,  105,  245,
-           33,   65,  125,  255,   33,   65,  143,   72,   34,   65,
-          251,  125,   32,   65,   44,  214,   32,   65,   85,  235,
-           33,   65,   96,  176,   32,   65,   69,   99,   33,   65,
-          225,   48,   33,   65,   37,  147,   33,   65,   84,  234,
-           32,   65,  142,   71,   33,   65,  193,   97,   34,   65,
-           20,   75,   34,   65,   47,  152,   33,   65,  147,  202,
-           33,   65,  181,   90,   32,   65,    7,  132,   33,   65,
-           20,   10,   32,   65,  179,  153,   32,   65,  171,   85,
-           32,   65,  135,    4,   34,   65,   68,   98,   32,   65
+           -0.980254,   -0.990773,   -0.981638,   -0.981269,   -0.978593,
+           -0.995386,   -0.992157,   -0.982007,   -0.993541,   -1.000000,
+           -1.000000,   -1.000000,   -1.000000,   -1.000000,   -0.977670,
+           -0.978501,   -0.985052,   -0.983206,   -0.996678,   -0.985790,
+           -0.999631,   -0.994371,   -0.996863,   -0.981084,   -1.000000
     };
 
     int width = 5;
     int height = 5;
-    int num_of_channels = 2;
-    int bytes_per_channel = 4;
 
     shared_ptr<Image> map;
     shared_ptr<Image> depth;
 
-    // shared_ptr<Image> map_part;
-    shared_ptr<Image> depth_part;
-
     tie(map, depth) = InitializeCorrespondenceMap(width, height);
-    // tie(map_part, depth_part) = InitializeCorrespondenceMap(width, height);
 
-    Image map_part;
+    shared_ptr<Image> map_part = CorrespondenceMap(width, height, -1, 5, 0);
+    shared_ptr<Image> depth_part = DepthBuffer(width, height, -1.0, 5.0, 0);
 
-    map_part.PrepareImage(width,
-                        height,
-                        num_of_channels,
-                        bytes_per_channel);
+    MergeCorrespondenceMaps(*map, *depth, *map_part, *depth_part);
 
-    int* const int_data = reinterpret_cast<int*>(&map_part.data_[0]);
-    size_t map_part_size = width * height * num_of_channels * bytes_per_channel / sizeof(int);
-    Rand(int_data, map_part_size, -1, 5, 0);
-
-    MergeCorrespondenceMaps(*map, *depth, map_part, *depth_part);
-
-    Print(map->data_);
-    Print(depth->data_);
-
-    EXPECT_EQ(ref_map.size(), map->data_.size());
+    size_t map_size = map->data_.size() / sizeof(int);
+    int* const map_data = reinterpret_cast<int*>(&map->data_[0]);
+    EXPECT_EQ(ref_map.size(), map_size);
     for (size_t i = 0; i < ref_map.size(); i++)
-        EXPECT_EQ(ref_map[i], map->data_[i]);
+        EXPECT_EQ(ref_map[i], map_data[i]);
 
-    EXPECT_EQ(ref_depth.size(), depth->data_.size());
+    size_t depth_size = depth->data_.size() / sizeof(float);
+    float* const depth_data = reinterpret_cast<float*>(&depth->data_[0]);
+    EXPECT_EQ(ref_depth.size(), depth_size);
     for (size_t i = 0; i < ref_depth.size(); i++)
-        EXPECT_EQ(ref_depth[i], depth->data_[i]);
+        EXPECT_NEAR(ref_depth[i], depth_data[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
