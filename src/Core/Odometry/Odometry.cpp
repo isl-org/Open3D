@@ -51,7 +51,7 @@ std::tuple<std::shared_ptr<Image>, std::shared_ptr<Image>>
     return std::make_tuple(correspondence_map, depth_buffer);
 }
 
-inline void AddElementToCorrespondenceMap(
+void AddElementToCorrespondenceMap(
         Image &correspondence_map, Image &depth_buffer,
         int u_s, int v_s, int u_t, int v_t, float transformed_d_t) {
     int exist_u_t, exist_v_t;
