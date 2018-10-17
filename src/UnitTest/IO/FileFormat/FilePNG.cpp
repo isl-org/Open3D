@@ -27,25 +27,25 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FilePNG, DISABLED_SetPNGImageFromImage)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FilePNG, DISABLED_ReadImageFromPNG)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FilePNG, DISABLED_WriteImageToPNG)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

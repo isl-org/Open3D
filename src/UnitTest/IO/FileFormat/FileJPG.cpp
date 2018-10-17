@@ -27,18 +27,18 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FileJPG, DISABLED_ReadImageFromJPG)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FileJPG, DISABLED_WriteImageToJPG)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 

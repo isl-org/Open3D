@@ -31,7 +31,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Greater than or Equal for sorting Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-bool UnitTest::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
+bool unit_test::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
     if (v0(0, 0) > v1(0, 0))
         return true;
@@ -54,7 +54,7 @@ bool UnitTest::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 // ----------------------------------------------------------------------------
 // Sort a vector of Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-void UnitTest::Sort::Do(vector<Eigen::Vector3d>& v)
+void unit_test::Sort::Do(vector<Eigen::Vector3d>& v)
 {
     Eigen::Vector3d temp(0.0, 0.0, 0.0);
     for (size_t i = 0; i < v.size(); i++)

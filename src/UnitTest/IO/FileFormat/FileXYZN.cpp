@@ -27,17 +27,17 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FileXYZN, DISABLED_WritePointCloudToXYZN)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

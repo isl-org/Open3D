@@ -27,17 +27,17 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(EstimateNormals, DISABLED_FastEigen3x3)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(EstimateNormals, DISABLED_ComputeNormal)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

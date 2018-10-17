@@ -32,65 +32,38 @@
 
 #include <Eigen/Core>
 
-namespace UnitTest
+namespace unit_test
 {
     const double THRESHOLD_1E_6 = 1e-6;
     const double THRESHOLD_1E_3 = 1e-3f;
 
-    // Display a single element.
-    template<class T>
-    void Print(const T& v)
-    {
-        std::cout << v;
-        std::cout << std::endl;
-    }
-
     // Print an Eigen::Vector3i.
-    template<>
     void Print(const Eigen::Vector3i &v);
 
     // Print an Eigen::Vector3d.
-    template<>
     void Print(const Eigen::Vector3d &v);
 
-    // Display a vector.
-    template<class T>
-    void Print(const std::vector<T>& v)
-    {
-        for (size_t i = 0; i < v.size(); i++)
-            std::cout << v[i] << std::endl;
-        std::cout << std::endl;
-    }
-
     // Print a vector of Eigen::Vector2i.
-    template<>
     void Print(const std::vector<Eigen::Vector2i> &v);
 
     // Print a vector of Eigen::Vector3i.
-    template<>
     void Print(const std::vector<Eigen::Vector3i> &v);
 
     // Print a vector of Eigen::Vector3d.
-    template<>
     void Print(const std::vector<Eigen::Vector3d> &v);
 
     // Print a uint8_t vector.
-    template<>
     void Print(const std::vector<uint8_t> &v);
 
     // Print an int vector.
-    template<>
     void Print(const std::vector<int> &v);
 
     // Print a size_t vector.
-    template<>
     void Print(const std::vector<size_t> &v);
 
     // Print a float vector.
-    template<>
     void Print(const std::vector<float> &v);
 
     // Print a double vector.
-    template<>
     void Print(const std::vector<double> &v);
 }

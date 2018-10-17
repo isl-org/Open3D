@@ -27,25 +27,25 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PoseGraphIO, DISABLED_CreatePoseGraphFromFile)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PoseGraphIO, DISABLED_ReadPoseGraph)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(PoseGraphIO, DISABLED_WritePoseGraph)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
