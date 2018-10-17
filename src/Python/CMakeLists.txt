@@ -9,7 +9,15 @@ if (NOT PYTHON_EXECUTABLE)
     find_program(PYTHON_IN_PATH "python")
     set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
 endif()
-message("Using Python executable ${PYTHON_EXECUTABLE}")
+message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
+
+# We need to get python version to configure some meta files
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
+    OUTPUT_VARIABLE PYTHON_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Using Python version: ${PYTHON_VERSION}")
 
 set(PACKAGE_NAME open3d)
 
@@ -48,6 +56,7 @@ add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_VERSION=${PYTHON_VERSION}
             -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
@@ -61,7 +70,8 @@ add_custom_target(python-package
 
 # Use `make pip-wheel` to create the pip package in the build directory
 add_custom_target(pip-wheel
-    COMMAND ${PYTHON_EXECUTABLE} "setup.py" "bdist_wheel"
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_wheel
+    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_wheel"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )
@@ -73,6 +83,24 @@ add_custom_target(install-pip-wheel
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/install_pip_wheel.cmake
     DEPENDS pip-wheel
+)
+
+# Use `make conda-package` to create conda package in the build directory
+# Note that we don't provide `make install-conda-package` similar to pip. This
+# is becuase:
+#     1) `make install-pip-whell` works in conda environment for local build
+#     2) `make conda-package` is mainly for internal use to distribute conda
+add_custom_target(conda-package
+    COMMAND ${CMAKE_COMMAND}
+            -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/check_and_install_conda_deps.cmake
+    # If we put the following `conda-build` in check_and_install_conda_deps.cmake, it
+    # causes broken pipe problem while running conda build. So we put it here.
+    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
+    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+    DEPENDS python-package
 )
 
 ################################################################################

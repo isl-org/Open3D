@@ -27,7 +27,7 @@ source activate clean_build_env2.7
 
 # On Mac/Ubuntu, we need to build all dependencies as static libs from source
 # On Windows, this is enabled by default
-cmake -DWITH_OPENMP=ON -DBUILD_EXPERIMENTAL=ON -DBUILD_EIGEN3=ON \
+cmake -DWITH_OPENMP=ON -DBUILD_EIGEN3=ON \
       -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON \
       -DBUILD_PNG=ON -DBUILD_PYBIND11=ON -DBUILD_PYTHON_MODULE=ON \
       -DBUILD_TINYFILEDIALOGS=ON \
@@ -48,6 +48,7 @@ Note: On windows, in order to build 32-bit binaries, we'll need to run
 ```
 set CONDA_FORCE_32BIT=1
 ```
+
 before creating and activating the conda environment.
 
 When configuring the projects, instead of `Visual Studio 15 2017 Win64`, we
@@ -103,7 +104,7 @@ conda create -n build_env python=3.6
 source activate build_env
 
 # Install conda-build
-conda install conda-build
+conda install -y -q conda-build
 
 # Build Conda package
 conda-build open3d --output-folder dist

@@ -37,7 +37,7 @@ foreach (PYPI_PACKAGE_NAME ${PYPI_PACKAGE_NAMES})
     configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py.in"
                    "${PYTHON_PACKAGE_DST_DIR}/setup.py")
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} "setup.py" "bdist_wheel"
+        COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_wheel
         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
 )
 endforeach()
