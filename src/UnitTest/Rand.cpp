@@ -32,6 +32,27 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
+// Initialize an array of float.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Rand(
+    float* const v,
+    const size_t& size,
+    const float &vmin,
+    const float &vmax,
+    const int& seed)
+{
+    UnitTest::Raw raw(seed);
+
+    float factor = (vmax - vmin) / UnitTest::Raw::VMAX;
+
+    for (size_t i = 0; i < size; i++)
+        v[i] = vmin + raw.Next<float>() * factor;
+}
+
+
+// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -143,4 +164,18 @@ void UnitTest::Rand(
 
     for (size_t i = 0; i < v.size(); i++)
         v[i] = vmin + (size_t)(raw.Next<size_t>() * factor);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize a float vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+template <>
+void UnitTest::Rand(
+    vector<float> &v,
+    const float &vmin,
+    const float &vmax,
+    const int& seed)
+{
+    Rand(&v[0], v.size(), vmin, vmax, seed);
 }

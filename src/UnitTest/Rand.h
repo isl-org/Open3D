@@ -31,6 +31,25 @@
 
 namespace UnitTest
 {
+    // Initialize an array.
+    // Output range: [vmin:vmax].
+    template<class T>
+    void Rand(T* const v,
+        const size_t& size,
+        const T& vmin,
+        const T& vmax,
+        const int& seed) {}
+
+    // Initialize an array of float.
+    // Output range: [vmin:vmax].
+    template <>
+    void Rand(
+        float* const v,
+        const size_t& size,
+        const float &vmin,
+        const float &vmax,
+        const int& seed);
+
     // Initialize a vector.
     // Output range: [vmin:vmax].
     template<class T>
@@ -77,5 +96,13 @@ namespace UnitTest
     void Rand(std::vector<size_t>& v,
         const size_t& vmin,
         const size_t& vmax,
+        const int& seed);
+
+    // Initialize a float vector.
+    // Output range: [vmin:vmax].
+    template<>
+    void Rand(std::vector<float>& v,
+        const float& vmin,
+        const float& vmax,
         const int& seed);
 }
