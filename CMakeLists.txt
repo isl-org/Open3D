@@ -33,10 +33,6 @@ set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 configure_file("${PROJECT_SOURCE_DIR}/src/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/src/Open3DConfig.h")
 
-# configure a setup.py for the pip packaging
-configure_file("${PROJECT_SOURCE_DIR}/util/pip_package/setup.py.in"
-               "${PROJECT_SOURCE_DIR}/util/pip_package/setup.py")
-
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
 else()
