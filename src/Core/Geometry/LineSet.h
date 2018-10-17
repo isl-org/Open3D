@@ -54,7 +54,7 @@ public:
 
 public:
     bool HasPoints() const {
-        return points_[0].size() > 0 && points_[1].size() > 0;
+        return points_.size() > 0;
     }
 
     bool HasLines() const {

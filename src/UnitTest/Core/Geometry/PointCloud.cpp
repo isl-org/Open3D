@@ -267,16 +267,11 @@ TEST(PointCloud, HasPoints)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
-
     open3d::PointCloud pc;
 
     EXPECT_FALSE(pc.HasPoints());
 
     pc.points_.resize(size);
-
-    UnitTest::Rand(pc.points_, vmin, vmax, 0);
 
     EXPECT_TRUE(pc.HasPoints());
 }
@@ -288,18 +283,12 @@ TEST(PointCloud, HasNormals)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
-
     open3d::PointCloud pc;
 
     EXPECT_FALSE(pc.HasNormals());
 
     pc.points_.resize(size);
     pc.normals_.resize(size);
-
-    UnitTest::Rand(pc.points_, vmin, vmax, 0);
-    UnitTest::Rand(pc.normals_, vmin, vmax, 0);
 
     EXPECT_TRUE(pc.HasNormals());
 }
@@ -311,18 +300,12 @@ TEST(PointCloud, HasColors)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
-
     open3d::PointCloud pc;
 
     EXPECT_FALSE(pc.HasColors());
 
     pc.points_.resize(size);
     pc.colors_.resize(size);
-
-    UnitTest::Rand(pc.points_, vmin, vmax, 0);
-    UnitTest::Rand(pc.colors_, vmin, vmax, 0);
 
     EXPECT_TRUE(pc.HasColors());
 }
