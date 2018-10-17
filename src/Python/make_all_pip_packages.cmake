@@ -1,5 +1,5 @@
 # Warning: Internal use only, consider droping this in the future
-# Use `make all-pip-wheels` to create the pip package in the build directory
+# Use `make all-pip-pacakges` to create the pip package in the build directory
 # This creates: open3d-python, py3d, open3d-original, open3d-official, open-3d
 #               pip wheels
 
@@ -37,7 +37,7 @@ foreach (PYPI_PACKAGE_NAME ${PYPI_PACKAGE_NAMES})
     configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py.in"
                    "${PYTHON_PACKAGE_DST_DIR}/setup.py")
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_wheel
+        COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
         WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
 )
 endforeach()
