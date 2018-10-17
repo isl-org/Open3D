@@ -24,18 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gtest/gtest.h>
+#pragma once
 
-#include "Print.h"
-#include "Rand.h"
-#include "Raw.h"
+#include <Eigen/Core>
+#include <vector>
 
-#include <string>
-using namespace std;
-
-int main(int argc, char **argv)
+namespace UnitTest
 {
-    testing::InitGoogleTest(&argc, argv);
+    // Initialize a vector.
+    // Output range: [vmin:vmax].
+    template<class T>
+    void Rand(std::vector<T>& v,
+        const T& vmin,
+        const T& vmax,
+        const int& seed) {}
 
-    return RUN_ALL_TESTS();
+    // Initialize an Eigen::Vector3i vector.
+    // Output range: [vmin:vmax].
+    template<>
+    void Rand(std::vector<Eigen::Vector3i>& v,
+        const Eigen::Vector3i& vmin,
+        const Eigen::Vector3i& vmax,
+        const int& seed);
+
+    // Initialize an Eigen::Vector3d vector.
+    // Output range: [vmin:vmax].
+    template<>
+    void Rand(std::vector<Eigen::Vector3d>& v,
+        const Eigen::Vector3d& vmin,
+        const Eigen::Vector3d& vmax,
+        const int& seed);
+
+    // Initialize a uint8_t vector.
+    // Output range: [vmin:vmax].
+    template<>
+    void Rand(std::vector<uint8_t>& v,
+        const uint8_t& vmin,
+        const uint8_t& vmax,
+        const int& seed);
+
+    // Initialize a size_t vector.
+    // Output range: [vmin:vmax].
+    template<>
+    void Rand(std::vector<size_t>& v,
+        const size_t& vmin,
+        const size_t& vmax,
+        const int& seed);
 }
