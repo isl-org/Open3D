@@ -47,3 +47,9 @@ Put all color images in the *image* folder, and all depth images in the *depth* 
 We assume the color images and the depth images are synchronized and registered. ``"path_intrinsic"`` specifies path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used. For your own dataset, use an appropriate camera intrinsic and visualize a depth image (likewise :ref:`rgbd_redwood`) prior to use the system.
 
 .. note:: ``"python_multi_threading": true`` utilizes ``joblib`` to parallelize the system using every CPU cores. With this option, Mac users may encounter an unexpected program termination. To avoid this issue, set this flag as ``false``.
+
+
+Capture your own dataset
+``````````````````````````````````````
+
+This tutorial provides an example that can records synchronized and aligned RGBD images using Intel Realsense camera. For more details, please see :ref:`capture_your_own_dataset`.
