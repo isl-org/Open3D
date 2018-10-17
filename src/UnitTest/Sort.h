@@ -26,16 +26,18 @@
 
 #pragma once
 
-#include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <vector>
 
-#include "Print.h"
-#include "Rand.h"
-#include "Sort.h"
-
 namespace UnitTest
 {
-    // Mechanism for reporting unit tests for which there is no implementation yet.
-    void NotImplemented();
-}
+    namespace Sort
+    {
+        // Greater than or Equal for sorting Eigen::Vector3d elements.
+        bool GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+
+        // Sort a vector of Eigen::Vector3d elements.
+        // method needed because std::sort failed on TravisCI/macOS (works fine on Linux)
+        void Do(std::vector<Eigen::Vector3d>& v);
+    }
+} // namespace UnitTest

@@ -24,18 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <gtest/gtest.h>
-#include <Eigen/Core>
-#include <vector>
-
-#include "Print.h"
-#include "Rand.h"
 #include "Sort.h"
 
-namespace UnitTest
+using namespace std;
+
+// ----------------------------------------------------------------------------
+// Greater than or Equal for sorting Eigen::Vector3d elements.
+// ----------------------------------------------------------------------------
+bool UnitTest::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
-    // Mechanism for reporting unit tests for which there is no implementation yet.
-    void NotImplemented();
+    if (v0(0, 0) > v1(0, 0))
+        return true;
+
+    if (v0(0, 0) == v1(0, 0))
+    {
+        if (v0(1, 0) > v1(1, 0))
+            return true;
+
+        if (v0(1, 0) == v1(1, 0))
+        {
+            if (v0(2, 0) >= v1(2, 0))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+// Sort a vector of Eigen::Vector3d elements.
+// ----------------------------------------------------------------------------
+void UnitTest::Sort::Do(vector<Eigen::Vector3d>& v)
+{
+    Eigen::Vector3d temp(0.0, 0.0, 0.0);
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        for (size_t j = 0; j < v.size(); j++)
+        {
+            if (GE(v[i], v[j]))
+                continue;
+
+            temp = v[j];
+            v[j] = v[i];
+            v[i] = temp;
+        }
+    }
 }
