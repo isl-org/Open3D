@@ -29,3 +29,16 @@ import importlib
 globals().update(importlib.import_module('open3d.open3d').__dict__)
 
 __version__ = '@PROJECT_VERSION@'
+
+# TODO: optionally enable Jupyter widget
+
+from .j_visualizer import *
+
+
+def _jupyter_nbextension_paths():
+    return [{
+        'section': 'notebook',
+        'src': 'static',
+        'dest': 'open3d',
+        'require': 'open3d/extension'
+    }]

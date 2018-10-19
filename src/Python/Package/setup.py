@@ -26,6 +26,23 @@
 
 from setuptools import setup, find_packages
 
+# Read requirements.txt
+with open('requirements.txt', 'r') as f:
+    lines = f.readlines()
+install_requires = [line.strip() for line in lines if line]
+
+# Data files for packaging
+data_files = [
+    ('share/jupyter/nbextensions/open3d', [
+        'open3d/static/extension.js',
+        'open3d/static/index.js',
+        'open3d/static/index.js.map',
+    ]),
+    ('etc/jupyter/nbconfig/notebook.d', [
+        'enable_jupyter_extension.json'
+    ])
+]
+
 setup(
     author='Open3D Team',
     author_email='@PROJECT_EMAIL@',
@@ -64,10 +81,9 @@ setup(
     description=[
         "Open3D is an open-source library that supports rapid development of software that deals with 3D data."
     ],
-    install_requires=[
-        'numpy',
-    ],
+    install_requires=install_requires,
     include_package_data=True,
+    data_files=data_files,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
     long_description=open('README.rst').read(),
@@ -83,4 +99,5 @@ setup(
         'Issues': '@PROJECT_ISSUES@',
     },
     version='@PROJECT_VERSION@',
+    zip_safe=False,
 )
