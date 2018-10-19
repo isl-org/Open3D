@@ -1,15 +1,32 @@
-# Create python pacakge. It contains
-# 1) Pure-python code and misc files, copied from src/Python/Package
-# 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
-# 3) Configured files and supporting files
-
 # Clean up directory
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 
+# Build Jupyter plugin with webpack. This step distills and merges all js
+# dependencies and include all static assets in ${PYTHON_PACKAGE_SRC_DIR}/open3d/static.
+# The resaon why we do this in ${PYTHON_PACKAGE_SRC_DIR} instead of
+# ${PYTHON_PACKAGE_DST_DIR} is that the intermediate step of downloading
+# node_modules is rather expensive. If we put it in ${PYTHON_PACKAGE_DST_DIR},
+# it will be cleared at each build.
+# TODO: we can revisit this to come up with a better solution.
+file(REMOVE_RECURSE ${PYTHON_PACKAGE_SRC_DIR}/open3d/static)
+if (JUPYTER_ENABLED)
+    message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
+    execute_process(
+        COMMAND npm install
+        WORKING_DIRECTORY ${PYTHON_PACKAGE_SRC_DIR}/js
+    )
+endif()
+
+# Create python pacakge. It contains:
+# 1) Pure-python code and misc files, copied from src/Python/Package
+# 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
+# 3) Configured files and supporting files
+
 # 1) Pure-python code and misc files, copied from src/Python/Package
 file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}
+     PATTERN "node_modules" EXCLUDE
 )
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
