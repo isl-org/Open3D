@@ -317,20 +317,20 @@ std::tuple<std::shared_ptr<PointCloud>,Eigen::MatrixXi> VoxelDownSampleAndTrace(
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
     hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
-    int cubic_id_temp[3] = {1, 2, 4};
+    int cid_temp[3] = {1, 2, 4};
     for (size_t i = 0; i < input.points_.size(); i++) {
         auto ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
         auto voxel_index = Eigen::Vector3i(int(floor(ref_coord(0))),
                                            int(floor(ref_coord(1))),
                                            int(floor(ref_coord(2))));
-        int cubic_id = 0;
+        int cid = 0;
         for (int c = 0; c < 3; c++){
             if((ref_coord(c)-voxel_index(c)) >= 0.5){
-                cubic_id += cubic_id_temp[c];
+                cid += cid_temp[c];
             }
         }
         voxelindex_to_accpoint[voxel_index].AddPoint(
-                input, i, cubic_id, approximate_class);
+                input, i, cid, approximate_class);
     }
     bool has_normals = input.HasNormals();
     bool has_colors = input.HasColors();
