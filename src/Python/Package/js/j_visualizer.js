@@ -162,6 +162,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
         this.initEnvironment();
     },
 
+    // TODO: consider using this mechanism to send geometry data
     setupEventListeners: function() {
         this.listenTo(
             this.model,
@@ -170,12 +171,11 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
         );
     },
 
-    // TODO: consider using this mechanism to send geometry data
     onCustomMessage: function(content, buffers) {
         switch (content.type) {
-            case "dog":
-                console.log("dog received with name " + content.name);
-                break;
+            // case "dog":
+            //     console.log("dog received with name " + content.name);
+            //     break;
             default:
                 console.error("ERROR: invalid custom message", content);
         }
