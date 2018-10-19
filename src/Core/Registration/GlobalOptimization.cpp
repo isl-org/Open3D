@@ -371,7 +371,7 @@ void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
     }
 }
 
-bool ValidatePoseGraph(const PoseGraph &pose_graph)
+bool ValidatePoseGraphConnectivity(const PoseGraph &pose_graph, bool ignore_uncertain_edges = false)
 {
     int n_nodes = (int)pose_graph.nodes_.size();
     int n_edges = (int)pose_graph.edges_.size();
@@ -388,6 +388,9 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph)
         nodes_to_explore.pop_back();
         for (int j = 0; j < n_edges; j++) {
             const PoseGraphEdge &t = pose_graph.edges_[j];
+            if (ignore_uncertain_edges && t.uncertain_) {
+                continue;
+            }
             int adjacent_node{-1};
             if (t.source_node_id_ == i) {
                 adjacent_node = t.target_node_id_;
@@ -403,9 +406,21 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph)
             }
         }
     }
-    if (component.size() < n_nodes) {
+    return component.size() == n_nodes;
+}
+
+bool ValidatePoseGraph(const PoseGraph &pose_graph)
+{
+    int n_nodes = (int)pose_graph.nodes_.size();
+    int n_edges = (int)pose_graph.edges_.size();
+
+    if (!ValidatePoseGraphConnectivity(pose_graph, false)) {
         PrintError("Invalid PoseGraph - graph is not connected.\n");
         return false;
+    }
+
+    if (!ValidatePoseGraphConnectivity(pose_graph, true)) {
+        PrintWarning("Certain-edge subset of PoseGraph is not connected.\n");
     }
 
     for (int j = 0; j < n_edges; j++) {
