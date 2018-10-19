@@ -12,10 +12,22 @@ file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_SRC_DIR}/open3d/static)
 if (JUPYTER_ENABLED)
     message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
-    execute_process(
-        COMMAND npm install
-        WORKING_DIRECTORY ${PYTHON_PACKAGE_SRC_DIR}/js
-    )
+    if (WIN32)
+        find_program(NPM "npm")
+        execute_process(
+            COMMAND cmd /c "${NPM}" install
+            RESULT_VARIABLE res_var
+            WORKING_DIRECTORY ${PYTHON_PACKAGE_SRC_DIR}/js
+        )
+        if (NOT "${res_var}" STREQUAL "0")
+            message(FATAL_ERROR "`npm install` failed with: '${res_var}'")
+        endif()
+    else()
+        execute_process(
+            COMMAND npm install
+            WORKING_DIRECTORY ${PYTHON_PACKAGE_SRC_DIR}/js
+        )
+    endif()
 endif()
 
 # Create python pacakge. It contains:
