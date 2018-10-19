@@ -8,7 +8,11 @@ var version = require("./package.json").version;
 // stored in a separate local variable.
 var rules = [
     { test: /\.css$/, use: ["style-loader", "css-loader"] },
-    { test: /\.less$/, use: ["style-loader", "css-loader", "less-loader"] }
+    { test: /\.less$/, use: ["style-loader", "css-loader", "less-loader"] },
+    {
+        test: /\.(png|svg|jpg|gif)$/,
+        use: ["file-loader"]
+    }
 ];
 
 module.exports = [

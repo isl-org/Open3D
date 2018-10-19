@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
+import glob
 
 # Read requirements.txt
 with open('requirements.txt', 'r') as f:
@@ -33,11 +34,7 @@ install_requires = [line.strip() for line in lines if line]
 
 # Data files for packaging
 data_files = [
-    ('share/jupyter/nbextensions/open3d', [
-        'open3d/static/extension.js',
-        'open3d/static/index.js',
-        'open3d/static/index.js.map',
-    ]),
+    ('share/jupyter/nbextensions/open3d', glob.glob('open3d/static/*')),
     ('etc/jupyter/nbconfig/notebook.d', [
         'enable_jupyter_extension.json'
     ])

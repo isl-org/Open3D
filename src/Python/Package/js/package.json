@@ -4,7 +4,7 @@
     "description": "Open3D Jupyter Widgets",
     "author": "Open3D Team",
     "license": "MIT",
-    "main": "index.js",
+    "private": true,
     "repository": {
         "type": "git",
         "url": "https://github.com/IntelVCL/Open3D.git"
@@ -36,8 +36,10 @@
         "less-loader": "^4.1.0",
         "rimraf": "^2.6.2",
         "style-loader": "^0.23.1",
+        "file-loader": "^2.0.0",
         "watch": "^1.0.2",
-        "webpack": "^3.5.5"
+        "webpack": "^4.21.0",
+        "webpack-cli": "^3.1.2"
     },
     "dependencies": {
         "@jupyter-widgets/base": "^1.2.2",

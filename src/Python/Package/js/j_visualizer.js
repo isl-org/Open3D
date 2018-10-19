@@ -29,6 +29,9 @@ var _ = require("lodash");
 var THREE = require("three");
 var OrbitControls = require("three-orbit-controls")(THREE);
 
+// Webpack automatically resolves path for assets
+import disc_path from "./assets/disc.png";
+
 var JVisualizerModel = widgets.DOMWidgetModel.extend({
     defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
         _model_name: "JVisualizerModel",
@@ -94,7 +97,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
         );
 
         // Material
-        let sprite = new THREE.TextureLoader().load("assets/disc.png");
+        let sprite = new THREE.TextureLoader().load(disc_path);
         let material = new THREE.PointsMaterial({
             size: 10,
             sizeAttenuation: false,
@@ -179,7 +182,5 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
     }
 });
 
-module.exports = {
-    JVisualizerModel: JVisualizerModel,
-    JVisualizerView: JVisualizerView
-};
+// Since we have `import`, cannot use common.js's module.exports, use ES6's way
+export { JVisualizerModel, JVisualizerView };
