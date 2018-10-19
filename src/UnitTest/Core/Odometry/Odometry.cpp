@@ -321,9 +321,46 @@ TEST(Odometry, ComputeCorrespondence)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_ConvertDepthImageToXYZImage)
+TEST(Odometry, ConvertDepthImageToXYZImage)
 {
-    unit_test::NotImplemented();
+    vector<float> ref_output =
+    {
+           -0.029619,   -0.010633,    0.019746,    0.004614,   -0.004969,
+            0.009227,    0.045905,   -0.009887,    0.018362,    0.084291,
+           -0.010086,    0.018731,    0.139146,   -0.011527,    0.021407,
+           -0.006920,    0.004614,    0.004614,    0.003922,    0.007843,
+            0.007843,    0.044983,    0.017993,    0.017993,    0.029066,
+            0.006459,    0.006459,    0.084567,    0.013010,    0.013010,
+           -0.016747,    0.028342,    0.011165,    0.007382,    0.037477,
+            0.014764,    0.021453,    0.021783,    0.008581,    0.053979,
+            0.030450,    0.011995,    0.145144,    0.056684,    0.022330,
+           -0.032249,    0.087651,    0.021499,    0.007474,    0.060942,
+            0.014948,    0.041984,    0.068466,    0.016794,    0.014948,
+            0.013543,    0.003322,    0.092364,    0.057933,    0.014210,
+           -0.000554,    0.002073,    0.000369,    0.002814,    0.031607,
+            0.005629,    0.007843,    0.017617,    0.003137,    0.085121,
+            0.106220,    0.018916,    0.023391,    0.020208,    0.003599
+    };
+
+    int width = 5;
+    int height = 5;
+
+    shared_ptr<Image> depth = DepthBuffer(width, height, 0.0, 6.0, 0);
+
+    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    intrinsic(0, 0) = 0.5;
+    intrinsic(1, 1) = 0.65;
+    intrinsic(0, 2) = 0.75;
+    intrinsic(1, 2) = 0.35;
+    intrinsic(2, 2) = 0.9;
+
+    shared_ptr<Image> output = ConvertDepthImageToXYZImage(*depth, intrinsic);
+
+    size_t output_size = output->data_.size() / sizeof(float);
+    float* const output_data = reinterpret_cast<float*>(&output->data_[0]);
+    EXPECT_EQ(ref_output.size(), output_size);
+    for (size_t i = 0; i < ref_output.size(); i++)
+        EXPECT_NEAR(ref_output[i], output_data[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
