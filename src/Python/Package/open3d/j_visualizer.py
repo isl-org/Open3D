@@ -51,10 +51,10 @@ def geometry_to_json(geometry):
 class JVisualizer(widgets.DOMWidget):
     _view_name = Unicode('JVisualizerView').tag(sync=True)
     _view_module = Unicode('open3d').tag(sync=True)
-    _view_module_version = Unicode('~0.3.0').tag(sync=True)
+    _view_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(sync=True)
     _model_name = Unicode('JVisualizerModel').tag(sync=True)
     _model_module = Unicode('open3d').tag(sync=True)
-    _model_module_version = Unicode('~0.3.0').tag(sync=True)
+    _model_module_version = Unicode('~@PROJECT_VERSION_THREE_NUMBER@').tag(sync=True)
 
     # We need to declare class attributes for traitlets to work
     geometry_jsons = List(Instance(dict)).tag(sync=True)

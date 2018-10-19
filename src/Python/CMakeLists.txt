@@ -77,6 +77,7 @@ add_custom_target(python-package
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${PROJECT_VERSION}
+            -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=open3d  # `open3d` is used in building from source
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )

@@ -1,6 +1,6 @@
 {
     "name": "open3d",
-    "version": "0.3.0",
+    "version": "@PROJECT_VERSION_THREE_NUMBER@",
     "description": "Open3D Jupyter Widgets",
     "author": "Open3D Team",
     "license": "MIT",

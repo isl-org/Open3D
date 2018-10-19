@@ -36,10 +36,10 @@ var JVisualizerModel = widgets.DOMWidgetModel.extend({
     defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
         _model_name: "JVisualizerModel",
         _model_module: "open3d",
-        _model_module_version: "0.3.0",
+        _model_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
         _view_name: "JVisualizerView",
         _view_module: "open3d",
-        _view_module_version: "0.3.0",
+        _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
         geometry_jsons: []
     })
 });
