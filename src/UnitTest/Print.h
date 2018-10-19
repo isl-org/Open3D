@@ -55,6 +55,9 @@ namespace unit_test
     // Print a vector of Eigen::Vector3d.
     void Print(const std::vector<Eigen::Vector3d> &v);
 
+    // Print a vector of Eigen::Matrix3d.
+    void Print(const std::vector<Eigen::Matrix3d> &v);
+
     // Print a vector of Eigen::Matrix<double, 6, 1>.
     void Print(const std::vector<Eigen::Matrix<double, 6, 1>> &v);
 
