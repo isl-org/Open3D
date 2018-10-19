@@ -366,9 +366,59 @@ TEST(Odometry, ConvertDepthImageToXYZImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_CreateCameraMatrixPyramid)
+TEST(Odometry, CreateCameraMatrixPyramid)
 {
-    unit_test::NotImplemented();
+    vector<vector<double>> ref_output =
+    {
+        {
+            0.500000,    0.000000,    0.000000,
+            0.000000,    0.650000,    0.000000,
+            0.750000,    0.350000,    1.000000,
+        },
+        {
+            0.250000,    0.000000,    0.000000,
+            0.000000,    0.325000,    0.000000,
+            0.375000,    0.175000,    1.000000,
+        },
+        {
+            0.125000,    0.000000,    0.000000,
+            0.000000,    0.162500,    0.000000,
+            0.187500,    0.087500,    1.000000,
+        },
+        {
+            0.062500,    0.000000,    0.000000,
+            0.000000,    0.081250,    0.000000,
+            0.093750,    0.043750,    1.000000,
+        },
+        {
+            0.031250,    0.000000,    0.000000,
+            0.000000,    0.040625,    0.000000,
+            0.046875,    0.021875,    1.000000,
+        }
+    };
+
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    int width = 640;
+    int height = 480;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    int levels = 5;
+
+    vector<Eigen::Matrix3d> output = CreateCameraMatrixPyramid(intrinsic, levels);
+
+    EXPECT_EQ(ref_output.size(), output.size());
+    for (size_t i = 0; i < ref_output.size(); i++)
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                EXPECT_NEAR(ref_output[i][r * 3 + c], output[i](c, r), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
