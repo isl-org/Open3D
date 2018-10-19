@@ -16,17 +16,16 @@ if __name__ == "__main__":
     min_bound = pcd_down.get_min_bound() - min_cube_size * 0.5
     max_bound = pcd_down.get_max_bound() + min_cube_size * 0.5
 
-    pcd_curr = PointCloudWithHighResCubicID()
-    pcd_curr.point_cloud = pcd_down
+    pcd_curr = pcd_down
     num_scales = 3
     for i in range(1, num_scales):
         multiplier = pow(2, i)
-        pcd_curr_down = voxel_down_sample_and_trace(pcd_curr.point_cloud,
+        pcd_curr_down, cubic_id = voxel_down_sample_and_trace(pcd_curr,
             multiplier * min_cube_size, min_bound, max_bound, False)
         print("\nScale %f, # of points %d" % (multiplier * min_cube_size,
-                np.asarray(pcd_curr_down.point_cloud.points).shape[0]))
+                np.asarray(pcd_curr_down.points).shape[0]))
         print("Downsampled points (the first 10 points)")
-        print(np.asarray(pcd_curr_down.point_cloud.points)[:10,:])
+        print(np.asarray(pcd_curr_down.points)[:10,:])
         print("Index (the first 10 indices)")
-        print(np.asarray(pcd_curr_down.cubic_id)[:10,:])
+        print(np.asarray(cubic_id)[:10,:])
         pcd_curr = pcd_curr_down

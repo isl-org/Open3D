@@ -88,18 +88,6 @@ public:
     std::vector<Eigen::Vector3d> colors_;
 };
 
-class PointCloudWithHighResCubicID
-{
-public:
-    PointCloud point_cloud;
-    Eigen::MatrixXi cubic_id;
-};
-
-/// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
-/// Return an empty pointcloud if fail to read the file.
-std::shared_ptr<PointCloud> CreatePointCloudFromFile(
-        const std::string &filename);
-
 /// Factory function to create a pointcloud from a depth image and a camera
 /// model (PointCloudFactory.cpp)
 /// The input depth image can be either a float image, or a uint16_t image. In
@@ -124,7 +112,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
 /// \return output pointcloud
 /// Points with indices in \param indices are selected.
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
-        const std::vector<size_t> &indices);
+        const std::vector<size_t> &indices, bool invert = false);
 
 /// Function to downsample \param input pointcloud into output pointcloud with a voxel
 /// \param voxel_size defines the resolution of the voxel grid, smaller value
@@ -135,7 +123,7 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
 
 /// Function to downsample using VoxelDownSample, but specialized for
 /// Surface convolution project. Experimental function.
-std::shared_ptr<PointCloudWithHighResCubicID> VoxelDownSampleForSurfaceConv(
+std::tuple<std::shared_ptr<PointCloud>,Eigen::MatrixXi> VoxelDownSampleAndTrace(
         const PointCloud &input, double voxel_size,
         const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
         bool approximate_class = false);
@@ -150,6 +138,18 @@ std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
 /// \param max_bound are clipped.
 std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
         const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound);
+
+/// Function to remove points that have less than \param nb_points in a sphere of
+/// radius \param search_radius
+std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>
+        RemoveRadiusOutliers(const PointCloud &input,
+        size_t nb_points , double search_radius);
+
+/// Function to remove points that are further away from their
+/// \param nb_neighbour neighbours in average.
+std::tuple<std::shared_ptr<PointCloud>,std::vector<size_t>>
+        RemoveStatisticalOutliers(const PointCloud &input,
+        size_t nb_neighbours , double std_ratio);
 
 /// Function to compute the normals of a point cloud
 /// \param cloud is the input point cloud. It also stores the output normals.
