@@ -26,6 +26,13 @@
 
 #include <gtest/gtest.h>
 
+#include "Print.h"
+#include "Rand.h"
+#include "Raw.h"
+
+#include <string>
+using namespace std;
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);

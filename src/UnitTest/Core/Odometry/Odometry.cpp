@@ -27,33 +27,33 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_ComputeRGBDOdometry)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_PinholeCameraIntrinsic)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_RGBDOdometryJacobianFromHybridTerm)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_OdometryOption)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
