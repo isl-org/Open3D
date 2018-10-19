@@ -69,6 +69,7 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
 
         // Collect vertices from point clouds
         // TODO: handle different geometries
+        // TODO: handle multiple geometries, some with color, some without
         let vertices = [];
         let colors = [];
         var geometry_idx;
@@ -81,8 +82,13 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
             if (geometry_json["type"] != "PointCloud") {
                 throw "Only support PointCloud in JS currently.";
             }
-            vertices.push.apply(vertices, geometry_json["points"]);
-            colors.push.apply(colors, geometry_json["colors"]);
+            // TODO: speed up
+            for (var i = 0; i < geometry_json["points"].length; i++) {
+                vertices.push(geometry_json["points"][i]);
+            }
+            for (var i = 0; i < geometry_json["colors"].length; i++) {
+                colors.push(geometry_json["colors"][i]);
+            }
         }
 
         // Geometry
@@ -91,10 +97,12 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
             "position",
             new THREE.Float32BufferAttribute(vertices, 3)
         );
-        this.geometry.addAttribute(
-            "color",
-            new THREE.Float32BufferAttribute(colors, 3)
-        );
+        if (colors.length != 0) {
+            this.geometry.addAttribute(
+                "color",
+                new THREE.Float32BufferAttribute(colors, 3)
+            );
+        }
 
         // Material
         let sprite = new THREE.TextureLoader().load(disc_path);
@@ -103,9 +111,13 @@ var JVisualizerView = widgets.DOMWidgetView.extend({
             sizeAttenuation: false,
             map: sprite,
             alphaTest: 0.5,
-            transparent: true,
-            vertexColors: THREE.VertexColors
+            transparent: true
         });
+        if (colors.length != 0) {
+            material.vertexColors = THREE.VertexColors;
+        } else {
+            material.color.setRGB(0, 0, 0);
+        }
         let particles = new THREE.Points(this.geometry, material);
 
         // Scene
