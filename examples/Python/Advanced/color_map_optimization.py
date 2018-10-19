@@ -2,11 +2,13 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/Advanced/color_map_optimization.py
+
 from open3d import *
 from trajectory_io import *
 import os, sys
 sys.path.append("../Utility")
-from common import *
+from file import *
 
 path = "[path_to_fountain_dataset]"
 debug_mode = False
@@ -28,7 +30,7 @@ if __name__ == "__main__":
                 convert_rgb_to_intensity = False)
         if debug_mode:
             pcd = create_point_cloud_from_rgbd_image(rgbd_image,
-                    PinholeCameraIntrinsic.get_prime_sense_default())
+                    PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters.PrimeSenseDefault))
             draw_geometries([pcd])
         rgbd_images.append(rgbd_image)
 

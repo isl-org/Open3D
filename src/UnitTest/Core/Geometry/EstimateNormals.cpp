@@ -26,7 +26,18 @@
 
 #include "UnitTest.h"
 
-TEST(EstimateNormals, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(EstimateNormals, DISABLED_FastEigen3x3)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(EstimateNormals, DISABLED_ComputeNormal)
+{
+    UnitTest::NotImplemented();
 }

@@ -26,7 +26,66 @@
 
 #include "UnitTest.h"
 
-TEST(SelectionPolygonVolume, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_Destructor)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_MemberData)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_ConvertToJsonValue)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_ConvertFromJsonValue)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_CropPointCloud)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_CropPointCloudInPolygon)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(SelectionPolygonVolume, DISABLED_CropInPolygon)
+{
+    UnitTest::NotImplemented();
 }

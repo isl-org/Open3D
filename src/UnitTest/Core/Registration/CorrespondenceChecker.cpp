@@ -26,7 +26,58 @@
 
 #include "UnitTest.h"
 
-TEST(CorrespondenceChecker, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_Destructor)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_MemberData)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_Check)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal)
+{
+    UnitTest::NotImplemented();
 }

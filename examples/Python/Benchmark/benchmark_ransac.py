@@ -2,21 +2,15 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# import os
-# import sys
-# sys.path.append("../Utility")
-# sys.path.append("../ReconstructionSystem")
-# import numpy as np # todo: this is just for testing
-# from global_registration import *
-# from downloader import *
-# from redwood_dataset_trajectory_io import *
+# examples/Python/Tutorial/Benchmark/benchmark_ransac.py
 
 import os
 import sys
 sys.path.append("../Advanced")
 sys.path.append("../Utility")
 import numpy as np
-from common import *
+from file import *
+from visualization import *
 from downloader import *
 from fast_global_registration import *
 from trajectory_io import *
@@ -62,7 +56,7 @@ if __name__ == "__main__":
                     success = False
                 else:
                     success = True
-                    
+
                 # Note: we save inverse of result.transformation
                 # to comply with http://redwood-data.org/indoor/fileformat.html
                 if not success:

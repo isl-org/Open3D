@@ -128,14 +128,16 @@ int UpdateConfidence(
     int valid_edges_num = 0;
     for (int iter_edge = 0; iter_edge < n_edges; iter_edge++) {
         PoseGraphEdge &t = pose_graph.edges_[iter_edge];
-        Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
-        double residual_square = e.transpose() * t.information_ * e;
-        double temp = line_process_weight /
-                (line_process_weight + residual_square);
-        double temp2 = temp * temp;
-        t.confidence_ = temp2;
-        if (temp2 > option.edge_prune_threshold_)
-            valid_edges_num++;
+        if (t.uncertain_) {
+            Eigen::Vector6d e = zeta.block<6, 1>(iter_edge * 6, 0);
+            double residual_square = e.transpose() * t.information_ * e;
+            double temp = line_process_weight /
+                    (line_process_weight + residual_square);
+            double temp2 = temp * temp;
+            t.confidence_ = temp2;
+            if (temp2 > option.edge_prune_threshold_)
+                valid_edges_num++;
+        }
     }
     return valid_edges_num;
 }
@@ -172,7 +174,7 @@ Eigen::VectorXd ComputeZeta(const PoseGraph &pose_graph)
 }
 
 /// The information matrix used here is consistent with [Choi et al 2015].
-/// It is [p_x | I]^T[p_x | I]. \zeta is [\alpha \beta \gamma a b c]
+/// It is [-p_x | I]^T[-p_x | I]. \zeta is [\alpha \beta \gamma a b c]
 /// Another definition of information matrix used for [Kümmerle et al 2011] is
 /// [I | p_x] ^ T[I | p_x]  so \zeta is [a b c \alpha \beta \gamma].
 ///
@@ -367,6 +369,45 @@ void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
                     pose_graph_new.nodes_[i].pose_;
         }
     }
+}
+
+bool ValidatePoseGraph(const PoseGraph &pose_graph)
+{
+    int n_nodes = (int)pose_graph.nodes_.size();
+    int n_edges = (int)pose_graph.edges_.size();
+    for (int i = 0; i < n_nodes-1; i++) {
+        bool valid = false;
+        for (int j = 0; j < n_edges; j++) {
+            const PoseGraphEdge &t = pose_graph.edges_[j];
+            if (t.source_node_id_ == i &&
+                    t.target_node_id_ - t.source_node_id_ == 1)
+                valid = true;
+        }
+        if (!valid) {
+            PrintError("Invalid PoseGraph - adjacent nodes are disconnected.\n");
+            return false;
+        }
+    }
+    for (int j = 0; j < n_edges; j++) {
+        bool valid = false;
+        const PoseGraphEdge &t = pose_graph.edges_[j];
+        if (t.source_node_id_ >= 0 && t.source_node_id_ < n_nodes &&
+            t.target_node_id_ >= 0 && t.target_node_id_ < n_nodes)
+            valid = true;
+        if (!valid) {
+            PrintError("Invalid PoseGraph - an edge references an invalide node.\n");
+            return false;
+        }
+    }
+    for (int j = 0; j < n_edges; j++) {
+        const PoseGraphEdge &t = pose_graph.edges_[j];
+        if (!t.uncertain_ && t.confidence_ != 1.0) {
+            PrintError("Invalid PoseGraph - the certain edge does not have 1.0 as a confidence.\n");
+            return false;
+        }
+    }
+    PrintInfo("Validating PoseGraph - finished.\n");
+    return true;
 }
 
 }    // unnamed namespace
@@ -615,16 +656,20 @@ void GlobalOptimization(
         const GlobalOptimizationOption &option
         /* = GlobalOptimizationOption() */)
 {
+    if (!ValidatePoseGraph(pose_graph))
+        return;
     std::shared_ptr<PoseGraph> pose_graph_pre =
             std::make_shared<PoseGraph>();
     *pose_graph_pre = pose_graph;
     method.OptimizePoseGraph(*pose_graph_pre, criteria, option);
-    auto pose_graph_pruned = CreatePoseGraphWithoutInvalidEdges(
+    auto pose_graph_pre_pruned = CreatePoseGraphWithoutInvalidEdges(
             *pose_graph_pre, option);
-    method.OptimizePoseGraph(*pose_graph_pruned, criteria, option);
-    CompensateReferencePoseGraphNode(*pose_graph_pruned,
+    method.OptimizePoseGraph(*pose_graph_pre_pruned, criteria, option);
+    auto pose_graph_pre_pruned_2 = CreatePoseGraphWithoutInvalidEdges(
+            *pose_graph_pre_pruned, option);
+    CompensateReferencePoseGraphNode(*pose_graph_pre_pruned_2,
             pose_graph, option.reference_node_);
-    pose_graph = *pose_graph_pruned;
+    pose_graph = *pose_graph_pre_pruned_2;
 }
 
 }    // namespace open3d

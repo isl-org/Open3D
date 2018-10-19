@@ -26,7 +26,250 @@
 
 #include "UnitTest.h"
 
-TEST(ViewControlWithCustomAnimation, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_Reset)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_ChangeFieldOfView)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_Scale)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_Rotate)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_Translate)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_SetAnimationMode)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_AddKeyFrame)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_UpdateKeyFrame)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_DeleteKeyFrame)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_AddSpinKeyFrames)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_ClearAllKeyFrames)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_NumOfKeyFrames)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_NumOfFrames)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_ToggleTrajectoryLoop)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_ChangeTrajectoryInterval)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_GetTrajectoryInterval)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_GetStatusString)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_Step)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_GoToFirst)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_GoToLast)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_CaptureTrajectory)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_LoadTrajectoryFromJsonFile)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_LoadTrajectoryFromCameraTrajectory)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_IsPreviewing)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_IsPlaying)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_IsPlayingEnd)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_IsValidPinholeCameraTrajectory)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_CurrentFrame)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_CurrentKeyframe)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_RegularizeFrameIndex)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithCustomAnimation, DISABLED_SetViewControlFromTrajectory)
+{
+    UnitTest::NotImplemented();
 }

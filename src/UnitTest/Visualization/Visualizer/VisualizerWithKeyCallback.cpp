@@ -26,7 +26,58 @@
 
 #include "UnitTest.h"
 
-TEST(VisualizerWithKeyCallback, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_Destructor)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_MemberData)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_PrintVisualizerHelp)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_RegisterKeyCallback)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_KeyPressCallback)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithKeyCallback, DISABLED_PrintKeyToString)
+{
+    UnitTest::NotImplemented();
 }

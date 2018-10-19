@@ -10,4 +10,5 @@ This tutorial demonstrates a complete pipeline to reconstruct a 3D scene from an
   system_overview
   make_fragments
   register_fragments
+  refine_registration
   integrate_scene

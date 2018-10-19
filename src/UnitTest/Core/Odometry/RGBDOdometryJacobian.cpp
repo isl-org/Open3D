@@ -26,7 +26,50 @@
 
 #include "UnitTest.h"
 
-TEST(RGBDOdometryJacobian, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_Destructor)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_MemberData)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_ComputeJacobianAndResidual)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromColorTerm)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromHybridTerm)
+{
+    UnitTest::NotImplemented();
 }

@@ -26,7 +26,106 @@
 
 #include "UnitTest.h"
 
-TEST(VisualizerWithCustomAnimation, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_Destructor)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_MemberData)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_PrintVisualizerHelp)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_UpdateWindowTitle)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_Play)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingImageFormat)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingDepthFormat)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_InitViewControl)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseMoveCallback)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseScrollCallback)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseButtonCallback)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithCustomAnimation, DISABLED_KeyPressCallback)
+{
+    UnitTest::NotImplemented();
 }

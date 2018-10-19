@@ -26,7 +26,42 @@
 
 #include "UnitTest.h"
 
-TEST(PinholeCameraTrajectory, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectory, DISABLED_Constructor)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectory, DISABLED_Destructor)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectory, DISABLED_MemberData)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraTrajectory, DISABLED_ConvertFromJsonValue)
+{
+    UnitTest::NotImplemented();
 }

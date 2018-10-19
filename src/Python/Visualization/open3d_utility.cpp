@@ -28,6 +28,7 @@
 
 #include <Core/Utility/FileSystem.h>
 #include <Core/Geometry/PointCloud.h>
+#include <Core/Geometry/TriangleMesh.h>
 #include <Visualization/Utility/SelectionPolygonVolume.h>
 #include <Visualization/Utility/DrawGeometry.h>
 #include <Visualization/Visualizer/Visualizer.h>
@@ -45,6 +46,10 @@ void pybind_utility(py::module &m)
         .def("crop_point_cloud", [](const SelectionPolygonVolume &s,
                 const PointCloud &input) {
             return s.CropPointCloud(input);
+        }, "input"_a)
+        .def("crop_triangle_mesh", [](const SelectionPolygonVolume &s,
+                const TriangleMesh &input) {
+            return s.CropTriangleMesh(input);
         }, "input"_a)
         .def("__repr__", [](const SelectionPolygonVolume &s) {
             return std::string("SelectionPolygonVolume, access its members:\n"

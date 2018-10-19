@@ -5,28 +5,11 @@ File IO
 
 This tutorial shows how basic geometries are read and written by Open3D.
 
-.. code-block:: python
-
-    # examples/Python/Tutorial/Basic/io.py
-
-    from open3d import *
-
-    if __name__ == "__main__":
-
-        print("Testing IO for point cloud ...")
-        pcd = read_point_cloud("../../TestData/fragment.pcd")
-        print(pcd)
-        write_point_cloud("copy_of_fragment.pcd", pcd)
-
-        print("Testing IO for meshes ...")
-        mesh = read_triangle_mesh("../../TestData/knot.ply")
-        print(mesh)
-        write_triangle_mesh("copy_of_knot.ply", mesh)
-
-        print("Testing IO for images ...")
-        img = read_image("../../TestData/lena_color.jpg")
-        print(img)
-        write_image("copy_of_lena_color.jpg", img)
+.. literalinclude:: ../../../examples/Python/Basic/file_io.py
+   :language: python
+   :lineno-start: 5
+   :lines: 5-
+   :linenos:
 
 .. _io_point_cloud:
 
@@ -35,12 +18,11 @@ Point cloud
 
 This script reads and writes a point cloud.
 
-.. code-block:: python
-
-    print("Testing IO for point cloud ...")
-    pcd = read_point_cloud("../../TestData/fragment.pcd")
-    print(pcd)
-    write_point_cloud("copy_of_fragment.pcd", pcd)
+.. literalinclude:: ../../../examples/Python/Basic/file_io.py
+   :language: python
+   :lineno-start: 11
+   :lines: 11-14
+   :linenos:
 
 ``print()`` function can be used for displaying a summary of ``pcd``. Output message is below:
 
@@ -57,12 +39,11 @@ Mesh
 
 This script reads and writes a mesh.
 
-.. code-block:: python
-
-    print("Testing IO for meshes ...")
-    mesh = read_triangle_mesh("../../TestData/knot.ply")
-    print(mesh)
-    write_triangle_mesh("copy_of_knot.ply", mesh)
+.. literalinclude:: ../../../examples/Python/Basic/file_io.py
+   :language: python
+   :lineno-start: 16
+   :lines: 16-19
+   :linenos:
 
 Compared to the data structure of point cloud, mesh has triangles that define surface.
 
@@ -79,12 +60,11 @@ Image
 
 This script reads and writes an image.
 
-.. code-block:: python
-
-    print("Testing IO for images ...")
-    img = read_image("../../TestData/lena_color.jpg")
-    print(img)
-    write_image("copy_of_lena_color.jpg", img)
+.. literalinclude:: ../../../examples/Python/Basic/file_io.py
+   :language: python
+   :lineno-start: 21
+   :lines: 21-24
+   :linenos:
 
 Size of image is readily displayed using ``print(img)``.
 

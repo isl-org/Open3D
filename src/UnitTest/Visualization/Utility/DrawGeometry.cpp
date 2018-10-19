@@ -26,7 +26,42 @@
 
 #include "UnitTest.h"
 
-TEST(DrawGeometry, Default)
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(DrawGeometry, DISABLED_DrawGeometries)
 {
-    NotImplemented();
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithCustomAnimation)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithAnimationCallback)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithKeyCallbacks)
+{
+    UnitTest::NotImplemented();
+}
+
+// ----------------------------------------------------------------------------
+// 
+// ----------------------------------------------------------------------------
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithEditing)
+{
+    UnitTest::NotImplemented();
 }

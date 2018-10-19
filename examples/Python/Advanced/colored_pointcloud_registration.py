@@ -2,6 +2,8 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
+# examples/Python/Tutorial/Advanced/colored_pointcloud_registration.py
+
 import numpy as np
 import copy
 from open3d import *
@@ -35,9 +37,9 @@ if __name__ == "__main__":
             source, target, result_icp.transformation)
 
     # colored pointcloud registration
-     # This is implementation of following paper
-     # J. Park, Q.-Y. Zhou, V. Koltun,
-     # Colored Point Cloud Registration Revisited, ICCV 2017
+    # This is implementation of following paper
+    # J. Park, Q.-Y. Zhou, V. Koltun,
+    # Colored Point Cloud Registration Revisited, ICCV 2017
     voxel_radius = [ 0.04, 0.02, 0.01 ];
     max_iter = [ 50, 30, 14 ];
     current_transformation = np.identity(4)
