@@ -479,9 +479,78 @@ TEST(Odometry, CreateInformationMatrix)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_NormalizeIntensity)
+TEST(Odometry, NormalizeIntensity)
 {
-    unit_test::NotImplemented();
+    vector<float> ref_image_s_data =
+    {
+            0.500740,    0.493067,    0.499731,    0.500000,    0.501952,
+            0.489701,    0.492057,    0.499462,    0.491047,    0.495827,
+            0.494480,    0.497106,    0.492596,    0.495086,    0.502625,
+            0.502019,    0.497240,    0.498586,    0.488759,    0.496702,
+            0.486605,    0.490442,    0.488624,    0.500135,    0.488961
+    };
+
+    vector<float> ref_image_t_data =
+    {
+            0.500263,    0.499389,    0.500148,    0.500179,    0.500401,
+            0.499006,    0.499274,    0.500118,    0.499159,    0.499704,
+            0.499550,    0.499849,    0.499335,    0.499619,    0.500478,
+            0.500409,    0.499865,    0.500018,    0.498898,    0.499803,
+            0.498653,    0.499090,    0.498883,    0.500194,    0.498921
+    };
+
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    intrinsic(0, 0) = 0.5;
+    intrinsic(1, 1) = 0.65;
+    intrinsic(0, 2) = 0.75;
+    intrinsic(1, 2) = 0.35;
+    intrinsic(2, 2) = 0.9;
+
+    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    extrinsic(0, 0) = 1.0;
+    extrinsic(1, 1) = 1.0;
+    extrinsic(2, 2) = 1.0;
+    extrinsic(0, 3) = 1.0;
+
+    shared_ptr<Image> depth_s = DepthBuffer(width, height, 0.0, 60.0, 0);
+    shared_ptr<Image> depth_t = DepthBuffer(width, height, 1.0, 50.0, 0);
+    OdometryOption option;
+    option.max_depth_diff_ = 0.978100725;
+
+    shared_ptr<vector<Eigen::Vector4i>> correspondence =
+        ComputeCorrespondence(intrinsic,
+                              extrinsic,
+                              *depth_s,
+                              *depth_t,
+                              option);
+
+    Image image_s;
+    Image image_t;
+
+    image_s.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+    image_t.PrepareImage(width, height, num_of_channels, bytes_per_channel);
+
+    float* const image_s_data = reinterpret_cast<float*>(&image_s.data_[0]);
+    size_t image_s_size = image_s.data_.size() / sizeof(float);
+    Rand(image_s_data, width * height, 10.0, 100.0, 0);
+    float* const image_t_data = reinterpret_cast<float*>(&image_t.data_[0]);
+    size_t image_t_size = image_t.data_.size() / sizeof(float);
+    Rand(image_t_data, width * height, 100.0, 200.0, 0);
+
+    NormalizeIntensity(image_s, image_t, *correspondence);
+
+    EXPECT_EQ(ref_image_s_data.size(), image_s_size);
+    for (size_t i = 0; i < ref_image_s_data.size(); i++)
+        EXPECT_NEAR(ref_image_s_data[i], image_s_data[i], THRESHOLD_1E_6);
+
+    EXPECT_EQ(ref_image_t_data.size(), image_t_size);
+    for (size_t i = 0; i < ref_image_t_data.size(); i++)
+        EXPECT_NEAR(ref_image_t_data[i], image_t_data[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
