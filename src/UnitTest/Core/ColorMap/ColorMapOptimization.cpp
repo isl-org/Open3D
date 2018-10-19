@@ -57,8 +57,8 @@ vector<Image> GenerateImages(const int& width,
 
         if (bytes_per_channel == 4)
         {
-            float* const depthData = reinterpret_cast<float*>(&image.data_[0]);
-            Rand(depthData, width * height, 10.0, 100.0, i);
+            float* const depth_data = reinterpret_cast<float*>(&image.data_[0]);
+            Rand(depth_data, width * height, 10.0, 100.0, i);
         }
         else
             Rand(image.data_, 0, 255, i);
@@ -387,8 +387,8 @@ TEST(ColorMapOptimization, QueryImageIntensity)
                     height,
                     num_of_channels,
                     bytes_per_channel);
-    float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
-    Rand(depthData, width * height, 10.0, 100.0, 0);
+    float* const depth_data = reinterpret_cast<float*>(&img.data_[0]);
+    Rand(depth_data, width * height, 10.0, 100.0, 0);
 
     Eigen::Vector3d pose(62.5, 37.5, 1.85);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
@@ -482,8 +482,8 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
                     height,
                     num_of_channels,
                     bytes_per_channel);
-    float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
-    Rand(depthData, width * height, 10.0, 100.0, 0);
+    float* const depth_data = reinterpret_cast<float*>(&img.data_[0]);
+    Rand(depth_data, width * height, 10.0, 100.0, 0);
 
     // TODO: change the initialization in such a way that the field has an
     // effect on the outcome of QueryImageIntensity.
