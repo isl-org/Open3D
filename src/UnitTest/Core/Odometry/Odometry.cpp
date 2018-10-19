@@ -424,9 +424,56 @@ TEST(Odometry, CreateCameraMatrixPyramid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_CreateInformationMatrix)
+TEST(Odometry, CreateInformationMatrix)
 {
-    unit_test::NotImplemented();
+    vector<vector<double>> ref_output =
+    {
+        { 17.769332, -1.677223, -0.014674,  0.000000, -0.013595,  1.548815, },
+        { -1.677223, 22.485787, -0.004965,  0.013595,  0.000000, -4.816394, },
+        { -0.014674, -0.004965, 23.255035, -1.548815,  4.816394,  0.000000, },
+        {  0.000000,  0.013595, -1.548815, 22.000000,  0.000000,  0.000000, },
+        { -0.013595,  0.000000,  4.816394,  0.000000, 22.000000,  0.000000, },
+        {  1.548815, -4.816394,  0.000000,  0.000000,  0.000000, 22.000000, }
+    };
+
+    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    extrinsic(0, 0) = 10.0;
+    extrinsic(1, 1) = 10.0;
+    extrinsic(2, 2) = 0.2;
+    extrinsic(0, 3) = 1.0;
+
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    int width = 240;
+    int height = 180;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    shared_ptr<Image> depth_s = DepthBuffer(width, height, 0.0, 6.0, 0);
+    shared_ptr<Image> depth_t = DepthBuffer(width, height, 0.0, 4.0, 0);
+
+    OdometryOption option;
+    option.max_depth_diff_ = 0.25;
+
+    Eigen::Matrix6d output = CreateInformationMatrix(extrinsic,
+                                                     intrinsic,
+                                                     *depth_s,
+                                                     *depth_t,
+                                                     option);
+
+    EXPECT_EQ(6, ref_output.size());
+    for (int r = 0; r < 6; r++)
+    {
+        EXPECT_EQ(6, ref_output[r].size());
+        for (int c = 0; c < 6; c++)
+            EXPECT_NEAR(ref_output[r][c], output(c, r), THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
