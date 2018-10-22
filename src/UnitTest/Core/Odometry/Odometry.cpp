@@ -588,9 +588,33 @@ TEST(Odometry, PackRGBDImage)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_PreprocessDepth)
+TEST(Odometry, PreprocessDepth)
 {
-    unit_test::NotImplemented();
+    vector<float> ref_output =
+    {
+            0.197463,    0.092272,    0.183622,    0.187313,    0.214072,
+            0.046136,    0.078431,    0.179931,    0.064591,    0.130104,
+            0.111649,    0.147636,    0.085813,    0.119954,    0.223299,
+            0.214994,    0.149481,    0.167935,    0.033218,    0.142099,
+            0.003691,    0.056286,    0.031373,    0.189158,    0.035986
+    };
+
+    int width = 5;
+    int height = 5;
+
+    shared_ptr<Image> depth = DepthBuffer(width, height, 0.0, 60.0, 0);
+
+    OdometryOption option;
+    option.max_depth_diff_ = 0.978100725;
+
+    shared_ptr<Image> output = PreprocessDepth(*depth, option);
+
+    float* const output_data = reinterpret_cast<float*>(&(*output).data_[0]);
+    size_t output_size = output->data_.size() / sizeof(float);
+
+    EXPECT_EQ(ref_output.size(), output_size);
+    for (size_t i = 0; i < ref_output.size(); i++)
+        EXPECT_NEAR(ref_output[i], output_data[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
