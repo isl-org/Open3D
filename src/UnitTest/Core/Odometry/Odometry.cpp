@@ -560,8 +560,8 @@ TEST(Odometry, PackRGBDImage)
 {
     int width = 640;
     int height = 480;
-    int num_of_channels = 3;
-    int bytes_per_channel = 1;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
     Image color;
 
@@ -675,9 +675,119 @@ TEST(Odometry, CheckRGBDImagePair)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_InitializeRGBDOdometry)
+TEST(Odometry, InitializeRGBDOdometry)
 {
-    unit_test::NotImplemented();
+    vector<float> ref_rgbd0_color =
+    {
+            0.000000,    0.000000,    0.442811,    0.885622,    0.442811,
+            0.499995,    0.999904,    0.647547,    0.295207,    0.147604,
+            0.999990,    1.999809,    0.999887,   -0.000000,   -0.000000,
+            0.500010,    0.999932,    1.672728,    2.372141,    1.252569,
+            0.000044,    0.000084,    3.518353,    7.116423,    3.757708
+    };
+
+    vector<float> ref_rgbd1_color =
+    {
+            0.000000,    0.000000,    0.391780,    0.783561,    0.391780,
+            0.442374,    0.884673,    0.572922,    0.261187,    0.130593,
+            0.884748,    1.769345,    0.884657,   -0.000000,   -0.000000,
+            0.442387,    0.884697,    1.479958,    2.098768,    1.108220,
+            0.000039,    0.000074,    3.112888,    6.296306,    3.324659
+    };
+
+    vector<float> ref_rgbd0_depth =
+    {
+            0.141926,    0.129988,    0.152710,    0.172261,    0.183968,
+            0.100058,    0.114014,    0.130738,    0.137486,    0.158074,
+            0.123529,    0.128143,    0.118743,    0.119608,    0.155882,
+            0.133679,    0.125260,    0.111534,    0.109227,    0.125375,
+            0.062284,    0.070300,    0.090196,    0.107093,    0.084429
+    };
+
+    vector<float> ref_rgbd1_depth =
+    {
+            0.112284,    0.152710,    0.172261,    0.151326,    0.095156,
+            0.113725,    0.130738,    0.137486,    0.144752,    0.134429,
+            0.130565,    0.118743,    0.119608,    0.145040,    0.147174,
+            0.122607,    0.111534,    0.109227,    0.111188,    0.093310,
+            0.076067,    0.090196,    0.107093,    0.086678,    0.069262
+    };
+
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    Image color0;
+    Image color1;
+
+    color0.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+    color1.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+
+    Rand(color0.data_, 0, 255, 0);
+    Rand(color1.data_, 0, 255, 0);
+
+    shared_ptr<Image> depth0 = DepthBuffer(width, height, 0.0, 60.0, 0);
+    shared_ptr<Image> depth1 = DepthBuffer(width, height, 0.0, 60.0, 1);
+
+    shared_ptr<RGBDImage> source = PackRGBDImage(color0, *depth0);
+    shared_ptr<RGBDImage> target = PackRGBDImage(color1, *depth1);
+
+    open3d::PinholeCameraIntrinsic intrinsic;
+
+    double fx = 0.5;
+    double fy = 0.65;
+
+    double cx = 0.75;
+    double cy = 0.35;
+
+    intrinsic.SetIntrinsics(width, height, fx, fy, cx, cy);
+
+    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    extrinsic(0, 0) = 1.0;
+    extrinsic(1, 1) = 1.0;
+    extrinsic(2, 2) = 1.0;
+    extrinsic(0, 3) = 1.0;
+
+    OdometryOption option;
+    option.max_depth_diff_ = 0.5;
+
+    shared_ptr<RGBDImage> rgbd0 = NULL;
+    shared_ptr<RGBDImage> rgbd1 = NULL;
+
+    tie(rgbd0, rgbd1) = InitializeRGBDOdometry(*source,
+                                               *target,
+                                               intrinsic,
+                                               extrinsic,
+                                               option);
+
+    float* const rgbd0_color = reinterpret_cast<float*>(&(*rgbd0).color_.data_[0]);
+    float* const rgbd1_color = reinterpret_cast<float*>(&(*rgbd1).color_.data_[0]);
+    float* const rgbd0_depth = reinterpret_cast<float*>(&(*rgbd0).depth_.data_[0]);
+    float* const rgbd1_depth = reinterpret_cast<float*>(&(*rgbd1).depth_.data_[0]);
+    size_t rgbd_size = width * height;
+
+    EXPECT_EQ(ref_rgbd0_color.size(), rgbd_size);
+    for (size_t i = 0; i < ref_rgbd0_color.size(); i++)
+        EXPECT_NEAR(ref_rgbd0_color[i], rgbd0_color[i], THRESHOLD_1E_6);
+
+    EXPECT_EQ(ref_rgbd1_color.size(), rgbd_size);
+    for (size_t i = 0; i < ref_rgbd1_color.size(); i++)
+        EXPECT_NEAR(ref_rgbd1_color[i], rgbd1_color[i], THRESHOLD_1E_6);
+
+    EXPECT_EQ(ref_rgbd0_depth.size(), rgbd_size);
+    for (size_t i = 0; i < ref_rgbd0_depth.size(); i++)
+        EXPECT_NEAR(ref_rgbd0_depth[i], rgbd0_depth[i], THRESHOLD_1E_6);
+
+    EXPECT_EQ(ref_rgbd1_depth.size(), rgbd_size);
+    for (size_t i = 0; i < ref_rgbd1_depth.size(); i++)
+        EXPECT_NEAR(ref_rgbd1_depth[i], rgbd1_depth[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
