@@ -634,9 +634,42 @@ TEST(Odometry, CheckImagePair)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_CheckRGBDImagePair)
+TEST(Odometry, CheckRGBDImagePair)
 {
-    unit_test::NotImplemented();
+    int width = 640;
+    int height = 480;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    Image color0;
+    Image color1;
+    Image depth0;
+    Image depth1;
+
+    color0.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+
+    color1.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+
+    depth0.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+
+    depth1.PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
+
+    shared_ptr<RGBDImage> rgbd_image0 = PackRGBDImage(color0, depth0);
+    shared_ptr<RGBDImage> rgbd_image1 = PackRGBDImage(color1, depth1);
+
+    EXPECT_TRUE(CheckRGBDImagePair(*rgbd_image0, *rgbd_image1));
 }
 
 // ----------------------------------------------------------------------------
