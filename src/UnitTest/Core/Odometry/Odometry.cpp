@@ -25,9 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #include "UnitTest.h"
+#include "OdometryTools.h"
 
-#include <Core/Odometry/Odometry.h>
+#include "Core/Odometry/Odometry.h"
+#include "Core/Odometry/RGBDOdometryJacobian.h"
 
+using namespace odometry_tools;
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
@@ -795,7 +798,66 @@ TEST(Odometry, InitializeRGBDOdometry)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_DoSingleIteration)
 {
-    unit_test::NotImplemented();
+    int iter;
+    int level;
+
+    int width = 240;
+    int height = 180;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    shared_ptr<Image> srcColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    shared_ptr<Image> srcDepth = GenerateImage(width, height, 1, 4, 0.0f, 6.0f, 0);
+
+    shared_ptr<Image> tgtColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    shared_ptr<Image> tgtDepth = GenerateImage(width, height, 1, 4, 1.0f, 5.0f, 0);
+
+    shared_ptr<Image> dxColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    shared_ptr<Image> dyColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+
+    ShiftLeft(tgtColor, 10);
+    ShiftUP(tgtColor, 5);
+
+    ShiftLeft(dxColor, 10);
+    ShiftUP(dyColor, 5);
+
+    RGBDImage source(*srcColor, *srcDepth);
+    RGBDImage target(*tgtColor, *tgtDepth);
+    shared_ptr<Image> source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);;
+    RGBDImage target_dx(*dxColor, *tgtDepth);
+    RGBDImage target_dy(*dyColor, *tgtDepth);
+
+    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    intrinsic(0, 0) = 0.5;
+    intrinsic(1, 1) = 0.65;
+    intrinsic(0, 2) = 0.75;
+    intrinsic(1, 2) = 0.35;
+    intrinsic(2, 2) = 0.9;
+
+    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    extrinsic(0, 0) = 1.0;
+    extrinsic(1, 1) = 1.0;
+    extrinsic(2, 2) = 1.0;
+    extrinsic(0, 3) = 1.0;
+
+    RGBDOdometryJacobianFromColorTerm jacobian_method;
+
+    OdometryOption option;
+    option.max_depth_diff_ = 0.978100725;
+
+    bool status = false;
+    Eigen::Matrix4d output = Eigen::Matrix4d::Zero();
+    tie(status, output) = DoSingleIteration(iter,
+                                            level,
+                                            source,
+                                            target,
+                                            *source_xyz,
+                                            target_dx,
+                                            target_dy,
+                                            intrinsic,
+                                            extrinsic,
+                                            jacobian_method,
+                                            option);
 }
 
 // ----------------------------------------------------------------------------
