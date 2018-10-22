@@ -556,9 +556,33 @@ TEST(Odometry, NormalizeIntensity)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_PackRGBDImage)
+TEST(Odometry, PackRGBDImage)
 {
-    unit_test::NotImplemented();
+    int width = 640;
+    int height = 480;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+
+    Image color;
+
+    color.PrepareImage(width,
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
+
+    Rand(color.data_, 0, 255, 0);
+
+    shared_ptr<Image> depth = DepthBuffer(width, height, 0.0, 60.0, 0);
+
+    shared_ptr<RGBDImage> rgbd_image = PackRGBDImage(color, *depth);
+
+    EXPECT_EQ(rgbd_image->color_.data_.size(), color.data_.size());
+    for (size_t i = 0; i < rgbd_image->color_.data_.size(); i++)
+        EXPECT_EQ(rgbd_image->color_.data_[i], color.data_[i]);
+
+    EXPECT_EQ(rgbd_image->depth_.data_.size(), depth->data_.size());
+    for (size_t i = 0; i < rgbd_image->depth_.data_.size(); i++)
+        EXPECT_EQ(rgbd_image->depth_.data_[i], depth->data_[i]);
 }
 
 // ----------------------------------------------------------------------------
