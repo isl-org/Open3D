@@ -85,3 +85,55 @@ void odometry_tools::ShiftUP(shared_ptr<Image> image, const int& step)
         for (int w = 0; w < width; w++)
             float_data[h * width + w] = float_data[((h + step) % height) * width + w];
 }
+
+// ----------------------------------------------------------------------------
+// Create dummy correspondence map object.
+// ----------------------------------------------------------------------------
+shared_ptr<Image> odometry_tools::CorrespondenceMap(const int& width,
+                                                    const int& height,
+                                                    const int& vmin,
+                                                    const int& vmax,
+                                                    const int& seed)
+{
+    int num_of_channels = 2;
+    int bytes_per_channel = 4;
+
+    Image image;
+
+    image.PrepareImage(width,
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
+
+    int* const int_data = reinterpret_cast<int*>(&image.data_[0]);
+    size_t image_size = image.data_.size() / sizeof(int);
+    Rand(int_data, image_size, vmin, vmax, seed);
+
+    return make_shared<Image>(image);
+}
+
+// ----------------------------------------------------------------------------
+// Create dummy depth buffer object.
+// ----------------------------------------------------------------------------
+shared_ptr<Image> odometry_tools::DepthBuffer(const int& width,
+                                              const int& height,
+                                              const float& vmin,
+                                              const float& vmax,
+                                              const int& seed)
+{
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    Image image;
+
+    image.PrepareImage(width,
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
+
+    float* const float_data = reinterpret_cast<float*>(&image.data_[0]);
+    size_t image_size = image.data_.size() / sizeof(float);
+    Rand(float_data, image_size, vmin, vmax, seed);
+
+    return make_shared<Image>(image);
+}
