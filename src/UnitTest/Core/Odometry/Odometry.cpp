@@ -620,9 +620,15 @@ TEST(Odometry, PreprocessDepth)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Odometry, DISABLED_CheckImagePair)
+TEST(Odometry, CheckImagePair)
 {
-    unit_test::NotImplemented();
+    int width = 5;
+    int height = 5;
+
+    shared_ptr<Image> depth0 = DepthBuffer(width, height,  0.0, 60.0, 0);
+    shared_ptr<Image> depth1 = DepthBuffer(width, height, 10.0, 50.0, 0);
+
+    EXPECT_TRUE(CheckImagePair(*depth0, *depth1));
 }
 
 // ----------------------------------------------------------------------------
