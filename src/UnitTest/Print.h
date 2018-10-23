@@ -40,6 +40,9 @@ namespace unit_test
     // Print an Eigen::Vector3d.
     void Print(const Eigen::Vector3d &v);
 
+    // Print an Eigen::Matrix4d.
+    void Print(const Eigen::Matrix4d &m);
+
     // Print an Eigen::Matrix6d.
     void Print(const Eigen::Matrix<double, 6, 6> &m);
 
