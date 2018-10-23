@@ -31,15 +31,17 @@
 
 #include <vector>
 
+using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, Constructor)
 {
-    open3d::Image image;
-    open3d::Image color;
+    Image image;
+    Image color;
 
     const int size = 5;
 
@@ -64,18 +66,18 @@ TEST(RGBDImage, Constructor)
                        image_num_of_channels,
                        image_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 100, 150, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(image.data_, 100, 150, 0);
+    Rand(color.data_, 130, 200, 0);
 
-    auto depth = open3d::ConvertDepthToFloatImage(image);
+    auto depth = ConvertDepthToFloatImage(image);
 
-    open3d::RGBDImage rgbdImage(color, *depth);
+    RGBDImage rgbd_image(color, *depth);
 
     for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(color.data_[i], rgbdImage.color_.data_[i]);
+        EXPECT_EQ(color.data_[i], rgbd_image.color_.data_[i]);
 
     for (size_t i = 0; i < depth->data_.size(); i++)
-        EXPECT_EQ(depth->data_[i], rgbdImage.depth_.data_[i]);
+        EXPECT_EQ(depth->data_[i], rgbd_image.depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -83,7 +85,7 @@ TEST(RGBDImage, Constructor)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_MemberData)
 {
-    unit_test::NotImplemented();
+    NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
@@ -107,20 +109,20 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
 
     vector<uint8_t> ref_depth =
     {
-          172,  219,   92,   54,  209,  104,  206,   53,  157,   96,
-           77,   54,  110,  129,   81,   54,   89,  111,  111,   54,
-          209,  104,   78,   53,  178,  114,  175,   53,  204,   63,
-           73,   54,  146,  124,  144,   53,  199,  132,   17,   54,
-           99,  193,  249,   53,  168,   32,   37,   54,  246,  245,
-          191,   53,  136,   42,    6,   54,   99,  193,  121,   54,
-          141,  119,  112,   54,   16,   49,   39,   54,   37,  213,
-           59,   54,   99,  157,   20,   53,  110,  239,   30,   54,
-           32,   26,  132,   51,  204,  209,  123,   53,  194,   91,
-           12,   53,  214,  145,   83,   54,  214,  255,   32,   53
+          208,  254,   91,   58,  103,  154,  205,   57,   59,  147,
+           76,   58,  236,  175,   80,   58,  232,  127,  110,   58,
+          103,  154,   77,   57,   62,  195,  174,   57,  139,  118,
+           72,   58,   22,  236,  143,   57,   66,  243,   16,   58,
+          161,  199,  248,   57,  134,  123,   36,   58,  255,   53,
+          191,   57,   93,  164,    5,   58,  161,  199,  120,   58,
+           20,  135,  111,   58,  222,  137,   38,   58,   79,   25,
+           59,   58,  198,    8,   20,   57,  126,   80,   30,   58,
+            5,  150,  131,   55,  249,  213,  122,   57,  101,  207,
+           11,   57,   68,  190,   82,   58,  214,   94,   32,   57
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -146,18 +148,18 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
-    auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
+    auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbdImage->color_.data_.size());
+    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
     for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbdImage->color_.data_[i]);
+        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
 
-    EXPECT_EQ(ref_depth.size(), rgbdImage->depth_.data_.size());
+    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
     for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbdImage->depth_.data_[i]);
+        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -181,20 +183,20 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
 
     vector<uint8_t> ref_depth =
     {
-          172,  219,   92,   54,  209,  104,  206,   53,  157,   96,
-           77,   54,  110,  129,   81,   54,   89,  111,  111,   54,
-          209,  104,   78,   53,  178,  114,  175,   53,  204,   63,
-           73,   54,  146,  124,  144,   53,  199,  132,   17,   54,
-           99,  193,  249,   53,  168,   32,   37,   54,  246,  245,
-          191,   53,  136,   42,    6,   54,   99,  193,  121,   54,
-          141,  119,  112,   54,   16,   49,   39,   54,   37,  213,
-           59,   54,   99,  157,   20,   53,  110,  239,   30,   54,
-           32,   26,  132,   51,  204,  209,  123,   53,  194,   91,
-           12,   53,  214,  145,   83,   54,  214,  255,   32,   53
+          208,  254,   91,   58,  103,  154,  205,   57,   59,  147,
+           76,   58,  236,  175,   80,   58,  232,  127,  110,   58,
+          103,  154,   77,   57,   62,  195,  174,   57,  139,  118,
+           72,   58,   22,  236,  143,   57,   66,  243,   16,   58,
+          161,  199,  248,   57,  134,  123,   36,   58,  255,   53,
+          191,   57,   93,  164,    5,   58,  161,  199,  120,   58,
+           20,  135,  111,   58,  222,  137,   38,   58,   79,   25,
+           59,   58,  198,    8,   20,   57,  126,   80,   30,   58,
+            5,  150,  131,   55,  249,  213,  122,   57,  101,  207,
+           11,   57,   68,  190,   82,   58,  214,   94,   32,   57
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -220,18 +222,18 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
-    auto rgbdImage = open3d::CreateRGBDImageFromRedwoodFormat(color, depth);
+    auto rgbd_image = CreateRGBDImageFromRedwoodFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbdImage->color_.data_.size());
+    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
     for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbdImage->color_.data_[i]);
+        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
 
-    EXPECT_EQ(ref_depth.size(), rgbdImage->depth_.data_.size());
+    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
     for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbdImage->depth_.data_[i]);
+        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -255,20 +257,20 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
 
     vector<uint8_t> ref_depth =
     {
-          189,  175,   48,   53,  167,   32,  165,   52,   74,   77,
-           36,   53,  190,  154,   39,   53,   71,  140,   63,   53,
-          167,   32,   37,   52,  194,   91,  140,   52,  214,  255,
-           32,   53,  183,   45,  103,   52,  113,  212,  232,   52,
-          233,  205,  199,   52,   32,   26,    4,   53,  145,  145,
-          153,   52,  116,  170,  214,   52,  233,  205,   71,   53,
-          164,   95,   64,   53,  218,  192,    5,   53,   29,   68,
-           22,   53,  159,  200,  237,   51,  227,   75,  254,   52,
-            0,   93,   83,   50,  163,  116,   73,   52,  207,  146,
-          224,   51,  120,   65,   41,   53,  171,  204,    0,   52
+           13,  255,   47,   57,  134,  123,  164,   56,  252,  168,
+           35,   57,   35,  243,   38,   57,  186,  204,   62,   57,
+          134,  123,   36,   56,  101,  207,  139,   56,  214,   94,
+           32,   57,  137,   70,  102,   56,  156,  235,  231,   56,
+           26,    6,  199,   56,    5,  150,    3,   57,  255,  247,
+          152,   56,  200,  211,  213,   56,   26,    6,   71,   57,
+           68,  159,   63,   57,   24,   59,    5,   57,  217,  173,
+           21,   57,  214,  218,  236,   55,  150,   77,  253,   56,
+          162,  137,   82,   54,   45,  171,   72,   56,   60,  178,
+          223,   55,   54,  152,   40,   57,  222,   75,    0,   56
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -294,18 +296,18 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
-    auto rgbdImage = open3d::CreateRGBDImageFromTUMFormat(color, depth);
+    auto rgbd_image = CreateRGBDImageFromTUMFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbdImage->color_.data_.size());
+    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
     for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbdImage->color_.data_[i]);
+        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
 
-    EXPECT_EQ(ref_depth.size(), rgbdImage->depth_.data_.size());
+    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
     for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbdImage->depth_.data_[i]);
+        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -329,20 +331,20 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
 
     vector<uint8_t> ref_depth =
     {
-          164,  120,  112,  226,   13,  203,   94,   34,  204,  202,
-          110,    2,  229,   78,  111,  130,  241,  110,  115,   34,
-          191,  104,   78,   34,    0,    0,    0,    0,  177,   70,
-          110,  130,  193,  236,   86,  162,  122,  171,  102,  194,
-            0,    0,    0,    0,   86,    4,  106,   34,  152,  205,
-          191,   53,  136,   42,    6,   54,   99,  193,  121,   54,
-          141,  119,  112,   54,   16,   49,   39,   54,   37,  213,
-           59,   54,   99,  157,   20,   53,  110,  239,   30,   54,
-           32,   26,  132,   51,  204,  209,  123,   53,  194,   91,
-           12,   53,  214,  145,   83,   54,  214,  255,   32,   53
+          145,  158,  240,  194,  183,  111,  222,    2,  251,  170,
+          237,  226,    0,    0,    0,    0,  181,  238,  242,    2,
+          105,   13,  206,    2,    0,    0,    0,    0,    0,    0,
+            0,    0,  237,  185,  214,  130,   32,   61,  231,  162,
+            0,    0,    0,    0,   41,  174,  233,    2,  253,  240,
+          190,   57,   93,  164,    5,   58,  161,  199,  120,   58,
+           20,  135,  111,   58,  222,  137,   38,   58,   79,   25,
+           59,   58,  198,    8,   20,   57,  126,   80,   30,   58,
+            5,  150,  131,   55,  249,  213,  122,   57,  101,  207,
+           11,   57,   68,  190,   82,   58,  214,   94,   32,   57
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -368,18 +370,18 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
-    auto rgbdImage = open3d::CreateRGBDImageFromSUNFormat(color, depth);
+    auto rgbd_image = CreateRGBDImageFromSUNFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbdImage->color_.data_.size());
+    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
     for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbdImage->color_.data_[i]);
+        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
 
-    EXPECT_EQ(ref_depth.size(), rgbdImage->depth_.data_.size());
+    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
     for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbdImage->depth_.data_[i]);
+        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -405,18 +407,18 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
     {
             0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
             0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    1,    0,    0,    0,    0,    0,
             0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,  238,  124,
-          191,   53,  136,   42,    6,   54,   99,  193,  121,   54,
-          141,  119,  112,   54,   16,   49,   39,   54,   37,  213,
-           59,   54,   99,  157,   20,   53,  110,  239,   30,   54,
-           32,   26,  132,   51,  204,  209,  123,   53,  194,   91,
-           12,   53,  214,  145,   83,   54,  214,  255,   32,   53
+            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+            0,    0,    0,    0,    0,    0,    0,    0,  201,  118,
+          190,   57,   93,  164,    5,   58,  161,  199,  120,   58,
+           20,  135,  111,   58,  222,  137,   38,   58,   79,   25,
+           59,   58,  198,    8,   20,   57,  126,   80,   30,   58,
+            5,  150,  131,   55,  249,  213,  122,   57,  101,  207,
+           11,   57,   68,  190,   82,   58,  214,   94,   32,   57
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -442,18 +444,18 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
-    auto rgbdImage = open3d::CreateRGBDImageFromNYUFormat(color, depth);
+    auto rgbd_image = CreateRGBDImageFromNYUFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbdImage->color_.data_.size());
+    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
     for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbdImage->color_.data_[i]);
+        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
 
-    EXPECT_EQ(ref_depth.size(), rgbdImage->depth_.data_.size());
+    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
     for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbdImage->depth_.data_[i]);
+        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -484,25 +486,25 @@ TEST(RGBDImage, FilterRGBDImagePyramid)
     vector<vector<uint8_t>> ref_depth =
     {
         {
-              228,  189,   30,   54,  192,   99,   17,   54,  198,  205,
-               42,   54,  153,  171,   64,   54,  176,  195,   77,   54,
-               66,  211,  223,   53,  111,   11,  255,   53,  106,   58,
-               18,   54,  104,  198,   25,   54,  118,  205,   48,   54,
-               82,   42,   10,   54,   88,   83,   15,   54,  196,  207,
-                4,   54,  116,  199,    5,   54,  250,   89,   46,   54,
-              145,  132,   21,   54,  180,   25,   12,   54,   87,  127,
-              249,   53,   81,   86,  244,   53,  187,   58,   12,   54,
-              141,   83,  139,   53,   25,   66,  157,   53,  230,  195,
-              201,   53,   95,  144,  239,   53,   89,  221,  188,   53
+               38,   31,   30,   58,   91,  210,   16,   58,  248,   34,
+               42,   58,  238,  234,   63,   58,  236,  245,   76,   58,
+              110,  243,  222,   57,   98,   12,  254,   57,   47,  168,
+               17,   58,  162,   44,   25,   58,  168,   28,   48,   58,
+               39,  160,    9,   58,    4,  196,   14,   58,  243,   74,
+                4,   58,  173,   65,    5,   58,  160,  171,   45,   58,
+               11,  239,   20,   58,  154,  141,   11,   58,  214,  133,
+              248,   57,  250,   97,  243,   57,  128,  174,   11,   58,
+               56,  200,  138,   57,  214,  164,  156,   57,   33,  250,
+              200,   57,  206,  160,  238,   57,  123,   32,  188,   57
         },
         {
-                4,   63,    9,   54,  112,  194,   22,   54,  170,  235,
-               23,   54,  208,   54,    8,   54
+              196,  181,    8,   58,  174,   43,   22,   58,  190,   83,
+               23,   58,  152,  174,    7,   58
         }
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -528,23 +530,24 @@ TEST(RGBDImage, FilterRGBDImagePyramid)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
-    auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
-    auto pyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, num_of_levels);
-    auto filteredPyramid = open3d::FilterRGBDImagePyramid(pyramid, open3d::Image::FilterType::Gaussian3);
+    auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
+    auto pyramid = CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
+    auto filtered = FilterRGBDImagePyramid(pyramid,
+                                            Image::FilterType::Gaussian3);
 
     for (size_t j = 0; j < num_of_levels; j++)
     {
-        EXPECT_EQ(ref_color[j].size(), filteredPyramid[j]->color_.data_.size());
+        EXPECT_EQ(ref_color[j].size(), filtered[j]->color_.data_.size());
         for (size_t i = 0; i < ref_color[j].size(); i++)
-            EXPECT_EQ(ref_color[j][i], filteredPyramid[j]->color_.data_[i]);
+            EXPECT_EQ(ref_color[j][i], filtered[j]->color_.data_[i]);
 
-        EXPECT_EQ(ref_depth[j].size(), filteredPyramid[j]->depth_.data_.size());
+        EXPECT_EQ(ref_depth[j].size(), filtered[j]->depth_.data_.size());
         for (size_t i = 0; i < ref_depth[j].size(); i++)
-            EXPECT_EQ(ref_depth[j][i], filteredPyramid[j]->depth_.data_[i]);
+            EXPECT_EQ(ref_depth[j][i], filtered[j]->depth_.data_[i]);
     }
 }
 
@@ -576,25 +579,25 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
     vector<vector<uint8_t>> ref_depth =
     {
         {
-              172,  219,   92,   54,  209,  104,  206,   53,  157,   96,
-               77,   54,  110,  129,   81,   54,   89,  111,  111,   54,
-              209,  104,   78,   53,  178,  114,  175,   53,  204,   63,
-               73,   54,  146,  124,  144,   53,  199,  132,   17,   54,
-               99,  193,  249,   53,  168,   32,   37,   54,  246,  245,
-              191,   53,  136,   42,    6,   54,   99,  193,  121,   54,
-              141,  119,  112,   54,   16,   49,   39,   54,   37,  213,
-               59,   54,   99,  157,   20,   53,  110,  239,   30,   54,
-               32,   26,  132,   51,  204,  209,  123,   53,  194,   91,
-               12,   53,  214,  145,   83,   54,  214,  255,   32,   53
+              208,  254,   91,   58,  103,  154,  205,   57,   59,  147,
+               76,   58,  236,  175,   80,   58,  232,  127,  110,   58,
+              103,  154,   77,   57,   62,  195,  174,   57,  139,  118,
+               72,   58,   22,  236,  143,   57,   66,  243,   16,   58,
+              161,  199,  248,   57,  134,  123,   36,   58,  255,   53,
+              191,   57,   93,  164,    5,   58,  161,  199,  120,   58,
+               20,  135,  111,   58,  222,  137,   38,   58,   79,   25,
+               59,   58,  198,    8,   20,   57,  126,   80,   30,   58,
+                5,  150,  131,   55,  249,  213,  122,   57,  101,  207,
+               11,   57,   68,  190,   82,   58,  214,   94,   32,   57
         },
         {
-              208,  177,  231,   53,    8,   24,   44,   54,  126,  106,
-               46,   54,    0,  145,  227,   53
+               30,  202,  230,   57,  240,  107,   43,   58,   18,  188,
+               45,   58,  111,  173,  226,   57
         }
     };
 
-    open3d::Image depth;
-    open3d::Image color;
+    Image depth;
+    Image color;
 
     const int size = 5;
 
@@ -620,12 +623,12 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
                        depth_bytes_per_channel);
 
     float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
-    unit_test::Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
-    unit_test::Rand(color.data_, 130, 200, 0);
+    Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
+    Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
-    auto rgbdImage = open3d::CreateRGBDImageFromColorAndDepth(color, depth);
-    auto pyramid = open3d::CreateRGBDImagePyramid(*rgbdImage, num_of_levels);
+    auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
+    auto pyramid = CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
 
     for (size_t j = 0; j < num_of_levels; j++)
     {

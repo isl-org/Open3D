@@ -204,7 +204,7 @@ void unit_test::Rand(
 {
     unit_test::Raw raw(seed);
 
-    float factor = (float)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
         v[i] = vmin + (uint8_t)(raw.Next<uint8_t>() * factor);
@@ -223,7 +223,7 @@ void unit_test::Rand(
 {
     unit_test::Raw raw(seed);
 
-    float factor = (float)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
 
     for (size_t i = 0; i < size; i++)
         v[i] = vmin + (int)(raw.Next<int>() * factor);
@@ -254,7 +254,7 @@ void unit_test::Rand(
 {
     unit_test::Raw raw(seed);
 
-    float factor = (float)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
         v[i] = vmin + (size_t)(raw.Next<size_t>() * factor);
@@ -273,7 +273,7 @@ void unit_test::Rand(
 {
     unit_test::Raw raw(seed);
 
-    float factor = (vmax - vmin) / unit_test::Raw::VMAX;
+    float factor = vmax - vmin;
 
     for (size_t i = 0; i < size; i++)
         v[i] = vmin + raw.Next<float>() * factor;
