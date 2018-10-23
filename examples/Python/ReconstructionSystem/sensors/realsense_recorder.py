@@ -10,6 +10,12 @@ import shutil
 import json
 from enum import IntEnum
 
+try:
+    # Python 2 compatible
+    input = raw_input
+except NameError:
+    pass
+
 
 class Preset(IntEnum):
     Custom = 0
