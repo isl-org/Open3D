@@ -746,8 +746,8 @@ TEST(Odometry, InitializeRGBDOdometry)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_DoSingleIteration)
 {
-    int iter;
-    int level;
+    int iter = 1;
+    int level = 1;
 
     int width = 240;
     int height = 180;
@@ -806,6 +806,8 @@ TEST(Odometry, DISABLED_DoSingleIteration)
                                             extrinsic,
                                             jacobian_method,
                                             option);
+
+    Print(output);
 }
 
 // ----------------------------------------------------------------------------
