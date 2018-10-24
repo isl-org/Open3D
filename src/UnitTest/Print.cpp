@@ -64,6 +64,44 @@ void unit_test::Print(const Eigen::Vector3d &v)
 }
 
 // ----------------------------------------------------------------------------
+// Print an Eigen::Vector4d.
+// ----------------------------------------------------------------------------
+void unit_test::Print(const Eigen::Vector4d &v)
+{
+    int precision = 6;
+    int width = 11;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
+    cout << setw(width) << v(0, 0) << ",";
+    cout << setw(width) << v(1, 0) << ",";
+    cout << setw(width) << v(2, 0) << ",";
+    cout << setw(width) << v(3, 0);
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
+// Print an Eigen::Vector6d.
+// ----------------------------------------------------------------------------
+void unit_test::Print(const Eigen::Matrix<double, 6, 1> &v)
+{
+    int precision = 6;
+    int width = 11;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
+    cout << setw(width) << v(0, 0) << ",";
+    cout << setw(width) << v(1, 0) << ",";
+    cout << setw(width) << v(2, 0) << ",";
+    cout << setw(width) << v(3, 0) << ",";
+    cout << setw(width) << v(4, 0) << ",";
+    cout << setw(width) << v(5, 0);
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
 // Print an Eigen::Matrix4d.
 // ----------------------------------------------------------------------------
 void unit_test::Print(const Eigen::Matrix4d &m)
