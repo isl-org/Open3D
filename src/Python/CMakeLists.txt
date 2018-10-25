@@ -11,6 +11,18 @@ if (NOT PYTHON_EXECUTABLE)
 endif()
 message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
 
+# Detect whether `npm` is installed. Jupyter support will only be enabled if
+# `npm` is found.
+find_program(NPM "npm")
+option(JUPYTER_ENABLED "Enable Jupyter support for Open3D" ON)
+if (NOT NPM)
+    message(WARNING "Cannot find npm. Jupyter support will be disabled.")
+    set(JUPYTER_ENABLED OFF)
+else()
+    message(STATUS "npm found at: ${NPM}. Jupyter support will be disabled.")
+endif()
+message(STATUS "JUPYTER_ENABLED is set to ${JUPYTER_ENABLED}")
+
 # We need to get python version to configure some meta files
 execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
@@ -58,12 +70,14 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
+            -DJUPYTER_ENABLED=${JUPYTER_ENABLED}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${PROJECT_VERSION}
+            -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=open3d  # `open3d` is used in building from source
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
