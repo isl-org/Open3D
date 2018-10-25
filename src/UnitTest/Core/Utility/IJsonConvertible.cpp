@@ -132,3 +132,28 @@ TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray)
         ExpectEQ(ref, m4d);
     }
 }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(IJsonConvertible, EigenMatrix6dToFromJsonArray)
+{
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Eigen::Matrix6d m6d = Eigen::Matrix6d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Eigen::Matrix6d ref;
+
+        status = IJsonConvertible::EigenMatrix6dToJsonArray(m6d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenMatrix6dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, m6d);
+    }
+}
