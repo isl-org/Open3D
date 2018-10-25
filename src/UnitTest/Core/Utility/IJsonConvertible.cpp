@@ -54,9 +54,7 @@ TEST(IJsonConvertible, EigenVector3dToFromJsonArray)
         status = IJsonConvertible::EigenVector3dFromJsonArray(ref, json_value);
         EXPECT_TRUE(status);
 
-        EXPECT_NEAR(ref(0, 0), v3d(0, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 0), v3d(1, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 0), v3d(2, 0), THRESHOLD_1E_6);
+        ExpectEQ(ref, v3d);
     }
 }
 
@@ -81,10 +79,7 @@ TEST(IJsonConvertible, EigenVector4dToFromJsonArray)
         status = IJsonConvertible::EigenVector4dFromJsonArray(ref, json_value);
         EXPECT_TRUE(status);
 
-        EXPECT_NEAR(ref(0, 0), v4d(0, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 0), v4d(1, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 0), v4d(2, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(3, 0), v4d(3, 0), THRESHOLD_1E_6);
+        ExpectEQ(ref, v4d);
     }
 }
 
@@ -109,17 +104,7 @@ TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray)
         status = IJsonConvertible::EigenMatrix3dFromJsonArray(ref, json_value);
         EXPECT_TRUE(status);
 
-        EXPECT_NEAR(ref(0, 0), m3d(0, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 0), m3d(1, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 0), m3d(2, 0), THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref(0, 1), m3d(0, 1), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 1), m3d(1, 1), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 1), m3d(2, 1), THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref(0, 2), m3d(0, 2), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 2), m3d(1, 2), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 2), m3d(2, 2), THRESHOLD_1E_6);
+        ExpectEQ(ref, m3d);
     }
 }
 
@@ -144,24 +129,6 @@ TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray)
         status = IJsonConvertible::EigenMatrix4dFromJsonArray(ref, json_value);
         EXPECT_TRUE(status);
 
-        EXPECT_NEAR(ref(0, 0), m4d(0, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 0), m4d(1, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 0), m4d(2, 0), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(3, 0), m4d(3, 0), THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref(0, 1), m4d(0, 1), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 1), m4d(1, 1), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 1), m4d(2, 1), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(3, 1), m4d(3, 1), THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref(0, 2), m4d(0, 2), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 2), m4d(1, 2), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 2), m4d(2, 2), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(3, 2), m4d(3, 2), THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref(0, 3), m4d(0, 3), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(1, 3), m4d(1, 3), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(2, 3), m4d(2, 3), THRESHOLD_1E_6);
-        EXPECT_NEAR(ref(3, 3), m4d(3, 3), THRESHOLD_1E_6);
+        ExpectEQ(ref, m4d);
     }
 }
