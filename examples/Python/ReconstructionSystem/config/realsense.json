@@ -10,5 +10,5 @@
     "tsdf_cubic_size": 3.0,
     "icp_method": "color",
     "global_registration": "ransac",
-    "python_multi_threading": false
+    "python_multi_threading": true
 }
