@@ -10,6 +10,12 @@ import shutil
 import json
 from enum import IntEnum
 
+try:
+    # Python 2 compatible
+    input = raw_input
+except NameError:
+    pass
+
 
 class Preset(IntEnum):
     Custom = 0
@@ -48,7 +54,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
             description="Realsense Recorder. Please select one of the optional arguments")
-    parser.add_argument("--output_folder", default='dataset/realsense/',
+    parser.add_argument("--output_folder", default='../dataset/realsense/',
             help="set output folder")
     parser.add_argument("--record_rosbag", action='store_true',
             help="Recording rgbd stream into realsense.bag")
@@ -84,11 +90,13 @@ if __name__ == "__main__":
     #  different resolutions of color and depth streams
     config = rs.config()
 
-    if args.record_rosbag:
+    if args.record_imgs or args.record_rosbag:
         # note: using 640 x 480 depth resolution produces smooth depth boundaries
+        #       using rs.format.bgr8 for color image format for OpenCV based image visualization
         config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
         config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-        config.enable_record_to_file(path_bag)
+        if args.record_rosbag:
+            config.enable_record_to_file(path_bag)
     if args.playback_rosbag:
         config.enable_device_from_file(path_bag, repeat_playback = True)
 
