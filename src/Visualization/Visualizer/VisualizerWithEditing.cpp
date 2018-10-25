@@ -417,7 +417,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                     PrintInfo("No filename is given. Abort saving.\n");
                 } else {
                     SaveCroppingResult(filename);
-                    crop_action_count_++;                    
+                    crop_action_count_++;
                 }
                 view_control.ToggleLocking();
                 InvalidateSelectionPolygon();
