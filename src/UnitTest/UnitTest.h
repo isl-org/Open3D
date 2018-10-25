@@ -50,8 +50,14 @@ namespace unit_test
     void ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 
+    // Equal test over Eigen::Vector4d components.
+    void ExpectEQ(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1);
+
     // Equal test over Eigen::Matrix3d components.
     void ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1);
+
+    // Equal test over Eigen::Matrix4d components.
+    void ExpectEQ(const Eigen::Matrix4d& v0, const Eigen::Matrix4d& v1);
 
     // Equal test over Eigen::Vector2i components.
     void ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1);
