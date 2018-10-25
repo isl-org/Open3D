@@ -46,7 +46,7 @@ namespace unit_test
         static const int SIZE = 1021;
 
         // raw data
-        static std::vector<uint8_t> data;
+        static std::vector<uint8_t> data_;
 
     public:
         // low end of the range
