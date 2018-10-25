@@ -27,7 +27,7 @@
 #include "UnitTest.h"
 #include "Core/Geometry/PointCloud.h"
 #include "Core/Geometry/Image.h"
-#include <Core/Geometry/RGBDImage.h>
+#include "Core/Geometry/RGBDImage.h"
 #include "Core/Camera/PinholeCameraIntrinsic.h"
 
 #include <algorithm>
