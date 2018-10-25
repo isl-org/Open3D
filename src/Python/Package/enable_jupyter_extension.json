@@ -1,0 +1,5 @@
+{
+    "load_extensions": {
+        "open3d/extension": true
+    }
+}

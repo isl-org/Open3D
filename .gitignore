@@ -19,3 +19,9 @@ util/pip_package/dist/
 util/conda_package/dist/
 examples/Python/ReconstructionSystem/dataset/
 *.egg-info/
+*.ipynb_checkpoints/
+*.py[cod]
+node_modules/
+static/
+**/package-lock.json
+*.old*
