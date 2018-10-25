@@ -22,6 +22,12 @@ string(CONCAT OPEN3D_VERSION "${OPEN3D_VERSION_MAJOR}"
 project(Open3D VERSION ${OPEN3D_VERSION})
 message(STATUS "Open3D ${PROJECT_VERSION}")
 
+# npm version has to be MAJOR.MINOR.PATCH
+string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
+                                           ".${OPEN3D_VERSION_MINOR}"
+                                           ".${OPEN3D_VERSION_PATCH}")
+
+
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")

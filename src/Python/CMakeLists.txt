@@ -9,7 +9,27 @@ if (NOT PYTHON_EXECUTABLE)
     find_program(PYTHON_IN_PATH "python")
     set(PYTHON_EXECUTABLE ${PYTHON_IN_PATH})
 endif()
-message("Using Python executable ${PYTHON_EXECUTABLE}")
+message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
+
+# Detect whether `npm` is installed. Jupyter support will only be enabled if
+# `npm` is found.
+find_program(NPM "npm")
+option(JUPYTER_ENABLED "Enable Jupyter support for Open3D" ON)
+if (NOT NPM)
+    message(WARNING "Cannot find npm. Jupyter support will be disabled.")
+    set(JUPYTER_ENABLED OFF)
+else()
+    message(STATUS "npm found at: ${NPM}. Jupyter support will be disabled.")
+endif()
+message(STATUS "JUPYTER_ENABLED is set to ${JUPYTER_ENABLED}")
+
+# We need to get python version to configure some meta files
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
+    OUTPUT_VARIABLE PYTHON_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Using Python version: ${PYTHON_VERSION}")
 
 set(PACKAGE_NAME open3d)
 
@@ -48,39 +68,61 @@ add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_VERSION=${PYTHON_VERSION}
             -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
+            -DJUPYTER_ENABLED=${JUPYTER_ENABLED}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${PROJECT_VERSION}
+            -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=open3d  # `open3d` is used in building from source
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 
-# Use `make pip-wheel` to create the pip package in the build directory
-add_custom_target(pip-wheel
-    COMMAND ${PYTHON_EXECUTABLE} "setup.py" "bdist_wheel"
+# Use `make pip-package` to create the pip package in the build directory
+add_custom_target(pip-package
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )
 
-# Use `make install-pip-wheel` to install pip wheel package to the current
+# Use `make install-pip-package` to install pip wheel package to the current
 # python environment.
-add_custom_target(install-pip-wheel
+add_custom_target(install-pip-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-            -P ${CMAKE_CURRENT_SOURCE_DIR}/install_pip_wheel.cmake
-    DEPENDS pip-wheel
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/make_install_pip_package.cmake
+    DEPENDS pip-package
+)
+
+# Use `make conda-package` to create conda package in the build directory
+# Note that we don't provide `make install-conda-package` similar to pip. This
+# is becuase:
+#     1) `make install-pip-whell` works in conda environment for local build
+#     2) `make conda-package` is mainly for internal use to distribute conda
+add_custom_target(conda-package
+    COMMAND ${CMAKE_COMMAND}
+            -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/check_and_install_conda_deps.cmake
+    # If we put the following `conda-build` in check_and_install_conda_deps.cmake, it
+    # causes broken pipe problem while running conda build. So we put it here.
+    COMMAND conda-build conda_meta --output-folder conda_package
+    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
+    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+    DEPENDS python-package
 )
 
 ################################################################################
 # Warning: Internal use only, consider droping this in the future
-# Use `make all-pip-wheels` to create the pip package in the build directory
+# Use `make all-pip-packages` to create the pip package in the build directory
 # This creates: open3d-python, py3d, open3d-original, open3d-official, open-3d
 #               pip wheels
-add_custom_target(all-pip-wheels
+add_custom_target(all-pip-packages
     COMMAND ${CMAKE_COMMAND}
         -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
         -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
@@ -92,5 +134,5 @@ add_custom_target(all-pip-wheels
         -DPROJECT_CODE=${PROJECT_CODE}
         -DPROJECT_ISSUES=${PROJECT_ISSUES}
         -DPROJECT_VERSION=${PROJECT_VERSION}
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/make_all_pip_wheels.cmake
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/make_all_pip_packages.cmake
 )
