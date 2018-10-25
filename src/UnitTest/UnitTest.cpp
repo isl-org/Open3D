@@ -94,17 +94,8 @@ void unit_test::ExpectEQ(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1)
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
 {
-    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 0), v1(2, 0), unit_test::THRESHOLD_1E_6);
-
-    EXPECT_NEAR(v0(0, 1), v1(0, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 1), v1(1, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 1), v1(2, 1), unit_test::THRESHOLD_1E_6);
-
-    EXPECT_NEAR(v0(0, 2), v1(0, 2), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 2), v1(1, 2), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 2), v1(2, 2), unit_test::THRESHOLD_1E_6);
+    for (int i = 0; i < 9; i++)
+        EXPECT_NEAR(v0.coeffRef(i), v1.coeffRef(i), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -112,25 +103,18 @@ void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const Eigen::Matrix4d& v0, const Eigen::Matrix4d& v1)
 {
-    EXPECT_NEAR(v0(0, 0), v1(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 0), v1(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 0), v1(2, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(3, 0), v1(3, 0), THRESHOLD_1E_6);
+    for (int i = 0; i < 16; i++)
+        EXPECT_NEAR(v0.coeffRef(i), v1.coeffRef(i), THRESHOLD_1E_6);
+}
 
-    EXPECT_NEAR(v0(0, 1), v1(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 1), v1(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 1), v1(2, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(3, 1), v1(3, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(v0(0, 2), v1(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 2), v1(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 2), v1(2, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(3, 2), v1(3, 2), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(v0(0, 3), v1(0, 3), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 3), v1(1, 3), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 3), v1(2, 3), THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(3, 3), v1(3, 3), THRESHOLD_1E_6);
+// ----------------------------------------------------------------------------
+// Equal test over Eigen::Matrix6d components.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const Eigen::Matrix<double, 6, 6>& v0,
+                         const Eigen::Matrix<double, 6, 6>& v1)
+{
+    for (int i = 0; i < 36; i++)
+        EXPECT_NEAR(v0.coeffRef(i), v1.coeffRef(i), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
