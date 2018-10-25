@@ -6,28 +6,28 @@
 # since we'll use the `open3d` name rather than open3d-python`.
 
 package:
-  name: open3d
-  version: "0.3.0"
+    name: open3d
+    version: "@PROJECT_VERSION@"
 
 source:
-  path: ../../pip_package
+    path: ../ # Points to setup.py after configuration
 
 requirements:
-  build:
-    - python {{ python }}
-    - setuptools
-  run:
-    - python
-    - numpy
+    build:
+        - python {{ python }}
+        - setuptools
+    run:
+        - python
+        - numpy
 
 test:
-  script:
-    - test_import.py
+    script:
+        - test_import.py
 
 about:
-  home: http://www.open3d.org/
-  license: MIT
-  license_file: LICENSE.txt
-  summary: Open3D is an open-source library that supports rapid development of software that deals with 3D data.
-  doc_url: http://www.open3d.org/docs/
-  dev_url: https://github.com/IntelVCL/Open3D
+    home: @PROJECT_HOME@
+    license: MIT
+    license_file: LICENSE.txt
+    summary: Open3D is an open-source library that supports rapid development of software that deals with 3D data.
+    doc_url: @PROJECT_DOCS@
+    dev_url: @PROJECT_CODE@

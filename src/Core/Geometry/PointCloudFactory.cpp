@@ -36,6 +36,19 @@ namespace open3d{
 
 namespace {
 
+int CountValidDepthPixels(const Image &depth, int stride)
+{
+    int num_valid_pixels = 0;
+    for (int i = 0; i < depth.height_; i += stride) {
+        for (int j = 0; j < depth.width_; j += stride) {
+            const float *p = PointerAt<float>(depth, j, i);
+            if (*p > 0)
+                num_valid_pixels += 1;
+        }
+    }
+    return num_valid_pixels;
+}
+
 std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
         const Image &depth, const PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic, int stride)
@@ -44,6 +57,9 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
+    int num_valid_pixels = CountValidDepthPixels(depth, stride);
+    pointcloud->points_.resize(num_valid_pixels);
+    int cnt = 0;
     for (int i = 0; i < depth.height_; i += stride) {
         for (int j = 0; j < depth.width_; j += stride) {
             const float *p = PointerAt<float>(depth, j, i);
@@ -55,7 +71,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
                         focal_length.second;
                 Eigen::Vector4d point = camera_pose *
                         Eigen::Vector4d(x, y, z, 1.0);
-                pointcloud->points_.push_back(point.block<3, 1>(0, 0));
+                pointcloud->points_[cnt++] = point.block<3, 1>(0, 0);
             }
         }
     }
@@ -72,6 +88,10 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
     double scale = (sizeof(TC) == 1) ? 255.0 : 1.0;
+    int num_valid_pixels = CountValidDepthPixels(image.depth_, 1);
+    pointcloud->points_.resize(num_valid_pixels);
+    pointcloud->colors_.resize(num_valid_pixels);
+    int cnt = 0;
     for (int i = 0; i < image.depth_.height_; i++) {
         float *p = (float *)(image.depth_.data_.data() +
                 i * image.depth_.BytesPerLine());
@@ -86,9 +106,9 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
                         focal_length.second;
                 Eigen::Vector4d point = camera_pose *
                         Eigen::Vector4d(x, y, z, 1.0);
-                pointcloud->points_.push_back(point.block<3, 1>(0, 0));
-                pointcloud->colors_.push_back(Eigen::Vector3d(
-                        pc[0], pc[(NC - 1) / 2], pc[NC - 1]) / scale);
+                pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
+                pointcloud->colors_[cnt++] = Eigen::Vector3d(
+                        pc[0], pc[(NC - 1) / 2], pc[NC - 1]) / scale;
             }
         }
     }
