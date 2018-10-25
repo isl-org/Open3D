@@ -26,82 +26,142 @@
 
 #include "UnitTest.h"
 
+#include "Core/Utility/IJsonConvertible.h"
+#include <json/json.h>
+
+using namespace open3d;
+using namespace std;
+using namespace unit_test;
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray)
+TEST(IJsonConvertible, EigenVector3dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Eigen::Vector3d v3d = Eigen::Vector3d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Eigen::Vector3d ref;
+
+        status = IJsonConvertible::EigenVector3dToJsonArray(v3d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenVector3dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        EXPECT_NEAR(ref(0, 0), v3d(0, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 0), v3d(1, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 0), v3d(2, 0), THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray)
+TEST(IJsonConvertible, EigenVector4dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Eigen::Vector4d v4d = Eigen::Vector4d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Eigen::Vector4d ref;
+
+        status = IJsonConvertible::EigenVector4dToJsonArray(v4d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenVector4dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        EXPECT_NEAR(ref(0, 0), v4d(0, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 0), v4d(1, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 0), v4d(2, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(3, 0), v4d(3, 0), THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray)
+TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Eigen::Matrix3d m3d = Eigen::Matrix3d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Eigen::Matrix3d ref;
+
+        status = IJsonConvertible::EigenMatrix3dToJsonArray(m3d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenMatrix3dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        EXPECT_NEAR(ref(0, 0), m3d(0, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 0), m3d(1, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 0), m3d(2, 0), THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref(0, 1), m3d(0, 1), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 1), m3d(1, 1), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 1), m3d(2, 1), THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref(0, 2), m3d(0, 2), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 2), m3d(1, 2), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 2), m3d(2, 2), THRESHOLD_1E_6);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray)
+TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray)
 {
-    unit_test::NotImplemented();
-}
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Eigen::Matrix4d m4d = Eigen::Matrix4d::Random();
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        bool status = false;
+        Json::Value json_value;
+        Eigen::Matrix4d ref;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        status = IJsonConvertible::EigenMatrix4dToJsonArray(m4d, json_value);
+        EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        status = IJsonConvertible::EigenMatrix4dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        EXPECT_NEAR(ref(0, 0), m4d(0, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 0), m4d(1, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 0), m4d(2, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(3, 0), m4d(3, 0), THRESHOLD_1E_6);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        EXPECT_NEAR(ref(0, 1), m4d(0, 1), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 1), m4d(1, 1), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 1), m4d(2, 1), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(3, 1), m4d(3, 1), THRESHOLD_1E_6);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix6dToJsonArray)
-{
-    unit_test::NotImplemented();
+        EXPECT_NEAR(ref(0, 2), m4d(0, 2), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 2), m4d(1, 2), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 2), m4d(2, 2), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(3, 2), m4d(3, 2), THRESHOLD_1E_6);
+
+        EXPECT_NEAR(ref(0, 3), m4d(0, 3), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(1, 3), m4d(1, 3), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(2, 3), m4d(2, 3), THRESHOLD_1E_6);
+        EXPECT_NEAR(ref(3, 3), m4d(3, 3), THRESHOLD_1E_6);
+    }
 }
