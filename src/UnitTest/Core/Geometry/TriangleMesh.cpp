@@ -28,6 +28,7 @@
 
 #include "Core/Geometry/TriangleMesh.h"
 
+using namespace open3d;
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -35,10 +36,10 @@ using namespace std;
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, Constructor)
 {
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     // inherited from Geometry2D
-    EXPECT_EQ(open3d::Geometry::GeometryType::TriangleMesh, tm.GetGeometryType());
+    EXPECT_EQ(Geometry::GeometryType::TriangleMesh, tm.GetGeometryType());
     EXPECT_EQ(3, tm.Dimension());
 
     // public member variables
@@ -51,16 +52,8 @@ TEST(TriangleMesh, Constructor)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    Eigen::Vector3d minBound = tm.GetMinBound();
-    Eigen::Vector3d maxBound = tm.GetMaxBound();
-
-    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(2, 0));
-
-    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
-    EXPECT_FLOAT_EQ(0.0, maxBound(2, 0));
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMinBound());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -90,7 +83,7 @@ TEST(TriangleMesh, Clear)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     tm.vertex_normals_.resize(size);
@@ -104,16 +97,11 @@ TEST(TriangleMesh, Clear)
     unit_test::Rand(tm.triangles_,        imin, imax, 0);
     unit_test::Rand(tm.triangle_normals_, dmin, dmax, 0);
 
-    Eigen::Vector3d minBound = tm.GetMinBound();
-    Eigen::Vector3d maxBound = tm.GetMaxBound();
-
     EXPECT_FALSE(tm.IsEmpty());
-    EXPECT_NEAR( 19.607843, minBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(2, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(2, 0), unit_test::THRESHOLD_1E_6);
+
+    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, tm.GetMinBound());
+    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, tm.GetMaxBound());
+
     EXPECT_TRUE(tm.HasVertices());
     EXPECT_TRUE(tm.HasVertexNormals());
     EXPECT_TRUE(tm.HasVertexColors());
@@ -122,17 +110,12 @@ TEST(TriangleMesh, Clear)
 
     tm.Clear();
 
-    minBound = tm.GetMinBound();
-    maxBound = tm.GetMaxBound();
-
     // public members
     EXPECT_TRUE(tm.IsEmpty());
-    EXPECT_NEAR(0.0, minBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, minBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, minBound(2, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, maxBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, maxBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, maxBound(2, 0), unit_test::THRESHOLD_1E_6);
+
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMinBound());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMaxBound());
+
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
     EXPECT_FALSE(tm.HasVertexColors());
@@ -147,7 +130,7 @@ TEST(TriangleMesh, IsEmpty)
 {
     int size = 100;
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     EXPECT_TRUE(tm.IsEmpty());
 
@@ -166,16 +149,14 @@ TEST(TriangleMesh, GetMinBound)
     Eigen::Vector3d dmin(0.0, 0.0, 0.0);
     Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     unit_test::Rand(tm.vertices_, dmin, dmax, 0);
 
     Eigen::Vector3d minBound = tm.GetMinBound();
 
-    EXPECT_NEAR( 19.607843, minBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(2, 0), unit_test::THRESHOLD_1E_6);
+    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, tm.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -188,16 +169,14 @@ TEST(TriangleMesh, GetMaxBound)
     Eigen::Vector3d dmin(0.0, 0.0, 0.0);
     Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     unit_test::Rand(tm.vertices_, dmin, dmax, 0);
 
     Eigen::Vector3d maxBound = tm.GetMaxBound();
 
-    EXPECT_NEAR(996.078431, maxBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(2, 0), unit_test::THRESHOLD_1E_6);
+    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, tm.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -252,7 +231,7 @@ TEST(TriangleMesh, Transform)
     Eigen::Vector3d dmin(0.0, 0.0, 0.0);
     Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     tm.vertex_normals_.resize(size);
@@ -275,17 +254,9 @@ TEST(TriangleMesh, Transform)
     EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.vertices_.size(); i++)
     {
-        EXPECT_NEAR(ref_vertices[i](0, 0), tm.vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), tm.vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), tm.vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref_vertex_normals[i](0, 0), tm.vertex_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](1, 0), tm.vertex_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](2, 0), tm.vertex_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref_triangle_normals[i](0, 0), tm.triangle_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](1, 0), tm.triangle_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](2, 0), tm.triangle_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(ref_vertices[i], tm.vertices_[i]);
+        unit_test::ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
+        unit_test::ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
     }
 }
 
@@ -302,8 +273,8 @@ TEST(TriangleMesh, OperatorAppend)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm0;
-    open3d::TriangleMesh tm1;
+    TriangleMesh tm0;
+    TriangleMesh tm1;
 
     tm0.vertices_.resize(size);
     tm0.vertex_normals_.resize(size);
@@ -329,68 +300,52 @@ TEST(TriangleMesh, OperatorAppend)
     unit_test::Rand(tm1.triangles_,        imin, imax, 0);
     unit_test::Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
-    open3d::TriangleMesh tm(tm0);
+    TriangleMesh tm(tm0);
     tm += tm1;
 
     EXPECT_EQ(2 * size, tm.vertices_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.vertices_[i](0, 0), tm.vertices_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertices_[i](1, 0), tm.vertices_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertices_[i](2, 0), tm.vertices_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.vertices_[i](0, 0), tm.vertices_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertices_[i](1, 0), tm.vertices_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertices_[i](2, 0), tm.vertices_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.vertices_[i], tm.vertices_[i +    0]);
+        unit_test::ExpectEQ(tm1.vertices_[i], tm.vertices_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.vertex_normals_[i](0, 0), tm.vertex_normals_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_normals_[i](1, 0), tm.vertex_normals_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_normals_[i](2, 0), tm.vertex_normals_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.vertex_normals_[i](0, 0), tm.vertex_normals_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_normals_[i](1, 0), tm.vertex_normals_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_normals_[i](2, 0), tm.vertex_normals_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.vertex_normals_[i],
+                            tm.vertex_normals_[i +    0]);
+        unit_test::ExpectEQ(tm1.vertex_normals_[i],
+                            tm.vertex_normals_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.vertex_colors_[i](0, 0), tm.vertex_colors_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_colors_[i](1, 0), tm.vertex_colors_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_colors_[i](2, 0), tm.vertex_colors_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.vertex_colors_[i](0, 0), tm.vertex_colors_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_colors_[i](1, 0), tm.vertex_colors_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_colors_[i](2, 0), tm.vertex_colors_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.vertex_colors_[i],
+                            tm.vertex_colors_[i +    0]);
+        unit_test::ExpectEQ(tm1.vertex_colors_[i],
+                            tm.vertex_colors_[i + size]);
     }
 
     // NOTE: why is this offset required only for triangles?
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.triangles_[i](0, 0) +    0, tm.triangles_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangles_[i](1, 0) +    0, tm.triangles_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangles_[i](2, 0) +    0, tm.triangles_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.triangles_[i](0, 0) + size, tm.triangles_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangles_[i](1, 0) + size, tm.triangles_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangles_[i](2, 0) + size, tm.triangles_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
+        unit_test::ExpectEQ(tm1.triangles_[i](0, 0) + size,
+                            tm1.triangles_[i](1, 0) + size,
+                            tm1.triangles_[i](2, 0) + size,
+                            tm.triangles_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.triangle_normals_[i](0, 0), tm.triangle_normals_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangle_normals_[i](1, 0), tm.triangle_normals_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangle_normals_[i](2, 0), tm.triangle_normals_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.triangle_normals_[i](0, 0), tm.triangle_normals_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangle_normals_[i](1, 0), tm.triangle_normals_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangle_normals_[i](2, 0), tm.triangle_normals_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.triangle_normals_[i],
+                            tm.triangle_normals_[i + 0]);
+        unit_test::ExpectEQ(tm1.triangle_normals_[i],
+                            tm.triangle_normals_[i + size]);
     }
 }
 
@@ -407,8 +362,8 @@ TEST(TriangleMesh, OperatorADD)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm0;
-    open3d::TriangleMesh tm1;
+    TriangleMesh tm0;
+    TriangleMesh tm1;
 
     tm0.vertices_.resize(size);
     tm0.vertex_normals_.resize(size);
@@ -434,67 +389,51 @@ TEST(TriangleMesh, OperatorADD)
     unit_test::Rand(tm1.triangles_,        imin, imax, 0);
     unit_test::Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
-    open3d::TriangleMesh tm = tm0 + tm1;
+    TriangleMesh tm = tm0 + tm1;
 
     EXPECT_EQ(2 * size, tm.vertices_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.vertices_[i](0, 0), tm.vertices_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertices_[i](1, 0), tm.vertices_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertices_[i](2, 0), tm.vertices_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.vertices_[i](0, 0), tm.vertices_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertices_[i](1, 0), tm.vertices_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertices_[i](2, 0), tm.vertices_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.vertices_[i], tm.vertices_[i +    0]);
+        unit_test::ExpectEQ(tm1.vertices_[i], tm.vertices_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.vertex_normals_[i](0, 0), tm.vertex_normals_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_normals_[i](1, 0), tm.vertex_normals_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_normals_[i](2, 0), tm.vertex_normals_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.vertex_normals_[i](0, 0), tm.vertex_normals_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_normals_[i](1, 0), tm.vertex_normals_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_normals_[i](2, 0), tm.vertex_normals_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.vertex_normals_[i],
+                            tm.vertex_normals_[i +    0]);
+        unit_test::ExpectEQ(tm1.vertex_normals_[i],
+                            tm.vertex_normals_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.vertex_colors_[i](0, 0), tm.vertex_colors_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_colors_[i](1, 0), tm.vertex_colors_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.vertex_colors_[i](2, 0), tm.vertex_colors_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.vertex_colors_[i](0, 0), tm.vertex_colors_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_colors_[i](1, 0), tm.vertex_colors_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.vertex_colors_[i](2, 0), tm.vertex_colors_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.vertex_colors_[i],
+                            tm.vertex_colors_[i + 0]);
+        unit_test::ExpectEQ(tm1.vertex_colors_[i],
+                            tm.vertex_colors_[i + size]);
     }
 
     // NOTE: why is this offset required only for triangles?
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.triangles_[i](0, 0) +    0, tm.triangles_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangles_[i](1, 0) +    0, tm.triangles_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangles_[i](2, 0) +    0, tm.triangles_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.triangles_[i](0, 0) + size, tm.triangles_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangles_[i](1, 0) + size, tm.triangles_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangles_[i](2, 0) + size, tm.triangles_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
+        unit_test::ExpectEQ(tm1.triangles_[i](0, 0) + size,
+                            tm1.triangles_[i](1, 0) + size,
+                            tm1.triangles_[i](2, 0) + size,
+                            tm.triangles_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(tm0.triangle_normals_[i](0, 0), tm.triangle_normals_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangle_normals_[i](1, 0), tm.triangle_normals_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm0.triangle_normals_[i](2, 0), tm.triangle_normals_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(tm1.triangle_normals_[i](0, 0), tm.triangle_normals_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangle_normals_[i](1, 0), tm.triangle_normals_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(tm1.triangle_normals_[i](2, 0), tm.triangle_normals_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(tm0.triangle_normals_[i],
+                            tm.triangle_normals_[i + 0]);
+        unit_test::ExpectEQ(tm1.triangle_normals_[i],
+                            tm.triangle_normals_[i + size]);
     }
 }
 
@@ -540,23 +479,20 @@ TEST(TriangleMesh, ComputeTriangleNormals)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     unit_test::Rand(tm.vertices_, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
-        tm.triangles_.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
+        tm.triangles_.push_back(Eigen::Vector3i(i, (i + 1) % size,
+                                                   (i + 2) % size));
 
     tm.ComputeTriangleNormals();
 
     EXPECT_EQ(ref.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref[i](0, 0), tm.triangle_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref[i](1, 0), tm.triangle_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref[i](2, 0), tm.triangle_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref[i], tm.triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -601,23 +537,20 @@ TEST(TriangleMesh, ComputeVertexNormals)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     unit_test::Rand(tm.vertices_, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
-        tm.triangles_.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
+        tm.triangles_.push_back(Eigen::Vector3i(i, (i + 1) % size,
+                                                   (i + 2) % size));
 
     tm.ComputeVertexNormals();
 
     EXPECT_EQ(ref.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref[i](0, 0), tm.vertex_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref[i](1, 0), tm.vertex_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref[i](2, 0), tm.vertex_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref[i], tm.vertex_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -709,7 +642,7 @@ TEST(TriangleMesh, Purge)
         {  666.666667,  529.411765,   39.215686 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {    20,     9,    18 },
         {    19,    21,     4 },
@@ -769,8 +702,8 @@ TEST(TriangleMesh, Purge)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm0;
-    open3d::TriangleMesh tm1;
+    TriangleMesh tm0;
+    TriangleMesh tm1;
 
     tm0.vertices_.resize(size);
     tm0.vertex_normals_.resize(size);
@@ -796,49 +729,29 @@ TEST(TriangleMesh, Purge)
     unit_test::Rand(tm1.triangles_,        imin, imax, 0);
     unit_test::Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
-    open3d::TriangleMesh tm = tm0 + tm1;
+    TriangleMesh tm = tm0 + tm1;
 
     tm.Purge();
 
     EXPECT_EQ(ref_vertices.size(), tm.vertices_.size());
     for (size_t i = 0; i < tm.vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), tm.vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), tm.vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), tm.vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], tm.vertices_[i]);
 
     EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_normals[i](0, 0), tm.vertex_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](1, 0), tm.vertex_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](2, 0), tm.vertex_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
 
     EXPECT_EQ(ref_vertex_colors.size(), tm.vertex_colors_.size());
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_colors[i](0, 0), tm.vertex_colors_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](1, 0), tm.vertex_colors_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](2, 0), tm.vertex_colors_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_colors[i], tm.vertex_colors_[i]);
 
     EXPECT_EQ(ref_triangles.size(), tm.triangles_.size());
     for (size_t i = 0; i < tm.triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), tm.triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), tm.triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), tm.triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], tm.triangles_[i]);
 
     EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangle_normals[i](0, 0), tm.triangle_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](1, 0), tm.triangle_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](2, 0), tm.triangle_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -848,7 +761,7 @@ TEST(TriangleMesh, HasVertices)
 {
     int size = 100;
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasVertices());
 
@@ -864,7 +777,7 @@ TEST(TriangleMesh, HasTriangles)
 {
     int size = 100;
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasTriangles());
 
@@ -881,7 +794,7 @@ TEST(TriangleMesh, HasVertexNormals)
 {
     int size = 100;
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasVertexNormals());
 
@@ -898,7 +811,7 @@ TEST(TriangleMesh, HasVertexColors)
 {
     int size = 100;
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasVertexColors());
 
@@ -915,7 +828,7 @@ TEST(TriangleMesh, HasTriangleNormals)
 {
     int size = 100;
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     EXPECT_FALSE(tm.HasTriangleNormals());
 
@@ -994,7 +907,7 @@ TEST(TriangleMesh, NormalizeNormals)
     Eigen::Vector3d dmin(0.0, 0.0, 0.0);
     Eigen::Vector3d dmax(10.0, 10.0, 10.0);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertex_normals_.resize(size);
     tm.triangle_normals_.resize(size);
@@ -1005,19 +918,11 @@ TEST(TriangleMesh, NormalizeNormals)
 
     EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_normals[i](0, 0), tm.vertex_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](1, 0), tm.vertex_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](2, 0), tm.vertex_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
 
     EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangle_normals[i](0, 0), tm.triangle_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](1, 0), tm.triangle_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](2, 0), tm.triangle_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1025,53 +930,20 @@ TEST(TriangleMesh, NormalizeNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, PaintUniformColor)
 {
-    vector<Eigen::Vector3d> ref =
-    {
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 },
-        {   31.000000,  120.000000,  205.000000 }
-    };
-
     int size = 25;
 
     Eigen::Vector3d dmin(0.0, 0.0, 0.0);
     Eigen::Vector3d dmax(10.0, 10.0, 10.0);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     tm.vertex_colors_.resize(size);
 
-    tm.PaintUniformColor(Eigen::Vector3d(31, 120, 205));
+    tm.PaintUniformColor(Eigen::Vector3d(31.0, 120.0, 205.0));
 
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-    {
-        EXPECT_NEAR( 31, tm.vertex_colors_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(120, tm.vertex_colors_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(205, tm.vertex_colors_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(31.0, 120.0, 205.0, tm.vertex_colors_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1105,7 +977,7 @@ TEST(TriangleMesh, SelectDownSample)
         { 360.784314, 717.647059, 800.000000 },
         { 811.764706, 752.941176, 352.941176 },
         { 341.176471,  47.058824, 764.705882 },
-        { 945.098039,  98.039216, 274.509804 } \
+        { 945.098039,  98.039216, 274.509804 }
     };
 
     vector<Eigen::Vector3d> ref_vertex_normals =
@@ -1134,7 +1006,7 @@ TEST(TriangleMesh, SelectDownSample)
         { 717.647059, 800.000000, 674.509804 },
         { 752.941176, 352.941176, 996.078431 },
         {  47.058824, 764.705882, 800.000000 },
-        {  98.039216, 274.509804, 239.215686 } \
+        {  98.039216, 274.509804, 239.215686 }
     };
 
     vector<Eigen::Vector3d> ref_vertex_colors =
@@ -1163,10 +1035,10 @@ TEST(TriangleMesh, SelectDownSample)
         { 396.078431, 392.156863, 596.078431 },
         { 286.274510,  90.196078, 933.333333 },
         { 337.254902, 133.333333,   3.921569 },
-        { 764.705882, 533.333333, 474.509804 } \
+        { 764.705882, 533.333333, 474.509804 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {    19,     7,    12 },
         {     8,    23,     2 },
@@ -1188,7 +1060,7 @@ TEST(TriangleMesh, SelectDownSample)
         {    14,    24,    16 },
         {    12,    10,    23 },
         {    17,    10,    11 },
-        {    15,    13,     1 } \
+        {    15,    13,     1 }
     };
 
     vector<Eigen::Vector3d> ref_triangle_normals =
@@ -1213,7 +1085,7 @@ TEST(TriangleMesh, SelectDownSample)
         { 156.862745, 207.843137, 392.156863 },
         { 682.352941, 294.117647, 149.019608 },
         { 698.039216, 341.176471, 698.039216 },
-        { 749.019608, 588.235294, 243.137255 } \
+        { 749.019608, 588.235294, 243.137255 }
     };
 
     int size = 1000;
@@ -1224,7 +1096,7 @@ TEST(TriangleMesh, SelectDownSample)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     tm.vertex_normals_.resize(size);
@@ -1241,47 +1113,31 @@ TEST(TriangleMesh, SelectDownSample)
     vector<size_t> indices(size / 40);
     unit_test::Rand(indices, 0, size - 1, 0);
 
-    auto output_tm = open3d::SelectDownSample(tm, indices);
+    auto output_tm = SelectDownSample(tm, indices);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_vertex_normals.size(), output_tm->vertex_normals_.size());
     for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_normals[i](0, 0), output_tm->vertex_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](1, 0), output_tm->vertex_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](2, 0), output_tm->vertex_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_normals[i],
+                            output_tm->vertex_normals_[i]);
 
     EXPECT_EQ(ref_vertex_colors.size(), output_tm->vertex_colors_.size());
     for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_colors[i](0, 0), output_tm->vertex_colors_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](1, 0), output_tm->vertex_colors_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](2, 0), output_tm->vertex_colors_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_colors[i],
+                            output_tm->vertex_colors_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 
-    EXPECT_EQ(ref_triangle_normals.size(), output_tm->triangle_normals_.size());
+    EXPECT_EQ(ref_triangle_normals.size(),
+              output_tm->triangle_normals_.size());
     for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangle_normals[i](0, 0), output_tm->triangle_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](1, 0), output_tm->triangle_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](2, 0), output_tm->triangle_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangle_normals[i],
+                            output_tm->triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1296,7 +1152,7 @@ TEST(TriangleMesh, CropTriangleMesh)
         { 678.431373, 643.137255, 443.137255 },
         { 345.098039, 529.411765, 454.901961 },
         { 360.784314, 576.470588, 592.156863 },
-        { 317.647059, 666.666667, 525.490196 } \
+        { 317.647059, 666.666667, 525.490196 }
     };
 
     vector<Eigen::Vector3d> ref_vertex_normals =
@@ -1306,7 +1162,7 @@ TEST(TriangleMesh, CropTriangleMesh)
         { 643.137255, 443.137255, 266.666667 },
         { 529.411765, 454.901961, 639.215686 },
         { 576.470588, 592.156863, 662.745098 },
-        { 666.666667, 525.490196, 847.058824 } \
+        { 666.666667, 525.490196, 847.058824 }
     };
 
     vector<Eigen::Vector3d> ref_vertex_colors =
@@ -1316,19 +1172,19 @@ TEST(TriangleMesh, CropTriangleMesh)
         { 807.843137, 309.803922,   3.921569 },
         { 686.274510,  43.137255, 772.549020 },
         { 576.470588, 698.039216, 831.372549 },
-        { 854.901961, 341.176471, 878.431373 } \
+        { 854.901961, 341.176471, 878.431373 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     1,     0,     3 },
-        {     5,     2,     4 } \
+        {     5,     2,     4 }
     };
 
     vector<Eigen::Vector3d> ref_triangle_normals =
     {
         { 125.490196, 160.784314, 913.725490 },
-        { 764.705882, 901.960784, 807.843137 } \
+        { 764.705882, 901.960784, 807.843137 }
     };
 
     int size = 1000;
@@ -1339,7 +1195,7 @@ TEST(TriangleMesh, CropTriangleMesh)
     Eigen::Vector3i imin(0, 0, 0);
     Eigen::Vector3i imax(size - 1, size - 1, size - 1);
 
-    open3d::TriangleMesh tm;
+    TriangleMesh tm;
 
     tm.vertices_.resize(size);
     tm.vertex_normals_.resize(size);
@@ -1356,47 +1212,31 @@ TEST(TriangleMesh, CropTriangleMesh)
     Eigen::Vector3d cropBoundMin(300.0, 300.0, 300.0);
     Eigen::Vector3d cropBoundMax(800.0, 800.0, 800.0);
 
-    auto output_tm = open3d::CropTriangleMesh(tm, cropBoundMin, cropBoundMax);
+    auto output_tm = CropTriangleMesh(tm, cropBoundMin, cropBoundMax);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_vertex_normals.size(), output_tm->vertex_normals_.size());
     for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_normals[i](0, 0), output_tm->vertex_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](1, 0), output_tm->vertex_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](2, 0), output_tm->vertex_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_normals[i],
+                            output_tm->vertex_normals_[i]);
 
     EXPECT_EQ(ref_vertex_colors.size(), output_tm->vertex_colors_.size());
     for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_colors[i](0, 0), output_tm->vertex_colors_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](1, 0), output_tm->vertex_colors_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](2, 0), output_tm->vertex_colors_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_colors[i],
+                            output_tm->vertex_colors_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 
-    EXPECT_EQ(ref_triangle_normals.size(), output_tm->triangle_normals_.size());
+    EXPECT_EQ(ref_triangle_normals.size(),
+              output_tm->triangle_normals_.size());
     for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangle_normals[i](0, 0), output_tm->triangle_normals_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](1, 0), output_tm->triangle_normals_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](2, 0), output_tm->triangle_normals_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangle_normals[i],
+                            output_tm->triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1450,7 +1290,7 @@ TEST(TriangleMesh, CreateMeshSphere)
         {    0.475528,   -0.345492,   -0.809017 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    33,    32 },
@@ -1534,23 +1374,15 @@ TEST(TriangleMesh, CreateMeshSphere)
         {    41,    32,    22 }
     };
 
-    auto output_tm = open3d::CreateMeshSphere(1.0, 5);
+    auto output_tm = CreateMeshSphere(1.0, 5);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1589,7 +1421,7 @@ TEST(TriangleMesh, CreateMeshCylinder)
         {    0.309017,   -0.951057,   -1.000000 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    23,    22 },
@@ -1643,23 +1475,15 @@ TEST(TriangleMesh, CreateMeshCylinder)
         {    26,    22,    17 }
     };
 
-    auto output_tm = open3d::CreateMeshCylinder(1.0, 2.0, 5);
+    auto output_tm = CreateMeshCylinder(1.0, 2.0, 5);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1678,7 +1502,7 @@ TEST(TriangleMesh, CreateMeshCone)
         {    0.309017,   -0.951057,    0.000000 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     3,     2 },
         {     1,     2,     3 },
@@ -1692,23 +1516,15 @@ TEST(TriangleMesh, CreateMeshCone)
         {     1,     6,     2 }
     };
 
-    auto output_tm = open3d::CreateMeshCone(1.0, 2.0, 5);
+    auto output_tm = CreateMeshCone(1.0, 2.0, 5);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1754,7 +1570,7 @@ TEST(TriangleMesh, CreateMeshArrow)
         {    0.463525,   -1.426585,    2.000000 }
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    23,    22 },
@@ -1818,23 +1634,15 @@ TEST(TriangleMesh, CreateMeshArrow)
         {    28,    33,    29 }
     };
 
-    auto output_tm = open3d::CreateMeshArrow(1.0, 1.5, 2.0, 1.0, 5);
+    auto output_tm = CreateMeshArrow(1.0, 1.5, 2.0, 1.0, 5);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1941,7 +1749,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
         {   0.000000,   0.000000,   1.000000 },
     };
 
-    vector<Eigen::Vector3d> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     0,    22,    23 },
@@ -2061,48 +1869,33 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
         {   0.000000,   0.000000,  -1.000000 },
     };
 
-    auto output_tm = open3d::CreateMeshCoordinateFrame(0.1);
+    auto output_tm = CreateMeshCoordinateFrame(0.1);
 
     // this procedure generates too many values to save here
     // using this stride in order to sample the total number of generated values
     int stride = 40;
     EXPECT_EQ(1134, output_tm->vertices_.size());
     for (size_t i = 0; i < ref_vertices.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertices[i](0, 0), output_tm->vertices_[i * stride](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](1, 0), output_tm->vertices_[i * stride](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertices[i](2, 0), output_tm->vertices_[i * stride](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertices[i],
+                            output_tm->vertices_[i * stride]);
 
     EXPECT_EQ(1134, output_tm->vertex_normals_.size());
     for (size_t i = 0; i < ref_vertex_normals.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_normals[i](0, 0), output_tm->vertex_normals_[i * stride](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](1, 0), output_tm->vertex_normals_[i * stride](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_normals[i](2, 0), output_tm->vertex_normals_[i * stride](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_normals[i],
+                            output_tm->vertex_normals_[i * stride]);
 
     EXPECT_EQ(1134, output_tm->vertex_colors_.size());
     for (size_t i = 0; i < ref_vertex_colors.size(); i++)
-    {
-        EXPECT_NEAR(ref_vertex_colors[i](0, 0), output_tm->vertex_colors_[i * stride](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](1, 0), output_tm->vertex_colors_[i * stride](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_vertex_colors[i](2, 0), output_tm->vertex_colors_[i * stride](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_vertex_colors[i],
+                            output_tm->vertex_colors_[i * stride]);
 
     EXPECT_EQ(2240, output_tm->triangles_.size());
     for (size_t i = 0; i < ref_triangles.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangles[i](0, 0), output_tm->triangles_[i * stride](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](1, 0), output_tm->triangles_[i * stride](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangles[i](2, 0), output_tm->triangles_[i * stride](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangles[i],
+                            output_tm->triangles_[i * stride]);
 
     EXPECT_EQ(2240, output_tm->triangle_normals_.size());
     for (size_t i = 0; i < ref_triangle_normals.size(); i++)
-    {
-        EXPECT_NEAR(ref_triangle_normals[i](0, 0), output_tm->triangle_normals_[i * stride](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](1, 0), output_tm->triangle_normals_[i * stride](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_triangle_normals[i](2, 0), output_tm->triangle_normals_[i * stride](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_triangle_normals[i],
+                            output_tm->triangle_normals_[i * stride]);
 }

@@ -34,9 +34,6 @@
 
 namespace unit_test
 {
-    const double THRESHOLD_1E_6 = 1e-6;
-    const double THRESHOLD_1E_3 = 1e-3f;
-
     // Print an Eigen::Vector3i.
     void Print(const Eigen::Vector3i &v);
 

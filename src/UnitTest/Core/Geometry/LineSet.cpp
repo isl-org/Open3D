@@ -51,16 +51,8 @@ TEST(LineSet, Constructor)
     // public members
     EXPECT_TRUE(ls.IsEmpty());
 
-    Eigen::Vector3d minBound = ls.GetMinBound();
-    Eigen::Vector3d maxBound = ls.GetMaxBound();
-
-    EXPECT_FLOAT_EQ(0.0, minBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(1, 0));
-    EXPECT_FLOAT_EQ(0.0, minBound(2, 0));
-
-    EXPECT_FLOAT_EQ(0.0, maxBound(0, 0));
-    EXPECT_FLOAT_EQ(0.0, maxBound(1, 0));
-    EXPECT_FLOAT_EQ(0.0, maxBound(2, 0));
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -98,33 +90,22 @@ TEST(LineSet, Clear)
     unit_test::Rand(ls.lines_, imin, imax, 0);
     unit_test::Rand(ls.colors_, dmin, dmax, 0);
 
-    Eigen::Vector3d minBound = ls.GetMinBound();
-    Eigen::Vector3d maxBound = ls.GetMaxBound();
-
     EXPECT_FALSE(ls.IsEmpty());
-    EXPECT_NEAR( 19.607843, minBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(2, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(2, 0), unit_test::THRESHOLD_1E_6);
+
+    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, ls.GetMaxBound());
+
     EXPECT_TRUE(ls.HasPoints());
     EXPECT_TRUE(ls.HasLines());
     EXPECT_TRUE(ls.HasColors());
 
     ls.Clear();
 
-    minBound = ls.GetMinBound();
-    maxBound = ls.GetMaxBound();
-
     // public members
     EXPECT_TRUE(ls.IsEmpty());
-    EXPECT_NEAR(0.0, minBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, minBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, minBound(2, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, maxBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, maxBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, maxBound(2, 0), unit_test::THRESHOLD_1E_6);
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMaxBound());
+
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
     EXPECT_FALSE(ls.HasColors());
@@ -169,9 +150,7 @@ TEST(LineSet, GetMinBound)
 
     Eigen::Vector3d minBound = ls.GetMinBound();
 
-    EXPECT_NEAR( 19.607843, minBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(  0.000000, minBound(2, 0), unit_test::THRESHOLD_1E_6);
+    unit_test::ExpectEQ(19.607843, 0.0, 0.0, ls.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -192,9 +171,7 @@ TEST(LineSet, GetMaxBound)
 
     Eigen::Vector3d maxBound = ls.GetMaxBound();
 
-    EXPECT_NEAR(996.078431, maxBound(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(996.078431, maxBound(2, 0), unit_test::THRESHOLD_1E_6);
+    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, ls.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -255,18 +232,11 @@ TEST(LineSet, Transform)
 
     EXPECT_EQ(ref_points.size(), ls.points_.size());
     for (size_t i = 0; i < ls.points_.size(); i++)
-    {
-        EXPECT_NEAR(ref_points[i](0, 0), ls.points_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i](1, 0), ls.points_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i](2, 0), ls.points_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_points[i], ls.points_[i]);
 
     EXPECT_EQ(ref_lines.size(), ls.lines_.size());
     for (size_t i = 0; i < ls.lines_.size(); i++)
-    {
-        EXPECT_EQ(ref_lines[i](0, 0), ls.lines_[i](0, 0));
-        EXPECT_EQ(ref_lines[i](1, 0), ls.lines_[i](1, 0));
-    }
+        unit_test::ExpectEQ(ref_lines[i], ls.lines_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -313,35 +283,24 @@ TEST(LineSet, OperatorAppend)
     EXPECT_EQ(2 * size, ls.points_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(ls0.points_[i](0, 0), ls.points_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.points_[i](1, 0), ls.points_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.points_[i](2, 0), ls.points_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ls1.points_[i](0, 0), ls.points_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.points_[i](1, 0), ls.points_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.points_[i](2, 0), ls.points_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(ls0.points_[i], ls.points_[i +    0]);
+        unit_test::ExpectEQ(ls1.points_[i], ls.points_[i + size]);
     }
 
     EXPECT_EQ(2 * size, ls.lines_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_EQ(ls0.lines_[i](0, 0), ls.lines_[i](0, 0));
-        EXPECT_EQ(ls0.lines_[i](1, 0), ls.lines_[i](1, 0));
+        unit_test::ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
 
-        EXPECT_EQ(ls1.lines_[i](0, 0), ls.lines_[i](0, 0));
-        EXPECT_EQ(ls1.lines_[i](1, 0), ls.lines_[i](1, 0));
+        Eigen::Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        unit_test::ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
     }
 
     EXPECT_EQ(2 * size, ls.colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(ls0.colors_[i](0, 0), ls.colors_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.colors_[i](1, 0), ls.colors_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.colors_[i](2, 0), ls.colors_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ls1.colors_[i](0, 0), ls.colors_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.colors_[i](1, 0), ls.colors_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.colors_[i](2, 0), ls.colors_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(ls0.colors_[i], ls.colors_[i + 0]);
+        unit_test::ExpectEQ(ls1.colors_[i], ls.colors_[i + size]);
     }
 }
 
@@ -388,35 +347,24 @@ TEST(LineSet, OperatorADD)
     EXPECT_EQ(2 * size, ls.points_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(ls0.points_[i](0, 0), ls.points_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.points_[i](1, 0), ls.points_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.points_[i](2, 0), ls.points_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ls1.points_[i](0, 0), ls.points_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.points_[i](1, 0), ls.points_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.points_[i](2, 0), ls.points_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(ls0.points_[i], ls.points_[i +    0]);
+        unit_test::ExpectEQ(ls1.points_[i], ls.points_[i + size]);
     }
 
     EXPECT_EQ(2 * size, ls.lines_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_EQ(ls0.lines_[i](0, 0), ls.lines_[i](0, 0));
-        EXPECT_EQ(ls0.lines_[i](1, 0), ls.lines_[i](1, 0));
+        unit_test::ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
 
-        EXPECT_EQ(ls1.lines_[i](0, 0), ls.lines_[i](0, 0));
-        EXPECT_EQ(ls1.lines_[i](1, 0), ls.lines_[i](1, 0));
+        Eigen::Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        unit_test::ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
     }
 
     EXPECT_EQ(2 * size, ls.colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(ls0.colors_[i](0, 0), ls.colors_[   0 + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.colors_[i](1, 0), ls.colors_[   0 + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls0.colors_[i](2, 0), ls.colors_[   0 + i](2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ls1.colors_[i](0, 0), ls.colors_[size + i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.colors_[i](1, 0), ls.colors_[size + i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ls1.colors_[i](2, 0), ls.colors_[size + i](2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(ls0.colors_[i], ls.colors_[i + 0]);
+        unit_test::ExpectEQ(ls1.colors_[i], ls.colors_[i + size]);
     }
 }
 
@@ -510,13 +458,8 @@ TEST(LineSet, GetLineCoordinate)
     {
         auto result = ls.GetLineCoordinate(i);
 
-        EXPECT_NEAR(ref_points[i][0](0, 0), result.first(0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i][0](1, 0), result.first(1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i][0](2, 0), result.first(2, 0), unit_test::THRESHOLD_1E_6);
-
-        EXPECT_NEAR(ref_points[i][1](0, 0), result.second(0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i][1](1, 0), result.second(1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i][1](2, 0), result.second(2, 0), unit_test::THRESHOLD_1E_6);
+        unit_test::ExpectEQ(ref_points[i][0], result.first);
+        unit_test::ExpectEQ(ref_points[i][1], result.second);
     }
 }
 
@@ -598,16 +541,9 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
 
     EXPECT_EQ(ref_points.size(), ls->points_.size());
     for (size_t i = 0; i < ls->points_.size(); i++)
-    {
-        EXPECT_NEAR(ref_points[i](0, 0), ls->points_[i](0, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i](1, 0), ls->points_[i](1, 0), unit_test::THRESHOLD_1E_6);
-        EXPECT_NEAR(ref_points[i](2, 0), ls->points_[i](2, 0), unit_test::THRESHOLD_1E_6);
-    }
+        unit_test::ExpectEQ(ref_points[i], ls->points_[i]);
 
     EXPECT_EQ(ref_lines.size(), ls->lines_.size());
     for (size_t i = 0; i < ls->lines_.size(); i++)
-    {
-        EXPECT_EQ(ref_lines[i](0, 0), ls->lines_[i](0, 0));
-        EXPECT_EQ(ref_lines[i](1, 0), ls->lines_[i](1, 0));
-    }
+        unit_test::ExpectEQ(ref_lines[i], ls->lines_[i]);
 }

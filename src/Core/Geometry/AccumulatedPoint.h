@@ -26,70 +26,28 @@
 
 #pragma once
 
-#include <iostream>
+#include <Eigen/Core>
 
-#include <vector>
-#include <string>
+namespace open3d {
 
-namespace unit_test
+class PointCloud;
+
+class AccumulatedPoint
 {
-    // Class for "generating" data.
-    class Raw
-    {
-    public:
-        Raw() : index(0), step(1) {}
-        Raw(const int &seed) :
-            index(abs(seed) % SIZE),
-            step((seed <= 0) ? 1 : seed) {}
-    private:
-        // size of the raw data
-        static const int SIZE = 1021;
+public:
+    AccumulatedPoint();
 
-        // raw data
-        static std::vector<uint8_t> data_;
+public:
+    void AddPoint(const PointCloud &cloud, int index);
+    Eigen::Vector3d GetAveragePoint() const;
+    Eigen::Vector3d GetAverageNormal() const;
+    Eigen::Vector3d GetAverageColor() const;
 
-    public:
-        // low end of the range
-        static const uint8_t VMIN = 0;
+private:
+    int num_of_points_;
+    Eigen::Vector3d point_;
+    Eigen::Vector3d normal_;
+    Eigen::Vector3d color_;
+};
 
-        // high end of the range
-        static const uint8_t VMAX = 255;
-
-    private:
-        // step through the raw data
-        int step;
-
-        // index into the raw data
-        int index;
-
-    public:
-        // Get the next value.
-        template<class T>
-        T Next() { return T(0); }
-    };
-
-    // Get the next uint8_t value.
-    // Output range: [0, 255].
-    template<>
-    uint8_t Raw::Next();
-
-    // Get the next int value.
-    // Output range: [0, 255].
-    template<>
-    int Raw::Next();
-
-    // Get the next size_t value.
-    // Output range: [0, 255].
-    template<>
-    size_t Raw::Next();
-
-    // Get the next float value.
-    // Output range: [0, 1].
-    template<>
-    float Raw::Next();
-
-    // Get the next double value.
-    // Output range: [0, 1].
-    template<>
-    double Raw::Next();
-} // namespace unit_test
+}    // namespace open3d

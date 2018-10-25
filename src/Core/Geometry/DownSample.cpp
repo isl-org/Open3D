@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "AccumulatedPoint.h"
 #include "PointCloud.h"
 #include "TriangleMesh.h"
 
@@ -35,125 +36,6 @@
 #include <Core/Geometry/KDTreeFlann.h>
 
 namespace open3d{
-
-namespace {
-
-class AccumulatedPoint
-{
-public:
-    AccumulatedPoint() :
-            num_of_points_(0),
-            point_(0.0, 0.0, 0.0),
-            normal_(0.0, 0.0, 0.0),
-            color_(0.0, 0.0, 0.0)
-    {
-    }
-
-public:
-    void AddPoint(const PointCloud &cloud, int index)
-    {
-        point_ += cloud.points_[index];
-        if (cloud.HasNormals()) {
-            if (!std::isnan(cloud.normals_[index](0)) &&
-                    !std::isnan(cloud.normals_[index](1)) &&
-                    !std::isnan(cloud.normals_[index](2))) {
-                normal_ += cloud.normals_[index];
-            }
-        }
-        if (cloud.HasColors()) {
-            color_ += cloud.colors_[index];
-        }
-        num_of_points_++;
-    }
-
-    Eigen::Vector3d GetAveragePoint() const
-    {
-        return point_ / double(num_of_points_);
-    }
-
-    Eigen::Vector3d GetAverageNormal() const
-    {
-        return normal_.normalized();
-    }
-
-    Eigen::Vector3d GetAverageColor() const
-    {
-        return color_ / double(num_of_points_);
-    }
-
-public:
-    int num_of_points_;
-    Eigen::Vector3d point_;
-    Eigen::Vector3d normal_;
-    Eigen::Vector3d color_;
-};
-
-class point_cubic_id
-{
-public:
-    size_t point_id;
-    int cubic_id;
-};
-
-class AccumulatedPointForTrace : public AccumulatedPoint
-{
-public:
-    void AddPoint(const PointCloud &cloud, size_t index,
-                  int cubic_index, bool approximate_class)
-    {
-        point_ += cloud.points_[index];
-        if (cloud.HasNormals()) {
-            if (!std::isnan(cloud.normals_[index](0)) &&
-                !std::isnan(cloud.normals_[index](1)) &&
-                !std::isnan(cloud.normals_[index](2))) {
-                normal_ += cloud.normals_[index];
-            }
-        }
-        if (cloud.HasColors()) {
-            if (approximate_class) {
-                auto got = classes.find(cloud.colors_[index][0]);
-                if (got == classes.end())
-                    classes[cloud.colors_[index][0]] = 1;
-                else classes[cloud.colors_[index][0]] += 1;
-            }
-            else {
-                color_ += cloud.colors_[index];
-            }
-        }
-        point_cubic_id new_id;
-        new_id.point_id = index;
-        new_id.cubic_id = cubic_index;
-        original_id.push_back(new_id);
-        num_of_points_++;
-    }
-
-    Eigen::Vector3d GetMaxClass()
-    {
-        int max_class = -1;
-        int max_count = -1;
-        for(auto it=classes.begin(); it!=classes.end(); it++)
-        {
-            if(it->second > max_count)
-            {
-                max_count = it->second;
-                max_class = it->first;
-            }
-        }
-        return Eigen::Vector3d(max_class, max_class, max_class);
-    }
-
-    std::vector<point_cubic_id> GetOriginalID()
-    {
-        return original_id;
-    }
-
-private:
-    // original point cloud id in higher resolution + its cubic id
-    std::vector<point_cubic_id> original_id;
-    std::unordered_map<int, int> classes;
-};
-
-}    // unnamed namespace
 
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
         const std::vector<size_t> &indices, bool invert /* = false */)
