@@ -33,13 +33,13 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-shared_ptr<Image> odometry_tools::GenerateImage(const int width,
-                                               const int height,
-                                               const int num_of_channels,
-                                               const int bytes_per_channel,
-                                               const float& vmin,
-                                               const float& vmax,
-                                               const int& seed)
+shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
+                                                const int& height,
+                                                const int& num_of_channels,
+                                                const int& bytes_per_channel,
+                                                const float& vmin,
+                                                const float& vmax,
+                                                const int& seed)
 {
     Image image;
 
