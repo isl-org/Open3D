@@ -50,7 +50,7 @@ class Feature {
 
 /// Function to compute FPFH feature for a point cloud
 std::shared_ptr<Feature> ComputeFPFHFeature(
-    const PointCloud &input,
-    const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+        const PointCloud &input,
+        const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
 }  // namespace open3d

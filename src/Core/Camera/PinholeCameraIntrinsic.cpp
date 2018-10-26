@@ -41,7 +41,7 @@ PinholeCameraIntrinsic::PinholeCameraIntrinsic(int width, int height, double fx,
 }
 
 PinholeCameraIntrinsic::PinholeCameraIntrinsic(
-    PinholeCameraIntrinsicParameters param) {
+        PinholeCameraIntrinsicParameters param) {
     if (param == PinholeCameraIntrinsicParameters::PrimeSenseDefault)
         SetIntrinsics(640, 480, 525.0, 525.0, 319.5, 239.5);
     else if (param ==
@@ -67,8 +67,8 @@ bool PinholeCameraIntrinsic::ConvertToJsonValue(Json::Value &value) const {
 bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning(
-            "PinholeCameraParameters read JSON failed: unsupported json "
-            "format.\n");
+                "PinholeCameraParameters read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
     width_ = value.get("width", -1).asInt();
@@ -76,7 +76,7 @@ bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
     if (EigenMatrix3dFromJsonArray(intrinsic_matrix_,
                                    value["intrinsic_matrix"]) == false) {
         PrintWarning(
-            "PinholeCameraParameters read JSON failed: wrong format.\n");
+                "PinholeCameraParameters read JSON failed: wrong format.\n");
         return false;
     }
     return true;

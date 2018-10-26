@@ -55,16 +55,16 @@ bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const {
 bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning(
-            "SelectionPolygonVolume read JSON failed: unsupported json "
-            "format.\n");
+                "SelectionPolygonVolume read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "SelectionPolygonVolume" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
         PrintWarning(
-            "SelectionPolygonVolume read JSON failed: unsupported json "
-            "format.\n");
+                "SelectionPolygonVolume read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
     orthogonal_axis_ = value.get("orthogonal_axis", "").asString();
@@ -73,7 +73,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     const Json::Value &polygon_array = value["bounding_polygon"];
     if (polygon_array.size() == 0) {
         PrintWarning(
-            "SelectionPolygonVolume read JSON failed: empty trajectory.\n");
+                "SelectionPolygonVolume read JSON failed: empty trajectory.\n");
         return false;
     }
     bounding_polygon_.resize(polygon_array.size());
@@ -88,31 +88,31 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
 }
 
 std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloud(
-    const PointCloud &input) const {
+        const PointCloud &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
         return std::make_shared<PointCloud>();
     return CropPointCloudInPolygon(input);
 }
 
 std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
-    const PointCloud &input) const {
+        const PointCloud &input) const {
     return SelectDownSample(input, CropInPolygon(input.points_));
 }
 
 std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMesh(
-    const TriangleMesh &input) const {
+        const TriangleMesh &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
         return std::make_shared<TriangleMesh>();
     return CropTriangleMeshInPolygon(input);
 }
 
 std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
-    const TriangleMesh &input) const {
+        const TriangleMesh &input) const {
     return SelectDownSample(input, CropInPolygon(input.vertices_));
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
-    const std::vector<Eigen::Vector3d> &input) const {
+        const std::vector<Eigen::Vector3d> &input) const {
     std::vector<size_t> output_index;
     int u, v, w;
     if (orthogonal_axis_ == "x" || orthogonal_axis_ == "X") {
@@ -141,11 +141,12 @@ std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
                  bounding_polygon_[j](v) >= point(v)) ||
                 (bounding_polygon_[j](v) < point(v) &&
                  bounding_polygon_[i](v) >= point(v))) {
-                nodes.push_back(
-                    bounding_polygon_[i](u) +
-                    (point(v) - bounding_polygon_[i](v)) /
-                        (bounding_polygon_[j](v) - bounding_polygon_[i](v)) *
-                        (bounding_polygon_[j](u) - bounding_polygon_[i](u)));
+                nodes.push_back(bounding_polygon_[i](u) +
+                                (point(v) - bounding_polygon_[i](v)) /
+                                        (bounding_polygon_[j](v) -
+                                         bounding_polygon_[i](v)) *
+                                        (bounding_polygon_[j](u) -
+                                         bounding_polygon_[i](u)));
             }
         }
         std::sort(nodes.begin(), nodes.end());

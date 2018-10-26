@@ -39,52 +39,56 @@ void pybind_camera(py::module &m) {
     py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
     py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
     pinhole_intr
-        .def(py::init(
-                 [](int w, int h, double fx, double fy, double cx, double cy) {
+            .def(py::init([](int w, int h, double fx, double fy, double cx,
+                             double cy) {
                      return new PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
                  }),
-             "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
-        .def(py::init([](PinholeCameraIntrinsicParameters param) {
-                 return new PinholeCameraIntrinsic(param);
-             }),
-             "param"_a)
-        .def("set_intrinsics", &PinholeCameraIntrinsic::SetIntrinsics,
-             "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
-        .def("get_focal_length", &PinholeCameraIntrinsic::GetFocalLength)
-        .def("get_principal_point", &PinholeCameraIntrinsic::GetPrincipalPoint)
-        .def("get_skew", &PinholeCameraIntrinsic::GetSkew)
-        .def("is_valid", &PinholeCameraIntrinsic::IsValid)
-        .def_readwrite("width", &PinholeCameraIntrinsic::width_)
-        .def_readwrite("height", &PinholeCameraIntrinsic::height_)
-        .def_readwrite("intrinsic_matrix",
-                       &PinholeCameraIntrinsic::intrinsic_matrix_)
-        .def("__repr__", [](const PinholeCameraIntrinsic &c) {
-            return std::string("PinholeCameraIntrinsic with width = ") +
-                   std::to_string(c.width_) + std::string(" and height = ") +
-                   std::to_string(c.height_) +
-                   std::string(".\nAccess intrinsics with intrinsic_matrix.");
-        });
+                 "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
+            .def(py::init([](PinholeCameraIntrinsicParameters param) {
+                     return new PinholeCameraIntrinsic(param);
+                 }),
+                 "param"_a)
+            .def("set_intrinsics", &PinholeCameraIntrinsic::SetIntrinsics,
+                 "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
+            .def("get_focal_length", &PinholeCameraIntrinsic::GetFocalLength)
+            .def("get_principal_point",
+                 &PinholeCameraIntrinsic::GetPrincipalPoint)
+            .def("get_skew", &PinholeCameraIntrinsic::GetSkew)
+            .def("is_valid", &PinholeCameraIntrinsic::IsValid)
+            .def_readwrite("width", &PinholeCameraIntrinsic::width_)
+            .def_readwrite("height", &PinholeCameraIntrinsic::height_)
+            .def_readwrite("intrinsic_matrix",
+                           &PinholeCameraIntrinsic::intrinsic_matrix_)
+            .def("__repr__", [](const PinholeCameraIntrinsic &c) {
+                return std::string("PinholeCameraIntrinsic with width = ") +
+                       std::to_string(c.width_) +
+                       std::string(" and height = ") +
+                       std::to_string(c.height_) +
+                       std::string(
+                               ".\nAccess intrinsics with intrinsic_matrix.");
+            });
     py::enum_<PinholeCameraIntrinsicParameters>(
-        m, "PinholeCameraIntrinsicParameters", py::arithmetic())
-        .value("PrimeSenseDefault",
-               PinholeCameraIntrinsicParameters::PrimeSenseDefault)
-        .value("Kinect2DepthCameraDefault",
-               PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault)
-        .value("Kinect2ColorCameraDefault",
-               PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault)
-        .export_values();
+            m, "PinholeCameraIntrinsicParameters", py::arithmetic())
+            .value("PrimeSenseDefault",
+                   PinholeCameraIntrinsicParameters::PrimeSenseDefault)
+            .value("Kinect2DepthCameraDefault",
+                   PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault)
+            .value("Kinect2ColorCameraDefault",
+                   PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault)
+            .export_values();
 
     py::class_<PinholeCameraTrajectory> pinhole_traj(m,
                                                      "PinholeCameraTrajectory");
     py::detail::bind_default_constructor<PinholeCameraTrajectory>(pinhole_traj);
     py::detail::bind_copy_functions<PinholeCameraTrajectory>(pinhole_traj);
     pinhole_traj
-        .def_readwrite("intrinsic", &PinholeCameraTrajectory::intrinsic_)
-        .def_readwrite("extrinsic", &PinholeCameraTrajectory::extrinsic_)
-        .def("__repr__", [](const PinholeCameraTrajectory &c) {
-            return std::string("PinholeCameraTrajectory class.\n") +
-                   std::string("Access its data via intrinsic and extrinsic.");
-        });
+            .def_readwrite("intrinsic", &PinholeCameraTrajectory::intrinsic_)
+            .def_readwrite("extrinsic", &PinholeCameraTrajectory::extrinsic_)
+            .def("__repr__", [](const PinholeCameraTrajectory &c) {
+                return std::string("PinholeCameraTrajectory class.\n") +
+                       std::string(
+                               "Access its data via intrinsic and extrinsic.");
+            });
 }
 
 void pybind_camera_methods(py::module &m) {

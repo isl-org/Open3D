@@ -33,20 +33,21 @@ void PrintHelp() {
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
     PrintInfo(
-        "    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file "
-        "[options]\n");
+            "    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file "
+            "[options]\n");
     PrintInfo("      Manually crop geometry in speficied file.\n");
     PrintInfo("\n");
     PrintInfo("Options:\n");
     PrintInfo(
-        "    --pointcloud,             : Read geometry as point cloud.\n");
+            "    --pointcloud,             : Read geometry as point cloud.\n");
     PrintInfo("    --mesh,                   : Read geometry as mesh.\n");
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
     PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
     PrintInfo(
-        "    --without_dialog          : Disable dialogs. Default files will "
-        "be used.\n");
+            "    --without_dialog          : Disable dialogs. Default files "
+            "will "
+            "be used.\n");
 }
 
 int main(int argc, char **argv) {
@@ -61,7 +62,7 @@ int main(int argc, char **argv) {
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
     double voxel_size =
-        GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
+            GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
     bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
 
     VisualizerWithEditing vis(voxel_size, with_dialog,

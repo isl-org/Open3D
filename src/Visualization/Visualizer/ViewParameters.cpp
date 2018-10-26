@@ -80,7 +80,7 @@ bool ViewParameters::ConvertToJsonValue(Json::Value &value) const {
 bool ViewParameters::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning(
-            "ViewParameters read JSON failed: unsupported json format.\n");
+                "ViewParameters read JSON failed: unsupported json format.\n");
         return false;
     }
     field_of_view_ = value.get("field_of_view", 60.0).asDouble();

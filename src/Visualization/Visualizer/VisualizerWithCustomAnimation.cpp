@@ -46,14 +46,16 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp() {
     PrintInfo("    Ctrl + F     : Enter freeview (editing) mode.\n");
     PrintInfo("    Ctrl + W     : Enter preview mode.\n");
     PrintInfo(
-        "    Ctrl + P     : Enter animation mode and play animation from "
-        "beginning.\n");
+            "    Ctrl + P     : Enter animation mode and play animation from "
+            "beginning.\n");
     PrintInfo(
-        "    Ctrl + R     : Enter animation mode, play animation, and record "
-        "screen.\n");
+            "    Ctrl + R     : Enter animation mode, play animation, and "
+            "record "
+            "screen.\n");
     PrintInfo(
-        "    Ctrl + G     : Enter animation mode, play animation, and record "
-        "depth.\n");
+            "    Ctrl + G     : Enter animation mode, play animation, and "
+            "record "
+            "depth.\n");
     PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
     PrintInfo("\n");
     PrintInfo("    -- In free view mode --\n");
@@ -61,15 +63,17 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp() {
     PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
     PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
     PrintInfo(
-        "    Ctrl + +/-   : Increase/decrease interval between keyframes.\n");
+            "    Ctrl + +/-   : Increase/decrease interval between "
+            "keyframes.\n");
     PrintInfo("    Ctrl + L     : Turn on/off camera path as a loop.\n");
     PrintInfo(
-        "    Ctrl + A     : Add a keyframe right after the current "
-        "keyframe.\n");
+            "    Ctrl + A     : Add a keyframe right after the current "
+            "keyframe.\n");
     PrintInfo("    Ctrl + U     : Update the current keyframe.\n");
     PrintInfo("    Ctrl + D     : Delete the current keyframe.\n");
     PrintInfo(
-        "    Ctrl + N     : Add 360 spin right after the current keyframe.\n");
+            "    Ctrl + N     : Add 360 spin right after the current "
+            "keyframe.\n");
     PrintInfo("    Ctrl + E     : Erase the entire camera path.\n");
     PrintInfo("\n");
     PrintInfo("    -- In preview mode --\n");
@@ -82,23 +86,23 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp() {
 void VisualizerWithCustomAnimation::UpdateWindowTitle() {
     if (window_ != NULL) {
         auto &view_control =
-            (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+                (ViewControlWithCustomAnimation &)(*view_control_ptr_);
         std::string new_window_title =
-            window_name_ + " - " + view_control.GetStatusString();
+                window_name_ + " - " + view_control.GetStatusString();
         glfwSetWindowTitle(window_, new_window_title.c_str());
     }
 }
 
 void VisualizerWithCustomAnimation::Play(
-    bool recording /* = false*/, bool recording_depth /* = false*/,
-    bool close_window_when_animation_ends /* = false*/) {
+        bool recording /* = false*/, bool recording_depth /* = false*/,
+        bool close_window_when_animation_ends /* = false*/) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.NumOfFrames() == 0) {
         PrintInfo("Abort playing due to empty trajectory.\n");
         return;
     }
     view_control.SetAnimationMode(
-        ViewControlWithCustomAnimation::AnimationMode::PlayMode);
+            ViewControlWithCustomAnimation::AnimationMode::PlayMode);
     is_redraw_required_ = true;
     UpdateWindowTitle();
     recording_file_index_ = 0;
@@ -116,14 +120,14 @@ void VisualizerWithCustomAnimation::Play(
         // The lambda function captures no references to avoid dangling
         // references
         auto &view_control =
-            (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+                (ViewControlWithCustomAnimation &)(*view_control_ptr_);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         recording_file_index_++;
         if (recording) {
             if (recording_trajectory) {
                 Eigen::Matrix4d extrinsic;
                 view_control.ConvertToPinholeCameraParameters(
-                    trajectory_ptr->intrinsic_, extrinsic);
+                        trajectory_ptr->intrinsic_, extrinsic);
                 trajectory_ptr->extrinsic_.push_back(extrinsic);
             }
             char buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -131,31 +135,31 @@ void VisualizerWithCustomAnimation::Play(
                 sprintf(buffer, recording_depth_filename_format_.c_str(),
                         recording_file_index_);
                 CaptureDepthImage(
-                    recording_depth_basedir_ + std::string(buffer), false);
+                        recording_depth_basedir_ + std::string(buffer), false);
             } else {
                 sprintf(buffer, recording_image_filename_format_.c_str(),
                         recording_file_index_);
                 CaptureScreenImage(
-                    recording_image_basedir_ + std::string(buffer), false);
+                        recording_image_basedir_ + std::string(buffer), false);
             }
         }
         view_control.Step(1.0);
         AdvanceConsoleProgress();
         if (view_control.IsPlayingEnd(recording_file_index_)) {
             view_control.SetAnimationMode(
-                ViewControlWithCustomAnimation::AnimationMode::FreeMode);
+                    ViewControlWithCustomAnimation::AnimationMode::FreeMode);
             RegisterAnimationCallback(nullptr);
             if (recording && recording_trajectory) {
                 if (recording_depth) {
                     WriteIJsonConvertible(
-                        recording_depth_basedir_ +
-                            recording_depth_trajectory_filename_,
-                        *trajectory_ptr);
+                            recording_depth_basedir_ +
+                                    recording_depth_trajectory_filename_,
+                            *trajectory_ptr);
                 } else {
                     WriteIJsonConvertible(
-                        recording_image_basedir_ +
-                            recording_image_trajectory_filename_,
-                        *trajectory_ptr);
+                            recording_image_basedir_ +
+                                    recording_image_trajectory_filename_,
+                            *trajectory_ptr);
                 }
             }
             if (close_window_when_animation_ends) {
@@ -169,7 +173,7 @@ void VisualizerWithCustomAnimation::Play(
 
 bool VisualizerWithCustomAnimation::InitViewControl() {
     view_control_ptr_ = std::unique_ptr<ViewControlWithCustomAnimation>(
-        new ViewControlWithCustomAnimation);
+            new ViewControlWithCustomAnimation);
     ResetViewPoint();
     return true;
 }
@@ -185,13 +189,14 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
     if (mods & GLFW_MOD_CONTROL) {
         switch (key) {
             case GLFW_KEY_F:
-                view_control.SetAnimationMode(
-                    ViewControlWithCustomAnimation::AnimationMode::FreeMode);
+                view_control.SetAnimationMode(ViewControlWithCustomAnimation::
+                                                      AnimationMode::FreeMode);
                 PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
                 break;
             case GLFW_KEY_W:
                 view_control.SetAnimationMode(
-                    ViewControlWithCustomAnimation::AnimationMode::PreviewMode);
+                        ViewControlWithCustomAnimation::AnimationMode::
+                                PreviewMode);
                 PrintDebug("[Visualizer] Enter preview mode.\n");
                 break;
             case GLFW_KEY_P:
@@ -244,14 +249,14 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
             case GLFW_KEY_D:
                 view_control.DeleteKeyFrame();
                 PrintDebug(
-                    "[Visualizer] Delete last key frame; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
+                        "[Visualizer] Delete last key frame; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
                 break;
             case GLFW_KEY_N:
                 view_control.AddSpinKeyFrames();
                 PrintDebug(
-                    "[Visualizer] Insert spin key frames; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
+                        "[Visualizer] Insert spin key frames; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
                 break;
             case GLFW_KEY_E:
                 view_control.ClearAllKeyFrames();

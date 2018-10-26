@@ -60,7 +60,8 @@ int main(int argc, char* argv[]) {
     std::string intrinsic_path;
     if (ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
         intrinsic_path =
-            GetProgramOptionAsString(argc, argv, "--camera_intrinsic").c_str();
+                GetProgramOptionAsString(argc, argv, "--camera_intrinsic")
+                        .c_str();
         PrintInfo("Camera intrinsic path %s\n", intrinsic_path.c_str());
     } else {
         PrintInfo("Camera intrinsic path is not given\n");
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
         PrintWarning("Failed to read intrinsic parameters for depth image.\n");
         PrintWarning("Use default value for Primesense camera.\n");
         intrinsic = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+                PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
 
     if (ProgramOptionExists(argc, argv, "--verbose"))
@@ -105,11 +106,11 @@ int main(int argc, char* argv[]) {
     if (ProgramOptionExists(argc, argv, "--hybrid")) {
         RGBDOdometryJacobianFromHybridTerm jacobian_method;
         std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry(
-            *source, *target, intrinsic, odo_init, jacobian_method, option);
+                *source, *target, intrinsic, odo_init, jacobian_method, option);
     } else {
         RGBDOdometryJacobianFromColorTerm jacobian_method;
         std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry(
-            *source, *target, intrinsic, odo_init, jacobian_method, option);
+                *source, *target, intrinsic, odo_init, jacobian_method, option);
     }
     std::cout << "Estimated 4x4 motion matrix : " << std::endl;
     std::cout << trans_odo << std::endl;

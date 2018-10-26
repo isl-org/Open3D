@@ -52,14 +52,16 @@ Eigen::Vector2d SelectionPolygon::GetMinBound() const {
     if (polygon_.empty()) {
         return Eigen::Vector2d(0.0, 0.0);
     }
-    auto itr_x =
-        std::min_element(polygon_.begin(), polygon_.end(),
-                         [](const Eigen::Vector2d &a,
-                            const Eigen::Vector2d &b) { return a(0) < b(0); });
-    auto itr_y =
-        std::min_element(polygon_.begin(), polygon_.end(),
-                         [](const Eigen::Vector2d &a,
-                            const Eigen::Vector2d &b) { return a(1) < b(1); });
+    auto itr_x = std::min_element(
+            polygon_.begin(), polygon_.end(),
+            [](const Eigen::Vector2d &a, const Eigen::Vector2d &b) {
+                return a(0) < b(0);
+            });
+    auto itr_y = std::min_element(
+            polygon_.begin(), polygon_.end(),
+            [](const Eigen::Vector2d &a, const Eigen::Vector2d &b) {
+                return a(1) < b(1);
+            });
     return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
 }
 
@@ -67,14 +69,16 @@ Eigen::Vector2d SelectionPolygon::GetMaxBound() const {
     if (polygon_.empty()) {
         return Eigen::Vector2d(0.0, 0.0);
     }
-    auto itr_x =
-        std::max_element(polygon_.begin(), polygon_.end(),
-                         [](const Eigen::Vector2d &a,
-                            const Eigen::Vector2d &b) { return a(0) < b(0); });
-    auto itr_y =
-        std::max_element(polygon_.begin(), polygon_.end(),
-                         [](const Eigen::Vector2d &a,
-                            const Eigen::Vector2d &b) { return a(1) < b(1); });
+    auto itr_x = std::max_element(
+            polygon_.begin(), polygon_.end(),
+            [](const Eigen::Vector2d &a, const Eigen::Vector2d &b) {
+                return a(0) < b(0);
+            });
+    auto itr_y = std::max_element(
+            polygon_.begin(), polygon_.end(),
+            [](const Eigen::Vector2d &a, const Eigen::Vector2d &b) {
+                return a(1) < b(1);
+            });
     return Eigen::Vector2d((*itr_x)(0), (*itr_y)(1));
 }
 
@@ -93,11 +97,12 @@ void SelectionPolygon::FillPolygon(int width, int height) {
             size_t j = (i + 1) % polygon_.size();
             if ((polygon_[i](1) < y && polygon_[j](1) >= y) ||
                 (polygon_[j](1) < y && polygon_[i](1) >= y)) {
-                nodes.push_back((int)(polygon_[i](0) +
-                                      (y - polygon_[i](1)) /
-                                          (polygon_[j](1) - polygon_[i](1)) *
-                                          (polygon_[j](0) - polygon_[i](0)) +
-                                      0.5));
+                nodes.push_back(
+                        (int)(polygon_[i](0) +
+                              (y - polygon_[i](1)) /
+                                      (polygon_[j](1) - polygon_[i](1)) *
+                                      (polygon_[j](0) - polygon_[i](0)) +
+                              0.5));
             }
         }
         std::sort(nodes.begin(), nodes.end());
@@ -117,7 +122,7 @@ void SelectionPolygon::FillPolygon(int width, int height) {
 }
 
 std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
-    const PointCloud &input, const ViewControl &view) {
+        const PointCloud &input, const ViewControl &view) {
     if (IsEmpty()) {
         return std::make_shared<PointCloud>();
     }
@@ -133,7 +138,7 @@ std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
 }
 
 std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
-    const TriangleMesh &input, const ViewControl &view) {
+        const TriangleMesh &input, const ViewControl &view) {
     if (IsEmpty()) {
         return std::make_shared<TriangleMesh>();
     }
@@ -178,8 +183,8 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
     }
     for (const auto &point : polygon_) {
         auto point3d = GLHelper::Unproject(
-            Eigen::Vector3d(point(0), point(1), 1.0), view.GetMVPMatrix(),
-            view.GetWindowWidth(), view.GetWindowHeight());
+                Eigen::Vector3d(point(0), point(1), 1.0), view.GetMVPMatrix(),
+                view.GetWindowWidth(), view.GetWindowHeight());
         point3d(idx) = 0.0;
         volume->bounding_polygon_.push_back(point3d);
     }
@@ -191,27 +196,27 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
 }
 
 std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInRectangle(
-    const PointCloud &input, const ViewControl &view) {
+        const PointCloud &input, const ViewControl &view) {
     return SelectDownSample(input, CropInRectangle(input.points_, view));
 }
 
 std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInPolygon(
-    const PointCloud &input, const ViewControl &view) {
+        const PointCloud &input, const ViewControl &view) {
     return SelectDownSample(input, CropInPolygon(input.points_, view));
 }
 
 std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInRectangle(
-    const TriangleMesh &input, const ViewControl &view) {
+        const TriangleMesh &input, const ViewControl &view) {
     return SelectDownSample(input, CropInRectangle(input.vertices_, view));
 }
 
 std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInPolygon(
-    const TriangleMesh &input, const ViewControl &view) {
+        const TriangleMesh &input, const ViewControl &view) {
     return SelectDownSample(input, CropInPolygon(input.vertices_, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(
-    const std::vector<Eigen::Vector3d> &input, const ViewControl &view) {
+        const std::vector<Eigen::Vector3d> &input, const ViewControl &view) {
     std::vector<size_t> output_index;
     Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
     double half_width = (double)view.GetWindowWidth() * 0.5;
@@ -223,7 +228,7 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
         AdvanceConsoleProgress();
         const auto &point = input[i];
         Eigen::Vector4d pos =
-            mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+                mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
         if (pos(3) == 0.0) break;
         pos /= pos(3);
         double x = (pos(0) + 1.0) * half_width;
@@ -237,7 +242,7 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
 }
 
 std::vector<size_t> SelectionPolygon::CropInPolygon(
-    const std::vector<Eigen::Vector3d> &input, const ViewControl &view) {
+        const std::vector<Eigen::Vector3d> &input, const ViewControl &view) {
     std::vector<size_t> output_index;
     Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
     double half_width = (double)view.GetWindowWidth() * 0.5;
@@ -248,7 +253,7 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
         AdvanceConsoleProgress();
         const auto &point = input[k];
         Eigen::Vector4d pos =
-            mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+                mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
         if (pos(3) == 0.0) break;
         pos /= pos(3);
         double x = (pos(0) + 1.0) * half_width;
@@ -260,8 +265,8 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
                 (polygon_[j](1) < y && polygon_[i](1) >= y)) {
                 nodes.push_back(polygon_[i](0) +
                                 (y - polygon_[i](1)) /
-                                    (polygon_[j](1) - polygon_[i](1)) *
-                                    (polygon_[j](0) - polygon_[i](0)));
+                                        (polygon_[j](1) - polygon_[i](1)) *
+                                        (polygon_[j](0) - polygon_[i](0)));
             }
         }
         std::sort(nodes.begin(), nodes.end());

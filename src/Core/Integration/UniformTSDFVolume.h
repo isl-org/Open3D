@@ -51,9 +51,9 @@ class UniformTSDFVolume : public TSDFVolume {
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
     /// precomputed from camera intrinsic
     void IntegrateWithDepthToCameraDistanceMultiplier(
-        const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic,
-        const Image &depth_to_camera_distance_multiplier);
+            const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
+            const Image &depth_to_camera_distance_multiplier);
 
     inline int IndexOf(int x, int y, int z) const {
         return x * resolution_ * resolution_ + y * resolution_ + z;

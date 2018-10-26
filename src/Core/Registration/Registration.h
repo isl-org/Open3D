@@ -80,7 +80,7 @@ class RANSACConvergenceCriteria {
 class RegistrationResult {
    public:
     RegistrationResult(
-        const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
+            const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
 
@@ -93,44 +93,47 @@ class RegistrationResult {
 
 /// Function for evaluation
 RegistrationResult EvaluateRegistration(
-    const PointCloud &source, const PointCloud &target,
-    double max_correspondence_distance,
-    const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
+        const PointCloud &source, const PointCloud &target,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
 
 /// Functions for ICP registration
 RegistrationResult RegistrationICP(
-    const PointCloud &source, const PointCloud &target,
-    double max_correspondence_distance,
-    const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
-    const TransformationEstimation &estimation =
-        TransformationEstimationPointToPoint(false),
-    const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+        const PointCloud &source, const PointCloud &target,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint(false),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
 /// Function for global RANSAC registration based on a given set of
 /// correspondences
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
-    const PointCloud &source, const PointCloud &target,
-    const CorrespondenceSet &corres, double max_correspondence_distance,
-    const TransformationEstimation &estimation =
-        TransformationEstimationPointToPoint(false),
-    int ransac_n = 6,
-    const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria());
+        const PointCloud &source, const PointCloud &target,
+        const CorrespondenceSet &corres, double max_correspondence_distance,
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint(false),
+        int ransac_n = 6,
+        const RANSACConvergenceCriteria &criteria =
+                RANSACConvergenceCriteria());
 
 /// Function for global RANSAC registration based on feature matching
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
-    const PointCloud &source, const PointCloud &target,
-    const Feature &source_feature, const Feature &target_feature,
-    double max_correspondence_distance,
-    const TransformationEstimation &estimation =
-        TransformationEstimationPointToPoint(false),
-    int ransac_n = 4,
-    const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-        &checkers = {},
-    const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria());
+        const PointCloud &source, const PointCloud &target,
+        const Feature &source_feature, const Feature &target_feature,
+        double max_correspondence_distance,
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint(false),
+        int ransac_n = 4,
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+                &checkers = {},
+        const RANSACConvergenceCriteria &criteria =
+                RANSACConvergenceCriteria());
 
 /// Function for computing information matrix from RegistrationResult
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
-    const PointCloud &source, const PointCloud &target,
-    double max_correspondence_distance, const Eigen::Matrix4d &transformation);
+        const PointCloud &source, const PointCloud &target,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &transformation);
 
 }  // namespace open3d

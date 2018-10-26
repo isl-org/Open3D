@@ -62,14 +62,14 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
 }
 
 std::shared_ptr<TriangleMesh> SelectDownSample(
-    const TriangleMesh &input, const std::vector<size_t> &indices) {
+        const TriangleMesh &input, const std::vector<size_t> &indices) {
     auto output = std::make_shared<TriangleMesh>();
     bool has_triangle_normals = input.HasTriangleNormals();
     bool has_vertex_normals = input.HasVertexNormals();
     bool has_vertex_colors = input.HasVertexColors();
     // For each vertex, list face indices.
     std::vector<std::vector<int>> vertex_to_triangle_temp(
-        input.vertices_.size());
+            input.vertices_.size());
     int triangle_id = 0;
     for (auto trangle : input.triangles_) {
         for (int i = 0; i < 3; i++)
@@ -113,7 +113,7 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
             output->triangles_.push_back(new_face);
             if (has_triangle_normals)
                 output->triangle_normals_.push_back(
-                    input.triangle_normals_[triangle_id]);
+                        input.triangle_normals_[triangle_id]);
         }
         triangle_id++;
     }
@@ -129,10 +129,10 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
     }
     output->Purge();
     PrintDebug(
-        "Triangle mesh sampled from %d vertices and %d triangles to %d "
-        "vertices and %d triangles.\n",
-        (int)input.vertices_.size(), (int)input.triangles_.size(),
-        (int)output->vertices_.size(), (int)output->triangles_.size());
+            "Triangle mesh sampled from %d vertices and %d triangles to %d "
+            "vertices and %d triangles.\n",
+            (int)input.vertices_.size(), (int)input.triangles_.size(),
+            (int)output->vertices_.size(), (int)output->triangles_.size());
     return output;
 }
 
@@ -144,7 +144,7 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
         return output;
     }
     Eigen::Vector3d voxel_size3 =
-        Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
     Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
@@ -154,13 +154,13 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
                        hash_eigen::hash<Eigen::Vector3i>>
-        voxelindex_to_accpoint;
+            voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
     for (int i = 0; i < (int)input.points_.size(); i++) {
         ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
-            int(floor(ref_coord(2)));
+                int(floor(ref_coord(2)));
         voxelindex_to_accpoint[voxel_index].AddPoint(input, i);
     }
     bool has_normals = input.HasNormals();
@@ -217,8 +217,8 @@ RemoveRadiusOutliers(const PointCloud &input, size_t nb_points,
                      double search_radius) {
     if (nb_points < 1 || search_radius <= 0) {
         PrintDebug(
-            "[RemoveRadiusOutliers] Illegal input parameters,"
-            "number of points and radius must be positive\n");
+                "[RemoveRadiusOutliers] Illegal input parameters,"
+                "number of points and radius must be positive\n");
         return std::make_tuple(std::make_shared<PointCloud>(),
                                std::vector<size_t>());
     }
@@ -249,9 +249,10 @@ RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbors,
                           double std_ratio) {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         PrintDebug(
-            "[RemoveStatisticalOutliers] Illegal input parameters, number of "
-            "neighbors"
-            "and standard deviation ratio must be positive\n");
+                "[RemoveStatisticalOutliers] Illegal input parameters, number "
+                "of "
+                "neighbors"
+                "and standard deviation ratio must be positive\n");
         return std::make_tuple(std::make_shared<PointCloud>(),
                                std::vector<size_t>());
     }
@@ -262,7 +263,7 @@ RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbors,
     KDTreeFlann kdtree;
     kdtree.SetGeometry(input);
     std::vector<double> avg_distances =
-        std::vector<double>(input.points_.size());
+            std::vector<double>(input.points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
 #ifdef _OPENMP
@@ -284,15 +285,15 @@ RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbors,
                                std::vector<size_t>());
     }
     double cloud_mean = std::accumulate(
-        avg_distances.begin(), avg_distances.end(), 0.0,
-        [](double const &x, double const &y) { return y > 0 ? x + y : x; });
+            avg_distances.begin(), avg_distances.end(), 0.0,
+            [](double const &x, double const &y) { return y > 0 ? x + y : x; });
     cloud_mean /= valid_distances;
     double sq_sum = std::inner_product(
-        avg_distances.begin(), avg_distances.end(), avg_distances.begin(), 0.0,
-        [](double const &x, double const &y) { return x + y; },
-        [cloud_mean](double const &x, double const &y) {
-            return x > 0 ? (x - cloud_mean) * (y - cloud_mean) : 0;
-        });
+            avg_distances.begin(), avg_distances.end(), avg_distances.begin(),
+            0.0, [](double const &x, double const &y) { return x + y; },
+            [cloud_mean](double const &x, double const &y) {
+                return x > 0 ? (x - cloud_mean) * (y - cloud_mean) : 0;
+            });
     // Bessel's correction
     double std_dev = std::sqrt(sq_sum / (valid_distances - 1));
     double distance_threshold = cloud_mean + std_ratio * std_dev;
@@ -305,8 +306,8 @@ RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbors,
 }
 
 std::shared_ptr<TriangleMesh> CropTriangleMesh(
-    const TriangleMesh &input, const Eigen::Vector3d &min_bound,
-    const Eigen::Vector3d &max_bound) {
+        const TriangleMesh &input, const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound) {
     if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
         min_bound(2) > max_bound(2)) {
         PrintDebug("[CropTriangleMesh] Illegal boundary clipped all points.\n");

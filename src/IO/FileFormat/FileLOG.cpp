@@ -40,7 +40,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
                                         PinholeCameraTrajectory &trajectory) {
     if (trajectory.intrinsic_.IsValid() == false) {
         trajectory.intrinsic_ = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+                PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
     trajectory.extrinsic_.clear();
     FILE *f = fopen(filename.c_str(), "r");
@@ -99,7 +99,8 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 }
 
 bool WritePinholeCameraTrajectoryToLOG(
-    const std::string &filename, const PinholeCameraTrajectory &trajectory) {
+        const std::string &filename,
+        const PinholeCameraTrajectory &trajectory) {
     FILE *f = fopen(filename.c_str(), "w");
     if (f == NULL) {
         PrintWarning("Write LOG failed: unable to open file: %s\n",

@@ -58,14 +58,14 @@ int main(int argc, char *argv[]) {
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
     double max_distance =
-        GetProgramOptionAsDouble(argc, argv, "--max_distance", 0.0);
+            GetProgramOptionAsDouble(argc, argv, "--max_distance", 0.0);
     auto pcd = CreatePointCloudFromFile(argv[1]);
     if (pcd->IsEmpty()) {
         PrintInfo("Empty point cloud.\n");
         return 1;
     }
     std::string binname =
-        filesystem::GetFileNameWithoutExtension(argv[1]) + ".bin";
+            filesystem::GetFileNameWithoutExtension(argv[1]) + ".bin";
     std::vector<double> distances(pcd->points_.size());
     if (ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
         distances = ComputePointCloudMahalanobisDistance(*pcd);

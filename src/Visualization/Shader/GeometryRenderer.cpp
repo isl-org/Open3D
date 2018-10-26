@@ -52,7 +52,7 @@ bool PointCloudRenderer::Render(const RenderOption &option,
         }
         if (option.point_show_normal_) {
             success &=
-                simpleblack_normal_shader_.Render(pointcloud, option, view);
+                    simpleblack_normal_shader_.Render(pointcloud, option, view);
         }
     } else {
         success &= simple_point_shader_.Render(pointcloud, option, view);
@@ -61,7 +61,7 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
         return false;
     }
@@ -85,7 +85,7 @@ bool PointCloudPickingRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudPickingRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
         return false;
     }
@@ -105,7 +105,7 @@ bool LineSetRenderer::Render(const RenderOption &option,
 }
 
 bool LineSetRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::LineSet) {
         return false;
     }
@@ -140,7 +140,7 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 }
 
 bool TriangleMeshRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
         Geometry::GeometryType::TriangleMesh) {
         return false;
@@ -185,7 +185,7 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
 }
 
 bool CoordinateFrameRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
         Geometry::GeometryType::TriangleMesh) {
         return false;
@@ -211,7 +211,7 @@ bool SelectionPolygonRenderer::Render(const RenderOption &option,
 }
 
 bool SelectionPolygonRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
         Geometry::GeometryType::Unspecified) {
         return false;
@@ -230,11 +230,11 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
                                       const ViewControl &view) {
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
-        Eigen::Vector3d(255, 180, 0) / 255.0,
-        Eigen::Vector3d(0, 166, 237) / 255.0,
-        Eigen::Vector3d(246, 81, 29) / 255.0,
-        Eigen::Vector3d(127, 184, 0) / 255.0,
-        Eigen::Vector3d(13, 44, 84) / 255.0,
+            Eigen::Vector3d(255, 180, 0) / 255.0,
+            Eigen::Vector3d(0, 166, 237) / 255.0,
+            Eigen::Vector3d(246, 81, 29) / 255.0,
+            Eigen::Vector3d(127, 184, 0) / 255.0,
+            Eigen::Vector3d(13, 44, 84) / 255.0,
     };
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &picker = (const PointCloudPicker &)(*geometry_ptr_);
@@ -244,13 +244,13 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
         size_t index = picker.picked_indices_[i];
         if (index < pointcloud.points_.size()) {
             auto sphere =
-                CreateMeshSphere(view.GetBoundingBox().GetSize() *
-                                 _option.pointcloud_picker_sphere_size_);
+                    CreateMeshSphere(view.GetBoundingBox().GetSize() *
+                                     _option.pointcloud_picker_sphere_size_);
             sphere->ComputeVertexNormals();
             sphere->vertex_colors_.clear();
             sphere->vertex_colors_.resize(
-                sphere->vertices_.size(),
-                color_palette[i % NUM_OF_COLOR_PALETTE]);
+                    sphere->vertices_.size(),
+                    color_palette[i % NUM_OF_COLOR_PALETTE]);
             Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
             trans.block<3, 1>(0, 3) = pointcloud.points_[index];
             sphere->Transform(trans);
@@ -264,7 +264,7 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudPickerRenderer::AddGeometry(
-    std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
         Geometry::GeometryType::Unspecified) {
         return false;

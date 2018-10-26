@@ -39,14 +39,14 @@ class GlobalOptimizationOption {
           preference_loop_closure_(preference_loop_closure),
           reference_node_(reference_node) {
         max_correspondence_distance_ = max_correspondence_distance < 0.0
-                                           ? 0.075
-                                           : max_correspondence_distance;
+                                               ? 0.075
+                                               : max_correspondence_distance;
         edge_prune_threshold_ =
-            edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
-                ? 0.25
-                : edge_prune_threshold;
+                edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
+                        ? 0.25
+                        : edge_prune_threshold;
         preference_loop_closure_ =
-            preference_loop_closure < 0.0 ? 1.0 : preference_loop_closure;
+                preference_loop_closure < 0.0 ? 1.0 : preference_loop_closure;
     };
     ~GlobalOptimizationOption(){};
 
@@ -71,11 +71,11 @@ class GlobalOptimizationOption {
 class GlobalOptimizationConvergenceCriteria {
    public:
     GlobalOptimizationConvergenceCriteria(
-        int max_iteration = 100, double min_relative_increment = 1e-6,
-        double min_relative_residual_increment = 1e-6,
-        double min_right_term = 1e-6, double min_residual = 1e-6,
-        int max_iteration_lm = 20, double upper_scale_factor = 2. / 3.,
-        double lower_scale_factor = 1. / 3.)
+            int max_iteration = 100, double min_relative_increment = 1e-6,
+            double min_relative_residual_increment = 1e-6,
+            double min_right_term = 1e-6, double min_residual = 1e-6,
+            int max_iteration_lm = 20, double upper_scale_factor = 2. / 3.,
+            double lower_scale_factor = 1. / 3.)
         : max_iteration_(max_iteration),
           min_relative_increment_(min_relative_increment),
           min_relative_residual_increment_(min_relative_residual_increment),
@@ -85,13 +85,13 @@ class GlobalOptimizationConvergenceCriteria {
           upper_scale_factor_(upper_scale_factor),
           lower_scale_factor_(lower_scale_factor) {
         upper_scale_factor_ =
-            upper_scale_factor < 0.0 || upper_scale_factor > 1.0
-                ? 2. / 3.
-                : upper_scale_factor;
+                upper_scale_factor < 0.0 || upper_scale_factor > 1.0
+                        ? 2. / 3.
+                        : upper_scale_factor;
         lower_scale_factor_ =
-            lower_scale_factor < 0.0 || lower_scale_factor > 1.0
-                ? 1. / 3.
-                : lower_scale_factor;
+                lower_scale_factor < 0.0 || lower_scale_factor > 1.0
+                        ? 1. / 3.
+                        : lower_scale_factor;
     };
     ~GlobalOptimizationConvergenceCriteria(){};
 

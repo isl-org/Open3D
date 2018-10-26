@@ -66,19 +66,19 @@ class SelectionPolygon : public Geometry2D {
     std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
                                                    const ViewControl &view);
     std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
-        const ViewControl &view);
+            const ViewControl &view);
 
    private:
     std::shared_ptr<PointCloud> CropPointCloudInRectangle(
-        const PointCloud &input, const ViewControl &view);
+            const PointCloud &input, const ViewControl &view);
     std::shared_ptr<PointCloud> CropPointCloudInPolygon(
-        const PointCloud &input, const ViewControl &view);
+            const PointCloud &input, const ViewControl &view);
     std::shared_ptr<TriangleMesh> CropTriangleMeshInRectangle(
-        const TriangleMesh &input, const ViewControl &view);
+            const TriangleMesh &input, const ViewControl &view);
     std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
-        const TriangleMesh &input, const ViewControl &view);
+            const TriangleMesh &input, const ViewControl &view);
     std::vector<size_t> CropInRectangle(
-        const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
+            const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
     std::vector<size_t> CropInPolygon(const std::vector<Eigen::Vector3d> &input,
                                       const ViewControl &view);
 

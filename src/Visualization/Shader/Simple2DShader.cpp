@@ -112,8 +112,8 @@ void Simple2DShader::UnbindGeometry() {
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareRendering(
-    const Geometry &geometry, const RenderOption &option,
-    const ViewControl &view) {
+        const Geometry &geometry, const RenderOption &option,
+        const ViewControl &view) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
         return false;
@@ -125,9 +125,9 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareBinding(
-    const Geometry &geometry, const RenderOption &option,
-    const ViewControl &view, std::vector<Eigen::Vector3f> &points,
-    std::vector<Eigen::Vector3f> &colors) {
+        const Geometry &geometry, const RenderOption &option,
+        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
         return false;
@@ -159,13 +159,13 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(
         const auto &vi = polygon.polygon_[i];
         const auto &vj = polygon.polygon_[j];
         points[i * 2] =
-            Eigen::Vector3f((float)(vi(0) / width * 2.0 - 1.0),
-                            (float)(vi(1) / height * 2.0 - 1.0), 0.0f);
+                Eigen::Vector3f((float)(vi(0) / width * 2.0 - 1.0),
+                                (float)(vi(1) / height * 2.0 - 1.0), 0.0f);
         points[i * 2 + 1] =
-            Eigen::Vector3f((float)(vj(0) / width * 2.0 - 1.0),
-                            (float)(vj(1) / height * 2.0 - 1.0), 0.0f);
+                Eigen::Vector3f((float)(vj(0) / width * 2.0 - 1.0),
+                                (float)(vj(1) / height * 2.0 - 1.0), 0.0f);
         colors[i * 2] = colors[i * 2 + 1] =
-            _option.selection_polygon_boundary_color_.cast<float>();
+                _option.selection_polygon_boundary_color_.cast<float>();
     }
     draw_arrays_mode_ = GL_LINES;
     draw_arrays_size_ = GLsizei(points.size());

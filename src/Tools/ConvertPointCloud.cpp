@@ -35,76 +35,84 @@ void PrintHelp() {
     PrintInfo("Usage:\n");
     PrintInfo("    > ConvertPointCloud source_file target_file [options]\n");
     PrintInfo(
-        "    > ConvertPointCloud source_directory target_directory "
-        "[options]\n");
+            "    > ConvertPointCloud source_directory target_directory "
+            "[options]\n");
     PrintInfo(
-        "      Read point cloud from source file and convert it to target "
-        "file.\n");
+            "      Read point cloud from source file and convert it to target "
+            "file.\n");
     PrintInfo("\n");
     PrintInfo("Options (listed in the order of execution priority):\n");
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
     PrintInfo(
-        "    --clip_x_min x0           : Clip points with x coordinate < "
-        "x0.\n");
+            "    --clip_x_min x0           : Clip points with x coordinate < "
+            "x0.\n");
     PrintInfo(
-        "    --clip_x_max x1           : Clip points with x coordinate > "
-        "x1.\n");
+            "    --clip_x_max x1           : Clip points with x coordinate > "
+            "x1.\n");
     PrintInfo(
-        "    --clip_y_min y0           : Clip points with y coordinate < "
-        "y0.\n");
+            "    --clip_y_min y0           : Clip points with y coordinate < "
+            "y0.\n");
     PrintInfo(
-        "    --clip_y_max y1           : Clip points with y coordinate > "
-        "y1.\n");
+            "    --clip_y_max y1           : Clip points with y coordinate > "
+            "y1.\n");
     PrintInfo(
-        "    --clip_z_min z0           : Clip points with z coordinate < "
-        "z0.\n");
+            "    --clip_z_min z0           : Clip points with z coordinate < "
+            "z0.\n");
     PrintInfo(
-        "    --clip_z_max z1           : Clip points with z coordinate > "
-        "z1.\n");
+            "    --clip_z_max z1           : Clip points with z coordinate > "
+            "z1.\n");
     PrintInfo(
-        "    --filter_mahalanobis d    : Filter out points with Mahalanobis "
-        "distance > d.\n");
+            "    --filter_mahalanobis d    : Filter out points with "
+            "Mahalanobis "
+            "distance > d.\n");
     PrintInfo(
-        "    --uniform_sample_every K  : Downsample the point cloud uniformly. "
-        "Keep only\n");
+            "    --uniform_sample_every K  : Downsample the point cloud "
+            "uniformly. "
+            "Keep only\n");
     PrintInfo(
-        "                              : one point for every K points.\n");
+            "                              : one point for every K points.\n");
     PrintInfo(
-        "    --voxel_sample voxel_size : Downsample the point cloud with a "
-        "voxel.\n");
+            "    --voxel_sample voxel_size : Downsample the point cloud with a "
+            "voxel.\n");
     PrintInfo(
-        "    --estimate_normals radius : Estimate normals using a search "
-        "neighborhood of\n");
+            "    --estimate_normals radius : Estimate normals using a search "
+            "neighborhood of\n");
     PrintInfo(
-        "                                radius. The normals are oriented "
-        "w.r.t. the\n");
+            "                                radius. The normals are oriented "
+            "w.r.t. the\n");
     PrintInfo(
-        "                                original normals of the pointcloud if "
-        "they\n");
+            "                                original normals of the "
+            "pointcloud if "
+            "they\n");
     PrintInfo(
-        "                                exist. Otherwise, they are oriented "
-        "towards -Z\n");
+            "                                exist. Otherwise, they are "
+            "oriented "
+            "towards -Z\n");
     PrintInfo("                                direction.\n");
     PrintInfo(
-        "    --estimate_normals_knn k  : Estimate normals using a search with "
-        "k nearest\n");
+            "    --estimate_normals_knn k  : Estimate normals using a search "
+            "with "
+            "k nearest\n");
     PrintInfo(
-        "                                neighbors. The normals are oriented "
-        "w.r.t. the\n");
+            "                                neighbors. The normals are "
+            "oriented "
+            "w.r.t. the\n");
     PrintInfo(
-        "                                original normals of the pointcloud if "
-        "they\n");
+            "                                original normals of the "
+            "pointcloud if "
+            "they\n");
     PrintInfo(
-        "                                exist. Otherwise, they are oriented "
-        "towards -Z\n");
+            "                                exist. Otherwise, they are "
+            "oriented "
+            "towards -Z\n");
     PrintInfo("                                direction.\n");
     PrintInfo(
-        "    --orient_normals [x,y,z]  : Orient the normals w.r.t the "
-        "direction [x,y,z].\n");
+            "    --orient_normals [x,y,z]  : Orient the normals w.r.t the "
+            "direction [x,y,z].\n");
     PrintInfo(
-        "    --camera_location [x,y,z] : Orient the normals w.r.t camera "
-        "location [x,y,z].\n");
+            "    --camera_location [x,y,z] : Orient the normals w.r.t camera "
+            "location [x,y,z].\n");
 }
 
 void convert(int argc, char **argv, const std::string &file_in,
@@ -117,32 +125,35 @@ void convert(int argc, char **argv, const std::string &file_in,
 
     // clip
     if (ProgramOptionExistsAny(
-            argc, argv,
-            {"--clip_x_min", "--clip_x_max", "--clip_y_min", "--clip_y_max",
-             "--clip_z_min", "--clip_z_max"})) {
+                argc, argv,
+                {"--clip_x_min", "--clip_x_max", "--clip_y_min", "--clip_y_max",
+                 "--clip_z_min", "--clip_z_max"})) {
         Eigen::Vector3d min_bound, max_bound;
-        min_bound(0) = GetProgramOptionAsDouble(
-            argc, argv, "--clip_x_min", std::numeric_limits<double>::lowest());
-        min_bound(1) = GetProgramOptionAsDouble(
-            argc, argv, "--clip_y_min", std::numeric_limits<double>::lowest());
-        min_bound(2) = GetProgramOptionAsDouble(
-            argc, argv, "--clip_z_min", std::numeric_limits<double>::lowest());
+        min_bound(0) =
+                GetProgramOptionAsDouble(argc, argv, "--clip_x_min",
+                                         std::numeric_limits<double>::lowest());
+        min_bound(1) =
+                GetProgramOptionAsDouble(argc, argv, "--clip_y_min",
+                                         std::numeric_limits<double>::lowest());
+        min_bound(2) =
+                GetProgramOptionAsDouble(argc, argv, "--clip_z_min",
+                                         std::numeric_limits<double>::lowest());
         max_bound(0) = GetProgramOptionAsDouble(
-            argc, argv, "--clip_x_max", std::numeric_limits<double>::max());
+                argc, argv, "--clip_x_max", std::numeric_limits<double>::max());
         max_bound(1) = GetProgramOptionAsDouble(
-            argc, argv, "--clip_y_max", std::numeric_limits<double>::max());
+                argc, argv, "--clip_y_max", std::numeric_limits<double>::max());
         max_bound(2) = GetProgramOptionAsDouble(
-            argc, argv, "--clip_z_max", std::numeric_limits<double>::max());
+                argc, argv, "--clip_z_max", std::numeric_limits<double>::max());
         pointcloud_ptr = CropPointCloud(*pointcloud_ptr, min_bound, max_bound);
         processed = true;
     }
 
     // filter_mahalanobis
     double mahalanobis_threshold =
-        GetProgramOptionAsDouble(argc, argv, "--filter_mahalanobis", 0.0);
+            GetProgramOptionAsDouble(argc, argv, "--filter_mahalanobis", 0.0);
     if (mahalanobis_threshold > 0.0) {
         auto mahalanobis =
-            ComputePointCloudMahalanobisDistance(*pointcloud_ptr);
+                ComputePointCloudMahalanobisDistance(*pointcloud_ptr);
         std::vector<size_t> indices;
         for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
             if (mahalanobis[i] < mahalanobis_threshold) {
@@ -157,7 +168,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 
     // uniform_downsample
     int every_k =
-        GetProgramOptionAsInt(argc, argv, "--uniform_sample_every", 0);
+            GetProgramOptionAsInt(argc, argv, "--uniform_sample_every", 0);
     if (every_k > 1) {
         PrintDebug("Downsample point cloud uniformly every %d points.\n",
                    every_k);
@@ -167,7 +178,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 
     // voxel_downsample
     double voxel_size =
-        GetProgramOptionAsDouble(argc, argv, "--voxel_sample", 0.0);
+            GetProgramOptionAsDouble(argc, argv, "--voxel_sample", 0.0);
     if (voxel_size > 0.0) {
         PrintDebug("Downsample point cloud with voxel size %.4f.\n",
                    voxel_size);
@@ -177,7 +188,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 
     // estimate_normals
     double radius =
-        GetProgramOptionAsDouble(argc, argv, "--estimate_normals", 0.0);
+            GetProgramOptionAsDouble(argc, argv, "--estimate_normals", 0.0);
     if (radius > 0.0) {
         PrintDebug("Estimate normals with search radius %.4f.\n", radius);
         EstimateNormals(*pointcloud_ptr, KDTreeSearchParamRadius(radius));
@@ -193,7 +204,7 @@ void convert(int argc, char **argv, const std::string &file_in,
 
     // orient_normals
     Eigen::VectorXd direction =
-        GetProgramOptionAsEigenVectorXd(argc, argv, "--orient_normals");
+            GetProgramOptionAsEigenVectorXd(argc, argv, "--orient_normals");
     if (direction.size() == 3 && pointcloud_ptr->HasNormals()) {
         PrintDebug("Orient normals to [%.2f, %.2f, %.2f].\n", direction(0),
                    direction(1), direction(2));
@@ -202,7 +213,7 @@ void convert(int argc, char **argv, const std::string &file_in,
         processed = true;
     }
     Eigen::VectorXd camera_loc =
-        GetProgramOptionAsEigenVectorXd(argc, argv, "--camera_location");
+            GetProgramOptionAsEigenVectorXd(argc, argv, "--camera_location");
     if (camera_loc.size() == 3 && pointcloud_ptr->HasNormals()) {
         PrintDebug("Orient normals towards [%.2f, %.2f, %.2f].\n",
                    camera_loc(0), camera_loc(1), camera_loc(2));
@@ -241,7 +252,7 @@ int main(int argc, char **argv) {
         for (const auto &fn : filenames) {
             convert(argc, argv, fn,
                     GetRegularizedDirectoryName(argv[2]) +
-                        GetFileNameWithoutDirectory(fn));
+                            GetFileNameWithoutDirectory(fn));
         }
     } else {
         PrintError("File or directory does not exist.\n");

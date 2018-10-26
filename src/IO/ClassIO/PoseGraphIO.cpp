@@ -45,21 +45,22 @@ bool WritePoseGraphToJSON(const std::string &filename,
 }
 
 static const std::unordered_map<
-    std::string, std::function<bool(const std::string &, PoseGraph &)>>
-    file_extension_to_pose_graph_read_function{
-        {"json", ReadPoseGraphFromJSON},
-    };
+        std::string, std::function<bool(const std::string &, PoseGraph &)>>
+        file_extension_to_pose_graph_read_function{
+                {"json", ReadPoseGraphFromJSON},
+        };
 
 static const std::unordered_map<
-    std::string, std::function<bool(const std::string &, const PoseGraph &)>>
-    file_extension_to_pose_graph_write_function{
-        {"json", WritePoseGraphToJSON},
-    };
+        std::string,
+        std::function<bool(const std::string &, const PoseGraph &)>>
+        file_extension_to_pose_graph_write_function{
+                {"json", WritePoseGraphToJSON},
+        };
 
 }  // unnamed namespace
 
 std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
-    const std::string &filename) {
+        const std::string &filename) {
     auto pose_graph = std::make_shared<PoseGraph>();
     ReadPoseGraph(filename, *pose_graph);
     return pose_graph;
@@ -67,13 +68,13 @@ std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
 
 bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph) {
     std::string filename_ext =
-        filesystem::GetFileExtensionInLowerCase(filename);
+            filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         PrintWarning("Read PoseGraph failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
-        file_extension_to_pose_graph_read_function.find(filename_ext);
+            file_extension_to_pose_graph_read_function.find(filename_ext);
     if (map_itr == file_extension_to_pose_graph_read_function.end()) {
         PrintWarning("Read PoseGraph failed: unknown file extension.\n");
         return false;
@@ -83,13 +84,13 @@ bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph) {
 
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph) {
     std::string filename_ext =
-        filesystem::GetFileExtensionInLowerCase(filename);
+            filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         PrintWarning("Write PoseGraph failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
-        file_extension_to_pose_graph_write_function.find(filename_ext);
+            file_extension_to_pose_graph_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pose_graph_write_function.end()) {
         PrintWarning("Write PoseGraph failed: unknown file extension.\n");
         return false;

@@ -37,7 +37,7 @@ class GLFWEnvironmentSingleton {
     GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n"); }
     GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
     GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
-        delete;
+            delete;
 
    public:
     ~GLFWEnvironmentSingleton() {
@@ -70,9 +70,10 @@ Visualizer::~Visualizer() {
 }
 
 bool Visualizer::CreateVisualizerWindow(
-    const std::string &window_name /* = "Open3D"*/, const int width /* = 640*/,
-    const int height /* = 480*/, const int left /* = 50*/,
-    const int top /* = 50*/, const bool visible /* = true*/) {
+        const std::string &window_name /* = "Open3D"*/,
+        const int width /* = 640*/, const int height /* = 480*/,
+        const int left /* = 50*/, const int top /* = 50*/,
+        const bool visible /* = true*/) {
     window_name_ = window_name;
     if (window_) {  // window already created
         UpdateWindowTitle();
@@ -127,45 +128,45 @@ bool Visualizer::CreateVisualizerWindow(
 
     auto window_refresh_callback = [](GLFWwindow *window) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->WindowRefreshCallback(window);
+                ->WindowRefreshCallback(window);
     };
     glfwSetWindowRefreshCallback(window_, window_refresh_callback);
 
     auto window_resize_callback = [](GLFWwindow *window, int w, int h) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->WindowResizeCallback(window, w, h);
+                ->WindowResizeCallback(window, w, h);
     };
     glfwSetFramebufferSizeCallback(window_, window_resize_callback);
 
     auto mouse_move_callback = [](GLFWwindow *window, double x, double y) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->MouseMoveCallback(window, x, y);
+                ->MouseMoveCallback(window, x, y);
     };
     glfwSetCursorPosCallback(window_, mouse_move_callback);
 
     auto mouse_scroll_callback = [](GLFWwindow *window, double x, double y) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->MouseScrollCallback(window, x, y);
+                ->MouseScrollCallback(window, x, y);
     };
     glfwSetScrollCallback(window_, mouse_scroll_callback);
 
     auto mouse_button_callback = [](GLFWwindow *window, int button, int action,
                                     int mods) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->MouseButtonCallback(window, button, action, mods);
+                ->MouseButtonCallback(window, button, action, mods);
     };
     glfwSetMouseButtonCallback(window_, mouse_button_callback);
 
     auto key_press_callback = [](GLFWwindow *window, int key, int scancode,
                                  int action, int mods) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->KeyPressCallback(window, key, scancode, action, mods);
+                ->KeyPressCallback(window, key, scancode, action, mods);
     };
     glfwSetKeyCallback(window_, key_press_callback);
 
     auto window_close_callback = [](GLFWwindow *window) {
         static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
-            ->WindowCloseCallback(window);
+                ->WindowCloseCallback(window);
     };
     glfwSetWindowCloseCallback(window_, window_close_callback);
 
@@ -200,7 +201,7 @@ void Visualizer::DestroyVisualizerWindow() {
 }
 
 void Visualizer::RegisterAnimationCallback(
-    std::function<bool(Visualizer *)> callback_func) {
+        std::function<bool(Visualizer *)> callback_func) {
     animation_callback_func_ = callback_func;
 }
 
@@ -227,11 +228,11 @@ void Visualizer::BuildUtilities() {
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
     coordinate_frame_mesh_ptr_ = CreateMeshCoordinateFrame(
-        boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+            boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
-        std::make_shared<glsl::CoordinateFrameRenderer>();
+            std::make_shared<glsl::CoordinateFrameRenderer>();
     if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
-            coordinate_frame_mesh_ptr_) == false) {
+                coordinate_frame_mesh_ptr_) == false) {
         return;
     }
     utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);
@@ -358,7 +359,8 @@ void Visualizer::PrintVisualizerHelp() {
     PrintInfo("    [/]          : Increase/decrease field of view.\n");
     PrintInfo("    R            : Reset view point.\n");
     PrintInfo(
-        "    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
+            "    Ctrl/Cmd + C : Copy current view status into the "
+            "clipboard.\n");
     PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
     PrintInfo("\n");
     PrintInfo("  -- General control --\n");
@@ -367,15 +369,16 @@ void Visualizer::PrintVisualizerHelp() {
     PrintInfo("    P, PrtScn    : Take a screen capture.\n");
     PrintInfo("    D            : Take a depth capture.\n");
     PrintInfo(
-        "    O            : Take a capture of current rendering settings.\n");
+            "    O            : Take a capture of current rendering "
+            "settings.\n");
     PrintInfo("\n");
     PrintInfo("  -- Render mode control --\n");
     PrintInfo("    L            : Turn on/off lighting.\n");
     PrintInfo("    +/-          : Increase/decrease point size.\n");
     PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
     PrintInfo(
-        "    S            : Toggle between mesh flat shading and smooth "
-        "shading.\n");
+            "    S            : Toggle between mesh flat shading and smooth "
+            "shading.\n");
     PrintInfo("    W            : Turn on/off mesh wireframe.\n");
     PrintInfo("    B            : Turn on/off back face rendering.\n");
     PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
@@ -392,8 +395,8 @@ void Visualizer::PrintVisualizerHelp() {
     PrintInfo("                   9 - normal as color.\n");
     PrintInfo("    Ctrl + 0..4,9: Set mesh color option.\n");
     PrintInfo(
-        "                   0 - Default behavior, render uniform gray "
-        "color.\n");
+            "                   0 - Default behavior, render uniform gray "
+            "color.\n");
     PrintInfo("                   1 - Render point color.\n");
     PrintInfo("                   2 - x coordinate as color.\n");
     PrintInfo("                   3 - y coordinate as color.\n");

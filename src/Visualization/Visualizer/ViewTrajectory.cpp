@@ -57,9 +57,9 @@ void ViewTrajectory::ComputeInterpolationCoefficients() {
         return;
     } else if (n == 2) {
         coeff_[0].block<17, 1>(0, 1) =
-            coeff_[1].block<17, 1>(0, 0) - coeff_[0].block<17, 1>(0, 0);
+                coeff_[1].block<17, 1>(0, 0) - coeff_[0].block<17, 1>(0, 0);
         coeff_[1].block<17, 1>(0, 1) =
-            coeff_[0].block<17, 1>(0, 0) - coeff_[1].block<17, 1>(0, 0);
+                coeff_[0].block<17, 1>(0, 0) - coeff_[1].block<17, 1>(0, 0);
         return;
     }
 
@@ -117,23 +117,23 @@ void ViewTrajectory::ComputeInterpolationCoefficients() {
         for (int i = 0; i < n; i++) {
             int i1 = (i + 1) % n;
             coeff_[i](k, 1) = x(i);
-            coeff_[i](k, 2) =
-                3.0 * (coeff_[i1](k, 0) - coeff_[i](k, 0)) - 2.0 * x(i) - x(i1);
+            coeff_[i](k, 2) = 3.0 * (coeff_[i1](k, 0) - coeff_[i](k, 0)) -
+                              2.0 * x(i) - x(i1);
             coeff_[i](k, 3) =
-                2.0 * (coeff_[i](k, 0) - coeff_[i1](k, 0)) + x(i) + x(i1);
+                    2.0 * (coeff_[i](k, 0) - coeff_[i1](k, 0)) + x(i) + x(i1);
         }
     }
 }
 
 std::tuple<bool, ViewParameters> ViewTrajectory::GetInterpolatedFrame(
-    size_t k) {
+        size_t k) {
     ViewParameters status;
     if (view_status_.empty() || k >= NumOfFrames()) {
         return std::make_tuple(false, status);
     }
     size_t segment_index = k / (interval_ + 1);
     double segment_fraction =
-        double(k - segment_index * (interval_ + 1)) / double(interval_ + 1);
+            double(k - segment_index * (interval_ + 1)) / double(interval_ + 1);
     Eigen::Vector4d s(1.0, segment_fraction,
                       segment_fraction * segment_fraction,
                       segment_fraction * segment_fraction * segment_fraction);
@@ -163,14 +163,14 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
 bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning(
-            "ViewTrajectory read JSON failed: unsupported json format.\n");
+                "ViewTrajectory read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "ViewTrajectory" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
         PrintWarning(
-            "ViewTrajectory read JSON failed: unsupported json format.\n");
+                "ViewTrajectory read JSON failed: unsupported json format.\n");
         return false;
     }
     is_loop_ = value.get("is_loop", false).asBool();

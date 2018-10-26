@@ -114,11 +114,11 @@ int main(int argc, char *argv[]) {
     }
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
-        Eigen::Vector3d(255, 180, 0) / 255.0,
-        Eigen::Vector3d(0, 166, 237) / 255.0,
-        Eigen::Vector3d(246, 81, 29) / 255.0,
-        Eigen::Vector3d(127, 184, 0) / 255.0,
-        Eigen::Vector3d(13, 44, 84) / 255.0,
+            Eigen::Vector3d(255, 180, 0) / 255.0,
+            Eigen::Vector3d(0, 166, 237) / 255.0,
+            Eigen::Vector3d(246, 81, 29) / 255.0,
+            Eigen::Vector3d(127, 184, 0) / 255.0,
+            Eigen::Vector3d(13, 44, 84) / 255.0,
     };
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     std::string pcd_dirname = GetProgramOptionAsString(argc, argv, "--dir");
     if (pcd_dirname.empty()) {
         pcd_dirname =
-            filesystem::GetFileParentDirectory(log_filename) + "pcds/";
+                filesystem::GetFileParentDirectory(log_filename) + "pcds/";
     }
 
     std::vector<std::tuple<int, int, int>> metadata;

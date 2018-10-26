@@ -35,17 +35,18 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-    std::string, std::function<bool(const std::string &, TriangleMesh &)>>
-    file_extension_to_trianglemesh_read_function{
-        {"ply", ReadTriangleMeshFromPLY},
-    };
+        std::string, std::function<bool(const std::string &, TriangleMesh &)>>
+        file_extension_to_trianglemesh_read_function{
+                {"ply", ReadTriangleMeshFromPLY},
+        };
 
 static const std::unordered_map<
-    std::string, std::function<bool(const std::string &, const TriangleMesh &,
-                                    const bool, const bool)>>
-    file_extension_to_trianglemesh_write_function{
-        {"ply", WriteTriangleMeshToPLY},
-    };
+        std::string,
+        std::function<bool(const std::string &, const TriangleMesh &,
+                           const bool, const bool)>>
+        file_extension_to_trianglemesh_write_function{
+                {"ply", WriteTriangleMeshToPLY},
+        };
 
 }  // unnamed namespace
 
@@ -57,13 +58,13 @@ std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename) {
 
 bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh) {
     std::string filename_ext =
-        filesystem::GetFileExtensionInLowerCase(filename);
+            filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
-        file_extension_to_trianglemesh_read_function.find(filename_ext);
+            file_extension_to_trianglemesh_read_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
         return false;
@@ -78,13 +79,13 @@ bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     std::string filename_ext =
-        filesystem::GetFileExtensionInLowerCase(filename);
+            filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
-        file_extension_to_trianglemesh_write_function.find(filename_ext);
+            file_extension_to_trianglemesh_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
         PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
         return false;

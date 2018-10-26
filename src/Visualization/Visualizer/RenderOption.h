@@ -118,9 +118,9 @@ class RenderOption : public IJsonConvertible {
         }
     }
     void ChangePointSize(double change) {
-        point_size_ = std::max(
-            std::min(point_size_ + change * POINT_SIZE_STEP, POINT_SIZE_MAX),
-            POINT_SIZE_MIN);
+        point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
+                                        POINT_SIZE_MAX),
+                               POINT_SIZE_MIN);
     }
     void TogglePointShowNormal() { point_show_normal_ = !point_show_normal_; }
     void ToggleShadingOption() {
@@ -151,7 +151,7 @@ class RenderOption : public IJsonConvertible {
     // global options
     Eigen::Vector3d background_color_ = Eigen::Vector3d::Ones();
     TextureInterpolationOption interpolation_option_ =
-        TextureInterpolationOption::Nearest;
+            TextureInterpolationOption::Nearest;
 
     // Phong lighting options
     bool light_on_ = true;

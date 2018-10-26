@@ -36,53 +36,61 @@ using namespace open3d;
 
 void pybind_colormap_optimization(py::module &m) {
     py::class_<ColorMapOptmizationOption> color_map_optimization_option(
-        m, "ColorMapOptmizationOption");
+            m, "ColorMapOptmizationOption");
     py::detail::bind_default_constructor<ColorMapOptmizationOption>(
-        color_map_optimization_option);
+            color_map_optimization_option);
     color_map_optimization_option
-        .def_readwrite("non_rigid_camera_coordinate",
-                       &ColorMapOptmizationOption::non_rigid_camera_coordinate_)
-        .def_readwrite("number_of_vertical_anchors",
-                       &ColorMapOptmizationOption::number_of_vertical_anchors_)
-        .def_readwrite(
-            "non_rigid_anchor_point_weight",
-            &ColorMapOptmizationOption::non_rigid_anchor_point_weight_)
-        .def_readwrite("maximum_iteration",
-                       &ColorMapOptmizationOption::maximum_iteration_)
-        .def_readwrite("maximum_allowable_depth",
-                       &ColorMapOptmizationOption::maximum_allowable_depth_)
-        .def_readwrite(
-            "depth_threshold_for_visiblity_check",
-            &ColorMapOptmizationOption::depth_threshold_for_visiblity_check_)
-        .def_readwrite("depth_threshold_for_discontinuity_check",
-                       &ColorMapOptmizationOption::
-                           depth_threshold_for_discontinuity_check_)
-        .def_readwrite("half_dilation_kernel_size_for_discontinuity_map",
-                       &ColorMapOptmizationOption::
-                           half_dilation_kernel_size_for_discontinuity_map_)
-        .def("__repr__", [](const ColorMapOptmizationOption &to) {
-            return std::string("ColorMapOptmizationOption with") +
-                   std::string("\n- non_rigid_camera_coordinate : ") +
-                   std::to_string(to.non_rigid_camera_coordinate_) +
-                   std::string("\n- number_of_vertical_anchors : ") +
-                   std::to_string(to.number_of_vertical_anchors_) +
-                   std::string("\n- non_rigid_anchor_point_weight : ") +
-                   std::to_string(to.non_rigid_anchor_point_weight_) +
-                   std::string("\n- maximum_iteration : ") +
-                   std::to_string(to.maximum_iteration_) +
-                   std::string("\n- maximum_allowable_depth : ") +
-                   std::to_string(to.maximum_allowable_depth_) +
-                   std::string("\n- depth_threshold_for_visiblity_check : ") +
-                   std::to_string(to.depth_threshold_for_visiblity_check_) +
-                   std::string(
-                       "\n- depth_threshold_for_discontinuity_check : ") +
-                   std::to_string(to.depth_threshold_for_discontinuity_check_) +
-                   std::string(
-                       "\n- half_dilation_kernel_size_for_discontinuity_map "
-                       ": ") +
-                   std::to_string(
-                       to.half_dilation_kernel_size_for_discontinuity_map_);
-        });
+            .def_readwrite(
+                    "non_rigid_camera_coordinate",
+                    &ColorMapOptmizationOption::non_rigid_camera_coordinate_)
+            .def_readwrite(
+                    "number_of_vertical_anchors",
+                    &ColorMapOptmizationOption::number_of_vertical_anchors_)
+            .def_readwrite(
+                    "non_rigid_anchor_point_weight",
+                    &ColorMapOptmizationOption::non_rigid_anchor_point_weight_)
+            .def_readwrite("maximum_iteration",
+                           &ColorMapOptmizationOption::maximum_iteration_)
+            .def_readwrite("maximum_allowable_depth",
+                           &ColorMapOptmizationOption::maximum_allowable_depth_)
+            .def_readwrite("depth_threshold_for_visiblity_check",
+                           &ColorMapOptmizationOption::
+                                   depth_threshold_for_visiblity_check_)
+            .def_readwrite("depth_threshold_for_discontinuity_check",
+                           &ColorMapOptmizationOption::
+                                   depth_threshold_for_discontinuity_check_)
+            .def_readwrite(
+                    "half_dilation_kernel_size_for_discontinuity_map",
+                    &ColorMapOptmizationOption::
+                            half_dilation_kernel_size_for_discontinuity_map_)
+            .def("__repr__", [](const ColorMapOptmizationOption &to) {
+                return std::string("ColorMapOptmizationOption with") +
+                       std::string("\n- non_rigid_camera_coordinate : ") +
+                       std::to_string(to.non_rigid_camera_coordinate_) +
+                       std::string("\n- number_of_vertical_anchors : ") +
+                       std::to_string(to.number_of_vertical_anchors_) +
+                       std::string("\n- non_rigid_anchor_point_weight : ") +
+                       std::to_string(to.non_rigid_anchor_point_weight_) +
+                       std::string("\n- maximum_iteration : ") +
+                       std::to_string(to.maximum_iteration_) +
+                       std::string("\n- maximum_allowable_depth : ") +
+                       std::to_string(to.maximum_allowable_depth_) +
+                       std::string(
+                               "\n- depth_threshold_for_visiblity_check : ") +
+                       std::to_string(to.depth_threshold_for_visiblity_check_) +
+                       std::string(
+                               "\n- depth_threshold_for_discontinuity_check "
+                               ": ") +
+                       std::to_string(
+                               to.depth_threshold_for_discontinuity_check_) +
+                       std::string(
+                               "\n- "
+                               "half_dilation_kernel_size_for_discontinuity_"
+                               "map "
+                               ": ") +
+                       std::to_string(
+                               to.half_dilation_kernel_size_for_discontinuity_map_);
+            });
 }
 
 void pybind_colormap_optimization_methods(py::module &m) {

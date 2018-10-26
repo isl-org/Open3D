@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
-        Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitX()));
+            Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitX()));
     pointcloud_transformed_ptr->Transform(trans_to_origin.inverse() *
                                           transformation * trans_to_origin);
 
@@ -174,17 +174,17 @@ int main(int argc, char *argv[]) {
 
     // 6. test normal estimation
     DrawGeometriesWithKeyCallbacks(
-        {pointcloud_ptr},
-        {{GLFW_KEY_SPACE,
-          [&](Visualizer *vis) {
-              // EstimateNormals(*pointcloud_ptr,
-              //        open3d::KDTreeSearchParamKNN(20));
-              EstimateNormals(*pointcloud_ptr,
-                              open3d::KDTreeSearchParamRadius(0.05));
-              PrintInfo("Done.\n");
-              return true;
-          }}},
-        "Press Space to Estimate Normal", 1600, 900);
+            {pointcloud_ptr},
+            {{GLFW_KEY_SPACE,
+              [&](Visualizer *vis) {
+                  // EstimateNormals(*pointcloud_ptr,
+                  //        open3d::KDTreeSearchParamKNN(20));
+                  EstimateNormals(*pointcloud_ptr,
+                                  open3d::KDTreeSearchParamRadius(0.05));
+                  PrintInfo("Done.\n");
+                  return true;
+              }}},
+            "Press Space to Estimate Normal", 1600, 900);
 
     // n. test end
 

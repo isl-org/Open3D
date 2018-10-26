@@ -63,7 +63,7 @@ int main(int argc, char **args) {
     FPSTimer timer("Realsense stream");
 
     rs::extrinsics extrinsics =
-        dev->get_extrinsics(rs::stream::depth, rs::stream::rectified_color);
+            dev->get_extrinsics(rs::stream::depth, rs::stream::rectified_color);
     for (int i = 0; i < 9; i++) {
         PrintInfo("%.6f ", extrinsics.rotation[i]);
     }
@@ -92,7 +92,7 @@ int main(int argc, char **args) {
     PrintInfo("\n\n");
 
     rs::intrinsics rect_intr =
-        dev->get_stream_intrinsics(rs::stream::rectified_color);
+            dev->get_stream_intrinsics(rs::stream::rectified_color);
     PrintInfo("%d %d %.6f %.6f %.6f %.6f\n", rect_intr.width, rect_intr.height,
               rect_intr.fx, rect_intr.fy, rect_intr.ppx, rect_intr.ppy);
     for (int i = 0; i < 5; i++) {
@@ -104,7 +104,7 @@ int main(int argc, char **args) {
     if (depth_vis.CreateVisualizerWindow("Depth", 640, 480, 15, 50) == false ||
         depth_vis.AddGeometry(depth_image_ptr) == false ||
         color_vis.CreateVisualizerWindow("Color", 1920, 1080, 675, 50) ==
-            false ||
+                false ||
         color_vis.AddGeometry(color_image_ptr) == false) {
         return 0;
     }

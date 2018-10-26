@@ -75,7 +75,7 @@ class ViewControlWithCustomAnimation : public ViewControl {
     bool CaptureTrajectory(const std::string &filename = "");
     bool LoadTrajectoryFromJsonFile(const std::string &filename);
     bool LoadTrajectoryFromCameraTrajectory(
-        const PinholeCameraTrajectory &camera_trajectory);
+            const PinholeCameraTrajectory &camera_trajectory);
     bool IsPreviewing() {
         return animation_mode_ == AnimationMode::PreviewMode;
     }

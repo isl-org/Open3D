@@ -61,7 +61,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(const Eigen::MatrixXd &A,
 /// Input: 6x6 Jacobian matrix and 6-dim residual vector.
 /// Output: tuple of is_success, 4x4 extrinsic matrices.
 std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
-    const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr);
+        const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr);
 
 /// Function to solve Jacobian system
 /// Input: 6nx6n Jacobian matrix and 6n-dim residual vector.
@@ -77,7 +77,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 /// vector.
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType> ComputeJTJandJTr(
-    std::function<void(int, VecType &, double &)> f, int iteration_num);
+        std::function<void(int, VecType &, double &)> f, int iteration_num);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
@@ -86,7 +86,8 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 /// vector.
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType> ComputeJTJandJTr(
-    std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
-    int iteration_num);
+        std::function<void(int, std::vector<VecType> &, std::vector<double> &)>
+                f,
+        int iteration_num);
 
 }  // namespace open3d

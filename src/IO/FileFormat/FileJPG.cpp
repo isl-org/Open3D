@@ -118,7 +118,7 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
     cinfo.image_height = image.height_;
     cinfo.input_components = image.num_of_channels_;
     cinfo.in_color_space =
-        (cinfo.input_components == 1 ? JCS_GRAYSCALE : JCS_RGB);
+            (cinfo.input_components == 1 ? JCS_GRAYSCALE : JCS_RGB);
     jpeg_set_defaults(&cinfo);
     jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);

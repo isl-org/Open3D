@@ -35,26 +35,27 @@ void VisualizerForAlignment::PrintVisualizerHelp() {
     PrintInfo("  -- Alignment control --\n");
     PrintInfo("    Ctrl + R     : Reset source and target to initial state.\n");
     PrintInfo(
-        "    Ctrl + S     : Save current alignment session into a JSON "
-        "file.\n");
+            "    Ctrl + S     : Save current alignment session into a JSON "
+            "file.\n");
     PrintInfo(
-        "    Ctrl + O     : Load current alignment session from a JSON "
-        "file.\n");
+            "    Ctrl + O     : Load current alignment session from a JSON "
+            "file.\n");
     PrintInfo(
-        "    Ctrl + A     : Align point clouds based on manually "
-        "annotations.\n");
+            "    Ctrl + A     : Align point clouds based on manually "
+            "annotations.\n");
     PrintInfo("    Ctrl + I     : Run ICP refinement.\n");
     PrintInfo(
-        "    Ctrl + D     : Run voxel downsample for both source and "
-        "target.\n");
+            "    Ctrl + D     : Run voxel downsample for both source and "
+            "target.\n");
     PrintInfo(
-        "    Ctrl + K     : Load a polygon from a JSON file and crop "
-        "source.\n");
+            "    Ctrl + K     : Load a polygon from a JSON file and crop "
+            "source.\n");
     PrintInfo("    Ctrl + E     : Evaluate error and save to files.\n");
 }
 
 bool VisualizerForAlignment::AddSourceAndTarget(
-    std::shared_ptr<PointCloud> source, std::shared_ptr<PointCloud> target) {
+        std::shared_ptr<PointCloud> source,
+        std::shared_ptr<PointCloud> target) {
     GetRenderOption().point_size_ = 1.0;
     alignment_session_.source_ptr_ = source;
     alignment_session_.target_ptr_ = target;
@@ -81,11 +82,11 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
             }
             case GLFW_KEY_S: {
                 std::string default_alignment =
-                    default_directory_ + "alignment.json";
+                        default_directory_ + "alignment.json";
                 if (use_dialog_) {
                     filename = tinyfd_saveFileDialog(
-                        "Alignment session", default_alignment.c_str(), 1,
-                        pattern, "JSON file (*.json)");
+                            "Alignment session", default_alignment.c_str(), 1,
+                            pattern, "JSON file (*.json)");
                 } else {
                     filename = default_alignment.c_str();
                 }
@@ -96,11 +97,11 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
             }
             case GLFW_KEY_O: {
                 std::string default_alignment =
-                    default_directory_ + "alignment.json";
+                        default_directory_ + "alignment.json";
                 if (use_dialog_) {
                     filename = tinyfd_openFileDialog(
-                        "Alignment session", default_alignment.c_str(), 1,
-                        pattern, "JSON file (*.json)", 0);
+                            "Alignment session", default_alignment.c_str(), 1,
+                            pattern, "JSON file (*.json)", 0);
                 } else {
                     filename = default_alignment.c_str();
                 }
@@ -120,11 +121,11 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                 if (use_dialog_) {
                     char buff[DEFAULT_IO_BUFFER_SIZE];
                     sprintf(buff, "%.4f", max_correspondence_distance_);
-                    const char *str =
-                        tinyfd_inputBox("Set voxel size",
-                                        "Set max correspondence distance for "
-                                        "ICP (ignored if it is non-positive)",
-                                        buff);
+                    const char *str = tinyfd_inputBox(
+                            "Set voxel size",
+                            "Set max correspondence distance for "
+                            "ICP (ignored if it is non-positive)",
+                            buff);
                     if (str == NULL) {
                         PrintDebug("Dialog closed.\n");
                         return;
@@ -135,8 +136,9 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
                             PrintDebug(
-                                "Illegal input, use default max correspondence "
-                                "distance.\n");
+                                    "Illegal input, use default max "
+                                    "correspondence "
+                                    "distance.\n");
                         } else {
                             max_correspondence_distance_ = l;
                         }
@@ -146,26 +148,27 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                     PrintInfo("ICP with max correspondence distance %.4f.\n",
                               max_correspondence_distance_);
                     auto result = RegistrationICP(
-                        *source_copy_ptr_, *target_copy_ptr_,
-                        max_correspondence_distance_,
-                        Eigen::Matrix4d::Identity(),
-                        TransformationEstimationPointToPoint(true),
-                        ICPConvergenceCriteria(1e-6, 1e-6, 30));
+                            *source_copy_ptr_, *target_copy_ptr_,
+                            max_correspondence_distance_,
+                            Eigen::Matrix4d::Identity(),
+                            TransformationEstimationPointToPoint(true),
+                            ICPConvergenceCriteria(1e-6, 1e-6, 30));
                     PrintInfo(
-                        "Registration finished with fitness %.4f and RMSE "
-                        "%.4f.\n",
-                        result.fitness_, result.inlier_rmse_);
+                            "Registration finished with fitness %.4f and RMSE "
+                            "%.4f.\n",
+                            result.fitness_, result.inlier_rmse_);
                     if (result.fitness_ > 0.0) {
                         transformation_ =
-                            result.transformation_ * transformation_;
+                                result.transformation_ * transformation_;
                         PrintTransformation();
                         source_copy_ptr_->Transform(result.transformation_);
                         UpdateGeometry();
                     }
                 } else {
                     PrintInfo(
-                        "No ICP performed due to illegal max correspondence "
-                        "distance.\n");
+                            "No ICP performed due to illegal max "
+                            "correspondence "
+                            "distance.\n");
                 }
                 return;
             }
@@ -174,8 +177,9 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                     char buff[DEFAULT_IO_BUFFER_SIZE];
                     sprintf(buff, "%.4f", voxel_size_);
                     const char *str = tinyfd_inputBox(
-                        "Set voxel size",
-                        "Set voxel size (ignored if it is non-positive)", buff);
+                            "Set voxel size",
+                            "Set voxel size (ignored if it is non-positive)",
+                            buff);
                     if (str == NULL) {
                         PrintDebug("Dialog closed.\n");
                         return;
@@ -186,7 +190,7 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
                             PrintDebug(
-                                "Illegal input, use default voxel size.\n");
+                                    "Illegal input, use default voxel size.\n");
                         } else {
                             voxel_size_ = l;
                         }
@@ -196,12 +200,13 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                     PrintInfo("Voxel downsample with voxel size %.4f.\n",
                               voxel_size_);
                     *source_copy_ptr_ =
-                        *VoxelDownSample(*source_copy_ptr_, voxel_size_);
+                            *VoxelDownSample(*source_copy_ptr_, voxel_size_);
                     UpdateGeometry();
                 } else {
                     PrintInfo(
-                        "No voxel downsample performed due to illegal voxel "
-                        "size.\n");
+                            "No voxel downsample performed due to illegal "
+                            "voxel "
+                            "size.\n");
                 }
                 return;
             }
@@ -209,17 +214,17 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
                 if (!filesystem::FileExists(polygon_filename_)) {
                     if (use_dialog_) {
                         polygon_filename_ = tinyfd_openFileDialog(
-                            "Bounding polygon", "polygon.json", 0, NULL, NULL,
-                            0);
+                                "Bounding polygon", "polygon.json", 0, NULL,
+                                NULL, 0);
                     } else {
                         polygon_filename_ = "polygon.json";
                     }
                 }
                 auto polygon_volume =
-                    std::make_shared<SelectionPolygonVolume>();
+                        std::make_shared<SelectionPolygonVolume>();
                 if (ReadIJsonConvertible(polygon_filename_, *polygon_volume)) {
                     *source_copy_ptr_ =
-                        *polygon_volume->CropPointCloud(*source_copy_ptr_);
+                            *polygon_volume->CropPointCloud(*source_copy_ptr_);
                     ResetViewPoint(true);
                     UpdateGeometry();
                 }
@@ -227,11 +232,11 @@ void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
             }
             case GLFW_KEY_E: {
                 std::string default_alignment =
-                    default_directory_ + "alignment.json";
+                        default_directory_ + "alignment.json";
                 if (use_dialog_) {
                     filename = tinyfd_saveFileDialog(
-                        "Alignment session", default_alignment.c_str(), 1,
-                        pattern, "JSON file (*.json)");
+                            "Alignment session", default_alignment.c_str(), 1,
+                            pattern, "JSON file (*.json)");
                 } else {
                     filename = default_alignment.c_str();
                 }
@@ -251,7 +256,7 @@ bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {
     alignment_session_.target_indices_ = target_visualizer_.GetPickedPoints();
     alignment_session_.voxel_size_ = voxel_size_;
     alignment_session_.max_correspondence_distance_ =
-        max_correspondence_distance_;
+            max_correspondence_distance_;
     alignment_session_.with_scaling_ = with_scaling_;
     alignment_session_.transformation_ = transformation_;
     return WriteIJsonConvertible(filename, alignment_session_);
@@ -265,7 +270,7 @@ bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
     target_visualizer_.GetPickedPoints() = alignment_session_.target_indices_;
     voxel_size_ = alignment_session_.voxel_size_;
     max_correspondence_distance_ =
-        alignment_session_.max_correspondence_distance_;
+            alignment_session_.max_correspondence_distance_;
     with_scaling_ = alignment_session_.with_scaling_;
     transformation_ = alignment_session_.transformation_;
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
@@ -282,8 +287,8 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     if (source_idx.empty() || target_idx.empty() ||
         source_idx.size() != target_idx.size()) {
         PrintWarning(
-            "# of picked points mismatch: %d in source, %d in target.\n",
-            (int)source_idx.size(), (int)target_idx.size());
+                "# of picked points mismatch: %d in source, %d in target.\n",
+                (int)source_idx.size(), (int)target_idx.size());
         return false;
     }
     TransformationEstimationPointToPoint p2p(with_scaling_);
@@ -295,8 +300,8 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
               p2p.ComputeRMSE(*alignment_session_.source_ptr_,
                               *alignment_session_.target_ptr_, corres));
     transformation_ =
-        p2p.ComputeTransformation(*alignment_session_.source_ptr_,
-                                  *alignment_session_.target_ptr_, corres);
+            p2p.ComputeTransformation(*alignment_session_.source_ptr_,
+                                      *alignment_session_.target_ptr_, corres);
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
     source_copy_ptr_->Transform(transformation_);
@@ -323,16 +328,16 @@ void VisualizerForAlignment::PrintTransformation() {
 }
 
 void VisualizerForAlignment::EvaluateAlignmentAndSave(
-    const std::string &filename) {
+        const std::string &filename) {
     // Evaluate source_copy_ptr_ and target_copy_ptr_
     std::string source_filename =
-        filesystem::GetFileNameWithoutExtension(filename) + ".source.ply";
+            filesystem::GetFileNameWithoutExtension(filename) + ".source.ply";
     std::string target_filename =
-        filesystem::GetFileNameWithoutExtension(filename) + ".target.ply";
+            filesystem::GetFileNameWithoutExtension(filename) + ".target.ply";
     std::string source_binname =
-        filesystem::GetFileNameWithoutExtension(filename) + ".source.bin";
+            filesystem::GetFileNameWithoutExtension(filename) + ".source.bin";
     std::string target_binname =
-        filesystem::GetFileNameWithoutExtension(filename) + ".target.bin";
+            filesystem::GetFileNameWithoutExtension(filename) + ".target.bin";
     FILE *f;
 
     WritePointCloud(source_filename, *source_copy_ptr_);

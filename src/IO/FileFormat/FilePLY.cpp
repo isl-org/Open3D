@@ -92,7 +92,7 @@ int ReadColorCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->pointcloud_ptr->colors_[state_ptr->color_index](index) =
-        value / 255.0;
+            value / 255.0;
     if (index == 2) {  // reading 'z'
         state_ptr->color_index++;
     }
@@ -144,7 +144,7 @@ int ReadNormalCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->mesh_ptr->vertex_normals_[state_ptr->normal_index](index) =
-        value;
+            value;
     if (index == 2) {  // reading 'z'
         state_ptr->normal_index++;
     }
@@ -162,7 +162,7 @@ int ReadColorCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->mesh_ptr->vertex_colors_[state_ptr->color_index](index) =
-        value / 255.0;
+            value / 255.0;
     if (index == 2) {  // reading 'z'
         state_ptr->color_index++;
     }
@@ -182,7 +182,7 @@ int ReadFaceCallBack(p_ply_argument argument) {
     ply_get_argument_property(argument, NULL, &length, &index);
     if ((index >= 0) && (index <= 2)) {
         state_ptr->mesh_ptr->triangles_[state_ptr->triangle_index](index) =
-            static_cast<int>(value);
+                static_cast<int>(value);
     }
     if (index == 2) {  // reading 'triangles_[n](2)'
         state_ptr->triangle_index++;
@@ -213,8 +213,8 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     PLYReaderState state;
     state.pointcloud_ptr = &pointcloud;
-    state.vertex_num =
-        ply_set_read_cb(ply_file, "vertex", "x", ReadVertexCallback, &state, 0);
+    state.vertex_num = ply_set_read_cb(ply_file, "vertex", "x",
+                                       ReadVertexCallback, &state, 0);
     ply_set_read_cb(ply_file, "vertex", "y", ReadVertexCallback, &state, 1);
     ply_set_read_cb(ply_file, "vertex", "z", ReadVertexCallback, &state, 2);
 
@@ -266,9 +266,9 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    p_ply ply_file =
-        ply_create(filename.c_str(),
-                   write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
+    p_ply ply_file = ply_create(filename.c_str(),
+                                write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
+                                NULL, 0, NULL);
     if (!ply_file) {
         PrintWarning("Write PLY failed: unable to open file: %s\n",
                      filename.c_str());
@@ -343,8 +343,8 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh) {
 
     PLYReaderState state;
     state.mesh_ptr = &mesh;
-    state.vertex_num =
-        ply_set_read_cb(ply_file, "vertex", "x", ReadVertexCallback, &state, 0);
+    state.vertex_num = ply_set_read_cb(ply_file, "vertex", "x",
+                                       ReadVertexCallback, &state, 0);
     ply_set_read_cb(ply_file, "vertex", "y", ReadVertexCallback, &state, 1);
     ply_set_read_cb(ply_file, "vertex", "z", ReadVertexCallback, &state, 2);
 
@@ -405,9 +405,9 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
         return false;
     }
 
-    p_ply ply_file =
-        ply_create(filename.c_str(),
-                   write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN, NULL, 0, NULL);
+    p_ply ply_file = ply_create(filename.c_str(),
+                                write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
+                                NULL, 0, NULL);
     if (!ply_file) {
         PrintWarning("Write PLY failed: unable to open file: %s\n",
                      filename.c_str());
@@ -439,8 +439,8 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
     }
 
     ResetConsoleProgress(
-        static_cast<int>(mesh.vertices_.size() + mesh.triangles_.size()),
-        "Writing PLY: ");
+            static_cast<int>(mesh.vertices_.size() + mesh.triangles_.size()),
+            "Writing PLY: ");
     for (size_t i = 0; i < mesh.vertices_.size(); i++) {
         const auto &vertex = mesh.vertices_[i];
         ply_write(ply_file, vertex(0));

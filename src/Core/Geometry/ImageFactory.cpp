@@ -31,16 +31,16 @@
 namespace open3d {
 
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
-    const PinholeCameraIntrinsic &intrinsic) {
+        const PinholeCameraIntrinsic &intrinsic) {
     auto fimage = std::make_shared<Image>();
     fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
     float ffl_inv[2] = {
-        1.0f / (float)intrinsic.GetFocalLength().first,
-        1.0f / (float)intrinsic.GetFocalLength().second,
+            1.0f / (float)intrinsic.GetFocalLength().first,
+            1.0f / (float)intrinsic.GetFocalLength().second,
     };
     float fpp[2] = {
-        (float)intrinsic.GetPrincipalPoint().first,
-        (float)intrinsic.GetPrincipalPoint().second,
+            (float)intrinsic.GetPrincipalPoint().first,
+            (float)intrinsic.GetPrincipalPoint().second,
     };
     std::vector<float> xx(intrinsic.width_);
     std::vector<float> yy(intrinsic.height_);
@@ -52,7 +52,7 @@ std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
     }
     for (int i = 0; i < intrinsic.height_; i++) {
         float *fp =
-            (float *)(fimage->data_.data() + i * fimage->BytesPerLine());
+                (float *)(fimage->data_.data() + i * fimage->BytesPerLine());
         for (int j = 0; j < intrinsic.width_; j++, fp++) {
             *fp = sqrtf(xx[j] * xx[j] + yy[i] * yy[i] + 1.0f);
         }
@@ -61,8 +61,8 @@ std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
 }
 
 std::shared_ptr<Image> CreateFloatImageFromImage(
-    const Image &image,
-    Image::ColorToIntensityConversionType type /* = WEIGHTED*/) {
+        const Image &image,
+        Image::ColorToIntensityConversionType type /* = WEIGHTED*/) {
     auto fimage = std::make_shared<Image>();
     if (image.IsEmpty()) {
         return fimage;
@@ -70,8 +70,9 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
     fimage->PrepareImage(image.width_, image.height_, 1, 4);
     for (int i = 0; i < image.height_ * image.width_; i++) {
         float *p = (float *)(fimage->data_.data() + i * 4);
-        const uint8_t *pi = image.data_.data() + i * image.num_of_channels_ *
-                                                     image.bytes_per_channel_;
+        const uint8_t *pi =
+                image.data_.data() +
+                i * image.num_of_channels_ * image.bytes_per_channel_;
         if (image.num_of_channels_ == 1) {
             // grayscale image
             if (image.bytes_per_channel_ == 1) {
@@ -140,9 +141,9 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input) {
 }
 
 template std::shared_ptr<Image> CreateImageFromFloatImage<uint8_t>(
-    const Image &input);
+        const Image &input);
 template std::shared_ptr<Image> CreateImageFromFloatImage<uint16_t>(
-    const Image &input);
+        const Image &input);
 
 ImagePyramid CreateImagePyramid(const Image &input, size_t num_of_levels,
                                 bool with_gaussian_filter /*= true*/) {

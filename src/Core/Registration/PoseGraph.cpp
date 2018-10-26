@@ -49,14 +49,14 @@ bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const {
 bool PoseGraphNode::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning(
-            "PoseGraphNode read JSON failed: unsupported json format.\n");
+                "PoseGraphNode read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraphNode" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
         PrintWarning(
-            "PoseGraphNode read JSON failed: unsupported json format.\n");
+                "PoseGraphNode read JSON failed: unsupported json format.\n");
         return false;
     }
 
@@ -95,14 +95,14 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const {
 bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning(
-            "PoseGraphEdge read JSON failed: unsupported json format.\n");
+                "PoseGraphEdge read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraphEdge" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
         PrintWarning(
-            "PoseGraphEdge read JSON failed: unsupported json format.\n");
+                "PoseGraphEdge read JSON failed: unsupported json format.\n");
         return false;
     }
 

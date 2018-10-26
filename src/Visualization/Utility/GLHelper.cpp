@@ -95,10 +95,10 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
                           const GLMatrix4f &mvp_matrix, const int width,
                           const int height) {
     Eigen::Vector4d point =
-        mvp_matrix.cast<double>().inverse() *
-        Eigen::Vector4d(screen_point(0) / (double)width * 2.0 - 1.0,
-                        screen_point(1) / (double)height * 2.0 - 1.0,
-                        screen_point(2) * 2.0 - 1.0, 1.0);
+            mvp_matrix.cast<double>().inverse() *
+            Eigen::Vector4d(screen_point(0) / (double)width * 2.0 - 1.0,
+                            screen_point(1) / (double)height * 2.0 - 1.0,
+                            screen_point(2) * 2.0 - 1.0, 1.0);
     if (point(3) == 0.0) {
         return Eigen::Vector3d::Zero();
     }

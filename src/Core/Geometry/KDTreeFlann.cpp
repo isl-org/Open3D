@@ -50,25 +50,26 @@ KDTreeFlann::~KDTreeFlann() {}
 
 bool KDTreeFlann::SetMatrixData(const Eigen::MatrixXd &data) {
     return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
-        data.data(), data.rows(), data.cols()));
+            data.data(), data.rows(), data.cols()));
 }
 
 bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
     switch (geometry.GetGeometryType()) {
         case Geometry::GeometryType::PointCloud:
             return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
-                (const double *)((const PointCloud &)geometry).points_.data(),
-                3, ((const PointCloud &)geometry).points_.size()));
+                    (const double *)((const PointCloud &)geometry)
+                            .points_.data(),
+                    3, ((const PointCloud &)geometry).points_.size()));
         case Geometry::GeometryType::TriangleMesh:
             return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
-                (const double *)((const TriangleMesh &)geometry)
-                    .vertices_.data(),
-                3, ((const TriangleMesh &)geometry).vertices_.size()));
+                    (const double *)((const TriangleMesh &)geometry)
+                            .vertices_.data(),
+                    3, ((const TriangleMesh &)geometry).vertices_.size()));
         case Geometry::GeometryType::Image:
         case Geometry::GeometryType::Unspecified:
         default:
             PrintDebug(
-                "[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.\n");
             return false;
     }
 }
@@ -87,13 +88,13 @@ int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param,
                              indices, distance2);
         case KDTreeSearchParam::SearchType::Radius:
             return SearchRadius(
-                query, ((const KDTreeSearchParamRadius &)param).radius_,
-                indices, distance2);
+                    query, ((const KDTreeSearchParamRadius &)param).radius_,
+                    indices, distance2);
         case KDTreeSearchParam::SearchType::Hybrid:
             return SearchHybrid(
-                query, ((const KDTreeSearchParamHybrid &)param).radius_,
-                ((const KDTreeSearchParamHybrid &)param).max_nn_, indices,
-                distance2);
+                    query, ((const KDTreeSearchParamHybrid &)param).radius_,
+                    ((const KDTreeSearchParamHybrid &)param).max_nn_, indices,
+                    distance2);
         default:
             return -1;
     }
@@ -185,36 +186,36 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     flann_dataset_.reset(new flann::Matrix<double>((double *)data_.data(),
                                                    dataset_size_, dimension_));
     flann_index_.reset(new flann::Index<flann::L2<double>>(
-        *flann_dataset_, flann::KDTreeSingleIndexParams(15)));
+            *flann_dataset_, flann::KDTreeSingleIndexParams(15)));
     flann_index_->buildIndex();
     return true;
 }
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(
-    const Eigen::Vector3d &query, const open3d::KDTreeSearchParam &param,
-    std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::Vector3d &query, const open3d::KDTreeSearchParam &param,
+        std::vector<int> &indices, std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::Vector3d>(
-    const Eigen::Vector3d &query, int knn, std::vector<int> &indices,
-    std::vector<double> &distance2) const;
+        const Eigen::Vector3d &query, int knn, std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
-    const Eigen::Vector3d &query, double radius, std::vector<int> &indices,
-    std::vector<double> &distance2) const;
+        const Eigen::Vector3d &query, double radius, std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchHybrid<Eigen::Vector3d>(
-    const Eigen::Vector3d &query, double radius, int max_nn,
-    std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::Vector3d &query, double radius, int max_nn,
+        std::vector<int> &indices, std::vector<double> &distance2) const;
 
 template int KDTreeFlann::Search<Eigen::VectorXd>(
-    const Eigen::VectorXd &query, const open3d::KDTreeSearchParam &param,
-    std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::VectorXd &query, const open3d::KDTreeSearchParam &param,
+        std::vector<int> &indices, std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::VectorXd>(
-    const Eigen::VectorXd &query, int knn, std::vector<int> &indices,
-    std::vector<double> &distance2) const;
+        const Eigen::VectorXd &query, int knn, std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::VectorXd>(
-    const Eigen::VectorXd &query, double radius, std::vector<int> &indices,
-    std::vector<double> &distance2) const;
+        const Eigen::VectorXd &query, double radius, std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchHybrid<Eigen::VectorXd>(
-    const Eigen::VectorXd &query, double radius, int max_nn,
-    std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::VectorXd &query, double radius, int max_nn,
+        std::vector<int> &indices, std::vector<double> &distance2) const;
 
 }  // namespace open3d
 

@@ -106,8 +106,8 @@ void ViewControlWithCustomAnimation::AddKeyFrame() {
         } else {
             size_t current_index = CurrentKeyframe();
             view_trajectory_.view_status_.insert(
-                view_trajectory_.view_status_.begin() + current_index + 1,
-                current_status);
+                    view_trajectory_.view_status_.begin() + current_index + 1,
+                    current_status);
             current_keyframe_ = current_index + 1.0;
         }
     }
@@ -117,7 +117,7 @@ void ViewControlWithCustomAnimation::UpdateKeyFrame() {
     if (animation_mode_ == AnimationMode::FreeMode &&
         !view_trajectory_.view_status_.empty()) {
         ConvertToViewParameters(
-            view_trajectory_.view_status_[CurrentKeyframe()]);
+                view_trajectory_.view_status_[CurrentKeyframe()]);
     }
 }
 
@@ -126,10 +126,10 @@ void ViewControlWithCustomAnimation::DeleteKeyFrame() {
         !view_trajectory_.view_status_.empty()) {
         size_t current_index = CurrentKeyframe();
         view_trajectory_.view_status_.erase(
-            view_trajectory_.view_status_.begin() + current_index);
+                view_trajectory_.view_status_.begin() + current_index);
         current_keyframe_ = RegularizeFrameIndex(
-            current_index - 1.0, view_trajectory_.view_status_.size(),
-            view_trajectory_.is_loop_);
+                current_index - 1.0, view_trajectory_.view_status_.size(),
+                view_trajectory_.is_loop_);
     }
     SetViewControlFromTrajectory();
 }
@@ -188,13 +188,13 @@ void ViewControlWithCustomAnimation::Step(double change) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         current_keyframe_ += change;
         current_keyframe_ = RegularizeFrameIndex(
-            current_keyframe_, view_trajectory_.view_status_.size(),
-            view_trajectory_.is_loop_);
+                current_keyframe_, view_trajectory_.view_status_.size(),
+                view_trajectory_.is_loop_);
     } else {
         current_frame_ += change;
-        current_frame_ =
-            RegularizeFrameIndex(current_frame_, view_trajectory_.NumOfFrames(),
-                                 view_trajectory_.is_loop_);
+        current_frame_ = RegularizeFrameIndex(current_frame_,
+                                              view_trajectory_.NumOfFrames(),
+                                              view_trajectory_.is_loop_);
     }
     SetViewControlFromTrajectory();
 }
@@ -224,7 +224,7 @@ void ViewControlWithCustomAnimation::GoToLast() {
 }
 
 bool ViewControlWithCustomAnimation::CaptureTrajectory(
-    const std::string &filename /* = ""*/) {
+        const std::string &filename /* = ""*/) {
     if (view_trajectory_.view_status_.empty()) {
         return false;
     }
@@ -238,7 +238,7 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
-    const std::string &filename) {
+        const std::string &filename) {
     bool success = ReadIJsonConvertible(filename, view_trajectory_);
     if (success == false) {
         view_trajectory_.Reset();
@@ -250,7 +250,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
-    const PinholeCameraTrajectory &camera_trajectory) {
+        const PinholeCameraTrajectory &camera_trajectory) {
     current_keyframe_ = 0.0;
     current_frame_ = 0.0;
     view_trajectory_.Reset();
@@ -263,13 +263,13 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
     for (size_t i = 0; i < camera_trajectory.extrinsic_.size(); i++) {
         ViewControlWithCustomAnimation view_control = *this;
         if (view_control.ConvertFromPinholeCameraParameters(
-                camera_trajectory.intrinsic_,
-                camera_trajectory.extrinsic_[i]) == false) {
+                    camera_trajectory.intrinsic_,
+                    camera_trajectory.extrinsic_[i]) == false) {
             view_trajectory_.Reset();
             return false;
         }
         if (view_control.ConvertToViewParameters(
-                view_trajectory_.view_status_[i]) == false) {
+                    view_trajectory_.view_status_[i]) == false) {
             view_trajectory_.Reset();
             return false;
         }
@@ -295,7 +295,7 @@ bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const {
 }
 
 double ViewControlWithCustomAnimation::RegularizeFrameIndex(
-    double current_frame, size_t num_of_frames, bool is_loop) {
+        double current_frame, size_t num_of_frames, bool is_loop) {
     if (num_of_frames == 0) {
         return 0.0;
     }
@@ -324,12 +324,12 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory() {
     }
     if (animation_mode_ == AnimationMode::FreeMode) {
         ConvertFromViewParameters(
-            view_trajectory_.view_status_[CurrentKeyframe()]);
+                view_trajectory_.view_status_[CurrentKeyframe()]);
     } else {
         bool success;
         ViewParameters status;
         std::tie(success, status) =
-            view_trajectory_.GetInterpolatedFrame(CurrentFrame());
+                view_trajectory_.GetInterpolatedFrame(CurrentFrame());
         if (success) {
             ConvertFromViewParameters(status);
         }

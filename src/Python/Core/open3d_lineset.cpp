@@ -33,24 +33,23 @@ using namespace open3d;
 void pybind_lineset(py::module &m) {
     py::class_<LineSet, PyGeometry3D<LineSet>, std::shared_ptr<LineSet>,
                Geometry3D>
-        lineset(m, "LineSet");
+            lineset(m, "LineSet");
     py::detail::bind_default_constructor<LineSet>(lineset);
     py::detail::bind_copy_functions<LineSet>(lineset);
-    lineset
-        .def("__repr__",
-             [](const LineSet &lineset) {
-                 return std::string("LineSet with ") +
-                        std::to_string(lineset.lines_.size()) + " lines.";
-             })
-        .def(py::self + py::self)
-        .def(py::self += py::self)
-        .def("has_points", &LineSet::HasPoints)
-        .def("has_lines", &LineSet::HasLines)
-        .def("has_colors", &LineSet::HasColors)
-        .def("normalize_normals", &LineSet::GetLineCoordinate)
-        .def_readwrite("points", &LineSet::points_)
-        .def_readwrite("lines", &LineSet::lines_)
-        .def_readwrite("colors", &LineSet::colors_);
+    lineset.def("__repr__",
+                [](const LineSet &lineset) {
+                    return std::string("LineSet with ") +
+                           std::to_string(lineset.lines_.size()) + " lines.";
+                })
+            .def(py::self + py::self)
+            .def(py::self += py::self)
+            .def("has_points", &LineSet::HasPoints)
+            .def("has_lines", &LineSet::HasLines)
+            .def("has_colors", &LineSet::HasColors)
+            .def("normalize_normals", &LineSet::GetLineCoordinate)
+            .def_readwrite("points", &LineSet::points_)
+            .def_readwrite("lines", &LineSet::lines_)
+            .def_readwrite("colors", &LineSet::colors_);
 }
 
 void pybind_lineset_methods(py::module &m) {}

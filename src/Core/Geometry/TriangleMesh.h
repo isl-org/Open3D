@@ -120,14 +120,14 @@ class TriangleMesh : public Geometry3D {
 /// \return output TriangleMesh
 /// Vertices with indices in \param indices are selected.
 std::shared_ptr<TriangleMesh> SelectDownSample(
-    const TriangleMesh &input, const std::vector<size_t> &indices);
+        const TriangleMesh &input, const std::vector<size_t> &indices);
 
 /// Function to crop \param input tringlemesh into output tringlemesh
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
 std::shared_ptr<TriangleMesh> CropTriangleMesh(
-    const TriangleMesh &input, const Eigen::Vector3d &min_bound,
-    const Eigen::Vector3d &max_bound);
+        const TriangleMesh &input, const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound);
 
 /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
 /// The sphere with \param radius will be centered at (0, 0, 0).
@@ -166,16 +166,16 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
 /// segments. The \param cone_height will be split into \param cone_split
 /// segments.
 std::shared_ptr<TriangleMesh> CreateMeshArrow(
-    double cylinder_radius = 1.0, double cone_radius = 1.5,
-    double cylinder_height = 5.0, double cone_height = 4.0, int resolution = 20,
-    int cylinder_split = 4, int cone_split = 1);
+        double cylinder_radius = 1.0, double cone_radius = 1.5,
+        double cylinder_height = 5.0, double cone_height = 4.0,
+        int resolution = 20, int cylinder_split = 4, int cone_split = 1);
 
 /// Factory function to create a coordinate frame mesh (TriangleMeshFactory.cpp)
 /// The coordinate frame will be centered at \param origin
 /// The x, y, z axis will be rendered as red, green, and blue arrows
 /// respectively. \param size is the length of the axes.
 std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
-    double size = 1.0,
-    const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
+        double size = 1.0,
+        const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
 }  // namespace open3d

@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
         correspondences.push_back(std::make_pair(0, indices_vec[i]));
     }
     auto lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
-        *cloud_ptr, *cloud_ptr, correspondences);
+            *cloud_ptr, *cloud_ptr, correspondences);
     DrawGeometries({cloud_ptr, lineset_ptr});
 
     auto new_cloud_ptr = std::make_shared<PointCloud>();
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
-        Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitX()));
+            Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitX()));
     new_cloud_ptr->Transform(trans_to_origin.inverse() * transformation *
                              trans_to_origin);
     correspondences.clear();
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
         correspondences.push_back(std::make_pair(indices_vec[0], (int)i));
     }
     auto new_lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
-        *cloud_ptr, *new_cloud_ptr, correspondences);
+            *cloud_ptr, *new_cloud_ptr, correspondences);
     new_lineset_ptr->colors_.resize(new_lineset_ptr->lines_.size());
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);

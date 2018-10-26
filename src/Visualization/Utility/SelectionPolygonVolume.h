@@ -47,15 +47,15 @@ class SelectionPolygonVolume : public IJsonConvertible {
     bool ConvertFromJsonValue(const Json::Value &value) override;
     std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input) const;
     std::shared_ptr<TriangleMesh> CropTriangleMesh(
-        const TriangleMesh &input) const;
+            const TriangleMesh &input) const;
 
    private:
     std::shared_ptr<PointCloud> CropPointCloudInPolygon(
-        const PointCloud &input) const;
+            const PointCloud &input) const;
     std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
-        const TriangleMesh &input) const;
+            const TriangleMesh &input) const;
     std::vector<size_t> CropInPolygon(
-        const std::vector<Eigen::Vector3d> &input) const;
+            const std::vector<Eigen::Vector3d> &input) const;
 
    public:
     std::string orthogonal_axis_ = "";

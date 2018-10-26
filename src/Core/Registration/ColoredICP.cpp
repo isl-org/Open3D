@@ -47,7 +47,7 @@ class PointCloudForColoredICP : public PointCloud {
 class TransformationEstimationForColoredICP : public TransformationEstimation {
    public:
     TransformationEstimationType GetTransformationEstimationType()
-        const override {
+            const override {
         return type_;
     };
     TransformationEstimationForColoredICP(double lambda_geometric = 0.968)
@@ -61,19 +61,19 @@ class TransformationEstimationForColoredICP : public TransformationEstimation {
     double ComputeRMSE(const PointCloud &source, const PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-        const PointCloud &source, const PointCloud &target,
-        const CorrespondenceSet &corres) const override;
+            const PointCloud &source, const PointCloud &target,
+            const CorrespondenceSet &corres) const override;
 
    public:
     double lambda_geometric_;
 
    private:
     const TransformationEstimationType type_ =
-        TransformationEstimationType::ColoredICP;
+            TransformationEstimationType::ColoredICP;
 };
 
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
-    const PointCloud &target, const KDTreeSearchParamHybrid &search_param) {
+        const PointCloud &target, const KDTreeSearchParamHybrid &search_param) {
     PrintDebug("InitializePointCloudForColoredICP\n");
 
     KDTreeFlann tree;
@@ -127,7 +127,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             bool is_success;
             Eigen::MatrixXd x;
             std::tie(is_success, x) =
-                SolveLinearSystem(A.transpose() * A, A.transpose() * b);
+                    SolveLinearSystem(A.transpose() * A, A.transpose() * b);
             if (is_success) {
                 output->color_gradient_[k] = x;
             }
@@ -137,8 +137,8 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
 }
 
 Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
-    const PointCloud &source, const PointCloud &target,
-    const CorrespondenceSet &corres) const {
+        const PointCloud &source, const PointCloud &target,
+        const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false ||
         target.HasColors() == false || source.HasColors() == false)
         return Eigen::Matrix4d::Identity();
@@ -149,61 +149,62 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
     const auto &target_c = (const PointCloudForColoredICP &)target;
 
-    auto compute_jacobian_and_residual =
-        [&](int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
-            size_t cs = corres[i][0];
-            size_t ct = corres[i][1];
-            const Eigen::Vector3d &vs = source.points_[cs];
-            const Eigen::Vector3d &vt = target.points_[ct];
-            const Eigen::Vector3d &nt = target.normals_[ct];
+    auto compute_jacobian_and_residual = [&](int i,
+                                             std::vector<Eigen::Vector6d> &J_r,
+                                             std::vector<double> &r) {
+        size_t cs = corres[i][0];
+        size_t ct = corres[i][1];
+        const Eigen::Vector3d &vs = source.points_[cs];
+        const Eigen::Vector3d &vt = target.points_[ct];
+        const Eigen::Vector3d &nt = target.normals_[ct];
 
-            J_r.resize(2);
-            r.resize(2);
+        J_r.resize(2);
+        r.resize(2);
 
-            J_r[0].block<3, 1>(0, 0) = sqrt_lambda_geometric * vs.cross(nt);
-            J_r[0].block<3, 1>(3, 0) = sqrt_lambda_geometric * nt;
-            r[0] = sqrt_lambda_geometric * (vs - vt).dot(nt);
+        J_r[0].block<3, 1>(0, 0) = sqrt_lambda_geometric * vs.cross(nt);
+        J_r[0].block<3, 1>(3, 0) = sqrt_lambda_geometric * nt;
+        r[0] = sqrt_lambda_geometric * (vs - vt).dot(nt);
 
-            // project vs into vt's tangential plane
-            Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
-            double is = (source.colors_[cs](0) + source.colors_[cs](1) +
-                         source.colors_[cs](2)) /
-                        3.0;
-            double it = (target.colors_[ct](0) + target.colors_[ct](1) +
-                         target.colors_[ct](2)) /
-                        3.0;
-            const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
-            double is0_proj = (dit.dot(vs_proj - vt)) + it;
+        // project vs into vt's tangential plane
+        Eigen::Vector3d vs_proj = vs - (vs - vt).dot(nt) * nt;
+        double is = (source.colors_[cs](0) + source.colors_[cs](1) +
+                     source.colors_[cs](2)) /
+                    3.0;
+        double it = (target.colors_[ct](0) + target.colors_[ct](1) +
+                     target.colors_[ct](2)) /
+                    3.0;
+        const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
+        double is0_proj = (dit.dot(vs_proj - vt)) + it;
 
-            const Eigen::Matrix3d M =
+        const Eigen::Matrix3d M =
                 (Eigen::Matrix3d() << 1.0 - nt(0) * nt(0), -nt(0) * nt(1),
                  -nt(0) * nt(2), -nt(0) * nt(1), 1.0 - nt(1) * nt(1),
                  -nt(1) * nt(2), -nt(0) * nt(2), -nt(1) * nt(2),
                  1.0 - nt(2) * nt(2))
-                    .finished();
+                        .finished();
 
-            const Eigen::Vector3d &ditM = -dit.transpose() * M;
-            J_r[1].block<3, 1>(0, 0) = sqrt_lambda_photometric * vs.cross(ditM);
-            J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
-            r[1] = sqrt_lambda_photometric * (is - is0_proj);
-        };
+        const Eigen::Vector3d &ditM = -dit.transpose() * M;
+        J_r[1].block<3, 1>(0, 0) = sqrt_lambda_photometric * vs.cross(ditM);
+        J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
+        r[1] = sqrt_lambda_photometric * (is - is0_proj);
+    };
 
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-        compute_jacobian_and_residual, (int)corres.size());
+            compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-        SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
 double TransformationEstimationForColoredICP::ComputeRMSE(
-    const PointCloud &source, const PointCloud &target,
-    const CorrespondenceSet &corres) const {
+        const PointCloud &source, const PointCloud &target,
+        const CorrespondenceSet &corres) const {
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;
     double sqrt_lambda_photometric = sqrt(lambda_photometric);
@@ -236,15 +237,15 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 }  // unnamed namespace
 
 RegistrationResult RegistrationColoredICP(
-    const PointCloud &source, const PointCloud &target, double max_distance,
-    const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
-    const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
-    double lambda_geometric /* = 0.968*/) {
+        const PointCloud &source, const PointCloud &target, double max_distance,
+        const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
+        const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
+        double lambda_geometric /* = 0.968*/) {
     auto target_c = InitializePointCloudForColoredICP(
-        target, KDTreeSearchParamHybrid(max_distance * 2.0, 30));
+            target, KDTreeSearchParamHybrid(max_distance * 2.0, 30));
     return RegistrationICP(
-        source, *target_c, max_distance, init,
-        TransformationEstimationForColoredICP(lambda_geometric), criteria);
+            source, *target_c, max_distance, init,
+            TransformationEstimationForColoredICP(lambda_geometric), criteria);
 }
 
 }  // namespace open3d

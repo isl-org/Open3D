@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         PrintInfo("\tSubstring : %s\n", str.c_str());
     }
     Eigen::VectorXd vec =
-        GetProgramOptionAsEigenVectorXd(argc, argv, "--vector");
+            GetProgramOptionAsEigenVectorXd(argc, argv, "--vector");
     PrintInfo("Vector is (");
     for (auto i = 0; i < vec.size(); i++) {
         if (i == 0) {

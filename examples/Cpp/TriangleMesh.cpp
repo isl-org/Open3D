@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
             mesh->ComputeVertexNormals();
             BoundingBox boundingbox(*mesh);
             auto mesh_frame = CreateMeshCoordinateFrame(
-                boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+                    boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
             DrawGeometries({mesh, mesh_frame});
         }
     } else if (option == "merge") {
@@ -101,8 +101,8 @@ int main(int argc, char *argv[]) {
                   mesh1->vertices_.size(), mesh1->triangles_.size());
         mesh1->Purge();
         PrintInfo(
-            "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
-            mesh1->vertices_.size(), mesh1->triangles_.size());
+                "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
+                mesh1->vertices_.size(), mesh1->triangles_.size());
         DrawGeometries({mesh1});
         WriteTriangleMesh("temp.ply", *mesh1, true, true);
     } else if (option == "normal") {
@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
         mesh->Transform(trans);
         trans.setIdentity();
         trans.block<3, 1>(0, 3) =
-            Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, scale2 / 2.0) -
-            bbox.GetCenter() * scale1 / bbox.GetSize();
+                Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, scale2 / 2.0) -
+                bbox.GetCenter() * scale1 / bbox.GetSize();
         mesh->Transform(trans);
         WriteTriangleMesh(argv[3], *mesh);
     } else if (option == "distance") {
@@ -190,13 +190,13 @@ int main(int argc, char *argv[]) {
             auto image = CreateImageFromFile(buffer);
             auto fimage = CreateFloatImageFromImage(*image);
             Eigen::Vector4d pt_in_camera =
-                trajectory.extrinsic_[i] *
-                Eigen::Vector4d(mesh->vertices_[idx](0),
-                                mesh->vertices_[idx](1),
-                                mesh->vertices_[idx](2), 1.0);
+                    trajectory.extrinsic_[i] *
+                    Eigen::Vector4d(mesh->vertices_[idx](0),
+                                    mesh->vertices_[idx](1),
+                                    mesh->vertices_[idx](2), 1.0);
             Eigen::Vector3d pt_in_plane =
-                trajectory.intrinsic_.intrinsic_matrix_ *
-                pt_in_camera.block<3, 1>(0, 0);
+                    trajectory.intrinsic_.intrinsic_matrix_ *
+                    pt_in_camera.block<3, 1>(0, 0);
             Eigen::Vector3d uv = pt_in_plane / pt_in_plane(2);
             std::cout << pt_in_camera << std::endl;
             std::cout << pt_in_plane << std::endl;

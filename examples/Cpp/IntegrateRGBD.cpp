@@ -63,24 +63,24 @@ int main(int argc, char *argv[]) {
     }
 
     std::string match_filename =
-        GetProgramOptionAsString(argc, argv, "--match");
+            GetProgramOptionAsString(argc, argv, "--match");
     std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
     bool save_pointcloud = ProgramOptionExists(argc, argv, "--save_pointcloud");
     bool save_mesh = ProgramOptionExists(argc, argv, "--save_mesh");
     bool save_voxel = ProgramOptionExists(argc, argv, "--save_voxel");
     int every_k_frames =
-        GetProgramOptionAsInt(argc, argv, "--every_k_frames", 0);
+            GetProgramOptionAsInt(argc, argv, "--every_k_frames", 0);
     double length = GetProgramOptionAsDouble(argc, argv, "--length", 4.0);
     int resolution = GetProgramOptionAsInt(argc, argv, "--resolution", 512);
-    double sdf_trunc_percentage =
-        GetProgramOptionAsDouble(argc, argv, "--sdf_trunc_percentage", 0.01);
+    double sdf_trunc_percentage = GetProgramOptionAsDouble(
+            argc, argv, "--sdf_trunc_percentage", 0.01);
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
 
     auto camera_trajectory =
-        CreatePinholeCameraTrajectoryFromFile(log_filename);
+            CreatePinholeCameraTrajectoryFromFile(log_filename);
     std::string dir_name =
-        filesystem::GetFileParentDirectory(match_filename).c_str();
+            filesystem::GetFileParentDirectory(match_filename).c_str();
     FILE *file = fopen(match_filename.c_str(), "r");
     if (file == NULL) {
         PrintError("Unable to open file %s\n", match_filename.c_str());

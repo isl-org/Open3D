@@ -76,12 +76,12 @@ class VisualizerWithEditing : public Visualizer {
    protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
     std::shared_ptr<glsl::SelectionPolygonRenderer>
-        selection_polygon_renderer_ptr_;
+            selection_polygon_renderer_ptr_;
     SelectionMode selection_mode_ = SelectionMode::None;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>
-        pointcloud_picker_renderer_ptr_;
+            pointcloud_picker_renderer_ptr_;
 
     std::shared_ptr<const Geometry> original_geometry_ptr_;
     std::shared_ptr<Geometry> editing_geometry_ptr_;

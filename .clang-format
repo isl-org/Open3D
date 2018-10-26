@@ -5,3 +5,4 @@ UseTab: Never
 Language: Cpp
 Standard: Cpp11
 SortIncludes: false
+ContinuationIndentWidth: 8

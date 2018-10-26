@@ -45,7 +45,7 @@ void VisualizerWithKeyCallback::PrintVisualizerHelp() {
 }
 
 void VisualizerWithKeyCallback::RegisterKeyCallback(
-    int key, std::function<bool(Visualizer *)> callback) {
+        int key, std::function<bool(Visualizer *)> callback) {
     key_to_callback_[key] = callback;
 }
 

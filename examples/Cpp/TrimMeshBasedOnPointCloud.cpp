@@ -135,9 +135,10 @@ int main(int argc, char *argv[]) {
         if (has_tri_normal) mesh->triangle_normals_.resize(kt);
     }
     PrintDebug(
-        "[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have been "
-        "removed.\n",
-        old_vertex_num - k, old_triangle_num - kt);
+            "[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have "
+            "been "
+            "removed.\n",
+            old_vertex_num - k, old_triangle_num - kt);
     WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;
 }

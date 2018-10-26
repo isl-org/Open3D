@@ -35,20 +35,21 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-    std::string, std::function<bool(const std::string &, Image &)>>
-    file_extension_to_image_read_function{
-        {"png", ReadImageFromPNG},
-        {"jpg", ReadImageFromJPG},
-        {"jpeg", ReadImageFromJPG},
-    };
+        std::string, std::function<bool(const std::string &, Image &)>>
+        file_extension_to_image_read_function{
+                {"png", ReadImageFromPNG},
+                {"jpg", ReadImageFromJPG},
+                {"jpeg", ReadImageFromJPG},
+        };
 
 static const std::unordered_map<
-    std::string, std::function<bool(const std::string &, const Image &, int)>>
-    file_extension_to_image_write_function{
-        {"png", WriteImageToPNG},
-        {"jpg", WriteImageToJPG},
-        {"jpeg", WriteImageToJPG},
-    };
+        std::string,
+        std::function<bool(const std::string &, const Image &, int)>>
+        file_extension_to_image_write_function{
+                {"png", WriteImageToPNG},
+                {"jpg", WriteImageToJPG},
+                {"jpeg", WriteImageToJPG},
+        };
 
 }  // unnamed namespace
 
@@ -60,7 +61,7 @@ std::shared_ptr<Image> CreateImageFromFile(const std::string &filename) {
 
 bool ReadImage(const std::string &filename, Image &image) {
     std::string filename_ext =
-        filesystem::GetFileExtensionInLowerCase(filename);
+            filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         PrintWarning("Read Image failed: unknown file extension.\n");
         return false;
@@ -76,7 +77,7 @@ bool ReadImage(const std::string &filename, Image &image) {
 bool WriteImage(const std::string &filename, const Image &image,
                 int quality /* = 90*/) {
     std::string filename_ext =
-        filesystem::GetFileExtensionInLowerCase(filename);
+            filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
         PrintWarning("Write Image failed: unknown file extension.\n");
         return false;

@@ -44,11 +44,12 @@ const double ViewControl::ZOOM_STEP = 0.02;
 const double ViewControl::ROTATION_RADIAN_PER_PIXEL = 0.003;
 
 void ViewControl::SetViewMatrices(
-    const Eigen::Matrix4d &model_matrix /* = Eigen::Matrix4d::Identity()*/) {
+        const Eigen::Matrix4d
+                &model_matrix /* = Eigen::Matrix4d::Identity()*/) {
     if (window_height_ <= 0 || window_width_ <= 0) {
         PrintWarning(
-            "[ViewControl] SetViewPoint() failed because window height and "
-            "width are not set.");
+                "[ViewControl] SetViewPoint() failed because window height and "
+                "width are not set.");
         return;
     }
     glViewport(0, 0, window_width_, window_height_);
@@ -58,15 +59,15 @@ void ViewControl::SetViewMatrices(
                            distance_ - 3.0 * bounding_box_.GetSize());
         z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
         projection_matrix_ =
-            GLHelper::Perspective(field_of_view_, aspect_, z_near_, z_far_);
+                GLHelper::Perspective(field_of_view_, aspect_, z_near_, z_far_);
     } else {
         // Orthogonal projection
         // We use some black magic to support distance_ in orthogonal view
         z_near_ = distance_ - 3.0 * bounding_box_.GetSize();
         z_far_ = distance_ + 3.0 * bounding_box_.GetSize();
         projection_matrix_ =
-            GLHelper::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
-                            -view_ratio_, view_ratio_, z_near_, z_far_);
+                GLHelper::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
+                                -view_ratio_, view_ratio_, z_near_, z_far_);
     }
     view_matrix_ = GLHelper::LookAt(eye_, lookat_, up_);
     model_matrix_ = model_matrix.cast<GLfloat>();
@@ -104,17 +105,19 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
 }
 
 bool ViewControl::ConvertToPinholeCameraParameters(
-    PinholeCameraIntrinsic &intrinsic, Eigen::Matrix4d &extrinsic) {
+        PinholeCameraIntrinsic &intrinsic, Eigen::Matrix4d &extrinsic) {
     if (window_height_ <= 0 || window_width_ <= 0) {
         PrintWarning(
-            "[ViewControl] ConvertToPinholeCameraParameters() failed because "
-            "window height and width are not set.\n");
+                "[ViewControl] ConvertToPinholeCameraParameters() failed "
+                "because "
+                "window height and width are not set.\n");
         return false;
     }
     if (GetProjectionType() == ProjectionType::Orthogonal) {
         PrintWarning(
-            "[ViewControl] ConvertToPinholeCameraParameters() failed because "
-            "orthogonal view cannot be translated to a pinhole camera.\n");
+                "[ViewControl] ConvertToPinholeCameraParameters() failed "
+                "because "
+                "orthogonal view cannot be translated to a pinhole camera.\n");
         return false;
     }
     SetProjectionParameters();
@@ -124,7 +127,7 @@ bool ViewControl::ConvertToPinholeCameraParameters(
     double fov_rad = field_of_view_ / 180.0 * M_PI;
     double tan_half_fov = std::tan(fov_rad / 2.0);
     intrinsic.intrinsic_matrix_(0, 0) = intrinsic.intrinsic_matrix_(1, 1) =
-        (double)window_height_ / tan_half_fov / 2.0;
+            (double)window_height_ / tan_half_fov / 2.0;
     intrinsic.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0 - 0.5;
     intrinsic.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0 - 0.5;
     extrinsic.setZero();
@@ -142,30 +145,34 @@ bool ViewControl::ConvertToPinholeCameraParameters(
 }
 
 bool ViewControl::ConvertFromPinholeCameraParameters(
-    const PinholeCameraIntrinsic &intrinsic, const Eigen::Matrix4d &extrinsic) {
+        const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic) {
     if (window_height_ <= 0 || window_width_ <= 0 ||
         window_height_ != intrinsic.height_ ||
         window_width_ != intrinsic.width_ ||
         intrinsic.intrinsic_matrix_(0, 2) !=
-            (double)window_width_ / 2.0 - 0.5 ||
+                (double)window_width_ / 2.0 - 0.5 ||
         intrinsic.intrinsic_matrix_(1, 2) !=
-            (double)window_height_ / 2.0 - 0.5) {
+                (double)window_height_ / 2.0 - 0.5) {
         PrintWarning(
-            "[ViewControl] ConvertFromPinholeCameraParameters() failed because "
-            "window height and width do not match.\n");
+                "[ViewControl] ConvertFromPinholeCameraParameters() failed "
+                "because "
+                "window height and width do not match.\n");
         return false;
     }
     double tan_half_fov =
-        (double)window_height_ / (intrinsic.intrinsic_matrix_(1, 1) * 2.0);
+            (double)window_height_ / (intrinsic.intrinsic_matrix_(1, 1) * 2.0);
     double fov_rad = std::atan(tan_half_fov) * 2.0;
     double old_fov = field_of_view_;
-    field_of_view_ = std::max(
-        std::min(fov_rad * 180.0 / M_PI, FIELD_OF_VIEW_MAX), FIELD_OF_VIEW_MIN);
+    field_of_view_ =
+            std::max(std::min(fov_rad * 180.0 / M_PI, FIELD_OF_VIEW_MAX),
+                     FIELD_OF_VIEW_MIN);
     if (GetProjectionType() == ProjectionType::Orthogonal) {
         field_of_view_ = old_fov;
         PrintWarning(
-            "[ViewControl] ConvertFromPinholeCameraParameters() failed because "
-            "field of view is impossible.\n");
+                "[ViewControl] ConvertFromPinholeCameraParameters() failed "
+                "because "
+                "field of view is impossible.\n");
         return false;
     }
     right_ = extrinsic.block<1, 3>(0, 0).transpose();
@@ -212,15 +219,16 @@ void ViewControl::SetProjectionParameters() {
     } else {
         view_ratio_ = zoom_ * bounding_box_.GetSize();
         distance_ =
-            view_ratio_ / std::tan(FIELD_OF_VIEW_STEP * 0.5 / 180.0 * M_PI);
+                view_ratio_ / std::tan(FIELD_OF_VIEW_STEP * 0.5 / 180.0 * M_PI);
         eye_ = lookat_ + front_ * distance_;
     }
 }
 
 void ViewControl::ChangeFieldOfView(double step) {
-    field_of_view_ = std::max(
-        std::min(field_of_view_ + step * FIELD_OF_VIEW_STEP, FIELD_OF_VIEW_MAX),
-        FIELD_OF_VIEW_MIN);
+    field_of_view_ =
+            std::max(std::min(field_of_view_ + step * FIELD_OF_VIEW_STEP,
+                              FIELD_OF_VIEW_MAX),
+                     FIELD_OF_VIEW_MIN);
     SetProjectionParameters();
 }
 

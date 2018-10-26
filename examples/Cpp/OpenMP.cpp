@@ -66,7 +66,7 @@ void svd_task() {
     for (int i = 0; i < n_a_rows; ++i)
         for (int j = 0; j < n_a_cols; ++j) a(i, j) = n_a_cols * i + j;
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(
-        a, Eigen::ComputeThinU | Eigen::ComputeThinV);
+            a, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::MatrixXd pca = svd.matrixU().block<10000, 10>(0, 0).transpose() * a;
 }
 
@@ -91,7 +91,7 @@ void TestMatrixMultiplication(int argc, char **argv) {
 #endif
 
 #pragma omp parallel default(none) private(i) \
-    shared(nSum, nThreads, nStart, nEnd)
+        shared(nSum, nThreads, nStart, nEnd)
     {
 #ifdef _OPENMP
 #pragma omp master
@@ -116,9 +116,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
 
     if (nSum != nSumCalc) {
         PrintInfo(
-            "The sum of %d through %d should be %d, "
-            "but %d was reported!\n",
-            NUM_START, NUM_END, nSumCalc, nSum);
+                "The sum of %d through %d should be %d, "
+                "but %d was reported!\n",
+                NUM_START, NUM_END, nSumCalc, nSum);
         nRet = 1;
     } else {
         PrintInfo("The sum of %d through %d is %d\n", NUM_START, NUM_END, nSum);

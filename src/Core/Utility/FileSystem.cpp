@@ -175,7 +175,7 @@ bool ListFilesInDirectory(const std::string &directory,
         const std::string file_name = ent->d_name;
         if (file_name[0] == '.') continue;
         std::string full_file_name =
-            GetRegularizedDirectoryName(directory) + file_name;
+                GetRegularizedDirectoryName(directory) + file_name;
         if (stat(full_file_name.c_str(), &st) == -1) continue;
         if (S_ISREG(st.st_mode)) filenames.push_back(full_file_name);
     }

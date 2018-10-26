@@ -42,7 +42,7 @@ PreprocessPointCloud(const char *file_name) {
     auto pcd_down = VoxelDownSample(*pcd, 0.05);
     EstimateNormals(*pcd_down, open3d::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = ComputeFPFHFeature(
-        *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
+            *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
 
     if (argc != 3) {
         PrintDebug(
-            "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
-            "[path_to_second_point_cloud]\n");
+                "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
+                "[path_to_second_point_cloud]\n");
         return 1;
     }
 
@@ -84,21 +84,22 @@ int main(int argc, char *argv[]) {
         std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
         std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-            correspondence_checker;
+                correspondence_checker;
         auto correspondence_checker_edge_length =
-            CorrespondenceCheckerBasedOnEdgeLength(0.9);
+                CorrespondenceCheckerBasedOnEdgeLength(0.9);
         auto correspondence_checker_distance =
-            CorrespondenceCheckerBasedOnDistance(0.075);
+                CorrespondenceCheckerBasedOnDistance(0.075);
         auto correspondence_checker_normal =
-            CorrespondenceCheckerBasedOnNormal(0.52359878);
+                CorrespondenceCheckerBasedOnNormal(0.52359878);
 
         correspondence_checker.push_back(correspondence_checker_edge_length);
         correspondence_checker.push_back(correspondence_checker_distance);
         correspondence_checker.push_back(correspondence_checker_normal);
         auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
-            *source, *target, *source_fpfh, *target_fpfh, 0.075,
-            TransformationEstimationPointToPoint(false), 4,
-            correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
+                *source, *target, *source_fpfh, *target_fpfh, 0.075,
+                TransformationEstimationPointToPoint(false), 4,
+                correspondence_checker,
+                RANSACConvergenceCriteria(4000000, 1000));
 
         if (visualization)
             VisualizeRegistration(*source, *target,

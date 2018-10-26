@@ -79,7 +79,7 @@ class Visualizer {
     /// Function to register a callback function for animation
     /// The callback function returns if UpdateGeometry() needs to be run
     void RegisterAnimationCallback(
-        std::function<bool(Visualizer *)> callback_func);
+            std::function<bool(Visualizer *)> callback_func);
 
     /// Function to activate the window
     /// This function will block the current thread until the window is closed.
@@ -179,7 +179,7 @@ class Visualizer {
     // so that even if user calls RegisterAnimationCallback() within the
     // callback function it is still safe.
     std::function<bool(Visualizer *)> animation_callback_func_in_loop_ =
-        nullptr;
+            nullptr;
 
     // control
     MouseControl mouse_control_;
@@ -197,7 +197,7 @@ class Visualizer {
 
     // geometry renderers
     std::vector<std::shared_ptr<glsl::GeometryRenderer>>
-        geometry_renderer_ptrs_;
+            geometry_renderer_ptrs_;
 
     // utilities owned by the Visualizer
     std::vector<std::shared_ptr<const Geometry>> utility_ptrs_;
@@ -208,7 +208,7 @@ class Visualizer {
     // coordinate frame
     std::shared_ptr<TriangleMesh> coordinate_frame_mesh_ptr_;
     std::shared_ptr<glsl::CoordinateFrameRenderer>
-        coordinate_frame_mesh_renderer_ptr_;
+            coordinate_frame_mesh_renderer_ptr_;
 
 #ifdef __APPLE__
     // MacBook with Retina display does not have a 1:1 mapping from screen

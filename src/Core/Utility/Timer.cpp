@@ -39,7 +39,7 @@ Timer::~Timer() {}
 
 double Timer::GetSystemTimeInMilliseconds() {
     std::chrono::duration<double, std::milli> current_time =
-        std::chrono::high_resolution_clock::now().time_since_epoch();
+            std::chrono::high_resolution_clock::now().time_since_epoch();
     return current_time.count();
 }
 
@@ -92,13 +92,14 @@ void FPSTimer::Signal() {
         // print and reset
         if (expectation_ == -1) {
             PrintInfo(
-                "%s at %.2f fps.\n", fps_timer_info_.c_str(),
-                double(event_fragment_count_ + 1) / GetDuration() * 1000.0);
+                    "%s at %.2f fps.\n", fps_timer_info_.c_str(),
+                    double(event_fragment_count_ + 1) / GetDuration() * 1000.0);
         } else {
             PrintInfo(
-                "%s at %.2f fps (progress %.2f%%).\n", fps_timer_info_.c_str(),
-                double(event_fragment_count_ + 1) / GetDuration() * 1000.0,
-                (double)event_total_count_ * 100.0 / (double)expectation_);
+                    "%s at %.2f fps (progress %.2f%%).\n",
+                    fps_timer_info_.c_str(),
+                    double(event_fragment_count_ + 1) / GetDuration() * 1000.0,
+                    (double)event_total_count_ * 100.0 / (double)expectation_);
         }
         Start();
         event_fragment_count_ = 0;

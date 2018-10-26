@@ -106,12 +106,13 @@ class Image : public Geometry2D {
 /// This function is used as a convenient function for performance optimization
 /// in volumetric integration (see Core/Integration/TSDFVolume.h).
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
-    const PinholeCameraIntrinsic &intrinsic);
+        const PinholeCameraIntrinsic &intrinsic);
 
 /// Return a gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(
-    const Image &image, Image::ColorToIntensityConversionType type =
-                            Image::ColorToIntensityConversionType::Weighted);
+        const Image &image,
+        Image::ColorToIntensityConversionType type =
+                Image::ColorToIntensityConversionType::Weighted);
 
 /// Function to access the raw data of a single-channel Image
 template <typename T>

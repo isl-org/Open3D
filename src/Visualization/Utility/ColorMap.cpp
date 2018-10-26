@@ -39,7 +39,7 @@ class GlobalColorMapSingleton {
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
-        delete;
+            delete;
 
    public:
     ~GlobalColorMapSingleton() { PrintDebug("Global colormap destruct.\n"); }
@@ -78,10 +78,10 @@ Eigen::Vector3d ColorMapWinter::GetColor(double value) const {
 
 Eigen::Vector3d ColorMapHot::GetColor(double value) const {
     Eigen::Vector3d edges[4] = {
-        Eigen::Vector3d(1.0, 1.0, 1.0),
-        Eigen::Vector3d(1.0, 1.0, 0.0),
-        Eigen::Vector3d(1.0, 0.0, 0.0),
-        Eigen::Vector3d(0.0, 0.0, 0.0),
+            Eigen::Vector3d(1.0, 1.0, 1.0),
+            Eigen::Vector3d(1.0, 1.0, 0.0),
+            Eigen::Vector3d(1.0, 0.0, 0.0),
+            Eigen::Vector3d(0.0, 0.0, 0.0),
     };
     if (value < 0.0) {
         return edges[0];
@@ -104,24 +104,24 @@ void SetGlobalColorMap(ColorMap::ColorMapOption option) {
     switch (option) {
         case ColorMap::ColorMapOption::Gray:
             GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapGray);
+                    new ColorMapGray);
             break;
         case ColorMap::ColorMapOption::Summer:
             GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapSummer);
+                    new ColorMapSummer);
             break;
         case ColorMap::ColorMapOption::Winter:
             GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapWinter);
+                    new ColorMapWinter);
             break;
         case ColorMap::ColorMapOption::Hot:
             GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapHot);
+                    new ColorMapHot);
             break;
         case ColorMap::ColorMapOption::Jet:
         default:
             GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapJet);
+                    new ColorMapJet);
             break;
     }
 }

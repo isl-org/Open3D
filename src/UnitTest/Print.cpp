@@ -134,7 +134,7 @@ void unit_test::Print(const vector<uint8_t> &v) {
     int width = 5;
     size_t cols = 10;
     size_t rows =
-        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
+            (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << setw(TAB_SIZE) << "";
     cout << "{";
@@ -170,7 +170,7 @@ void unit_test::Print(const vector<int> &v) {
     int width = 6;
     size_t cols = 10;
     size_t rows =
-        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
+            (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << setw(TAB_SIZE) << "";
     cout << "{";
@@ -206,7 +206,7 @@ void unit_test::Print(const vector<size_t> &v) {
     int width = 6;
     size_t cols = 10;
     size_t rows =
-        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
+            (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << setw(TAB_SIZE) << "";
     cout << "{";
@@ -243,7 +243,7 @@ void unit_test::Print(const vector<float> &v) {
     int width = 12;
     size_t cols = 5;
     size_t rows =
-        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
+            (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << fixed;
     cout << setprecision(precision);
@@ -283,7 +283,7 @@ void unit_test::Print(const vector<double> &v) {
     int width = 12;
     size_t cols = 5;
     size_t rows =
-        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
+            (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << fixed;
     cout << setprecision(precision);

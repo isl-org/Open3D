@@ -67,13 +67,13 @@ int main(int argc, char *argv[]) {
         }
         mesh_ptr->ComputeVertexNormals();
         DrawGeometriesWithAnimationCallback(
-            {mesh_ptr},
-            [&](Visualizer *vis) {
-                vis->GetViewControl().Rotate(10, 0);
-                std::this_thread::sleep_for(std::chrono::milliseconds(30));
-                return false;
-            },
-            "Spin", 1600, 900);
+                {mesh_ptr},
+                [&](Visualizer *vis) {
+                    vis->GetViewControl().Rotate(10, 0);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+                    return false;
+                },
+                "Spin", 1600, 900);
     } else if (option == "slowspin") {
         auto mesh_ptr = std::make_shared<TriangleMesh>();
         if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
@@ -84,14 +84,15 @@ int main(int argc, char *argv[]) {
         }
         mesh_ptr->ComputeVertexNormals();
         DrawGeometriesWithKeyCallbacks(
-            {mesh_ptr},
-            {{GLFW_KEY_SPACE,
-              [&](Visualizer *vis) {
-                  vis->GetViewControl().Rotate(10, 0);
-                  std::this_thread::sleep_for(std::chrono::milliseconds(30));
-                  return false;
-              }}},
-            "Press Space key to spin", 1600, 900);
+                {mesh_ptr},
+                {{GLFW_KEY_SPACE,
+                  [&](Visualizer *vis) {
+                      vis->GetViewControl().Rotate(10, 0);
+                      std::this_thread::sleep_for(
+                              std::chrono::milliseconds(30));
+                      return false;
+                  }}},
+                "Press Space key to spin", 1600, 900);
     } else if (option == "pointcloud") {
         auto cloud_ptr = std::make_shared<PointCloud>();
         if (ReadPointCloud(argv[2], *cloud_ptr)) {
@@ -124,15 +125,15 @@ int main(int argc, char *argv[]) {
         update_colors_func(1.0);
 
         DrawGeometriesWithAnimationCallback(
-            {cloud_ptr},
-            [&](Visualizer *vis) {
-                color_index += color_index_step;
-                if (color_index > 2.0) color_index -= 2.0;
-                update_colors_func(fabs(color_index - 1.0));
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                return true;
-            },
-            "Rainbow", 1600, 900);
+                {cloud_ptr},
+                [&](Visualizer *vis) {
+                    color_index += color_index_step;
+                    if (color_index > 2.0) color_index -= 2.0;
+                    update_colors_func(fabs(color_index - 1.0));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    return true;
+                },
+                "Rainbow", 1600, 900);
     } else if (option == "image") {
         auto image_ptr = std::make_shared<Image>();
         if (ReadImage(argv[2], *image_ptr)) {
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]) {
         PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
-            CreatePointCloudFromDepthImage(*image_ptr, camera);
+                CreatePointCloudFromDepthImage(*image_ptr, camera);
         DrawGeometries({pointcloud_ptr}, "PointCloud from Depth Image", 1920,
                        1080);
     } else if (option == "editing") {

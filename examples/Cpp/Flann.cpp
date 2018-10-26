@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < new_indices_vec.size(); i++) {
         PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
         new_cloud_ptr->colors_[new_indices_vec[i]] =
-            Eigen::Vector3d(1.0, 0.0, 0.0);
+                Eigen::Vector3d(1.0, 0.0, 0.0);
     }
 
     new_cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < k; i++) {
         PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
         new_cloud_ptr->colors_[new_indices_vec[i]] =
-            Eigen::Vector3d(0.0, 0.0, 1.0);
+                Eigen::Vector3d(0.0, 0.0, 1.0);
     }
     new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < k; i++) {
         PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
         new_cloud_ptr->colors_[new_indices_vec[i]] =
-            Eigen::Vector3d(0.0, 0.0, 1.0);
+                Eigen::Vector3d(0.0, 0.0, 1.0);
     }
     new_cloud_ptr->colors_[199] = Eigen::Vector3d(0.0, 1.0, 1.0);
 

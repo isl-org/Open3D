@@ -40,7 +40,7 @@ class VisualizerWithKeyCallback : public Visualizer {
     ~VisualizerWithKeyCallback() override;
     VisualizerWithKeyCallback(const VisualizerWithKeyCallback &) = delete;
     VisualizerWithKeyCallback &operator=(const VisualizerWithKeyCallback &) =
-        delete;
+            delete;
 
    public:
     void PrintVisualizerHelp() override;

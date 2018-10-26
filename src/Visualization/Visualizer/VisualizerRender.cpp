@@ -93,7 +93,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
             *coordinate_frame_mesh_ptr_ = *CreateMeshCoordinateFrame(
-                boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+                    boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
         }
     }
@@ -133,12 +133,12 @@ void Visualizer::CopyViewStatusFromClipboard() {
             return;
         }
         view_control_ptr_->ConvertFromViewParameters(
-            trajectory.view_status_[0]);
+                trajectory.view_status_[0]);
     }
 }
 
 std::shared_ptr<Image> Visualizer::CaptureScreenFloatBuffer(
-    bool do_render /* = true*/) {
+        bool do_render /* = true*/) {
     Image screen_image;
     screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                               view_control_ptr_->GetWindowHeight(), 3, 4);
@@ -160,7 +160,7 @@ std::shared_ptr<Image> Visualizer::CaptureScreenFloatBuffer(
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(image_ptr->data_.data() + bytes_per_line * i,
                screen_image.data_.data() +
-                   bytes_per_line * (screen_image.height_ - i - 1),
+                       bytes_per_line * (screen_image.height_ - i - 1),
                bytes_per_line);
     }
     return image_ptr;
@@ -196,7 +196,7 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(png_image.data_.data() + bytes_per_line * i,
                screen_image.data_.data() +
-                   bytes_per_line * (screen_image.height_ - i - 1),
+                       bytes_per_line * (screen_image.height_ - i - 1),
                bytes_per_line);
     }
 
@@ -208,13 +208,13 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
         PinholeCameraTrajectory trajectory;
         trajectory.extrinsic_.resize(1);
         view_control_ptr_->ConvertToPinholeCameraParameters(
-            trajectory.intrinsic_, trajectory.extrinsic_[0]);
+                trajectory.intrinsic_, trajectory.extrinsic_[0]);
         WriteIJsonConvertible(camera_filename, trajectory);
     }
 }
 
 std::shared_ptr<Image> Visualizer::CaptureDepthFloatBuffer(
-    bool do_render /* = true*/) {
+        bool do_render /* = true*/) {
     Image depth_image;
     depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                              view_control_ptr_->GetWindowHeight(), 1, 4);
@@ -260,17 +260,17 @@ std::shared_ptr<Image> Visualizer::CaptureDepthFloatBuffer(
     for (int i = 0; i < depth_image.height_; i++) {
         float *p_depth = (float *)(depth_image.data_.data() +
                                    depth_image.BytesPerLine() *
-                                       (depth_image.height_ - i - 1));
-        float *p_image =
-            (float *)(image_ptr->data_.data() + image_ptr->BytesPerLine() * i);
+                                           (depth_image.height_ - i - 1));
+        float *p_image = (float *)(image_ptr->data_.data() +
+                                   image_ptr->BytesPerLine() * i);
         for (int j = 0; j < depth_image.width_; j++) {
             if (p_depth[j] == 1.0) {
                 continue;
             }
             double z_depth =
-                2.0 * z_near * z_far /
-                (z_far + z_near -
-                 (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));
+                    2.0 * z_near * z_far /
+                    (z_far + z_near -
+                     (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));
             p_image[j] = (float)z_depth;
         }
     }
@@ -333,17 +333,17 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
     for (int i = 0; i < depth_image.height_; i++) {
         float *p_depth = (float *)(depth_image.data_.data() +
                                    depth_image.BytesPerLine() *
-                                       (depth_image.height_ - i - 1));
-        uint16_t *p_png =
-            (uint16_t *)(png_image.data_.data() + png_image.BytesPerLine() * i);
+                                           (depth_image.height_ - i - 1));
+        uint16_t *p_png = (uint16_t *)(png_image.data_.data() +
+                                       png_image.BytesPerLine() * i);
         for (int j = 0; j < depth_image.width_; j++) {
             if (p_depth[j] == 1.0) {
                 continue;
             }
             double z_depth =
-                2.0 * z_near * z_far /
-                (z_far + z_near -
-                 (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));
+                    2.0 * z_near * z_far /
+                    (z_far + z_near -
+                     (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));
             p_png[j] = (uint16_t)std::min(std::round(depth_scale * z_depth),
                                           (double)INT16_MAX);
         }
@@ -357,14 +357,14 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
         PinholeCameraTrajectory trajectory;
         trajectory.extrinsic_.resize(1);
         view_control_ptr_->ConvertToPinholeCameraParameters(
-            trajectory.intrinsic_, trajectory.extrinsic_[0]);
+                trajectory.intrinsic_, trajectory.extrinsic_[0]);
         WriteIJsonConvertible(camera_filename, trajectory);
     }
 }
 
 void Visualizer::CaptureDepthPointCloud(
-    const std::string &filename /* = ""*/, bool do_render /* = true*/,
-    bool convert_to_world_coordinate /* = false*/) {
+        const std::string &filename /* = ""*/, bool do_render /* = true*/,
+        bool convert_to_world_coordinate /* = false*/) {
     std::string ply_filename = filename;
     std::string camera_filename;
     if (ply_filename.empty()) {
@@ -425,9 +425,9 @@ void Visualizer::CaptureDepthPointCloud(
                 continue;
             }
             depth_pointcloud.points_.push_back(GLHelper::Unproject(
-                Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]), mvp_matrix,
-                view_control_ptr_->GetWindowWidth(),
-                view_control_ptr_->GetWindowHeight()));
+                    Eigen::Vector3d(j + 0.5, i + 0.5, p_depth[j]), mvp_matrix,
+                    view_control_ptr_->GetWindowWidth(),
+                    view_control_ptr_->GetWindowHeight()));
         }
     }
 
@@ -440,7 +440,7 @@ void Visualizer::CaptureDepthPointCloud(
         PinholeCameraTrajectory trajectory;
         trajectory.extrinsic_.resize(1);
         view_control_ptr_->ConvertToPinholeCameraParameters(
-            trajectory.intrinsic_, trajectory.extrinsic_[0]);
+                trajectory.intrinsic_, trajectory.extrinsic_[0]);
         WriteIJsonConvertible(camera_filename, trajectory);
     }
 }

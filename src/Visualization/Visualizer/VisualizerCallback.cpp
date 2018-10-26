@@ -177,9 +177,9 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
             UpdateGeometry();
             PrintDebug("[Visualizer] Mesh shading mode is %s.\n",
                        render_option_ptr_->mesh_shade_option_ ==
-                               RenderOption::MeshShadeOption::FlatShade
-                           ? "FLAT"
-                           : "SMOOTH");
+                                       RenderOption::MeshShadeOption::FlatShade
+                               ? "FLAT"
+                               : "SMOOTH");
             break;
         case GLFW_KEY_W:
             render_option_ptr_->ToggleMeshShowWireframe();
@@ -194,11 +194,13 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_I:
             render_option_ptr_->ToggleInterpolationOption();
             UpdateGeometry();
-            PrintDebug("[Visualizer] Image interpolation mode is %s.\n",
-                       render_option_ptr_->interpolation_option_ ==
-                               RenderOption::TextureInterpolationOption::Nearest
-                           ? "NEARST"
-                           : "LINEAR");
+            PrintDebug(
+                    "[Visualizer] Image interpolation mode is %s.\n",
+                    render_option_ptr_->interpolation_option_ ==
+                                    RenderOption::TextureInterpolationOption::
+                                            Nearest
+                            ? "NEARST"
+                            : "LINEAR");
             break;
         case GLFW_KEY_T:
             render_option_ptr_->ToggleImageStretchOption();
@@ -208,7 +210,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_0:
             if (mods & GLFW_MOD_CONTROL) {
                 render_option_ptr_->mesh_color_option_ =
-                    RenderOption::MeshColorOption::Default;
+                        RenderOption::MeshColorOption::Default;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Mesh color set to DEFAULT.\n");
             } else if (mods & GLFW_MOD_SHIFT) {
@@ -217,7 +219,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
                 PrintDebug("[Visualizer] Color map set to GRAY.\n");
             } else {
                 render_option_ptr_->point_color_option_ =
-                    RenderOption::PointColorOption::Default;
+                        RenderOption::PointColorOption::Default;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Point color set to DEFAULT.\n");
             }
@@ -225,7 +227,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_1:
             if (mods & GLFW_MOD_CONTROL) {
                 render_option_ptr_->mesh_color_option_ =
-                    RenderOption::MeshColorOption::Color;
+                        RenderOption::MeshColorOption::Color;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Mesh color set to COLOR.\n");
             } else if (mods & GLFW_MOD_SHIFT) {
@@ -234,7 +236,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
                 PrintDebug("[Visualizer] Color map set to JET.\n");
             } else {
                 render_option_ptr_->point_color_option_ =
-                    RenderOption::PointColorOption::Color;
+                        RenderOption::PointColorOption::Color;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Point color set to COLOR.\n");
             }
@@ -242,7 +244,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_2:
             if (mods & GLFW_MOD_CONTROL) {
                 render_option_ptr_->mesh_color_option_ =
-                    RenderOption::MeshColorOption::XCoordinate;
+                        RenderOption::MeshColorOption::XCoordinate;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Mesh color set to X.\n");
             } else if (mods & GLFW_MOD_SHIFT) {
@@ -251,7 +253,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
                 PrintDebug("[Visualizer] Color map set to SUMMER.\n");
             } else {
                 render_option_ptr_->point_color_option_ =
-                    RenderOption::PointColorOption::XCoordinate;
+                        RenderOption::PointColorOption::XCoordinate;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Point color set to X.\n");
             }
@@ -259,7 +261,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_3:
             if (mods & GLFW_MOD_CONTROL) {
                 render_option_ptr_->mesh_color_option_ =
-                    RenderOption::MeshColorOption::YCoordinate;
+                        RenderOption::MeshColorOption::YCoordinate;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Mesh color set to Y.\n");
             } else if (mods & GLFW_MOD_SHIFT) {
@@ -268,7 +270,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
                 PrintDebug("[Visualizer] Color map set to WINTER.\n");
             } else {
                 render_option_ptr_->point_color_option_ =
-                    RenderOption::PointColorOption::YCoordinate;
+                        RenderOption::PointColorOption::YCoordinate;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Point color set to Y.\n");
             }
@@ -276,7 +278,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_4:
             if (mods & GLFW_MOD_CONTROL) {
                 render_option_ptr_->mesh_color_option_ =
-                    RenderOption::MeshColorOption::ZCoordinate;
+                        RenderOption::MeshColorOption::ZCoordinate;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Mesh color set to Z.\n");
             } else if (mods & GLFW_MOD_SHIFT) {
@@ -285,7 +287,7 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
                 PrintDebug("[Visualizer] Color map set to HOT.\n");
             } else {
                 render_option_ptr_->point_color_option_ =
-                    RenderOption::PointColorOption::ZCoordinate;
+                        RenderOption::PointColorOption::ZCoordinate;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Point color set to Z.\n");
             }
@@ -293,13 +295,13 @@ void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
         case GLFW_KEY_9:
             if (mods & GLFW_MOD_CONTROL) {
                 render_option_ptr_->mesh_color_option_ =
-                    RenderOption::MeshColorOption::Normal;
+                        RenderOption::MeshColorOption::Normal;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Mesh color set to NORMAL.\n");
             } else if (mods & GLFW_MOD_SHIFT) {
             } else {
                 render_option_ptr_->point_color_option_ =
-                    RenderOption::PointColorOption::Normal;
+                        RenderOption::PointColorOption::Normal;
                 UpdateGeometry();
                 PrintDebug("[Visualizer] Point color set to NORMAL.\n");
             }

@@ -38,8 +38,8 @@ void PrintHelp() {
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
     PrintInfo(
-        "    --purge                   : Clear duplicated and non-manifold "
-        "vertices and\n");
+            "    --purge                   : Clear duplicated and non-manifold "
+            "vertices and\n");
     PrintInfo("                                triangles.\n");
 }
 

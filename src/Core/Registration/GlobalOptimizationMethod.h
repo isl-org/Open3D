@@ -45,9 +45,9 @@ class GlobalOptimizationMethod {
 
    public:
     virtual void OptimizePoseGraph(
-        PoseGraph &pose_graph,
-        const GlobalOptimizationConvergenceCriteria &criteria,
-        const GlobalOptimizationOption &option) const = 0;
+            PoseGraph &pose_graph,
+            const GlobalOptimizationConvergenceCriteria &criteria,
+            const GlobalOptimizationOption &option) const = 0;
 };
 
 class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
@@ -57,9 +57,9 @@ class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
 
    public:
     void OptimizePoseGraph(
-        PoseGraph &pose_graph,
-        const GlobalOptimizationConvergenceCriteria &criteria,
-        const GlobalOptimizationOption &option) const override;
+            PoseGraph &pose_graph,
+            const GlobalOptimizationConvergenceCriteria &criteria,
+            const GlobalOptimizationOption &option) const override;
 };
 
 class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
@@ -69,9 +69,9 @@ class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
 
    public:
     void OptimizePoseGraph(
-        PoseGraph &pose_graph,
-        const GlobalOptimizationConvergenceCriteria &criteria,
-        const GlobalOptimizationOption &option) const override;
+            PoseGraph &pose_graph,
+            const GlobalOptimizationConvergenceCriteria &criteria,
+            const GlobalOptimizationOption &option) const override;
 };
 
 }  // namespace open3d

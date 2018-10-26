@@ -90,11 +90,12 @@ class ImageWarpingField {
 const double IMAGE_BOUNDARY_MARGIN = 10;
 
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
-    const Eigen::Vector3d X, const PinholeCameraTrajectory& camera, int camid) {
+        const Eigen::Vector3d X, const PinholeCameraTrajectory& camera,
+        int camid) {
     std::pair<double, double> f = camera.intrinsic_.GetFocalLength();
     std::pair<double, double> p = camera.intrinsic_.GetPrincipalPoint();
     Eigen::Vector4d Vt =
-        camera.extrinsic_[camid] * Eigen::Vector4d(X(0), X(1), X(2), 1);
+            camera.extrinsic_[camid] * Eigen::Vector4d(X(0), X(1), X(2), 1);
     float u = float((Vt(0) * f.first) / Vt(2) + p.first);
     float v = float((Vt(1) * f.second) / Vt(2) + p.second);
     float z = float(Vt(2));
@@ -145,13 +146,13 @@ MakeVertexAndImageVisibility(const TriangleMesh& mesh,
                    double(viscnt) / n_vertex * 100);
         fflush(stdout);
     }
-    return std::move(
-        std::make_tuple(visiblity_vertex_to_image, visiblity_image_to_vertex));
+    return std::move(std::make_tuple(visiblity_vertex_to_image,
+                                     visiblity_image_to_vertex));
 }
 
 std::vector<ImageWarpingField> MakeWarpingFields(
-    const std::vector<std::shared_ptr<Image>>& images,
-    const ColorMapOptmizationOption& option) {
+        const std::vector<std::shared_ptr<Image>>& images,
+        const ColorMapOptmizationOption& option) {
     std::vector<ImageWarpingField> fields;
     for (auto i = 0; i < images.size(); i++) {
         int width = images[i]->width_;
@@ -202,7 +203,7 @@ std::tuple<bool, T> QueryImageIntensity(const Image& img,
                                        *PointerAt<T>(img, u_shift, v_shift));
             } else {
                 return std::make_tuple(
-                    true, *PointerAt<T>(img, u_shift, v_shift, ch));
+                        true, *PointerAt<T>(img, u_shift, v_shift, ch));
             }
         }
     }
@@ -210,12 +211,12 @@ std::tuple<bool, T> QueryImageIntensity(const Image& img,
 }
 
 void SetProxyIntensityForVertex(
-    const TriangleMesh& mesh,
-    const std::vector<std::shared_ptr<Image>>& images_gray,
-    const std::vector<ImageWarpingField>& warping_field,
-    const PinholeCameraTrajectory& camera,
-    const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-    std::vector<double>& proxy_intensity) {
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<ImageWarpingField>& warping_field,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        std::vector<double>& proxy_intensity) {
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
@@ -228,9 +229,9 @@ void SetProxyIntensityForVertex(
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
-            std::tie(valid, gray) =
-                QueryImageIntensity<float>(*images_gray[j], warping_field[j],
-                                           mesh.vertices_[i], camera, j);
+            std::tie(valid, gray) = QueryImageIntensity<float>(
+                    *images_gray[j], warping_field[j], mesh.vertices_[i],
+                    camera, j);
             if (valid) {
                 sum += 1.0;
                 proxy_intensity[i] += gray;
@@ -243,11 +244,11 @@ void SetProxyIntensityForVertex(
 }
 
 void SetProxyIntensityForVertex(
-    const TriangleMesh& mesh,
-    const std::vector<std::shared_ptr<Image>>& images_gray,
-    const PinholeCameraTrajectory& camera,
-    const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-    std::vector<double>& proxy_intensity) {
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        std::vector<double>& proxy_intensity) {
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
@@ -261,7 +262,7 @@ void SetProxyIntensityForVertex(
             float gray;
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
-                *images_gray[j], mesh.vertices_[i], camera, j);
+                    *images_gray[j], mesh.vertices_[i], camera, j);
             if (valid) {
                 sum += 1.0;
                 proxy_intensity[i] += gray;
@@ -274,17 +275,17 @@ void SetProxyIntensityForVertex(
 }
 
 void OptimizeImageCoorNonrigid(
-    const TriangleMesh& mesh,
-    const std::vector<std::shared_ptr<Image>>& images_gray,
-    const std::vector<std::shared_ptr<Image>>& images_dx,
-    const std::vector<std::shared_ptr<Image>>& images_dy,
-    std::vector<ImageWarpingField>& warping_fields,
-    const std::vector<ImageWarpingField>& warping_fields_init,
-    PinholeCameraTrajectory& camera,
-    const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-    const std::vector<std::vector<int>>& visiblity_image_to_vertex,
-    std::vector<double>& proxy_intensity,
-    const ColorMapOptmizationOption& option) {
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<std::shared_ptr<Image>>& images_dx,
+        const std::vector<std::shared_ptr<Image>>& images_dy,
+        std::vector<ImageWarpingField>& warping_fields,
+        const std::vector<ImageWarpingField>& warping_fields_init,
+        PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visiblity_image_to_vertex,
+        std::vector<double>& proxy_intensity,
+        const ColorMapOptmizationOption& option) {
     auto n_vertex = mesh.vertices_.size();
     auto n_camera = camera.extrinsic_.size();
     Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
@@ -303,10 +304,10 @@ void OptimizeImageCoorNonrigid(
 #pragma omp parallel for schedule(static)
 #endif
         for (int i = 0; i < n_camera; i++) {
-            int nonrigidval =
-                warping_fields[i].anchor_w_ * warping_fields[i].anchor_h_ * 2;
+            int nonrigidval = warping_fields[i].anchor_w_ *
+                              warping_fields[i].anchor_h_ * 2;
             Eigen::MatrixXd JJ =
-                Eigen::MatrixXd::Zero(6 + nonrigidval, 6 + nonrigidval);
+                    Eigen::MatrixXd::Zero(6 + nonrigidval, 6 + nonrigidval);
             Eigen::VectorXd Jb = Eigen::VectorXd::Zero(6 + nonrigidval);
             double rr = 0.0;
             double rr_reg = 0.0;
@@ -328,14 +329,14 @@ void OptimizeImageCoorNonrigid(
                 double p = (u - ii * anchor_step) / anchor_step;
                 double q = (v - jj * anchor_step) / anchor_step;
                 Eigen::Vector2d grids[4] = {
-                    warping_fields[i].QueryFlow(ii, jj),
-                    warping_fields[i].QueryFlow(ii, jj + 1),
-                    warping_fields[i].QueryFlow(ii + 1, jj),
-                    warping_fields[i].QueryFlow(ii + 1, jj + 1),
+                        warping_fields[i].QueryFlow(ii, jj),
+                        warping_fields[i].QueryFlow(ii, jj + 1),
+                        warping_fields[i].QueryFlow(ii + 1, jj),
+                        warping_fields[i].QueryFlow(ii + 1, jj + 1),
                 };
                 Eigen::Vector2d uuvv =
-                    (1 - p) * (1 - q) * grids[0] + (1 - p) * (q)*grids[1] +
-                    (p) * (1 - q) * grids[2] + (p) * (q)*grids[3];
+                        (1 - p) * (1 - q) * grids[0] + (1 - p) * (q)*grids[1] +
+                        (p) * (1 - q) * grids[2] + (p) * (q)*grids[3];
                 double uu = uuvv(0);
                 double vv = uuvv(1);
                 if (!images_gray[i]->TestImageBoundary(uu, vv,
@@ -403,7 +404,7 @@ void OptimizeImageCoorNonrigid(
             }
             if (this_num == 0) continue;
             double weight =
-                option.non_rigid_anchor_point_weight_ * this_num / n_vertex;
+                    option.non_rigid_anchor_point_weight_ * this_num / n_vertex;
             for (int j = 0; j < nonrigidval; j++) {
                 double r = weight * (warping_fields[i].flow_(j) -
                                      warping_fields_init[i].flow_(j));
@@ -420,12 +421,12 @@ void OptimizeImageCoorNonrigid(
                 std::tie(success, result) = SolveLinearSystem(JJ, -Jb, false);
                 Eigen::Affine3d aff_mat;
                 aff_mat.linear() =
-                    (Eigen::Matrix3d)Eigen::AngleAxisd(
-                        result(2), Eigen::Vector3d::UnitZ()) *
-                    Eigen::AngleAxisd(result(1), Eigen::Vector3d::UnitY()) *
-                    Eigen::AngleAxisd(result(0), Eigen::Vector3d::UnitX());
+                        (Eigen::Matrix3d)Eigen::AngleAxisd(
+                                result(2), Eigen::Vector3d::UnitZ()) *
+                        Eigen::AngleAxisd(result(1), Eigen::Vector3d::UnitY()) *
+                        Eigen::AngleAxisd(result(0), Eigen::Vector3d::UnitX());
                 aff_mat.translation() =
-                    Eigen::Vector3d(result(3), result(4), result(5));
+                        Eigen::Vector3d(result(3), result(4), result(5));
                 pose = aff_mat.matrix() * pose;
                 for (int j = 0; j < nonrigidval; j++) {
                     warping_fields[i].flow_(j) += result(6 + j);
@@ -444,15 +445,15 @@ void OptimizeImageCoorNonrigid(
 }
 
 void OptimizeImageCoorRigid(
-    const TriangleMesh& mesh,
-    const std::vector<std::shared_ptr<Image>>& images_gray,
-    const std::vector<std::shared_ptr<Image>>& images_dx,
-    const std::vector<std::shared_ptr<Image>>& images_dy,
-    PinholeCameraTrajectory& camera,
-    const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-    const std::vector<std::vector<int>>& visiblity_image_to_vertex,
-    std::vector<double>& proxy_intensity,
-    const ColorMapOptmizationOption& option) {
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<std::shared_ptr<Image>>& images_dx,
+        const std::vector<std::shared_ptr<Image>>& images_dy,
+        PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        const std::vector<std::vector<int>>& visiblity_image_to_vertex,
+        std::vector<double>& proxy_intensity,
+        const ColorMapOptmizationOption& option) {
     int total_num_ = 0;
     auto n_camera = camera.extrinsic_.size();
     Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
@@ -522,12 +523,12 @@ void OptimizeImageCoorRigid(
             result = -JJ.inverse() * Jb;
             Eigen::Affine3d aff_mat;
             aff_mat.linear() =
-                (Eigen::Matrix3d)Eigen::AngleAxisd(result(2),
-                                                   Eigen::Vector3d::UnitZ()) *
-                Eigen::AngleAxisd(result(1), Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxisd(result(0), Eigen::Vector3d::UnitX());
+                    (Eigen::Matrix3d)Eigen::AngleAxisd(
+                            result(2), Eigen::Vector3d::UnitZ()) *
+                    Eigen::AngleAxisd(result(1), Eigen::Vector3d::UnitY()) *
+                    Eigen::AngleAxisd(result(0), Eigen::Vector3d::UnitX());
             aff_mat.translation() =
-                Eigen::Vector3d(result(3), result(4), result(5));
+                    Eigen::Vector3d(result(3), result(4), result(5));
             pose = aff_mat.matrix() * pose;
             camera.extrinsic_[i] = pose;
 #ifdef _OPENMP
@@ -546,10 +547,10 @@ void OptimizeImageCoorRigid(
 }
 
 void SetGeometryColorAverage(
-    TriangleMesh& mesh, const std::vector<RGBDImage>& images_rgbd,
-    const std::vector<ImageWarpingField>& warping_fields,
-    const PinholeCameraTrajectory& camera,
-    const std::vector<std::vector<int>>& visiblity_vertex_to_image) {
+        TriangleMesh& mesh, const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<ImageWarpingField>& warping_fields,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image) {
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
@@ -563,14 +564,14 @@ void SetGeometryColorAverage(
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
-                images_rgbd[j].color_, warping_fields[j], mesh.vertices_[i],
-                camera, j, 0);
+                    images_rgbd[j].color_, warping_fields[j], mesh.vertices_[i],
+                    camera, j, 0);
             std::tie(valid, g_temp) = QueryImageIntensity<unsigned char>(
-                images_rgbd[j].color_, warping_fields[j], mesh.vertices_[i],
-                camera, j, 1);
+                    images_rgbd[j].color_, warping_fields[j], mesh.vertices_[i],
+                    camera, j, 1);
             std::tie(valid, b_temp) = QueryImageIntensity<unsigned char>(
-                images_rgbd[j].color_, warping_fields[j], mesh.vertices_[i],
-                camera, j, 2);
+                    images_rgbd[j].color_, warping_fields[j], mesh.vertices_[i],
+                    camera, j, 2);
             float r = (float)r_temp / 255.0f;
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;
@@ -586,9 +587,9 @@ void SetGeometryColorAverage(
 }
 
 void SetGeometryColorAverage(
-    TriangleMesh& mesh, const std::vector<RGBDImage>& images_rgbd,
-    const PinholeCameraTrajectory& camera,
-    const std::vector<std::vector<int>>& visiblity_vertex_to_image) {
+        TriangleMesh& mesh, const std::vector<RGBDImage>& images_rgbd,
+        const PinholeCameraTrajectory& camera,
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image) {
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
@@ -602,11 +603,11 @@ void SetGeometryColorAverage(
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
-                images_rgbd[j].color_, mesh.vertices_[i], camera, j, 0);
+                    images_rgbd[j].color_, mesh.vertices_[i], camera, j, 0);
             std::tie(valid, g_temp) = QueryImageIntensity<unsigned char>(
-                images_rgbd[j].color_, mesh.vertices_[i], camera, j, 1);
+                    images_rgbd[j].color_, mesh.vertices_[i], camera, j, 1);
             std::tie(valid, b_temp) = QueryImageIntensity<unsigned char>(
-                images_rgbd[j].color_, mesh.vertices_[i], camera, j, 2);
+                    images_rgbd[j].color_, mesh.vertices_[i], camera, j, 2);
             float r = (float)r_temp / 255.0f;
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;
@@ -632,12 +633,12 @@ MakeGradientImages(const std::vector<RGBDImage>& images_rgbd) {
     for (int i = 0; i < n_images; i++) {
         auto gray_image = CreateFloatImageFromImage(images_rgbd[i].color_);
         auto gray_image_filtered =
-            FilterImage(*gray_image, Image::FilterType::Gaussian3);
+                FilterImage(*gray_image, Image::FilterType::Gaussian3);
         images_gray.push_back(gray_image_filtered);
         images_dx.push_back(
-            FilterImage(*gray_image_filtered, Image::FilterType::Sobel3Dx));
+                FilterImage(*gray_image_filtered, Image::FilterType::Sobel3Dx));
         images_dy.push_back(
-            FilterImage(*gray_image_filtered, Image::FilterType::Sobel3Dy));
+                FilterImage(*gray_image_filtered, Image::FilterType::Sobel3Dy));
     }
     return std::move(std::make_tuple(images_gray, images_dx, images_dy));
 }
@@ -652,9 +653,9 @@ std::vector<Image> MakeDepthMasks(const std::vector<RGBDImage>& images_rgbd,
         int height = images_rgbd[i].depth_.height_;
         auto depth_image = CreateFloatImageFromImage(images_rgbd[i].depth_);
         auto depth_image_gradient_dx =
-            FilterImage(*depth_image, Image::FilterType::Sobel3Dx);
+                FilterImage(*depth_image, Image::FilterType::Sobel3Dx);
         auto depth_image_gradient_dy =
-            FilterImage(*depth_image, Image::FilterType::Sobel3Dy);
+                FilterImage(*depth_image, Image::FilterType::Sobel3Dy);
         auto mask = std::make_shared<Image>();
         mask->PrepareImage(width, height, 1, 1);
         for (int v = 0; v < height; v++) {
@@ -670,7 +671,7 @@ std::vector<Image> MakeDepthMasks(const std::vector<RGBDImage>& images_rgbd,
             }
         }
         auto mask_dilated = DilateImage(
-            *mask, option.half_dilation_kernel_size_for_discontinuity_map_);
+                *mask, option.half_dilation_kernel_size_for_discontinuity_map_);
         images_mask.push_back(*mask_dilated);
     }
     return std::move(images_mask);
@@ -688,7 +689,7 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::shared_ptr<Image>> images_dx;
     std::vector<std::shared_ptr<Image>> images_dy;
     std::tie(images_gray, images_dx, images_dy) =
-        MakeGradientImages(images_rgbd);
+            MakeGradientImages(images_rgbd);
 
     PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
     auto images_mask = MakeDepthMasks(images_rgbd, option);
@@ -697,8 +698,8 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
-        MakeVertexAndImageVisibility(mesh, images_rgbd, images_mask, camera,
-                                     option);
+            MakeVertexAndImageVisibility(mesh, images_rgbd, images_mask, camera,
+                                         option);
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {
@@ -706,9 +707,9 @@ void ColorMapOptimization(TriangleMesh& mesh,
         auto warping_uv_ = MakeWarpingFields(images_gray, option);
         auto warping_uv_init_ = MakeWarpingFields(images_gray, option);
         OptimizeImageCoorNonrigid(
-            mesh, images_gray, images_dx, images_dy, warping_uv_,
-            warping_uv_init_, camera, visiblity_vertex_to_image,
-            visiblity_image_to_vertex, proxy_intensity, option);
+                mesh, images_gray, images_dx, images_dy, warping_uv_,
+                warping_uv_init_, camera, visiblity_vertex_to_image,
+                visiblity_image_to_vertex, proxy_intensity, option);
         SetGeometryColorAverage(mesh, images_rgbd, warping_uv_, camera,
                                 visiblity_vertex_to_image);
     } else {

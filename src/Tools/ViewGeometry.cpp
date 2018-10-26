@@ -38,35 +38,39 @@ void PrintHelp() {
     PrintInfo("Basic options:\n");
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo(
-        "    --mesh file               : Add a triangle mesh from file.\n");
+            "    --mesh file               : Add a triangle mesh from file.\n");
     PrintInfo("    --pointcloud file         : Add a point cloud from file.\n");
     PrintInfo("    --image file              : Add an image from file.\n");
     PrintInfo(
-        "    --depth file              : Add a point cloud converted from a "
-        "depth image.\n");
+            "    --depth file              : Add a point cloud converted from "
+            "a "
+            "depth image.\n");
     PrintInfo(
-        "    --depth_camera file       : Use with --depth, read a json file "
-        "that stores\n");
+            "    --depth_camera file       : Use with --depth, read a json "
+            "file "
+            "that stores\n");
     PrintInfo("                                the camera parameters.\n");
     PrintInfo("    --show_frame              : Add a coordinate frame.\n");
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
     PrintInfo("\n");
     PrintInfo("Animation options:\n");
     PrintInfo(
-        "    --render_option file      : Read a json file of rendering "
-        "settings.\n");
+            "    --render_option file      : Read a json file of rendering "
+            "settings.\n");
     PrintInfo(
-        "    --view_trajectory file    : Read a json file of view "
-        "trajectory.\n");
+            "    --view_trajectory file    : Read a json file of view "
+            "trajectory.\n");
     PrintInfo(
-        "    --camera_trajectory file  : Read a json file of camera "
-        "trajectory.\n");
+            "    --camera_trajectory file  : Read a json file of camera "
+            "trajectory.\n");
     PrintInfo(
-        "    --auto_recording [i|d]    : Automatically plays the animation, "
-        "record\n");
+            "    --auto_recording [i|d]    : Automatically plays the "
+            "animation, "
+            "record\n");
     PrintInfo(
-        "                                images (i) or depth images (d). Exits "
-        "when\n");
+            "                                images (i) or depth images (d). "
+            "Exits "
+            "when\n");
     PrintInfo("                                animation ends.\n");
     PrintInfo("\n");
     PrintInfo("Window options:\n");
@@ -94,25 +98,25 @@ int main(int argc, char **argv) {
     int height = GetProgramOptionAsInt(argc, argv, "--height", 1080);
     int top = GetProgramOptionAsInt(argc, argv, "--top", 200);
     int left = GetProgramOptionAsInt(argc, argv, "--left", 200);
-    std::string window_name =
-        GetProgramOptionAsString(argc, argv, "--window_name", "ViewGeometry");
+    std::string window_name = GetProgramOptionAsString(
+            argc, argv, "--window_name", "ViewGeometry");
     std::string mesh_filename = GetProgramOptionAsString(argc, argv, "--mesh");
     std::string pcd_filename =
-        GetProgramOptionAsString(argc, argv, "--pointcloud");
+            GetProgramOptionAsString(argc, argv, "--pointcloud");
     std::string image_filename =
-        GetProgramOptionAsString(argc, argv, "--image");
+            GetProgramOptionAsString(argc, argv, "--image");
     std::string depth_filename =
-        GetProgramOptionAsString(argc, argv, "--depth");
+            GetProgramOptionAsString(argc, argv, "--depth");
     std::string depth_parameter_filename =
-        GetProgramOptionAsString(argc, argv, "--depth_camera");
+            GetProgramOptionAsString(argc, argv, "--depth_camera");
     std::string render_filename =
-        GetProgramOptionAsString(argc, argv, "--render_option");
+            GetProgramOptionAsString(argc, argv, "--render_option");
     std::string view_filename =
-        GetProgramOptionAsString(argc, argv, "--view_trajectory");
+            GetProgramOptionAsString(argc, argv, "--view_trajectory");
     std::string camera_filename =
-        GetProgramOptionAsString(argc, argv, "--camera_trajectory");
+            GetProgramOptionAsString(argc, argv, "--camera_trajectory");
     bool show_coordinate_frame =
-        ProgramOptionExists(argc, argv, "--show_frame");
+            ProgramOptionExists(argc, argv, "--show_frame");
 
     VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
@@ -148,16 +152,16 @@ int main(int argc, char **argv) {
         if (depth_parameter_filename.empty() ||
             !ReadIJsonConvertible(depth_parameter_filename, intrinsic)) {
             PrintWarning(
-                "Failed to read intrinsic parameters for depth image.\n");
+                    "Failed to read intrinsic parameters for depth image.\n");
             PrintWarning("Use default value for Primesense camera.\n");
             intrinsic.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
                                                239.5);
         }
         auto image_ptr = CreateImageFromFile(depth_filename);
         auto pointcloud_ptr = CreatePointCloudFromDepthImage(
-            *image_ptr, intrinsic.intrinsic_,
-            intrinsic.extrinsic_.empty() ? Eigen::Matrix4d::Identity()
-                                         : intrinsic.extrinsic_[0]);
+                *image_ptr, intrinsic.intrinsic_,
+                intrinsic.extrinsic_.empty() ? Eigen::Matrix4d::Identity()
+                                             : intrinsic.extrinsic_[0]);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             PrintWarning("Failed adding depth image.\n");
         }
@@ -178,7 +182,7 @@ int main(int argc, char **argv) {
 
     if (!view_filename.empty()) {
         auto &view_control =
-            (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
+                (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
         if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
             PrintWarning("Failed loading view trajectory.\n");
         }
@@ -187,13 +191,13 @@ int main(int argc, char **argv) {
         if (ReadIJsonConvertible(camera_filename, camera_trajectory) == false) {
             PrintWarning("Failed loading camera trajectory.\n");
         } else {
-            auto &view_control =
-                (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
+            auto &view_control = (ViewControlWithCustomAnimation &)
+                                         visualizer.GetViewControl();
             if (view_control.LoadTrajectoryFromCameraTrajectory(
-                    camera_trajectory) == false) {
+                        camera_trajectory) == false) {
                 PrintWarning(
-                    "Failed converting camera trajectory to view "
-                    "trajectory.\n");
+                        "Failed converting camera trajectory to view "
+                        "trajectory.\n");
             }
         }
     }
@@ -202,7 +206,7 @@ int main(int argc, char **argv) {
 
     if (ProgramOptionExists(argc, argv, "--auto_recording")) {
         std::string mode =
-            GetProgramOptionAsString(argc, argv, "--auto_recording");
+                GetProgramOptionAsString(argc, argv, "--auto_recording");
         if (mode == "i") {
             visualizer.Play(true, false, true);
         } else if (mode == "d") {

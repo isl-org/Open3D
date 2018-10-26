@@ -58,7 +58,7 @@ class ViewControl {
     /// This function obtains OpenGL context and calls OpenGL functions to set
     /// the view point.
     void SetViewMatrices(
-        const Eigen::Matrix4d &model_matrix = Eigen::Matrix4d::Identity());
+            const Eigen::Matrix4d &model_matrix = Eigen::Matrix4d::Identity());
 
     /// Function to get equivalent view parameters (support orthogonal)
     bool ConvertToViewParameters(ViewParameters &status) const;
@@ -69,8 +69,8 @@ class ViewControl {
     bool ConvertToPinholeCameraParameters(PinholeCameraIntrinsic &intrinsic,
                                           Eigen::Matrix4d &extrinsic);
     bool ConvertFromPinholeCameraParameters(
-        const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic);
+            const PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4d &extrinsic);
 
     ProjectionType GetProjectionType() const;
     void SetProjectionParameters();

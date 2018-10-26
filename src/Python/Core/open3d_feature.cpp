@@ -37,15 +37,15 @@ void pybind_feature(py::module &m) {
     py::detail::bind_default_constructor<Feature>(feature);
     py::detail::bind_copy_functions<Feature>(feature);
     feature.def("resize", &Feature::Resize, "dim"_a, "n"_a)
-        .def("dimension", &Feature::Dimension)
-        .def("num", &Feature::Num)
-        .def_readwrite("data", &Feature::data_)
-        .def("__repr__", [](const Feature &f) {
-            return std::string("Feature class with dimension = ") +
-                   std::to_string(f.Dimension()) + std::string(" and num = ") +
-                   std::to_string(f.Num()) +
-                   std::string("\nAccess its data via data member.");
-        });
+            .def("dimension", &Feature::Dimension)
+            .def("num", &Feature::Num)
+            .def_readwrite("data", &Feature::data_)
+            .def("__repr__", [](const Feature &f) {
+                return std::string("Feature class with dimension = ") +
+                       std::to_string(f.Dimension()) +
+                       std::string(" and num = ") + std::to_string(f.Num()) +
+                       std::string("\nAccess its data via data member.");
+            });
 }
 
 void pybind_feature_methods(py::module &m) {

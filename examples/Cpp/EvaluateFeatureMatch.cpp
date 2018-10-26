@@ -51,9 +51,9 @@ class KDTreeFlannFeature {
                   dimension_, fid);
         }
         flann_dataset_.reset(new flann::Matrix<float>(
-            (float *)data_.data(), dataset_size_, dimension_));
+                (float *)data_.data(), dataset_size_, dimension_));
         flann_index_.reset(new flann::Index<flann::L2<float>>(
-            *flann_dataset_, flann::KDTreeSingleIndexParams(15)));
+                *flann_dataset_, flann::KDTreeSingleIndexParams(15)));
         flann_index_->buildIndex();
         fclose(fid);
         return true;
@@ -62,7 +62,7 @@ class KDTreeFlannFeature {
     int SearchKNN(std::vector<float> &data, int i, int knn,
                   std::vector<int> &indices, std::vector<float> &distance2) {
         flann::Matrix<float> query_flann(
-            ((float *)data.data()) + i * dimension_, 1, dimension_);
+                ((float *)data.data()) + i * dimension_, 1, dimension_);
         indices.resize(knn);
         distance2.resize(knn);
         flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, knn);
@@ -174,10 +174,10 @@ int main(int argc, char *argv[]) {
     std::string pcd_dirname = GetProgramOptionAsString(argc, argv, "--dir");
     if (pcd_dirname.empty()) {
         pcd_dirname =
-            filesystem::GetFileParentDirectory(log_filename) + "pcds/";
+                filesystem::GetFileParentDirectory(log_filename) + "pcds/";
     }
     double threshold =
-        GetProgramOptionAsDouble(argc, argv, "--threshold", 0.075);
+            GetProgramOptionAsDouble(argc, argv, "--threshold", 0.075);
     double threshold2 = threshold * threshold;
     // std::vector<std::string> features = {"fpfh", "pfh", "shot", "spin",
     // "usc", "d32_norelu"}; std::vector<std::string> features = {"r17",
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
             int positive = 0;
             int correspondence_num = 0;
             std::vector<bool> has_correspondence(
-                pcds[pair_ids[k].second].points_.size(), false);
+                    pcds[pair_ids[k].second].points_.size(), false);
             for (auto i = 0; i < source.points_.size(); i++) {
                 const auto &pt = source.points_[i];
                 if (kdtrees[pair_ids[k].first].SearchKNN(pt, 1, indices,
@@ -269,17 +269,17 @@ int main(int argc, char *argv[]) {
             }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static) \
-    num_threads(16) private(indices, fdistance2)
+        num_threads(16) private(indices, fdistance2)
 #endif
             for (auto i = 0; i < source.points_.size(); i++) {
                 if (has_correspondence[i]) {
                     if (feature_trees[pair_ids[k].first].SearchKNN(
-                            feature_trees[pair_ids[k].second].data_, i, 1,
-                            indices, fdistance2) > 0) {
+                                feature_trees[pair_ids[k].second].data_, i, 1,
+                                indices, fdistance2) > 0) {
                         double new_dis =
-                            (source.points_[i] -
-                             pcds[pair_ids[k].first].points_[indices[0]])
-                                .norm();
+                                (source.points_[i] -
+                                 pcds[pair_ids[k].first].points_[indices[0]])
+                                        .norm();
                         true_dis[total_point_num + i] = new_dis;
                         if (new_dis < threshold) {
 #ifdef _OPENMP
@@ -294,16 +294,17 @@ int main(int argc, char *argv[]) {
             total_positive += positive;
             total_point_num += (int)source.points_.size();
             PrintInfo(
-                "#%d <-- #%d : %d out of %d out of %d (%.2f%% w.r.t. "
-                "correspondences).\n",
-                pair_ids[k].first, pair_ids[k].second, positive,
-                correspondence_num, (int)source.points_.size(),
-                positive * 100.0 / correspondence_num);
+                    "#%d <-- #%d : %d out of %d out of %d (%.2f%% w.r.t. "
+                    "correspondences).\n",
+                    pair_ids[k].first, pair_ids[k].second, positive,
+                    correspondence_num, (int)source.points_.size(),
+                    positive * 100.0 / correspondence_num);
         }
         PrintWarning(
-            "Total %d out of %d out of %d (%.2f%% w.r.t. correspondences).\n\n",
-            total_positive, total_correspondence_num, total_point_num,
-            total_positive * 100.0 / total_correspondence_num);
+                "Total %d out of %d out of %d (%.2f%% w.r.t. "
+                "correspondences).\n\n",
+                total_positive, total_correspondence_num, total_point_num,
+                total_positive * 100.0 / total_correspondence_num);
         WriteBinaryResult(pcd_dirname + feature + ".bin", true_dis);
     }
     return 0;

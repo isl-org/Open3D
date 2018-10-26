@@ -47,19 +47,19 @@ class RenderOptionWithEditing : public RenderOption {
     bool ConvertFromJsonValue(const Json::Value &value) override;
     void IncreaseSphereSize() {
         pointcloud_picker_sphere_size_ = std::min(
-            pointcloud_picker_sphere_size_ * 2.0, PICKER_SPHERE_SIZE_MAX);
+                pointcloud_picker_sphere_size_ * 2.0, PICKER_SPHERE_SIZE_MAX);
     }
     void DecreaseSphereSize() {
         pointcloud_picker_sphere_size_ = std::max(
-            pointcloud_picker_sphere_size_ * 0.5, PICKER_SPHERE_SIZE_MIN);
+                pointcloud_picker_sphere_size_ * 0.5, PICKER_SPHERE_SIZE_MIN);
     }
 
    public:
     // Selection polygon
     Eigen::Vector3d selection_polygon_boundary_color_ =
-        Eigen::Vector3d(0.3, 0.3, 0.3);
+            Eigen::Vector3d(0.3, 0.3, 0.3);
     Eigen::Vector3d selection_polygon_mask_color_ =
-        Eigen::Vector3d(0.3, 0.3, 0.3);
+            Eigen::Vector3d(0.3, 0.3, 0.3);
     double selection_polygon_mask_alpha_ = 0.5;
 
     // PointCloud Picker

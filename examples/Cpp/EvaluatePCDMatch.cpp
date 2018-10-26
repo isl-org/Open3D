@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
     std::string pcd_dirname = GetProgramOptionAsString(argc, argv, "--dir");
     double threshold = GetProgramOptionAsDouble(argc, argv, "--threshold");
     double threshold_rmse = GetProgramOptionAsDouble(
-        argc, argv, "--threshold_rmse", threshold * 2.0);
+            argc, argv, "--threshold_rmse", threshold * 2.0);
     if (pcd_dirname.empty()) {
         pcd_dirname =
-            filesystem::GetFileParentDirectory(log_filename) + "pcds/";
+                filesystem::GetFileParentDirectory(log_filename) + "pcds/";
     }
     double threshold2 = threshold * threshold;
     std::vector<std::string> pcd_names;
@@ -162,9 +162,9 @@ int main(int argc, char *argv[]) {
                 if (distance2[0] < threshold2) {
                     correspondence_num++;
                     double new_dis =
-                        (source.points_[i] -
-                         pcds[pair_ids[k].first].points_[indices[0]])
-                            .norm();
+                            (source.points_[i] -
+                             pcds[pair_ids[k].first].points_[indices[0]])
+                                    .norm();
                     rmse += new_dis * new_dis;
                 }
             }

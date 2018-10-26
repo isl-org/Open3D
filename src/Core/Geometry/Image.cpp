@@ -77,7 +77,7 @@ std::pair<bool, double> Image::FloatValueAt(double u, double v) const {
                       *PointerAt<float>(*this, ui + 1, vi + 1)};
     return std::make_pair(true,
                           (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
-                              (value[2] * (1 - pv) + value[3] * pv) * pu);
+                                  (value[2] * (1 - pv) + value[3] * pv) * pu);
 }
 
 template <typename T>
@@ -94,7 +94,7 @@ template <typename T>
 T *PointerAt(const Image &image, int u, int v, int ch) {
     return (T *)(image.data_.data() +
                  ((v * image.width_ + u) * image.num_of_channels_ + ch) *
-                     sizeof(T));
+                         sizeof(T));
 }
 
 template float *PointerAt<float>(const Image &image, int u, int v, int ch);
@@ -104,8 +104,8 @@ template uint16_t *PointerAt<uint16_t>(const Image &image, int u, int v,
                                        int ch);
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(
-    const Image &depth, double depth_scale /* = 1000.0*/,
-    double depth_trunc /* = 3.0*/) {
+        const Image &depth, double depth_scale /* = 1000.0*/,
+        double depth_trunc /* = 3.0*/) {
     // don't need warning message about image type
     // as we call CreateFloatImageFromImage
     auto output = CreateFloatImageFromImage(depth);
@@ -175,13 +175,13 @@ std::shared_ptr<Image> DownsampleImage(const Image &input) {
 }
 
 std::shared_ptr<Image> FilterHorizontalImage(
-    const Image &input, const std::vector<double> &kernel) {
+        const Image &input, const std::vector<double> &kernel) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
         PrintWarning(
-            "[FilterHorizontalImage] Unsupported image format or kernel "
-            "size.\n");
+                "[FilterHorizontalImage] Unsupported image format or kernel "
+                "size.\n");
         return output;
     }
     output->PrepareImage(input.width_, input.height_, 1, 4);

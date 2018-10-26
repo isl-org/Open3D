@@ -72,9 +72,9 @@ class FastGlobalRegistrationOption {
 };
 
 RegistrationResult FastGlobalRegistration(
-    const PointCloud &source, const PointCloud &target,
-    const Feature &source_feature, const Feature &target_feature,
-    const FastGlobalRegistrationOption &option =
-        FastGlobalRegistrationOption());
+        const PointCloud &source, const PointCloud &target,
+        const Feature &source_feature, const Feature &target_feature,
+        const FastGlobalRegistrationOption &option =
+                FastGlobalRegistrationOption());
 
 }  // namespace open3d

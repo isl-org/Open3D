@@ -35,9 +35,9 @@ class VisualizerWithCustomAnimation : public Visualizer {
     VisualizerWithCustomAnimation();
     ~VisualizerWithCustomAnimation() override;
     VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) =
-        delete;
+            delete;
     VisualizerWithCustomAnimation &operator=(
-        const VisualizerWithCustomAnimation &) = delete;
+            const VisualizerWithCustomAnimation &) = delete;
 
    public:
     void PrintVisualizerHelp() override;

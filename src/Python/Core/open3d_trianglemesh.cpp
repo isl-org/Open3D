@@ -34,41 +34,45 @@ using namespace open3d;
 void pybind_trianglemesh(py::module &m) {
     py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
                std::shared_ptr<TriangleMesh>, Geometry3D>
-        trianglemesh(m, "TriangleMesh");
+            trianglemesh(m, "TriangleMesh");
     py::detail::bind_default_constructor<TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
     trianglemesh
-        .def("__repr__",
-             [](const TriangleMesh &mesh) {
-                 return std::string("TriangleMesh with ") +
-                        std::to_string(mesh.vertices_.size()) + " points and " +
-                        std::to_string(mesh.triangles_.size()) + " triangles.";
-             })
-        .def(py::self + py::self)
-        .def(py::self += py::self)
-        .def("compute_triangle_normals", &TriangleMesh::ComputeTriangleNormals,
-             "Function to compute triangle normals, usually called before "
-             "rendering",
-             "normalized"_a = true)
-        .def("compute_vertex_normals", &TriangleMesh::ComputeVertexNormals,
-             "Function to compute vertex normals, usually called before "
-             "rendering",
-             "normalized"_a = true)
-        .def(
-            "purge", &TriangleMesh::Purge,
-            "Function to remove duplicated and non-manifold vertices/triangles")
-        .def("has_vertices", &TriangleMesh::HasVertices)
-        .def("has_triangles", &TriangleMesh::HasTriangles)
-        .def("has_vertex_normals", &TriangleMesh::HasVertexNormals)
-        .def("has_vertex_colors", &TriangleMesh::HasVertexColors)
-        .def("has_triangle_normals", &TriangleMesh::HasTriangleNormals)
-        .def("normalize_normals", &TriangleMesh::NormalizeNormals)
-        .def("paint_uniform_color", &TriangleMesh::PaintUniformColor)
-        .def_readwrite("vertices", &TriangleMesh::vertices_)
-        .def_readwrite("vertex_normals", &TriangleMesh::vertex_normals_)
-        .def_readwrite("vertex_colors", &TriangleMesh::vertex_colors_)
-        .def_readwrite("triangles", &TriangleMesh::triangles_)
-        .def_readwrite("triangle_normals", &TriangleMesh::triangle_normals_);
+            .def("__repr__",
+                 [](const TriangleMesh &mesh) {
+                     return std::string("TriangleMesh with ") +
+                            std::to_string(mesh.vertices_.size()) +
+                            " points and " +
+                            std::to_string(mesh.triangles_.size()) +
+                            " triangles.";
+                 })
+            .def(py::self + py::self)
+            .def(py::self += py::self)
+            .def("compute_triangle_normals",
+                 &TriangleMesh::ComputeTriangleNormals,
+                 "Function to compute triangle normals, usually called before "
+                 "rendering",
+                 "normalized"_a = true)
+            .def("compute_vertex_normals", &TriangleMesh::ComputeVertexNormals,
+                 "Function to compute vertex normals, usually called before "
+                 "rendering",
+                 "normalized"_a = true)
+            .def("purge", &TriangleMesh::Purge,
+                 "Function to remove duplicated and non-manifold "
+                 "vertices/triangles")
+            .def("has_vertices", &TriangleMesh::HasVertices)
+            .def("has_triangles", &TriangleMesh::HasTriangles)
+            .def("has_vertex_normals", &TriangleMesh::HasVertexNormals)
+            .def("has_vertex_colors", &TriangleMesh::HasVertexColors)
+            .def("has_triangle_normals", &TriangleMesh::HasTriangleNormals)
+            .def("normalize_normals", &TriangleMesh::NormalizeNormals)
+            .def("paint_uniform_color", &TriangleMesh::PaintUniformColor)
+            .def_readwrite("vertices", &TriangleMesh::vertices_)
+            .def_readwrite("vertex_normals", &TriangleMesh::vertex_normals_)
+            .def_readwrite("vertex_colors", &TriangleMesh::vertex_colors_)
+            .def_readwrite("triangles", &TriangleMesh::triangles_)
+            .def_readwrite("triangle_normals",
+                           &TriangleMesh::triangle_normals_);
 }
 
 void pybind_trianglemesh_methods(py::module &m) {

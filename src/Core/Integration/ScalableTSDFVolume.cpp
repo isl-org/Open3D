@@ -68,21 +68,21 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
         (color_type_ != TSDFVolumeColorType::None &&
          image.color_.height_ != intrinsic.height_)) {
         PrintWarning(
-            "[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
+                "[ScalableTSDFVolume::Integrate] Unsupported image format.\n");
         return;
     }
     auto depth2cameradistance =
-        CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
-    auto pointcloud =
-        CreatePointCloudFromDepthImage(image.depth_, intrinsic, extrinsic,
-                                       1000.0, 1000.0, depth_sampling_stride_);
+            CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
+    auto pointcloud = CreatePointCloudFromDepthImage(image.depth_, intrinsic,
+                                                     extrinsic, 1000.0, 1000.0,
+                                                     depth_sampling_stride_);
     std::unordered_set<Eigen::Vector3i, hash_eigen::hash<Eigen::Vector3i>>
-        touched_volume_units_;
+            touched_volume_units_;
     for (const auto &point : pointcloud->points_) {
         auto min_bound = LocateVolumeUnit(
-            point - Eigen::Vector3d(sdf_trunc_, sdf_trunc_, sdf_trunc_));
+                point - Eigen::Vector3d(sdf_trunc_, sdf_trunc_, sdf_trunc_));
         auto max_bound = LocateVolumeUnit(
-            point + Eigen::Vector3d(sdf_trunc_, sdf_trunc_, sdf_trunc_));
+                point + Eigen::Vector3d(sdf_trunc_, sdf_trunc_, sdf_trunc_));
         for (auto x = min_bound(0); x <= max_bound(0); x++) {
             for (auto y = min_bound(1); y <= max_bound(1); y++) {
                 for (auto z = min_bound(2); z <= max_bound(2); z++) {
@@ -92,7 +92,8 @@ void ScalableTSDFVolume::Integrate(const RGBDImage &image,
                         touched_volume_units_.insert(loc);
                         auto volume = OpenVolumeUnit(Eigen::Vector3i(x, y, z));
                         volume->IntegrateWithDepthToCameraDistanceMultiplier(
-                            image, intrinsic, extrinsic, *depth2cameradistance);
+                                image, intrinsic, extrinsic,
+                                *depth2cameradistance);
                     }
                 }
             }
@@ -119,11 +120,13 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                             c0 = volume0.color_[volume0.IndexOf(idx0)];
                         if (w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f) {
                             Eigen::Vector3d p0 =
-                                Eigen::Vector3d(
-                                    half_voxel_length + voxel_length_ * x,
-                                    half_voxel_length + voxel_length_ * y,
-                                    half_voxel_length + voxel_length_ * z) +
-                                index0.cast<double>() * volume_unit_length_;
+                                    Eigen::Vector3d(half_voxel_length +
+                                                            voxel_length_ * x,
+                                                    half_voxel_length +
+                                                            voxel_length_ * y,
+                                                    half_voxel_length +
+                                                            voxel_length_ * z) +
+                                    index0.cast<double>() * volume_unit_length_;
                             for (int i = 0; i < 3; i++) {
                                 Eigen::Vector3d p1 = p0;
                                 Eigen::Vector3i idx1 = idx0;
@@ -135,8 +138,8 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                     f1 = volume0.tsdf_[volume0.IndexOf(idx1)];
                                     if (color_type_ !=
                                         TSDFVolumeColorType::None)
-                                        c1 = volume0
-                                                 .color_[volume0.IndexOf(idx1)];
+                                        c1 = volume0.color_[volume0.IndexOf(
+                                                idx1)];
                                 } else {
                                     idx1(i) -= volume0.resolution_;
                                     index1(i) += 1;
@@ -146,16 +149,15 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                         f1 = 0.0f;
                                     } else {
                                         const auto &volume1 =
-                                            *unit_itr->second.volume_;
-                                        w1 =
-                                            volume1
-                                                .weight_[volume1.IndexOf(idx1)];
-                                        f1 = volume1
-                                                 .tsdf_[volume1.IndexOf(idx1)];
+                                                *unit_itr->second.volume_;
+                                        w1 = volume1.weight_[volume1.IndexOf(
+                                                idx1)];
+                                        f1 = volume1.tsdf_[volume1.IndexOf(
+                                                idx1)];
                                         if (color_type_ !=
                                             TSDFVolumeColorType::None)
                                             c1 = volume1.color_[volume1.IndexOf(
-                                                idx1)];
+                                                    idx1)];
                                     }
                                 }
                                 if (w1 != 0.0f && f1 < 0.98f && f1 >= -0.98f &&
@@ -163,24 +165,25 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
                                     float r0 = std::fabs(f0);
                                     float r1 = std::fabs(f1);
                                     Eigen::Vector3d p = p0;
-                                    p(i) =
-                                        (p0(i) * r1 + p1(i) * r0) / (r0 + r1);
+                                    p(i) = (p0(i) * r1 + p1(i) * r0) /
+                                           (r0 + r1);
                                     pointcloud->points_.push_back(p);
                                     if (color_type_ ==
                                         TSDFVolumeColorType::RGB8) {
                                         pointcloud->colors_.push_back(
-                                            ((c0 * r1 + c1 * r0) / (r0 + r1) /
-                                             255.0f)
-                                                .cast<double>());
+                                                ((c0 * r1 + c1 * r0) /
+                                                 (r0 + r1) / 255.0f)
+                                                        .cast<double>());
                                     } else if (color_type_ ==
                                                TSDFVolumeColorType::Gray32) {
                                         pointcloud->colors_.push_back(
-                                            ((c0 * r1 + c1 * r0) / (r0 + r1))
-                                                .cast<double>());
+                                                ((c0 * r1 + c1 * r0) /
+                                                 (r0 + r1))
+                                                        .cast<double>());
                                     }
                                     // has_normal
                                     pointcloud->normals_.push_back(
-                                        GetNormalAt(p));
+                                            GetNormalAt(p));
                                 }
                             }
                         }
@@ -198,7 +201,7 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
     auto mesh = std::make_shared<TriangleMesh>();
     double half_voxel_length = voxel_length_ * 0.5;
     std::unordered_map<Eigen::Vector4i, int, hash_eigen::hash<Eigen::Vector4i>>
-        edgeindex_to_vertexindex;
+            edgeindex_to_vertexindex;
     int edge_to_index[12];
     for (const auto &unit : volume_units_) {
         if (unit.second.volume_) {
@@ -222,12 +225,12 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
                                 f[i] = volume0.tsdf_[volume0.IndexOf(idx1)];
                                 if (color_type_ == TSDFVolumeColorType::RGB8)
                                     c[i] = volume0.color_[volume0.IndexOf(idx1)]
-                                               .cast<double>() /
+                                                   .cast<double>() /
                                            255.0;
                                 else if (color_type_ ==
                                          TSDFVolumeColorType::Gray32)
                                     c[i] = volume0.color_[volume0.IndexOf(idx1)]
-                                               .cast<double>();
+                                                   .cast<double>();
                             } else {
                                 for (int j = 0; j < 3; j++) {
                                     if (idx1(j) >= volume_unit_resolution_) {
@@ -241,23 +244,21 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
                                     f[i] = 0.0f;
                                 } else {
                                     const auto &volume1 =
-                                        *unit_itr1->second.volume_;
-                                    w[i] =
-                                        volume1.weight_[volume1.IndexOf(idx1)];
+                                            *unit_itr1->second.volume_;
+                                    w[i] = volume1.weight_[volume1.IndexOf(
+                                            idx1)];
                                     f[i] = volume1.tsdf_[volume1.IndexOf(idx1)];
                                     if (color_type_ ==
                                         TSDFVolumeColorType::RGB8)
-                                        c[i] =
-                                            volume1
-                                                .color_[volume1.IndexOf(idx1)]
-                                                .cast<double>() /
-                                            255.0;
+                                        c[i] = volume1.color_[volume1.IndexOf(
+                                                                      idx1)]
+                                                       .cast<double>() /
+                                               255.0;
                                     else if (color_type_ ==
                                              TSDFVolumeColorType::Gray32)
-                                        c[i] =
-                                            volume1
-                                                .color_[volume1.IndexOf(idx1)]
-                                                .cast<double>();
+                                        c[i] = volume1.color_[volume1.IndexOf(
+                                                                      idx1)]
+                                                       .cast<double>();
                                 }
                             }
                             if (w[i] == 0.0f) {
@@ -275,49 +276,55 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
                         for (int i = 0; i < 12; i++) {
                             if (edge_table[cube_index] & (1 << i)) {
                                 Eigen::Vector4i edge_index =
-                                    Eigen::Vector4i(index0(0), index0(1),
-                                                    index0(2), 0) *
-                                        volume_unit_resolution_ +
-                                    Eigen::Vector4i(x, y, z, 0) + edge_shift[i];
+                                        Eigen::Vector4i(index0(0), index0(1),
+                                                        index0(2), 0) *
+                                                volume_unit_resolution_ +
+                                        Eigen::Vector4i(x, y, z, 0) +
+                                        edge_shift[i];
                                 if (edgeindex_to_vertexindex.find(edge_index) ==
                                     edgeindex_to_vertexindex.end()) {
                                     edge_to_index[i] =
-                                        (int)mesh->vertices_.size();
+                                            (int)mesh->vertices_.size();
                                     edgeindex_to_vertexindex[edge_index] =
-                                        (int)mesh->vertices_.size();
+                                            (int)mesh->vertices_.size();
                                     Eigen::Vector3d pt(
-                                        half_voxel_length +
-                                            voxel_length_ * edge_index(0),
-                                        half_voxel_length +
-                                            voxel_length_ * edge_index(1),
-                                        half_voxel_length +
-                                            voxel_length_ * edge_index(2));
-                                    double f0 =
-                                        std::abs((double)f[edge_to_vert[i][0]]);
-                                    double f1 =
-                                        std::abs((double)f[edge_to_vert[i][1]]);
+                                            half_voxel_length +
+                                                    voxel_length_ *
+                                                            edge_index(0),
+                                            half_voxel_length +
+                                                    voxel_length_ *
+                                                            edge_index(1),
+                                            half_voxel_length +
+                                                    voxel_length_ *
+                                                            edge_index(2));
+                                    double f0 = std::abs(
+                                            (double)f[edge_to_vert[i][0]]);
+                                    double f1 = std::abs(
+                                            (double)f[edge_to_vert[i][1]]);
                                     pt(edge_index(3)) +=
-                                        f0 * voxel_length_ / (f0 + f1);
+                                            f0 * voxel_length_ / (f0 + f1);
                                     mesh->vertices_.push_back(pt);
                                     if (color_type_ !=
                                         TSDFVolumeColorType::None) {
                                         const auto &c0 = c[edge_to_vert[i][0]];
                                         const auto &c1 = c[edge_to_vert[i][1]];
                                         mesh->vertex_colors_.push_back(
-                                            (f1 * c0 + f0 * c1) / (f0 + f1));
+                                                (f1 * c0 + f0 * c1) /
+                                                (f0 + f1));
                                     }
                                 } else {
-                                    edge_to_index[i] =
-                                        edgeindex_to_vertexindex[edge_index];
+                                    edge_to_index[i] = edgeindex_to_vertexindex
+                                            [edge_index];
                                 }
                             }
                         }
                         for (int i = 0; tri_table[cube_index][i] != -1;
                              i += 3) {
                             mesh->triangles_.push_back(Eigen::Vector3i(
-                                edge_to_index[tri_table[cube_index][i]],
-                                edge_to_index[tri_table[cube_index][i + 2]],
-                                edge_to_index[tri_table[cube_index][i + 1]]));
+                                    edge_to_index[tri_table[cube_index][i]],
+                                    edge_to_index[tri_table[cube_index][i + 2]],
+                                    edge_to_index[tri_table[cube_index]
+                                                           [i + 1]]));
                         }
                     }
                 }
@@ -339,12 +346,12 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractVoxelPointCloud() {
 }
 
 std::shared_ptr<UniformTSDFVolume> ScalableTSDFVolume::OpenVolumeUnit(
-    const Eigen::Vector3i &index) {
+        const Eigen::Vector3i &index) {
     auto &unit = volume_units_[index];
     if (!unit.volume_) {
         unit.volume_.reset(new UniformTSDFVolume(
-            volume_unit_length_, volume_unit_resolution_, sdf_trunc_,
-            color_type_, index.cast<double>() * volume_unit_length_));
+                volume_unit_length_, volume_unit_resolution_, sdf_trunc_,
+                color_type_, index.cast<double>() * volume_unit_length_));
         unit.index_ = index;
     }
     return unit.volume_;
@@ -365,7 +372,7 @@ Eigen::Vector3d ScalableTSDFVolume::GetNormalAt(const Eigen::Vector3d &p) {
 
 double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
     Eigen::Vector3d p_locate =
-        p - Eigen::Vector3d(0.5, 0.5, 0.5) * voxel_length_;
+            p - Eigen::Vector3d(0.5, 0.5, 0.5) * voxel_length_;
     Eigen::Vector3i index0 = LocateVolumeUnit(p_locate);
     auto unit_itr = volume_units_.find(index0);
     if (unit_itr == volume_units_.end()) {
@@ -374,8 +381,8 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
     const auto &volume0 = *unit_itr->second.volume_;
     Eigen::Vector3i idx0;
     Eigen::Vector3d p_grid =
-        (p_locate - index0.cast<double>() * volume_unit_length_) /
-        voxel_length_;
+            (p_locate - index0.cast<double>() * volume_unit_length_) /
+            voxel_length_;
     for (int i = 0; i < 3; i++) {
         idx0(i) = (int)std::floor(p_grid(i));
         if (idx0(i) < 0) idx0(i) = 0;

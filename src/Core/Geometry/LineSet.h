@@ -61,7 +61,7 @@ class LineSet : public Geometry3D {
     }
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
-        size_t i) const {
+            size_t i) const {
         return std::make_pair(points_[lines_[i][0]], points_[lines_[i][1]]);
     }
 
@@ -74,7 +74,7 @@ class LineSet : public Geometry3D {
 /// Factory function to create a lineset from two pointclouds and a
 /// correspondence set (LineSetFactory.cpp)
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-    const PointCloud &cloud0, const PointCloud &cloud1,
-    const std::vector<std::pair<int, int>> &correspondences);
+        const PointCloud &cloud0, const PointCloud &cloud1,
+        const std::vector<std::pair<int, int>> &correspondences);
 
 }  // namespace open3d

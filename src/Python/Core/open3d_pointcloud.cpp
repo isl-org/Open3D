@@ -37,25 +37,25 @@ using namespace open3d;
 void pybind_pointcloud(py::module &m) {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
                std::shared_ptr<PointCloud>, Geometry3D>
-        pointcloud(m, "PointCloud");
+            pointcloud(m, "PointCloud");
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
-        .def("__repr__",
-             [](const PointCloud &pcd) {
-                 return std::string("PointCloud with ") +
-                        std::to_string(pcd.points_.size()) + " points.";
-             })
-        .def(py::self + py::self)
-        .def(py::self += py::self)
-        .def("has_points", &PointCloud::HasPoints)
-        .def("has_normals", &PointCloud::HasNormals)
-        .def("has_colors", &PointCloud::HasColors)
-        .def("normalize_normals", &PointCloud::NormalizeNormals)
-        .def("paint_uniform_color", &PointCloud::PaintUniformColor)
-        .def_readwrite("points", &PointCloud::points_)
-        .def_readwrite("normals", &PointCloud::normals_)
-        .def_readwrite("colors", &PointCloud::colors_);
+            .def("__repr__",
+                 [](const PointCloud &pcd) {
+                     return std::string("PointCloud with ") +
+                            std::to_string(pcd.points_.size()) + " points.";
+                 })
+            .def(py::self + py::self)
+            .def(py::self += py::self)
+            .def("has_points", &PointCloud::HasPoints)
+            .def("has_normals", &PointCloud::HasNormals)
+            .def("has_colors", &PointCloud::HasColors)
+            .def("normalize_normals", &PointCloud::NormalizeNormals)
+            .def("paint_uniform_color", &PointCloud::PaintUniformColor)
+            .def_readwrite("points", &PointCloud::points_)
+            .def_readwrite("normals", &PointCloud::normals_)
+            .def_readwrite("colors", &PointCloud::colors_);
 }
 
 void pybind_pointcloud_methods(py::module &m) {
@@ -130,11 +130,11 @@ void pybind_pointcloud_methods(py::module &m) {
           &OrientNormalsTowardsCameraLocation,
           "Function to orient the normals of a point cloud", "cloud"_a,
           "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
-    m.def(
-        "compute_point_cloud_to_point_cloud_distance",
-        &ComputePointCloudToPointCloudDistance,
-        "Function to compute the ponit to point distances between point clouds",
-        "source"_a, "target"_a);
+    m.def("compute_point_cloud_to_point_cloud_distance",
+          &ComputePointCloudToPointCloudDistance,
+          "Function to compute the ponit to point distances between point "
+          "clouds",
+          "source"_a, "target"_a);
     m.def("compute_point_cloud_mean_and_covariance",
           &ComputePointCloudMeanAndCovariance,
           "Function to compute the mean and covariance matrix of a point cloud",

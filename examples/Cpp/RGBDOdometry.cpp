@@ -40,8 +40,8 @@ void PrintHelp() {
 }
 
 std::shared_ptr<RGBDImage> ReadRGBDImage(
-    const char* color_filename, const char* depth_filename,
-    const PinholeCameraIntrinsic& intrinsic, bool visualize) {
+        const char* color_filename, const char* depth_filename,
+        const PinholeCameraIntrinsic& intrinsic, bool visualize) {
     Image color, depth;
     ReadImage(color_filename, color);
     ReadImage(depth_filename, depth);
@@ -55,7 +55,7 @@ std::shared_ptr<RGBDImage> ReadRGBDImage(
     double depth_scale = 1000.0, depth_trunc = 3.0;
     bool convert_rgb_to_intensity = true;
     std::shared_ptr<RGBDImage> rgbd_image = CreateRGBDImageFromColorAndDepth(
-        color, depth, depth_scale, depth_trunc, convert_rgb_to_intensity);
+            color, depth, depth_scale, depth_trunc, convert_rgb_to_intensity);
     if (visualize) {
         auto pcd = CreatePointCloudFromRGBDImage(*rgbd_image, intrinsic);
         DrawGeometries({pcd});
@@ -70,16 +70,16 @@ int main(int argc, char* argv[]) {
     }
     SetVerbosityLevel(VerbosityLevel::VerboseDebug);
     PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
-        PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     bool visualize = true;
     auto source = ReadRGBDImage(argv[1], argv[2], intrinsic, visualize);
     auto target = ReadRGBDImage(argv[3], argv[4], intrinsic, visualize);
 
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> rgbd_odo =
-        ComputeRGBDOdometry(*source, *target, intrinsic, odo_init,
-                            RGBDOdometryJacobianFromHybridTerm(),
-                            OdometryOption());
+            ComputeRGBDOdometry(*source, *target, intrinsic, odo_init,
+                                RGBDOdometryJacobianFromHybridTerm(),
+                                OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
     return 0;
