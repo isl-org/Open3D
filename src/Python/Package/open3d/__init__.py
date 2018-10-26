@@ -31,7 +31,7 @@ globals().update(importlib.import_module('open3d.open3d').__dict__)
 __version__ = '@PROJECT_VERSION@'
 
 if "@JUPYTER_ENABLED@" == "ON":
-    from .j_visualizer import *
+    from open3d.j_visualizer import *
 
     def _jupyter_nbextension_paths():
         return [{
