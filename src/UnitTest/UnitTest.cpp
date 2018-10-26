@@ -95,7 +95,7 @@ void unit_test::ExpectEQ(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1)
 void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
 {
     for (int i = 0; i < 9; i++)
-        EXPECT_NEAR(v0.coeffRef(i), v1.coeffRef(i), THRESHOLD_1E_6);
+        EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
 void unit_test::ExpectEQ(const Eigen::Matrix4d& v0, const Eigen::Matrix4d& v1)
 {
     for (int i = 0; i < 16; i++)
-        EXPECT_NEAR(v0.coeffRef(i), v1.coeffRef(i), THRESHOLD_1E_6);
+        EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -114,7 +114,7 @@ void unit_test::ExpectEQ(const Eigen::Matrix<double, 6, 6>& v0,
                          const Eigen::Matrix<double, 6, 6>& v1)
 {
     for (int i = 0; i < 36; i++)
-        EXPECT_NEAR(v0.coeffRef(i), v1.coeffRef(i), THRESHOLD_1E_6);
+        EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
