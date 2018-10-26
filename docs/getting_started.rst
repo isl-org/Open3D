@@ -33,9 +33,9 @@ PyPI
 
 Note: In general, we recommend using a
 `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_ for
-containerization. Otherwise, depending on the configurations, you might want to
-use ``pip3`` to install Open3D for Python 3 or use the ``--user`` option to
-avoid permission issues. For example:
+containerization. Otherwise, depending on the configurations, ``pip3`` may be
+needed for Python 3, or the ``--user`` option may need to be used to avoid
+permission issues. For example:
 
 .. code-block:: bash
 
@@ -67,7 +67,7 @@ Now, try importing Open3D.
 
     python -c "import open3d"
 
-If this works, configurations, you've now have Open3D successfully installed!
+If this works, configurations, now Open3D has been successfully installed!
 
 
 Running Open3D tutorials

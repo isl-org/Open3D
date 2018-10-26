@@ -4,16 +4,14 @@ Compiling from source
 =====================
 
 You may want to build Open3D from source if you are developing Open3D, want to
-get the latest features in the ``master`` branch, or if your OS or Python
+get the latest features in the ``master`` branch, or if the OS or Python
 versions are not covered by Open3D's pre-built Python packages from PyPI and
 Conda.
 
-This guide gets you started compiling Open3D from source.
-The basic tools you need are `git <https://git-scm.com/>`_,
+The basic tools needed are `git <https://git-scm.com/>`_,
 `CMake <https://cmake.org/>`_, and **a non-ancient C++ compiler** that supports
-C++11, such as gcc 4.8+, Visual Studio 2015 update 3+, or XCode 8.0+. If you
-want to install the Python binding, make sure you have Python 2.7 or 3.5+
-installed.
+C++11, such as gcc 4.8+, Visual Studio 2015 update 3+, or XCode 8.0+. If Python
+binding is needed, make sure Python 2.7 or 3.5+ is installed.
 
 Download source code from the `repository <https://github.com/IntelVCL/Open3D>`_.
 
@@ -31,8 +29,8 @@ Ubuntu
 1. Install dependencies (optional)
 ``````````````````````````````````
 
-Optionally, you can install dependencies to reduce compilation time. Otherwise,
-you may also choose to build these dependencies from source, see
+Optionally, dependencies can be installed prior to building Open3D to reduce
+compilation time. Otherwise, the dependencies can also be build from source, see
 :ref:`compilation_options_dependencies`.
 
 .. code-block:: bash
@@ -44,22 +42,22 @@ you may also choose to build these dependencies from source, see
 2. Setup Python binding environments
 ````````````````````````````````````
 
-This step is only required if you'd like to build Open3D with Python support.
+This step is only required Python support for Open3D is needed.
 We use `pybind11 <https://github.com/pybind/pybind11>`_ for the Python
-binding. You may refer to
+binding. Please refer to
 `pybind11 document page <http://pybind11.readthedocs.io/en/stable/faq.html>`_
 when running into Python binding issues.
 
 2.1 Select the right Python executable
 ::::::::::::::::::::::::::::::::::::::
 
-All you'll need to do is this step is to ensure that the default Python in your
-current ``PATH`` is the one you want to use. Specifically,
+All we need to do is this step is to ensure that the default Python in the
+current ``PATH`` is the desired one. Specifically,
 
-- If you're using pip virtualenv, activate it by ``source path_to_my_env/bin/activate``.
-- If you're using Conda virtualenv, activate it by ``conda activate my_env``.
-- Or if you plan to use the system's default Python (note: ``sudo`` may be
-  required for installing Python packages), you don't need to do anything.
+- For pip virtualenv, activate it by ``source path_to_my_env/bin/activate``.
+- For Conda virtualenv, activate it by ``conda activate my_env``.
+- For the system's default Python (note: ``sudo`` may be required for installing
+  Python packages), no action is required.
 
 Finally, check
 
@@ -76,9 +74,8 @@ step (when running ``cmake ..``), check the printed message indicating
 
     -- Found PythonInterp: /your/path/to/bin/python3.6 (found version "3.6.6")
 
-Alternatively, you may also specify the CMake flag
-``-DPYTHON_EXECUTABLE=/path/to/my/python`` force CMake to use the specified
-Python executable.
+Alternatively, CMake flag ``-DPYTHON_EXECUTABLE=/path/to/my/python``
+can be set to force CMake to use the specified Python executable.
 
 2.2 Jupyter visualization widgets support (experimental)
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -89,7 +86,7 @@ visualization. To enable Jupyter visualization support, install
 installed, Jupyter visualization support will not be enabled, however the rest of
 the Python bindings will still work.
 
-To check your installation:
+To check the installation:
 
 .. code-block:: bash
 
@@ -109,8 +106,8 @@ To check your installation:
 2.3 Disable Python binding
 ::::::::::::::::::::::::::
 
-If you do not want to build Python binding at all, you may turn off the
-following compilation options:
+If Python binding is not needed, it can be turned off by setting the following
+compilation options to ``OFF``:
 
 - ``BUILD_PYBIND11``
 - ``BUILD_PYTHON_MODULE``
@@ -148,7 +145,7 @@ build, please see :ref:`compilation_options`.
 5.1 Install Open3D Python package
 :::::::::::::::::::::::::::::::::
 
-Inside your activated virtualenv (shall be activated before ``cmake``),
+Inside the activated virtualenv (shall be activated before ``cmake``),
 run
 
 .. code-block:: bash
@@ -165,8 +162,7 @@ uninstall, run
 
     pip uninstall open3d
 
-If you'd need more fine-grained controls, here is a list of all related build
-targets:
+If more fine-grained controls, here is a list of all related build targets:
 
 .. code-block:: bash
 
@@ -200,9 +196,9 @@ To Install/uninstall the Open3D as a C++ library (headers and binaries):
     ...
     make uninstall
 
-.. tip:: You will need ``sudo`` to install Open3D to a system location.
+.. tip:: ``sudo`` may be needed to install Open3D to a system location.
 
-To link your C++ project against the Open3D C++ library, please refer to
+To link a C++ project against the Open3D C++ library, please refer to
 :ref:`create_cplusplus_project`, starting from
 `this example CMake file <https://github.com/IntelVCL/Open3D/tree/master/docs/_static/C%2B%2B>`_.
 
@@ -227,16 +223,9 @@ Same as the steps for Ubuntu: :ref:`compilation_ubuntu_python_binding`.
 3. Config
 `````````
 
-You could use the same ``cmake`` command to create a ``make`` target as in
-Ubuntu: :ref:`compilation_ubuntu_config`.
+Same as the steps for Ubuntu: :ref:`compilation_ubuntu_config`.
 
-.. code-block:: bash
-
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
-
-Alternatively, if you want to use Xcode IDE, run:
+Alternatively, to use Xcode IDE, run:
 
 .. code-block:: bash
 
@@ -272,16 +261,16 @@ in the ``3rdparty`` folder. Therefore, we don't need to install any dependencies
 ````````````````````````````````````
 
 Most steps are the steps for Ubuntu: :ref:`compilation_ubuntu_python_binding`.
-Instead of ``which``, check your Python path with ``where python``, also pay
+Instead of ``which``, check the Python path with ``where python``, also pay
 attention to the ``Found PythonInterp`` message printed by CMake.
 
 3. Config (generate Visual Studio solution)
 ```````````````````````````````````````````
 
-You can use the CMake GUI as shown in the following figure. Specify the
+The CMake GUI is as shown in the following figure. Specify the
 directories, click ``Configure`` and choose the correct Visual Studio
 version (e.g., ``Visual Studio 14 2015 Win64``), then click ``Generate``.
-This will create an ``Open3D.sln`` file in your build directory.
+This will create an ``Open3D.sln`` file in the build directory.
 
 .. image:: _static/cmake_windows.png
     :width: 500px
@@ -307,7 +296,7 @@ Open ``Open3D.sln`` file with Visual Studio, change the build type to
 .. image:: _static/open3d.vc_solution.hightlights.png
     :width: 250px
 
-You can also build directly from the CMD terminal. Run
+Alternatively, we can also build directly from the CMD terminal. Run
 
 .. code-block:: bat
 
@@ -316,7 +305,7 @@ You can also build directly from the CMD terminal. Run
 5. Install
 ``````````
 
-You can install Open3D as C++ library or Python package, by building the
+Open3D can be installed as a C++ library or a Python package, by building the
 corresponding targets with Visual Studio or from the terminal. E.g.
 
 .. code-block:: bat
@@ -356,7 +345,7 @@ shell:
 Compilation Options
 -------------------
 
-This page shows advanced options to customize your Open3D build. For quick
+This page shows advanced options to customize the Open3D build. For quick
 start, see :ref:`compilation`.
 
 .. _compilation_options_dependencies:
