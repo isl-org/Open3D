@@ -22,11 +22,14 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
           packages:
             - gcc-4.8
             - g++-4.8
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+            - clang-format-6.0
+      env: CHECK_STYLE=ON
 
     - os: linux
       dist: trusty
@@ -126,6 +129,12 @@ script:
             -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON
             -DBUILD_PNG=ON ..;
     fi
+
+  # Check style
+  - if [ "$CHECK_STYLE" == "ON" ]; then
+      make check-style
+    fi
+
   # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
   # this is presumably due to limited memory space of travis-ci
   # also set the time limit to 30 mins, this is a fix to issue #557
