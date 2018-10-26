@@ -87,10 +87,10 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual)
     shared_ptr<Image> dyColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
 
     ShiftLeft(tgtColor, 10);
-    ShiftUP(tgtColor, 5);
+    ShiftUp(tgtColor, 5);
 
     ShiftLeft(dxColor, 10);
-    ShiftUP(dyColor, 5);
+    ShiftUp(dyColor, 5);
 
     RGBDImage source(*srcColor, *srcDepth);
     RGBDImage target(*tgtColor, *tgtDepth);
