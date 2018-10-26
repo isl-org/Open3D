@@ -352,8 +352,10 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue)
 
     Json::Value value;
     bool output = src.ConvertToJsonValue(value);
+    EXPECT_TRUE(output);
 
     output = dst.ConvertFromJsonValue(value);
+    EXPECT_TRUE(output);
 
     EXPECT_EQ(width, dst.width_);
     EXPECT_EQ(height, dst.height_);
@@ -369,12 +371,4 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue)
     EXPECT_NEAR(cx, dst.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
     EXPECT_NEAR(cy, dst.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
     EXPECT_NEAR(1.0, dst.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_ConvertFromJsonValue)
-{
-    unit_test::NotImplemented();
 }
