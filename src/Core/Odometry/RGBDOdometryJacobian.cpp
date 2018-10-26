@@ -37,17 +37,14 @@ namespace {
 const double SOBEL_SCALE = 0.125;
 const double LAMBDA_HYBRID_DEPTH = 0.968;
 
-}    // unnamed namespace
+}  // unnamed namespace
 
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
-        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
-        const RGBDImage &source, const RGBDImage &target,
-        const Image &source_xyz,
-        const RGBDImage &target_dx, const RGBDImage &target_dy,
-        const Eigen::Matrix3d &intrinsic,
-        const Eigen::Matrix4d &extrinsic,
-        const CorrespondenceSetPixelWise &corresps) const
-{
+    int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+    const RGBDImage &source, const RGBDImage &target, const Image &source_xyz,
+    const RGBDImage &target_dx, const RGBDImage &target_dy,
+    const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+    const CorrespondenceSetPixelWise &corresps) const {
     Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
     Eigen::Vector3d t = extrinsic.block<3, 1>(0, 3);
 
@@ -56,13 +53,12 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     int u_t = corresps[row](2);
     int v_t = corresps[row](3);
     double diff = *PointerAt<float>(target.color_, u_t, v_t) -
-            *PointerAt<float>(source.color_, u_s, v_s);
+                  *PointerAt<float>(source.color_, u_s, v_s);
     double dIdx = SOBEL_SCALE * (*PointerAt<float>(target_dx.color_, u_t, v_t));
     double dIdy = SOBEL_SCALE * (*PointerAt<float>(target_dy.color_, u_t, v_t));
-    Eigen::Vector3d p3d_mat(
-            *PointerAt<float>(source_xyz, u_s, v_s, 0),
-            *PointerAt<float>(source_xyz, u_s, v_s, 1),
-            *PointerAt<float>(source_xyz, u_s, v_s, 2));
+    Eigen::Vector3d p3d_mat(*PointerAt<float>(source_xyz, u_s, v_s, 0),
+                            *PointerAt<float>(source_xyz, u_s, v_s, 1),
+                            *PointerAt<float>(source_xyz, u_s, v_s, 2));
     Eigen::Vector3d p3d_trans = R * p3d_mat + t;
     double invz = 1. / p3d_trans(2);
     double c0 = dIdx * intrinsic(0, 0) * invz;
@@ -81,14 +77,11 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 }
 
 void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
-        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
-        const RGBDImage &source, const RGBDImage &target,
-        const Image &source_xyz,
-        const RGBDImage &target_dx, const RGBDImage &target_dy,
-        const Eigen::Matrix3d &intrinsic,
-        const Eigen::Matrix4d &extrinsic,
-        const CorrespondenceSetPixelWise &corresps) const
-{
+    int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+    const RGBDImage &source, const RGBDImage &target, const Image &source_xyz,
+    const RGBDImage &target_dx, const RGBDImage &target_dy,
+    const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+    const CorrespondenceSetPixelWise &corresps) const {
     double sqrt_lamba_dep, sqrt_lambda_img;
     sqrt_lamba_dep = sqrt(LAMBDA_HYBRID_DEPTH);
     sqrt_lambda_img = sqrt(1.0 - LAMBDA_HYBRID_DEPTH);
@@ -103,25 +96,19 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     int u_t = corresps[row](2);
     int v_t = corresps[row](3);
     double diff_photo = (*PointerAt<float>(target.color_, u_t, v_t) -
-            *PointerAt<float>(source.color_, u_s, v_s));
-    double dIdx = SOBEL_SCALE *
-            (*PointerAt<float>(target_dx.color_, u_t, v_t));
-    double dIdy = SOBEL_SCALE *
-            (*PointerAt<float>(target_dy.color_, u_t, v_t));
-    double dDdx = SOBEL_SCALE *
-            (*PointerAt<float>(target_dx.depth_, u_t, v_t));
-    double dDdy = SOBEL_SCALE *
-            (*PointerAt<float>(target_dy.depth_, u_t, v_t));
+                         *PointerAt<float>(source.color_, u_s, v_s));
+    double dIdx = SOBEL_SCALE * (*PointerAt<float>(target_dx.color_, u_t, v_t));
+    double dIdy = SOBEL_SCALE * (*PointerAt<float>(target_dy.color_, u_t, v_t));
+    double dDdx = SOBEL_SCALE * (*PointerAt<float>(target_dx.depth_, u_t, v_t));
+    double dDdy = SOBEL_SCALE * (*PointerAt<float>(target_dy.depth_, u_t, v_t));
     if (std::isnan(dDdx)) dDdx = 0;
     if (std::isnan(dDdy)) dDdy = 0;
-    Eigen::Vector3d p3d_mat(
-            *PointerAt<float>(source_xyz, u_s, v_s, 0),
-            *PointerAt<float>(source_xyz, u_s, v_s, 1),
-            *PointerAt<float>(source_xyz, u_s, v_s, 2));
+    Eigen::Vector3d p3d_mat(*PointerAt<float>(source_xyz, u_s, v_s, 0),
+                            *PointerAt<float>(source_xyz, u_s, v_s, 1),
+                            *PointerAt<float>(source_xyz, u_s, v_s, 2));
     Eigen::Vector3d p3d_trans = R * p3d_mat + t;
 
-    double diff_geo = *PointerAt<float>(target.depth_, u_t, v_t) -
-            p3d_trans(2);
+    double diff_geo = *PointerAt<float>(target.depth_, u_t, v_t) - p3d_trans(2);
     double invz = 1. / p3d_trans(2);
     double c0 = dIdx * fx * invz;
     double c1 = dIdy * fy * invz;
@@ -142,11 +129,10 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     r[0] = r_photo;
 
     J_r[1](0) = sqrt_lamba_dep *
-            ((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
+                ((-p3d_trans(2) * d1 + p3d_trans(1) * d2) - p3d_trans(1));
     J_r[1](1) = sqrt_lamba_dep *
-            ((p3d_trans(2) * d0 - p3d_trans(0) * d2) + p3d_trans(0));
-    J_r[1](2) = sqrt_lamba_dep *
-            ((-p3d_trans(1) * d0 + p3d_trans(0) * d1));
+                ((p3d_trans(2) * d0 - p3d_trans(0) * d2) + p3d_trans(0));
+    J_r[1](2) = sqrt_lamba_dep * ((-p3d_trans(1) * d0 + p3d_trans(0) * d1));
     J_r[1](3) = sqrt_lamba_dep * (d0);
     J_r[1](4) = sqrt_lamba_dep * (d1);
     J_r[1](5) = sqrt_lamba_dep * (d2 - 1.0f);
@@ -154,4 +140,4 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     r[1] = r_geo;
 }
 
-}    // namespace open3d
+}  // namespace open3d

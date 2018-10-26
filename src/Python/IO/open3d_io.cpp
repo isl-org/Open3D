@@ -26,10 +26,6 @@
 
 #include "open3d_io.h"
 
-void pybind_io_classes(py::module &m)
-{
-}
+void pybind_io_classes(py::module &m) {}
 
-void pybind_io_methods(py::module &m)
-{
-}
+void pybind_io_methods(py::module &m) {}

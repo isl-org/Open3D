@@ -29,71 +29,44 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_Render)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_Render) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_AddGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_AddGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_UpdateGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_UpdateGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_HasGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_HasGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_IsVisible)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_IsVisible) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GeometryRenderer, DISABLED_SetVisible)
-{
-    unit_test::NotImplemented();
-}
+TEST(GeometryRenderer, DISABLED_SetVisible) { unit_test::NotImplemented(); }

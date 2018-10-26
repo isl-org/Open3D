@@ -27,8 +27,7 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
@@ -38,12 +37,13 @@ void PrintHelp()
     PrintInfo("Options (listed in the order of execution priority):\n");
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    PrintInfo("    --purge                   : Clear duplicated and non-manifold vertices and\n");
+    PrintInfo(
+        "    --purge                   : Clear duplicated and non-manifold "
+        "vertices and\n");
     PrintInfo("                                triangles.\n");
- }
+}
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::filesystem;
 

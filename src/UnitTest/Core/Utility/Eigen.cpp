@@ -29,47 +29,37 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, DISABLED_TransformVector6dToMatrix4d)
-{
+TEST(Eigen, DISABLED_TransformVector6dToMatrix4d) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, DISABLED_TransformMatrix4dToVector6d)
-{
+TEST(Eigen, DISABLED_TransformMatrix4dToVector6d) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, DISABLED_SolveLinearSystem)
-{
+TEST(Eigen, DISABLED_SolveLinearSystem) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrix) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrix)
-{
+TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, DISABLED_SolveJacobianSystemAndObtainExtrinsicMatrixArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(Eigen, DISABLED_ComputeJTJandJTr)
-{
-    unit_test::NotImplemented();
-}
+TEST(Eigen, DISABLED_ComputeJTJandJTr) { unit_test::NotImplemented(); }

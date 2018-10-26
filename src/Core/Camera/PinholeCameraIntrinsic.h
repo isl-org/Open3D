@@ -37,22 +37,24 @@ enum class PinholeCameraIntrinsicParameters {
     Kinect2ColorCameraDefault = 2,
 };
 
-class PinholeCameraIntrinsic : public IJsonConvertible
-{
-public:
+class PinholeCameraIntrinsic : public IJsonConvertible {
+   public:
     PinholeCameraIntrinsic();
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);
     PinholeCameraIntrinsic(int width, int height, double fx, double fy,
-        double cx, double cy);
+                           double cx, double cy);
     ~PinholeCameraIntrinsic() override;
 
-public:
+   public:
     void SetIntrinsics(int width, int height, double fx, double fy, double cx,
-            double cy) {
-        width_ = width; height_ = height;
+                       double cy) {
+        width_ = width;
+        height_ = height;
         intrinsic_matrix_.setIdentity();
-        intrinsic_matrix_(0, 0) = fx; intrinsic_matrix_(1, 1) = fy;
-        intrinsic_matrix_(0, 2) = cx; intrinsic_matrix_(1, 2) = cy;
+        intrinsic_matrix_(0, 0) = fx;
+        intrinsic_matrix_(1, 1) = fy;
+        intrinsic_matrix_(0, 2) = cx;
+        intrinsic_matrix_(1, 2) = cy;
     }
 
     std::pair<double, double> GetFocalLength() const {
@@ -70,10 +72,10 @@ public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-public:
+   public:
     int width_ = -1;
     int height_ = -1;
     Eigen::Matrix3d intrinsic_matrix_;
 };
 
-}   // namespace open3d
+}  // namespace open3d

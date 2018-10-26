@@ -30,8 +30,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintInfo("Usage :\n");
     PrintInfo("    > TriangleMesh sphere\n");
@@ -39,16 +38,14 @@ void PrintHelp()
     PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
 }
 
-void PaintMesh(open3d::TriangleMesh &mesh, const Eigen::Vector3d &color)
-{
+void PaintMesh(open3d::TriangleMesh &mesh, const Eigen::Vector3d &color) {
     mesh.vertex_colors_.resize(mesh.vertices_.size());
     for (size_t i = 0; i < mesh.vertices_.size(); i++) {
         mesh.vertex_colors_[i] = color;
     }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
@@ -89,22 +86,23 @@ int main(int argc, char *argv[])
             mesh->ComputeVertexNormals();
             BoundingBox boundingbox(*mesh);
             auto mesh_frame = CreateMeshCoordinateFrame(
-                    boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+                boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
             DrawGeometries({mesh, mesh_frame});
         }
     } else if (option == "merge") {
         auto mesh1 = CreateMeshFromFile(argv[2]);
         auto mesh2 = CreateMeshFromFile(argv[3]);
         PrintInfo("Mesh1 has %d vertices, %d triangles.\n",
-                mesh1->vertices_.size(), mesh1->triangles_.size());
+                  mesh1->vertices_.size(), mesh1->triangles_.size());
         PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
-                mesh2->vertices_.size(), mesh2->triangles_.size());
+                  mesh2->vertices_.size(), mesh2->triangles_.size());
         *mesh1 += *mesh2;
         PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n",
-                mesh1->vertices_.size(), mesh1->triangles_.size());
+                  mesh1->vertices_.size(), mesh1->triangles_.size());
         mesh1->Purge();
-        PrintInfo("After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
-                mesh1->vertices_.size(), mesh1->triangles_.size());
+        PrintInfo(
+            "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
+            mesh1->vertices_.size(), mesh1->triangles_.size());
         DrawGeometries({mesh1});
         WriteTriangleMesh("temp.ply", *mesh1, true, true);
     } else if (option == "normal") {
@@ -129,8 +127,9 @@ int main(int argc, char *argv[])
         trans(0, 0) = trans(1, 1) = trans(2, 2) = scale1 / bbox.GetSize();
         mesh->Transform(trans);
         trans.setIdentity();
-        trans.block<3, 1>(0, 3) = Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0,
-                scale2 / 2.0) - bbox.GetCenter() * scale1 / bbox.GetSize();
+        trans.block<3, 1>(0, 3) =
+            Eigen::Vector3d(scale2 / 2.0, scale2 / 2.0, scale2 / 2.0) -
+            bbox.GetCenter() * scale1 / bbox.GetSize();
         mesh->Transform(trans);
         WriteTriangleMesh(argv[3], *mesh);
     } else if (option == "distance") {
@@ -150,7 +149,7 @@ int main(int argc, char *argv[])
             r += sqrt(dists[0]);
         }
         PrintInfo("Average distance is %.6f.\n",
-                r / (double)mesh1->vertices_.size());
+                  r / (double)mesh1->vertices_.size());
         if (argc > 5) {
             WriteTriangleMesh(argv[5], *mesh1);
         }
@@ -190,12 +189,14 @@ int main(int argc, char *argv[])
             sprintf(buffer, "image/image_%06d.png", (int)i + 1);
             auto image = CreateImageFromFile(buffer);
             auto fimage = CreateFloatImageFromImage(*image);
-            Eigen::Vector4d pt_in_camera = trajectory.extrinsic_[i] *
-                    Eigen::Vector4d(mesh->vertices_[idx](0),
-                    mesh->vertices_[idx](1), mesh->vertices_[idx](2), 1.0);
+            Eigen::Vector4d pt_in_camera =
+                trajectory.extrinsic_[i] *
+                Eigen::Vector4d(mesh->vertices_[idx](0),
+                                mesh->vertices_[idx](1),
+                                mesh->vertices_[idx](2), 1.0);
             Eigen::Vector3d pt_in_plane =
-                    trajectory.intrinsic_.intrinsic_matrix_ *
-                    pt_in_camera.block<3, 1>(0, 0);
+                trajectory.intrinsic_.intrinsic_matrix_ *
+                pt_in_camera.block<3, 1>(0, 0);
             Eigen::Vector3d uv = pt_in_plane / pt_in_plane(2);
             std::cout << pt_in_camera << std::endl;
             std::cout << pt_in_plane << std::endl;

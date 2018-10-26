@@ -32,8 +32,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
@@ -62,12 +61,12 @@ int main(int argc, char *argv[])
             pcd->Transform(trajectory.extrinsic_[i]);
             pcd->colors_.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {
-                pcd->colors_.resize(pcd->points_.size(),
-                        color_palette[i]);
+                pcd->colors_.resize(pcd->points_.size(), color_palette[i]);
             } else {
                 pcd->colors_.resize(pcd->points_.size(),
-                        (Eigen::Vector3d::Random() +
-                        Eigen::Vector3d::Constant(1.0)) * 0.5);
+                                    (Eigen::Vector3d::Random() +
+                                     Eigen::Vector3d::Constant(1.0)) *
+                                        0.5);
             }
             pcds.push_back(pcd);
         }

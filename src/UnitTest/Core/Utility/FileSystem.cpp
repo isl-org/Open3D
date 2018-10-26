@@ -29,119 +29,90 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileExtensionInLowerCase)
-{
+TEST(FileSystem, DISABLED_GetFileExtensionInLowerCase) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileNameWithoutExtension)
-{
+TEST(FileSystem, DISABLED_GetFileNameWithoutExtension) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileNameWithoutDirectory)
-{
+TEST(FileSystem, DISABLED_GetFileNameWithoutDirectory) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileParentDirectory)
-{
+TEST(FileSystem, DISABLED_GetFileParentDirectory) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetRegularizedDirectoryName)
-{
+TEST(FileSystem, DISABLED_GetRegularizedDirectoryName) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetWorkingDirectory)
-{
+TEST(FileSystem, DISABLED_GetWorkingDirectory) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(FileSystem, DISABLED_ChangeWorkingDirectory) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ChangeWorkingDirectory)
-{
+TEST(FileSystem, DISABLED_DirectoryExists) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(FileSystem, DISABLED_MakeDirectory) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(FileSystem, DISABLED_MakeDirectoryHierarchy) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_DirectoryExists)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileSystem, DISABLED_DeleteDirectory) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_MakeDirectory)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileSystem, DISABLED_FileExists) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_MakeDirectoryHierarchy)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileSystem, DISABLED_RemoveFile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_DeleteDirectory)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileSystem, DISABLED_ListFilesInDirectory) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_FileExists)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_RemoveFile)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ListFilesInDirectory)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ListFilesInDirectoryWithExtension)
-{
+TEST(FileSystem, DISABLED_ListFilesInDirectoryWithExtension) {
     unit_test::NotImplemented();
 }

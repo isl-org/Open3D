@@ -26,16 +26,15 @@
 
 #include "TriangleMesh.h"
 
-namespace open3d{
+namespace open3d {
 
-std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
-        int resolution/* = 20*/)
-{
+std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius /* = 1.0*/,
+                                               int resolution /* = 20*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0.0 || resolution <= 0) {
         return mesh_ptr;
     }
-    mesh_ptr->vertices_.resize(2 * resolution * (resolution -1 ) + 2);
+    mesh_ptr->vertices_.resize(2 * resolution * (resolution - 1) + 2);
     mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, radius);
     mesh_ptr->vertices_[1] = Eigen::Vector3d(0.0, 0.0, -radius);
     double step = M_PI / (double)resolution;
@@ -45,8 +44,9 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
         for (int j = 0; j < 2 * resolution; j++) {
             double theta = step * j;
             mesh_ptr->vertices_[base + j] =
-                    Eigen::Vector3d(sin(alpha) * cos(theta),
-                    sin(alpha) * sin(theta), cos(alpha)) * radius;
+                Eigen::Vector3d(sin(alpha) * cos(theta),
+                                sin(alpha) * sin(theta), cos(alpha)) *
+                radius;
         }
     }
     for (int j = 0; j < 2 * resolution; j++) {
@@ -61,18 +61,19 @@ std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
         int base2 = base1 + 2 * resolution;
         for (int j = 0; j < 2 * resolution; j++) {
             int j1 = (j + 1) % (2 * resolution);
-            mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
-                    base1 + j1, base1 + j));
-            mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
-                    base2 + j1, base1 + j1));
+            mesh_ptr->triangles_.push_back(
+                Eigen::Vector3i(base2 + j, base1 + j1, base1 + j));
+            mesh_ptr->triangles_.push_back(
+                Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1));
         }
     }
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius/* = 1.0*/,
-        double height/* = 2.0*/, int resolution/* = 20*/, int split/* = 4*/)
-{
+std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius /* = 1.0*/,
+                                                 double height /* = 2.0*/,
+                                                 int resolution /* = 20*/,
+                                                 int split /* = 4*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0.0 || height <= 0.0 || resolution <= 0 || split <= 0) {
         return mesh_ptr;
@@ -86,8 +87,8 @@ std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius/* = 1.0*/,
         for (int j = 0; j < resolution; j++) {
             double theta = step * j;
             mesh_ptr->vertices_[2 + resolution * i + j] =
-                    Eigen::Vector3d(cos(theta) * radius, sin(theta) * radius,
-                    height * 0.5 - h_step * i);
+                Eigen::Vector3d(cos(theta) * radius, sin(theta) * radius,
+                                height * 0.5 - h_step * i);
         }
     }
     for (int j = 0; j < resolution; j++) {
@@ -102,18 +103,19 @@ std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius/* = 1.0*/,
         int base2 = base1 + resolution;
         for (int j = 0; j < resolution; j++) {
             int j1 = (j + 1) % resolution;
-            mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
-                    base1 + j1, base1 + j));
-            mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j,
-                    base2 + j1, base1 + j1));
+            mesh_ptr->triangles_.push_back(
+                Eigen::Vector3i(base2 + j, base1 + j1, base1 + j));
+            mesh_ptr->triangles_.push_back(
+                Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1));
         }
     }
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> CreateMeshCone(double radius/* = 1.0*/,
-        double height/* = 2.0*/, int resolution/* = 20*/, int split/* = 4*/)
-{
+std::shared_ptr<TriangleMesh> CreateMeshCone(double radius /* = 1.0*/,
+                                             double height /* = 2.0*/,
+                                             int resolution /* = 20*/,
+                                             int split /* = 4*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0.0 || height <= 0.0 || resolution <= 0 || split <= 0) {
         return mesh_ptr;
@@ -130,7 +132,7 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius/* = 1.0*/,
         for (int j = 0; j < resolution; j++) {
             double theta = step * j;
             mesh_ptr->vertices_[base + j] =
-                    Eigen::Vector3d(cos(theta) * r, sin(theta) * r, h_step * i);
+                Eigen::Vector3d(cos(theta) * r, sin(theta) * r, h_step * i);
         }
     }
     for (int j = 0; j < resolution; j++) {
@@ -145,27 +147,29 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius/* = 1.0*/,
         int base2 = base1 + resolution;
         for (int j = 0; j < resolution; j++) {
             int j1 = (j + 1) % resolution;
-            mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j1,
-                    base1 + j, base1 + j1));
-            mesh_ptr->triangles_.push_back(Eigen::Vector3i(base2 + j1,
-                    base2 + j, base1 + j));
+            mesh_ptr->triangles_.push_back(
+                Eigen::Vector3i(base2 + j1, base1 + j, base1 + j1));
+            mesh_ptr->triangles_.push_back(
+                Eigen::Vector3i(base2 + j1, base2 + j, base1 + j));
         }
     }
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius/* = 1.0*/,
-        double cone_radius/* = 1.5*/, double cylinder_height/* = 5.0*/,
-        double cone_height/* = 4.0*/, int resolution/* = 20*/,
-        int cylinder_split/* = 4*/, int cone_split/* = 1*/)
-{
+std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius /* = 1.0*/,
+                                              double cone_radius /* = 1.5*/,
+                                              double cylinder_height /* = 5.0*/,
+                                              double cone_height /* = 4.0*/,
+                                              int resolution /* = 20*/,
+                                              int cylinder_split /* = 4*/,
+                                              int cone_split /* = 1*/) {
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     auto mesh_cylinder = CreateMeshCylinder(cylinder_radius, cylinder_height,
-            resolution, cylinder_split);
+                                            resolution, cylinder_split);
     transformation(2, 3) = cylinder_height * 0.5;
     mesh_cylinder->Transform(transformation);
-    auto mesh_cone = CreateMeshCone(cone_radius, cone_height, resolution,
-            cone_split);
+    auto mesh_cone =
+        CreateMeshCone(cone_radius, cone_height, resolution, cone_split);
     transformation(2, 3) = cylinder_height;
     mesh_cone->Transform(transformation);
     auto mesh_arrow = mesh_cylinder;
@@ -173,9 +177,9 @@ std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius/* = 1.0*/,
     return mesh_arrow;
 }
 
-std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
-        const Eigen::Vector3d &origin/* = Eigen::Vector3d(0.0, 0.0, 0.0)*/)
-{
+std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
+    double size /* = 1.0*/,
+    const Eigen::Vector3d &origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
     auto mesh_frame = CreateMeshSphere(0.06 * size);
     mesh_frame->ComputeVertexNormals();
     mesh_frame->PaintUniformColor(Eigen::Vector3d(0.5, 0.5, 0.5));
@@ -183,39 +187,27 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
     std::shared_ptr<TriangleMesh> mesh_arrow;
     Eigen::Matrix4d transformation;
 
-    mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size,
-            0.2 * size);
+    mesh_arrow =
+        CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
     mesh_arrow->ComputeVertexNormals();
     mesh_arrow->PaintUniformColor(Eigen::Vector3d(1.0, 0.0, 0.0));
-    transformation <<
-            0, 0, 1, 0,
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 0, 1;
+    transformation << 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1;
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size,
-            0.2 * size);
+    mesh_arrow =
+        CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
     mesh_arrow->ComputeVertexNormals();
     mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 1.0, 0.0));
-    transformation <<
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            1, 0, 0, 0,
-            0, 0, 0, 1;
+    transformation << 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1;
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
-    mesh_arrow = CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size,
-            0.2 * size);
+    mesh_arrow =
+        CreateMeshArrow(0.035 * size, 0.06 * size, 0.8 * size, 0.2 * size);
     mesh_arrow->ComputeVertexNormals();
     mesh_arrow->PaintUniformColor(Eigen::Vector3d(0.0, 0.0, 1.0));
-    transformation <<
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1;
+    transformation << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
     mesh_arrow->Transform(transformation);
     *mesh_frame += *mesh_arrow;
 
@@ -226,4 +218,4 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size/* = 1.0*/,
     return mesh_frame;
 }
 
-}    // namespace open3d
+}  // namespace open3d

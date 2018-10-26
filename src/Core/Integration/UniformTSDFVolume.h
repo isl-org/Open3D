@@ -31,17 +31,17 @@
 namespace open3d {
 
 class UniformTSDFVolume : public TSDFVolume {
-public:
+   public:
     UniformTSDFVolume(double length, int resolution, double sdf_trunc,
-            TSDFVolumeColorType color_type,
-            const Eigen::Vector3d &origin = Eigen::Vector3d::Zero());
+                      TSDFVolumeColorType color_type,
+                      const Eigen::Vector3d &origin = Eigen::Vector3d::Zero());
     ~UniformTSDFVolume() override;
 
-public:
+   public:
     void Reset() override;
     void Integrate(const RGBDImage &image,
-            const PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic) override;
+                   const PinholeCameraIntrinsic &intrinsic,
+                   const Eigen::Matrix4d &extrinsic) override;
     std::shared_ptr<PointCloud> ExtractPointCloud() override;
     std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
 
@@ -50,10 +50,10 @@ public:
 
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
     /// precomputed from camera intrinsic
-    void IntegrateWithDepthToCameraDistanceMultiplier(const RGBDImage &image,
-            const PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
-            const Image &depth_to_camera_distance_multiplier);
+    void IntegrateWithDepthToCameraDistanceMultiplier(
+        const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
+        const Image &depth_to_camera_distance_multiplier);
 
     inline int IndexOf(int x, int y, int z) const {
         return x * resolution_ * resolution_ + y * resolution_ + z;
@@ -63,7 +63,7 @@ public:
         return IndexOf(xyz(0), xyz(1), xyz(2));
     }
 
-public:
+   public:
     Eigen::Vector3d origin_;
     double length_;
     int resolution_;
@@ -72,10 +72,10 @@ public:
     std::vector<Eigen::Vector3f> color_;
     std::vector<float> weight_;
 
-private:
+   private:
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
 
     double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
-}    // namespace open3d
+}  // namespace open3d

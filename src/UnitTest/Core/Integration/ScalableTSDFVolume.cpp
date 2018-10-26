@@ -29,103 +29,74 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_VolumeUnit)
-{
+TEST(ScalableTSDFVolume, DISABLED_VolumeUnit) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ScalableTSDFVolume, DISABLED_Constructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ScalableTSDFVolume, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ScalableTSDFVolume, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ScalableTSDFVolume, DISABLED_Reset) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ScalableTSDFVolume, DISABLED_Integrate) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ScalableTSDFVolume, DISABLED_ExtractPointCloud) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_Constructor)
-{
+TEST(ScalableTSDFVolume, DISABLED_ExtractTriangleMesh) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_Destructor)
-{
+TEST(ScalableTSDFVolume, DISABLED_ExtractVoxelPointCloud) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_MemberData)
-{
+TEST(ScalableTSDFVolume, DISABLED_LocateVolumeUnit) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_Reset)
-{
+TEST(ScalableTSDFVolume, DISABLED_OpenVolumeUnit) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_Integrate)
-{
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_GetNormalAt) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_ExtractPointCloud)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_ExtractTriangleMesh)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_ExtractVoxelPointCloud)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_LocateVolumeUnit)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_OpenVolumeUnit)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_GetNormalAt)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ScalableTSDFVolume, DISABLED_GetTSDFAt)
-{
-    unit_test::NotImplemented();
-}
+TEST(ScalableTSDFVolume, DISABLED_GetTSDFAt) { unit_test::NotImplemented(); }

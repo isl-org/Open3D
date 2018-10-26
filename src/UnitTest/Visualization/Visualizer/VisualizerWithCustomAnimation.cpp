@@ -29,103 +29,90 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_Constructor)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_Destructor)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_MemberData)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_PrintVisualizerHelp)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_PrintVisualizerHelp) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_UpdateWindowTitle)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_UpdateWindowTitle) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_Play)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_Play) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingImageFormat)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingImageFormat) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingDepthFormat)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_RegisterRecordingDepthFormat) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_InitViewControl)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_InitViewControl) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_MouseMoveCallback)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseMoveCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_MouseScrollCallback)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseScrollCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_MouseButtonCallback)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_MouseButtonCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithCustomAnimation, DISABLED_KeyPressCallback)
-{
+TEST(VisualizerWithCustomAnimation, DISABLED_KeyPressCallback) {
     unit_test::NotImplemented();
 }

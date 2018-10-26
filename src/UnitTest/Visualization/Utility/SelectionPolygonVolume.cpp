@@ -29,63 +29,55 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_Constructor)
-{
+TEST(SelectionPolygonVolume, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_Destructor)
-{
+TEST(SelectionPolygonVolume, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_MemberData)
-{
+TEST(SelectionPolygonVolume, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_ConvertToJsonValue)
-{
+TEST(SelectionPolygonVolume, DISABLED_ConvertToJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_ConvertFromJsonValue)
-{
+TEST(SelectionPolygonVolume, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_CropPointCloud)
-{
+TEST(SelectionPolygonVolume, DISABLED_CropPointCloud) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_CropPointCloudInPolygon)
-{
+TEST(SelectionPolygonVolume, DISABLED_CropPointCloudInPolygon) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SelectionPolygonVolume, DISABLED_CropInPolygon)
-{
+TEST(SelectionPolygonVolume, DISABLED_CropInPolygon) {
     unit_test::NotImplemented();
 }

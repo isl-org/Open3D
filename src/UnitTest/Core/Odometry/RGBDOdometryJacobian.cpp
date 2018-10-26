@@ -29,47 +29,37 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, DISABLED_Constructor)
-{
+TEST(RGBDOdometryJacobian, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, DISABLED_Destructor)
-{
+TEST(RGBDOdometryJacobian, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RGBDOdometryJacobian, DISABLED_ComputeJacobianAndResidual) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, DISABLED_MemberData)
-{
+TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromColorTerm) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, DISABLED_ComputeJacobianAndResidual)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromColorTerm)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromHybridTerm)
-{
+TEST(RGBDOdometryJacobian, DISABLED_RGBDOdometryJacobianFromHybridTerm) {
     unit_test::NotImplemented();
 }

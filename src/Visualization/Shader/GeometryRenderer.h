@@ -40,15 +40,14 @@
 namespace open3d {
 
 namespace glsl {
-    
-class GeometryRenderer
-{
-public:
+
+class GeometryRenderer {
+   public:
     virtual ~GeometryRenderer() {}
 
-public:
+   public:
     virtual bool Render(const RenderOption &option,
-            const ViewControl &view) = 0;
+                        const ViewControl &view) = 0;
 
     /// Function to add geometry to the renderer
     /// 1. After calling the function, the renderer owns the geometry object.
@@ -62,137 +61,127 @@ public:
     /// Programmer must call this function to notify a change of the geometry
     virtual bool UpdateGeometry() = 0;
 
-    bool HasGeometry() const {
-        return bool(geometry_ptr_);
-    }
+    bool HasGeometry() const { return bool(geometry_ptr_); }
 
     bool IsVisible() const { return is_visible_; }
     void SetVisible(bool visible) { is_visible_ = visible; };
-    
-protected:
+
+   protected:
     std::shared_ptr<const Geometry> geometry_ptr_;
     bool is_visible_ = true;
 };
 
-class PointCloudRenderer : public GeometryRenderer
-{
-public:
+class PointCloudRenderer : public GeometryRenderer {
+   public:
     ~PointCloudRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     SimpleShaderForPointCloud simple_point_shader_;
     PhongShaderForPointCloud phong_point_shader_;
     NormalShaderForPointCloud normal_point_shader_;
     SimpleBlackShaderForPointCloudNormal simpleblack_normal_shader_;
 };
 
-class PointCloudPickingRenderer : public GeometryRenderer
-{
-public:
+class PointCloudPickingRenderer : public GeometryRenderer {
+   public:
     ~PointCloudPickingRenderer() override {}
 
-public:
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     PickingShaderForPointCloud picking_shader_;
 };
 
-class LineSetRenderer : public GeometryRenderer
-{
-public:
+class LineSetRenderer : public GeometryRenderer {
+   public:
     ~LineSetRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
-class TriangleMeshRenderer : public GeometryRenderer
-{
-public:
+class TriangleMeshRenderer : public GeometryRenderer {
+   public:
     ~TriangleMeshRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     SimpleShaderForTriangleMesh simple_mesh_shader_;
     PhongShaderForTriangleMesh phong_mesh_shader_;
     NormalShaderForTriangleMesh normal_mesh_shader_;
     SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
 };
 
-class ImageRenderer : public GeometryRenderer
-{
-public:
+class ImageRenderer : public GeometryRenderer {
+   public:
     ~ImageRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     ImageShaderForImage image_shader_;
 };
 
-class CoordinateFrameRenderer : public GeometryRenderer
-{
-public:
+class CoordinateFrameRenderer : public GeometryRenderer {
+   public:
     ~CoordinateFrameRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     PhongShaderForTriangleMesh phong_shader_;
 };
 
-class SelectionPolygonRenderer : public GeometryRenderer
-{
-public:
+class SelectionPolygonRenderer : public GeometryRenderer {
+   public:
     ~SelectionPolygonRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     Simple2DShaderForSelectionPolygon simple2d_shader_;
     ImageMaskShaderForImage image_mask_shader_;
 };
 
-class PointCloudPickerRenderer : public GeometryRenderer
-{
-public:
+class PointCloudPickerRenderer : public GeometryRenderer {
+   public:
     ~PointCloudPickerRenderer() override {}
-    
-public:
+
+   public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
-    
-protected:
+
+   protected:
     PhongShaderForTriangleMesh phong_shader_;
 };
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

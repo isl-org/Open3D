@@ -29,23 +29,14 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(OdometryOption, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(OdometryOption, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(OdometryOption, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(OdometryOption, DISABLED_MemberData) { unit_test::NotImplemented(); }

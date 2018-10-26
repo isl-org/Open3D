@@ -32,24 +32,21 @@ using namespace open3d;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-AccumulatedPoint::AccumulatedPoint() :
-        num_of_points_(0),
-        point_(0.0, 0.0, 0.0),
-        normal_(0.0, 0.0, 0.0),
-        color_(0.0, 0.0, 0.0)
-{
-}
+AccumulatedPoint::AccumulatedPoint()
+    : num_of_points_(0),
+      point_(0.0, 0.0, 0.0),
+      normal_(0.0, 0.0, 0.0),
+      color_(0.0, 0.0, 0.0) {}
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void AccumulatedPoint::AddPoint(const PointCloud &cloud, int index)
-{
+void AccumulatedPoint::AddPoint(const PointCloud &cloud, int index) {
     point_ += cloud.points_[index];
     if (cloud.HasNormals()) {
         if (!std::isnan(cloud.normals_[index](0)) &&
-                !std::isnan(cloud.normals_[index](1)) &&
-                !std::isnan(cloud.normals_[index](2))) {
+            !std::isnan(cloud.normals_[index](1)) &&
+            !std::isnan(cloud.normals_[index](2))) {
             normal_ += cloud.normals_[index];
         }
     }
@@ -62,23 +59,20 @@ void AccumulatedPoint::AddPoint(const PointCloud &cloud, int index)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-Eigen::Vector3d AccumulatedPoint::GetAveragePoint() const
-{
+Eigen::Vector3d AccumulatedPoint::GetAveragePoint() const {
     return point_ / double(num_of_points_);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-Eigen::Vector3d AccumulatedPoint::GetAverageNormal() const
-{
+Eigen::Vector3d AccumulatedPoint::GetAverageNormal() const {
     return normal_.normalized();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-Eigen::Vector3d AccumulatedPoint::GetAverageColor() const
-{
+Eigen::Vector3d AccumulatedPoint::GetAverageColor() const {
     return color_ / double(num_of_points_);
 }

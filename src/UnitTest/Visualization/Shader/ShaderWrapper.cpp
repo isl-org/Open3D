@@ -29,127 +29,83 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_Constructor)
-{
+TEST(ShaderWrapper, DISABLED_Constructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ShaderWrapper, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ShaderWrapper, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ShaderWrapper, DISABLED_Render) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ShaderWrapper, DISABLED_InvalidateGeometry) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_Destructor)
-{
+TEST(ShaderWrapper, DISABLED_PrintShaderWarning) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_Compile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_Render)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_Release) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_InvalidateGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_BindGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_PrintShaderWarning)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_RenderGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_Compile)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_UnbindGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_Release)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_ValidateShader) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_BindGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_ValidateProgram) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_RenderGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_CompileShaders) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_UnbindGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_ReleaseProgram) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_ValidateShader)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_ValidateProgram)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_CompileShaders)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_ReleaseProgram)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ShaderWrapper, DISABLED_SetShaderName)
-{
-    unit_test::NotImplemented();
-}
+TEST(ShaderWrapper, DISABLED_SetShaderName) { unit_test::NotImplemented(); }

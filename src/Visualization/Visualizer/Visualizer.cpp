@@ -28,24 +28,24 @@
 
 #include <Core/Geometry/TriangleMesh.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-class GLFWEnvironmentSingleton
-{
-private:
-    GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n");}
+class GLFWEnvironmentSingleton {
+   private:
+    GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n"); }
     GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
     GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
-            delete;
-public:
+        delete;
+
+   public:
     ~GLFWEnvironmentSingleton() {
         glfwTerminate();
         PrintDebug("GLFW destruct.\n");
     }
 
-public:
+   public:
     static GLFWEnvironmentSingleton &GetInstance() {
         static GLFWEnvironmentSingleton singleton;
         return singleton;
@@ -56,39 +56,36 @@ public:
         return glfwInit();
     }
 
-    static void GLFWErrorCallback(int error, const char* description) {
+    static void GLFWErrorCallback(int error, const char *description) {
         PrintError("GLFW Error: %s\n", description);
     }
 };
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-Visualizer::Visualizer()
-{
+Visualizer::Visualizer() {}
+
+Visualizer::~Visualizer() {
+    glfwTerminate();  // to be safe
 }
 
-Visualizer::~Visualizer()
-{
-    glfwTerminate();    // to be safe
-}
-
-bool Visualizer::CreateVisualizerWindow(const std::string &window_name/* = "Open3D"*/,
-        const int width/* = 640*/, const int height/* = 480*/,
-        const int left/* = 50*/, const int top/* = 50*/, const bool visible/* = true*/)
-{
+bool Visualizer::CreateVisualizerWindow(
+    const std::string &window_name /* = "Open3D"*/, const int width /* = 640*/,
+    const int height /* = 480*/, const int left /* = 50*/,
+    const int top /* = 50*/, const bool visible /* = true*/) {
     window_name_ = window_name;
-    if (window_) {    // window already created
+    if (window_) {  // window already created
         UpdateWindowTitle();
         glfwSetWindowPos(window_, left, top);
         glfwSetWindowSize(window_, width, height);
 #ifdef __APPLE__
         glfwSetWindowSize(window_,
-                std::round(width * pixel_to_screen_coordinate_),
-                std::round(height * pixel_to_screen_coordinate_));
+                          std::round(width * pixel_to_screen_coordinate_),
+                          std::round(height * pixel_to_screen_coordinate_));
         glfwSetWindowPos(window_,
-                std::round(left * pixel_to_screen_coordinate_),
-                std::round(top * pixel_to_screen_coordinate_));
-#endif //__APPLE__
+                         std::round(left * pixel_to_screen_coordinate_),
+                         std::round(top * pixel_to_screen_coordinate_));
+#endif  //__APPLE__
         return true;
     }
 
@@ -122,57 +119,53 @@ bool Visualizer::CreateVisualizerWindow(const std::string &window_name/* = "Open
     } else {
         pixel_to_screen_coordinate_ = 1.0;
     }
-    glfwSetWindowSize(window_,
-            std::round(width * pixel_to_screen_coordinate_),
-            std::round(height * pixel_to_screen_coordinate_));
-    glfwSetWindowPos(window_,
-            std::round(left * pixel_to_screen_coordinate_),
-            std::round(top * pixel_to_screen_coordinate_));
-#endif //__APPLE__
+    glfwSetWindowSize(window_, std::round(width * pixel_to_screen_coordinate_),
+                      std::round(height * pixel_to_screen_coordinate_));
+    glfwSetWindowPos(window_, std::round(left * pixel_to_screen_coordinate_),
+                     std::round(top * pixel_to_screen_coordinate_));
+#endif  //__APPLE__
 
     auto window_refresh_callback = [](GLFWwindow *window) {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                WindowRefreshCallback(window);
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->WindowRefreshCallback(window);
     };
     glfwSetWindowRefreshCallback(window_, window_refresh_callback);
 
     auto window_resize_callback = [](GLFWwindow *window, int w, int h) {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                WindowResizeCallback(window, w, h);
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->WindowResizeCallback(window, w, h);
     };
     glfwSetFramebufferSizeCallback(window_, window_resize_callback);
 
     auto mouse_move_callback = [](GLFWwindow *window, double x, double y) {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                MouseMoveCallback(window, x, y);
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->MouseMoveCallback(window, x, y);
     };
     glfwSetCursorPosCallback(window_, mouse_move_callback);
 
     auto mouse_scroll_callback = [](GLFWwindow *window, double x, double y) {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                MouseScrollCallback(window, x, y);
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->MouseScrollCallback(window, x, y);
     };
     glfwSetScrollCallback(window_, mouse_scroll_callback);
 
-    auto mouse_button_callback = [](GLFWwindow *window,
-            int button, int action, int mods)
-    {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                MouseButtonCallback(window, button, action, mods);
+    auto mouse_button_callback = [](GLFWwindow *window, int button, int action,
+                                    int mods) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->MouseButtonCallback(window, button, action, mods);
     };
     glfwSetMouseButtonCallback(window_, mouse_button_callback);
 
-    auto key_press_callback = [](GLFWwindow *window,
-            int key, int scancode, int action, int mods)
-    {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                KeyPressCallback(window, key, scancode, action, mods);
+    auto key_press_callback = [](GLFWwindow *window, int key, int scancode,
+                                 int action, int mods) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->KeyPressCallback(window, key, scancode, action, mods);
     };
     glfwSetKeyCallback(window_, key_press_callback);
 
     auto window_close_callback = [](GLFWwindow *window) {
-        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))->
-                WindowCloseCallback(window);
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+            ->WindowCloseCallback(window);
     };
     glfwSetWindowCloseCallback(window_, window_close_callback);
 
@@ -201,48 +194,42 @@ bool Visualizer::CreateVisualizerWindow(const std::string &window_name/* = "Open
     return true;
 }
 
-void Visualizer::DestroyVisualizerWindow()
-{
+void Visualizer::DestroyVisualizerWindow() {
     is_initialized_ = false;
     glfwDestroyWindow(window_);
 }
 
 void Visualizer::RegisterAnimationCallback(
-        std::function<bool (Visualizer *)> callback_func)
-{
+    std::function<bool(Visualizer *)> callback_func) {
     animation_callback_func_ = callback_func;
 }
 
-bool Visualizer::InitViewControl()
-{
+bool Visualizer::InitViewControl() {
     view_control_ptr_ = std::unique_ptr<ViewControl>(new ViewControl);
     ResetViewPoint();
     return true;
 }
 
-bool Visualizer::InitRenderOption()
-{
+bool Visualizer::InitRenderOption() {
     render_option_ptr_ = std::unique_ptr<RenderOption>(new RenderOption);
     return true;
 }
 
-void Visualizer::UpdateWindowTitle()
-{
+void Visualizer::UpdateWindowTitle() {
     if (window_ != NULL) {
         glfwSetWindowTitle(window_, window_name_.c_str());
     }
 }
 
-void Visualizer::BuildUtilities()
-{
+void Visualizer::BuildUtilities() {
     glfwMakeContextCurrent(window_);
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
     coordinate_frame_mesh_ptr_ = CreateMeshCoordinateFrame(
-            boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
+        boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
-            std::make_shared<glsl::CoordinateFrameRenderer>();
+        std::make_shared<glsl::CoordinateFrameRenderer>();
     if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
             coordinate_frame_mesh_ptr_) == false) {
         return;
@@ -251,8 +238,7 @@ void Visualizer::BuildUtilities()
     utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
 }
 
-void Visualizer::Run()
-{
+void Visualizer::Run() {
     BuildUtilities();
     UpdateWindowTitle();
     while (bool(animation_callback_func_) ? PollEvents() : WaitEvents()) {
@@ -268,14 +254,12 @@ void Visualizer::Run()
     }
 }
 
-void Visualizer::Close()
-{
+void Visualizer::Close() {
     glfwSetWindowShouldClose(window_, GL_TRUE);
     PrintDebug("[Visualizer] Window closing.\n");
 }
 
-bool Visualizer::WaitEvents()
-{
+bool Visualizer::WaitEvents() {
     if (is_initialized_ == false) {
         return false;
     }
@@ -288,8 +272,7 @@ bool Visualizer::WaitEvents()
     return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::PollEvents()
-{
+bool Visualizer::PollEvents() {
     if (is_initialized_ == false) {
         return false;
     }
@@ -302,39 +285,38 @@ bool Visualizer::PollEvents()
     return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
-{
+bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) {
     if (is_initialized_ == false) {
         return false;
     }
 
     glfwMakeContextCurrent(window_);
     if (geometry_ptr->GetGeometryType() ==
-            Geometry::GeometryType::Unspecified) {
+        Geometry::GeometryType::Unspecified) {
         return false;
     } else if (geometry_ptr->GetGeometryType() ==
-            Geometry::GeometryType::PointCloud) {
+               Geometry::GeometryType::PointCloud) {
         auto renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-            Geometry::GeometryType::LineSet) {
+               Geometry::GeometryType::LineSet) {
         auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-            Geometry::GeometryType::TriangleMesh) {
+               Geometry::GeometryType::TriangleMesh) {
         auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-            Geometry::GeometryType::Image) {
+               Geometry::GeometryType::Image) {
         auto renderer_ptr = std::make_shared<glsl::ImageRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
@@ -348,12 +330,11 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
     view_control_ptr_->FitInGeometry(*geometry_ptr);
     ResetViewPoint();
     PrintDebug("Add geometry and update bounding box to %s\n",
-            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+               view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
-bool Visualizer::UpdateGeometry()
-{
+bool Visualizer::UpdateGeometry() {
     glfwMakeContextCurrent(window_);
     bool success = true;
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
@@ -363,18 +344,11 @@ bool Visualizer::UpdateGeometry()
     return success;
 }
 
-void Visualizer::UpdateRender()
-{
-    is_redraw_required_ = true;
-}
+void Visualizer::UpdateRender() { is_redraw_required_ = true; }
 
-bool Visualizer::HasGeometry() const
-{
-    return !geometry_ptrs_.empty();
-}
+bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
-void Visualizer::PrintVisualizerHelp()
-{
+void Visualizer::PrintVisualizerHelp() {
     PrintInfo("  -- Mouse view control --\n");
     PrintInfo("    Left button + drag        : Rotate.\n");
     PrintInfo("    Ctrl + left button + drag : Translate.\n");
@@ -383,7 +357,8 @@ void Visualizer::PrintVisualizerHelp()
     PrintInfo("  -- Keyboard view control --\n");
     PrintInfo("    [/]          : Increase/decrease field of view.\n");
     PrintInfo("    R            : Reset view point.\n");
-    PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
+    PrintInfo(
+        "    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
     PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
     PrintInfo("\n");
     PrintInfo("  -- General control --\n");
@@ -391,13 +366,16 @@ void Visualizer::PrintVisualizerHelp()
     PrintInfo("    H            : Print help message.\n");
     PrintInfo("    P, PrtScn    : Take a screen capture.\n");
     PrintInfo("    D            : Take a depth capture.\n");
-    PrintInfo("    O            : Take a capture of current rendering settings.\n");
+    PrintInfo(
+        "    O            : Take a capture of current rendering settings.\n");
     PrintInfo("\n");
     PrintInfo("  -- Render mode control --\n");
     PrintInfo("    L            : Turn on/off lighting.\n");
     PrintInfo("    +/-          : Increase/decrease point size.\n");
     PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
-    PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
+    PrintInfo(
+        "    S            : Toggle between mesh flat shading and smooth "
+        "shading.\n");
     PrintInfo("    W            : Turn on/off mesh wireframe.\n");
     PrintInfo("    B            : Turn on/off back face rendering.\n");
     PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
@@ -413,7 +391,9 @@ void Visualizer::PrintVisualizerHelp()
     PrintInfo("                   4 - z coordinate as color.\n");
     PrintInfo("                   9 - normal as color.\n");
     PrintInfo("    Ctrl + 0..4,9: Set mesh color option.\n");
-    PrintInfo("                   0 - Default behavior, render uniform gray color.\n");
+    PrintInfo(
+        "                   0 - Default behavior, render uniform gray "
+        "color.\n");
     PrintInfo("                   1 - Render point color.\n");
     PrintInfo("                   2 - x coordinate as color.\n");
     PrintInfo("                   3 - y coordinate as color.\n");
@@ -428,4 +408,4 @@ void Visualizer::PrintVisualizerHelp()
     PrintInfo("\n");
 }
 
-}    // namespace open3d
+}  // namespace open3d

@@ -37,35 +37,35 @@
 using namespace open3d;
 
 std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
-        PreprocessPointCloud(const char* file_name)
-{
+PreprocessPointCloud(const char *file_name) {
     auto pcd = open3d::CreatePointCloudFromFile(file_name);
     auto pcd_down = VoxelDownSample(*pcd, 0.05);
     EstimateNormals(*pcd_down, open3d::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = ComputeFPFHFeature(
-            *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
+        *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
 void VisualizeRegistration(const open3d::PointCloud &source,
-        const open3d::PointCloud &target, const Eigen::Matrix4d &Transformation)
-{
+                           const open3d::PointCloud &target,
+                           const Eigen::Matrix4d &Transformation) {
     std::shared_ptr<PointCloud> source_transformed_ptr(new PointCloud);
     std::shared_ptr<PointCloud> target_ptr(new PointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
     source_transformed_ptr->Transform(Transformation);
-    DrawGeometries({ source_transformed_ptr, target_ptr }, "Registration result");
+    DrawGeometries({source_transformed_ptr, target_ptr}, "Registration result");
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
     if (argc != 3) {
-        PrintDebug("Usage : RegistrationRANSAC [path_to_first_point_cloud] [path_to_second_point_cloud]\n");
+        PrintDebug(
+            "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
+            "[path_to_second_point_cloud]\n");
         return 1;
     }
 
@@ -80,10 +80,8 @@ int main(int argc, char *argv[])
 
         std::shared_ptr<PointCloud> source, target;
         std::shared_ptr<Feature> source_fpfh, target_fpfh;
-        std::tie(source, source_fpfh) =
-            PreprocessPointCloud(argv[1]);
-        std::tie(target, target_fpfh) =
-            PreprocessPointCloud(argv[2]);
+        std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
+        std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
         std::vector<std::reference_wrapper<const CorrespondenceChecker>>
             correspondence_checker;
@@ -104,7 +102,7 @@ int main(int argc, char *argv[])
 
         if (visualization)
             VisualizeRegistration(*source, *target,
-                registration_result.transformation_);
+                                  registration_result.transformation_);
     }
 
     return 0;

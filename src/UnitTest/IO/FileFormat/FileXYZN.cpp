@@ -29,15 +29,9 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileXYZN, DISABLED_ReadPointCloudFromXYZN) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileXYZN, DISABLED_WritePointCloudToXYZN)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileXYZN, DISABLED_WritePointCloudToXYZN) { unit_test::NotImplemented(); }

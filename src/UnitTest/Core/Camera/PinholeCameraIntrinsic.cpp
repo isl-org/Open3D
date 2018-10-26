@@ -29,79 +29,65 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_Constructor)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_Destructor)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_MemberData)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_SetIntrinsics)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_SetIntrinsics) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_GetFocalLength)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_GetFocalLength) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_GetPrincipalPoint)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_GetPrincipalPoint) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_GetSkew)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_GetSkew) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraIntrinsic, DISABLED_IsValid) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PinholeCameraIntrinsic, DISABLED_ConvertToJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_IsValid)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_ConvertToJsonValue)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_ConvertFromJsonValue)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }

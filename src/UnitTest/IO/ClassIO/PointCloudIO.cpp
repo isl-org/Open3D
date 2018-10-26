@@ -29,119 +29,100 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile)
-{
+TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloud)
-{
+TEST(PointCloudIO, DISABLED_ReadPointCloud) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PointCloudIO, DISABLED_WritePointCloud) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZ) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloud)
-{
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZ) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZ)
-{
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZN) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloudToXYZ)
-{
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZN) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZN)
-{
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZRGB) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloudToXYZN)
-{
+TEST(PointCloudIO, DISABLED_WritePointCloudToXYZRGB) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromXYZRGB)
-{
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPLY) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloudToXYZRGB)
-{
+TEST(PointCloudIO, DISABLED_WritePointCloudToPLY) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromPLY)
-{
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPCD) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloudToPLY)
-{
+TEST(PointCloudIO, DISABLED_WritePointCloudToPCD) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromPCD)
-{
+TEST(PointCloudIO, DISABLED_ReadPointCloudFromPTS) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloudToPCD)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_ReadPointCloudFromPTS)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PointCloudIO, DISABLED_WritePointCloudToPTS)
-{
+TEST(PointCloudIO, DISABLED_WritePointCloudToPTS) {
     unit_test::NotImplemented();
 }

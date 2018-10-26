@@ -29,103 +29,78 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_Constructor)
-{
+TEST(RenderOption, DISABLED_Constructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RenderOption, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RenderOption, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RenderOption, DISABLED_ConvertToJsonValue) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RenderOption, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_Destructor)
-{
+TEST(RenderOption, DISABLED_ToggleLightOn) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RenderOption, DISABLED_ToggleInterpolationOption) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_MemberData)
-{
+TEST(RenderOption, DISABLED_ChangePointSize) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(RenderOption, DISABLED_TogglePointShowNormal) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ConvertToJsonValue)
-{
+TEST(RenderOption, DISABLED_ToggleShadingOption) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ConvertFromJsonValue)
-{
+TEST(RenderOption, DISABLED_ToggleMeshShowBackFace) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ToggleLightOn)
-{
+TEST(RenderOption, DISABLED_ToggleMeshShowWireframe) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ToggleInterpolationOption)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ChangePointSize)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_TogglePointShowNormal)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ToggleShadingOption)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ToggleMeshShowBackFace)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ToggleMeshShowWireframe)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(RenderOption, DISABLED_ToggleImageStretchOption)
-{
+TEST(RenderOption, DISABLED_ToggleImageStretchOption) {
     unit_test::NotImplemented();
 }

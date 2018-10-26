@@ -29,7 +29,4 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Helper, DISABLED_SplitString)
-{
-    unit_test::NotImplemented();
-}
+TEST(Helper, DISABLED_SplitString) { unit_test::NotImplemented(); }

@@ -29,87 +29,56 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_Compile)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_Compile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_Release)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_Release) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_BindGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_BindGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_RenderGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_RenderGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_UnbindGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_UnbindGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_PrepareRendering)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_PrepareRendering) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_PrepareBinding)
-{
-    unit_test::NotImplemented();
-}
+TEST(Simple2DShader, DISABLED_PrepareBinding) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Simple2DShader, DISABLED_Simple2DShaderForSelectionPolygon)
-{
+TEST(Simple2DShader, DISABLED_Simple2DShaderForSelectionPolygon) {
     unit_test::NotImplemented();
 }

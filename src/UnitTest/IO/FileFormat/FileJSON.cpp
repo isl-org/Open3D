@@ -29,48 +29,41 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONStream)
-{
+TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONStream) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONStream)
-{
+TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONStream) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSON)
-{
+TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSON) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSON)
-{
+TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSON) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONString)
-{
+TEST(FileJSON, DISABLED_ReadIJsonConvertibleFromJSONString) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONString)
-{
+TEST(FileJSON, DISABLED_WriteIJsonConvertibleToJSONString) {
     unit_test::NotImplemented();
 }
-

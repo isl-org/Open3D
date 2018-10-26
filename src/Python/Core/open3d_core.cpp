@@ -26,8 +26,7 @@
 
 #include "open3d_core.h"
 
-void pybind_core_classes(py::module &m)
-{
+void pybind_core_classes(py::module &m) {
     pybind_console(m);
     pybind_geometry(m);
     pybind_pointcloud(m);
@@ -44,8 +43,7 @@ void pybind_core_classes(py::module &m)
     pybind_colormap_optimization(m);
 }
 
-void pybind_core_methods(py::module &m)
-{
+void pybind_core_methods(py::module &m) {
     pybind_pointcloud_methods(m);
     pybind_lineset_methods(m);
     pybind_trianglemesh_methods(m);

@@ -38,31 +38,30 @@ class Geometry;
 class PointCloud;
 class TriangleMesh;
 
-class SelectionPolygonVolume : public IJsonConvertible
-{
-public:
+class SelectionPolygonVolume : public IJsonConvertible {
+   public:
     ~SelectionPolygonVolume() override {}
 
-public:
+   public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
     std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input) const;
-    std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input) const;
+    std::shared_ptr<TriangleMesh> CropTriangleMesh(
+        const TriangleMesh &input) const;
 
-
-private:
+   private:
     std::shared_ptr<PointCloud> CropPointCloudInPolygon(
-            const PointCloud &input) const;
+        const PointCloud &input) const;
     std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
-            const TriangleMesh &input) const;
+        const TriangleMesh &input) const;
     std::vector<size_t> CropInPolygon(
-            const std::vector<Eigen::Vector3d> &input) const;
+        const std::vector<Eigen::Vector3d> &input) const;
 
-public:
+   public:
     std::string orthogonal_axis_ = "";
     std::vector<Eigen::Vector3d> bounding_polygon_;
     double axis_min_ = 0.0;
     double axis_max_ = 0.0;
 };
 
-}   // namespace open3d
+}  // namespace open3d

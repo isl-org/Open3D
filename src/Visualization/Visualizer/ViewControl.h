@@ -34,9 +34,8 @@
 
 namespace open3d {
 
-class ViewControl
-{
-public:
+class ViewControl {
+   public:
     static const double FIELD_OF_VIEW_MAX;
     static const double FIELD_OF_VIEW_MIN;
     static const double FIELD_OF_VIEW_DEFAULT;
@@ -54,12 +53,12 @@ public:
         Orthogonal = 1,
     };
 
-public:
+   public:
     /// Function to set view points
     /// This function obtains OpenGL context and calls OpenGL functions to set
     /// the view point.
     void SetViewMatrices(
-            const Eigen::Matrix4d &model_matrix = Eigen::Matrix4d::Identity());
+        const Eigen::Matrix4d &model_matrix = Eigen::Matrix4d::Identity());
 
     /// Function to get equivalent view parameters (support orthogonal)
     bool ConvertToViewParameters(ViewParameters &status) const;
@@ -67,12 +66,11 @@ public:
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view)
-    bool ConvertToPinholeCameraParameters(
-            PinholeCameraIntrinsic &intrinsic,
-            Eigen::Matrix4d &extrinsic);
+    bool ConvertToPinholeCameraParameters(PinholeCameraIntrinsic &intrinsic,
+                                          Eigen::Matrix4d &extrinsic);
     bool ConvertFromPinholeCameraParameters(
-            const PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic);
+        const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic);
 
     ProjectionType GetProjectionType() const;
     void SetProjectionParameters();
@@ -99,15 +97,11 @@ public:
     /// Coordinates are measured in screen coordinates relative to the top-left
     /// corner of the window client area.
     virtual void Translate(double x, double y, double xo = 0.0,
-            double yo = 0.0);
+                           double yo = 0.0);
 
-    const BoundingBox &GetBoundingBox() const {
-        return bounding_box_;
-    }
+    const BoundingBox &GetBoundingBox() const { return bounding_box_; }
 
-    void ResetBoundingBox() {
-        bounding_box_.Reset();
-    }
+    void ResetBoundingBox() { bounding_box_.Reset(); }
 
     void FitInGeometry(const Geometry &geometry) {
         if (geometry.Dimension() == 3) {
@@ -133,7 +127,7 @@ public:
     double GetZNear() const { return z_near_; }
     double GetZFar() const { return z_far_; }
 
-protected:
+   protected:
     int window_width_ = 0;
     int window_height_ = 0;
     BoundingBox bounding_box_;
@@ -155,4 +149,4 @@ protected:
     GLHelper::GLMatrix4f MVP_matrix_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

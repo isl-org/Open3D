@@ -34,8 +34,7 @@ namespace open3d {
 /// Factory function to create a PoseGraph from a file
 /// (PinholeCameraTrajectoryFactory.cpp)
 /// Return an empty PinholeCameraTrajectory if fail to read the file.
-std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
-    const std::string &filename);
+std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(const std::string &filename);
 
 /// The general entrance for reading a PoseGraph from a file.
 /// The function calls read functions based on the extension name of filename.
@@ -47,4 +46,4 @@ bool ReadPoseGraph(const std::string &filename, PoseGraph &pose_graph);
 /// \return return true if the write function is successful, false otherwise.
 bool WritePoseGraph(const std::string &filename, const PoseGraph &pose_graph);
 
-}    // namespace open3d
+}  // namespace open3d

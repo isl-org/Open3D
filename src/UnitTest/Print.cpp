@@ -36,8 +36,7 @@ static const int TAB_SIZE = 4;
 // ----------------------------------------------------------------------------
 // Print an Eigen::Vector3i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Vector3i &v)
-{
+void unit_test::Print(const Eigen::Vector3i &v) {
     int width = 6;
 
     cout << setw(width) << v(0, 0) << ",";
@@ -49,8 +48,7 @@ void unit_test::Print(const Eigen::Vector3i &v)
 // ----------------------------------------------------------------------------
 // Print an Eigen::Vector3d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Vector3d &v)
-{
+void unit_test::Print(const Eigen::Vector3d &v) {
     int precision = 6;
     int width = 11;
 
@@ -66,20 +64,17 @@ void unit_test::Print(const Eigen::Vector3d &v)
 // ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector2i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector2i> &v)
-{
+void unit_test::Print(const vector<Eigen::Vector2i> &v) {
     int width = 6;
 
     cout << "    {";
     cout << endl;
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         cout << "        {";
         cout << setw(width) << v[i](0, 0) << ",";
         cout << setw(width) << v[i](1, 0);
         cout << " }";
-        if (i < (v.size() - 1))
-            cout << ",";
+        if (i < (v.size() - 1)) cout << ",";
         cout << endl;
     }
     cout << "    };";
@@ -89,21 +84,18 @@ void unit_test::Print(const vector<Eigen::Vector2i> &v)
 // ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector3i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector3i> &v)
-{
+void unit_test::Print(const vector<Eigen::Vector3i> &v) {
     int width = 6;
 
     cout << "    {";
     cout << endl;
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         cout << "        {";
         cout << setw(width) << v[i](0, 0) << ",";
         cout << setw(width) << v[i](1, 0) << ",";
         cout << setw(width) << v[i](2, 0);
         cout << " }";
-        if (i < (v.size() - 1))
-            cout << ",";
+        if (i < (v.size() - 1)) cout << ",";
         cout << endl;
     }
     cout << "    };";
@@ -113,8 +105,7 @@ void unit_test::Print(const vector<Eigen::Vector3i> &v)
 // ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector3d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector3d> &v)
-{
+void unit_test::Print(const vector<Eigen::Vector3d> &v) {
     int precision = 6;
     int width = 12;
 
@@ -123,15 +114,13 @@ void unit_test::Print(const vector<Eigen::Vector3d> &v)
 
     cout << "    {";
     cout << endl;
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         cout << "        {";
         cout << setw(width) << v[i](0, 0) << ",";
         cout << setw(width) << v[i](1, 0) << ",";
         cout << setw(width) << v[i](2, 0);
         cout << " }";
-        if (i < (v.size() - 1))
-            cout << ",";
+        if (i < (v.size() - 1)) cout << ",";
         cout << endl;
     }
     cout << "    };";
@@ -141,23 +130,21 @@ void unit_test::Print(const vector<Eigen::Vector3d> &v)
 // ----------------------------------------------------------------------------
 // Print a uint8_t vector.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<uint8_t> &v)
-{
+void unit_test::Print(const vector<uint8_t> &v) {
     int width = 5;
     size_t cols = 10;
-    size_t rows = (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols)  + 1;
+    size_t rows =
+        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << setw(TAB_SIZE) << "";
     cout << "{";
     cout << endl;
 
-    for (size_t r = 0; r < rows; r++)
-    {
+    for (size_t r = 0; r < rows; r++) {
         cout << setw(TAB_SIZE) << "";
         cout << setw(TAB_SIZE) << "";
 
-        for (size_t c = 0; c < cols; c++)
-        {
+        for (size_t c = 0; c < cols; c++) {
             int i = r * cols + c;
 
             cout << setw(width) << (int)v[i];
@@ -179,23 +166,21 @@ void unit_test::Print(const vector<uint8_t> &v)
 // ----------------------------------------------------------------------------
 // Print a int vector.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<int> &v)
-{
+void unit_test::Print(const vector<int> &v) {
     int width = 6;
     size_t cols = 10;
-    size_t rows = (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols)  + 1;
+    size_t rows =
+        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << setw(TAB_SIZE) << "";
     cout << "{";
     cout << endl;
 
-    for (size_t r = 0; r < rows; r++)
-    {
+    for (size_t r = 0; r < rows; r++) {
         cout << setw(TAB_SIZE) << "";
         cout << setw(TAB_SIZE) << "";
 
-        for (size_t c = 0; c < cols; c++)
-        {
+        for (size_t c = 0; c < cols; c++) {
             int i = r * cols + c;
 
             cout << setw(width) << v[i];
@@ -217,23 +202,21 @@ void unit_test::Print(const vector<int> &v)
 // ----------------------------------------------------------------------------
 // Print a size_t vector.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<size_t> &v)
-{
+void unit_test::Print(const vector<size_t> &v) {
     int width = 6;
     size_t cols = 10;
-    size_t rows = (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols)  + 1;
+    size_t rows =
+        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << setw(TAB_SIZE) << "";
     cout << "{";
     cout << endl;
 
-    for (size_t r = 0; r < rows; r++)
-    {
+    for (size_t r = 0; r < rows; r++) {
         cout << setw(TAB_SIZE) << "";
         cout << setw(TAB_SIZE) << "";
 
-        for (size_t c = 0; c < cols; c++)
-        {
+        for (size_t c = 0; c < cols; c++) {
             int i = r * cols + c;
 
             cout << setw(width) << v[i];
@@ -255,12 +238,12 @@ void unit_test::Print(const vector<size_t> &v)
 // ----------------------------------------------------------------------------
 // Print a float vector.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<float> &v)
-{
+void unit_test::Print(const vector<float> &v) {
     int precision = 6;
     int width = 12;
     size_t cols = 5;
-    size_t rows = (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols)  + 1;
+    size_t rows =
+        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << fixed;
     cout << setprecision(precision);
@@ -269,13 +252,11 @@ void unit_test::Print(const vector<float> &v)
     cout << "{";
     cout << endl;
 
-    for (size_t r = 0; r < rows; r++)
-    {
+    for (size_t r = 0; r < rows; r++) {
         cout << setw(TAB_SIZE) << "";
         cout << setw(TAB_SIZE) << "";
 
-        for (size_t c = 0; c < cols; c++)
-        {
+        for (size_t c = 0; c < cols; c++) {
             int i = r * cols + c;
 
             cout << setw(width) << v[i];
@@ -297,12 +278,12 @@ void unit_test::Print(const vector<float> &v)
 // ----------------------------------------------------------------------------
 // Print a double vector.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<double> &v)
-{
+void unit_test::Print(const vector<double> &v) {
     int precision = 6;
     int width = 12;
     size_t cols = 5;
-    size_t rows = (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols)  + 1;
+    size_t rows =
+        (v.size() % cols) == 0 ? (v.size() / cols) : (v.size() / cols) + 1;
 
     cout << fixed;
     cout << setprecision(precision);
@@ -311,13 +292,11 @@ void unit_test::Print(const vector<double> &v)
     cout << "{";
     cout << endl;
 
-    for (size_t r = 0; r < rows; r++)
-    {
+    for (size_t r = 0; r < rows; r++) {
         cout << setw(TAB_SIZE) << "";
         cout << setw(TAB_SIZE) << "";
 
-        for (size_t c = 0; c < cols; c++)
-        {
+        for (size_t c = 0; c < cols; c++) {
             int i = r * cols + c;
 
             cout << setw(width) << v[i];

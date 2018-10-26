@@ -29,39 +29,28 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption)
-{
+TEST(ColorMapOptmization, DISABLED_ColorMapOptmizationOption) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMapOptmization, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMapOptmization, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMapOptmization, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMapOptmization, DISABLED_ColorMapOptmization)
-{
+TEST(ColorMapOptmization, DISABLED_ColorMapOptmization) {
     unit_test::NotImplemented();
 }

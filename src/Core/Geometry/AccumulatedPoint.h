@@ -32,22 +32,21 @@ namespace open3d {
 
 class PointCloud;
 
-class AccumulatedPoint
-{
-public:
+class AccumulatedPoint {
+   public:
     AccumulatedPoint();
 
-public:
+   public:
     void AddPoint(const PointCloud &cloud, int index);
     Eigen::Vector3d GetAveragePoint() const;
     Eigen::Vector3d GetAverageNormal() const;
     Eigen::Vector3d GetAverageColor() const;
 
-private:
+   private:
     int num_of_points_;
     Eigen::Vector3d point_;
     Eigen::Vector3d normal_;
     Eigen::Vector3d color_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

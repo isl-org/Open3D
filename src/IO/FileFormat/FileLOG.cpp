@@ -34,19 +34,19 @@
 // http://redwood-data.org/indoor/fileformat.html
 // https://github.com/qianyizh/ElasticReconstruction/blob/f986e81a46201e28c0408a5f6303b4d3cdac7423/GraphOptimizer/helper.h
 
-namespace open3d{
+namespace open3d {
 
 bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
-        PinholeCameraTrajectory &trajectory)
-{
+                                        PinholeCameraTrajectory &trajectory) {
     if (trajectory.intrinsic_.IsValid() == false) {
         trajectory.intrinsic_ = PinholeCameraIntrinsic(
-                PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
     trajectory.extrinsic_.clear();
-    FILE * f = fopen(filename.c_str(), "r");
+    FILE *f = fopen(filename.c_str(), "r");
     if (f == NULL) {
-        PrintWarning("Read LOG failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Read LOG failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -64,32 +64,32 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
                 fclose(f);
                 return false;
             } else {
-                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0,0), &trans(0,1),
-                        &trans(0,2), &trans(0,3));
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(0, 0),
+                       &trans(0, 1), &trans(0, 2), &trans(0, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
                 PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
-                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1,0), &trans(1,1),
-                        &trans(1,2), &trans(1,3));
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(1, 0),
+                       &trans(1, 1), &trans(1, 2), &trans(1, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
                 PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
-                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2,0), &trans(2,1),
-                        &trans(2,2), &trans(2,3));
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(2, 0),
+                       &trans(2, 1), &trans(2, 2), &trans(2, 3));
             }
             if (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f) == 0) {
                 PrintWarning("Read LOG failed: unrecognized format.\n");
                 fclose(f);
                 return false;
             } else {
-                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3,0), &trans(3,1),
-                        &trans(3,2), &trans(3,3));
+                sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3, 0),
+                       &trans(3, 1), &trans(3, 2), &trans(3, 3));
             }
             trajectory.extrinsic_.push_back(trans.inverse());
         }
@@ -98,28 +98,28 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
     return true;
 }
 
-bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
-        const PinholeCameraTrajectory &trajectory)
-{
-    FILE * f = fopen( filename.c_str(), "w" );
+bool WritePinholeCameraTrajectoryToLOG(
+    const std::string &filename, const PinholeCameraTrajectory &trajectory) {
+    FILE *f = fopen(filename.c_str(), "w");
     if (f == NULL) {
-        PrintWarning("Write LOG failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Write LOG failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
-    for (size_t i = 0; i < trajectory.extrinsic_.size(); i++ ) {
+    for (size_t i = 0; i < trajectory.extrinsic_.size(); i++) {
         const auto &trans = trajectory.extrinsic_[i];
         fprintf(f, "%d %d %d\n", (int)i, (int)i, (int)i + 1);
-        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0,0), trans(0,1), trans(0,2),
-                trans(0,3) );
-        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(1,0), trans(1,1), trans(1,2),
-                trans(1,3) );
-        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(2,0), trans(2,1), trans(2,2),
-                trans(2,3) );
-        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(3,0), trans(3,1), trans(3,2),
-                trans(3,3) );
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(0, 0), trans(0, 1),
+                trans(0, 2), trans(0, 3));
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(1, 0), trans(1, 1),
+                trans(1, 2), trans(1, 3));
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(2, 0), trans(2, 1),
+                trans(2, 2), trans(2, 3));
+        fprintf(f, "%.8f %.8f %.8f %.8f\n", trans(3, 0), trans(3, 1),
+                trans(3, 2), trans(3, 3));
     }
-    fclose( f );
+    fclose(f);
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

@@ -33,24 +33,25 @@ namespace open3d {
 class SelectionPolygon;
 class PointCloudPicker;
 
-class VisualizerWithEditing : public Visualizer
-{
-public:
+class VisualizerWithEditing : public Visualizer {
+   public:
     enum class SelectionMode {
         None = 0,
         Rectangle = 1,
         Polygon = 2,
     };
 
-public:
+   public:
     VisualizerWithEditing(double voxel_size = -1.0, bool use_dialog = true,
-            const std::string &directory = "") : voxel_size_(voxel_size),
-            use_dialog_(use_dialog), default_directory_(directory) {}
+                          const std::string &directory = "")
+        : voxel_size_(voxel_size),
+          use_dialog_(use_dialog),
+          default_directory_(directory) {}
     ~VisualizerWithEditing() override {}
     VisualizerWithEditing(const VisualizerWithEditing &) = delete;
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
-public:
+   public:
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
@@ -58,29 +59,29 @@ public:
     int PickPoint(double x, double y);
     std::vector<size_t> &GetPickedPoints();
 
-protected:
+   protected:
     bool InitViewControl() override;
     bool InitRenderOption() override;
     void WindowResizeCallback(GLFWwindow *window, int w, int h) override;
-    void MouseMoveCallback(GLFWwindow* window, double x, double y) override;
-    void MouseScrollCallback(GLFWwindow* window, double x, double y) override;
-    void MouseButtonCallback(GLFWwindow* window,
-            int button, int action, int mods) override;
-    void KeyPressCallback(GLFWwindow *window,
-            int key, int scancode, int action, int mods) override;
+    void MouseMoveCallback(GLFWwindow *window, double x, double y) override;
+    void MouseScrollCallback(GLFWwindow *window, double x, double y) override;
+    void MouseButtonCallback(GLFWwindow *window, int button, int action,
+                             int mods) override;
+    void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
+                          int mods) override;
     void InvalidateSelectionPolygon();
     void InvalidatePicking();
     void SaveCroppingResult(const std::string &filename = "");
 
-protected:
+   protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
     std::shared_ptr<glsl::SelectionPolygonRenderer>
-            selection_polygon_renderer_ptr_;
+        selection_polygon_renderer_ptr_;
     SelectionMode selection_mode_ = SelectionMode::None;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>
-            pointcloud_picker_renderer_ptr_;
+        pointcloud_picker_renderer_ptr_;
 
     std::shared_ptr<const Geometry> original_geometry_ptr_;
     std::shared_ptr<Geometry> editing_geometry_ptr_;
@@ -91,4 +92,4 @@ protected:
     std::string default_directory_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

@@ -29,55 +29,34 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_CreateImageFromFile)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_CreateImageFromFile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_ReadImage)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_ReadImage) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_WriteImage)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_WriteImage) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_ReadImageFromPNG)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_ReadImageFromPNG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_WriteImageToPNG)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_WriteImageToPNG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_ReadImageFromJPG)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_ReadImageFromJPG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ImageIO, DISABLED_WriteImageToJPG)
-{
-    unit_test::NotImplemented();
-}
+TEST(ImageIO, DISABLED_WriteImageToJPG) { unit_test::NotImplemented(); }

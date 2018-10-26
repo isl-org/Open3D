@@ -28,41 +28,44 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     PrintInfo("Usage:\n");
-    PrintInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]\n");
+    PrintInfo(
+        "    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file "
+        "[options]\n");
     PrintInfo("      Manually crop geometry in speficied file.\n");
     PrintInfo("\n");
     PrintInfo("Options:\n");
-    PrintInfo("    --pointcloud,             : Read geometry as point cloud.\n");
+    PrintInfo(
+        "    --pointcloud,             : Read geometry as point cloud.\n");
     PrintInfo("    --mesh,                   : Read geometry as mesh.\n");
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
     PrintInfo("    --voxel_size d            : Set downsample voxel size.\n");
-    PrintInfo("    --without_dialog          : Disable dialogs. Default files will be used.\n");
+    PrintInfo(
+        "    --without_dialog          : Disable dialogs. Default files will "
+        "be used.\n");
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
 
     if (argc < 2 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 0;
     }
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
-    double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
-            -1.0);
+    double voxel_size =
+        GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
     bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
 
     VisualizerWithEditing vis(voxel_size, with_dialog,
-            filesystem::GetFileParentDirectory(argv[1]));
+                              filesystem::GetFileParentDirectory(argv[1]));
     vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);
     if (ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd_ptr = CreatePointCloudFromFile(argv[2]);

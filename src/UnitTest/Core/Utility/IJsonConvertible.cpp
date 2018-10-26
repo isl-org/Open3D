@@ -29,119 +29,98 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_Constructor)
-{
+TEST(IJsonConvertible, DISABLED_Constructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(IJsonConvertible, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(IJsonConvertible, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(IJsonConvertible, DISABLED_ConvertToJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_Destructor)
-{
+TEST(IJsonConvertible, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_MemberData)
-{
+TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_ConvertToJsonValue)
-{
+TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_ConvertFromJsonValue)
-{
+TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix6dToJsonArray)
-{
+TEST(IJsonConvertible, DISABLED_EigenMatrix6dToJsonArray) {
     unit_test::NotImplemented();
 }

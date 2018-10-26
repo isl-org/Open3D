@@ -29,18 +29,13 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-PinholeCameraTrajectory::PinholeCameraTrajectory()
-{
-}
+PinholeCameraTrajectory::PinholeCameraTrajectory() {}
 
-PinholeCameraTrajectory::~PinholeCameraTrajectory()
-{
-}
+PinholeCameraTrajectory::~PinholeCameraTrajectory() {}
 
-bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
-{
+bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const {
     Json::Value trajectory_array;
     for (const auto &status : extrinsic_) {
         Json::Value status_object;
@@ -59,16 +54,19 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
-{
+bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
+        PrintWarning(
+            "PinholeCameraTrajectory read JSON failed: unsupported json "
+            "format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PinholeCameraTrajectory" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning(
+            "PinholeCameraTrajectory read JSON failed: unsupported json "
+            "format.\n");
         return false;
     }
     if (intrinsic_.ConvertFromJsonValue(value["intrinsic"]) == false) {
@@ -76,7 +74,8 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
     }
     const Json::Value &trajectory_array = value["extrinsic"];
     if (trajectory_array.size() == 0) {
-        PrintWarning("PinholeCameraTrajectory read JSON failed: empty trajectory.\n");
+        PrintWarning(
+            "PinholeCameraTrajectory read JSON failed: empty trajectory.\n");
         return false;
     }
     extrinsic_.resize(trajectory_array.size());
@@ -89,4 +88,4 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

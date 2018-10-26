@@ -60,11 +60,12 @@ bool FileExists(const std::string &filename);
 bool RemoveFile(const std::string &filename);
 
 bool ListFilesInDirectory(const std::string &directory,
-        std::vector<std::string> &filenames);
+                          std::vector<std::string> &filenames);
 
 bool ListFilesInDirectoryWithExtension(const std::string &directory,
-        const std::string &extname, std::vector<std::string> &filenames);
+                                       const std::string &extname,
+                                       std::vector<std::string> &filenames);
 
-}    // namespace open3d::filesystem
+}  // namespace filesystem
 
-}    // namespace open3d
+}  // namespace open3d

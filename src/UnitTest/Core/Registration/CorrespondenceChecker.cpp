@@ -29,55 +29,46 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_Constructor)
-{
+TEST(CorrespondenceChecker, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_Destructor)
-{
+TEST(CorrespondenceChecker, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_MemberData)
-{
+TEST(CorrespondenceChecker, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_Check)
-{
+TEST(CorrespondenceChecker, DISABLED_Check) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnEdgeLength)
-{
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnDistance)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal)
-{
+TEST(CorrespondenceChecker, DISABLED_CorrespondenceCheckerBasedOnNormal) {
     unit_test::NotImplemented();
 }

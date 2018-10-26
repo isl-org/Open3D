@@ -29,23 +29,14 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePNG, DISABLED_SetPNGImageFromImage)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePNG, DISABLED_SetPNGImageFromImage) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePNG, DISABLED_ReadImageFromPNG)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePNG, DISABLED_ReadImageFromPNG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePNG, DISABLED_WriteImageToPNG)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePNG, DISABLED_WriteImageToPNG) { unit_test::NotImplemented(); }

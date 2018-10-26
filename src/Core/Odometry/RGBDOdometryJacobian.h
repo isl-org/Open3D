@@ -42,25 +42,23 @@ class RGBDImage;
 typedef std::vector<Eigen::Vector4i> CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
-class RGBDOdometryJacobian
-{
-public:
+class RGBDOdometryJacobian {
+   public:
     RGBDOdometryJacobian() {}
     virtual ~RGBDOdometryJacobian() {}
 
-public:
+   public:
     /// Function to compute i-th row of J and r
     /// the vector form of J_r is basically 6x1 matrix, but it can be
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
-            const RGBDImage &source, const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
-            const CorrespondenceSetPixelWise &corresps) const = 0;
+        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+        const RGBDImage &source, const RGBDImage &target,
+        const Image &source_xyz, const RGBDImage &target_dx,
+        const RGBDImage &target_dy, const Eigen::Matrix3d &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
+        const CorrespondenceSetPixelWise &corresps) const = 0;
 };
 
 /// Function to Compute Jacobian using color term
@@ -69,21 +67,19 @@ public:
 /// F. Steinbrucker, J. Sturm, and D. Cremers.
 /// Real-time visual odometry from dense RGB-D images.
 /// In ICCV Workshops, 2011.
-class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian
-{
-public:
+class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
+   public:
     RGBDOdometryJacobianFromColorTerm() {}
     ~RGBDOdometryJacobianFromColorTerm() override {}
 
-public:
+   public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
-            const RGBDImage &source, const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
-            const CorrespondenceSetPixelWise &corresps) const override;
+        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+        const RGBDImage &source, const RGBDImage &target,
+        const Image &source_xyz, const RGBDImage &target_dx,
+        const RGBDImage &target_dy, const Eigen::Matrix3d &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
+        const CorrespondenceSetPixelWise &corresps) const override;
 };
 
 /// Function to Compute Jacobian using hybrid term
@@ -91,21 +87,19 @@ public:
 /// reference:
 /// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission
-class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian
-{
-public:
+class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
+   public:
     RGBDOdometryJacobianFromHybridTerm() {}
     ~RGBDOdometryJacobianFromHybridTerm() override {}
 
-public:
+   public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
-            const RGBDImage &source, const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
-            const CorrespondenceSetPixelWise &corresps) const override;
+        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+        const RGBDImage &source, const RGBDImage &target,
+        const Image &source_xyz, const RGBDImage &target_dx,
+        const RGBDImage &target_dy, const Eigen::Matrix3d &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
+        const CorrespondenceSetPixelWise &corresps) const override;
 };
 
-}    // namespace open3d
+}  // namespace open3d

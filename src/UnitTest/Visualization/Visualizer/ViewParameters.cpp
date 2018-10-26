@@ -29,55 +29,42 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_Constructor)
-{
+TEST(ViewParameters, DISABLED_Constructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ViewParameters, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ViewParameters, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ViewParameters, DISABLED_ConvertToVector17d) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_Destructor)
-{
+TEST(ViewParameters, DISABLED_ConvertFromVector17d) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_MemberData)
-{
+TEST(ViewParameters, DISABLED_ConvertToJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_ConvertToVector17d)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_ConvertFromVector17d)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_ConvertToJsonValue)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ViewParameters, DISABLED_ConvertFromJsonValue)
-{
+TEST(ViewParameters, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }

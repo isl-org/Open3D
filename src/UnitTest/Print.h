@@ -32,35 +32,34 @@
 
 #include <Eigen/Core>
 
-namespace unit_test
-{
-    // Print an Eigen::Vector3i.
-    void Print(const Eigen::Vector3i &v);
+namespace unit_test {
+// Print an Eigen::Vector3i.
+void Print(const Eigen::Vector3i &v);
 
-    // Print an Eigen::Vector3d.
-    void Print(const Eigen::Vector3d &v);
+// Print an Eigen::Vector3d.
+void Print(const Eigen::Vector3d &v);
 
-    // Print a vector of Eigen::Vector2i.
-    void Print(const std::vector<Eigen::Vector2i> &v);
+// Print a vector of Eigen::Vector2i.
+void Print(const std::vector<Eigen::Vector2i> &v);
 
-    // Print a vector of Eigen::Vector3i.
-    void Print(const std::vector<Eigen::Vector3i> &v);
+// Print a vector of Eigen::Vector3i.
+void Print(const std::vector<Eigen::Vector3i> &v);
 
-    // Print a vector of Eigen::Vector3d.
-    void Print(const std::vector<Eigen::Vector3d> &v);
+// Print a vector of Eigen::Vector3d.
+void Print(const std::vector<Eigen::Vector3d> &v);
 
-    // Print a uint8_t vector.
-    void Print(const std::vector<uint8_t> &v);
+// Print a uint8_t vector.
+void Print(const std::vector<uint8_t> &v);
 
-    // Print an int vector.
-    void Print(const std::vector<int> &v);
+// Print an int vector.
+void Print(const std::vector<int> &v);
 
-    // Print a size_t vector.
-    void Print(const std::vector<size_t> &v);
+// Print a size_t vector.
+void Print(const std::vector<size_t> &v);
 
-    // Print a float vector.
-    void Print(const std::vector<float> &v);
+// Print a float vector.
+void Print(const std::vector<float> &v);
 
-    // Print a double vector.
-    void Print(const std::vector<double> &v);
-}
+// Print a double vector.
+void Print(const std::vector<double> &v);
+}  // namespace unit_test

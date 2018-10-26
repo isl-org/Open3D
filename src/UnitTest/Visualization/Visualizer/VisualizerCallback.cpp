@@ -29,95 +29,77 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_Render)
-{
+TEST(VisualizerCallback, DISABLED_Render) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(VisualizerCallback, DISABLED_PrintDebug) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(VisualizerCallback, DISABLED_ResetViewPoint) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_PrintDebug)
-{
+TEST(VisualizerCallback, DISABLED_CopyViewStatusToClipboard) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_ResetViewPoint)
-{
+TEST(VisualizerCallback, DISABLED_CopyViewStatusFromClipboard) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_CopyViewStatusToClipboard)
-{
+TEST(VisualizerCallback, DISABLED_Close) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(VisualizerCallback, DISABLED_PrintVisualizerHelp) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_CopyViewStatusFromClipboard)
-{
+TEST(VisualizerCallback, DISABLED_CaptureScreenImage) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_Close)
-{
+TEST(VisualizerCallback, DISABLED_CaptureDepthImage) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_PrintVisualizerHelp)
-{
+TEST(VisualizerCallback, DISABLED_CaptureRenderOption) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_CaptureScreenImage)
-{
+TEST(VisualizerCallback, DISABLED_UpdateGeometry) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_CaptureDepthImage)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_CaptureRenderOption)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_UpdateGeometry)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(VisualizerCallback, DISABLED_SetGlobalColorMap)
-{
+TEST(VisualizerCallback, DISABLED_SetGlobalColorMap) {
     unit_test::NotImplemented();
 }

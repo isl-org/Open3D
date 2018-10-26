@@ -29,39 +29,34 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_Constructor)
-{
+TEST(PinholeCameraTrajectory, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_Destructor)
-{
+TEST(PinholeCameraTrajectory, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_MemberData)
-{
+TEST(PinholeCameraTrajectory, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue)
-{
+TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_ConvertFromJsonValue)
-{
+TEST(PinholeCameraTrajectory, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }
