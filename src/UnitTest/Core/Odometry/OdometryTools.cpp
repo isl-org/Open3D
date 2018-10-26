@@ -73,7 +73,7 @@ void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step)
 // ----------------------------------------------------------------------------
 // Shift the pixels up with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftUP(shared_ptr<Image> image, const int& step)
+void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step)
 {
     int width = image->width_;
     int height = image->height_;

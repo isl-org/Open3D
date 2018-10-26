@@ -44,5 +44,5 @@ namespace odometry_tools
     void ShiftLeft(std::shared_ptr<open3d::Image> image, const int& step);
 
     // Shift the pixels up with a specified step.
-    void ShiftUP(std::shared_ptr<open3d::Image> image, const int& step);
+    void ShiftUp(std::shared_ptr<open3d::Image> image, const int& step);
 }
