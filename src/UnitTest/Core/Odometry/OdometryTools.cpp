@@ -33,13 +33,13 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-shared_ptr<Image> odometry_tools::GenerateImage(const int width,
-                                               const int height,
-                                               const int num_of_channels,
-                                               const int bytes_per_channel,
-                                               const float& vmin,
-                                               const float& vmax,
-                                               const int& seed)
+shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
+                                                const int& height,
+                                                const int& num_of_channels,
+                                                const int& bytes_per_channel,
+                                                const float& vmin,
+                                                const float& vmax,
+                                                const int& seed)
 {
     Image image;
 
@@ -73,7 +73,7 @@ void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step)
 // ----------------------------------------------------------------------------
 // Shift the pixels up with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftUP(shared_ptr<Image> image, const int& step)
+void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step)
 {
     int width = image->width_;
     int height = image->height_;
