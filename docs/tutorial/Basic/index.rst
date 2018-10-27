@@ -15,3 +15,4 @@ This page includes a number of basic functions using Open3D Python interface.
     kdtree
     icp_registration
     working_with_numpy
+    jupyter
