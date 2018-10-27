@@ -12,7 +12,7 @@ This page explains how to create a CMake based C++ project using the Open3D C++ 
 Install open3d from source
 ==========================
 
-For installing from source see :ref:`getting_started_compilation`.
+For installing from source see :ref:`compilation`.
 
 .. _create_cplusplus_project:
 
