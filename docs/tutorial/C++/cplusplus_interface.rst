@@ -50,6 +50,6 @@ This section of the ``CMakeLists.txt`` specifies the installed Open3D include di
 
 .. literalinclude:: ../../_static/C++/CMakeLists.txt
    :language: cmake
-   :lineno-start: 21
-   :lines: 21-41
+   :lineno-start: 40
+   :lines: 40-46
    :linenos:
