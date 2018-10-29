@@ -26,44 +26,74 @@
 
 #include "UnitTest.h"
 
+#include "Core/Utility/FileSystem.h"
+
+using namespace open3d;
+using namespace std;
+using namespace unit_test;
+
 // ----------------------------------------------------------------------------
-//
+// Get the file extension and convert to lower case.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileExtensionInLowerCase)
+TEST(FileSystem, GetFileExtensionInLowerCase)
 {
-    unit_test::NotImplemented();
+    string path = "test/fileExtension/fileName.EXT";
+
+    string output;
+    output = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", output);
+}
+
+// ----------------------------------------------------------------------------
+// Should return the file name only, without extension.
+// What it actually does is return the full path without the extension.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetFileNameWithoutExtension)
+{
+    string path = "test/fileExtension/fileName.ext";
+
+    string output;
+    output = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/fileExtension/fileName", output);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileNameWithoutExtension)
+TEST(FileSystem, GetFileNameWithoutDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test/fileExtension/fileName.ext";
+
+    string output;
+    output = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName.ext", output);
 }
 
 // ----------------------------------------------------------------------------
-//
+// Get parent directory, terminated in '/'.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileNameWithoutDirectory)
+TEST(FileSystem, GetFileParentDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test/fileExtension/fileName.ext";
+
+    string output;
+    output = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/fileExtension/", output);
 }
 
 // ----------------------------------------------------------------------------
-//
+// Add '/' at the end of the input path, if missing.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileParentDirectory)
+TEST(FileSystem, GetRegularizedDirectoryName)
 {
-    unit_test::NotImplemented();
-}
+    string path = "test/fileExtension";
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetRegularizedDirectoryName)
-{
-    unit_test::NotImplemented();
+    string output;
+    output = filesystem::GetRegularizedDirectoryName(path);
+    EXPECT_EQ("test/fileExtension/", output);
+
+    output = filesystem::GetRegularizedDirectoryName(output);
+    EXPECT_EQ("test/fileExtension/", output);
 }
 
 // ----------------------------------------------------------------------------
@@ -71,47 +101,136 @@ TEST(FileSystem, DISABLED_GetRegularizedDirectoryName)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DISABLED_GetWorkingDirectory)
 {
-    unit_test::NotImplemented();
+    string cwd = filesystem::GetWorkingDirectory();
+
+    cout << cwd << endl;
 }
 
 // ----------------------------------------------------------------------------
-//
+// Change the working directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ChangeWorkingDirectory)
+TEST(FileSystem, ChangeWorkingDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test";
+
+    bool output;
+
+    output = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(output);
+
+    output = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(output);
+
+    string cwd = filesystem::GetWorkingDirectory();
+
+    EXPECT_EQ(path, filesystem::GetFileNameWithoutDirectory(cwd));
+
+    output = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(output);
 }
 
 // ----------------------------------------------------------------------------
-//
+// Check if a path exists.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_DirectoryExists)
+TEST(FileSystem, DirectoryExists)
 {
-    unit_test::NotImplemented();
+    string path = "test/fileExtension";
+
+    bool output;
+
+    // path doesn't exist yet
+    output = filesystem::DirectoryExists(path);
+    EXPECT_FALSE(output);
+
+    // create the path
+    output = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(output);
+
+    // path exists
+    output = filesystem::DirectoryExists(path);
+    EXPECT_TRUE(output);
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    output = filesystem::ChangeWorkingDirectory("test");
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory("fileExtension");
+    EXPECT_TRUE(output);
+
+    output = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(output);
 }
 
 // ----------------------------------------------------------------------------
-//
+// Make a directory.
+// Return true if the directory was created.
+// Return false otherwise. This could mean that the directory already exists.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_MakeDirectory)
+TEST(FileSystem, MakeDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test";
+
+    bool output;
+
+    output = filesystem::MakeDirectory(path);
+    EXPECT_TRUE(output);
+
+    output = filesystem::MakeDirectory(path);
+    EXPECT_FALSE(output);
+
+    output = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(output);
 }
 
 // ----------------------------------------------------------------------------
-//
+// Make a hierarchy of directories. Equivalent to 'mkdir -p ...'.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_MakeDirectoryHierarchy)
+TEST(FileSystem, MakeDirectoryHierarchy)
 {
-    unit_test::NotImplemented();
+    string path = "test/fileExtension";
+
+    bool output;
+
+    output = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(output);
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    output = filesystem::ChangeWorkingDirectory("test");
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory("fileExtension");
+    EXPECT_TRUE(output);
+
+    output = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(output);
 }
 
 // ----------------------------------------------------------------------------
-//
+// Note: DeleteDirectory can delete one dir at a time.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_DeleteDirectory)
+TEST(FileSystem, DeleteDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test";
+
+    bool output;
+
+    output = filesystem::MakeDirectory(path);
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory(path);
+    EXPECT_TRUE(output);
+
+    output = filesystem::DeleteDirectory(path);
+    EXPECT_FALSE(output);
 }
 
 // ----------------------------------------------------------------------------
