@@ -42,14 +42,14 @@ This technique is required when installing Open3D to a user location rather than
 
 .. literalinclude:: ../../_static/C++/CMakeLists.txt
    :language: cmake
-   :lineno-start: 5
-   :lines: 5
+   :lineno-start: 13
+   :lines: 13-18
    :linenos:
 
 This section of the ``CMakeLists.txt`` specifies the installed Open3D include directories, libraries and library directories.
 
 .. literalinclude:: ../../_static/C++/CMakeLists.txt
    :language: cmake
-   :lineno-start: 21
-   :lines: 21-41
+   :lineno-start: 40
+   :lines: 40-46
    :linenos:
