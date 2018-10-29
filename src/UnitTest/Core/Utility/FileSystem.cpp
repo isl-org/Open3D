@@ -27,6 +27,8 @@
 #include "UnitTest.h"
 
 #include "Core/Utility/FileSystem.h"
+#include <sys/stat.h>
+#include <fcntl.h>
 
 using namespace open3d;
 using namespace std;
@@ -37,11 +39,11 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileExtensionInLowerCase)
 {
-    string path = "test/fileExtension/fileName.EXT";
+    string path = "test/filesystem/fileName.EXT";
 
-    string output;
-    output = filesystem::GetFileExtensionInLowerCase(path);
-    EXPECT_EQ("ext", output);
+    string result;
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -50,11 +52,11 @@ TEST(FileSystem, GetFileExtensionInLowerCase)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileNameWithoutExtension)
 {
-    string path = "test/fileExtension/fileName.ext";
+    string path = "test/filesystem/fileName.ext";
 
-    string output;
-    output = filesystem::GetFileNameWithoutExtension(path);
-    EXPECT_EQ("test/fileExtension/fileName", output);
+    string result;
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/filesystem/fileName", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -62,11 +64,11 @@ TEST(FileSystem, GetFileNameWithoutExtension)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileNameWithoutDirectory)
 {
-    string path = "test/fileExtension/fileName.ext";
+    string path = "test/filesystem/fileName.ext";
 
-    string output;
-    output = filesystem::GetFileNameWithoutDirectory(path);
-    EXPECT_EQ("fileName.ext", output);
+    string result;
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName.ext", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -74,11 +76,11 @@ TEST(FileSystem, GetFileNameWithoutDirectory)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileParentDirectory)
 {
-    string path = "test/fileExtension/fileName.ext";
+    string path = "test/filesystem/fileName.ext";
 
-    string output;
-    output = filesystem::GetFileParentDirectory(path);
-    EXPECT_EQ("test/fileExtension/", output);
+    string result;
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/filesystem/", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -86,14 +88,14 @@ TEST(FileSystem, GetFileParentDirectory)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetRegularizedDirectoryName)
 {
-    string path = "test/fileExtension";
+    string path = "test/filesystem";
 
-    string output;
-    output = filesystem::GetRegularizedDirectoryName(path);
-    EXPECT_EQ("test/fileExtension/", output);
+    string result;
+    result = filesystem::GetRegularizedDirectoryName(path);
+    EXPECT_EQ("test/filesystem/", result);
 
-    output = filesystem::GetRegularizedDirectoryName(output);
-    EXPECT_EQ("test/fileExtension/", output);
+    result = filesystem::GetRegularizedDirectoryName(result);
+    EXPECT_EQ("test/filesystem/", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -113,23 +115,23 @@ TEST(FileSystem, ChangeWorkingDirectory)
 {
     string path = "test";
 
-    bool output;
+    bool status;
 
-    output = filesystem::MakeDirectoryHierarchy(path);
-    EXPECT_TRUE(output);
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
 
-    output = filesystem::ChangeWorkingDirectory(path);
-    EXPECT_TRUE(output);
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
 
     string cwd = filesystem::GetWorkingDirectory();
 
     EXPECT_EQ(path, filesystem::GetFileNameWithoutDirectory(cwd));
 
-    output = filesystem::ChangeWorkingDirectory("..");
-    EXPECT_TRUE(output);
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory("test");
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
@@ -137,34 +139,34 @@ TEST(FileSystem, ChangeWorkingDirectory)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DirectoryExists)
 {
-    string path = "test/fileExtension";
+    string path = "test/filesystem";
 
-    bool output;
+    bool status;
 
     // path doesn't exist yet
-    output = filesystem::DirectoryExists(path);
-    EXPECT_FALSE(output);
+    status = filesystem::DirectoryExists(path);
+    EXPECT_FALSE(status);
 
     // create the path
-    output = filesystem::MakeDirectoryHierarchy(path);
-    EXPECT_TRUE(output);
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
 
     // path exists
-    output = filesystem::DirectoryExists(path);
-    EXPECT_TRUE(output);
+    status = filesystem::DirectoryExists(path);
+    EXPECT_TRUE(status);
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    output = filesystem::ChangeWorkingDirectory("test");
-    EXPECT_TRUE(output);
+    status = filesystem::ChangeWorkingDirectory("test");
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory("fileExtension");
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
 
-    output = filesystem::ChangeWorkingDirectory("..");
-    EXPECT_TRUE(output);
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory("test");
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
@@ -176,16 +178,16 @@ TEST(FileSystem, MakeDirectory)
 {
     string path = "test";
 
-    bool output;
+    bool status;
 
-    output = filesystem::MakeDirectory(path);
-    EXPECT_TRUE(output);
+    status = filesystem::MakeDirectory(path);
+    EXPECT_TRUE(status);
 
-    output = filesystem::MakeDirectory(path);
-    EXPECT_FALSE(output);
+    status = filesystem::MakeDirectory(path);
+    EXPECT_FALSE(status);
 
-    output = filesystem::DeleteDirectory("test");
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
@@ -193,25 +195,25 @@ TEST(FileSystem, MakeDirectory)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, MakeDirectoryHierarchy)
 {
-    string path = "test/fileExtension";
+    string path = "test/filesystem";
 
-    bool output;
+    bool status;
 
-    output = filesystem::MakeDirectoryHierarchy(path);
-    EXPECT_TRUE(output);
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    output = filesystem::ChangeWorkingDirectory("test");
-    EXPECT_TRUE(output);
+    status = filesystem::ChangeWorkingDirectory("test");
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory("fileExtension");
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
 
-    output = filesystem::ChangeWorkingDirectory("..");
-    EXPECT_TRUE(output);
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory("test");
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
@@ -221,32 +223,60 @@ TEST(FileSystem, DeleteDirectory)
 {
     string path = "test";
 
-    bool output;
+    bool status;
 
-    output = filesystem::MakeDirectory(path);
-    EXPECT_TRUE(output);
+    status = filesystem::MakeDirectory(path);
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory(path);
-    EXPECT_TRUE(output);
+    status = filesystem::DeleteDirectory(path);
+    EXPECT_TRUE(status);
 
-    output = filesystem::DeleteDirectory(path);
-    EXPECT_FALSE(output);
+    status = filesystem::DeleteDirectory(path);
+    EXPECT_FALSE(status);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_FileExists)
+TEST(FileSystem, File_Exists_Remove)
 {
-    unit_test::NotImplemented();
-}
+    string path = "test/filesystem";
+    string fileName = "fileName.ext";
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_RemoveFile)
-{
-    unit_test::NotImplemented();
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::FileExists(fileName);
+    EXPECT_FALSE(status);
+
+    creat(fileName.c_str(), 0);
+
+    status = filesystem::FileExists(fileName);
+    EXPECT_TRUE(status);
+
+    status = filesystem::RemoveFile(fileName);
+    EXPECT_TRUE(status);
+
+    status = filesystem::FileExists(fileName);
+    EXPECT_FALSE(status);
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
