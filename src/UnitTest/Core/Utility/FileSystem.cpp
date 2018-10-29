@@ -281,7 +281,7 @@ TEST(FileSystem, File_Exists_Remove)
 }
 
 // ----------------------------------------------------------------------------
-//
+// List all files in the specified directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ListFilesInDirectory)
 {
@@ -312,7 +312,11 @@ TEST(FileSystem, ListFilesInDirectory)
     {
         EXPECT_EQ(fileNames[i],
                   filesystem::GetFileNameWithoutDirectory(list[i]));
+    }
 
+    // clean-up
+    for (size_t i = 0; i < fileNames.size(); i++)
+    {
         status = filesystem::RemoveFile(fileNames[i]);
         EXPECT_TRUE(status);
     }
@@ -332,9 +336,60 @@ TEST(FileSystem, ListFilesInDirectory)
 }
 
 // ----------------------------------------------------------------------------
-//
+// List all files of a specific extension in the specified directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ListFilesInDirectoryWithExtension)
+TEST(FileSystem, ListFilesInDirectoryWithExtension)
 {
-    unit_test::NotImplemented();
+    string path = "test/filesystem";
+    vector<string> fileNames = { "fileName00.ext0",
+                                 "fileName01.ext0",
+                                 "fileName02.ext0",
+                                 "fileName03.ext0",
+                                 "fileName04.ext1",
+                                 "fileName05.ext1",
+                                 "fileName06.ext1",
+                                 "fileName07.ext1" };
+
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
+
+    for (size_t i = 0; i < fileNames.size(); i++)
+        creat(fileNames[i].c_str(), 0);
+
+    vector<string> list;
+    status = filesystem::ListFilesInDirectory(".", list);
+    EXPECT_TRUE(status);
+
+    sort(list.begin(), list.end());
+
+    for (size_t i = 0; i < list.size(); i++)
+    {
+        EXPECT_EQ(fileNames[i],
+                  filesystem::GetFileNameWithoutDirectory(list[i]));
+    }
+
+    // clean-up
+    for (size_t i = 0; i < fileNames.size(); i++)
+    {
+        status = filesystem::RemoveFile(fileNames[i]);
+        EXPECT_TRUE(status);
+    }
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
