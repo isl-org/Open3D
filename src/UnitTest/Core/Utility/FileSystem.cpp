@@ -100,17 +100,7 @@ TEST(FileSystem, GetRegularizedDirectoryName)
 }
 
 // ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetWorkingDirectory)
-{
-    string cwd = filesystem::GetWorkingDirectory();
-
-    cout << cwd << endl;
-}
-
-// ----------------------------------------------------------------------------
-// Change the working directory.
+// Get/Change the working directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ChangeWorkingDirectory)
 {
