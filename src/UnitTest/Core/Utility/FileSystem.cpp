@@ -29,6 +29,7 @@
 #include "Core/Utility/FileSystem.h"
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <algorithm>
 
 using namespace open3d;
 using namespace std;
@@ -282,9 +283,52 @@ TEST(FileSystem, File_Exists_Remove)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ListFilesInDirectory)
+TEST(FileSystem, ListFilesInDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test/filesystem";
+    vector<string> fileNames = { "fileName00.ext",
+                                 "fileName01.ext",
+                                 "fileName02.ext",
+                                 "fileName03.ext" };
+
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
+
+    for (size_t i = 0; i < fileNames.size(); i++)
+        creat(fileNames[i].c_str(), 0);
+
+    vector<string> list;
+    status = filesystem::ListFilesInDirectory(".", list);
+    EXPECT_TRUE(status);
+
+    sort(list.begin(), list.end());
+
+    for (size_t i = 0; i < fileNames.size(); i++)
+    {
+        EXPECT_EQ(fileNames[i],
+                  filesystem::GetFileNameWithoutDirectory(list[i]));
+
+        status = filesystem::RemoveFile(fileNames[i]);
+        EXPECT_TRUE(status);
+    }
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
