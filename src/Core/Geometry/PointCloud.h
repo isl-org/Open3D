@@ -83,9 +83,9 @@ public:
     }
 
 public:
-    std::vector<Eigen::Vector3d> points_;
-    std::vector<Eigen::Vector3d> normals_;
-    std::vector<Eigen::Vector3d> colors_;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> points_;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> normals_;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> colors_;
 };
 
 /// Factory function to create a pointcloud from a depth image and a camera

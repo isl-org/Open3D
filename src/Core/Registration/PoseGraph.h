@@ -34,70 +34,73 @@
 
 namespace open3d {
 
-class PoseGraphNode : public IJsonConvertible
-{
-public:
-    PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) :
-            pose_(pose) {};
-    ~PoseGraphNode();
+    class PoseGraphNode : public IJsonConvertible
+    {
+    public:
+        PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) :
+                pose_(pose) {};
+        ~PoseGraphNode();
 
-public:
-    bool ConvertToJsonValue(Json::Value &value) const override;
-    bool ConvertFromJsonValue(const Json::Value &value) override;
+    public:
+        bool ConvertToJsonValue(Json::Value &value) const override;
+        bool ConvertFromJsonValue(const Json::Value &value) override;
 
-public:
-    Eigen::Matrix4d pose_;
-};
+    public:
+        Eigen::Matrix4d pose_;
 
-class PoseGraphEdge : public IJsonConvertible
-{
-public:
-    PoseGraphEdge(
-            int source_node_id = -1, int target_node_id = -1,
-            const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
-            const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
-            bool uncertain = false,
-            double confidence = 1.0) :
-            source_node_id_(source_node_id),
-            target_node_id_(target_node_id),
-            transformation_(transformation),
-            information_(information),
-            uncertain_(uncertain),
-            confidence_(confidence) {};
-    ~PoseGraphEdge();
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    };
 
-public:
-    bool ConvertToJsonValue(Json::Value &value) const override;
-    bool ConvertFromJsonValue(const Json::Value &value) override;
+    class PoseGraphEdge : public IJsonConvertible
+    {
+    public:
+        PoseGraphEdge(
+                int source_node_id = -1, int target_node_id = -1,
+                const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
+                const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
+                bool uncertain = false,
+                double confidence = 1.0) :
+                source_node_id_(source_node_id),
+                target_node_id_(target_node_id),
+                transformation_(transformation),
+                information_(information),
+                uncertain_(uncertain),
+                confidence_(confidence) {};
+        ~PoseGraphEdge();
 
-public:
-    int source_node_id_;
-    int target_node_id_;
-    Eigen::Matrix4d transformation_;
-    Eigen::Matrix6d information_;
-    /// odometry edge has uncertain == false
-    /// loop closure edges has uncertain == true
-    bool uncertain_;
-    /// if uncertain_ is true, it has confidence bounded in [0,1].
-    /// 1 means reliable, and 0 means unreliable edge.
-    /// This correspondence to line process value in [Choi et al 2015]
-    /// See core/registration/globaloptimization.h for more details.
-    double confidence_;
-};
+    public:
+        bool ConvertToJsonValue(Json::Value &value) const override;
+        bool ConvertFromJsonValue(const Json::Value &value) override;
 
-class PoseGraph : public IJsonConvertible
-{
-public:
-    PoseGraph();
-    ~PoseGraph() override;
+    public:
+        int source_node_id_;
+        int target_node_id_;
+        Eigen::Matrix4d transformation_;
+        Eigen::Matrix6d information_;
+        /// odometry edge has uncertain == false
+        /// loop closure edges has uncertain == true
+        bool uncertain_;
+        /// if uncertain_ is true, it has confidence bounded in [0,1].
+        /// 1 means reliable, and 0 means unreliable edge.
+        /// This correspondence to line process value in [Choi et al 2015]
+        /// See core/registration/globaloptimization.h for more details.
+        double confidence_;
 
-public:
-    bool ConvertToJsonValue(Json::Value &value) const override;
-    bool ConvertFromJsonValue(const Json::Value &value) override;
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    };
 
-public:
-    std::vector<PoseGraphNode> nodes_;
-    std::vector<PoseGraphEdge> edges_;
-};
+    class PoseGraph : public IJsonConvertible
+    {
+    public:
+        PoseGraph();
+        ~PoseGraph() override;
 
+    public:
+        bool ConvertToJsonValue(Json::Value &value) const override;
+        bool ConvertFromJsonValue(const Json::Value &value) override;
+
+    public:
+        std::vector<PoseGraphNode, Eigen::aligned_allocator<PoseGraphNode>> nodes_;
+        std::vector<PoseGraphEdge, Eigen::aligned_allocator<PoseGraphEdge>> edges_;
+    };
 }    // namespace open3d

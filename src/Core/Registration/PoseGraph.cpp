@@ -84,10 +84,11 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
     value["target_node_id"] = target_node_id_;
     value["uncertain"] = uncertain_;
     value["confidence"] = confidence_;
-    Json::Value transformation_object;
+    Json::Value transformation_object;\
     if (EigenMatrix4dToJsonArray(transformation_, transformation_object) == false) {
         return false;
     }
+    
     value["transformation"] = transformation_object;
     Json::Value information_object;
     if (EigenMatrix6dToJsonArray(information_, information_object) == false) {
@@ -207,5 +208,8 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
     }
     return true;
 }
-
+//
+//void printSizeOf() {
+//    std::cout << "sizeof(PoseGraphNode) = " << sizeof(PoseGraphNode) << std::endl;
+//}
 }    // namespace open3d

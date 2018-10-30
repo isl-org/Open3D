@@ -185,6 +185,8 @@ public:
 
     // Coordinate frame
     bool show_coordinate_frame_ = false;
+    
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }   // namespace open3d

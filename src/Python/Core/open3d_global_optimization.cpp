@@ -64,7 +64,7 @@ void pybind_global_optimization(py::module &m)
         .def("__repr__", [](const PoseGraphNode &rr) {
             return std::string("PoseGraphNode, access pose to get its current pose.");
     });
-    py::bind_vector<std::vector<PoseGraphNode>>(m, "PoseGraphNodeVector");
+    py::bind_vector<std::vector<PoseGraphNode, Eigen::aligned_allocator<PoseGraphNode>>>(m, "PoseGraphNodeVector");
 
     py::class_<PoseGraphEdge, std::shared_ptr<PoseGraphEdge>>
             pose_graph_edge(m, "PoseGraphEdge");
@@ -93,7 +93,7 @@ void pybind_global_optimization(py::module &m)
                     std::to_string(rr.target_node_id_) +
                     std::string(", access transformation to get relative transformation");
     });
-    py::bind_vector<std::vector<PoseGraphEdge>>(m, "PoseGraphEdgeVector");
+    py::bind_vector<std::vector<PoseGraphEdge, Eigen::aligned_allocator<PoseGraphEdge>>>(m, "PoseGraphEdgeVector");
 
     py::class_<PoseGraph, std::shared_ptr<PoseGraph>> pose_graph(m, "PoseGraph");
     py::detail::bind_default_constructor<PoseGraph>(pose_graph);

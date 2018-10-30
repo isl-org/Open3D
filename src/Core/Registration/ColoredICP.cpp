@@ -41,7 +41,7 @@ namespace {
 
 class PointCloudForColoredICP : public PointCloud {
 public:
-    std::vector<Eigen::Vector3d> color_gradient_;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> color_gradient_;
 };
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
@@ -152,7 +152,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     const auto &target_c = (const PointCloudForColoredICP &)target;
 
     auto compute_jacobian_and_residual = [&]
-            (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r)
+            (int i, std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> &J_r, std::vector<double> &r)
     {
         size_t cs = corres[i][0];
         size_t ct = corres[i][1];

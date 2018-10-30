@@ -54,7 +54,7 @@ bool unit_test::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 // ----------------------------------------------------------------------------
 // Sort a vector of Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-void unit_test::Sort::Do(vector<Eigen::Vector3d>& v)
+void unit_test::Sort::Do(vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& v)
 {
     Eigen::Vector3d temp(0.0, 0.0, 0.0);
     for (size_t i = 0; i < v.size(); i++)

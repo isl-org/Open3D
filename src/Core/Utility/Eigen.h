@@ -65,7 +65,7 @@ std::tuple<bool, Eigen::Matrix4d>
 /// Function to solve Jacobian system
 /// Input: 6nx6n Jacobian matrix and 6n-dim residual vector.
 /// Output: tuple of is_success, n 4x4 motion matrices.
-std::tuple<bool, std::vector<Eigen::Matrix4d>>
+std::tuple<bool, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>>
         SolveJacobianSystemAndObtainExtrinsicMatrixArray(
         const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &JTr);
 
@@ -84,7 +84,7 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 /// Note: f takes index of row, and outputs corresponding residual and row vector.
 template<typename MatType, typename VecType>
 std::tuple<MatType, VecType> ComputeJTJandJTr(
-        std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
+        std::function<void(int, std::vector<VecType, Eigen::aligned_allocator<VecType>> &, std::vector<double> &)> f,
         int iteration_num);
 
 }    // namespace open3d

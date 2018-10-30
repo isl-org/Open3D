@@ -66,7 +66,7 @@ void unit_test::Print(const Eigen::Vector3d &v)
 // ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector2i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector2i> &v)
+void unit_test::Print(const vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> &v)
 {
     int width = 6;
 
@@ -89,7 +89,7 @@ void unit_test::Print(const vector<Eigen::Vector2i> &v)
 // ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector3i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector3i> &v)
+void unit_test::Print(const vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> &v)
 {
     int width = 6;
 
@@ -113,7 +113,7 @@ void unit_test::Print(const vector<Eigen::Vector3i> &v)
 // ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector3d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector3d> &v)
+void unit_test::Print(const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &v)
 {
     int precision = 6;
     int width = 12;

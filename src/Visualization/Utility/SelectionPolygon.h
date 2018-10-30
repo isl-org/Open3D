@@ -79,12 +79,12 @@ private:
     std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
             const TriangleMesh &input, const ViewControl &view);
     std::vector<size_t> CropInRectangle(
-            const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
+            const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &input, const ViewControl &view);
     std::vector<size_t> CropInPolygon(
-            const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
+            const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &input, const ViewControl &view);
 
 public:
-    std::vector<Eigen::Vector2d> polygon_;
+    std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> polygon_;
     bool is_closed_ = false;
     Image polygon_interior_mask_;
     SectionPolygonType polygon_type_ = SectionPolygonType::Unfilled;

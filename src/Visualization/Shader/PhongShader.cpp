@@ -78,9 +78,9 @@ bool PhongShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    std::vector<Eigen::Vector3f> points;
-    std::vector<Eigen::Vector3f> normals;
-    std::vector<Eigen::Vector3f> colors;
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> points;
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> normals;
+    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> colors;
     if (PrepareBinding(geometry, option, view, points, normals, colors) ==
             false) {
         PrintShaderWarning("Binding failed when preparing data.");
@@ -199,9 +199,9 @@ bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 
 bool PhongShaderForPointCloud::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &normals,
-        std::vector<Eigen::Vector3f> &colors)
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::PointCloud) {
@@ -286,9 +286,9 @@ bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 
 bool PhongShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &normals,
-        std::vector<Eigen::Vector3f> &colors)
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
+        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::TriangleMesh) {

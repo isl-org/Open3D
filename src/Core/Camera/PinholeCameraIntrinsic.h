@@ -74,6 +74,8 @@ public:
     int width_ = -1;
     int height_ = -1;
     Eigen::Matrix3d intrinsic_matrix_;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }   // namespace open3d

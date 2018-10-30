@@ -153,6 +153,9 @@ protected:
     GLHelper::GLMatrix4f view_matrix_;
     GLHelper::GLMatrix4f model_matrix_;
     GLHelper::GLMatrix4f MVP_matrix_;
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }    // namespace open3d

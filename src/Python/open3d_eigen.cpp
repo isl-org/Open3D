@@ -85,9 +85,9 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
         const std::string &repr_name)
 {
     typedef typename EigenVector::Scalar Scalar;
-    auto vec = py::bind_vector_without_repr<std::vector<EigenVector>>(
+    auto vec = py::bind_vector_without_repr<std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>>>(
             m, bind_name, py::buffer_protocol());
-    vec.def_buffer([](std::vector<EigenVector> &v) -> py::buffer_info {
+    vec.def_buffer([](std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>> &v) -> py::buffer_info {
         size_t rows = EigenVector::RowsAtCompileTime;
         return py::buffer_info(
                 v.data(), sizeof(Scalar),
@@ -95,36 +95,36 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
                 2, {v.size(), rows},
                 {sizeof(EigenVector), sizeof(Scalar)});
     });
-    vec.def("__repr__", [repr_name](const std::vector<EigenVector> &v) {
+    vec.def("__repr__", [repr_name](const std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>> &v) {
         return repr_name + std::string(" with ") +
                 std::to_string(v.size()) + std::string(" elements.\n") +
                 std::string("Use numpy.asarray() to access data.");
     });
-    vec.def("__copy__", [](std::vector<EigenVector> &v) {
-        return std::vector<EigenVector>(v);
+    vec.def("__copy__", [](std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>> &v) {
+        return std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>>(v);
     });
-    vec.def("__deepcopy__", [](std::vector<EigenVector> &v,
+    vec.def("__deepcopy__", [](std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>> &v,
             py::dict &memo) {
-        return std::vector<EigenVector>(v);
+        return std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>>(v);
     });
     // Bare bones interface
     // We choose to disable them because they do not support slice indices
     // such as [:,:]. It is recommanded to convert it to numpy.asarray()
     // to access raw data.
-    //v.def("__getitem__", [](const std::vector<Eigen::Vector3d> &v,
+    //v.def("__getitem__", [](const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &v,
     //        std::pair<size_t, size_t> i) {
     //    if (i.first >= v.size() || i.second >= 3)
     //        throw py::index_error();
     //    return v[i.first](i.second);
     //});
-    //v.def("__setitem__", [](std::vector<Eigen::Vector3d> &v,
+    //v.def("__setitem__", [](std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &v,
     //        std::pair<size_t, size_t> i, double x) {
     //    if (i.first >= v.size() || i.second >= 3)
     //        throw py::index_error();
     //    v[i.first](i.second) = x;
     //});
     // We use iterable __init__ by default
-    //vec.def("__init__", [](std::vector<EigenVector> &v,
+    //vec.def("__init__", [](std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>> &v,
     //        py::array_t<Scalar, py::array::c_style> b) {
     //    py::buffer_info info = b.request();s
     //    if (info.format !=
@@ -132,7 +132,7 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
     //            info.ndim != 2 ||
     //            info.shape[1] != EigenVector::RowsAtCompileTime)
     //        throw std::runtime_error("Incompatible buffer format!");
-    //    new (&v) std::vector<EigenVector>(info.shape[0]);
+    //    new (&v) std::vector<EigenVector, Eigen::aligned_allocator<EigenVector>>(info.shape[0]);
     //    memcpy(v.data(), info.ptr, sizeof(EigenVector) * v.size());
     //});
 }
@@ -142,9 +142,9 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
         const std::string &repr_name)
 {
     typedef typename EigenMatrix::Scalar Scalar;
-    auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix>>(
+    auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>>>(
             m, bind_name, py::buffer_protocol());
-    vec.def_buffer([](std::vector<EigenMatrix> &v) -> py::buffer_info {
+    vec.def_buffer([](std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>> &v) -> py::buffer_info {
         // We use this function to bind Eigen default matrix.
         // Thus they are all column major.
         size_t rows = EigenMatrix::RowsAtCompileTime;
@@ -156,17 +156,17 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
                 {sizeof(EigenMatrix), sizeof(Scalar),
                 sizeof(Scalar) * rows});
     });
-    vec.def("__repr__", [repr_name](const std::vector<EigenMatrix> &v) {
+    vec.def("__repr__", [repr_name](const std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>> &v) {
         return repr_name + std::string(" with ") +
                 std::to_string(v.size()) + std::string(" elements.\n") +
                 std::string("Use numpy.asarray() to access data.");
     });
-    vec.def("__copy__", [](std::vector<EigenMatrix> &v) {
-        return std::vector<EigenMatrix>(v);
+    vec.def("__copy__", [](std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>> &v) {
+        return std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>>(v);
     });
-    vec.def("__deepcopy__", [](std::vector<EigenMatrix> &v,
+    vec.def("__deepcopy__", [](std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>> &v,
             py::dict &memo) {
-        return std::vector<EigenMatrix>(v);
+        return std::vector<EigenMatrix, Eigen::aligned_allocator<EigenMatrix>>(v);
     });
 }
 
@@ -177,11 +177,11 @@ void pybind_eigen(py::module &m)
     pybind_eigen_vector_of_scalar<int>(m, "IntVector");
     pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
     pybind_eigen_vector_of_vector<Eigen::Vector3d>(m, "Vector3dVector",
-            "std::vector<Eigen::Vector3d>");
+            "std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>");
     pybind_eigen_vector_of_vector<Eigen::Vector3i>(m, "Vector3iVector",
-            "std::vector<Eigen::Vector3i>");
+            "std::vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>>");
     pybind_eigen_vector_of_vector<Eigen::Vector2i>(m, "Vector2iVector",
-            "std::vector<Eigen::Vector2i>");
+            "std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>>");
     pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(m, "Matrix4dVector",
-            "std::vector<Eigen::Matrix4d>");
+            "std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>");
 }

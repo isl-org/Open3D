@@ -40,7 +40,7 @@ const double LAMBDA_HYBRID_DEPTH = 0.968;
 }    // unnamed namespace
 
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
-        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+        int row, std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> &J_r, std::vector<double> &r,
         const RGBDImage &source, const RGBDImage &target,
         const Image &source_xyz,
         const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -81,7 +81,7 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 }
 
 void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
-        int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+        int row, std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> &J_r, std::vector<double> &r,
         const RGBDImage &source, const RGBDImage &target,
         const Image &source_xyz,
         const RGBDImage &target_dx, const RGBDImage &target_dy,

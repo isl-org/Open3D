@@ -55,6 +55,8 @@ public:
     Eigen::Vector3d front_;
     Eigen::Vector3d boundingbox_min_;
     Eigen::Vector3d boundingbox_max_;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }   // namespace open3d

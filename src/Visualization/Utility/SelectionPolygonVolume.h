@@ -56,11 +56,11 @@ private:
     std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
             const TriangleMesh &input) const;
     std::vector<size_t> CropInPolygon(
-            const std::vector<Eigen::Vector3d> &input) const;
+            const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &input) const;
 
 public:
     std::string orthogonal_axis_ = "";
-    std::vector<Eigen::Vector3d> bounding_polygon_;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> bounding_polygon_;
     double axis_min_ = 0.0;
     double axis_max_ = 0.0;
 };

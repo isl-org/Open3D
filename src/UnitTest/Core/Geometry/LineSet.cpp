@@ -179,7 +179,7 @@ TEST(LineSet, GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(LineSet, Transform)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_points =
     {
         {  396.870588, 1201.976471,  880.472941 },
         {  320.792157, 1081.976471,  829.139608 },
@@ -193,7 +193,7 @@ TEST(LineSet, Transform)
         {  274.909804,  802.368627,  218.747451 }
     };
 
-    vector<Eigen::Vector2i> ref_lines =
+    vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> ref_lines =
     {
         {   839,   392 },
         {   780,   796 },
@@ -265,15 +265,15 @@ TEST(LineSet, OperatorAppend)
     unit_test::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
     unit_test::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
     p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
-    vector<Eigen::Vector2i> n;
+    vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> n;
     n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
     n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
-    vector<Eigen::Vector3d> c;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> c;
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
@@ -330,15 +330,15 @@ TEST(LineSet, OperatorADD)
     unit_test::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
     unit_test::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
     p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
-    vector<Eigen::Vector2i> n;
+    vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> n;
     n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
     n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
-    vector<Eigen::Vector3d> c;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> c;
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
@@ -424,7 +424,7 @@ TEST(LineSet, HasColors)
 // ----------------------------------------------------------------------------
 TEST(LineSet, GetLineCoordinate)
 {
-    vector<vector<Eigen::Vector3d>> ref_points =
+    vector<vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>> ref_points =
     {
         { {  239.215686,  133.333333,  803.921569 }, {  552.941176,  474.509804,  627.450980 } },
         { {  239.215686,  133.333333,  803.921569 }, {  239.215686,  133.333333,  803.921569 } },
@@ -470,7 +470,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
 {
     int size = 10;
 
-    vector<Eigen::Vector3d> ref_points =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_points =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  796.078431,  909.803922,  196.078431 },
@@ -494,7 +494,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
         {  105.882353,  996.078431,  215.686275 }
     };
 
-    vector<Eigen::Vector2i> ref_lines =
+    vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> ref_lines =
     {
         {     8,    13 },
         {     7,    17 },

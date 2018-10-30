@@ -38,6 +38,6 @@ namespace unit_test
 
         // Sort a vector of Eigen::Vector3d elements.
         // method needed because std::sort failed on TravisCI/macOS (works fine on Linux)
-        void Do(std::vector<Eigen::Vector3d>& v);
+        void Do(std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& v);
     }
 } // namespace unit_test

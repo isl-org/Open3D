@@ -41,13 +41,13 @@ namespace unit_test
     void Print(const Eigen::Vector3d &v);
 
     // Print a vector of Eigen::Vector2i.
-    void Print(const std::vector<Eigen::Vector2i> &v);
+    void Print(const std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> &v);
 
     // Print a vector of Eigen::Vector3i.
-    void Print(const std::vector<Eigen::Vector3i> &v);
+    void Print(const std::vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> &v);
 
     // Print a vector of Eigen::Vector3d.
-    void Print(const std::vector<Eigen::Vector3d> &v);
+    void Print(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &v);
 
     // Print a uint8_t vector.
     void Print(const std::vector<uint8_t> &v);

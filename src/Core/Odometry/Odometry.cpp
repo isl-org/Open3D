@@ -218,11 +218,11 @@ std::shared_ptr<Image> ConvertDepthImageToXYZImage(
     return image_xyz;
 }
 
-std::vector<Eigen::Matrix3d>
+std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d>>
         CreateCameraMatrixPyramid(
         const PinholeCameraIntrinsic &pinhole_camera_intrinsic, int levels)
 {
-    std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
+    std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d>> pyramid_camera_matrix;
     pyramid_camera_matrix.reserve(levels);
     for (int i = 0; i < levels; i++) {
         Eigen::Matrix3d level_camera_matrix;
@@ -405,7 +405,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     int corresps_count = (int)correspondence->size();
     
     auto f_lambda = [&]
-            (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
+            (int i, std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d>> &J_r, std::vector<double> &r) {
         jacobian_method.ComputeJacobianAndResidual(i, J_r, r,
                 source, target, source_xyz, target_dx, target_dy,
                 intrinsic, extrinsic_initial, *correspondence);
@@ -448,7 +448,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
     Eigen::Matrix4d result_odo = extrinsic_initial.isZero() ?
             Eigen::Matrix4d::Identity() : extrinsic_initial;
 
-    std::vector<Eigen::Matrix3d> pyramid_camera_matrix =
+    std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d>> pyramid_camera_matrix =
             CreateCameraMatrixPyramid(pinhole_camera_intrinsic,
             (int)iter_counts.size());
 

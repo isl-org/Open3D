@@ -177,7 +177,7 @@ TEST(PointCloud, GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, Transform)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_points =
     {
         {  396.870588, 1201.976471,  880.472941 },
         {  320.792157, 1081.976471,  829.139608 },
@@ -191,7 +191,7 @@ TEST(PointCloud, Transform)
         {  274.909804,  802.368627,  218.747451 }
     };
 
-    vector<Eigen::Vector3d> ref_normals =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_normals =
     {
         {  396.470588, 1201.176471,  880.352941 },
         {  320.392157, 1081.176471,  829.019608 },
@@ -289,7 +289,7 @@ TEST(PointCloud, HasColors)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, NormalizeNormals)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {    0.692861,    0.323767,    0.644296 },
         {    0.650010,    0.742869,    0.160101 },
@@ -385,15 +385,15 @@ TEST(PointCloud, OperatorAppend)
     unit_test::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     unit_test::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
     p.insert(p.end(), pc1.points_.begin(), pc1.points_.end());
 
-    vector<Eigen::Vector3d> n;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> n;
     n.insert(n.end(), pc0.normals_.begin(), pc0.normals_.end());
     n.insert(n.end(), pc1.normals_.begin(), pc1.normals_.end());
 
-    vector<Eigen::Vector3d> c;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> c;
     c.insert(c.end(), pc0.colors_.begin(), pc0.colors_.end());
     c.insert(c.end(), pc1.colors_.begin(), pc1.colors_.end());
 
@@ -448,15 +448,15 @@ TEST(PointCloud, OperatorADD)
     unit_test::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
     unit_test::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
     p.insert(p.end(), pc1.points_.begin(), pc1.points_.end());
 
-    vector<Eigen::Vector3d> n;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> n;
     n.insert(n.end(), pc0.normals_.begin(), pc0.normals_.end());
     n.insert(n.end(), pc1.normals_.begin(), pc1.normals_.end());
 
-    vector<Eigen::Vector3d> c;
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> c;
     c.insert(c.end(), pc0.colors_.begin(), pc0.colors_.end());
     c.insert(c.end(), pc1.colors_.begin(), pc1.colors_.end());
 
@@ -497,7 +497,7 @@ TEST(PointCloud, DISABLED_CreatePointCloudFromFile)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, SelectDownSample)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {  796.078431,  909.803922,  196.078431 },
         {  768.627451,  525.490196,  768.627451 },
@@ -555,7 +555,7 @@ TEST(PointCloud, SelectDownSample)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, VoxelDownSample)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_points =
     {
         {   19.607843,  454.901961,   62.745098 },
         {   66.666667,  949.019608,  525.490196 },
@@ -579,7 +579,7 @@ TEST(PointCloud, VoxelDownSample)
         {  913.725490,  635.294118,  713.725490 }
     };
 
-    vector<Eigen::Vector3d> ref_normals =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_normals =
     {
         {    0.042660,    0.989719,    0.136513 },
         {    0.061340,    0.873191,    0.483503 },
@@ -603,7 +603,7 @@ TEST(PointCloud, VoxelDownSample)
         {    0.930383,    0.360677,    0.065578 }
     };
 
-    vector<Eigen::Vector3d> ref_colors =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_colors =
     {
         {    5.000000,  116.000000,   16.000000 },
         {   17.000000,  242.000000,  134.000000 },
@@ -663,7 +663,7 @@ TEST(PointCloud, VoxelDownSample)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, UniformDownSample)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  364.705882,  509.803922,  949.019608 },
@@ -739,7 +739,7 @@ TEST(PointCloud, CropPointCloud)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, EstimateNormals)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {    0.282003,    0.866394,    0.412111 },
         {    0.550791,    0.829572,   -0.091869 },
@@ -804,7 +804,7 @@ TEST(PointCloud, EstimateNormals)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, OrientNormalsToAlignWithDirection)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {    0.282003,    0.866394,    0.412111 },
         {    0.550791,    0.829572,   -0.091869 },
@@ -870,7 +870,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, OrientNormalsTowardsCameraLocation)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {   -0.282003,   -0.866394,   -0.412111 },
         {   -0.550791,   -0.829572,    0.091869 },
@@ -958,7 +958,7 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance)
     Eigen::Vector3d vmin(0.0, 0.0, 0.0);
     Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    vector<Eigen::Vector3d> points(size);
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> points(size);
     unit_test::Rand(points, vmin, vmax, 0);
 
     for (int i = 0; i < (size / 2); i++)
@@ -1100,7 +1100,7 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, CreatePointCloudFromDepthImage)
 {
-    vector<Eigen::Vector3d> ref =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
     {
         {  -15.709662,  -11.776101,   25.813999 },
         {  -31.647980,  -23.798088,   52.167000 },
@@ -1164,8 +1164,8 @@ TEST(PointCloud, CreatePointCloudFromDepthImage)
 void TEST_CreatePointCloudFromRGBDImage(
     const int& color_num_of_channels,
     const int& color_bytes_per_channel,
-    const vector<Eigen::Vector3d>& ref_points,
-    const vector<Eigen::Vector3d>& ref_colors)
+    const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& ref_points,
+    const vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& ref_colors)
 {
     open3d::Image image;
     open3d::Image color;
@@ -1220,7 +1220,7 @@ void TEST_CreatePointCloudFromRGBDImage(
 // ----------------------------------------------------------------------------
 TEST(PointCloud, CreatePointCloudFromRGBDImage_3_1)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_points =
     {
         {   -0.000337,   -0.000252,    0.000553 },
         {   -0.000283,   -0.000213,    0.000467 },
@@ -1249,7 +1249,7 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage_3_1)
         {   -0.000252,   -0.000188,    0.000420 }
     };
 
-    vector<Eigen::Vector3d> ref_colors =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_colors =
     {
         {    0.737255,    0.615686,    0.721569 },
         {    0.725490,    0.756863,    0.560784 },
@@ -1295,7 +1295,7 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage_3_1)
 // ----------------------------------------------------------------------------
 TEST(PointCloud, CreatePointCloudFromRGBDImage_1_4)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_points =
     {
         {   -0.000337,   -0.000252,    0.000553 },
         {   -0.000283,   -0.000213,    0.000467 },
@@ -1324,7 +1324,7 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage_1_4)
         {   -0.000252,   -0.000188,    0.000420 }
     };
 
-    vector<Eigen::Vector3d> ref_colors =
+    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_colors =
     {
         {   -0.000352,   -0.000352,   -0.000352 },
         {   -0.000018,   -0.000018,   -0.000018 },

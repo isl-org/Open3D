@@ -45,7 +45,7 @@ public:
 
 public:
     PinholeCameraIntrinsic intrinsic_;
-    std::vector<Eigen::Matrix4d> extrinsic_;
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> extrinsic_;
 };
 
 }    // namespace open3d

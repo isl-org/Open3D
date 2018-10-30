@@ -203,8 +203,10 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
     // http://paulbourke.net/geometry/polygonise/
     auto mesh = std::make_shared<TriangleMesh>();
     double half_voxel_length = voxel_length_ * 0.5;
-    std::unordered_map<Eigen::Vector4i, int, hash_eigen::hash<Eigen::Vector4i>>
-        edgeindex_to_vertexindex;
+    std::unordered_map<Eigen::Vector4i, int,
+            hash_eigen::hash<Eigen::Vector4i>,
+            std::equal_to<Eigen::Vector4i>,
+            Eigen::aligned_allocator<std::pair<Eigen::Vector4i, int>>> edgeindex_to_vertexindex;
     int edge_to_index[12];
     for (const auto &unit : volume_units_) {
         if (unit.second.volume_) {
