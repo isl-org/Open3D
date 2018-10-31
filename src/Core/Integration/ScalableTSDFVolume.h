@@ -103,7 +103,7 @@ private:
 
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
 
-    double GetTSDFAt(const Eigen::Vector3d &p);    
+    double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
 }    // namespace open3d
