@@ -43,8 +43,9 @@ namespace unit_test
     void NotImplemented();
 
     // Equal test.
-    template<class T>
-    void ExpectEQ(const T& v0, const T& v1)
+    template<class T, int M, int N>
+    void ExpectEQ(const Eigen::Matrix<T, M, N>& v0,
+                  const Eigen::Matrix<T, M, N>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
@@ -52,8 +53,9 @@ namespace unit_test
     }
 
     // Less than or Equal test.
-    template<class T>
-    void ExpectLE(const T& v0, const T& v1)
+    template<class T, int M, int N>
+    void ExpectLE(const Eigen::Matrix<T, M, N>& v0,
+                  const Eigen::Matrix<T, M, N>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
@@ -61,8 +63,9 @@ namespace unit_test
     }
 
     // Greater than or Equal test.
-    template<class T>
-    void ExpectGE(const T& v0, const T& v1)
+    template<class T, int M, int N>
+    void ExpectGE(const Eigen::Matrix<T, M, N>& v0,
+                  const Eigen::Matrix<T, M, N>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
