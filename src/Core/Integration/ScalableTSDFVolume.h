@@ -89,7 +89,8 @@ public:
     std::unordered_map<Eigen::Vector3i, VolumeUnit,
             hash_eigen::hash<Eigen::Vector3i>,
             std::equal_to<Eigen::Vector3i>,
-            Eigen::aligned_allocator<std::pair<Eigen::Vector3i, VolumeUnit>>> volume_units_;
+            Eigen::aligned_allocator<std::pair<const Eigen::Vector3i, VolumeUnit>>>
+            volume_units_;
 
 private:
     Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3d &point) {

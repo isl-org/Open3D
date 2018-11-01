@@ -206,7 +206,8 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh()
     std::unordered_map<Eigen::Vector4i, int,
             hash_eigen::hash<Eigen::Vector4i>,
             std::equal_to<Eigen::Vector4i>,
-            Eigen::aligned_allocator<std::pair<Eigen::Vector4i, int>>> edgeindex_to_vertexindex;
+            Eigen::aligned_allocator<std::pair<const Eigen::Vector4i, int>>>
+            edgeindex_to_vertexindex;
     int edge_to_index[12];
     for (const auto &unit : volume_units_) {
         if (unit.second.volume_) {
