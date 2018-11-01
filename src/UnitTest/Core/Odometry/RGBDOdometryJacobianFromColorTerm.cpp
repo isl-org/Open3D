@@ -30,6 +30,7 @@
 #include "Core/Geometry/RGBDImage.h"
 #include "Core/Odometry/RGBDOdometryJacobian.h"
 
+using namespace Eigen;
 using namespace odometry_tools;
 using namespace open3d;
 using namespace std;
@@ -86,26 +87,26 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
     RGBDImage target_dx(*dxColor, *tgtDepth);
     RGBDImage target_dy(*dyColor, *tgtDepth);
 
-    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    Matrix3d intrinsic = Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;
     intrinsic(1, 1) = 0.65;
     intrinsic(0, 2) = 0.75;
     intrinsic(1, 2) = 0.35;
 
-    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 1.0;
     extrinsic(1, 1) = 1.0;
     extrinsic(2, 2) = 1.0;
 
     int rows = height;
-    vector<Eigen::Vector4i> corresps(rows);
+    vector<Vector4i> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
     RGBDOdometryJacobianFromColorTerm jacobian_method;
 
     for (int row = 0; row < rows; row++)
     {
-        vector<Eigen::Vector6d> J_r;
+        vector<Vector6d> J_r;
         vector<double> r;
 
         jacobian_method.ComputeJacobianAndResidual(

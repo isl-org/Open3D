@@ -30,6 +30,8 @@
 #include "Core/Geometry/LineSet.h"
 #include "Core/Geometry/PointCloud.h"
 
+using namespace Eigen;
+using namespace open3d;
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -37,10 +39,10 @@ using namespace std;
 // ----------------------------------------------------------------------------
 TEST(LineSet, Constructor)
 {
-    open3d::LineSet ls;
+    LineSet ls;
 
     // inherited from Geometry2D
-    EXPECT_EQ(open3d::Geometry::GeometryType::LineSet, ls.GetGeometryType());
+    EXPECT_EQ(Geometry::GeometryType::LineSet, ls.GetGeometryType());
     EXPECT_EQ(3, ls.Dimension());
 
     // public member variables
@@ -51,8 +53,8 @@ TEST(LineSet, Constructor)
     // public members
     EXPECT_TRUE(ls.IsEmpty());
 
-    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
-    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
+    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
+    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -74,13 +76,13 @@ TEST(LineSet, Clear)
 {
     int size = 100;
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Vector3d dmin(0.0, 0.0, 0.0);
+    Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Eigen::Vector2i imin(0, 0);
-    Eigen::Vector2i imax(1000, 1000);
+    Vector2i imin(0, 0);
+    Vector2i imax(1000, 1000);
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     ls.points_.resize(size);
     ls.lines_.resize(size);
@@ -92,9 +94,9 @@ TEST(LineSet, Clear)
 
     EXPECT_FALSE(ls.IsEmpty());
 
-    unit_test::ExpectEQ(Eigen::Vector3d( 19.607843, 0.0, 0.0),
+    unit_test::ExpectEQ(Vector3d( 19.607843, 0.0, 0.0),
                         ls.GetMinBound());
-    unit_test::ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+    unit_test::ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
                         ls.GetMaxBound());
 
     EXPECT_TRUE(ls.HasPoints());
@@ -105,8 +107,8 @@ TEST(LineSet, Clear)
 
     // public members
     EXPECT_TRUE(ls.IsEmpty());
-    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
-    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
+    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
+    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -120,10 +122,10 @@ TEST(LineSet, IsEmpty)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+    Vector3d vmin(0.0, 0.0, 0.0);
+    Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     EXPECT_TRUE(ls.IsEmpty());
 
@@ -141,18 +143,18 @@ TEST(LineSet, GetMinBound)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+    Vector3d vmin(0.0, 0.0, 0.0);
+    Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     ls.points_.resize(size);
 
     unit_test::Rand(ls.points_, vmin, vmax, 0);
 
-    Eigen::Vector3d minBound = ls.GetMinBound();
+    Vector3d minBound = ls.GetMinBound();
 
-    unit_test::ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), ls.GetMinBound());
+    unit_test::ExpectEQ(Vector3d(19.607843, 0.0, 0.0), ls.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -162,18 +164,18 @@ TEST(LineSet, GetMaxBound)
 {
     int size = 100;
 
-    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+    Vector3d vmin(0.0, 0.0, 0.0);
+    Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     ls.points_.resize(size);
 
     unit_test::Rand(ls.points_, vmin, vmax, 0);
 
-    Eigen::Vector3d maxBound = ls.GetMaxBound();
+    Vector3d maxBound = ls.GetMaxBound();
 
-    unit_test::ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+    unit_test::ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
                         ls.GetMaxBound());
 }
 
@@ -182,7 +184,7 @@ TEST(LineSet, GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(LineSet, Transform)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Vector3d> ref_points =
     {
         {  396.870588, 1201.976471,  880.472941 },
         {  320.792157, 1081.976471,  829.139608 },
@@ -196,7 +198,7 @@ TEST(LineSet, Transform)
         {  274.909804,  802.368627,  218.747451 }
     };
 
-    vector<Eigen::Vector2i> ref_lines =
+    vector<Vector2i> ref_lines =
     {
         {   839,   392 },
         {   780,   796 },
@@ -211,13 +213,13 @@ TEST(LineSet, Transform)
     };
 
     int size = 10;
-    open3d::LineSet ls;
+    LineSet ls;
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Vector3d dmin(0.0, 0.0, 0.0);
+    Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Eigen::Vector2i imin(0, 0);
-    Eigen::Vector2i imax(1000, 1000);
+    Vector2i imin(0, 0);
+    Vector2i imax(1000, 1000);
 
     ls.points_.resize(size);
     unit_test::Rand(ls.points_, dmin, dmax, 0);
@@ -225,7 +227,7 @@ TEST(LineSet, Transform)
     ls.lines_.resize(size);
     unit_test::Rand(ls.lines_, imin, imax, 0);
 
-    Eigen::Matrix4d transformation;
+    Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40,
                       0.50, 0.60, 0.70, 0.80,
                       0.90, 0.10, 0.11, 0.12,
@@ -249,8 +251,8 @@ TEST(LineSet, OperatorAppend)
 {
     int size = 100;
 
-    open3d::LineSet ls0;
-    open3d::LineSet ls1;
+    LineSet ls0;
+    LineSet ls1;
 
     ls0.points_.resize(size);
     ls0.lines_.resize(size);
@@ -260,27 +262,27 @@ TEST(LineSet, OperatorAppend)
     ls1.lines_.resize(size);
     ls1.colors_.resize(size);
 
-    unit_test::Rand(ls0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    unit_test::Rand(ls0.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
-    unit_test::Rand(ls0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(ls0.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls0.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls0.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 0);
 
-    unit_test::Rand(ls1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    unit_test::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
-    unit_test::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+    unit_test::Rand(ls1.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls1.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls1.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
+    vector<Vector3d> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
     p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
-    vector<Eigen::Vector2i> n;
+    vector<Vector2i> n;
     n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
     n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
-    vector<Eigen::Vector3d> c;
+    vector<Vector3d> c;
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
-    open3d::LineSet ls(ls0);
+    LineSet ls(ls0);
     ls += ls1;
 
     EXPECT_EQ(2 * size, ls.points_.size());
@@ -295,7 +297,7 @@ TEST(LineSet, OperatorAppend)
     {
         unit_test::ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
 
-        Eigen::Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
         unit_test::ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
     }
 
@@ -314,8 +316,8 @@ TEST(LineSet, OperatorADD)
 {
     int size = 100;
 
-    open3d::LineSet ls0;
-    open3d::LineSet ls1;
+    LineSet ls0;
+    LineSet ls1;
 
     ls0.points_.resize(size);
     ls0.lines_.resize(size);
@@ -325,27 +327,27 @@ TEST(LineSet, OperatorADD)
     ls1.lines_.resize(size);
     ls1.colors_.resize(size);
 
-    unit_test::Rand(ls0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    unit_test::Rand(ls0.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
-    unit_test::Rand(ls0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(ls0.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls0.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls0.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 0);
 
-    unit_test::Rand(ls1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    unit_test::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
-    unit_test::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+    unit_test::Rand(ls1.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls1.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls1.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 1);
 
-    vector<Eigen::Vector3d> p;
+    vector<Vector3d> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
     p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
 
-    vector<Eigen::Vector2i> n;
+    vector<Vector2i> n;
     n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
     n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
 
-    vector<Eigen::Vector3d> c;
+    vector<Vector3d> c;
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
-    open3d::LineSet ls = ls0 + ls1;
+    LineSet ls = ls0 + ls1;
 
     EXPECT_EQ(2 * size, ls.points_.size());
     for (size_t i = 0; i < size; i++)
@@ -359,7 +361,7 @@ TEST(LineSet, OperatorADD)
     {
         unit_test::ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
 
-        Eigen::Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
         unit_test::ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
     }
 
@@ -378,7 +380,7 @@ TEST(LineSet, HasPoints)
 {
     int size = 100;
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     EXPECT_FALSE(ls.HasPoints());
 
@@ -394,7 +396,7 @@ TEST(LineSet, HasLines)
 {
     int size = 100;
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     EXPECT_FALSE(ls.HasLines());
 
@@ -411,7 +413,7 @@ TEST(LineSet, HasColors)
 {
     int size = 100;
 
-    open3d::LineSet ls;
+    LineSet ls;
 
     EXPECT_FALSE(ls.HasColors());
 
@@ -427,7 +429,7 @@ TEST(LineSet, HasColors)
 // ----------------------------------------------------------------------------
 TEST(LineSet, GetLineCoordinate)
 {
-    vector<vector<Eigen::Vector3d>> ref_points =
+    vector<vector<Vector3d>> ref_points =
     {
         { {  239.215686,  133.333333,  803.921569 }, {  552.941176,  474.509804,  627.450980 } },
         { {  239.215686,  133.333333,  803.921569 }, {  239.215686,  133.333333,  803.921569 } },
@@ -442,13 +444,13 @@ TEST(LineSet, GetLineCoordinate)
     };
 
     int size = 10;
-    open3d::LineSet ls;
+    LineSet ls;
 
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Vector3d dmin(0.0, 0.0, 0.0);
+    Vector3d dmax(1000.0, 1000.0, 1000.0);
 
-    Eigen::Vector2i imin(0, 0);
-    Eigen::Vector2i imax(size - 1, size - 1);
+    Vector2i imin(0, 0);
+    Vector2i imax(size - 1, size - 1);
 
     ls.points_.resize(size);
     unit_test::Rand(ls.points_, dmin, dmax, 0);
@@ -473,7 +475,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
 {
     int size = 10;
 
-    vector<Eigen::Vector3d> ref_points =
+    vector<Vector3d> ref_points =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  796.078431,  909.803922,  196.078431 },
@@ -497,7 +499,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
         {  105.882353,  996.078431,  215.686275 }
     };
 
-    vector<Eigen::Vector2i> ref_lines =
+    vector<Vector2i> ref_lines =
     {
         {     8,    13 },
         {     7,    17 },
@@ -511,8 +513,8 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
         {     1,    16 }
     };
 
-    open3d::PointCloud pc0;
-    open3d::PointCloud pc1;
+    PointCloud pc0;
+    PointCloud pc1;
     vector<pair<int, int>> correspondence(size);
 
     pc0.points_.resize(size);
@@ -523,13 +525,13 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    unit_test::Rand(pc0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    unit_test::Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
-    unit_test::Rand(pc0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(pc0.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(pc0.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(pc0.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 0);
 
-    unit_test::Rand(pc1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
-    unit_test::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
-    unit_test::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+    unit_test::Rand(pc1.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(pc1.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(pc1.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 1);
 
     unit_test::Raw raw;
     for (int i = 0; i < size; i++)
@@ -540,7 +542,7 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
         correspondence[i] = pair<int, int>(first, second);
     }
 
-    auto ls = open3d::CreateLineSetFromPointCloudCorrespondences(pc0, pc1, correspondence);
+    auto ls = CreateLineSetFromPointCloudCorrespondences(pc0, pc1, correspondence);
 
     EXPECT_EQ(ref_points.size(), ls->points_.size());
     for (size_t i = 0; i < ls->points_.size(); i++)

@@ -28,15 +28,16 @@
 
 #include <iostream>
 
+using namespace Eigen;
 using namespace std;
 
 // tab size used for formatting ref data.
 static const int TAB_SIZE = 4;
 
 // ----------------------------------------------------------------------------
-// Print an Eigen::Vector3i.
+// Print an Vector3i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Vector3i &v)
+void unit_test::Print(const Vector3i &v)
 {
     int width = 6;
 
@@ -47,9 +48,9 @@ void unit_test::Print(const Eigen::Vector3i &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print an Eigen::Vector3d.
+// Print an Vector3d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Vector3d &v)
+void unit_test::Print(const Vector3d &v)
 {
     int precision = 6;
     int width = 11;
@@ -64,9 +65,9 @@ void unit_test::Print(const Eigen::Vector3d &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print an Eigen::Vector4d.
+// Print an Vector4d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Vector4d &v)
+void unit_test::Print(const Vector4d &v)
 {
     int precision = 6;
     int width = 11;
@@ -82,9 +83,9 @@ void unit_test::Print(const Eigen::Vector4d &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print an Eigen::Vector6d.
+// Print an Vector6d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Matrix<double, 6, 1> &v)
+void unit_test::Print(const Matrix<double, 6, 1> &v)
 {
     int precision = 6;
     int width = 11;
@@ -102,9 +103,9 @@ void unit_test::Print(const Eigen::Matrix<double, 6, 1> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print an Eigen::Matrix4d.
+// Print an Matrix4d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Matrix4d &m)
+void unit_test::Print(const Matrix4d &m)
 {
     int precision = 6;
     int width = 12;
@@ -148,9 +149,9 @@ void unit_test::Print(const Eigen::Matrix4d &m)
 }
 
 // ----------------------------------------------------------------------------
-// Print an Eigen::Matrix6d.
+// Print an Matrix6d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const Eigen::Matrix<double, 6, 6> &m)
+void unit_test::Print(const Matrix<double, 6, 6> &m)
 {
     int precision = 6;
     int width = 12;
@@ -220,9 +221,9 @@ void unit_test::Print(const Eigen::Matrix<double, 6, 6> &m)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Vector2i.
+// Print a vector of Vector2i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector2i> &v)
+void unit_test::Print(const vector<Vector2i> &v)
 {
     int width = 6;
 
@@ -243,9 +244,9 @@ void unit_test::Print(const vector<Eigen::Vector2i> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Vector3i.
+// Print a vector of Vector3i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector3i> &v)
+void unit_test::Print(const vector<Vector3i> &v)
 {
     int width = 6;
 
@@ -267,9 +268,9 @@ void unit_test::Print(const vector<Eigen::Vector3i> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Vector4i.
+// Print a vector of Vector4i.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector4i> &v)
+void unit_test::Print(const vector<Vector4i> &v)
 {
     int width = 6;
 
@@ -292,9 +293,9 @@ void unit_test::Print(const vector<Eigen::Vector4i> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Vector2d.
+// Print a vector of Vector2d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector2d> &v)
+void unit_test::Print(const vector<Vector2d> &v)
 {
     int precision = 6;
     int width = 12;
@@ -319,9 +320,9 @@ void unit_test::Print(const vector<Eigen::Vector2d> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Vector3d.
+// Print a vector of Vector3d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Vector3d> &v)
+void unit_test::Print(const vector<Vector3d> &v)
 {
     int precision = 6;
     int width = 12;
@@ -347,9 +348,9 @@ void unit_test::Print(const vector<Eigen::Vector3d> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Matrix3d.
+// Print a vector of Matrix3d.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Matrix3d> &v)
+void unit_test::Print(const vector<Matrix3d> &v)
 {
     int precision = 6;
     int width = 12;
@@ -391,9 +392,9 @@ void unit_test::Print(const vector<Eigen::Matrix3d> &v)
 }
 
 // ----------------------------------------------------------------------------
-// Print a vector of Eigen::Matrix<double, 6, 1>.
+// Print a vector of Matrix<double, 6, 1>.
 // ----------------------------------------------------------------------------
-void unit_test::Print(const vector<Eigen::Matrix<double, 6, 1>> &v)
+void unit_test::Print(const vector<Matrix<double, 6, 1>> &v)
 {
     int precision = 6;
     int width = 12;

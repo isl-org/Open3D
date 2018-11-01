@@ -26,12 +26,13 @@
 
 #include "Sort.h"
 
+using namespace Eigen;
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// Greater than or Equal for sorting Eigen::Vector3d elements.
+// Greater than or Equal for sorting Vector3d elements.
 // ----------------------------------------------------------------------------
-bool unit_test::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
+bool unit_test::Sort::GE(const Vector3d& v0, const Vector3d& v1)
 {
     if (v0(0, 0) > v1(0, 0))
         return true;
@@ -52,11 +53,11 @@ bool unit_test::Sort::GE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 }
 
 // ----------------------------------------------------------------------------
-// Sort a vector of Eigen::Vector3d elements.
+// Sort a vector of Vector3d elements.
 // ----------------------------------------------------------------------------
-void unit_test::Sort::Do(vector<Eigen::Vector3d>& v)
+void unit_test::Sort::Do(vector<Vector3d>& v)
 {
-    Eigen::Vector3d temp(0.0, 0.0, 0.0);
+    Vector3d temp(0.0, 0.0, 0.0);
     for (size_t i = 0; i < v.size(); i++)
     {
         for (size_t j = 0; j < v.size(); j++)

@@ -38,7 +38,7 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Default)
 {
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
@@ -65,7 +65,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Default)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault)
 {
-    open3d::PinholeCameraIntrinsic intrinsic(
+    PinholeCameraIntrinsic intrinsic(
         PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     EXPECT_EQ(640, intrinsic.width_);
@@ -89,7 +89,7 @@ TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault)
 {
-    open3d::PinholeCameraIntrinsic intrinsic(
+    PinholeCameraIntrinsic intrinsic(
         PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault);
 
     EXPECT_EQ(512, intrinsic.width_);
@@ -113,7 +113,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault)
 {
-    open3d::PinholeCameraIntrinsic intrinsic(
+    PinholeCameraIntrinsic intrinsic(
         PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault);
 
     EXPECT_EQ(1920, intrinsic.width_);
@@ -146,7 +146,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Init)
     double cx = 0.75;
     double cy = 0.35;
 
-    open3d::PinholeCameraIntrinsic intrinsic(width,
+    PinholeCameraIntrinsic intrinsic(width,
                                              height,
                                              fx, fy,
                                              cx, cy);
@@ -180,7 +180,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, SetIntrinsics)
 {
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
@@ -233,7 +233,7 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetFocalLength)
 {
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -260,7 +260,7 @@ TEST(PinholeCameraIntrinsic, GetFocalLength)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetPrincipalPoint)
 {
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -287,7 +287,7 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetSkew)
 {
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -313,7 +313,7 @@ TEST(PinholeCameraIntrinsic, GetSkew)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, IsValid)
 {
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     EXPECT_FALSE(intrinsic.IsValid());
 
@@ -336,8 +336,8 @@ TEST(PinholeCameraIntrinsic, IsValid)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue)
 {
-    open3d::PinholeCameraIntrinsic src;
-    open3d::PinholeCameraIntrinsic dst;
+    PinholeCameraIntrinsic src;
+    PinholeCameraIntrinsic dst;
 
     int width = 640;
     int height = 480;

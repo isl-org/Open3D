@@ -29,6 +29,7 @@
 #include "Core/Camera/PinholeCameraTrajectory.h"
 #include <json/json.h>
 
+using namespace Eigen;
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
@@ -46,17 +47,17 @@ TEST(PinholeCameraTrajectory, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
 {
-    open3d::PinholeCameraTrajectory src;
-    open3d::PinholeCameraTrajectory dst;
+    PinholeCameraTrajectory src;
+    PinholeCameraTrajectory dst;
 
     int width = 640;
     int height = 480;
 
     src.intrinsic_.width_ = width;
     src.intrinsic_.height_ = height;
-    src.intrinsic_.intrinsic_matrix_ = Eigen::Matrix3d::Random();
+    src.intrinsic_.intrinsic_matrix_ = Matrix3d::Random();
 
-    src.extrinsic_.push_back(Eigen::Matrix4d::Random());
+    src.extrinsic_.push_back(Matrix4d::Random());
 
     Json::Value value;
     bool output = src.ConvertToJsonValue(value);

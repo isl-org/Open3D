@@ -28,6 +28,8 @@
 
 #include "Core/ColorMap/ImageWarpingField.h"
 
+using namespace Eigen;
+using namespace open3d;
 using namespace std;
 
 // ----------------------------------------------------------------------------
@@ -127,7 +129,7 @@ TEST(ImageWarpingField, Constructor)
     int height = 240;
     int nr_anchors = 16;
 
-    open3d::ImageWarpingField field(width, height, nr_anchors);
+    ImageWarpingField field(width, height, nr_anchors);
 
     EXPECT_EQ(21, field.anchor_w_);
     EXPECT_EQ(16, field.anchor_h_);
@@ -170,7 +172,7 @@ TEST(ImageWarpingField, QueryFlow)
            205,     3,   228,   135,     0,    79,   198,    83,   141,     0
     };
 
-    vector<Eigen::Vector2d> ref_output =
+    vector<Vector2d> ref_output =
     {
         {    0.00,    0.00 }, {    0.00,    0.00 }, {  112.00,    0.00 },
         {  160.00,  240.00 }, {  208.00,   80.00 }, {  256.00,  192.00 },
@@ -195,7 +197,7 @@ TEST(ImageWarpingField, QueryFlow)
     int height = 240;
     int nr_anchors = 16;
 
-    open3d::ImageWarpingField field(width, height, nr_anchors);
+    ImageWarpingField field(width, height, nr_anchors);
 
     for (size_t i = 0; i < ref_output.size(); i++)
         unit_test::ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
@@ -224,7 +226,7 @@ TEST(ImageWarpingField, GetImageWarpingField)
            205,     3,   228,   135,     0,    79,   198,    83,   141,     0
     };
 
-    vector<Eigen::Vector2d> ref_output =
+    vector<Vector2d> ref_output =
     {
         {    5.00,   81.00 }, {    6.00,  109.00 }, {    7.00,    0.00 },
         {   10.00,   15.00 }, {   13.00,    5.00 }, {   16.00,   12.00 },
@@ -249,11 +251,11 @@ TEST(ImageWarpingField, GetImageWarpingField)
     int height = 240;
     int nr_anchors = 16;
 
-    open3d::ImageWarpingField field(width, height, nr_anchors);
+    ImageWarpingField field(width, height, nr_anchors);
 
     for (size_t i = 0; i < ref_output.size(); i++)
     {
-        Eigen::Vector2d elem = field.GetImageWarpingField(x[i], y[i]);
+        Vector2d elem = field.GetImageWarpingField(x[i], y[i]);
 
         unit_test::ExpectEQ(ref_output[i], elem);
     }

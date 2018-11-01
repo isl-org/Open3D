@@ -30,6 +30,7 @@
 #include "Core/Odometry/Odometry.h"
 #include "Core/Odometry/RGBDOdometryJacobian.h"
 
+using namespace Eigen;
 using namespace odometry_tools;
 using namespace open3d;
 using namespace std;
@@ -194,7 +195,7 @@ TEST(Odometry, CountCorrespondence)
 // ----------------------------------------------------------------------------
 TEST(Odometry, ComputeCorrespondence)
 {
-    vector<Eigen::Vector4i> ref_output =
+    vector<Vector4i> ref_output =
     {
         {    59,     2,    59,     2 },
         {   120,     6,   120,     6 },
@@ -243,14 +244,14 @@ TEST(Odometry, ComputeCorrespondence)
     int width = 240;
     int height = 180;
 
-    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    Matrix3d intrinsic = Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;
     intrinsic(1, 1) = 0.65;
     intrinsic(0, 2) = 0.75;
     intrinsic(1, 2) = 0.35;
     intrinsic(2, 2) = 0.9;
 
-    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 1.0;
     extrinsic(1, 1) = 1.0;
     extrinsic(2, 2) = 1.0;
@@ -261,7 +262,7 @@ TEST(Odometry, ComputeCorrespondence)
     OdometryOption option;
     option.max_depth_diff_ = 0.25;
 
-    shared_ptr<vector<Eigen::Vector4i>> output =
+    shared_ptr<vector<Vector4i>> output =
         ComputeCorrespondence(intrinsic,
                               extrinsic,
                               *depth_s,
@@ -302,7 +303,7 @@ TEST(Odometry, ConvertDepthImageToXYZImage)
 
     shared_ptr<Image> depth = DepthBuffer(width, height, 0.0, 6.0, 0);
 
-    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    Matrix3d intrinsic = Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;
     intrinsic(1, 1) = 0.65;
     intrinsic(0, 2) = 0.75;
@@ -352,7 +353,7 @@ TEST(Odometry, CreateCameraMatrixPyramid)
         }
     };
 
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -367,7 +368,7 @@ TEST(Odometry, CreateCameraMatrixPyramid)
 
     int levels = 5;
 
-    vector<Eigen::Matrix3d> output = CreateCameraMatrixPyramid(intrinsic, levels);
+    vector<Matrix3d> output = CreateCameraMatrixPyramid(intrinsic, levels);
 
     EXPECT_EQ(ref_output.size(), output.size());
     for (size_t i = 0; i < ref_output.size(); i++)
@@ -393,13 +394,13 @@ TEST(Odometry, DISABLED_CreateInformationMatrix)
         {  1.548815, -4.816394,  0.000000,  0.000000,  0.000000, 22.000000, }
     };
 
-    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 10.0;
     extrinsic(1, 1) = 10.0;
     extrinsic(2, 2) = 0.2;
     extrinsic(0, 3) = 1.0;
 
-    open3d::PinholeCameraIntrinsic intrinsic;
+    PinholeCameraIntrinsic intrinsic;
 
     int width = 240;
     int height = 180;
@@ -418,7 +419,7 @@ TEST(Odometry, DISABLED_CreateInformationMatrix)
     OdometryOption option;
     option.max_depth_diff_ = 0.25;
 
-    Eigen::Matrix6d output = CreateInformationMatrix(extrinsic,
+    Matrix6d output = CreateInformationMatrix(extrinsic,
                                                      intrinsic,
                                                      *depth_s,
                                                      *depth_t,
@@ -461,14 +462,14 @@ TEST(Odometry, NormalizeIntensity)
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    Matrix3d intrinsic = Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;
     intrinsic(1, 1) = 0.65;
     intrinsic(0, 2) = 0.75;
     intrinsic(1, 2) = 0.35;
     intrinsic(2, 2) = 0.9;
 
-    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 1.0;
     extrinsic(1, 1) = 1.0;
     extrinsic(2, 2) = 1.0;
@@ -479,7 +480,7 @@ TEST(Odometry, NormalizeIntensity)
     OdometryOption option;
     option.max_depth_diff_ = 0.978100725;
 
-    shared_ptr<vector<Eigen::Vector4i>> correspondence =
+    shared_ptr<vector<Vector4i>> correspondence =
         ComputeCorrespondence(intrinsic,
                               extrinsic,
                               *depth_s,
@@ -700,15 +701,15 @@ TEST(Odometry, InitializeRGBDOdometry)
     shared_ptr<RGBDImage> source = PackRGBDImage(color0, *depth0);
     shared_ptr<RGBDImage> target = PackRGBDImage(color1, *depth1);
 
-    open3d::PinholeCameraIntrinsic intrinsic;
-    intrinsic.intrinsic_matrix_ = Eigen::Matrix3d::Zero();
+    PinholeCameraIntrinsic intrinsic;
+    intrinsic.intrinsic_matrix_ = Matrix3d::Zero();
     intrinsic.intrinsic_matrix_(0, 0) = 0.5;
     intrinsic.intrinsic_matrix_(1, 1) = 0.65;
     intrinsic.intrinsic_matrix_(0, 2) = 0.75;
     intrinsic.intrinsic_matrix_(1, 2) = 0.35;
     intrinsic.intrinsic_matrix_(2, 2) = 0.9;
 
-    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 1.0;
     extrinsic(1, 1) = 1.0;
     extrinsic(2, 2) = 1.0;
@@ -785,14 +786,14 @@ TEST(Odometry, DISABLED_DoSingleIteration)
     RGBDImage target_dx(*dxColor, *tgtDepth);
     RGBDImage target_dy(*dyColor, *tgtDepth);
 
-    Eigen::Matrix3d intrinsic = Eigen::Matrix3d::Zero();
+    Matrix3d intrinsic = Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;
     intrinsic(1, 1) = 0.65;
     intrinsic(0, 2) = 0.75;
     intrinsic(1, 2) = 0.35;
     intrinsic(2, 2) = 0.9;
 
-    Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Zero();
+    Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 1.0;
     extrinsic(1, 1) = 1.0;
     extrinsic(2, 2) = 1.0;
@@ -804,7 +805,7 @@ TEST(Odometry, DISABLED_DoSingleIteration)
     option.max_depth_diff_ = 0.978100725;
 
     bool status = false;
-    Eigen::Matrix4d output = Eigen::Matrix4d::Zero();
+    Matrix4d output = Matrix4d::Zero();
     tie(status, output) = DoSingleIteration(iter,
                                             level,
                                             source,

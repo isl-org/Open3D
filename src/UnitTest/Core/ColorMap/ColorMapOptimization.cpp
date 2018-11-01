@@ -32,6 +32,7 @@
 #include "Core/Geometry/RGBDImage.h"
 #include "Core/Geometry/TriangleMesh.h"
 
+using namespace Eigen;
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
@@ -130,7 +131,7 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
 // ----------------------------------------------------------------------------
 PinholeCameraTrajectory GenerateCamera(const int& width,
                                        const int& height,
-                                       const Eigen::Vector3d& pose)
+                                       const Vector3d& pose)
 {
     PinholeCameraTrajectory camera;
 
@@ -160,7 +161,7 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
 {
-    vector<Eigen::Vector3d> ref_points =
+    vector<Vector3d> ref_points =
     {
         {    1.072613,    0.611307,   42.921570 },
         {    0.897783,    0.859754,   43.784313 },
@@ -197,20 +198,20 @@ TEST(ColorMapOptimization, Project3DPointAndGetUVDepth)
     int width = 320;
     int height = 240;
 
-    Eigen::Vector3d point = { 3.3, 4.4, 5.5 };
+    Vector3d point = { 3.3, 4.4, 5.5 };
 
-    vector<Eigen::Vector3d> output;
+    vector<Vector3d> output;
     for (int i = 0; i < ref_points.size(); i++)
     {
         // change the pose randomly
-        Eigen::Vector3d pose;
+        Vector3d pose;
         Rand(pose, 0.0, 10.0, i);
         PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
         int camid = 0;
 
         float u, v, d;
         tie(u, v, d) = Project3DPointAndGetUVDepth(point, camera, camid);
-        ExpectEQ(ref_points[i], Eigen::Vector3d(u, v, d));
+        ExpectEQ(ref_points[i], Vector3d(u, v, d));
     }
 }
 
@@ -266,7 +267,7 @@ TEST(ColorMapOptimization, MakeVertexAndImageVisibility)
                                                bytes_per_channel,
                                                size);
 
-    Eigen::Vector3d pose(-0.30, -0.15, -0.13);
+    Vector3d pose(-0.30, -0.15, -0.13);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     ColorMapOptimizationOption option(false, 4, 0.316, 30, 95, 120, 0.1, 3);
@@ -349,7 +350,7 @@ TEST(ColorMapOptimization, QueryImageIntensity)
              0,     0,     0,     1,     0
     };
 
-    vector<Eigen::Vector3d> ref_float =
+    vector<Vector3d> ref_float =
     {
         {    0.000000,    0.000000,    0.000000 },
         {   76.352943,   28.000000,   92.588234 },
@@ -391,7 +392,7 @@ TEST(ColorMapOptimization, QueryImageIntensity)
     float* const depth_data = reinterpret_cast<float*>(&img.data_[0]);
     Rand(depth_data, width * height, 10.0, 100.0, 0);
 
-    Eigen::Vector3d pose(62.5, 37.5, 1.85);
+    Vector3d pose(62.5, 37.5, 1.85);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
     int ch = -1;
@@ -402,7 +403,7 @@ TEST(ColorMapOptimization, QueryImageIntensity)
     {
         vector<double> vData(3);
         Rand(vData, 10.0, 100.0, i);
-        Eigen::Vector3d V(vData[0], vData[1], vData[2]);
+        Vector3d V(vData[0], vData[1], vData[2]);
 
         bool boolResult = false;
         float float_result = 0.0;
@@ -445,7 +446,7 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
              0,     0,     0,     1,     0
     };
 
-    vector<Eigen::Vector3d> ref_float =
+    vector<Vector3d> ref_float =
     {
         {    0.000000,    0.000000,    0.000000 },
         {   76.352943,   28.000000,   92.588234 },
@@ -490,9 +491,9 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
     // TODO: change the initialization in such a way that the field has an
     // effect on the outcome of QueryImageIntensity.
     int nr_anchors = 16;
-    open3d::ImageWarpingField field(width, height, nr_anchors);
+    ImageWarpingField field(width, height, nr_anchors);
 
-    Eigen::Vector3d pose(62.5, 37.5, 1.85);
+    Vector3d pose(62.5, 37.5, 1.85);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
     int ch = -1;
@@ -503,7 +504,7 @@ TEST(ColorMapOptimization, QueryImageIntensity_WarpingField)
     {
         vector<double> vData(3);
         Rand(vData, 10.0, 100.0, i);
-        Eigen::Vector3d V(vData[0], vData[1], vData[2]);
+        Vector3d V(vData[0], vData[1], vData[2]);
 
         bool boolResult = false;
         float float_result = 0.0;
@@ -596,7 +597,7 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex)
                                                 bytes_per_channel,
                                                 size);
 
-    Eigen::Vector3d pose(30, 15, 0.3);
+    Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
 
@@ -689,7 +690,7 @@ TEST(ColorMapOptimization, SetProxyIntensityForVertex_WarpingField)
                                                 bytes_per_channel,
                                                 size);
 
-    Eigen::Vector3d pose(30, 15, 0.3);
+    Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
 
@@ -770,7 +771,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid)
         warping_fields_init.push_back(field);
     }
 
-    Eigen::Vector3d pose(60, 15, 0.3);
+    Vector3d pose(60, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
@@ -852,7 +853,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
                                                 bytes_per_channel,
                                                 size);
 
-    Eigen::Vector3d pose(30, 15, 0.3);
+    Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
@@ -890,7 +891,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, SetGeometryColorAverage)
 {
-    vector<Eigen::Vector3d> ref_vertex_colors =
+    vector<Vector3d> ref_vertex_colors =
     {
         {    0.000000,    0.000000,    0.000000 },
         {    0.000000,    0.000000,    0.000000 },
@@ -944,7 +945,7 @@ TEST(ColorMapOptimization, SetGeometryColorAverage)
 
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
 
-    Eigen::Vector3d pose(30, 15, 0.3);
+    Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
 
@@ -968,7 +969,7 @@ TEST(ColorMapOptimization, SetGeometryColorAverage)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, SetGeometryColorAverage_WarpingFields)
 {
-    vector<Eigen::Vector3d> ref_vertex_colors =
+    vector<Vector3d> ref_vertex_colors =
     {
         {    0.000000,    0.000000,    0.000000 },
         {    0.000000,    0.000000,    0.000000 },
@@ -1032,7 +1033,7 @@ TEST(ColorMapOptimization, SetGeometryColorAverage_WarpingFields)
 
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
 
-    Eigen::Vector3d pose(30, 15, 0.3);
+    Vector3d pose(30, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
     int camid = 0;
 
@@ -1236,7 +1237,7 @@ TEST(ColorMapOptimization, MakeDepthMasks)
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptimization, ColorMapOptimization)
 {
-    vector<Eigen::Vector3d> ref_vertices =
+    vector<Vector3d> ref_vertices =
     {
         {    0.000000,    0.000000,   10.000000 },
         {    0.000000,    0.000000,  -10.000000 },
@@ -1282,11 +1283,11 @@ TEST(ColorMapOptimization, ColorMapOptimization)
         {    4.755283,   -3.454915,   -8.090170 }
     };
 
-    vector<Eigen::Vector3d> ref_vertex_normals =
+    vector<Vector3d> ref_vertex_normals =
     {
     };
 
-    vector<Eigen::Vector3d> ref_vertex_colors =
+    vector<Vector3d> ref_vertex_colors =
     {
         {    0.000000,    0.000000,    0.000000 },
         {    0.000000,    0.000000,    0.000000 },
@@ -1332,7 +1333,7 @@ TEST(ColorMapOptimization, ColorMapOptimization)
         {    0.000000,    0.000000,    0.000000 }
     };
 
-    vector<Eigen::Vector3i> ref_triangles =
+    vector<Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    33,    32 },
@@ -1416,7 +1417,7 @@ TEST(ColorMapOptimization, ColorMapOptimization)
         {    41,    32,    22 }
     };
 
-    vector<Eigen::Vector3d> ref_triangle_normals =
+    vector<Vector3d> ref_triangle_normals =
     {
     };
 
@@ -1430,7 +1431,7 @@ TEST(ColorMapOptimization, ColorMapOptimization)
 
     vector<RGBDImage> rgbdImages = GenerateRGBDImages(width, height, size);
 
-    Eigen::Vector3d pose(60, 15, 0.3);
+    Vector3d pose(60, 15, 0.3);
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95, 3);

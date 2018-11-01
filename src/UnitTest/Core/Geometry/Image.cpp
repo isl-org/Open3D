@@ -29,6 +29,8 @@
 #include "Core/Geometry/Image.h"
 #include "Core/Camera/PinholeCameraIntrinsic.h"
 
+using namespace Eigen;
+using namespace open3d;
 using namespace std;
 
 static const int default_width = 1920;
@@ -41,10 +43,10 @@ static const int default_bytes_per_channel = 1;
 // ----------------------------------------------------------------------------
 TEST(Image, DefaultConstructor)
 {
-    open3d::Image image;
+    Image image;
 
     // inherited from Geometry2D
-    EXPECT_EQ(open3d::Geometry::GeometryType::Image, image.GetGeometryType());
+    EXPECT_EQ(Geometry::GeometryType::Image, image.GetGeometryType());
     EXPECT_EQ(2, image.Dimension());
 
     // public member variables
@@ -58,8 +60,8 @@ TEST(Image, DefaultConstructor)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
-    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
+    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -70,7 +72,7 @@ TEST(Image, DefaultConstructor)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImage)
 {
-    open3d::Image image;
+    Image image;
 
     image.PrepareImage(default_width,
                        default_height,
@@ -91,8 +93,8 @@ TEST(Image, CreateImage)
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
-    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
-    unit_test::ExpectEQ(Eigen::Vector2d(default_width, default_height),
+    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectEQ(Vector2d(default_width, default_height),
                         image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
@@ -106,7 +108,7 @@ TEST(Image, CreateImage)
 // ----------------------------------------------------------------------------
 TEST(Image, Clear)
 {
-    open3d::Image image;
+    Image image;
 
     image.PrepareImage(default_width,
                        default_height,
@@ -126,8 +128,8 @@ TEST(Image, Clear)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
-    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
+    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -138,7 +140,7 @@ TEST(Image, Clear)
 // ----------------------------------------------------------------------------
 TEST(Image, FloatValueAt)
 {
-    open3d::Image image;
+    Image image;
 
     const int local_width = 10;
     const int local_height = 10;
@@ -172,7 +174,7 @@ TEST(Image, FloatValueAt)
 // ----------------------------------------------------------------------------
 TEST(Image, DISABLED_MemberData)
 {
-    open3d::Image image;
+    Image image;
 
     image.PrepareImage(default_width,
                        default_height,
@@ -224,9 +226,9 @@ TEST(Image, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 {
-    open3d::PinholeCameraIntrinsic intrinsic =
-        open3d::PinholeCameraIntrinsic(
-            open3d::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    PinholeCameraIntrinsic intrinsic =
+        PinholeCameraIntrinsic(
+            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto image = CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
 
@@ -253,9 +255,9 @@ void TEST_CreateFloatImageFromImage(
     const int& num_of_channels,
     const int& bytes_per_channel,
     const vector<uint8_t>& ref,
-    const open3d::Image::ColorToIntensityConversionType& type)
+    const Image::ColorToIntensityConversionType& type)
 {
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -269,7 +271,7 @@ void TEST_CreateFloatImageFromImage(
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
     EXPECT_EQ(local_width, float_image->width_);
@@ -302,7 +304,7 @@ TEST(Image, CreateFloatImageFromImage_1_1)
             8,   62,  206,  205,   77,   63,  157,  156,   28,   62
     };
 
-    TEST_CreateFloatImageFromImage(1, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 1, ref, Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -327,7 +329,7 @@ TEST(Image, CreateFloatImageFromImage_1_2)
           178,   70,    0,  205,  106,   71,    0,   17,  114,   71
     };
 
-    TEST_CreateFloatImageFromImage(1, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 2, ref, Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -352,7 +354,7 @@ TEST(Image, CreateFloatImageFromImage_1_4)
           243,  150,  167,  218,  112,  235,  101,  207,  174,  232
     };
 
-    TEST_CreateFloatImageFromImage(1, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 4, ref, Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -378,7 +380,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Weighted)
            29,   63,  197,  186,    3,   63,  145,   27,   72,   63
     };
 
-    TEST_CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 1, ref, Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -404,7 +406,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Equal)
            29,   63,  197,  186,    3,   63,  145,   27,   72,   63
     };
 
-    TEST_CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 1, ref, Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -430,7 +432,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Weighted)
            23,   71,  210,  181,   85,   71,  101,   14,   28,   71
     };
 
-    TEST_CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 2, ref, Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -456,7 +458,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Equal)
            23,   71,  210,  181,   85,   71,  101,   14,   28,   71
     };
 
-    TEST_CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 2, ref, Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -482,7 +484,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Weighted)
            98,  222,  145,  236,   94,  233,   36,   85,  141,  233
     };
 
-    TEST_CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 4, ref, Image::ColorToIntensityConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -508,7 +510,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal)
            98,  222,  145,  236,   94,  233,   36,   85,  141,  233
     };
 
-    TEST_CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 4, ref, Image::ColorToIntensityConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -516,7 +518,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal)
 // ----------------------------------------------------------------------------
 TEST(Image, PointerAt)
 {
-    open3d::Image image;
+    Image image;
 
     const int local_width = 10;
     const int local_height = 10;
@@ -535,10 +537,10 @@ TEST(Image, PointerAt)
     im[1 * local_width + 0] = 2.0f;
     im[1 * local_width + 1] = 3.0f;
 
-    EXPECT_NEAR(0.0f, *open3d::PointerAt<float>(image, 0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, *open3d::PointerAt<float>(image, 1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, *open3d::PointerAt<float>(image, 0, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(3.0f, *open3d::PointerAt<float>(image, 1, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0f, *PointerAt<float>(image, 0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, *PointerAt<float>(image, 1, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, *PointerAt<float>(image, 0, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(3.0f, *PointerAt<float>(image, 1, 1), unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -561,7 +563,7 @@ TEST(Image, ConvertDepthToFloatImage)
            11,   57,   68,  190,   82,   58,  214,   94,   32,   57
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -577,7 +579,7 @@ TEST(Image, ConvertDepthToFloatImage)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::ConvertDepthToFloatImage(image);
+    auto float_image = ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
     EXPECT_EQ(local_width, float_image->width_);
@@ -608,7 +610,7 @@ TEST(Image, FlipImage)
           249,  145,  118,  162,  118,  230,  110,    1,  179,  227
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -624,7 +626,7 @@ TEST(Image, FlipImage)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto flip_image = open3d::ConvertDepthToFloatImage(image);
+    auto flip_image = ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(flip_image->IsEmpty());
     EXPECT_EQ(local_width, flip_image->width_);
@@ -642,9 +644,9 @@ TEST(Image, FlipImage)
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
 void TEST_FilterImage(const vector<uint8_t>& ref,
-                 const open3d::Image::FilterType& filter)
+                 const Image::FilterType& filter)
 {
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -659,9 +661,9 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto output_image = open3d::FilterImage(*float_image, filter);
+    auto output_image = FilterImage(*float_image, filter);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ(local_width, output_image->width_);
@@ -692,7 +694,7 @@ TEST(Image, FilterImage_Gaussian3)
            52,  234,  108,  176,  182,  234,  146,  238,   64,  234
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian3);
+    TEST_FilterImage(ref, Image::FilterType::Gaussian3);
 }
 
 // ----------------------------------------------------------------------------
@@ -715,7 +717,7 @@ TEST(Image, FilterImage_Gaussian5)
            44,  234,   32,  174,  126,  234,   84,  234,   47,  234
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian5);
+    TEST_FilterImage(ref, Image::FilterType::Gaussian5);
 }
 
 // ----------------------------------------------------------------------------
@@ -738,7 +740,7 @@ TEST(Image, FilterImage_Gaussian7)
            18,  234,  108,  135,   55,  234,  187,   97,   17,  234
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian7);
+    TEST_FilterImage(ref, Image::FilterType::Gaussian7);
 }
 
 // ----------------------------------------------------------------------------
@@ -761,7 +763,7 @@ TEST(Image, FilterImage_Sobel3Dx)
            52,  236,  140,   27,  131,  233,   33,  139,   48,  108
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Sobel3Dx);
+    TEST_FilterImage(ref, Image::FilterType::Sobel3Dx);
 }
 
 // ----------------------------------------------------------------------------
@@ -784,7 +786,7 @@ TEST(Image, FilterImage_Sobel3Dy)
           112,  235,  229,  149,  243,  235,   12,  159,  128,  235
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Sobel3Dy);
+    TEST_FilterImage(ref, Image::FilterType::Sobel3Dy);
 }
 
 // ----------------------------------------------------------------------------
@@ -807,7 +809,7 @@ TEST(Image, FilterHorizontalImage)
           112,  234,  229,  149,  243,  234,   12,  159,  128,  234
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -822,11 +824,11 @@ TEST(Image, FilterHorizontalImage)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
     const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
 
-    auto output_image = open3d::FilterHorizontalImage(*float_image, Gaussian3);
+    auto output_image = FilterHorizontalImage(*float_image, Gaussian3);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ(local_width, output_image->width_);
@@ -849,7 +851,7 @@ TEST(Image, DownsampleImage)
           205,  233,   49,  169,  227,   87
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -864,9 +866,9 @@ TEST(Image, DownsampleImage)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto output_image = open3d::DownsampleImage(*float_image);
+    auto output_image = DownsampleImage(*float_image);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ((int)(local_width / 2), output_image->width_);
@@ -897,7 +899,7 @@ TEST(Image, DilateImage)
           255,  255,  255,    0,    0,    0,    0,    0,  255,  255
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 10;
@@ -915,7 +917,7 @@ TEST(Image, DilateImage)
         if (i % 9 == 0)
             image.data_[i] = 255;
 
-    auto output_image = open3d::DilateImage(image);
+    auto output_image = DilateImage(image);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ(local_width, output_image->width_);
@@ -946,7 +948,7 @@ TEST(Image, LinearTransformImage)
            25,   62,  186,  125,   10,  236,   27,    8,   73,  233
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -961,9 +963,9 @@ TEST(Image, LinearTransformImage)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto output_image = open3d::CreateFloatImageFromImage(image);
+    auto output_image = CreateFloatImageFromImage(image);
 
-    open3d::LinearTransformImage(*output_image, 2.3, 0.15);
+    LinearTransformImage(*output_image, 2.3, 0.15);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ(local_width, output_image->width_);
@@ -994,7 +996,7 @@ TEST(Image, ClipIntensityImage)
           168,   62,  195,  245,  168,   62,  195,  245,  168,   62
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 5;
@@ -1009,9 +1011,9 @@ TEST(Image, ClipIntensityImage)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto output_image = open3d::CreateFloatImageFromImage(image);
+    auto output_image = CreateFloatImageFromImage(image);
 
-    open3d::ClipIntensityImage(*output_image, 0.33, 0.71);
+    ClipIntensityImage(*output_image, 0.33, 0.71);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ(local_width, output_image->width_);
@@ -1028,7 +1030,7 @@ TEST(Image, ClipIntensityImage)
 template<typename T>
 void TEST_CreateImageFromFloatImage()
 {
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 10;
@@ -1043,9 +1045,9 @@ void TEST_CreateImageFromFloatImage()
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto output_image = open3d::CreateImageFromFloatImage<T>(*float_image);
+    auto output_image = CreateImageFromFloatImage<T>(*float_image);
 
     EXPECT_FALSE(output_image->IsEmpty());
     EXPECT_EQ(local_width, output_image->width_);
@@ -1108,7 +1110,7 @@ TEST(Image, FilterImagePyramid)
         }
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 6;
@@ -1124,11 +1126,11 @@ TEST(Image, FilterImagePyramid)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = open3d::CreateImagePyramid(*float_image, local_num_of_levels);
+    auto pyramid = CreateImagePyramid(*float_image, local_num_of_levels);
 
-    auto outputPyramid = open3d::FilterImagePyramid(pyramid, open3d::Image::FilterType::Gaussian3);
+    auto outputPyramid = FilterImagePyramid(pyramid, Image::FilterType::Gaussian3);
 
     EXPECT_EQ(pyramid.size(), outputPyramid.size());
 
@@ -1180,7 +1182,7 @@ TEST(Image, CreateImagePyramid)
         }
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
     const int local_width = 6;
@@ -1196,9 +1198,9 @@ TEST(Image, CreateImagePyramid)
 
     unit_test::Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = open3d::CreateImagePyramid(*float_image, local_num_of_levels);
+    auto pyramid = CreateImagePyramid(*float_image, local_num_of_levels);
 
     int expected_width = local_width;
     int expected_height = local_width;

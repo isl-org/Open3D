@@ -29,21 +29,22 @@
 
 #include <iostream>
 
+using namespace Eigen;
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d.
+// Initialize an Vector3d.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    Eigen::Vector3d &v,
-    const Eigen::Vector3d &vmin,
-    const Eigen::Vector3d &vmax,
+    Vector3d &v,
+    const Vector3d &vmin,
+    const Vector3d &vmax,
     const int& seed)
 {
     unit_test::Raw raw(seed);
 
-    Eigen::Vector3d factor;
+    Vector3d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
     factor(2, 0) = vmax(2, 0) - vmin(2, 0);
@@ -54,11 +55,11 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d.
+// Initialize an Vector3d.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    Eigen::Vector3d &v,
+    Vector3d &v,
     const double &vmin,
     const double &vmax,
     const int& seed)
@@ -74,18 +75,18 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector2i vector.
+// Initialize an Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector2i> &v,
-    const Eigen::Vector2i &vmin,
-    const Eigen::Vector2i &vmax,
+    vector<Vector2i> &v,
+    const Vector2i &vmin,
+    const Vector2i &vmax,
     const int& seed)
 {
     unit_test::Raw raw(seed);
 
-    Eigen::Vector2d factor;
+    Vector2d factor;
     factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / unit_test::Raw::VMAX;
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / unit_test::Raw::VMAX;
 
@@ -97,18 +98,18 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3i vector.
+// Initialize an Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector3i> &v,
-    const Eigen::Vector3i &vmin,
-    const Eigen::Vector3i &vmax,
+    vector<Vector3i> &v,
+    const Vector3i &vmin,
+    const Vector3i &vmax,
     const int& seed)
 {
     unit_test::Raw raw(seed);
 
-    Eigen::Vector3d factor;
+    Vector3d factor;
     factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / unit_test::Raw::VMAX;
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / unit_test::Raw::VMAX;
     factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / unit_test::Raw::VMAX;
@@ -122,18 +123,18 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector2d vector.
+// Initialize an Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector2d> &v,
-    const Eigen::Vector2d &vmin,
-    const Eigen::Vector2d &vmax,
+    vector<Vector2d> &v,
+    const Vector2d &vmin,
+    const Vector2d &vmax,
     const int& seed)
 {
     unit_test::Raw raw(seed);
 
-    Eigen::Vector2d factor;
+    Vector2d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
 
@@ -145,18 +146,18 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d vector.
+// Initialize an Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector3d> &v,
-    const Eigen::Vector3d &vmin,
-    const Eigen::Vector3d &vmax,
+    vector<Vector3d> &v,
+    const Vector3d &vmin,
+    const Vector3d &vmax,
     const int& seed)
 {
     unit_test::Raw raw(seed);
 
-    Eigen::Vector3d factor;
+    Vector3d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
     factor(2, 0) = vmax(2, 0) - vmin(2, 0);
@@ -170,11 +171,11 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector4i vector.
+// Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector4i> &v,
+    vector<Vector4i> &v,
     const int &vmin,
     const int &vmax,
     const int& seed)

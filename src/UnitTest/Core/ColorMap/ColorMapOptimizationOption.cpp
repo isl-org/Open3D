@@ -28,12 +28,15 @@
 
 #include "Core/ColorMap/ColorMapOptimizationOption.h"
 
+using namespace open3d;
+using namespace std;
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 TEST(ColorMapOptimizationOption, Constructor)
 {
-    open3d::ColorMapOptimizationOption option;
+    ColorMapOptimizationOption option;
 
     EXPECT_FALSE(option.non_rigid_camera_coordinate_);
 
