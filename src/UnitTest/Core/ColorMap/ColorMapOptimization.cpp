@@ -144,10 +144,7 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
     camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
 
     camera.extrinsic_.resize(1);
-    camera.extrinsic_[0] << 0.0, 0.0, 0.0, 0.0,
-                            0.0, 0.0, 0.0, 0.0,
-                            0.0, 0.0, 0.0, 0.0,
-                            0.0, 0.0, 0.0, 0.0;
+    camera.extrinsic_[0] = Matrix4d::Zero();
 
     camera.extrinsic_[0](0, 0) = pose(0, 0);
     camera.extrinsic_[0](1, 1) = pose(1, 0);
