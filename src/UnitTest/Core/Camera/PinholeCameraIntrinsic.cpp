@@ -29,6 +29,7 @@
 #include "Core/Camera/PinholeCameraIntrinsic.h"
 #include <json/json.h>
 
+using namespace Eigen;
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
@@ -43,21 +44,8 @@ TEST(PinholeCameraIntrinsic, Constructor_Default)
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
 
-    intrinsic.intrinsic_matrix_ << 0.0, 0.0, 0.0,
-                                   0.0, 0.0, 0.0,
-                                   0.0, 0.0, 0.0;
-
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    Matrix3d reference = Matrix3d::Zero();
+    ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
 // ----------------------------------------------------------------------------
@@ -71,17 +59,10 @@ TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault)
     EXPECT_EQ(640, intrinsic.width_);
     EXPECT_EQ(480, intrinsic.height_);
 
-    EXPECT_NEAR(525, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+    Matrix3d reference;
+    reference << 525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0;
 
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(525, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(319.5, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(239.5, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
 // ----------------------------------------------------------------------------
@@ -95,17 +76,10 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault)
     EXPECT_EQ(512, intrinsic.width_);
     EXPECT_EQ(424, intrinsic.height_);
 
-    EXPECT_NEAR(254.878, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+    Matrix3d reference;
+    reference << 254.878, 0.0, 365.456, 0.0, 205.395, 365.456, 0.0, 0.0, 1.0;
 
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(205.395, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(365.456, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(365.456, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
 // ----------------------------------------------------------------------------
@@ -119,17 +93,12 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault)
     EXPECT_EQ(1920, intrinsic.width_);
     EXPECT_EQ(1080, intrinsic.height_);
 
-    EXPECT_NEAR(1059.9718, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+    Matrix3d reference;
+    reference << 1059.9718,       0.0, 975.7193,
+                       0.0, 1059.9718, 545.9533,
+                       0.0,       0.0,      1.0;
 
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(1059.9718, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(975.7193, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(545.9533, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
 // ----------------------------------------------------------------------------
@@ -146,25 +115,15 @@ TEST(PinholeCameraIntrinsic, Constructor_Init)
     double cx = 0.75;
     double cy = 0.35;
 
-    PinholeCameraIntrinsic intrinsic(width,
-                                             height,
-                                             fx, fy,
-                                             cx, cy);
+    PinholeCameraIntrinsic intrinsic(width, height, fx, fy, cx, cy);
 
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    EXPECT_NEAR(fx, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+    Matrix3d reference;
+    reference << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(fy, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(cx, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(cy, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
 // ----------------------------------------------------------------------------
@@ -185,21 +144,7 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics)
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
 
-    intrinsic.intrinsic_matrix_ << 0.0, 0.0, 0.0,
-                                   0.0, 0.0, 0.0,
-                                   0.0, 0.0, 0.0;
-
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    intrinsic.intrinsic_matrix_ = Matrix3d::Zero();
 
     int width = 640;
     int height = 480;
@@ -215,17 +160,10 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics)
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
 
-    EXPECT_NEAR(fx, intrinsic.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+    Matrix3d reference;
+    reference << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(fy, intrinsic.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, intrinsic.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(cx, intrinsic.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(cy, intrinsic.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0, intrinsic.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 
 // ----------------------------------------------------------------------------
@@ -360,15 +298,8 @@ TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue)
     EXPECT_EQ(width, dst.width_);
     EXPECT_EQ(height, dst.height_);
 
-    EXPECT_NEAR(fx, dst.intrinsic_matrix_(0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(2, 0), THRESHOLD_1E_6);
+    Matrix3d reference;
+    reference << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
-    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(fy, dst.intrinsic_matrix_(1, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(0.0, dst.intrinsic_matrix_(2, 1), THRESHOLD_1E_6);
-
-    EXPECT_NEAR(cx, dst.intrinsic_matrix_(0, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(cy, dst.intrinsic_matrix_(1, 2), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0, dst.intrinsic_matrix_(2, 2), THRESHOLD_1E_6);
+    ExpectEQ(reference, dst.intrinsic_matrix_);
 }
