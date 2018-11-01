@@ -34,6 +34,7 @@
 using namespace open3d;
 using namespace std;
 using namespace unit_test;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -85,7 +86,7 @@ TEST(RGBDImage, Constructor)
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, DISABLED_MemberData)
 {
-    NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------

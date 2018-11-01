@@ -31,6 +31,7 @@
 
 using namespace Eigen;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 // Initialize an Vector3d.
@@ -42,7 +43,7 @@ void unit_test::Rand(
     const Vector3d &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     Vector3d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
@@ -64,7 +65,7 @@ void unit_test::Rand(
     const double &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     double factor;
     factor = vmax - vmin;
@@ -84,11 +85,11 @@ void unit_test::Rand(
     const Vector2i &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     Vector2d factor;
-    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / unit_test::Raw::VMAX;
-    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / unit_test::Raw::VMAX;
+    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
+    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -107,12 +108,12 @@ void unit_test::Rand(
     const Vector3i &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     Vector3d factor;
-    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / unit_test::Raw::VMAX;
-    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / unit_test::Raw::VMAX;
-    factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / unit_test::Raw::VMAX;
+    factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
+    factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
+    factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -132,7 +133,7 @@ void unit_test::Rand(
     const Vector2d &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     Vector2d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
@@ -155,7 +156,7 @@ void unit_test::Rand(
     const Vector3d &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     Vector3d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
@@ -180,9 +181,9 @@ void unit_test::Rand(
     const int &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
-    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
     {
@@ -203,9 +204,9 @@ void unit_test::Rand(
     const uint8_t &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
-    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
         v[i] = vmin + (uint8_t)(raw.Next<uint8_t>() * factor);
@@ -222,9 +223,9 @@ void unit_test::Rand(
     const int &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
-    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / Raw::VMAX;
 
     for (size_t i = 0; i < size; i++)
         v[i] = vmin + (int)(raw.Next<int>() * factor);
@@ -253,9 +254,9 @@ void unit_test::Rand(
     const size_t &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
-    double factor = (double)(vmax - vmin) / unit_test::Raw::VMAX;
+    double factor = (double)(vmax - vmin) / Raw::VMAX;
 
     for (size_t i = 0; i < v.size(); i++)
         v[i] = vmin + (size_t)(raw.Next<size_t>() * factor);
@@ -272,7 +273,7 @@ void unit_test::Rand(
     const float &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     float factor = vmax - vmin;
 
@@ -304,7 +305,7 @@ void unit_test::Rand(
     const double &vmax,
     const int& seed)
 {
-    unit_test::Raw raw(seed);
+    Raw raw(seed);
 
     double factor = vmax - vmin;
 

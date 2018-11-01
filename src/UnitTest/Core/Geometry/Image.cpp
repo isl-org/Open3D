@@ -32,6 +32,7 @@
 using namespace Eigen;
 using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 static const int default_width = 1920;
 static const int default_height = 1080;
@@ -60,8 +61,8 @@ TEST(Image, DefaultConstructor)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
-    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
+    ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -93,8 +94,8 @@ TEST(Image, CreateImage)
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
-    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
-    unit_test::ExpectEQ(Vector2d(default_width, default_height),
+    ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    ExpectEQ(Vector2d(default_width, default_height),
                         image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
@@ -128,8 +129,8 @@ TEST(Image, Clear)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
-    unit_test::ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
+    ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -159,14 +160,14 @@ TEST(Image, FloatValueAt)
     im[1 * local_width + 0] = 4.0f;
     im[1 * local_width + 1] = 4.0f;
 
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -269,7 +270,7 @@ void TEST_CreateFloatImageFromImage(
                        num_of_channels,
                        bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
@@ -537,10 +538,10 @@ TEST(Image, PointerAt)
     im[1 * local_width + 0] = 2.0f;
     im[1 * local_width + 1] = 3.0f;
 
-    EXPECT_NEAR(0.0f, *PointerAt<float>(image, 0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, *PointerAt<float>(image, 1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, *PointerAt<float>(image, 0, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(3.0f, *PointerAt<float>(image, 1, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0f, *PointerAt<float>(image, 0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, *PointerAt<float>(image, 1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, *PointerAt<float>(image, 0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(3.0f, *PointerAt<float>(image, 1, 1), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -577,7 +578,7 @@ TEST(Image, ConvertDepthToFloatImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = ConvertDepthToFloatImage(image);
 
@@ -624,7 +625,7 @@ TEST(Image, FlipImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto flip_image = ConvertDepthToFloatImage(image);
 
@@ -659,7 +660,7 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
@@ -822,7 +823,7 @@ TEST(Image, FilterHorizontalImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
@@ -864,7 +865,7 @@ TEST(Image, DownsampleImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
@@ -912,7 +913,7 @@ TEST(Image, DilateImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
     for (size_t i = 0; i < image.data_.size(); i++)
         if (i % 9 == 0)
             image.data_[i] = 255;
@@ -961,7 +962,7 @@ TEST(Image, LinearTransformImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto output_image = CreateFloatImageFromImage(image);
 
@@ -1009,7 +1010,7 @@ TEST(Image, ClipIntensityImage)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto output_image = CreateFloatImageFromImage(image);
 
@@ -1043,7 +1044,7 @@ void TEST_CreateImageFromFloatImage()
                        local_num_of_channels,
                        bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
@@ -1124,7 +1125,7 @@ TEST(Image, FilterImagePyramid)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
@@ -1196,7 +1197,7 @@ TEST(Image, CreateImagePyramid)
                        local_num_of_channels,
                        local_bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 

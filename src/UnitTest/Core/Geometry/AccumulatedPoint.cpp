@@ -32,6 +32,7 @@
 using namespace Eigen;
 using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -55,19 +56,19 @@ TEST(AccumulatedPoint, Default)
     pc.normals_.resize(size);
     pc.colors_.resize(size);
 
-    unit_test::Rand(pc.points_, pmin, pmax, 0);
-    unit_test::Rand(pc.normals_, nmin, nmax, 0);
-    unit_test::Rand(pc.colors_, cmin, cmax, 0);
+    Rand(pc.points_, pmin, pmax, 0);
+    Rand(pc.normals_, nmin, nmax, 0);
+    Rand(pc.colors_, cmin, cmax, 0);
 
     AccumulatedPoint accpoint;
 
     for (size_t i = 0; i < pc.points_.size(); i++)
         accpoint.AddPoint(pc, i);
 
-    unit_test::ExpectEQ(Vector3d(531.137254, 535.176470, 501.882352),
+    ExpectEQ(Vector3d(531.137254, 535.176470, 501.882352),
                         accpoint.GetAveragePoint());
-    unit_test::ExpectEQ(Vector3d(0.586397, 0.590857, 0.554099),
+    ExpectEQ(Vector3d(0.586397, 0.590857, 0.554099),
                         accpoint.GetAverageNormal());
-    unit_test::ExpectEQ(Vector3d(135.44, 136.47, 127.98),
+    ExpectEQ(Vector3d(135.44, 136.47, 127.98),
                         accpoint.GetAverageColor());
 }

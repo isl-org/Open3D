@@ -33,6 +33,7 @@
 using namespace Eigen;
 using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -72,7 +73,7 @@ TEST(KDTreeFlann, SearchKNN)
     Vector3d vmax(10.0, 10.0, 10.0);
 
     pc.points_.resize(size);
-    unit_test::Rand(pc.points_, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     KDTreeFlann kdtree(pc);
 
@@ -91,7 +92,7 @@ TEST(KDTreeFlann, SearchKNN)
 
     EXPECT_EQ(ref_distance2.size(), distance2.size());
     for (size_t i = 0; i < ref_distance2.size(); i++)
-        EXPECT_NEAR(ref_distance2[i], distance2[i], unit_test::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_distance2[i], distance2[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -123,7 +124,7 @@ TEST(KDTreeFlann, SearchRadius)
     Vector3d vmax(10.0, 10.0, 10.0);
 
     pc.points_.resize(size);
-    unit_test::Rand(pc.points_, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     KDTreeFlann kdtree(pc);
 
@@ -142,7 +143,7 @@ TEST(KDTreeFlann, SearchRadius)
 
     EXPECT_EQ(ref_distance2.size(), distance2.size());
     for (size_t i = 0; i < ref_distance2.size(); i++)
-        EXPECT_NEAR(ref_distance2[i], distance2[i], unit_test::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_distance2[i], distance2[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -171,7 +172,7 @@ TEST(KDTreeFlann, SearchHybrid)
     Vector3d vmax(10.0, 10.0, 10.0);
 
     pc.points_.resize(size);
-    unit_test::Rand(pc.points_, vmin, vmax, 0);
+    Rand(pc.points_, vmin, vmax, 0);
 
     KDTreeFlann kdtree(pc);
 
@@ -191,5 +192,5 @@ TEST(KDTreeFlann, SearchHybrid)
 
     EXPECT_EQ(ref_distance2.size(), distance2.size());
     for (size_t i = 0; i < ref_distance2.size(); i++)
-        EXPECT_NEAR(ref_distance2[i], distance2[i], unit_test::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref_distance2[i], distance2[i], THRESHOLD_1E_6);
 }

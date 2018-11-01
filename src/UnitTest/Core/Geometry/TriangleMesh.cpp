@@ -31,6 +31,7 @@
 using namespace Eigen;
 using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -53,8 +54,8 @@ TEST(TriangleMesh, Constructor)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
-    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
+    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -92,17 +93,17 @@ TEST(TriangleMesh, Clear)
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm.vertex_colors_,    dmin, dmax, 0);
-    unit_test::Rand(tm.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm.triangle_normals_, dmin, dmax, 0);
+    Rand(tm.vertices_,         dmin, dmax, 0);
+    Rand(tm.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm.vertex_colors_,    dmin, dmax, 0);
+    Rand(tm.triangles_,        imin, imax, 0);
+    Rand(tm.triangle_normals_, dmin, dmax, 0);
 
     EXPECT_FALSE(tm.IsEmpty());
 
-    unit_test::ExpectEQ(Vector3d( 19.607843, 0.0, 0.0),
+    ExpectEQ(Vector3d( 19.607843, 0.0, 0.0),
                         tm.GetMinBound());
-    unit_test::ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
                         tm.GetMaxBound());
 
     EXPECT_TRUE(tm.HasVertices());
@@ -116,8 +117,8 @@ TEST(TriangleMesh, Clear)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
-    unit_test::ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
+    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -155,11 +156,11 @@ TEST(TriangleMesh, GetMinBound)
     TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    unit_test::Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_, dmin, dmax, 0);
 
     Vector3d minBound = tm.GetMinBound();
 
-    unit_test::ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -175,11 +176,11 @@ TEST(TriangleMesh, GetMaxBound)
     TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    unit_test::Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_, dmin, dmax, 0);
 
     Vector3d maxBound = tm.GetMaxBound();
 
-    unit_test::ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
                         tm.GetMaxBound());
 }
 
@@ -241,9 +242,9 @@ TEST(TriangleMesh, Transform)
     tm.vertex_normals_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm.triangle_normals_, dmin, dmax, 0);
+    Rand(tm.vertices_,         dmin, dmax, 0);
+    Rand(tm.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm.triangle_normals_, dmin, dmax, 0);
 
     Matrix4d transformation;
     transformation << 0.10, 0.20, 0.30, 0.40,
@@ -258,9 +259,9 @@ TEST(TriangleMesh, Transform)
     EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.vertices_.size(); i++)
     {
-        unit_test::ExpectEQ(ref_vertices[i], tm.vertices_[i]);
-        unit_test::ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
-        unit_test::ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
+        ExpectEQ(ref_vertices[i], tm.vertices_[i]);
+        ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
+        ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
     }
 }
 
@@ -292,17 +293,17 @@ TEST(TriangleMesh, OperatorAppend)
     tm1.triangles_.resize(size);
     tm1.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm0.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm0.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm0.vertex_colors_,    dmin, dmax, 0);
-    unit_test::Rand(tm0.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm0.triangle_normals_, dmin, dmax, 0);
+    Rand(tm0.vertices_,         dmin, dmax, 0);
+    Rand(tm0.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm0.vertex_colors_,    dmin, dmax, 0);
+    Rand(tm0.triangles_,        imin, imax, 0);
+    Rand(tm0.triangle_normals_, dmin, dmax, 0);
 
-    unit_test::Rand(tm1.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm1.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm1.vertex_colors_,    dmin, dmax, 1);
-    unit_test::Rand(tm1.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_,         dmin, dmax, 0);
+    Rand(tm1.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm1.vertex_colors_,    dmin, dmax, 1);
+    Rand(tm1.triangles_,        imin, imax, 0);
+    Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
     TriangleMesh tm(tm0);
     tm += tm1;
@@ -310,25 +311,25 @@ TEST(TriangleMesh, OperatorAppend)
     EXPECT_EQ(2 * size, tm.vertices_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.vertices_[i], tm.vertices_[i +    0]);
-        unit_test::ExpectEQ(tm1.vertices_[i], tm.vertices_[i + size]);
+        ExpectEQ(tm0.vertices_[i], tm.vertices_[i +    0]);
+        ExpectEQ(tm1.vertices_[i], tm.vertices_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.vertex_normals_[i],
+        ExpectEQ(tm0.vertex_normals_[i],
                             tm.vertex_normals_[i +    0]);
-        unit_test::ExpectEQ(tm1.vertex_normals_[i],
+        ExpectEQ(tm1.vertex_normals_[i],
                             tm.vertex_normals_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.vertex_colors_[i],
+        ExpectEQ(tm0.vertex_colors_[i],
                             tm.vertex_colors_[i +    0]);
-        unit_test::ExpectEQ(tm1.vertex_colors_[i],
+        ExpectEQ(tm1.vertex_colors_[i],
                             tm.vertex_colors_[i + size]);
     }
 
@@ -336,8 +337,8 @@ TEST(TriangleMesh, OperatorAppend)
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
-        unit_test::ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
+        ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
+        ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
                                             tm1.triangles_[i](1, 0) + size,
                                             tm1.triangles_[i](2, 0) + size),
                             tm.triangles_[i + size]);
@@ -346,9 +347,9 @@ TEST(TriangleMesh, OperatorAppend)
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.triangle_normals_[i],
+        ExpectEQ(tm0.triangle_normals_[i],
                             tm.triangle_normals_[i + 0]);
-        unit_test::ExpectEQ(tm1.triangle_normals_[i],
+        ExpectEQ(tm1.triangle_normals_[i],
                             tm.triangle_normals_[i + size]);
     }
 }
@@ -381,42 +382,42 @@ TEST(TriangleMesh, OperatorADD)
     tm1.triangles_.resize(size);
     tm1.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm0.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm0.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm0.vertex_colors_,    dmin, dmax, 0);
-    unit_test::Rand(tm0.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm0.triangle_normals_, dmin, dmax, 0);
+    Rand(tm0.vertices_,         dmin, dmax, 0);
+    Rand(tm0.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm0.vertex_colors_,    dmin, dmax, 0);
+    Rand(tm0.triangles_,        imin, imax, 0);
+    Rand(tm0.triangle_normals_, dmin, dmax, 0);
 
-    unit_test::Rand(tm1.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm1.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm1.vertex_colors_,    dmin, dmax, 1);
-    unit_test::Rand(tm1.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_,         dmin, dmax, 0);
+    Rand(tm1.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm1.vertex_colors_,    dmin, dmax, 1);
+    Rand(tm1.triangles_,        imin, imax, 0);
+    Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
     TriangleMesh tm = tm0 + tm1;
 
     EXPECT_EQ(2 * size, tm.vertices_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.vertices_[i], tm.vertices_[i +    0]);
-        unit_test::ExpectEQ(tm1.vertices_[i], tm.vertices_[i + size]);
+        ExpectEQ(tm0.vertices_[i], tm.vertices_[i +    0]);
+        ExpectEQ(tm1.vertices_[i], tm.vertices_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.vertex_normals_[i],
+        ExpectEQ(tm0.vertex_normals_[i],
                             tm.vertex_normals_[i +    0]);
-        unit_test::ExpectEQ(tm1.vertex_normals_[i],
+        ExpectEQ(tm1.vertex_normals_[i],
                             tm.vertex_normals_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.vertex_colors_[i],
+        ExpectEQ(tm0.vertex_colors_[i],
                             tm.vertex_colors_[i + 0]);
-        unit_test::ExpectEQ(tm1.vertex_colors_[i],
+        ExpectEQ(tm1.vertex_colors_[i],
                             tm.vertex_colors_[i + size]);
     }
 
@@ -424,8 +425,8 @@ TEST(TriangleMesh, OperatorADD)
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
-        unit_test::ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
+        ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
+        ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
                                             tm1.triangles_[i](1, 0) + size,
                                             tm1.triangles_[i](2, 0) + size),
                             tm.triangles_[i + size]);
@@ -434,9 +435,9 @@ TEST(TriangleMesh, OperatorADD)
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        unit_test::ExpectEQ(tm0.triangle_normals_[i],
+        ExpectEQ(tm0.triangle_normals_[i],
                             tm.triangle_normals_[i + 0]);
-        unit_test::ExpectEQ(tm1.triangle_normals_[i],
+        ExpectEQ(tm1.triangle_normals_[i],
                             tm.triangle_normals_[i + size]);
     }
 }
@@ -486,7 +487,7 @@ TEST(TriangleMesh, ComputeTriangleNormals)
     TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    unit_test::Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
         tm.triangles_.push_back(Vector3i(i, (i + 1) % size,
@@ -496,7 +497,7 @@ TEST(TriangleMesh, ComputeTriangleNormals)
 
     EXPECT_EQ(ref.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-        unit_test::ExpectEQ(ref[i], tm.triangle_normals_[i]);
+        ExpectEQ(ref[i], tm.triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -544,7 +545,7 @@ TEST(TriangleMesh, ComputeVertexNormals)
     TriangleMesh tm;
 
     tm.vertices_.resize(size);
-    unit_test::Rand(tm.vertices_, dmin, dmax, 0);
+    Rand(tm.vertices_, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
         tm.triangles_.push_back(Vector3i(i, (i + 1) % size,
@@ -554,7 +555,7 @@ TEST(TriangleMesh, ComputeVertexNormals)
 
     EXPECT_EQ(ref.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-        unit_test::ExpectEQ(ref[i], tm.vertex_normals_[i]);
+        ExpectEQ(ref[i], tm.vertex_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -721,17 +722,17 @@ TEST(TriangleMesh, Purge)
     tm1.triangles_.resize(size);
     tm1.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm0.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm0.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm0.vertex_colors_,    dmin, dmax, 0);
-    unit_test::Rand(tm0.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm0.triangle_normals_, dmin, dmax, 0);
+    Rand(tm0.vertices_,         dmin, dmax, 0);
+    Rand(tm0.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm0.vertex_colors_,    dmin, dmax, 0);
+    Rand(tm0.triangles_,        imin, imax, 0);
+    Rand(tm0.triangle_normals_, dmin, dmax, 0);
 
-    unit_test::Rand(tm1.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm1.vertex_normals_,   dmin, dmax, 0);
-    unit_test::Rand(tm1.vertex_colors_,    dmin, dmax, 1);
-    unit_test::Rand(tm1.triangles_,        imin, imax, 0);
-    unit_test::Rand(tm1.triangle_normals_, dmin, dmax, 0);
+    Rand(tm1.vertices_,         dmin, dmax, 0);
+    Rand(tm1.vertex_normals_,   dmin, dmax, 0);
+    Rand(tm1.vertex_colors_,    dmin, dmax, 1);
+    Rand(tm1.triangles_,        imin, imax, 0);
+    Rand(tm1.triangle_normals_, dmin, dmax, 0);
 
     TriangleMesh tm = tm0 + tm1;
 
@@ -739,23 +740,23 @@ TEST(TriangleMesh, Purge)
 
     EXPECT_EQ(ref_vertices.size(), tm.vertices_.size());
     for (size_t i = 0; i < tm.vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], tm.vertices_[i]);
+        ExpectEQ(ref_vertices[i], tm.vertices_[i]);
 
     EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
+        ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
 
     EXPECT_EQ(ref_vertex_colors.size(), tm.vertex_colors_.size());
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_colors[i], tm.vertex_colors_[i]);
+        ExpectEQ(ref_vertex_colors[i], tm.vertex_colors_[i]);
 
     EXPECT_EQ(ref_triangles.size(), tm.triangles_.size());
     for (size_t i = 0; i < tm.triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], tm.triangles_[i]);
+        ExpectEQ(ref_triangles[i], tm.triangles_[i]);
 
     EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
+        ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -915,18 +916,18 @@ TEST(TriangleMesh, NormalizeNormals)
 
     tm.vertex_normals_.resize(size);
     tm.triangle_normals_.resize(size);
-    unit_test::Rand(tm.vertex_normals_, dmin, dmax, 0);
-    unit_test::Rand(tm.triangle_normals_, dmin, dmax, 1);
+    Rand(tm.vertex_normals_, dmin, dmax, 0);
+    Rand(tm.triangle_normals_, dmin, dmax, 1);
 
     tm.NormalizeNormals();
 
     EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
     for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
+        ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
 
     EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
     for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
+        ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -947,7 +948,7 @@ TEST(TriangleMesh, PaintUniformColor)
     tm.PaintUniformColor(Vector3d(31.0, 120.0, 205.0));
 
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-        unit_test::ExpectEQ(Vector3d(31.0, 120.0, 205.0),
+        ExpectEQ(Vector3d(31.0, 120.0, 205.0),
                             tm.vertex_colors_[i]);
 }
 
@@ -1109,39 +1110,39 @@ TEST(TriangleMesh, SelectDownSample)
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm.vertex_normals_,   dmin, dmax, 1);
-    unit_test::Rand(tm.vertex_colors_,    dmin, dmax, 2);
-    unit_test::Rand(tm.triangles_,        imin, imax, 3);
-    unit_test::Rand(tm.triangle_normals_, dmin, dmax, 4);
+    Rand(tm.vertices_,         dmin, dmax, 0);
+    Rand(tm.vertex_normals_,   dmin, dmax, 1);
+    Rand(tm.vertex_colors_,    dmin, dmax, 2);
+    Rand(tm.triangles_,        imin, imax, 3);
+    Rand(tm.triangle_normals_, dmin, dmax, 4);
 
     vector<size_t> indices(size / 40);
-    unit_test::Rand(indices, 0, size - 1, 0);
+    Rand(indices, 0, size - 1, 0);
 
     auto output_tm = SelectDownSample(tm, indices);
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
+        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_vertex_normals.size(), output_tm->vertex_normals_.size());
     for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_normals[i],
+        ExpectEQ(ref_vertex_normals[i],
                             output_tm->vertex_normals_[i]);
 
     EXPECT_EQ(ref_vertex_colors.size(), output_tm->vertex_colors_.size());
     for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_colors[i],
+        ExpectEQ(ref_vertex_colors[i],
                             output_tm->vertex_colors_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 
     EXPECT_EQ(ref_triangle_normals.size(),
               output_tm->triangle_normals_.size());
     for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_triangle_normals[i],
+        ExpectEQ(ref_triangle_normals[i],
                             output_tm->triangle_normals_[i]);
 }
 
@@ -1208,11 +1209,11 @@ TEST(TriangleMesh, CropTriangleMesh)
     tm.triangles_.resize(size);
     tm.triangle_normals_.resize(size);
 
-    unit_test::Rand(tm.vertices_,         dmin, dmax, 0);
-    unit_test::Rand(tm.vertex_normals_,   dmin, dmax, 1);
-    unit_test::Rand(tm.vertex_colors_,    dmin, dmax, 2);
-    unit_test::Rand(tm.triangles_,        imin, imax, 3);
-    unit_test::Rand(tm.triangle_normals_, dmin, dmax, 4);
+    Rand(tm.vertices_,         dmin, dmax, 0);
+    Rand(tm.vertex_normals_,   dmin, dmax, 1);
+    Rand(tm.vertex_colors_,    dmin, dmax, 2);
+    Rand(tm.triangles_,        imin, imax, 3);
+    Rand(tm.triangle_normals_, dmin, dmax, 4);
 
     Vector3d cropBoundMin(300.0, 300.0, 300.0);
     Vector3d cropBoundMax(800.0, 800.0, 800.0);
@@ -1221,26 +1222,26 @@ TEST(TriangleMesh, CropTriangleMesh)
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
+        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_vertex_normals.size(), output_tm->vertex_normals_.size());
     for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_normals[i],
+        ExpectEQ(ref_vertex_normals[i],
                             output_tm->vertex_normals_[i]);
 
     EXPECT_EQ(ref_vertex_colors.size(), output_tm->vertex_colors_.size());
     for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_colors[i],
+        ExpectEQ(ref_vertex_colors[i],
                             output_tm->vertex_colors_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 
     EXPECT_EQ(ref_triangle_normals.size(),
               output_tm->triangle_normals_.size());
     for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
-        unit_test::ExpectEQ(ref_triangle_normals[i],
+        ExpectEQ(ref_triangle_normals[i],
                             output_tm->triangle_normals_[i]);
 }
 
@@ -1383,11 +1384,11 @@ TEST(TriangleMesh, CreateMeshSphere)
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
+        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1484,11 +1485,11 @@ TEST(TriangleMesh, CreateMeshCylinder)
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
+        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1525,11 +1526,11 @@ TEST(TriangleMesh, CreateMeshCone)
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
+        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1643,11 +1644,11 @@ TEST(TriangleMesh, CreateMeshArrow)
 
     EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
     for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
+        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
 
     EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
     for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1881,26 +1882,26 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
     int stride = 40;
     EXPECT_EQ(1134, output_tm->vertices_.size());
     for (size_t i = 0; i < ref_vertices.size(); i++)
-        unit_test::ExpectEQ(ref_vertices[i],
+        ExpectEQ(ref_vertices[i],
                             output_tm->vertices_[i * stride]);
 
     EXPECT_EQ(1134, output_tm->vertex_normals_.size());
     for (size_t i = 0; i < ref_vertex_normals.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_normals[i],
+        ExpectEQ(ref_vertex_normals[i],
                             output_tm->vertex_normals_[i * stride]);
 
     EXPECT_EQ(1134, output_tm->vertex_colors_.size());
     for (size_t i = 0; i < ref_vertex_colors.size(); i++)
-        unit_test::ExpectEQ(ref_vertex_colors[i],
+        ExpectEQ(ref_vertex_colors[i],
                             output_tm->vertex_colors_[i * stride]);
 
     EXPECT_EQ(2240, output_tm->triangles_.size());
     for (size_t i = 0; i < ref_triangles.size(); i++)
-        unit_test::ExpectEQ(ref_triangles[i],
+        ExpectEQ(ref_triangles[i],
                             output_tm->triangles_[i * stride]);
 
     EXPECT_EQ(2240, output_tm->triangle_normals_.size());
     for (size_t i = 0; i < ref_triangle_normals.size(); i++)
-        unit_test::ExpectEQ(ref_triangle_normals[i],
+        ExpectEQ(ref_triangle_normals[i],
                             output_tm->triangle_normals_[i * stride]);
 }

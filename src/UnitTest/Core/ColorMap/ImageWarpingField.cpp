@@ -31,6 +31,7 @@
 using namespace Eigen;
 using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -134,11 +135,11 @@ TEST(ImageWarpingField, Constructor)
     EXPECT_EQ(21, field.anchor_w_);
     EXPECT_EQ(16, field.anchor_h_);
 
-    EXPECT_NEAR(16, field.anchor_step_, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(16, field.anchor_step_, THRESHOLD_1E_6);
 
     EXPECT_EQ(672, field.flow_.size());
     for (size_t i = 0; i < field.flow_.size(); i++)
-        EXPECT_NEAR(ref[i], field.flow_[i], unit_test::THRESHOLD_1E_6);
+        EXPECT_NEAR(ref[i], field.flow_[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -200,7 +201,7 @@ TEST(ImageWarpingField, QueryFlow)
     ImageWarpingField field(width, height, nr_anchors);
 
     for (size_t i = 0; i < ref_output.size(); i++)
-        unit_test::ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
+        ExpectEQ(ref_output[i], field.QueryFlow(x[i], y[i]));
 }
 
 // ----------------------------------------------------------------------------
@@ -257,6 +258,6 @@ TEST(ImageWarpingField, GetImageWarpingField)
     {
         Vector2d elem = field.GetImageWarpingField(x[i], y[i]);
 
-        unit_test::ExpectEQ(ref_output[i], elem);
+        ExpectEQ(ref_output[i], elem);
     }
 }
