@@ -51,8 +51,8 @@ TEST(LineSet, Constructor)
     // public members
     EXPECT_TRUE(ls.IsEmpty());
 
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -92,8 +92,10 @@ TEST(LineSet, Clear)
 
     EXPECT_FALSE(ls.IsEmpty());
 
-    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, ls.GetMinBound());
-    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, ls.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d( 19.607843, 0.0, 0.0),
+                        ls.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+                        ls.GetMaxBound());
 
     EXPECT_TRUE(ls.HasPoints());
     EXPECT_TRUE(ls.HasLines());
@@ -103,8 +105,8 @@ TEST(LineSet, Clear)
 
     // public members
     EXPECT_TRUE(ls.IsEmpty());
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -150,7 +152,7 @@ TEST(LineSet, GetMinBound)
 
     Eigen::Vector3d minBound = ls.GetMinBound();
 
-    unit_test::ExpectEQ(19.607843, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), ls.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -171,7 +173,8 @@ TEST(LineSet, GetMaxBound)
 
     Eigen::Vector3d maxBound = ls.GetMaxBound();
 
-    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, ls.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+                        ls.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------

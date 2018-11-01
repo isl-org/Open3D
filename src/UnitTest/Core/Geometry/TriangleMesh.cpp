@@ -52,8 +52,8 @@ TEST(TriangleMesh, Constructor)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -99,8 +99,10 @@ TEST(TriangleMesh, Clear)
 
     EXPECT_FALSE(tm.IsEmpty());
 
-    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, tm.GetMinBound());
-    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, tm.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d( 19.607843, 0.0, 0.0),
+                        tm.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+                        tm.GetMaxBound());
 
     EXPECT_TRUE(tm.HasVertices());
     EXPECT_TRUE(tm.HasVertexNormals());
@@ -113,8 +115,8 @@ TEST(TriangleMesh, Clear)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, 0.0, tm.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -156,7 +158,7 @@ TEST(TriangleMesh, GetMinBound)
 
     Eigen::Vector3d minBound = tm.GetMinBound();
 
-    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, tm.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(19.607843, 0.0, 0.0), tm.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -176,7 +178,8 @@ TEST(TriangleMesh, GetMaxBound)
 
     Eigen::Vector3d maxBound = tm.GetMaxBound();
 
-    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, tm.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
+                        tm.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -333,9 +336,9 @@ TEST(TriangleMesh, OperatorAppend)
     for (size_t i = 0; i < size; i++)
     {
         unit_test::ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
-        unit_test::ExpectEQ(tm1.triangles_[i](0, 0) + size,
-                            tm1.triangles_[i](1, 0) + size,
-                            tm1.triangles_[i](2, 0) + size,
+        unit_test::ExpectEQ(Eigen::Vector3i(tm1.triangles_[i](0, 0) + size,
+                                            tm1.triangles_[i](1, 0) + size,
+                                            tm1.triangles_[i](2, 0) + size),
                             tm.triangles_[i + size]);
     }
 
@@ -421,9 +424,9 @@ TEST(TriangleMesh, OperatorADD)
     for (size_t i = 0; i < size; i++)
     {
         unit_test::ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
-        unit_test::ExpectEQ(tm1.triangles_[i](0, 0) + size,
-                            tm1.triangles_[i](1, 0) + size,
-                            tm1.triangles_[i](2, 0) + size,
+        unit_test::ExpectEQ(Eigen::Vector3i(tm1.triangles_[i](0, 0) + size,
+                                            tm1.triangles_[i](1, 0) + size,
+                                            tm1.triangles_[i](2, 0) + size),
                             tm.triangles_[i + size]);
     }
 
@@ -943,7 +946,8 @@ TEST(TriangleMesh, PaintUniformColor)
     tm.PaintUniformColor(Eigen::Vector3d(31.0, 120.0, 205.0));
 
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-        unit_test::ExpectEQ(31.0, 120.0, 205.0, tm.vertex_colors_[i]);
+        unit_test::ExpectEQ(Eigen::Vector3d(31.0, 120.0, 205.0),
+                            tm.vertex_colors_[i]);
 }
 
 // ----------------------------------------------------------------------------

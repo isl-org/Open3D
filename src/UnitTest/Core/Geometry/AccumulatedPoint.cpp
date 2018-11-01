@@ -60,7 +60,10 @@ TEST(AccumulatedPoint, Default)
     for (size_t i = 0; i < pc.points_.size(); i++)
         accpoint.AddPoint(pc, i);
 
-    unit_test::ExpectEQ(531.137254, 535.176470, 501.882352, accpoint.GetAveragePoint());
-    unit_test::ExpectEQ(0.586397, 0.590857, 0.554099, accpoint.GetAverageNormal());
-    unit_test::ExpectEQ(135.44, 136.47, 127.98, accpoint.GetAverageColor());
+    unit_test::ExpectEQ(Eigen::Vector3d(531.137254, 535.176470, 501.882352),
+                        accpoint.GetAveragePoint());
+    unit_test::ExpectEQ(Eigen::Vector3d(0.586397, 0.590857, 0.554099),
+                        accpoint.GetAverageNormal());
+    unit_test::ExpectEQ(Eigen::Vector3d(135.44, 136.47, 127.98),
+                        accpoint.GetAverageColor());
 }

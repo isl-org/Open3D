@@ -39,46 +39,33 @@ namespace unit_test
     // thresholds for comparing floating point values
     const double THRESHOLD_1E_6 = 1e-6;
 
-    // Mechanism for reporting unit tests for which there is no implementation yet.
+    // Mechanism for reporting unit tests for which there is no implementation.
     void NotImplemented();
 
-    // Equal test over Eigen::Vector2d components.
-    void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
-    void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
+    // Equal test.
+    template<class T>
+    void ExpectEQ(const T& v0, const T& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
+    }
 
-    // Equal test over Eigen::Vector3d components.
-    void ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
-    void ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+    // Less than or Equal test.
+    template<class T>
+    void ExpectLE(const T& v0, const T& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            EXPECT_LE(v0.coeff(i), v1.coeff(i));
+    }
 
-    // Equal test over Eigen::Vector4d components.
-    void ExpectEQ(const Eigen::Vector4d& v0, const Eigen::Vector4d& v1);
-
-    // Equal test over Eigen::Matrix3d components.
-    void ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1);
-
-    // Equal test over Eigen::Matrix4d components.
-    void ExpectEQ(const Eigen::Matrix4d& v0, const Eigen::Matrix4d& v1);
-
-    // Equal test over Eigen::Matrix6d components.
-    void ExpectEQ(const Eigen::Matrix<double, 6, 6>& v0, const Eigen::Matrix<double, 6, 6>& v1);
-
-    // Equal test over Eigen::Vector2i components.
-    void ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1);
-    void ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1);
-
-    // Equal test over Eigen::Vector3i components.
-    void ExpectEQ(const Eigen::Vector3i& v0, const Eigen::Vector3i& v1);
-    void ExpectEQ(const int& v00, const int& v01, const int& v02, const Eigen::Vector3i& v1);
-
-    // Equal test over Eigen::Vector4i components.
-    void ExpectEQ(const Eigen::Vector4i& v0, const Eigen::Vector4i& v1);
-    void ExpectEQ(const int& v00, const int& v01, const int& v02, const int& v03, const Eigen::Vector4i& v1);
-
-    // Less than or Equal test over Eigen::Vector3d components.
-    void ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
-    void ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
-
-    // Greater than or Equal test over Eigen::Vector3d components.
-    void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
-    void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+    // Greater than or Equal test.
+    template<class T>
+    void ExpectGE(const T& v0, const T& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            EXPECT_GE(v0.coeff(i), v1.coeff(i));
+    }
 }

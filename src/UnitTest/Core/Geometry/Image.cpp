@@ -58,8 +58,8 @@ TEST(Image, DefaultConstructor)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -91,8 +91,9 @@ TEST(Image, CreateImage)
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMinBound());
-    unit_test::ExpectEQ((float)default_width, (float)default_height, image.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector2d(default_width, default_height),
+                        image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(default_width *
@@ -125,8 +126,8 @@ TEST(Image, Clear)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMaxBound());
+    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMinBound());
+    unit_test::ExpectEQ(Eigen::Vector2d(0.0, 0.0), image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
