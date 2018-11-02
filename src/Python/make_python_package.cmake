@@ -36,7 +36,7 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
 # Build Jupyter plugin with webpack. This step distills and merges all js
 # dependencies and include all static assets. The generated output is in
 # ${PYTHON_PACKAGE_DST_DIR}/open3d/static.
-if (JUPYTER_ENABLED)
+if (ENABLE_JUPYTER)
     file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR}/open3d/static)
     message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
     if (WIN32)
