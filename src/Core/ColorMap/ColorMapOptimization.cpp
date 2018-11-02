@@ -36,12 +36,61 @@
 #include <IO/ClassIO/TriangleMeshIO.h>
 #include <Core/Utility/Eigen.h>
 
+namespace open3d {
+
+namespace {
+
+class ImageWarpingField {
+
+public:
+    ImageWarpingField (int width, int height, int number_of_vertical_anchors) {
+        InitializeWarpingFields(width, height, number_of_vertical_anchors);
+    }
+
+    void InitializeWarpingFields(int width, int height,
+            int number_of_vertical_anchors) {
+        anchor_h_ = number_of_vertical_anchors;
+        anchor_step_ = double(height) / (anchor_h_ - 1);
+        anchor_w_ = int(std::ceil(double(width) / anchor_step_) + 1);
+        flow_ = Eigen::VectorXd(anchor_w_ * anchor_h_ * 2);
+        for (int i = 0; i <= (anchor_w_ - 1); i++) {
+            for (int j = 0; j <= (anchor_h_ - 1); j++) {
+                int baseidx = (i + j * anchor_w_) * 2;
+                flow_(baseidx) = i * anchor_step_;
+                flow_(baseidx + 1) = j * anchor_step_;
+            }
+        }
+    }
+
+    Eigen::Vector2d QueryFlow(int i, int j) const {
+        int baseidx = (i + j * anchor_w_) * 2;
+        // exceptional case: quried anchor index is out of pre-defined space
+        if (baseidx < 0 || baseidx > anchor_w_ * anchor_h_ * 2)
+            return Eigen::Vector2d(0.0, 0.0);
+        else
+            return Eigen::Vector2d(flow_(baseidx), flow_(baseidx + 1));
+    }
+
+    Eigen::Vector2d GetImageWarpingField(double u, double v) const {
+        int i = (int)(u / anchor_step_);
+        int j = (int)(v / anchor_step_);
+        double p = (u - i * anchor_step_) / anchor_step_;
+        double q = (v - j * anchor_step_) / anchor_step_;
+        return (1 - p) * (1 - q) * QueryFlow(i, j)
+            + (1 - p) * (q)* QueryFlow(i, j + 1)
+            + (p)* (1 - q) * QueryFlow(i + 1, j)
+            + (p)* (q)* QueryFlow(i + 1, j + 1);
+    }
+
+public:
+    Eigen::VectorXd flow_;
+    int anchor_w_, anchor_h_;
+    double anchor_step_;
+};
+
 const double IMAGE_BOUNDARY_MARGIN = 10;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-std::tuple<float, float, float> open3d::Project3DPointAndGetUVDepth(
+inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
         const PinholeCameraTrajectory& camera, int camid)
 {
@@ -55,11 +104,8 @@ std::tuple<float, float, float> open3d::Project3DPointAndGetUVDepth(
     return std::make_tuple(u, v, z);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
-        open3d::MakeVertexAndImageVisibility(const TriangleMesh& mesh,
+        MakeVertexAndImageVisibility(const TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
         const std::vector<Image>& images_mask,
         const PinholeCameraTrajectory& camera,
@@ -107,12 +153,9 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
             visiblity_vertex_to_image, visiblity_image_to_vertex));
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-std::vector<open3d::ImageWarpingField> open3d::MakeWarpingFields(
-        const std::vector<std::shared_ptr<open3d::Image>>& images,
-        const open3d::ColorMapOptimizationOption& option)
+std::vector<ImageWarpingField> MakeWarpingFields(
+        const std::vector<std::shared_ptr<Image>>& images,
+        const ColorMapOptimizationOption& option)
 {
     std::vector<ImageWarpingField> fields;
     for (auto i = 0; i < images.size(); i++) {
@@ -124,13 +167,10 @@ std::vector<open3d::ImageWarpingField> open3d::MakeWarpingFields(
     return std::move(fields);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 template<typename T>
-std::tuple<bool, T> open3d::QueryImageIntensity(
-        const open3d::Image& img, const Eigen::Vector3d& V,
-        const open3d::PinholeCameraTrajectory& camera, int camid, int ch)
+std::tuple<bool, T> QueryImageIntensity(
+        const Image& img, const Eigen::Vector3d& V,
+        const PinholeCameraTrajectory& camera, int camid, int ch = -1)
 {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
@@ -149,14 +189,11 @@ std::tuple<bool, T> open3d::QueryImageIntensity(
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
 template<typename T>
-std::tuple<bool, T> open3d::QueryImageIntensity(
-        const open3d::Image& img, const ImageWarpingField& field,
+std::tuple<bool, T> QueryImageIntensity(
+        const Image& img, const ImageWarpingField& field,
         const Eigen::Vector3d& V,
-        const open3d::PinholeCameraTrajectory& camera, int camid, int ch)
+        const PinholeCameraTrajectory& camera, int camid, int ch = -1)
 {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
@@ -178,13 +215,10 @@ std::tuple<bool, T> open3d::QueryImageIntensity(
     return std::make_tuple(false, 0);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::SetProxyIntensityForVertex(const open3d::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_gray,
-        const std::vector<open3d::ImageWarpingField>& warping_field,
-        const open3d::PinholeCameraTrajectory& camera,
+void SetProxyIntensityForVertex(const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<ImageWarpingField>& warping_field,
+        const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         std::vector<double>& proxy_intensity)
 {
@@ -214,12 +248,9 @@ void open3d::SetProxyIntensityForVertex(const open3d::TriangleMesh& mesh,
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::SetProxyIntensityForVertex(const open3d::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_gray,
-        const open3d::PinholeCameraTrajectory& camera,
+void SetProxyIntensityForVertex(const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         std::vector<double>& proxy_intensity)
 {
@@ -248,21 +279,18 @@ void open3d::SetProxyIntensityForVertex(const open3d::TriangleMesh& mesh,
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::OptimizeImageCoorNonrigid(
-        const open3d::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_gray,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_dx,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_dy,
-        std::vector<open3d::ImageWarpingField>& warping_fields,
-        const std::vector<open3d::ImageWarpingField>& warping_fields_init,
-        open3d::PinholeCameraTrajectory& camera,
+void OptimizeImageCoorNonrigid(
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<std::shared_ptr<Image>>& images_dx,
+        const std::vector<std::shared_ptr<Image>>& images_dy,
+        std::vector<ImageWarpingField>& warping_fields,
+        const std::vector<ImageWarpingField>& warping_fields_init,
+        PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const open3d::ColorMapOptimizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     auto n_vertex = mesh.vertices_.size();
     auto n_camera = camera.extrinsic_.size();
@@ -420,19 +448,16 @@ void open3d::OptimizeImageCoorNonrigid(
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::OptimizeImageCoorRigid(
-        const open3d::TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_gray,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_dx,
-        const std::vector<std::shared_ptr<open3d::Image>>& images_dy,
-        open3d::PinholeCameraTrajectory& camera,
+void OptimizeImageCoorRigid(
+        const TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const std::vector<std::shared_ptr<Image>>& images_dx,
+        const std::vector<std::shared_ptr<Image>>& images_dy,
+        PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const open3d::ColorMapOptimizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     int total_num_ = 0;
     auto n_camera = camera.extrinsic_.size();
@@ -525,13 +550,10 @@ void open3d::OptimizeImageCoorRigid(
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::SetGeometryColorAverage(open3d::TriangleMesh& mesh,
-        const std::vector<open3d::RGBDImage>& images_rgbd,
-        const std::vector<open3d::ImageWarpingField>& warping_fields,
-        const open3d::PinholeCameraTrajectory& camera,
+void SetGeometryColorAverage(TriangleMesh& mesh,
+        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<ImageWarpingField>& warping_fields,
+        const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image)
 {
     auto n_vertex = mesh.vertices_.size();
@@ -569,12 +591,9 @@ void open3d::SetGeometryColorAverage(open3d::TriangleMesh& mesh,
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::SetGeometryColorAverage(open3d::TriangleMesh& mesh,
-        const std::vector<open3d::RGBDImage>& images_rgbd,
-        const open3d::PinholeCameraTrajectory& camera,
+void SetGeometryColorAverage(TriangleMesh& mesh,
+        const std::vector<RGBDImage>& images_rgbd,
+        const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image)
 {
     auto n_vertex = mesh.vertices_.size();
@@ -609,13 +628,10 @@ void open3d::SetGeometryColorAverage(open3d::TriangleMesh& mesh,
     }
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-std::tuple<std::vector<std::shared_ptr<open3d::Image>>,
-        std::vector<std::shared_ptr<open3d::Image>>,
-        std::vector<std::shared_ptr<open3d::Image>>> open3d::MakeGradientImages(
-        const std::vector<open3d::RGBDImage>& images_rgbd)
+std::tuple<std::vector<std::shared_ptr<Image>>,
+        std::vector<std::shared_ptr<Image>>,
+        std::vector<std::shared_ptr<Image>>> MakeGradientImages(
+        const std::vector<RGBDImage>& images_rgbd)
 {
     auto n_images = images_rgbd.size();
     std::vector<std::shared_ptr<Image>> images_gray;
@@ -634,12 +650,9 @@ std::tuple<std::vector<std::shared_ptr<open3d::Image>>,
     return std::move(std::make_tuple(images_gray, images_dx, images_dy));
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-std::vector<open3d::Image> open3d::MakeDepthMasks(
-        const std::vector<open3d::RGBDImage>& images_rgbd,
-        const open3d::ColorMapOptimizationOption& option)
+std::vector<Image> MakeDepthMasks(
+        const std::vector<RGBDImage>& images_rgbd,
+        const ColorMapOptimizationOption& option)
 {
     auto n_images = images_rgbd.size();
     std::vector<Image> images_mask;
@@ -673,13 +686,12 @@ std::vector<open3d::Image> open3d::MakeDepthMasks(
     return std::move(images_mask);
 }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void open3d::ColorMapOptimization(open3d::TriangleMesh& mesh,
-        const std::vector<open3d::RGBDImage>& images_rgbd,
-        open3d::PinholeCameraTrajectory& camera,
-        const open3d::ColorMapOptimizationOption& option
+}    // unnamed namespace
+
+void ColorMapOptimization(TriangleMesh& mesh,
+        const std::vector<RGBDImage>& images_rgbd,
+        PinholeCameraTrajectory& camera,
+        const ColorMapOptimizationOption& option
         /* = ColorMapOptimizationOption()*/)
 {
     PrintDebug("[ColorMapOptimization]\n");
@@ -720,18 +732,4 @@ void open3d::ColorMapOptimization(open3d::TriangleMesh& mesh,
     }
 }
 
-template
-std::tuple<bool, float> open3d::QueryImageIntensity(
-        const open3d::Image& img, const Eigen::Vector3d& V,
-        const open3d::PinholeCameraTrajectory& camera, int camid, int ch);
-
-template
-std::tuple<bool, unsigned char> open3d::QueryImageIntensity(
-        const open3d::Image& img, const Eigen::Vector3d& V,
-        const open3d::PinholeCameraTrajectory& camera, int camid, int ch);
-
-template
-std::tuple<bool, float> open3d::QueryImageIntensity(
-        const open3d::Image& img, const ImageWarpingField& field,
-        const Eigen::Vector3d& V,
-        const open3d::PinholeCameraTrajectory& camera, int camid, int ch);
+}    // namespace open3d

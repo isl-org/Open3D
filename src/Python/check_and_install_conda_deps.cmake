@@ -1,11 +1,3 @@
-# Check if conda in path, if not, throw exception
-find_program(CONDA "conda")
-if (NOT CONDA)
-    message(FATAL_ERROR "conda not found, please install, see https://conda.io/docs/user-guide/install/index.html")
-else ()
-    message(STATUS "conda is found at ${CONDA}")
-endif()
-
 # Assert that we're inside a conda environemnt
 message(STATUS "Asserting this is Conda python: ${PYTHON_EXECUTABLE} ...")
 execute_process(
