@@ -14,14 +14,15 @@ message(STATUS "Using Python executable: ${PYTHON_EXECUTABLE}")
 # Detect whether `npm` is installed. Jupyter support will only be enabled if
 # `npm` is found.
 find_program(NPM "npm")
-option(JUPYTER_ENABLED "Enable Jupyter support for Open3D" ON)
-if (NOT NPM)
-    message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-    set(JUPYTER_ENABLED OFF)
-else()
-    message(STATUS "npm found at: ${NPM}. Jupyter support will be disabled.")
+if (ENABLE_JUPYTER)
+    if (NOT NPM)
+        message(WARNING "Cannot find npm. Jupyter support will be disabled.")
+        set(ENABLE_JUPYTER OFF)
+    else()
+        message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
+    endif()
 endif()
-message(STATUS "JUPYTER_ENABLED is set to ${JUPYTER_ENABLED}")
+message(STATUS "ENABLE_JUPYTER is set to ${ENABLE_JUPYTER}")
 
 # We need to get python version to configure some meta files
 execute_process(
@@ -70,7 +71,7 @@ add_custom_target(python-package
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
-            -DJUPYTER_ENABLED=${JUPYTER_ENABLED}
+            -DENABLE_JUPYTER=${ENABLE_JUPYTER}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOME=${PROJECT_HOME}
             -DPROJECT_DOCS=${PROJECT_DOCS}
