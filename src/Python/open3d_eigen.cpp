@@ -29,22 +29,120 @@
 namespace pybind11 {
 
 template <typename Vector, typename holder_type = std::unique_ptr<Vector>, typename... Args>
-pybind11::class_<Vector, holder_type> bind_vector_without_repr(
-        pybind11::module &m, std::string const &name, Args&&... args) {
+py::class_<Vector, holder_type> bind_vector_without_repr(
+        py::module &m, std::string const &name, Args&&... args) {
     // hack function to disable __repr__ for the convenient function
     // bind_vector()
-    using Class_ = pybind11::class_<Vector, holder_type>;
+    using Class_ = py::class_<Vector, holder_type>;
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
-    cl.def(pybind11::init<>());
-    detail::vector_if_copy_constructible<Vector, Class_>(cl);
-    detail::vector_if_equal_operator<Vector, Class_>(cl);
-    detail::vector_modifiers<Vector, Class_>(cl);
-    detail::vector_accessor<Vector, Class_>(cl);
+    cl.def(py::init<>());
     cl.def("__bool__", [](const Vector &v) -> bool {
         return !v.empty();
     }, "Check whether the list is nonempty");
     cl.def("__len__", &Vector::size);
     return cl;
+}
+
+// - This function is used by Pybind for std::vector<SomeEigenType> constructor.
+//   This optional constructor is added to avoid too many Python <-> C++ API
+//   calls when the vector size is large using the default biding method.
+//   Pybind matches np.float64 array to py::array_t<double> buffer.
+// - Directly using templates for the py::array_t<double> and py::array_t<int>
+//   and etc. doesn't work. The current solution is to explicitly implement
+//   bindings for each py array types.
+template <typename EigenVector>
+std::vector<EigenVector> py_array_to_vectors_double(py::array_t<double> array) {
+    typedef typename EigenVector::Scalar Scalar;
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    std::vector<Scalar> result_buf(eigen_vector_size);
+    for (size_t i = 0; i < array_unchecked.shape(0); ++i) {
+        // - The array can be non-contiguous (e.g. numpy array slice), we
+        //   have to acces the array element by array(i, j). We cannot use a
+        //   block of memory to map to Eigen vector.
+        // - The result_buf is a trick to make Eigen::Map work with
+        //   different size eigen vectors. The alternative approach is to
+        //   not use result_buf, but instead do:
+        //   eigen_vectors[i] = EigenVector(array_unchecked(i, 0),
+        //                                  array_unchecked(i, 1),
+        //                                  ...                   )
+        //   The alternative approach is 30% faster than the current generic
+        //   approach. However the code is more verbose -- we need to handle
+        //   eigen_vector_size == 2, 3, 4 separately, since we cannot template
+        //   the EigenVector() constructor for all of 2, 3 or 4 arguments.
+        for (size_t j = 0; j < eigen_vector_size; ++j) {
+            result_buf[j] = array_unchecked(i, j);
+        }
+        eigen_vectors[i] = Eigen::Map<EigenVector>(result_buf.data());
+    }
+    return eigen_vectors;
+}
+
+template <typename EigenVector>
+std::vector<EigenVector> py_array_to_vectors_int(py::array_t<int> array) {
+    typedef typename EigenVector::Scalar Scalar;
+    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
+        throw py::cast_error();
+    }
+    std::vector<EigenVector> eigen_vectors(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<2>();
+    std::vector<Scalar> result_buf(eigen_vector_size);
+    for (size_t i = 0; i < array_unchecked.shape(0); ++i) {
+        for (size_t j = 0; j < eigen_vector_size; ++j) {
+            result_buf[j] = array_unchecked(i, j);
+        }
+        eigen_vectors[i] = Eigen::Map<EigenVector>(result_buf.data());
+    }
+    return eigen_vectors;
+}
+
+template <typename EigenMatrix>
+std::vector<EigenMatrix> py_array_to_matrices_double(py::array_t<double> array) {
+    typedef typename EigenMatrix::Scalar Scalar;
+    size_t num_rows = EigenMatrix::RowsAtCompileTime;
+    size_t num_cols = EigenMatrix::ColsAtCompileTime;
+    if (array.ndim() != 3 ||
+        array.shape(1) != num_rows || array.shape(2) != num_cols) {
+        throw py::cast_error();
+    }
+    std::vector<EigenMatrix> eigen_matrices(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<3>();
+    std::vector<Scalar> result_buf(num_rows * num_cols);
+    for (size_t i = 0; i < array_unchecked.shape(0); ++i) {
+        for (size_t j = 0; j < num_rows * num_cols; ++j) {
+            // Flip rows and cols since eigen is column major
+            result_buf[j] = array_unchecked(i, j % num_cols, j / num_cols);
+        }
+        eigen_matrices[i] = Eigen::Map<EigenMatrix>(result_buf.data());
+    }
+    return eigen_matrices;
+}
+
+template <typename EigenMatrix>
+std::vector<EigenMatrix> py_array_to_matrices_int(py::array_t<int> array) {
+    typedef typename EigenMatrix::Scalar Scalar;
+    size_t num_rows = EigenMatrix::RowsAtCompileTime;
+    size_t num_cols = EigenMatrix::ColsAtCompileTime;
+    if (array.ndim() != 3 ||
+        array.shape(1) != num_rows || array.shape(2) != num_cols) {
+        throw py::cast_error();
+    }
+    std::vector<EigenMatrix> eigen_matrices(array.shape(0));
+    auto array_unchecked = array.mutable_unchecked<3>();
+    std::vector<Scalar> result_buf(num_rows * num_cols);
+    for (size_t i = 0; i < array_unchecked.shape(0); ++i) {
+        for (size_t j = 0; j < num_rows * num_cols; ++j) {
+            // Flip rows and cols since eigen is column major
+            result_buf[j] = array_unchecked(i, j % num_cols, j / num_cols);
+        }
+        eigen_matrices[i] = Eigen::Map<EigenMatrix>(result_buf.data());
+    }
+    return eigen_matrices;
 }
 
 }    //namespace pybind11
@@ -87,6 +185,10 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
     typedef typename EigenVector::Scalar Scalar;
     auto vec = py::bind_vector_without_repr<std::vector<EigenVector>>(
             m, bind_name, py::buffer_protocol());
+    auto init_func_double = py::py_array_to_vectors_double<EigenVector>;
+    auto init_func_int = py::py_array_to_vectors_int<EigenVector>;
+    vec.def(py::init(init_func_double));
+    vec.def(py::init(init_func_int));
     vec.def_buffer([](std::vector<EigenVector> &v) -> py::buffer_info {
         size_t rows = EigenVector::RowsAtCompileTime;
         return py::buffer_info(
@@ -107,6 +209,15 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
             py::dict &memo) {
         return std::vector<EigenVector>(v);
     });
+
+    // py::detail must be after custom constructor
+    using Vector = std::vector<EigenVector>;
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
+
     // Bare bones interface
     // We choose to disable them because they do not support slice indices
     // such as [:,:]. It is recommanded to convert it to numpy.asarray()
@@ -144,6 +255,10 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
     typedef typename EigenMatrix::Scalar Scalar;
     auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix>>(
             m, bind_name, py::buffer_protocol());
+    auto init_func_double = py::py_array_to_matrices_double<EigenMatrix>;
+    auto init_func_int = py::py_array_to_matrices_int<EigenMatrix>;
+    vec.def(py::init(init_func_double));
+    vec.def(py::init(init_func_int));
     vec.def_buffer([](std::vector<EigenMatrix> &v) -> py::buffer_info {
         // We use this function to bind Eigen default matrix.
         // Thus they are all column major.
@@ -168,6 +283,14 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
             py::dict &memo) {
         return std::vector<EigenMatrix>(v);
     });
+
+    // py::detail must be after custom constructor
+    using Vector = std::vector<EigenMatrix>;
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
 }
 
 }    // unnamed namespace
