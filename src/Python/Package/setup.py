@@ -26,6 +26,14 @@
 
 from setuptools import setup, find_packages
 import glob
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            self.root_is_pure = False
+except ImportError:
+    bdist_wheel = None
 
 # Read requirements.txt
 with open('requirements.txt', 'r') as f:
@@ -78,6 +86,7 @@ setup(
     description=[
         "Open3D is an open-source library that supports rapid development of software that deals with 3D data."
     ],
+    cmdclass={'bdist_wheel': bdist_wheel},
     install_requires=install_requires,
     include_package_data=True,
     data_files=data_files,

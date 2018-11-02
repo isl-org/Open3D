@@ -18,6 +18,9 @@ requirements:
         - setuptools
     run:
         - python
+        - ipywidgets
+        - widgetsnbextension
+        - notebook
         - numpy
 
 test:
