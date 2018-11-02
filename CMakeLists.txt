@@ -67,6 +67,7 @@ option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
+option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
