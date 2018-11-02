@@ -1,4 +1,4 @@
-ipywidgets>=7.4.2
-widgetsnbextension>=3.4.2
-notebook>=5.7.0
+ipywidgets
+widgetsnbextension
+notebook
 numpy
