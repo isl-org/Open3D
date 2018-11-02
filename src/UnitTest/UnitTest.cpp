@@ -32,7 +32,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
-//
+// Default message to use for tests missing an implementation.
 // ----------------------------------------------------------------------------
 void unit_test::NotImplemented()
 {

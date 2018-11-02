@@ -56,8 +56,8 @@ TEST(PointCloud, Constructor)
     // public members
     EXPECT_TRUE(pc.IsEmpty());
 
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), pc.GetMinBound());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), pc.GetMaxBound());
+    ExpectEQ(Zero3d, pc.GetMinBound());
+    ExpectEQ(Zero3d, pc.GetMaxBound());
 
     EXPECT_FALSE(pc.HasPoints());
     EXPECT_FALSE(pc.HasNormals());
@@ -92,10 +92,8 @@ TEST(PointCloud, Clear)
     Rand(pc.normals_, vmin, vmax, 0);
     Rand(pc.colors_, vmin, vmax, 0);
 
-    ExpectEQ(Vector3d( 19.607843, 0.0, 0.0),
-                        pc.GetMinBound());
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
-                        pc.GetMaxBound());
+    ExpectEQ(Vector3d( 19.607843, 0.0, 0.0), pc.GetMinBound());
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
 
     EXPECT_FALSE(pc.IsEmpty());
     EXPECT_TRUE(pc.HasPoints());
@@ -107,8 +105,8 @@ TEST(PointCloud, Clear)
     // public members
     EXPECT_TRUE(pc.IsEmpty());
 
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), pc.GetMinBound());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), pc.GetMaxBound());
+    ExpectEQ(Zero3d, pc.GetMinBound());
+    ExpectEQ(Zero3d, pc.GetMaxBound());
 
     EXPECT_FALSE(pc.HasPoints());
     EXPECT_FALSE(pc.HasNormals());
@@ -175,8 +173,7 @@ TEST(PointCloud, GetMaxBound)
 
     Vector3d maxBound = pc.GetMaxBound();
 
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
-                        pc.GetMaxBound());
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), pc.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -232,13 +229,8 @@ TEST(PointCloud, Transform)
 
     pc.Transform(transformation);
 
-    EXPECT_EQ(ref_points.size(), pc.points_.size());
-    EXPECT_EQ(ref_normals.size(), pc.normals_.size());
-    for (size_t i = 0; i < pc.points_.size(); i++)
-    {
-        ExpectEQ(ref_points[i], pc.points_[i]);
-        ExpectEQ(ref_normals[i], pc.normals_[i]);
-    }
+    ExpectEQ(ref_points, pc.points_);
+    ExpectEQ(ref_normals, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -333,9 +325,7 @@ TEST(PointCloud, NormalizeNormals)
 
     pc.NormalizeNormals();
 
-    EXPECT_EQ(ref.size(), pc.normals_.size());
-    for (size_t i = 0; i < pc.normals_.size(); i++)
-        ExpectEQ(ref[i], pc.normals_[i]);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -384,25 +374,13 @@ TEST(PointCloud, OperatorAppend)
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc0.normals_,
-                    Vector3d(-1.0, -1.0, -1.0),
-                    Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc0.colors_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc0.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc1.normals_,
-                    Vector3d(-1.0, -1.0, -1.0),
-                    Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc1.colors_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(pc1.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc1.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Vector3d> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
@@ -459,25 +437,13 @@ TEST(PointCloud, OperatorADD)
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc0.normals_,
-                    Vector3d(-1.0, -1.0, -1.0),
-                    Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc0.colors_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc0.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc1.normals_,
-                    Vector3d(-1.0, -1.0, -1.0),
-                    Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc1.colors_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(pc1.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc1.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Vector3d> p;
     p.insert(p.end(), pc0.points_.begin(), pc0.points_.end());
@@ -576,9 +542,7 @@ TEST(PointCloud, SelectDownSample)
 
     auto output_pc = SelectDownSample(pc, indices);
 
-    EXPECT_EQ(ref.size(), output_pc->points_.size());
-    for (size_t i = 0; i < indices.size(); i++)
-        ExpectEQ(ref[i], output_pc->points_[i]);
+    ExpectEQ(ref, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -665,15 +629,9 @@ TEST(PointCloud, VoxelDownSample)
     pc.normals_.resize(size);
     pc.colors_.resize(size);
 
-    Rand(pc.points_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(pc.normals_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(10.0, 10.0, 10.0), 0);
-    Rand(pc.colors_,
-                    Vector3d(0.0, 0.0, 0.0),
-                    Vector3d(255.0, 255.0, 255.0), 0);
+    Rand(pc.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc.normals_, Zero3d, Vector3d(10.0, 10.0, 10.0), 0);
+    Rand(pc.colors_, Zero3d, Vector3d(255.0, 255.0, 255.0), 0);
 
     double voxel_size = 0.5;
     auto output_pc = VoxelDownSample(pc, voxel_size);
@@ -684,15 +642,9 @@ TEST(PointCloud, VoxelDownSample)
     Sort::Do(output_pc->normals_);
     Sort::Do(output_pc->colors_);
 
-    EXPECT_EQ(ref_points.size(), output_pc->points_.size());
-    EXPECT_EQ(ref_normals.size(), output_pc->normals_.size());
-    EXPECT_EQ(ref_colors.size(), output_pc->colors_.size());
-    for (size_t i = 0; i < output_pc->points_.size(); i++)
-    {
-        ExpectEQ(ref_points[i], output_pc->points_[i]);
-        ExpectEQ(ref_normals[i], output_pc->normals_[i]);
-        ExpectEQ(ref_colors[i], output_pc->colors_[i]);
-    }
+    ExpectEQ(ref_points, output_pc->points_);
+    ExpectEQ(ref_normals, output_pc->normals_);
+    ExpectEQ(ref_colors, output_pc->colors_);
 }
 
 // ----------------------------------------------------------------------------
@@ -741,9 +693,7 @@ TEST(PointCloud, UniformDownSample)
     size_t every_k_points = 4;
     auto output_pc = UniformDownSample(pc, every_k_points);
 
-    EXPECT_EQ(ref.size(), output_pc->points_.size());
-    for (size_t i = 0; i < output_pc->points_.size(); i++)
-        ExpectEQ(ref[i], output_pc->points_[i]);
+    ExpectEQ(ref, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -764,11 +714,8 @@ TEST(PointCloud, CropPointCloud)
     Vector3d maxBound(800.0, 800.0, 800.0);
     auto output_pc = CropPointCloud(pc, minBound, maxBound);
 
-    for (size_t i = 0; i < output_pc->points_.size(); i++)
-    {
-        ExpectLE(minBound, output_pc->points_[i]);
-        ExpectGE(maxBound, output_pc->points_[i]);
-    }
+    ExpectLE(minBound, output_pc->points_);
+    ExpectGE(maxBound, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -831,9 +778,7 @@ TEST(PointCloud, EstimateNormals)
 
     bool result = EstimateNormals(pc);
 
-    EXPECT_EQ(ref.size(), pc.normals_.size());
-    for (size_t i = 0; i < pc.normals_.size(); i++)
-        ExpectEQ(ref[i], pc.normals_[i]);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -895,12 +840,9 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection)
     Rand(pc.points_, vmin, vmax, 0);
 
     bool result = EstimateNormals(pc);
-    result = OrientNormalsToAlignWithDirection(pc,
-                Vector3d(1.5, 0.5, 3.3));
+    result = OrientNormalsToAlignWithDirection(pc, Vector3d(1.5, 0.5, 3.3));
 
-    EXPECT_EQ(ref.size(), pc.normals_.size());
-    for (size_t i = 0; i < pc.normals_.size(); i++)
-        ExpectEQ(ref[i], pc.normals_[i]);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -962,12 +904,9 @@ TEST(PointCloud, OrientNormalsTowardsCameraLocation)
     Rand(pc.points_, vmin, vmax, 0);
 
     bool result = EstimateNormals(pc);
-    result = OrientNormalsTowardsCameraLocation(pc,
-                Vector3d(1.5, 0.5, 3.3));
+    result = OrientNormalsTowardsCameraLocation(pc, Vector3d(1.5, 0.5, 3.3));
 
-    EXPECT_EQ(ref.size(), pc.normals_.size());
-    for (size_t i = 0; i < pc.normals_.size(); i++)
-        ExpectEQ(ref[i], pc.normals_[i]);
+    ExpectEQ(ref, pc.normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1033,8 +972,7 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance)
     Vector3d mean = get<0>(output);
     Matrix3d covariance = get<1>(output);
 
-    ExpectEQ(Vector3d(514.215686, 566.666666, 526.568627),
-                        mean);
+    ExpectEQ(Vector3d(514.215686, 566.666666, 526.568627), mean);
 
     Matrix3d ref_covariance;
     ref_covariance << 86747.549019, -9480.776624, 1416.234140,
@@ -1129,8 +1067,7 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    vector<double> distance =
-        ComputePointCloudNearestNeighborDistance(pc);
+    vector<double> distance = ComputePointCloudNearestNeighborDistance(pc);
 
     EXPECT_EQ(ref.size(), distance.size());
     for (size_t i = 0; i < distance.size(); i++)
@@ -1186,15 +1123,12 @@ TEST(PointCloud, CreatePointCloudFromDepthImage)
 
     Rand(image.data_, 0, 255, 0);
 
-    PinholeCameraIntrinsic intrinsic =
-        PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
+        PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto output_pc = CreatePointCloudFromDepthImage(image, intrinsic);
 
-    EXPECT_EQ(ref.size(), output_pc->points_.size());
-    for (size_t i = 0; i < output_pc->points_.size(); i++)
-        ExpectEQ(ref[i], output_pc->points_[i]);
+    ExpectEQ(ref, output_pc->points_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1240,19 +1174,13 @@ void TEST_CreatePointCloudFromRGBDImage(
 
     RGBDImage rgbd_image(color, *depth);
 
-    PinholeCameraIntrinsic intrinsic =
-        PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
+        PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto output_pc = CreatePointCloudFromRGBDImage(rgbd_image, intrinsic);
 
-    EXPECT_EQ(ref_points.size(), output_pc->points_.size());
-    EXPECT_EQ(ref_colors.size(), output_pc->colors_.size());
-    for (size_t i = 0; i < output_pc->points_.size(); i++)
-    {
-        ExpectEQ(ref_points[i], output_pc->points_[i]);
-        ExpectEQ(ref_colors[i], output_pc->colors_[i]);
-    }
+    ExpectEQ(ref_points, output_pc->points_);
+    ExpectEQ(ref_colors, output_pc->colors_);
 }
 
 // ----------------------------------------------------------------------------

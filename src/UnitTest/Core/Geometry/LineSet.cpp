@@ -54,8 +54,8 @@ TEST(LineSet, Constructor)
     // public members
     EXPECT_TRUE(ls.IsEmpty());
 
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
+    ExpectEQ(Zero3d, ls.GetMinBound());
+    ExpectEQ(Zero3d, ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -108,8 +108,8 @@ TEST(LineSet, Clear)
 
     // public members
     EXPECT_TRUE(ls.IsEmpty());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMinBound());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), ls.GetMaxBound());
+    ExpectEQ(Zero3d, ls.GetMinBound());
+    ExpectEQ(Zero3d, ls.GetMaxBound());
 
     EXPECT_FALSE(ls.HasPoints());
     EXPECT_FALSE(ls.HasLines());
@@ -176,8 +176,7 @@ TEST(LineSet, GetMaxBound)
 
     Vector3d maxBound = ls.GetMaxBound();
 
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
-                        ls.GetMaxBound());
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), ls.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -263,13 +262,13 @@ TEST(LineSet, OperatorAppend)
     ls1.lines_.resize(size);
     ls1.colors_.resize(size);
 
-    Rand(ls0.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(ls0.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
-    Rand(ls0.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(ls0.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls0.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
+    Rand(ls0.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(ls1.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(ls1.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
-    Rand(ls1.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(ls1.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls1.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
+    Rand(ls1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Vector3d> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
@@ -298,7 +297,8 @@ TEST(LineSet, OperatorAppend)
     {
         ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
 
-        Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size,
+                                ls1.lines_[i](1, 0) + size };
         ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
     }
 
@@ -328,13 +328,13 @@ TEST(LineSet, OperatorADD)
     ls1.lines_.resize(size);
     ls1.colors_.resize(size);
 
-    Rand(ls0.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(ls0.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
-    Rand(ls0.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(ls0.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls0.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
+    Rand(ls0.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(ls1.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
-    Rand(ls1.lines_, Vector2i(0, 0), Vector2i(size - 1, size - 1), 0);
-    Rand(ls1.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(ls1.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(ls1.lines_, Zero2i, Vector2i(size - 1, size - 1), 0);
+    Rand(ls1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
     vector<Vector3d> p;
     p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
@@ -362,7 +362,8 @@ TEST(LineSet, OperatorADD)
     {
         ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
 
-        Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size,
+                                ls1.lines_[i](1, 0) + size };
         ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
     }
 
@@ -432,16 +433,26 @@ TEST(LineSet, GetLineCoordinate)
 {
     vector<vector<Vector3d>> ref_points =
     {
-        { {  239.215686,  133.333333,  803.921569 }, {  552.941176,  474.509804,  627.450980 } },
-        { {  239.215686,  133.333333,  803.921569 }, {  239.215686,  133.333333,  803.921569 } },
-        { {  152.941176,  400.000000,  129.411765 }, {  796.078431,  909.803922,  196.078431 } },
-        { {  552.941176,  474.509804,  627.450980 }, {  141.176471,  603.921569,   15.686275 } },
-        { {  333.333333,  764.705882,  274.509804 }, {  364.705882,  509.803922,  949.019608 } },
-        { {  364.705882,  509.803922,  949.019608 }, {  913.725490,  635.294118,  713.725490 } },
-        { {  552.941176,  474.509804,  627.450980 }, {  364.705882,  509.803922,  949.019608 } },
-        { {  152.941176,  400.000000,  129.411765 }, {  152.941176,  400.000000,  129.411765 } },
-        { {  913.725490,  635.294118,  713.725490 }, {  141.176471,  603.921569,   15.686275 } },
-        { {  796.078431,  909.803922,  196.078431 }, {  913.725490,  635.294118,  713.725490 } }
+        { {  239.215686,  133.333333,  803.921569 },
+          {  552.941176,  474.509804,  627.450980 } },
+        { {  239.215686,  133.333333,  803.921569 },
+          {  239.215686,  133.333333,  803.921569 } },
+        { {  152.941176,  400.000000,  129.411765 },
+          {  796.078431,  909.803922,  196.078431 } },
+        { {  552.941176,  474.509804,  627.450980 },
+          {  141.176471,  603.921569,   15.686275 } },
+        { {  333.333333,  764.705882,  274.509804 },
+          {  364.705882,  509.803922,  949.019608 } },
+        { {  364.705882,  509.803922,  949.019608 },
+          {  913.725490,  635.294118,  713.725490 } },
+        { {  552.941176,  474.509804,  627.450980 },
+          {  364.705882,  509.803922,  949.019608 } },
+        { {  152.941176,  400.000000,  129.411765 },
+          {  152.941176,  400.000000,  129.411765 } },
+        { {  913.725490,  635.294118,  713.725490 },
+          {  141.176471,  603.921569,   15.686275 } },
+        { {  796.078431,  909.803922,  196.078431 },
+          {  913.725490,  635.294118,  713.725490 } }
     };
 
     int size = 10;
@@ -526,13 +537,13 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
     pc1.normals_.resize(size);
     pc1.colors_.resize(size);
 
-    Rand(pc0.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc0.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(pc0.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc0.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 0);
+    Rand(pc0.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 0);
 
-    Rand(pc1.points_, Vector3d(0.0, 0.0, 0.0), Vector3d(1000.0, 1000.0, 1000.0), 0);
+    Rand(pc1.points_, Zero3d, Vector3d(1000.0, 1000.0, 1000.0), 0);
     Rand(pc1.normals_, Vector3d(-1.0, -1.0, -1.0), Vector3d(1.0, 1.0, 1.0), 0);
-    Rand(pc1.colors_, Vector3d(0.0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0), 1);
+    Rand(pc1.colors_, Zero3d, Vector3d(1.0, 1.0, 1.0), 1);
 
     Raw raw;
     for (int i = 0; i < size; i++)
@@ -543,7 +554,8 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
         correspondence[i] = pair<int, int>(first, second);
     }
 
-    auto ls = CreateLineSetFromPointCloudCorrespondences(pc0, pc1, correspondence);
+    auto ls = CreateLineSetFromPointCloudCorrespondences(pc0, pc1,
+                                                         correspondence);
 
     EXPECT_EQ(ref_points.size(), ls->points_.size());
     for (size_t i = 0; i < ls->points_.size(); i++)

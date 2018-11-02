@@ -54,8 +54,8 @@ TEST(TriangleMesh, Constructor)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
+    ExpectEQ(Zero3d, tm.GetMinBound());
+    ExpectEQ(Zero3d, tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());
@@ -117,8 +117,8 @@ TEST(TriangleMesh, Clear)
     // public members
     EXPECT_TRUE(tm.IsEmpty());
 
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMinBound());
-    ExpectEQ(Vector3d(0.0, 0.0, 0.0), tm.GetMaxBound());
+    ExpectEQ(Zero3d, tm.GetMinBound());
+    ExpectEQ(Zero3d, tm.GetMaxBound());
 
     EXPECT_FALSE(tm.HasVertices());
     EXPECT_FALSE(tm.HasVertexNormals());

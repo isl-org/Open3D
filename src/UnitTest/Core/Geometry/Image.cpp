@@ -61,8 +61,8 @@ TEST(Image, DefaultConstructor)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
-    ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
+    ExpectEQ(Zero2d, image.GetMinBound());
+    ExpectEQ(Zero2d, image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -94,7 +94,7 @@ TEST(Image, CreateImage)
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
-    ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
+    ExpectEQ(Zero2d, image.GetMinBound());
     ExpectEQ(Vector2d(default_width, default_height),
                         image.GetMaxBound());
 
@@ -129,8 +129,8 @@ TEST(Image, Clear)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    ExpectEQ(Vector2d(0.0, 0.0), image.GetMinBound());
-    ExpectEQ(Vector2d(0.0, 0.0), image.GetMaxBound());
+    ExpectEQ(Zero2d, image.GetMinBound());
+    ExpectEQ(Zero2d, image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
