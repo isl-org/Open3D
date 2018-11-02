@@ -101,50 +101,6 @@ std::vector<EigenVector> py_array_to_vectors_int(py::array_t<int> array) {
     return eigen_vectors;
 }
 
-template <typename EigenMatrix>
-std::vector<EigenMatrix> py_array_to_matrices_double(py::array_t<double> array) {
-    typedef typename EigenMatrix::Scalar Scalar;
-    size_t num_rows = EigenMatrix::RowsAtCompileTime;
-    size_t num_cols = EigenMatrix::ColsAtCompileTime;
-    if (array.ndim() != 3 ||
-        array.shape(1) != num_rows || array.shape(2) != num_cols) {
-        throw py::cast_error();
-    }
-    std::vector<EigenMatrix> eigen_matrices(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<3>();
-    std::vector<Scalar> result_buf(num_rows * num_cols);
-    for (size_t i = 0; i < array_unchecked.shape(0); ++i) {
-        for (size_t j = 0; j < num_rows * num_cols; ++j) {
-            // Flip rows and cols since eigen is column major
-            result_buf[j] = array_unchecked(i, j % num_cols, j / num_cols);
-        }
-        eigen_matrices[i] = Eigen::Map<EigenMatrix>(result_buf.data());
-    }
-    return eigen_matrices;
-}
-
-template <typename EigenMatrix>
-std::vector<EigenMatrix> py_array_to_matrices_int(py::array_t<int> array) {
-    typedef typename EigenMatrix::Scalar Scalar;
-    size_t num_rows = EigenMatrix::RowsAtCompileTime;
-    size_t num_cols = EigenMatrix::ColsAtCompileTime;
-    if (array.ndim() != 3 ||
-        array.shape(1) != num_rows || array.shape(2) != num_cols) {
-        throw py::cast_error();
-    }
-    std::vector<EigenMatrix> eigen_matrices(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<3>();
-    std::vector<Scalar> result_buf(num_rows * num_cols);
-    for (size_t i = 0; i < array_unchecked.shape(0); ++i) {
-        for (size_t j = 0; j < num_rows * num_cols; ++j) {
-            // Flip rows and cols since eigen is column major
-            result_buf[j] = array_unchecked(i, j % num_cols, j / num_cols);
-        }
-        eigen_matrices[i] = Eigen::Map<EigenMatrix>(result_buf.data());
-    }
-    return eigen_matrices;
-}
-
 }    //namespace pybind11
 
 namespace {
@@ -255,10 +211,6 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
     typedef typename EigenMatrix::Scalar Scalar;
     auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix>>(
             m, bind_name, py::buffer_protocol());
-    auto init_func_double = py::py_array_to_matrices_double<EigenMatrix>;
-    auto init_func_int = py::py_array_to_matrices_int<EigenMatrix>;
-    vec.def(py::init(init_func_double));
-    vec.def(py::init(init_func_int));
     vec.def_buffer([](std::vector<EigenMatrix> &v) -> py::buffer_info {
         // We use this function to bind Eigen default matrix.
         // Thus they are all column major.

@@ -188,13 +188,3 @@ def test_benchmark():
     z = np.asarray(y)
     print("numpy -> open3d: %.6fs" % (time.time() - start_time))
     np.testing.assert_allclose(x, z)
-
-    print("\nopen3d.Matrix4dVector:", x.shape)
-    x = np.random.randint(10, size=(vector_size, 4, 4)).astype(np.float64)
-    start_time = time.time()
-    y = open3d.Matrix4dVector(x)
-    print("open3d -> numpy: %.6fs" % (time.time() - start_time))
-    start_time = time.time()
-    z = np.asarray(y)
-    print("numpy -> open3d: %.6fs" % (time.time() - start_time))
-    np.testing.assert_allclose(x, z)
