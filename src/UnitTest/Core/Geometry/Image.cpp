@@ -36,11 +36,6 @@ using namespace unit_test;
 
 using ConversionType = Image::ColorToIntensityConversionType;
 
-static const int default_width = 1920;
-static const int default_height = 1080;
-static const int default_num_of_channels = 3;
-static const int default_bytes_per_channel = 1;
-
 // ----------------------------------------------------------------------------
 // test the default constructor scenario
 // ----------------------------------------------------------------------------
@@ -75,35 +70,40 @@ TEST(Image, DefaultConstructor)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImage)
 {
+    int width = 1920;
+    int height = 1080;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+
     Image image;
 
-    image.PrepareImage(default_width,
-                       default_height,
-                       default_num_of_channels,
-                       default_bytes_per_channel);
+    image.PrepareImage(width,
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
 
     // public member variables
-    EXPECT_EQ(default_width, image.width_);
-    EXPECT_EQ(default_height, image.height_);
-    EXPECT_EQ(default_num_of_channels, image.num_of_channels_);
-    EXPECT_EQ(default_bytes_per_channel, image.bytes_per_channel_);
-    EXPECT_EQ(default_width *
-              default_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(width, image.width_);
+    EXPECT_EQ(height, image.height_);
+    EXPECT_EQ(num_of_channels, image.num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, image.bytes_per_channel_);
+    EXPECT_EQ(width *
+              height *
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 
     // public members
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
     ExpectEQ(Zero2d, image.GetMinBound());
-    ExpectEQ(Vector2d(default_width, default_height),
+    ExpectEQ(Vector2d(width, height),
                         image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
-    EXPECT_EQ(default_width *
-              default_num_of_channels *
-              default_bytes_per_channel, image.BytesPerLine());
+    EXPECT_EQ(width *
+              num_of_channels *
+              bytes_per_channel, image.BytesPerLine());
 }
 
 // ----------------------------------------------------------------------------
@@ -111,12 +111,14 @@ TEST(Image, CreateImage)
 // ----------------------------------------------------------------------------
 TEST(Image, Clear)
 {
+    int width = 1920;
+    int height = 1080;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+
     Image image;
 
-    image.PrepareImage(default_width,
-                       default_height,
-                       default_num_of_channels,
-                       default_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     image.Clear();
 
@@ -145,22 +147,19 @@ TEST(Image, FloatValueAt)
 {
     Image image;
 
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     float* im = reinterpret_cast<float*>(&image.data_[0]);
 
-    im[0 * local_width + 0] = 4.0f;
-    im[0 * local_width + 1] = 4.0f;
-    im[1 * local_width + 0] = 4.0f;
-    im[1 * local_width + 1] = 4.0f;
+    im[0 * width + 0] = 4.0f;
+    im[0 * width + 1] = 4.0f;
+    im[1 * width + 0] = 4.0f;
+    im[1 * width + 1] = 4.0f;
 
     EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, THRESHOLD_1E_6);
     EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, THRESHOLD_1E_6);
@@ -177,12 +176,14 @@ TEST(Image, FloatValueAt)
 // ----------------------------------------------------------------------------
 TEST(Image, DISABLED_MemberData)
 {
+    int width = 1920;
+    int height = 1080;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+
     Image image;
 
-    image.PrepareImage(default_width,
-                       default_height,
-                       default_num_of_channels,
-                       default_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     int temp_width = 320;
     int temp_height = 240;
@@ -191,37 +192,37 @@ TEST(Image, DISABLED_MemberData)
 
     image.width_ = temp_width;
     EXPECT_EQ(temp_width *
-              default_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+              height *
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 
-    image.width_ = default_width;
+    image.width_ = width;
     image.height_ = temp_height;
-    EXPECT_EQ(default_width *
+    EXPECT_EQ(width *
               temp_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 
-    image.height_ = default_height;
+    image.height_ = height;
     image.num_of_channels_ = temp_num_of_channels;
-    EXPECT_EQ(default_width *
-              default_height *
+    EXPECT_EQ(width *
+              height *
               temp_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+              bytes_per_channel, image.data_.size());
 
-    image.num_of_channels_ = default_num_of_channels;
+    image.num_of_channels_ = num_of_channels;
     image.bytes_per_channel_ = temp_bytes_per_channel;
-    EXPECT_EQ(default_width *
-              default_height *
-              default_num_of_channels *
+    EXPECT_EQ(width *
+              height *
+              num_of_channels *
               temp_bytes_per_channel, image.data_.size());
 
-    image.bytes_per_channel_ = default_bytes_per_channel;
+    image.bytes_per_channel_ = bytes_per_channel;
     image.data_ = vector<uint8_t>();
-    EXPECT_EQ(default_width *
-              default_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(width *
+              height *
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 }
 
 // ----------------------------------------------------------------------------
@@ -236,16 +237,16 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
     auto image = CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
 
     // test image dimensions
-    const int local_width = 640;
-    const int local_height = 480;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 640;
+    int height = 480;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
     EXPECT_FALSE(image->IsEmpty());
-    EXPECT_EQ(local_width, image->width_);
-    EXPECT_EQ(local_height, image->height_);
-    EXPECT_EQ(local_num_of_channels, image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, image->bytes_per_channel_);
+    EXPECT_EQ(width, image->width_);
+    EXPECT_EQ(height, image->height_);
+    EXPECT_EQ(num_of_channels, image->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, image->bytes_per_channel_);
 }
 
 // ----------------------------------------------------------------------------
@@ -263,22 +264,19 @@ void TEST_CreateFloatImageFromImage(
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int float_num_of_channels = 1;
+    int width = 5;
+    int height = 5;
+    int float_num_of_channels = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       num_of_channels,
-                       bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
-    EXPECT_EQ(local_width, float_image->width_);
-    EXPECT_EQ(local_height, float_image->height_);
+    EXPECT_EQ(width, float_image->width_);
+    EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
     for (size_t i = 0; i < float_image->data_.size(); i++)
@@ -523,22 +521,19 @@ TEST(Image, PointerAt)
 {
     Image image;
 
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     float* im = reinterpret_cast<float*>(&image.data_[0]);
 
-    im[0 * local_width + 0] = 0.0f;
-    im[0 * local_width + 1] = 1.0f;
-    im[1 * local_width + 0] = 2.0f;
-    im[1 * local_width + 1] = 3.0f;
+    im[0 * width + 0] = 0.0f;
+    im[0 * width + 1] = 1.0f;
+    im[1 * width + 0] = 2.0f;
+    im[1 * width + 1] = 3.0f;
 
     EXPECT_NEAR(0.0f, *PointerAt<float>(image, 0, 0), THRESHOLD_1E_6);
     EXPECT_NEAR(1.0f, *PointerAt<float>(image, 1, 0), THRESHOLD_1E_6);
@@ -569,24 +564,21 @@ TEST(Image, ConvertDepthToFloatImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 1;
-    const int float_num_of_channels = 1;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+    int float_num_of_channels = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto float_image = ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
-    EXPECT_EQ(local_width, float_image->width_);
-    EXPECT_EQ(local_height, float_image->height_);
+    EXPECT_EQ(width, float_image->width_);
+    EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
     for (size_t i = 0; i < float_image->data_.size(); i++)
@@ -616,24 +608,21 @@ TEST(Image, FlipImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
-    const int flip_bytes_per_channel = 1;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+    int flip_bytes_per_channel = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto flip_image = ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(flip_image->IsEmpty());
-    EXPECT_EQ(local_width, flip_image->width_);
-    EXPECT_EQ(local_height, flip_image->height_);
+    EXPECT_EQ(width, flip_image->width_);
+    EXPECT_EQ(height, flip_image->height_);
     EXPECT_EQ(flip_bytes_per_channel, flip_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), flip_image->bytes_per_channel_);
     for (size_t i = 0; i < flip_image->data_.size(); i++)
@@ -652,15 +641,12 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -669,10 +655,10 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
     auto output = FilterImage(*float_image, filter);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ(local_width, output->width_);
-    EXPECT_EQ(local_height, output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(ref[i], output->data_[i]);
 }
@@ -815,15 +801,12 @@ TEST(Image, FilterHorizontalImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -834,10 +817,10 @@ TEST(Image, FilterHorizontalImage)
     auto output = FilterHorizontalImage(*float_image, Gaussian3);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ(local_width, output->width_);
-    EXPECT_EQ(local_height, output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(ref[i], output->data_[i]);
 }
@@ -857,15 +840,12 @@ TEST(Image, DownsampleImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -874,10 +854,10 @@ TEST(Image, DownsampleImage)
     auto output = DownsampleImage(*float_image);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ((int)(local_width / 2), output->width_);
-    EXPECT_EQ((int)(local_height / 2), output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+    EXPECT_EQ((int)(width / 2), output->width_);
+    EXPECT_EQ((int)(height / 2), output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(ref[i], output->data_[i]);
 }
@@ -905,15 +885,12 @@ TEST(Image, DilateImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 1;
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
     for (size_t i = 0; i < image.data_.size(); i++)
@@ -923,10 +900,10 @@ TEST(Image, DilateImage)
     auto output = DilateImage(image);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ(local_width, output->width_);
-    EXPECT_EQ(local_height, output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(ref[i], output->data_[i]);
 }
@@ -954,15 +931,12 @@ TEST(Image, LinearTransformImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -971,10 +945,10 @@ TEST(Image, LinearTransformImage)
     LinearTransformImage(*output, 2.3, 0.15);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ(local_width, output->width_);
-    EXPECT_EQ(local_height, output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(ref[i], output->data_[i]);
 }
@@ -1002,15 +976,12 @@ TEST(Image, ClipIntensityImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -1019,10 +990,10 @@ TEST(Image, ClipIntensityImage)
     ClipIntensityImage(*output, 0.33, 0.71);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ(local_width, output->width_);
-    EXPECT_EQ(local_height, output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(ref[i], output->data_[i]);
 }
@@ -1036,15 +1007,12 @@ void TEST_CreateImageFromFloatImage()
     Image image;
 
     // test image dimensions
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int bytes_per_channel = sizeof(T);
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = sizeof(T);
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
@@ -1053,9 +1021,9 @@ void TEST_CreateImageFromFloatImage()
     auto output = CreateImageFromFloatImage<T>(*float_image);
 
     EXPECT_FALSE(output->IsEmpty());
-    EXPECT_EQ(local_width, output->width_);
-    EXPECT_EQ(local_height, output->height_);
-    EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     for (size_t i = 0; i < output->data_.size(); i++)
         EXPECT_EQ(image.data_[i], output->data_[i]);
@@ -1116,22 +1084,19 @@ TEST(Image, FilterImagePyramid)
     Image image;
 
     // test image dimensions
-    const int local_width = 6;
-    const int local_height = 6;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
-    const int local_num_of_levels = 2;
+    int width = 6;
+    int height = 6;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+    int num_of_levels = 2;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = CreateImagePyramid(*float_image, local_num_of_levels);
+    auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
 
     auto outputPyramid = FilterImagePyramid(pyramid, Image::FilterType::Gaussian3);
 
@@ -1188,25 +1153,22 @@ TEST(Image, CreateImagePyramid)
     Image image;
 
     // test image dimensions
-    const int local_width = 6;
-    const int local_height = 6;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
-    const int local_num_of_levels = 2;
+    int width = 6;
+    int height = 6;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+    int num_of_levels = 2;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     Rand(image.data_, 0, 255, 0);
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = CreateImagePyramid(*float_image, local_num_of_levels);
+    auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
 
-    int expected_width = local_width;
-    int expected_height = local_width;
+    int expected_width = width;
+    int expected_height = width;
     for (size_t p = 0; p < pyramid.size(); p++)
     {
         auto output = pyramid[p];
@@ -1214,8 +1176,8 @@ TEST(Image, CreateImagePyramid)
         EXPECT_FALSE(output->IsEmpty());
         EXPECT_EQ(expected_width, output->width_);
         EXPECT_EQ(expected_height, output->height_);
-        EXPECT_EQ(local_num_of_channels, output->num_of_channels_);
-        EXPECT_EQ(local_bytes_per_channel, output->bytes_per_channel_);
+        EXPECT_EQ(num_of_channels, output->num_of_channels_);
+        EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
         for (size_t i = 0; i < output->data_.size(); i++)
             EXPECT_EQ(ref[p][i], output->data_[i]);
 
