@@ -39,27 +39,22 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 TEST(Eigen, TransformVector6dToMatrix4d)
 {
-    double ref_matrix4d[4][4] =
-    {
-        {  0.829278,  0.453036, -0.327195,  0.000000 },
-        { -0.425147,  0.891445,  0.156765,  0.000000 },
-        {  0.362696,  0.009104,  0.931863,  0.000000 },
-        {  0.666667,  0.833333,  1.000000,  1.000000 },
-    };
+    Matrix4d ref_matrix4d;
+    ref_matrix4d <<  0.829278, -0.425147, 0.362696, 0.666667,
+                     0.453036,  0.891445, 0.009104, 0.833333,
+                    -0.327195,  0.156765, 0.931863, 1.000000,
+                     0.000000,  0.000000, 0.000000, 1.000000;
 
     Vector6d vector6d = Vector6d::Zero();
 
-    for (int i = 0; i < 6; i++)
-        EXPECT_NEAR(0.0, vector6d(i, 0), THRESHOLD_1E_6);
+    ExpectEQ(Zero6d, vector6d);
 
     for (int i = 0; i < 6; i++)
         vector6d(i, 0) = (i + 1) / 6.0;
 
     Matrix4d matrix4d = TransformVector6dToMatrix4d(vector6d);
 
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            EXPECT_NEAR(ref_matrix4d[i][j], matrix4d(j, i), THRESHOLD_1E_6);
+    ExpectEQ(ref_matrix4d, matrix4d);
 }
 
 // ----------------------------------------------------------------------------
@@ -67,25 +62,13 @@ TEST(Eigen, TransformVector6dToMatrix4d)
 // ----------------------------------------------------------------------------
 TEST(Eigen, TransformMatrix4dToVector6d)
 {
-    double ref_matrix4d[4][4] =
-    {
-        {  0.829278,  0.453036, -0.327195,  0.000000 },
-        { -0.425147,  0.891445,  0.156765,  0.000000 },
-        {  0.362696,  0.009104,  0.931863,  0.000000 },
-        {  0.666667,  0.833333,  1.000000,  1.000000 },
-    };
+    Matrix4d ref_matrix4d;
+    ref_matrix4d <<  0.829278, -0.425147, 0.362696, 0.666667,
+                     0.453036,  0.891445, 0.009104, 0.833333,
+                    -0.327195,  0.156765, 0.931863, 1.000000,
+                     0.000000,  0.000000, 0.000000, 1.000000;
 
-    Matrix4d matrix4d = Matrix4d::Zero();
-
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            EXPECT_NEAR(0.0, matrix4d(j, i), THRESHOLD_1E_6);
-
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            matrix4d(j, i) = ref_matrix4d[i][j];
-
-    Vector6d vector6d = TransformMatrix4dToVector6d(matrix4d);
+    Vector6d vector6d = TransformMatrix4dToVector6d(ref_matrix4d);
 
     for (int i = 0; i < 6; i++)
         EXPECT_NEAR((i + 1) / 6.0, vector6d(i, 0), THRESHOLD_1E_6);
@@ -117,8 +100,7 @@ TEST(Eigen, SolveLinearSystem)
 
         tie(status, result) = SolveLinearSystem(A, b);
 
-        for (int i = 0; i < 4; i++)
-            EXPECT_NEAR(result(i, 0), x(i, 0), THRESHOLD_1E_6);
+        ExpectEQ(result, x);
     }
 }
 
@@ -151,8 +133,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrix)
 
         Vector6d r = TransformMatrix4dToVector6d(result);
 
-        for (int i = 0; i < 6; i++)
-            EXPECT_NEAR(r(i), x(i), THRESHOLD_1E_6);
+        ExpectEQ(r, x);
     }
 }
 
@@ -185,8 +166,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray)
 
         Vector6d r = TransformMatrix4dToVector6d(result[0]);
 
-        for (int i = 0; i < 6; i++)
-            EXPECT_NEAR(r(i), x(i), THRESHOLD_1E_6);
+        ExpectEQ(r, x);
     }
 }
 
@@ -229,13 +209,8 @@ TEST(Eigen, ComputeJTJandJTr)
                         testFunction,
                         iteration_num);
 
-    for (int i = 0; i < 6; i++)
-    {
-        EXPECT_NEAR(ref_JTr(i), JTr(i), THRESHOLD_1E_6);
-
-        for (int j = 0; j < 6; j++)
-            EXPECT_NEAR(ref_JTJ(j, i), JTJ(j, i), THRESHOLD_1E_6);
-    }
+    ExpectEQ(ref_JTr, JTr);
+    ExpectEQ(ref_JTJ, JTJ);
 }
 
 // ----------------------------------------------------------------------------
@@ -287,11 +262,6 @@ TEST(Eigen, ComputeJTJandJTr_vector)
                         testFunction,
                         iteration_num);
 
-    for (int i = 0; i < 6; i++)
-    {
-        EXPECT_NEAR(ref_JTr(i), JTr(i), THRESHOLD_1E_6);
-
-        for (int j = 0; j < 6; j++)
-            EXPECT_NEAR(ref_JTJ(j, i), JTJ(j, i), THRESHOLD_1E_6);
-    }
+    ExpectEQ(ref_JTr, JTr);
+    ExpectEQ(ref_JTJ, JTJ);
 }
