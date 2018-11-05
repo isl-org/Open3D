@@ -101,10 +101,8 @@ TEST(TriangleMesh, Clear)
 
     EXPECT_FALSE(tm.IsEmpty());
 
-    ExpectEQ(Vector3d( 19.607843, 0.0, 0.0),
-                        tm.GetMinBound());
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
-                        tm.GetMaxBound());
+    ExpectEQ(Vector3d( 19.607843, 0.0, 0.0), tm.GetMinBound());
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
 
     EXPECT_TRUE(tm.HasVertices());
     EXPECT_TRUE(tm.HasVertexNormals());
@@ -471,8 +469,7 @@ TEST(TriangleMesh, ComputeTriangleNormals)
     Rand(tm.vertices_, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
-        tm.triangles_.push_back(Vector3i(i, (i + 1) % size,
-                                                   (i + 2) % size));
+        tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeTriangleNormals();
 
@@ -527,8 +524,7 @@ TEST(TriangleMesh, ComputeVertexNormals)
     Rand(tm.vertices_, dmin, dmax, 0);
 
     for (int i = 0; i < size; i++)
-        tm.triangles_.push_back(Vector3i(i, (i + 1) % size,
-                                                   (i + 2) % size));
+        tm.triangles_.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     tm.ComputeVertexNormals();
 
