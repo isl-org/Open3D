@@ -180,8 +180,7 @@ TEST(TriangleMesh, GetMaxBound)
 
     Vector3d maxBound = tm.GetMaxBound();
 
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
-                        tm.GetMaxBound());
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), tm.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
@@ -254,15 +253,9 @@ TEST(TriangleMesh, Transform)
 
     tm.Transform(transformation);
 
-    EXPECT_EQ(ref_vertices.size(), tm.vertices_.size());
-    EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
-    EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
-    for (size_t i = 0; i < tm.vertices_.size(); i++)
-    {
-        ExpectEQ(ref_vertices[i], tm.vertices_[i]);
-        ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
-        ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
-    }
+    ExpectEQ(ref_vertices, tm.vertices_);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -318,19 +311,15 @@ TEST(TriangleMesh, OperatorAppend)
     EXPECT_EQ(2 * size, tm.vertex_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        ExpectEQ(tm0.vertex_normals_[i],
-                            tm.vertex_normals_[i +    0]);
-        ExpectEQ(tm1.vertex_normals_[i],
-                            tm.vertex_normals_[i + size]);
+        ExpectEQ(tm0.vertex_normals_[i], tm.vertex_normals_[i +    0]);
+        ExpectEQ(tm1.vertex_normals_[i], tm.vertex_normals_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        ExpectEQ(tm0.vertex_colors_[i],
-                            tm.vertex_colors_[i +    0]);
-        ExpectEQ(tm1.vertex_colors_[i],
-                            tm.vertex_colors_[i + size]);
+        ExpectEQ(tm0.vertex_colors_[i], tm.vertex_colors_[i +    0]);
+        ExpectEQ(tm1.vertex_colors_[i], tm.vertex_colors_[i + size]);
     }
 
     // NOTE: why is this offset required only for triangles?
@@ -339,18 +328,16 @@ TEST(TriangleMesh, OperatorAppend)
     {
         ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
         ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
-                                            tm1.triangles_[i](1, 0) + size,
-                                            tm1.triangles_[i](2, 0) + size),
-                            tm.triangles_[i + size]);
+                          tm1.triangles_[i](1, 0) + size,
+                          tm1.triangles_[i](2, 0) + size),
+                          tm.triangles_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        ExpectEQ(tm0.triangle_normals_[i],
-                            tm.triangle_normals_[i + 0]);
-        ExpectEQ(tm1.triangle_normals_[i],
-                            tm.triangle_normals_[i + size]);
+        ExpectEQ(tm0.triangle_normals_[i], tm.triangle_normals_[i + 0]);
+        ExpectEQ(tm1.triangle_normals_[i], tm.triangle_normals_[i + size]);
     }
 }
 
@@ -406,19 +393,15 @@ TEST(TriangleMesh, OperatorADD)
     EXPECT_EQ(2 * size, tm.vertex_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        ExpectEQ(tm0.vertex_normals_[i],
-                            tm.vertex_normals_[i +    0]);
-        ExpectEQ(tm1.vertex_normals_[i],
-                            tm.vertex_normals_[i + size]);
+        ExpectEQ(tm0.vertex_normals_[i], tm.vertex_normals_[i +    0]);
+        ExpectEQ(tm1.vertex_normals_[i], tm.vertex_normals_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.vertex_colors_.size());
     for (size_t i = 0; i < size; i++)
     {
-        ExpectEQ(tm0.vertex_colors_[i],
-                            tm.vertex_colors_[i + 0]);
-        ExpectEQ(tm1.vertex_colors_[i],
-                            tm.vertex_colors_[i + size]);
+        ExpectEQ(tm0.vertex_colors_[i], tm.vertex_colors_[i + 0]);
+        ExpectEQ(tm1.vertex_colors_[i], tm.vertex_colors_[i + size]);
     }
 
     // NOTE: why is this offset required only for triangles?
@@ -427,18 +410,16 @@ TEST(TriangleMesh, OperatorADD)
     {
         ExpectEQ(tm0.triangles_[i], tm.triangles_[i + 0]);
         ExpectEQ(Vector3i(tm1.triangles_[i](0, 0) + size,
-                                            tm1.triangles_[i](1, 0) + size,
-                                            tm1.triangles_[i](2, 0) + size),
-                            tm.triangles_[i + size]);
+                          tm1.triangles_[i](1, 0) + size,
+                          tm1.triangles_[i](2, 0) + size),
+                          tm.triangles_[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
     for (size_t i = 0; i < size; i++)
     {
-        ExpectEQ(tm0.triangle_normals_[i],
-                            tm.triangle_normals_[i + 0]);
-        ExpectEQ(tm1.triangle_normals_[i],
-                            tm.triangle_normals_[i + size]);
+        ExpectEQ(tm0.triangle_normals_[i], tm.triangle_normals_[i + 0]);
+        ExpectEQ(tm1.triangle_normals_[i], tm.triangle_normals_[i + size]);
     }
 }
 
@@ -495,9 +476,7 @@ TEST(TriangleMesh, ComputeTriangleNormals)
 
     tm.ComputeTriangleNormals();
 
-    EXPECT_EQ(ref.size(), tm.triangle_normals_.size());
-    for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-        ExpectEQ(ref[i], tm.triangle_normals_[i]);
+    ExpectEQ(ref, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -553,9 +532,7 @@ TEST(TriangleMesh, ComputeVertexNormals)
 
     tm.ComputeVertexNormals();
 
-    EXPECT_EQ(ref.size(), tm.vertex_normals_.size());
-    for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-        ExpectEQ(ref[i], tm.vertex_normals_[i]);
+    ExpectEQ(ref, tm.vertex_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -738,25 +715,11 @@ TEST(TriangleMesh, Purge)
 
     tm.Purge();
 
-    EXPECT_EQ(ref_vertices.size(), tm.vertices_.size());
-    for (size_t i = 0; i < tm.vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], tm.vertices_[i]);
-
-    EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
-    for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-        ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
-
-    EXPECT_EQ(ref_vertex_colors.size(), tm.vertex_colors_.size());
-    for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-        ExpectEQ(ref_vertex_colors[i], tm.vertex_colors_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), tm.triangles_.size());
-    for (size_t i = 0; i < tm.triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], tm.triangles_[i]);
-
-    EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
-    for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-        ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
+    ExpectEQ(ref_vertices, tm.vertices_);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
+    ExpectEQ(ref_vertex_colors, tm.vertex_colors_);
+    ExpectEQ(ref_triangles, tm.triangles_);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -921,13 +884,8 @@ TEST(TriangleMesh, NormalizeNormals)
 
     tm.NormalizeNormals();
 
-    EXPECT_EQ(ref_vertex_normals.size(), tm.vertex_normals_.size());
-    for (size_t i = 0; i < tm.vertex_normals_.size(); i++)
-        ExpectEQ(ref_vertex_normals[i], tm.vertex_normals_[i]);
-
-    EXPECT_EQ(ref_triangle_normals.size(), tm.triangle_normals_.size());
-    for (size_t i = 0; i < tm.triangle_normals_.size(); i++)
-        ExpectEQ(ref_triangle_normals[i], tm.triangle_normals_[i]);
+    ExpectEQ(ref_vertex_normals, tm.vertex_normals_);
+    ExpectEQ(ref_triangle_normals, tm.triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -948,8 +906,7 @@ TEST(TriangleMesh, PaintUniformColor)
     tm.PaintUniformColor(Vector3d(31.0, 120.0, 205.0));
 
     for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
-        ExpectEQ(Vector3d(31.0, 120.0, 205.0),
-                            tm.vertex_colors_[i]);
+        ExpectEQ(Vector3d(31.0, 120.0, 205.0), tm.vertex_colors_[i]);
 }
 
 // ----------------------------------------------------------------------------
@@ -1121,29 +1078,11 @@ TEST(TriangleMesh, SelectDownSample)
 
     auto output_tm = SelectDownSample(tm, indices);
 
-    EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
-    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
-
-    EXPECT_EQ(ref_vertex_normals.size(), output_tm->vertex_normals_.size());
-    for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
-        ExpectEQ(ref_vertex_normals[i],
-                            output_tm->vertex_normals_[i]);
-
-    EXPECT_EQ(ref_vertex_colors.size(), output_tm->vertex_colors_.size());
-    for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
-        ExpectEQ(ref_vertex_colors[i],
-                            output_tm->vertex_colors_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
-    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
-
-    EXPECT_EQ(ref_triangle_normals.size(),
-              output_tm->triangle_normals_.size());
-    for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
-        ExpectEQ(ref_triangle_normals[i],
-                            output_tm->triangle_normals_[i]);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
+    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1220,29 +1159,11 @@ TEST(TriangleMesh, CropTriangleMesh)
 
     auto output_tm = CropTriangleMesh(tm, cropBoundMin, cropBoundMax);
 
-    EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
-    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
-
-    EXPECT_EQ(ref_vertex_normals.size(), output_tm->vertex_normals_.size());
-    for (size_t i = 0; i < output_tm->vertex_normals_.size(); i++)
-        ExpectEQ(ref_vertex_normals[i],
-                            output_tm->vertex_normals_[i]);
-
-    EXPECT_EQ(ref_vertex_colors.size(), output_tm->vertex_colors_.size());
-    for (size_t i = 0; i < output_tm->vertex_colors_.size(); i++)
-        ExpectEQ(ref_vertex_colors[i],
-                            output_tm->vertex_colors_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
-    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
-
-    EXPECT_EQ(ref_triangle_normals.size(),
-              output_tm->triangle_normals_.size());
-    for (size_t i = 0; i < output_tm->triangle_normals_.size(); i++)
-        ExpectEQ(ref_triangle_normals[i],
-                            output_tm->triangle_normals_[i]);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_vertex_normals, output_tm->vertex_normals_);
+    ExpectEQ(ref_vertex_colors, output_tm->vertex_colors_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
+    ExpectEQ(ref_triangle_normals, output_tm->triangle_normals_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1382,13 +1303,8 @@ TEST(TriangleMesh, CreateMeshSphere)
 
     auto output_tm = CreateMeshSphere(1.0, 5);
 
-    EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
-    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
-    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1483,13 +1399,8 @@ TEST(TriangleMesh, CreateMeshCylinder)
 
     auto output_tm = CreateMeshCylinder(1.0, 2.0, 5);
 
-    EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
-    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
-    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1524,13 +1435,8 @@ TEST(TriangleMesh, CreateMeshCone)
 
     auto output_tm = CreateMeshCone(1.0, 2.0, 5);
 
-    EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
-    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
-    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1642,13 +1548,8 @@ TEST(TriangleMesh, CreateMeshArrow)
 
     auto output_tm = CreateMeshArrow(1.0, 1.5, 2.0, 1.0, 5);
 
-    EXPECT_EQ(ref_vertices.size(), output_tm->vertices_.size());
-    for (size_t i = 0; i < output_tm->vertices_.size(); i++)
-        ExpectEQ(ref_vertices[i], output_tm->vertices_[i]);
-
-    EXPECT_EQ(ref_triangles.size(), output_tm->triangles_.size());
-    for (size_t i = 0; i < output_tm->triangles_.size(); i++)
-        ExpectEQ(ref_triangles[i], output_tm->triangles_[i]);
+    ExpectEQ(ref_vertices, output_tm->vertices_);
+    ExpectEQ(ref_triangles, output_tm->triangles_);
 }
 
 // ----------------------------------------------------------------------------
