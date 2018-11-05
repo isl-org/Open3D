@@ -114,4 +114,12 @@ namespace unit_test
         for (int i = 0; i < v0.size(); i++)
             ExpectGE(v0[i], v1[i]);
     }
+
+    // Test equality of two vectors of int.
+    void ExpectEQ(const std::vector<int>& v0,
+                  const std::vector<int>& v1);
+
+    // Test equality of two vectors of double.
+    void ExpectEQ(const std::vector<double>& v0,
+                  const std::vector<double>& v1);
 }

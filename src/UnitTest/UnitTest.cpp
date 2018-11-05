@@ -30,6 +30,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 // Default message to use for tests missing an implementation.
@@ -44,4 +45,24 @@ void unit_test::NotImplemented()
          << "\033[0;0m" << endl;
 
     GTEST_NONFATAL_FAILURE_("Not implemented");
+}
+
+// ----------------------------------------------------------------------------
+// Test equality of two vectors of int.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1)
+{
+    EXPECT_EQ(v0.size(), v1.size());
+    for (int i = 0; i < v0.size(); i++)
+        EXPECT_EQ(v0[i], v1[i]);
+}
+
+// ----------------------------------------------------------------------------
+// Test equality of two vectors of double.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const vector<double>& v0, const vector<double>& v1)
+{
+    EXPECT_EQ(v0.size(), v1.size());
+    for (int i = 0; i < v0.size(); i++)
+        EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
 }
