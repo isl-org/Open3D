@@ -64,14 +64,14 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<Image> srcColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
-    shared_ptr<Image> srcDepth = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 0);
+    auto srcColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    auto srcDepth = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 0);
 
-    shared_ptr<Image> tgtColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
-    shared_ptr<Image> tgtDepth = GenerateImage(width, height, 1, 4, 1.0f, 2.0f, 0);
+    auto tgtColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    auto tgtDepth = GenerateImage(width, height, 1, 4, 1.0f, 2.0f, 0);
 
-    shared_ptr<Image> dxColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
-    shared_ptr<Image> dyColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    auto dxColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
+    auto dyColor = GenerateImage(width, height, 1, 4, 0.0f, 1.0f, 1);
 
     ShiftLeft(tgtColor, 10);
     ShiftUp(tgtColor, 5);
@@ -81,7 +81,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
 
     RGBDImage source(*srcColor, *srcDepth);
     RGBDImage target(*tgtColor, *tgtDepth);
-    shared_ptr<Image> source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);;
+    auto source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);;
     RGBDImage target_dx(*dxColor, *tgtDepth);
     RGBDImage target_dy(*dyColor, *tgtDepth);
 
