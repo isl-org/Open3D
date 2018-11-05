@@ -86,13 +86,8 @@ TEST(KDTreeFlann, SearchKNN)
 
     EXPECT_EQ(result, 30);
 
-    EXPECT_EQ(ref_indices.size(), indices.size());
-    for (size_t i = 0; i < ref_indices.size(); i++)
-        EXPECT_EQ(ref_indices[i], indices[i]);
-
-    EXPECT_EQ(ref_distance2.size(), distance2.size());
-    for (size_t i = 0; i < ref_distance2.size(); i++)
-        EXPECT_NEAR(ref_distance2[i], distance2[i], THRESHOLD_1E_6);
+    ExpectEQ(ref_indices, indices);
+    ExpectEQ(ref_distance2, distance2);
 }
 
 // ----------------------------------------------------------------------------
@@ -138,13 +133,8 @@ TEST(KDTreeFlann, SearchRadius)
 
     EXPECT_EQ(result, 21);
 
-    EXPECT_EQ(ref_indices.size(), indices.size());
-    for (size_t i = 0; i < ref_indices.size(); i++)
-        EXPECT_EQ(ref_indices[i], indices[i]);
-
-    EXPECT_EQ(ref_distance2.size(), distance2.size());
-    for (size_t i = 0; i < ref_distance2.size(); i++)
-        EXPECT_NEAR(ref_distance2[i], distance2[i], THRESHOLD_1E_6);
+    ExpectEQ(ref_indices, indices);
+    ExpectEQ(ref_distance2, distance2);
 }
 
 // ----------------------------------------------------------------------------
@@ -188,11 +178,6 @@ TEST(KDTreeFlann, SearchHybrid)
 
     EXPECT_EQ(result, 15);
 
-    EXPECT_EQ(ref_indices.size(), indices.size());
-    for (size_t i = 0; i < ref_indices.size(); i++)
-        EXPECT_EQ(ref_indices[i], indices[i]);
-
-    EXPECT_EQ(ref_distance2.size(), distance2.size());
-    for (size_t i = 0; i < ref_distance2.size(); i++)
-        EXPECT_NEAR(ref_distance2[i], distance2[i], THRESHOLD_1E_6);
+    ExpectEQ(ref_indices, indices);
+    ExpectEQ(ref_distance2, distance2);
 }
