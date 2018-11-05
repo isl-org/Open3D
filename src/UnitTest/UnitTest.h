@@ -115,9 +115,17 @@ namespace unit_test
             ExpectGE(v0[i], v1[i]);
     }
 
+    // Test equality of two vectors of uint8_t.
+    void ExpectEQ(const std::vector<uint8_t>& v0,
+                  const std::vector<uint8_t>& v1);
+
     // Test equality of two vectors of int.
     void ExpectEQ(const std::vector<int>& v0,
                   const std::vector<int>& v1);
+
+    // Test equality of two vectors of float.
+    void ExpectEQ(const std::vector<float>& v0,
+                  const std::vector<float>& v1);
 
     // Test equality of two vectors of double.
     void ExpectEQ(const std::vector<double>& v0,

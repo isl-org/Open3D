@@ -48,6 +48,16 @@ void unit_test::NotImplemented()
 }
 
 // ----------------------------------------------------------------------------
+// Test equality of two vectors of uint8_t.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const vector<uint8_t>& v0, const vector<uint8_t>& v1)
+{
+    EXPECT_EQ(v0.size(), v1.size());
+    for (int i = 0; i < v0.size(); i++)
+        EXPECT_EQ(v0[i], v1[i]);
+}
+
+// ----------------------------------------------------------------------------
 // Test equality of two vectors of int.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1)
@@ -55,6 +65,16 @@ void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1)
     EXPECT_EQ(v0.size(), v1.size());
     for (int i = 0; i < v0.size(); i++)
         EXPECT_EQ(v0[i], v1[i]);
+}
+
+// ----------------------------------------------------------------------------
+// Test equality of two vectors of float.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const vector<float>& v0, const vector<float>& v1)
+{
+    EXPECT_EQ(v0.size(), v1.size());
+    for (int i = 0; i < v0.size(); i++)
+        EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
