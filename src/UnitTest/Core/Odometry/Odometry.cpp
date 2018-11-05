@@ -113,17 +113,11 @@ TEST(Odometry, AddElementToCorrespondenceMap)
                                       v_t[i],
                                       transformed_d_t[i]);
 
-    size_t map_size = map->data_.size() / sizeof(int);
     int* const map_data = reinterpret_cast<int*>(&map->data_[0]);
-    EXPECT_EQ(ref_map.size(), map_size);
-    for (size_t i = 0; i < ref_map.size(); i++)
-        EXPECT_EQ(ref_map[i], map_data[i]);
+    ExpectEQ(&ref_map[0], map_data, map->data_.size() / sizeof(int));
 
-    size_t depth_size = depth->data_.size() / sizeof(float);
     float* const depth_data = reinterpret_cast<float*>(&depth->data_[0]);
-    EXPECT_EQ(ref_depth.size(), depth_size);
-    for (size_t i = 0; i < ref_depth.size(); i++)
-        EXPECT_NEAR(ref_depth[i], depth_data[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_depth[0], depth_data, depth->data_.size() / sizeof(float));
 }
 
 // ----------------------------------------------------------------------------
@@ -162,17 +156,11 @@ TEST(Odometry, MergeCorrespondenceMaps)
 
     MergeCorrespondenceMaps(*map, *depth, *map_part, *depth_part);
 
-    size_t map_size = map->data_.size() / sizeof(int);
     int* const map_data = reinterpret_cast<int*>(&map->data_[0]);
-    EXPECT_EQ(ref_map.size(), map_size);
-    for (size_t i = 0; i < ref_map.size(); i++)
-        EXPECT_EQ(ref_map[i], map_data[i]);
+    ExpectEQ(&ref_map[0], map_data, map->data_.size() / sizeof(int));
 
-    size_t depth_size = depth->data_.size() / sizeof(float);
     float* const depth_data = reinterpret_cast<float*>(&depth->data_[0]);
-    EXPECT_EQ(ref_depth.size(), depth_size);
-    for (size_t i = 0; i < ref_depth.size(); i++)
-        EXPECT_NEAR(ref_depth[i], depth_data[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_depth[0], depth_data, depth->data_.size() / sizeof(float));
 }
 
 // ----------------------------------------------------------------------------
@@ -269,9 +257,7 @@ TEST(Odometry, ComputeCorrespondence)
                               *depth_t,
                               option);
 
-    EXPECT_EQ(ref_output.size(), output->size());
-    for (size_t i = 0; i < ref_output.size(); i++)
-        ExpectEQ(ref_output[i], (*output)[i]);
+    ExpectEQ(ref_output, *output);
 }
 
 // ----------------------------------------------------------------------------
@@ -312,11 +298,8 @@ TEST(Odometry, ConvertDepthImageToXYZImage)
 
     shared_ptr<Image> output = ConvertDepthImageToXYZImage(*depth, intrinsic);
 
-    size_t output_size = output->data_.size() / sizeof(float);
     float* const output_data = reinterpret_cast<float*>(&output->data_[0]);
-    EXPECT_EQ(ref_output.size(), output_size);
-    for (size_t i = 0; i < ref_output.size(); i++)
-        EXPECT_NEAR(ref_output[i], output_data[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_output[0], output_data, output->data_.size() / sizeof(float));
 }
 
 // ----------------------------------------------------------------------------
@@ -324,34 +307,22 @@ TEST(Odometry, ConvertDepthImageToXYZImage)
 // ----------------------------------------------------------------------------
 TEST(Odometry, CreateCameraMatrixPyramid)
 {
-    vector<vector<double>> ref_output =
-    {
-        {
-            0.500000,    0.000000,    0.000000,
-            0.000000,    0.650000,    0.000000,
-            0.750000,    0.350000,    1.000000,
-        },
-        {
-            0.250000,    0.000000,    0.000000,
-            0.000000,    0.325000,    0.000000,
-            0.375000,    0.175000,    1.000000,
-        },
-        {
-            0.125000,    0.000000,    0.000000,
-            0.000000,    0.162500,    0.000000,
-            0.187500,    0.087500,    1.000000,
-        },
-        {
-            0.062500,    0.000000,    0.000000,
-            0.000000,    0.081250,    0.000000,
-            0.093750,    0.043750,    1.000000,
-        },
-        {
-            0.031250,    0.000000,    0.000000,
-            0.000000,    0.040625,    0.000000,
-            0.046875,    0.021875,    1.000000,
-        }
-    };
+    vector<Matrix3d> ref_output(5);
+    ref_output[0] << 0.500000, 0.000000, 0.750000,
+                     0.000000, 0.650000, 0.350000,
+                     0.000000, 0.000000, 1.000000;
+    ref_output[1] << 0.250000, 0.000000, 0.375000,
+                     0.000000, 0.325000, 0.175000,
+                     0.000000, 0.000000, 1.000000;
+    ref_output[2] << 0.125000, 0.000000, 0.187500,
+                     0.000000, 0.162500, 0.087500,
+                     0.000000, 0.000000, 1.000000;
+    ref_output[3] << 0.062500, 0.000000, 0.093750,
+                     0.000000, 0.081250, 0.043750,
+                     0.000000, 0.000000, 1.000000;
+    ref_output[4] << 0.031250, 0.000000, 0.046875,
+                     0.000000, 0.040625, 0.021875,
+                     0.000000, 0.000000, 1.000000;
 
     PinholeCameraIntrinsic intrinsic;
 
@@ -370,11 +341,7 @@ TEST(Odometry, CreateCameraMatrixPyramid)
 
     vector<Matrix3d> output = CreateCameraMatrixPyramid(intrinsic, levels);
 
-    EXPECT_EQ(ref_output.size(), output.size());
-    for (size_t i = 0; i < ref_output.size(); i++)
-        for (int r = 0; r < 3; r++)
-            for (int c = 0; c < 3; c++)
-                EXPECT_NEAR(ref_output[i][r * 3 + c], output[i](c, r), THRESHOLD_1E_6);
+    ExpectEQ(ref_output, output);
 }
 
 // ----------------------------------------------------------------------------
@@ -384,15 +351,14 @@ TEST(Odometry, CreateCameraMatrixPyramid)
 // ----------------------------------------------------------------------------
 TEST(Odometry, DISABLED_CreateInformationMatrix)
 {
-    vector<vector<double>> ref_output =
-    {
-        { 17.769332, -1.677223, -0.014674,  0.000000, -0.013595,  1.548815, },
-        { -1.677223, 22.485787, -0.004965,  0.013595,  0.000000, -4.816394, },
-        { -0.014674, -0.004965, 23.255035, -1.548815,  4.816394,  0.000000, },
-        {  0.000000,  0.013595, -1.548815, 22.000000,  0.000000,  0.000000, },
-        { -0.013595,  0.000000,  4.816394,  0.000000, 22.000000,  0.000000, },
-        {  1.548815, -4.816394,  0.000000,  0.000000,  0.000000, 22.000000, }
-    };
+    Matrix6d ref_output;
+    ref_output <<
+      613.863173, -1502.530770,  -29.912557,   0.000000, -0.486275,  24.425943,
+    -1502.530770,  3801.174861,  -11.877714,   0.486275,  0.000000, -61.513725,
+      -29.912557,   -11.877714, 4397.565108, -24.425943, 61.513725,   0.000000,
+        0.000000,     0.486275,  -24.425943,  18.000000,  0.000000,   0.000000,
+       -0.486275,     0.000000,   61.513725,   0.000000, 18.000000,   0.000000,
+       24.425943,   -61.513725,    0.000000,   0.000000,  0.000000,  18.000000;
 
     Matrix4d extrinsic = Matrix4d::Zero();
     extrinsic(0, 0) = 10.0;
@@ -420,18 +386,12 @@ TEST(Odometry, DISABLED_CreateInformationMatrix)
     option.max_depth_diff_ = 0.25;
 
     Matrix6d output = CreateInformationMatrix(extrinsic,
-                                                     intrinsic,
-                                                     *depth_s,
-                                                     *depth_t,
-                                                     option);
+                                              intrinsic,
+                                              *depth_s,
+                                              *depth_t,
+                                              option);
 
-    EXPECT_EQ(6, ref_output.size());
-    for (int r = 0; r < 6; r++)
-    {
-        EXPECT_EQ(6, ref_output[r].size());
-        for (int c = 0; c < 6; c++)
-            EXPECT_NEAR(ref_output[r][c], output(c, r), THRESHOLD_1E_6);
-    }
+    ExpectEQ(ref_output, output);
 }
 
 // ----------------------------------------------------------------------------
@@ -503,12 +463,10 @@ TEST(Odometry, NormalizeIntensity)
     NormalizeIntensity(image_s, image_t, *correspondence);
 
     EXPECT_EQ(ref_image_s_data.size(), image_s_size);
-    for (size_t i = 0; i < ref_image_s_data.size(); i++)
-        EXPECT_NEAR(ref_image_s_data[i], image_s_data[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_image_s_data[0], image_s_data, image_s_size);
 
     EXPECT_EQ(ref_image_t_data.size(), image_t_size);
-    for (size_t i = 0; i < ref_image_t_data.size(); i++)
-        EXPECT_NEAR(ref_image_t_data[i], image_t_data[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_image_t_data[0], image_t_data, image_t_size);
 }
 
 // ----------------------------------------------------------------------------
@@ -534,13 +492,8 @@ TEST(Odometry, PackRGBDImage)
 
     shared_ptr<RGBDImage> rgbd_image = PackRGBDImage(color, *depth);
 
-    EXPECT_EQ(rgbd_image->color_.data_.size(), color.data_.size());
-    for (size_t i = 0; i < rgbd_image->color_.data_.size(); i++)
-        EXPECT_EQ(rgbd_image->color_.data_[i], color.data_[i]);
-
-    EXPECT_EQ(rgbd_image->depth_.data_.size(), depth->data_.size());
-    for (size_t i = 0; i < rgbd_image->depth_.data_.size(); i++)
-        EXPECT_EQ(rgbd_image->depth_.data_[i], depth->data_[i]);
+    ExpectEQ(rgbd_image->color_.data_, color.data_);
+    ExpectEQ(rgbd_image->depth_.data_, depth->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -572,8 +525,7 @@ TEST(Odometry, PreprocessDepth)
     size_t output_size = output->data_.size() / sizeof(float);
 
     EXPECT_EQ(ref_output.size(), output_size);
-    for (size_t i = 0; i < ref_output.size(); i++)
-        EXPECT_NEAR(ref_output[i], output_data[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_output[0], output_data, output_size);
 }
 
 // ----------------------------------------------------------------------------
@@ -736,20 +688,16 @@ TEST(Odometry, InitializeRGBDOdometry)
     size_t rgbd_size = width * height;
 
     EXPECT_EQ(ref_rgbd0_color.size(), rgbd_size);
-    for (size_t i = 0; i < ref_rgbd0_color.size(); i++)
-        EXPECT_NEAR(ref_rgbd0_color[i], rgbd0_color[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_rgbd0_color[0], rgbd0_color, rgbd_size);
 
     EXPECT_EQ(ref_rgbd1_color.size(), rgbd_size);
-    for (size_t i = 0; i < ref_rgbd1_color.size(); i++)
-        EXPECT_NEAR(ref_rgbd1_color[i], rgbd1_color[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_rgbd1_color[0], rgbd1_color, rgbd_size);
 
     EXPECT_EQ(ref_rgbd0_depth.size(), rgbd_size);
-    for (size_t i = 0; i < ref_rgbd0_depth.size(); i++)
-        EXPECT_NEAR(ref_rgbd0_depth[i], rgbd0_depth[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_rgbd0_depth[0], rgbd0_depth, rgbd_size);
 
     EXPECT_EQ(ref_rgbd1_depth.size(), rgbd_size);
-    for (size_t i = 0; i < ref_rgbd1_depth.size(); i++)
-        EXPECT_NEAR(ref_rgbd1_depth[i], rgbd1_depth[i], THRESHOLD_1E_6);
+    ExpectEQ(&ref_rgbd1_depth[0], rgbd1_depth, rgbd_size);
 }
 
 // ----------------------------------------------------------------------------
