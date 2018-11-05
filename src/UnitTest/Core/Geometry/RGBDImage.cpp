@@ -74,11 +74,8 @@ TEST(RGBDImage, Constructor)
 
     RGBDImage rgbd_image(color, *depth);
 
-    for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(color.data_[i], rgbd_image.color_.data_[i]);
-
-    for (size_t i = 0; i < depth->data_.size(); i++)
-        EXPECT_EQ(depth->data_[i], rgbd_image.depth_.data_[i]);
+    ExpectEQ(color.data_, rgbd_image.color_.data_);
+    ExpectEQ(depth->data_, rgbd_image.depth_.data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -154,13 +151,8 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
 
     auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
-    for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
-
-    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
-    for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
+    ExpectEQ(ref_color, rgbd_image->color_.data_);
+    ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -228,13 +220,8 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
 
     auto rgbd_image = CreateRGBDImageFromRedwoodFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
-    for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
-
-    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
-    for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
+    ExpectEQ(ref_color, rgbd_image->color_.data_);
+    ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -302,13 +289,8 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
 
     auto rgbd_image = CreateRGBDImageFromTUMFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
-    for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
-
-    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
-    for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
+    ExpectEQ(ref_color, rgbd_image->color_.data_);
+    ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -376,13 +358,8 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
 
     auto rgbd_image = CreateRGBDImageFromSUNFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
-    for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
-
-    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
-    for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
+    ExpectEQ(ref_color, rgbd_image->color_.data_);
+    ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -450,13 +427,8 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
 
     auto rgbd_image = CreateRGBDImageFromNYUFormat(color, depth);
 
-    EXPECT_EQ(ref_color.size(), rgbd_image->color_.data_.size());
-    for (size_t i = 0; i < color.data_.size(); i++)
-        EXPECT_EQ(ref_color[i], rgbd_image->color_.data_[i]);
-
-    EXPECT_EQ(ref_depth.size(), rgbd_image->depth_.data_.size());
-    for (size_t i = 0; i < depth.data_.size(); i++)
-        EXPECT_EQ(ref_depth[i], rgbd_image->depth_.data_[i]);
+    ExpectEQ(ref_color, rgbd_image->color_.data_);
+    ExpectEQ(ref_depth, rgbd_image->depth_.data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -542,13 +514,8 @@ TEST(RGBDImage, FilterRGBDImagePyramid)
 
     for (size_t j = 0; j < num_of_levels; j++)
     {
-        EXPECT_EQ(ref_color[j].size(), filtered[j]->color_.data_.size());
-        for (size_t i = 0; i < ref_color[j].size(); i++)
-            EXPECT_EQ(ref_color[j][i], filtered[j]->color_.data_[i]);
-
-        EXPECT_EQ(ref_depth[j].size(), filtered[j]->depth_.data_.size());
-        for (size_t i = 0; i < ref_depth[j].size(); i++)
-            EXPECT_EQ(ref_depth[j][i], filtered[j]->depth_.data_[i]);
+        ExpectEQ(ref_color[j], filtered[j]->color_.data_);
+        ExpectEQ(ref_depth[j], filtered[j]->depth_.data_);
     }
 }
 
@@ -633,12 +600,7 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
 
     for (size_t j = 0; j < num_of_levels; j++)
     {
-        EXPECT_EQ(ref_color[j].size(), pyramid[j]->color_.data_.size());
-        for (size_t i = 0; i < ref_color[j].size(); i++)
-            EXPECT_EQ(ref_color[j][i], pyramid[j]->color_.data_[i]);
-
-        EXPECT_EQ(ref_depth[j].size(), pyramid[j]->depth_.data_.size());
-        for (size_t i = 0; i < ref_depth[j].size(); i++)
-            EXPECT_EQ(ref_depth[j][i], pyramid[j]->depth_.data_[i]);
+        EXPECT_EQ(ref_color[j], pyramid[j]->color_.data_);
+        EXPECT_EQ(ref_depth[j], pyramid[j]->depth_.data_);
     }
 }
