@@ -280,8 +280,7 @@ void TEST_CreateFloatImageFromImage(
     EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
-    for (size_t i = 0; i < float_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], float_image->data_[i]);
+    ExpectEQ(ref, float_image->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -582,8 +581,7 @@ TEST(Image, ConvertDepthToFloatImage)
     EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
-    for (size_t i = 0; i < float_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], float_image->data_[i]);
+    ExpectEQ(ref, float_image->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -626,8 +624,7 @@ TEST(Image, FlipImage)
     EXPECT_EQ(height, flip_image->height_);
     EXPECT_EQ(flip_bytes_per_channel, flip_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), flip_image->bytes_per_channel_);
-    for (size_t i = 0; i < flip_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], flip_image->data_[i]);
+    ExpectEQ(ref, flip_image->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -660,8 +657,7 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
     EXPECT_EQ(height, output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(ref[i], output->data_[i]);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -822,8 +818,7 @@ TEST(Image, FilterHorizontalImage)
     EXPECT_EQ(height, output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(ref[i], output->data_[i]);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -859,8 +854,7 @@ TEST(Image, DownsampleImage)
     EXPECT_EQ((int)(height / 2), output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(ref[i], output->data_[i]);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -905,8 +899,7 @@ TEST(Image, DilateImage)
     EXPECT_EQ(height, output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(ref[i], output->data_[i]);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -950,8 +943,7 @@ TEST(Image, LinearTransformImage)
     EXPECT_EQ(height, output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(ref[i], output->data_[i]);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -995,8 +987,7 @@ TEST(Image, ClipIntensityImage)
     EXPECT_EQ(height, output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(ref[i], output->data_[i]);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1026,8 +1017,7 @@ void TEST_CreateImageFromFloatImage()
     EXPECT_EQ(height, output->height_);
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-    for (size_t i = 0; i < output->data_.size(); i++)
-        EXPECT_EQ(image.data_[i], output->data_[i]);
+    ExpectEQ(image.data_, output->data_);
 }
 
 template void TEST_CreateImageFromFloatImage<uint8_t>();
@@ -1113,8 +1103,7 @@ TEST(Image, FilterImagePyramid)
         EXPECT_EQ(input->height_, output->height_);
         EXPECT_EQ(input->num_of_channels_, output->num_of_channels_);
         EXPECT_EQ(input->bytes_per_channel_, output->bytes_per_channel_);
-        for (size_t i = 0; i < output->data_.size(); i++)
-            EXPECT_EQ(ref[p][i], output->data_[i]);
+        ExpectEQ(ref[p], output->data_);
     }
 }
 
@@ -1179,8 +1168,7 @@ TEST(Image, CreateImagePyramid)
         EXPECT_EQ(expected_height, output->height_);
         EXPECT_EQ(num_of_channels, output->num_of_channels_);
         EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
-        for (size_t i = 0; i < output->data_.size(); i++)
-            EXPECT_EQ(ref[p][i], output->data_[i]);
+        ExpectEQ(ref[p], output->data_);
 
         expected_width /= 2;
         expected_height /= 2;
