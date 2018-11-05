@@ -65,7 +65,7 @@ vector<Image> GenerateImages(const int& width,
 
         if (bytes_per_channel == 4)
         {
-            float* const depth_data = reinterpret_cast<float*>(&image.data_[0]);
+            float* const depth_data = Cast<float>(&image.data_[0]);
             Rand(depth_data, width * height, 10.0, 100.0, i);
         }
         else
@@ -393,7 +393,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity)
                     height,
                     num_of_channels,
                     bytes_per_channel);
-    float* const depth_data = reinterpret_cast<float*>(&img.data_[0]);
+    float* const depth_data = Cast<float>(&img.data_[0]);
     Rand(depth_data, width * height, 10.0, 100.0, 0);
 
     Vector3d pose(62.5, 37.5, 1.85);
@@ -489,7 +489,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField)
                     height,
                     num_of_channels,
                     bytes_per_channel);
-    float* const depth_data = reinterpret_cast<float*>(&img.data_[0]);
+    float* const depth_data = Cast<float>(&img.data_[0]);
     Rand(depth_data, width * height, 10.0, 100.0, 0);
 
     // TODO: change the initialization in such a way that the field has an

@@ -81,7 +81,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
 
     RGBDImage source(*srcColor, *srcDepth);
     RGBDImage target(*tgtColor, *tgtDepth);
-    auto source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);;
+    auto source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);
     RGBDImage target_dx(*dxColor, *tgtDepth);
     RGBDImage target_dy(*dyColor, *tgtDepth);
 

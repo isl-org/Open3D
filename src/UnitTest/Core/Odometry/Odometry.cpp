@@ -49,12 +49,12 @@ TEST(Odometry, InitializeCorrespondenceMap)
 
     tie(map, depth) = InitializeCorrespondenceMap(width, height);
 
-    int* const map_data = reinterpret_cast<int*>(&map->data_[0]);
+    int* const map_data = Cast<int>(&map->data_[0]);
     size_t map_size = map->data_.size() / sizeof(int);
     for (int i = 0; i < map_size; i++)
         EXPECT_EQ(-1, map_data[i]);
 
-    float* const depth_data = reinterpret_cast<float*>(&depth->data_[0]);
+    float* const depth_data = Cast<float>(&depth->data_[0]);
     size_t depth_size = depth->data_.size() / sizeof(float);
     for (int i = 0; i < depth_size; i++)
         EXPECT_NEAR(-1.0f, depth_data[i], THRESHOLD_1E_6);
@@ -113,10 +113,10 @@ TEST(Odometry, AddElementToCorrespondenceMap)
                                       v_t[i],
                                       transformed_d_t[i]);
 
-    int* const map_data = reinterpret_cast<int*>(&map->data_[0]);
+    int* const map_data = Cast<int>(&map->data_[0]);
     ExpectEQ(&ref_map[0], map_data, map->data_.size() / sizeof(int));
 
-    float* const depth_data = reinterpret_cast<float*>(&depth->data_[0]);
+    float* const depth_data = Cast<float>(&depth->data_[0]);
     ExpectEQ(&ref_depth[0], depth_data, depth->data_.size() / sizeof(float));
 }
 
@@ -156,10 +156,10 @@ TEST(Odometry, MergeCorrespondenceMaps)
 
     MergeCorrespondenceMaps(*map, *depth, *map_part, *depth_part);
 
-    int* const map_data = reinterpret_cast<int*>(&map->data_[0]);
+    int* const map_data = Cast<int>(&map->data_[0]);
     ExpectEQ(&ref_map[0], map_data, map->data_.size() / sizeof(int));
 
-    float* const depth_data = reinterpret_cast<float*>(&depth->data_[0]);
+    float* const depth_data = Cast<float>(&depth->data_[0]);
     ExpectEQ(&ref_depth[0], depth_data, depth->data_.size() / sizeof(float));
 }
 
@@ -298,7 +298,7 @@ TEST(Odometry, ConvertDepthImageToXYZImage)
 
     shared_ptr<Image> output = ConvertDepthImageToXYZImage(*depth, intrinsic);
 
-    float* const output_data = reinterpret_cast<float*>(&output->data_[0]);
+    float* const output_data = Cast<float>(&output->data_[0]);
     ExpectEQ(&ref_output[0], output_data, output->data_.size() / sizeof(float));
 }
 
@@ -453,10 +453,10 @@ TEST(Odometry, NormalizeIntensity)
     image_s.PrepareImage(width, height, num_of_channels, bytes_per_channel);
     image_t.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    float* const image_s_data = reinterpret_cast<float*>(&image_s.data_[0]);
+    float* const image_s_data = Cast<float>(&image_s.data_[0]);
     size_t image_s_size = image_s.data_.size() / sizeof(float);
     Rand(image_s_data, width * height, 10.0, 100.0, 0);
-    float* const image_t_data = reinterpret_cast<float*>(&image_t.data_[0]);
+    float* const image_t_data = Cast<float>(&image_t.data_[0]);
     size_t image_t_size = image_t.data_.size() / sizeof(float);
     Rand(image_t_data, width * height, 100.0, 200.0, 0);
 
@@ -521,7 +521,7 @@ TEST(Odometry, PreprocessDepth)
 
     shared_ptr<Image> output = PreprocessDepth(*depth, option);
 
-    float* const output_data = reinterpret_cast<float*>(&(*output).data_[0]);
+    float* const output_data = Cast<float>(&(*output).data_[0]);
     size_t output_size = output->data_.size() / sizeof(float);
 
     EXPECT_EQ(ref_output.size(), output_size);
@@ -641,8 +641,8 @@ TEST(Odometry, InitializeRGBDOdometry)
                         num_of_channels,
                         bytes_per_channel);
 
-    float* const color0_data = reinterpret_cast<float*>(&color0.data_[0]);
-    float* const color1_data = reinterpret_cast<float*>(&color1.data_[0]);
+    float* const color0_data = Cast<float>(&color0.data_[0]);
+    float* const color1_data = Cast<float>(&color1.data_[0]);
     size_t color_size = width * height;
     Rand(color0_data, color_size, 0.0, 255.0, 0);
     Rand(color1_data, color_size, 0.0, 255.0, 1);
@@ -681,10 +681,10 @@ TEST(Odometry, InitializeRGBDOdometry)
                                                extrinsic,
                                                option);
 
-    float* const rgbd0_color = reinterpret_cast<float*>(&(*rgbd0).color_.data_[0]);
-    float* const rgbd1_color = reinterpret_cast<float*>(&(*rgbd1).color_.data_[0]);
-    float* const rgbd0_depth = reinterpret_cast<float*>(&(*rgbd0).depth_.data_[0]);
-    float* const rgbd1_depth = reinterpret_cast<float*>(&(*rgbd1).depth_.data_[0]);
+    float* const rgbd0_color = Cast<float>(&(*rgbd0).color_.data_[0]);
+    float* const rgbd1_color = Cast<float>(&(*rgbd1).color_.data_[0]);
+    float* const rgbd0_depth = Cast<float>(&(*rgbd0).depth_.data_[0]);
+    float* const rgbd1_depth = Cast<float>(&(*rgbd1).depth_.data_[0]);
     size_t rgbd_size = width * height;
 
     EXPECT_EQ(ref_rgbd0_color.size(), rgbd_size);
@@ -730,7 +730,7 @@ TEST(Odometry, DISABLED_DoSingleIteration)
 
     RGBDImage source(*srcColor, *srcDepth);
     RGBDImage target(*tgtColor, *tgtDepth);
-    shared_ptr<Image> source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);;
+    shared_ptr<Image> source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);
     RGBDImage target_dx(*dxColor, *tgtDepth);
     RGBDImage target_dy(*dyColor, *tgtDepth);
 

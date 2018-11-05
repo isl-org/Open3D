@@ -48,7 +48,7 @@ shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
                        num_of_channels,
                        bytes_per_channel);
 
-    float* const depthData = reinterpret_cast<float*>(&image.data_[0]);
+    float* const depthData = Cast<float>(&image.data_[0]);
     Rand(depthData, width * height, vmin, vmax, seed);
 
     return make_shared<Image>(image);
@@ -64,7 +64,7 @@ void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step)
     int num_of_channels = image->num_of_channels_;
     int bytes_per_channel = image->bytes_per_channel_;
 
-    float* const float_data = reinterpret_cast<float*>(&image->data_[0]);
+    float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
             float_data[h * width + w] = float_data[h * width + (w + step) % width];
@@ -80,7 +80,7 @@ void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step)
     int num_of_channels = image->num_of_channels_;
     int bytes_per_channel = image->bytes_per_channel_;
 
-    float* const float_data = reinterpret_cast<float*>(&image->data_[0]);
+    float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
             float_data[h * width + w] = float_data[((h + step) % height) * width + w];
@@ -105,7 +105,7 @@ shared_ptr<Image> odometry_tools::CorrespondenceMap(const int& width,
                        num_of_channels,
                        bytes_per_channel);
 
-    int* const int_data = reinterpret_cast<int*>(&image.data_[0]);
+    int* const int_data = Cast<int>(&image.data_[0]);
     size_t image_size = image.data_.size() / sizeof(int);
     Rand(int_data, image_size, vmin, vmax, seed);
 
@@ -131,7 +131,7 @@ shared_ptr<Image> odometry_tools::DepthBuffer(const int& width,
                        num_of_channels,
                        bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&image.data_[0]);
+    float* const float_data = Cast<float>(&image.data_[0]);
     size_t image_size = image.data_.size() / sizeof(float);
     Rand(float_data, image_size, vmin, vmax, seed);
 

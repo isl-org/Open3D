@@ -151,4 +151,11 @@ namespace unit_test
     // Test equality of two vectors of double.
     void ExpectEQ(const std::vector<double>& v0,
                   const std::vector<double>& v1);
+
+    // Reinterpret cast from uint8_t* to float*.
+    template<class T>
+    T* const Cast(uint8_t* data)
+    {
+        return reinterpret_cast<T* const>(data);
+    }
 }

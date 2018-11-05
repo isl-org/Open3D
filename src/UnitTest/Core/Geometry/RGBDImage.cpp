@@ -145,7 +145,7 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -214,7 +214,7 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -283,7 +283,7 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -352,7 +352,7 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -421,7 +421,7 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -502,7 +502,7 @@ TEST(RGBDImage, FilterRGBDImagePyramid)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
@@ -590,7 +590,7 @@ TEST(RGBDImage, CreateRGBDImagePyramid)
                        depth_num_of_channels,
                        depth_bytes_per_channel);
 
-    float* const float_data = reinterpret_cast<float*>(&depth.data_[0]);
+    float* const float_data = Cast<float>(&depth.data_[0]);
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 

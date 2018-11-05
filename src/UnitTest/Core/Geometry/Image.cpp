@@ -155,7 +155,7 @@ TEST(Image, FloatValueAt)
 
     image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    float* im = reinterpret_cast<float*>(&image.data_[0]);
+    float* const im = Cast<float>(&image.data_[0]);
 
     im[0 * width + 0] = 4.0f;
     im[0 * width + 1] = 4.0f;
@@ -528,7 +528,7 @@ TEST(Image, PointerAt)
 
     image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    float* im = reinterpret_cast<float*>(&image.data_[0]);
+    float* const im = Cast<float>(&image.data_[0]);
 
     im[0 * width + 0] = 0.0f;
     im[0 * width + 1] = 1.0f;
