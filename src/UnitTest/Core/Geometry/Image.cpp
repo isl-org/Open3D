@@ -35,6 +35,7 @@ using namespace std;
 using namespace unit_test;
 
 using ConversionType = Image::ColorToIntensityConversionType;
+using FilterType = Image::FilterType;
 
 // ----------------------------------------------------------------------------
 // test the default constructor scenario
@@ -683,7 +684,7 @@ TEST(Image, FilterImage_Gaussian3)
            52,  234,  108,  176,  182,  234,  146,  238,   64,  234
     };
 
-    TEST_FilterImage(ref, Image::FilterType::Gaussian3);
+    TEST_FilterImage(ref, FilterType::Gaussian3);
 }
 
 // ----------------------------------------------------------------------------
@@ -706,7 +707,7 @@ TEST(Image, FilterImage_Gaussian5)
            44,  234,   32,  174,  126,  234,   84,  234,   47,  234
     };
 
-    TEST_FilterImage(ref, Image::FilterType::Gaussian5);
+    TEST_FilterImage(ref, FilterType::Gaussian5);
 }
 
 // ----------------------------------------------------------------------------
@@ -729,7 +730,7 @@ TEST(Image, FilterImage_Gaussian7)
            18,  234,  108,  135,   55,  234,  187,   97,   17,  234
     };
 
-    TEST_FilterImage(ref, Image::FilterType::Gaussian7);
+    TEST_FilterImage(ref, FilterType::Gaussian7);
 }
 
 // ----------------------------------------------------------------------------
@@ -752,7 +753,7 @@ TEST(Image, FilterImage_Sobel3Dx)
            52,  236,  140,   27,  131,  233,   33,  139,   48,  108
     };
 
-    TEST_FilterImage(ref, Image::FilterType::Sobel3Dx);
+    TEST_FilterImage(ref, FilterType::Sobel3Dx);
 }
 
 // ----------------------------------------------------------------------------
@@ -775,7 +776,7 @@ TEST(Image, FilterImage_Sobel3Dy)
           112,  235,  229,  149,  243,  235,   12,  159,  128,  235
     };
 
-    TEST_FilterImage(ref, Image::FilterType::Sobel3Dy);
+    TEST_FilterImage(ref, FilterType::Sobel3Dy);
 }
 
 // ----------------------------------------------------------------------------
@@ -1098,7 +1099,7 @@ TEST(Image, FilterImagePyramid)
 
     auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
 
-    auto outputPyramid = FilterImagePyramid(pyramid, Image::FilterType::Gaussian3);
+    auto outputPyramid = FilterImagePyramid(pyramid, FilterType::Gaussian3);
 
     EXPECT_EQ(pyramid.size(), outputPyramid.size());
 
