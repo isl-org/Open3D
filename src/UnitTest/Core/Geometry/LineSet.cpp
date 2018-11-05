@@ -97,8 +97,7 @@ TEST(LineSet, Clear)
 
     ExpectEQ(Vector3d( 19.607843, 0.0, 0.0),
                         ls.GetMinBound());
-    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431),
-                        ls.GetMaxBound());
+    ExpectEQ(Vector3d(996.078431, 996.078431, 996.078431), ls.GetMaxBound());
 
     EXPECT_TRUE(ls.HasPoints());
     EXPECT_TRUE(ls.HasLines());
@@ -235,13 +234,8 @@ TEST(LineSet, Transform)
 
     ls.Transform(transformation);
 
-    EXPECT_EQ(ref_points.size(), ls.points_.size());
-    for (size_t i = 0; i < ls.points_.size(); i++)
-        ExpectEQ(ref_points[i], ls.points_[i]);
-
-    EXPECT_EQ(ref_lines.size(), ls.lines_.size());
-    for (size_t i = 0; i < ls.lines_.size(); i++)
-        ExpectEQ(ref_lines[i], ls.lines_[i]);
+    ExpectEQ(ref_points, ls.points_);
+    ExpectEQ(ref_lines, ls.lines_);
 }
 
 // ----------------------------------------------------------------------------
@@ -557,11 +551,6 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
     auto ls = CreateLineSetFromPointCloudCorrespondences(pc0, pc1,
                                                          correspondence);
 
-    EXPECT_EQ(ref_points.size(), ls->points_.size());
-    for (size_t i = 0; i < ls->points_.size(); i++)
-        ExpectEQ(ref_points[i], ls->points_[i]);
-
-    EXPECT_EQ(ref_lines.size(), ls->lines_.size());
-    for (size_t i = 0; i < ls->lines_.size(); i++)
-        ExpectEQ(ref_lines[i], ls->lines_[i]);
+    ExpectEQ(ref_points, ls->points_);
+    ExpectEQ(ref_lines, ls->lines_);
 }
