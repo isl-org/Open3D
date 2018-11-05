@@ -948,9 +948,7 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance)
     vector<double> distance =
         ComputePointCloudToPointCloudDistance(pc0, pc1);
 
-    EXPECT_EQ(ref.size(), distance.size());
-    for (size_t i = 0; i < distance.size(); i++)
-        EXPECT_NEAR(ref[i], distance[i], THRESHOLD_1E_6);
+    ExpectEQ(ref, distance);
 }
 
 // ----------------------------------------------------------------------------
@@ -1023,9 +1021,7 @@ TEST(PointCloud, ComputePointCloudMahalanobisDistance)
 
     vector<double> distance = ComputePointCloudMahalanobisDistance(pc);
 
-    EXPECT_EQ(ref.size(), distance.size());
-    for (size_t i = 0; i < distance.size(); i++)
-        EXPECT_NEAR(ref[i], distance[i], THRESHOLD_1E_6);
+    ExpectEQ(ref, distance);
 }
 
 // ----------------------------------------------------------------------------
@@ -1069,9 +1065,7 @@ TEST(PointCloud, ComputePointCloudNearestNeighborDistance)
 
     vector<double> distance = ComputePointCloudNearestNeighborDistance(pc);
 
-    EXPECT_EQ(ref.size(), distance.size());
-    for (size_t i = 0; i < distance.size(); i++)
-        EXPECT_NEAR(ref[i], distance[i], THRESHOLD_1E_6);
+    ExpectEQ(ref, distance);
 }
 
 // ----------------------------------------------------------------------------
@@ -1111,10 +1105,10 @@ TEST(PointCloud, CreatePointCloudFromDepthImage)
     Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 2;
+    int local_width = 5;
+    int local_height = 5;
+    int local_num_of_channels = 1;
+    int local_bytes_per_channel = 2;
 
     image.PrepareImage(local_width,
                        local_height,
@@ -1146,24 +1140,18 @@ void TEST_CreatePointCloudFromRGBDImage(
     Image image;
     Image color;
 
-    const int size = 5;
+    int size = 5;
 
     // test image dimensions
-    const int image_width = size;
-    const int image_height = size;
-    const int image_num_of_channels = 1;
-    const int image_bytes_per_channel = 1;
+    int width = size;
+    int height = size;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
 
-    const int color_width = size;
-    const int color_height = size;
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    image.PrepareImage(image_width,
-                       image_height,
-                       image_num_of_channels,
-                       image_bytes_per_channel);
-
-    color.PrepareImage(color_width,
-                       color_height,
+    color.PrepareImage(width,
+                       height,
                        color_num_of_channels,
                        color_bytes_per_channel);
 
@@ -1248,8 +1236,8 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage_3_1)
         {    0.627451,    0.764706,    0.764706 }
     };
 
-    const int color_num_of_channels = 3;
-    const int color_bytes_per_channel = 1;
+    int color_num_of_channels = 3;
+    int color_bytes_per_channel = 1;
 
     TEST_CreatePointCloudFromRGBDImage(
         color_num_of_channels,
@@ -1323,8 +1311,8 @@ TEST(PointCloud, CreatePointCloudFromRGBDImage_1_4)
         {  -22.216120,  -22.216120,  -22.216120 }
     };
 
-    const int color_num_of_channels = 1;
-    const int color_bytes_per_channel = 4;
+    int color_num_of_channels = 1;
+    int color_bytes_per_channel = 4;
 
     TEST_CreatePointCloudFromRGBDImage(
         color_num_of_channels,
