@@ -1099,14 +1099,14 @@ TEST(Image, FilterImagePyramid)
 
     auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
 
-    auto outputPyramid = FilterImagePyramid(pyramid, FilterType::Gaussian3);
+    auto output_pyramid = FilterImagePyramid(pyramid, FilterType::Gaussian3);
 
-    EXPECT_EQ(pyramid.size(), outputPyramid.size());
+    EXPECT_EQ(pyramid.size(), output_pyramid.size());
 
     for (size_t p = 0; p < pyramid.size(); p++)
     {
         auto input = pyramid[p];
-        auto output = outputPyramid[p];
+        auto output = output_pyramid[p];
 
         EXPECT_FALSE(output->IsEmpty());
         EXPECT_EQ(input->width_, output->width_);
