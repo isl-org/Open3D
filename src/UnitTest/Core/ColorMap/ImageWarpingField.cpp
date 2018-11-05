@@ -29,7 +29,7 @@
 // #include "Core/ColorMap/ImageWarpingField.h"
 
 using namespace Eigen;
-using namespace open3d;
+// using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
