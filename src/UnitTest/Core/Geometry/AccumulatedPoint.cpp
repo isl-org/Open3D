@@ -26,41 +26,12 @@
 
 #include "UnitTest.h"
 
-// #include "Core/Geometry/AccumulatedPoint.h"
 #include "Core/Geometry/PointCloud.h"
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, Default)
+TEST(AccumulatedPoint, DISABLED_Default)
 {
-    // int size = 100;
-
-    // Eigen::Vector3d pmin(0.0, 0.0, 0.0);
-    // Eigen::Vector3d pmax(1000.0, 1000.0, 1000.0);
-
-    // Eigen::Vector3d nmin(0.0, 0.0, 0.0);
-    // Eigen::Vector3d nmax(1.0, 1.0, 1.0);
-
-    // Eigen::Vector3d cmin(0.0, 0.0, 0.0);
-    // Eigen::Vector3d cmax(255.0, 255.0, 255.0);
-
-    // open3d::PointCloud pc;
-
-    // pc.points_.resize(size);
-    // pc.normals_.resize(size);
-    // pc.colors_.resize(size);
-
-    // unit_test::Rand(pc.points_, pmin, pmax, 0);
-    // unit_test::Rand(pc.normals_, nmin, nmax, 0);
-    // unit_test::Rand(pc.colors_, cmin, cmax, 0);
-
-    // open3d::AccumulatedPoint accpoint;
-
-    // for (size_t i = 0; i < pc.points_.size(); i++)
-    //     accpoint.AddPoint(pc, i);
-
-    // unit_test::ExpectEQ(531.137254, 535.176470, 501.882352, accpoint.GetAveragePoint());
-    // unit_test::ExpectEQ(0.586397, 0.590857, 0.554099, accpoint.GetAverageNormal());
-    // unit_test::ExpectEQ(135.44, 136.47, 127.98, accpoint.GetAverageColor());
+    unit_test::NotImplemented();
 }
