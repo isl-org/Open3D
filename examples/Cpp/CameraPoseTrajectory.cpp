@@ -38,8 +38,9 @@ int main(int argc, char *argv[])
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
     if (argc != 3) {
-        PrintInfo("> TestCameraPoseTrajectory trajectory_file pcds_dir\n");
-        return 0;
+        PrintInfo("Usage :\n");
+        PrintInfo(">    CameraPoseTrajectory trajectory_file pcds_dir\n");
+        return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
@@ -73,5 +74,5 @@ int main(int argc, char *argv[])
     }
     DrawGeometriesWithCustomAnimation(pcds);
 
-    return 1;
+    return 0;
 }

@@ -25,115 +25,525 @@
 // ----------------------------------------------------------------------------
 
 #include "UnitTest.h"
+#include "Raw.h"
+
+#include "Core/Geometry/LineSet.h"
+#include "Core/Geometry/PointCloud.h"
+
+using namespace std;
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_Constructor)
+TEST(LineSet, Constructor)
 {
-    UnitTest::NotImplemented();
+    open3d::LineSet ls;
+
+    // inherited from Geometry2D
+    EXPECT_EQ(open3d::Geometry::GeometryType::LineSet, ls.GetGeometryType());
+    EXPECT_EQ(3, ls.Dimension());
+
+    // public member variables
+    EXPECT_EQ(0, ls.points_.size());
+    EXPECT_EQ(0, ls.lines_.size());
+    EXPECT_EQ(0, ls.colors_.size());
+
+    // public members
+    EXPECT_TRUE(ls.IsEmpty());
+
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMaxBound());
+
+    EXPECT_FALSE(ls.HasPoints());
+    EXPECT_FALSE(ls.HasLines());
+    EXPECT_FALSE(ls.HasColors());
 }
 
 // ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_Destructor)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(LineSet, DISABLED_MemberData)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_Clear)
+TEST(LineSet, Clear)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector2i imin(0, 0);
+    Eigen::Vector2i imax(1000, 1000);
+
+    open3d::LineSet ls;
+
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+    ls.colors_.resize(size);
+
+    unit_test::Rand(ls.points_, dmin, dmax, 0);
+    unit_test::Rand(ls.lines_, imin, imax, 0);
+    unit_test::Rand(ls.colors_, dmin, dmax, 0);
+
+    EXPECT_FALSE(ls.IsEmpty());
+
+    unit_test::ExpectEQ( 19.607843, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, ls.GetMaxBound());
+
+    EXPECT_TRUE(ls.HasPoints());
+    EXPECT_TRUE(ls.HasLines());
+    EXPECT_TRUE(ls.HasColors());
+
+    ls.Clear();
+
+    // public members
+    EXPECT_TRUE(ls.IsEmpty());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMinBound());
+    unit_test::ExpectEQ(0.0, 0.0, 0.0, ls.GetMaxBound());
+
+    EXPECT_FALSE(ls.HasPoints());
+    EXPECT_FALSE(ls.HasLines());
+    EXPECT_FALSE(ls.HasColors());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_IsEmpty)
+TEST(LineSet, IsEmpty)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    open3d::LineSet ls;
+
+    EXPECT_TRUE(ls.IsEmpty());
+
+    ls.points_.resize(size);
+
+    unit_test::Rand(ls.points_, vmin, vmax, 0);
+
+    EXPECT_FALSE(ls.IsEmpty());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_GetMinBound)
+TEST(LineSet, GetMinBound)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    open3d::LineSet ls;
+
+    ls.points_.resize(size);
+
+    unit_test::Rand(ls.points_, vmin, vmax, 0);
+
+    Eigen::Vector3d minBound = ls.GetMinBound();
+
+    unit_test::ExpectEQ(19.607843, 0.0, 0.0, ls.GetMinBound());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_GetMaxBound)
+TEST(LineSet, GetMaxBound)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    Eigen::Vector3d vmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d vmax(1000.0, 1000.0, 1000.0);
+
+    open3d::LineSet ls;
+
+    ls.points_.resize(size);
+
+    unit_test::Rand(ls.points_, vmin, vmax, 0);
+
+    Eigen::Vector3d maxBound = ls.GetMaxBound();
+
+    unit_test::ExpectEQ(996.078431, 996.078431, 996.078431, ls.GetMaxBound());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_Transform)
+TEST(LineSet, Transform)
 {
-    UnitTest::NotImplemented();
+    vector<Eigen::Vector3d> ref_points =
+    {
+        {  396.870588, 1201.976471,  880.472941 },
+        {  320.792157, 1081.976471,  829.139608 },
+        {  269.027451,  818.447059,  406.786667 },
+        {  338.831373, 1001.192157,  614.237647 },
+        {  423.537255, 1153.349020,  483.727843 },
+        {  432.949020, 1338.447059,  964.512157 },
+        {  140.007843,  444.721569,  189.296471 },
+        {  292.164706,  763.152941,  317.178824 },
+        {  134.517647,  407.858824,  192.002353 },
+        {  274.909804,  802.368627,  218.747451 }
+    };
+
+    vector<Eigen::Vector2i> ref_lines =
+    {
+        {   839,   392 },
+        {   780,   796 },
+        {   909,   196 },
+        {   333,   764 },
+        {   274,   552 },
+        {   474,   627 },
+        {   364,   509 },
+        {   949,   913 },
+        {   635,   713 },
+        {   141,   603 }
+    };
+
+    int size = 10;
+    open3d::LineSet ls;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector2i imin(0, 0);
+    Eigen::Vector2i imax(1000, 1000);
+
+    ls.points_.resize(size);
+    unit_test::Rand(ls.points_, dmin, dmax, 0);
+
+    ls.lines_.resize(size);
+    unit_test::Rand(ls.lines_, imin, imax, 0);
+
+    Eigen::Matrix4d transformation;
+    transformation << 0.10, 0.20, 0.30, 0.40,
+                      0.50, 0.60, 0.70, 0.80,
+                      0.90, 0.10, 0.11, 0.12,
+                      0.13, 0.14, 0.15, 0.16;
+
+    ls.Transform(transformation);
+
+    EXPECT_EQ(ref_points.size(), ls.points_.size());
+    for (size_t i = 0; i < ls.points_.size(); i++)
+        unit_test::ExpectEQ(ref_points[i], ls.points_[i]);
+
+    EXPECT_EQ(ref_lines.size(), ls.lines_.size());
+    for (size_t i = 0; i < ls.lines_.size(); i++)
+        unit_test::ExpectEQ(ref_lines[i], ls.lines_[i]);
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_HasPoints)
+TEST(LineSet, OperatorAppend)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls0;
+    open3d::LineSet ls1;
+
+    ls0.points_.resize(size);
+    ls0.lines_.resize(size);
+    ls0.colors_.resize(size);
+
+    ls1.points_.resize(size);
+    ls1.lines_.resize(size);
+    ls1.colors_.resize(size);
+
+    unit_test::Rand(ls0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls0.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+
+    unit_test::Rand(ls1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+
+    vector<Eigen::Vector3d> p;
+    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
+    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
+
+    vector<Eigen::Vector2i> n;
+    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
+    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
+
+    vector<Eigen::Vector3d> c;
+    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
+    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
+
+    open3d::LineSet ls(ls0);
+    ls += ls1;
+
+    EXPECT_EQ(2 * size, ls.points_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        unit_test::ExpectEQ(ls0.points_[i], ls.points_[i +    0]);
+        unit_test::ExpectEQ(ls1.points_[i], ls.points_[i + size]);
+    }
+
+    EXPECT_EQ(2 * size, ls.lines_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        unit_test::ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
+
+        Eigen::Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        unit_test::ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
+    }
+
+    EXPECT_EQ(2 * size, ls.colors_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        unit_test::ExpectEQ(ls0.colors_[i], ls.colors_[i + 0]);
+        unit_test::ExpectEQ(ls1.colors_[i], ls.colors_[i + size]);
+    }
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_HasLines)
+TEST(LineSet, OperatorADD)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls0;
+    open3d::LineSet ls1;
+
+    ls0.points_.resize(size);
+    ls0.lines_.resize(size);
+    ls0.colors_.resize(size);
+
+    ls1.points_.resize(size);
+    ls1.lines_.resize(size);
+    ls1.colors_.resize(size);
+
+    unit_test::Rand(ls0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls0.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+
+    unit_test::Rand(ls1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(ls1.lines_, Eigen::Vector2i(0, 0), Eigen::Vector2i(size - 1, size - 1), 0);
+    unit_test::Rand(ls1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+
+    vector<Eigen::Vector3d> p;
+    p.insert(p.end(), ls0.points_.begin(), ls0.points_.end());
+    p.insert(p.end(), ls1.points_.begin(), ls1.points_.end());
+
+    vector<Eigen::Vector2i> n;
+    n.insert(n.end(), ls0.lines_.begin(), ls0.lines_.end());
+    n.insert(n.end(), ls1.lines_.begin(), ls1.lines_.end());
+
+    vector<Eigen::Vector3d> c;
+    c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
+    c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
+
+    open3d::LineSet ls = ls0 + ls1;
+
+    EXPECT_EQ(2 * size, ls.points_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        unit_test::ExpectEQ(ls0.points_[i], ls.points_[i +    0]);
+        unit_test::ExpectEQ(ls1.points_[i], ls.points_[i + size]);
+    }
+
+    EXPECT_EQ(2 * size, ls.lines_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        unit_test::ExpectEQ(ls0.lines_[i], ls.lines_[i + 0]);
+
+        Eigen::Vector2i ls1_line_i = { ls1.lines_[i](0, 0) + size, ls1.lines_[i](1, 0) + size };
+        unit_test::ExpectEQ(ls1_line_i, ls.lines_[i + ls0.lines_.size()]);
+    }
+
+    EXPECT_EQ(2 * size, ls.colors_.size());
+    for (size_t i = 0; i < size; i++)
+    {
+        unit_test::ExpectEQ(ls0.colors_[i], ls.colors_[i + 0]);
+        unit_test::ExpectEQ(ls1.colors_[i], ls.colors_[i + size]);
+    }
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_HasColors)
+TEST(LineSet, HasPoints)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls;
+
+    EXPECT_FALSE(ls.HasPoints());
+
+    ls.points_.resize(size);
+
+    EXPECT_TRUE(ls.HasPoints());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_GetLineCoordinate)
+TEST(LineSet, HasLines)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls;
+
+    EXPECT_FALSE(ls.HasLines());
+
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+
+    EXPECT_TRUE(ls.HasLines());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSet, DISABLED_CreateLineSetFromPointCloudCorrespondences)
+TEST(LineSet, HasColors)
 {
-    UnitTest::NotImplemented();
+    int size = 100;
+
+    open3d::LineSet ls;
+
+    EXPECT_FALSE(ls.HasColors());
+
+    ls.points_.resize(size);
+    ls.lines_.resize(size);
+    ls.colors_.resize(size);
+
+    EXPECT_TRUE(ls.HasColors());
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(LineSetFactory, DISABLED_CreateLineSetFromPointCloudCorrespondences)
+TEST(LineSet, GetLineCoordinate)
 {
-    UnitTest::NotImplemented();
+    vector<vector<Eigen::Vector3d>> ref_points =
+    {
+        { {  239.215686,  133.333333,  803.921569 }, {  552.941176,  474.509804,  627.450980 } },
+        { {  239.215686,  133.333333,  803.921569 }, {  239.215686,  133.333333,  803.921569 } },
+        { {  152.941176,  400.000000,  129.411765 }, {  796.078431,  909.803922,  196.078431 } },
+        { {  552.941176,  474.509804,  627.450980 }, {  141.176471,  603.921569,   15.686275 } },
+        { {  333.333333,  764.705882,  274.509804 }, {  364.705882,  509.803922,  949.019608 } },
+        { {  364.705882,  509.803922,  949.019608 }, {  913.725490,  635.294118,  713.725490 } },
+        { {  552.941176,  474.509804,  627.450980 }, {  364.705882,  509.803922,  949.019608 } },
+        { {  152.941176,  400.000000,  129.411765 }, {  152.941176,  400.000000,  129.411765 } },
+        { {  913.725490,  635.294118,  713.725490 }, {  141.176471,  603.921569,   15.686275 } },
+        { {  796.078431,  909.803922,  196.078431 }, {  913.725490,  635.294118,  713.725490 } }
+    };
+
+    int size = 10;
+    open3d::LineSet ls;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    Eigen::Vector2i imin(0, 0);
+    Eigen::Vector2i imax(size - 1, size - 1);
+
+    ls.points_.resize(size);
+    unit_test::Rand(ls.points_, dmin, dmax, 0);
+
+    ls.lines_.resize(size);
+    unit_test::Rand(ls.lines_, imin, imax, 0);
+
+    EXPECT_EQ(ref_points.size(), size);
+    for (size_t i = 0; i < size; i++)
+    {
+        auto result = ls.GetLineCoordinate(i);
+
+        unit_test::ExpectEQ(ref_points[i][0], result.first);
+        unit_test::ExpectEQ(ref_points[i][1], result.second);
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(LineSet, CreateLineSetFromPointCloudCorrespondences)
+{
+    int size = 10;
+
+    vector<Eigen::Vector3d> ref_points =
+    {
+        {  839.215686,  392.156863,  780.392157 },
+        {  796.078431,  909.803922,  196.078431 },
+        {  333.333333,  764.705882,  274.509804 },
+        {  552.941176,  474.509804,  627.450980 },
+        {  364.705882,  509.803922,  949.019608 },
+        {  913.725490,  635.294118,  713.725490 },
+        {  141.176471,  603.921569,   15.686275 },
+        {  239.215686,  133.333333,  803.921569 },
+        {  152.941176,  400.000000,  129.411765 },
+        {  105.882353,  996.078431,  215.686275 },
+        {  839.215686,  392.156863,  780.392157 },
+        {  796.078431,  909.803922,  196.078431 },
+        {  333.333333,  764.705882,  274.509804 },
+        {  552.941176,  474.509804,  627.450980 },
+        {  364.705882,  509.803922,  949.019608 },
+        {  913.725490,  635.294118,  713.725490 },
+        {  141.176471,  603.921569,   15.686275 },
+        {  239.215686,  133.333333,  803.921569 },
+        {  152.941176,  400.000000,  129.411765 },
+        {  105.882353,  996.078431,  215.686275 }
+    };
+
+    vector<Eigen::Vector2i> ref_lines =
+    {
+        {     8,    13 },
+        {     7,    17 },
+        {     9,    11 },
+        {     3,    17 },
+        {     2,    15 },
+        {     4,    16 },
+        {     3,    15 },
+        {     9,    19 },
+        {     6,    17 },
+        {     1,    16 }
+    };
+
+    open3d::PointCloud pc0;
+    open3d::PointCloud pc1;
+    vector<pair<int, int>> correspondence(size);
+
+    pc0.points_.resize(size);
+    pc0.normals_.resize(size);
+    pc0.colors_.resize(size);
+
+    pc1.points_.resize(size);
+    pc1.normals_.resize(size);
+    pc1.colors_.resize(size);
+
+    unit_test::Rand(pc0.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(pc0.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(pc0.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+
+    unit_test::Rand(pc1.points_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1000.0, 1000.0, 1000.0), 0);
+    unit_test::Rand(pc1.normals_, Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0), 0);
+    unit_test::Rand(pc1.colors_, Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(1.0, 1.0, 1.0), 1);
+
+    unit_test::Raw raw;
+    for (int i = 0; i < size; i++)
+    {
+        int first = size * raw.Next<int>() / unit_test::Raw::VMAX;
+        int second = size * raw.Next<int>() / unit_test::Raw::VMAX;
+
+        correspondence[i] = pair<int, int>(first, second);
+    }
+
+    auto ls = open3d::CreateLineSetFromPointCloudCorrespondences(pc0, pc1, correspondence);
+
+    EXPECT_EQ(ref_points.size(), ls->points_.size());
+    for (size_t i = 0; i < ls->points_.size(); i++)
+        unit_test::ExpectEQ(ref_points[i], ls->points_[i]);
+
+    EXPECT_EQ(ref_lines.size(), ls->lines_.size());
+    for (size_t i = 0; i < ls->lines_.size(); i++)
+        unit_test::ExpectEQ(ref_lines[i], ls->lines_[i]);
 }

@@ -111,7 +111,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         const std::vector<RGBDImage>& images_rgbd,
         const std::vector<Image>& images_mask,
         const PinholeCameraTrajectory& camera,
-        const ColorMapOptmizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     auto n_camera = camera.parameters_.size();
     auto n_vertex = mesh.vertices_.size();
@@ -157,7 +157,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
 
 std::vector<ImageWarpingField> MakeWarpingFields(
         const std::vector<std::shared_ptr<Image>>& images,
-        const ColorMapOptmizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     std::vector<ImageWarpingField> fields;
     for (auto i = 0; i < images.size(); i++) {
@@ -292,7 +292,7 @@ void OptimizeImageCoorNonrigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const ColorMapOptmizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     auto n_vertex = mesh.vertices_.size();
     auto n_camera = camera.parameters_.size();
@@ -462,7 +462,7 @@ void OptimizeImageCoorRigid(
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
-        const ColorMapOptmizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     int total_num_ = 0;
     auto n_camera = camera.parameters_.size();
@@ -660,7 +660,7 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
 
 std::vector<Image> MakeDepthMasks(
         const std::vector<RGBDImage>& images_rgbd,
-        const ColorMapOptmizationOption& option)
+        const ColorMapOptimizationOption& option)
 {
     auto n_images = images_rgbd.size();
     std::vector<Image> images_mask;
@@ -699,8 +699,8 @@ std::vector<Image> MakeDepthMasks(
 void ColorMapOptimization(TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
         PinholeCameraTrajectory& camera,
-        const ColorMapOptmizationOption& option
-        /* = ColorMapOptmizationOption()*/)
+        const ColorMapOptimizationOption& option
+        /* = ColorMapOptimizationOption()*/)
 {
     PrintDebug("[ColorMapOptimization]\n");
     std::vector<std::shared_ptr<Image>> images_gray;

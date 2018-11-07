@@ -34,9 +34,9 @@ void PrintHelp()
 {
     using namespace open3d;
     PrintInfo("Usage :\n");
-    PrintInfo("    > TestTriangleMesh sphere\n");
-    PrintInfo("    > TestTriangleMesh merge <file1> <file2>\n");
-    PrintInfo("    > TestTriangleMesh normal <file1> <file2>\n");
+    PrintInfo("    > TriangleMesh sphere\n");
+    PrintInfo("    > TriangleMesh merge <file1> <file2>\n");
+    PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
 }
 
 void PaintMesh(open3d::TriangleMesh &mesh, const Eigen::Vector3d &color)
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
     if (argc < 2) {
         PrintHelp();
-        return 0;
+        return 1;
     }
 
     std::string option(argv[1]);
@@ -208,4 +208,5 @@ int main(int argc, char *argv[])
             DrawGeometries({fimage}, "Test", 1920, 1080);
         }
     }
+    return 0;
 }

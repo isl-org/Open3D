@@ -1,5 +1,7 @@
 project(libpng C)
 
+option(PNG_HARDWARE_OPTIMIZATIONS "Enable Hardware Optimizations" ON)
+
 cmake_minimum_required(VERSION 3.0.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
@@ -7,6 +9,37 @@ set(PNGLIB_MAJOR 1)
 set(PNGLIB_MINOR 6)
 set(PNGLIB_RELEASE 18)
 set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_RELEASE})
+
+if(PNG_HARDWARE_OPTIMIZATIONS)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" OR
+  CMAKE_SYSTEM_PROCESSOR MATCHES "^aarch64")
+  set(PNG_ARM_NEON_POSSIBLE_VALUES check on off)
+  set(PNG_ARM_NEON "check" CACHE STRING "Enable ARM NEON optimizations:
+     check: (default) use internal checking code;
+     off: disable the optimizations;
+     on: turn on unconditionally.")
+  set_property(CACHE PNG_ARM_NEON PROPERTY STRINGS
+     ${PNG_ARM_NEON_POSSIBLE_VALUES})
+  list(FIND PNG_ARM_NEON_POSSIBLE_VALUES ${PNG_ARM_NEON} index)
+  if(index EQUAL -1)
+    message(FATAL_ERROR
+      " PNG_ARM_NEON must be one of [${PNG_ARM_NEON_POSSIBLE_VALUES}]")
+  elseif(NOT ${PNG_ARM_NEON} STREQUAL "no")
+    set(libpng_arm_sources
+      arm/arm_init.c
+      arm/filter_neon.S
+      arm/filter_neon_intrinsics.c)
+
+    if(${PNG_ARM_NEON} STREQUAL "on")
+      add_definitions(-DPNG_ARM_NEON_OPT=2)
+    elseif(${PNG_ARM_NEON} STREQUAL "check")
+      add_definitions(-DPNG_ARM_NEON_CHECK_SUPPORTED)
+    endif()
+  else()
+    add_definitions(-DPNG_ARM_NEON_OPT=0)
+  endif()
+endif()
+endif(PNG_HARDWARE_OPTIMIZATIONS)
 
 # needed packages
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../zlib")
@@ -63,6 +96,7 @@ set(libpng_sources
   pngwrite.c
   pngwtran.c
   pngwutil.c
+  ${libpng_arm_sources}
 )
 # SOME NEEDED DEFINITIONS
 

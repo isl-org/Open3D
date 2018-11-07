@@ -26,42 +26,12 @@
 
 #include "UnitTest.h"
 
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, DISABLED_Constructor)
-{
-    UnitTest::NotImplemented();
-}
+#include "Core/Geometry/PointCloud.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, DISABLED_AddPoint)
+TEST(AccumulatedPoint, DISABLED_Default)
 {
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, DISABLED_GetAveragePoint)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, DISABLED_GetAverageNormal)
-{
-    UnitTest::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-// 
-// ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, DISABLED_GetAverageColor)
-{
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

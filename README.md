@@ -32,6 +32,11 @@ Please cite our work if you use Open3D.
 * XCode 8.0 and later on OS X
 * Visual Studio 2015 update 3 and later on Windows
 
+## Open3D ecosystem
+
+* [Open3D-PointNet:](https://github.com/IntelVCL/Open3D-PointNet) A fork of PyTorch PointNet for point cloud classification and semantic segmentation compatible with Open3D.
+
+
 ## Resources
 
 * Website: [open3d.org](http://www.open3d.org)

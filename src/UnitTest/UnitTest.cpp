@@ -24,7 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <UnitTest.h>
+#include "UnitTest.h"
+
 #include <Eigen/Core>
 #include <iostream>
 
@@ -33,7 +34,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void UnitTest::NotImplemented()
+void unit_test::NotImplemented()
 {
     cout << "\033[0;32m"
          << "[          ] "
@@ -48,197 +49,109 @@ void UnitTest::NotImplemented()
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d with random values in the [vmin:vmax] range.
+// Equal test over Eigen::Vector2d components.
 // ----------------------------------------------------------------------------
-template <>
-Eigen::Vector3d UnitTest::Rand<Eigen::Vector3d>(
-    const Eigen::Vector3d &vmin,
-    const Eigen::Vector3d &vmax)
+void unit_test::ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1)
 {
-    Eigen::Vector3d v;
-
-    Eigen::Vector3d factor;
-    factor[0, 0] = (vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
-    factor[0, 1] = (vmax[0, 1] - vmin[0, 1]) / RAND_MAX;
-    factor[0, 2] = (vmax[0, 2] - vmin[0, 2]) / RAND_MAX;
-
-    v[0, 0] = vmin[0, 0] + rand() * factor[0, 0];
-    v[0, 1] = vmin[0, 1] + rand() * factor[0, 1];
-    v[0, 2] = vmin[0, 2] + rand() * factor[0, 2];
-
-    return v;
+    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
+}
+void unit_test::ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1)
+{
+    EXPECT_NEAR(v00, v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v01, v1(1, 0), unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
-// Initialize an Eigen::Vector3d vector with random values in the [vmin:vmax] range.
+// Equal test over Eigen::Vector3d components.
 // ----------------------------------------------------------------------------
-template <>
-void UnitTest::Rand(
-    vector<Eigen::Vector3d> &v,
-    const Eigen::Vector3d &vmin,
-    const Eigen::Vector3d &vmax)
+void unit_test::ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
-    srand(0);
-
-    Eigen::Vector3d factor;
-    factor[0, 0] = (vmax[0, 0] - vmin[0, 0]) / RAND_MAX;
-    factor[0, 1] = (vmax[0, 1] - vmin[0, 1]) / RAND_MAX;
-    factor[0, 2] = (vmax[0, 2] - vmin[0, 2]) / RAND_MAX;
-
-    for (size_t i = 0; i < v.size(); i++)
-    {
-        v[i][0, 0] = vmin[0, 0] + rand() * factor[0, 0];
-        v[i][0, 1] = vmin[0, 1] + rand() * factor[0, 1];
-        v[i][0, 2] = vmin[0, 2] + rand() * factor[0, 2];
-    }
+    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 0), v1(2, 0), unit_test::THRESHOLD_1E_6);
+}
+void unit_test::ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
+{
+    EXPECT_NEAR(v00, v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v01, v1(1, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v02, v1(2, 0), unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
-// Initialize a uint8_t vector with random values in the [vmin:vmax] range.
+// Equal test over Eigen::Matrix3d components.
 // ----------------------------------------------------------------------------
-template <>
-void UnitTest::Rand(
-    vector<uint8_t> &v,
-    const uint8_t &vmin,
-    const uint8_t &vmax)
+void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
 {
-    srand(0);
-
-    float factor = (float)(vmax - vmin) / RAND_MAX;
-
-    for (size_t i = 0; i < v.size(); i++)
-        v[i] = vmin + (uint8_t)(rand() * factor);
+    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 0), v1(2, 0), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(0, 1), v1(0, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 1), v1(1, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 1), v1(2, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(0, 2), v1(0, 2), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(1, 2), v1(1, 2), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(v0(2, 2), v1(2, 2), unit_test::THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
-// Initialize a size_t vector with random values in the [vmin:vmax] range.
+// Equal test over Eigen::Vector2i components.
 // ----------------------------------------------------------------------------
-template <>
-void UnitTest::Rand(
-    vector<size_t> &v,
-    const size_t &vmin,
-    const size_t &vmax)
+void unit_test::ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1)
 {
-    srand(0);
-
-    float factor = (float)(vmax - vmin) / RAND_MAX;
-
-    for (size_t i = 0; i < v.size(); i++)
-        v[i] = vmin + (size_t)(rand() * factor);
+    EXPECT_EQ(v0(0, 0), v1(0, 0));
+    EXPECT_EQ(v0(1, 0), v1(1, 0));
+}
+void unit_test::ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1)
+{
+    EXPECT_EQ(v00, v1(0, 0));
+    EXPECT_EQ(v01, v1(1, 0));
 }
 
 // ----------------------------------------------------------------------------
-// Print a uint8_t vector.
+// Equal test over Eigen::Vector3i components.
 // ----------------------------------------------------------------------------
-template <>
-void UnitTest::Print(const vector<Eigen::Vector3d> &v)
+void unit_test::ExpectEQ(const Eigen::Vector3i& v0, const Eigen::Vector3i& v1)
 {
-    int precision = 6;
-    int width = 11;
-
-    cout << fixed;
-    cout << setprecision(precision);
-
-    cout << "{";
-    cout << endl;
-    for (size_t i = 0; i < v.size(); i++)
-    {
-        cout << "    {";
-        cout << setw(width) << v[i](0, 0) << ",";
-        cout << setw(width) << v[i](1, 0) << ",";
-        cout << setw(width) << v[i](2, 0);
-        cout << " }";
-        if (i == (v.size() - 1))
-            cout << " \\";
-        else
-            cout << ",\\";
-        cout << endl;
-    }
-    cout << "}";
-    cout << endl;
+    EXPECT_EQ(v0(0, 0), v1(0, 0));
+    EXPECT_EQ(v0(1, 0), v1(1, 0));
+    EXPECT_EQ(v0(2, 0), v1(2, 0));
+}
+void unit_test::ExpectEQ(const int& v00, const int& v01, const int& v02, const Eigen::Vector3i& v1)
+{
+    EXPECT_EQ(v00, v1(0, 0));
+    EXPECT_EQ(v01, v1(1, 0));
+    EXPECT_EQ(v02, v1(2, 0));
 }
 
 // ----------------------------------------------------------------------------
-// Print a uint8_t vector.
+// Less than or Equal test over Eigen::Vector3d components.
 // ----------------------------------------------------------------------------
-template <>
-void UnitTest::Print(const vector<uint8_t> &v)
+void unit_test::ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
-    int width = 5;
-    int cols = 10;
-
-    cout << "{";
-    for (size_t i = 0; i < v.size(); i++)
-    {
-        if ((i % cols == 0) && (i != 0))
-            cout << "\\" << endl;
-
-        if (i == 0)
-            cout << setw(width - 1) << (int)v[i];
-        else
-            cout << setw(width) << (int)v[i];
-
-        if (i != (v.size() - 1))
-            cout << ",";
-    }
-    cout << " }";
-    cout << endl;
+    EXPECT_LE(v0(0, 0), v1(0, 0));
+    EXPECT_LE(v0(1, 0), v1(1, 0));
+    EXPECT_LE(v0(2, 0), v1(2, 0));
+}
+void unit_test::ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
+{
+    EXPECT_LE(v00, v1(0, 0));
+    EXPECT_LE(v01, v1(1, 0));
+    EXPECT_LE(v02, v1(2, 0));
 }
 
 // ----------------------------------------------------------------------------
-// Print a size_t vector.
+// Greater than or Equal test over Eigen::Vector3d components.
 // ----------------------------------------------------------------------------
-template <>
-void UnitTest::Print(const vector<size_t> &v)
+void unit_test::ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
 {
-    int width = 6;
-    int cols = 10;
-
-    cout << "{";
-    for (size_t i = 0; i < v.size(); i++)
-    {
-        if ((i % cols == 0) && (i != 0))
-            cout << "\\" << endl;
-
-        if (i == 0)
-            cout << setw(width - 1) << v[i];
-        else
-            cout << setw(width) << v[i];
-
-        if (i != (v.size() - 1))
-            cout << ",";
-    }
-    cout << " }";
-    cout << endl;
+    EXPECT_GE(v0(0, 0), v1(0, 0));
+    EXPECT_GE(v0(1, 0), v1(1, 0));
+    EXPECT_GE(v0(2, 0), v1(2, 0));
 }
-
-// ----------------------------------------------------------------------------
-// Print a double vector.
-// ----------------------------------------------------------------------------
-template <>
-void UnitTest::Print(const vector<double> &v)
+void unit_test::ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
 {
-    int precision = 6;
-    int width = 12;
-    int cols = 5;
-
-    cout << fixed;
-    cout << setprecision(precision);
-
-    cout << "{";
-    for (size_t i = 0; i < v.size(); i++)
-    {
-        if ((i % cols == 0) && (i != 0))
-            cout << "\\" << endl;
-
-        if (i == 0)
-            cout << setw(width - 1) << v[i];
-        else
-            cout << setw(width) << v[i];
-
-        if (i != (v.size() - 1))
-            cout << ",";
-    }
-    cout << " }";
-    cout << endl;
+    EXPECT_GE(v00, v1(0, 0));
+    EXPECT_GE(v01, v1(1, 0));
+    EXPECT_GE(v02, v1(2, 0));
 }

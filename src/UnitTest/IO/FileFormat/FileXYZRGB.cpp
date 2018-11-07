@@ -27,17 +27,17 @@
 #include "UnitTest.h"
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FileXYZRGB, DISABLED_ReadPointCloudFromXYZRGB)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
-// 
+//
 // ----------------------------------------------------------------------------
 TEST(FileXYZRGB, DISABLED_WritePointCloudToXYZRGB)
 {
-    UnitTest::NotImplemented();
+    unit_test::NotImplemented();
 }

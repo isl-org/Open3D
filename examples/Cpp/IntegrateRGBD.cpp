@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
             ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
-        return 0;
+        return 1;
     }
 
     std::string match_filename = GetProgramOptionAsString(argc, argv,
@@ -140,5 +140,5 @@ int main(int argc, char *argv[])
         }
     }
     fclose(file);
-    return 1;
+    return 0;
 }

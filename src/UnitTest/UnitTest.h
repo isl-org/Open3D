@@ -30,51 +30,42 @@
 #include <Eigen/Core>
 #include <vector>
 
-namespace UnitTest
+#include "Print.h"
+#include "Rand.h"
+#include "Sort.h"
+
+namespace unit_test
 {
+    // thresholds for comparing floating point values
     const double THRESHOLD_1E_6 = 1e-6;
-    const double THRESHOLD_1E_3 = 1e-3f;
 
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
-    // Return a random value.
-    template<class T>
-    T Rand(const T& vmin, const T& vmax)
-    {
-        T t;
+    // Equal test over Eigen::Vector2d components.
+    void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
+    void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
 
-        return t;
-    }
-    template<>
-    Eigen::Vector3d Rand<Eigen::Vector3d>(const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
+    // Equal test over Eigen::Vector3d components.
+    void ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+    void ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 
-    // Initialize a vector with random values.
-    template<class T>
-    void Rand(std::vector<T>& v, const T& vmin, const T& vmax) {}
+    // Equal test over Eigen::Matrix3d components.
+    void ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1);
 
-    template<>
-    void Rand(std::vector<Eigen::Vector3d>& v, const Eigen::Vector3d& vmin, const Eigen::Vector3d& vmax);
-    template<>
-    void Rand(std::vector<uint8_t>& v, const uint8_t& vmin, const uint8_t& vmax);
-    template<>
-    void Rand(std::vector<size_t>& v, const size_t& vmin, const size_t& vmax);
+    // Equal test over Eigen::Vector2i components.
+    void ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1);
+    void ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1);
 
-    // Initialize a vector with random values.
-    template<class T>
-    void Print(const std::vector<T>& v)
-    {
-        for (size_t i = 0; i < v.size(); i++)
-            std::cout << v[i];
-        std::cout << std::endl;
-    }
+    // Equal test over Eigen::Vector3i components.
+    void ExpectEQ(const Eigen::Vector3i& v0, const Eigen::Vector3i& v1);
+    void ExpectEQ(const int& v00, const int& v01, const int& v02, const Eigen::Vector3i& v1);
 
-    template<>
-    void Print(const std::vector<Eigen::Vector3d> &v);
-    template<>
-    void Print(const std::vector<uint8_t> &v);
-    template<>
-    void Print(const std::vector<size_t> &v);
-    template<>
-    void Print(const std::vector<double> &v);
+    // Less than or Equal test over Eigen::Vector3d components.
+    void ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+    void ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+
+    // Greater than or Equal test over Eigen::Vector3d components.
+    void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
+    void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 }

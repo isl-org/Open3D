@@ -22,6 +22,12 @@ string(CONCAT OPEN3D_VERSION "${OPEN3D_VERSION_MAJOR}"
 project(Open3D VERSION ${OPEN3D_VERSION})
 message(STATUS "Open3D ${PROJECT_VERSION}")
 
+# npm version has to be MAJOR.MINOR.PATCH
+string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
+                                           ".${OPEN3D_VERSION_MINOR}"
+                                           ".${OPEN3D_VERSION_PATCH}")
+
+
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
@@ -32,10 +38,6 @@ set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 # configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/src/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/src/Open3DConfig.h")
-
-# configure a setup.py for the pip packaging
-configure_file("${PROJECT_SOURCE_DIR}/util/pip_package/setup.py.in"
-               "${PROJECT_SOURCE_DIR}/util/pip_package/setup.py")
 
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
@@ -65,6 +67,8 @@ option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(BUILD_LIBREALSENSE        "Build support for Intel RealSense camera" OFF)
 option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
+option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
+option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -103,6 +107,24 @@ if (WIN32)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D _ENABLE_EXTENDED_ALIGNED_STORAGE")
     endif (MSVC)
+
+    if (STATIC_WINDOWS_RUNTIME)
+        # by default, "/MD" and "/MDd" is set by CMake automatically
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
+        string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+        string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
+        string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    else ()
+        # handles the case when re-running cmake with STATIC_WINDOWS_RUNTIME=OFF
+        string(REPLACE "/MT" "/MD" CMAKE_C_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
+        string(REPLACE "/MTd" "/MDd" CMAKE_C_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+        string(REPLACE "/MT" "/MD" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
+        string(REPLACE "/MTd" "/MDd" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    endif ()
+    message(STATUS "CMAKE_C_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
+    message(STATUS "CMAKE_C_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
+    message(STATUS "CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
+    message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
