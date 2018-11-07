@@ -121,6 +121,13 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
 std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
         double voxel_size);
 
+/// Function to downsample using VoxelDownSample, but specialized for
+/// Surface convolution project. Experimental function.
+std::tuple<std::shared_ptr<PointCloud>,Eigen::MatrixXi> VoxelDownSampleAndTrace(
+        const PointCloud &input, double voxel_size,
+        const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
+        bool approximate_class = false);
+
 /// Function to downsample \param input pointcloud into output pointcloud uniformly
 /// \param every_k_points indicates the sample rate.
 std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
