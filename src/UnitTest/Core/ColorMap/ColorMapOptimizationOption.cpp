@@ -24,46 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "UnitTest.h"
 
-#include <iostream>
-#include <iomanip>
-#include <vector>
+// #include "Core/ColorMap/ColorMapOptimizationOption.h"
 
-#include <Eigen/Core>
+/* TODO
+As the ColorMapOptimization subcomponents go back into hiding several lines of
+code had to commented out. Do not remove these lines, they may become useful
+again after a decision has been made about the way to make these subcomponents
+visible to UnitTest.
+*/
 
-namespace unit_test
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ColorMapOptimizationOption, DISABLED_Constructor)
 {
-    // Print an Eigen::Vector3i.
-    void Print(const Eigen::Vector3i &v);
+    // open3d::ColorMapOptimizationOption option;
 
-    // Print an Eigen::Vector3d.
-    void Print(const Eigen::Vector3d &v);
+    // EXPECT_FALSE(option.non_rigid_camera_coordinate_);
 
-    // Print a vector of Eigen::Vector2i.
-    void Print(const std::vector<Eigen::Vector2i> &v);
+    // EXPECT_EQ(16, option.number_of_vertical_anchors_);
+    // EXPECT_EQ(3, option.half_dilation_kernel_size_for_discontinuity_map_);
 
-    // Print a vector of Eigen::Vector2d.
-    void Print(const std::vector<Eigen::Vector2d> &v);
-
-    // Print a vector of Eigen::Vector3i.
-    void Print(const std::vector<Eigen::Vector3i> &v);
-
-    // Print a vector of Eigen::Vector3d.
-    void Print(const std::vector<Eigen::Vector3d> &v);
-
-    // Print a uint8_t vector.
-    void Print(const std::vector<uint8_t> &v);
-
-    // Print an int vector.
-    void Print(const std::vector<int> &v);
-
-    // Print a size_t vector.
-    void Print(const std::vector<size_t> &v);
-
-    // Print a float vector.
-    void Print(const std::vector<float> &v);
-
-    // Print a double vector.
-    void Print(const std::vector<double> &v);
+    // EXPECT_NEAR(0.316, option.non_rigid_anchor_point_weight_, unit_test::THRESHOLD_1E_6);
+    // EXPECT_NEAR(300, option.maximum_iteration_, unit_test::THRESHOLD_1E_6);
+    // EXPECT_NEAR(2.5, option.maximum_allowable_depth_, unit_test::THRESHOLD_1E_6);
+    // EXPECT_NEAR(0.03, option.depth_threshold_for_visiblity_check_, unit_test::THRESHOLD_1E_6);
+    // EXPECT_NEAR(0.1, option.depth_threshold_for_discontinuity_check_, unit_test::THRESHOLD_1E_6);
 }

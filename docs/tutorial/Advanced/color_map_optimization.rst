@@ -71,7 +71,7 @@ The script sets ``maximum_iteration = 300`` for actual iterations. The optimizat
     [Iteration 0299] Residual error : 8890.037077 (avg : 0.001903)
     [Iteration 0300] Residual error : 8888.970765 (avg : 0.001903)
 
-Residual error implies inconsistency of image intensities. Lower residual leads better color map quality. By default, ``ColorMapOptmizationOption`` enables rigid optimization. It optimizes 6-dimentional pose of every cameras.
+Residual error implies inconsistency of image intensities. Lower residual leads better color map quality. By default, ``ColorMapOptimizationOption`` enables rigid optimization. It optimizes 6-dimentional pose of every cameras.
 
 .. image:: ../../_static/Advanced/color_map_optimization/rigid.png
     :width: 300px

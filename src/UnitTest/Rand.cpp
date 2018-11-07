@@ -32,6 +32,48 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector3d.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    Eigen::Vector3d &v,
+    const Eigen::Vector3d &vmin,
+    const Eigen::Vector3d &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    Eigen::Vector3d factor;
+    factor(0, 0) = vmax(0, 0) - vmin(0, 0);
+    factor(1, 0) = vmax(1, 0) - vmin(1, 0);
+    factor(2, 0) = vmax(2, 0) - vmin(2, 0);
+
+    v(0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
+    v(1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
+    v(2, 0) = vmin(2, 0) + raw.Next<double>() * factor(2, 0);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector3d.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    Eigen::Vector3d &v,
+    const double &vmin,
+    const double &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    double factor;
+    factor = vmax - vmin;
+
+    v(0, 0) = vmin + raw.Next<double>() * factor;
+    v(1, 0) = vmin + raw.Next<double>() * factor;
+    v(2, 0) = vmin + raw.Next<double>() * factor;
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -80,6 +122,29 @@ void unit_test::Rand(
 }
 
 // ----------------------------------------------------------------------------
+// Initialize an Eigen::Vector2d vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<Eigen::Vector2d> &v,
+    const Eigen::Vector2d &vmin,
+    const Eigen::Vector2d &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    Eigen::Vector2d factor;
+    factor(0, 0) = vmax(0, 0) - vmin(0, 0);
+    factor(1, 0) = vmax(1, 0) - vmin(1, 0);
+
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        v[i](0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
+        v[i](1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Initialize an Eigen::Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
@@ -122,6 +187,23 @@ void unit_test::Rand(
         v[i] = vmin + (uint8_t)(raw.Next<uint8_t>() * factor);
 }
 
+// ----------------------------------------------------------------------------
+// Initialize a int vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<int> &v,
+    const int &vmin,
+    const int &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    float factor = (float)(vmax - vmin) / unit_test::Raw::VMAX;
+
+    for (size_t i = 0; i < v.size(); i++)
+        v[i] = vmin + (int)(raw.Next<int>() * factor);
+}
 // ----------------------------------------------------------------------------
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
@@ -167,6 +249,38 @@ void unit_test::Rand(
     vector<float> &v,
     const float &vmin,
     const float &vmax,
+    const int& seed)
+{
+    Rand(&v[0], v.size(), vmin, vmax, seed);
+}
+
+// ----------------------------------------------------------------------------
+// Initialize an array of double.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    double* const v,
+    const size_t& size,
+    const double &vmin,
+    const double &vmax,
+    const int& seed)
+{
+    unit_test::Raw raw(seed);
+
+    double factor = vmax - vmin;
+
+    for (size_t i = 0; i < size; i++)
+        v[i] = vmin + raw.Next<double>() * factor;
+}
+
+// ----------------------------------------------------------------------------
+// Initialize a double vector.
+// Output range: [vmin:vmax].
+// ----------------------------------------------------------------------------
+void unit_test::Rand(
+    vector<double> &v,
+    const double &vmin,
+    const double &vmax,
     const int& seed)
 {
     Rand(&v[0], v.size(), vmin, vmax, seed);
