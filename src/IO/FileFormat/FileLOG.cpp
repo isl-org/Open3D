@@ -40,17 +40,10 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
         PinholeCameraTrajectory &trajectory)
 {
     PinholeCameraIntrinsic intrinsic;
-    bool default_intrinsic = false;
-    if (trajectory.parameters_.size() >= 1) {
-        if (trajectory.parameters_[0].intrinsic_.IsValid() == false) {
-            default_intrinsic = true;
-        } else {
-            intrinsic = trajectory.parameters_[0].intrinsic_;
-        }
+    if (trajectory.parameters_.size() >= 1 &&
+            trajectory.parameters_[0].intrinsic_.IsValid()) {
+        intrinsic = trajectory.parameters_[0].intrinsic_;
     } else {
-        default_intrinsic = true;
-    }
-    if (default_intrinsic) {
         intrinsic = PinholeCameraIntrinsic(
                 PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }

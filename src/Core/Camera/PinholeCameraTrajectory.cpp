@@ -83,7 +83,7 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
         return false;
     }
     parameters_.resize(parameter_array.size());
-    for (int i = 0; i < (int)parameter_array.size(); i++) {
+    for (auto i = 0; i < parameter_array.size(); i++) {
         const Json::Value &status_object = parameter_array[i];
         if (parameters_[i].intrinsic_.ConvertFromJsonValue(
                 status_object["intrinsic"]) == false) {

@@ -45,11 +45,9 @@ bool PinholeCameraParameters::ConvertToJsonValue(Json::Value &value) const
     value["class_name"] = "PinholeCameraParameters";
     value["version_major"] = 1;
     value["version_minor"] = 0;
-    Json::Value status_object;
-    if (EigenMatrix4dToJsonArray(extrinsic_, status_object) == false) {
+    if (EigenMatrix4dToJsonArray(extrinsic_, value["extrinsic"]) == false) {
         return false;
     }
-    value["extrinsic"] = status_object;
     if (intrinsic_.ConvertToJsonValue(value["intrinsic"]) == false) {
         return false;
     }
