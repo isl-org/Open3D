@@ -94,6 +94,10 @@ void pybind_pointcloud_methods(py::module &m)
     m.def("voxel_down_sample", &VoxelDownSample,
             "Function to downsample input pointcloud into output pointcloud with a voxel",
             "input"_a, "voxel_size"_a);
+    m.def("voxel_down_sample_and_trace", &VoxelDownSampleAndTrace,
+          "Function to downsample using VoxelDownSample also records point cloud index before downsampling",
+          "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
+          "approximate_class"_a = false);
     m.def("uniform_down_sample", &UniformDownSample,
             "Function to downsample input pointcloud into output pointcloud uniformly",
             "input"_a, "every_k_points"_a);
