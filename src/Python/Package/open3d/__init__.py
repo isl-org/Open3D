@@ -25,7 +25,7 @@
 # ----------------------------------------------------------------------------
 
 import importlib
-from open3d.open3d import *
+from .open3d import * # py2 py3 compatible
 
 globals().update(importlib.import_module('open3d.open3d').__dict__)
 
