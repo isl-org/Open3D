@@ -29,22 +29,23 @@
 #include <vector>
 #include <memory>
 
-#include <Core/Camera/PinholeCameraParameters.h>
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d {
 
-class PinholeCameraTrajectory : public IJsonConvertible
+class PinholeCameraParameters : public IJsonConvertible
 {
 public:
-    PinholeCameraTrajectory();
-    ~PinholeCameraTrajectory() override;
+    PinholeCameraParameters();
+    ~PinholeCameraParameters() override;
 
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    std::vector<PinholeCameraParameters> parameters_;
+    PinholeCameraIntrinsic intrinsic_;
+    Eigen::Matrix4d extrinsic_;
 };
 
 }    // namespace open3d

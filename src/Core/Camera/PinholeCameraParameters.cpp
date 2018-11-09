@@ -24,27 +24,55 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "PinholeCameraParameters.h"
 
-#include <vector>
-#include <memory>
+#include <json/json.h>
+#include <Core/Utility/Console.h>
 
-#include <Core/Camera/PinholeCameraParameters.h>
+namespace open3d{
 
-namespace open3d {
-
-class PinholeCameraTrajectory : public IJsonConvertible
+PinholeCameraParameters::PinholeCameraParameters()
 {
-public:
-    PinholeCameraTrajectory();
-    ~PinholeCameraTrajectory() override;
+}
 
-public:
-    bool ConvertToJsonValue(Json::Value &value) const override;
-    bool ConvertFromJsonValue(const Json::Value &value) override;
+PinholeCameraParameters::~PinholeCameraParameters()
+{
+}
 
-public:
-    std::vector<PinholeCameraParameters> parameters_;
-};
+bool PinholeCameraParameters::ConvertToJsonValue(Json::Value &value) const
+{
+    Json::Value trajectory_array;
+    value["class_name"] = "PinholeCameraParameters";
+    value["version_major"] = 1;
+    value["version_minor"] = 0;
+    if (EigenMatrix4dToJsonArray(extrinsic_, value["extrinsic"]) == false) {
+        return false;
+    }
+    if (intrinsic_.ConvertToJsonValue(value["intrinsic"]) == false) {
+        return false;
+    }
+    return true;
+}
+
+bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value)
+{
+    if (value.isObject() == false) {
+        PrintWarning("PinholeCameraParameters read JSON failed: unsupported json format.\n");
+        return false;
+    }
+    if (value.get("class_name", "").asString() != "PinholeCameraParameters" ||
+            value.get("version_major", 1).asInt() != 1 ||
+            value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning("PinholeCameraParameters read JSON failed: unsupported json format.\n");
+        return false;
+    }
+    if (intrinsic_.ConvertFromJsonValue(value["intrinsic"]) == false) {
+        return false;
+    }
+    if (EigenMatrix4dFromJsonArray(extrinsic_, value["extrinsic"]) == false) {
+        return false;
+    }
+    return true;
+}
 
 }    // namespace open3d

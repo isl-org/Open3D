@@ -41,14 +41,13 @@ void pybind_viewcontrol(py::module &m)
             return std::string("ViewControl");
         })
         .def("convert_to_pinhole_camera_parameters", [](ViewControl &vc) {
-            PinholeCameraIntrinsic intrinsic;
-            Eigen::Matrix4d extrinsic;
-            vc.ConvertToPinholeCameraParameters(intrinsic, extrinsic);
-            return std::make_tuple(intrinsic, extrinsic);
+            PinholeCameraParameters parameter;
+            vc.ConvertToPinholeCameraParameters(parameter);
+            return parameter;
         }, "Function to convert ViewControl to PinholeCameraParameters")
         .def("convert_from_pinhole_camera_parameters",
                 &ViewControl::ConvertFromPinholeCameraParameters,
-                "intrinsic"_a, "extrinsic"_a)
+                "parameter"_a)
         .def("scale", &ViewControl::Scale, "Function to process scaling",
                 "scale"_a)
         .def("rotate", &ViewControl::Rotate, "Function to process rotation",
