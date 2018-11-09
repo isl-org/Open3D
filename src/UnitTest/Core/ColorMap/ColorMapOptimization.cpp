@@ -140,6 +140,7 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
                                        const Eigen::Vector3d& pose)
 {
     PinholeCameraTrajectory camera;
+    camera.parameters_.resize(1);
 
     double fx = 0.5;
     double fy = 0.65;
@@ -147,17 +148,16 @@ PinholeCameraTrajectory GenerateCamera(const int& width,
     double cx = 0.75;
     double cy = 0.35;
 
-    camera.intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
+    camera.parameters_[0].intrinsic_.SetIntrinsics(width, height, fx, fy, cx, cy);
 
-    camera.extrinsic_.resize(1);
-    camera.extrinsic_[0] << 0.0, 0.0, 0.0, 0.0,
+    camera.parameters_[0].extrinsic_ << 0.0, 0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0, 0.0,
                             0.0, 0.0, 0.0, 0.0;
 
-    camera.extrinsic_[0](0, 0) = pose(0, 0);
-    camera.extrinsic_[0](1, 1) = pose(1, 0);
-    camera.extrinsic_[0](2, 2) = pose(2, 0);
+    camera.parameters_[0].extrinsic_(0, 0) = pose(0, 0);
+    camera.parameters_[0].extrinsic_(1, 1) = pose(1, 0);
+    camera.parameters_[0].extrinsic_(2, 2) = pose(2, 0);
 
     return camera;
 }
@@ -779,7 +779,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
-    size_t n_camera = camera.extrinsic_.size();
+    size_t n_camera = camera.parameters_.size();
 
     vector<vector<int>> vertex_to_image(n_vertex, vector<int>(n_camera, 0));
     vector<vector<int>> image_to_vertex(n_camera, vector<int>(n_vertex, 0));
@@ -861,7 +861,7 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid)
     PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
-    size_t n_camera = camera.extrinsic_.size();
+    size_t n_camera = camera.parameters_.size();
 
     vector<vector<int>> vertex_to_image(n_vertex, vector<int>(n_camera, 0));
     vector<vector<int>> image_to_vertex(n_camera, vector<int>(n_vertex, 0));
