@@ -42,6 +42,16 @@ namespace unit_test
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
+    // Equal test.
+    template<class T, int M, int N>
+    void ExpectEQ(const Eigen::Matrix<T, M, N>& v0,
+                  const Eigen::Matrix<T, M, N>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
+    }
+
     // Equal test over Eigen::Vector2d components.
     void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
     void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
