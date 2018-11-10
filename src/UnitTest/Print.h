@@ -40,29 +40,65 @@ namespace unit_test
     // Print an Eigen::Vector3d.
     void Print(const Eigen::Vector3d &v);
 
+    // Print an Eigen::Vector4d.
+    void Print(const Eigen::Vector4d &v);
+
+    // Print an Eigen::Vector6d.
+    void Print(const Eigen::Matrix<double, 6, 1> &v);
+
+    // Print an Eigen::Matrix4d.
+    void Print(const Eigen::Matrix4d &m);
+
+    // Print an Eigen::Matrix6d.
+    void Print(const Eigen::Matrix<double, 6, 6> &m);
+
     // Print a vector of Eigen::Vector2i.
     void Print(const std::vector<Eigen::Vector2i> &v);
-
-    // Print a vector of Eigen::Vector2d.
-    void Print(const std::vector<Eigen::Vector2d> &v);
 
     // Print a vector of Eigen::Vector3i.
     void Print(const std::vector<Eigen::Vector3i> &v);
 
+    // Print a vector of Eigen::Vector4i.
+    void Print(const std::vector<Eigen::Vector4i> &v);
+
+    // Print a vector of Eigen::Vector2d.
+    void Print(const std::vector<Eigen::Vector2d> &v);
+
     // Print a vector of Eigen::Vector3d.
     void Print(const std::vector<Eigen::Vector3d> &v);
+
+    // Print a vector of Eigen::Matrix3d.
+    void Print(const std::vector<Eigen::Matrix3d> &v);
+
+    // Print a vector of Eigen::Matrix<double, 6, 1>.
+    void Print(const std::vector<Eigen::Matrix<double, 6, 1>> &v);
+
+    // Print an array of uint8_t.
+    void Print(const uint8_t* const v, const size_t& size);
 
     // Print a uint8_t vector.
     void Print(const std::vector<uint8_t> &v);
 
+    // Print an array of int.
+    void Print(const int* const v, const size_t& size);
+
     // Print an int vector.
     void Print(const std::vector<int> &v);
+
+    // Print an array of size_t.
+    void Print(const size_t* const v, const size_t& size);
 
     // Print a size_t vector.
     void Print(const std::vector<size_t> &v);
 
+    // Print an array of float.
+    void Print(const float* const v, const size_t& size);
+
     // Print a float vector.
     void Print(const std::vector<float> &v);
+
+    // Print an array of double.
+    void Print(const double* const v, const size_t& size);
 
     // Print a double vector.
     void Print(const std::vector<double> &v);
