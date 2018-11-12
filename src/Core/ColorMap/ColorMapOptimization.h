@@ -35,10 +35,10 @@ class RGBDImage;
 class Image;
 class PinholeCameraTrajectory;
 
-class ColorMapOptmizationOption
+class ColorMapOptimizationOption
 {
 public:
-	ColorMapOptmizationOption(
+	ColorMapOptimizationOption(
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
             double non_rigid_anchor_point_weight = 0.316,
@@ -58,7 +58,7 @@ public:
             depth_threshold_for_discontinuity_check),
             half_dilation_kernel_size_for_discontinuity_map_(
             half_dilation_kernel_size_for_discontinuity_map) {}
-	~ColorMapOptmizationOption() {}
+	~ColorMapOptimizationOption() {}
 
 public:
     bool non_rigid_camera_coordinate_;
@@ -78,6 +78,6 @@ public:
 void ColorMapOptimization(TriangleMesh& mesh,
         const std::vector<RGBDImage>& imgs_rgbd,
         PinholeCameraTrajectory& camera,
-        const ColorMapOptmizationOption& option =
-        ColorMapOptmizationOption());
+        const ColorMapOptimizationOption& option =
+        ColorMapOptimizationOption());
 }	// namespace open3d

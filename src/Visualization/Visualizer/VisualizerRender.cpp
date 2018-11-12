@@ -212,11 +212,9 @@ void Visualizer::CaptureScreenImage(const std::string &filename/* = ""*/,
     if (!camera_filename.empty()) {
         PrintDebug("[Visualizer] Screen camera capture to %s\n",
                 camera_filename.c_str());
-        PinholeCameraTrajectory trajectory;
-        trajectory.extrinsic_.resize(1);
-        view_control_ptr_->ConvertToPinholeCameraParameters(
-                trajectory.intrinsic_, trajectory.extrinsic_[0]);
-        WriteIJsonConvertible(camera_filename, trajectory);
+        PinholeCameraParameters parameter;
+        view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
+        WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
@@ -360,11 +358,9 @@ void Visualizer::CaptureDepthImage(const std::string &filename/* = ""*/,
     if (!camera_filename.empty()) {
         PrintDebug("[Visualizer] Depth camera capture to %s\n",
                 camera_filename.c_str());
-        PinholeCameraTrajectory trajectory;
-        trajectory.extrinsic_.resize(1);
-        view_control_ptr_->ConvertToPinholeCameraParameters(
-                trajectory.intrinsic_, trajectory.extrinsic_[0]);
-        WriteIJsonConvertible(camera_filename, trajectory);
+        PinholeCameraParameters parameter;
+        view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
+        WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
@@ -446,11 +442,9 @@ void Visualizer::CaptureDepthPointCloud(const std::string &filename/* = ""*/,
     if (!camera_filename.empty()) {
         PrintDebug("[Visualizer] Depth camera capture to %s\n",
                 camera_filename.c_str());
-        PinholeCameraTrajectory trajectory;
-        trajectory.extrinsic_.resize(1);
-        view_control_ptr_->ConvertToPinholeCameraParameters(
-                trajectory.intrinsic_, trajectory.extrinsic_[0]);
-        WriteIJsonConvertible(camera_filename, trajectory);
+        PinholeCameraParameters parameter;
+        view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
+        WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 

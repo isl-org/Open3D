@@ -108,7 +108,7 @@ bool ViewControl::ConvertFromViewParameters(
 }
 
 bool ViewControl::ConvertToPinholeCameraParameters(
-        PinholeCameraIntrinsic &intrinsic, Eigen::Matrix4d &extrinsic)
+        PinholeCameraParameters &parameters)
 {
     if (window_height_ <= 0 || window_width_ <= 0) {
         PrintWarning("[ViewControl] ConvertToPinholeCameraParameters() failed because window height and width are not set.\n");
@@ -119,6 +119,7 @@ bool ViewControl::ConvertToPinholeCameraParameters(
         return false;
     }
     SetProjectionParameters();
+    auto intrinsic = PinholeCameraIntrinsic();
     intrinsic.width_ = window_width_;
     intrinsic.height_ = window_height_;
     intrinsic.intrinsic_matrix_.setIdentity();
@@ -128,6 +129,8 @@ bool ViewControl::ConvertToPinholeCameraParameters(
             (double)window_height_ / tan_half_fov / 2.0;
     intrinsic.intrinsic_matrix_(0, 2) = (double)window_width_ / 2.0 - 0.5;
     intrinsic.intrinsic_matrix_(1, 2) = (double)window_height_ / 2.0 - 0.5;
+    parameters.intrinsic_ = intrinsic;
+    Eigen::Matrix4d extrinsic;
     extrinsic.setZero();
     Eigen::Vector3d front_dir = front_.normalized();
     Eigen::Vector3d up_dir = up_.normalized();
@@ -139,13 +142,15 @@ bool ViewControl::ConvertToPinholeCameraParameters(
     extrinsic(1, 3) = up_dir.dot(eye_);
     extrinsic(2, 3) = front_dir.dot(eye_);
     extrinsic(3, 3) = 1.0;
+    parameters.extrinsic_ = extrinsic;
     return true;
 }
 
 bool ViewControl::ConvertFromPinholeCameraParameters(
-        const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic)
+        const PinholeCameraParameters &parameters)
 {
+    auto intrinsic = parameters.intrinsic_;
+    auto extrinsic = parameters.extrinsic_;
     if (window_height_ <= 0 || window_width_ <= 0 ||
             window_height_ != intrinsic.height_ ||
             window_width_ != intrinsic.width_ ||

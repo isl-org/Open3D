@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "AccumulatedPoint.h"
 #include "PointCloud.h"
 #include "TriangleMesh.h"
 
@@ -36,6 +35,125 @@
 #include <Core/Geometry/KDTreeFlann.h>
 
 namespace open3d{
+
+namespace {
+
+class AccumulatedPoint
+{
+public:
+    AccumulatedPoint() :
+            num_of_points_(0),
+            point_(0.0, 0.0, 0.0),
+            normal_(0.0, 0.0, 0.0),
+            color_(0.0, 0.0, 0.0)
+    {
+    }
+
+public:
+    void AddPoint(const PointCloud &cloud, int index)
+    {
+        point_ += cloud.points_[index];
+        if (cloud.HasNormals()) {
+            if (!std::isnan(cloud.normals_[index](0)) &&
+                    !std::isnan(cloud.normals_[index](1)) &&
+                    !std::isnan(cloud.normals_[index](2))) {
+                normal_ += cloud.normals_[index];
+            }
+        }
+        if (cloud.HasColors()) {
+            color_ += cloud.colors_[index];
+        }
+        num_of_points_++;
+    }
+
+    Eigen::Vector3d GetAveragePoint() const
+    {
+        return point_ / double(num_of_points_);
+    }
+
+    Eigen::Vector3d GetAverageNormal() const
+    {
+        return normal_.normalized();
+    }
+
+    Eigen::Vector3d GetAverageColor() const
+    {
+        return color_ / double(num_of_points_);
+    }
+
+public:
+    int num_of_points_;
+    Eigen::Vector3d point_;
+    Eigen::Vector3d normal_;
+    Eigen::Vector3d color_;
+};
+
+class point_cubic_id
+{
+public:
+    size_t point_id;
+    int cubic_id;
+};
+
+class AccumulatedPointForTrace : public AccumulatedPoint
+{
+public:
+    void AddPoint(const PointCloud &cloud, size_t index,
+                  int cubic_index, bool approximate_class)
+    {
+        point_ += cloud.points_[index];
+        if (cloud.HasNormals()) {
+            if (!std::isnan(cloud.normals_[index](0)) &&
+                !std::isnan(cloud.normals_[index](1)) &&
+                !std::isnan(cloud.normals_[index](2))) {
+                normal_ += cloud.normals_[index];
+            }
+        }
+        if (cloud.HasColors()) {
+            if (approximate_class) {
+                auto got = classes.find(cloud.colors_[index][0]);
+                if (got == classes.end())
+                    classes[cloud.colors_[index][0]] = 1;
+                else classes[cloud.colors_[index][0]] += 1;
+            }
+            else {
+                color_ += cloud.colors_[index];
+            }
+        }
+        point_cubic_id new_id;
+        new_id.point_id = index;
+        new_id.cubic_id = cubic_index;
+        original_id.push_back(new_id);
+        num_of_points_++;
+    }
+
+    Eigen::Vector3d GetMaxClass()
+    {
+        int max_class = -1;
+        int max_count = -1;
+        for(auto it=classes.begin(); it!=classes.end(); it++)
+        {
+            if(it->second > max_count)
+            {
+                max_count = it->second;
+                max_class = it->first;
+            }
+        }
+        return Eigen::Vector3d(max_class, max_class, max_class);
+    }
+
+    std::vector<point_cubic_id> GetOriginalID()
+    {
+        return original_id;
+    }
+
+private:
+    // original point cloud id in higher resolution + its cubic id
+    std::vector<point_cubic_id> original_id;
+    std::unordered_map<int, int> classes;
+};
+
+}    // unnamed namespace
 
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
         const std::vector<size_t> &indices, bool invert /* = false */)
@@ -176,6 +294,80 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
             (int)input.points_.size(), (int)output->points_.size());
     return output;
+}
+
+std::tuple<std::shared_ptr<PointCloud>,Eigen::MatrixXi> VoxelDownSampleAndTrace(
+        const PointCloud &input, double voxel_size,
+        const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound,
+        bool approximate_class)
+{
+    auto output = std::make_shared<PointCloud>();
+    Eigen::MatrixXi cubic_id;
+    if (voxel_size <= 0.0) {
+        PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
+        return std::make_tuple(output, cubic_id);
+    }
+    auto voxel_size3 = Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+    // Note: this is different from VoxelDownSample.
+    // It is for fixing coordinate for multiscale voxel space
+    auto voxel_min_bound = min_bound;
+    auto voxel_max_bound = max_bound;
+    if (voxel_size * std::numeric_limits<int>::max() <
+        (voxel_max_bound - voxel_min_bound).maxCoeff()) {
+        PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
+        return std::make_tuple(output, cubic_id);
+    }
+    std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
+    hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
+    int cid_temp[3] = {1, 2, 4};
+    for (size_t i = 0; i < input.points_.size(); i++) {
+        auto ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
+        auto voxel_index = Eigen::Vector3i(int(floor(ref_coord(0))),
+                                           int(floor(ref_coord(1))),
+                                           int(floor(ref_coord(2))));
+        int cid = 0;
+        for (int c = 0; c < 3; c++){
+            if((ref_coord(c)-voxel_index(c)) >= 0.5){
+                cid += cid_temp[c];
+            }
+        }
+        voxelindex_to_accpoint[voxel_index].AddPoint(
+                input, i, cid, approximate_class);
+    }
+    bool has_normals = input.HasNormals();
+    bool has_colors = input.HasColors();
+    int cnt = 0;
+    cubic_id.resize(voxelindex_to_accpoint.size(),8);
+    cubic_id.setConstant(-1);
+    for (auto accpoint : voxelindex_to_accpoint) {
+        output->points_.push_back(
+                accpoint.second.GetAveragePoint());
+        if (has_normals) {
+            output->normals_.push_back(
+                    accpoint.second.GetAverageNormal());
+        }
+        if (has_colors) {
+            if (approximate_class) {
+                output->colors_.push_back(
+                        accpoint.second.GetMaxClass());
+            }
+            else {
+                output->colors_.push_back(
+                        accpoint.second.GetAverageColor());
+            }
+        }
+        auto original_id = accpoint.second.GetOriginalID();
+        for (int i = 0; i < (int)original_id.size(); i++){
+            size_t pid = original_id[i].point_id;
+            int cid = original_id[i].cubic_id;
+            cubic_id(cnt, cid) = pid;
+        }
+        cnt++;
+    }
+    PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
+               (int)input.points_.size(),
+               (int)output->points_.size());
+    return std::make_tuple(output, cubic_id);
 }
 
 std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,

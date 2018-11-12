@@ -26,28 +26,26 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <vector>
+#include <memory>
+
+#include <Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d {
 
-class PointCloud;
-
-class AccumulatedPoint
+class PinholeCameraParameters : public IJsonConvertible
 {
 public:
-    AccumulatedPoint();
+    PinholeCameraParameters();
+    ~PinholeCameraParameters() override;
 
 public:
-    void AddPoint(const PointCloud &cloud, int index);
-    Eigen::Vector3d GetAveragePoint() const;
-    Eigen::Vector3d GetAverageNormal() const;
-    Eigen::Vector3d GetAverageColor() const;
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
-private:
-    int num_of_points_;
-    Eigen::Vector3d point_;
-    Eigen::Vector3d normal_;
-    Eigen::Vector3d color_;
+public:
+    PinholeCameraIntrinsic intrinsic_;
+    Eigen::Matrix4d extrinsic_;
 };
 
 }    // namespace open3d

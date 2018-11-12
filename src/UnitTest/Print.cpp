@@ -87,6 +87,33 @@ void unit_test::Print(const vector<Eigen::Vector2i> &v)
 }
 
 // ----------------------------------------------------------------------------
+// Print a vector of Eigen::Vector2d.
+// ----------------------------------------------------------------------------
+void unit_test::Print(const vector<Eigen::Vector2d> &v)
+{
+    int precision = 6;
+    int width = 12;
+
+    cout << fixed;
+    cout << setprecision(precision);
+
+    cout << "    {";
+    cout << endl;
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        cout << "        {";
+        cout << setw(width) << v[i](0, 0) << ",";
+        cout << setw(width) << v[i](1, 0);
+        cout << " }";
+        if (i < (v.size() - 1))
+            cout << ",";
+        cout << endl;
+    }
+    cout << "    };";
+    cout << endl;
+}
+
+// ----------------------------------------------------------------------------
 // Print a vector of Eigen::Vector3i.
 // ----------------------------------------------------------------------------
 void unit_test::Print(const vector<Eigen::Vector3i> &v)

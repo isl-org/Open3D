@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     ScalableTSDFVolume volume(length / (double)resolution,
             length * sdf_trunc_percentage, TSDFVolumeColorType::RGB8);
     FPSTimer timer("Process RGBD stream",
-            (int)camera_trajectory->extrinsic_.size());
+            (int)camera_trajectory->parameters_.size());
     Image depth, color;
     while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         std::vector<std::string> st;
@@ -108,10 +108,11 @@ int main(int argc, char *argv[])
                     (every_k_frames > 0 && index % every_k_frames == 0)) {
                 volume.Reset();
             }
-            volume.Integrate(*rgbd, camera_trajectory->intrinsic_,
-                    camera_trajectory->extrinsic_[index]);
+            volume.Integrate(*rgbd,
+                    camera_trajectory->parameters_[index].intrinsic_,
+                    camera_trajectory->parameters_[index].extrinsic_);
             index++;
-            if (index == (int)camera_trajectory->extrinsic_.size() ||
+            if (index == (int)camera_trajectory->parameters_.size() ||
                     (every_k_frames > 0 && index % every_k_frames == 0)) {
                 PrintDebug("Saving fragment %d ...\n", save_index);
                 std::string save_index_str = std::to_string(save_index);
