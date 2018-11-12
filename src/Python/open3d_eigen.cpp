@@ -121,11 +121,10 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
         const std::string &repr_name, InitFunc init_func)
 {
     typedef typename EigenVector::Scalar Scalar;
-    typedef typename Eigen::aligned_allocator<EigenVector> EigenAllocator;
-    auto vec = py::bind_vector_without_repr<std::vector<EigenVector, EigenAllocator>>(
+    auto vec = py::bind_vector_without_repr<std::vector<EigenVector>>(
             m, bind_name, py::buffer_protocol());
     vec.def(py::init(init_func));
-    vec.def_buffer([](std::vector<EigenVector, EigenAllocator> &v) -> py::buffer_info {
+    vec.def_buffer([](std::vector<EigenVector> &v) -> py::buffer_info {
         size_t rows = EigenVector::RowsAtCompileTime;
         return py::buffer_info(
                 v.data(), sizeof(Scalar),
@@ -133,17 +132,17 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
                 2, {v.size(), rows},
                 {sizeof(EigenVector), sizeof(Scalar)});
     });
-    vec.def("__repr__", [repr_name](const std::vector<EigenVector, EigenAllocator> &v) {
+    vec.def("__repr__", [repr_name](const std::vector<EigenVector> &v) {
         return repr_name + std::string(" with ") +
                 std::to_string(v.size()) + std::string(" elements.\n") +
                 std::string("Use numpy.asarray() to access data.");
     });
-    vec.def("__copy__", [](std::vector<EigenVector, EigenAllocator> &v) {
+    vec.def("__copy__", [](std::vector<EigenVector> &v) {
         return std::vector<EigenVector>(v);
     });
-    vec.def("__deepcopy__", [](std::vector<EigenVector, EigenAllocator> &v,
+    vec.def("__deepcopy__", [](std::vector<EigenVector> &v,
             py::dict &memo) {
-        return std::vector<EigenVector, EigenAllocator>(v);
+        return std::vector<EigenVector>(v);
     });
 
     // py::detail must be after custom constructor
@@ -171,7 +170,7 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
     //    v[i.first](i.second) = x;
     //});
     // We use iterable __init__ by default
-    //vec.def("__init__", [](std::vector<EigenVector, EigenAllocator> &v,
+    //vec.def("__init__", [](std::vector<EigenVector> &v,
     //        py::array_t<Scalar, py::array::c_style> b) {
     //    py::buffer_info info = b.request();s
     //    if (info.format !=
@@ -179,7 +178,7 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
     //            info.ndim != 2 ||
     //            info.shape[1] != EigenVector::RowsAtCompileTime)
     //        throw std::runtime_error("Incompatible buffer format!");
-    //    new (&v) std::vector<EigenVector, EigenAllocator>(info.shape[0]);
+    //    new (&v) std::vector<EigenVector>(info.shape[0]);
     //    memcpy(v.data(), info.ptr, sizeof(EigenVector) * v.size());
     //});
 }
@@ -210,7 +209,7 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
                 std::string("Use numpy.asarray() to access data.");
     });
     vec.def("__copy__", [](std::vector<EigenMatrix, EigenAllocator> &v) {
-        return std::vector<EigenMatrix>(v);
+        return std::vector<EigenMatrix, EigenAllocator>(v);
     });
     vec.def("__deepcopy__", [](std::vector<EigenMatrix, EigenAllocator> &v,
             py::dict &memo) {
