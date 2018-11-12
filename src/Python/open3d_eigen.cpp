@@ -59,7 +59,7 @@ std::vector<EigenVector> py_array_to_vectors_double(
     }
     std::vector<EigenVector> eigen_vectors(array.shape(0));
     auto array_unchecked = array.mutable_unchecked<2>();
-    for (py::ssize_t i = 0; i < array_unchecked.shape(0); ++i) {
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
         // The EigenVector here must be a double-typed eigen vector, since only
         // open3d::Vector3dVector binds to py_array_to_vectors_double.
         // Therefore, we can use the memory map directly.
@@ -77,7 +77,7 @@ std::vector<EigenVector> py_array_to_vectors_int(
     }
     std::vector<EigenVector> eigen_vectors(array.shape(0));
     auto array_unchecked = array.mutable_unchecked<2>();
-    for (py::ssize_t i = 0; i < array_unchecked.shape(0); ++i) {
+    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
         eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
     }
     return eigen_vectors;
