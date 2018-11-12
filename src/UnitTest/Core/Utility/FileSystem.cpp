@@ -26,122 +26,360 @@
 
 #include "UnitTest.h"
 
+#include "Core/Utility/FileSystem.h"
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <algorithm>
+
+using namespace open3d;
+using namespace std;
+using namespace unit_test;
+
 // ----------------------------------------------------------------------------
-//
+// Get the file extension and convert to lower case.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileExtensionInLowerCase)
+TEST(FileSystem, GetFileExtensionInLowerCase)
 {
-    unit_test::NotImplemented();
+    string path = "test/filesystem/fileName.EXT";
+
+    string result;
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", result);
+}
+
+// ----------------------------------------------------------------------------
+// Should return the file name only, without extension.
+// What it actually does is return the full path without the extension.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetFileNameWithoutExtension)
+{
+    string path = "test/filesystem/fileName.ext";
+
+    string result;
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/filesystem/fileName", result);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileNameWithoutExtension)
+TEST(FileSystem, GetFileNameWithoutDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test/filesystem/fileName.ext";
+
+    string result;
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName.ext", result);
+}
+
+// ----------------------------------------------------------------------------
+// Get parent directory, terminated in '/'.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetFileParentDirectory)
+{
+    string path = "test/filesystem/fileName.ext";
+
+    string result;
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/filesystem/", result);
+}
+
+// ----------------------------------------------------------------------------
+// Add '/' at the end of the input path, if missing.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, GetRegularizedDirectoryName)
+{
+    string path = "test/filesystem";
+
+    string result;
+    result = filesystem::GetRegularizedDirectoryName(path);
+    EXPECT_EQ("test/filesystem/", result);
+
+    result = filesystem::GetRegularizedDirectoryName(result);
+    EXPECT_EQ("test/filesystem/", result);
+}
+
+// ----------------------------------------------------------------------------
+// Get/Change the working directory.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, ChangeWorkingDirectory)
+{
+    string path = "test";
+
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
+
+    string cwd = filesystem::GetWorkingDirectory();
+
+    EXPECT_EQ(path, filesystem::GetFileNameWithoutDirectory(cwd));
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
+}
+
+// ----------------------------------------------------------------------------
+// Check if a path exists.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, DirectoryExists)
+{
+    string path = "test/filesystem";
+
+    bool status;
+
+    // path doesn't exist yet
+    status = filesystem::DirectoryExists(path);
+    EXPECT_FALSE(status);
+
+    // create the path
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    // path exists
+    status = filesystem::DirectoryExists(path);
+    EXPECT_TRUE(status);
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("test");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
+}
+
+// ----------------------------------------------------------------------------
+// Make a directory.
+// Return true if the directory was created.
+// Return false otherwise. This could mean that the directory already exists.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, MakeDirectory)
+{
+    string path = "test";
+
+    bool status;
+
+    status = filesystem::MakeDirectory(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::MakeDirectory(path);
+    EXPECT_FALSE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
+}
+
+// ----------------------------------------------------------------------------
+// Make a hierarchy of directories. Equivalent to 'mkdir -p ...'.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, MakeDirectoryHierarchy)
+{
+    string path = "test/filesystem";
+
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("test");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
+}
+
+// ----------------------------------------------------------------------------
+// Note: DeleteDirectory can delete one dir at a time.
+// ----------------------------------------------------------------------------
+TEST(FileSystem, DeleteDirectory)
+{
+    string path = "test";
+
+    bool status;
+
+    status = filesystem::MakeDirectory(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory(path);
+    EXPECT_FALSE(status);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileNameWithoutDirectory)
+TEST(FileSystem, File_Exists_Remove)
 {
-    unit_test::NotImplemented();
+    string path = "test/filesystem";
+    string fileName = "fileName.ext";
+
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::FileExists(fileName);
+    EXPECT_FALSE(status);
+
+    creat(fileName.c_str(), 0);
+
+    status = filesystem::FileExists(fileName);
+    EXPECT_TRUE(status);
+
+    status = filesystem::RemoveFile(fileName);
+    EXPECT_TRUE(status);
+
+    status = filesystem::FileExists(fileName);
+    EXPECT_FALSE(status);
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
-//
+// List all files in the specified directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetFileParentDirectory)
+TEST(FileSystem, ListFilesInDirectory)
 {
-    unit_test::NotImplemented();
+    string path = "test/filesystem";
+    vector<string> fileNames = { "fileName00.ext",
+                                 "fileName01.ext",
+                                 "fileName02.ext",
+                                 "fileName03.ext" };
+
+    bool status;
+
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
+
+    for (size_t i = 0; i < fileNames.size(); i++)
+        creat(fileNames[i].c_str(), 0);
+
+    vector<string> list;
+    status = filesystem::ListFilesInDirectory(".", list);
+    EXPECT_TRUE(status);
+
+    sort(list.begin(), list.end());
+
+    for (size_t i = 0; i < fileNames.size(); i++)
+    {
+        EXPECT_EQ(fileNames[i],
+                  filesystem::GetFileNameWithoutDirectory(list[i]));
+    }
+
+    // clean-up
+    for (size_t i = 0; i < fileNames.size(); i++)
+    {
+        status = filesystem::RemoveFile(fileNames[i]);
+        EXPECT_TRUE(status);
+    }
+
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
 
 // ----------------------------------------------------------------------------
-//
+// List all files of a specific extension in the specified directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetRegularizedDirectoryName)
+TEST(FileSystem, ListFilesInDirectoryWithExtension)
 {
-    unit_test::NotImplemented();
-}
+    string path = "test/filesystem";
+    vector<string> fileNames = { "fileName00.ext0",
+                                 "fileName01.ext0",
+                                 "fileName02.ext0",
+                                 "fileName03.ext0",
+                                 "fileName04.ext1",
+                                 "fileName05.ext1",
+                                 "fileName06.ext1",
+                                 "fileName07.ext1" };
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_GetWorkingDirectory)
-{
-    unit_test::NotImplemented();
-}
+    bool status;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ChangeWorkingDirectory)
-{
-    unit_test::NotImplemented();
-}
+    status = filesystem::MakeDirectoryHierarchy(path);
+    EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_DirectoryExists)
-{
-    unit_test::NotImplemented();
-}
+    status = filesystem::ChangeWorkingDirectory(path);
+    EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_MakeDirectory)
-{
-    unit_test::NotImplemented();
-}
+    for (size_t i = 0; i < fileNames.size(); i++)
+        creat(fileNames[i].c_str(), 0);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_MakeDirectoryHierarchy)
-{
-    unit_test::NotImplemented();
-}
+    vector<string> list;
+    status = filesystem::ListFilesInDirectory(".", list);
+    EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_DeleteDirectory)
-{
-    unit_test::NotImplemented();
-}
+    sort(list.begin(), list.end());
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_FileExists)
-{
-    unit_test::NotImplemented();
-}
+    for (size_t i = 0; i < list.size(); i++)
+    {
+        EXPECT_EQ(fileNames[i],
+                  filesystem::GetFileNameWithoutDirectory(list[i]));
+    }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_RemoveFile)
-{
-    unit_test::NotImplemented();
-}
+    // clean-up
+    for (size_t i = 0; i < fileNames.size(); i++)
+    {
+        status = filesystem::RemoveFile(fileNames[i]);
+        EXPECT_TRUE(status);
+    }
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ListFilesInDirectory)
-{
-    unit_test::NotImplemented();
-}
+    // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(FileSystem, DISABLED_ListFilesInDirectoryWithExtension)
-{
-    unit_test::NotImplemented();
+    status = filesystem::DeleteDirectory("filesystem");
+    EXPECT_TRUE(status);
+
+    status = filesystem::ChangeWorkingDirectory("..");
+    EXPECT_TRUE(status);
+
+    status = filesystem::DeleteDirectory("test");
+    EXPECT_TRUE(status);
 }
