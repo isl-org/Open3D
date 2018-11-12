@@ -377,7 +377,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                 const char *filename;
                 const char *pattern[1] = {"*.ply"};
                 std::string default_filename = default_directory_ +
-                        "cropped.ply";
+                        "cropped_" + std::to_string(crop_action_count_+1) + ".ply";
                 if (use_dialog_) {
                     filename = tinyfd_saveFileDialog("PointCloud file",
                             default_filename.c_str(), 1, pattern,
@@ -389,6 +389,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                     PrintInfo("No filename is given. Abort saving.\n");
                 } else {
                     SaveCroppingResult(filename);
+                    crop_action_count_++;
                 }
                 view_control.ToggleLocking();
                 InvalidateSelectionPolygon();
@@ -404,7 +405,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                 const char *filename;
                 const char *pattern[1] = {"*.ply"};
                 std::string default_filename = default_directory_ +
-                        "cropped.ply";
+                        "cropped_" + std::to_string(crop_action_count_+1) + ".ply";
                 if (use_dialog_) {
                     filename = tinyfd_saveFileDialog("Mesh file",
                             default_filename.c_str(), 1, pattern,
@@ -416,6 +417,7 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window,
                     PrintInfo("No filename is given. Abort saving.\n");
                 } else {
                     SaveCroppingResult(filename);
+                    crop_action_count_++;
                 }
                 view_control.ToggleLocking();
                 InvalidateSelectionPolygon();
