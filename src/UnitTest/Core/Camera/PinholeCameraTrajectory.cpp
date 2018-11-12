@@ -26,21 +26,13 @@
 
 #include "UnitTest.h"
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+#include "Core/Camera/PinholeCameraTrajectory.h"
+#include <json/json.h>
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+using namespace Eigen;
+using namespace open3d;
+using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
 //
@@ -53,15 +45,48 @@ TEST(PinholeCameraTrajectory, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_ConvertToJsonValue)
+TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
 {
-    unit_test::NotImplemented();
-}
+    PinholeCameraTrajectory src;
+    PinholeCameraTrajectory dst;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_ConvertFromJsonValue)
-{
-    unit_test::NotImplemented();
+    int width = 640;
+    int height = 480;
+
+    src.parameters_.resize(2);
+    for (size_t i = 0; i < src.parameters_.size(); i++)
+    {
+        PinholeCameraParameters src_params = src.parameters_[i];
+
+        PinholeCameraIntrinsic intrinsic;
+        intrinsic.width_ = width;
+        intrinsic.height_ = height;
+        intrinsic.intrinsic_matrix_ = Matrix3d::Random();
+
+        src.parameters_[i].intrinsic_ = intrinsic;
+        src.parameters_[i].extrinsic_ = Matrix4d::Random();
+    }
+
+    Json::Value value;
+    bool output = src.ConvertToJsonValue(value);
+    EXPECT_TRUE(output);
+
+    output = dst.ConvertFromJsonValue(value);
+    EXPECT_TRUE(output);
+
+    EXPECT_EQ(src.parameters_.size(), dst.parameters_.size());
+
+    for (size_t i = 0; i < src.parameters_.size(); i++)
+    {
+        PinholeCameraParameters src_params = src.parameters_[i];
+        PinholeCameraParameters dst_params = dst.parameters_[i];
+
+        EXPECT_EQ(src_params.intrinsic_.width_, dst_params.intrinsic_.width_);
+        EXPECT_EQ(src_params.intrinsic_.height_, dst_params.intrinsic_.height_);
+
+        ExpectEQ(src_params.intrinsic_.intrinsic_matrix_,
+                dst_params.intrinsic_.intrinsic_matrix_);
+
+        ExpectEQ(src_params.extrinsic_, dst_params.extrinsic_);
+    }
 }

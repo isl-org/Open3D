@@ -30,6 +30,9 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
+// DEBUG CODE
+// #include<iostream>
+
 namespace open3d{
 
 PinholeCameraTrajectory::PinholeCameraTrajectory()
@@ -46,22 +49,13 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
     value["version_major"] = 1;
     value["version_minor"] = 0;
     Json::Value parameters_array;
-    for (const auto &status : parameters_) {
-        Json::Value parameters, intrinsic, extrinsic, status_object;
-        if (status.intrinsic_.ConvertToJsonValue(status_object) == false) {
-            return false;
-        }
-        intrinsic["intrinsic"] = status_object;
-        if (EigenMatrix4dToJsonArray(
-                status.extrinsic_, status_object) == false) {
-            return false;
-        }
-        extrinsic["extrinsic"] = status_object;
-        parameters.append(intrinsic);
-        parameters.append(extrinsic);
-        parameters_array.append(parameters);
+    for (const auto &parameter : parameters_) {
+        Json::Value parameter_value;
+        parameter.ConvertToJsonValue(parameter_value);
+        parameters_array.append(parameter_value);
     }
     value["parameters"] = parameters_array;
+
     return true;
 }
 
@@ -77,7 +71,9 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
         PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
         return false;
     }
-    const Json::Value &parameter_array = value["PinholeCameraParameters"];
+
+    const Json::Value parameter_array = value["parameters"];
+
     if (parameter_array.size() == 0) {
         PrintWarning("PinholeCameraTrajectory read JSON failed: empty trajectory.\n");
         return false;
