@@ -87,11 +87,10 @@ public:
     ~RegistrationResult() {}
 
 public:
-    Eigen::Matrix4d transformation_;
+    Eigen::Matrix4d_u transformation_;
     CorrespondenceSet correspondence_set_;
     double inlier_rmse_;
     double fitness_;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 /// Function for evaluation

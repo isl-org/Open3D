@@ -65,7 +65,7 @@ bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> points;
+    std::vector<Eigen::Vector3f> points;
     if (PrepareBinding(geometry, option, view, points) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
@@ -122,7 +122,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
         const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points)
+        const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::PointCloud) {
@@ -167,7 +167,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points)
+        const ViewControl &view, std::vector<Eigen::Vector3f> &points)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::TriangleMesh) {

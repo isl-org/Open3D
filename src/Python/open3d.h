@@ -35,25 +35,21 @@
 #include <pybind11/functional.h>
 
 #include <Core/Registration/PoseGraph.h>
+#include <Core/Utility/Eigen.h>
 
 namespace py = pybind11;
 using namespace py::literals;
 
-typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> temp_eigen_vec3d;
-typedef std::vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> temp_eigen_vec3i;
-typedef std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> temp_eigen_vec2i;
-typedef std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> temp_eigen_matrix4d;
-typedef std::vector<open3d::PoseGraphEdge, Eigen::aligned_allocator<open3d::PoseGraphEdge>> temp_open3d_posegraphedge;
-typedef std::vector<open3d::PoseGraphNode, Eigen::aligned_allocator<open3d::PoseGraphNode>> temp_open3d_posegraphnode;
+typedef std::vector<Eigen::Matrix4d, open3d::Matrix4d_allocator> temp_eigen_matrix4d;
 
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
-PYBIND11_MAKE_OPAQUE(temp_eigen_vec3d);
-PYBIND11_MAKE_OPAQUE(temp_eigen_vec3i);
-PYBIND11_MAKE_OPAQUE(temp_eigen_vec2i);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
 PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
-PYBIND11_MAKE_OPAQUE(temp_open3d_posegraphedge);
-PYBIND11_MAKE_OPAQUE(temp_open3d_posegraphnode);
+PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphEdge>);
+PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphNode>);
 
 // some helper functions
 namespace pybind11 {

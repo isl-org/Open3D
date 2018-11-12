@@ -213,7 +213,7 @@ std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInPolygon(
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(
-        const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &input, const ViewControl &view)
+        const std::vector<Eigen::Vector3d> &input, const ViewControl &view)
 {
     std::vector<size_t> output_index;
     Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();
@@ -240,7 +240,7 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
 }
 
 std::vector<size_t> SelectionPolygon::CropInPolygon(
-        const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &input, const ViewControl &view)
+        const std::vector<Eigen::Vector3d> &input, const ViewControl &view)
 {
     std::vector<size_t> output_index;
     Eigen::Matrix4d mvp_matrix = view.GetMVPMatrix().cast<double>();

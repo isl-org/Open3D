@@ -30,6 +30,7 @@
 #include <memory>
 
 #include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Core/Utility/Eigen.h>
 
 namespace open3d {
 
@@ -45,7 +46,7 @@ public:
 
 public:
     PinholeCameraIntrinsic intrinsic_;
-    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> extrinsic_;
+    std::vector<Eigen::Matrix4d, Matrix4d_allocator> extrinsic_;
 };
 
 }    // namespace open3d

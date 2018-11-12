@@ -36,6 +36,7 @@ class ViewParameters : public IJsonConvertible
 public:
     typedef Eigen::Matrix<double, 17, 4, Eigen::RowMajor> Matrix17x4d;
     typedef Eigen::Matrix<double, 17, 1> Vector17d;
+    typedef Eigen::aligned_allocator<Matrix17x4d> Matrix17x4d_allocator;
 
 public:
     ViewParameters() {}
@@ -55,8 +56,6 @@ public:
     Eigen::Vector3d front_;
     Eigen::Vector3d boundingbox_min_;
     Eigen::Vector3d boundingbox_max_;
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }   // namespace open3d

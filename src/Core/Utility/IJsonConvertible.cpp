@@ -124,6 +124,19 @@ bool IJsonConvertible::EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
     return true;
 }
 
+bool IJsonConvertible::EigenMatrix4dFromJsonArray(Eigen::Matrix4d_u &mat,
+                                                  const Json::Value &value)
+{
+    if (value.size() != 16) {
+        return false;
+    } else {
+        for (int i = 0; i < 16; i++) {
+            mat.coeffRef(i) = value[i].asDouble();
+        }
+        return true;
+    }
+}
+
 bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
         const Json::Value &value)
 {
@@ -147,4 +160,16 @@ bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
     return true;
 }
 
+bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d_u &mat,
+                                                  const Json::Value &value)
+{
+    if (value.size() != 36) {
+        return false;
+    } else {
+        for (int i = 0; i < 36; i++) {
+            mat.coeffRef(i) = value[i].asDouble();
+        }
+        return true;
+    }
+}
 }   // namespace open3d

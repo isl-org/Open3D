@@ -36,9 +36,19 @@ namespace Eigen {
 typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
+/// Use Eigen::DontAlign for matrices inside classes which are exposed in the
+/// Open3D headers https://github.com/IntelVCL/Open3D/issues/653
+typedef Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Matrix6d_u;
+typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
+
 }    // namespace Eigen
 
 namespace open3d {
+    using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;
+    using Matrix6d_allocator = Eigen::aligned_allocator<Eigen::Matrix6d>;
+    using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
+    using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
+    using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
 
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:
@@ -65,7 +75,7 @@ std::tuple<bool, Eigen::Matrix4d>
 /// Function to solve Jacobian system
 /// Input: 6nx6n Jacobian matrix and 6n-dim residual vector.
 /// Output: tuple of is_success, n 4x4 motion matrices.
-std::tuple<bool, std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>>>
+std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
         SolveJacobianSystemAndObtainExtrinsicMatrixArray(
         const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &JTr);
 
@@ -84,7 +94,8 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 /// Note: f takes index of row, and outputs corresponding residual and row vector.
 template<typename MatType, typename VecType>
 std::tuple<MatType, VecType> ComputeJTJandJTr(
-        std::function<void(int, std::vector<VecType, Eigen::aligned_allocator<VecType>> &, std::vector<double> &)> f,
+        std::function<void(int, std::vector<VecType,
+                Eigen::aligned_allocator<VecType>> &, std::vector<double> &)> f,
         int iteration_num);
 
 }    // namespace open3d

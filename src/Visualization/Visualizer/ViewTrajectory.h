@@ -86,10 +86,11 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    std::vector<ViewParameters, Eigen::aligned_allocator<ViewParameters>> view_status_;
+    std::vector<ViewParameters> view_status_;
     bool is_loop_ = false;
     int interval_ = INTERVAL_DEFAULT;
-    std::vector<ViewParameters::Matrix17x4d, Eigen::aligned_allocator<ViewParameters::Matrix17x4d>> coeff_;
+    std::vector<ViewParameters::Matrix17x4d, 
+                ViewParameters::Matrix17x4d_allocator> coeff_;
 };
 
 }   // namespace open3d

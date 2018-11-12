@@ -186,13 +186,13 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 }
 
 // Normalize scale of points. X' = (X-\mu)/scale
-std::tuple<std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>, double, double> NormalizePointCloud(
+std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         std::vector<PointCloud>& point_cloud_vec,
         const FastGlobalRegistrationOption& option)
 {
     int num = 2;
     double scale = 0;
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> pcd_mean_vec;
+    std::vector<Eigen::Vector3d> pcd_mean_vec;
     double scale_global, scale_start;
 
     for (int i = 0; i < num; ++i) {
@@ -328,7 +328,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
 // e.g. T * point_cloud_vec[1] is aligned with point_cloud_vec[0].
 Eigen::Matrix4d GetTransformationOriginalScale(
         const Eigen::Matrix4d& transformation, 
-        const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& pcd_mean_vec, 
+        const std::vector<Eigen::Vector3d>& pcd_mean_vec, 
         const double scale_global)
 {
     Eigen::Matrix3d R = transformation.block<3, 3>(0, 0);
@@ -359,7 +359,7 @@ RegistrationResult FastGlobalRegistration(
     features_vec.push_back(target_feature);
 
     double scale_global, scale_start;
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> pcd_mean_vec;
+    std::vector<Eigen::Vector3d> pcd_mean_vec;
     std::tie(pcd_mean_vec, scale_global, scale_start) = 
             NormalizePointCloud(point_cloud_vec, option);
     std::vector<std::pair<int, int>> corres;

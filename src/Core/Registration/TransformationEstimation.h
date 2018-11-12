@@ -35,7 +35,7 @@ namespace open3d {
 
 class PointCloud;
 
-typedef std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> CorrespondenceSet;
+typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
 enum class TransformationEstimationType
 {

@@ -61,7 +61,6 @@ public:
     public:
         std::shared_ptr<UniformTSDFVolume> volume_;
         Eigen::Vector3i index_;
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     };
 public:
     ScalableTSDFVolume(double voxel_length, double sdf_trunc,
@@ -87,10 +86,7 @@ public:
     /// from (x, y, z) * volume_unit_length_
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
     std::unordered_map<Eigen::Vector3i, VolumeUnit,
-            hash_eigen::hash<Eigen::Vector3i>,
-            std::equal_to<Eigen::Vector3i>,
-            Eigen::aligned_allocator<std::pair<const Eigen::Vector3i, VolumeUnit>>>
-            volume_units_;
+            hash_eigen::hash<Eigen::Vector3i>> volume_units_;
 
 private:
     Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3d &point) {

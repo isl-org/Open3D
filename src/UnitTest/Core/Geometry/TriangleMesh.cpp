@@ -184,7 +184,7 @@ TEST(TriangleMesh, GetMaxBound)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, Transform)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {  396.870588, 1201.976471,  880.472941 },
         {  320.792157, 1081.976471,  829.139608 },
@@ -198,7 +198,7 @@ TEST(TriangleMesh, Transform)
         {  274.909804,  802.368627,  218.747451 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_normals =
+    vector<Eigen::Vector3d> ref_vertex_normals =
     {
         {  396.470588, 1201.176471,  880.352941 },
         {  320.392157, 1081.176471,  829.019608 },
@@ -212,7 +212,7 @@ TEST(TriangleMesh, Transform)
         {  274.509804,  801.568627,  218.627451 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_triangle_normals =
+    vector<Eigen::Vector3d> ref_triangle_normals =
     {
         {  396.470588, 1201.176471,  880.352941 },
         {  320.392157, 1081.176471,  829.019608 },
@@ -442,7 +442,7 @@ TEST(TriangleMesh, OperatorADD)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, ComputeTriangleNormals)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
+    vector<Eigen::Vector3d> ref =
     {
         {   -0.119231,    0.738792,    0.663303 },
         {   -0.115181,    0.730934,    0.672658 },
@@ -500,7 +500,7 @@ TEST(TriangleMesh, ComputeTriangleNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, ComputeVertexNormals)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref =
+    vector<Eigen::Vector3d> ref =
     {
         {    0.635868,    0.698804,    0.327636 },
         {    0.327685,    0.717012,    0.615237 },
@@ -558,7 +558,7 @@ TEST(TriangleMesh, ComputeVertexNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, Purge)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  796.078431,  909.803922,  196.078431 },
@@ -586,7 +586,7 @@ TEST(TriangleMesh, Purge)
         {  666.666667,  529.411765,   39.215686 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_normals =
+    vector<Eigen::Vector3d> ref_vertex_normals =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  796.078431,  909.803922,  196.078431 },
@@ -614,7 +614,7 @@ TEST(TriangleMesh, Purge)
         {  666.666667,  529.411765,   39.215686 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_colors =
+    vector<Eigen::Vector3d> ref_vertex_colors =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  796.078431,  909.803922,  196.078431 },
@@ -642,7 +642,7 @@ TEST(TriangleMesh, Purge)
         {  666.666667,  529.411765,   39.215686 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {    20,     9,    18 },
         {    19,    21,     4 },
@@ -668,7 +668,7 @@ TEST(TriangleMesh, Purge)
         {    16,    12,     0 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_triangle_normals =
+    vector<Eigen::Vector3d> ref_triangle_normals =
     {
         {  839.215686,  392.156863,  780.392157 },
         {  796.078431,  909.803922,  196.078431 },
@@ -844,7 +844,7 @@ TEST(TriangleMesh, HasTriangleNormals)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, NormalizeNormals)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_normals =
+    vector<Eigen::Vector3d> ref_vertex_normals =
     {
         {    0.692861,    0.323767,    0.644296 },
         {    0.650010,    0.742869,    0.160101 },
@@ -873,7 +873,7 @@ TEST(TriangleMesh, NormalizeNormals)
         {    0.314385,    0.671253,    0.671253 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_triangle_normals =
+    vector<Eigen::Vector3d> ref_triangle_normals =
     {
         {    0.331843,    0.660368,    0.673642 },
         {    0.920309,    0.198342,    0.337182 },
@@ -951,7 +951,7 @@ TEST(TriangleMesh, PaintUniformColor)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, SelectDownSample)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         { 349.019608, 803.921569, 917.647059 },
         { 439.215686, 117.647059, 588.235294 },
@@ -980,7 +980,7 @@ TEST(TriangleMesh, SelectDownSample)
         { 945.098039,  98.039216, 274.509804 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_normals =
+    vector<Eigen::Vector3d> ref_vertex_normals =
     {
         { 803.921569, 917.647059,  66.666667 },
         { 117.647059, 588.235294, 576.470588 },
@@ -1009,7 +1009,7 @@ TEST(TriangleMesh, SelectDownSample)
         {  98.039216, 274.509804, 239.215686 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_colors =
+    vector<Eigen::Vector3d> ref_vertex_colors =
     {
         { 654.901961, 439.215686, 396.078431 },
         {  94.117647, 945.098039, 274.509804 },
@@ -1038,7 +1038,7 @@ TEST(TriangleMesh, SelectDownSample)
         { 764.705882, 533.333333, 474.509804 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {    19,     7,    12 },
         {     8,    23,     2 },
@@ -1063,7 +1063,7 @@ TEST(TriangleMesh, SelectDownSample)
         {    15,    13,     1 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_triangle_normals =
+    vector<Eigen::Vector3d> ref_triangle_normals =
     {
         { 909.803922, 274.509804, 364.705882 },
         { 635.294118,  15.686275, 152.941176 },
@@ -1145,7 +1145,7 @@ TEST(TriangleMesh, SelectDownSample)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, CropTriangleMesh)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         { 615.686275, 639.215686, 517.647059 },
         { 615.686275, 760.784314, 772.549020 },
@@ -1155,7 +1155,7 @@ TEST(TriangleMesh, CropTriangleMesh)
         { 317.647059, 666.666667, 525.490196 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_normals =
+    vector<Eigen::Vector3d> ref_vertex_normals =
     {
         { 639.215686, 517.647059, 400.000000 },
         { 760.784314, 772.549020, 282.352941 },
@@ -1165,7 +1165,7 @@ TEST(TriangleMesh, CropTriangleMesh)
         { 666.666667, 525.490196, 847.058824 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_colors =
+    vector<Eigen::Vector3d> ref_vertex_colors =
     {
         { 647.058824, 325.490196, 603.921569 },
         { 941.176471, 121.568627, 513.725490 },
@@ -1175,13 +1175,13 @@ TEST(TriangleMesh, CropTriangleMesh)
         { 854.901961, 341.176471, 878.431373 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     1,     0,     3 },
         {     5,     2,     4 }
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_triangle_normals =
+    vector<Eigen::Vector3d> ref_triangle_normals =
     {
         { 125.490196, 160.784314, 913.725490 },
         { 764.705882, 901.960784, 807.843137 }
@@ -1244,7 +1244,7 @@ TEST(TriangleMesh, CropTriangleMesh)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, CreateMeshSphere)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {    0.000000,    0.000000,    1.000000 },
         {    0.000000,    0.000000,   -1.000000 },
@@ -1290,7 +1290,7 @@ TEST(TriangleMesh, CreateMeshSphere)
         {    0.475528,   -0.345492,   -0.809017 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    33,    32 },
@@ -1390,7 +1390,7 @@ TEST(TriangleMesh, CreateMeshSphere)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, CreateMeshCylinder)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {    0.000000,    0.000000,    1.000000 },
         {    0.000000,    0.000000,   -1.000000 },
@@ -1421,7 +1421,7 @@ TEST(TriangleMesh, CreateMeshCylinder)
         {    0.309017,   -0.951057,   -1.000000 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    23,    22 },
@@ -1491,7 +1491,7 @@ TEST(TriangleMesh, CreateMeshCylinder)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, CreateMeshCone)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {    0.000000,    0.000000,    0.000000 },
         {    0.000000,    0.000000,    2.000000 },
@@ -1502,7 +1502,7 @@ TEST(TriangleMesh, CreateMeshCone)
         {    0.309017,   -0.951057,    0.000000 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     3,     2 },
         {     1,     2,     3 },
@@ -1532,7 +1532,7 @@ TEST(TriangleMesh, CreateMeshCone)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, CreateMeshArrow)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {    0.000000,    0.000000,    2.000000 },
         {    0.000000,    0.000000,    0.000000 },
@@ -1570,7 +1570,7 @@ TEST(TriangleMesh, CreateMeshArrow)
         {    0.463525,   -1.426585,    2.000000 }
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     1,    23,    22 },
@@ -1650,7 +1650,7 @@ TEST(TriangleMesh, CreateMeshArrow)
 // ----------------------------------------------------------------------------
 TEST(TriangleMesh, CreateMeshCoordinateFrame)
 {
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertices =
+    vector<Eigen::Vector3d> ref_vertices =
     {
         {   0.000000,   0.000000,   0.006000 },
         {   0.000893,  -0.000290,   0.005926 },
@@ -1683,7 +1683,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
         {  -0.001854,   0.005706,   0.080000 },
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_normals =
+    vector<Eigen::Vector3d> ref_vertex_normals =
     {
         {   0.000000,   0.000000,   1.000000 },
         {   0.171274,  -0.062054,   0.983267 },
@@ -1716,7 +1716,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
         {  -0.309017,   0.951057,   0.000000 },
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_vertex_colors =
+    vector<Eigen::Vector3d> ref_vertex_colors =
     {
         {   0.500000,   0.500000,   0.500000 },
         {   0.500000,   0.500000,   0.500000 },
@@ -1749,7 +1749,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
         {   0.000000,   0.000000,   1.000000 },
     };
 
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> ref_triangles =
+    vector<Eigen::Vector3i> ref_triangles =
     {
         {     0,     2,     3 },
         {     0,    22,    23 },
@@ -1809,7 +1809,7 @@ TEST(TriangleMesh, CreateMeshCoordinateFrame)
         {  1112,  1115,  1114 },
     };
 
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> ref_triangle_normals =
+    vector<Eigen::Vector3d> ref_triangle_normals =
     {
         {   0.078458,   0.006175,   0.996898 },
         {  -0.078458,  -0.006175,   0.996898 },

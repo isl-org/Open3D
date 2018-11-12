@@ -184,9 +184,7 @@ public:
     int image_max_depth_ = 3000;
 
     // Coordinate frame
-    bool show_coordinate_frame_ = false;
-    
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    bool show_coordinate_frame_ = false;    
 };
 
 }   // namespace open3d

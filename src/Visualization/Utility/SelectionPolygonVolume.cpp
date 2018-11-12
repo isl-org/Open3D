@@ -115,7 +115,7 @@ std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
 
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
-        const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &input) const
+        const std::vector<Eigen::Vector3d> &input) const
 {
     std::vector<size_t> output_index;
     int u, v, w;

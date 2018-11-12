@@ -33,21 +33,21 @@ namespace unit_test
 {
     // Initialize an Eigen::Vector2i vector.
     // Output range: [vmin:vmax].
-    void Rand(std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>>& v,
+    void Rand(std::vector<Eigen::Vector2i>& v,
         const Eigen::Vector2i& vmin,
         const Eigen::Vector2i& vmax,
         const int& seed);
 
     // Initialize an Eigen::Vector3i vector.
     // Output range: [vmin:vmax].
-    void Rand(std::vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>>& v,
+    void Rand(std::vector<Eigen::Vector3i>& v,
         const Eigen::Vector3i& vmin,
         const Eigen::Vector3i& vmax,
         const int& seed);
 
     // Initialize an Eigen::Vector3d vector.
     // Output range: [vmin:vmax].
-    void Rand(std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& v,
+    void Rand(std::vector<Eigen::Vector3d>& v,
         const Eigen::Vector3d& vmin,
         const Eigen::Vector3d& vmax,
         const int& seed);

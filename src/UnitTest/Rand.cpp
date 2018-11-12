@@ -36,7 +36,7 @@ using namespace std;
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i>> &v,
+    vector<Eigen::Vector2i> &v,
     const Eigen::Vector2i &vmin,
     const Eigen::Vector2i &vmax,
     const int& seed)
@@ -59,7 +59,7 @@ void unit_test::Rand(
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> &v,
+    vector<Eigen::Vector3i> &v,
     const Eigen::Vector3i &vmin,
     const Eigen::Vector3i &vmax,
     const int& seed)
@@ -84,7 +84,7 @@ void unit_test::Rand(
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
 void unit_test::Rand(
-    vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> &v,
+    vector<Eigen::Vector3d> &v,
     const Eigen::Vector3d &vmin,
     const Eigen::Vector3d &vmax,
     const int& seed)

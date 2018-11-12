@@ -113,11 +113,11 @@ public:
     }
 
 public:
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> vertices_;
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> vertex_normals_;
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> vertex_colors_;
-    std::vector<Eigen::Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> triangles_;
-    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> triangle_normals_;
+    std::vector<Eigen::Vector3d> vertices_;
+    std::vector<Eigen::Vector3d> vertex_normals_;
+    std::vector<Eigen::Vector3d> vertex_colors_;
+    std::vector<Eigen::Vector3i> triangles_;
+    std::vector<Eigen::Vector3d> triangle_normals_;
 };
 
 /// Function to select points from \param input TriangleMesh into

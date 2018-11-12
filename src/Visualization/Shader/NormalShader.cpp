@@ -66,8 +66,8 @@ bool NormalShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> points;
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> normals;
+    std::vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> normals;
     if (PrepareBinding(geometry, option, view, points, normals) ==
             false) {
         PrintShaderWarning("Binding failed when preparing data.");
@@ -135,8 +135,8 @@ bool NormalShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 
 bool NormalShaderForPointCloud::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals)
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &normals)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::PointCloud) {
@@ -192,8 +192,8 @@ bool NormalShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 
 bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals)
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &normals)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::TriangleMesh) {

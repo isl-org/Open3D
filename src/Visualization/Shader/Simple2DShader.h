@@ -56,8 +56,8 @@ protected:
             const RenderOption &option, const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors) = 0;
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) = 0;
 
 protected:
     GLuint vertex_position_;
@@ -77,8 +77,8 @@ protected:
             const RenderOption &option, const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors) final;
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
 }    // namespace open3d::glsl

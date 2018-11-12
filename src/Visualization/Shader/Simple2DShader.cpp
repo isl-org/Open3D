@@ -64,8 +64,8 @@ bool Simple2DShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> points;
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> colors;
+    std::vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> colors;
     if (PrepareBinding(geometry, option, view, points, colors) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
@@ -131,8 +131,8 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 
 bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors)
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::Unspecified) {

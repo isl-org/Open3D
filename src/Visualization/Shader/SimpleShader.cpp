@@ -67,8 +67,8 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> points;
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> colors;
+    std::vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> colors;
     if (PrepareBinding(geometry, option, view, points, colors) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
@@ -133,8 +133,8 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 
 bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors)
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::PointCloud) {
@@ -200,8 +200,8 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 
 bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors)
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::LineSet) {
@@ -259,8 +259,8 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 
 bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors)
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors)
 {
     if (geometry.GetGeometryType() !=
             Geometry::GeometryType::TriangleMesh) {

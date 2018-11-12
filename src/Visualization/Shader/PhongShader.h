@@ -56,9 +56,9 @@ protected:
             const RenderOption &option, const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors) = 0;
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals,
+            std::vector<Eigen::Vector3f> &colors) = 0;
     
 protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
@@ -99,9 +99,9 @@ protected:
             const RenderOption &option, const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors) final;
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
 class PhongShaderForTriangleMesh : public PhongShader
@@ -114,9 +114,9 @@ protected:
             const RenderOption &option, const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &normals,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &colors) final;
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &normals,
+            std::vector<Eigen::Vector3f> &colors) final;
 };
 
 }    // namespace open3d::glsl

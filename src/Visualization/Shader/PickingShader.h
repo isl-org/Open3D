@@ -56,7 +56,7 @@ protected:
             const RenderOption &option, const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
+            std::vector<Eigen::Vector3f> &points,
             std::vector<float> &indices) = 0;
 
 protected:
@@ -78,7 +78,7 @@ protected:
             const RenderOption &option, const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
             const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
+            std::vector<Eigen::Vector3f> &points,
             std::vector<float> &indices) final;
 };
 

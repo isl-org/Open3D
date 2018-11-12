@@ -66,7 +66,7 @@ bool PickingShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> points;
+    std::vector<Eigen::Vector3f> points;
     std::vector<float> indices;
     if (PrepareBinding(geometry, option, view, points, indices) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
@@ -133,7 +133,7 @@ bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 
 bool PickingShaderForPointCloud::PrepareBinding(const Geometry &geometry,
         const RenderOption &option, const ViewControl &view,
-        std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> &points,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<float> &indices)
 {
     if (geometry.GetGeometryType() !=

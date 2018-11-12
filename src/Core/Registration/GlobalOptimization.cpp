@@ -49,7 +49,7 @@ namespace {
 ///                 |     0      0      0     1 |
 /// It is from sin(x) \approx x and cos(x) \approx 1 when x is almost zero.
 /// See [Choi et al 2015] for more detail. Reference list in GlobalOptimization.h
-const std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> jacobian_operator = {
+const std::vector<Eigen::Matrix4d, Matrix4d_allocator> jacobian_operator = {
     (Eigen::Matrix4d() << /* for alpha */
     0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0).finished(),
     (Eigen::Matrix4d() << /* for beta */

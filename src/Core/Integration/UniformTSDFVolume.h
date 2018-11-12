@@ -69,9 +69,8 @@ public:
     int resolution_;
     int voxel_num_;
     std::vector<float> tsdf_;
-    std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> color_;
+    std::vector<Eigen::Vector3f> color_;
     std::vector<float> weight_;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);

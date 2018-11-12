@@ -150,12 +150,9 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
         PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
         return output;
     }
-    // NOTE() : eigen issue
+    
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
-            hash_eigen::hash<Eigen::Vector3i>,
-            std::equal_to<Eigen::Vector3i>,
-            Eigen::aligned_allocator<std::pair<const Eigen::Vector3i, AccumulatedPoint>>>
-            voxelindex_to_accpoint;
+            hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
 
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
