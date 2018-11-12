@@ -39,6 +39,12 @@ namespace unit_test
     // thresholds for comparing floating point values
     const double THRESHOLD_1E_6 = 1e-6;
 
+    // Eigen Zero()
+    const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
+    const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
+    const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
+    const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
+
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
@@ -68,4 +74,20 @@ namespace unit_test
     // Greater than or Equal test over Eigen::Vector3d components.
     void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+
+    // Test equality of two arrays of uint8_t.
+    void ExpectEQ(const uint8_t* const v0,
+                  const uint8_t* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of uint8_t.
+    void ExpectEQ(const std::vector<uint8_t>& v0,
+                  const std::vector<uint8_t>& v1);
+
+    // Reinterpret cast from uint8_t* to float*.
+    template<class T>
+    T* const Cast(uint8_t* data)
+    {
+        return reinterpret_cast<T* const>(data);
+    }
 }
