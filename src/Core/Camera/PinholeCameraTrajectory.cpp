@@ -30,9 +30,6 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-// DEBUG CODE
-// #include<iostream>
-
 namespace open3d{
 
 PinholeCameraTrajectory::PinholeCameraTrajectory()
