@@ -56,8 +56,6 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
     src.parameters_.resize(2);
     for (size_t i = 0; i < src.parameters_.size(); i++)
     {
-        PinholeCameraParameters src_params = src.parameters_[i];
-
         PinholeCameraIntrinsic intrinsic;
         intrinsic.width_ = width;
         intrinsic.height_ = height;
