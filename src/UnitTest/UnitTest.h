@@ -94,6 +94,24 @@ namespace unit_test
     void ExpectEQ(const std::vector<uint8_t>& v0,
                   const std::vector<uint8_t>& v1);
 
+    // Test equality of two arrays of int.
+    void ExpectEQ(const int* const v0,
+                  const int* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of int.
+    void ExpectEQ(const std::vector<int>& v0,
+                  const std::vector<int>& v1);
+
+    // Test equality of two arrays of double.
+    void ExpectEQ(const double* const v0,
+                  const double* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of double.
+    void ExpectEQ(const std::vector<double>& v0,
+                  const std::vector<double>& v1);
+
     // Reinterpret cast from uint8_t* to float*.
     template<class T>
     T* const Cast(uint8_t* data)
