@@ -92,4 +92,22 @@ namespace unit_test
     // Greater than or Equal test over Eigen::Vector3d components.
     void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+
+    // Test equality of two arrays of int.
+    void ExpectEQ(const int* const v0,
+                  const int* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of int.
+    void ExpectEQ(const std::vector<int>& v0,
+                  const std::vector<int>& v1);
+
+    // Test equality of two arrays of double.
+    void ExpectEQ(const double* const v0,
+                  const double* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of double.
+    void ExpectEQ(const std::vector<double>& v0,
+                  const std::vector<double>& v1);
 }
