@@ -32,7 +32,8 @@
 
 namespace open3d{
 
-PinholeCameraIntrinsic::PinholeCameraIntrinsic()
+PinholeCameraIntrinsic::PinholeCameraIntrinsic() : width_(-1), height_(-1),
+    intrinsic_matrix_(Eigen::Matrix3d::Zero())
 {
 }
 

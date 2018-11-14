@@ -57,6 +57,7 @@ namespace unit_test
         for (int i = 0; i < v0.size(); i++)
             EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
     }
+
     template<class T, int M, int N>
     void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N>>& v0,
                   const std::vector<Eigen::Matrix<T, M, N>>& v1)
@@ -126,6 +127,15 @@ namespace unit_test
     // Greater than or Equal test over Eigen::Vector3d components.
     void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+
+    // Test equality of two arrays of int.
+    void ExpectEQ(const int* const v0,
+                  const int* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of int.
+    void ExpectEQ(const std::vector<int>& v0,
+                  const std::vector<int>& v1);
 
     // Test equality of two arrays of double.
     void ExpectEQ(const double* const v0,

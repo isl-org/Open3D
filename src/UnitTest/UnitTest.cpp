@@ -157,6 +157,26 @@ void unit_test::ExpectGE(const double& v00, const double& v01, const double& v02
 }
 
 // ----------------------------------------------------------------------------
+// Test equality of two arrays of int.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const int* const v0,
+              const int* const v1,
+              const size_t& size)
+{
+    for (int i = 0; i < size; i++)
+        EXPECT_EQ(v0[i], v1[i]);
+}
+
+// ----------------------------------------------------------------------------
+// Test equality of two vectors of int.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1)
+{
+    EXPECT_EQ(v0.size(), v1.size());
+    ExpectEQ(&v0[0], &v1[0], v0.size());
+}
+
+// ----------------------------------------------------------------------------
 // Test equality of two arrays of double.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const double* const v0,
