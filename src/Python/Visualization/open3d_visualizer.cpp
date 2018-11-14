@@ -106,6 +106,7 @@ void pybind_visualizer(py::module &m)
     py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit
+        .def(py::init<double, bool, const std::string &>())
         .def("__repr__", [](const VisualizerWithEditing &vis) {
             return std::string("VisualizerWithEditing with name ") +
                     vis.GetWindowName();

@@ -26,122 +26,135 @@
 
 #include "UnitTest.h"
 
+#include "Core/Utility/IJsonConvertible.h"
+#include <json/json.h>
+
+using namespace Eigen;
+using namespace open3d;
+using namespace std;
+using namespace unit_test;
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_Constructor)
+TEST(IJsonConvertible, EigenVector3dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Vector3d v3d = Vector3d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Vector3d ref;
+
+        status = IJsonConvertible::EigenVector3dToJsonArray(v3d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenVector3dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, v3d);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_Destructor)
+TEST(IJsonConvertible, EigenVector4dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Vector4d v4d = Vector4d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Vector4d ref;
+
+        status = IJsonConvertible::EigenVector4dToJsonArray(v4d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenVector4dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, v4d);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_MemberData)
+TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Matrix3d m3d = Matrix3d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Matrix3d ref;
+
+        status = IJsonConvertible::EigenMatrix3dToJsonArray(m3d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenMatrix3dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, m3d);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_ConvertToJsonValue)
+TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray)
 {
-    unit_test::NotImplemented();
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Matrix4d m4d = Matrix4d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Matrix4d ref;
+
+        status = IJsonConvertible::EigenMatrix4dToJsonArray(m4d, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenMatrix4dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, m4d);
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_ConvertFromJsonValue)
+TEST(IJsonConvertible, EigenMatrix6dToFromJsonArray)
 {
-    unit_test::NotImplemented();
-}
+    int loops = 10000;
+    srand((unsigned int) time(0));
+    for (int i = 0; i < loops; i++)
+    {
+        Matrix6d m6d = Matrix6d::Random();
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector3dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        bool status = false;
+        Json::Value json_value;
+        Matrix6d ref;
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector3dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        status = IJsonConvertible::EigenMatrix6dToJsonArray(m6d, json_value);
+        EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector4dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
+        status = IJsonConvertible::EigenMatrix6dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenVector4dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix3dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix3dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix4dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix4dToJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix6dFromJsonArray)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(IJsonConvertible, DISABLED_EigenMatrix6dToJsonArray)
-{
-    unit_test::NotImplemented();
+        ExpectEQ(ref, m6d);
+    }
 }
