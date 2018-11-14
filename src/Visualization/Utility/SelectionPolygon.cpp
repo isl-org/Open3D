@@ -134,6 +134,12 @@ std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
     if (IsEmpty()) {
         return std::make_shared<TriangleMesh>();
     }
+    if (input.HasVertices() && !input.HasTriangles()) {
+        PrintWarning(
+            "TriangleMesh contains vertices, but no triangles; "
+            "cropping will always yield an empty TriangleMesh.\n");
+        return std::make_shared<TriangleMesh>();
+    }
     switch (polygon_type_) {
     case SectionPolygonType::Rectangle:
         return CropTriangleMeshInRectangle(input, view);

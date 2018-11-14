@@ -39,6 +39,12 @@ namespace unit_test
     // thresholds for comparing floating point values
     const double THRESHOLD_1E_6 = 1e-6;
 
+    // Eigen Zero()
+    const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
+    const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
+    const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
+    const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
+
     // Mechanism for reporting unit tests for which there is no implementation yet.
     void NotImplemented();
 
@@ -87,6 +93,24 @@ namespace unit_test
     // Test equality of two vectors of uint8_t.
     void ExpectEQ(const std::vector<uint8_t>& v0,
                   const std::vector<uint8_t>& v1);
+
+    // Test equality of two arrays of int.
+    void ExpectEQ(const int* const v0,
+                  const int* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of int.
+    void ExpectEQ(const std::vector<int>& v0,
+                  const std::vector<int>& v1);
+
+    // Test equality of two arrays of double.
+    void ExpectEQ(const double* const v0,
+                  const double* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of double.
+    void ExpectEQ(const std::vector<double>& v0,
+                  const std::vector<double>& v1);
 
     // Reinterpret cast from uint8_t* to float*.
     template<class T>
