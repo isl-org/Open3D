@@ -40,9 +40,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
             #vis.capture_depth_image("depth/{:05d}.png".format(glb.index), False)
             #vis.capture_screen_image("image/{:05d}.png".format(glb.index), False)
         glb.index = glb.index + 1
-        if glb.index < len(glb.trajectory.extrinsic):
-            ctr.convert_from_pinhole_camera_parameters(glb.trajectory.intrinsic,\
-                    glb.trajectory.extrinsic[glb.index])
+        if glb.index < len(glb.trajectory.parameters):
+            ctr.convert_from_pinhole_camera_parameters(glb.trajectory.parameters[glb.index])
         else:
             custom_draw_geometry_with_camera_trajectory.vis.\
                     register_animation_callback(None)
