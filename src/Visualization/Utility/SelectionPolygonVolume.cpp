@@ -58,7 +58,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value)
 {
     if (value.isObject() == false) {
         PrintWarning("SelectionPolygonVolume read JSON failed: unsupported json format.\n");
-        return false;        
+        return false;
     }
     if (value.get("class_name", "").asString() != "SelectionPolygonVolume" ||
             value.get("version_major", 1).asInt() != 1 ||
@@ -104,6 +104,12 @@ std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMesh(
 {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
         return std::make_shared<TriangleMesh>();
+    if (input.HasVertices() && !input.HasTriangles()) {
+        PrintWarning(
+            "TriangleMesh contains vertices, but no triangles; "
+            "cropping will always yield an empty TriangleMesh.\n");
+        return std::make_shared<TriangleMesh>();
+    }
     return CropTriangleMeshInPolygon(input);
 }
 
