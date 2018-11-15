@@ -66,6 +66,49 @@ namespace unit_test
             ExpectEQ(v0[i], v1[i]);
     }
 
+    template<class T, int M, int N>
+    void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            ExpectEQ(v0[i], v1[i]);
+    }
+
+    // Less than or Equal test.
+    template<class T, int M, int N>
+    void ExpectLE(const Eigen::Matrix<T, M, N>& v0,
+                  const Eigen::Matrix<T, M, N>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            EXPECT_LE(v0.coeff(i), v1.coeff(i));
+    }
+    template<class T, int M, int N>
+    void ExpectLE(const Eigen::Matrix<T, M, N>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    {
+        for (int i = 0; i < v0.size(); i++)
+            ExpectLE(v0, v1[i]);
+    }
+
+    // Greater than or Equal test.
+    template<class T, int M, int N>
+    void ExpectGE(const Eigen::Matrix<T, M, N>& v0,
+                  const Eigen::Matrix<T, M, N>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            EXPECT_GE(v0.coeff(i), v1.coeff(i));
+    }
+    template<class T, int M, int N>
+    void ExpectGE(const Eigen::Matrix<T, M, N>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    {
+        for (int i = 0; i < v1.size(); i++)
+            ExpectGE(v0, v1[i]);
+    }
+
     // Equal test over Eigen::Vector2d components.
     void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
     void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
@@ -93,6 +136,15 @@ namespace unit_test
     void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 
+    // Test equality of two arrays of uint8_t.
+    void ExpectEQ(const uint8_t* const v0,
+                  const uint8_t* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of uint8_t.
+    void ExpectEQ(const std::vector<uint8_t>& v0,
+                  const std::vector<uint8_t>& v1);
+
     // Test equality of two arrays of int.
     void ExpectEQ(const int* const v0,
                   const int* const v1,
@@ -110,4 +162,11 @@ namespace unit_test
     // Test equality of two vectors of double.
     void ExpectEQ(const std::vector<double>& v0,
                   const std::vector<double>& v1);
+
+    // Reinterpret cast from uint8_t* to float*.
+    template<class T>
+    T* const Cast(uint8_t* data)
+    {
+        return reinterpret_cast<T* const>(data);
+    }
 }
