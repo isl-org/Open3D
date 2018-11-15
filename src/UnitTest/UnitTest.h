@@ -66,15 +66,6 @@ namespace unit_test
             ExpectEQ(v0[i], v1[i]);
     }
 
-    template<class T, int M, int N>
-    void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N>>& v0,
-                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
-    {
-        EXPECT_EQ(v0.size(), v1.size());
-        for (int i = 0; i < v0.size(); i++)
-            ExpectEQ(v0[i], v1[i]);
-    }
-
     // Less than or Equal test.
     template<class T, int M, int N>
     void ExpectLE(const Eigen::Matrix<T, M, N>& v0,
