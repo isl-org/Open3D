@@ -136,6 +136,15 @@ namespace unit_test
     void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
     void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
 
+    // Test equality of two arrays of uint8_t.
+    void ExpectEQ(const uint8_t* const v0,
+                  const uint8_t* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of uint8_t.
+    void ExpectEQ(const std::vector<uint8_t>& v0,
+                  const std::vector<uint8_t>& v1);
+
     // Test equality of two arrays of int.
     void ExpectEQ(const int* const v0,
                   const int* const v1,
@@ -153,4 +162,11 @@ namespace unit_test
     // Test equality of two vectors of double.
     void ExpectEQ(const std::vector<double>& v0,
                   const std::vector<double>& v1);
+
+    // Reinterpret cast from uint8_t* to float*.
+    template<class T>
+    T* const Cast(uint8_t* data)
+    {
+        return reinterpret_cast<T* const>(data);
+    }
 }
