@@ -57,6 +57,14 @@ namespace unit_test
         for (int i = 0; i < v0.size(); i++)
             EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
     }
+    template<class T, int M, int N>
+    void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            ExpectEQ(v0[i], v1[i]);
+    }
 
     template<class T, int M, int N>
     void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N>>& v0,
