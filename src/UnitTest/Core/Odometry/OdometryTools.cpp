@@ -98,18 +98,18 @@ shared_ptr<Image> odometry_tools::CorrespondenceMap(const int& width,
     int num_of_channels = 2;
     int bytes_per_channel = 4;
 
-    Image image;
+    shared_ptr<Image> image = make_shared<Image>();
 
-    image.PrepareImage(width,
-                       height,
-                       num_of_channels,
-                       bytes_per_channel);
+    image->PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
 
-    int* const int_data = Cast<int>(&image.data_[0]);
-    size_t image_size = image.data_.size() / sizeof(int);
+    int* const int_data = Cast<int>(&image->data_[0]);
+    size_t image_size = image->data_.size() / sizeof(int);
     Rand(int_data, image_size, vmin, vmax, seed);
 
-    return make_shared<Image>(image);
+    return image;
 }
 
 // ----------------------------------------------------------------------------
@@ -124,16 +124,16 @@ shared_ptr<Image> odometry_tools::DepthBuffer(const int& width,
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    Image image;
+    shared_ptr<Image> image = make_shared<Image>();
 
-    image.PrepareImage(width,
-                       height,
-                       num_of_channels,
-                       bytes_per_channel);
+    image->PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
 
-    float* const float_data = Cast<float>(&image.data_[0]);
-    size_t image_size = image.data_.size() / sizeof(float);
+    float* const float_data = Cast<float>(&image->data_[0]);
+    size_t image_size = image->data_.size() / sizeof(float);
     Rand(float_data, image_size, vmin, vmax, seed);
 
-    return make_shared<Image>(image);
+    return image;
 }
