@@ -41,17 +41,17 @@ shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
                                                 const float& vmax,
                                                 const int& seed)
 {
-    Image image;
+    shared_ptr<Image> image = make_shared<Image>();
 
-    image.PrepareImage(width,
-                       height,
-                       num_of_channels,
-                       bytes_per_channel);
+    image->PrepareImage(width,
+                        height,
+                        num_of_channels,
+                        bytes_per_channel);
 
-    float* const depthData = Cast<float>(&image.data_[0]);
+    float* const depthData = Cast<float>(&image->data_[0]);
     Rand(depthData, width * height, vmin, vmax, seed);
 
-    return make_shared<Image>(image);
+    return image;
 }
 
 // ----------------------------------------------------------------------------
