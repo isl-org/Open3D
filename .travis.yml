@@ -104,7 +104,6 @@ before_install:
     fi
   # scripts/install-deps-osx.sh works well
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      brew install python;
       ./util/scripts/install-deps-osx.sh;
       ./util/scripts/install-gtest.sh;
     fi
@@ -112,6 +111,7 @@ before_install:
   # for reference, display cmake and python version
   - python -V
   - cmake --version
+  - export nproc=2
   # - pip install numpy
 
 script:
