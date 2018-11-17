@@ -40,11 +40,57 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileExtensionInLowerCase)
 {
-    string path = "test/filesystem/fileName.EXT";
-
+    string path;
     string result;
+
+    // empty
+    path = "";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("", result);
+
+    // no folder tree
+    path = "fileName.EXT";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
+
+    // just a dot
+    path = "fileName.";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("", result);
+
+    path = "test/filesystem/fileName.EXT";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", result);
+
+    // no extension
+    path = "test/filesystem/fileName";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("", result);
+
+    // multiple extensions
+    path = "test/filesystem/fileName.EXT.EXT";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", result);
+
+    // multiple dots
+    path = "test/filesystem/fileName..EXT";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", result);
+
+    // dot before the /
+    path = "test/filesystem.EXT/fileName";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("", result);
+
+    // space in file name
+    path = "test/filesystem/fileName .EXT";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ("ext", result);
+
+    // space in extension
+    path = "test/filesystem/fileName. EXT";
+    result = filesystem::GetFileExtensionInLowerCase(path);
+    EXPECT_EQ(" ext", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -53,11 +99,42 @@ TEST(FileSystem, GetFileExtensionInLowerCase)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileNameWithoutExtension)
 {
-    string path = "test/filesystem/fileName.ext";
-
+    string path;
     string result;
+
+    // empty
+    path = "";
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("", result);
+
+    // no folder tree
+    path = "fileName.EXT";
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("fileName", result);
+
+    path = "test/filesystem/fileName.EXT";
     result = filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("test/filesystem/fileName", result);
+
+    // no extension
+    path = "test/filesystem/fileName";
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/filesystem/fileName", result);
+
+    // multiple extensions
+    path = "test/filesystem/fileName.EXT.EXT";
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/filesystem/fileName.EXT", result);
+
+    // multiple dots
+    path = "test/filesystem/fileName..EXT";
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/filesystem/fileName.", result);
+
+    // space in file name
+    path = "test/filesystem/fileName .EXT";
+    result = filesystem::GetFileNameWithoutExtension(path);
+    EXPECT_EQ("test/filesystem/fileName ", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -65,11 +142,42 @@ TEST(FileSystem, GetFileNameWithoutExtension)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileNameWithoutDirectory)
 {
-    string path = "test/filesystem/fileName.ext";
-
+    string path;
     string result;
+
+    // empty
+    path = "";
     result = filesystem::GetFileNameWithoutDirectory(path);
-    EXPECT_EQ("fileName.ext", result);
+    EXPECT_EQ("", result);
+
+    // no folder tree
+    path = "fileName.EXT";
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName.EXT", result);
+
+    path = "test/filesystem/fileName.EXT";
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName.EXT", result);
+
+    // no extension
+    path = "test/filesystem/fileName";
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName", result);
+
+    // multiple extensions
+    path = "test/filesystem/fileName.EXT.EXT";
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName.EXT.EXT", result);
+
+    // multiple dots
+    path = "test/filesystem/fileName..EXT";
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName..EXT", result);
+
+    // space in file name
+    path = "test/filesystem/fileName .EXT";
+    result = filesystem::GetFileNameWithoutDirectory(path);
+    EXPECT_EQ("fileName .EXT", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -77,9 +185,40 @@ TEST(FileSystem, GetFileNameWithoutDirectory)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetFileParentDirectory)
 {
-    string path = "test/filesystem/fileName.ext";
-
+    string path;
     string result;
+
+    // empty
+    path = "";
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("", result);
+
+    // no folder tree
+    path = "fileName.EXT";
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("", result);
+
+    path = "test/filesystem/fileName.EXT";
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/filesystem/", result);
+
+    // no extension
+    path = "test/filesystem/fileName";
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/filesystem/", result);
+
+    // multiple extensions
+    path = "test/filesystem/fileName.EXT.EXT";
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/filesystem/", result);
+
+    // multiple dots
+    path = "test/filesystem/fileName..EXT";
+    result = filesystem::GetFileParentDirectory(path);
+    EXPECT_EQ("test/filesystem/", result);
+
+    // space in file name
+    path = "test/filesystem/fileName .EXT";
     result = filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("test/filesystem/", result);
 }
@@ -89,13 +228,19 @@ TEST(FileSystem, GetFileParentDirectory)
 // ----------------------------------------------------------------------------
 TEST(FileSystem, GetRegularizedDirectoryName)
 {
-    string path = "test/filesystem";
-
+    string path;
     string result;
+
+    path = "";
+    result = filesystem::GetRegularizedDirectoryName(path);
+    EXPECT_EQ("/", result);
+
+    path = "test/filesystem";
     result = filesystem::GetRegularizedDirectoryName(path);
     EXPECT_EQ("test/filesystem/", result);
 
-    result = filesystem::GetRegularizedDirectoryName(result);
+    path = "test/filesystem/";
+    result = filesystem::GetRegularizedDirectoryName(path);
     EXPECT_EQ("test/filesystem/", result);
 }
 
