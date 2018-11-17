@@ -63,12 +63,9 @@ std::string GetFileExtensionInLowerCase(const std::string &filename)
 
 std::string GetFileNameWithoutExtension(const std::string &filename)
 {
-    std::string ext = GetFileExtensionInLowerCase(filename);
-    if (ext.length() >= filename.length() - 1) {
-        return "";
-    } else {
-        return filename.substr(0, filename.length() - ext.length() - 1);
-    }
+    size_t dot_pos = filename.find_last_of(".");
+
+    return filename.substr(0, dot_pos);
 }
 
 std::string GetFileNameWithoutDirectory(const std::string &filename)
