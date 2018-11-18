@@ -26,15 +26,13 @@
 
 #include "ColorMapOptimization.h"
 
-#include <Eigen/Dense>
-
 #include <Core/Utility/Console.h>
+#include <Core/Utility/Eigen.h>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <IO/ClassIO/TriangleMeshIO.h>
-#include <Core/Utility/Eigen.h>
 
 namespace open3d {
 
@@ -109,7 +107,7 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         MakeVertexAndImageVisibility(const TriangleMesh& mesh,
         const std::vector<RGBDImage>& images_rgbd,
-        const std::vector<Image>& images_mask,
+        const std::vector<std::shared_ptr<Image>>& images_mask,
         const PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option)
 {
@@ -134,7 +132,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
             float d_sensor = *PointerAt<float>(images_rgbd[c].depth_, u_d, v_d);
             if (d_sensor > option.maximum_allowable_depth_)
                 continue;
-            if (*PointerAt<unsigned char>(images_mask[c], u_d, v_d) == 255)
+            if (*PointerAt<unsigned char>(*images_mask[c], u_d, v_d) == 255)
                 continue;
             if (std::fabs(d - d_sensor) <
                     option.depth_threshold_for_visiblity_check_) {
@@ -426,17 +424,14 @@ void OptimizeImageCoorNonrigid(
 #pragma omp critical
 #endif
             {
-                bool success = false;
+                bool success;
                 Eigen::VectorXd result;
                 std::tie(success, result) = SolveLinearSystem(JJ, -Jb, false);
-                Eigen::Affine3d aff_mat;
-                aff_mat.linear() = (Eigen::Matrix3d)
-                        Eigen::AngleAxisd(result(2),Eigen::Vector3d::UnitZ())
-                        * Eigen::AngleAxisd(result(1),Eigen::Vector3d::UnitY())
-                        * Eigen::AngleAxisd(result(0),Eigen::Vector3d::UnitX());
-                aff_mat.translation() =
-                        Eigen::Vector3d(result(3), result(4), result(5));
-                pose = aff_mat.matrix() * pose;
+                Eigen::Vector6d result_pose;
+                result_pose << result.block(0,0,6,1);
+                auto delta = TransformVector6dToMatrix4d(result_pose);
+                pose = delta * pose;
+
                 for (int j = 0; j < nonrigidval; j++) {
                     warping_fields[i].flow_(j) += result(6 + j);
                 }
@@ -532,16 +527,12 @@ void OptimizeImageCoorRigid(
                 rr += r * r;
                 this_num++;
             }
-            Eigen::VectorXd result(6);
-            result = -JJ.inverse() * Jb;
-            Eigen::Affine3d aff_mat;
-            aff_mat.linear() = (Eigen::Matrix3d)
-                    Eigen::AngleAxisd(result(2), Eigen::Vector3d::UnitZ())
-                    * Eigen::AngleAxisd(result(1), Eigen::Vector3d::UnitY())
-                    * Eigen::AngleAxisd(result(0), Eigen::Vector3d::UnitX());
-            aff_mat.translation() =
-                    Eigen::Vector3d(result(3), result(4), result(5));
-            pose = aff_mat.matrix() * pose;
+
+            bool is_success;
+            Eigen::Matrix4d delta;
+            std::tie(is_success, delta) =
+                    SolveJacobianSystemAndObtainExtrinsicMatrix(JJ, Jb);
+            pose = delta * pose;
             camera.parameters_[i].extrinsic_ = pose;
 #ifdef _OPENMP
 #pragma omp critical
@@ -658,40 +649,19 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
     return std::move(std::make_tuple(images_gray, images_dx, images_dy));
 }
 
-std::vector<Image> MakeDepthMasks(
+std::vector<std::shared_ptr<Image>> CreateDepthBoundaryMasks(
         const std::vector<RGBDImage>& images_rgbd,
         const ColorMapOptimizationOption& option)
 {
     auto n_images = images_rgbd.size();
-    std::vector<Image> images_mask;
-    for (int i=0; i<n_images; i++) {
+    std::vector<std::shared_ptr<Image>> masks;
+    for (auto i=0; i<n_images; i++) {
         PrintDebug("[MakeDepthMasks] Image %d/%d\n", i, n_images);
-        int width = images_rgbd[i].depth_.width_;
-        int height = images_rgbd[i].depth_.height_;
-        auto depth_image = CreateFloatImageFromImage(images_rgbd[i].depth_);
-        auto depth_image_gradient_dx = FilterImage(*depth_image,
-                Image::FilterType::Sobel3Dx);
-        auto depth_image_gradient_dy = FilterImage(*depth_image,
-                Image::FilterType::Sobel3Dy);
-        auto mask = std::make_shared<Image>();
-        mask->PrepareImage(width, height, 1, 1);
-        for (int v=0; v<height; v++) {
-            for (int u=0; u<width; u++) {
-                double dx = *PointerAt<float>(*depth_image_gradient_dx, u, v);
-                double dy = *PointerAt<float>(*depth_image_gradient_dy, u, v);
-                double mag = sqrt(dx * dx + dy * dy);
-                if (mag > option.depth_threshold_for_discontinuity_check_) {
-                    *PointerAt<unsigned char>(*mask, u, v) = 255;
-                } else {
-                    *PointerAt<unsigned char>(*mask, u, v) = 0;
-                }
-            }
-        }
-        auto mask_dilated = DilateImage(*mask,
-                option.half_dilation_kernel_size_for_discontinuity_map_);
-        images_mask.push_back(*mask_dilated);
+        masks.push_back(CreateDepthBoundaryMask(images_rgbd[i].depth_,
+                option.depth_threshold_for_discontinuity_check_,
+                option.half_dilation_kernel_size_for_discontinuity_map_));
     }
-    return std::move(images_mask);
+    return masks;
 }
 
 }    // unnamed namespace
@@ -710,7 +680,7 @@ void ColorMapOptimization(TriangleMesh& mesh,
             MakeGradientImages(images_rgbd);
 
     PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
-    auto images_mask = MakeDepthMasks(images_rgbd, option);
+    auto images_mask = CreateDepthBoundaryMasks(images_rgbd, option);
 
     PrintDebug("[ColorMapOptimization] :: VisibilityCheck\n");
     std::vector<std::vector<int>> visiblity_vertex_to_image;
