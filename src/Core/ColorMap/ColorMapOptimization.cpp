@@ -26,12 +26,13 @@
 
 #include "ColorMapOptimization.h"
 
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Eigen.h>
+#include <Core/ColorMap/ColorMapOptimizationJacobian.h>
+#include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Geometry/TriangleMesh.h>
-#include <Core/Camera/PinholeCameraTrajectory.h>
+#include <Core/Utility/Console.h>
+#include <Core/Utility/Eigen.h>
 #include <IO/ClassIO/TriangleMeshIO.h>
 
 namespace open3d {
@@ -470,76 +471,44 @@ void OptimizeImageCoorRigid(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int i = 0; i < n_camera; i++) {
-            Eigen::MatrixXd JJ(6, 6);
-            Eigen::VectorXd Jb(6);
-            JJ.setZero();
-            Jb.setZero();
-            double rr = 0.0;
-            int this_num = 0;
-
-            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-            intr.block<3,3>(0,0) =
-                    camera.parameters_[i].intrinsic_.intrinsic_matrix_;
-            intr(3, 3) = 1.0;
-            double fx = intr(0, 0);
-            double fy = intr(1, 1);
+        for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
-            pose = camera.parameters_[i].extrinsic_;
-
-            for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
-                    iter++) {
-                int j = visiblity_image_to_vertex[i][iter];
-                Eigen::Vector3d V = mesh.vertices_[j];
-                Eigen::Vector4d G = pose * Eigen::Vector4d(V(0), V(1), V(2), 1);
-                Eigen::Vector4d L = intr * G;
-                double u = L(0) / L(2);
-                double v = L(1) / L(2);
-                if (!images_gray[i]->TestImageBoundary(u, v,
-                        IMAGE_BOUNDARY_MARGIN))
-                    continue;
-                bool valid; double gray, dIdx, dIdy;
-                std::tie(valid, gray) = images_gray[i]->FloatValueAt(u, v);
-                std::tie(valid, dIdx) = images_dx[i]->FloatValueAt(u, v);
-                std::tie(valid, dIdy) = images_dy[i]->FloatValueAt(u, v);
-                if (gray == -1.0)
-                    continue;
-                double invz = 1. / G(2);
-                double v0 = dIdx * fx * invz;
-                double v1 = dIdy * fy * invz;
-                double v2 = -(v0 * G(0) + v1 * G(1)) * invz;
-                double C[6];
-                C[0] = (-G(2) * v1 + G(1) * v2);
-                C[1] = (G(2) * v0 - G(0) * v2);
-                C[2] = (-G(1) * v0 + G(0) * v1);
-                C[3] = v0;
-                C[4] = v1;
-                C[5] = v2;
-                for (int x = 0; x < 6; x++) {
-                    for (int y = 0; y < 6; y++) {
-                        JJ(x, y) += C[x] * C[y];
-                    }
-                }
-                double r = (proxy_intensity[j] - gray);
-                for (int x = 0; x < 6; x++) {
-                    Jb(x) -= r * C[x];
-                }
-                rr += r * r;
-                this_num++;
-            }
-
+            pose = camera.parameters_[c].extrinsic_;
+            
+            auto intrinsic = camera.parameters_[c].intrinsic_.intrinsic_matrix_;
+            auto extrinsic = camera.parameters_[c].extrinsic_;
+            ColorMapOptimizationJacobian jac;
+            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+            intr.block<3,3>(0,0) = intrinsic;
+            intr(3, 3) = 1.0;
+            
+            auto f_lambda = [&]
+            (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
+                    jac.ComputeJacobianAndResidualRigid(i, J_r, r,
+                    mesh, proxy_intensity,
+                    images_gray[c], images_dx[c], images_dy[c],
+                    intr, extrinsic, visiblity_image_to_vertex[c],
+                    IMAGE_BOUNDARY_MARGIN);
+            };
+            Eigen::Matrix6d JTJ;
+            Eigen::Vector6d JTr;
+            double r2;
+            std::tie(JTJ, JTr, r2) = ComputeJTJandJTr
+                    <Eigen::Matrix6d, Eigen::Vector6d>(f_lambda,
+                    visiblity_image_to_vertex[c].size(), false);
+            
             bool is_success;
             Eigen::Matrix4d delta;
             std::tie(is_success, delta) =
-                    SolveJacobianSystemAndObtainExtrinsicMatrix(JJ, Jb);
+                    SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
             pose = delta * pose;
-            camera.parameters_[i].extrinsic_ = pose;
+            camera.parameters_[c].extrinsic_ = pose;
 #ifdef _OPENMP
 #pragma omp critical
 #endif
             {
-                residual += rr;
-                total_num_ += this_num;
+                residual += r2;
+                total_num_ += visiblity_image_to_vertex[c].size();
             }
         }
         PrintDebug("Residual error : %.6f (avg : %.6f)\n",
