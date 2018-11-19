@@ -29,22 +29,23 @@
 #include "Core/Geometry/Image.h"
 #include "Core/Camera/PinholeCameraIntrinsic.h"
 
+using namespace Eigen;
+using namespace open3d;
 using namespace std;
+using namespace unit_test;
 
-static const int default_width = 1920;
-static const int default_height = 1080;
-static const int default_num_of_channels = 3;
-static const int default_bytes_per_channel = 1;
+using ConversionType = Image::ColorToIntensityConversionType;
+using FilterType = Image::FilterType;
 
 // ----------------------------------------------------------------------------
 // test the default constructor scenario
 // ----------------------------------------------------------------------------
 TEST(Image, DefaultConstructor)
 {
-    open3d::Image image;
+    Image image;
 
     // inherited from Geometry2D
-    EXPECT_EQ(open3d::Geometry::GeometryType::Image, image.GetGeometryType());
+    EXPECT_EQ(Geometry::GeometryType::Image, image.GetGeometryType());
     EXPECT_EQ(2, image.Dimension());
 
     // public member variables
@@ -58,8 +59,8 @@ TEST(Image, DefaultConstructor)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMaxBound());
+    ExpectEQ(Zero2d, image.GetMinBound());
+    ExpectEQ(Zero2d, image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -70,34 +71,40 @@ TEST(Image, DefaultConstructor)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateImage)
 {
-    open3d::Image image;
+    int width = 1920;
+    int height = 1080;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
 
-    image.PrepareImage(default_width,
-                       default_height,
-                       default_num_of_channels,
-                       default_bytes_per_channel);
+    Image image;
+
+    image.PrepareImage(width,
+                       height,
+                       num_of_channels,
+                       bytes_per_channel);
 
     // public member variables
-    EXPECT_EQ(default_width, image.width_);
-    EXPECT_EQ(default_height, image.height_);
-    EXPECT_EQ(default_num_of_channels, image.num_of_channels_);
-    EXPECT_EQ(default_bytes_per_channel, image.bytes_per_channel_);
-    EXPECT_EQ(default_width *
-              default_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(width, image.width_);
+    EXPECT_EQ(height, image.height_);
+    EXPECT_EQ(num_of_channels, image.num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, image.bytes_per_channel_);
+    EXPECT_EQ(width *
+              height *
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 
     // public members
     EXPECT_FALSE(image.IsEmpty());
     EXPECT_TRUE(image.HasData());
 
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMinBound());
-    unit_test::ExpectEQ((float)default_width, (float)default_height, image.GetMaxBound());
+    ExpectEQ(Zero2d, image.GetMinBound());
+    ExpectEQ(Vector2d(width, height),
+                        image.GetMaxBound());
 
     EXPECT_TRUE(image.TestImageBoundary(0, 0));
-    EXPECT_EQ(default_width *
-              default_num_of_channels *
-              default_bytes_per_channel, image.BytesPerLine());
+    EXPECT_EQ(width *
+              num_of_channels *
+              bytes_per_channel, image.BytesPerLine());
 }
 
 // ----------------------------------------------------------------------------
@@ -105,12 +112,14 @@ TEST(Image, CreateImage)
 // ----------------------------------------------------------------------------
 TEST(Image, Clear)
 {
-    open3d::Image image;
+    int width = 1920;
+    int height = 1080;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
 
-    image.PrepareImage(default_width,
-                       default_height,
-                       default_num_of_channels,
-                       default_bytes_per_channel);
+    Image image;
+
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     image.Clear();
 
@@ -125,8 +134,8 @@ TEST(Image, Clear)
     EXPECT_TRUE(image.IsEmpty());
     EXPECT_FALSE(image.HasData());
 
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMinBound());
-    unit_test::ExpectEQ(0.0, 0.0, image.GetMaxBound());
+    ExpectEQ(Zero2d, image.GetMinBound());
+    ExpectEQ(Zero2d, image.GetMaxBound());
 
     EXPECT_FALSE(image.TestImageBoundary(0, 0));
     EXPECT_EQ(0, image.BytesPerLine());
@@ -137,33 +146,30 @@ TEST(Image, Clear)
 // ----------------------------------------------------------------------------
 TEST(Image, FloatValueAt)
 {
-    open3d::Image image;
+    Image image;
 
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    float* im = reinterpret_cast<float*>(&image.data_[0]);
+    float* const im = Cast<float>(&image.data_[0]);
 
-    im[0 * local_width + 0] = 4.0f;
-    im[0 * local_width + 1] = 4.0f;
-    im[1 * local_width + 0] = 4.0f;
-    im[1 * local_width + 1] = 4.0f;
+    im[0 * width + 0] = 4.0f;
+    im[0 * width + 1] = 4.0f;
+    im[1 * width + 0] = 4.0f;
+    im[1 * width + 1] = 4.0f;
 
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 0.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.0, 1.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 0.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(1.0, 1.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(4.0f, image.FloatValueAt(0.5, 0.5).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(0.0, 1.5).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, image.FloatValueAt(1.5, 0.0).second, THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, image.FloatValueAt(1.5, 1.5).second, THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -171,12 +177,14 @@ TEST(Image, FloatValueAt)
 // ----------------------------------------------------------------------------
 TEST(Image, DISABLED_MemberData)
 {
-    open3d::Image image;
+    int width = 1920;
+    int height = 1080;
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
 
-    image.PrepareImage(default_width,
-                       default_height,
-                       default_num_of_channels,
-                       default_bytes_per_channel);
+    Image image;
+
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     int temp_width = 320;
     int temp_height = 240;
@@ -185,37 +193,37 @@ TEST(Image, DISABLED_MemberData)
 
     image.width_ = temp_width;
     EXPECT_EQ(temp_width *
-              default_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+              height *
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 
-    image.width_ = default_width;
+    image.width_ = width;
     image.height_ = temp_height;
-    EXPECT_EQ(default_width *
+    EXPECT_EQ(width *
               temp_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 
-    image.height_ = default_height;
+    image.height_ = height;
     image.num_of_channels_ = temp_num_of_channels;
-    EXPECT_EQ(default_width *
-              default_height *
+    EXPECT_EQ(width *
+              height *
               temp_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+              bytes_per_channel, image.data_.size());
 
-    image.num_of_channels_ = default_num_of_channels;
+    image.num_of_channels_ = num_of_channels;
     image.bytes_per_channel_ = temp_bytes_per_channel;
-    EXPECT_EQ(default_width *
-              default_height *
-              default_num_of_channels *
+    EXPECT_EQ(width *
+              height *
+              num_of_channels *
               temp_bytes_per_channel, image.data_.size());
 
-    image.bytes_per_channel_ = default_bytes_per_channel;
+    image.bytes_per_channel_ = bytes_per_channel;
     image.data_ = vector<uint8_t>();
-    EXPECT_EQ(default_width *
-              default_height *
-              default_num_of_channels *
-              default_bytes_per_channel, image.data_.size());
+    EXPECT_EQ(width *
+              height *
+              num_of_channels *
+              bytes_per_channel, image.data_.size());
 }
 
 // ----------------------------------------------------------------------------
@@ -223,23 +231,23 @@ TEST(Image, DISABLED_MemberData)
 // ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage)
 {
-    open3d::PinholeCameraIntrinsic intrinsic =
-        open3d::PinholeCameraIntrinsic(
-            open3d::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    PinholeCameraIntrinsic intrinsic =
+        PinholeCameraIntrinsic(
+            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto image = CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
 
     // test image dimensions
-    const int local_width = 640;
-    const int local_height = 480;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 640;
+    int height = 480;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
     EXPECT_FALSE(image->IsEmpty());
-    EXPECT_EQ(local_width, image->width_);
-    EXPECT_EQ(local_height, image->height_);
-    EXPECT_EQ(local_num_of_channels, image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, image->bytes_per_channel_);
+    EXPECT_EQ(width, image->width_);
+    EXPECT_EQ(height, image->height_);
+    EXPECT_EQ(num_of_channels, image->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, image->bytes_per_channel_);
 }
 
 // ----------------------------------------------------------------------------
@@ -252,31 +260,27 @@ void TEST_CreateFloatImageFromImage(
     const int& num_of_channels,
     const int& bytes_per_channel,
     const vector<uint8_t>& ref,
-    const open3d::Image::ColorToIntensityConversionType& type)
+    const Image::ColorToIntensityConversionType& type)
 {
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int float_num_of_channels = 1;
+    int width = 5;
+    int height = 5;
+    int float_num_of_channels = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       num_of_channels,
-                       bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
-    EXPECT_EQ(local_width, float_image->width_);
-    EXPECT_EQ(local_height, float_image->height_);
+    EXPECT_EQ(width, float_image->width_);
+    EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
-    for (size_t i = 0; i < float_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], float_image->data_[i]);
+    ExpectEQ(ref, float_image->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -301,7 +305,7 @@ TEST(Image, CreateFloatImageFromImage_1_1)
             8,   62,  206,  205,   77,   63,  157,  156,   28,   62
     };
 
-    TEST_CreateFloatImageFromImage(1, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 1, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -326,7 +330,7 @@ TEST(Image, CreateFloatImageFromImage_1_2)
           178,   70,    0,  205,  106,   71,    0,   17,  114,   71
     };
 
-    TEST_CreateFloatImageFromImage(1, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 2, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -351,7 +355,7 @@ TEST(Image, CreateFloatImageFromImage_1_4)
           243,  150,  167,  218,  112,  235,  101,  207,  174,  232
     };
 
-    TEST_CreateFloatImageFromImage(1, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(1, 4, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -377,7 +381,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Weighted)
            29,   63,  197,  186,    3,   63,  145,   27,   72,   63
     };
 
-    TEST_CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 1, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -403,7 +407,7 @@ TEST(Image, CreateFloatImageFromImage_3_1_Equal)
            29,   63,  197,  186,    3,   63,  145,   27,   72,   63
     };
 
-    TEST_CreateFloatImageFromImage(3, 1, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 1, ref, ConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -429,7 +433,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Weighted)
            23,   71,  210,  181,   85,   71,  101,   14,   28,   71
     };
 
-    TEST_CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 2, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -455,7 +459,7 @@ TEST(Image, CreateFloatImageFromImage_3_2_Equal)
            23,   71,  210,  181,   85,   71,  101,   14,   28,   71
     };
 
-    TEST_CreateFloatImageFromImage(3, 2, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 2, ref, ConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -481,7 +485,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Weighted)
            98,  222,  145,  236,   94,  233,   36,   85,  141,  233
     };
 
-    TEST_CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Weighted);
+    TEST_CreateFloatImageFromImage(3, 4, ref, ConversionType::Weighted);
 }
 
 // ----------------------------------------------------------------------------
@@ -507,7 +511,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal)
            98,  222,  145,  236,   94,  233,   36,   85,  141,  233
     };
 
-    TEST_CreateFloatImageFromImage(3, 4, ref, open3d::Image::ColorToIntensityConversionType::Equal);
+    TEST_CreateFloatImageFromImage(3, 4, ref, ConversionType::Equal);
 }
 
 // ----------------------------------------------------------------------------
@@ -515,29 +519,26 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal)
 // ----------------------------------------------------------------------------
 TEST(Image, PointerAt)
 {
-    open3d::Image image;
+    Image image;
 
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    float* im = reinterpret_cast<float*>(&image.data_[0]);
+    float* const im = Cast<float>(&image.data_[0]);
 
-    im[0 * local_width + 0] = 0.0f;
-    im[0 * local_width + 1] = 1.0f;
-    im[1 * local_width + 0] = 2.0f;
-    im[1 * local_width + 1] = 3.0f;
+    im[0 * width + 0] = 0.0f;
+    im[0 * width + 1] = 1.0f;
+    im[1 * width + 0] = 2.0f;
+    im[1 * width + 1] = 3.0f;
 
-    EXPECT_NEAR(0.0f, *open3d::PointerAt<float>(image, 0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, *open3d::PointerAt<float>(image, 1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, *open3d::PointerAt<float>(image, 0, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(3.0f, *open3d::PointerAt<float>(image, 1, 1), unit_test::THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0f, *PointerAt<float>(image, 0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, *PointerAt<float>(image, 1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, *PointerAt<float>(image, 0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(3.0f, *PointerAt<float>(image, 1, 1), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -560,31 +561,27 @@ TEST(Image, ConvertDepthToFloatImage)
            11,   57,   68,  190,   82,   58,  214,   94,   32,   57
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 1;
-    const int float_num_of_channels = 1;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+    int float_num_of_channels = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::ConvertDepthToFloatImage(image);
+    auto float_image = ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
-    EXPECT_EQ(local_width, float_image->width_);
-    EXPECT_EQ(local_height, float_image->height_);
+    EXPECT_EQ(width, float_image->width_);
+    EXPECT_EQ(height, float_image->height_);
     EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), float_image->bytes_per_channel_);
-    for (size_t i = 0; i < float_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], float_image->data_[i]);
+    ExpectEQ(ref, float_image->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -607,31 +604,27 @@ TEST(Image, FlipImage)
           249,  145,  118,  162,  118,  230,  110,    1,  179,  227
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
-    const int flip_bytes_per_channel = 1;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+    int flip_bytes_per_channel = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto flip_image = open3d::ConvertDepthToFloatImage(image);
+    auto flip_image = ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(flip_image->IsEmpty());
-    EXPECT_EQ(local_width, flip_image->width_);
-    EXPECT_EQ(local_height, flip_image->height_);
+    EXPECT_EQ(width, flip_image->width_);
+    EXPECT_EQ(height, flip_image->height_);
     EXPECT_EQ(flip_bytes_per_channel, flip_image->num_of_channels_);
     EXPECT_EQ(sizeof(float), flip_image->bytes_per_channel_);
-    for (size_t i = 0; i < flip_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], flip_image->data_[i]);
+    ExpectEQ(ref, flip_image->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -641,34 +634,30 @@ TEST(Image, FlipImage)
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
 void TEST_FilterImage(const vector<uint8_t>& ref,
-                 const open3d::Image::FilterType& filter)
+                 const Image::FilterType& filter)
 {
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto output_image = open3d::FilterImage(*float_image, filter);
+    auto output = FilterImage(*float_image, filter);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ(local_width, output_image->width_);
-    EXPECT_EQ(local_height, output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -691,7 +680,7 @@ TEST(Image, FilterImage_Gaussian3)
            52,  234,  108,  176,  182,  234,  146,  238,   64,  234
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian3);
+    TEST_FilterImage(ref, FilterType::Gaussian3);
 }
 
 // ----------------------------------------------------------------------------
@@ -714,7 +703,7 @@ TEST(Image, FilterImage_Gaussian5)
            44,  234,   32,  174,  126,  234,   84,  234,   47,  234
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian5);
+    TEST_FilterImage(ref, FilterType::Gaussian5);
 }
 
 // ----------------------------------------------------------------------------
@@ -737,7 +726,7 @@ TEST(Image, FilterImage_Gaussian7)
            18,  234,  108,  135,   55,  234,  187,   97,   17,  234
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Gaussian7);
+    TEST_FilterImage(ref, FilterType::Gaussian7);
 }
 
 // ----------------------------------------------------------------------------
@@ -760,7 +749,7 @@ TEST(Image, FilterImage_Sobel3Dx)
            52,  236,  140,   27,  131,  233,   33,  139,   48,  108
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Sobel3Dx);
+    TEST_FilterImage(ref, FilterType::Sobel3Dx);
 }
 
 // ----------------------------------------------------------------------------
@@ -783,7 +772,7 @@ TEST(Image, FilterImage_Sobel3Dy)
           112,  235,  229,  149,  243,  235,   12,  159,  128,  235
     };
 
-    TEST_FilterImage(ref, open3d::Image::FilterType::Sobel3Dy);
+    TEST_FilterImage(ref, FilterType::Sobel3Dy);
 }
 
 // ----------------------------------------------------------------------------
@@ -806,34 +795,30 @@ TEST(Image, FilterHorizontalImage)
           112,  234,  229,  149,  243,  234,   12,  159,  128,  234
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
     const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
 
-    auto output_image = open3d::FilterHorizontalImage(*float_image, Gaussian3);
+    auto output = FilterHorizontalImage(*float_image, Gaussian3);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ(local_width, output_image->width_);
-    EXPECT_EQ(local_height, output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -848,32 +833,28 @@ TEST(Image, DownsampleImage)
           205,  233,   49,  169,  227,   87
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto output_image = open3d::DownsampleImage(*float_image);
+    auto output = DownsampleImage(*float_image);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ((int)(local_width / 2), output_image->width_);
-    EXPECT_EQ((int)(local_height / 2), output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ((int)(width / 2), output->width_);
+    EXPECT_EQ((int)(height / 2), output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -896,33 +877,29 @@ TEST(Image, DilateImage)
           255,  255,  255,    0,    0,    0,    0,    0,  255,  255
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 1;
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
     for (size_t i = 0; i < image.data_.size(); i++)
         if (i % 9 == 0)
             image.data_[i] = 255;
 
-    auto output_image = open3d::DilateImage(image);
+    auto output = DilateImage(image);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ(local_width, output_image->width_);
-    EXPECT_EQ(local_height, output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -945,32 +922,28 @@ TEST(Image, LinearTransformImage)
            25,   62,  186,  125,   10,  236,   27,    8,   73,  233
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto output_image = open3d::CreateFloatImageFromImage(image);
+    auto output = CreateFloatImageFromImage(image);
 
-    open3d::LinearTransformImage(*output_image, 2.3, 0.15);
+    LinearTransformImage(*output, 2.3, 0.15);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ(local_width, output_image->width_);
-    EXPECT_EQ(local_height, output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -993,32 +966,28 @@ TEST(Image, ClipIntensityImage)
           168,   62,  195,  245,  168,   62,  195,  245,  168,   62
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 5;
-    const int local_height = 5;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto output_image = open3d::CreateFloatImageFromImage(image);
+    auto output = CreateFloatImageFromImage(image);
 
-    open3d::ClipIntensityImage(*output_image, 0.33, 0.71);
+    ClipIntensityImage(*output, 0.33, 0.71);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ(local_width, output_image->width_);
-    EXPECT_EQ(local_height, output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(ref[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->data_);
 }
 
 // ----------------------------------------------------------------------------
@@ -1027,32 +996,28 @@ TEST(Image, ClipIntensityImage)
 template<typename T>
 void TEST_CreateImageFromFloatImage()
 {
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 10;
-    const int local_height = 10;
-    const int local_num_of_channels = 1;
-    const int bytes_per_channel = sizeof(T);
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = sizeof(T);
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto output_image = open3d::CreateImageFromFloatImage<T>(*float_image);
+    auto output = CreateImageFromFloatImage<T>(*float_image);
 
-    EXPECT_FALSE(output_image->IsEmpty());
-    EXPECT_EQ(local_width, output_image->width_);
-    EXPECT_EQ(local_height, output_image->height_);
-    EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-    EXPECT_EQ(bytes_per_channel, output_image->bytes_per_channel_);
-    for (size_t i = 0; i < output_image->data_.size(); i++)
-        EXPECT_EQ(image.data_[i], output_image->data_[i]);
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(image.data_, output->data_);
 }
 
 template void TEST_CreateImageFromFloatImage<uint8_t>();
@@ -1107,42 +1072,38 @@ TEST(Image, FilterImagePyramid)
         }
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 6;
-    const int local_height = 6;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
-    const int local_num_of_levels = 2;
+    int width = 6;
+    int height = 6;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+    int num_of_levels = 2;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = open3d::CreateImagePyramid(*float_image, local_num_of_levels);
+    auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
 
-    auto outputPyramid = open3d::FilterImagePyramid(pyramid, open3d::Image::FilterType::Gaussian3);
+    auto output_pyramid = FilterImagePyramid(pyramid, FilterType::Gaussian3);
 
-    EXPECT_EQ(pyramid.size(), outputPyramid.size());
+    EXPECT_EQ(pyramid.size(), output_pyramid.size());
 
     for (size_t p = 0; p < pyramid.size(); p++)
     {
-        auto input_image = pyramid[p];
-        auto output_image = outputPyramid[p];
+        auto input = pyramid[p];
+        auto output = output_pyramid[p];
 
-        EXPECT_FALSE(output_image->IsEmpty());
-        EXPECT_EQ(input_image->width_, output_image->width_);
-        EXPECT_EQ(input_image->height_, output_image->height_);
-        EXPECT_EQ(input_image->num_of_channels_, output_image->num_of_channels_);
-        EXPECT_EQ(input_image->bytes_per_channel_, output_image->bytes_per_channel_);
-        for (size_t i = 0; i < output_image->data_.size(); i++)
-            EXPECT_EQ(ref[p][i], output_image->data_[i]);
+        EXPECT_FALSE(output->IsEmpty());
+        EXPECT_EQ(input->width_, output->width_);
+        EXPECT_EQ(input->height_, output->height_);
+        EXPECT_EQ(input->num_of_channels_, output->num_of_channels_);
+        EXPECT_EQ(input->bytes_per_channel_, output->bytes_per_channel_);
+        ExpectEQ(ref[p], output->data_);
     }
 }
 
@@ -1179,39 +1140,35 @@ TEST(Image, CreateImagePyramid)
         }
     };
 
-    open3d::Image image;
+    Image image;
 
     // test image dimensions
-    const int local_width = 6;
-    const int local_height = 6;
-    const int local_num_of_channels = 1;
-    const int local_bytes_per_channel = 4;
-    const int local_num_of_levels = 2;
+    int width = 6;
+    int height = 6;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+    int num_of_levels = 2;
 
-    image.PrepareImage(local_width,
-                       local_height,
-                       local_num_of_channels,
-                       local_bytes_per_channel);
+    image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
-    unit_test::Rand(image.data_, 0, 255, 0);
+    Rand(image.data_, 0, 255, 0);
 
-    auto float_image = open3d::CreateFloatImageFromImage(image);
+    auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = open3d::CreateImagePyramid(*float_image, local_num_of_levels);
+    auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
 
-    int expected_width = local_width;
-    int expected_height = local_width;
+    int expected_width = width;
+    int expected_height = width;
     for (size_t p = 0; p < pyramid.size(); p++)
     {
-        auto output_image = pyramid[p];
+        auto output = pyramid[p];
 
-        EXPECT_FALSE(output_image->IsEmpty());
-        EXPECT_EQ(expected_width, output_image->width_);
-        EXPECT_EQ(expected_height, output_image->height_);
-        EXPECT_EQ(local_num_of_channels, output_image->num_of_channels_);
-        EXPECT_EQ(local_bytes_per_channel, output_image->bytes_per_channel_);
-        for (size_t i = 0; i < output_image->data_.size(); i++)
-            EXPECT_EQ(ref[p][i], output_image->data_[i]);
+        EXPECT_FALSE(output->IsEmpty());
+        EXPECT_EQ(expected_width, output->width_);
+        EXPECT_EQ(expected_height, output->height_);
+        EXPECT_EQ(num_of_channels, output->num_of_channels_);
+        EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+        ExpectEQ(ref[p], output->data_);
 
         expected_width /= 2;
         expected_height /= 2;
