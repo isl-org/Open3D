@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest.h"
-#include "Raw.h"
+#include "Utility/UnitTest.h"
+#include "Utility/Raw.h"
 
 #include "Core/Geometry/LineSet.h"
 #include "Core/Geometry/PointCloud.h"
