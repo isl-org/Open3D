@@ -27,12 +27,15 @@
 #pragma once
 
 #include <vector>
+#include <Core/ColorMap/EigenHelperForNonRigidOptimization.h>
 #include <Core/Utility/Eigen.h>
 
 namespace open3d {
-    
+
 class Image;
-    
+
+class ImageWarpingField;
+
 class TriangleMesh;
 
 /// Base class that computes Jacobian from two RGB-D images
@@ -41,7 +44,7 @@ class ColorMapOptimizationJacobian
 public:
     ColorMapOptimizationJacobian() {}
 //    virtual ColorMapOptimizationJacobian() {}
-    
+
 public:
     /// Function to compute i-th row of J and r
     /// the vector form of J_r is basically 6x1 matrix, but it can be
@@ -49,7 +52,7 @@ public:
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
 //    virtual void ComputeJacobianAndResidual() const = 0;
     void ComputeJacobianAndResidualRigid(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+            int row, Eigen::Vector6d &J_r, double &r,
             const TriangleMesh& mesh,
             const std::vector<double>& proxy_intensity,
             const std::shared_ptr<Image>& images_gray,
@@ -59,6 +62,21 @@ public:
             const Eigen::Matrix4d &extrinsic,
             const std::vector<int>& visiblity_image_to_vertex,
             const int image_boundary_margin);
+
+    void ComputeJacobianAndResidualNonRigid(
+            int row, Eigen::Vector14d &J_r, double &r,
+            Eigen::Vector14d &pattern,
+            const TriangleMesh& mesh,
+            const std::vector<double>& proxy_intensity,
+            const std::shared_ptr<Image>& images_gray,
+            const std::shared_ptr<Image>& images_dx,
+            const std::shared_ptr<Image>& images_dy,
+            const ImageWarpingField& warping_fields,
+            const ImageWarpingField& warping_fields_init,
+            const Eigen::Matrix4d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
+            const std::vector<int>& visiblity_image_to_vertex,
+            const int image_boundary_margin);
 };
-    
+
 }	// namespace open3d

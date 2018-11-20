@@ -35,6 +35,8 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Eigen.h>
 
+#include <iostream>
+
 namespace open3d {
 
 namespace {
@@ -257,142 +259,68 @@ void OptimizeImageCoorNonrigid(
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-        for (int i = 0; i < n_camera; i++) {
-            int nonrigidval = warping_fields[i].anchor_w_ *
-                    warping_fields[i].anchor_h_ * 2;
-            Eigen::MatrixXd JJ = Eigen::MatrixXd::Zero(
-                    6 + nonrigidval, 6 + nonrigidval);
-            Eigen::VectorXd Jb = Eigen::VectorXd::Zero(6 + nonrigidval);
-            double rr = 0.0;
+        for (int c = 0; c < n_camera; c++) {
+            int nonrigidval = warping_fields[c].anchor_w_ *
+                    warping_fields[c].anchor_h_ * 2;
             double rr_reg = 0.0;
-            int this_num = 0;
 
-            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-            intr.block<3,3>(0,0) =
-                    camera.parameters_[i].intrinsic_.intrinsic_matrix_;
-            intr(3, 3) = 1.0;
-            double fx = intr(0, 0);
-            double fy = intr(1, 1);
             Eigen::Matrix4d pose;
-            pose = camera.parameters_[i].extrinsic_;
+            pose = camera.parameters_[c].extrinsic_;
 
-            double anchor_step = warping_fields[i].anchor_step_;
-            int anchor_w = warping_fields[i].anchor_w_;
-            for (auto iter = 0; iter < visiblity_image_to_vertex[i].size();
-                    iter++) {
-                int j = visiblity_image_to_vertex[i][iter];
-                Eigen::Vector3d V = mesh.vertices_[j];
-                Eigen::Vector4d G = pose * Eigen::Vector4d(V(0), V(1), V(2), 1);
-                Eigen::Vector4d L = intr * G;
-                double u = L(0) / L(2);
-                double v = L(1) / L(2);
-                int ii = (int)(u / anchor_step);
-                int jj = (int)(v / anchor_step);
-                double p = (u - ii * anchor_step) / anchor_step;
-                double q = (v - jj * anchor_step) / anchor_step;
-                Eigen::Vector2d grids[4] = {
-                    warping_fields[i].QueryFlow(ii, jj),
-                    warping_fields[i].QueryFlow(ii, jj + 1),
-                    warping_fields[i].QueryFlow(ii + 1, jj),
-                    warping_fields[i].QueryFlow(ii + 1, jj + 1),
-                };
-                Eigen::Vector2d uuvv = (1 - p) * (1 - q) * grids[0]
-                    + (1 - p) * (q)* grids[1]
-                    + (p)* (1 - q) * grids[2]
-                    + (p)* (q)* grids[3];
-                double uu = uuvv(0);
-                double vv = uuvv(1);
-                if (!images_gray[i]->TestImageBoundary(uu, vv,
-                        IMAGE_BOUNDARY_MARGIN))
-                    continue;
-                bool valid; double gray, dIdfx, dIdfy;
-                std::tie(valid, gray) = images_gray[i]->FloatValueAt(uu, vv);
-                std::tie(valid, dIdfx) = images_dx[i]->FloatValueAt(uu, vv);
-                std::tie(valid, dIdfy) = images_dy[i]->FloatValueAt(uu, vv);
-                Eigen::Vector2d dIdf(dIdfx, dIdfy);
-                Eigen::Vector2d dfdx = ((grids[2] - grids[0]) * (1 - q) +
-                        (grids[3] - grids[1]) * q) / anchor_step;
-                Eigen::Vector2d dfdy = ((grids[1] - grids[0]) * (1 - p) +
-                        (grids[3] - grids[2]) * p) / anchor_step;
-                double dIdx = dIdf.dot(dfdx);
-                double dIdy = dIdf.dot(dfdy);
-                double invz = 1. / G(2);
-                double v0 = dIdx * fx * invz;
-                double v1 = dIdy * fy * invz;
-                double v2 = -(v0 * G(0) + v1 * G(1)) * invz;
-                double C[6 + 8];
-                C[0] = -G(2) * v1 + G(1) * v2;
-                C[1] = G(2) * v0 - G(0) * v2;
-                C[2] = -G(1) * v0 + G(0) * v1;
-                C[3] = v0;
-                C[4] = v1;
-                C[5] = v2;
-                C[6] = dIdf(0) * (1 - p) * (1 - q);
-                C[7] = dIdf(1) * (1 - p) * (1 - q);
-                C[8] = dIdf(0) * (1 - p) * (q);
-                C[9] = dIdf(1) * (1 - p) * (q);
-                C[10] = dIdf(0) * (p)* (1 - q);
-                C[11] = dIdf(1) * (p)* (1 - q);
-                C[12] = dIdf(0) * (p)* (q);
-                C[13] = dIdf(1) * (p)* (q);
-                int idx[6 + 8];
-                idx[0] = 0;
-                idx[1] = 1;
-                idx[2] = 2;
-                idx[3] = 3;
-                idx[4] = 4;
-                idx[5] = 5;
-                idx[6] = 6 + (ii + jj * anchor_w) * 2;
-                idx[7] = 6 + (ii + jj * anchor_w) * 2 + 1;
-                idx[8] = 6 + (ii + (jj + 1) * anchor_w) * 2;
-                idx[9] = 6 + (ii + (jj + 1) * anchor_w) * 2 + 1;
-                idx[10] = 6 + ((ii + 1) + jj * anchor_w) * 2;
-                idx[11] = 6 + ((ii + 1) + jj * anchor_w) * 2 + 1;
-                idx[12] = 6 + ((ii + 1) + (jj + 1) * anchor_w) * 2;
-                idx[13] = 6 + ((ii + 1) + (jj + 1) * anchor_w) * 2 + 1;
-                for (int x = 0; x < 14; x++) {
-                    for (int y = 0; y < 14; y++) {
-                        JJ(idx[x], idx[y]) += C[x] * C[y];
-                    }
-                }
-                double r = (proxy_intensity[j] - gray);
-                for (int x = 0; x < 14; x++) {
-                    Jb(idx[x]) -= r * C[x];
-                }
-                rr += r * r;
-                this_num++;
-            }
-            if (this_num == 0)
-                continue;
+            auto intrinsic = camera.parameters_[c].intrinsic_.intrinsic_matrix_;
+            auto extrinsic = camera.parameters_[c].extrinsic_;
+            ColorMapOptimizationJacobian jac;
+            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+            intr.block<3,3>(0,0) = intrinsic;
+            intr(3, 3) = 1.0;
+
+            auto f_lambda = [&]
+            (int i, Eigen::Vector14d &J_r, double &r, Eigen::Vector14d &pattern) {
+                jac.ComputeJacobianAndResidualNonRigid(i, J_r, r, pattern,
+                        mesh, proxy_intensity,
+                        images_gray[c], images_dx[c], images_dy[c],
+                        warping_fields[c], warping_fields_init[c],
+                        intr, extrinsic, visiblity_image_to_vertex[c],
+                        IMAGE_BOUNDARY_MARGIN);
+            };
+            Eigen::MatrixXd JTJ;
+            Eigen::VectorXd JTr;
+            double r2;
+            int this_num = visiblity_image_to_vertex[c].size();
+            std::tie(JTJ, JTr, r2) = ComputeJTJandJTr
+            <Eigen::Vector14d, Eigen::MatrixXd, Eigen::VectorXd>(f_lambda,
+                    visiblity_image_to_vertex[c].size(), nonrigidval, false);
+
             double weight = option.non_rigid_anchor_point_weight_
                     * this_num / n_vertex;
             for (int j = 0; j < nonrigidval; j++) {
-                double r = weight * (warping_fields[i].flow_(j) -
-                        warping_fields_init[i].flow_(j));
-                JJ(6 + j, 6 + j) += weight * weight;
-                Jb(6 + j) += weight * r;
+                double r = weight * (warping_fields[c].flow_(j) -
+                        warping_fields_init[c].flow_(j));
+                JTJ(6 + j, 6 + j) += weight * weight;
+                JTr(6 + j) += weight * r;
                 rr_reg += r * r;
             }
+
+            bool success;
+            Eigen::VectorXd result;
+            std::tie(success, result) = SolveLinearSystem(JTJ, -JTr, false);
+            Eigen::Vector6d result_pose;
+            result_pose << result.block(0,0,6,1);
+            auto delta = TransformVector6dToMatrix4d(result_pose);
+            pose = delta * pose;
+
+            for (int j = 0; j < nonrigidval; j++) {
+                warping_fields[c].flow_(j) += result(6 + j);
+            }
+            camera.parameters_[c].extrinsic_ = pose;
 #ifdef _OPENMP
 #pragma omp critical
 #endif
             {
-                bool success;
-                Eigen::VectorXd result;
-                std::tie(success, result) = SolveLinearSystem(JJ, -Jb, false);
-                Eigen::Vector6d result_pose;
-                result_pose << result.block(0,0,6,1);
-                auto delta = TransformVector6dToMatrix4d(result_pose);
-                pose = delta * pose;
-
-                for (int j = 0; j < nonrigidval; j++) {
-                    warping_fields[i].flow_(j) += result(6 + j);
-                }
+                residual += r2;
+                residual_reg += rr_reg;
+                total_num_ += this_num;
             }
-            camera.parameters_[i].extrinsic_ = pose;
-            residual += rr;
-            residual_reg += rr_reg;
-            total_num_ += this_num;
         }
         PrintDebug("Residual error : %.6f, reg : %.6f\n",
                 residual, residual_reg);
@@ -426,16 +354,16 @@ void OptimizeImageCoorRigid(
         for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = camera.parameters_[c].extrinsic_;
-            
+
             auto intrinsic = camera.parameters_[c].intrinsic_.intrinsic_matrix_;
             auto extrinsic = camera.parameters_[c].extrinsic_;
             ColorMapOptimizationJacobian jac;
             Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
             intr.block<3,3>(0,0) = intrinsic;
             intr(3, 3) = 1.0;
-            
+
             auto f_lambda = [&]
-            (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
+            (int i, Eigen::Vector6d &J_r, double &r) {
                     jac.ComputeJacobianAndResidualRigid(i, J_r, r,
                     mesh, proxy_intensity,
                     images_gray[c], images_dx[c], images_dy[c],
@@ -448,7 +376,7 @@ void OptimizeImageCoorRigid(
             std::tie(JTJ, JTr, r2) = ComputeJTJandJTr
                     <Eigen::Matrix6d, Eigen::Vector6d>(f_lambda,
                     visiblity_image_to_vertex[c].size(), false);
-            
+
             bool is_success;
             Eigen::Matrix4d delta;
             std::tie(is_success, delta) =

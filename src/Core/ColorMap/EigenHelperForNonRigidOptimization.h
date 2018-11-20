@@ -24,24 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Core/Geometry/Image.h>
+#pragma once
+
+#include <tuple>
+#include <vector>
+#include <Eigen/Core>
+
+namespace Eigen {
+
+typedef Eigen::Matrix<double, 14, 14> Matrix14d;
+typedef Eigen::Matrix<double, 14, 1> Vector14d;
+
+}    // namespace Eigen
 
 namespace open3d {
 
-class ImageWarpingField {
+/// Function to compute JTJ and Jtr
+/// Input: function pointer f and total number of rows of Jacobian matrix
+/// Output: JTJ, JTr, sum of r^2
+/// Note: f takes index of row, and outputs corresponding residual and row vector.
+template<typename VecInType, typename MatOutType, typename VecOutType>
+std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
+        std::function<void(int, VecInType &, double &, VecInType &)> f,
+        int iteration_num, int nonrigidval, bool verbose = true);
 
-public:
-    ImageWarpingField (int width, int height, int number_of_vertical_anchors);
-    void InitializeWarpingFields(int width, int height,
-            int number_of_vertical_anchors);
-    Eigen::Vector2d QueryFlow(int i, int j) const;
-    Eigen::Vector2d GetImageWarpingField(double u, double v) const;
-
-public:
-    Eigen::VectorXd flow_;
-    int anchor_w_;
-    int anchor_h_;
-    double anchor_step_;
-};
-
-}	// namespace open3d
+}    // namespace open3d
