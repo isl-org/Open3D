@@ -150,7 +150,7 @@ configure_package_config_file(Open3DConfig.cmake.in
 # find_package Open3D Version
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
                                  VERSION ${PROJECT_VERSION}
-                                 COMPATIBILITY AnyNewerVersion)
+                                 COMPATIBILITY ExactVersion)
 
 # install
 install(TARGETS ${CMAKE_PROJECT_NAME}
