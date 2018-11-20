@@ -42,7 +42,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${OMP_LIBRARIES})
 
 # input_dirs: a list of absolute paths in the source dir
-# output_dirs: a list of absolute paths in the install dir
+# output_dirs: a list of relative paths in the install dir
 # input_base_dir: the base dir of input_dirs
 function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
     get_filename_component(absolute_input_base_dir ${input_base_dir} ABSOLUTE)
@@ -57,12 +57,8 @@ function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
             set(relative_path "")
             file(RELATIVE_PATH relative_path ${absolute_input_base_dir} ${input_dir})
 
-            # construct absolute path in the install dir
-            set(install_path "")
-            get_filename_component(install_path
-                                   "${relative_path}"
-                                   REALPATH
-                                   BASE_DIR "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}")
+            # construct relative path in the install dir
+            set(install_path "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/${relative_path}")
 
             # save
             list(APPEND converted ${install_path})
@@ -141,13 +137,20 @@ list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     ${3RDPARTY_LIBRARY_DIRS}
     ${OMP_LIBRARY_DIRS})
 
+include(CMakePackageConfigHelpers)
+
 # find_package Open3D
-configure_file(Open3DConfig.cmake.in
-               "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake" @ONLY)
+configure_package_config_file(Open3DConfig.cmake.in
+                              "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
+                              INSTALL_DESTINATION ${INSTALL_CMAKE_DIR}
+                              PATH_VARS CONFIG_Open3D_INCLUDE_DIRS CONFIG_Open3D_LIBRARY_DIRS
+                              NO_SET_AND_CHECK_MACRO
+                              NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
 # find_package Open3D Version
-configure_file(Open3DConfigVersion.cmake.in
-               "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake" @ONLY)
+write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
+                                 VERSION ${PROJECT_VERSION}
+                                 COMPATIBILITY AnyNewerVersion)
 
 # install
 install(TARGETS ${CMAKE_PROJECT_NAME}
