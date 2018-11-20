@@ -31,8 +31,6 @@
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/TriangleMesh.h>
 
-#include <iostream>
-
 namespace open3d {
 
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
