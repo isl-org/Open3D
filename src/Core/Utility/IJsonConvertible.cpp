@@ -125,7 +125,7 @@ bool IJsonConvertible::EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
 }
 
 bool IJsonConvertible::EigenMatrix4dFromJsonArray(Eigen::Matrix4d_u &mat,
-                                                  const Json::Value &value)
+        const Json::Value &value)
 {
     if (value.size() != 16) {
         return false;
@@ -135,6 +135,16 @@ bool IJsonConvertible::EigenMatrix4dFromJsonArray(Eigen::Matrix4d_u &mat,
         }
         return true;
     }
+}
+
+bool IJsonConvertible::EigenMatrix4dToJsonArray(const Eigen::Matrix4d_u &mat,
+        Json::Value &value)
+{
+    value.clear();
+    for (int i = 0; i < 16; i++) {
+        value.append(mat.coeffRef(i));
+    }
+    return true;
 }
 
 bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
@@ -161,7 +171,7 @@ bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
 }
 
 bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d_u &mat,
-                                                  const Json::Value &value)
+        const Json::Value &value)
 {
     if (value.size() != 36) {
         return false;
@@ -171,5 +181,15 @@ bool IJsonConvertible::EigenMatrix6dFromJsonArray(Eigen::Matrix6d_u &mat,
         }
         return true;
     }
+}
+
+bool IJsonConvertible::EigenMatrix6dToJsonArray(const Eigen::Matrix6d_u &mat,
+        Json::Value &value)
+{
+    value.clear();
+    for (int i = 0; i < 36; i++) {
+        value.append(mat.coeffRef(i));
+    }
+    return true;
 }
 }   // namespace open3d

@@ -29,6 +29,7 @@
 #include <tuple>
 #include <vector>
 #include <Eigen/Core>
+#include <Eigen/StdVector>
 
 namespace Eigen {
 

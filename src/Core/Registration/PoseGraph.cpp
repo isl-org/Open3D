@@ -88,7 +88,6 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
     if (EigenMatrix4dToJsonArray(transformation_, transformation_object) == false) {
         return false;
     }
-    
     value["transformation"] = transformation_object;
     Json::Value information_object;
     if (EigenMatrix6dToJsonArray(information_, information_object) == false) {
