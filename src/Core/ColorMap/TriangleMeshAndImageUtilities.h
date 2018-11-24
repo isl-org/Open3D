@@ -44,7 +44,7 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         MakeVertexAndImageVisibility(const TriangleMesh& mesh,
-        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const std::vector<std::shared_ptr<Image>>& images_mask,
         const PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option);
@@ -76,12 +76,12 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         std::vector<double>& proxy_intensity);
 
 void SetGeometryColorAverage(TriangleMesh& mesh,
-        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image);
 
 void SetGeometryColorAverage(TriangleMesh& mesh,
-        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const std::vector<ImageWarpingField>& warping_fields,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image);

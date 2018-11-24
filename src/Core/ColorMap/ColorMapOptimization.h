@@ -80,7 +80,7 @@ public:
 /// Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
 /// SIGGRAPH 2014
 void ColorMapOptimization(TriangleMesh& mesh,
-        const std::vector<RGBDImage>& imgs_rgbd,
+        const std::vector<std::shared_ptr<RGBDImage>>& imgs_rgbd,
         PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option =
         ColorMapOptimizationOption());

@@ -26,6 +26,7 @@
 
 #include "ColorMapOptimization.h"
 
+#include <memory>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Core/ColorMap/ColorMapOptimizationJacobian.h>
 #include <Core/ColorMap/ImageWarpingField.h>
@@ -206,15 +207,18 @@ void OptimizeImageCoorRigid(
 
 std::tuple<std::vector<std::shared_ptr<Image>>,
         std::vector<std::shared_ptr<Image>>,
+        std::vector<std::shared_ptr<Image>>,
+        std::vector<std::shared_ptr<Image>>,
         std::vector<std::shared_ptr<Image>>> MakeGradientImages(
-        const std::vector<RGBDImage>& images_rgbd)
+        const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd)
 {
-    auto n_images = images_rgbd.size();
     std::vector<std::shared_ptr<Image>> images_gray;
     std::vector<std::shared_ptr<Image>> images_dx;
     std::vector<std::shared_ptr<Image>> images_dy;
-    for (int i=0; i<n_images; i++) {
-        auto gray_image = CreateFloatImageFromImage(images_rgbd[i].color_);
+    std::vector<std::shared_ptr<Image>> images_color;
+    std::vector<std::shared_ptr<Image>> images_depth;
+    for (auto i=0; i<images_rgbd.size(); i++) {
+        auto gray_image = CreateFloatImageFromImage(images_rgbd[i]->color_);
         auto gray_image_filtered = FilterImage(*gray_image,
                 Image::FilterType::Gaussian3);
         images_gray.push_back(gray_image_filtered);
@@ -222,19 +226,24 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
                 Image::FilterType::Sobel3Dx));
         images_dy.push_back(FilterImage(*gray_image_filtered,
                 Image::FilterType::Sobel3Dy));
+        auto color = std::make_shared<Image>(images_rgbd[i]->color_);
+        auto depth = std::make_shared<Image>(images_rgbd[i]->depth_);
+        images_color.push_back(color);
+        images_depth.push_back(depth);
     }
-    return std::move(std::make_tuple(images_gray, images_dx, images_dy));
+    return std::move(std::make_tuple(images_gray, images_dx, images_dy,
+            images_color, images_depth));
 }
 
 std::vector<std::shared_ptr<Image>> CreateDepthBoundaryMasks(
-        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<std::shared_ptr<Image>>& images_depth,
         const ColorMapOptimizationOption& option)
 {
-    auto n_images = images_rgbd.size();
+    auto n_images = images_depth.size();
     std::vector<std::shared_ptr<Image>> masks;
     for (auto i=0; i<n_images; i++) {
         PrintDebug("[MakeDepthMasks] Image %d/%d\n", i, n_images);
-        masks.push_back(CreateDepthBoundaryMask(images_rgbd[i].depth_,
+        masks.push_back(CreateDepthBoundaryMask(*images_depth[i],
                 option.depth_threshold_for_discontinuity_check_,
                 option.half_dilation_kernel_size_for_discontinuity_map_));
     }
@@ -258,27 +267,26 @@ std::vector<ImageWarpingField> MakeWarpingFields(
 }    // unnamed namespace
 
 void ColorMapOptimization(TriangleMesh& mesh,
-        const std::vector<RGBDImage>& images_rgbd,
+        const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd,
         PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option
         /* = ColorMapOptimizationOption()*/)
 {
     PrintDebug("[ColorMapOptimization]\n");
-    std::vector<std::shared_ptr<Image>> images_gray;
-    std::vector<std::shared_ptr<Image>> images_dx;
-    std::vector<std::shared_ptr<Image>> images_dy;
-    std::tie(images_gray, images_dx, images_dy) =
+    std::vector<std::shared_ptr<Image>> images_gray,
+            images_dx, images_dy, images_color, images_depth;
+    std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
             MakeGradientImages(images_rgbd);
 
     PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
-    auto images_mask = CreateDepthBoundaryMasks(images_rgbd, option);
+    auto images_mask = CreateDepthBoundaryMasks(images_depth, option);
 
     PrintDebug("[ColorMapOptimization] :: VisibilityCheck\n");
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
-            MakeVertexAndImageVisibility(mesh, images_rgbd,
-            images_mask, camera, option);
+            MakeVertexAndImageVisibility(mesh, images_depth,
+                    images_mask, camera, option);
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {
@@ -289,14 +297,14 @@ void ColorMapOptimization(TriangleMesh& mesh,
                 images_dx, images_dy, warping_uv_, warping_uv_init_, camera,
                 visiblity_vertex_to_image, visiblity_image_to_vertex,
                 proxy_intensity, option);
-        SetGeometryColorAverage(mesh, images_rgbd, warping_uv_, camera,
+        SetGeometryColorAverage(mesh, images_color, warping_uv_, camera,
                 visiblity_vertex_to_image);
     } else {
         PrintDebug("[ColorMapOptimization] :: Rigid Optimization\n");
         OptimizeImageCoorRigid(mesh, images_gray, images_dx, images_dy, camera,
                 visiblity_vertex_to_image, visiblity_image_to_vertex,
                 proxy_intensity, option);
-        SetGeometryColorAverage(mesh, images_rgbd, camera,
+        SetGeometryColorAverage(mesh, images_color, camera,
                 visiblity_vertex_to_image);
     }
 }
