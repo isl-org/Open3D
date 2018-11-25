@@ -135,6 +135,8 @@ elseif (APPLE)
     add_definitions(-DUNIX)
     # enable c++11
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    add_compile_options(-Wno-deprecated-declarations)
+    add_compile_options(-Wno-expansion-to-defined)
     if (NOT BUILD_SHARED_LIBS)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
     endif (NOT BUILD_SHARED_LIBS)

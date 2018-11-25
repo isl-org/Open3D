@@ -67,7 +67,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     for (const auto &c : corres) {
         r = (source.points_[c[0]] - target.points_[c[1]]).dot(
                 target.normals_[c[1]]);
-        err = r * r;
+        err += r * r;
     }
     return std::sqrt(err / (double)corres.size());
 }

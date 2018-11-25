@@ -73,6 +73,10 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
     bool success = map_itr->second(filename, mesh);
     PrintDebug("Read TriangleMesh: %d triangles and %d vertices.\n",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+    if (mesh.HasVertices() && !mesh.HasTriangles()) {
+        PrintWarning("TriangleMesh appears to be a PointCloud (only contains "
+            "vertices, but no triangles).\n");
+    }
     return success;
 }
 
