@@ -151,7 +151,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray)
     JTJ = JTJ + Matrix6d::Identity();
 
     bool status = false;
-    vector<Matrix4d> result;
+    vector<Matrix4d, Matrix4d_allocator> result;
 
     int loops = 10000;
     srand((unsigned int) time(0));
@@ -230,7 +230,7 @@ TEST(Eigen, ComputeJTJandJTr_vector)
     ref_JTr << 2.896078, 4.166667, -1.629412, 1.386275, -4.468627, -7.115686;
 
     auto testFunction = [&](int i,
-                            vector<Vector6d> &J_r,
+                            vector<Vector6d, Vector6d_allocator> &J_r,
                             vector<double> &r)
     {
 #pragma omp critical
