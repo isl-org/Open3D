@@ -66,9 +66,4 @@ COPY ./setup/install-gtest.sh .
 RUN chmod a+x /root/install-gtest.sh
 RUN /root/install-gtest.sh
 
-# RUN git clone https://github.com/IntelVCL/Open3D.git open3d
-
-# WORKDIR $HOME/open3d
-# COPY ./setup/build.sh .
-
 CMD ["bash", "/root/entrypoint.sh"]

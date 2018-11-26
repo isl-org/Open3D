@@ -1,9 +1,12 @@
 #!/bin/sh
 
-. ./name.sh
-./stop.sh
+# get the name of the upper level directory
+NAME=$(bash -c 'basename $(cd .. ; pwd)')
 
-# run container with the shared folder as a bind mount
+# stop the container if it's already running
+docker container stop -t 0 $NAME
+
+# run the container
 docker container run \
        --rm \
        -d \
@@ -12,38 +15,33 @@ docker container run \
        --name $NAME \
        $NAME
 
-# docker container exec -it -w $Open3D_DOCK $NAME bash -c 'git clone https://github.com/IntelVCL/Open3D.git open3d && cd open3d && mkdir -p build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=~/open3d_install -DBUILD_UNIT_TESTS=ON && make -j && make install && bash'
-# docker container exec -it -w $Open3D_DOCK $NAME bash -c 'build.sh && bash'
-# docker container exec -it -w $Open3D_DOCK $NAME bash -c '/root/open3d/util/scripts/install-gtest.sh && bash'
+# attach to the container, clone & build & install Open3d
+docker container exec -it -w /root $NAME bash -c '\
+    echo && \
+    git clone https://github.com/IntelVCL/Open3D.git open3d && \
+    cd open3d && \
+    echo && \
+    echo building... && \
+    mkdir -p build && \
+    cd build && \
+    cmake .. -DBUILD_UNIT_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Release && \
+    echo && \
+    make -j && \
+    echo && \
+    echo installing... && \
+    make install && \
+    echo && \
+    echo running the unit tests... && \
+    ./bin/unitTests'
 
-# docker container exec -it -w $Open3D_DOCK $NAME bash -c 'wget https://github.com/google/googletest/archive/release-1.8.0.tar.gz -O /tmp/release-1.8.0.tar.gz && \
-#                                                          cd /tmp/ && \
-#                                                          tar -xzvf /tmp/release-1.8.0.tar.gz && \
-#                                                          cd /tmp/googletest-release-1.8.0 && \
-#                                                          mkdir build && \
-#                                                          cd build && \
-#                                                          cmake .. && \
-#                                                          make -j && \
-#                                                          cd googlemock/gtest && \
-#                                                          cp lib*.a /usr/local/lib && \
-#                                                          cd ../../../googletest && \
-#                                                          cp -r include/gtest /usr/local/include/gtest && \
-#                                                          cd ../.. && \
-#                                                          bash'
+    #  cmake .. -DCMAKE_INSTALL_PREFIX=~/open3d_install \
 
-# Open3D_DOCK=/root/open3d
-# docker container exec -it -w $Open3D_DOCK $NAME bash -c './build.sh && bash'
+    #  ./bin/unitTests && \
+    #  bash'
 
-Open3D_DOCK=/root
-docker container exec -it -w $Open3D_DOCK $NAME bash -c 'git clone https://github.com/IntelVCL/Open3D.git open3d && \
-                                                         cd open3d && \
-                                                         mkdir -p build && \
-                                                         cd build && \
-                                                         cmake .. -DCMAKE_INSTALL_PREFIX=~/open3d_install -DBUILD_UNIT_TESTS=ON -DCMAKE_BUILD_TYPE=Release && \
-                                                         echo && \
-                                                         make -j && \
-                                                         echo && \
-                                                         make install && \
-                                                         bash'
+    #  echo && \
+    #  make install-pip-package && \
 
-                                                      #  make install-pip-package && \
+# stop the container
+docker container stop -t 0 $NAME
