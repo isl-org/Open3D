@@ -10,7 +10,6 @@ RUN apt-get update && \
     build-essential \
     cmake \
     git \
-    # gdb \
     libeigen3-dev \
     libgl1-mesa-dev \
     libgl1-mesa-glx \
@@ -21,29 +20,19 @@ RUN apt-get update && \
     libjsoncpp-dev \
     libosmesa6-dev \
     libpng-dev \
-    # lxde \
     mesa-utils \
-    # ne \
     python3 \
     python3-dev \
     python3-pip \
     python3-tk \
-    # python3-dbg \
     pybind11-dev \
     software-properties-common \
-    # x11vnc \
     xorg-dev \
-    # xterm \
-    # xvfb \
     wget && \
     rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
 RUN pip3 install matplotlib numpy
-
-# EXPOSE 5920
-
-# ENV HOME=/root
 
 WORKDIR /root
 
