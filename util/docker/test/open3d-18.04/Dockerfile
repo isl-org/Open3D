@@ -10,7 +10,7 @@ RUN apt-get update && \
     build-essential \
     cmake \
     git \
-    gdb \
+    # gdb \
     libeigen3-dev \
     libgl1-mesa-dev \
     libgl1-mesa-glx \
@@ -21,40 +21,32 @@ RUN apt-get update && \
     libjsoncpp-dev \
     libosmesa6-dev \
     libpng-dev \
-    lxde \
+    # lxde \
     mesa-utils \
-    ne \
+    # ne \
     python3 \
     python3-dev \
     python3-pip \
     python3-tk \
-    python3-dbg \
+    # python3-dbg \
     pybind11-dev \
     software-properties-common \
-    x11vnc \
+    # x11vnc \
     xorg-dev \
-    xterm \
-    xvfb \
+    # xterm \
+    # xvfb \
     wget && \
     rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
-RUN pip3 install \
-    matplotlib \
-    numpy \
-    opencv-python
+RUN pip3 install matplotlib numpy
 
-EXPOSE 5920
+# EXPOSE 5920
 
-ENV HOME=/root
+# ENV HOME=/root
 
-WORKDIR $HOME
-COPY ./setup/.xinitrc .
-RUN chmod a+x .xinitrc
-COPY ./setup/entrypoint.sh .
+WORKDIR /root
 
 COPY ./setup/install-gtest.sh .
 RUN chmod a+x /root/install-gtest.sh
 RUN /root/install-gtest.sh
-
-# CMD ["bash", "/root/entrypoint.sh"]

@@ -6,6 +6,12 @@ NAME=$(bash -c 'basename $(cd .. ; pwd)')
 # stop the container if it's already running
 docker container stop -t 0 $NAME
 
+# delete the previous container
+docker image rm $NAME:latest
+
+# build the image
+docker image build -t $NAME ..
+
 # run the container
 docker container run \
        --rm \
@@ -43,3 +49,6 @@ docker container exec -it -w /root $NAME bash -c '\
 
 # stop the container
 docker container stop -t 0 $NAME
+
+# display images in order to check image size
+docker image ls
