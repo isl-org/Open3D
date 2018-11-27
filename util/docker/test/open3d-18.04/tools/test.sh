@@ -10,6 +10,7 @@ docker container stop -t 0 $NAME
 docker container run \
        --rm \
        -d \
+       -t \
        -p 5920:5900 \
        -h $NAME \
        --name $NAME \
@@ -25,7 +26,7 @@ docker container exec -it -w /root $NAME bash -c '\
     mkdir -p build && \
     cd build && \
     cmake .. -DBUILD_UNIT_TESTS=ON \
-    -DCMAKE_BUILD_TYPE=Release && \
+             -DCMAKE_BUILD_TYPE=Release && \
     echo && \
     make -j && \
     echo && \
@@ -36,9 +37,6 @@ docker container exec -it -w /root $NAME bash -c '\
     ./bin/unitTests'
 
     #  cmake .. -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-
-    #  ./bin/unitTests && \
-    #  bash'
 
     #  echo && \
     #  make install-pip-package && \

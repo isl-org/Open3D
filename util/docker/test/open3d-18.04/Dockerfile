@@ -1,14 +1,5 @@
 FROM ubuntu:18.04
 
-# ENV http_proxy  ""
-# ENV HTTP_PROXY  ""
-# ENV https_proxy ""
-# ENV HTTPS_PROXY ""
-# ENV ftp_proxy   ""
-# ENV socks_proxy ""
-# ENV no_proxy    ""
-# ENV ALL_PROXY   ""
-
 ENV DEBIAN_FRONTEND noninteractive
 
 # install Open3D dependencies
@@ -66,4 +57,4 @@ COPY ./setup/install-gtest.sh .
 RUN chmod a+x /root/install-gtest.sh
 RUN /root/install-gtest.sh
 
-CMD ["bash", "/root/entrypoint.sh"]
+# CMD ["bash", "/root/entrypoint.sh"]
