@@ -2,5 +2,5 @@
 
 ./stop.sh
 
-docker container prune
-docker image prune
+docker container prune -f
+docker image prune -f
