@@ -10,7 +10,7 @@ docker container stop -t 0 $NAME
 docker image rm $NAME:latest
 
 # build the image
-docker image build -t $NAME -f ../Dockerfile ..
+docker image build -t $NAME -f ../Dockerfile_with_deps ..
 
 # run the container
 docker container run \
