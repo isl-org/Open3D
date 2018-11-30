@@ -42,25 +42,23 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       ${OMP_LIBRARIES})
 
 # input_dirs: a list of absolute paths in the source dir
-# output_dirs: a list of absolute paths in the install dir
+# output_dirs: a list of relative paths in the install dir
 # input_base_dir: the base dir of input_dirs
 function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
+    get_filename_component(absolute_input_base_dir ${input_base_dir} ABSOLUTE)
     foreach(input_dir ${input_dirs})
         # We need to handle case where input_dir is not child subdirectory of
-        # input_base_dir. This could happen for pre-installed headers, e.g.
+        # input_base_dir (or input_base_dir itself).
+        # This could happen for pre-installed headers, e.g.
         #   input_dir == /usr/include/libpng16
         #   input_base_dir = /path-to-repo/Open3D
-        if(${input_dir} MATCHES "^${input_base_dir}/.*")
+        if(${input_dir} MATCHES "^${absolute_input_base_dir}($|/.*)")
             # extract path relative to the project source dir
             set(relative_path "")
-            file(RELATIVE_PATH relative_path ${input_base_dir} ${input_dir})
+            file(RELATIVE_PATH relative_path ${absolute_input_base_dir} ${input_dir})
 
-            # construct absolute path in the install dir
-            set(install_path "")
-            get_filename_component(install_path
-                                   "${relative_path}"
-                                   REALPATH
-                                   BASE_DIR "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}")
+            # construct relative path in the install dir
+            set(install_path "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}/${relative_path}")
 
             # save
             list(APPEND converted ${install_path})
@@ -74,6 +72,7 @@ function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
 endfunction()
 
 # build a list of include folders
+SourcePath2InstallPath("${CMAKE_CURRENT_SOURCE_DIR}"   INSTALL_PROJECT_INCLUDE_DIR        ${CMAKE_CURRENT_SOURCE_DIR})
 SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS          ${CMAKE_CURRENT_SOURCE_DIR})
 SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS            ${CMAKE_CURRENT_SOURCE_DIR})
 SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
@@ -81,7 +80,7 @@ SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS}"      INSTALL_3RDPARTY_INCLUDE_
 
 # set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
-     "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+     ${INSTALL_PROJECT_INCLUDE_DIR}
      ${INSTALL_CORE_INCLUDE_DIRS}
      ${INSTALL_IO_INCLUDE_DIRS}
      ${INSTALL_VISUALIZATION_INCLUDE_DIRS}
@@ -138,13 +137,20 @@ list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     ${3RDPARTY_LIBRARY_DIRS}
     ${OMP_LIBRARY_DIRS})
 
+include(CMakePackageConfigHelpers)
+
 # find_package Open3D
-configure_file(Open3DConfig.cmake.in
-               "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake" @ONLY)
+configure_package_config_file(Open3DConfig.cmake.in
+                              "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
+                              INSTALL_DESTINATION ${INSTALL_CMAKE_DIR}
+                              PATH_VARS CONFIG_Open3D_INCLUDE_DIRS CONFIG_Open3D_LIBRARY_DIRS
+                              NO_SET_AND_CHECK_MACRO
+                              NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
 # find_package Open3D Version
-configure_file(Open3DConfigVersion.cmake.in
-               "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake" @ONLY)
+write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
+                                 VERSION ${PROJECT_VERSION}
+                                 COMPATIBILITY ExactVersion)
 
 # install
 install(TARGETS ${CMAKE_PROJECT_NAME}
