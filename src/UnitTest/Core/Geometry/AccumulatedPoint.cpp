@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest.h"
+#include "Utility/UnitTest.h"
 
 #include "Core/Geometry/PointCloud.h"
 

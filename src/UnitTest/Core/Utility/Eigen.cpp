@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 
-#include "UnitTest.h"
+#include "Utility/UnitTest.h"
 
 #include "Core/Utility/Eigen.h"
 
