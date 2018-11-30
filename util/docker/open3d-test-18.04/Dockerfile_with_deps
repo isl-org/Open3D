@@ -9,4 +9,5 @@ RUN apt-get update && \
     libjpeg-dev \
     libjsoncpp-dev \
     libpng-dev \
-    pybind11-dev
+    pybind11-dev && \
+    rm -rf /var/lib/apt/lists/*
