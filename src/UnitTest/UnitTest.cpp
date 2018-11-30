@@ -30,9 +30,10 @@
 #include <iostream>
 
 using namespace std;
+using namespace unit_test;
 
 // ----------------------------------------------------------------------------
-//
+// Default message to use for tests missing an implementation.
 // ----------------------------------------------------------------------------
 void unit_test::NotImplemented()
 {
@@ -43,126 +44,15 @@ void unit_test::NotImplemented()
          << "Not implemented."
          << "\033[0;0m" << endl;
 
-    // FAIL();
-    // ADD_FAILURE();
     GTEST_NONFATAL_FAILURE_("Not implemented");
 }
-
-// ----------------------------------------------------------------------------
-// Equal test over Eigen::Vector2d components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1)
-{
-    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
-}
-void unit_test::ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1)
-{
-    EXPECT_NEAR(v00, v1(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v01, v1(1, 0), unit_test::THRESHOLD_1E_6);
-}
-
-// ----------------------------------------------------------------------------
-// Equal test over Eigen::Vector3d components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
-{
-    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 0), v1(2, 0), unit_test::THRESHOLD_1E_6);
-}
-void unit_test::ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
-{
-    EXPECT_NEAR(v00, v1(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v01, v1(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v02, v1(2, 0), unit_test::THRESHOLD_1E_6);
-}
-
-// ----------------------------------------------------------------------------
-// Equal test over Eigen::Matrix3d components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1)
-{
-    EXPECT_NEAR(v0(0, 0), v1(0, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 0), v1(1, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 0), v1(2, 0), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(0, 1), v1(0, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 1), v1(1, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 1), v1(2, 1), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(0, 2), v1(0, 2), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(1, 2), v1(1, 2), unit_test::THRESHOLD_1E_6);
-    EXPECT_NEAR(v0(2, 2), v1(2, 2), unit_test::THRESHOLD_1E_6);
-}
-
-// ----------------------------------------------------------------------------
-// Equal test over Eigen::Vector2i components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1)
-{
-    EXPECT_EQ(v0(0, 0), v1(0, 0));
-    EXPECT_EQ(v0(1, 0), v1(1, 0));
-}
-void unit_test::ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1)
-{
-    EXPECT_EQ(v00, v1(0, 0));
-    EXPECT_EQ(v01, v1(1, 0));
-}
-
-// ----------------------------------------------------------------------------
-// Equal test over Eigen::Vector3i components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const Eigen::Vector3i& v0, const Eigen::Vector3i& v1)
-{
-    EXPECT_EQ(v0(0, 0), v1(0, 0));
-    EXPECT_EQ(v0(1, 0), v1(1, 0));
-    EXPECT_EQ(v0(2, 0), v1(2, 0));
-}
-void unit_test::ExpectEQ(const int& v00, const int& v01, const int& v02, const Eigen::Vector3i& v1)
-{
-    EXPECT_EQ(v00, v1(0, 0));
-    EXPECT_EQ(v01, v1(1, 0));
-    EXPECT_EQ(v02, v1(2, 0));
-}
-
-// ----------------------------------------------------------------------------
-// Less than or Equal test over Eigen::Vector3d components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
-{
-    EXPECT_LE(v0(0, 0), v1(0, 0));
-    EXPECT_LE(v0(1, 0), v1(1, 0));
-    EXPECT_LE(v0(2, 0), v1(2, 0));
-}
-void unit_test::ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
-{
-    EXPECT_LE(v00, v1(0, 0));
-    EXPECT_LE(v01, v1(1, 0));
-    EXPECT_LE(v02, v1(2, 0));
-}
-
-// ----------------------------------------------------------------------------
-// Greater than or Equal test over Eigen::Vector3d components.
-// ----------------------------------------------------------------------------
-void unit_test::ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1)
-{
-    EXPECT_GE(v0(0, 0), v1(0, 0));
-    EXPECT_GE(v0(1, 0), v1(1, 0));
-    EXPECT_GE(v0(2, 0), v1(2, 0));
-}
-void unit_test::ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1)
-{
-    EXPECT_GE(v00, v1(0, 0));
-    EXPECT_GE(v01, v1(1, 0));
-    EXPECT_GE(v02, v1(2, 0));
-}
-
 
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of uint8_t.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const uint8_t* const v0,
-              const uint8_t* const v1,
-              const size_t& size)
+                         const uint8_t* const v1,
+                         const size_t& size)
 {
     for (int i = 0; i < size; i++)
         EXPECT_EQ(v0[i], v1[i]);
@@ -174,15 +64,15 @@ void unit_test::ExpectEQ(const uint8_t* const v0,
 void unit_test::ExpectEQ(const vector<uint8_t>& v0, const vector<uint8_t>& v1)
 {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(&v0[0], &v1[0], v0.size());
+    ExpectEQ(v0.data(), v1.data(), v0.size());
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of int.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const int* const v0,
-              const int* const v1,
-              const size_t& size)
+                         const int* const v1,
+                         const size_t& size)
 {
     for (int i = 0; i < size; i++)
         EXPECT_EQ(v0[i], v1[i]);
@@ -194,15 +84,35 @@ void unit_test::ExpectEQ(const int* const v0,
 void unit_test::ExpectEQ(const vector<int>& v0, const vector<int>& v1)
 {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(&v0[0], &v1[0], v0.size());
+    ExpectEQ(v0.data(), v1.data(), v0.size());
+}
+
+// ----------------------------------------------------------------------------
+// Test equality of two arrays of float.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const float* const v0,
+                         const float* const v1,
+                         const size_t& size)
+{
+    for (int i = 0; i < size; i++)
+        EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
+}
+
+// ----------------------------------------------------------------------------
+// Test equality of two vectors of float.
+// ----------------------------------------------------------------------------
+void unit_test::ExpectEQ(const vector<float>& v0, const vector<float>& v1)
+{
+    EXPECT_EQ(v0.size(), v1.size());
+    ExpectEQ(v0.data(), v1.data(), v0.size());
 }
 
 // ----------------------------------------------------------------------------
 // Test equality of two arrays of double.
 // ----------------------------------------------------------------------------
 void unit_test::ExpectEQ(const double* const v0,
-              const double* const v1,
-              const size_t& size)
+                         const double* const v1,
+                         const size_t& size)
 {
     for (int i = 0; i < size; i++)
         EXPECT_NEAR(v0[i], v1[i], THRESHOLD_1E_6);
@@ -214,5 +124,5 @@ void unit_test::ExpectEQ(const double* const v0,
 void unit_test::ExpectEQ(const vector<double>& v0, const vector<double>& v1)
 {
     EXPECT_EQ(v0.size(), v1.size());
-    ExpectEQ(&v0[0], &v1[0], v0.size());
+    ExpectEQ(v0.data(), v1.data(), v0.size());
 }

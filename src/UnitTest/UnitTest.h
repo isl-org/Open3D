@@ -82,6 +82,14 @@ namespace unit_test
         for (int i = 0; i < v0.size(); i++)
             ExpectLE(v0, v1[i]);
     }
+    template<class T, int M, int N>
+    void ExpectLE(const std::vector<Eigen::Matrix<T, M, N>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            ExpectLE(v0[i], v1[i]);
+    }
 
     // Greater than or Equal test.
     template<class T, int M, int N>
@@ -99,33 +107,14 @@ namespace unit_test
         for (int i = 0; i < v1.size(); i++)
             ExpectGE(v0, v1[i]);
     }
-
-    // Equal test over Eigen::Vector2d components.
-    void ExpectEQ(const Eigen::Vector2d& v0, const Eigen::Vector2d& v1);
-    void ExpectEQ(const double& v00, const double& v01, const Eigen::Vector2d& v1);
-
-    // Equal test over Eigen::Vector3d components.
-    void ExpectEQ(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
-    void ExpectEQ(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
-
-    // Equal test over Eigen::Matrix3d components.
-    void ExpectEQ(const Eigen::Matrix3d& v0, const Eigen::Matrix3d& v1);
-
-    // Equal test over Eigen::Vector2i components.
-    void ExpectEQ(const Eigen::Vector2i& v0, const Eigen::Vector2i& v1);
-    void ExpectEQ(const int& v00, const int& v01, const Eigen::Vector2i& v1);
-
-    // Equal test over Eigen::Vector3i components.
-    void ExpectEQ(const Eigen::Vector3i& v0, const Eigen::Vector3i& v1);
-    void ExpectEQ(const int& v00, const int& v01, const int& v02, const Eigen::Vector3i& v1);
-
-    // Less than or Equal test over Eigen::Vector3d components.
-    void ExpectLE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
-    void ExpectLE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
-
-    // Greater than or Equal test over Eigen::Vector3d components.
-    void ExpectGE(const Eigen::Vector3d& v0, const Eigen::Vector3d& v1);
-    void ExpectGE(const double& v00, const double& v01, const double& v02, const Eigen::Vector3d& v1);
+    template<class T, int M, int N>
+    void ExpectGE(const std::vector<Eigen::Matrix<T, M, N>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    {
+        EXPECT_EQ(v0.size(), v1.size());
+        for (int i = 0; i < v0.size(); i++)
+            ExpectGE(v0[i], v1[i]);
+    }
 
     // Test equality of two arrays of uint8_t.
     void ExpectEQ(const uint8_t* const v0,
@@ -144,6 +133,15 @@ namespace unit_test
     // Test equality of two vectors of int.
     void ExpectEQ(const std::vector<int>& v0,
                   const std::vector<int>& v1);
+
+    // Test equality of two arrays of float.
+    void ExpectEQ(const float* const v0,
+                  const float* const v1,
+                  const size_t& size);
+
+    // Test equality of two vectors of float.
+    void ExpectEQ(const std::vector<float>& v0,
+                  const std::vector<float>& v1);
 
     // Test equality of two arrays of double.
     void ExpectEQ(const double* const v0,

@@ -49,26 +49,25 @@ namespace filesystem {
 std::string GetFileExtensionInLowerCase(const std::string &filename)
 {
     size_t dot_pos = filename.find_last_of(".");
-    if (dot_pos == std::string::npos || dot_pos == filename.length() - 1) {
+    if (dot_pos >= filename.length())
         return "";
-    }
+
+    if (filename.find_first_of("/\\", dot_pos) != std::string::npos)
+        return "";
+
     std::string filename_ext = filename.substr(dot_pos + 1);
-    if (filename_ext.find_first_of("/\\") != std::string::npos) {
-        return "";
-    }
+
     std::transform(filename_ext.begin(), filename_ext.end(),
             filename_ext.begin(), ::tolower);
+
     return filename_ext;
 }
 
 std::string GetFileNameWithoutExtension(const std::string &filename)
 {
-    std::string ext = GetFileExtensionInLowerCase(filename);
-    if (ext.length() >= filename.length() - 1) {
-        return "";
-    } else {
-        return filename.substr(0, filename.length() - ext.length() - 1);
-    }
+    size_t dot_pos = filename.find_last_of(".");
+
+    return filename.substr(0, dot_pos);
 }
 
 std::string GetFileNameWithoutDirectory(const std::string &filename)
