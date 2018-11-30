@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <Core/ColorMap/EigenHelperForNonRigidOptimization.h>
 #include <Core/Utility/Eigen.h>
