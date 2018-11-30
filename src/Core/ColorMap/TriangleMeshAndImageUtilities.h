@@ -43,7 +43,7 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const PinholeCameraTrajectory& camera, int camid);
 
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
-        MakeVertexAndImageVisibility(const TriangleMesh& mesh,
+        CreateVertexAndImageVisibility(const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const std::vector<std::shared_ptr<Image>>& images_mask,
         const PinholeCameraTrajectory& camera,

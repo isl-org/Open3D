@@ -210,7 +210,7 @@ std::tuple<std::vector<std::shared_ptr<Image>>,
         std::vector<std::shared_ptr<Image>>,
         std::vector<std::shared_ptr<Image>>,
         std::vector<std::shared_ptr<Image>>,
-        std::vector<std::shared_ptr<Image>>> MakeGradientImages(
+        std::vector<std::shared_ptr<Image>>> CreateGradientImages(
         const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd)
 {
     std::vector<std::shared_ptr<Image>> images_gray;
@@ -251,7 +251,7 @@ std::vector<std::shared_ptr<Image>> CreateDepthBoundaryMasks(
     return masks;
 }
 
-std::vector<ImageWarpingField> MakeWarpingFields(
+std::vector<ImageWarpingField> CreateWarpingFields(
         const std::vector<std::shared_ptr<Image>>& images,
         const ColorMapOptimizationOption& option)
 {
@@ -277,7 +277,7 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::shared_ptr<Image>> images_gray,
             images_dx, images_dy, images_color, images_depth;
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
-            MakeGradientImages(images_rgbd);
+            CreateGradientImages(images_rgbd);
 
     PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
     auto images_mask = CreateDepthBoundaryMasks(images_depth, option);
@@ -286,14 +286,14 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
-            MakeVertexAndImageVisibility(mesh, images_depth,
+            CreateVertexAndImageVisibility(mesh, images_depth,
                     images_mask, camera, option);
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {
         PrintDebug("[ColorMapOptimization] :: Non-Rigid Optimization\n");
-        auto warping_uv_ = MakeWarpingFields(images_gray, option);
-        auto warping_uv_init_ = MakeWarpingFields(images_gray, option);
+        auto warping_uv_ = CreateWarpingFields(images_gray, option);
+        auto warping_uv_init_ = CreateWarpingFields(images_gray, option);
         OptimizeImageCoorNonrigid(mesh, images_gray,
                 images_dx, images_dy, warping_uv_, warping_uv_init_, camera,
                 visiblity_vertex_to_image, visiblity_image_to_vertex,

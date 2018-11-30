@@ -28,11 +28,8 @@
 
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-// This function make JTJ and JTr
-// The main difference between this and other helper functions in Eigen
-// is that this function can take multiplication pattern
 template<typename VecInType, typename MatOutType, typename VecOutType>
 std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
         std::function<void(int, VecInType &, double &, VecInType &)> f,

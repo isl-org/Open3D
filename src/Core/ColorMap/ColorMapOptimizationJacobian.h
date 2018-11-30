@@ -38,7 +38,6 @@ class ImageWarpingField;
 
 class TriangleMesh;
 
-/// Base class that computes Jacobian from two RGB-D images
 class ColorMapOptimizationJacobian
 {
 public:
