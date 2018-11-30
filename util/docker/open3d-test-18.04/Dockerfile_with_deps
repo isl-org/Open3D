@@ -8,4 +8,5 @@ RUN apt-get update && \
     libglfw3-dev \
     libjpeg-dev \
     libjsoncpp-dev \
-    libpng-dev
+    libpng-dev \
+    pybind11-dev

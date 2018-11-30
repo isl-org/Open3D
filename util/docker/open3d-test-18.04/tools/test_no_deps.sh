@@ -33,13 +33,7 @@ docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     echo building... && \
     mkdir -p build && \
     cd build && \
-    cmake .. -DBUILD_EIGEN3=ON \
-             -DBUILD_GLEW=ON \
-             -DBUILD_GLFW=ON \
-             -DBUILD_JPEG=ON \
-             -DBUILD_JSONCPP=ON \
-             -DBUILD_PNG=ON \
-             -DBUILD_UNIT_TESTS=ON \
+    cmake .. -DBUILD_UNIT_TESTS=ON \
              -DCMAKE_BUILD_TYPE=Release && \
     echo && \
     make -j && \
