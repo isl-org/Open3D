@@ -26,7 +26,6 @@
 
 #include "ColorMapOptimization.h"
 
-#include <memory>
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Core/ColorMap/ColorMapOptimizationJacobian.h>
 #include <Core/ColorMap/ImageWarpingField.h>
@@ -287,7 +286,9 @@ void ColorMapOptimization(TriangleMesh& mesh,
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
             CreateVertexAndImageVisibility(mesh, images_depth,
-                    images_mask, camera, option);
+                    images_mask, camera,
+                    option.maximum_allowable_depth_,
+                    option.depth_threshold_for_visiblity_check_);
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {

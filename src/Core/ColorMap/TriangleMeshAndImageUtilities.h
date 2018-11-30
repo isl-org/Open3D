@@ -48,7 +48,8 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const std::vector<std::shared_ptr<Image>>& images_mask,
         const PinholeCameraTrajectory& camera,
-        const ColorMapOptimizationOption& option);
+        double maximum_allowable_depth,
+        double depth_threshold_for_visiblity_check);
 
 template<typename T>
 std::tuple<bool, T> QueryImageIntensity(

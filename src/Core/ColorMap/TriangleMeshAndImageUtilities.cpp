@@ -28,14 +28,12 @@
 
 #include <Core/Camera/PinholeCameraTrajectory.h>
 #include <Core/ColorMap/ImageWarpingField.h>
-#include <Core/ColorMap/ColorMapOptimization.h>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Geometry/TriangleMesh.h>
 
 namespace open3d {
 
-// general - but could be used for more general cases where the input is vector
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
         const PinholeCameraTrajectory& camera, int camid)
@@ -52,13 +50,13 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
     return std::make_tuple(u, v, z);
 }
 
-// general
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
         CreateVertexAndImageVisibility(const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_depth,
         const std::vector<std::shared_ptr<Image>>& images_mask,
         const PinholeCameraTrajectory& camera,
-        const ColorMapOptimizationOption& option)
+        double maximum_allowable_depth,
+        double depth_threshold_for_visiblity_check)
 {
     auto n_camera = camera.parameters_.size();
     auto n_vertex = mesh.vertices_.size();
@@ -79,12 +77,12 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
             if (d < 0.0 || !images_depth[c]->TestImageBoundary(u_d, v_d))
                 continue;
             float d_sensor = *PointerAt<float>(*images_depth[c], u_d, v_d);
-            if (d_sensor > option.maximum_allowable_depth_)
+            if (d_sensor > maximum_allowable_depth)
                 continue;
             if (*PointerAt<unsigned char>(*images_depth[c], u_d, v_d) == 255)
                 continue;
             if (std::fabs(d - d_sensor) <
-                    option.depth_threshold_for_visiblity_check_) {
+                    depth_threshold_for_visiblity_check) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
@@ -102,7 +100,6 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
             visiblity_vertex_to_image, visiblity_image_to_vertex));
 }
 
-// general
 template<typename T>
 std::tuple<bool, T> QueryImageIntensity(
         const Image& img, const Eigen::Vector3d& V,
@@ -126,7 +123,6 @@ std::tuple<bool, T> QueryImageIntensity(
     }
 }
 
-// not general
 template<typename T>
 std::tuple<bool, T> QueryImageIntensity(
         const Image& img, const ImageWarpingField& field,
@@ -154,7 +150,6 @@ std::tuple<bool, T> QueryImageIntensity(
     return std::make_tuple(false, 0);
 }
 
-//    not general
 void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const std::vector<ImageWarpingField>& warping_field,
@@ -188,7 +183,6 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     }
 }
 
-//    not general
 void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const PinholeCameraTrajectory& camera,
@@ -221,7 +215,6 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     }
 }
 
-//    general but the input argument is not RGBDImage
 void SetGeometryColorAverage(TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_color,
         const PinholeCameraTrajectory& camera,
