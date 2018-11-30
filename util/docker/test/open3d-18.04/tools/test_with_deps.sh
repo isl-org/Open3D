@@ -2,27 +2,30 @@
 
 # get the name of the upper level directory
 NAME=$(bash -c 'basename $(cd .. ; pwd)')
+TAG=with_deps
+CONTAINER_NAME=${NAME}_${TAG}
+DOCKERFILE=Dockerfile_$TAG
 
 # stop the container if it's already running
-docker container stop -t 0 $NAME
+docker container stop -t 0 $CONTAINER_NAME
 
 # delete the previous container
-docker image rm $NAME:latest
+docker image rm $NAME:$TAG
 
 # build the image
-docker image build -t $NAME -f ../Dockerfile_with_deps ..
+docker image build -t $NAME:$TAG -f ../$DOCKERFILE ..
 
 # run the container
 docker container run \
        --rm \
        -d \
        -t \
-       -h $NAME \
-       --name $NAME \
-       $NAME
+       -h $CONTAINER_NAME \
+       --name $CONTAINER_NAME \
+       $NAME:$TAG
 
 # attach to the container, clone & build & install Open3d
-docker container exec -it -w /root $NAME bash -c '\
+docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     echo && \
     git clone https://github.com/IntelVCL/Open3D.git open3d && \
     cd open3d && \
@@ -39,7 +42,7 @@ docker container exec -it -w /root $NAME bash -c '\
     ./bin/unitTests'
 
 # stop the container
-docker container stop -t 0 $NAME
+docker container stop -t 0 $CONTAINER_NAME
 
 # display images in order to check image size
 docker image ls
