@@ -67,23 +67,25 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<ImageWarpingField>& warping_field,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        std::vector<double>& proxy_intensity);
+        std::vector<double>& proxy_intensity, int image_boundary_margin);
 
 void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        std::vector<double>& proxy_intensity);
+        std::vector<double>& proxy_intensity, int image_boundary_margin);
 
 void SetGeometryColorAverage(TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image);
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        int image_boundary_margin = 10);
 
 void SetGeometryColorAverage(TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_rgbd,
         const std::vector<ImageWarpingField>& warping_fields,
         const PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image);
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        int image_boundary_margin = 10);
 
 }   // namespace open3d

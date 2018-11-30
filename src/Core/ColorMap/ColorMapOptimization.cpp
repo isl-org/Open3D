@@ -57,12 +57,12 @@ void OptimizeImageCoorNonrigid(
     auto n_vertex = mesh.vertices_.size();
     auto n_camera = camera.parameters_.size();
     SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
-            visiblity_vertex_to_image, proxy_intensity);
+            visiblity_vertex_to_image, proxy_intensity,
+            option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
         PrintDebug("[Iteration %04d] ", itr+1);
         double residual = 0.0;
         double residual_reg = 0.0;
-        int total_num_ = 0;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -93,13 +93,12 @@ void OptimizeImageCoorNonrigid(
             Eigen::MatrixXd JTJ;
             Eigen::VectorXd JTr;
             double r2;
-            int this_num = visiblity_image_to_vertex[c].size();
             std::tie(JTJ, JTr, r2) = ComputeJTJandJTr
             <Eigen::Vector14d, Eigen::MatrixXd, Eigen::VectorXd>(f_lambda,
                     visiblity_image_to_vertex[c].size(), nonrigidval, false);
 
             double weight = option.non_rigid_anchor_point_weight_
-                    * this_num / n_vertex;
+                    * visiblity_image_to_vertex[c].size() / n_vertex;
             for (int j = 0; j < nonrigidval; j++) {
                 double r = weight * (warping_fields[c].flow_(j) -
                         warping_fields_init[c].flow_(j));
@@ -126,13 +125,13 @@ void OptimizeImageCoorNonrigid(
             {
                 residual += r2;
                 residual_reg += rr_reg;
-                total_num_ += this_num;
             }
         }
         PrintDebug("Residual error : %.6f, reg : %.6f\n",
                 residual, residual_reg);
         SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
-                visiblity_vertex_to_image, proxy_intensity);
+                visiblity_vertex_to_image, proxy_intensity,
+                option.image_boundary_margin_);
     }
 }
 
@@ -150,7 +149,8 @@ void OptimizeImageCoorRigid(
     int total_num_ = 0;
     auto n_camera = camera.parameters_.size();
     SetProxyIntensityForVertex(mesh, images_gray, camera,
-            visiblity_vertex_to_image, proxy_intensity);
+            visiblity_vertex_to_image, proxy_intensity,
+            option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
         PrintDebug("[Iteration %04d] ", itr+1);
         double residual = 0.0;
@@ -201,7 +201,8 @@ void OptimizeImageCoorRigid(
         PrintDebug("Residual error : %.6f (avg : %.6f)\n",
                 residual, residual / total_num_);
         SetProxyIntensityForVertex(mesh, images_gray, camera,
-                visiblity_vertex_to_image, proxy_intensity);
+                visiblity_vertex_to_image, proxy_intensity,
+                option.image_boundary_margin_);
     }
 }
 
@@ -249,7 +250,7 @@ std::vector<std::shared_ptr<Image>> CreateDepthBoundaryMasks(
     }
     return masks;
 }
-    
+
 std::vector<ImageWarpingField> MakeWarpingFields(
         const std::vector<std::shared_ptr<Image>>& images,
         const ColorMapOptimizationOption& option)
@@ -259,7 +260,7 @@ std::vector<ImageWarpingField> MakeWarpingFields(
         int width = images[i]->width_;
         int height = images[i]->height_;
         fields.push_back(ImageWarpingField(width, height,
-                                           option.number_of_vertical_anchors_));
+                option.number_of_vertical_anchors_));
     }
     return std::move(fields);
 }
@@ -298,14 +299,14 @@ void ColorMapOptimization(TriangleMesh& mesh,
                 visiblity_vertex_to_image, visiblity_image_to_vertex,
                 proxy_intensity, option);
         SetGeometryColorAverage(mesh, images_color, warping_uv_, camera,
-                visiblity_vertex_to_image);
+                visiblity_vertex_to_image, option.image_boundary_margin_);
     } else {
         PrintDebug("[ColorMapOptimization] :: Rigid Optimization\n");
         OptimizeImageCoorRigid(mesh, images_gray, images_dx, images_dy, camera,
                 visiblity_vertex_to_image, visiblity_image_to_vertex,
                 proxy_intensity, option);
         SetGeometryColorAverage(mesh, images_color, camera,
-                visiblity_vertex_to_image);
+                visiblity_vertex_to_image, option.image_boundary_margin_);
     }
 }
 

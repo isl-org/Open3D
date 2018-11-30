@@ -160,7 +160,7 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<ImageWarpingField>& warping_field,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        std::vector<double>& proxy_intensity)
+        std::vector<double>& proxy_intensity, int image_boundary_margin)
 {
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
@@ -176,7 +176,7 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
                     *images_gray[j], warping_field[j],
-                    mesh.vertices_[i], camera, j);
+                    mesh.vertices_[i], camera, j, -1, image_boundary_margin);
             if (valid) {
                 sum += 1.0;
                 proxy_intensity[i] += gray;
@@ -193,7 +193,7 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        std::vector<double>& proxy_intensity)
+        std::vector<double>& proxy_intensity, int image_boundary_margin)
 {
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
@@ -208,7 +208,8 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
             float gray;
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
-                    *images_gray[j], mesh.vertices_[i], camera, j);
+                    *images_gray[j], mesh.vertices_[i], camera, j,
+                    -1, image_boundary_margin);
             if (valid) {
                 sum += 1.0;
                 proxy_intensity[i] += gray;
@@ -224,7 +225,8 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
 void SetGeometryColorAverage(TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_color,
         const PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image)
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        int image_boundary_margin/*= 10*/)
 {
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
@@ -239,11 +241,14 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], mesh.vertices_[i], camera, j, 0);
+                    *images_color[j], mesh.vertices_[i], camera,
+                    j, 0, image_boundary_margin);
             std::tie(valid, g_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], mesh.vertices_[i], camera, j, 1);
+                    *images_color[j], mesh.vertices_[i], camera,
+                    j, 1, image_boundary_margin);
             std::tie(valid, b_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], mesh.vertices_[i], camera, j, 2);
+                    *images_color[j], mesh.vertices_[i], camera,
+                    j, 2, image_boundary_margin);
             float r = (float)r_temp / 255.0f;
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;
@@ -258,12 +263,12 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     }
 }
 
-//    general but the input argument is not RGBDImage
 void SetGeometryColorAverage(TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_color,
         const std::vector<ImageWarpingField>& warping_fields,
         const PinholeCameraTrajectory& camera,
-        const std::vector<std::vector<int>>& visiblity_vertex_to_image)
+        const std::vector<std::vector<int>>& visiblity_vertex_to_image,
+        int image_boundary_margin/*= 10*/)
 {
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
@@ -279,13 +284,13 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
                     *images_color[j], warping_fields[j],
-                    mesh.vertices_[i], camera, j, 0);
+                    mesh.vertices_[i], camera, j, 0, image_boundary_margin);
             std::tie(valid, g_temp) = QueryImageIntensity<unsigned char>(
                     *images_color[j], warping_fields[j],
-                    mesh.vertices_[i], camera, j, 1);
+                    mesh.vertices_[i], camera, j, 1, image_boundary_margin);
             std::tie(valid, b_temp) = QueryImageIntensity<unsigned char>(
                     *images_color[j], warping_fields[j],
-                    mesh.vertices_[i], camera, j, 2);
+                    mesh.vertices_[i], camera, j, 2, image_boundary_margin);
             float r = (float)r_temp / 255.0f;
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;

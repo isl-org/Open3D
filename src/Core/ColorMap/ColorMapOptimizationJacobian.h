@@ -43,14 +43,12 @@ class ColorMapOptimizationJacobian
 {
 public:
     ColorMapOptimizationJacobian() {}
-//    virtual ColorMapOptimizationJacobian() {}
 
 public:
     /// Function to compute i-th row of J and r
     /// the vector form of J_r is basically 6x1 matrix, but it can be
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
-//    virtual void ComputeJacobianAndResidual() const = 0;
     void ComputeJacobianAndResidualRigid(
             int row, Eigen::Vector6d &J_r, double &r,
             const TriangleMesh& mesh,
@@ -63,6 +61,10 @@ public:
             const std::vector<int>& visiblity_image_to_vertex,
             const int image_boundary_margin);
 
+    /// Function to compute i-th row of J and r
+    /// The vector form of J_r is basically 14x1 matrix.
+    /// This function can take additional matrix multiplication pattern
+    /// to avoid full matrix multiplication
     void ComputeJacobianAndResidualNonRigid(
             int row, Eigen::Vector14d &J_r, double &r,
             Eigen::Vector14d &pattern,
