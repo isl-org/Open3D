@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "UnitTest.h"
+#include "Utility/UnitTest.h"
 
 #include "Core/Geometry/Image.h"
 
