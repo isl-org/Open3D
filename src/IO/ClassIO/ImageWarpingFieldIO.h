@@ -26,34 +26,27 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
+#include <Core/ColorMap/ImageWarpingField.h>
 
 namespace open3d {
 
 class ImageWarpingField;
 
-/// Factory function to create a PinholeCameraTrajectory from a file
-/// (PinholeCameraTrajectoryFactory.cpp)
+/// Factory function to create a ImageWarpingField from a file
 /// Return an empty PinholeCameraTrajectory if fail to read the file.
 std::shared_ptr<ImageWarpingField> CreateImageWarpingFieldFromFile(
     const std::string &filename);
 
-/// The general entrance for reading a PinholeCameraTrajectory from a file
-/// The function calls read functions based on the extension name of filename.
+/// The general entrance for reading a ImageWarpingField from a file
 /// \return If the read function is successful.
 bool ReadImageWarpingField(const std::string &filename,
         ImageWarpingField &warping_field);
 
-/// The general entrance for writing a PinholeCameraTrajectory to a file
-/// The function calls write functions based on the extension name of filename.
+/// The general entrance for writing a ImageWarpingField to a file
 /// \return If the write function is successful.
 bool WriteImageWarpingField(const std::string &filename,
         const ImageWarpingField &warping_field);
-//
-// bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
-//         PinholeCameraTrajectory &trajectory);
-//
-// bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
-//         const PinholeCameraTrajectory &trajectory);
 
 }    // namespace open3d

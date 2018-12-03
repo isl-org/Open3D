@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <Core/Geometry/Image.h>
 #include <Core/Utility/IJsonConvertible.h>
 
 namespace open3d {

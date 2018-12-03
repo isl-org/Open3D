@@ -27,8 +27,7 @@
 #include "ImageWarpingFieldIO.h"
 
 #include <unordered_map>
-#include <Core/ColorMap/ImageWarpingField.h>
-// #include <Core/Utility/Console.h>
+#include <Core/Utility/Console.h>
 #include <Core/Utility/FileSystem.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 
