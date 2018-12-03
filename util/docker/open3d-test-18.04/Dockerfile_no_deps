@@ -15,6 +15,7 @@ RUN apt-get update && \
     python3-numpy \
     python3-matplotlib \
     xorg-dev && \
+    apt-get remove -y libpng* && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
