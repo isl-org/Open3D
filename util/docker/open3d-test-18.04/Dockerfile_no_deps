@@ -14,7 +14,10 @@ RUN apt-get update && \
     python3-pip \
     python3-numpy \
     python3-matplotlib \
-    xorg-dev && \
+    libxrandr-dev \
+    libxinerama-dev \
+    libxcursor-dev \
+    libxi-dev && \
     apt-get remove -y libpng* && \
     rm -rf /var/lib/apt/lists/*
 
