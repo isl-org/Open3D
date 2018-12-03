@@ -67,7 +67,7 @@ public:
     /// to avoid full matrix multiplication
     void ComputeJacobianAndResidualNonRigid(
             int row, Eigen::Vector14d &J_r, double &r,
-            Eigen::Vector14d &pattern,
+            Eigen::Vector14i &pattern,
             const TriangleMesh& mesh,
             const std::vector<double>& proxy_intensity,
             const std::shared_ptr<Image>& images_gray,

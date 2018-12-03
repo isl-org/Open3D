@@ -35,6 +35,8 @@
 #include <Core/Geometry/TriangleMesh.h>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Eigen.h>
+#include <IO/ClassIO/ImageWarpingFieldIO.h>
+#include <IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
 namespace open3d {
 
@@ -81,7 +83,8 @@ void OptimizeImageCoorNonrigid(
             intr(3, 3) = 1.0;
 
             auto f_lambda = [&]
-            (int i, Eigen::Vector14d &J_r, double &r, Eigen::Vector14d &pattern) {
+            (int i, Eigen::Vector14d &J_r, double &r, Eigen::Vector14i &pattern)
+            {
                 jac.ComputeJacobianAndResidualNonRigid(i, J_r, r, pattern,
                         mesh, proxy_intensity,
                         images_gray[c], images_dx[c], images_dy[c],
@@ -93,7 +96,8 @@ void OptimizeImageCoorNonrigid(
             Eigen::VectorXd JTr;
             double r2;
             std::tie(JTJ, JTr, r2) = ComputeJTJandJTr
-            <Eigen::Vector14d, Eigen::MatrixXd, Eigen::VectorXd>(f_lambda,
+            <Eigen::Vector14d, Eigen::Vector14i,
+                    Eigen::MatrixXd, Eigen::VectorXd>(f_lambda,
                     visiblity_image_to_vertex[c].size(), nonrigidval, false);
 
             double weight = option.non_rigid_anchor_point_weight_
@@ -118,6 +122,7 @@ void OptimizeImageCoorNonrigid(
                 warping_fields[c].flow_(j) += result(6 + j);
             }
             camera.parameters_[c].extrinsic_ = pose;
+
 #ifdef _OPENMP
 #pragma omp critical
 #endif

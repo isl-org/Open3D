@@ -160,7 +160,9 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
+#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
+#endif
     for (auto i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -192,7 +194,9 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
-#pragma omp parallel for num_threads( 8 )
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
     for (auto i = 0; i < n_vertex; i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -224,7 +228,9 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
+#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
+#endif
     for (int i = 0; i < n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
@@ -266,7 +272,9 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
+#ifdef _OPENMP
 #pragma omp parallel for schedule(static)
+#endif
     for (int i = 0; i < n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;

@@ -26,7 +26,13 @@
 
 #include "ImageWarpingField.h"
 
+#include <json/json.h>
+
 namespace open3d {
+
+ImageWarpingField::ImageWarpingField () {
+    InitializeWarpingFields(0, 0, 0);
+}
 
 ImageWarpingField::ImageWarpingField (
         int width, int height, int number_of_vertical_anchors) {
@@ -67,6 +73,49 @@ Eigen::Vector2d ImageWarpingField::GetImageWarpingField(
         + (1 - p) * (q)* QueryFlow(i, j + 1)
         + (p)* (1 - q) * QueryFlow(i + 1, j)
         + (p)* (q)* QueryFlow(i + 1, j + 1);
+}
+
+bool ImageWarpingField::ConvertToJsonValue(Json::Value &value) const
+{
+    value["class_name"] = "ImageWarpingField";
+    value["version_major"] = 1;
+    value["version_minor"] = 0;
+    value["anchor_w"] = anchor_w_;
+    value["anchor_h"] = anchor_h_;
+    Json::Value flow_array;
+    for (int i = 0; i < anchor_w_ * anchor_h_ * 2; i++) {
+        flow_array.append(flow_[i]);
+    }
+    value["flow"] = flow_array;
+    return true;
+}
+
+bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value)
+{
+    if (value.isObject() == false) {
+        PrintWarning("ImageWarpingField read JSON failed: unsupported json format.\n");
+        return false;
+    }
+    if (value.get("class_name", "").asString() != "ImageWarpingField" ||
+            value.get("version_major", 1).asInt() != 1 ||
+            value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning("ImageWarpingField read JSON failed: unsupported json format.\n");
+        return false;
+    }
+    anchor_w_ = value.get("anchor_w", 1).asInt();
+    anchor_h_ = value.get("anchor_h", 1).asInt();
+
+    const Json::Value flow_array = value["flow"];
+    if (flow_array.size() == 0 ||
+            flow_array.size() != (anchor_w_ * anchor_h_ * 2)) {
+        PrintWarning("ImageWarpingField read JSON failed: invalid flow.\n");
+        return false;
+    }
+    flow_.resize(anchor_w_ * anchor_h_ * 2, 1);
+    for (int i = 0; i < anchor_w_ * anchor_h_ * 2; i++) {
+        flow_(i) = flow_array[i].asDouble();
+    }
+    return true;
 }
 
 }	// namespace open3d

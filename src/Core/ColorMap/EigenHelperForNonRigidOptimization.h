@@ -34,6 +34,7 @@ namespace Eigen {
 
 typedef Eigen::Matrix<double, 14, 14> Matrix14d;
 typedef Eigen::Matrix<double, 14, 1> Vector14d;
+typedef Eigen::Matrix<int, 14, 1> Vector14i;
 
 }    // namespace Eigen
 
@@ -45,9 +46,10 @@ namespace open3d {
 /// Note: this function is almost identical to the functions in Utility/Eigen.h/cpp,
 /// but this function takes additional multiplication pattern
 /// that can produce JTJ having hundreds of rows and columns.
-template<typename VecInType, typename MatOutType, typename VecOutType>
-std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
-        std::function<void(int, VecInType &, double &, VecInType &)> f,
+template<typename VecInTypeDouble, typename VecInTypeInt,
+        typename MatOutType, typename VecOutType>
+        std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
+        std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
         int iteration_num, int nonrigidval, bool verbose = true);
 
 }    // namespace open3d

@@ -26,35 +26,34 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <string>
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+namespace open3d {
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+class ImageWarpingField;
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+/// Factory function to create a PinholeCameraTrajectory from a file
+/// (PinholeCameraTrajectoryFactory.cpp)
+/// Return an empty PinholeCameraTrajectory if fail to read the file.
+std::shared_ptr<ImageWarpingField> CreateImageWarpingFieldFromFile(
+    const std::string &filename);
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+/// The general entrance for reading a PinholeCameraTrajectory from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return If the read function is successful.
+bool ReadImageWarpingField(const std::string &filename,
+        ImageWarpingField &warping_field);
 
-#include "Odometry/Odometry.h"
+/// The general entrance for writing a PinholeCameraTrajectory to a file
+/// The function calls write functions based on the extension name of filename.
+/// \return If the write function is successful.
+bool WriteImageWarpingField(const std::string &filename,
+        const ImageWarpingField &warping_field);
+//
+// bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
+//         PinholeCameraTrajectory &trajectory);
+//
+// bool WritePinholeCameraTrajectoryToLOG(const std::string &filename,
+//         const PinholeCameraTrajectory &trajectory);
 
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
-
-#include "../Open3DConfig.h"
+}    // namespace open3d

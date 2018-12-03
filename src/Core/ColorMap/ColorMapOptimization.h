@@ -43,7 +43,7 @@ public:
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
             double non_rigid_anchor_point_weight = 0.316,
-            double maximum_iteration = 300,
+            int maximum_iteration = 300,
             double maximum_allowable_depth = 2.5,
             double depth_threshold_for_visiblity_check = 0.03,
             double depth_threshold_for_discontinuity_check = 0.1,
@@ -68,7 +68,7 @@ public:
     bool non_rigid_camera_coordinate_;
     int number_of_vertical_anchors_;
     double non_rigid_anchor_point_weight_;
-    double maximum_iteration_;
+    int maximum_iteration_;
     double maximum_allowable_depth_;
     double depth_threshold_for_visiblity_check_;
     double depth_threshold_for_discontinuity_check_;

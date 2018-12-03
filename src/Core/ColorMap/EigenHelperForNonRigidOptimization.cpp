@@ -30,9 +30,10 @@
 
 namespace open3d {
 
-template<typename VecInType, typename MatOutType, typename VecOutType>
-std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
-        std::function<void(int, VecInType &, double &, VecInType &)> f,
+template<typename VecInTypeDouble, typename VecInTypeInt,
+        typename MatOutType, typename VecOutType>
+        std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
+        std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
         int iteration_num, int nonrigidval, bool verbose/*=true*/)
 {
     MatOutType JTJ(6 + nonrigidval, 6 + nonrigidval);
@@ -49,21 +50,21 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
         double r2_sum_private = 0.0;
         JTJ_private.setZero();
         JTr_private.setZero();
-        VecInType J_r;
-        VecInType pattern;
+        VecInTypeDouble J_r;
+        VecInTypeInt pattern;
         double r;
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
         for (int i = 0; i < iteration_num; i++) {
             f(i, J_r, r, pattern);
-            for (int x = 0; x < J_r.size(); x++) {
-                for (int y = 0; y < J_r.size(); y++) {
-                    JTJ_private(pattern[x], pattern[y]) += J_r[x] * J_r[y];
+            for (auto x = 0; x < J_r.size(); x++) {
+                for (auto y = 0; y < J_r.size(); y++) {
+                    JTJ_private(pattern(x), pattern(y)) += J_r(x) * J_r(y);
                 }
             }
-            for (int x = 0; x < J_r.size(); x++) {
-                JTr_private(pattern[x]) += r * J_r[x];
+            for (auto x = 0; x < J_r.size(); x++) {
+                JTr_private(pattern(x)) += r * J_r(x);
             }
             r2_sum_private += r * r;
         }
@@ -86,7 +87,8 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
 }
 
 template std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeJTJandJTr(
-        std::function<void(int, Eigen::Vector14d &, double &, Eigen::Vector14d &)> f,
-        int iteration_num, int nonrigidval, bool verbose);
+        std::function<void(int, Eigen::Vector14d &, double &,
+        Eigen::Vector14i &)> f, int iteration_num, int nonrigidval,
+        bool verbose);
 
 }    // namespace open3d

@@ -75,7 +75,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
 }
 
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
-        int row, Eigen::Vector14d &J_r, double &r, Eigen::Vector14d &pattern,
+        int row, Eigen::Vector14d &J_r, double &r, Eigen::Vector14i &pattern,
         const TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
         const std::shared_ptr<Image>& images_gray,
@@ -99,6 +99,10 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     Eigen::Vector4d L = intrinsic * G;
     double u = L(0) / L(2);
     double v = L(1) / L(2);
+    if (!images_gray->TestImageBoundary(u, v,
+            image_boundary_margin)) {
+        return;
+    }
     int ii = (int)(u / anchor_step);
     int jj = (int)(v / anchor_step);
     double p = (u - ii * anchor_step) / anchor_step;
@@ -116,8 +120,9 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     double uu = uuvv(0);
     double vv = uuvv(1);
     if (!images_gray->TestImageBoundary(uu, vv,
-            image_boundary_margin))
+            image_boundary_margin)) {
         return;
+    }
     bool valid; double gray, dIdfx, dIdfy;
     std::tie(valid, gray) = images_gray->FloatValueAt(uu, vv);
     std::tie(valid, dIdfx) = images_dx->FloatValueAt(uu, vv);
