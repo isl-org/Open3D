@@ -1,9 +1,7 @@
 #!/bin/sh
 
-wget https://github.com/abseil/googletest/archive/release-1.8.0.tar.gz -O /tmp/release-1.8.0.tar.gz
-cd /tmp/
-tar -xzvf /tmp/release-1.8.0.tar.gz
-cd /tmp/googletest-release-1.8.0
+tar -xzf googletest-release-1.8.0.tar.gz
+cd googletest-release-1.8.0
 mkdir build
 cd build
 cmake ..
@@ -12,4 +10,5 @@ cd googlemock/gtest
 cp lib*.a /usr/local/lib
 cd ../../../googletest
 cp -r include/gtest /usr/local/include/gtest
+rm -rf /root/googletest-release-1.8.0*
 cd ../..

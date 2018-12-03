@@ -12,12 +12,14 @@ RUN apt-get update && \
     python3 \
     python3-dev \
     python3-pip \
-    xorg-dev \
-    wget && \
+    python3-numpy \
+    python3-matplotlib \
+    xorg-dev && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
 
 COPY ./setup/install-gtest.sh .
 RUN chmod a+x /root/install-gtest.sh
-RUN /root/install-gtest.sh
+
+COPY ./setup/googletest-release-1.8.0.tar.gz .

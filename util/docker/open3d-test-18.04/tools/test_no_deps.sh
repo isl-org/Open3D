@@ -27,6 +27,9 @@ docker container run \
 # attach to the container, clone & build & install Open3d
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     echo && \
+    echo installing googletest... && \
+    ./install-gtest.sh && \
+    echo && \
     git clone https://github.com/IntelVCL/Open3D.git open3d && \
     cd open3d && \
     echo && \
