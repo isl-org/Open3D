@@ -1,12 +1,18 @@
 #!/bin/sh
 
-# $1 must be no_deps or with_deps
+# $1 must be the Ubuntu version:
+# - 14.04
+# - 16.04
+# - 18.04
+
+# $2 must be:
+# - no_deps
+# - with_deps
 
 # get the name of the upper level directory
 NAME=$(bash -c 'basename $(cd .. ; pwd)')
-TAG=$1
+TAG=${1}-${2}
 CONTAINER_NAME=${NAME}_${TAG}
-DOCKERFILE=Dockerfile_$TAG
 
 # stop the container if it's already running
 docker container stop -t 0 $CONTAINER_NAME
@@ -15,7 +21,7 @@ docker container stop -t 0 $CONTAINER_NAME
 docker image rm $NAME:$TAG
 
 # build the image
-docker image build -t $NAME:$TAG -f ../$DOCKERFILE ..
+docker image build -t $NAME:$TAG -f ../$1/$2/Dockerfile ..
 
 # run the container
 docker container run \
