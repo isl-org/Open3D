@@ -1,8 +1,10 @@
 #!/bin/sh
 
+# $1 must be no_deps or with_deps
+
 # get the name of the upper level directory
 NAME=$(bash -c 'basename $(cd .. ; pwd)')
-TAG=with_deps
+TAG=$1
 CONTAINER_NAME=${NAME}_${TAG}
 DOCKERFILE=Dockerfile_$TAG
 
