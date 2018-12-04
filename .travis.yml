@@ -117,6 +117,7 @@ before_install:
 script:
   # Build and install to CMake's default install path
   - python -V
+  - git submodule update --init --recursive
   - mkdir build
   - cd build
   - if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
