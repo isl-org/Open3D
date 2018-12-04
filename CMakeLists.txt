@@ -47,7 +47,7 @@ endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
     "Installation directory for CMake files")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/Open3D-3rdparty/CMake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -80,8 +80,8 @@ endif ()
 # set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/3rdparty
-    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+    ${PROJECT_SOURCE_DIR}/Open3D-3rdparty
+    ${PROJECT_SOURCE_DIR}/Open3D-3rdparty/librealsense/include
     )
 
 # if dynamic link is added, use if (WIN32) macro
@@ -195,7 +195,7 @@ macro(ADD_SOURCE_GROUP MODULE_NAME)
 endmacro(ADD_SOURCE_GROUP)
 
 # Handling dependencies
-add_subdirectory(3rdparty)
+add_subdirectory(Open3D-3rdparty)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${3RDPARTY_INCLUDE_DIRS})
 link_directories(${3RDPARTY_LIBRARY_DIRS})
