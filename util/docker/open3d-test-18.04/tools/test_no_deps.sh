@@ -30,6 +30,9 @@ docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     echo installing googletest... && \
     ./install-gtest.sh && \
     echo && \
+    echo work around SSL CA cert issue... && \
+    git config --global http.sslVerify false && \
+    echo && \
     git clone https://github.com/IntelVCL/Open3D.git open3d && \
     cd open3d && \
     echo && \
