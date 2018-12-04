@@ -29,9 +29,6 @@ docker container run \
 # attach to the container, clone & build & install Open3d
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     echo && \
-    echo installing googletest... && \
-    ./install-gtest.sh && \
-    echo && \
     echo work around SSL CA cert issue... && \
     git config --global http.sslVerify false && \
     echo && \

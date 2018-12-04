@@ -1,3 +1,15 @@
+# Open3D Docker test image:
+# - based on Ubuntu 18.04
+# - no Open3D dependencies are installed
+# - xorg-dev replaced with just 4 out of ~60 dependencies:
+#   - libxrandr-dev
+#   - libxinerama-dev
+#   - libxcursor-dev
+#   - libxi-dev &&
+# - by replacing xorg-dev we're:
+#   - reducing image size substantially
+#   - making sure libpng is not installed
+
 FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -18,7 +30,9 @@ RUN apt-get update && \
 
 WORKDIR /root
 
-COPY /setup/install-gtest.sh .
-RUN chmod a+x /root/install-gtest.sh
-
 COPY /setup/googletest-release-1.8.0.tar.gz .
+COPY /setup/install-gtest.sh .
+
+RUN chmod a+x /root/install-gtest.sh && \
+    /root/install-gtest.sh && \
+    rm /root/install-gtest.sh
