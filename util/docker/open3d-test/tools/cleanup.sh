@@ -1,10 +1,9 @@
 #!/bin/sh
 
+. ./name.sh
+
 echo "cleaning up images..."
 echo
-
-# use the name of the upper level directory as the image name
-NAME=$(bash -c 'basename $(cd .. ; pwd)')
 
 for ubuntu in 18.04; do
     # build the tag of the image
