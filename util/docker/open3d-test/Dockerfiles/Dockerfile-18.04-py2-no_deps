@@ -1,0 +1,11 @@
+# Open3D Docker test image:
+# - based on Ubuntu 18.04
+# - no Open3D dependencies are installed
+
+FROM open3d-test:18.04-base
+
+# install python2 dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python-dev && \
+    rm -rf /var/lib/apt/lists/*

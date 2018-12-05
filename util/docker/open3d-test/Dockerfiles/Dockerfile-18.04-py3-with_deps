@@ -2,7 +2,7 @@
 # - based on Ubuntu 18.04
 # - Open3D dependencies are installed here
 
-FROM open3d-test:18.04-no_deps
+FROM open3d-test:18.04-py3-no_deps
 
 # install Open3D dependencies
 RUN apt-get update && \

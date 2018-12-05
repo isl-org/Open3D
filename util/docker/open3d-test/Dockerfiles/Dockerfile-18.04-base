@@ -1,3 +1,4 @@
+# Open3D Docker base image doesn't install Python or Open3D dependencies.
 # Open3D Docker test image:
 # - based on Ubuntu 18.04
 # - no Open3D dependencies are installed
@@ -21,7 +22,6 @@ RUN apt-get update && \
     cmake \
     git \
     libglu1-mesa-dev \
-    python3-dev \
     libxrandr-dev \
     libxinerama-dev \
     libxcursor-dev \
@@ -33,6 +33,9 @@ WORKDIR /root
 COPY /setup/googletest-release-1.8.0.tar.gz .
 COPY /setup/install-gtest.sh .
 
+# install googletest
+# work around SSL CA cert issue...
 RUN chmod a+x /root/install-gtest.sh && \
     /root/install-gtest.sh && \
-    rm /root/install-gtest.sh
+    rm /root/install-gtest.sh && \
+    git config --global http.sslVerify false

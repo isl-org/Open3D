@@ -5,14 +5,30 @@
 # - 16.04
 # - 18.04
 
-# $2 must be:
+# $2 must be the python version:
+# - py2
+# - py3
+
+# $3 must be:
 # - no_deps
 # - with_deps
 
+if [ $# -lt 3 ]; then
+    echo "./test.sh <Ubuntu_version_nr> <Python_version_nr> <Type>"
+    echo
+    echo "    Ubuntu version nr: 14.04/16.04/18.04"
+    echo "    Python version nr: py2/py3"
+    echo "    Type:              no_deps/with_deps"
+    echo
+
+    exit 0
+fi
+
 # get the name of the upper level directory
 NAME=$(bash -c 'basename $(cd .. ; pwd)')
-TAG=${1}-${2}
-CONTAINER_NAME=${NAME}_${TAG}
+TAG=${1}-${2}-${3}
+CONTAINER_NAME=${NAME}-${TAG}
+DOCKERFILE=Dockerfile-$TAG
 
 # stop the container if it's already running
 docker container stop -t 0 $CONTAINER_NAME
@@ -21,7 +37,7 @@ docker container stop -t 0 $CONTAINER_NAME
 docker image rm $NAME:$TAG
 
 # build the image
-docker image build -t $NAME:$TAG -f ../$1/$2/Dockerfile ..
+docker image build -t $NAME:$TAG -f ../Dockerfiles/$DOCKERFILE ..
 
 # run the container
 docker container run \
@@ -34,9 +50,6 @@ docker container run \
 
 # attach to the container, clone & build & install Open3d
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
-    echo && \
-    echo work around SSL CA cert issue... && \
-    git config --global http.sslVerify false && \
     echo && \
     git clone https://github.com/IntelVCL/Open3D.git open3d && \
     cd open3d && \
