@@ -5,7 +5,7 @@
 echo "cleaning up images..."
 echo
 
-for ubuntu in 18.04; do
+for ubuntu in 16.04 18.04; do
     # build the tag of the image
     TAG=${ubuntu}-base
     echo "removing $NAME:${TAG}..."

@@ -3,7 +3,7 @@
 echo "building all images..."
 echo
 
-for ubuntu in 18.04; do
+for ubuntu in 16.04 18.04; do
     ./build.sh $ubuntu base
     echo
 
