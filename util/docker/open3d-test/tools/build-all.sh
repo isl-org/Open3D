@@ -3,20 +3,17 @@
 echo "building all images..."
 echo
 
-./build.sh 18.04 base
-echo
+for ubuntu in 18.04; do
+    ./build.sh $ubuntu base
+    echo
 
-./build.sh 18.04 py2 no_deps
-echo
-
-./build.sh 18.04 py2 with_deps
-echo
-
-./build.sh 18.04 py3 no_deps
-echo
-
-./build.sh 18.04 py3 with_deps
-echo
+    for python in py2 py3; do
+        for deps in no_deps with_deps; do
+            ./build.sh $ubuntu $python $deps
+            echo
+        done
+    done
+done
 
 # display images in order to check image size
 docker image ls

@@ -3,20 +3,22 @@
 echo "cleaning up images..."
 echo
 
-docker image rm open3d-test:18.04-py3-with_deps
-echo
+# use the name of the upper level directory as the image name
+NAME=$(bash -c 'basename $(cd .. ; pwd)')
 
-docker image rm open3d-test:18.04-py3-no_deps
-echo
+for ubuntu in 18.04; do
+    echo "removing $NAME:${ubuntu}-base..."
+    docker image rm $NAME:${ubuntu}-base
+    echo
 
-docker image rm open3d-test:18.04-py2-with_deps
-echo
-
-docker image rm open3d-test:18.04-py2-no_deps
-echo
-
-docker image rm open3d-test:18.04-base
-echo
+    for python in py2 py3; do
+        for deps in no_deps with_deps; do
+            echo "removing $NAME:${ubuntu}-${python}-${deps}..."
+            docker image rm $NAME:${ubuntu}-${python}-${deps}
+            echo
+        done
+    done
+done
 
 docker image ls
 echo
