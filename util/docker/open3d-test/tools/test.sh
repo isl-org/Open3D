@@ -37,7 +37,7 @@ docker container stop -t 0 $CONTAINER_NAME
 docker image rm $NAME:$TAG
 
 # build the image
-docker image build -t $NAME:$TAG -f ../Dockerfiles/$DOCKERFILE ..
+docker image build -t $NAME:$TAG -f ../Dockerfiles/${1}/$DOCKERFILE ..
 
 # run the container
 docker container run \

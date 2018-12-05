@@ -23,7 +23,7 @@ DOCKERFILE=Dockerfile-${TAG}
 docker image rm $NAME:$TAG
 
 # build the image
-docker image build -t $NAME:$TAG -f ../Dockerfiles/$DOCKERFILE ..
+docker image build -t $NAME:$TAG -f ../Dockerfiles/${1}/$DOCKERFILE ..
 
 # display images in order to check image size
 docker image ls
