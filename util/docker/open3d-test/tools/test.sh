@@ -14,6 +14,14 @@ docker container run \
        --name $CONTAINER_NAME \
        $NAME:$TAG
 
+PYTHON=""
+if [ "$2" != "py2" ]; then
+    PYTHON="2"
+fi
+if [ "$2" != "py3" ]; then
+    PYTHON="3"
+fi
+
 # attach to the container, clone & build & install Open3d
 echo "testing $NAME:$TAG..."
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
@@ -24,8 +32,9 @@ docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     echo building... && \
     mkdir -p build && \
     cd build && \
-    cmake .. -DBUILD_UNIT_TESTS=ON \
-             -DCMAKE_BUILD_TYPE=Release && \
+    cmake .. -DPYTHON_EXECUTABLE=/usr/bin/python${PYTHON} \
+             -DCMAKE_BUILD_TYPE=Release \
+             -DBUILD_UNIT_TESTS=ON && \
     echo && \
     make -j && \
     echo && \
