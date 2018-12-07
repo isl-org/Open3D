@@ -26,35 +26,30 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <tuple>
+#include <vector>
+#include <Eigen/Core>
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+namespace Eigen {
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+typedef Eigen::Matrix<double, 14, 14> Matrix14d;
+typedef Eigen::Matrix<double, 14, 1> Vector14d;
+typedef Eigen::Matrix<int, 14, 1> Vector14i;
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+}    // namespace Eigen
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+namespace open3d {
 
-#include "Odometry/Odometry.h"
+/// Function to compute JTJ and Jtr
+/// Input: function pointer f and total number of rows of Jacobian matrix
+/// Output: JTJ, JTr, sum of r^2
+/// Note: this function is almost identical to the functions in Utility/Eigen.h/cpp,
+/// but this function takes additional multiplication pattern
+/// that can produce JTJ having hundreds of rows and columns.
+template<typename VecInTypeDouble, typename VecInTypeInt,
+        typename MatOutType, typename VecOutType>
+        std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
+        std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
+        int iteration_num, int nonrigidval, bool verbose = true);
 
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
-
-#include "../Open3DConfig.h"
+}    // namespace open3d

@@ -71,20 +71,20 @@ std::tuple<bool, std::vector<Eigen::Matrix4d>>
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
-/// Output: JTJ and JTr
+/// Output: JTJ, JTr, sum of r^2
 /// Note: f takes index of row, and outputs corresponding residual and row vector.
 template<typename MatType, typename VecType>
-std::tuple<MatType, VecType> ComputeJTJandJTr(
+std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<void(int, VecType &, double &)> f,
-        int iteration_num);
+        int iteration_num, bool verbose = true);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
-/// Output: JTJ and JTr
+/// Output: JTJ, JTr, sum of r^2
 /// Note: f takes index of row, and outputs corresponding residual and row vector.
 template<typename MatType, typename VecType>
-std::tuple<MatType, VecType> ComputeJTJandJTr(
+std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
-        int iteration_num);
+        int iteration_num, bool verbose = true);
 
 }    // namespace open3d

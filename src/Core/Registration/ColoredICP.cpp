@@ -189,7 +189,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
-    std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+    double r2;
+    std::tie(JTJ, JTr, r2) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
             compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;

@@ -26,35 +26,29 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <Core/Utility/IJsonConvertible.h>
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+namespace open3d {
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+class ImageWarpingField : public IJsonConvertible
+{
+public:
+    ImageWarpingField();
+    ImageWarpingField (int width, int height, int number_of_vertical_anchors);
+    void InitializeWarpingFields(int width, int height,
+            int number_of_vertical_anchors);
+    Eigen::Vector2d QueryFlow(int i, int j) const;
+    Eigen::Vector2d GetImageWarpingField(double u, double v) const;
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+public:
+    bool ConvertToJsonValue(Json::Value &value) const override;
+    bool ConvertFromJsonValue(const Json::Value &value) override;
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+public:
+    Eigen::VectorXd flow_;
+    int anchor_w_;
+    int anchor_h_;
+    double anchor_step_;
+};
 
-#include "Odometry/Odometry.h"
-
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
-
-#include "../Open3DConfig.h"
+}	// namespace open3d
