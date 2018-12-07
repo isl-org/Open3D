@@ -5,7 +5,7 @@
 echo "stopping containers..."
 echo
 
-for ubuntu in 18.04; do
+for ubuntu in 14.04 16.04 18.04; do
     for python in py2 py3; do
         for deps in no_deps with_deps; do
             # build the tag of the image
