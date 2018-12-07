@@ -18,3 +18,22 @@ echo
 
 echo running the unit tests...
 ./bin/unitTests
+
+echo cleaning...
+cd ..
+rm -rf build
+echo
+
+echo shared building...
+mkdir -p build
+cd build
+cmake .. -DBUILD_SHARED_LIBS=ON \
+         -DPYTHON_EXECUTABLE=/usr/bin/${PYTHON} \
+         -DCMAKE_BUILD_TYPE=Release \
+         -DBUILD_UNIT_TESTS=ON
+echo
+make -j
+echo
+
+echo running the unit tests...
+./bin/unitTests
