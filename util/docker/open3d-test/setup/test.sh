@@ -4,6 +4,7 @@ echo
 
 git clone https://github.com/IntelVCL/Open3D.git open3d
 cd open3d
+git submodule update --init --recursive
 echo
 
 echo building STATIC...
