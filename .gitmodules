@@ -1,0 +1,3 @@
+[submodule "3rdparty"]
+	path = 3rdparty
+	url = https://github.com/IntelVCL/Open3D-3rdparty
