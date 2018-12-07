@@ -6,7 +6,7 @@ git clone https://github.com/IntelVCL/Open3D.git open3d
 cd open3d
 echo
 
-echo building...
+echo building STATIC...
 mkdir -p build
 cd build
 cmake .. -DPYTHON_EXECUTABLE=/usr/bin/${PYTHON} \
@@ -24,7 +24,7 @@ cd ..
 rm -rf build
 echo
 
-echo shared building...
+echo building SHARED...
 mkdir -p build
 cd build
 cmake .. -DBUILD_SHARED_LIBS=ON \
