@@ -53,7 +53,15 @@ DOCKERFILE=Dockerfile-${TAG}
 # build the container name
 CONTAINER_NAME=${NAME}-${TAG}
 
+PYTHON="python"
+if [ "$2" = "py2" ]; then
+    PYTHON="python2"
+elif [ "$2" = "py3" ]; then
+    PYTHON="python3"
+fi
+
 export NAME
 export TAG
 export DOCKERFILE
 export CONTAINER_NAME
+export PYTHON

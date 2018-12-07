@@ -5,13 +5,6 @@
 # build the image
 ./build.sh ${1} ${2} ${3}
 
-PYTHON="python"
-if [ "$2" = "py2" ]; then
-    PYTHON="python2"
-elif [ "$2" = "py3" ]; then
-    PYTHON="python3"
-fi
-
 # run the container
 docker container run \
     --rm \
