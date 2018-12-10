@@ -39,7 +39,8 @@ class Image;
 
 class RGBDImage;
 
-typedef std::vector<Eigen::Vector4i, Vector4i_allocator> CorrespondenceSetPixelWise;
+typedef std::vector<Eigen::Vector4i,
+                    Vector4i_allocator> CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
 class RGBDOdometryJacobian

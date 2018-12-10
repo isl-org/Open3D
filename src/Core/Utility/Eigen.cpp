@@ -183,8 +183,8 @@ std::tuple<MatType, VecType> ComputeJTJandJTr(
 
 template<typename MatType, typename VecType>
 std::tuple<MatType, VecType> ComputeJTJandJTr(
-        std::function<void(int, 
-            std::vector<VecType, Eigen::aligned_allocator<VecType>> &, 
+        std::function<void(int,
+            std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
         std::vector<double> &)> f,
         int iteration_num)
 {
@@ -237,7 +237,9 @@ template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
         int iteration_num);
 
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d> ComputeJTJandJTr(
-        std::function<void(int, std::vector<Eigen::Vector6d, Vector6d_allocator> &,
-        std::vector<double> &)> f, int iteration_num);
+        std::function<void(int,
+                           std::vector<Eigen::Vector6d, Vector6d_allocator> &,
+                           std::vector<double> &)> f,
+                           int iteration_num);
 
 }    // namespace open3d

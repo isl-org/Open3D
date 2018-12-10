@@ -40,7 +40,8 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-typedef std::vector<Eigen::Matrix4d, open3d::Matrix4d_allocator> temp_eigen_matrix4d;
+typedef std::vector<Eigen::Matrix4d,
+                    open3d::Matrix4d_allocator> temp_eigen_matrix4d;
 
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
