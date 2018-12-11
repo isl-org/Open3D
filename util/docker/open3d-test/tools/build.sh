@@ -12,5 +12,8 @@ fi
 
 # build the image
 echo "building $NAME:$TAG..."
+date
 docker image build -t $NAME:$TAG -f ../Dockerfiles/${1}/$DOCKERFILE ..
+date
+echo "done building $NAME:$TAG..."
 echo

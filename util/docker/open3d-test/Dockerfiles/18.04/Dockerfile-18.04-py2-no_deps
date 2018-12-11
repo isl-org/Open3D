@@ -7,5 +7,8 @@ FROM open3d-test:18.04-base
 # install python2 dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    python-dev && \
+    python-dev \
+    python-pip \
+    python-setuptools \
+    python-wheel && \
     rm -rf /var/lib/apt/lists/*
