@@ -5,12 +5,15 @@
 
 . set_variables.sh
 
+TIMEZONE=$(cat /etc/timezone)
+
 # run the container
 docker container run \
     --rm \
     -d \
     -t \
     -e PYTHON=$PYTHON \
+    -e TZ=$TIMEZONE \
     -h $CONTAINER_NAME \
     --name $CONTAINER_NAME \
     $NAME:$TAG
