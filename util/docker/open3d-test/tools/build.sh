@@ -2,18 +2,18 @@
 
 . set_variables.sh
 
-if [ "$3" = "${deps_type[1]}" ]; then
-    ./build.sh ${1} ${2} ${deps_type[0]}
+# build the images this image depends on
+if [ "$3" != "" ]; then
+    ./build.sh ${1} ${2}
 fi
-
-if [ "$3" = "${deps_type[0]}" ]; then
-    ./build.sh ${1} base
+if [ "$2" = "${bundle_type[1]}" ]; then
+    ./build.sh ${1} ${bundle_type[0]} ${3}
 fi
 
 # build the image
-echo "building $NAME:$TAG..."
+echo "building $IMAGE_NAME..."
 date
-docker image build -t $NAME:$TAG -f ../Dockerfiles/${1}/$DOCKERFILE ..
+docker image build -t $IMAGE_NAME -f ../Dockerfiles/${1}/$DOCKERFILE ..
 date
-echo "done building $NAME:$TAG..."
+echo "done building $IMAGE_NAME..."
 echo

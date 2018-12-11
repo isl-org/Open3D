@@ -2,14 +2,13 @@
 # - based on Ubuntu 14.04
 # - Open3D dependencies are installed here
 
-FROM open3d-test:14.04-py3-no_deps
+FROM open3d-test:14.04-deps-py3
 
-# install Open3D dependencies
+# install python3 dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libeigen3-dev \
-    libglew-dev \
-    libjpeg-dev \
-    libjsoncpp-dev \
-    libpng-dev && \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel && \
     rm -rf /var/lib/apt/lists/*

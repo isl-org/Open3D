@@ -16,10 +16,10 @@ docker container run \
     -e TZ=$TIMEZONE \
     -h $CONTAINER_NAME \
     --name $CONTAINER_NAME \
-    $NAME:$TAG
+    $IMAGE_NAME
 
 # attach to the running container, clone & build Open3d
-echo "testing $NAME:$TAG..."
+echo "testing $IMAGE_NAME..."
 docker container exec -it -w /root $CONTAINER_NAME bash -c './test.sh'
 
 # stop the container

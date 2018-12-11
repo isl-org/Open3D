@@ -1,15 +1,14 @@
 # Open3D Docker test image:
-# - based on Ubuntu 16.04
+# - based on Ubuntu 14.04
 # - Open3D dependencies are installed here
 
-FROM open3d-test:16.04-py2-no_deps
+FROM open3d-test:14.04-base
 
 # install Open3D dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libeigen3-dev \
     libglew-dev \
-    libglfw3-dev \
     libjpeg-dev \
     libjsoncpp-dev \
     libpng-dev && \

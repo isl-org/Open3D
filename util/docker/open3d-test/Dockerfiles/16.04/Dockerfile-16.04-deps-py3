@@ -1,0 +1,14 @@
+# Open3D Docker test image:
+# - based on Ubuntu 16.04
+# - Open3D dependencies are installed here
+
+FROM open3d-test:16.04-deps-py3
+
+# install python3 dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel && \
+    rm -rf /var/lib/apt/lists/*
