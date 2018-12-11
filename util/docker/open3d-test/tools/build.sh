@@ -3,7 +3,7 @@
 . set_variables.sh
 
 if [ "$3" = "${deps_type[1]}" ]; then
-    ./build.sh ${1} ${2} no_deps
+    ./build.sh ${1} ${2} ${deps_type[0]}
 fi
 
 if [ "$3" = "${deps_type[0]}" ]; then
