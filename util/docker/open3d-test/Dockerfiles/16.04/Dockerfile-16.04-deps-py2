@@ -2,7 +2,7 @@
 # - based on Ubuntu 16.04
 # - Open3D dependencies are installed here
 
-FROM open3d-test:16.04-deps-py2
+FROM open3d-test:16.04-deps
 
 # install python2 dependencies
 RUN apt-get update && \

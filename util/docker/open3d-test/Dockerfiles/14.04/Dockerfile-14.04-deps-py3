@@ -2,7 +2,7 @@
 # - based on Ubuntu 14.04
 # - Open3D dependencies are installed here
 
-FROM open3d-test:14.04-deps-py3
+FROM open3d-test:14.04-deps
 
 # install python3 dependencies
 RUN apt-get update && \
