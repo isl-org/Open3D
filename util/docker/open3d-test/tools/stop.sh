@@ -1,13 +1,15 @@
 #!/bin/bash
 
-. ./name.sh
+. name.sh
+
+. arguments.sh
 
 echo "stopping containers..."
 echo
 
-for ubuntu in 14.04 16.04 18.04; do
-    for python in py2 py3; do
-        for deps in no_deps with_deps; do
+for ubuntu in ${ubuntu_version[@]}; do
+    for python in ${python_version[@]}; do
+        for deps in ${deps_type[@]}; do
             # build the tag of the image
             TAG=${ubuntu}-${python}-${deps}
             # build the container name

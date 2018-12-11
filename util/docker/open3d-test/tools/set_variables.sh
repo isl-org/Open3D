@@ -1,10 +1,8 @@
 #!/bin/bash
 
-. ./name.sh
+. name.sh
 
-declare -a ubuntu_version=(14.04 16.04 18.04)
-declare -a python_version=(py2 py3)
-declare -a deps_type=(no_deps with_deps)
+. arguments.sh
 
 if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     echo "./build.sh <Ubuntu_version_nr> <base  or <Python_version_nr> <Type>>"

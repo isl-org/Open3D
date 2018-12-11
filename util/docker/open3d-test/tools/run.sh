@@ -3,7 +3,7 @@
 # tool used for debugging
 # accepts the exact same command line arguments as test.sh
 
-. ./set_variables.sh
+. set_variables.sh
 
 # run the container
 docker container run \

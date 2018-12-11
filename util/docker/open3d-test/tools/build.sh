@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./set_variables.sh
+. set_variables.sh
 
 if [ "$3" = "with_deps" ]; then
     ./build.sh ${1} ${2} no_deps

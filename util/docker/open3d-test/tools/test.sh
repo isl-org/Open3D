@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./set_variables.sh
+. set_variables.sh
 
 # build the image
 ./build.sh ${1} ${2} ${3}

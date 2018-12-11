@@ -1,14 +1,16 @@
 #!/bin/bash
 
+. arguments.sh
+
 echo "building all images..."
 echo
 
-for ubuntu in 14.04 16.04 18.04; do
+for ubuntu in ${ubuntu_version[@]}; do
     ./build.sh $ubuntu base
     echo
 
-    for python in py2 py3; do
-        for deps in no_deps with_deps; do
+    for python in ${python_version[@]}; do
+        for deps in ${deps_type[@]}; do
             ./build.sh $ubuntu $python $deps
             echo
         done
