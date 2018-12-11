@@ -25,7 +25,8 @@ RUN apt-get update && \
     libxrandr-dev \
     libxinerama-dev \
     libxcursor-dev \
-    libxi-dev && \
+    libxi-dev \
+    tzdata && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
