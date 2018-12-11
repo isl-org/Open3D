@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # tool used for debugging
 # accepts the exact same command line arguments as test.sh

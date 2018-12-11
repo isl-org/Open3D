@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "testing all images..."
 echo

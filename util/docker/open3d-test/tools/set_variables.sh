@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./name.sh
+
+declare -a ubuntu_version=(14.04 16.04 18.04)
+declare -a python_version=(py2 py3)
+declare -a deps_type=(no_deps with_deps)
 
 if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     echo "./build.sh <Ubuntu_version_nr> <base  or <Python_version_nr> <Type>>"
@@ -9,30 +13,42 @@ if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     echo "                    |"
     echo "                     -- <Python version> <Type>"
     echo
-    echo "    Ubuntu version: 14.04/16.04/18.04"
-    echo "    Python version: py2/py3"
-    echo "    Type:           no_deps/with_deps"
+    echo "    Ubuntu version: ${ubuntu_version[*]}"
+    echo "    Python version: ${python_version[*]}"
+    echo "    Type:           ${deps_type[*]}"
     echo
     exit 1
 fi
 
-if [ "$1" != "14.04" ] && [ "$1" != "16.04" ] && [ "$1" != "18.04" ]; then
-    echo "    the first argument must be the Ubuntu version: 14.04/16.04/18.04"
+if [[ ! " ${ubuntu_version[@]} " =~ " $1 " ]]; then
+    echo "    the first argument must be the Ubuntu version: ${ubuntu_version[*]}"
     echo "    argument provided: $1"
     echo
     exit 1
 fi
 
-if [ "$2" != "base" ] && [ "$2" != "py2" ] && [ "$2" != "py3" ]; then
-    echo "    the second argument must be either 'base' or the Python version: py2/py3"
-    echo "    argument provided: $2"
+if [ "$2" = "" ]; then
+    echo "    the second argument must be either 'base' or the Python version: ${python_version[*]}"
     echo
     exit 1
 fi
 
 if [ "$2" != "base" ]; then
-    if [ "$3" != "no_deps" ] && [ "$3" != "with_deps" ]; then
-        echo "    the third argument must be the build type: no_deps/with_deps"
+    if [[ ! " ${python_version[@]} " =~ " $2 " ]]; then
+        echo "    the second argument must be either 'base' or the Python version: ${python_version[*]}"
+        echo "    argument provided: $2"
+        echo
+        exit 1
+    fi
+
+    if [ "$3" = "" ]; then
+        echo "    the third argument must be the build type: ${deps_type[*]}"
+        echo
+        exit 1
+    fi
+
+    if [[ ! " ${deps_type[@]} " =~ " $3 " ]]; then
+        echo "    the third argument must be the build type: ${deps_type[*]}"
         echo "    argument provided: $3"
         echo
         exit 1
