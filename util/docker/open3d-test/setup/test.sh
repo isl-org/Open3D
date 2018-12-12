@@ -38,7 +38,6 @@ fi
 
 echo
 
-# git clone --recurse-submodules https://github.com/IntelVCL/Open3D.git open3d
 cd open3d
 echo
 

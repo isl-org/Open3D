@@ -28,7 +28,7 @@ docker container run \
     --name $CONTAINER_NAME \
     $IMAGE_NAME
 
-# attach to the running container, clone & build Open3d
+# attach to the running container, clone once & build Open3D twice
 echo "testing $IMAGE_NAME..."
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
