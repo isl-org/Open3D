@@ -5,6 +5,15 @@
 # build the image
 ./build.sh ${1} ${2} ${3}
 
+# miniconda needs to be activated before building Open3D
+ACTIVATE_CONDA=""
+if [ "$3" = "mc2" ]; then
+    ACTIVATE_CONDA="source /root/miniconda2/bin/activate"
+elif [ "$3" = "mc3" ]; then
+    ACTIVATE_CONDA="source /root/miniconda3/bin/activate"
+fi
+
+# helps sync the container clock with the host clock
 TIMEZONE=$(cat /etc/timezone)
 
 # run the container
@@ -12,7 +21,7 @@ docker container run \
     --rm \
     -d \
     -t \
-    -e PYTHON=$PYTHON \
+    -e ACTIVATE_CONDA=$ACTIVATE_CONDA \
     -e TZ=$TIMEZONE \
     -h $CONTAINER_NAME \
     --name $CONTAINER_NAME \
@@ -21,8 +30,8 @@ docker container run \
 # attach to the running container, clone & build Open3d
 echo "testing $IMAGE_NAME..."
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
-    git clone --recurse-submodules https://github.com/IntelVCL/Open3D.git open3d && \
-    source /root/miniconda2/bin/activate && \
+    git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
+    $ACTIVATE_CONDA && \
     ./test.sh Release STATIC ${3} && \
     ./test.sh Release SHARED ${3} && \
     bash'
