@@ -11,7 +11,7 @@ if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     echo "    Ubuntu version: ${ubuntu_version[*]}"
     echo "    Bundle type:    ${bundle_type[*]}"
     echo "Optional:"
-    echo "    Python version: ${python_version[*]}"
+    echo "    Python version: ${env_type[*]}"
     echo
     exit 1
 fi
@@ -31,8 +31,8 @@ if [[ ! " ${bundle_type[@]} " =~ " $2 " ]]; then
 fi
 
 if [ "$3" != "" ]; then
-    if [[ ! " ${python_version[@]} " =~ " $3 " ]]; then
-        echo "    the third argument must be the Python version: ${python_version[*]}"
+    if [[ ! " ${env_type[@]} " =~ " $3 " ]]; then
+        echo "    the third argument must be the Python version: ${env_type[*]}"
         echo "    argument provided: '$3'"
         echo
         exit 1

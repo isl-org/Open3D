@@ -7,7 +7,7 @@ echo
 
 for ubuntu in ${ubuntu_version[@]}; do
     for deps in ${bundle_type[@]}; do
-        for python in ${python_version[@]}; do
+        for python in ${env_type[@]}; do
             ./build.sh $ubuntu $deps $python
             echo
         done

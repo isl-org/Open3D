@@ -13,7 +13,7 @@ for ubuntu in ${ubuntu_version[@]}; do
         docker image rm $IMAGE_NAME
         echo
 
-        for python in ${python_version[@]}; do
+        for python in ${env_type[@]}; do
             . set_variables.sh ${ubuntu} ${deps} ${python}
 
             echo "removing $IMAGE_NAME..."
