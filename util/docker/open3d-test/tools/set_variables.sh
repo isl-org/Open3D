@@ -54,15 +54,11 @@ DOCKERFILE=Dockerfile-${TAG}
 # build the container name
 CONTAINER_NAME=${NAME}-${TAG}
 
-# set the python executable
-PYTHON=$3
-if [ "$3" = "py2" ]; then
-    PYTHON="python2"
-elif [ "$3" = "py3" ]; then
-    PYTHON="python3"
-fi
+MC2_INSTALLER=Miniconda2-latest-Linux-x86_64.sh
+MC3_INSTALLER=Miniconda3-latest-Linux-x86_64.sh
 
 export IMAGE_NAME
 export DOCKERFILE
 export CONTAINER_NAME
-export PYTHON
+export MC2_INSTALLER
+export MC3_INSTALLER

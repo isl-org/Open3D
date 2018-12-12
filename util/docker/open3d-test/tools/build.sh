@@ -12,12 +12,12 @@ fi
 
 # download miniconda installer once
 if [ "$3" = "mc2" ]; then
-    if [ ! -f ../setup/Miniconda2-latest-Linux-x86_64.sh ]; then
-        wget -P ../setup https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh
+    if [ ! -f ../setup/$MC2_INSTALLER ]; then
+        wget -P ../setup https://repo.anaconda.com/miniconda/$MC2_INSTALLER
     fi
 elif [ "$3" = "mc3" ]; then
-    if [ ! -f ../setup/Miniconda3-latest-Linux-x86_64.sh ]; then
-        wget -P ../setup https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    if [ ! -f ../setup/$MC3_INSTALLER ]; then
+        wget -P ../setup https://repo.anaconda.com/miniconda/$MC3_INSTALLER
     fi
 fi
 

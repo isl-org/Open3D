@@ -12,7 +12,6 @@ docker container run \
     --rm \
     -d \
     -t \
-    -e PYTHON=$PYTHON \
     -e TZ=$TIMEZONE \
     -h $CONTAINER_NAME \
     --name $CONTAINER_NAME \
