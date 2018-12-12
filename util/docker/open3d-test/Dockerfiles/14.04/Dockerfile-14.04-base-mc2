@@ -12,4 +12,7 @@ RUN apt-get update && \
     wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh && \
     chmod a+x /root/Miniconda2-latest-Linux-x86_64.sh && \
     /root/Miniconda2-latest-Linux-x86_64.sh -b && \
-    rm -rf /root/Miniconda2-latest-Linux-x86_64.sh
+    rm -rf /root/Miniconda2-latest-Linux-x86_64.sh && \
+    /root/miniconda2/bin/conda install -y -c anaconda conda-build && \
+    /root/miniconda2/bin/conda install -y -c anaconda conda-verify && \
+    /root/miniconda2/bin/conda clean -a
