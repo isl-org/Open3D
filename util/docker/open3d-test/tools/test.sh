@@ -22,6 +22,7 @@ docker container run \
     -d \
     -t \
     -e ACTIVATE_CONDA=$ACTIVATE_CONDA \
+    -e ENV_TYPE=${3} \
     -e TZ=$TIMEZONE \
     -h $CONTAINER_NAME \
     --name $CONTAINER_NAME \
@@ -32,9 +33,8 @@ echo "testing $IMAGE_NAME..."
 docker container exec -it -w /root $CONTAINER_NAME bash -c '\
     git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
     $ACTIVATE_CONDA && \
-    ./test.sh Release STATIC ${3} && \
-    ./test.sh Release SHARED ${3} && \
-    bash'
+    ./test.sh Release STATIC $ENV_TYPE && \
+    ./test.sh Release SHARED $ENV_TYPE'
 
 # stop the container
 docker container stop -t 0 $CONTAINER_NAME
