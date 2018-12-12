@@ -4,7 +4,7 @@
 
 FROM open3d-test:14.04-base
 
-# install python3 dependencies
+# install native python3
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     python3-dev \
