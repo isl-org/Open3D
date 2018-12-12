@@ -1,0 +1,15 @@
+# Open3D Docker test image:
+# - based on Ubuntu 16.04
+# - Open3D dependencies are installed here
+
+FROM open3d-test:16.04-deps
+
+# install python2 dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget && \
+    rm -rf /var/lib/apt/lists/* && \
+    wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    chmod a+x /root/Miniconda3-latest-Linux-x86_64.sh && \
+    /root/Miniconda3-latest-Linux-x86_64.sh -b && \
+    rm -rf /root/Miniconda3-latest-Linux-x86_64.sh
