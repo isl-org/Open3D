@@ -21,10 +21,20 @@ elif [ "$3" = "mc3" ]; then
     fi
 fi
 
-# build the image
-echo "building $IMAGE_NAME..."
-date
-docker image build -t $IMAGE_NAME -f ../Dockerfiles/${1}/$DOCKERFILE ..
-date
-echo "done building $IMAGE_NAME..."
-echo
+# check if the image already exists or not
+docker image inspect $IMAGE_NAME >/dev/null 2>&1
+IMAGE_EXISTS=$?
+
+# build the image only if not found
+if [ 0 -eq $IMAGE_EXISTS ]; then
+    echo "skipping $IMAGE_NAME, already exists."
+    exit 0
+else
+    echo
+    echo "building $IMAGE_NAME..."
+    date
+    docker image build -t $IMAGE_NAME -f ../Dockerfiles/${1}/$DOCKERFILE ..
+    date
+    echo "done building $IMAGE_NAME..."
+    echo
+fi
