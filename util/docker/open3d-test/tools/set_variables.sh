@@ -4,35 +4,38 @@
 
 . arguments.sh
 
+# display help on the required command line arguments
 if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
-    echo "./build.sh <Ubuntu_version> <Bundle_type> <Python_version>"
+    echo "./build.sh <ubuntu_version> <bundle_type> <env_type>"
     echo
     echo "Required:"
-    echo "    Ubuntu version: ${ubuntu_version[*]}"
-    echo "    Bundle type:    ${bundle_type[*]}"
-    echo "Optional:"
-    echo "    Python version: ${env_type[*]}"
+    echo "    Ubuntu version:   ${ubuntu_version[*]}"
+    echo "    Bundle type:      ${bundle_type[*]}"
+    echo "    Environment type: ${env_type[*]}"
     echo
     exit 1
 fi
 
+# display help on the first required argument
 if [[ ! " ${ubuntu_version[@]} " =~ " $1 " ]]; then
-    echo "    the first argument must be the Ubuntu version: ${ubuntu_version[*]}"
+    echo "    options for the the 1st argument: ${ubuntu_version[*]}"
     echo "    argument provided: '$1'"
     echo
     exit 1
 fi
 
+# display help on the second required argument
 if [[ ! " ${bundle_type[@]} " =~ " $2 " ]]; then
-    echo "    the second argument must be the Bundle type: ${bundle_type[*]}"
+    echo "    options for the 2nd argument: ${bundle_type[*]}"
     echo "    argument provided: '$2'"
     echo
     exit 1
 fi
 
+# display help on the third required argument
 if [ "$3" != "" ]; then
     if [[ ! " ${env_type[@]} " =~ " $3 " ]]; then
-        echo "    the third argument must be the Python version: ${env_type[*]}"
+        echo "    options for the 3rd argument: ${env_type[*]}"
         echo "    argument provided: '$3'"
         echo
         exit 1
@@ -54,11 +57,18 @@ DOCKERFILE=Dockerfile-${TAG}
 # build the container name
 CONTAINER_NAME=${NAME}-${TAG}
 
+# the miniconda2/3 installer filenames
 MC2_INSTALLER=Miniconda2-latest-Linux-x86_64.sh
 MC3_INSTALLER=Miniconda3-latest-Linux-x86_64.sh
+
+# the host/docker Open3D clone locations
+Open3D_HOST=~/$NAME-${1}
+Open3D_DOCK=/root/$NAME-${1}
 
 export IMAGE_NAME
 export DOCKERFILE
 export CONTAINER_NAME
 export MC2_INSTALLER
 export MC3_INSTALLER
+export Open3D_HOST
+export Open3D_DOCK

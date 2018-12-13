@@ -4,6 +4,7 @@ declare -a build_type=(Debug Release)
 declare -a link_type=(STATIC SHARED)
 declare -a env_type=(py2 py3 mc2 mc3)
 
+# display help on the required command line arguments
 if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     echo "./build.sh <build_type> <link_type> <env_type>"
     echo
@@ -15,22 +16,25 @@ if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     exit 1
 fi
 
+# display help on the first required argument
 if [[ ! " ${build_type[@]} " =~ " $1 " ]]; then
-    echo "    the first argument must be the build type: ${build_type[*]}"
+    echo "    options for the 1st argument: ${build_type[*]}"
     echo "    argument provided: '$1'"
     echo
     exit 1
 fi
 
+# display help on the second required argument
 if [[ ! " ${link_type[@]} " =~ " $2 " ]]; then
-    echo "    the second argument must be the library link type: ${link_type[*]}"
+    echo "    options for the 2nd argument: ${link_type[*]}"
     echo "    argument provided: '$2'"
     echo
     exit 1
 fi
 
+# display help on the third required argument
 if [[ ! " ${env_type[@]} " =~ " $3 " ]]; then
-    echo "    the third argument must be the environment type: ${env_type[*]}"
+    echo "    options for the 3rd argument: ${env_type[*]}"
     echo "    argument provided: '$3'"
     echo
     exit 1
