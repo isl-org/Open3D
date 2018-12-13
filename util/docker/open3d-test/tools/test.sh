@@ -21,9 +21,9 @@ docker container run \
     --rm \
     -d \
     -t \
-    -e ACTIVATE_CONDA=$ACTIVATE_CONDA \
-    -e ENV_TYPE=${3} \
-    -e TZ=$TIMEZONE \
+    -e ACTIVATE_CONDA="$ACTIVATE_CONDA" \
+    -e ENV_TYPE="$3" \
+    -e TZ="$TIMEZONE" \
     -h $CONTAINER_NAME \
     --name $CONTAINER_NAME \
     $IMAGE_NAME
