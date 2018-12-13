@@ -75,17 +75,27 @@ make -j
 date
 echo
 
-echo "building pip package..."
-date
 if [ "$3" = "py2" ]; then
+    echo "building python2 pip package..."
+    date
+
     make pip-package
     #make install-pip-package
 elif [ "$3" = "py3" ]; then
+    echo "building python3 pip package..."
+    date
+
     make pip-package
     #make install-pip-package
 elif [ "$3" = "mc2" ]; then
+    echo "building python2 conda package..."
+    date
+
     make conda-package
 elif [ "$3" = "mc3" ]; then
+    echo "building python3 conda package..."
+    date
+
     make conda-package
 fi
 date
