@@ -396,6 +396,7 @@ void Visualizer::PrintVisualizerHelp()
     PrintInfo("  -- Render mode control --\n");
     PrintInfo("    L            : Turn on/off lighting.\n");
     PrintInfo("    +/-          : Increase/decrease point size.\n");
+    PrintInfo("    Ctrl + +/-   : Increase/decrease width of LineSet.\n");
     PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
     PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
     PrintInfo("    W            : Turn on/off mesh wireframe.\n");

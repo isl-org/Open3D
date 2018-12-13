@@ -55,6 +55,10 @@ public:
     const double POINT_SIZE_MIN = 1.0;
     const double POINT_SIZE_STEP = 1.0;
     const double POINT_SIZE_DEFAULT = 5.0;
+    const double LINE_WIDTH_MAX = 10.0;
+    const double LINE_WIDTH_MIN = 1.0;
+    const double LINE_WIDTH_STEP = 1.0;
+    const double LINE_WIDTH_DEFAULT = 1.0;
 
     // TriangleMesh options
     enum class MeshShadeOption {
@@ -124,6 +128,10 @@ public:
         point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
                 POINT_SIZE_MAX), POINT_SIZE_MIN);
     }
+    void ChangeLineWidth(double change) {
+        line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
+                LINE_WIDTH_MAX), LINE_WIDTH_MIN);
+    }    
     void TogglePointShowNormal() {
         point_show_normal_ = !point_show_normal_;
     }
@@ -178,6 +186,9 @@ public:
     bool mesh_show_wireframe_ = false;
     Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(
             0.7, 0.7, 0.7);
+
+    // LineSet options
+    double line_width_ = LINE_WIDTH_DEFAULT;
 
     // Image options
     ImageStretchOption image_stretch_option_ = ImageStretchOption::OriginalSize;
