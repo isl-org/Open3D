@@ -6,9 +6,9 @@ echo "testing all images..."
 echo
 
 for ubuntu in ${ubuntu_version[@]}; do
-    for deps in ${bundle_type[@]}; do
-        for python in ${env_type[@]}; do
-            ./test.sh $ubuntu $deps $python
+    for bundle in ${bundle_type[@]}; do
+        for env in ${env_type[@]}; do
+            ./test.sh $ubuntu $bundle $env
             echo
         done
     done
