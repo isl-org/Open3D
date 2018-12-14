@@ -10,6 +10,6 @@ COPY /setup/Miniconda2-latest-Linux-x86_64.sh .
 RUN chmod a+x /root/Miniconda2-latest-Linux-x86_64.sh && \
     /root/Miniconda2-latest-Linux-x86_64.sh -b && \
     rm -rf /root/Miniconda2-latest-Linux-x86_64.sh && \
-    /root/miniconda2/bin/conda install -q -y -c anaconda conda-build && \
-    /root/miniconda2/bin/conda install -q -y -c anaconda conda-verify && \
+    /root/miniconda2/bin/conda install -q -y conda-build conda-verify && \
+    /root/miniconda2/bin/conda update --all -q -y && \
     /root/miniconda2/bin/conda clean -a -q -y

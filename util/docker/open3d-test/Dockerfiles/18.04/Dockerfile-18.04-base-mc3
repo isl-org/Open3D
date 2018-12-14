@@ -10,6 +10,6 @@ COPY /setup/Miniconda3-latest-Linux-x86_64.sh .
 RUN chmod a+x /root/Miniconda3-latest-Linux-x86_64.sh && \
     /root/Miniconda3-latest-Linux-x86_64.sh -b && \
     rm -rf /root/Miniconda3-latest-Linux-x86_64.sh && \
-    /root/miniconda3/bin/conda install -q -y -c anaconda conda-build && \
-    /root/miniconda3/bin/conda install -q -y -c anaconda conda-verify && \
+    /root/miniconda3/bin/conda install -q -y conda-build conda-verify && \
+    /root/miniconda3/bin/conda update --all -q -y && \
     /root/miniconda3/bin/conda clean -a -q -y

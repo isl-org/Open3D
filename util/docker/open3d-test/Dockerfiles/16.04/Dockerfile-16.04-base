@@ -16,8 +16,8 @@ FROM ubuntu:16.04
 ENV DEBIAN_FRONTEND noninteractive
 
 # install Open3D dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update -qq && \
+    apt-get install -qq -y --no-install-recommends \
     build-essential \
     cmake \
     git \

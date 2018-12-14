@@ -5,8 +5,8 @@
 FROM open3d-test:14.04-base
 
 # install native python2
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update -qq && \
+    apt-get install -qq -y --no-install-recommends \
     python-dev \
     python-pip \
     python-setuptools \
