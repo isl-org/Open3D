@@ -40,6 +40,7 @@ void PrintHelp()
     PrintInfo("    --help, -h                : Print help information.\n");
     PrintInfo("    --mesh file               : Add a triangle mesh from file.\n");
     PrintInfo("    --pointcloud file         : Add a point cloud from file.\n");
+    PrintInfo("    --lineset file            : Add a line set from file.\n");
     PrintInfo("    --image file              : Add an image from file.\n");
     PrintInfo("    --depth file              : Add a point cloud converted from a depth image.\n");
     PrintInfo("    --depth_camera file       : Use with --depth, read a json file that stores\n");
@@ -86,6 +87,8 @@ int main(int argc, char **argv)
     std::string mesh_filename = GetProgramOptionAsString(argc, argv, "--mesh");
     std::string pcd_filename = GetProgramOptionAsString(argc, argv,
             "--pointcloud");
+    std::string lineset_filename = GetProgramOptionAsString(argc, argv,
+            "--lineset");
     std::string image_filename = GetProgramOptionAsString(argc, argv,
             "--image");
     std::string depth_filename = GetProgramOptionAsString(argc, argv,
@@ -122,6 +125,12 @@ int main(int argc, char **argv)
         }
         if (pointcloud_ptr->points_.size() > 5000000) {
             visualizer.GetRenderOption().point_size_ = 1.0;
+        }
+    }
+    if (!lineset_filename.empty()) {
+        auto lineset_ptr = CreateLineSetFromFile(lineset_filename);
+        if (visualizer.AddGeometry(lineset_ptr) == false) {
+            PrintWarning("Failed adding point cloud.\n");
         }
     }
     if (!image_filename.empty()) {
