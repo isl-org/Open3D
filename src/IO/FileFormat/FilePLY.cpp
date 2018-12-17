@@ -246,6 +246,7 @@ int ReadLineCallback(p_ply_argument argument)
     state_ptr->lineset_ptr->lines_[state_ptr->line_index](index) = value;
     if (index == 1) {    // reading 'vertex2'
         state_ptr->line_index++;
+        AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -265,6 +266,7 @@ int ReadColorCallback(p_ply_argument argument)
         value / 255.0;
     if (index == 2) {    // reading 'blue'
         state_ptr->color_index++;
+        AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -595,7 +597,8 @@ bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset)
     lineset.lines_.resize(state.line_num);
     lineset.colors_.resize(state.color_num);
 
-    ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
+    ResetConsoleProgress(state.vertex_num + state.line_num + state.color_num,
+            "Reading PLY: ");
 
     if (!ply_read(ply_file)) {
         PrintWarning("Read PLY failed: unable to read file: %s\n", filename.c_str());
@@ -604,7 +607,6 @@ bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset)
     }
 
     ply_close(ply_file);
-    AdvanceConsoleProgress();
     return true;
 }
 
@@ -648,7 +650,8 @@ bool WriteLineSetToPLY(const std::string &filename,
         return false;
     }
 
-    ResetConsoleProgress(static_cast<int>(lineset.lines_.size()),
+    ResetConsoleProgress(static_cast<int>(
+            lineset.points_.size() + lineset.lines_.size()),
             "Writing PLY: ");
 
     for (size_t i = 0; i < lineset.points_.size(); i++) {
@@ -656,6 +659,7 @@ bool WriteLineSetToPLY(const std::string &filename,
         ply_write(ply_file, point(0));
         ply_write(ply_file, point(1));
         ply_write(ply_file, point(2));
+        AdvanceConsoleProgress();
     }
     for (size_t i = 0; i < lineset.lines_.size(); i++) {
         const Eigen::Vector2i &line = lineset.lines_[i];

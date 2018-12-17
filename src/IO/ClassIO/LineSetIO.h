@@ -31,7 +31,7 @@
 
 namespace open3d {
 
-/// Factory function to create a lineset from a file (LineSetFactory.cpp)
+/// Factory function to create a lineset from a file.
 /// Return an empty lineset if fail to read the file.
 std::shared_ptr<LineSet> CreateLineSetFromFile(
     const std::string &filename, const std::string &format = "auto");
