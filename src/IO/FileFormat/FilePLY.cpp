@@ -34,7 +34,7 @@ namespace open3d{
 
 namespace {
 
-namespace ply_poincloud_reader {
+namespace ply_pointcloud_reader {
 
 struct PLYReaderState {
     PointCloud *pointcloud_ptr;
@@ -102,7 +102,7 @@ int ReadColorCallback(p_ply_argument argument)
     return 1;
 }
 
-}    // namespace ply_poincloud_reader
+}    // namespace ply_pointcloud_reader
 
 namespace ply_trianglemesh_reader {
 
@@ -205,7 +205,7 @@ int ReadFaceCallBack(p_ply_argument argument)
 
 bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud)
 {
-    using namespace ply_poincloud_reader;
+    using namespace ply_pointcloud_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {

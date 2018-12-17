@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 
-#include "UnitTest.h"
+#include "Utility/UnitTest.h"
 
 #include "Core/Utility/Eigen.h"
 
@@ -204,8 +204,9 @@ TEST(Eigen, ComputeJTJandJTr)
 
     Matrix6d JTJ = Matrix6d::Zero();
     Vector6d JTr = Vector6d::Zero();
+    double r = 0.0;
 
-    tie(JTJ, JTr) = ComputeJTJandJTr<Matrix6d, Vector6d>(
+    tie(JTJ, JTr, r) = ComputeJTJandJTr<Matrix6d, Vector6d>(
                         testFunction,
                         iteration_num);
 
@@ -257,8 +258,9 @@ TEST(Eigen, ComputeJTJandJTr_vector)
 
     Matrix6d JTJ = Matrix6d::Zero();
     Vector6d JTr = Vector6d::Zero();
+    double r = 0.0;
 
-    tie(JTJ, JTr) = ComputeJTJandJTr<Matrix6d, Vector6d>(
+    tie(JTJ, JTr, r) = ComputeJTJandJTr<Matrix6d, Vector6d>(
                         testFunction,
                         iteration_num);
 

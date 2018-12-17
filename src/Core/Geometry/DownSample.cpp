@@ -306,7 +306,6 @@ std::tuple<std::shared_ptr<PointCloud>,Eigen::MatrixXi> VoxelDownSampleAndTrace(
         PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
         return std::make_tuple(output, cubic_id);
     }
-    auto voxel_size3 = Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
     // Note: this is different from VoxelDownSample.
     // It is for fixing coordinate for multiscale voxel space
     auto voxel_min_bound = min_bound;

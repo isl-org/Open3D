@@ -57,7 +57,9 @@ void pybind_colormap_optimization(py::module &m)
          &ColorMapOptimizationOption::depth_threshold_for_discontinuity_check_)
          .def_readwrite("half_dilation_kernel_size_for_discontinuity_map",
          &ColorMapOptimizationOption::half_dilation_kernel_size_for_discontinuity_map_)
-        .def("__repr__", [](const ColorMapOptimizationOption &to) {
+         .def_readwrite("image_boundary_margin",
+         &ColorMapOptimizationOption::image_boundary_margin_)
+         .def("__repr__", [](const ColorMapOptimizationOption &to) {
             return std::string("ColorMapOptimizationOption with") +
                     std::string("\n- non_rigid_camera_coordinate : ") +
                     std::to_string(to.non_rigid_camera_coordinate_) +
@@ -74,7 +76,9 @@ void pybind_colormap_optimization(py::module &m)
                     std::string("\n- depth_threshold_for_discontinuity_check : ") +
                     std::to_string(to.depth_threshold_for_discontinuity_check_) +
                     std::string("\n- half_dilation_kernel_size_for_discontinuity_map : ") +
-                    std::to_string(to.half_dilation_kernel_size_for_discontinuity_map_);
+                    std::to_string(to.half_dilation_kernel_size_for_discontinuity_map_) +
+                    std::string("\n- image_boundary_margin : ") +
+                    std::to_string(to.image_boundary_margin_);
         });
 }
 
