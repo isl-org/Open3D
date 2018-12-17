@@ -570,10 +570,10 @@ bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset)
             ReadLineCallback, &state, 0);
     ply_set_read_cb(ply_file, "edge", "vertex2", ReadLineCallback, &state, 1);
 
-    state.color_num = ply_set_read_cb(ply_file, "vertex", "red",
+    state.color_num = ply_set_read_cb(ply_file, "edge", "red",
             ReadColorCallback, &state, 0);
-    ply_set_read_cb(ply_file, "vertex", "green",  ReadColorCallback, &state, 1);
-    ply_set_read_cb(ply_file, "vertex", "blue",  ReadColorCallback, &state, 2);
+    ply_set_read_cb(ply_file, "edge", "green",  ReadColorCallback, &state, 1);
+    ply_set_read_cb(ply_file, "edge", "blue",  ReadColorCallback, &state, 2);
 
     if (state.vertex_num <= 0) {
         PrintWarning("Read PLY failed: number of vertex <= 0.\n");

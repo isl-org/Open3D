@@ -130,7 +130,7 @@ int main(int argc, char **argv)
     if (!lineset_filename.empty()) {
         auto lineset_ptr = CreateLineSetFromFile(lineset_filename);
         if (visualizer.AddGeometry(lineset_ptr) == false) {
-            PrintWarning("Failed adding point cloud.\n");
+            PrintWarning("Failed adding line set.\n");
         }
     }
     if (!image_filename.empty()) {
