@@ -137,18 +137,20 @@ list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     ${3RDPARTY_LIBRARY_DIRS}
     ${OMP_LIBRARY_DIRS})
 
+set(CONFIG_Open3D_BINARY_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+
 include(CMakePackageConfigHelpers)
 
 # find_package Open3D
 configure_package_config_file(Open3DConfig.cmake.in
                               "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
                               INSTALL_DESTINATION ${INSTALL_CMAKE_DIR}
-                              PATH_VARS CONFIG_Open3D_INCLUDE_DIRS CONFIG_Open3D_LIBRARY_DIRS
+                              PATH_VARS CONFIG_Open3D_INCLUDE_DIRS CONFIG_Open3D_LIBRARY_DIRS CONFIG_Open3D_BINARY_DIR
                               NO_SET_AND_CHECK_MACRO
                               NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 
 # find_package Open3D Version
-write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
+write_basic_package_version_file("${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfigVersion.cmake"
                                  VERSION ${PROJECT_VERSION}
                                  COMPATIBILITY ExactVersion)
 
@@ -164,7 +166,8 @@ install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAK
 # Install the Open3DConfig.cmake and Open3DConfigVersion.cmake
 install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
-        "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
+        "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfigVersion.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Open3DTargets.cmake"
         DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
 
 # uninstall target
