@@ -29,6 +29,8 @@
 #include <Eigen/Dense>
 #include <GLFW/glfw3.h>
 
+#include <cmath> // jspark
+
 namespace open3d{
 
 const double ViewControl::FIELD_OF_VIEW_MAX = 90.0;
@@ -212,7 +214,7 @@ void ViewControl::SetProjectionParameters()
 {
     front_ = front_.normalized();
     right_ = up_.cross(front_).normalized();
-    up_ = front_.cross(right_).normalized();
+    up_ = front_.cross(right_).normalized(); // todo: required?
     if (GetProjectionType() == ProjectionType::Perspective) {
         view_ratio_ = zoom_ * bounding_box_.GetSize();
         distance_ = view_ratio_ /
@@ -269,6 +271,54 @@ void ViewControl::Translate(double x, double y,
     eye_ += shift;
     lookat_ += shift;
     SetProjectionParameters();
+}
+
+double radians(double in)
+{
+    return in / 180.0 * 3.14159265358979323846;
+}
+
+void ViewControl::RotateWalk(double x, double y) {
+    float sensitivity = 0.1;
+    x *= sensitivity;
+    y *= sensitivity;
+
+    yaw_ += x;
+    pitch_ += y;
+
+    if (pitch_ > 89.0f) pitch_ = 89.0f;
+    if (pitch_ < -89.0f) pitch_ = -89.0f;
+
+    if (yaw_ > 179.0f) yaw_ = 179.0f;
+    if (yaw_ < -179.0f) yaw_ = -179.0f;
+
+    PrintInfo("yaw_ : %f\n", yaw_);
+    PrintInfo("pitch_ : %f\n", pitch_);
+
+    // glm::vec3 front;
+    front_(0) = std::cos(radians(yaw_)) * std::cos(radians(pitch_));
+    front_(1) = std::sin(radians(pitch_));
+    front_(2) = std::sin(radians(yaw_)) * std::cos(radians(pitch_));
+    front_.normalize();
+    lookat_ = eye_ + front_;
+}
+
+void ViewControl::Walk(int key)
+{
+    float cameraSpeed = view_ratio_ / 20.0;  // adjust accordingly
+    if (key == GLFW_KEY_UP) {
+        eye_ -= cameraSpeed * front_;
+        lookat_ -= cameraSpeed * front_;
+    } else if (key == GLFW_KEY_DOWN) {
+        eye_ += cameraSpeed * front_;
+        lookat_ += cameraSpeed * front_;
+    } else if (key == GLFW_KEY_LEFT) {
+        eye_ += cameraSpeed * right_;
+        lookat_ += cameraSpeed * right_;
+    } else if (key == GLFW_KEY_RIGHT) {
+        eye_ -= cameraSpeed * right_;
+        lookat_ -= cameraSpeed * right_;
+    }
 }
 
 }    // namespace open3d
