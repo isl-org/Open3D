@@ -75,12 +75,6 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
                 mouse_control_.mouse_position_y);
         is_redraw_required_ = true;
     }
-    // if (true) { // some mode
-    //     view_control_ptr_->RotateWalk(
-    //             x - mouse_control_.mouse_position_x,
-    //             y - mouse_control_.mouse_position_y);
-    //     is_redraw_required_ = true;
-    // }
     mouse_control_.mouse_position_x = x;
     mouse_control_.mouse_position_y = y;
 }
@@ -225,22 +219,6 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
                 render_option_ptr_->interpolation_option_ ==
                 RenderOption::TextureInterpolationOption::Nearest ?
                 "NEARST" : "LINEAR");
-        break;
-    case GLFW_KEY_UP:
-        view_control_ptr_->Walk(key);
-        is_redraw_required_ = true;
-        break;
-    case GLFW_KEY_DOWN:
-        view_control_ptr_->Walk(key);
-        is_redraw_required_ = true;
-        break;
-    case GLFW_KEY_LEFT:
-        view_control_ptr_->Walk(key);
-        is_redraw_required_ = true;
-        break;
-    case GLFW_KEY_RIGHT:
-        view_control_ptr_->Walk(key);
-        is_redraw_required_ = true;
         break;
     case GLFW_KEY_T:
         render_option_ptr_->ToggleImageStretchOption();

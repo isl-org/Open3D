@@ -99,11 +99,11 @@ public:
     virtual void Translate(double x, double y, double xo = 0.0,
             double yo = 0.0);
 
+    // Function to process rolling
+    /// \param x is the distances the mouse cursor has moved.
+    /// Coordinates are measured in screen coordinates relative to the top-left
+    /// corner of the window client area.
     virtual void Roll(double x);
-
-    virtual void Walk(int key_type);
-
-    virtual void RotateWalk(double x, double y);
 
     const BoundingBox &GetBoundingBox() const {
         return bounding_box_;
@@ -157,9 +157,6 @@ protected:
     GLHelper::GLMatrix4f view_matrix_;
     GLHelper::GLMatrix4f model_matrix_;
     GLHelper::GLMatrix4f MVP_matrix_;
-
-    double pitch_ = 0.0;
-    double yaw_ = -90.0;
 };
 
 }    // namespace open3d
