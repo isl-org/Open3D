@@ -25,9 +25,11 @@ Open3D provides a convenient visualization function ``draw_geometries`` which ta
 .. code-block:: sh
 
     -- Mouse view control --
-      Left button + drag        : Rotate.
-      Ctrl + left button + drag : Translate.
-      Wheel                     : Zoom in/out.
+      Left button + drag         : Rotate.
+      Ctrl + left button + drag  : Translate.
+      Wheel button + drag        : Translate.
+      Shift + left button + drag : Roll.
+      Wheel                      : Zoom in/out.
 
     -- Keyboard view control --
       [/]          : Increase/decrease field of view.
