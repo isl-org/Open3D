@@ -50,6 +50,7 @@ public:
     struct MouseControl {
     public:
         bool is_mouse_left_button_down = false;
+        bool is_mouse_middle_button_down = false;
         bool is_control_key_down = false;
         bool is_shift_key_down = false;
         bool is_alt_key_down = false;

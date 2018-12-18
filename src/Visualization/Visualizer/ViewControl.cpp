@@ -273,10 +273,17 @@ void ViewControl::Translate(double x, double y,
     SetProjectionParameters();
 }
 
-double radians(double in)
+void ViewControl::Roll(double x)
 {
-    return in / 180.0 * 3.14159265358979323846;
+    double alpha = x * ROTATION_RADIAN_PER_PIXEL;
+    // Rotates up_ vector using Rodrigues' rotation formula.
+    // front_ vector is an axis of rotation.
+    up_ = up_ * std::cos(alpha) + front_.cross(up_) * std::sin(alpha) +
+            front_ * (front_.dot(up_)) * (1.0 - std::cos(alpha));
+    up_.normalized();
 }
+
+double radians(double in) { return in / 180.0 * 3.14159265358979323846; }
 
 void ViewControl::RotateWalk(double x, double y) {
     float sensitivity = 0.1;

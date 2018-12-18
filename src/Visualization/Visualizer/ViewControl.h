@@ -99,6 +99,8 @@ public:
     virtual void Translate(double x, double y, double xo = 0.0,
             double yo = 0.0);
 
+    virtual void Roll(double x);
+
     virtual void Walk(int key_type);
 
     virtual void RotateWalk(double x, double y);
