@@ -36,14 +36,14 @@ namespace {
 
 static const std::unordered_map<std::string,
         std::function<bool(const std::string &, LineSet &)>>
-        file_extension_to_pointcloud_read_function
+        file_extension_to_lineset_read_function
         {{"ply", ReadLineSetFromPLY},
         };
 
 static const std::unordered_map<std::string,
         std::function<bool(const std::string &, const LineSet &,
         const bool, const bool)>>
-        file_extension_to_pointcloud_write_function
+        file_extension_to_lineset_write_function
         {{"ply", WriteLineSetToPLY},
         };
 }    // unnamed namespace
@@ -51,12 +51,12 @@ static const std::unordered_map<std::string,
 std::shared_ptr<LineSet> CreateLineSetFromFile(
     const std::string &filename, const std::string &format)
 {
-    auto pointcloud = std::make_shared<LineSet>();
-    ReadLineSet(filename, *pointcloud, format);
-    return pointcloud;
+    auto lineset = std::make_shared<LineSet>();
+    ReadLineSet(filename, *lineset, format);
+    return lineset;
 }
 
-bool ReadLineSet(const std::string &filename, LineSet &pointcloud,
+bool ReadLineSet(const std::string &filename, LineSet &lineset,
         const std::string &format)
 {
     std::string filename_ext;
@@ -70,18 +70,18 @@ bool ReadLineSet(const std::string &filename, LineSet &pointcloud,
         return false;
     }
     auto map_itr =
-            file_extension_to_pointcloud_read_function.find(filename_ext);
-    if (map_itr == file_extension_to_pointcloud_read_function.end()) {
+            file_extension_to_lineset_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_lineset_read_function.end()) {
         PrintWarning("Read LineSet failed: unknown file extension.\n");
         return false;
     }
-    bool success = map_itr->second(filename, pointcloud);
+    bool success = map_itr->second(filename, lineset);
     PrintDebug("Read LineSet: %d vertices.\n",
-            (int)pointcloud.points_.size());
+            (int)lineset.points_.size());
     return success;
 }
 
-bool WriteLineSet(const std::string &filename, const LineSet &pointcloud,
+bool WriteLineSet(const std::string &filename, const LineSet &lineset,
         bool write_ascii/* = false*/, bool compressed/* = false*/)
 {
     std::string filename_ext =
@@ -91,15 +91,15 @@ bool WriteLineSet(const std::string &filename, const LineSet &pointcloud,
         return false;
     }
     auto map_itr =
-            file_extension_to_pointcloud_write_function.find(filename_ext);
-    if (map_itr == file_extension_to_pointcloud_write_function.end()) {
+            file_extension_to_lineset_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_lineset_write_function.end()) {
         PrintWarning("Write LineSet failed: unknown file extension.\n");
         return false;
     }
-    bool success = map_itr->second(filename, pointcloud, write_ascii,
+    bool success = map_itr->second(filename, lineset, write_ascii,
             compressed);
     PrintDebug("Write LineSet: %d vertices.\n",
-            (int)pointcloud.points_.size());
+            (int)lineset.points_.size());
     return success;
 }
 
