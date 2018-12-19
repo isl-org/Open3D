@@ -4,11 +4,13 @@
 
 FROM open3d-test:14.04-base
 
-# install native python2
+ARG PYTHON
+
+# install native python
 RUN apt-get update -qq && \
     apt-get install -qq -y --no-install-recommends \
-    python-dev \
-    python-pip \
-    python-setuptools \
-    python-wheel && \
+    ${PYTHON}-dev \
+    ${PYTHON}-pip \
+    ${PYTHON}-setuptools \
+    ${PYTHON}-wheel && \
     rm -rf /var/lib/apt/lists/*

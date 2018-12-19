@@ -31,6 +31,7 @@ else
     echo "building $IMAGE_NAME..."
     date
     docker image build \
+        --build-arg PYTHON="${PYTHON}" \
         --build-arg MC_INSTALLER="${MC_INSTALLER}" \
         --build-arg CONDA_DIR="${CONDA_DIR}" \
         -t $IMAGE_NAME -f ../Dockerfiles/${1}/$DOCKERFILE ..

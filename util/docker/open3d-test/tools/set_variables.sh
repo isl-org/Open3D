@@ -57,13 +57,20 @@ DOCKERFILE=Dockerfile-${TAG}
 # build the container name
 CONTAINER_NAME=${NAME}-${TAG}
 
+# python version
+PYTHON=""
+
 # the miniconda2/3 installer filename
 MC_INSTALLER=""
 
 # miniconda2/3 install dir
 CONDA_DIR=""
 
-if [ "$3" = "mc2" ]; then
+if [ "$3" = "py2" ]; then
+    PYTHON="python"
+elif [ "$3" = "py3" ]; then
+    PYTHON="python3"
+elif [ "$3" = "mc2" ]; then
     MC_INSTALLER=Miniconda2-latest-Linux-x86_64.sh
     CONDA_DIR="/root/miniconda2"
 elif [ "$3" = "mc3" ]; then
@@ -78,6 +85,7 @@ Open3D_DOCK=/root/$NAME-${1}
 export IMAGE_NAME
 export DOCKERFILE
 export CONTAINER_NAME
+export PYTHON
 export MC_INSTALLER
 export CONDA_DIR
 export Open3D_HOST
