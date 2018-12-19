@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # the google test library must be built with
 # the same flags as the C++ code under test.

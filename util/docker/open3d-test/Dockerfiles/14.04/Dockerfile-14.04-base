@@ -37,7 +37,6 @@ COPY /setup/test.sh .
 
 # install googletest
 # work around SSL CA cert issue...
-RUN chmod a+x /root/install-gtest.sh && \
-    /root/install-gtest.sh && \
+RUN /bin/bash /root/install-gtest.sh && \
     rm /root/install-gtest.sh && \
     git config --global http.sslVerify false

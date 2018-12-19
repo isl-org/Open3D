@@ -57,9 +57,19 @@ DOCKERFILE=Dockerfile-${TAG}
 # build the container name
 CONTAINER_NAME=${NAME}-${TAG}
 
-# the miniconda2/3 installer filenames
-MC2_INSTALLER=Miniconda2-latest-Linux-x86_64.sh
-MC3_INSTALLER=Miniconda3-latest-Linux-x86_64.sh
+# the miniconda2/3 installer filename
+MC_INSTALLER=""
+
+# miniconda2/3 install dir
+CONDA_DIR=""
+
+if [ "$3" = "mc2" ]; then
+    MC_INSTALLER=Miniconda2-latest-Linux-x86_64.sh
+    CONDA_DIR="/root/miniconda2"
+elif [ "$3" = "mc3" ]; then
+    MC_INSTALLER=Miniconda3-latest-Linux-x86_64.sh
+    CONDA_DIR="/root/miniconda3"
+fi
 
 # the host/docker Open3D clone locations
 Open3D_HOST=~/$NAME-${1}
@@ -68,7 +78,7 @@ Open3D_DOCK=/root/$NAME-${1}
 export IMAGE_NAME
 export DOCKERFILE
 export CONTAINER_NAME
-export MC2_INSTALLER
-export MC3_INSTALLER
+export MC_INSTALLER
+export CONDA_DIR
 export Open3D_HOST
 export Open3D_DOCK

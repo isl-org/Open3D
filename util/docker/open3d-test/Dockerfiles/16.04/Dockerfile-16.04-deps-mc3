@@ -4,12 +4,27 @@
 
 FROM open3d-test:16.04-deps
 
-COPY /setup/Miniconda3-latest-Linux-x86_64.sh .
+# the miniconda2/3 installer filename
+ARG MC_INSTALLER
+COPY /setup/$MC_INSTALLER .
 
-# install miniconda3
-RUN chmod a+x /root/Miniconda3-latest-Linux-x86_64.sh && \
-    /root/Miniconda3-latest-Linux-x86_64.sh -b && \
-    rm -rf /root/Miniconda3-latest-Linux-x86_64.sh && \
-    /root/miniconda3/bin/conda install -q -y conda-build conda-verify && \
-    /root/miniconda3/bin/conda update --all -q -y && \
-    /root/miniconda3/bin/conda clean -a -q -y
+# miniconda2/3 install dir
+ARG CONDA_DIR
+ENV PATH "$CONDA_DIR"/bin:$PATH
+
+# miniconda:
+# - install
+# - install conda-build & conda-verify
+# - update
+# - clean
+# - enable the 'conda' command
+# - activate
+RUN /bin/bash /root/$MC_INSTALLER -bfp "$CONDA_DIR" && \
+    rm -rf /root/$MC_INSTALLER && \
+    conda install -qy conda-build conda-verify && \
+    conda update --all -qy && \
+    conda config --set auto_update_conda False && \
+    conda clean -aqy && \
+    ln -s "$CONDA_DIR/etc/profile.d/conda.sh" /etc/profile.d/conda.sh && \
+    echo ". $CONDA_DIR/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc

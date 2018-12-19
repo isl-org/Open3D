@@ -50,9 +50,9 @@ date
 
 # set the library link mode to OFF (STATIC) or ON (SHARED)
 SHARED=OFF
-if [ "$3" = "STATIC" ]; then
+if [ "$2" = "STATIC" ]; then
     SHARED="OFF"
-elif [ "$3" = "SHARED" ]; then
+elif [ "$2" = "SHARED" ]; then
     SHARED="ON"
 fi
 
