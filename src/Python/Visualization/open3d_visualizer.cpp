@@ -37,7 +37,7 @@ using namespace open3d;
 void pybind_visualizer(py::module &m)
 {
     py::class_<Visualizer, PyVisualizer<>, std::shared_ptr<Visualizer>>
-            visualizer(m, "Visualizer");
+            visualizer(m, "Visualizer", "Visualizer");
     py::detail::bind_default_constructor<Visualizer>(visualizer);
     visualizer
         .def("__repr__", [](const Visualizer &vis) {
@@ -86,7 +86,8 @@ void pybind_visualizer(py::module &m)
     py::class_<VisualizerWithKeyCallback,
             PyVisualizer<VisualizerWithKeyCallback>,
             std::shared_ptr<VisualizerWithKeyCallback>>
-            visualizer_key(m, "VisualizerWithKeyCallback", visualizer);
+            visualizer_key(m, "VisualizerWithKeyCallback", visualizer, 
+            "VisualizerWithKeyCallback");
     py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
             visualizer_key);
     visualizer_key
@@ -102,7 +103,8 @@ void pybind_visualizer(py::module &m)
     py::class_<VisualizerWithEditing,
             PyVisualizer<VisualizerWithEditing>,
             std::shared_ptr<VisualizerWithEditing>>
-            visualizer_edit(m, "VisualizerWithEditing", visualizer);
+            visualizer_edit(m, "VisualizerWithEditing", visualizer, 
+            "VisualizerWithEditing");
     py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit

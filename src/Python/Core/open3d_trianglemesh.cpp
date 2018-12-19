@@ -35,7 +35,7 @@ void pybind_trianglemesh(py::module &m)
 {
     py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
             std::shared_ptr<TriangleMesh>, Geometry3D> trianglemesh(m,
-            "TriangleMesh");
+            "TriangleMesh", "TriangleMesh");
     py::detail::bind_default_constructor<TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
     trianglemesh

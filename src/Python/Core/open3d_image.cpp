@@ -35,7 +35,7 @@ using namespace open3d;
 void pybind_image(py::module &m)
 {
     py::class_<Image, PyGeometry2D<Image>, std::shared_ptr<Image>, Geometry2D>
-            image(m, "Image", py::buffer_protocol());
+            image(m, "Image", py::buffer_protocol(), "Image");
     py::detail::bind_default_constructor<Image>(image);
     py::detail::bind_copy_functions<Image>(image);
     image
@@ -114,7 +114,8 @@ void pybind_image(py::module &m)
                     std::string(" channels.\nUse numpy.asarray to access buffer data.");
         });
 
-    py::class_<RGBDImage, std::shared_ptr<RGBDImage>> rgbd_image(m, "RGBDImage");
+    py::class_<RGBDImage, std::shared_ptr<RGBDImage>> rgbd_image(m, "RGBDImage", 
+            "RGBDImage");
     py::detail::bind_default_constructor<RGBDImage>(rgbd_image);
     rgbd_image
         .def_readwrite("color", &RGBDImage::color_)
