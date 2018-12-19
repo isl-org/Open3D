@@ -10,7 +10,7 @@
 
 ARG UBUNTU_VERSION
 
-FROM open3d-test:${UBUNTU_VERSION}
+FROM ubuntu:${UBUNTU_VERSION}
 
 ENV DEBIAN_FRONTEND noninteractive
 

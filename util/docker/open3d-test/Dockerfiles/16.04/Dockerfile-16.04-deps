@@ -1,6 +1,6 @@
 ARG UBUNTU_VERSION
 
-FROM open3d-test:${UBUNTU_VERSION}-deps
+FROM open3d-test:${UBUNTU_VERSION}-base
 
 # install Open3D dependencies
 RUN apt-get update -qq && \
