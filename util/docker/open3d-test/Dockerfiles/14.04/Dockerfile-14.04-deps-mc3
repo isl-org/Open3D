@@ -1,8 +1,6 @@
-# Open3D Docker test image:
-# - based on Ubuntu 14.04
-# - Open3D dependencies are installed here
+ARG UBUNTU_VERSION
 
-FROM open3d-test:14.04-deps
+FROM open3d-test:${UBUNTU_VERSION}-deps
 
 COPY /setup/Miniconda3-latest-Linux-x86_64.sh .
 

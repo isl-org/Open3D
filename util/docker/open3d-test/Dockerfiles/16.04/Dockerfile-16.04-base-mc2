@@ -1,15 +1,13 @@
-# Open3D Docker test image:
-# - based on Ubuntu 16.04
-# - no Open3D dependencies are installed
+ARG UBUNTU_VERSION
+ARG MC_INSTALLER
+ARG CONDA_DIR
 
-FROM open3d-test:16.04-base
+FROM open3d-test:${UBUNTU_VERSION}-base
 
 # the miniconda2/3 installer filename
-ARG MC_INSTALLER
 COPY /setup/$MC_INSTALLER .
 
 # miniconda2/3 install dir
-ARG CONDA_DIR
 ENV PATH "$CONDA_DIR"/bin:$PATH
 
 # miniconda:

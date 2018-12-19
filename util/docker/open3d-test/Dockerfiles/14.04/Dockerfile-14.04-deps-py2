@@ -1,8 +1,7 @@
-# Open3D Docker test image:
-# - based on Ubuntu 14.04
-# - Open3D dependencies are installed here
-
+ARG UBUNTU_VERSION
 ARG PYTHON
+
+FROM open3d-test:${UBUNTU_VERSION}-deps
 
 # install native python
 RUN apt-get update -qq && \

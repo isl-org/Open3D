@@ -1,7 +1,4 @@
 # Open3D Docker base image doesn't install Python or Open3D dependencies.
-# Open3D Docker test image:
-# - based on Ubuntu 14.04
-# - no Open3D dependencies are installed
 # - xorg-dev replaced with just 4 out of ~60 dependencies:
 #   - libxrandr-dev
 #   - libxinerama-dev
@@ -11,7 +8,9 @@
 #   - reducing image size substantially
 #   - making sure libpng is not installed
 
-FROM ubuntu:14.04
+ARG UBUNTU_VERSION
+
+FROM ubuntu:${UBUNTU_VERSION}
 
 ENV DEBIAN_FRONTEND noninteractive
 

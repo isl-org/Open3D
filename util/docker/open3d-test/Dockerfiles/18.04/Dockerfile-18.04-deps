@@ -1,8 +1,6 @@
-# Open3D Docker test image:
-# - based on Ubuntu 18.04
-# - Open3D dependencies are installed here
+ARG UBUNTU_VERSION
 
-FROM open3d-test:18.04-base
+FROM open3d-test:${UBUNTU_VERSION}-base
 
 # install Open3D dependencies
 RUN apt-get update -qq && \
