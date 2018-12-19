@@ -1,14 +1,15 @@
 ARG UBUNTU_VERSION
-ARG MC_INSTALLER
-ARG CONDA_DIR
 
 FROM open3d-test:${UBUNTU_VERSION}-deps
 
+ARG MC_INSTALLER
+ARG CONDA_DIR
+
 # the miniconda2/3 installer filename
-COPY /setup/$MC_INSTALLER .
+COPY /setup/${MC_INSTALLER} .
 
 # miniconda2/3 install dir
-ENV PATH "$CONDA_DIR"/bin:$PATH
+ENV PATH "${CONDA_DIR}"/bin:$PATH
 
 # miniconda:
 # - install
@@ -17,12 +18,12 @@ ENV PATH "$CONDA_DIR"/bin:$PATH
 # - clean
 # - enable the 'conda' command
 # - activate
-RUN /bin/bash /root/$MC_INSTALLER -bfp "$CONDA_DIR" && \
-    rm -rf /root/$MC_INSTALLER && \
+RUN /bin/bash /root/${MC_INSTALLER} -bfp "${CONDA_DIR}" && \
+    rm -rf /root/${MC_INSTALLER} && \
     conda install -qy conda-build conda-verify && \
     conda update --all -qy && \
     conda config --set auto_update_conda False && \
     conda clean -aqy && \
-    ln -s "$CONDA_DIR/etc/profile.d/conda.sh" /etc/profile.d/conda.sh && \
-    echo ". $CONDA_DIR/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    ln -s "${CONDA_DIR}/etc/profile.d/conda.sh" /etc/profile.d/conda.sh && \
+    echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate base" >> ~/.bashrc

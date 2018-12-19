@@ -1,7 +1,8 @@
 ARG UBUNTU_VERSION
-ARG PYTHON
 
 FROM open3d-test:${UBUNTU_VERSION}-deps
+
+ARG PYTHON
 
 # install native python
 RUN apt-get update -qq && \

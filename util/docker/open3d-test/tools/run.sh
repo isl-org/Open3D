@@ -12,14 +12,14 @@ docker container run \
     --rm \
     -d \
     -t \
-    -e TZ=$TIMEZONE \
-    -h $CONTAINER_NAME \
-    --name $CONTAINER_NAME \
-    $IMAGE_NAME
+    -e TZ=${TIMEZONE} \
+    -h ${CONTAINER_NAME} \
+    --name ${CONTAINER_NAME} \
+    ${IMAGE_NAME}
 
 # attach to the running container
-echo "running $IMAGE_NAME..."
-docker container exec -it -w /root $CONTAINER_NAME bash -c 'bash'
+echo "running ${IMAGE_NAME}..."
+docker container exec -it -w /root ${CONTAINER_NAME} bash -c 'bash'
 
 # stop the container
-docker container stop $CONTAINER_NAME
+docker container stop ${CONTAINER_NAME}
