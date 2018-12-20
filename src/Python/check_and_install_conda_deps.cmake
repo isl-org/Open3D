@@ -1,10 +1,13 @@
 # Assert that we're inside a conda environemnt
-message(STATUS "Asserting this is Conda python: ${PYTHON_EXECUTABLE} ...")
+message(STATUS "Checking Conda environment...")
 execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; assert 'conda' in sys.version"
+    COMMAND bash "-c" "conda info | grep -q \"active environment : None\""
     RESULT_VARIABLE return_code
 )
+
 if (${return_code})
+    message("Conda environment is active.")
+else()
     message(FATAL_ERROR "Not in a conda environment: 1) activate conda, 2) rerun cmake and make")
 endif()
 
