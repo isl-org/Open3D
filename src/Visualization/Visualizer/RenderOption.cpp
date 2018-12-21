@@ -106,6 +106,8 @@ bool RenderOption::ConvertToJsonValue(Json::Value &value) const
         return false;
     }
 
+    value["line_width"] = line_width_;
+
     value["image_stretch_option"] = (int)image_stretch_option_;
     value["image_max_depth"] = image_max_depth_;
 
@@ -213,6 +215,8 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value)
             value["default_mesh_color"]) == false ) {
         return false;
     }
+
+    line_width_ = value.get("line_width", line_width_).asDouble();
 
     image_stretch_option_ = (ImageStretchOption)value.get(
             "image_stretch_option", (int)image_stretch_option_).asInt();
