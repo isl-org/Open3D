@@ -95,11 +95,11 @@ Geometry primitives
 .. literalinclude:: ../../../examples/Python/Basic/visualization.py
    :language: python
    :lineno-start: 16
-   :lines: 16-23
+   :lines: 16-26
    :linenos:
 
-This script generates a sphere and a cylinder using ``create_mesh_sphere`` and
-``create_mesh_cylinder``.  The sphere is painted in blue. The cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh` and :ref:`surface_normal_estimation`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
+This script generates a cubic, a sphere, and a cylinder using ``create_mesh_cubic``, ``create_mesh_sphere`` and
+``create_mesh_cylinder``.  The cubic is painted in red, sphere is painted in blue, and the cylinder is painted in green. Normals are computed for both meshes to support the Phong shading (see :ref:`visualize_3d_mesh` and :ref:`surface_normal_estimation`). We can even create a coordinate axis using ``create_mesh_coordinate_frame``, with its origin point set at (-2, -2, -2).
 
 .. _draw_multiple_geometries:
 
@@ -108,8 +108,8 @@ Draw multiple geometries
 
 .. literalinclude:: ../../../examples/Python/Basic/visualization.py
    :language: python
-   :lineno-start: 25
-   :lines: 25-29
+   :lineno-start: 28
+   :lines: 28-32
    :linenos:
 
 ``draw_geometries`` takes a list of geometries and renders them all together. Alternatively, ``TriangleMesh`` supports a ``+`` operator to combine multiple meshes into one. We recommend the first approach since it supports a combination of different geometries (e.g., a mesh can be rendered in tandem with a point cloud).
@@ -124,8 +124,8 @@ Draw line set
 
 .. literalinclude:: ../../../examples/Python/Basic/visualization.py
    :language: python
-   :lineno-start: 31
-   :lines: 31-42
+   :lineno-start: 34
+   :lines: 34-45
    :linenos:
 
 To draw lines, it is necessary to define ``LineSet`` and create a set of points and a set of edges. An edge is a pair of point indices. The above example creates custom ``points`` and edges (denoted as ``lines``) to make a cubic. Color is optional - red color ``[1,0,0]`` is assigned to each edge in this example. This script visualizes the following cubic.
