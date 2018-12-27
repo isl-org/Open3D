@@ -28,7 +28,7 @@
 
 namespace open3d{
 
-std::shared_ptr<TriangleMesh> CreateMeshCubic(double width/* = 1.0*/, 
+std::shared_ptr<TriangleMesh> CreateMeshBox(double width/* = 1.0*/,
     double height/* = 1.0*/, double depth/* = 1.0*/)
 {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
