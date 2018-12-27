@@ -28,6 +28,34 @@
 
 namespace open3d{
 
+std::shared_ptr<TriangleMesh> CreateMeshCubic(double width/* = 1.0*/, 
+    double height/* = 1.0*/, double depth/* = 1.0*/)
+{
+    auto mesh_ptr = std::make_shared<TriangleMesh>();
+    mesh_ptr->vertices_.resize(8);
+    mesh_ptr->vertices_[0] = Eigen::Vector3d(0.0, 0.0, 0.0);
+    mesh_ptr->vertices_[1] = Eigen::Vector3d(width, 0.0, 0.0);
+    mesh_ptr->vertices_[2] = Eigen::Vector3d(0.0, 0.0, depth);
+    mesh_ptr->vertices_[3] = Eigen::Vector3d(width, 0.0, depth);
+    mesh_ptr->vertices_[4] = Eigen::Vector3d(0.0, height, 0.0);
+    mesh_ptr->vertices_[5] = Eigen::Vector3d(width, height, 0.0);
+    mesh_ptr->vertices_[6] = Eigen::Vector3d(0.0, height, depth);
+    mesh_ptr->vertices_[7] = Eigen::Vector3d(width, height, depth);
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(4, 7, 5));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(4, 6, 7));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, 2, 4));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 6, 4));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, 1, 2));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 3, 2));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 5, 7));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 7, 3));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 3, 7));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(2, 7, 6));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(0, 4, 1));
+    mesh_ptr->triangles_.push_back(Eigen::Vector3i(1, 4, 5));
+    return mesh_ptr;
+}
+
 std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius/* = 1.0*/,
         int resolution/* = 20*/)
 {
