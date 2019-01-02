@@ -86,6 +86,9 @@ void pybind_trianglemesh_methods(py::module &m)
     m.def("crop_triangle_mesh", &CropTriangleMesh,
             "Function to crop input triangle mesh into output triangle mesh",
             "input"_a, "min_bound"_a, "max_bound"_a);
+    m.def("create_mesh_box", &CreateMeshBox,
+            "Factory function to create a box",
+            "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0);
     m.def("create_mesh_sphere", &CreateMeshSphere,
             "Factory function to create a sphere mesh",
             "radius"_a = 1.0, "resolution"_a = 20);
