@@ -40,7 +40,7 @@ RUN apt-get update -qq && \
     else \
         apt-get install -qq -y --no-install-recommends cmake; \
     fi && \
-    rm -rf /var/lib/apt/lists/* && \
     /bin/bash /root/install-gtest.sh && \
+    git config --global http.sslVerify false && \
     rm /root/install-gtest.sh && \
-    git config --global http.sslVerify false
+    rm -rf /var/lib/apt/lists/*
