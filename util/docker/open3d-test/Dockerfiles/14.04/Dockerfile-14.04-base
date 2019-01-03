@@ -14,7 +14,7 @@ FROM ubuntu:${UBUNTU_VERSION}
 
 ENV DEBIAN_FRONTEND noninteractive
 
-# install Open3D dependencies
+# install minimal Open3D dependencies
 RUN apt-get update -qq && \
     apt-get install -qq -y --no-install-recommends \
     build-essential \

@@ -32,6 +32,7 @@ else
     date
     docker image build \
         --build-arg UBUNTU_VERSION="${1}" \
+        --build-arg BUNDLE_TYPE="${2}" \
         --build-arg PYTHON="${PYTHON}" \
         --build-arg MC_INSTALLER="${MC_INSTALLER}" \
         --build-arg CONDA_DIR="${CONDA_DIR}" \
