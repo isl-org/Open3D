@@ -12,13 +12,14 @@ ARG UBUNTU_VERSION
 
 FROM ubuntu:${UBUNTU_VERSION}
 
+ARG UBUNTU_VERSION
+
 ENV DEBIAN_FRONTEND noninteractive
 
 # install minimal Open3D dependencies
 RUN apt-get update -qq && \
     apt-get install -qq -y --no-install-recommends \
     build-essential \
-    cmake \
     git \
     libglu1-mesa-dev \
     libxrandr-dev \
@@ -26,6 +27,11 @@ RUN apt-get update -qq && \
     libxcursor-dev \
     libxi-dev \
     tzdata && \
+    if [ "${UBUNTU_VERSION}" = "14.04" ]; then \
+        apt-get install -qq -y --no-install-recommends cmake3; \
+    else \
+        apt-get install -qq -y --no-install-recommends cmake; \
+    fi && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
