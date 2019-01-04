@@ -2,8 +2,8 @@
 
 . set_variables.sh
 
-# build the image
-./build.sh ${1} ${2} ${3}
+# download the image
+docker pull ${IMAGE_NAME}
 
 # helps sync the container clock with the host clock
 TIMEZONE=$(cat /etc/timezone)

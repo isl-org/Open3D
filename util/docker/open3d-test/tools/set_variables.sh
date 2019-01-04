@@ -42,6 +42,9 @@ if [ "${3}" != "" ]; then
     fi
 fi
 
+# the name of the repository where the images will be uploaded to
+REPOSITORY=takanokage
+
 # build the tag of the image
 TAG=${1}-${2}
 if [ "${3}" != "" ]; then
@@ -49,7 +52,7 @@ if [ "${3}" != "" ]; then
 fi
 
 # build image name complete with tag
-IMAGE_NAME=${NAME}:${TAG}
+IMAGE_NAME=${REPOSITORY}/${NAME}:${TAG}
 
 # build the Dockerfile name
 DOCKERFILE=""
