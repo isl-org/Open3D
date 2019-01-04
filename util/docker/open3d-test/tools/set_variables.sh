@@ -52,7 +52,14 @@ fi
 IMAGE_NAME=${NAME}:${TAG}
 
 # build the Dockerfile name
-DOCKERFILE=Dockerfile-${TAG}
+DOCKERFILE=""
+if [ "${3}" = "" ]; then
+    DOCKERFILE=Dockerfile-${2}
+elif [[ "${3}" =~ "py" ]]; then
+    DOCKERFILE=Dockerfile-py
+elif [[ "${3}" =~ "mc" ]]; then
+    DOCKERFILE=Dockerfile-mc
+fi
 
 # build the container name
 CONTAINER_NAME=${NAME}-${TAG}
