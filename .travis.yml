@@ -5,14 +5,8 @@ services:
 
 matrix:
   include:
-    - env: UBUNTU=16.04
-      env: BUNDLE=deps
-      env: ENV=py3
-      env: LINK=STATIC
-    - env: UBUNTU=16.04
-      env: BUNDLE=deps
-      env: ENV=py3
-      env: LINK=SHARED
+    - env: UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
+    - env: UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
 
 script:
   - cd util/docker/open3d-test/tools
