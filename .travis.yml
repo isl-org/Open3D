@@ -8,4 +8,6 @@ before_install:
 script:
   - cd util/docker/open3d-test/tools
   - ./test.sh 16.04 deps py3 STATIC
+  - ./stop.sh 16.04 deps py3
   - ./test.sh 16.04 deps py3 SHARED
+  - ./stop.sh 16.04 deps py3
