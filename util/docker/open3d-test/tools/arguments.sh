@@ -10,3 +10,6 @@ declare -a bundle_type=(base deps)
 # py2/3 represent the native environment with python2/3
 # mc2/3 represent the miniconda2/3 environment
 declare -a env_type=(py2 py3 mc2 mc3)
+
+# type of linking to be used at build time
+declare -a link_type=(STATIC SHARED)

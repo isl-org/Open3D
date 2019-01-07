@@ -42,6 +42,16 @@ if [ "${3}" != "" ]; then
     fi
 fi
 
+# display help on the fourth required argument
+if [ "${4}" != "" ]; then
+    if [[ ! " ${link_type[@]} " =~ " ${4} " ]]; then
+        echo "    options for the 4th argument: ${link_type[*]}"
+        echo "    argument provided: '${4}'"
+        echo
+        exit 1
+    fi
+fi
+
 # the name of the repository where the images will be uploaded to
 REPOSITORY=takanokage
 
@@ -53,6 +63,10 @@ fi
 
 # build image name complete with tag
 IMAGE_NAME=${REPOSITORY}/${NAME}:${TAG}
+
+# check if the image already exists or not
+docker image inspect ${IMAGE_NAME} >/dev/null 2>&1
+IMAGE_EXISTS=$?
 
 # build the Dockerfile name
 DOCKERFILE=""
@@ -92,7 +106,14 @@ fi
 Open3D_HOST=~/${NAME}-${1}
 Open3D_DOCK=/root/${NAME}-${1}
 
+# link type, default STATIC
+LINK_TYPE=STATIC
+if [ "${4}" != "" ]; then
+    LINK_TYPE=${4}
+fi
+
 export IMAGE_NAME
+export IMAGE_EXISTS
 export DOCKERFILE
 export CONTAINER_NAME
 export PYTHON
@@ -100,3 +121,4 @@ export MC_INSTALLER
 export CONDA_DIR
 export Open3D_HOST
 export Open3D_DOCK
+export LINK_TYPE

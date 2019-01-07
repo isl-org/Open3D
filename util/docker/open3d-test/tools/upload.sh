@@ -1,26 +1,15 @@
 #!/bin/bash
 
-. arguments.sh
+. set_variables.sh
 
-echo "uploading all images..."
-echo
+# build the images this image depends on
+if [ "${3}" != "" ]; then
+    ./upload.sh ${1} ${2}
+fi
+if [ "${2}" = "${bundle_type[1]}" ]; then
+    ./upload.sh ${1} ${bundle_type[0]}
+fi
 
-for ubuntu in ${ubuntu_version[@]}; do
-    for bundle in ${bundle_type[@]}; do
-        . set_variables.sh ${ubuntu} ${bundle}
-
-        echo "uploading ${IMAGE_NAME}..."
-        docker push ${IMAGE_NAME}
-        echo
-
-        for env in ${env_type[@]}; do
-            . set_variables.sh ${ubuntu} ${bundle} ${env}
-
-            echo "uploading ${IMAGE_NAME}..."
-            docker push ${IMAGE_NAME}
-            echo
-        done
-    done
-done
-
+echo "uploading ${IMAGE_NAME}..."
+docker push ${IMAGE_NAME}
 echo

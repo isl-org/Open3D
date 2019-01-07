@@ -18,11 +18,7 @@ if [ "${MC_INSTALLER}" != "" ]; then
     fi
 fi
 
-# check if the image already exists or not
-docker image inspect ${IMAGE_NAME} >/dev/null 2>&1
-IMAGE_EXISTS=$?
-
-# build the image only if not found
+# build the image only if not found locally
 if [ 0 -eq ${IMAGE_EXISTS} ]; then
     echo "skipping ${IMAGE_NAME}, already exists."
     exit 0
@@ -31,6 +27,7 @@ else
     echo "building ${IMAGE_NAME}..."
     date
     docker image build \
+        --build-arg REPOSITORY="${REPOSITORY}" \
         --build-arg UBUNTU_VERSION="${1}" \
         --build-arg BUNDLE_TYPE="${2}" \
         --build-arg PYTHON="${PYTHON}" \

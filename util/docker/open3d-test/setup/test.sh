@@ -75,7 +75,10 @@ cmake .. -DCMAKE_BUILD_TYPE=${1} \
          -DPYTHON_EXECUTABLE=${PYTHON} \
          -DBUILD_UNIT_TESTS=ON
 echo
-make -j
+
+# make -j brings 'virtual memory exhausted: Cannot allocate memory' message
+# this is presumably due to limited memory space of travis-ci
+make -j$(nproc)
 date
 echo
 

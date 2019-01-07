@@ -8,8 +8,10 @@ echo
 for ubuntu in ${ubuntu_version[@]}; do
     for bundle in ${bundle_type[@]}; do
         for env in ${env_type[@]}; do
-            ./test.sh $ubuntu $bundle $env
-            echo
+            for link in ${link_type[@]}; do
+                ./test.sh $ubuntu $bundle $env $link
+                echo
+            done
         done
     done
 done
