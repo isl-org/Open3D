@@ -28,6 +28,7 @@ COPY [ "/setup/googletest-release-1.8.0.tar.gz", \
 RUN apt-get update -qq && \
     apt-get install -qq -y --no-install-recommends \
     build-essential \
+    coreutils \
     git \
     libglu1-mesa-dev \
     libxrandr-dev \
