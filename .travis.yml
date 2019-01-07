@@ -9,4 +9,4 @@ matrix:
     - env: UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
 
 script:
-  - ~/open3d/util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
+  - ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
