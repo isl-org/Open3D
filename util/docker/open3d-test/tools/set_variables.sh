@@ -1,17 +1,20 @@
 #!/bin/bash
 
-. name.sh
+REAL_PATH=$(dirname $(realpath ${0}))
 
-. arguments.sh
+. ${REAL_PATH}/name.sh
+. ${REAL_PATH}/arguments.sh
 
 # display help on the required command line arguments
 if [ $# -eq 0 ] || [ "${1}" = "--help" ]; then
-    echo "./build.sh <ubuntu_version> <bundle_type> <env_type>"
+    echo "./build.sh <ubuntu_version> <bundle_type> <env_type> <link_type>"
     echo
     echo "Required:"
     echo "    Ubuntu version:   ${ubuntu_version[*]}"
     echo "    Bundle type:      ${bundle_type[*]}"
+    echo "Optional:"
     echo "    Environment type: ${env_type[*]}"
+    echo "    Link type:        ${link_type[*]}"
     echo
     exit 1
 fi

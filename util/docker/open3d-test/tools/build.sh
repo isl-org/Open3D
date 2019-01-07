@@ -1,20 +1,22 @@
 #!/bin/bash
 
-. set_variables.sh
+REAL_PATH=$(dirname $(realpath ${0}))
+
+. ${REAL_PATH}/set_variables.sh
 
 # build the images this image depends on
 if [ "${3}" != "" ]; then
-    ./build.sh ${1} ${2}
+    ${REAL_PATH}/build.sh ${1} ${2}
 fi
 if [ "${2}" = "${bundle_type[1]}" ]; then
-    ./build.sh ${1} ${bundle_type[0]}
+    ${REAL_PATH}/build.sh ${1} ${bundle_type[0]}
 fi
 
 # download miniconda installer once
 if [ "${MC_INSTALLER}" != "" ]; then
-    if [ ! -f "../setup/${MC_INSTALLER}" ]; then
+    if [ ! -f "${REAL_PATH}/../setup/${MC_INSTALLER}" ]; then
         echo not found
-        wget -P ../setup "https://repo.anaconda.com/miniconda/${MC_INSTALLER}"
+        wget -P "${REAL_PATH}/../setup" "https://repo.anaconda.com/miniconda/${MC_INSTALLER}"
     fi
 fi
 
@@ -33,7 +35,8 @@ else
         --build-arg PYTHON="${PYTHON}" \
         --build-arg MC_INSTALLER="${MC_INSTALLER}" \
         --build-arg CONDA_DIR="${CONDA_DIR}" \
-        -t ${IMAGE_NAME} -f ../Dockerfiles/${DOCKERFILE} ..
+        -t ${IMAGE_NAME} -f "${REAL_PATH}/../Dockerfiles/${DOCKERFILE}" \
+        ${REAL_PATH}/..
     date
     echo "done building ${IMAGE_NAME}..."
     echo

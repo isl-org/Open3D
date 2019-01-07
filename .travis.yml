@@ -5,7 +5,5 @@ services:
 
 matrix:
   include:
-    - env: UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
-      script: cd util/docker/open3d-test/tools && ./test.sh $UBUNTU $BUNDLE $ENV $LINK
-    - env: UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
-      script: cd util/docker/open3d-test/tools && ./test.sh $UBUNTU $BUNDLE $ENV $LINK
+    - script: ~/open3d/util/docker/open3d-test/tools/test.sh 16.04 deps py3 STATIC
+    - script: ~/open3d/util/docker/open3d-test/tools/test.sh 16.04 deps py3 SHARED

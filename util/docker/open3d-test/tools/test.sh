@@ -1,6 +1,8 @@
 #!/bin/bash
 
-. set_variables.sh
+REAL_PATH=$(dirname $(realpath ${0}))
+
+. ${REAL_PATH}/set_variables.sh
 
 # download the image only if not found locally
 if [ 1 -eq ${IMAGE_EXISTS} ]; then

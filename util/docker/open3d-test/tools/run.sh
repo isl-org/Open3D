@@ -1,9 +1,15 @@
 #!/bin/bash
 
-. set_variables.sh
+REAL_PATH=$(dirname $(realpath ${0}))
 
-# build the image
-./build.sh ${1} ${2} ${3}
+. ${REAL_PATH}/set_variables.sh
+
+# download the image only if not found locally
+if [ 1 -eq ${IMAGE_EXISTS} ]; then
+    echo "downloading ${IMAGE_NAME}..."
+    docker pull ${IMAGE_NAME}
+    echo
+fi
 
 # helps sync the container clock with the host clock
 TIMEZONE=$(cat /etc/timezone)
