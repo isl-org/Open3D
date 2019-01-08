@@ -82,7 +82,9 @@ elif [[ "${3}" =~ "mc" ]]; then
 fi
 
 # build the container name
-CONTAINER_NAME=${NAME}-${TAG}
+# remove the . in the TAG/Ubuntu version number
+#   in order to use the CONTAINER_NAME as hostname
+CONTAINER_NAME=${NAME}-${TAG//.}
 
 # python version
 PYTHON=""
