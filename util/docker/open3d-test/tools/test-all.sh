@@ -17,7 +17,3 @@ for ubuntu in ${ubuntu_version[@]}; do
         done
     done
 done
-
-# display images in order to check image size
-docker image ls
-echo

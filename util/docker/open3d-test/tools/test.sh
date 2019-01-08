@@ -44,4 +44,4 @@ elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
 fi
 
 # stop the container
-docker container stop -t 0 ${CONTAINER_NAME}
+docker container stop -t 0 ${CONTAINER_NAME} >/dev/null 2>&1

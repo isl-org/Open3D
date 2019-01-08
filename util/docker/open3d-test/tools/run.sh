@@ -33,4 +33,4 @@ docker container exec -it -w /root ${CONTAINER_NAME} bash -c '\
     bash'
 
 # stop the container
-docker container stop -t 0 ${CONTAINER_NAME}
+docker container stop -t 0 ${CONTAINER_NAME} >/dev/null 2>&1

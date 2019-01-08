@@ -16,5 +16,4 @@ for ubuntu in ${ubuntu_version[@]}; do
         done
     done
 done
-
 echo
