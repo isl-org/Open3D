@@ -3,15 +3,22 @@
 # the google test library must be built with
 # the same flags as the C++ code under test.
 
+# decompress the gtest source
 tar -xzf googletest-release-1.8.0.tar.gz
+
+# build
 cd googletest-release-1.8.0
 mkdir build
 cd build
-cmake ..
-make -j
+cmake .. >/dev/null 2>&1
+make -j$(nproc) >/dev/null 2>&1
+
+# install
 cd googlemock/gtest
 cp lib*.a /usr/local/lib
 cd ../../../googletest
 cp -r include/gtest /usr/local/include/gtest
+
+# cleanup
 rm -rf /root/googletest-release-1.8.0*
 cd ../..

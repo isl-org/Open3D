@@ -6,11 +6,6 @@ FROM ${REPOSITORY}/open3d-test:${UBUNTU_VERSION}-${BUNDLE_TYPE}
 
 ARG PYTHON
 
-# install native python
-RUN apt-get update -qq && \
-    apt-get install -qq -y --no-install-recommends \
-    ${PYTHON}-dev \
-    ${PYTHON}-pip \
-    ${PYTHON}-setuptools \
-    ${PYTHON}-wheel && \
-    rm -rf /var/lib/apt/lists/*
+COPY [ "/setup/setup-py.sh", "./" ]
+
+RUN /root/setup-py.sh ${PYTHON} && rm /root/setup-py.sh

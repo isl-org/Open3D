@@ -5,15 +5,6 @@ FROM ${REPOSITORY}/open3d-test:${UBUNTU_VERSION}-base
 
 ARG UBUNTU_VERSION
 
-# install Open3D dependencies
-RUN apt-get update -qq && \
-    apt-get install -qq -y --no-install-recommends \
-    libeigen3-dev \
-    libglew-dev \
-    libjpeg-dev \
-    libjsoncpp-dev \
-    libpng-dev && \
-    if [ "${UBUNTU_VERSION}" != "14.04" ]; then \
-        apt-get install -qq -y --no-install-recommends libglfw3-dev; \
-    fi && \
-    rm -rf /var/lib/apt/lists/*
+COPY [ "/setup/setup-deps.sh", "./" ]
+
+RUN /bin/bash /root/setup-deps.sh && rm /root/setup-deps.sh
