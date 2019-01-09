@@ -22,7 +22,7 @@ docker container run \
     -e ENV_TYPE="${3}" \
     -e TZ="${TIMEZONE}" \
     -e LINK_TYPE="${LINK_TYPE}" \
-    -h ${CONTAINER_NAME} \
+    -h ${CONTAINER_HOSTNAME} \
     --name ${CONTAINER_NAME} \
     ${IMAGE_NAME}
 

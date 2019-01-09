@@ -81,10 +81,15 @@ elif [[ "${3}" =~ "mc" ]]; then
     DOCKERFILE=Dockerfile-mc
 fi
 
+# build the container host name
+# remove the dot in the TAG/Ubuntu version number
+#   in order to use the full hostname in the bash prompt
+#   otherwise the text after the dot is not displayed
+CONTAINER_HOSTNAME=${NAME}-${TAG//.}
+
 # build the container name
-# remove the . in the TAG/Ubuntu version number
-#   in order to use the CONTAINER_NAME as hostname
-CONTAINER_NAME=${NAME}-${TAG//.}
+# suffix with the link type in order to avoid container name collisions
+CONTAINER_NAME=${NAME}-${TAG//.}-${4}
 
 # python version
 PYTHON=""
@@ -120,6 +125,7 @@ fi
 export IMAGE_NAME
 export IMAGE_EXISTS
 export DOCKERFILE
+export CONTAINER_HOSTNAME
 export CONTAINER_NAME
 export PYTHON
 export MC_INSTALLER

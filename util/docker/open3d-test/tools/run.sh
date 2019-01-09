@@ -21,7 +21,7 @@ docker container run \
     -t \
     -e ENV_TYPE="${3}" \
     -e TZ="${TIMEZONE}" \
-    -h ${CONTAINER_NAME} \
+    -h ${CONTAINER_HOSTNAME} \
     --name ${CONTAINER_NAME} \
     ${IMAGE_NAME}
 
