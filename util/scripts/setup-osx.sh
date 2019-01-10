@@ -1,7 +1,7 @@
 #!/bin/bash
 
-./install-deps-osx.sh
-./install-gtest.sh
+./util/scripts/install-deps-osx.sh
+./util/scripts/install-gtest.sh
 
 python --version
 cmake --version
