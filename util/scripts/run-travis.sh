@@ -3,8 +3,6 @@
 python --version
 cmake --version
 
-git submodule update --init --recursive
-
 # Build and install to CMake's default install path
 mkdir build
 cd build
