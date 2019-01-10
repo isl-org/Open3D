@@ -46,8 +46,8 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
             Eigen::MatrixXd x = A.ldlt().solve(b);
             return std::make_tuple(solution_exist, std::move(x));
         } else {
-            return std::make_tuple(false,
-                    std::move(Eigen::VectorXd::Zero(b.rows())));
+            return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
+                    
         }
     } else {
         Eigen::MatrixXd x = A.ldlt().solve(b);
@@ -101,7 +101,7 @@ std::tuple<bool, Eigen::Matrix4d>
         return std::make_tuple(solution_exist, std::move(extrinsic));
     }
     else {
-        return std::make_tuple(false, std::move(Eigen::Matrix4d::Identity()));
+        return std::make_tuple(false, Eigen::Matrix4d::Identity());
     }
 }
 

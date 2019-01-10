@@ -158,20 +158,32 @@ void Visualizer::KeyPressCallback(GLFWwindow *window,
                 render_option_ptr_->light_on_ ? "ON" : "OFF");
         break;
     case GLFW_KEY_EQUAL:
-        render_option_ptr_->ChangePointSize(1.0);
-        if (render_option_ptr_->point_show_normal_) {
-            UpdateGeometry();
+        if (mods & GLFW_MOD_SHIFT) {
+            render_option_ptr_->ChangeLineWidth(1.0);
+            PrintDebug("[Visualizer] Line width set to %.2f.\n",
+                       render_option_ptr_->line_width_);
+        } else {
+            render_option_ptr_->ChangePointSize(1.0);
+            if (render_option_ptr_->point_show_normal_) {
+                UpdateGeometry();
+            }
+            PrintDebug("[Visualizer] Point size set to %.2f.\n",
+                       render_option_ptr_->point_size_);
         }
-        PrintDebug("[Visualizer] Point size set to %.2f.\n",
-                render_option_ptr_->point_size_);
         break;
     case GLFW_KEY_MINUS:
-        render_option_ptr_->ChangePointSize(-1.0);
-        if (render_option_ptr_->point_show_normal_) {
-            UpdateGeometry();
+        if (mods & GLFW_MOD_SHIFT) {
+            render_option_ptr_->ChangeLineWidth(-1.0);
+            PrintDebug("[Visualizer] Line width set to %.2f.\n",
+                    render_option_ptr_->line_width_);
+        } else { 
+            render_option_ptr_->ChangePointSize(-1.0);
+            if (render_option_ptr_->point_show_normal_) {
+                UpdateGeometry();
+            }
+            PrintDebug("[Visualizer] Point size set to %.2f.\n",
+                    render_option_ptr_->point_size_);
         }
-        PrintDebug("[Visualizer] Point size set to %.2f.\n",
-                render_option_ptr_->point_size_);
         break;
     case GLFW_KEY_N:
         render_option_ptr_->TogglePointShowNormal();
