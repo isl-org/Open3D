@@ -31,6 +31,7 @@ matrix:
             - g++-4.8
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+      before_install: ./util/scripts/setup-linux.sh;
 
     - os: linux
       dist: trusty
@@ -47,6 +48,7 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env: SHARED=ON
+      before_install: ./util/scripts/setup-linux.sh;
 
     - os: linux
       dist: trusty
@@ -63,8 +65,7 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install:
-        - ./util/scripts/setup-linux.sh;
+      before_install: ./util/scripts/setup-linux.sh;
 
     # Similar environment of Ubuntu 16.04 (gcc 5.4)
     # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
@@ -83,34 +84,29 @@ matrix:
             - g++-6
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      before_install:
-        - ./util/scripts/setup-linux.sh;
+      before_install: ./util/scripts/setup-linux.sh;
 
     # Default environment of MacOS El Capitan
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
-      before_install:
-        - ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh;
 
     - os: osx
       osx_image: xcode8
       env: SHARED=ON
-      before_install:
-        - ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh;
 
     # Default environment of MacOS 10.13
     # compiled using clang shipped with xcode10.1
     - os: osx
       osx_image: xcode10.1
-      before_install:
-        - ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh;
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install:
-        - ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh;
 
 script:
   # Build and install to CMake's default install path
