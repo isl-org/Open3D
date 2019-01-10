@@ -19,7 +19,7 @@ fi
 # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
 # this is presumably due to limited memory space of travis-ci
 # also set the time limit to 30 mins, this is a fix to issue #557
-travis_wait 30 sudo make install -j$(nproc)
+sudo make install -j$(nproc)
 
 ./bin/unitTests
 
@@ -42,7 +42,8 @@ else
         -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON
         -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
 fi
-travis_wait 30 sudo make install -j$(nproc)
+
+sudo make install -j$(nproc)
 
 test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST -DCMAKE_PREFIX_PATH="~/open3d_install/lib/cmake"`
 if [ "$test" == "Open3D found." ]; then
