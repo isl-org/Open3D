@@ -9,10 +9,6 @@ notifications:
     on_success: never
     on_failure: always
 
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y realpath
-
 matrix:
 
   include:
@@ -31,7 +27,8 @@ matrix:
             - g++-4.8
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      before_install: ./util/scripts/setup-linux.sh;
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     - os: linux
       dist: trusty
@@ -48,7 +45,8 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env: SHARED=ON
-      before_install: ./util/scripts/setup-linux.sh;
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     - os: linux
       dist: trusty
@@ -65,7 +63,8 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-linux.sh;
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     # Similar environment of Ubuntu 16.04 (gcc 5.4)
     # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
@@ -84,85 +83,31 @@ matrix:
             - g++-6
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      before_install: ./util/scripts/setup-linux.sh;
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     # Default environment of MacOS El Capitan
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
-      before_install: ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh
+      script: ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode8
       env: SHARED=ON
-      before_install: ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh
+      script: ./util/scripts/run-travis.sh
 
     # Default environment of MacOS 10.13
     # compiled using clang shipped with xcode10.1
     - os: osx
       osx_image: xcode10.1
-      before_install: ./util/scripts/setup-osx.sh;
+      before_install: ./util/scripts/setup-osx.sh
+      script: ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
-      before_install: ./util/scripts/setup-osx.sh;
-
-script:
-  # Build and install to CMake's default install path
-  - python -V
-  - git submodule update --init --recursive
-  - mkdir build
-  - cd build
-  - if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON ..;
-    else
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON
-            -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON
-            -DBUILD_PNG=ON ..;
-    fi
-  # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
-  # this is presumably due to limited memory space of travis-ci
-  # also set the time limit to 30 mins, this is a fix to issue #557
-  - travis_wait 30 sudo make install -j$(nproc)
-  - ./bin/unitTests
-  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST`
-  - if [ "$test" == "Open3D found." ]; then
-      echo "PASSED find_package(Open3D) in default install path.";
-    else
-      echo "FAILED find_package(Open3D) in default install path.";
-      exit 1;
-    fi
-
-  # Reconfig and install in a specified CMAKE_INSTALL_PREFIX
-  - sudo make uninstall
-  - if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON
-            -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
-    else
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON
-            -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON
-            -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
-    fi
-  - travis_wait 30 sudo make install -j$(nproc)
-  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST
-                -DCMAKE_PREFIX_PATH="~/open3d_install/lib/cmake"`
-  - if [ "$test" == "Open3D found." ]; then
-      echo "PASSED find_package(Open3D) in specified install path.";
-    else
-      echo "FAILED find_package(Open3D) in specified install path.";
-      exit 1;
-    fi
-
-  # Test building example with installed Open3D
-  - cd ../docs/_static/C++
-  - mkdir build
-  - cd build
-  - cmake -DCMAKE_INSTALL_PREFIX=~/open3d_install ..
-  - make
-  - ./TestVisualizer
-
-  # The following script has issues on SHARED = "ON"
-  # - if [ "$SHARED" == "OFF" ]; then
-  #     cd lib/Tutorial/Basic/ && python file_io.py
-  #   fi
+      before_install: ./util/scripts/setup-osx.sh
+      script: ./util/scripts/run-travis.sh
