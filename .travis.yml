@@ -9,8 +9,6 @@ notifications:
     on_success: never
     on_failure: always
 
-before install: git submodule update --init --recursive
-
 matrix:
 
   include:
