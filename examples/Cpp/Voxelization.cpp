@@ -43,6 +43,7 @@ int main(int argc, char **args) {
     }
 
     auto pcd = CreatePointCloudFromFile(args[1]);
+    DrawGeometries({pcd});
     auto voxel = CreateVoxelGridFromPointCloud(*pcd, 0.05);
     DrawGeometries({voxel});
     WriteVoxelGrid(args[2], *voxel);

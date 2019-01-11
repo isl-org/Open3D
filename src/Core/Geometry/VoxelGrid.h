@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Eigen/Core>
 #include <Core/Geometry/Geometry3D.h>
 
