@@ -325,18 +325,14 @@ bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
         PrintShaderWarning("Rendering type is not VoxelGrid.");
         return false;
     }
-    if (option.mesh_show_back_face_) {
-        glDisable(GL_CULL_FACE);
-    } else {
-        glEnable(GL_CULL_FACE);
-    }
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if (option.mesh_show_wireframe_) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.0, 1.0);
     } else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
     return true;
