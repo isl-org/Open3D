@@ -12,7 +12,7 @@ mkdir build
 cd build
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
-          -DBUILD_UNIT_TESTS=ON
+          -DBUILD_UNIT_TESTS=ON \
           -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
           ..
 else
