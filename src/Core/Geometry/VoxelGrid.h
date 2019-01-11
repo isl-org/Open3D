@@ -63,7 +63,9 @@ public:
     }
 
 public:
-    // Eigen::Vector3i resolution_;
+    // double voxel_size_;
+    // Eigen::Vector3d min_bound_;
+    // Eigen::Vector3d max_bound_;
     std::vector<Eigen::Vector3i> voxels_;
     std::vector<Eigen::Vector3d> colors_;
 

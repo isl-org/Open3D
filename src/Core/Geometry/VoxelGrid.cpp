@@ -74,22 +74,7 @@ void VoxelGrid::Transform(const Eigen::Matrix4d &transformation)
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid)
 {
-    // We do not use std::vector::insert to combine std::vector because it will
-    // crash if the pointcloud is added to itself.
-    if (voxelgrid.IsEmpty()) return (*this);
-    size_t old_voxel_num = voxels_.size();
-    size_t add_voxel_num = voxelgrid.voxels_.size();
-    size_t new_voxel_num = old_voxel_num + add_voxel_num;
-    if ((!HasVoxels() || HasColors()) && voxelgrid.HasColors()) {
-        colors_.resize(new_voxel_num);
-        for (size_t i = 0; i < add_voxel_num; i++)
-            colors_[old_voxel_num + i] = voxelgrid.colors_[i];
-    } else {
-        colors_.clear();
-    }
-    voxels_.resize(new_voxel_num);
-    for (size_t i = 0; i < add_voxel_num; i++)
-        voxels_[old_voxel_num + i] = voxelgrid.voxels_[i];
+    // not implemented.
     return (*this);
 }
 
