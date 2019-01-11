@@ -90,27 +90,27 @@ matrix:
     # compiled using clang shipped with xcode8
     - os: osx
       osx_image: xcode8
+      script: travis_wait 30 ./util/scripts/run-travis.sh
       before_install: ./util/scripts/setup-osx.sh
-      script: ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode8
       env: SHARED=ON
       before_install: ./util/scripts/setup-osx.sh
-      script: ./util/scripts/run-travis.sh
+      script: travis_wait 30 ./util/scripts/run-travis.sh
 
     # Default environment of MacOS 10.13
     # compiled using clang shipped with xcode10.1
     - os: osx
       osx_image: xcode10.1
       before_install: ./util/scripts/setup-osx.sh
-      script: ./util/scripts/run-travis.sh
+      script: travis_wait 30 ./util/scripts/run-travis.sh
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+      script: travis_wait 30 ./util/scripts/run-travis.sh
       before_install: ./util/scripts/setup-osx.sh
-      script: ./util/scripts/run-travis.sh
 
     - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
       script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
