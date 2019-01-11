@@ -111,3 +111,11 @@ matrix:
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
       before_install: ./util/scripts/setup-osx.sh
       script: ./util/scripts/run-travis.sh
+
+    - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
+      script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
+      before_install: sudo apt-get update && sudo apt-get install -y realpath
+
+    - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
+      script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
+      before_install: sudo apt-get update && sudo apt-get install -y realpath
