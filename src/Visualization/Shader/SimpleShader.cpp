@@ -358,15 +358,16 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     points.resize(n_voxels * 24);
     colors.resize(n_voxels * 24);
 
+    double r = 0.5;
     std::vector<Eigen::Vector3f> disp;      // eight points
-    disp.push_back(Eigen::Vector3f(-0.5, -0.5, -0.5));
-    disp.push_back(Eigen::Vector3f(-0.5, -0.5, 0.5));
-    disp.push_back(Eigen::Vector3f(0.5, -0.5, -0.5));
-    disp.push_back(Eigen::Vector3f(0.5, -0.5, 0.5));
-    disp.push_back(Eigen::Vector3f(-0.5, 0.5, -0.5));
-    disp.push_back(Eigen::Vector3f(-0.5, 0.5, 0.5));
-    disp.push_back(Eigen::Vector3f(0.5, 0.5, -0.5));
-    disp.push_back(Eigen::Vector3f(0.5, 0.5, 0.5));
+    disp.push_back(Eigen::Vector3f(-r, -r, -r));
+    disp.push_back(Eigen::Vector3f(-r, -r, r));
+    disp.push_back(Eigen::Vector3f(r, -r, -r));
+    disp.push_back(Eigen::Vector3f(r, -r, r));
+    disp.push_back(Eigen::Vector3f(-r, r, -r));
+    disp.push_back(Eigen::Vector3f(-r, r, r));
+    disp.push_back(Eigen::Vector3f(r, r, -r));
+    disp.push_back(Eigen::Vector3f(r, r, r));
 
     std::vector<Eigen::Vector4i> quad_id;   // six rectangles
     quad_id.push_back(Eigen::Vector4i(0, 2, 6, 4));
