@@ -27,6 +27,7 @@
 #pragma once
 
 #include "ClassIO/PointCloudIO.h"
+#include "ClassIO/VoxelGridIO.h"
 #include "ClassIO/TriangleMeshIO.h"
 #include "ClassIO/LineSetIO.h"
 #include "ClassIO/ImageIO.h"

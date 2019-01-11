@@ -320,6 +320,13 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
+            Geometry::GeometryType::VoxelGrid) {
+        auto renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+        geometry_renderer_ptrs_.push_back(renderer_ptr);
+    } else if (geometry_ptr->GetGeometryType() ==
             Geometry::GeometryType::LineSet) {
         auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {

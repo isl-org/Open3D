@@ -24,38 +24,28 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+using namespace open3d;
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+int main(int argc, char **args) {
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/VoxelGrid.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+    using namespace open3d;
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    if (argc < 3) {
+        PrintOpen3DVersion();
+        PrintInfo("Usage:\n");
+        PrintInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]\n");
+        return 1;
+    }
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
-
-#include "Odometry/Odometry.h"
-
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
-
-#include "../Open3DConfig.h"
+    auto pcd = CreatePointCloudFromFile(args[1]);
+    auto voxel = CreateVoxelGridFromPointCloud(*pcd, 0.05);
+    DrawGeometries({voxel});
+    WriteVoxelGrid(args[2], *voxel);
+    auto voxel_read = CreateVoxelGridFromFile(args[2]);
+    DrawGeometries({voxel_read});
+}
