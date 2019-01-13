@@ -37,10 +37,10 @@ namespace open3d {
 
 namespace {
 
-class SurfaceVoxel
+class PointCloudVoxel
 {
 public:
-    SurfaceVoxel() :
+    PointCloudVoxel() :
         num_of_points_(0),
         color_(0.0, 0.0, 0.0)
     {
@@ -93,7 +93,7 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = voxel_min_bound;
-    std::unordered_map<Eigen::Vector3i, SurfaceVoxel,
+    std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
             hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
