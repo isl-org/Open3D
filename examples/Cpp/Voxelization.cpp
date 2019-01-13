@@ -30,6 +30,15 @@
 
 using namespace open3d;
 
+void PrintVoxelGridInformation(const VoxelGrid& voxel_grid)
+{
+    PrintDebug("VoxelGrid with %d voxels\n", voxel_grid.voxels_.size());
+    PrintDebug("               origin: [%f %f %f]\n", voxel_grid.origin_(0),
+            voxel_grid.origin_(1), voxel_grid.origin_(2));
+    PrintDebug("               voxel_size: %f\n", voxel_grid.voxel_size_);
+    return;
+}
+
 int main(int argc, char **args) {
 
     using namespace open3d;
@@ -43,10 +52,12 @@ int main(int argc, char **args) {
     }
 
     auto pcd = CreatePointCloudFromFile(args[1]);
-    DrawGeometries({pcd});
-    auto voxel = CreateVoxelGridFromPointCloud(*pcd, 0.05);
-    DrawGeometries({voxel});
-    WriteVoxelGrid(args[2], *voxel);
+    auto voxel = CreateSurfaceVoxelGridFromPointCloud(*pcd, 0.05);
+    PrintVoxelGridInformation(*voxel);
+    DrawGeometries({pcd, voxel});
+    WriteVoxelGrid(args[2], *voxel, true);
+
     auto voxel_read = CreateVoxelGridFromFile(args[2]);
-    DrawGeometries({voxel_read});
+    PrintVoxelGridInformation(*voxel_read);
+    DrawGeometries({pcd, voxel_read});
 }

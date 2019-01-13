@@ -54,9 +54,10 @@ void pybind_voxelgrid(py::module &m)
 
 void pybind_voxelgrid_methods(py::module &m)
 {
-    m.def("create_voxel_grid_from_point_cloud", &CreateVoxelGridFromPointCloud,
-        "Function to downsample input pointcloud into output pointcloud with a voxel",
-        "point_cloud"_a, "voxel_size"_a);
+    m.def("create_surface_voxel_grid_from_point_cloud",
+            &CreateSurfaceVoxelGridFromPointCloud,
+            "Function to make voxels from scanned point cloud", "point_cloud"_a,
+            "voxel_size"_a);
     m.def("read_voxel_grid", [](const std::string &filename,
             const std::string &format) {
         VoxelGrid voxel_grid;

@@ -30,6 +30,8 @@ namespace open3d {
 
 void VoxelGrid::Clear()
 {
+    voxel_size_ = 0.0;
+    origin_ = Eigen::Vector3d::Zero();
     voxels_.clear();
     colors_.clear();
 }
@@ -50,7 +52,9 @@ Eigen::Vector3d VoxelGrid::GetMinBound() const
         [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) { return a(1) < b(1); });
     auto itr_z = std::min_element(voxels_.begin(), voxels_.end(),
         [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) { return a(2) < b(2); });
-    return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+    return Eigen::Vector3d((*itr_x)(0) * voxel_size_ + origin_(0),
+                           (*itr_y)(1) * voxel_size_ + origin_(1),
+                           (*itr_z)(2) * voxel_size_ + origin_(2));
 }
 
 Eigen::Vector3d VoxelGrid::GetMaxBound() const
@@ -64,7 +68,9 @@ Eigen::Vector3d VoxelGrid::GetMaxBound() const
         [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) { return a(1) < b(1); });
     auto itr_z = std::max_element(voxels_.begin(), voxels_.end(),
         [](const Eigen::Vector3i &a, const Eigen::Vector3i &b) { return a(2) < b(2); });
-    return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
+    return Eigen::Vector3d((*itr_x)(0) * voxel_size_ + origin_(0),
+                           (*itr_y)(1) * voxel_size_ + origin_(1),
+                           (*itr_z)(2) * voxel_size_ + origin_(2));
 }
 
 void VoxelGrid::Transform(const Eigen::Matrix4d &transformation)

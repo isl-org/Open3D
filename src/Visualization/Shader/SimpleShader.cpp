@@ -329,11 +329,8 @@ bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
     glDepthFunc(GL_LESS);
     if (option.mesh_show_wireframe_) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(1.0, 10.0);
     } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDisable(GL_POLYGON_OFFSET_FILL);
     }
     return true;
 }
@@ -358,15 +355,15 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     points.resize(n_voxels * 24);
     colors.resize(n_voxels * 24);
 
-    double r = 0.5;
+    double r = 1.0;
     std::vector<Eigen::Vector3f> disp;      // eight points
-    disp.push_back(Eigen::Vector3f(-r, -r, -r));
-    disp.push_back(Eigen::Vector3f(-r, -r, r));
-    disp.push_back(Eigen::Vector3f(r, -r, -r));
-    disp.push_back(Eigen::Vector3f(r, -r, r));
-    disp.push_back(Eigen::Vector3f(-r, r, -r));
-    disp.push_back(Eigen::Vector3f(-r, r, r));
-    disp.push_back(Eigen::Vector3f(r, r, -r));
+    disp.push_back(Eigen::Vector3f(0, 0, 0));
+    disp.push_back(Eigen::Vector3f(0, 0, r));
+    disp.push_back(Eigen::Vector3f(r, 0, 0));
+    disp.push_back(Eigen::Vector3f(r, 0, r));
+    disp.push_back(Eigen::Vector3f(0, r, 0));
+    disp.push_back(Eigen::Vector3f(0, r, r));
+    disp.push_back(Eigen::Vector3f(r, r, 0));
     disp.push_back(Eigen::Vector3f(r, r, r));
 
     std::vector<Eigen::Vector4i> quad_id;   // six rectangles
@@ -377,14 +374,15 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     quad_id.push_back(Eigen::Vector4i(5, 4, 6, 7));
     quad_id.push_back(Eigen::Vector4i(0, 1, 3, 2));
 
-    for (size_t i = 0; i < n_voxels; i++) {
+        for (size_t i = 0; i < n_voxels; i++) {
         std::vector<Eigen::Vector3f> vertex;
         for (size_t d = 0; d < 8; d++)
             vertex.push_back(voxelgrid.voxels_[i].cast<float>() + disp[d]);
         for (size_t j = 0; j < 6; j++) {
             for (size_t k = 0; k < 4; k++) {
                 size_t idx = ((i * 6) + j) * 4 + k;
-                points[idx] = vertex[quad_id[j](k)];
+                points[idx] = (vertex[quad_id[j](k)] * voxelgrid.voxel_size_) +
+                        voxelgrid.origin_.cast<float>();
                 Eigen::Vector3d color;
                 switch (option.mesh_color_option_) {
                     case RenderOption::MeshColorOption::XCoordinate:

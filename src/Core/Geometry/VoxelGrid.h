@@ -63,15 +63,14 @@ public:
     }
 
 public:
-    // double voxel_size_;
-    // Eigen::Vector3d min_bound_;
-    // Eigen::Vector3d max_bound_;
+    double voxel_size_;
+    Eigen::Vector3d origin_;
     std::vector<Eigen::Vector3i> voxels_;
     std::vector<Eigen::Vector3d> colors_;
 
 };
 
-std::shared_ptr<VoxelGrid> CreateVoxelGridFromPointCloud(
+std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input, double voxel_size);
 
 }
