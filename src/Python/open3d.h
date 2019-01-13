@@ -77,10 +77,6 @@ void bind_copy_functions(Class_ &cl) {
 
 void pybind_eigen(py::module &m);
 
-void pybind_core_classes(py::module &m);
-void pybind_io_classes(py::module &m);
-void pybind_visualization_classes(py::module &m);
-
-void pybind_core_methods(py::module &m);
-void pybind_io_methods(py::module &m);
-void pybind_visualization_methods(py::module &m);
+void pybind_core(py::module &m);
+void pybind_io(py::module &m);
+void pybind_visualization(py::module &m);

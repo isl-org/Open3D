@@ -75,8 +75,8 @@ public:
 
 void pybind_registration(py::module &m)
 {
-    py::class_<ICPConvergenceCriteria> convergence_criteria(m,
-            "ICPConvergenceCriteria");
+    py::class_<ICPConvergenceCriteria> convergence_criteria(
+        m, "ICPConvergenceCriteria", "ICPConvergenceCriteria");
     py::detail::bind_copy_functions<ICPConvergenceCriteria>(
             convergence_criteria);
     convergence_criteria
@@ -99,7 +99,7 @@ void pybind_registration(py::module &m)
         });
 
     py::class_<RANSACConvergenceCriteria> ransac_criteria(m,
-            "RANSACConvergenceCriteria");
+            "RANSACConvergenceCriteria", "RANSACConvergenceCriteria");
     py::detail::bind_copy_functions<RANSACConvergenceCriteria>(
             ransac_criteria);
     ransac_criteria
@@ -120,7 +120,7 @@ void pybind_registration(py::module &m)
 
     py::class_<TransformationEstimation,
             PyTransformationEstimation<TransformationEstimation>>
-            te(m, "TransformationEstimation");
+            te(m, "TransformationEstimation", "TransformationEstimation");
     te
         .def("compute_rmse", &TransformationEstimation::ComputeRMSE)
         .def("compute_transformation",
@@ -129,6 +129,7 @@ void pybind_registration(py::module &m)
     py::class_<TransformationEstimationPointToPoint,
             PyTransformationEstimation<TransformationEstimationPointToPoint>,
             TransformationEstimation> te_p2p(m,
+            "TransformationEstimationPointToPoint",
             "TransformationEstimationPointToPoint");
     py::detail::bind_copy_functions<TransformationEstimationPointToPoint>(
             te_p2p);
@@ -147,6 +148,7 @@ void pybind_registration(py::module &m)
     py::class_<TransformationEstimationPointToPlane,
             PyTransformationEstimation<TransformationEstimationPointToPlane>,
             TransformationEstimation> te_p2l(m,
+            "TransformationEstimationPointToPlane",
             "TransformationEstimationPointToPlane");
     py::detail::bind_default_constructor<TransformationEstimationPointToPlane>(
             te_p2l);
@@ -159,13 +161,14 @@ void pybind_registration(py::module &m)
 
     py::class_<CorrespondenceChecker,
             PyCorrespondenceChecker<CorrespondenceChecker>>
-            cc(m, "CorrespondenceChecker");
+            cc(m, "CorrespondenceChecker", "CorrespondenceChecker");
     cc
             .def("Check", &CorrespondenceChecker::Check);
 
     py::class_<CorrespondenceCheckerBasedOnEdgeLength,
             PyCorrespondenceChecker<CorrespondenceCheckerBasedOnEdgeLength>,
             CorrespondenceChecker> cc_el(m,
+            "CorrespondenceCheckerBasedOnEdgeLength", 
             "CorrespondenceCheckerBasedOnEdgeLength");
     py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnEdgeLength>(
             cc_el);
@@ -184,6 +187,7 @@ void pybind_registration(py::module &m)
     py::class_<CorrespondenceCheckerBasedOnDistance,
             PyCorrespondenceChecker<CorrespondenceCheckerBasedOnDistance>,
             CorrespondenceChecker> cc_d(m,
+            "CorrespondenceCheckerBasedOnDistance",
             "CorrespondenceCheckerBasedOnDistance");
     py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnDistance>(
             cc_d);
@@ -202,6 +206,7 @@ void pybind_registration(py::module &m)
     py::class_<CorrespondenceCheckerBasedOnNormal,
             PyCorrespondenceChecker<CorrespondenceCheckerBasedOnNormal>,
             CorrespondenceChecker> cc_n(m,
+            "CorrespondenceCheckerBasedOnNormal",
             "CorrespondenceCheckerBasedOnNormal");
     py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnNormal>(
             cc_n);
@@ -218,6 +223,7 @@ void pybind_registration(py::module &m)
                 &CorrespondenceCheckerBasedOnNormal::normal_angle_threshold_);
 
     py::class_<FastGlobalRegistrationOption> fgr_option(m,
+            "FastGlobalRegistrationOption",
             "FastGlobalRegistrationOption");
     py::detail::bind_copy_functions<FastGlobalRegistrationOption>(
             fgr_option);
@@ -267,7 +273,8 @@ void pybind_registration(py::module &m)
                     std::to_string(c.maximum_tuple_count_);
         });
 
-    py::class_<RegistrationResult> registration_result(m, "RegistrationResult");
+    py::class_<RegistrationResult> registration_result(m, "RegistrationResult", 
+            "RegistrationResult");
     py::detail::bind_default_constructor<RegistrationResult>(
             registration_result);
     py::detail::bind_copy_functions<RegistrationResult>(registration_result);
