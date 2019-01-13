@@ -49,6 +49,7 @@ void pybind_renderoption(py::module &m)
         .def_readwrite("background_color", &RenderOption::background_color_)
         .def_readwrite("light_on", &RenderOption::light_on_)
         .def_readwrite("point_size", &RenderOption::point_size_)
+        .def_readwrite("line_width", &RenderOption::line_width_)
         .def_readwrite("point_show_normal", &RenderOption::point_show_normal_)
         .def_readwrite("show_coordinate_frame", &RenderOption::show_coordinate_frame_)
         .def_readwrite("mesh_show_back_face", &RenderOption::mesh_show_back_face_);

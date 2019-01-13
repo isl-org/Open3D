@@ -24,85 +24,83 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "PoseGraphIO.h"
+#include "LineSetIO.h"
 
 #include <unordered_map>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/FileSystem.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace open3d{
 
 namespace {
 
-bool ReadPoseGraphFromJSON(const std::string &filename,
-        PoseGraph &pose_graph)
-{
-    return ReadIJsonConvertible(filename, pose_graph);
-}
-
-bool WritePoseGraphToJSON(const std::string &filename,
-        const PoseGraph &pose_graph)
-{
-    return WriteIJsonConvertibleToJSON(filename, pose_graph);
-}
-
 static const std::unordered_map<std::string,
-        std::function<bool(const std::string &, PoseGraph &)>>
-        file_extension_to_pose_graph_read_function
-        {{"json", ReadPoseGraphFromJSON},
+        std::function<bool(const std::string &, LineSet &)>>
+        file_extension_to_lineset_read_function
+        {{"ply", ReadLineSetFromPLY},
         };
 
 static const std::unordered_map<std::string,
-        std::function<bool(const std::string &,
-        const PoseGraph &)>>
-        file_extension_to_pose_graph_write_function
-        {{"json", WritePoseGraphToJSON},
+        std::function<bool(const std::string &, const LineSet &,
+        const bool, const bool)>>
+        file_extension_to_lineset_write_function
+        {{"ply", WriteLineSetToPLY},
         };
-
 }    // unnamed namespace
 
-std::shared_ptr<PoseGraph> CreatePoseGraphFromFile(
-    const std::string &filename)
+std::shared_ptr<LineSet> CreateLineSetFromFile(
+    const std::string &filename, const std::string &format)
 {
-    auto pose_graph = std::make_shared<PoseGraph>();
-    ReadPoseGraph(filename, *pose_graph);
-    return pose_graph;
+    auto lineset = std::make_shared<LineSet>();
+    ReadLineSet(filename, *lineset, format);
+    return lineset;
 }
 
-bool ReadPoseGraph(const std::string &filename,
-        PoseGraph &pose_graph)
+bool ReadLineSet(const std::string &filename, LineSet &lineset,
+        const std::string &format)
 {
-    std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+    std::string filename_ext;
+    if (format == "auto") {
+        filename_ext = filesystem::GetFileExtensionInLowerCase(filename);
+    } else {
+        filename_ext = format;
+    }
     if (filename_ext.empty()) {
-        PrintWarning("Read PoseGraph failed: unknown file extension.\n");
+        PrintWarning("Read LineSet failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
-            file_extension_to_pose_graph_read_function.find(filename_ext);
-    if (map_itr == file_extension_to_pose_graph_read_function.end()) {
-        PrintWarning("Read PoseGraph failed: unknown file extension.\n");
+            file_extension_to_lineset_read_function.find(filename_ext);
+    if (map_itr == file_extension_to_lineset_read_function.end()) {
+        PrintWarning("Read LineSet failed: unknown file extension.\n");
         return false;
     }
-    return map_itr->second(filename, pose_graph);
+    bool success = map_itr->second(filename, lineset);
+    PrintDebug("Read LineSet: %d vertices.\n",
+            (int)lineset.points_.size());
+    return success;
 }
 
-bool WritePoseGraph(const std::string &filename,
-        const PoseGraph &pose_graph)
+bool WriteLineSet(const std::string &filename, const LineSet &lineset,
+        bool write_ascii/* = false*/, bool compressed/* = false*/)
 {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write PoseGraph failed: unknown file extension.\n");
+        PrintWarning("Write LineSet failed: unknown file extension.\n");
         return false;
     }
-    auto map_itr = file_extension_to_pose_graph_write_function.find(filename_ext);
-    if (map_itr == file_extension_to_pose_graph_write_function.end()) {
-        PrintWarning("Write PoseGraph failed: unknown file extension.\n");
+    auto map_itr =
+            file_extension_to_lineset_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_lineset_write_function.end()) {
+        PrintWarning("Write LineSet failed: unknown file extension.\n");
         return false;
     }
-    return map_itr->second(filename, pose_graph);
+    bool success = map_itr->second(filename, lineset, write_ascii,
+            compressed);
+    PrintDebug("Write LineSet: %d vertices.\n",
+            (int)lineset.points_.size());
+    return success;
 }
 
 }    // namespace open3d

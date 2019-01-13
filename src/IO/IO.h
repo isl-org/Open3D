@@ -28,6 +28,7 @@
 
 #include "ClassIO/PointCloudIO.h"
 #include "ClassIO/TriangleMeshIO.h"
+#include "ClassIO/LineSetIO.h"
 #include "ClassIO/ImageIO.h"
 #include "ClassIO/PinholeCameraTrajectoryIO.h"
 #include "ClassIO/IJsonConvertibleIO.h"

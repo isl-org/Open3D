@@ -68,7 +68,7 @@ void pybind_integration(py::module &m)
         .export_values();
 
     py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>>
-            tsdfvolume(m, "TSDFVolume");
+            tsdfvolume(m, "TSDFVolume", "TSDFVolume");
     tsdfvolume
         .def("reset", &TSDFVolume::Reset, "Function to reset the TSDFVolume")
         .def("integrate", &TSDFVolume::Integrate,
@@ -83,7 +83,7 @@ void pybind_integration(py::module &m)
         .def_readwrite("color_type", &TSDFVolume::color_type_);
 
     py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
-            uniform_tsdfvolume(m, "UniformTSDFVolume");
+            uniform_tsdfvolume(m, "UniformTSDFVolume", "UniformTSDFVolume");
     py::detail::bind_copy_functions<UniformTSDFVolume>(
             uniform_tsdfvolume);
     uniform_tsdfvolume
@@ -103,7 +103,7 @@ void pybind_integration(py::module &m)
         .def_readwrite("resolution", &UniformTSDFVolume::resolution_);
 
     py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
-            scalable_tsdfvolume(m, "ScalableTSDFVolume");
+            scalable_tsdfvolume(m, "ScalableTSDFVolume", "ScalableTSDFVolume");
     py::detail::bind_copy_functions<ScalableTSDFVolume>(
             scalable_tsdfvolume);
     scalable_tsdfvolume

@@ -40,7 +40,9 @@ class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase
 public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
             const RGBDImage &source, const RGBDImage &target,
             const Image &source_xyz,
             const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -58,7 +60,7 @@ public:
 
 void pybind_odometry(py::module &m)
 {
-    py::class_<OdometryOption> odometry_option(m, "OdometryOption");
+    py::class_<OdometryOption> odometry_option(m, "OdometryOption", "OdometryOption");
     odometry_option
         .def(py::init([](std::vector<int> iteration_number_per_pyramid_level,
                 double max_depth_diff, double min_depth, double max_depth) {
@@ -94,7 +96,7 @@ void pybind_odometry(py::module &m)
 
     py::class_<RGBDOdometryJacobian,
             PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
-            jacobian(m, "RGBDOdometryJacobian");
+            jacobian(m, "RGBDOdometryJacobian", "RGBDOdometryJacobian");
     jacobian
             .def("compute_jacobian_and_residual",
                     &RGBDOdometryJacobian::ComputeJacobianAndResidual);
@@ -102,6 +104,7 @@ void pybind_odometry(py::module &m)
     py::class_<RGBDOdometryJacobianFromColorTerm,
             PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
             RGBDOdometryJacobian> jacobian_color(m,
+            "RGBDOdometryJacobianFromColorTerm",
             "RGBDOdometryJacobianFromColorTerm");
     py::detail::bind_default_constructor<RGBDOdometryJacobianFromColorTerm>
             (jacobian_color);
@@ -115,6 +118,7 @@ void pybind_odometry(py::module &m)
     py::class_<RGBDOdometryJacobianFromHybridTerm,
             PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
             RGBDOdometryJacobian> jacobian_hybrid(m,
+            "RGBDOdometryJacobianFromHybridTerm",
             "RGBDOdometryJacobianFromHybridTerm");
     py::detail::bind_default_constructor<RGBDOdometryJacobianFromHybridTerm>
         (jacobian_hybrid);

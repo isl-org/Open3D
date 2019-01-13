@@ -54,7 +54,7 @@ public:
 void pybind_global_optimization(py::module &m)
 {
     py::class_<PoseGraphNode, std::shared_ptr<PoseGraphNode>>
-            pose_graph_node(m, "PoseGraphNode");
+            pose_graph_node(m, "PoseGraphNode", "PoseGraphNode");
     py::detail::bind_default_constructor<PoseGraphNode>(pose_graph_node);
     py::detail::bind_copy_functions<PoseGraphNode>(pose_graph_node);
     pose_graph_node
@@ -67,7 +67,7 @@ void pybind_global_optimization(py::module &m)
     py::bind_vector<std::vector<PoseGraphNode>>(m, "PoseGraphNodeVector");
 
     py::class_<PoseGraphEdge, std::shared_ptr<PoseGraphEdge>>
-            pose_graph_edge(m, "PoseGraphEdge");
+            pose_graph_edge(m, "PoseGraphEdge", "PoseGraphEdge");
     py::detail::bind_default_constructor<PoseGraphEdge>(pose_graph_edge);
     py::detail::bind_copy_functions<PoseGraphEdge>(pose_graph_edge);
     pose_graph_edge
@@ -111,7 +111,8 @@ void pybind_global_optimization(py::module &m)
 
     py::class_<GlobalOptimizationMethod,
             PyGlobalOptimizationMethod<GlobalOptimizationMethod>>
-            global_optimization_method(m, "GlobalOptimizationMethod");
+            global_optimization_method(m, "GlobalOptimizationMethod", 
+            "GlobalOptimizationMethod");
     global_optimization_method
             .def("OptimizePoseGraph",
             &GlobalOptimizationMethod::OptimizePoseGraph);
@@ -119,6 +120,7 @@ void pybind_global_optimization(py::module &m)
     py::class_<GlobalOptimizationLevenbergMarquardt,
             PyGlobalOptimizationMethod<GlobalOptimizationLevenbergMarquardt>,
             GlobalOptimizationMethod> global_optimization_method_lm(m,
+            "GlobalOptimizationLevenbergMarquardt",
             "GlobalOptimizationLevenbergMarquardt");
     py::detail::bind_default_constructor<GlobalOptimizationLevenbergMarquardt>
             (global_optimization_method_lm);
@@ -132,6 +134,7 @@ void pybind_global_optimization(py::module &m)
     py::class_<GlobalOptimizationGaussNewton,
             PyGlobalOptimizationMethod<GlobalOptimizationGaussNewton>,
             GlobalOptimizationMethod> global_optimization_method_gn(m,
+                "GlobalOptimizationGaussNewton",
                 "GlobalOptimizationGaussNewton");
     py::detail::bind_default_constructor<GlobalOptimizationGaussNewton>
             (global_optimization_method_gn);
@@ -143,7 +146,8 @@ void pybind_global_optimization(py::module &m)
     });
 
     py::class_<GlobalOptimizationConvergenceCriteria> criteria
-            (m, "GlobalOptimizationConvergenceCriteria");
+            (m, "GlobalOptimizationConvergenceCriteria", 
+            "GlobalOptimizationConvergenceCriteria");
     py::detail::bind_default_constructor
             <GlobalOptimizationConvergenceCriteria>(criteria);
     py::detail::bind_copy_functions
@@ -187,7 +191,7 @@ void pybind_global_optimization(py::module &m)
     });
 
     py::class_<GlobalOptimizationOption> option
-            (m, "GlobalOptimizationOption");
+            (m, "GlobalOptimizationOption", "GlobalOptimizationOption");
     py::detail::bind_default_constructor
             <GlobalOptimizationOption>(option);
     py::detail::bind_copy_functions

@@ -49,7 +49,7 @@ namespace {
 ///                 |     0      0      0     1 |
 /// It is from sin(x) \approx x and cos(x) \approx 1 when x is almost zero.
 /// See [Choi et al 2015] for more detail. Reference list in GlobalOptimization.h
-const std::vector<Eigen::Matrix4d> jacobian_operator = {
+const std::vector<Eigen::Matrix4d, Matrix4d_allocator> jacobian_operator = {
     (Eigen::Matrix4d() << /* for alpha */
     0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0).finished(),
     (Eigen::Matrix4d() << /* for beta */
@@ -68,7 +68,7 @@ const std::vector<Eigen::Matrix4d> jacobian_operator = {
 /// Alternatively, explicit representation that uses quaternion can be used
 /// here to replace this function. Refer to linearizeOplus() in
 /// https://github.com/RainerKuemmerle/g2o/blob/master/g2o/types/slam3d/edge_se3.cpp
-inline Eigen::Vector6d GetLinearized6DVector(const Eigen::Matrix4d input)
+inline Eigen::Vector6d GetLinearized6DVector(const Eigen::Matrix4d &input)
 {
     Eigen::Vector6d output;
     output(0) = (-input(1, 2) + input(2, 1)) / 2.0;
@@ -693,8 +693,7 @@ void GlobalOptimization(
 {
     if (!ValidatePoseGraph(pose_graph))
         return;
-    std::shared_ptr<PoseGraph> pose_graph_pre =
-            std::make_shared<PoseGraph>();
+    std::shared_ptr<PoseGraph> pose_graph_pre = std::make_shared<PoseGraph>();
     *pose_graph_pre = pose_graph;
     method.OptimizePoseGraph(*pose_graph_pre, criteria, option);
     auto pose_graph_pre_pruned = CreatePoseGraphWithoutInvalidEdges(

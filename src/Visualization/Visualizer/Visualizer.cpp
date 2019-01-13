@@ -376,9 +376,11 @@ bool Visualizer::HasGeometry() const
 void Visualizer::PrintVisualizerHelp()
 {
     PrintInfo("  -- Mouse view control --\n");
-    PrintInfo("    Left button + drag        : Rotate.\n");
-    PrintInfo("    Ctrl + left button + drag : Translate.\n");
-    PrintInfo("    Wheel                     : Zoom in/out.\n");
+    PrintInfo("    Left button + drag         : Rotate.\n");
+    PrintInfo("    Ctrl + left button + drag  : Translate.\n");
+    PrintInfo("    Wheel button + drag        : Translate.\n");
+    PrintInfo("    Shift + left button + drag : Roll.\n");
+    PrintInfo("    Wheel                      : Zoom in/out.\n");
     PrintInfo("\n");
     PrintInfo("  -- Keyboard view control --\n");
     PrintInfo("    [/]          : Increase/decrease field of view.\n");
@@ -396,6 +398,7 @@ void Visualizer::PrintVisualizerHelp()
     PrintInfo("  -- Render mode control --\n");
     PrintInfo("    L            : Turn on/off lighting.\n");
     PrintInfo("    +/-          : Increase/decrease point size.\n");
+    PrintInfo("    Ctrl + +/-   : Increase/decrease width of LineSet.\n");
     PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
     PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
     PrintInfo("    W            : Turn on/off mesh wireframe.\n");

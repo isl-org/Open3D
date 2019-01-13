@@ -45,7 +45,7 @@ public:
 
 public:
     PinholeCameraIntrinsic intrinsic_;
-    Eigen::Matrix4d extrinsic_;
+    Eigen::Matrix4d_u extrinsic_;
 };
 
 }    // namespace open3d

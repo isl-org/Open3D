@@ -24,50 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_core.h"
+#pragma once
 
-void pybind_core(py::module &m)
-{
-    py::module m_camera = m.def_submodule("camera");
-    py::module m_geometry = m.def_submodule("geometry");
-    py::module m_odometry = m.def_submodule("odometry");
-    py::module m_registration = m.def_submodule("registration");
-    py::module m_integration = m.def_submodule("integration");
-    py::module m_utility = m.def_submodule("utility");
+#include <string>
+#include <Core/Geometry/LineSet.h>
 
-    pybind_camera(m_camera);
+namespace open3d {
 
-    pybind_console(m_utility);
+/// Factory function to create a lineset from a file.
+/// \return return an empty lineset if fail to read the file.
+std::shared_ptr<LineSet> CreateLineSetFromFile(
+    const std::string &filename, const std::string &format = "auto");
 
-    pybind_geometry(m_geometry);
-    pybind_pointcloud(m_geometry);
-    pybind_lineset(m_geometry);
-    pybind_trianglemesh(m_geometry);
-    pybind_image(m_geometry);
-    pybind_kdtreeflann(m_geometry);
+/// The general entrance for reading a LineSet from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return return true if the read function is successful, false otherwise.
+bool ReadLineSet(const std::string &filename, LineSet &lineset,
+        const std::string &format = "auto");
 
-    pybind_feature(m_registration);
-    pybind_registration(m_registration);
-    pybind_global_optimization(m_registration);
-    pybind_colormap_optimization(m_registration);
-    
-    pybind_odometry(m_odometry);
-    
-    pybind_integration(m_integration);
+/// The general entrance for writing a LineSet to a file
+/// The function calls write functions based on the extension name of filename.
+/// If the write function supports binary encoding and compression, the later
+/// two parameters will be used. Otherwise they will be ignored.
+/// \return return true if the write function is successful, false otherwise.
+bool WriteLineSet(const std::string &filename, const LineSet &lineset,
+        bool write_ascii = false, bool compressed = false);
 
-    pybind_camera_methods(m_camera);
-    
-    pybind_pointcloud_methods(m_geometry);
-    pybind_lineset_methods(m_geometry);
-    pybind_trianglemesh_methods(m_geometry);
-    pybind_image_methods(m_geometry);
+bool ReadLineSetFromPLY(
+        const std::string &filename,
+        LineSet &lineset);
 
-    pybind_feature_methods(m_registration);
-    pybind_registration_methods(m_registration);
-    pybind_global_optimization_methods(m_registration);
-    pybind_colormap_optimization_methods(m_registration);
+bool WriteLineSetToPLY(const std::string &filename,
+        const LineSet &lineset, bool write_ascii = false,
+        bool compressed = false);
 
-    pybind_odometry_methods(m_odometry);
-
-    pybind_integration_methods(m_integration);
-}
+}    // namespace open3d

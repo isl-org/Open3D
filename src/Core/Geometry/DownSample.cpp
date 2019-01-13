@@ -270,6 +270,7 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
             hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
+
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
     for (int i = 0; i < (int)input.points_.size(); i++) {

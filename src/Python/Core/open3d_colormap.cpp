@@ -37,7 +37,7 @@ using namespace open3d;
 void pybind_colormap_optimization(py::module &m)
 {
     py::class_<ColorMapOptimizationOption> color_map_optimization_option(
-             m, "ColorMapOptimizationOption");
+             m, "ColorMapOptimizationOption", "ColorMapOptimizationOption");
     py::detail::bind_default_constructor<ColorMapOptimizationOption>(
             color_map_optimization_option);
     color_map_optimization_option
