@@ -286,19 +286,23 @@ struct PLYReaderState {
 
 int ReadOriginCallback(p_ply_argument argument)
 {
-    // PLYReaderState *state_ptr;
-    // long index;
-    // ply_get_argument_user_data(argument,
-    //         reinterpret_cast<void **>(&state_ptr), &index);
+    PLYReaderState *state_ptr;
+    long index;
+    ply_get_argument_user_data(argument,
+            reinterpret_cast<void **>(&state_ptr), &index);
     
-    // double value = ply_get_argument_value(argument);
-    // state_ptr->voxelgrid_ptr->origin_(index) = value;
+    double value = ply_get_argument_value(argument);
+    state_ptr->voxelgrid_ptr->origin_(index) = value;
     return 1;
 }
 
 int ReadScaleCallback(p_ply_argument argument)
 {
     PLYReaderState *state_ptr;
+    long index;
+    ply_get_argument_user_data(argument,
+            reinterpret_cast<void **>(&state_ptr), &index);
+
     double value = ply_get_argument_value(argument);
     state_ptr->voxelgrid_ptr->voxel_size_ = value;
     return 1;
@@ -786,10 +790,10 @@ bool ReadVoxelGridFromPLY(const std::string &filename, VoxelGrid &voxelgrid)
     ply_set_read_cb(ply_file, "vertex", "green", ReadColorCallback, &state, 1);
     ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
 
-    // ply_set_read_cb(ply_file, "origin", "x", ReadOriginCallback, &state, 0);
-    // ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
-    // ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
-    // ply_set_read_cb(ply_file, "voxel_size", "val", ReadScaleCallback, &state, 0);
+    ply_set_read_cb(ply_file, "origin", "x", ReadOriginCallback, &state, 0);
+    ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
+    ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
+    ply_set_read_cb(ply_file, "voxel_size", "val", ReadScaleCallback, &state, 0);
 
     state.voxel_index = 0;
     state.color_index = 0;
@@ -827,22 +831,25 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         return false;
     }
     ply_add_comment(ply_file, "Created by Open3D");
+    ply_add_element(ply_file, "origin", 1);
+    ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_element(ply_file, "voxel_size", 1);
+    ply_add_property(ply_file, "val", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+
     ply_add_element(ply_file, "vertex",
             static_cast<long>(voxelgrid.voxels_.size()));
-    ply_add_property(ply_file, "x", PLY_UINT, PLY_UINT, PLY_UINT);
-    ply_add_property(ply_file, "y", PLY_UINT, PLY_UINT, PLY_UINT);
-    ply_add_property(ply_file, "z", PLY_UINT, PLY_UINT, PLY_UINT);
+    // PLY_UINT could be used for x, y, z but PLY_DOUBLE used instead due to
+    // compatibility issue.
+    ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     if (voxelgrid.HasColors()) {
         ply_add_property(ply_file, "red", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
         ply_add_property(ply_file, "green", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
         ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
     }
-    // ply_add_element(ply_file, "origin", 1);
-    // ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
-    // ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
-    // ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
-    // ply_add_element(ply_file, "voxel_size", 1);
-    // ply_add_property(ply_file, "val", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
 
     if (!ply_write_header(ply_file)) {
         PrintWarning("Write PLY failed: unable to write header.\n");
@@ -852,6 +859,12 @@ bool WriteVoxelGridToPLY(const std::string &filename,
 
     ResetConsoleProgress(static_cast<int>(
             voxelgrid.voxels_.size()), "Writing PLY: ");
+
+    const Eigen::Vector3d &origin = voxelgrid.origin_;
+    ply_write(ply_file, origin(0));
+    ply_write(ply_file, origin(1));
+    ply_write(ply_file, origin(2));
+    ply_write(ply_file, voxelgrid.voxel_size_);
 
     for (size_t i = 0; i < voxelgrid.voxels_.size(); i++) {
         const Eigen::Vector3i &voxel = voxelgrid.voxels_[i];
@@ -869,11 +882,6 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         }
         AdvanceConsoleProgress();
     }
-    // const Eigen::Vector3d &origin = voxelgrid.origin_;
-    // ply_write(ply_file, origin(0));
-    // ply_write(ply_file, origin(1));
-    // ply_write(ply_file, origin(2));
-    // ply_write(ply_file, voxelgrid.voxel_size_);
 
     ply_close(ply_file);
     return true;
