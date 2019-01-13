@@ -188,9 +188,10 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
         const std::string &repr_name)
 {
     typedef typename EigenMatrix::Scalar Scalar;
-    auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix>>(
+    typedef typename Eigen::aligned_allocator<EigenMatrix> EigenAllocator;
+    auto vec = py::bind_vector_without_repr<std::vector<EigenMatrix, EigenAllocator>>(
             m, bind_name, py::buffer_protocol());
-    vec.def_buffer([](std::vector<EigenMatrix> &v) -> py::buffer_info {
+    vec.def_buffer([](std::vector<EigenMatrix, EigenAllocator> &v) -> py::buffer_info {
         // We use this function to bind Eigen default matrix.
         // Thus they are all column major.
         size_t rows = EigenMatrix::RowsAtCompileTime;
@@ -202,21 +203,21 @@ void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
                 {sizeof(EigenMatrix), sizeof(Scalar),
                 sizeof(Scalar) * rows});
     });
-    vec.def("__repr__", [repr_name](const std::vector<EigenMatrix> &v) {
+    vec.def("__repr__", [repr_name](const std::vector<EigenMatrix, EigenAllocator> &v) {
         return repr_name + std::string(" with ") +
                 std::to_string(v.size()) + std::string(" elements.\n") +
                 std::string("Use numpy.asarray() to access data.");
     });
-    vec.def("__copy__", [](std::vector<EigenMatrix> &v) {
-        return std::vector<EigenMatrix>(v);
+    vec.def("__copy__", [](std::vector<EigenMatrix, EigenAllocator> &v) {
+        return std::vector<EigenMatrix, EigenAllocator>(v);
     });
-    vec.def("__deepcopy__", [](std::vector<EigenMatrix> &v,
+    vec.def("__deepcopy__", [](std::vector<EigenMatrix, EigenAllocator> &v,
             py::dict &memo) {
-        return std::vector<EigenMatrix>(v);
+        return std::vector<EigenMatrix, EigenAllocator>(v);
     });
 
     // py::detail must be after custom constructor
-    using Vector = std::vector<EigenMatrix>;
+    using Vector = std::vector<EigenMatrix, EigenAllocator>;
     using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
     py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
     py::detail::vector_if_equal_operator<Vector, Class_>(vec);

@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <Core/Utility/Eigen.h>
+
 #include <Eigen/Core>
 #include <vector>
 
@@ -54,7 +56,7 @@ namespace unit_test
 
     // Initialize an Eigen::Vector2d vector.
     // Output range: [vmin:vmax].
-    void Rand(std::vector<Eigen::Vector2d>& v,
+    void Rand(std::vector<Eigen::Vector2d, open3d::Vector2d_allocator >& v,
         const Eigen::Vector2d& vmin,
         const Eigen::Vector2d& vmax,
         const int& seed);
@@ -75,7 +77,7 @@ namespace unit_test
 
     // Initialize an Eigen::Vector4i vector.
     // Output range: [vmin:vmax].
-    void Rand(std::vector<Eigen::Vector4i>& v,
+    void Rand(std::vector<Eigen::Vector4i, open3d::Vector4i_allocator>& v,
         const int& vmin,
         const int& vmax,
         const int& seed);

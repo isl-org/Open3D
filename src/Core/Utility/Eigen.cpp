@@ -89,7 +89,7 @@ std::tuple<bool, Eigen::Matrix4d>
         SolveJacobianSystemAndObtainExtrinsicMatrix(
         const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr)
 {
-    std::vector<Eigen::Matrix4d> output_matrix_array;
+    std::vector<Eigen::Matrix4d, Matrix4d_allocator> output_matrix_array;
     output_matrix_array.clear();
 
     bool solution_exist;
@@ -105,11 +105,11 @@ std::tuple<bool, Eigen::Matrix4d>
     }
 }
 
-std::tuple<bool, std::vector<Eigen::Matrix4d>>
+std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
         SolveJacobianSystemAndObtainExtrinsicMatrixArray(
         const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &JTr)
 {
-    std::vector<Eigen::Matrix4d> output_matrix_array;
+    std::vector<Eigen::Matrix4d, Matrix4d_allocator> output_matrix_array;
     output_matrix_array.clear();
     if (JTJ.rows() != JTr.rows() || JTJ.cols() % 6 != 0) {
         PrintWarning("[SolveJacobianSystemAndObtainExtrinsicMatrixArray] Unsupported matrix format.\n");
@@ -184,7 +184,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 
 template<typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, std::vector<VecType> &, std::vector<double> &)> f,
+        std::function<void(int, std::vector<VecType, Eigen::aligned_allocator<VecType>> &, std::vector<double> &)> f,
         int iteration_num, bool verbose/*=true*/)
 {
     MatType JTJ;
@@ -202,7 +202,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         JTJ_private.setZero();
         JTr_private.setZero();
         std::vector<double> r;
-        std::vector<VecType> J_r;
+        std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
 #ifdef _OPENMP
 #pragma omp for nowait
 #endif
@@ -237,7 +237,9 @@ template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
         int iteration_num, bool verbose);
 
 template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
-        std::function<void(int, std::vector<Eigen::Vector6d> &,
-        std::vector<double> &)> f, int iteration_num, bool verbose);
-
+        std::function<void(int,
+			   std::vector<Eigen::Vector6d, Vector6d_allocator> &,
+			   std::vector<double> &)> f,
+        int iteration_num,
+        bool verbose);
 }    // namespace open3d
