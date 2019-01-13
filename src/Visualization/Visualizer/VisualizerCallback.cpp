@@ -55,6 +55,9 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
                     y - mouse_control_.mouse_position_y,
                     mouse_control_.mouse_position_x,
                     mouse_control_.mouse_position_y);
+        } else if (mouse_control_.is_shift_key_down) {
+            view_control_ptr_->Roll(
+                    x - mouse_control_.mouse_position_x);
         } else {
             view_control_ptr_->Rotate(
                     x - mouse_control_.mouse_position_x,
@@ -62,6 +65,14 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y)
                     mouse_control_.mouse_position_x,
                     mouse_control_.mouse_position_y);
         }
+        is_redraw_required_ = true;
+    }
+    if (mouse_control_.is_mouse_middle_button_down) {
+        view_control_ptr_->Translate(
+                x - mouse_control_.mouse_position_x,
+                y - mouse_control_.mouse_position_y,
+                mouse_control_.mouse_position_x,
+                mouse_control_.mouse_position_y);
         is_redraw_required_ = true;
     }
     mouse_control_.mouse_position_x = x;
@@ -85,21 +96,23 @@ void Visualizer::MouseButtonCallback(GLFWwindow* window,
 #endif
     mouse_control_.mouse_position_x = x;
     mouse_control_.mouse_position_y = y;
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (action == GLFW_PRESS) {
+    if (action == GLFW_PRESS) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
             mouse_control_.is_mouse_left_button_down = true;
-            mouse_control_.is_control_key_down =
-                    (mods & GLFW_MOD_CONTROL) != 0;
+            mouse_control_.is_control_key_down = (mods & GLFW_MOD_CONTROL) != 0;
             mouse_control_.is_shift_key_down = (mods & GLFW_MOD_SHIFT) != 0;
             mouse_control_.is_alt_key_down = (mods & GLFW_MOD_ALT) != 0;
             mouse_control_.is_super_key_down = (mods & GLFW_MOD_SUPER) != 0;
-        } else {
-            mouse_control_.is_mouse_left_button_down = false;
-            mouse_control_.is_control_key_down = false;
-            mouse_control_.is_shift_key_down = false;
-            mouse_control_.is_alt_key_down = false;
-            mouse_control_.is_super_key_down = false;
+        } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+            mouse_control_.is_mouse_middle_button_down = true;
         }
+    } else {
+        mouse_control_.is_mouse_left_button_down = false;
+        mouse_control_.is_mouse_middle_button_down = false;
+        mouse_control_.is_control_key_down = false;
+        mouse_control_.is_shift_key_down = false;
+        mouse_control_.is_alt_key_down = false;
+        mouse_control_.is_super_key_down = false;
     }
 }
 

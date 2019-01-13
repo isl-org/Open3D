@@ -207,5 +207,4 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
     }
     return true;
 }
-
 }    // namespace open3d

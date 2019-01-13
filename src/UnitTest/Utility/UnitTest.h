@@ -49,17 +49,17 @@ namespace unit_test
     void NotImplemented();
 
     // Equal test.
-    template<class T, int M, int N>
-    void ExpectEQ(const Eigen::Matrix<T, M, N>& v0,
-                  const Eigen::Matrix<T, M, N>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectEQ(const Eigen::Matrix<T, M, N, A>& v0,
+                  const Eigen::Matrix<T, M, N, A>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
             EXPECT_NEAR(v0.coeff(i), v1.coeff(i), THRESHOLD_1E_6);
     }
-    template<class T, int M, int N>
-    void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N>>& v0,
-                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N, A>>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
@@ -67,24 +67,24 @@ namespace unit_test
     }
 
     // Less than or Equal test.
-    template<class T, int M, int N>
-    void ExpectLE(const Eigen::Matrix<T, M, N>& v0,
-                  const Eigen::Matrix<T, M, N>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectLE(const Eigen::Matrix<T, M, N, A>& v0,
+                  const Eigen::Matrix<T, M, N, A>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
             EXPECT_LE(v0.coeff(i), v1.coeff(i));
     }
-    template<class T, int M, int N>
-    void ExpectLE(const Eigen::Matrix<T, M, N>& v0,
-                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectLE(const Eigen::Matrix<T, M, N, A>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N, A>>& v1)
     {
         for (int i = 0; i < v0.size(); i++)
             ExpectLE(v0, v1[i]);
     }
-    template<class T, int M, int N>
-    void ExpectLE(const std::vector<Eigen::Matrix<T, M, N>>& v0,
-                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectLE(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N, A>>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
@@ -92,24 +92,24 @@ namespace unit_test
     }
 
     // Greater than or Equal test.
-    template<class T, int M, int N>
-    void ExpectGE(const Eigen::Matrix<T, M, N>& v0,
-                  const Eigen::Matrix<T, M, N>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectGE(const Eigen::Matrix<T, M, N, A>& v0,
+                  const Eigen::Matrix<T, M, N, A>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)
             EXPECT_GE(v0.coeff(i), v1.coeff(i));
     }
-    template<class T, int M, int N>
-    void ExpectGE(const Eigen::Matrix<T, M, N>& v0,
-                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectGE(const Eigen::Matrix<T, M, N, A>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N, A>>& v1)
     {
         for (int i = 0; i < v1.size(); i++)
             ExpectGE(v0, v1[i]);
     }
-    template<class T, int M, int N>
-    void ExpectGE(const std::vector<Eigen::Matrix<T, M, N>>& v0,
-                  const std::vector<Eigen::Matrix<T, M, N>>& v1)
+    template<class T, int M, int N, int A>
+    void ExpectGE(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+                  const std::vector<Eigen::Matrix<T, M, N, A>>& v1)
     {
         EXPECT_EQ(v0.size(), v1.size());
         for (int i = 0; i < v0.size(); i++)

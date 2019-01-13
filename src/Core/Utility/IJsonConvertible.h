@@ -63,9 +63,17 @@ public:
             const Json::Value &value);
     static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
             Json::Value &value);
+    static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d_u &mat,
+            const Json::Value &value);
+    static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d_u &mat,
+            Json::Value &value);
     static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
             const Json::Value &value);
     static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
+            Json::Value &value);
+    static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d_u &mat,
+            const Json::Value &value);
+    static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d_u &mat,
             Json::Value &value);
 };
 

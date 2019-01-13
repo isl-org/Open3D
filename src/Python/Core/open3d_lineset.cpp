@@ -35,7 +35,7 @@ void pybind_lineset(py::module &m)
 {
     py::class_<LineSet, PyGeometry3D<LineSet>,
             std::shared_ptr<LineSet>, Geometry3D> lineset(m,
-            "LineSet");
+            "LineSet", "LineSet");
     py::detail::bind_default_constructor<LineSet>(lineset);
     py::detail::bind_copy_functions<LineSet>(lineset);
     lineset

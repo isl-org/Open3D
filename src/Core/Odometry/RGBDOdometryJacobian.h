@@ -39,7 +39,8 @@ class Image;
 
 class RGBDImage;
 
-typedef std::vector<Eigen::Vector4i> CorrespondenceSetPixelWise;
+typedef std::vector<Eigen::Vector4i,
+                    Vector4i_allocator> CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
 class RGBDOdometryJacobian
@@ -54,7 +55,8 @@ public:
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
             const RGBDImage &source, const RGBDImage &target,
             const Image &source_xyz,
             const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -77,7 +79,8 @@ public:
 
 public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
             const RGBDImage &source, const RGBDImage &target,
             const Image &source_xyz,
             const RGBDImage &target_dx, const RGBDImage &target_dy,
@@ -99,7 +102,8 @@ public:
 
 public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r,
+            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
             const RGBDImage &source, const RGBDImage &target,
             const Image &source_xyz,
             const RGBDImage &target_dx, const RGBDImage &target_dy,
