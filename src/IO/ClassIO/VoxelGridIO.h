@@ -26,36 +26,36 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <string>
+#include <Core/Geometry/VoxelGrid.h>
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+namespace open3d {
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/VoxelGrid.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+/// Factory function to create a voxelgrid from a file.
+/// \return return an empty voxelgrid if fail to read the file.
+std::shared_ptr<VoxelGrid> CreateVoxelGridFromFile(
+    const std::string &filename, const std::string &format = "auto");
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+/// The general entrance for reading a VoxelGrid from a file
+/// The function calls read functions based on the extension name of filename.
+/// \return return true if the read function is successful, false otherwise.
+bool ReadVoxelGrid(const std::string &filename, VoxelGrid &voxelgrid,
+        const std::string &format = "auto");
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+/// The general entrance for writing a VoxelGrid to a file
+/// The function calls write functions based on the extension name of filename.
+/// If the write function supports binary encoding and compression, the later
+/// two parameters will be used. Otherwise they will be ignored.
+/// \return return true if the write function is successful, false otherwise.
+bool WriteVoxelGrid(const std::string &filename, const VoxelGrid &voxelgrid,
+        bool write_ascii = false, bool compressed = false);
 
-#include "Odometry/Odometry.h"
+bool ReadVoxelGridFromPLY(
+        const std::string &filename,
+        VoxelGrid &voxelgrid);
 
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
+bool WriteVoxelGridToPLY(const std::string &filename,
+        const VoxelGrid &voxelgrid, bool write_ascii = false,
+        bool compressed = false);
 
-#include "../Open3DConfig.h"
+}    // namespace open3d

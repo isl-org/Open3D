@@ -24,38 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <Core/Core.h>
+#include <IO/IO.h>
+#include <Visualization/Visualization.h>
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+using namespace open3d;
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+void PrintVoxelGridInformation(const VoxelGrid& voxel_grid)
+{
+    PrintDebug("VoxelGrid with %d voxels\n", voxel_grid.voxels_.size());
+    PrintDebug("               origin: [%f %f %f]\n", voxel_grid.origin_(0),
+            voxel_grid.origin_(1), voxel_grid.origin_(2));
+    PrintDebug("               voxel_size: %f\n", voxel_grid.voxel_size_);
+    return;
+}
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/VoxelGrid.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+int main(int argc, char **args) {
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+    using namespace open3d;
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    if (argc < 3) {
+        PrintOpen3DVersion();
+        PrintInfo("Usage:\n");
+        PrintInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]\n");
+        return 1;
+    }
 
-#include "Odometry/Odometry.h"
+    auto pcd = CreatePointCloudFromFile(args[1]);
+    auto voxel = CreateSurfaceVoxelGridFromPointCloud(*pcd, 0.05);
+    PrintVoxelGridInformation(*voxel);
+    DrawGeometries({pcd, voxel});
+    WriteVoxelGrid(args[2], *voxel, true);
 
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
-
-#include "../Open3DConfig.h"
+    auto voxel_read = CreateVoxelGridFromFile(args[2]);
+    PrintVoxelGridInformation(*voxel_read);
+    DrawGeometries({pcd, voxel_read});
+}

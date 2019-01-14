@@ -34,9 +34,11 @@ public:
     enum class GeometryType {
         Unspecified = 0,
         PointCloud = 1,
-        LineSet = 2,
-        TriangleMesh = 3,
-        Image = 4,
+        VoxelGrid = 2,
+        Octree = 3,
+        LineSet = 4,
+        TriangleMesh = 5,
+        Image = 6,
     };
 
 public:
