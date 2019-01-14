@@ -117,10 +117,7 @@ Open3D_HOST=~/${NAME}-${1}
 Open3D_DOCK=/root/${NAME}-${1}
 
 # link type, default STATIC
-LINK_TYPE=STATIC
-if [ "${4}" != "" ]; then
-    LINK_TYPE=${4}
-fi
+LINK_TYPE=${4}
 
 export IMAGE_NAME
 export IMAGE_EXISTS

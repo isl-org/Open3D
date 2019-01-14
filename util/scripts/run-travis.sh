@@ -4,16 +4,16 @@ python --version
 cmake --version
 echo
 
-INSTALL_DIR=~/open3d_install
+OPEN3D_INSTALL_DIR=~/open3d_install
 
-# configure the project
-# install to a specified CMAKE_INSTALL_PREFIX
+echo "cmake configure the Open3D project..."
+date
 mkdir build
 cd build
 if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
     cmake -DBUILD_SHARED_LIBS=$SHARED \
           -DBUILD_UNIT_TESTS=ON \
-          -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+          -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
           ..
 else
     cmake -DBUILD_SHARED_LIBS=$SHARED \
@@ -24,24 +24,29 @@ else
           -DBUILD_JPEG=ON \
           -DBUILD_JSONCPP=ON \
           -DBUILD_PNG=ON \
-          -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+          -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
           ..
 fi
 echo
 
-# build Open3D
+echo "build & install Open3D..."
+date
 make install -j$(nproc)
 echo
 
-# run Open3D unit tests
+echo "running the Open3D unit tests..."
+date
 ./bin/unitTests
+echo
 
+echo "test find_package(Open3D)..."
+date
 test=`cmake --find-package \
             -DNAME=Open3D \
             -DCOMPILER_ID=GNU \
             -DLANGUAGE=C \
             -DMODE=EXIST \
-            -DCMAKE_PREFIX_PATH="${INSTALL_DIR}/lib/cmake"`
+            -DCMAKE_PREFIX_PATH="${OPEN3D_INSTALL_DIR}/lib/cmake"`
 if [ "$test" == "Open3D found." ]; then
     echo "PASSED find_package(Open3D) in specified install path.";
 else
@@ -50,25 +55,29 @@ else
 fi
 echo
 
-# Test building a C++ example with installed Open3D
+echo "test building a C++ example with installed Open3D..."
+date
 cd ../docs/_static/C++
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
+cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
 make
 ./TestVisualizer
 echo
 
-# cleanup the C++ example
+echo "cleanup the C++ example..."
+date
 cd ../
 rm -rf build
 
-# uninstall Open3D
+echo "uninstall Open3D..."
+date
 cd ../../../build
 make uninstall
 
-# cleanup Open3D
+echo "cleanup Open3D..."
+date
 cd ../
 rm -rf build
-rm -rf ${INSTALL_DIR}
+rm -rf ${OPEN3D_INSTALL_DIR}
 echo

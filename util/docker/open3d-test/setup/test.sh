@@ -4,6 +4,8 @@ declare -a build_type=(Debug Release)
 declare -a link_type=(STATIC SHARED)
 declare -a env_type=(py2 py3 mc2 mc3)
 
+OPEN3D_INSTALL_DIR=~/open3d_install
+
 # display help on the required command line arguments
 if [ $# -eq 0 ] || [ "$1" = "--help" ]; then
     echo "./build.sh <build_type> <link_type> <env_type>"
@@ -39,7 +41,6 @@ if [[ ! " ${env_type[@]} " =~ " $3 " ]]; then
     echo
     exit 1
 fi
-
 echo
 
 cd open3d
@@ -57,7 +58,7 @@ elif [ "$2" = "SHARED" ]; then
 fi
 
 # set the python executable
-PYTHON=$3
+PYTHON=""
 if [ "$3" = "py2" ]; then
     PYTHON="/usr/bin/python2"
 elif [ "$3" = "py3" ]; then
@@ -68,18 +69,21 @@ elif [ "$3" = "mc3" ]; then
     PYTHON="/root/miniconda3/bin/python3"
 fi
 
+echo "cmake configure the Open3D project..."
+date
 mkdir -p build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=${1} \
-         -DBUILD_SHARED_LIBS=${SHARED} \
-         -DPYTHON_EXECUTABLE=${PYTHON} \
-         -DBUILD_UNIT_TESTS=ON
+cmake -DCMAKE_BUILD_TYPE=${1} \
+      -DBUILD_SHARED_LIBS=${SHARED} \
+      -DPYTHON_EXECUTABLE=${PYTHON} \
+      -DBUILD_UNIT_TESTS=ON \
+      -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} \
+      ..
 echo
 
-# make -j brings 'virtual memory exhausted: Cannot allocate memory' message
-# this is presumably due to limited memory space of travis-ci
-make -j$(nproc)
+echo "build & install Open3D..."
 date
+make install -j$(nproc)
 echo
 
 if [ "$3" = "py2" ]; then
@@ -108,13 +112,18 @@ fi
 date
 echo
 
-echo "running the unit tests..."
-./bin/unitTests
-
+echo "running the Open3D unit tests..."
 date
+./bin/unitTests
 echo
 
-echo "cleaning..."
+echo "uninstall Open3D..."
+date
+make uninstall
+
+echo "cleanup Open3D..."
+date
 cd ..
 rm -rf build
+rm -rf ${OPEN3D_INSTALL_DIR}
 echo
