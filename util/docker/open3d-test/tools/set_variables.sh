@@ -56,7 +56,7 @@ if [ "${4}" != "" ]; then
 fi
 
 # the name of the repository where the images will be uploaded to
-REPOSITORY=Open3D
+REPOSITORY=open3d
 
 # build the tag of the image
 TAG=${1}-${2}
