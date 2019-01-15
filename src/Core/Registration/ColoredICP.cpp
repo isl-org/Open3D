@@ -151,8 +151,9 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
     const auto &target_c = (const PointCloudForColoredICP &)target;
 
-    auto compute_jacobian_and_residual = [&]
-            (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r)
+    auto compute_jacobian_and_residual = [&](int i,
+        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+        std::vector<double> &r)
     {
         size_t cs = corres[i][0];
         size_t ct = corres[i][1];
@@ -189,7 +190,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
-    std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+    double r2;
+    std::tie(JTJ, JTr, r2) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
             compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;

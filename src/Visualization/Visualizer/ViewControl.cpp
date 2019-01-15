@@ -29,6 +29,8 @@
 #include <Eigen/Dense>
 #include <GLFW/glfw3.h>
 
+#include <cmath> // jspark
+
 namespace open3d{
 
 const double ViewControl::FIELD_OF_VIEW_MAX = 90.0;
@@ -212,7 +214,7 @@ void ViewControl::SetProjectionParameters()
 {
     front_ = front_.normalized();
     right_ = up_.cross(front_).normalized();
-    up_ = front_.cross(right_).normalized();
+    up_ = front_.cross(right_).normalized(); // todo: required?
     if (GetProjectionType() == ProjectionType::Perspective) {
         view_ratio_ = zoom_ * bounding_box_.GetSize();
         distance_ = view_ratio_ /
@@ -268,6 +270,17 @@ void ViewControl::Translate(double x, double y,
             up_ * y / window_height_ * view_ratio_ * 2.0;
     eye_ += shift;
     lookat_ += shift;
+    SetProjectionParameters();
+}
+
+void ViewControl::Roll(double x)
+{
+    double alpha = x * ROTATION_RADIAN_PER_PIXEL;
+    // Rotates up_ vector using Rodrigues' rotation formula.
+    // front_ vector is an axis of rotation.
+    up_ = up_ * std::cos(alpha) + front_.cross(up_) * std::sin(alpha) +
+            front_ * (front_.dot(up_)) * (1.0 - std::cos(alpha));
+    up_.normalized();
     SetProjectionParameters();
 }
 

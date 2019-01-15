@@ -105,6 +105,29 @@ bool PointCloudPickingRenderer::UpdateGeometry()
     return true;
 }
 
+bool VoxelGridRenderer::Render(const RenderOption &option,
+        const ViewControl &view)
+{
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    return simple_voxelgrid_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool VoxelGridRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
+{
+    if (geometry_ptr->GetGeometryType() !=
+            Geometry::GeometryType::VoxelGrid) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool VoxelGridRenderer::UpdateGeometry()
+{
+    simple_voxelgrid_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool LineSetRenderer::Render(const RenderOption &option,
         const ViewControl &view)
 {

@@ -403,9 +403,10 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     auto correspondence = ComputeCorrespondence(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
     int corresps_count = (int)correspondence->size();
-    
-    auto f_lambda = [&]
-            (int i, std::vector<Eigen::Vector6d> &J_r, std::vector<double> &r) {
+
+    auto f_lambda = [&](int i,
+                        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+                        std::vector<double> &r) {
         jacobian_method.ComputeJacobianAndResidual(i, J_r, r,
                 source, target, source_xyz, target_dx, target_dy,
                 intrinsic, extrinsic_initial, *correspondence);
@@ -413,7 +414,8 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
     PrintDebug("Iter : %d, Level : %d, ", iter, level);
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
-    std::tie(JTJ, JTr) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+    double r2;
+    std::tie(JTJ, JTr, r2) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
             f_lambda, corresps_count);
 
     bool is_success;

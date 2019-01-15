@@ -38,7 +38,7 @@ void pybind_pointcloud(py::module &m)
 {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
             std::shared_ptr<PointCloud>, Geometry3D> pointcloud(m,
-            "PointCloud");
+            "PointCloud", "PointCloud");
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud

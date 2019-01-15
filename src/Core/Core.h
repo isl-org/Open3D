@@ -32,8 +32,12 @@
 #include "Utility/FileSystem.h"
 #include "Utility/Eigen.h"
 
+#include "ColorMap/ColorMapOptimization.h"
+#include "ColorMap/ImageWarpingField.h"
+
 #include "Geometry/Geometry.h"
 #include "Geometry/PointCloud.h"
+#include "Geometry/VoxelGrid.h"
 #include "Geometry/LineSet.h"
 #include "Geometry/TriangleMesh.h"
 #include "Geometry/Image.h"

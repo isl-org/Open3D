@@ -99,6 +99,12 @@ public:
     virtual void Translate(double x, double y, double xo = 0.0,
             double yo = 0.0);
 
+    // Function to process rolling
+    /// \param x is the distances the mouse cursor has moved.
+    /// Coordinates are measured in screen coordinates relative to the top-left
+    /// corner of the window client area.
+    virtual void Roll(double x);
+
     const BoundingBox &GetBoundingBox() const {
         return bounding_box_;
     }

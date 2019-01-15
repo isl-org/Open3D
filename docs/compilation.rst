@@ -17,7 +17,7 @@ Download source code from the `repository <https://github.com/IntelVCL/Open3D>`_
 
 .. code-block:: bash
 
-    git clone https://github.com/IntelVCL/Open3D
+    git clone --recursive https://github.com/IntelVCL/Open3D
 
 .. _compilation_ubuntu:
 

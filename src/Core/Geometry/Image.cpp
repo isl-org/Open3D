@@ -338,4 +338,43 @@ std::shared_ptr<Image> DilateImage(const Image &input,
     return output;
 }
 
+std::shared_ptr<Image> CreateDepthBoundaryMask(
+        const Image& depth_image_input,
+        double depth_threshold_for_discontinuity_check,
+        int half_dilation_kernel_size_for_discontinuity_map)
+{
+    auto depth_image = CreateFloatImageFromImage(depth_image_input); // necessary?
+    int width = depth_image->width_;
+    int height = depth_image->height_;
+    auto depth_image_gradient_dx = FilterImage(*depth_image,
+            Image::FilterType::Sobel3Dx);
+    auto depth_image_gradient_dy = FilterImage(*depth_image,
+            Image::FilterType::Sobel3Dy);
+    auto mask = std::make_shared<Image>();
+    mask->PrepareImage(width, height, 1, 1);
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int v=0; v<height; v++) {
+        for (int u=0; u<width; u++) {
+            double dx = *PointerAt<float>(*depth_image_gradient_dx, u, v);
+            double dy = *PointerAt<float>(*depth_image_gradient_dy, u, v);
+            double mag = sqrt(dx * dx + dy * dy);
+            if (mag > depth_threshold_for_discontinuity_check) {
+                *PointerAt<unsigned char>(*mask, u, v) = 255;
+            } else {
+                *PointerAt<unsigned char>(*mask, u, v) = 0;
+            }
+        }
+    }
+    if (half_dilation_kernel_size_for_discontinuity_map >= 1) {
+        auto mask_dilated = DilateImage(*mask,
+        half_dilation_kernel_size_for_discontinuity_map);
+        return mask_dilated;
+    } else {
+        return mask;
+    }
+}
+
 }    // namespace open3d

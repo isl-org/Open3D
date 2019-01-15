@@ -132,6 +132,13 @@ std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
 std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
         const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound);
 
+/// Factory function to create a box mesh (TriangleMeshFactory.cpp)
+/// The left bottom corner on the front will be placed at (0, 0, 0).
+/// The \param width is x-directional length, and \param height and \param depth
+/// are y- and z-directional lengths respectively.
+std::shared_ptr<TriangleMesh> CreateMeshBox(double width = 1.0,
+        double height = 1.0, double depth = 1.0);
+
 /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
 /// The sphere with \param radius will be centered at (0, 0, 0).
 /// Its axis is aligned with z-axis.
