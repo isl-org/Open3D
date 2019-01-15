@@ -136,6 +136,20 @@ protected:
     SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
 };
 
+class VoxelGridRenderer : public GeometryRenderer
+{
+public:
+    ~VoxelGridRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForVoxelGrid simple_voxelgrid_shader_;
+};
+
 class ImageRenderer : public GeometryRenderer
 {
 public:

@@ -28,13 +28,14 @@
 #include "open3d_core_trampoline.h"
 
 #include <Core/Geometry/LineSet.h>
+#include <IO/ClassIO/LineSetIO.h>
 using namespace open3d;
 
 void pybind_lineset(py::module &m)
 {
     py::class_<LineSet, PyGeometry3D<LineSet>,
             std::shared_ptr<LineSet>, Geometry3D> lineset(m,
-            "LineSet");
+            "LineSet", "LineSet");
     py::detail::bind_default_constructor<LineSet>(lineset);
     py::detail::bind_copy_functions<LineSet>(lineset);
     lineset
@@ -55,5 +56,15 @@ void pybind_lineset(py::module &m)
 
 void pybind_lineset_methods(py::module &m)
 {
-    
+    m.def("read_line_set", [](const std::string &filename,
+            const std::string &format) {
+        LineSet line_set;
+        ReadLineSet(filename, line_set, format);
+        return line_set;
+    }, "Function to read LineSet from file", "filename"_a, "format"_a = "auto");
+    m.def("write_line_set", [](const std::string &filename,
+            const LineSet &line_set, bool write_ascii, bool compressed) {
+        return WriteLineSet(filename, line_set, write_ascii, compressed);
+    }, "Function to write LineSet to file", "filename"_a, "line_set"_a,
+            "write_ascii"_a = false, "compressed"_a = false);
 }

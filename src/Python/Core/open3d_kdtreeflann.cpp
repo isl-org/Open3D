@@ -32,7 +32,8 @@ using namespace open3d;
 
 void pybind_kdtreeflann(py::module &m)
 {
-    py::class_<KDTreeSearchParam> kdtreesearchparam(m, "KDTreeSearchParam");
+    py::class_<KDTreeSearchParam> kdtreesearchparam(m, "KDTreeSearchParam", 
+            "KDTreeSearchParam");
     kdtreesearchparam
         .def("get_search_type", &KDTreeSearchParam::GetSearchType);
     py::enum_<KDTreeSearchParam::SearchType>(kdtreesearchparam, "Type",
@@ -43,7 +44,8 @@ void pybind_kdtreeflann(py::module &m)
         .export_values();
 
     py::class_<KDTreeSearchParamKNN> kdtreesearchparam_knn(m,
-            "KDTreeSearchParamKNN", kdtreesearchparam);
+            "KDTreeSearchParamKNN", kdtreesearchparam, 
+            "KDTreeSearchParamKNN");
     kdtreesearchparam_knn
         .def(py::init<int>(), "knn"_a = 30)
         .def("__repr__", [](const KDTreeSearchParamKNN &param){
@@ -53,7 +55,8 @@ void pybind_kdtreeflann(py::module &m)
         .def_readwrite("knn", &KDTreeSearchParamKNN::knn_);
 
     py::class_<KDTreeSearchParamRadius> kdtreesearchparam_radius(m,
-            "KDTreeSearchParamRadius", kdtreesearchparam);
+            "KDTreeSearchParamRadius", kdtreesearchparam,
+            "KDTreeSearchParamRadius");
     kdtreesearchparam_radius
         .def(py::init<double>(), "radius"_a)
         .def("__repr__", [](const KDTreeSearchParamRadius &param) {
@@ -63,7 +66,8 @@ void pybind_kdtreeflann(py::module &m)
         .def_readwrite("radius", &KDTreeSearchParamRadius::radius_);
 
     py::class_<KDTreeSearchParamHybrid> kdtreesearchparam_hybrid(m,
-            "KDTreeSearchParamHybrid", kdtreesearchparam);
+            "KDTreeSearchParamHybrid", kdtreesearchparam,
+            "KDTreeSearchParamHybrid");
     kdtreesearchparam_hybrid
         .def(py::init<double, int>(), "radius"_a, "max_nn"_a)
         .def("__repr__", [](const KDTreeSearchParamHybrid &param) {
@@ -75,7 +79,7 @@ void pybind_kdtreeflann(py::module &m)
         .def_readwrite("max_nn", &KDTreeSearchParamHybrid::max_nn_);
 
     py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>> kdtreeflann(m,
-            "KDTreeFlann");
+            "KDTreeFlann", "KDTreeFlann");
     kdtreeflann.def(py::init<>())
         .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
         .def("set_matrix_data", &KDTreeFlann::SetMatrixData, "data"_a)

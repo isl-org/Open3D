@@ -164,10 +164,18 @@ std::shared_ptr<Image> CreateImageFromFloatImage(const Image &input);
 /// Typedef and functions for ImagePyramid
 typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
+/// Function to filter image pyramid
 ImagePyramid FilterImagePyramid(const ImagePyramid &input,
         Image::FilterType type);
 
+/// Function to create image pyramid
 ImagePyramid CreateImagePyramid(const Image& image,
         size_t num_of_levels, bool with_gaussian_filter = true);
+
+/// Function to create a depthmap boundary mask from depth image
+std::shared_ptr<Image> CreateDepthBoundaryMask(
+        const Image& depth_image_input,
+        double depth_threshold_for_discontinuity_check = 0.1,
+        int half_dilation_kernel_size_for_discontinuity_map = 3);
 
 }    // namespace open3d

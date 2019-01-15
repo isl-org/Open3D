@@ -36,7 +36,7 @@ using namespace open3d;
 void pybind_camera(py::module &m)
 {
     py::class_<PinholeCameraIntrinsic> pinhole_intr(m,
-            "PinholeCameraIntrinsic");
+            "PinholeCameraIntrinsic", "PinholeCameraIntrinsic");
     py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
     py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
     pinhole_intr
@@ -64,7 +64,8 @@ void pybind_camera(py::module &m)
                     std::string(".\nAccess intrinsics with intrinsic_matrix.");
         });
     py::enum_<PinholeCameraIntrinsicParameters>(m,
-        "PinholeCameraIntrinsicParameters", py::arithmetic())
+        "PinholeCameraIntrinsicParameters", py::arithmetic(), 
+        "PinholeCameraIntrinsicParameters")
         .value("PrimeSenseDefault",
         PinholeCameraIntrinsicParameters::PrimeSenseDefault)
         .value("Kinect2DepthCameraDefault",
@@ -74,7 +75,7 @@ void pybind_camera(py::module &m)
         .export_values();
 
     py::class_<PinholeCameraParameters> pinhole_param(m,
-            "PinholeCameraParameters");
+            "PinholeCameraParameters", "PinholeCameraParameters");
     py::detail::bind_default_constructor<PinholeCameraParameters>(pinhole_param);
     py::detail::bind_copy_functions<PinholeCameraParameters>(pinhole_param);
     pinhole_param
@@ -86,7 +87,7 @@ void pybind_camera(py::module &m)
         });
 
     py::class_<PinholeCameraTrajectory> pinhole_traj(m,
-            "PinholeCameraTrajectory");
+            "PinholeCameraTrajectory", "PinholeCameraTrajectory");
     py::detail::bind_default_constructor<PinholeCameraTrajectory>(pinhole_traj);
     py::detail::bind_copy_functions<PinholeCameraTrajectory>(pinhole_traj);
     pinhole_traj

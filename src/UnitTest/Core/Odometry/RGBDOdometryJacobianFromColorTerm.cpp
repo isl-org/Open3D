@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest.h"
+#include "Utility/UnitTest.h"
 #include "OdometryTools.h"
 
 #include "Core/Geometry/RGBDImage.h"
@@ -41,7 +41,7 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
 {
-    vector<Vector6d> ref_J_r(10);
+    vector<Vector6d, Vector6d_allocator> ref_J_r(10);
     ref_J_r[0] << -1.208103, 0.621106, -0.040830, 0.173142, 0.260220, -1.164557;
     ref_J_r[1] << -0.338017, 0.140257,  0.019732, 0.030357, 0.128839, -0.395772;
     ref_J_r[2] << -0.235842, 0.122008,  0.029948, 0.037260, 0.119792, -0.194611;
@@ -97,14 +97,14 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
     extrinsic(2, 2) = 1.0;
 
     int rows = height;
-    vector<Vector4i> corresps(rows);
+    vector<Vector4i, Vector4i_allocator> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
     RGBDOdometryJacobianFromColorTerm jacobian_method;
 
     for (int row = 0; row < rows; row++)
     {
-        vector<Vector6d> J_r;
+        vector<Vector6d, Vector6d_allocator> J_r;
         vector<double> r;
 
         jacobian_method.ComputeJacobianAndResidual(

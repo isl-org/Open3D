@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "UnitTest.h"
+#include "Utility/UnitTest.h"
 
 #include "Core/Camera/PinholeCameraIntrinsic.h"
 #include <json/json.h>

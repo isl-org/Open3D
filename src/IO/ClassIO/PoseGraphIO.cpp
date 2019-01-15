@@ -97,8 +97,7 @@ bool WritePoseGraph(const std::string &filename,
         PrintWarning("Write PoseGraph failed: unknown file extension.\n");
         return false;
     }
-    auto map_itr =
-            file_extension_to_pose_graph_write_function.find(filename_ext);
+    auto map_itr = file_extension_to_pose_graph_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pose_graph_write_function.end()) {
         PrintWarning("Write PoseGraph failed: unknown file extension.\n");
         return false;
