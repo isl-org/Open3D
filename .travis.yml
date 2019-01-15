@@ -3,6 +3,7 @@ env:
   global:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
+    - NPROC=2
 
 notifications:
   email:

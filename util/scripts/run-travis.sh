@@ -31,7 +31,7 @@ echo
 
 echo "build & install Open3D..."
 date
-make install -j$(nproc)
+make install -j$NPROC
 echo
 
 echo "running the Open3D unit tests..."
