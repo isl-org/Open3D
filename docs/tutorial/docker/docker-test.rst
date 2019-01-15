@@ -34,7 +34,7 @@ The images can be found at: `intelvcl/open3d-test <https://hub.docker.com/r/inte
 Usage notes
 ===========
 
-The docker setup files and tools can be found under: `Open3d/util/docker/open3d-test <https://github.com/takanokage/Open3D/tree/docker/util/docker/open3d-test>`_.
+The docker setup files and tools can be found under: `Open3d/util/docker/open3d-test <https://github.com/IntelVCL/Open3D/tree/docker/util/docker/open3d-test>`_.
 
 .. _docker-test-setup:
 
@@ -81,9 +81,21 @@ This script will build all of the supported Open3D docker images.
 
 This script will upload a single Open3D docker image. Accepts the same command line arguments as build.sh.
 
+Requires docker login:
+
+.. code-block:: sh
+
+    $ docker login --username intelvcl
+
 **upload-all.sh**
 
 This script will upload all of the Open3D docker images.
+
+Requires docker login:
+
+.. code-block:: sh
+
+    $ docker login --username intelvcl
 
 **cleanup.sh**
 
