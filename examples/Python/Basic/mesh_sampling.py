@@ -101,12 +101,17 @@ for xyz in sphere.vertices:
 
 vis.destroy_window()
 
-pcd_down = voxel_down_sample(pcd_agg, voxel_size=0.05)
-draw_geometries([pcd_down])
-write_point_cloud("output.ply", pcd_down)
-
+print("visualize camera center")
 centers = PointCloud()
 print(centers_pts)
 centers.points = Vector3dVector(centers_pts)
-
 draw_geometries([centers, model])
+
+print("voxelize dense point cloud")
+voxel = create_surface_voxel_grid_from_point_cloud(pcd_agg, voxel_size=0.05)
+draw_geometries([voxel])
+write_voxel_grid("output.ply", voxel)
+
+print("visualize original model and voxels together")
+voxel_read = read_voxel_grid("output.ply")
+draw_geometries([voxel_read, model])
