@@ -6,8 +6,8 @@ Docker
 The following document briefly describes:
 
 - the installation of Docker CE
-- a Docker CE based GUI solution for utilizing Open3D
-- the use of Docker images for testing Open3D
+- a solution for utilizing Open3D with GUI/visualization under Docker
+- the use of Docker images for testing Open3D without a GUI
 
 .. toctree::
 

@@ -3,7 +3,8 @@
 Docker GUI
 ----------
 
-The following document describes a Docker CE based GUI solution for utilizing Open3D.
+The following document describes a solution for utilizing Open3D with GUI/visualization under Docker.
+
 Utilizing this approach the user can:
 
 - sandbox Open3D from other applications on a machine
