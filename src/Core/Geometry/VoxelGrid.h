@@ -26,36 +26,51 @@
 
 #pragma once
 
-#include "Utility/Helper.h"
-#include "Utility/Console.h"
-#include "Utility/Timer.h"
-#include "Utility/FileSystem.h"
-#include "Utility/Eigen.h"
+#include <vector>
+#include <memory>
+#include <Eigen/Core>
+#include <Core/Geometry/Geometry3D.h>
 
-#include "ColorMap/ColorMapOptimization.h"
-#include "ColorMap/ImageWarpingField.h"
+namespace open3d {
 
-#include "Geometry/Geometry.h"
-#include "Geometry/PointCloud.h"
-#include "Geometry/VoxelGrid.h"
-#include "Geometry/LineSet.h"
-#include "Geometry/TriangleMesh.h"
-#include "Geometry/Image.h"
-#include "Geometry/RGBDImage.h"
-#include "Geometry/KDTreeFlann.h"
+class PointCloud;
+class TriangleMesh;
 
-#include "Camera/PinholeCameraIntrinsic.h"
-#include "Camera/PinholeCameraParameters.h"
-#include "Camera/PinholeCameraTrajectory.h"
+class VoxelGrid : public Geometry3D
+{
+public:
+    VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid){};
+    ~VoxelGrid() override{};
 
-#include "Registration/Feature.h"
-#include "Registration/Registration.h"
-#include "Registration/TransformationEstimation.h"
+public:
+    void Clear() override;
+    bool IsEmpty() const override;
+    Eigen::Vector3d GetMinBound() const override;
+    Eigen::Vector3d GetMaxBound() const override;
+    void Transform(const Eigen::Matrix4d &transformation) override;
 
-#include "Odometry/Odometry.h"
+public:
+    VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
+    VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
-#include "Integration/TSDFVolume.h"
-#include "Integration/UniformTSDFVolume.h"
-#include "Integration/ScalableTSDFVolume.h"
+public:
+    bool HasVoxels() const {
+        return voxels_.size() > 0;
+    }
 
-#include "../Open3DConfig.h"
+    bool HasColors() const {
+        return voxels_.size() > 0 && colors_.size() == voxels_.size();
+    }
+
+public:
+    double voxel_size_;
+    Eigen::Vector3d origin_;
+    std::vector<Eigen::Vector3i> voxels_;
+    std::vector<Eigen::Vector3d> colors_;
+
+};
+
+std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
+        const PointCloud &input, double voxel_size);
+
+}

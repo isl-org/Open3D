@@ -110,6 +110,20 @@ protected:
             std::vector<Eigen::Vector3f> &colors) final;
 };
 
+class SimpleShaderForVoxelGrid : public SimpleShader
+{
+public:
+    SimpleShaderForVoxelGrid() : SimpleShader("SimpleShaderForVoxelGrid") {}
+
+protected:
+    bool PrepareRendering(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry,
+            const RenderOption &option, const ViewControl &view,
+            std::vector<Eigen::Vector3f> &points,
+            std::vector<Eigen::Vector3f> &colors) final;
+};
+
 }    // namespace open3d::glsl
 
 }    // namespace open3d
