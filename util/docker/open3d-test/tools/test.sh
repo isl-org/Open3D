@@ -7,6 +7,7 @@ REAL_PATH=$(dirname $(realpath ${0}))
 # download the image only if not found locally
 if [ 1 -eq ${IMAGE_EXISTS} ]; then
     echo "downloading ${IMAGE_NAME}..."
+    date
     docker pull ${IMAGE_NAME}
     echo
 fi
@@ -14,7 +15,8 @@ fi
 # helps sync the container clock with the host clock
 TIMEZONE=$(cat /etc/timezone)
 
-# run the container
+echo "running the ${CONTAINER_HOSTNAME} container..."
+date
 docker container run \
     --rm \
     -d \
@@ -26,7 +28,7 @@ docker container run \
     --name ${CONTAINER_NAME} \
     ${IMAGE_NAME}
 
-# attach to the running container, clone once & build Open3D twice
+# attach to the running container, clone/build/test Open3D
 echo "testing ${IMAGE_NAME}..."
 date
 
@@ -43,5 +45,5 @@ elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
         ./test.sh Release ${LINK_TYPE} $ENV_TYPE'
 fi
 
-# stop the container
+echo "stopping the ${CONTAINER_HOSTNAME} container..."
 docker container stop -t 0 ${CONTAINER_NAME} >/dev/null 2>&1
