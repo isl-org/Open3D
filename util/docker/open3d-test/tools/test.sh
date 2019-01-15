@@ -27,10 +27,12 @@ docker container run \
     -h ${CONTAINER_HOSTNAME} \
     --name ${CONTAINER_NAME} \
     ${IMAGE_NAME}
+echo
 
 # attach to the running container, clone/build/test Open3D
 echo "testing ${IMAGE_NAME}..."
 date
+echo
 
 if [ "${3}" = "py2" ] || [ "${3}" = "py3" ]; then
     docker container exec -it ${CONTAINER_NAME} /bin/bash -c '\
@@ -46,4 +48,6 @@ elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
 fi
 
 echo "stopping the ${CONTAINER_HOSTNAME} container..."
+date
 docker container stop -t 0 ${CONTAINER_NAME} >/dev/null 2>&1
+echo
