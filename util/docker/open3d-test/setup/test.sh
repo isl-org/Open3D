@@ -117,13 +117,29 @@ date
 ./bin/unitTests
 echo
 
+echo "test building a C++ example with installed Open3D..."
+date
+cd ../docs/_static/C++
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
+make
+./TestVisualizer
+echo
+
+echo "cleanup the C++ example..."
+date
+cd ../
+rm -rf build
+
 echo "uninstall Open3D..."
 date
+cd ../../../build
 make uninstall
 
 echo "cleanup Open3D..."
 date
-cd ..
+cd ../
 rm -rf build
 rm -rf ${OPEN3D_INSTALL_DIR}
 echo
