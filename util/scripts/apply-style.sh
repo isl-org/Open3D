@@ -40,7 +40,7 @@ if ! [[ -x "$(command -v clang-format)" ]]; then
 fi
 
 pushd "${script_dir}/../.." > /dev/null
-for dir in src examples ; do
+for dir in src examples docs/_static ; do
     if ! [[ -d "${dir}" ]]; then
         echo "Directory $(pwd)/${dir} not found$"
         exit 1

@@ -29,13 +29,14 @@
 #include <cstdio>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-bool ReadPointCloudFromXYZ(const std::string &filename, PointCloud &pointcloud)
-{
+bool ReadPointCloudFromXYZ(const std::string &filename,
+                           PointCloud &pointcloud) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
-        PrintWarning("Read XYZ failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Read XYZ failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
 
@@ -54,23 +55,24 @@ bool ReadPointCloudFromXYZ(const std::string &filename, PointCloud &pointcloud)
 }
 
 bool WritePointCloudToXYZ(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii/* = false*/,
-        bool compressed/* = false*/)
-{
+                          const PointCloud &pointcloud,
+                          bool write_ascii /* = false*/,
+                          bool compressed /* = false*/) {
     FILE *file = fopen(filename.c_str(), "w");
     if (file == NULL) {
-        PrintWarning("Write XYZ failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Write XYZ failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const Eigen::Vector3d &point = pointcloud.points_[i];
-        if (fprintf(file, "%.10f %.10f %.10f\n",
-                point(0), point(1), point(2)) < 0)
-        {
-            PrintWarning("Write XYZ failed: unable to write file: %s\n", filename.c_str());
+        if (fprintf(file, "%.10f %.10f %.10f\n", point(0), point(1), point(2)) <
+            0) {
+            PrintWarning("Write XYZ failed: unable to write file: %s\n",
+                         filename.c_str());
             fclose(file);
-            return false;    // error happens during writing.
+            return false;  // error happens during writing.
         }
     }
 
@@ -78,4 +80,4 @@ bool WritePointCloudToXYZ(const std::string &filename,
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

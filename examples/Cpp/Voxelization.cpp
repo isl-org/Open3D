@@ -30,24 +30,24 @@
 
 using namespace open3d;
 
-void PrintVoxelGridInformation(const VoxelGrid& voxel_grid)
-{
+void PrintVoxelGridInformation(const VoxelGrid& voxel_grid) {
     PrintDebug("VoxelGrid with %d voxels\n", voxel_grid.voxels_.size());
     PrintDebug("               origin: [%f %f %f]\n", voxel_grid.origin_(0),
-            voxel_grid.origin_(1), voxel_grid.origin_(2));
+               voxel_grid.origin_(1), voxel_grid.origin_(2));
     PrintDebug("               voxel_size: %f\n", voxel_grid.voxel_size_);
     return;
 }
 
-int main(int argc, char **args) {
-
+int main(int argc, char** args) {
     using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
     if (argc < 3) {
         PrintOpen3DVersion();
+        // clang-format off
         PrintInfo("Usage:\n");
         PrintInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]\n");
+        // clang-format on
         return 1;
     }
 

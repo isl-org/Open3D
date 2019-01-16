@@ -31,10 +31,9 @@
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace open3d;
 
-void pybind_renderoption(py::module &m)
-{
-    py::class_<RenderOption, std::shared_ptr<RenderOption>>
-            renderoption(m, "RenderOption");
+void pybind_renderoption(py::module &m) {
+    py::class_<RenderOption, std::shared_ptr<RenderOption>> renderoption(
+            m, "RenderOption");
     py::detail::bind_default_constructor<RenderOption>(renderoption);
     renderoption
         .def("__repr__", [](const RenderOption &vc) {
@@ -57,7 +56,7 @@ void pybind_renderoption(py::module &m)
         .def_readwrite("mesh_shade_option", &RenderOption::mesh_shade_option_)
         .def_readwrite("mesh_color_option", &RenderOption::mesh_color_option_);
 
-    py::enum_<RenderOption::PointColorOption>(m, "PointColorOption", 
+    py::enum_<RenderOption::PointColorOption>(m, "PointColorOption",
                 py::arithmetic(), "PointColorOption")
         .value("Default", RenderOption::PointColorOption::Default)
         .value("Color", RenderOption::PointColorOption::Color)
@@ -82,6 +81,4 @@ void pybind_renderoption(py::module &m)
         .export_values();
 }
 
-void pybind_renderoption_method(py::module &m)
-{
-}
+void pybind_renderoption_method(py::module &m) {}

@@ -29,39 +29,32 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DISABLED_DrawGeometries)
-{
+TEST(DrawGeometry, DISABLED_DrawGeometries) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithCustomAnimation) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DISABLED_DrawGeometriesWithCustomAnimation)
-{
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithAnimationCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DISABLED_DrawGeometriesWithAnimationCallback)
-{
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithKeyCallbacks) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(DrawGeometry, DISABLED_DrawGeometriesWithKeyCallbacks)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(DrawGeometry, DISABLED_DrawGeometriesWithEditing)
-{
+TEST(DrawGeometry, DISABLED_DrawGeometriesWithEditing) {
     unit_test::NotImplemented();
 }

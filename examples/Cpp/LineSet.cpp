@@ -32,8 +32,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
@@ -41,6 +40,7 @@ int main(int argc, char **argv)
 
     if (argc < 2) {
         PrintOpen3DVersion();
+        // clang-format off
         PrintInfo("Usage:\n");
         PrintInfo("    > LineSet [filename]\n");
         PrintInfo("    The program will :\n");
@@ -51,6 +51,7 @@ int main(int argc, char **argv)
         PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
         PrintInfo("    6. convert to LineSet and render it.\n");
         PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
+        // clang-format on
         return 1;
     }
 
@@ -79,8 +80,8 @@ int main(int argc, char **argv)
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
             Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitX()));
-    new_cloud_ptr->Transform(
-            trans_to_origin.inverse() * transformation * trans_to_origin);
+    new_cloud_ptr->Transform(trans_to_origin.inverse() * transformation *
+                             trans_to_origin);
     correspondences.clear();
     for (size_t i = 0; i < new_cloud_ptr->points_.size(); i++) {
         kdtree.SearchKNN(new_cloud_ptr->points_[i], 1, indices_vec, dists_vec);
@@ -91,8 +92,8 @@ int main(int argc, char **argv)
     new_lineset_ptr->colors_.resize(new_lineset_ptr->lines_.size());
     for (size_t i = 0; i < new_lineset_ptr->lines_.size(); i++) {
         auto point_pair = new_lineset_ptr->GetLineCoordinate(i);
-        if ((point_pair.first - point_pair.second).norm() < 0.05 *
-                bounding_box.GetSize()) {
+        if ((point_pair.first - point_pair.second).norm() <
+            0.05 * bounding_box.GetSize()) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(1.0, 0.0, 0.0);
         } else {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);

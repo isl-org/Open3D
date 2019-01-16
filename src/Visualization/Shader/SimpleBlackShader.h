@@ -33,65 +33,66 @@
 namespace open3d {
 
 namespace glsl {
-    
-class SimpleBlackShader : public ShaderWrapper
-{
-public:
+
+class SimpleBlackShader : public ShaderWrapper {
+  public:
     ~SimpleBlackShader() override { Release(); }
 
-protected:
-    SimpleBlackShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
+  protected:
+    SimpleBlackShader(const std::string &name) : ShaderWrapper(name) {
+        Compile();
+    }
 
-protected:
+  protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
+                      const ViewControl &view) final;
     bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
+                        const ViewControl &view) final;
     void UnbindGeometry() final;
 
-protected:
+  protected:
     virtual bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) = 0;
+                                  const RenderOption &option,
+                                  const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points) = 0;
+                                const RenderOption &option,
+                                const ViewControl &view,
+                                std::vector<Eigen::Vector3f> &points) = 0;
 
-protected:
+  protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint MVP_;
 };
-    
-class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader
-{
-public:
-    SimpleBlackShaderForPointCloudNormal() :
-            SimpleBlackShader("SimpleBlackShaderForPointCloudNormal") {}
 
-protected:
-    bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points) final;
+class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader {
+  public:
+    SimpleBlackShaderForPointCloudNormal()
+        : SimpleBlackShader("SimpleBlackShaderForPointCloudNormal") {}
+
+  protected:
+    bool PrepareRendering(const Geometry &geometry, const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry, const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points) final;
 };
 
-class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader
-{
-public:
-    SimpleBlackShaderForTriangleMeshWireFrame() :
-            SimpleBlackShader("SimpleBlackShaderForTriangleMeshWireFrame") {}
+class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader {
+  public:
+    SimpleBlackShaderForTriangleMeshWireFrame()
+        : SimpleBlackShader("SimpleBlackShaderForTriangleMeshWireFrame") {}
 
-protected:
-    bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points) final;
+  protected:
+    bool PrepareRendering(const Geometry &geometry, const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const Geometry &geometry, const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points) final;
 };
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

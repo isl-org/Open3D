@@ -28,10 +28,10 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo("    > ViewDistances source_file [options]\n");
     PrintInfo("      View color coded distances of a point cloud.\n");
@@ -44,28 +44,28 @@ void PrintHelp()
     PrintInfo("    --nn_distance             : Compute the NN distance.\n");
     PrintInfo("    --write_color_back        : Write color back to source_file.\n");
     PrintInfo("    --without_gui             : Without GUI.\n");
+    // clang-format on
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 1;
     }
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
-    double max_distance = GetProgramOptionAsDouble(argc, argv, "--max_distance",
-            0.0);
+    double max_distance =
+            GetProgramOptionAsDouble(argc, argv, "--max_distance", 0.0);
     auto pcd = CreatePointCloudFromFile(argv[1]);
     if (pcd->IsEmpty()) {
         PrintInfo("Empty point cloud.\n");
         return 1;
     }
-    std::string binname = filesystem::GetFileNameWithoutExtension(argv[1]) +
-            ".bin";
+    std::string binname =
+            filesystem::GetFileNameWithoutExtension(argv[1]) + ".bin";
     std::vector<double> distances(pcd->points_.size());
     if (ProgramOptionExists(argc, argv, "--mahalanobis_distance")) {
         distances = ComputePointCloudMahalanobisDistance(*pcd);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         if (fread(distances.data(), sizeof(double), pcd->points_.size(), f) !=
-                pcd->points_.size()) {
+            pcd->points_.size()) {
             PrintInfo("Cannot open bin file.\n");
             return 1;
         }

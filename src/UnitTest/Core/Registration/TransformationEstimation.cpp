@@ -29,63 +29,55 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_Constructor)
-{
+TEST(TransformationEstimation, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_Destructor)
-{
+TEST(TransformationEstimation, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_MemberData)
-{
+TEST(TransformationEstimation, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_GetTransformationEstimationType)
-{
+TEST(TransformationEstimation, DISABLED_GetTransformationEstimationType) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_ComputeRMSE)
-{
+TEST(TransformationEstimation, DISABLED_ComputeRMSE) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_ComputeTransformation)
-{
+TEST(TransformationEstimation, DISABLED_ComputeTransformation) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPoint)
-{
+TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPoint) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPlane)
-{
+TEST(TransformationEstimation, DISABLED_TransformationEstimationPointToPlane) {
     unit_test::NotImplemented();
 }

@@ -39,25 +39,22 @@ class ImageWarpingField;
 
 class TriangleMesh;
 
-class ColorMapOptimizationJacobian
-{
-public:
+class ColorMapOptimizationJacobian {
+  public:
     ColorMapOptimizationJacobian() {}
 
-public:
+  public:
     /// Function to compute i-th row of J and r
     /// the vector form of J_r is basically 6x1 matrix, but it can be
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     void ComputeJacobianAndResidualRigid(
-            int row, Eigen::Vector6d &J_r, double &r,
-            const TriangleMesh& mesh,
+            int row, Eigen::Vector6d& J_r, double& r, const TriangleMesh& mesh,
             const std::vector<double>& proxy_intensity,
             const std::shared_ptr<Image>& images_gray,
             const std::shared_ptr<Image>& images_dx,
             const std::shared_ptr<Image>& images_dy,
-            const Eigen::Matrix4d &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
+            const Eigen::Matrix4d& intrinsic, const Eigen::Matrix4d& extrinsic,
             const std::vector<int>& visiblity_image_to_vertex,
             const int image_boundary_margin);
 
@@ -66,19 +63,17 @@ public:
     /// This function can take additional matrix multiplication pattern
     /// to avoid full matrix multiplication
     void ComputeJacobianAndResidualNonRigid(
-            int row, Eigen::Vector14d &J_r, double &r,
-            Eigen::Vector14i &pattern,
-            const TriangleMesh& mesh,
+            int row, Eigen::Vector14d& J_r, double& r,
+            Eigen::Vector14i& pattern, const TriangleMesh& mesh,
             const std::vector<double>& proxy_intensity,
             const std::shared_ptr<Image>& images_gray,
             const std::shared_ptr<Image>& images_dx,
             const std::shared_ptr<Image>& images_dy,
             const ImageWarpingField& warping_fields,
             const ImageWarpingField& warping_fields_init,
-            const Eigen::Matrix4d &intrinsic,
-            const Eigen::Matrix4d &extrinsic,
+            const Eigen::Matrix4d& intrinsic, const Eigen::Matrix4d& extrinsic,
             const std::vector<int>& visiblity_image_to_vertex,
             const int image_boundary_margin);
 };
 
-}	// namespace open3d
+}  // namespace open3d

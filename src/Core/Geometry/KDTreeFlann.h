@@ -35,16 +35,18 @@
 #include <Core/Registration/Feature.h>
 
 namespace flann {
-template <typename T> class Matrix;
-template <typename T> struct L2;
-template <typename T> class Index;
-}    // namespace flann
+template <typename T>
+class Matrix;
+template <typename T>
+struct L2;
+template <typename T>
+class Index;
+}  // namespace flann
 
 namespace open3d {
 
-class KDTreeFlann
-{
-public:
+class KDTreeFlann {
+  public:
     KDTreeFlann();
     KDTreeFlann(const Eigen::MatrixXd &data);
     KDTreeFlann(const Geometry &geometry);
@@ -53,31 +55,32 @@ public:
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 
-public:
+  public:
     bool SetMatrixData(const Eigen::MatrixXd &data);
     bool SetGeometry(const Geometry &geometry);
     bool SetFeature(const Feature &feature);
 
-    template<typename T>
+    template <typename T>
     int Search(const T &query, const KDTreeSearchParam &param,
-            std::vector<int> &indices, std::vector<double> &distance2) const;
+               std::vector<int> &indices, std::vector<double> &distance2) const;
 
-    template<typename T>
+    template <typename T>
     int SearchKNN(const T &query, int knn, std::vector<int> &indices,
-            std::vector<double> &distance2) const;
+                  std::vector<double> &distance2) const;
 
-    template<typename T>
+    template <typename T>
     int SearchRadius(const T &query, double radius, std::vector<int> &indices,
-            std::vector<double> &distance2) const;
+                     std::vector<double> &distance2) const;
 
-    template<typename T>
+    template <typename T>
     int SearchHybrid(const T &query, double radius, int max_nn,
-            std::vector<int> &indices, std::vector<double> &distance2) const;
+                     std::vector<int> &indices,
+                     std::vector<double> &distance2) const;
 
-private:
+  private:
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
-protected:
+  protected:
     std::vector<double> data_;
     std::unique_ptr<flann::Matrix<double>> flann_dataset_;
     std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
@@ -85,4 +88,4 @@ protected:
     size_t dataset_size_ = 0;
 };
 
-}    // namespace open3d
+}  // namespace open3d

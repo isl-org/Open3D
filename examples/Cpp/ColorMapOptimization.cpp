@@ -29,8 +29,7 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace open3d::filesystem;
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
@@ -43,26 +42,25 @@ int main(int argc, char *argv[])
     // Read RGBD images
     std::string data_path = argv[1];
     std::vector<std::string> depth_filenames, color_filenames;
-    ListFilesInDirectoryWithExtension(
-            data_path + "/depth/", "png", depth_filenames);
-    ListFilesInDirectoryWithExtension(
-            data_path + "/image/", "jpg", color_filenames);
+    ListFilesInDirectoryWithExtension(data_path + "/depth/", "png",
+                                      depth_filenames);
+    ListFilesInDirectoryWithExtension(data_path + "/image/", "jpg",
+                                      color_filenames);
     assert(depth_filenames.size() == color_filenames.size());
     std::vector<std::shared_ptr<RGBDImage>> rgbd_images;
-    for (int i=0; i<depth_filenames.size(); i++) {
+    for (int i = 0; i < depth_filenames.size(); i++) {
         PrintDebug("reading %s...\n", depth_filenames[i].c_str());
         auto depth = CreateImageFromFile(depth_filenames[i]);
         PrintDebug("reading %s...\n", color_filenames[i].c_str());
         auto color = CreateImageFromFile(color_filenames[i]);
-        auto rgbd_image = CreateRGBDImageFromColorAndDepth(
-                *color, *depth, 1000.0, 3.0, false);
+        auto rgbd_image = CreateRGBDImageFromColorAndDepth(*color, *depth,
+                                                           1000.0, 3.0, false);
         rgbd_images.push_back(rgbd_image);
     }
-    auto camera = CreatePinholeCameraTrajectoryFromFile(
-            data_path + "/scene/key.log");
-    auto mesh = CreateMeshFromFile(
-            data_path + "/scene/integrated.ply");
-    
+    auto camera =
+            CreatePinholeCameraTrajectoryFromFile(data_path + "/scene/key.log");
+    auto mesh = CreateMeshFromFile(data_path + "/scene/integrated.ply");
+
     // Optimize texture and save the mesh as texture_mapped.ply
     // This is implementation of following paper
     // Q.-Y. Zhou and V. Koltun,

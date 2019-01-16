@@ -32,9 +32,8 @@
 
 namespace open3d {
 
-class RenderOption : public IJsonConvertible
-{
-public:
+class RenderOption : public IJsonConvertible {
+  public:
     // Global options
     enum class TextureInterpolationOption {
         Nearest = 0,
@@ -82,7 +81,7 @@ public:
         StretchWithWindow = 2,
     };
 
-public:
+  public:
     RenderOption() {
         // VS2013 does not fully support C++11
         // Array initialization has to be done in constructors.
@@ -109,14 +108,12 @@ public:
     }
     ~RenderOption() override {}
 
-public:
+  public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-public:
-    void ToggleLightOn() {
-        light_on_ = !light_on_;
-    }
+  public:
+    void ToggleLightOn() { light_on_ = !light_on_; }
     void ToggleInterpolationOption() {
         if (interpolation_option_ == TextureInterpolationOption::Nearest) {
             interpolation_option_ = TextureInterpolationOption::Linear;
@@ -126,15 +123,15 @@ public:
     }
     void ChangePointSize(double change) {
         point_size_ = std::max(std::min(point_size_ + change * POINT_SIZE_STEP,
-                POINT_SIZE_MAX), POINT_SIZE_MIN);
+                                        POINT_SIZE_MAX),
+                               POINT_SIZE_MIN);
     }
     void ChangeLineWidth(double change) {
         line_width_ = std::max(std::min(line_width_ + change * LINE_WIDTH_STEP,
-                LINE_WIDTH_MAX), LINE_WIDTH_MIN);
-    }    
-    void TogglePointShowNormal() {
-        point_show_normal_ = !point_show_normal_;
+                                        LINE_WIDTH_MAX),
+                               LINE_WIDTH_MIN);
     }
+    void TogglePointShowNormal() { point_show_normal_ = !point_show_normal_; }
     void ToggleShadingOption() {
         if (mesh_shade_option_ == MeshShadeOption::FlatShade) {
             mesh_shade_option_ = MeshShadeOption::SmoothShade;
@@ -152,14 +149,14 @@ public:
         if (image_stretch_option_ == ImageStretchOption::OriginalSize) {
             image_stretch_option_ = ImageStretchOption::StretchKeepRatio;
         } else if (image_stretch_option_ ==
-                ImageStretchOption::StretchKeepRatio) {
+                   ImageStretchOption::StretchKeepRatio) {
             image_stretch_option_ = ImageStretchOption::StretchWithWindow;
         } else {
             image_stretch_option_ = ImageStretchOption::OriginalSize;
         }
     }
 
-public:
+  public:
     // global options
     Eigen::Vector3d background_color_ = Eigen::Vector3d::Ones();
     TextureInterpolationOption interpolation_option_ =
@@ -184,8 +181,7 @@ public:
     MeshColorOption mesh_color_option_ = MeshColorOption::Color;
     bool mesh_show_back_face_ = false;
     bool mesh_show_wireframe_ = false;
-    Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(
-            0.7, 0.7, 0.7);
+    Eigen::Vector3d default_mesh_color_ = Eigen::Vector3d(0.7, 0.7, 0.7);
 
     // LineSet options
     double line_width_ = LINE_WIDTH_DEFAULT;
@@ -195,7 +191,7 @@ public:
     int image_max_depth_ = 3000;
 
     // Coordinate frame
-    bool show_coordinate_frame_ = false;    
+    bool show_coordinate_frame_ = false;
 };
 
-}   // namespace open3d
+}  // namespace open3d

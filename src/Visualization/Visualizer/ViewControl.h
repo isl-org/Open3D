@@ -34,9 +34,8 @@
 
 namespace open3d {
 
-class ViewControl
-{
-public:
+class ViewControl {
+  public:
     static const double FIELD_OF_VIEW_MAX;
     static const double FIELD_OF_VIEW_MIN;
     static const double FIELD_OF_VIEW_DEFAULT;
@@ -54,7 +53,7 @@ public:
         Orthogonal = 1,
     };
 
-public:
+  public:
     /// Function to set view points
     /// This function obtains OpenGL context and calls OpenGL functions to set
     /// the view point.
@@ -67,8 +66,7 @@ public:
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view)
-    bool ConvertToPinholeCameraParameters(
-            PinholeCameraParameters &parameters);
+    bool ConvertToPinholeCameraParameters(PinholeCameraParameters &parameters);
     bool ConvertFromPinholeCameraParameters(
             const PinholeCameraParameters &parameters);
 
@@ -97,7 +95,7 @@ public:
     /// Coordinates are measured in screen coordinates relative to the top-left
     /// corner of the window client area.
     virtual void Translate(double x, double y, double xo = 0.0,
-            double yo = 0.0);
+                           double yo = 0.0);
 
     // Function to process rolling
     /// \param x is the distances the mouse cursor has moved.
@@ -105,13 +103,9 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const BoundingBox &GetBoundingBox() const {
-        return bounding_box_;
-    }
+    const BoundingBox &GetBoundingBox() const { return bounding_box_; }
 
-    void ResetBoundingBox() {
-        bounding_box_.Reset();
-    }
+    void ResetBoundingBox() { bounding_box_.Reset(); }
 
     void FitInGeometry(const Geometry &geometry) {
         if (geometry.Dimension() == 3) {
@@ -137,7 +131,7 @@ public:
     double GetZNear() const { return z_near_; }
     double GetZFar() const { return z_far_; }
 
-protected:
+  protected:
     int window_width_ = 0;
     int window_height_ = 0;
     BoundingBox bounding_box_;
@@ -159,4 +153,4 @@ protected:
     GLHelper::GLMatrix4f MVP_matrix_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

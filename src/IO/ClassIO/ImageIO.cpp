@@ -30,37 +30,36 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/FileSystem.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-static const std::unordered_map<std::string,
-        std::function<bool(const std::string &, Image &)>>
-        file_extension_to_image_read_function
-        {{"png", ReadImageFromPNG},
-        {"jpg", ReadImageFromJPG},
-        {"jpeg", ReadImageFromJPG},
+static const std::unordered_map<
+        std::string, std::function<bool(const std::string &, Image &)>>
+        file_extension_to_image_read_function{
+                {"png", ReadImageFromPNG},
+                {"jpg", ReadImageFromJPG},
+                {"jpeg", ReadImageFromJPG},
         };
 
-static const std::unordered_map<std::string,
+static const std::unordered_map<
+        std::string,
         std::function<bool(const std::string &, const Image &, int)>>
-        file_extension_to_image_write_function
-        {{"png", WriteImageToPNG},
-        {"jpg", WriteImageToJPG},
-        {"jpeg", WriteImageToJPG},
+        file_extension_to_image_write_function{
+                {"png", WriteImageToPNG},
+                {"jpg", WriteImageToJPG},
+                {"jpeg", WriteImageToJPG},
         };
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename)
-{
+std::shared_ptr<Image> CreateImageFromFile(const std::string &filename) {
     auto image = std::make_shared<Image>();
     ReadImage(filename, *image);
     return image;
 }
 
-bool ReadImage(const std::string &filename, Image &image)
-{
+bool ReadImage(const std::string &filename, Image &image) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -76,8 +75,7 @@ bool ReadImage(const std::string &filename, Image &image)
 }
 
 bool WriteImage(const std::string &filename, const Image &image,
-        int quality/* = 90*/)
-{
+                int quality /* = 90*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -92,4 +90,4 @@ bool WriteImage(const std::string &filename, const Image &image,
     return map_itr->second(filename, image, quality);
 }
 
-}    // namespace open3d
+}  // namespace open3d

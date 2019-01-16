@@ -27,10 +27,10 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo("    > MergeMesh source_directory target_file [option]\n");
     PrintInfo("      Merge mesh files under <source_directory>.\n");
@@ -40,10 +40,10 @@ void PrintHelp()
     PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
     PrintInfo("    --purge                   : Clear duplicated and non-manifold vertices and\n");
     PrintInfo("                                triangles.\n");
- }
+    // clang-format on
+}
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::filesystem;
 

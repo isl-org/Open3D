@@ -29,143 +29,123 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_Constructor)
-{
+TEST(VisualizerWithEditing, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_Destructor)
-{
+TEST(VisualizerWithEditing, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_MemberData)
-{
+TEST(VisualizerWithEditing, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_AddGeometry)
-{
+TEST(VisualizerWithEditing, DISABLED_AddGeometry) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_PrintVisualizerHelp)
-{
+TEST(VisualizerWithEditing, DISABLED_PrintVisualizerHelp) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_UpdateWindowTitle)
-{
+TEST(VisualizerWithEditing, DISABLED_UpdateWindowTitle) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_BuildUtilities)
-{
+TEST(VisualizerWithEditing, DISABLED_BuildUtilities) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_PickPoint)
-{
+TEST(VisualizerWithEditing, DISABLED_PickPoint) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(VisualizerWithEditing, DISABLED_InitViewControl) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_InitViewControl)
-{
+TEST(VisualizerWithEditing, DISABLED_InitRenderOption) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_InitRenderOption)
-{
+TEST(VisualizerWithEditing, DISABLED_WindowResizeCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_WindowResizeCallback)
-{
+TEST(VisualizerWithEditing, DISABLED_MouseMoveCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_MouseMoveCallback)
-{
+TEST(VisualizerWithEditing, DISABLED_MouseScrollCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_MouseScrollCallback)
-{
+TEST(VisualizerWithEditing, DISABLED_MouseButtonCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_MouseButtonCallback)
-{
+TEST(VisualizerWithEditing, DISABLED_KeyPressCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_KeyPressCallback)
-{
+TEST(VisualizerWithEditing, DISABLED_InvalidateSelectionPolygon) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_InvalidateSelectionPolygon)
-{
+TEST(VisualizerWithEditing, DISABLED_InvalidatePicking) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_InvalidatePicking)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(VisualizerWithEditing, DISABLED_SaveCroppingResult)
-{
+TEST(VisualizerWithEditing, DISABLED_SaveCroppingResult) {
     unit_test::NotImplemented();
 }

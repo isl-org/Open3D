@@ -30,14 +30,13 @@
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/KDTreeFlann.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
 double sqr(double x) { return x * x; }
 
-Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
-{
+Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A) {
     // Based on:
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     double p1 = sqr(A(0, 1)) + sqr(A(0, 2)) + sqr(A(1, 2));
@@ -49,7 +48,7 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
     } else {
         double q = A.trace() / 3.0;
         double p2 = sqr((A(0, 0) - q)) + sqr(A(1, 1) - q) + sqr(A(2, 2) - q) +
-                2 * p1;
+                    2 * p1;
         double p = sqrt(p2 / 6.0);
         Eigen::Matrix3d B = (1.0 / p) * (A - q * Eigen::Matrix3d::Identity());
         double r = B.determinant() / 2.0;
@@ -78,8 +77,7 @@ Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &A)
 }
 
 Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
-        const std::vector<int> &indices)
-{
+                              const std::vector<int> &indices) {
     if (indices.size() == 0) {
         return Eigen::Vector3d::Zero();
     }
@@ -110,16 +108,16 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
     covariance(2, 1) = covariance(1, 2);
 
     return FastEigen3x3(covariance);
-    //Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-    //solver.compute(covariance, Eigen::ComputeEigenvectors);
-    //return solver.eigenvectors().col(0);
+    // Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+    // solver.compute(covariance, Eigen::ComputeEigenvectors);
+    // return solver.eigenvectors().col(0);
 }
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-bool EstimateNormals(PointCloud &cloud,
-        const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
-{
+bool EstimateNormals(
+        PointCloud &cloud,
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
     bool has_normal = cloud.HasNormals();
     if (cloud.HasNormals() == false) {
         cloud.normals_.resize(cloud.points_.size());
@@ -133,8 +131,8 @@ bool EstimateNormals(PointCloud &cloud,
         std::vector<int> indices;
         std::vector<double> distance2;
         Eigen::Vector3d normal;
-        if (kdtree.Search(cloud.points_[i], search_param, indices,
-                distance2) >= 3) {
+        if (kdtree.Search(cloud.points_[i], search_param, indices, distance2) >=
+            3) {
             normal = ComputeNormal(cloud, indices);
             if (normal.norm() == 0.0) {
                 if (has_normal) {
@@ -155,12 +153,13 @@ bool EstimateNormals(PointCloud &cloud,
     return true;
 }
 
-bool OrientNormalsToAlignWithDirection(PointCloud &cloud,
-        const Eigen::Vector3d &orientation_reference
-        /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/)
-{
+bool OrientNormalsToAlignWithDirection(
+        PointCloud &cloud, const Eigen::Vector3d &orientation_reference
+        /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (cloud.HasNormals() == false) {
-        PrintDebug("[OrientNormalsToAlignWithDirection] No normals in the PointCloud. Call EstimateNormals() first.\n");
+        PrintDebug(
+                "[OrientNormalsToAlignWithDirection] No normals in the "
+                "PointCloud. Call EstimateNormals() first.\n");
     }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
@@ -176,18 +175,20 @@ bool OrientNormalsToAlignWithDirection(PointCloud &cloud,
     return true;
 }
 
-bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
-        const Eigen::Vector3d &camera_location/* = Eigen::Vector3d::Zero()*/)
-{
+bool OrientNormalsTowardsCameraLocation(
+        PointCloud &cloud,
+        const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
     if (cloud.HasNormals() == false) {
-        PrintDebug("[OrientNormalsTowardsCameraLocation] No normals in the PointCloud. Call EstimateNormals() first.\n");
+        PrintDebug(
+                "[OrientNormalsTowardsCameraLocation] No normals in the "
+                "PointCloud. Call EstimateNormals() first.\n");
     }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
     for (int i = 0; i < (int)cloud.points_.size(); i++) {
-        Eigen::Vector3d orientation_reference = camera_location -
-                cloud.points_[i];
+        Eigen::Vector3d orientation_reference =
+                camera_location - cloud.points_[i];
         auto &normal = cloud.normals_[i];
         if (normal.norm() == 0.0) {
             normal = orientation_reference;
@@ -203,4 +204,4 @@ bool OrientNormalsTowardsCameraLocation(PointCloud &cloud,
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

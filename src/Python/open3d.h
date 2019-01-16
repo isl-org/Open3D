@@ -40,8 +40,8 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-typedef std::vector<Eigen::Matrix4d,
-                    open3d::Matrix4d_allocator> temp_eigen_matrix4d;
+typedef std::vector<Eigen::Matrix4d, open3d::Matrix4d_allocator>
+        temp_eigen_matrix4d;
 
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
@@ -58,26 +58,18 @@ namespace detail {
 
 template <typename T, typename Class_>
 void bind_default_constructor(Class_ &cl) {
-    cl.def(py::init([]() {
-        return new T();
-    }), "Default constructor");
+    cl.def(py::init([]() { return new T(); }), "Default constructor");
 }
 
 template <typename T, typename Class_>
 void bind_copy_functions(Class_ &cl) {
-    cl.def(py::init([](const T &cp) {
-        return new T(cp);
-    }), "Copy constructor");
-    cl.def("__copy__", [](T &v) {
-        return T(v);
-    });
-    cl.def("__deepcopy__", [](T &v, py::dict &memo) {
-        return T(v);
-    });
+    cl.def(py::init([](const T &cp) { return new T(cp); }), "Copy constructor");
+    cl.def("__copy__", [](T &v) { return T(v); });
+    cl.def("__deepcopy__", [](T &v, py::dict &memo) { return T(v); });
 }
 
-}    // namespace pybind11::detail
-}    // namespace pybind11
+}  // namespace detail
+}  // namespace pybind11
 
 void pybind_eigen(py::module &m);
 
