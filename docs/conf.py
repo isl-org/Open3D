@@ -113,6 +113,9 @@ todo_include_todos = False
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# added by Jaesik to hide "View page source"
+html_show_sourcelink = False
+
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -169,3 +172,6 @@ texinfo_documents = [
      author, 'Open3D', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+# added by Jaesik to list Python members using the source order
+autodoc_member_order = 'bysource'
