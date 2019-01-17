@@ -21,6 +21,10 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import sphinx_rtd_theme
+import sys
+import os
+current_file_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.join(current_file_dir, "..", "build", "lib", "python_package", "open3d"))
 
 html_theme = "sphinx_rtd_theme"
 
