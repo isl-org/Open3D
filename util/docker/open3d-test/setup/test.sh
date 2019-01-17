@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 declare -a build_type=(Debug Release)
 declare -a link_type=(STATIC SHARED)
 declare -a env_type=(py2 py3 mc2 mc3)

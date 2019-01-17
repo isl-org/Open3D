@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 REAL_PATH=$(dirname $(realpath ${0}))
 
 . ${REAL_PATH}/set_variables.sh
