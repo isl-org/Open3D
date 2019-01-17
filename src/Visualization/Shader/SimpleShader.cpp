@@ -374,10 +374,12 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     quad_id.push_back(Eigen::Vector4i(5, 4, 6, 7));
     quad_id.push_back(Eigen::Vector4i(0, 1, 3, 2));
 
-        for (size_t i = 0; i < n_voxels; i++) {
+    for (size_t i = 0; i < n_voxels; i++) {
         std::vector<Eigen::Vector3f> vertex;
         for (size_t d = 0; d < 8; d++)
             vertex.push_back(voxelgrid.voxels_[i].cast<float>() + disp[d]);
+        Eigen::Vector3f base_vertex = (vertex[0] * voxelgrid.voxel_size_) +
+                voxelgrid.origin_.cast<float>();
         for (size_t j = 0; j < 6; j++) {
             for (size_t k = 0; k < 4; k++) {
                 size_t idx = ((i * 6) + j) * 4 + k;
@@ -387,15 +389,15 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
                 switch (option.mesh_color_option_) {
                     case RenderOption::MeshColorOption::XCoordinate:
                         color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetXPercentage(vertex[0](0)));
+                            view.GetBoundingBox().GetXPercentage(base_vertex(0)));
                         break;
                     case RenderOption::MeshColorOption::YCoordinate:
                         color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetYPercentage(vertex[0](1)));
+                            view.GetBoundingBox().GetYPercentage(base_vertex(1)));
                         break;
                     case RenderOption::MeshColorOption::ZCoordinate:
                         color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetZPercentage(vertex[0](2)));
+                            view.GetBoundingBox().GetZPercentage(base_vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
                         if (voxelgrid.HasColors()) {

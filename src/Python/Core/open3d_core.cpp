@@ -41,6 +41,7 @@ void pybind_core(py::module &m)
 
     pybind_geometry(m_geometry);
     pybind_pointcloud(m_geometry);
+    pybind_voxelgrid(m_geometry);
     pybind_lineset(m_geometry);
     pybind_trianglemesh(m_geometry);
     pybind_image(m_geometry);
@@ -58,6 +59,7 @@ void pybind_core(py::module &m)
     pybind_camera_methods(m_camera);
     
     pybind_pointcloud_methods(m_geometry);
+    pybind_voxelgrid_methods(m_geometry);
     pybind_lineset_methods(m_geometry);
     pybind_trianglemesh_methods(m_geometry);
     pybind_image_methods(m_geometry);
