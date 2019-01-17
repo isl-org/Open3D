@@ -23,6 +23,10 @@
 import sphinx_rtd_theme
 import sys
 import os
+
+# Import open3d raw python package with the highest priority
+# This is a trick to show open3d.open3d as open3d in the docs
+# Only tested to work on Unix
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.join(current_file_dir, "..", "build", "lib",
                                 "python_package", "open3d"))
