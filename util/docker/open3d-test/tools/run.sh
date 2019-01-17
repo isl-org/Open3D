@@ -32,7 +32,9 @@ echo "attaching to the ${CONTAINER_HOSTNAME} container..."
 date
 echo
 
-docker container exec -it -w /root ${CONTAINER_NAME} bash -c 'bash'
+docker container exec -it -w /root ${CONTAINER_NAME} bash -c '\
+        git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
+        bash'
 echo
 
 echo "stopping the ${CONTAINER_HOSTNAME} container..."
