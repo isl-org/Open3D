@@ -6,19 +6,22 @@
 # decompress the gtest source
 tar -xzf googletest-release-1.8.0.tar.gz
 
-# build
+printf "building googletest 1.8.0 ... "
 cd googletest-release-1.8.0
 mkdir build
 cd build
 cmake .. >/dev/null 2>&1
 make -j$(nproc) >/dev/null 2>&1
+printf "done\n"
 
-# install
+printf "installing ... "
 cd googlemock/gtest
 cp lib*.a /usr/local/lib
 cd ../../../googletest
 cp -r include/gtest /usr/local/include/gtest
+printf "done\n"
 
-# cleanup
+printf "cleanup ... "
 rm -rf /root/googletest-release-1.8.0*
 cd ../..
+printf "done\n\n"
