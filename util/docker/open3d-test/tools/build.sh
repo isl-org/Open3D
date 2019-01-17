@@ -22,14 +22,16 @@ fi
 GTEST_ARCHIVE=googletest-release-1.8.0.tar.gz
 if [ ! -f "${REAL_PATH}/../setup/${GTEST_ARCHIVE}" ]; then
     echo "${GTEST_ARCHIVE} not found, copying..."
-    cp "${REAL_PATH}/../../../../3rdparty/googletest/${GTEST_ARCHIVE}" "${REAL_PATH}/../setup"
+    cp "${REAL_PATH}/../../../../3rdparty/googletest/${GTEST_ARCHIVE}" \
+       "${REAL_PATH}/../setup"
 fi
 
 # download miniconda installer once
 if [ "${MC_INSTALLER}" != "" ]; then
     if [ ! -f "${REAL_PATH}/../setup/${MC_INSTALLER}" ]; then
         echo "${MC_INSTALLER} not found, downloading..."
-        wget -P "${REAL_PATH}/../setup" "https://repo.anaconda.com/miniconda/${MC_INSTALLER}"
+        wget -P "${REAL_PATH}/../setup" \
+                "https://repo.anaconda.com/miniconda/${MC_INSTALLER}"
     fi
 fi
 
