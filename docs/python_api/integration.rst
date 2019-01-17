@@ -7,3 +7,4 @@ Integration
 
 .. automodule:: open3d.integration
     :members:
+    :undoc-members:

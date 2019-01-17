@@ -7,3 +7,4 @@ Utility
 
 .. automodule:: open3d.utility
     :members:
+    :undoc-members:

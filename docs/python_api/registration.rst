@@ -7,3 +7,4 @@ Registration
 
 .. automodule:: open3d.registration
     :members:
+    :undoc-members:

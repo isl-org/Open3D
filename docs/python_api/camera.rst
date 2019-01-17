@@ -7,3 +7,4 @@ Camera
 
 .. automodule:: open3d.camera
     :members:
+    :undoc-members:

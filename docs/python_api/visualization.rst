@@ -7,3 +7,4 @@ Visualization
 
 .. automodule:: open3d.visualization
     :members:
+    :undoc-members:

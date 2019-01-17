@@ -7,3 +7,4 @@ Geometry
 
 .. automodule:: open3d.geometry
     :members:
+    :undoc-members:

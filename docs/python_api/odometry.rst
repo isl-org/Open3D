@@ -7,3 +7,4 @@ Odometry
 
 .. automodule:: open3d.odometry
     :members:
+    :undoc-members:
