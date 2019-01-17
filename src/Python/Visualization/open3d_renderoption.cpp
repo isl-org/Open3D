@@ -52,7 +52,34 @@ void pybind_renderoption(py::module &m)
         .def_readwrite("line_width", &RenderOption::line_width_)
         .def_readwrite("point_show_normal", &RenderOption::point_show_normal_)
         .def_readwrite("show_coordinate_frame", &RenderOption::show_coordinate_frame_)
-        .def_readwrite("mesh_show_back_face", &RenderOption::mesh_show_back_face_);
+        .def_readwrite("mesh_show_back_face", &RenderOption::mesh_show_back_face_)
+        .def_readwrite("point_color_option", &RenderOption::point_color_option_)
+        .def_readwrite("mesh_shade_option", &RenderOption::mesh_shade_option_)
+        .def_readwrite("mesh_color_option", &RenderOption::mesh_color_option_);
+
+    py::enum_<RenderOption::PointColorOption>(m, "PointColorOption", 
+                py::arithmetic(), "PointColorOption")
+        .value("Default", RenderOption::PointColorOption::Default)
+        .value("Color", RenderOption::PointColorOption::Color)
+        .value("XCoordinate", RenderOption::PointColorOption::XCoordinate)
+        .value("YCoordinate", RenderOption::PointColorOption::YCoordinate)
+        .value("ZCoordinate", RenderOption::PointColorOption::ZCoordinate)
+        .value("Normal", RenderOption::PointColorOption::Normal)
+        .export_values();
+    py::enum_<RenderOption::MeshShadeOption>(m, "MeshShadeOption",
+                py::arithmetic(), "MeshShadeOption")
+        .value("Default", RenderOption::MeshShadeOption::FlatShade)
+        .value("Color", RenderOption::MeshShadeOption::SmoothShade)
+        .export_values();
+    py::enum_<RenderOption::MeshColorOption>(m, "MeshColorOption",
+                py::arithmetic(), "MeshColorOption")
+        .value("Default", RenderOption::MeshColorOption::Default)
+        .value("Color", RenderOption::MeshColorOption::Color)
+        .value("XCoordinate", RenderOption::MeshColorOption::XCoordinate)
+        .value("YCoordinate", RenderOption::MeshColorOption::YCoordinate)
+        .value("ZCoordinate", RenderOption::MeshColorOption::ZCoordinate)
+        .value("Normal", RenderOption::MeshColorOption::Normal)
+        .export_values();
 }
 
 void pybind_renderoption_method(py::module &m)
