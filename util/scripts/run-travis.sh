@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 python --version
 cmake --version
 echo
