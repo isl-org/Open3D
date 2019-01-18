@@ -38,6 +38,7 @@ static const std::unordered_map<std::string,
         std::function<bool(const std::string &, TriangleMesh &)>>
         file_extension_to_trianglemesh_read_function
         {{"ply", ReadTriangleMeshFromPLY},
+        {"stl", ReadTriangleMeshFromSTL},
         };
 
 static const std::unordered_map<std::string,
@@ -45,6 +46,7 @@ static const std::unordered_map<std::string,
         const bool, const bool)>>
         file_extension_to_trianglemesh_write_function
         {{"ply", WriteTriangleMeshToPLY},
+        {"stl", WriteTriangleMeshToSTL},
         };
 
 }    // unnamed namespace
