@@ -27,6 +27,17 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
                                            ".${OPEN3D_VERSION_MINOR}"
                                            ".${OPEN3D_VERSION_PATCH}")
 
+# pypi package name controls specifies the repository name on pypi
+# possbie names include:
+# - open3d: default name when building from source and for conda
+# - open3d-python: for PyPI
+# - py3d
+# - open3d-original
+# - open3d-official
+# - open-3d
+if(NOT DEFINED PYPI_PACKAGE_NAME)
+    set(PYPI_PACKAGE_NAME "open3d")
+endif()
 
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
