@@ -65,6 +65,7 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # 3) Configured files and supporting files
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
+message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
