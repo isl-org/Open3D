@@ -39,18 +39,20 @@ void pybind_voxelgrid(py::module &m) {
     py::detail::bind_default_constructor<VoxelGrid>(voxelgrid);
     py::detail::bind_copy_functions<VoxelGrid>(voxelgrid);
     voxelgrid
-        .def("__repr__", [](const VoxelGrid &voxelgrid) {
-            return std::string("VoxelGrid with ") +
-                    std::to_string(voxelgrid.voxels_.size()) + " voxels.";
-        })
-        .def(py::self + py::self)
-        .def(py::self += py::self)
-        .def("has_voxels", &VoxelGrid::HasVoxels)
-        .def("has_colors", &VoxelGrid::HasColors)
-        .def_readwrite("voxels", &VoxelGrid::voxels_)
-        .def_readwrite("colors", &VoxelGrid::colors_)
-        .def_readwrite("origin", &VoxelGrid::origin_)
-        .def_readwrite("voxel_size", &VoxelGrid::voxel_size_);
+            .def("__repr__",
+                 [](const VoxelGrid &voxelgrid) {
+                     return std::string("VoxelGrid with ") +
+                            std::to_string(voxelgrid.voxels_.size()) +
+                            " voxels.";
+                 })
+            .def(py::self + py::self)
+            .def(py::self += py::self)
+            .def("has_voxels", &VoxelGrid::HasVoxels)
+            .def("has_colors", &VoxelGrid::HasColors)
+            .def_readwrite("voxels", &VoxelGrid::voxels_)
+            .def_readwrite("colors", &VoxelGrid::colors_)
+            .def_readwrite("origin", &VoxelGrid::origin_)
+            .def_readwrite("voxel_size", &VoxelGrid::voxel_size_);
 }
 
 void pybind_voxelgrid_methods(py::module &m) {
@@ -58,20 +60,22 @@ void pybind_voxelgrid_methods(py::module &m) {
           &CreateSurfaceVoxelGridFromPointCloud,
           "Function to make voxels from scanned point cloud", "point_cloud"_a,
           "voxel_size"_a);
-    m.def("read_voxel_grid",
-          [](const std::string &filename, const std::string &format) {
-              VoxelGrid voxel_grid;
-              ReadVoxelGrid(filename, voxel_grid, format);
-              return voxel_grid;
-          },
-          "Function to read VoxelGrid from file", "filename"_a,
-          "format"_a = "auto");
-    m.def("write_voxel_grid",
-          [](const std::string &filename, const VoxelGrid &voxel_grid,
-             bool write_ascii, bool compressed) {
-              return WriteVoxelGrid(filename, voxel_grid, write_ascii,
-                                    compressed);
-          },
-          "Function to write VoxelGrid to file", "filename"_a, "voxel_grid"_a,
-          "write_ascii"_a = false, "compressed"_a = false);
+    m.def(
+            "read_voxel_grid",
+            [](const std::string &filename, const std::string &format) {
+                VoxelGrid voxel_grid;
+                ReadVoxelGrid(filename, voxel_grid, format);
+                return voxel_grid;
+            },
+            "Function to read VoxelGrid from file", "filename"_a,
+            "format"_a = "auto");
+    m.def(
+            "write_voxel_grid",
+            [](const std::string &filename, const VoxelGrid &voxel_grid,
+               bool write_ascii, bool compressed) {
+                return WriteVoxelGrid(filename, voxel_grid, write_ascii,
+                                      compressed);
+            },
+            "Function to write VoxelGrid to file", "filename"_a, "voxel_grid"_a,
+            "write_ascii"_a = false, "compressed"_a = false);
 }
