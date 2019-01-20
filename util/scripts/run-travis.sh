@@ -36,6 +36,11 @@ date
 make install -j$NPROC
 echo
 
+echo "checking style..."
+if [ "$CHECK_STYLE" == "ON" ]; then
+    make check-style;
+fi
+
 echo "running the Open3D unit tests..."
 date
 ./bin/unitTests
