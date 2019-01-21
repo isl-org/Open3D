@@ -37,6 +37,8 @@ if ! [[ -x "$(command -v clang-format)" ]]; then
     echo "On Ubuntu, run `apt-get install clang-format`"
     echo "On Mac, run `brew install clang-format`"
     exit 1
+else
+    clang-format --version
 fi
 
 pushd "${script_dir}/../.." > /dev/null

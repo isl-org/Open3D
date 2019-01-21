@@ -332,11 +332,10 @@ Eigen::Matrix4d GetTransformationOriginalScale(
 }  // unnamed namespace
 
 RegistrationResult FastGlobalRegistration(
-        const PointCloud &source, const PointCloud &target,
-        const Feature &source_feature, const Feature &target_feature,
-        const FastGlobalRegistrationOption &option/* =
-        FastGlobalRegistrationOption()*/)
-{
+        const PointCloud& source, const PointCloud& target,
+        const Feature& source_feature, const Feature& target_feature,
+        const FastGlobalRegistrationOption& option /* =
+        FastGlobalRegistrationOption()*/) {
     std::vector<PointCloud> point_cloud_vec;
     point_cloud_vec.push_back(source);
     point_cloud_vec.push_back(target);

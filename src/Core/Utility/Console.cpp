@@ -265,10 +265,10 @@ double GetProgramOptionAsDouble(int argc, char **argv,
     return l;
 }
 
-Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv,
-        const std::string &option, const Eigen::VectorXd default_value/* =
-        Eigen::VectorXd::Zero()*/)
-{
+Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
+        int argc, char **argv, const std::string &option,
+        const Eigen::VectorXd default_value /* =
+        Eigen::VectorXd::Zero()*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
     if (str.length() == 0 || (!(str.front() == '(' && str.back() == ')') &&
                               !(str.front() == '[' && str.back() == ']') &&

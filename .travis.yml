@@ -23,13 +23,13 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty-5.0
           packages:
             - gcc-4.8
             - g++-4.8
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
-            - clang-format-6.0
+            - clang-format-5.0
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
       env: CHECK_STYLE=ON
