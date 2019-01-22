@@ -17,8 +17,17 @@
 # limitations under the License.
 # ******************************************************************************
 
-set(CLANG_FORMAT_EXEC clang-format)
-find_program(CLANG_FORMAT ${CLANG_FORMAT_EXEC} PATHS ENV PATH)
+# Tries to locate "clang-format-5.0" and then "clang-format"
+find_program(CLANG_FORMAT clang-format-5.0 PATHS ENV PATH)
+if (NOT CLANG_FORMAT)
+    find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
+endif()
+if (CLANG_FORMAT)
+    message(STATUS "clang-format found at: ${CLANG_FORMAT}")
+    execute_process(COMMAND ${CLANG_FORMAT} --version)
+else()
+    message(FATAL_ERROR "clang-format not found, style not available")
+endif()
 
 function(style_apply_file PATH)
     execute_process(
@@ -38,16 +47,12 @@ set(DIRECTORIES_OF_INTEREST
     docs/_static
 )
 
-if (CLANG_FORMAT)
-    foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST})
-        set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
-        set(H_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h")
-        file(GLOB_RECURSE FILES ${CPP_GLOB} ${H_GLOB})
-        foreach(FILE ${FILES})
-            style_apply_file(${FILE})
-        endforeach(FILE)
-    endforeach(DIRECTORY)
-    message(STATUS "apply-style done")
-else()
-    message(FATAL_ERROR "${CLANG_FORMAT_EXEC} not found, style not available")
-endif()
+foreach(DIRECTORY ${DIRECTORIES_OF_INTEREST})
+    set(CPP_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp")
+    set(H_GLOB "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h")
+    file(GLOB_RECURSE FILES ${CPP_GLOB} ${H_GLOB})
+    foreach(FILE ${FILES})
+        style_apply_file(${FILE})
+    endforeach(FILE)
+endforeach(DIRECTORY)
+message(STATUS "apply-style done")
