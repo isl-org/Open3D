@@ -13,7 +13,7 @@ notifications:
 matrix:
 
   include:
-    # Default environment of Ubuntu 14.04
+    # Style check only
     - os: linux
       dist: trusty
       sudo: true
@@ -31,8 +31,31 @@ matrix:
             - cmake
             - clang-format-5.0
       before_install: ./util/scripts/setup-linux.sh
+      script:
+        - mkdir build
+        - cd build
+        - cmake ..
+        - if [ "$CHECK_STYLE" == "ON" ]; then
+            make check-style;
+          fi
+
+    # Default environment of Ubuntu 14.04
+    - os: linux
+      dist: trusty
+      sudo: true
+      language: python
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.8
+            - g++-4.8
+            - cmake-data # to use cmake 3.0 or more recent
+            - cmake
+      before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
-      env: CHECK_STYLE=ON
 
     - os: linux
       dist: trusty
