@@ -33,14 +33,14 @@
 namespace open3d {
 
 class ViewControlWithCustomAnimation : public ViewControl {
-  public:
+public:
     enum AnimationMode {
         FreeMode = 0,
         PreviewMode = 1,
         PlayMode = 2,
     };
 
-  public:
+public:
     void Reset() override;
     void ChangeFieldOfView(double step) override;
     void Scale(double scale) override;
@@ -85,7 +85,7 @@ class ViewControlWithCustomAnimation : public ViewControl {
     }
     bool IsValidPinholeCameraTrajectory() const;
 
-  protected:
+protected:
     size_t CurrentFrame() const { return (size_t)round(current_frame_); }
     size_t CurrentKeyframe() const { return (size_t)round(current_keyframe_); }
     double RegularizeFrameIndex(double current_frame,
@@ -93,7 +93,7 @@ class ViewControlWithCustomAnimation : public ViewControl {
                                 bool is_loop);
     void SetViewControlFromTrajectory();
 
-  protected:
+protected:
     AnimationMode animation_mode_ = AnimationMode::FreeMode;
     ViewTrajectory view_trajectory_;
     double current_frame_ = 0.0;

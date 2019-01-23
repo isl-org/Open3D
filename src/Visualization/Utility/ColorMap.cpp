@@ -33,7 +33,7 @@ namespace open3d {
 namespace {
 
 class GlobalColorMapSingleton {
-  private:
+private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
         PrintDebug("Global colormap init.\n");
     }
@@ -41,16 +41,16 @@ class GlobalColorMapSingleton {
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
             delete;
 
-  public:
+public:
     ~GlobalColorMapSingleton() { PrintDebug("Global colormap destruct.\n"); }
 
-  public:
+public:
     static GlobalColorMapSingleton &GetInstance() {
         static GlobalColorMapSingleton singleton;
         return singleton;
     }
 
-  public:
+public:
     std::shared_ptr<const ColorMap> color_map_;
 };
 

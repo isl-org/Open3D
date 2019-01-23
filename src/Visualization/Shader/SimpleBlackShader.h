@@ -35,15 +35,15 @@ namespace open3d {
 namespace glsl {
 
 class SimpleBlackShader : public ShaderWrapper {
-  public:
+public:
     ~SimpleBlackShader() override { Release(); }
 
-  protected:
+protected:
     SimpleBlackShader(const std::string &name) : ShaderWrapper(name) {
         Compile();
     }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -54,7 +54,7 @@ class SimpleBlackShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -63,18 +63,18 @@ class SimpleBlackShader : public ShaderWrapper {
                                 const ViewControl &view,
                                 std::vector<Eigen::Vector3f> &points) = 0;
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint MVP_;
 };
 
 class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader {
-  public:
+public:
     SimpleBlackShaderForPointCloudNormal()
         : SimpleBlackShader("SimpleBlackShaderForPointCloudNormal") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
@@ -85,11 +85,11 @@ class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader {
 };
 
 class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader {
-  public:
+public:
     SimpleBlackShaderForTriangleMeshWireFrame()
         : SimpleBlackShader("SimpleBlackShaderForTriangleMeshWireFrame") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;

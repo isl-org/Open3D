@@ -37,7 +37,7 @@ class Image;
 class PinholeCameraTrajectory;
 
 class ColorMapOptimizationOption {
-  public:
+public:
     ColorMapOptimizationOption(
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
@@ -62,7 +62,7 @@ class ColorMapOptimizationOption {
           image_boundary_margin_(image_boundary_margin) {}
     ~ColorMapOptimizationOption() {}
 
-  public:
+public:
     bool non_rigid_camera_coordinate_;
     int number_of_vertical_anchors_;
     double non_rigid_anchor_point_weight_;

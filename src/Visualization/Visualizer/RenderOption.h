@@ -33,7 +33,7 @@
 namespace open3d {
 
 class RenderOption : public IJsonConvertible {
-  public:
+public:
     // Global options
     enum class TextureInterpolationOption {
         Nearest = 0,
@@ -81,7 +81,7 @@ class RenderOption : public IJsonConvertible {
         StretchWithWindow = 2,
     };
 
-  public:
+public:
     RenderOption() {
         // VS2013 does not fully support C++11
         // Array initialization has to be done in constructors.
@@ -108,11 +108,11 @@ class RenderOption : public IJsonConvertible {
     }
     ~RenderOption() override {}
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     void ToggleLightOn() { light_on_ = !light_on_; }
     void ToggleInterpolationOption() {
         if (interpolation_option_ == TextureInterpolationOption::Nearest) {
@@ -156,7 +156,7 @@ class RenderOption : public IJsonConvertible {
         }
     }
 
-  public:
+public:
     // global options
     Eigen::Vector3d background_color_ = Eigen::Vector3d::Ones();
     TextureInterpolationOption interpolation_option_ =

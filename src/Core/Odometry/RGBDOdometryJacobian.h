@@ -44,11 +44,11 @@ typedef std::vector<Eigen::Vector4i, Vector4i_allocator>
 
 /// Base class that computes Jacobian from two RGB-D images
 class RGBDOdometryJacobian {
-  public:
+public:
     RGBDOdometryJacobian() {}
     virtual ~RGBDOdometryJacobian() {}
 
-  public:
+public:
     /// Function to compute i-th row of J and r
     /// the vector form of J_r is basically 6x1 matrix, but it can be
     /// easily extendable to 6xn matrix.
@@ -74,11 +74,11 @@ class RGBDOdometryJacobian {
 /// Real-time visual odometry from dense RGB-D images.
 /// In ICCV Workshops, 2011.
 class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
-  public:
+public:
     RGBDOdometryJacobianFromColorTerm() {}
     ~RGBDOdometryJacobianFromColorTerm() override {}
 
-  public:
+public:
     void ComputeJacobianAndResidual(
             int row,
             std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
@@ -99,11 +99,11 @@ class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 /// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
-  public:
+public:
     RGBDOdometryJacobianFromHybridTerm() {}
     ~RGBDOdometryJacobianFromHybridTerm() override {}
 
-  public:
+public:
     void ComputeJacobianAndResidual(
             int row,
             std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,

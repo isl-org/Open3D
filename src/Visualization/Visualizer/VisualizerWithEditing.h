@@ -34,14 +34,14 @@ class SelectionPolygon;
 class PointCloudPicker;
 
 class VisualizerWithEditing : public Visualizer {
-  public:
+public:
     enum class SelectionMode {
         None = 0,
         Rectangle = 1,
         Polygon = 2,
     };
 
-  public:
+public:
     VisualizerWithEditing(double voxel_size = -1.0,
                           bool use_dialog = true,
                           const std::string &directory = "")
@@ -52,7 +52,7 @@ class VisualizerWithEditing : public Visualizer {
     VisualizerWithEditing(const VisualizerWithEditing &) = delete;
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
-  public:
+public:
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
@@ -60,7 +60,7 @@ class VisualizerWithEditing : public Visualizer {
     int PickPoint(double x, double y);
     std::vector<size_t> &GetPickedPoints();
 
-  protected:
+protected:
     bool InitViewControl() override;
     bool InitRenderOption() override;
     void WindowResizeCallback(GLFWwindow *window, int w, int h) override;
@@ -79,7 +79,7 @@ class VisualizerWithEditing : public Visualizer {
     void InvalidatePicking();
     void SaveCroppingResult(const std::string &filename = "");
 
-  protected:
+protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
     std::shared_ptr<glsl::SelectionPolygonRenderer>
             selection_polygon_renderer_ptr_;

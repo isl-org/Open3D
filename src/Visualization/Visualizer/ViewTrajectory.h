@@ -35,17 +35,17 @@
 namespace open3d {
 
 class ViewTrajectory : public IJsonConvertible {
-  public:
+public:
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;
     static const int INTERVAL_STEP;
     static const int INTERVAL_DEFAULT;
 
-  public:
+public:
     ViewTrajectory() {}
     ~ViewTrajectory() override {}
 
-  public:
+public:
     /// Function to compute a Cubic Spline Interpolation
     /// See this paper for details:
     /// Bartels, R. H.; Beatty, J. C.; and Barsky, B. A. "Hermite and Cubic
@@ -83,7 +83,7 @@ class ViewTrajectory : public IJsonConvertible {
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     std::vector<ViewParameters> view_status_;
     bool is_loop_ = false;
     int interval_ = INTERVAL_DEFAULT;

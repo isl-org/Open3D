@@ -31,7 +31,7 @@
 namespace open3d {
 
 class UniformTSDFVolume : public TSDFVolume {
-  public:
+public:
     UniformTSDFVolume(double length,
                       int resolution,
                       double sdf_trunc,
@@ -39,7 +39,7 @@ class UniformTSDFVolume : public TSDFVolume {
                       const Eigen::Vector3d &origin = Eigen::Vector3d::Zero());
     ~UniformTSDFVolume() override;
 
-  public:
+public:
     void Reset() override;
     void Integrate(const RGBDImage &image,
                    const PinholeCameraIntrinsic &intrinsic,
@@ -66,7 +66,7 @@ class UniformTSDFVolume : public TSDFVolume {
         return IndexOf(xyz(0), xyz(1), xyz(2));
     }
 
-  public:
+public:
     Eigen::Vector3d origin_;
     double length_;
     int resolution_;
@@ -75,7 +75,7 @@ class UniformTSDFVolume : public TSDFVolume {
     std::vector<Eigen::Vector3f> color_;
     std::vector<float> weight_;
 
-  private:
+private:
     Eigen::Vector3d GetNormalAt(const Eigen::Vector3d &p);
 
     double GetTSDFAt(const Eigen::Vector3d &p);

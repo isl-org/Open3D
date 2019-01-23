@@ -31,7 +31,7 @@
 namespace open3d {
 
 class ImageWarpingField : public IJsonConvertible {
-  public:
+public:
     ImageWarpingField();
     ImageWarpingField(int width, int height, int number_of_vertical_anchors);
     void InitializeWarpingFields(int width,
@@ -40,11 +40,11 @@ class ImageWarpingField : public IJsonConvertible {
     Eigen::Vector2d QueryFlow(int i, int j) const;
     Eigen::Vector2d GetImageWarpingField(double u, double v) const;
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     Eigen::VectorXd flow_;
     int anchor_w_;
     int anchor_h_;

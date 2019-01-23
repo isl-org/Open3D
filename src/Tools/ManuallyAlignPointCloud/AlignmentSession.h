@@ -32,11 +32,11 @@
 namespace open3d {
 
 class AlignmentSession : public IJsonConvertible {
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     std::shared_ptr<PointCloud> source_ptr_;  // Original source pointcloud
     std::shared_ptr<PointCloud> target_ptr_;  // Original target pointcloud
     std::vector<size_t> source_indices_;  // Manually annotated point indices

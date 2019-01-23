@@ -35,13 +35,13 @@ namespace open3d {
 namespace glsl {
 
 class NormalShader : public ShaderWrapper {
-  public:
+public:
     ~NormalShader() override { Release(); }
 
-  protected:
+protected:
     NormalShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -52,7 +52,7 @@ class NormalShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -62,7 +62,7 @@ class NormalShader : public ShaderWrapper {
                                 std::vector<Eigen::Vector3f> &points,
                                 std::vector<Eigen::Vector3f> &normals) = 0;
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_normal_;
@@ -73,10 +73,10 @@ class NormalShader : public ShaderWrapper {
 };
 
 class NormalShaderForPointCloud : public NormalShader {
-  public:
+public:
     NormalShaderForPointCloud() : NormalShader("NormalShaderForPointCloud") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
@@ -88,11 +88,11 @@ class NormalShaderForPointCloud : public NormalShader {
 };
 
 class NormalShaderForTriangleMesh : public NormalShader {
-  public:
+public:
     NormalShaderForTriangleMesh()
         : NormalShader("NormalShaderForTriangleMesh") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;

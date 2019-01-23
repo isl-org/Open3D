@@ -49,7 +49,7 @@ enum PCDDataType {
 };
 
 struct PCLPointField {
-  public:
+public:
     std::string name;
     int size;
     char type;
@@ -60,7 +60,7 @@ struct PCLPointField {
 };
 
 struct PCDHeader {
-  public:
+public:
     std::string version;
     std::vector<PCLPointField> fields;
     int width;

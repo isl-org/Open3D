@@ -31,7 +31,7 @@
 namespace open3d {
 
 class OdometryOption {
-  public:
+public:
     OdometryOption(
             const std::vector<int> &iteration_number_per_pyramid_level =
                     {20, 10,
@@ -46,7 +46,7 @@ class OdometryOption {
           max_depth_(max_depth) {}
     ~OdometryOption() {}
 
-  public:
+public:
     std::vector<int> iteration_number_per_pyramid_level_;
     double max_depth_diff_;
     double min_depth_;

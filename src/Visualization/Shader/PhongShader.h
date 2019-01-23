@@ -35,13 +35,13 @@ namespace open3d {
 namespace glsl {
 
 class PhongShader : public ShaderWrapper {
-  public:
+public:
     ~PhongShader() override { Release(); }
 
-  protected:
+protected:
     PhongShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -52,7 +52,7 @@ class PhongShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -63,10 +63,10 @@ class PhongShader : public ShaderWrapper {
                                 std::vector<Eigen::Vector3f> &normals,
                                 std::vector<Eigen::Vector3f> &colors) = 0;
 
-  protected:
+protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_color_;
@@ -93,10 +93,10 @@ class PhongShader : public ShaderWrapper {
 };
 
 class PhongShaderForPointCloud : public PhongShader {
-  public:
+public:
     PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
@@ -109,10 +109,10 @@ class PhongShaderForPointCloud : public PhongShader {
 };
 
 class PhongShaderForTriangleMesh : public PhongShader {
-  public:
+public:
     PhongShaderForTriangleMesh() : PhongShader("PhongShaderForTriangleMesh") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;

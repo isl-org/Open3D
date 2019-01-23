@@ -34,16 +34,16 @@ namespace open3d {
 /// A 3D bounding box class
 /// It is a utility class for Visualization
 class BoundingBox {
-  public:
+public:
     BoundingBox();
     BoundingBox(const Geometry3D &geometry);
     ~BoundingBox();
 
-  public:
+public:
     void Reset();
     void FitInGeometry(const Geometry3D &geometry);
 
-  public:
+public:
     Eigen::Vector3d GetCenter() const {
         return (min_bound_ + max_bound_) * 0.5;
     }
@@ -71,7 +71,7 @@ class BoundingBox {
         return std::string(buffer);
     }
 
-  public:
+public:
     Eigen::Vector3d min_bound_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
 };

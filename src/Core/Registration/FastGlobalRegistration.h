@@ -39,7 +39,7 @@ class Feature;
 class RegistrationResult;
 
 class FastGlobalRegistrationOption {
-  public:
+public:
     FastGlobalRegistrationOption(double division_factor = 1.4,
                                  bool use_absolute_scale = false,
                                  bool decrease_mu = true,
@@ -54,7 +54,7 @@ class FastGlobalRegistrationOption {
           maximum_tuple_count_(maximum_tuple_count) {}
     ~FastGlobalRegistrationOption() {}
 
-  public:
+public:
     // Division factor used for graduated non-convexity
     double division_factor_;
     // Measure distance in absolute scale (1) or in scale relative to the

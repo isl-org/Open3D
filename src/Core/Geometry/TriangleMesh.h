@@ -35,18 +35,18 @@
 namespace open3d {
 
 class TriangleMesh : public Geometry3D {
-  public:
+public:
     TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh){};
     ~TriangleMesh() override{};
 
-  public:
+public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     void Transform(const Eigen::Matrix4d &transformation) override;
 
-  public:
+public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
     TriangleMesh operator+(const TriangleMesh &mesh) const;
 
@@ -59,13 +59,13 @@ class TriangleMesh : public Geometry3D {
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
 
-  protected:
+protected:
     void RemoveDuplicatedVertices();
     void RemoveDuplicatedTriangles();
     void RemoveNonManifoldVertices();
     void RemoveNonManifoldTriangles();
 
-  public:
+public:
     bool HasVertices() const { return vertices_.size() > 0; }
 
     bool HasTriangles() const {
@@ -108,7 +108,7 @@ class TriangleMesh : public Geometry3D {
         }
     }
 
-  public:
+public:
     std::vector<Eigen::Vector3d> vertices_;
     std::vector<Eigen::Vector3d> vertex_normals_;
     std::vector<Eigen::Vector3d> vertex_colors_;

@@ -31,7 +31,7 @@
 namespace open3d {
 
 class ColorMap {
-  public:
+public:
     enum class ColorMapOption {
         Gray = 0,
         Jet = 1,
@@ -40,15 +40,15 @@ class ColorMap {
         Hot = 4,
     };
 
-  public:
+public:
     ColorMap(){};
     virtual ~ColorMap(){};
 
-  public:
+public:
     /// Function to get a color from a value in [0..1]
     virtual Eigen::Vector3d GetColor(double value) const = 0;
 
-  protected:
+protected:
     double Interpolate(
             double value, double y0, double x0, double y1, double x1) const {
         if (value < x0) return y0;
@@ -67,16 +67,16 @@ class ColorMap {
 };
 
 class ColorMapGray final : public ColorMap {
-  public:
+public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// See Matlab's Jet colormap
 class ColorMapJet final : public ColorMap {
-  public:
+public:
     Eigen::Vector3d GetColor(double value) const final;
 
-  protected:
+protected:
     double JetBase(double value) const {
         if (value <= -0.75) {
             return 0.0;
@@ -94,18 +94,18 @@ class ColorMapJet final : public ColorMap {
 
 /// See Matlab's Summer colormap
 class ColorMapSummer final : public ColorMap {
-  public:
+public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
 /// See Matlab's Winter colormap
 class ColorMapWinter final : public ColorMap {
-  public:
+public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 
 class ColorMapHot final : public ColorMap {
-  public:
+public:
     Eigen::Vector3d GetColor(double value) const final;
 };
 

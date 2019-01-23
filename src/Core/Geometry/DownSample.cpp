@@ -39,14 +39,14 @@ namespace open3d {
 namespace {
 
 class AccumulatedPoint {
-  public:
+public:
     AccumulatedPoint()
         : num_of_points_(0),
           point_(0.0, 0.0, 0.0),
           normal_(0.0, 0.0, 0.0),
           color_(0.0, 0.0, 0.0) {}
 
-  public:
+public:
     void AddPoint(const PointCloud &cloud, int index) {
         point_ += cloud.points_[index];
         if (cloud.HasNormals()) {
@@ -72,7 +72,7 @@ class AccumulatedPoint {
         return color_ / double(num_of_points_);
     }
 
-  public:
+public:
     int num_of_points_;
     Eigen::Vector3d point_;
     Eigen::Vector3d normal_;
@@ -80,13 +80,13 @@ class AccumulatedPoint {
 };
 
 class point_cubic_id {
-  public:
+public:
     size_t point_id;
     int cubic_id;
 };
 
 class AccumulatedPointForTrace : public AccumulatedPoint {
-  public:
+public:
     void AddPoint(const PointCloud &cloud,
                   size_t index,
                   int cubic_index,
@@ -131,7 +131,7 @@ class AccumulatedPointForTrace : public AccumulatedPoint {
 
     std::vector<point_cubic_id> GetOriginalID() { return original_id; }
 
-  private:
+private:
     // original point cloud id in higher resolution + its cubic id
     std::vector<point_cubic_id> original_id;
     std::unordered_map<int, int> classes;

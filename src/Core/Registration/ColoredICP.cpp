@@ -40,12 +40,12 @@ namespace open3d {
 namespace {
 
 class PointCloudForColoredICP : public PointCloud {
-  public:
+public:
     std::vector<Eigen::Vector3d> color_gradient_;
 };
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
-  public:
+public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
@@ -57,7 +57,7 @@ class TransformationEstimationForColoredICP : public TransformationEstimation {
     }
     ~TransformationEstimationForColoredICP() override {}
 
-  public:
+public:
     double ComputeRMSE(const PointCloud &source,
                        const PointCloud &target,
                        const CorrespondenceSet &corres) const override;
@@ -66,10 +66,10 @@ class TransformationEstimationForColoredICP : public TransformationEstimation {
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-  public:
+public:
     double lambda_geometric_;
 
-  private:
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::ColoredICP;
 };

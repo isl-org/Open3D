@@ -47,7 +47,7 @@ enum class TSDFVolumeColorType {
 /// A volumetric method for building complex models from range images
 /// In SIGGRAPH, 1996
 class TSDFVolume {
-  public:
+public:
     TSDFVolume(double voxel_length,
                double sdf_trunc,
                TSDFVolumeColorType color_type)
@@ -56,7 +56,7 @@ class TSDFVolume {
           color_type_(color_type) {}
     virtual ~TSDFVolume() {}
 
-  public:
+public:
     /// Function to reset the TSDFVolume
     virtual void Reset() = 0;
 
@@ -73,7 +73,7 @@ class TSDFVolume {
     /// (https://en.wikipedia.org/wiki/Marching_cubes)
     virtual std::shared_ptr<TriangleMesh> ExtractTriangleMesh() = 0;
 
-  public:
+public:
     double voxel_length_;
     double sdf_trunc_;
     TSDFVolumeColorType color_type_;

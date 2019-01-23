@@ -32,13 +32,13 @@
 namespace open3d {
 
 class Geometry3D : public Geometry {
-  public:
+public:
     ~Geometry3D() override {}
 
-  protected:
+protected:
     Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
-  public:
+public:
     void Clear() override = 0;
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;

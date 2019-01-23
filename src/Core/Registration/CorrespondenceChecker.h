@@ -42,12 +42,12 @@ class PointCloud;
 /// FastGlobalRegistration) to prune out outlier correspondences.
 /// The virtual function Check() must be implemented in subclasses.
 class CorrespondenceChecker {
-  public:
+public:
     CorrespondenceChecker(bool require_pointcloud_alignment)
         : require_pointcloud_alignment_(require_pointcloud_alignment) {}
     virtual ~CorrespondenceChecker() {}
 
-  public:
+public:
     /// Function to check if two points can be aligned. The two input point
     /// clouds must have exact the same number of points.
     virtual bool Check(const PointCloud &source,
@@ -55,7 +55,7 @@ class CorrespondenceChecker {
                        const CorrespondenceSet &corres,
                        const Eigen::Matrix4d &transformation) const = 0;
 
-  public:
+public:
     /// Some checkers do not require point clouds to be aligned, e.g., the edge
     /// length checker. Some checkers do, e.g., the distance checker.
     bool require_pointcloud_alignment_;
@@ -65,55 +65,55 @@ class CorrespondenceChecker {
 /// The only parameter similarity_threshold is a number between 0 (loose) and 1
 /// (strict).
 class CorrespondenceCheckerBasedOnEdgeLength : public CorrespondenceChecker {
-  public:
+public:
     CorrespondenceCheckerBasedOnEdgeLength(double similarity_threshold = 0.9)
         : CorrespondenceChecker(false),
           similarity_threshold_(similarity_threshold) {}
     ~CorrespondenceCheckerBasedOnEdgeLength() override {}
 
-  public:
+public:
     bool Check(const PointCloud &source,
                const PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
-  public:
+public:
     double similarity_threshold_;
 };
 
 /// Check if two aligned point clouds are close
 class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
-  public:
+public:
     CorrespondenceCheckerBasedOnDistance(double distance_threshold)
         : CorrespondenceChecker(true),
           distance_threshold_(distance_threshold) {}
     ~CorrespondenceCheckerBasedOnDistance() override {}
 
-  public:
+public:
     bool Check(const PointCloud &source,
                const PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
-  public:
+public:
     double distance_threshold_;
 };
 
 /// Check if two aligned point clouds have similar normals
 class CorrespondenceCheckerBasedOnNormal : public CorrespondenceChecker {
-  public:
+public:
     CorrespondenceCheckerBasedOnNormal(double normal_angle_threshold)
         : CorrespondenceChecker(true),
           normal_angle_threshold_(normal_angle_threshold) {}
     ~CorrespondenceCheckerBasedOnNormal() override {}
 
-  public:
+public:
     bool Check(const PointCloud &source,
                const PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
-  public:
+public:
     double normal_angle_threshold_;
 };
 

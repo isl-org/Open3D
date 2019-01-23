@@ -36,7 +36,7 @@ namespace open3d {
 class PointCloud;
 
 class Feature {
-  public:
+public:
     void Resize(int dim, int n) {
         data_.resize(dim, n);
         data_.setZero();
@@ -44,7 +44,7 @@ class Feature {
     size_t Dimension() const { return data_.rows(); }
     size_t Num() const { return data_.cols(); }
 
-  public:
+public:
     Eigen::MatrixXd data_;
 };
 

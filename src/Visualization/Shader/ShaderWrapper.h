@@ -37,15 +37,15 @@ namespace open3d {
 namespace glsl {
 
 class ShaderWrapper {
-  public:
+public:
     virtual ~ShaderWrapper() {}
     ShaderWrapper(const ShaderWrapper &) = delete;
     ShaderWrapper &operator=(const ShaderWrapper &) = delete;
 
-  protected:
+protected:
     ShaderWrapper(const std::string &name) : shader_name_(name) {}
 
-  public:
+public:
     /// Function to render geometry under condition of mode and view
     /// The geometry is updated in a passive manner (bind only when needed).
     /// Thus this function compiles shaders if not yet, binds geometry if not
@@ -62,7 +62,7 @@ class ShaderWrapper {
 
     void PrintShaderWarning(const std::string &message) const;
 
-  protected:
+protected:
     /// Function to compile shader
     /// In a derived class, this must be declared as final, and called from
     /// the constructor.
@@ -81,7 +81,7 @@ class ShaderWrapper {
                                 const ViewControl &view) = 0;
     virtual void UnbindGeometry() = 0;
 
-  protected:
+protected:
     bool ValidateShader(GLuint shader_index);
     bool ValidateProgram(GLuint program_index);
     bool CompileShaders(const char *const vertex_shader_code,
@@ -89,7 +89,7 @@ class ShaderWrapper {
                         const char *const fragment_shader_code);
     void ReleaseProgram();
 
-  protected:
+protected:
     GLuint vertex_shader_;
     GLuint geometry_shader_;
     GLuint fragment_shader_;
@@ -103,7 +103,7 @@ class ShaderWrapper {
         shader_name_ = shader_name;
     }
 
-  private:
+private:
     std::string shader_name_ = "ShaderWrapper";
 };
 

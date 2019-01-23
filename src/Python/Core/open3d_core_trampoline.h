@@ -34,7 +34,7 @@ using namespace open3d;
 
 template <class GeometryBase = Geometry>
 class PyGeometry : public GeometryBase {
-  public:
+public:
     using GeometryBase::GeometryBase;
     void Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
     bool IsEmpty() const override {
@@ -44,7 +44,7 @@ class PyGeometry : public GeometryBase {
 
 template <class Geometry3DBase = Geometry3D>
 class PyGeometry3D : public PyGeometry<Geometry3DBase> {
-  public:
+public:
     using PyGeometry<Geometry3DBase>::PyGeometry;
     Eigen::Vector3d GetMinBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
@@ -59,7 +59,7 @@ class PyGeometry3D : public PyGeometry<Geometry3DBase> {
 
 template <class Geometry2DBase = Geometry2D>
 class PyGeometry2D : public PyGeometry<Geometry2DBase> {
-  public:
+public:
     using PyGeometry<Geometry2DBase>::PyGeometry;
     Eigen::Vector2d GetMinBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );

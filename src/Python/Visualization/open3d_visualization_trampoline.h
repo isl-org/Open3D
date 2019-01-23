@@ -34,7 +34,7 @@ using namespace open3d;
 
 template <class VisualizerBase = Visualizer>
 class PyVisualizer : public VisualizerBase {
-  public:
+public:
     using VisualizerBase::VisualizerBase;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override {
         PYBIND11_OVERLOAD(bool, VisualizerBase, AddGeometry, geometry_ptr);
@@ -61,7 +61,7 @@ class PyVisualizer : public VisualizerBase {
 
 template <class ViewControlBase = ViewControl>
 class PyViewControl : public ViewControlBase {
-  public:
+public:
     using ViewControlBase::ViewControlBase;
     void Reset() override { PYBIND11_OVERLOAD(void, ViewControlBase, Reset, ); }
     void ChangeFieldOfView(double step) override {

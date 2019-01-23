@@ -35,21 +35,21 @@
 namespace open3d {
 
 class PoseGraphNode : public IJsonConvertible {
-  public:
+public:
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
         : pose_(pose){};
     ~PoseGraphNode();
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     Eigen::Matrix4d_u pose_;
 };
 
 class PoseGraphEdge : public IJsonConvertible {
-  public:
+public:
     PoseGraphEdge(
             int source_node_id = -1,
             int target_node_id = -1,
@@ -65,11 +65,11 @@ class PoseGraphEdge : public IJsonConvertible {
           confidence_(confidence){};
     ~PoseGraphEdge();
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     int source_node_id_;
     int target_node_id_;
     Eigen::Matrix4d_u transformation_;
@@ -85,15 +85,15 @@ class PoseGraphEdge : public IJsonConvertible {
 };
 
 class PoseGraph : public IJsonConvertible {
-  public:
+public:
     PoseGraph();
     ~PoseGraph() override;
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     std::vector<PoseGraphNode> nodes_;
     std::vector<PoseGraphEdge> edges_;
 };

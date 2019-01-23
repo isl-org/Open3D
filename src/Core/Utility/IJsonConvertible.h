@@ -38,14 +38,14 @@ namespace open3d {
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
 class IJsonConvertible {
-  public:
+public:
     virtual ~IJsonConvertible() {}
 
-  public:
+public:
     virtual bool ConvertToJsonValue(Json::Value &value) const = 0;
     virtual bool ConvertFromJsonValue(const Json::Value &value) = 0;
 
-  public:
+public:
     static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
                                            const Json::Value &value);
     static bool EigenVector3dToJsonArray(const Eigen::Vector3d &vec,

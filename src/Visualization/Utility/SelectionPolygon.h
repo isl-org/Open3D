@@ -44,18 +44,18 @@ class SelectionPolygonVolume;
 /// The coordinates in SelectionPolygon are lower-left corner based (the OpenGL
 /// convention).
 class SelectionPolygon : public Geometry2D {
-  public:
+public:
     enum class SectionPolygonType {
         Unfilled = 0,
         Rectangle = 1,
         Polygon = 2,
     };
 
-  public:
+public:
     SelectionPolygon() : Geometry2D(Geometry::GeometryType::Unspecified) {}
     ~SelectionPolygon() override {}
 
-  public:
+public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector2d GetMinBound() const final;
@@ -68,7 +68,7 @@ class SelectionPolygon : public Geometry2D {
     std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
             const ViewControl &view);
 
-  private:
+private:
     std::shared_ptr<PointCloud> CropPointCloudInRectangle(
             const PointCloud &input, const ViewControl &view);
     std::shared_ptr<PointCloud> CropPointCloudInPolygon(
@@ -82,7 +82,7 @@ class SelectionPolygon : public Geometry2D {
     std::vector<size_t> CropInPolygon(const std::vector<Eigen::Vector3d> &input,
                                       const ViewControl &view);
 
-  public:
+public:
     std::vector<Eigen::Vector2d> polygon_;
     bool is_closed_ = false;
     Image polygon_interior_mask_;

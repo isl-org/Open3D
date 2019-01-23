@@ -29,52 +29,52 @@
 namespace open3d {
 
 class KDTreeSearchParam {
-  public:
+public:
     enum class SearchType {
         Knn = 0,
         Radius = 1,
         Hybrid = 2,
     };
 
-  public:
+public:
     virtual ~KDTreeSearchParam() {}
 
-  protected:
+protected:
     KDTreeSearchParam(SearchType type) : search_type_(type) {}
 
-  public:
+public:
     SearchType GetSearchType() const { return search_type_; }
 
-  private:
+private:
     SearchType search_type_;
 };
 
 class KDTreeSearchParamKNN : public KDTreeSearchParam {
-  public:
+public:
     KDTreeSearchParamKNN(int knn = 30)
         : KDTreeSearchParam(SearchType::Knn), knn_(knn) {}
 
-  public:
+public:
     int knn_;
 };
 
 class KDTreeSearchParamRadius : public KDTreeSearchParam {
-  public:
+public:
     KDTreeSearchParamRadius(double radius)
         : KDTreeSearchParam(SearchType::Radius), radius_(radius) {}
 
-  public:
+public:
     double radius_;
 };
 
 class KDTreeSearchParamHybrid : public KDTreeSearchParam {
-  public:
+public:
     KDTreeSearchParamHybrid(double radius, int max_nn)
         : KDTreeSearchParam(SearchType::Hybrid),
           radius_(radius),
           max_nn_(max_nn) {}
 
-  public:
+public:
     double radius_;
     int max_nn_;
 };
