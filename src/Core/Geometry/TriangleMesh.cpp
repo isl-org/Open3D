@@ -33,69 +33,83 @@
 #include <Core/Utility/Helper.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-void TriangleMesh::Clear()
-{
+void TriangleMesh::Clear() {
     vertices_.clear();
     triangles_.clear();
 }
 
-bool TriangleMesh::IsEmpty() const
-{
-    return !HasVertices();
-}
+bool TriangleMesh::IsEmpty() const { return !HasVertices(); }
 
-Eigen::Vector3d TriangleMesh::GetMinBound() const
-{
+Eigen::Vector3d TriangleMesh::GetMinBound() const {
     if (!HasVertices()) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
-    auto itr_x = std::min_element(vertices_.begin(), vertices_.end(),
-        [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
-    auto itr_y = std::min_element(vertices_.begin(), vertices_.end(),
-        [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
-    auto itr_z = std::min_element(vertices_.begin(), vertices_.end(),
-        [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
+    auto itr_x = std::min_element(
+            vertices_.begin(), vertices_.end(),
+            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                return a(0) < b(0);
+            });
+    auto itr_y = std::min_element(
+            vertices_.begin(), vertices_.end(),
+            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                return a(1) < b(1);
+            });
+    auto itr_z = std::min_element(
+            vertices_.begin(), vertices_.end(),
+            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                return a(2) < b(2);
+            });
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-Eigen::Vector3d TriangleMesh::GetMaxBound() const
-{
+Eigen::Vector3d TriangleMesh::GetMaxBound() const {
     if (!HasVertices()) {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
-    auto itr_x = std::max_element(vertices_.begin(), vertices_.end(),
-        [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(0) < b(0); });
-    auto itr_y = std::max_element(vertices_.begin(), vertices_.end(),
-        [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(1) < b(1); });
-    auto itr_z = std::max_element(vertices_.begin(), vertices_.end(),
-        [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) { return a(2) < b(2); });
+    auto itr_x = std::max_element(
+            vertices_.begin(), vertices_.end(),
+            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                return a(0) < b(0);
+            });
+    auto itr_y = std::max_element(
+            vertices_.begin(), vertices_.end(),
+            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                return a(1) < b(1);
+            });
+    auto itr_z = std::max_element(
+            vertices_.begin(), vertices_.end(),
+            [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+                return a(2) < b(2);
+            });
     return Eigen::Vector3d((*itr_x)(0), (*itr_y)(1), (*itr_z)(2));
 }
 
-void TriangleMesh::Transform(const Eigen::Matrix4d &transformation)
-{
+void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
     for (auto &vertex : vertices_) {
-        Eigen::Vector4d new_point = transformation * Eigen::Vector4d(
-                vertex(0), vertex(1), vertex(2), 1.0);
+        Eigen::Vector4d new_point =
+                transformation *
+                Eigen::Vector4d(vertex(0), vertex(1), vertex(2), 1.0);
         vertex = new_point.block<3, 1>(0, 0);
     }
     for (auto &vertex_normal : vertex_normals_) {
-        Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
-                vertex_normal(0), vertex_normal(1), vertex_normal(2), 0.0);
+        Eigen::Vector4d new_normal =
+                transformation * Eigen::Vector4d(vertex_normal(0),
+                                                 vertex_normal(1),
+                                                 vertex_normal(2), 0.0);
         vertex_normal = new_normal.block<3, 1>(0, 0);
     }
     for (auto &triangle_normal : triangle_normals_) {
-        Eigen::Vector4d new_normal = transformation * Eigen::Vector4d(
-                triangle_normal(0), triangle_normal(1),
-                triangle_normal(2), 0.0);
+        Eigen::Vector4d new_normal =
+                transformation * Eigen::Vector4d(triangle_normal(0),
+                                                 triangle_normal(1),
+                                                 triangle_normal(2), 0.0);
         triangle_normal = new_normal.block<3, 1>(0, 0);
     }
 }
 
-TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
-{
+TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();
     size_t add_vert_num = mesh.vertices_.size();
@@ -122,7 +136,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
         vertices_[old_vert_num + i] = mesh.vertices_[i];
 
     if ((!HasTriangles() || HasTriangleNormals()) &&
-            mesh.HasTriangleNormals()) {
+        mesh.HasTriangleNormals()) {
         triangle_normals_.resize(new_tri_num);
         for (size_t i = 0; i < add_tri_num; i++)
             triangle_normals_[old_tri_num + i] = mesh.triangle_normals_[i];
@@ -131,20 +145,18 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh)
     }
     triangles_.resize(triangles_.size() + mesh.triangles_.size());
     Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num,
-            (int)old_vert_num);
+                                (int)old_vert_num);
     for (size_t i = 0; i < add_tri_num; i++) {
         triangles_[old_tri_num + i] = mesh.triangles_[i] + index_shift;
     }
     return (*this);
 }
 
-TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh) const
-{
+TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh) const {
     return (TriangleMesh(*this) += mesh);
 }
 
-void TriangleMesh::ComputeTriangleNormals(bool normalized/* = true*/)
-{
+void TriangleMesh::ComputeTriangleNormals(bool normalized /* = true*/) {
     triangle_normals_.resize(triangles_.size());
     for (size_t i = 0; i < triangles_.size(); i++) {
         auto &triangle = triangles_[i];
@@ -157,8 +169,7 @@ void TriangleMesh::ComputeTriangleNormals(bool normalized/* = true*/)
     }
 }
 
-void TriangleMesh::ComputeVertexNormals(bool normalized/* = true*/)
-{
+void TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     if (HasTriangleNormals() == false) {
         ComputeTriangleNormals(false);
     }
@@ -174,16 +185,14 @@ void TriangleMesh::ComputeVertexNormals(bool normalized/* = true*/)
     }
 }
 
-void TriangleMesh::Purge()
-{
+void TriangleMesh::Purge() {
     RemoveDuplicatedVertices();
     RemoveDuplicatedTriangles();
     RemoveNonManifoldTriangles();
     RemoveNonManifoldVertices();
 }
 
-void TriangleMesh::RemoveDuplicatedVertices()
-{
+void TriangleMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
     std::unordered_map<Coordinate3, size_t, hash_tuple::hash<Coordinate3>>
             point_to_old_index;
@@ -191,10 +200,10 @@ void TriangleMesh::RemoveDuplicatedVertices()
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
     size_t old_vertex_num = vertices_.size();
-    size_t k = 0;                                            // new index
-    for (size_t i = 0; i < old_vertex_num; i++) {            // old index
+    size_t k = 0;                                  // new index
+    for (size_t i = 0; i < old_vertex_num; i++) {  // old index
         Coordinate3 coord = std::make_tuple(vertices_[i](0), vertices_[i](1),
-                vertices_[i](2));
+                                            vertices_[i](2));
         if (point_to_old_index.find(coord) == point_to_old_index.end()) {
             point_to_old_index[coord] = i;
             vertices_[k] = vertices_[i];
@@ -217,11 +226,10 @@ void TriangleMesh::RemoveDuplicatedVertices()
         }
     }
     PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n",
-            (int)(old_vertex_num - k));
+               (int)(old_vertex_num - k));
 }
 
-void TriangleMesh::RemoveDuplicatedTriangles()
-{
+void TriangleMesh::RemoveDuplicatedTriangles() {
     typedef std::tuple<int, int, int> Index3;
     std::unordered_map<Index3, size_t, hash_tuple::hash<Index3>>
             triangle_to_old_index;
@@ -235,18 +243,18 @@ void TriangleMesh::RemoveDuplicatedTriangles()
         if (triangles_[i](0) <= triangles_[i](1)) {
             if (triangles_[i](0) <= triangles_[i](2)) {
                 index = std::make_tuple(triangles_[i](0), triangles_[i](1),
-                        triangles_[i](2));
+                                        triangles_[i](2));
             } else {
                 index = std::make_tuple(triangles_[i](2), triangles_[i](0),
-                        triangles_[i](1));
+                                        triangles_[i](1));
             }
         } else {
             if (triangles_[i](1) <= triangles_[i](2)) {
                 index = std::make_tuple(triangles_[i](1), triangles_[i](2),
-                        triangles_[i](0));
+                                        triangles_[i](0));
             } else {
                 index = std::make_tuple(triangles_[i](2), triangles_[i](0),
-                        triangles_[i](1));
+                                        triangles_[i](1));
             }
         }
         if (triangle_to_old_index.find(index) == triangle_to_old_index.end()) {
@@ -259,11 +267,10 @@ void TriangleMesh::RemoveDuplicatedTriangles()
     triangles_.resize(k);
     if (has_tri_normal) triangle_normals_.resize(k);
     PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
-            (int)(old_triangle_num - k));
+               (int)(old_triangle_num - k));
 }
 
-void TriangleMesh::RemoveNonManifoldVertices()
-{
+void TriangleMesh::RemoveNonManifoldVertices() {
     // Non-manifold vertices are vertices without a triangle reference. They
     // should not exist in a valid triangle mesh.
     std::vector<bool> vertex_has_reference(vertices_.size(), false);
@@ -276,8 +283,8 @@ void TriangleMesh::RemoveNonManifoldVertices()
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
     size_t old_vertex_num = vertices_.size();
-    size_t k = 0;                                            // new index
-    for (size_t i = 0; i < old_vertex_num; i++) {            // old index
+    size_t k = 0;                                  // new index
+    for (size_t i = 0; i < old_vertex_num; i++) {  // old index
         if (vertex_has_reference[i]) {
             vertices_[k] = vertices_[i];
             if (has_vert_normal) vertex_normals_[k] = vertex_normals_[i];
@@ -299,11 +306,10 @@ void TriangleMesh::RemoveNonManifoldVertices()
         }
     }
     PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n",
-            (int)(old_vertex_num - k));
+               (int)(old_vertex_num - k));
 }
 
-void TriangleMesh::RemoveNonManifoldTriangles()
-{
+void TriangleMesh::RemoveNonManifoldTriangles() {
     // Non-manifold triangles are degenerate triangles that have one vertex as
     // its multiple end-points. They are usually the product of removing
     // duplicated vertices.
@@ -313,7 +319,7 @@ void TriangleMesh::RemoveNonManifoldTriangles()
     for (size_t i = 0; i < old_triangle_num; i++) {
         const auto &triangle = triangles_[i];
         if (triangle(0) != triangle(1) && triangle(1) != triangle(2) &&
-                triangle(2) != triangle(0)) {
+            triangle(2) != triangle(0)) {
             triangles_[k] = triangles_[i];
             if (has_tri_normal) triangle_normals_[k] = triangle_normals_[i];
             k++;
@@ -322,7 +328,7 @@ void TriangleMesh::RemoveNonManifoldTriangles()
     triangles_.resize(k);
     if (has_tri_normal) triangle_normals_.resize(k);
     PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
-            (int)(old_triangle_num - k));
+               (int)(old_triangle_num - k));
 }
 
-}    // namespace open3d
+}  // namespace open3d

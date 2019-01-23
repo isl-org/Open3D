@@ -46,23 +46,24 @@ enum class TSDFVolumeColorType {
 /// B. Curless and M. Levoy
 /// A volumetric method for building complex models from range images
 /// In SIGGRAPH, 1996
-class TSDFVolume
-{
-public:
-    TSDFVolume(double voxel_length, double sdf_trunc,
-            TSDFVolumeColorType color_type) :
-            voxel_length_(voxel_length), sdf_trunc_(sdf_trunc),
-            color_type_(color_type) {}
+class TSDFVolume {
+  public:
+    TSDFVolume(double voxel_length,
+               double sdf_trunc,
+               TSDFVolumeColorType color_type)
+        : voxel_length_(voxel_length),
+          sdf_trunc_(sdf_trunc),
+          color_type_(color_type) {}
     virtual ~TSDFVolume() {}
 
-public:
+  public:
     /// Function to reset the TSDFVolume
     virtual void Reset() = 0;
 
     /// Function to integrate an RGB-D image into the volume
     virtual void Integrate(const RGBDImage &image,
-            const PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic) = 0;
+                           const PinholeCameraIntrinsic &intrinsic,
+                           const Eigen::Matrix4d &extrinsic) = 0;
 
     /// Function to extract a point cloud with normals, using the marching cubes
     /// algorithm (https://en.wikipedia.org/wiki/Marching_cubes)
@@ -72,10 +73,10 @@ public:
     /// (https://en.wikipedia.org/wiki/Marching_cubes)
     virtual std::shared_ptr<TriangleMesh> ExtractTriangleMesh() = 0;
 
-public:
+  public:
     double voxel_length_;
     double sdf_trunc_;
     TSDFVolumeColorType color_type_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

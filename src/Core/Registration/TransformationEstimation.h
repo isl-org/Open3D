@@ -37,8 +37,7 @@ class PointCloud;
 
 typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
-enum class TransformationEstimationType
-{
+enum class TransformationEstimationType {
     Unspecified = 0,
     PointToPoint = 1,
     PointToPlane = 2,
@@ -48,68 +47,73 @@ enum class TransformationEstimationType
 /// Base class that estimates a transformation between two point clouds
 /// The virtual function ComputeTransformation() must be implemented in
 /// subclasses.
-class TransformationEstimation
-{
-public:
+class TransformationEstimation {
+  public:
     TransformationEstimation() {}
     virtual ~TransformationEstimation() {}
 
-public:
-    virtual TransformationEstimationType
-            GetTransformationEstimationType() const = 0;
+  public:
+    virtual TransformationEstimationType GetTransformationEstimationType()
+            const = 0;
     virtual double ComputeRMSE(const PointCloud &source,
-            const PointCloud &target,
-            const CorrespondenceSet &corres) const = 0;
-    virtual Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
+                               const PointCloud &target,
+                               const CorrespondenceSet &corres) const = 0;
+    virtual Eigen::Matrix4d ComputeTransformation(
+            const PointCloud &source,
             const PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
 };
 
 /// Estimate a transformation for point to point distance
-class TransformationEstimationPointToPoint : public TransformationEstimation
-{
-public:
-    TransformationEstimationPointToPoint(bool with_scaling = false) :
-        with_scaling_(with_scaling) {}
+class TransformationEstimationPointToPoint : public TransformationEstimation {
+  public:
+    TransformationEstimationPointToPoint(bool with_scaling = false)
+        : with_scaling_(with_scaling) {}
     ~TransformationEstimationPointToPoint() override {}
 
-public:
+  public:
     TransformationEstimationType GetTransformationEstimationType()
-            const override { return type_; };
-    double ComputeRMSE(const PointCloud &source, const PointCloud &target,
-            const CorrespondenceSet &corres) const override;
-    Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
+            const override {
+        return type_;
+    };
+    double ComputeRMSE(const PointCloud &source,
+                       const PointCloud &target,
+                       const CorrespondenceSet &corres) const override;
+    Eigen::Matrix4d ComputeTransformation(
+            const PointCloud &source,
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-public:
+  public:
     bool with_scaling_ = false;
 
-private:
+  private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPoint;
 };
 
 /// Estimate a transformation for point to plane distance
-class TransformationEstimationPointToPlane : public TransformationEstimation
-{
-public:
+class TransformationEstimationPointToPlane : public TransformationEstimation {
+  public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
-public:
+  public:
     TransformationEstimationType GetTransformationEstimationType()
-            const override { return type_; };
-    double ComputeRMSE(const PointCloud &source, const PointCloud &target,
-            const CorrespondenceSet &corres) const override;
-    Eigen::Matrix4d ComputeTransformation(const PointCloud &source,
+            const override {
+        return type_;
+    };
+    double ComputeRMSE(const PointCloud &source,
+                       const PointCloud &target,
+                       const CorrespondenceSet &corres) const override;
+    Eigen::Matrix4d ComputeTransformation(
+            const PointCloud &source,
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-private:
+  private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
 };
 
-
-}    // namespace open3d
+}  // namespace open3d

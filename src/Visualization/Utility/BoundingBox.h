@@ -33,25 +33,22 @@ namespace open3d {
 
 /// A 3D bounding box class
 /// It is a utility class for Visualization
-class BoundingBox
-{
-public:
+class BoundingBox {
+  public:
     BoundingBox();
     BoundingBox(const Geometry3D &geometry);
     ~BoundingBox();
 
-public:
+  public:
     void Reset();
     void FitInGeometry(const Geometry3D &geometry);
 
-public:
+  public:
     Eigen::Vector3d GetCenter() const {
         return (min_bound_ + max_bound_) * 0.5;
     }
 
-    double GetSize() const {
-        return (max_bound_ - min_bound_).maxCoeff();
-    }
+    double GetSize() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
     double GetXPercentage(double x) const {
         return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
@@ -67,15 +64,16 @@ public:
 
     std::string GetPrintInfo() const {
         char buffer[DEFAULT_IO_BUFFER_SIZE];
-        snprintf(buffer, DEFAULT_IO_BUFFER_SIZE, "[(%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)]",
-                min_bound_(0), min_bound_(1), min_bound_(2),
-                max_bound_(0), max_bound_(1), max_bound_(2));
+        snprintf(buffer, DEFAULT_IO_BUFFER_SIZE,
+                 "[(%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)]", min_bound_(0),
+                 min_bound_(1), min_bound_(2), max_bound_(0), max_bound_(1),
+                 max_bound_(2));
         return std::string(buffer);
     }
 
-public:
+  public:
     Eigen::Vector3d min_bound_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
 };
 
-}    // namespace open3d
+}  // namespace open3d

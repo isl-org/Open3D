@@ -30,13 +30,13 @@
 #include <Core/Geometry/TriangleMesh.h>
 #include <Visualization/Shader/Shader.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
-bool NormalShader::Compile()
-{
-    if (CompileShaders(NormalVertexShader, NULL, NormalFragmentShader) == false) {
+bool NormalShader::Compile() {
+    if (CompileShaders(NormalVertexShader, NULL, NormalFragmentShader) ==
+        false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -48,15 +48,14 @@ bool NormalShader::Compile()
     return true;
 }
 
-void NormalShader::Release()
-{
+void NormalShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
 bool NormalShader::BindGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                const RenderOption &option,
+                                const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -68,8 +67,7 @@ bool NormalShader::BindGeometry(const Geometry &geometry,
     // Prepare data to be passed to GPU
     std::vector<Eigen::Vector3f> points;
     std::vector<Eigen::Vector3f> normals;
-    if (PrepareBinding(geometry, option, view, points, normals) ==
-            false) {
+    if (PrepareBinding(geometry, option, view, points, normals) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -78,18 +76,18 @@ bool NormalShader::BindGeometry(const Geometry &geometry,
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-            points.data(), GL_STATIC_DRAW);
+                 points.data(), GL_STATIC_DRAW);
     glGenBuffers(1, &vertex_normal_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(Eigen::Vector3f),
-            normals.data(), GL_STATIC_DRAW);
+                 normals.data(), GL_STATIC_DRAW);
     bound_ = true;
     return true;
 }
 
 bool NormalShader::RenderGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                  const RenderOption &option,
+                                  const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -110,8 +108,7 @@ bool NormalShader::RenderGeometry(const Geometry &geometry,
     return true;
 }
 
-void NormalShader::UnbindGeometry()
-{
+void NormalShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_normal_buffer_);
@@ -120,10 +117,9 @@ void NormalShader::UnbindGeometry()
 }
 
 bool NormalShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option,const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+                                                 const RenderOption &option,
+                                                 const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
         return false;
     }
@@ -133,13 +129,13 @@ bool NormalShaderForPointCloud::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool NormalShaderForPointCloud::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool NormalShaderForPointCloud::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &normals)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+        std::vector<Eigen::Vector3f> &normals) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
         return false;
     }
@@ -166,10 +162,9 @@ bool NormalShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 }
 
 bool NormalShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option,const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::TriangleMesh) {
+                                                   const RenderOption &option,
+                                                   const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not TriangleMesh.");
         return false;
     }
@@ -190,13 +185,13 @@ bool NormalShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool NormalShaderForTriangleMesh::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &normals)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::TriangleMesh) {
+        std::vector<Eigen::Vector3f> &normals) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not TriangleMesh.");
         return false;
     }
@@ -205,8 +200,8 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    if (mesh.HasTriangleNormals() == false || mesh.HasVertexNormals() == false)
-    {
+    if (mesh.HasTriangleNormals() == false ||
+        mesh.HasVertexNormals() == false) {
         PrintShaderWarning("Binding failed because mesh has no normals.");
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;
@@ -221,7 +216,7 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
             const auto &vertex = mesh.vertices_[vi];
             points[idx] = vertex.cast<float>();
             if (option.mesh_shade_option_ ==
-                    RenderOption::MeshShadeOption::FlatShade) {
+                RenderOption::MeshShadeOption::FlatShade) {
                 normals[idx] = mesh.triangle_normals_[i].cast<float>();
             } else {
                 normals[idx] = mesh.vertex_normals_[vi].cast<float>();
@@ -233,6 +228,6 @@ bool NormalShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
     return true;
 }
 
-}    // namespace glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

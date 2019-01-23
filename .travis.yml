@@ -13,6 +13,30 @@ notifications:
 matrix:
 
   include:
+    # Style check only
+    - os: linux
+      dist: trusty
+      sudo: true
+      language: python
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - gcc-4.8
+            - g++-4.8
+            - cmake-data # to use cmake 3.0 or more recent
+            - cmake
+            - clang-format-5.0
+      before_install: ./util/scripts/setup-linux.sh
+      script:
+        - mkdir build
+        - cd build
+        - cmake ..
+        - make check-style
+
     # Default environment of Ubuntu 14.04
     - os: linux
       dist: trusty

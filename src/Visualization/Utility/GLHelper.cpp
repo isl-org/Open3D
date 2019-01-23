@@ -33,9 +33,9 @@ namespace open3d {
 
 namespace GLHelper {
 
-GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
-        const Eigen::Vector3d &up)
-{
+GLMatrix4f LookAt(const Eigen::Vector3d &eye,
+                  const Eigen::Vector3d &lookat,
+                  const Eigen::Vector3d &up) {
     Eigen::Vector3d front_dir = (eye - lookat).normalized();
     Eigen::Vector3d up_dir = up.normalized();
     Eigen::Vector3d right_dir = up_dir.cross(front_dir).normalized();
@@ -52,9 +52,10 @@ GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
     return mat.cast<GLfloat>();
 }
 
-GLMatrix4f Perspective(double field_of_view_, double aspect,
-        double z_near, double z_far)
-{
+GLMatrix4f Perspective(double field_of_view_,
+                       double aspect,
+                       double z_near,
+                       double z_far) {
     Eigen::Matrix4d mat = Eigen::Matrix4d::Zero();
     double fov_rad = field_of_view_ / 180.0 * M_PI;
     double tan_half_fov = std::tan(fov_rad / 2.0);
@@ -66,9 +67,12 @@ GLMatrix4f Perspective(double field_of_view_, double aspect,
     return mat.cast<GLfloat>();
 }
 
-GLMatrix4f Ortho(double left, double right, double bottom, double top,
-        double z_near, double z_far)
-{
+GLMatrix4f Ortho(double left,
+                 double right,
+                 double bottom,
+                 double top,
+                 double z_near,
+                 double z_far) {
     Eigen::Matrix4d mat = Eigen::Matrix4d::Zero();
     mat(0, 0) = 2.0 / (right - left);
     mat(1, 1) = 2.0 / (top - bottom);
@@ -80,28 +84,30 @@ GLMatrix4f Ortho(double left, double right, double bottom, double top,
     return mat.cast<GLfloat>();
 }
 
-Eigen::Vector3d Project(const Eigen::Vector3d &point, 
-        const GLMatrix4f &mvp_matrix, const int width, const int height)
-{
+Eigen::Vector3d Project(const Eigen::Vector3d &point,
+                        const GLMatrix4f &mvp_matrix,
+                        const int width,
+                        const int height) {
     Eigen::Vector4d pos = mvp_matrix.cast<double>() *
-            Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+                          Eigen::Vector4d(point(0), point(1), point(2), 1.0);
     if (pos(3) == 0.0) {
         return Eigen::Vector3d::Zero();
     }
     pos /= pos(3);
-    return Eigen::Vector3d(
-            (pos(0) * 0.5 + 0.5) * (double)width,
-            (pos(1) * 0.5 + 0.5) * (double)height,
-            (1.0 + pos(2)) * 0.5);
+    return Eigen::Vector3d((pos(0) * 0.5 + 0.5) * (double)width,
+                           (pos(1) * 0.5 + 0.5) * (double)height,
+                           (1.0 + pos(2)) * 0.5);
 }
 
 Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
-        const GLMatrix4f &mvp_matrix, const int width, const int height)
-{
-    Eigen::Vector4d point = mvp_matrix.cast<double>().inverse() *
+                          const GLMatrix4f &mvp_matrix,
+                          const int width,
+                          const int height) {
+    Eigen::Vector4d point =
+            mvp_matrix.cast<double>().inverse() *
             Eigen::Vector4d(screen_point(0) / (double)width * 2.0 - 1.0,
-            screen_point(1) / (double)height * 2.0 - 1.0,
-            screen_point(2) * 2.0 - 1.0, 1.0);
+                            screen_point(1) / (double)height * 2.0 - 1.0,
+                            screen_point(2) * 2.0 - 1.0, 1.0);
     if (point(3) == 0.0) {
         return Eigen::Vector3d::Zero();
     }
@@ -109,8 +115,7 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
     return point.block<3, 1>(0, 0);
 }
 
-int ColorCodeToPickIndex(const Eigen::Vector4i &color)
-{
+int ColorCodeToPickIndex(const Eigen::Vector4i &color) {
     if (color(0) == 255) {
         return -1;
     } else {
@@ -118,6 +123,6 @@ int ColorCodeToPickIndex(const Eigen::Vector4i &color)
     }
 }
 
-}    // namespace GLHelper
+}  // namespace GLHelper
 
-}    // namespace open3d
+}  // namespace open3d

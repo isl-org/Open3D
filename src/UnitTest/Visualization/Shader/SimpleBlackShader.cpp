@@ -29,95 +29,71 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_Constructor)
-{
+TEST(SimpleBlackShader, DISABLED_Constructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(SimpleBlackShader, DISABLED_Destructor) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(SimpleBlackShader, DISABLED_MemberData) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(SimpleBlackShader, DISABLED_Compile) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(SimpleBlackShader, DISABLED_Release) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(SimpleBlackShader, DISABLED_BindGeometry) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(SimpleBlackShader, DISABLED_RenderGeometry) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_Destructor)
-{
+TEST(SimpleBlackShader, DISABLED_UnbindGeometry) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_MemberData)
-{
+TEST(SimpleBlackShader, DISABLED_PrepareRendering) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_Compile)
-{
+TEST(SimpleBlackShader, DISABLED_PrepareBinding) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_Release)
-{
+TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForPointCloudNormal) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_BindGeometry)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_RenderGeometry)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_UnbindGeometry)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_PrepareRendering)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_PrepareBinding)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForPointCloudNormal)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForTriangleMeshWireFrame)
-{
+TEST(SimpleBlackShader, DISABLED_SimpleBlackShaderForTriangleMeshWireFrame) {
     unit_test::NotImplemented();
 }

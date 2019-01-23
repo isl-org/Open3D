@@ -26,8 +26,7 @@
 
 #include "open3d_visualization.h"
 
-void pybind_visualization(py::module &m)
-{
+void pybind_visualization(py::module &m) {
     py::module m_visualization = m.def_submodule("visualization");
     pybind_renderoption(m_visualization);
     pybind_viewcontrol(m_visualization);

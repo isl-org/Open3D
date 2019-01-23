@@ -29,16 +29,9 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJPG, DISABLED_ReadImageFromJPG)
-{
-    unit_test::NotImplemented();
-}
+TEST(FileJPG, DISABLED_ReadImageFromJPG) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileJPG, DISABLED_WriteImageToJPG)
-{
-    unit_test::NotImplemented();
-}
-
+TEST(FileJPG, DISABLED_WriteImageToJPG) { unit_test::NotImplemented(); }

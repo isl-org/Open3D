@@ -32,32 +32,35 @@
 namespace open3d {
 
 namespace glsl {
-    
-class ImageShader : public ShaderWrapper
-{
-public:
+
+class ImageShader : public ShaderWrapper {
+  public:
     ~ImageShader() override { Release(); }
 
-protected:
+  protected:
     ImageShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-    
-protected:
+
+  protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
+    bool BindGeometry(const Geometry &geometry,
+                      const RenderOption &option,
+                      const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view) final;
     void UnbindGeometry() final;
 
-protected:
+  protected:
     virtual bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) = 0;
+                                  const RenderOption &option,
+                                  const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            Image &image) = 0;
+                                const RenderOption &option,
+                                const ViewControl &view,
+                                Image &image) = 0;
 
-protected:
+  protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_UV_;
@@ -65,23 +68,24 @@ protected:
     GLuint image_texture_;
     GLuint image_texture_buffer_;
     GLuint vertex_scale_;
-    
+
     GLHelper::GLVector3f vertex_scale_data_;
 };
 
-class ImageShaderForImage : public ImageShader
-{
-public:
+class ImageShaderForImage : public ImageShader {
+  public:
     ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
 
-protected:
+  protected:
     virtual bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) final;
+                                  const RenderOption &option,
+                                  const ViewControl &view) final;
     virtual bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            Image &render_image) final;
+                                const RenderOption &option,
+                                const ViewControl &view,
+                                Image &render_image) final;
 };
-    
-}    // namespace open3d::glsl
 
-}    // namespace open3d
+}  // namespace glsl
+
+}  // namespace open3d

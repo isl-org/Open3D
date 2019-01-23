@@ -38,43 +38,40 @@ class GlobalOptimizationConvergenceCriteria;
 
 class GlobalOptimizationOption;
 
-class GlobalOptimizationMethod
-{
-public:
+class GlobalOptimizationMethod {
+  public:
     GlobalOptimizationMethod() {}
     virtual ~GlobalOptimizationMethod() {}
 
-public:
+  public:
     virtual void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,
             const GlobalOptimizationOption &option) const = 0;
 };
 
-class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod
-{
-public:
+class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
+  public:
     GlobalOptimizationGaussNewton() {}
     ~GlobalOptimizationGaussNewton() override {}
 
-public:
+  public:
     void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,
             const GlobalOptimizationOption &option) const override;
 };
 
-class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod
-{
-public:
+class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
+  public:
     GlobalOptimizationLevenbergMarquardt() {}
     ~GlobalOptimizationLevenbergMarquardt() override {}
 
-public:
+  public:
     void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,
             const GlobalOptimizationOption &option) const override;
 };
 
-}    // namespace open3d
+}  // namespace open3d

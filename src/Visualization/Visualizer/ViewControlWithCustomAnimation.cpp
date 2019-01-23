@@ -28,17 +28,15 @@
 
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 
-namespace open3d{
+namespace open3d {
 
-void ViewControlWithCustomAnimation::Reset()
-{
+void ViewControlWithCustomAnimation::Reset() {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewControl::Reset();
     }
 }
 
-void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
-{
+void ViewControlWithCustomAnimation::ChangeFieldOfView(double step) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         if (!view_trajectory_.view_status_.empty()) {
             // Once editing starts, lock ProjectionType.
@@ -60,49 +58,49 @@ void ViewControlWithCustomAnimation::ChangeFieldOfView(double step)
     }
 }
 
-void ViewControlWithCustomAnimation::Scale(double scale)
-{
+void ViewControlWithCustomAnimation::Scale(double scale) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewControl::Scale(scale);
     }
 }
 
-void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo,
-        double yo)
-{
+void ViewControlWithCustomAnimation::Rotate(double x,
+                                            double y,
+                                            double xo,
+                                            double yo) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewControl::Rotate(x, y, xo, yo);
     }
 }
 
-void ViewControlWithCustomAnimation::Translate(double x, double y, double xo,
-        double yo)
-{
+void ViewControlWithCustomAnimation::Translate(double x,
+                                               double y,
+                                               double xo,
+                                               double yo) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewControl::Translate(x, y, xo, yo);
     }
 }
 
-void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode)
-{
-    if (mode != AnimationMode::FreeMode && view_trajectory_.view_status_.empty()) {
+void ViewControlWithCustomAnimation::SetAnimationMode(AnimationMode mode) {
+    if (mode != AnimationMode::FreeMode &&
+        view_trajectory_.view_status_.empty()) {
         return;
     }
     animation_mode_ = mode;
     switch (mode) {
-    case AnimationMode::PreviewMode:
-    case AnimationMode::PlayMode:
-        view_trajectory_.ComputeInterpolationCoefficients();
-        GoToFirst();
-        break;
-    case AnimationMode::FreeMode:
-    default:
-        break;
+        case AnimationMode::PreviewMode:
+        case AnimationMode::PlayMode:
+            view_trajectory_.ComputeInterpolationCoefficients();
+            GoToFirst();
+            break;
+        case AnimationMode::FreeMode:
+        default:
+            break;
     }
 }
 
-void ViewControlWithCustomAnimation::AddKeyFrame()
-{
+void ViewControlWithCustomAnimation::AddKeyFrame() {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewParameters current_status;
         ConvertToViewParameters(current_status);
@@ -119,32 +117,29 @@ void ViewControlWithCustomAnimation::AddKeyFrame()
     }
 }
 
-void ViewControlWithCustomAnimation::UpdateKeyFrame()
-{
+void ViewControlWithCustomAnimation::UpdateKeyFrame() {
     if (animation_mode_ == AnimationMode::FreeMode &&
-            !view_trajectory_.view_status_.empty()) {
+        !view_trajectory_.view_status_.empty()) {
         ConvertToViewParameters(
                 view_trajectory_.view_status_[CurrentKeyframe()]);
     }
 }
 
-void ViewControlWithCustomAnimation::DeleteKeyFrame()
-{
+void ViewControlWithCustomAnimation::DeleteKeyFrame() {
     if (animation_mode_ == AnimationMode::FreeMode &&
-            !view_trajectory_.view_status_.empty()) {
+        !view_trajectory_.view_status_.empty()) {
         size_t current_index = CurrentKeyframe();
         view_trajectory_.view_status_.erase(
                 view_trajectory_.view_status_.begin() + current_index);
-        current_keyframe_ = RegularizeFrameIndex(current_index - 1.0,
-                view_trajectory_.view_status_.size(),
+        current_keyframe_ = RegularizeFrameIndex(
+                current_index - 1.0, view_trajectory_.view_status_.size(),
                 view_trajectory_.is_loop_);
     }
     SetViewControlFromTrajectory();
 }
 
 void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames
-        /* = 20*/)
-{
+                                                      /* = 20*/) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         double radian_per_step = M_PI * 2.0 / double(num_of_key_frames);
         for (int i = 0; i < num_of_key_frames; i++) {
@@ -154,19 +149,18 @@ void ViewControlWithCustomAnimation::AddSpinKeyFrames(int num_of_key_frames
     }
 }
 
-std::string ViewControlWithCustomAnimation::GetStatusString() const
-{
+std::string ViewControlWithCustomAnimation::GetStatusString() const {
     std::string prefix;
     switch (animation_mode_) {
-    case AnimationMode::FreeMode:
-        prefix = "Editing ";
-        break;
-    case AnimationMode::PreviewMode:
-        prefix = "Previewing ";
-        break;
-    case AnimationMode::PlayMode:
-        prefix = "Playing ";
-        break;
+        case AnimationMode::FreeMode:
+            prefix = "Editing ";
+            break;
+        case AnimationMode::PreviewMode:
+            prefix = "Previewing ";
+            break;
+        case AnimationMode::PlayMode:
+            prefix = "Playing ";
+            break;
     }
     char buffer[DEFAULT_IO_BUFFER_SIZE];
     if (animation_mode_ == AnimationMode::FreeMode) {
@@ -191,26 +185,25 @@ std::string ViewControlWithCustomAnimation::GetStatusString() const
     return prefix + std::string(buffer);
 }
 
-void ViewControlWithCustomAnimation::Step(double change)
-{
+void ViewControlWithCustomAnimation::Step(double change) {
     if (view_trajectory_.view_status_.empty()) {
         return;
     }
     if (animation_mode_ == AnimationMode::FreeMode) {
         current_keyframe_ += change;
-        current_keyframe_ = RegularizeFrameIndex(current_keyframe_,
-                view_trajectory_.view_status_.size(),
+        current_keyframe_ = RegularizeFrameIndex(
+                current_keyframe_, view_trajectory_.view_status_.size(),
                 view_trajectory_.is_loop_);
     } else {
         current_frame_ += change;
         current_frame_ = RegularizeFrameIndex(current_frame_,
-                view_trajectory_.NumOfFrames(), view_trajectory_.is_loop_);
+                                              view_trajectory_.NumOfFrames(),
+                                              view_trajectory_.is_loop_);
     }
     SetViewControlFromTrajectory();
 }
 
-void ViewControlWithCustomAnimation::GoToFirst()
-{
+void ViewControlWithCustomAnimation::GoToFirst() {
     if (view_trajectory_.view_status_.empty()) {
         return;
     }
@@ -222,8 +215,7 @@ void ViewControlWithCustomAnimation::GoToFirst()
     SetViewControlFromTrajectory();
 }
 
-void ViewControlWithCustomAnimation::GoToLast()
-{
+void ViewControlWithCustomAnimation::GoToLast() {
     if (view_trajectory_.view_status_.empty()) {
         return;
     }
@@ -236,8 +228,7 @@ void ViewControlWithCustomAnimation::GoToLast()
 }
 
 bool ViewControlWithCustomAnimation::CaptureTrajectory(
-        const std::string &filename/* = ""*/)
-{
+        const std::string &filename /* = ""*/) {
     if (view_trajectory_.view_status_.empty()) {
         return false;
     }
@@ -245,13 +236,13 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
     if (json_filename.empty()) {
         json_filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
     }
-    PrintDebug("[Visualizer] Trejactory capture to %s\n", json_filename.c_str());
+    PrintDebug("[Visualizer] Trejactory capture to %s\n",
+               json_filename.c_str());
     return WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
-        const std::string &filename)
-{
+        const std::string &filename) {
     bool success = ReadIJsonConvertible(filename, view_trajectory_);
     if (success == false) {
         view_trajectory_.Reset();
@@ -263,8 +254,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
-        const PinholeCameraTrajectory &camera_trajectory)
-{
+        const PinholeCameraTrajectory &camera_trajectory) {
     current_keyframe_ = 0.0;
     current_frame_ = 0.0;
     view_trajectory_.Reset();
@@ -277,12 +267,12 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
     for (size_t i = 0; i < camera_trajectory.parameters_.size(); i++) {
         ViewControlWithCustomAnimation view_control = *this;
         if (view_control.ConvertFromPinholeCameraParameters(
-                camera_trajectory.parameters_[i]) == false) {
+                    camera_trajectory.parameters_[i]) == false) {
             view_trajectory_.Reset();
             return false;
         }
         if (view_control.ConvertToViewParameters(
-                view_trajectory_.view_status_[i]) == false) {
+                    view_trajectory_.view_status_[i]) == false) {
             view_trajectory_.Reset();
             return false;
         }
@@ -291,8 +281,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
     return true;
 }
 
-bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const
-{
+bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const {
     if (view_trajectory_.view_status_.empty()) {
         return false;
     }
@@ -301,7 +290,7 @@ bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const
     }
     for (const auto &status : view_trajectory_.view_status_) {
         if (status.field_of_view_ !=
-                view_trajectory_.view_status_[0].field_of_view_) {
+            view_trajectory_.view_status_[0].field_of_view_) {
             return false;
         }
     }
@@ -309,8 +298,7 @@ bool ViewControlWithCustomAnimation::IsValidPinholeCameraTrajectory() const
 }
 
 double ViewControlWithCustomAnimation::RegularizeFrameIndex(
-        double current_frame, size_t num_of_frames, bool is_loop)
-{
+        double current_frame, size_t num_of_frames, bool is_loop) {
     if (num_of_frames == 0) {
         return 0.0;
     }
@@ -333,8 +321,7 @@ double ViewControlWithCustomAnimation::RegularizeFrameIndex(
     return frame_index;
 }
 
-void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
-{
+void ViewControlWithCustomAnimation::SetViewControlFromTrajectory() {
     if (view_trajectory_.view_status_.empty()) {
         return;
     }
@@ -352,4 +339,4 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory()
     }
 }
 
-}    // namespace open3d
+}  // namespace open3d

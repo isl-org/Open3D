@@ -34,19 +34,18 @@
 
 namespace open3d {
 
-class ViewTrajectory : public IJsonConvertible
-{
-public:
+class ViewTrajectory : public IJsonConvertible {
+  public:
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;
     static const int INTERVAL_STEP;
     static const int INTERVAL_DEFAULT;
 
-public:
+  public:
     ViewTrajectory() {}
     ~ViewTrajectory() override {}
 
-public:
+  public:
     /// Function to compute a Cubic Spline Interpolation
     /// See this paper for details:
     /// Bartels, R. H.; Beatty, J. C.; and Barsky, B. A. "Hermite and Cubic
@@ -59,8 +58,7 @@ public:
 
     void ChangeInterval(int change) {
         int new_interval = interval_ + change * INTERVAL_STEP;
-        if (new_interval >= INTERVAL_MIN && new_interval <= INTERVAL_MAX)
-        {
+        if (new_interval >= INTERVAL_MIN && new_interval <= INTERVAL_MAX) {
             interval_ = new_interval;
         }
     }
@@ -69,8 +67,8 @@ public:
         if (view_status_.empty()) {
             return 0;
         } else {
-            return is_loop_ ? (interval_ + 1) * view_status_.size() :
-                    (interval_ + 1) * (view_status_.size() - 1) + 1;
+            return is_loop_ ? (interval_ + 1) * view_status_.size()
+                            : (interval_ + 1) * (view_status_.size() - 1) + 1;
         }
     }
 
@@ -85,12 +83,13 @@ public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-public:
+  public:
     std::vector<ViewParameters> view_status_;
     bool is_loop_ = false;
     int interval_ = INTERVAL_DEFAULT;
     std::vector<ViewParameters::Matrix17x4d,
-                ViewParameters::Matrix17x4d_allocator> coeff_;
+                ViewParameters::Matrix17x4d_allocator>
+            coeff_;
 };
 
-}   // namespace open3d
+}  // namespace open3d

@@ -32,14 +32,13 @@
 #include <Visualization/Shader/Shader.h>
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
-bool ImageMaskShader::Compile()
-{
-    if (CompileShaders(ImageMaskVertexShader, NULL,
-            ImageMaskFragmentShader) == false) {
+bool ImageMaskShader::Compile() {
+    if (CompileShaders(ImageMaskVertexShader, NULL, ImageMaskFragmentShader) ==
+        false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -51,15 +50,14 @@ bool ImageMaskShader::Compile()
     return true;
 }
 
-void ImageMaskShader::Release()
-{
+void ImageMaskShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
 bool ImageMaskShader::BindGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                   const RenderOption &option,
+                                   const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -77,44 +75,36 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 
     // Create buffers and bind the geometry
     const GLfloat vertex_position_buffer_data[18] = {
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 1.0f, 1.0f,  0.0f, -1.0f, 1.0f, 0.0f,
     };
     const GLfloat vertex_UV_buffer_data[12] = {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position_buffer_data),
-            vertex_position_buffer_data, GL_STATIC_DRAW);
+                 vertex_position_buffer_data, GL_STATIC_DRAW);
     glGenBuffers(1, &vertex_UV_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_UV_buffer_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_UV_buffer_data),
-            vertex_UV_buffer_data, GL_STATIC_DRAW);
+                 vertex_UV_buffer_data, GL_STATIC_DRAW);
 
     glGenTextures(1, &image_texture_buffer_);
     glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, render_image.width_,
-            render_image.height_, 0, GL_RED, GL_UNSIGNED_BYTE,
-            render_image.data_.data());
+                 render_image.height_, 0, GL_RED, GL_UNSIGNED_BYTE,
+                 render_image.data_.data());
 
     if (option.interpolation_option_ ==
-            RenderOption::TextureInterpolationOption::Nearest) {
+        RenderOption::TextureInterpolationOption::Nearest) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     } else {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                GL_LINEAR_MIPMAP_LINEAR);
+                        GL_LINEAR_MIPMAP_LINEAR);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
@@ -123,8 +113,8 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
 }
 
 bool ImageMaskShader::RenderGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                     const RenderOption &option,
+                                     const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -149,8 +139,7 @@ bool ImageMaskShader::RenderGeometry(const Geometry &geometry,
     return true;
 }
 
-void ImageMaskShader::UnbindGeometry()
-{
+void ImageMaskShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_UV_buffer_);
@@ -160,15 +149,15 @@ void ImageMaskShader::UnbindGeometry()
 }
 
 bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option,const ViewControl &view)
-{
+                                               const RenderOption &option,
+                                               const ViewControl &view) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
         PrintShaderWarning("Rendering type is not Image.");
         return false;
     }
     const Image &image = (const Image &)geometry;
     if (image.width_ != view.GetWindowWidth() ||
-            image.height_ != view.GetWindowHeight()) {
+        image.height_ != view.GetWindowHeight()) {
         PrintShaderWarning("Mask image does not match framebuffer size.");
         return false;
     }
@@ -182,9 +171,9 @@ bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
 }
 
 bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
-        Image &render_image)
-{
+                                             const RenderOption &option,
+                                             const ViewControl &view,
+                                             Image &render_image) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
         PrintShaderWarning("Rendering type is not Image.");
         return false;
@@ -195,7 +184,7 @@ bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
         return false;
     }
     if (image.width_ != view.GetWindowWidth() ||
-            image.height_ != view.GetWindowHeight()) {
+        image.height_ != view.GetWindowHeight()) {
         PrintShaderWarning("Mask image does not match framebuffer size.");
         return false;
     }
@@ -208,6 +197,6 @@ bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
     return true;
 }
 
-}    // namespace glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

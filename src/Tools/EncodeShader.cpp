@@ -28,8 +28,7 @@
 #include <cstdlib>
 #include <string>
 
-void PrintHelp()
-{
+void PrintHelp() {
     printf("Usage:\n");
     printf("    > EncodeShader target_file\n");
     printf("      Generate a header file with license information.\n");
@@ -38,8 +37,7 @@ void PrintHelp()
     printf("      Append the shader file to the target header file.\n");
 }
 
-void WriteFileHeader(FILE *file)
-{
+void WriteFileHeader(FILE *file) {
     fprintf(file, "// Automatically generated header file for shader.\n");
     fprintf(file, "// See LICENSE.txt for full license statement.\n");
     fprintf(file, "\n");
@@ -47,8 +45,7 @@ void WriteFileHeader(FILE *file)
     fprintf(file, "\n");
 }
 
-std::string MakeString(const std::string &line)
-{
+std::string MakeString(const std::string &line) {
     std::string str;
     for (size_t i = 0; i < line.size(); i++) {
         char c = line[i];
@@ -74,23 +71,20 @@ std::string MakeString(const std::string &line)
     return str;
 }
 
-void WriteStringHeader(const std::string &string_name, FILE *file)
-{
+void WriteStringHeader(const std::string &string_name, FILE *file) {
     fprintf(file, "namespace open3d {\n\n");
     fprintf(file, "namespace glsl {\n\n");
     fprintf(file, "const char * const %s = \n", string_name.c_str());
 }
 
-void WriteStringFooter(FILE *file)
-{
+void WriteStringFooter(FILE *file) {
     fprintf(file, ";\n");
     fprintf(file, "\n}  // namespace open3d::glsl\n");
     fprintf(file, "\n}  // namespace open3d\n");
     fprintf(file, "\n");
 }
 
-int main(int argc, char **args)
-{
+int main(int argc, char **args) {
     if (argc <= 1) {
         PrintHelp();
         return 0;
@@ -128,6 +122,7 @@ int main(int argc, char **args)
             string_name = string_name.substr(last_slash_idx + 1);
         }
 
+        fprintf(file_out, "// clang-format off\n");
         WriteStringHeader(string_name, file_out);
         char buffer[1024];
         while (fgets(buffer, sizeof(buffer), file_in)) {
@@ -135,6 +130,7 @@ int main(int argc, char **args)
             fprintf(file_out, "\"%s\\n\"\n", line.c_str());
         }
         WriteStringFooter(file_out);
+        fprintf(file_out, "// clang-format on\n");
 
         fclose(file_in);
         fclose(file_out);

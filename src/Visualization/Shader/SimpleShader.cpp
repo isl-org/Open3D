@@ -33,14 +33,13 @@
 #include <Visualization/Shader/Shader.h>
 #include <Visualization/Utility/ColorMap.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
-bool SimpleShader::Compile()
-{
-    if (CompileShaders(SimpleVertexShader, NULL,
-            SimpleFragmentShader) == false) {
+bool SimpleShader::Compile() {
+    if (CompileShaders(SimpleVertexShader, NULL, SimpleFragmentShader) ==
+        false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -50,15 +49,14 @@ bool SimpleShader::Compile()
     return true;
 }
 
-void SimpleShader::Release()
-{
+void SimpleShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
 bool SimpleShader::BindGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                const RenderOption &option,
+                                const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -79,18 +77,18 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-            points.data(), GL_STATIC_DRAW);
+                 points.data(), GL_STATIC_DRAW);
     glGenBuffers(1, &vertex_color_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
-            colors.data(), GL_STATIC_DRAW);
+                 colors.data(), GL_STATIC_DRAW);
     bound_ = true;
     return true;
 }
 
 bool SimpleShader::RenderGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                  const RenderOption &option,
+                                  const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -109,8 +107,7 @@ bool SimpleShader::RenderGeometry(const Geometry &geometry,
     return true;
 }
 
-void SimpleShader::UnbindGeometry()
-{
+void SimpleShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_color_buffer_);
@@ -119,10 +116,9 @@ void SimpleShader::UnbindGeometry()
 }
 
 bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+                                                 const RenderOption &option,
+                                                 const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
         return false;
     }
@@ -132,13 +128,13 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool SimpleShaderForPointCloud::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &colors)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
         return false;
     }
@@ -155,28 +151,28 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
         points[i] = point.cast<float>();
         Eigen::Vector3d color;
         switch (option.point_color_option_) {
-        case RenderOption::PointColorOption::XCoordinate:
-            color = global_color_map.GetColor(
-                    view.GetBoundingBox().GetXPercentage(point(0)));
-            break;
-        case RenderOption::PointColorOption::YCoordinate:
-            color = global_color_map.GetColor(
-                    view.GetBoundingBox().GetYPercentage(point(1)));
-            break;
-        case RenderOption::PointColorOption::ZCoordinate:
-            color = global_color_map.GetColor(
-                    view.GetBoundingBox().GetZPercentage(point(2)));
-            break;
-        case RenderOption::PointColorOption::Color:
-        case RenderOption::PointColorOption::Default:
-        default:
-            if (pointcloud.HasColors()) {
-                color = pointcloud.colors_[i];
-            } else {
+            case RenderOption::PointColorOption::XCoordinate:
+                color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetXPercentage(point(0)));
+                break;
+            case RenderOption::PointColorOption::YCoordinate:
+                color = global_color_map.GetColor(
+                        view.GetBoundingBox().GetYPercentage(point(1)));
+                break;
+            case RenderOption::PointColorOption::ZCoordinate:
                 color = global_color_map.GetColor(
                         view.GetBoundingBox().GetZPercentage(point(2)));
-            }
-            break;
+                break;
+            case RenderOption::PointColorOption::Color:
+            case RenderOption::PointColorOption::Default:
+            default:
+                if (pointcloud.HasColors()) {
+                    color = pointcloud.colors_[i];
+                } else {
+                    color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetZPercentage(point(2)));
+                }
+                break;
         }
         colors[i] = color.cast<float>();
     }
@@ -186,10 +182,9 @@ bool SimpleShaderForPointCloud::PrepareBinding(const Geometry &geometry,
 }
 
 bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::LineSet) {
+                                              const RenderOption &option,
+                                              const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::LineSet) {
         PrintShaderWarning("Rendering type is not LineSet.");
         return false;
     }
@@ -199,13 +194,13 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool SimpleShaderForLineSet::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &colors)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::LineSet) {
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::LineSet) {
         PrintShaderWarning("Rendering type is not LineSet.");
         return false;
     }
@@ -234,10 +229,9 @@ bool SimpleShaderForLineSet::PrepareBinding(const Geometry &geometry,
 }
 
 bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::TriangleMesh) {
+                                                   const RenderOption &option,
+                                                   const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not TriangleMesh.");
         return false;
     }
@@ -258,13 +252,13 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool SimpleShaderForTriangleMesh::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &colors)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::TriangleMesh) {
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not TriangleMesh.");
         return false;
     }
@@ -287,27 +281,27 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 
             Eigen::Vector3d color;
             switch (option.mesh_color_option_) {
-            case RenderOption::MeshColorOption::XCoordinate:
-                color = global_color_map.GetColor(
-                        view.GetBoundingBox().GetXPercentage(vertex(0)));
-                break;
-            case RenderOption::MeshColorOption::YCoordinate:
-                color = global_color_map.GetColor(
-                        view.GetBoundingBox().GetYPercentage(vertex(1)));
-                break;
-            case RenderOption::MeshColorOption::ZCoordinate:
-                color = global_color_map.GetColor(
-                        view.GetBoundingBox().GetZPercentage(vertex(2)));
-                break;
-            case RenderOption::MeshColorOption::Color:
-                if (mesh.HasVertexColors()) {
-                    color = mesh.vertex_colors_[vi];
+                case RenderOption::MeshColorOption::XCoordinate:
+                    color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetXPercentage(vertex(0)));
                     break;
-                }
-            case RenderOption::MeshColorOption::Default:
-            default:
-                color = option.default_mesh_color_;
-                break;
+                case RenderOption::MeshColorOption::YCoordinate:
+                    color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetYPercentage(vertex(1)));
+                    break;
+                case RenderOption::MeshColorOption::ZCoordinate:
+                    color = global_color_map.GetColor(
+                            view.GetBoundingBox().GetZPercentage(vertex(2)));
+                    break;
+                case RenderOption::MeshColorOption::Color:
+                    if (mesh.HasVertexColors()) {
+                        color = mesh.vertex_colors_[vi];
+                        break;
+                    }
+                case RenderOption::MeshColorOption::Default:
+                default:
+                    color = option.default_mesh_color_;
+                    break;
             }
             colors[idx] = color.cast<float>();
         }
@@ -318,10 +312,9 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(const Geometry &geometry,
 }
 
 bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::VoxelGrid) {
+                                                const RenderOption &option,
+                                                const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
         PrintShaderWarning("Rendering type is not VoxelGrid.");
         return false;
     }
@@ -335,13 +328,13 @@ bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool SimpleShaderForVoxelGrid::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &colors)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::VoxelGrid) {
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
         PrintShaderWarning("Rendering type is not VoxelGrid.");
         return false;
     }
@@ -356,7 +349,7 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     colors.resize(n_voxels * 24);
 
     double r = 1.0;
-    std::vector<Eigen::Vector3f> disp;      // eight points
+    std::vector<Eigen::Vector3f> disp;  // eight points
     disp.push_back(Eigen::Vector3f(0, 0, 0));
     disp.push_back(Eigen::Vector3f(0, 0, r));
     disp.push_back(Eigen::Vector3f(r, 0, 0));
@@ -366,7 +359,7 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     disp.push_back(Eigen::Vector3f(r, r, 0));
     disp.push_back(Eigen::Vector3f(r, r, r));
 
-    std::vector<Eigen::Vector4i> quad_id;   // six rectangles
+    std::vector<Eigen::Vector4i> quad_id;  // six rectangles
     quad_id.push_back(Eigen::Vector4i(0, 2, 6, 4));
     quad_id.push_back(Eigen::Vector4i(2, 3, 7, 6));
     quad_id.push_back(Eigen::Vector4i(3, 1, 5, 7));
@@ -379,25 +372,28 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
         for (size_t d = 0; d < 8; d++)
             vertex.push_back(voxelgrid.voxels_[i].cast<float>() + disp[d]);
         Eigen::Vector3f base_vertex = (vertex[0] * voxelgrid.voxel_size_) +
-                voxelgrid.origin_.cast<float>();
+                                      voxelgrid.origin_.cast<float>();
         for (size_t j = 0; j < 6; j++) {
             for (size_t k = 0; k < 4; k++) {
                 size_t idx = ((i * 6) + j) * 4 + k;
                 points[idx] = (vertex[quad_id[j](k)] * voxelgrid.voxel_size_) +
-                        voxelgrid.origin_.cast<float>();
+                              voxelgrid.origin_.cast<float>();
                 Eigen::Vector3d color;
                 switch (option.mesh_color_option_) {
                     case RenderOption::MeshColorOption::XCoordinate:
                         color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetXPercentage(base_vertex(0)));
+                                view.GetBoundingBox().GetXPercentage(
+                                        base_vertex(0)));
                         break;
                     case RenderOption::MeshColorOption::YCoordinate:
                         color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetYPercentage(base_vertex(1)));
+                                view.GetBoundingBox().GetYPercentage(
+                                        base_vertex(1)));
                         break;
                     case RenderOption::MeshColorOption::ZCoordinate:
                         color = global_color_map.GetColor(
-                            view.GetBoundingBox().GetZPercentage(base_vertex(2)));
+                                view.GetBoundingBox().GetZPercentage(
+                                        base_vertex(2)));
                         break;
                     case RenderOption::MeshColorOption::Color:
                         if (voxelgrid.HasColors()) {
@@ -418,6 +414,6 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(const Geometry &geometry,
     return true;
 }
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

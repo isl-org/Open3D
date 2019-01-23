@@ -32,28 +32,23 @@
 
 #include "VisualizerForAlignment.h"
 
-void PrintTransformation(const Eigen::Matrix4d &transformation)
-{
+void PrintTransformation(const Eigen::Matrix4d &transformation) {
     using namespace open3d;
     PrintInfo("Current transformation is:\n");
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n",
-            transformation(0, 0), transformation(0, 1),
-            transformation(0, 2), transformation(0, 3));
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n",
-            transformation(1, 0), transformation(1, 1),
-            transformation(1, 2), transformation(1, 3));
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n",
-            transformation(2, 0), transformation(2, 1),
-            transformation(2, 2), transformation(2, 3));
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n",
-            transformation(3, 0), transformation(3, 1),
-            transformation(3, 2), transformation(3, 3));
+    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation(0, 0),
+              transformation(0, 1), transformation(0, 2), transformation(0, 3));
+    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation(1, 0),
+              transformation(1, 1), transformation(1, 2), transformation(1, 3));
+    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation(2, 0),
+              transformation(2, 1), transformation(2, 2), transformation(2, 3));
+    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation(3, 0),
+              transformation(3, 1), transformation(3, 2), transformation(3, 3));
 }
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     // PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo("    > ManuallyAlignPointCloud source_file target_file [options]\n");
     PrintInfo("      Manually align point clouds in source_file and target_file.\n");
@@ -73,32 +68,32 @@ void PrintHelp()
     PrintInfo("                                will be created. The program reads an alignment\n");
     PrintInfo("                                from file. It does cropping, downsample,\n");
     PrintInfo("                                evaluation, then saves everything.\n");
+    // clang-format on
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
 
     if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 0;
     }
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
-    double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_size",
-            -1.0);
-    double max_corres_distance = GetProgramOptionAsDouble(argc, argv,
-            "--max_corres_distance", -1.0);
+    double voxel_size =
+            GetProgramOptionAsDouble(argc, argv, "--voxel_size", -1.0);
+    double max_corres_distance =
+            GetProgramOptionAsDouble(argc, argv, "--max_corres_distance", -1.0);
     bool with_scaling = !ProgramOptionExists(argc, argv, "--without_scaling");
     bool with_dialog = !ProgramOptionExists(argc, argv, "--without_dialog");
     std::string default_polygon_filename =
             filesystem::GetFileNameWithoutExtension(argv[2]) + ".json";
-    std::string alignment_filename = GetProgramOptionAsString(argc, argv,
-            "--without_gui_icp", "");
-    std::string eval_filename = GetProgramOptionAsString(argc, argv,
-            "--without_gui_eval", "");
+    std::string alignment_filename =
+            GetProgramOptionAsString(argc, argv, "--without_gui_icp", "");
+    std::string eval_filename =
+            GetProgramOptionAsString(argc, argv, "--without_gui_eval", "");
     std::string default_directory = filesystem::GetFileParentDirectory(argv[1]);
 
     auto source_ptr = CreatePointCloudFromFile(argv[1]);
@@ -123,21 +118,23 @@ int main(int argc, char **argv)
         }
         if (voxel_size > 0.0) {
             PrintInfo("Downsample point cloud with voxel size %.4f.\n",
-                    voxel_size);
+                      voxel_size);
             source_ptr = VoxelDownSample(*source_ptr, voxel_size);
         }
         if (max_corres_distance > 0.0) {
             PrintInfo("ICP with max correspondence distance %.4f.\n",
-                    max_corres_distance);
-            auto result = RegistrationICP(*source_ptr, *target_ptr,
-                    max_corres_distance, Eigen::Matrix4d::Identity(),
+                      max_corres_distance);
+            auto result = RegistrationICP(
+                    *source_ptr, *target_ptr, max_corres_distance,
+                    Eigen::Matrix4d::Identity(),
                     TransformationEstimationPointToPoint(true),
                     ICPConvergenceCriteria(1e-6, 1e-6, 30));
-            PrintInfo("Registration finished with fitness %.4f and RMSE %.4f.\n",
+            PrintInfo(
+                    "Registration finished with fitness %.4f and RMSE %.4f.\n",
                     result.fitness_, result.inlier_rmse_);
             if (result.fitness_ > 0.0) {
-                session.transformation_ = result.transformation_ *
-                        session.transformation_;
+                session.transformation_ =
+                        result.transformation_ * session.transformation_;
                 PrintTransformation(session.transformation_);
                 source_ptr->Transform(result.transformation_);
             }
@@ -159,28 +156,32 @@ int main(int argc, char **argv)
         }
         if (voxel_size > 0.0) {
             PrintInfo("Downsample point cloud with voxel size %.4f.\n",
-                    voxel_size);
+                      voxel_size);
             source_ptr = VoxelDownSample(*source_ptr, voxel_size);
         }
-        std::string source_filename = filesystem::GetFileNameWithoutExtension(
-                eval_filename) + ".source.ply";
-        std::string target_filename = filesystem::GetFileNameWithoutExtension(
-                eval_filename) + ".target.ply";
-        std::string source_binname = filesystem::GetFileNameWithoutExtension(
-                eval_filename) + ".source.bin";
-        std::string target_binname = filesystem::GetFileNameWithoutExtension(
-                eval_filename) + ".target.bin";
-        FILE * f;
+        std::string source_filename =
+                filesystem::GetFileNameWithoutExtension(eval_filename) +
+                ".source.ply";
+        std::string target_filename =
+                filesystem::GetFileNameWithoutExtension(eval_filename) +
+                ".target.ply";
+        std::string source_binname =
+                filesystem::GetFileNameWithoutExtension(eval_filename) +
+                ".source.bin";
+        std::string target_binname =
+                filesystem::GetFileNameWithoutExtension(eval_filename) +
+                ".target.bin";
+        FILE *f;
 
         WritePointCloud(source_filename, *source_ptr);
-        auto source_dis = ComputePointCloudToPointCloudDistance(
-                *source_ptr, *target_ptr);
+        auto source_dis =
+                ComputePointCloudToPointCloudDistance(*source_ptr, *target_ptr);
         f = fopen(source_binname.c_str(), "wb");
         fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
         fclose(f);
         WritePointCloud(target_filename, *target_ptr);
-        auto target_dis = ComputePointCloudToPointCloudDistance(
-                *target_ptr, *source_ptr);
+        auto target_dis =
+                ComputePointCloudToPointCloudDistance(*target_ptr, *source_ptr);
         f = fopen(target_binname.c_str(), "wb");
         fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
         fclose(f);
@@ -189,8 +190,9 @@ int main(int argc, char **argv)
 
     VisualizerWithEditing vis_source, vis_target;
     VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
-            max_corres_distance, with_scaling, with_dialog,
-            default_polygon_filename, default_directory);
+                                    max_corres_distance, with_scaling,
+                                    with_dialog, default_polygon_filename,
+                                    default_directory);
 
     vis_source.CreateVisualizerWindow("Source Point Cloud", 1280, 720, 10, 100);
     vis_source.AddGeometry(source_ptr);
@@ -209,7 +211,7 @@ int main(int argc, char **argv)
     vis_main.BuildUtilities();
 
     while (vis_source.PollEvents() && vis_target.PollEvents() &&
-            vis_main.PollEvents()) {
+           vis_main.PollEvents()) {
     }
 
     vis_source.DestroyVisualizerWindow();

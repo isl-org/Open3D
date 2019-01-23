@@ -43,4 +43,4 @@ bool ReadFeatureFromBIN(const std::string &filename, Feature &feature);
 
 bool WriteFeatureToBIN(const std::string &filename, const Feature &feature);
 
-}    // namespace open3d
+}  // namespace open3d

@@ -217,12 +217,16 @@ add_subdirectory(src)
 # Examples
 add_subdirectory(examples)
 
-# `make check-style` returns non-zero exit code if styling is not compliant
+# `make check-style` errors if styling is not compliant
 add_custom_target(check-style
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.sh
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.cmake
 )
 
 # `make apply-style` runs clang-format to format all source code
 add_custom_target(apply-style
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.sh
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.cmake
 )

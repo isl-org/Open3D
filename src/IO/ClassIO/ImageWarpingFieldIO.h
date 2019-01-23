@@ -37,16 +37,16 @@ class ImageWarpingField;
 /// Factory function to create a ImageWarpingField from a file
 /// Return an empty PinholeCameraTrajectory if fail to read the file.
 std::shared_ptr<ImageWarpingField> CreateImageWarpingFieldFromFile(
-    const std::string &filename);
+        const std::string &filename);
 
 /// The general entrance for reading a ImageWarpingField from a file
 /// \return If the read function is successful.
 bool ReadImageWarpingField(const std::string &filename,
-        ImageWarpingField &warping_field);
+                           ImageWarpingField &warping_field);
 
 /// The general entrance for writing a ImageWarpingField to a file
 /// \return If the write function is successful.
 bool WriteImageWarpingField(const std::string &filename,
-        const ImageWarpingField &warping_field);
+                            const ImageWarpingField &warping_field);
 
-}    // namespace open3d
+}  // namespace open3d

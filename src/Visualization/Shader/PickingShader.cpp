@@ -31,14 +31,13 @@
 #include <Visualization/Utility/ColorMap.h>
 #include <Visualization/Utility/GLHelper.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
-bool PickingShader::Compile()
-{
-    if (CompileShaders(PickingVertexShader, NULL,
-            PickingFragmentShader) == false) {
+bool PickingShader::Compile() {
+    if (CompileShaders(PickingVertexShader, NULL, PickingFragmentShader) ==
+        false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -48,15 +47,14 @@ bool PickingShader::Compile()
     return true;
 }
 
-void PickingShader::Release()
-{
+void PickingShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
 bool PickingShader::BindGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                 const RenderOption &option,
+                                 const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -77,19 +75,19 @@ bool PickingShader::BindGeometry(const Geometry &geometry,
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-            points.data(), GL_STATIC_DRAW);
+                 points.data(), GL_STATIC_DRAW);
     glGenBuffers(1, &vertex_index_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_index_buffer_);
     glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(float),
-            indices.data(), GL_STATIC_DRAW);
+                 indices.data(), GL_STATIC_DRAW);
 
     bound_ = true;
     return true;
 }
 
 bool PickingShader::RenderGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                   const RenderOption &option,
+                                   const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -108,8 +106,7 @@ bool PickingShader::RenderGeometry(const Geometry &geometry,
     return true;
 }
 
-void PickingShader::UnbindGeometry()
-{
+void PickingShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_index_buffer_);
@@ -118,10 +115,9 @@ void PickingShader::UnbindGeometry()
 }
 
 bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+                                                  const RenderOption &option,
+                                                  const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
         return false;
     }
@@ -131,13 +127,13 @@ bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool PickingShaderForPointCloud::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool PickingShaderForPointCloud::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<float> &indices)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+        std::vector<float> &indices) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
         return false;
     }
@@ -158,6 +154,6 @@ bool PickingShaderForPointCloud::PrepareBinding(const Geometry &geometry,
     return true;
 }
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

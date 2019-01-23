@@ -33,37 +33,40 @@
 namespace open3d {
 
 namespace glsl {
-    
-class PhongShader : public ShaderWrapper
-{
-public:
+
+class PhongShader : public ShaderWrapper {
+  public:
     ~PhongShader() override { Release(); }
-    
-protected:
+
+  protected:
     PhongShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-    
-protected:
+
+  protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
+    bool BindGeometry(const Geometry &geometry,
+                      const RenderOption &option,
+                      const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view) final;
     void UnbindGeometry() final;
 
-protected:
+  protected:
     virtual bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) = 0;
+                                  const RenderOption &option,
+                                  const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points,
-            std::vector<Eigen::Vector3f> &normals,
-            std::vector<Eigen::Vector3f> &colors) = 0;
-    
-protected:
+                                const RenderOption &option,
+                                const ViewControl &view,
+                                std::vector<Eigen::Vector3f> &points,
+                                std::vector<Eigen::Vector3f> &normals,
+                                std::vector<Eigen::Vector3f> &colors) = 0;
+
+  protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
 
-protected:
+  protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_color_;
@@ -89,36 +92,38 @@ protected:
     GLHelper::GLVector4f light_ambient_data_;
 };
 
-class PhongShaderForPointCloud : public PhongShader
-{
-public:
+class PhongShaderForPointCloud : public PhongShader {
+  public:
     PhongShaderForPointCloud() : PhongShader("PhongShaderForPointCloud") {}
-    
-protected:
+
+  protected:
     bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) final;
+                          const RenderOption &option,
+                          const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points,
-            std::vector<Eigen::Vector3f> &normals,
-            std::vector<Eigen::Vector3f> &colors) final;
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &normals,
+                        std::vector<Eigen::Vector3f> &colors) final;
 };
 
-class PhongShaderForTriangleMesh : public PhongShader
-{
-public:
+class PhongShaderForTriangleMesh : public PhongShader {
+  public:
     PhongShaderForTriangleMesh() : PhongShader("PhongShaderForTriangleMesh") {}
-    
-protected:
+
+  protected:
     bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) final;
+                          const RenderOption &option,
+                          const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points,
-            std::vector<Eigen::Vector3f> &normals,
-            std::vector<Eigen::Vector3f> &colors) final;
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<Eigen::Vector3f> &normals,
+                        std::vector<Eigen::Vector3f> &colors) final;
 };
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

@@ -30,34 +30,35 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/FileSystem.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-static const std::unordered_map<std::string,
+static const std::unordered_map<
+        std::string,
         std::function<bool(const std::string &, TriangleMesh &)>>
-        file_extension_to_trianglemesh_read_function
-        {{"ply", ReadTriangleMeshFromPLY},
+        file_extension_to_trianglemesh_read_function{
+                {"ply", ReadTriangleMeshFromPLY},
         };
 
 static const std::unordered_map<std::string,
-        std::function<bool(const std::string &, const TriangleMesh &,
-        const bool, const bool)>>
-        file_extension_to_trianglemesh_write_function
-        {{"ply", WriteTriangleMeshToPLY},
+                                std::function<bool(const std::string &,
+                                                   const TriangleMesh &,
+                                                   const bool,
+                                                   const bool)>>
+        file_extension_to_trianglemesh_write_function{
+                {"ply", WriteTriangleMeshToPLY},
         };
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename)
-{
+std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename) {
     auto mesh = std::make_shared<TriangleMesh>();
     ReadTriangleMesh(filename, *mesh);
     return mesh;
 }
 
-bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
-{
+bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -72,17 +73,19 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh)
     }
     bool success = map_itr->second(filename, mesh);
     PrintDebug("Read TriangleMesh: %d triangles and %d vertices.\n",
-            (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+               (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     if (mesh.HasVertices() && !mesh.HasTriangles()) {
-        PrintWarning("TriangleMesh appears to be a PointCloud (only contains "
-            "vertices, but no triangles).\n");
+        PrintWarning(
+                "TriangleMesh appears to be a PointCloud (only contains "
+                "vertices, but no triangles).\n");
     }
     return success;
 }
 
-bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
-        bool write_ascii/* = false*/, bool compressed/* = false*/)
-{
+bool WriteTriangleMesh(const std::string &filename,
+                       const TriangleMesh &mesh,
+                       bool write_ascii /* = false*/,
+                       bool compressed /* = false*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -97,8 +100,8 @@ bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
     }
     bool success = map_itr->second(filename, mesh, write_ascii, compressed);
     PrintDebug("Write TriangleMesh: %d triangles and %d vertices.\n",
-            (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+               (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     return success;
 }
 
-}    // namespace open3d
+}  // namespace open3d

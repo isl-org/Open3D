@@ -30,14 +30,13 @@
 #include <Visualization/Utility/SelectionPolygon.h>
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
-bool Simple2DShader::Compile()
-{
-    if (CompileShaders(Simple2DVertexShader, NULL,
-            Simple2DFragmentShader) == false) {
+bool Simple2DShader::Compile() {
+    if (CompileShaders(Simple2DVertexShader, NULL, Simple2DFragmentShader) ==
+        false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -46,15 +45,14 @@ bool Simple2DShader::Compile()
     return true;
 }
 
-void Simple2DShader::Release()
-{
+void Simple2DShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
 bool Simple2DShader::BindGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                  const RenderOption &option,
+                                  const ViewControl &view) {
     // If there is already geometry, we first unbind it.
     // We use GL_STATIC_DRAW. When geometry changes, we clear buffers and
     // rebind the geometry. Note that this approach is slow. If the geometry is
@@ -75,19 +73,19 @@ bool Simple2DShader::BindGeometry(const Geometry &geometry,
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-            points.data(), GL_STATIC_DRAW);
+                 points.data(), GL_STATIC_DRAW);
     glGenBuffers(1, &vertex_color_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
-            colors.data(), GL_STATIC_DRAW);
+                 colors.data(), GL_STATIC_DRAW);
 
     bound_ = true;
     return true;
 }
 
 bool Simple2DShader::RenderGeometry(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view)
-{
+                                    const RenderOption &option,
+                                    const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
@@ -105,8 +103,7 @@ bool Simple2DShader::RenderGeometry(const Geometry &geometry,
     return true;
 }
 
-void Simple2DShader::UnbindGeometry()
-{
+void Simple2DShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_color_buffer_);
@@ -115,11 +112,10 @@ void Simple2DShader::UnbindGeometry()
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareRendering(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::Unspecified) {
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
         return false;
     }
@@ -129,13 +125,13 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
     return true;
 }
 
-bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
-        const RenderOption &option, const ViewControl &view,
+bool Simple2DShaderForSelectionPolygon::PrepareBinding(
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
-        std::vector<Eigen::Vector3f> &colors)
-{
-    if (geometry.GetGeometryType() !=
-            Geometry::GeometryType::Unspecified) {
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
         return false;
     }
@@ -150,7 +146,6 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
     points.resize(segment_num * 2);
     colors.resize(segment_num * 2);
     for (size_t i = 0; i < segment_num; i++) {
-
     }
     if (polygon.is_closed_) {
         points.resize(polygon.polygon_.size() * 2);
@@ -166,10 +161,12 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
         size_t j = (i + 1) % polygon.polygon_.size();
         const auto &vi = polygon.polygon_[i];
         const auto &vj = polygon.polygon_[j];
-        points[i * 2] = Eigen::Vector3f((float)(vi(0) / width * 2.0 - 1.0),
-                (float)(vi(1) / height * 2.0 - 1.0), 0.0f);
-        points[i * 2 + 1] = Eigen::Vector3f((float)(vj(0) / width * 2.0 - 1.0),
-                (float)(vj(1) / height * 2.0 - 1.0), 0.0f);
+        points[i * 2] =
+                Eigen::Vector3f((float)(vi(0) / width * 2.0 - 1.0),
+                                (float)(vi(1) / height * 2.0 - 1.0), 0.0f);
+        points[i * 2 + 1] =
+                Eigen::Vector3f((float)(vj(0) / width * 2.0 - 1.0),
+                                (float)(vj(1) / height * 2.0 - 1.0), 0.0f);
         colors[i * 2] = colors[i * 2 + 1] =
                 _option.selection_polygon_boundary_color_.cast<float>();
     }
@@ -178,6 +175,6 @@ bool Simple2DShaderForSelectionPolygon::PrepareBinding(const Geometry &geometry,
     return true;
 }
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

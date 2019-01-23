@@ -31,15 +31,14 @@
 
 namespace open3d {
 
-class Geometry3D : public Geometry
-{
-public:
+class Geometry3D : public Geometry {
+  public:
     ~Geometry3D() override {}
 
-protected:
+  protected:
     Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
-public:
+  public:
     void Clear() override = 0;
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector3d GetMinBound() const = 0;
@@ -47,4 +46,4 @@ public:
     virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
 };
 
-}    // namespace open3d
+}  // namespace open3d

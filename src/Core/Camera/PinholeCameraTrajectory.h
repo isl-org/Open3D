@@ -33,18 +33,17 @@
 
 namespace open3d {
 
-class PinholeCameraTrajectory : public IJsonConvertible
-{
-public:
+class PinholeCameraTrajectory : public IJsonConvertible {
+  public:
     PinholeCameraTrajectory();
     ~PinholeCameraTrajectory() override;
 
-public:
+  public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-public:
+  public:
     std::vector<PinholeCameraParameters> parameters_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

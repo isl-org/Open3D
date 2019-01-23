@@ -32,24 +32,23 @@
 
 namespace open3d {
 
-class ViewParameters : public IJsonConvertible
-{
-public:
+class ViewParameters : public IJsonConvertible {
+  public:
     typedef Eigen::Matrix<double, 17, 4, Eigen::RowMajor> Matrix17x4d;
     typedef Eigen::Matrix<double, 17, 1> Vector17d;
     typedef Eigen::aligned_allocator<Matrix17x4d> Matrix17x4d_allocator;
 
-public:
+  public:
     ViewParameters() {}
     ~ViewParameters() override {}
 
-public:
+  public:
     Vector17d ConvertToVector17d();
     void ConvertFromVector17d(const Vector17d &v);
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-public:
+  public:
     double field_of_view_;
     double zoom_;
     Eigen::Vector3d lookat_;
@@ -59,4 +58,4 @@ public:
     Eigen::Vector3d boundingbox_max_;
 };
 
-}   // namespace open3d
+}  // namespace open3d

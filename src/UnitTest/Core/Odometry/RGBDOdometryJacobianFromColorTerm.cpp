@@ -39,25 +39,22 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
-{
+TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     vector<Vector6d, Vector6d_allocator> ref_J_r(10);
     ref_J_r[0] << -1.208103, 0.621106, -0.040830, 0.173142, 0.260220, -1.164557;
-    ref_J_r[1] << -0.338017, 0.140257,  0.019732, 0.030357, 0.128839, -0.395772;
-    ref_J_r[2] << -0.235842, 0.122008,  0.029948, 0.037260, 0.119792, -0.194611;
+    ref_J_r[1] << -0.338017, 0.140257, 0.019732, 0.030357, 0.128839, -0.395772;
+    ref_J_r[2] << -0.235842, 0.122008, 0.029948, 0.037260, 0.119792, -0.194611;
     ref_J_r[3] << -0.222063, 0.118091, -0.018617, 0.096335, 0.144784, -0.230677;
-    ref_J_r[4] << -0.127762, 0.197381,  0.104905, 0.072993, 0.146487, -0.186723;
+    ref_J_r[4] << -0.127762, 0.197381, 0.104905, 0.072993, 0.146487, -0.186723;
     ref_J_r[5] << -0.012070, 0.033963, -0.004087, 0.019158, 0.004083, -0.022654;
     ref_J_r[6] << -0.047053, 0.049144, -0.027889, 0.040064, 0.010937, -0.048321;
-    ref_J_r[7] << -0.338017, 0.140257,  0.019732, 0.030357, 0.128839, -0.395772;
-    ref_J_r[8] << -2.080471, 1.779082,  0.191770, 0.116250, 0.373750, -2.206175;
+    ref_J_r[7] << -0.338017, 0.140257, 0.019732, 0.030357, 0.128839, -0.395772;
+    ref_J_r[8] << -2.080471, 1.779082, 0.191770, 0.116250, 0.373750, -2.206175;
     ref_J_r[9] << -0.015476, 0.054573, -0.002288, 0.027828, 0.005931, -0.046776;
 
-    vector<double> ref_r =
-    {
-         0.419608, -0.360784, 0.274510,  0.564706,  0.835294,
-        -0.352941, -0.545098, -0.360784, 0.121569, -0.094118
-    };
+    vector<double> ref_r = {0.419608, -0.360784, 0.274510,  0.564706,
+                            0.835294, -0.352941, -0.545098, -0.360784,
+                            0.121569, -0.094118};
 
     int width = 10;
     int height = 10;
@@ -102,24 +99,13 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual)
 
     RGBDOdometryJacobianFromColorTerm jacobian_method;
 
-    for (int row = 0; row < rows; row++)
-    {
+    for (int row = 0; row < rows; row++) {
         vector<Vector6d, Vector6d_allocator> J_r;
         vector<double> r;
 
         jacobian_method.ComputeJacobianAndResidual(
-            row,
-            J_r,
-            r,
-            source,
-            target,
-            *source_xyz,
-            target_dx,
-            target_dy,
-            intrinsic,
-            extrinsic,
-            corresps
-        );
+                row, J_r, r, source, target, *source_xyz, target_dx, target_dy,
+                intrinsic, extrinsic, corresps);
 
         EXPECT_NEAR(ref_r[row], r[0], THRESHOLD_1E_6);
         ExpectEQ(ref_J_r[row], J_r[0]);
