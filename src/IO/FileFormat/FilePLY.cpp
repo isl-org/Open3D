@@ -680,7 +680,8 @@ bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset) {
     return true;
 }
 
-bool WriteLineSetToPLY(const std::string &filename, const LineSet &lineset,
+bool WriteLineSetToPLY(const std::string &filename,
+                       const LineSet &lineset,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     if (lineset.IsEmpty()) {

@@ -35,14 +35,16 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, LineSet &)>>
+        std::string,
+        std::function<bool(const std::string &, LineSet &)>>
         file_extension_to_lineset_read_function{
                 {"ply", ReadLineSetFromPLY},
         };
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, const LineSet &,
-                                        const bool, const bool)>>
+        std::string,
+        std::function<bool(
+                const std::string &, const LineSet &, const bool, const bool)>>
         file_extension_to_lineset_write_function{
                 {"ply", WriteLineSetToPLY},
         };
@@ -55,7 +57,8 @@ std::shared_ptr<LineSet> CreateLineSetFromFile(const std::string &filename,
     return lineset;
 }
 
-bool ReadLineSet(const std::string &filename, LineSet &lineset,
+bool ReadLineSet(const std::string &filename,
+                 LineSet &lineset,
                  const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
@@ -77,8 +80,10 @@ bool ReadLineSet(const std::string &filename, LineSet &lineset,
     return success;
 }
 
-bool WriteLineSet(const std::string &filename, const LineSet &lineset,
-                  bool write_ascii /* = false*/, bool compressed /* = false*/) {
+bool WriteLineSet(const std::string &filename,
+                  const LineSet &lineset,
+                  bool write_ascii /* = false*/,
+                  bool compressed /* = false*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {

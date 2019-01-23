@@ -59,7 +59,8 @@ class TransformationEstimation {
                                const PointCloud &target,
                                const CorrespondenceSet &corres) const = 0;
     virtual Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source, const PointCloud &target,
+            const PointCloud &source,
+            const PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
 };
 
@@ -75,10 +76,12 @@ class TransformationEstimationPointToPoint : public TransformationEstimation {
             const override {
         return type_;
     };
-    double ComputeRMSE(const PointCloud &source, const PointCloud &target,
+    double ComputeRMSE(const PointCloud &source,
+                       const PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source, const PointCloud &target,
+            const PointCloud &source,
+            const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
   public:
@@ -100,10 +103,12 @@ class TransformationEstimationPointToPlane : public TransformationEstimation {
             const override {
         return type_;
     };
-    double ComputeRMSE(const PointCloud &source, const PointCloud &target,
+    double ComputeRMSE(const PointCloud &source,
+                       const PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source, const PointCloud &target,
+            const PointCloud &source,
+            const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
   private:

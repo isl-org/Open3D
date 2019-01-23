@@ -101,7 +101,8 @@ void ExpectGE(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
 }
 
 // Test equality of two arrays of uint8_t.
-void ExpectEQ(const uint8_t* const v0, const uint8_t* const v1,
+void ExpectEQ(const uint8_t* const v0,
+              const uint8_t* const v1,
               const size_t& size);
 
 // Test equality of two vectors of uint8_t.
@@ -120,7 +121,8 @@ void ExpectEQ(const float* const v0, const float* const v1, const size_t& size);
 void ExpectEQ(const std::vector<float>& v0, const std::vector<float>& v1);
 
 // Test equality of two arrays of double.
-void ExpectEQ(const double* const v0, const double* const v1,
+void ExpectEQ(const double* const v0,
+              const double* const v1,
               const size_t& size);
 
 // Test equality of two vectors of double.

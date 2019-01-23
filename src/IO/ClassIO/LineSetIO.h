@@ -39,7 +39,8 @@ std::shared_ptr<LineSet> CreateLineSetFromFile(
 /// The general entrance for reading a LineSet from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadLineSet(const std::string &filename, LineSet &lineset,
+bool ReadLineSet(const std::string &filename,
+                 LineSet &lineset,
                  const std::string &format = "auto");
 
 /// The general entrance for writing a LineSet to a file
@@ -47,12 +48,16 @@ bool ReadLineSet(const std::string &filename, LineSet &lineset,
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
-bool WriteLineSet(const std::string &filename, const LineSet &lineset,
-                  bool write_ascii = false, bool compressed = false);
+bool WriteLineSet(const std::string &filename,
+                  const LineSet &lineset,
+                  bool write_ascii = false,
+                  bool compressed = false);
 
 bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset);
 
-bool WriteLineSetToPLY(const std::string &filename, const LineSet &lineset,
-                       bool write_ascii = false, bool compressed = false);
+bool WriteLineSetToPLY(const std::string &filename,
+                       const LineSet &lineset,
+                       bool write_ascii = false,
+                       bool compressed = false);
 
 }  // namespace open3d

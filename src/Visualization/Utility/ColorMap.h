@@ -49,14 +49,16 @@ class ColorMap {
     virtual Eigen::Vector3d GetColor(double value) const = 0;
 
   protected:
-    double Interpolate(double value, double y0, double x0, double y1,
-                       double x1) const {
+    double Interpolate(
+            double value, double y0, double x0, double y1, double x1) const {
         if (value < x0) return y0;
         if (value > x1) return y1;
         return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
     }
-    Eigen::Vector3d Interpolate(double value, const Eigen::Vector3d &y0,
-                                double x0, const Eigen::Vector3d &y1,
+    Eigen::Vector3d Interpolate(double value,
+                                const Eigen::Vector3d &y0,
+                                double x0,
+                                const Eigen::Vector3d &y1,
                                 double x1) const {
         if (value < x0) return y0;
         if (value > x1) return y1;

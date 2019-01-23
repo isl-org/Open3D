@@ -69,7 +69,9 @@ class Image : public Geometry2D {
                data_.size() == height_ * BytesPerLine();
     }
 
-    void PrepareImage(int width, int height, int num_of_channels,
+    void PrepareImage(int width,
+                      int height,
+                      int num_of_channels,
                       int bytes_per_channel) {
         width_ = width;
         height_ = height;
@@ -148,7 +150,8 @@ std::shared_ptr<Image> DilateImage(const Image &input,
 
 /// Function to linearly transform pixel intensities
 /// image_new = scale * image + offset
-void LinearTransformImage(Image &input, double scale = 1.0,
+void LinearTransformImage(Image &input,
+                          double scale = 1.0,
                           double offset = 0.0);
 
 /// Function to clipping pixel intensities
@@ -170,7 +173,8 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
                                 Image::FilterType type);
 
 /// Function to create image pyramid
-ImagePyramid CreateImagePyramid(const Image &image, size_t num_of_levels,
+ImagePyramid CreateImagePyramid(const Image &image,
+                                size_t num_of_levels,
                                 bool with_gaussian_filter = true);
 
 /// Function to create a depthmap boundary mask from depth image

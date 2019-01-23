@@ -38,7 +38,8 @@ class VisualizerForAlignment : public Visualizer {
                            VisualizerWithEditing &target,
                            double voxel_size = -1.0,
                            double max_correspondence_distance = -1.0,
-                           bool with_scaling = true, bool use_dialog = true,
+                           bool with_scaling = true,
+                           bool use_dialog = true,
                            const std::string &polygon_filename = "",
                            const std::string &directory = "")
         : source_visualizer_(source),
@@ -57,7 +58,10 @@ class VisualizerForAlignment : public Visualizer {
                             std::shared_ptr<PointCloud> target);
 
   protected:
-    void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
+    void KeyPressCallback(GLFWwindow *window,
+                          int key,
+                          int scancode,
+                          int action,
                           int mods) override;
     bool SaveSessionToFile(const std::string &filename);
     bool LoadSessionFromFile(const std::string &filename);

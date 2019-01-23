@@ -28,7 +28,8 @@
 
 namespace pybind11 {
 
-template <typename Vector, typename holder_type = std::unique_ptr<Vector>,
+template <typename Vector,
+          typename holder_type = std::unique_ptr<Vector>,
           typename... Args>
 py::class_<Vector, holder_type> bind_vector_without_repr(
         py::module &m, std::string const &name, Args &&... args) {
@@ -115,7 +116,8 @@ void pybind_eigen_vector_of_scalar(py::module &m,
 }
 
 template <typename EigenVector, typename InitFunc>
-void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
+void pybind_eigen_vector_of_vector(py::module &m,
+                                   const std::string &bind_name,
                                    const std::string &repr_name,
                                    InitFunc init_func) {
     typedef typename EigenVector::Scalar Scalar;
@@ -180,7 +182,8 @@ void pybind_eigen_vector_of_vector(py::module &m, const std::string &bind_name,
 }
 
 template <typename EigenMatrix>
-void pybind_eigen_vector_of_matrix(py::module &m, const std::string &bind_name,
+void pybind_eigen_vector_of_matrix(py::module &m,
+                                   const std::string &bind_name,
                                    const std::string &repr_name) {
     typedef typename EigenMatrix::Scalar Scalar;
     typedef typename Eigen::aligned_allocator<EigenMatrix> EigenAllocator;

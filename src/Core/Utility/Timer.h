@@ -60,8 +60,10 @@ class ScopeTimer : public Timer {
 
 class FPSTimer : public Timer {
   public:
-    FPSTimer(const std::string &fps_timer_info = "", int expectation = -1,
-             double time_to_print = 3000.0, int events_to_print = 100);
+    FPSTimer(const std::string &fps_timer_info = "",
+             int expectation = -1,
+             double time_to_print = 3000.0,
+             int events_to_print = 100);
 
     /// Function to signal an event
     /// It automatically prints FPS information when duration is more than

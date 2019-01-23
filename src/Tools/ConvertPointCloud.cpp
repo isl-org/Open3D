@@ -66,7 +66,9 @@ void PrintHelp() {
     // clang-format on
 }
 
-void convert(int argc, char **argv, const std::string &file_in,
+void convert(int argc,
+             char **argv,
+             const std::string &file_in,
              const std::string &file_out) {
     using namespace open3d;
     using namespace open3d::filesystem;

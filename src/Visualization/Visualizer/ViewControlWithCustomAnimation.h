@@ -88,7 +88,8 @@ class ViewControlWithCustomAnimation : public ViewControl {
   protected:
     size_t CurrentFrame() const { return (size_t)round(current_frame_); }
     size_t CurrentKeyframe() const { return (size_t)round(current_keyframe_); }
-    double RegularizeFrameIndex(double current_frame, size_t num_of_frames,
+    double RegularizeFrameIndex(double current_frame,
+                                size_t num_of_frames,
                                 bool is_loop);
     void SetViewControlFromTrajectory();
 

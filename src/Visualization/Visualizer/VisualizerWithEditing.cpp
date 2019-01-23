@@ -263,9 +263,8 @@ bool VisualizerWithEditing::InitRenderOption() {
     return true;
 }
 
-void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window, int key,
-                                             int scancode, int action,
-                                             int mods) {
+void VisualizerWithEditing::KeyPressCallback(
+        GLFWwindow *window, int key, int scancode, int action, int mods) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     auto &option = (RenderOptionWithEditing &)(*render_option_ptr_);
     if (action == GLFW_RELEASE) {
@@ -456,13 +455,15 @@ void VisualizerWithEditing::KeyPressCallback(GLFWwindow *window, int key,
     UpdateWindowTitle();
 }
 
-void VisualizerWithEditing::WindowResizeCallback(GLFWwindow *window, int w,
+void VisualizerWithEditing::WindowResizeCallback(GLFWwindow *window,
+                                                 int w,
                                                  int h) {
     InvalidateSelectionPolygon();
     Visualizer::WindowResizeCallback(window, w, h);
 }
 
-void VisualizerWithEditing::MouseMoveCallback(GLFWwindow *window, double x,
+void VisualizerWithEditing::MouseMoveCallback(GLFWwindow *window,
+                                              double x,
                                               double y) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     if (view_control.IsLocked()) {
@@ -489,7 +490,8 @@ void VisualizerWithEditing::MouseMoveCallback(GLFWwindow *window, double x,
     }
 }
 
-void VisualizerWithEditing::MouseScrollCallback(GLFWwindow *window, double x,
+void VisualizerWithEditing::MouseScrollCallback(GLFWwindow *window,
+                                                double x,
                                                 double y) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     if (view_control.IsLocked()) {
@@ -498,8 +500,10 @@ void VisualizerWithEditing::MouseScrollCallback(GLFWwindow *window, double x,
     }
 }
 
-void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window, int button,
-                                                int action, int mods) {
+void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
+                                                int button,
+                                                int action,
+                                                int mods) {
     auto &view_control = (ViewControlWithEditing &)(*view_control_ptr_);
     if (view_control.IsLocked() && selection_polygon_ptr_ &&
         selection_polygon_renderer_ptr_) {

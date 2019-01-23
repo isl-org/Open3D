@@ -38,7 +38,8 @@ static const int TAB_SIZE = 4;
 
 // Print a Matrix<T, M, N>.
 template <class T, int M, int N>
-void Print(const Eigen::Matrix<T, M, N>& matrix, const int& tabs = 1,
+void Print(const Eigen::Matrix<T, M, N>& matrix,
+           const int& tabs = 1,
            const char& terminator = ';') {
     int precision = 0;
     int width = 5;
@@ -73,7 +74,8 @@ void Print(const Eigen::Matrix<T, M, N>& matrix, const int& tabs = 1,
 
 // Print a vector of Matrix<T, M, N>.
 template <class T, int M, int N>
-void Print(const std::vector<Eigen::Matrix<T, M, N>>& v, const int& tabs = 1,
+void Print(const std::vector<Eigen::Matrix<T, M, N>>& v,
+           const int& tabs = 1,
            const char& terminator = ';') {
     std::cout << std::setw(tabs * TAB_SIZE) << "{";
     std::cout << std::endl;

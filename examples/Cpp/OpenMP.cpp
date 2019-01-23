@@ -180,7 +180,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 }
 
-inline void ComputeSomething(int i, Eigen::Vector6d &A_r, double &r,
+inline void ComputeSomething(int i,
+                             Eigen::Vector6d &A_r,
+                             double &r,
                              std::vector<Eigen::Vector3d> &data) {
     const Eigen::Vector3d &vs = data[i];
     const Eigen::Vector3d &vt = data[i];

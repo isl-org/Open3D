@@ -43,9 +43,11 @@ class ImageShader : public ShaderWrapper {
   protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+    bool BindGeometry(const Geometry &geometry,
+                      const RenderOption &option,
                       const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+    bool RenderGeometry(const Geometry &geometry,
+                        const RenderOption &option,
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
@@ -55,7 +57,8 @@ class ImageShader : public ShaderWrapper {
                                   const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
                                 const RenderOption &option,
-                                const ViewControl &view, Image &image) = 0;
+                                const ViewControl &view,
+                                Image &image) = 0;
 
   protected:
     GLuint vertex_position_;

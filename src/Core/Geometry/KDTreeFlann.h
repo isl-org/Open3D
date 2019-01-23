@@ -61,19 +61,27 @@ class KDTreeFlann {
     bool SetFeature(const Feature &feature);
 
     template <typename T>
-    int Search(const T &query, const KDTreeSearchParam &param,
-               std::vector<int> &indices, std::vector<double> &distance2) const;
+    int Search(const T &query,
+               const KDTreeSearchParam &param,
+               std::vector<int> &indices,
+               std::vector<double> &distance2) const;
 
     template <typename T>
-    int SearchKNN(const T &query, int knn, std::vector<int> &indices,
+    int SearchKNN(const T &query,
+                  int knn,
+                  std::vector<int> &indices,
                   std::vector<double> &distance2) const;
 
     template <typename T>
-    int SearchRadius(const T &query, double radius, std::vector<int> &indices,
+    int SearchRadius(const T &query,
+                     double radius,
+                     std::vector<int> &indices,
                      std::vector<double> &distance2) const;
 
     template <typename T>
-    int SearchHybrid(const T &query, double radius, int max_nn,
+    int SearchHybrid(const T &query,
+                     double radius,
+                     int max_nn,
                      std::vector<int> &indices,
                      std::vector<double> &distance2) const;
 

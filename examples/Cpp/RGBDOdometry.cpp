@@ -40,8 +40,10 @@ void PrintHelp() {
 }
 
 std::shared_ptr<RGBDImage> ReadRGBDImage(
-        const char* color_filename, const char* depth_filename,
-        const PinholeCameraIntrinsic& intrinsic, bool visualize) {
+        const char* color_filename,
+        const char* depth_filename,
+        const PinholeCameraIntrinsic& intrinsic,
+        bool visualize) {
     Image color, depth;
     ReadImage(color_filename, color);
     ReadImage(depth_filename, depth);

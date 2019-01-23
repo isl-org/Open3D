@@ -74,7 +74,8 @@ class LineSet : public Geometry3D {
 /// Factory function to create a lineset from two pointclouds and a
 /// correspondence set (LineSetFactory.cpp)
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-        const PointCloud &cloud0, const PointCloud &cloud1,
+        const PointCloud &cloud0,
+        const PointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences);
 
 }  // namespace open3d

@@ -41,13 +41,13 @@ class PinholeCameraIntrinsic : public IJsonConvertible {
   public:
     PinholeCameraIntrinsic();
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);
-    PinholeCameraIntrinsic(int width, int height, double fx, double fy,
-                           double cx, double cy);
+    PinholeCameraIntrinsic(
+            int width, int height, double fx, double fy, double cx, double cy);
     ~PinholeCameraIntrinsic() override;
 
   public:
-    void SetIntrinsics(int width, int height, double fx, double fy, double cx,
-                       double cy) {
+    void SetIntrinsics(
+            int width, int height, double fx, double fy, double cx, double cy) {
         width_ = width;
         height_ = height;
         intrinsic_matrix_.setIdentity();

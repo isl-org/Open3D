@@ -94,7 +94,9 @@ class ViewControl {
     /// cursor started to move from.
     /// Coordinates are measured in screen coordinates relative to the top-left
     /// corner of the window client area.
-    virtual void Translate(double x, double y, double xo = 0.0,
+    virtual void Translate(double x,
+                           double y,
+                           double xo = 0.0,
                            double yo = 0.0);
 
     // Function to process rolling

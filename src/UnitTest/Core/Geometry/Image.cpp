@@ -233,7 +233,8 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
 void TEST_CreateFloatImageFromImage(
-        const int& num_of_channels, const int& bytes_per_channel,
+        const int& num_of_channels,
+        const int& bytes_per_channel,
         const vector<uint8_t>& ref,
         const Image::ColorToIntensityConversionType& type) {
     Image image;

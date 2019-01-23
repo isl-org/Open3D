@@ -54,11 +54,16 @@ class RGBDOdometryJacobian {
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-            std::vector<double> &r, const RGBDImage &source,
-            const RGBDImage &target, const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
+            const RGBDImage &source,
+            const RGBDImage &target,
+            const Image &source_xyz,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
+            const Eigen::Matrix3d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const = 0;
 };
 
@@ -75,11 +80,16 @@ class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 
   public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-            std::vector<double> &r, const RGBDImage &source,
-            const RGBDImage &target, const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
+            const RGBDImage &source,
+            const RGBDImage &target,
+            const Image &source_xyz,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
+            const Eigen::Matrix3d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
@@ -95,11 +105,16 @@ class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 
   public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-            std::vector<double> &r, const RGBDImage &source,
-            const RGBDImage &target, const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
+            const RGBDImage &source,
+            const RGBDImage &target,
+            const Image &source_xyz,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
+            const Eigen::Matrix3d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 

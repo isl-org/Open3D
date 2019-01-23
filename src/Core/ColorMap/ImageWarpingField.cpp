@@ -33,7 +33,8 @@ namespace open3d {
 
 ImageWarpingField::ImageWarpingField() { InitializeWarpingFields(0, 0, 0); }
 
-ImageWarpingField::ImageWarpingField(int width, int height,
+ImageWarpingField::ImageWarpingField(int width,
+                                     int height,
                                      int number_of_vertical_anchors) {
     InitializeWarpingFields(width, height, number_of_vertical_anchors);
 }

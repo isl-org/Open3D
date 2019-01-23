@@ -30,11 +30,15 @@
 
 namespace open3d {
 
-template <typename VecInTypeDouble, typename VecInTypeInt, typename MatOutType,
+template <typename VecInTypeDouble,
+          typename VecInTypeInt,
+          typename MatOutType,
           typename VecOutType>
 std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
         std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
-        int iteration_num, int nonrigidval, bool verbose /*=true*/) {
+        int iteration_num,
+        int nonrigidval,
+        bool verbose /*=true*/) {
     MatOutType JTJ(6 + nonrigidval, 6 + nonrigidval);
     VecOutType JTr(6 + nonrigidval);
     double r2_sum = 0.0;
@@ -86,9 +90,10 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
 }
 
 template std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeJTJandJTr(
-        std::function<void(int, Eigen::Vector14d &, double &,
-                           Eigen::Vector14i &)>
-                f,
-        int iteration_num, int nonrigidval, bool verbose);
+        std::function<
+                void(int, Eigen::Vector14d &, double &, Eigen::Vector14i &)> f,
+        int iteration_num,
+        int nonrigidval,
+        bool verbose);
 
 }  // namespace open3d

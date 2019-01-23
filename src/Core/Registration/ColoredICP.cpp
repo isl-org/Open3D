@@ -58,10 +58,12 @@ class TransformationEstimationForColoredICP : public TransformationEstimation {
     ~TransformationEstimationForColoredICP() override {}
 
   public:
-    double ComputeRMSE(const PointCloud &source, const PointCloud &target,
+    double ComputeRMSE(const PointCloud &source,
+                       const PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source, const PointCloud &target,
+            const PointCloud &source,
+            const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
   public:
@@ -137,7 +139,8 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
 }
 
 Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false ||
         target.HasColors() == false || source.HasColors() == false)
@@ -205,7 +208,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 }
 
 double TransformationEstimationForColoredICP::ComputeRMSE(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         const CorrespondenceSet &corres) const {
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;
@@ -239,7 +243,9 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 }  // unnamed namespace
 
 RegistrationResult RegistrationColoredICP(
-        const PointCloud &source, const PointCloud &target, double max_distance,
+        const PointCloud &source,
+        const PointCloud &target,
+        double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
         double lambda_geometric /* = 0.968*/) {

@@ -44,9 +44,11 @@ class SimpleShader : public ShaderWrapper {
   protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
+    bool BindGeometry(const Geometry &geometry,
+                      const RenderOption &option,
                       const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
+    bool RenderGeometry(const Geometry &geometry,
+                        const RenderOption &option,
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
@@ -73,9 +75,11 @@ class SimpleShaderForPointCloud : public SimpleShader {
     SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
 
   protected:
-    bool PrepareRendering(const Geometry &geometry, const RenderOption &option,
+    bool PrepareRendering(const Geometry &geometry,
+                          const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry, const RenderOption &option,
+    bool PrepareBinding(const Geometry &geometry,
+                        const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
                         std::vector<Eigen::Vector3f> &colors) final;
@@ -86,9 +90,11 @@ class SimpleShaderForLineSet : public SimpleShader {
     SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
 
   protected:
-    bool PrepareRendering(const Geometry &geometry, const RenderOption &option,
+    bool PrepareRendering(const Geometry &geometry,
+                          const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry, const RenderOption &option,
+    bool PrepareBinding(const Geometry &geometry,
+                        const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
                         std::vector<Eigen::Vector3f> &colors) final;
@@ -100,9 +106,11 @@ class SimpleShaderForTriangleMesh : public SimpleShader {
         : SimpleShader("SimpleShaderForTriangleMesh") {}
 
   protected:
-    bool PrepareRendering(const Geometry &geometry, const RenderOption &option,
+    bool PrepareRendering(const Geometry &geometry,
+                          const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry, const RenderOption &option,
+    bool PrepareBinding(const Geometry &geometry,
+                        const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
                         std::vector<Eigen::Vector3f> &colors) final;
@@ -113,9 +121,11 @@ class SimpleShaderForVoxelGrid : public SimpleShader {
     SimpleShaderForVoxelGrid() : SimpleShader("SimpleShaderForVoxelGrid") {}
 
   protected:
-    bool PrepareRendering(const Geometry &geometry, const RenderOption &option,
+    bool PrepareRendering(const Geometry &geometry,
+                          const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry, const RenderOption &option,
+    bool PrepareBinding(const Geometry &geometry,
+                        const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
                         std::vector<Eigen::Vector3f> &colors) final;

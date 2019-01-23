@@ -33,7 +33,8 @@
 namespace open3d {
 
 bool CorrespondenceCheckerBasedOnEdgeLength::Check(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d & /*transformation*/) const {
     for (auto i = 0; i < corres.size(); i++) {
@@ -55,7 +56,8 @@ bool CorrespondenceCheckerBasedOnEdgeLength::Check(
 }
 
 bool CorrespondenceCheckerBasedOnDistance::Check(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     for (const auto &c : corres) {
@@ -71,7 +73,8 @@ bool CorrespondenceCheckerBasedOnDistance::Check(
 }
 
 bool CorrespondenceCheckerBasedOnNormal::Check(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     if (source.HasNormals() == false || target.HasNormals() == false) {

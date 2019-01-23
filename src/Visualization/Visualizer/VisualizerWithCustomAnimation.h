@@ -42,7 +42,8 @@ class VisualizerWithCustomAnimation : public Visualizer {
   public:
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
-    void Play(bool recording = false, bool recording_depth = false,
+    void Play(bool recording = false,
+              bool recording_depth = false,
               bool close_window_when_animation_ends = false);
     void RegisterRecordingImageFormat(const std::string &basedir,
                                       const std::string &format,
@@ -63,9 +64,14 @@ class VisualizerWithCustomAnimation : public Visualizer {
     bool InitViewControl() override;
     void MouseMoveCallback(GLFWwindow *window, double x, double y) override;
     void MouseScrollCallback(GLFWwindow *window, double x, double y) override;
-    void MouseButtonCallback(GLFWwindow *window, int button, int action,
+    void MouseButtonCallback(GLFWwindow *window,
+                             int button,
+                             int action,
                              int mods) override;
-    void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
+    void KeyPressCallback(GLFWwindow *window,
+                          int key,
+                          int scancode,
+                          int action,
                           int mods) override;
 
   protected:

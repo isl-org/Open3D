@@ -48,7 +48,10 @@ class VisualizerWithKeyCallback : public Visualizer {
                              std::function<bool(Visualizer *)> callback);
 
   protected:
-    void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
+    void KeyPressCallback(GLFWwindow *window,
+                          int key,
+                          int scancode,
+                          int action,
                           int mods) override;
     std::string PrintKeyToString(int key);
 

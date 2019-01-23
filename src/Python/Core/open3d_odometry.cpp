@@ -39,11 +39,16 @@ class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase {
   public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-            std::vector<double> &r, const RGBDImage &source,
-            const RGBDImage &target, const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
-            const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<double> &r,
+            const RGBDImage &source,
+            const RGBDImage &target,
+            const Image &source_xyz,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
+            const Eigen::Matrix3d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override {
         PYBIND11_OVERLOAD_PURE(void, RGBDOdometryJacobianBase, row, J_r, r,
                                source, target, source_xyz, target_dx, target_dy,

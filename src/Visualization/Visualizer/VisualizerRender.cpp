@@ -359,7 +359,8 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
 }
 
 void Visualizer::CaptureDepthPointCloud(
-        const std::string &filename /* = ""*/, bool do_render /* = true*/,
+        const std::string &filename /* = ""*/,
+        bool do_render /* = true*/,
         bool convert_to_world_coordinate /* = false*/) {
     std::string ply_filename = filename;
     std::string camera_filename;

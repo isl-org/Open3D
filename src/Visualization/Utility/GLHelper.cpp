@@ -33,7 +33,8 @@ namespace open3d {
 
 namespace GLHelper {
 
-GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
+GLMatrix4f LookAt(const Eigen::Vector3d &eye,
+                  const Eigen::Vector3d &lookat,
                   const Eigen::Vector3d &up) {
     Eigen::Vector3d front_dir = (eye - lookat).normalized();
     Eigen::Vector3d up_dir = up.normalized();
@@ -51,7 +52,9 @@ GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
     return mat.cast<GLfloat>();
 }
 
-GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near,
+GLMatrix4f Perspective(double field_of_view_,
+                       double aspect,
+                       double z_near,
                        double z_far) {
     Eigen::Matrix4d mat = Eigen::Matrix4d::Zero();
     double fov_rad = field_of_view_ / 180.0 * M_PI;
@@ -64,8 +67,12 @@ GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near,
     return mat.cast<GLfloat>();
 }
 
-GLMatrix4f Ortho(double left, double right, double bottom, double top,
-                 double z_near, double z_far) {
+GLMatrix4f Ortho(double left,
+                 double right,
+                 double bottom,
+                 double top,
+                 double z_near,
+                 double z_far) {
     Eigen::Matrix4d mat = Eigen::Matrix4d::Zero();
     mat(0, 0) = 2.0 / (right - left);
     mat(1, 1) = 2.0 / (top - bottom);
@@ -78,7 +85,8 @@ GLMatrix4f Ortho(double left, double right, double bottom, double top,
 }
 
 Eigen::Vector3d Project(const Eigen::Vector3d &point,
-                        const GLMatrix4f &mvp_matrix, const int width,
+                        const GLMatrix4f &mvp_matrix,
+                        const int width,
                         const int height) {
     Eigen::Vector4d pos = mvp_matrix.cast<double>() *
                           Eigen::Vector4d(point(0), point(1), point(2), 1.0);
@@ -92,7 +100,8 @@ Eigen::Vector3d Project(const Eigen::Vector3d &point,
 }
 
 Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
-                          const GLMatrix4f &mvp_matrix, const int width,
+                          const GLMatrix4f &mvp_matrix,
+                          const int width,
                           const int height) {
     Eigen::Vector4d point =
             mvp_matrix.cast<double>().inverse() *

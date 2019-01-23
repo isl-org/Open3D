@@ -28,7 +28,8 @@
 
 namespace open3d {
 
-void SplitString(std::vector<std::string> &tokens, const std::string &str,
+void SplitString(std::vector<std::string> &tokens,
+                 const std::string &str,
                  const std::string &delimiters /* = " "*/,
                  bool trim_empty_str /* = true*/) {
     std::string::size_type pos = 0, new_pos = 0, last_pos = 0;

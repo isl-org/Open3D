@@ -65,7 +65,8 @@ class ScalableTSDFVolume : public TSDFVolume {
     };
 
   public:
-    ScalableTSDFVolume(double voxel_length, double sdf_trunc,
+    ScalableTSDFVolume(double voxel_length,
+                       double sdf_trunc,
                        TSDFVolumeColorType color_type,
                        int volume_unit_resolution = 16,
                        int depth_sampling_stride = 4);
@@ -88,7 +89,8 @@ class ScalableTSDFVolume : public TSDFVolume {
     /// Assume the index of the volume unit is (x, y, z), then the unit spans
     /// from (x, y, z) * volume_unit_length_
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
-    std::unordered_map<Eigen::Vector3i, VolumeUnit,
+    std::unordered_map<Eigen::Vector3i,
+                       VolumeUnit,
                        hash_eigen::hash<Eigen::Vector3i>>
             volume_units_;
 

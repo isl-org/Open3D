@@ -104,7 +104,8 @@ GetRelativePoses(const PoseGraph &pose_graph, int edge_id) {
 }
 
 std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetJacobian(
-        const Eigen::Matrix4d &X_inv, const Eigen::Matrix4d &Ts,
+        const Eigen::Matrix4d &X_inv,
+        const Eigen::Matrix4d &Ts,
         const Eigen::Matrix4d &Tt_inv) {
     Eigen::Matrix6d Js = Eigen::Matrix6d::Zero();
     for (int i = 0; i < 6; i++) {
@@ -121,7 +122,8 @@ std::tuple<Eigen::Matrix6d, Eigen::Matrix6d> GetJacobian(
 
 /// Function to update line_process value defined in [Choi et al 2015]
 /// See Eq (2). temp2 value in this function is derived from dE/dl = 0
-int UpdateConfidence(PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
+int UpdateConfidence(PoseGraph &pose_graph,
+                     const Eigen::VectorXd &zeta,
                      const double line_process_weight,
                      const GlobalOptimizationOption &option) {
     int n_edges = (int)pose_graph.edges_.size();
@@ -142,7 +144,8 @@ int UpdateConfidence(PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
 }
 
 /// Function to compute residual defined in [Choi et al 2015] See Eq (9).
-double ComputeResidual(const PoseGraph &pose_graph, const Eigen::VectorXd &zeta,
+double ComputeResidual(const PoseGraph &pose_graph,
+                       const Eigen::VectorXd &zeta,
                        const double line_process_weight,
                        const GlobalOptimizationOption &option) {
     int n_edges = (int)pose_graph.edges_.size();
@@ -261,7 +264,8 @@ bool CheckRightTerm(const Eigen::VectorXd &right_term,
 }
 
 bool CheckRelativeIncrement(
-        const Eigen::VectorXd &delta, const Eigen::VectorXd &x,
+        const Eigen::VectorXd &delta,
+        const Eigen::VectorXd &x,
         const GlobalOptimizationConvergenceCriteria &criteria) {
     if (delta.norm() < criteria.min_relative_increment_ *
                                (x.norm() + criteria.min_relative_increment_)) {
@@ -274,7 +278,8 @@ bool CheckRelativeIncrement(
 }
 
 bool CheckRelativeResidualIncrement(
-        double current_residual, double new_residual,
+        double current_residual,
+        double new_residual,
         const GlobalOptimizationConvergenceCriteria &criteria) {
     if (current_residual - new_residual <
         criteria.min_relative_residual_increment_ * current_residual) {

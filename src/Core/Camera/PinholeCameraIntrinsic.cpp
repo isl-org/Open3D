@@ -35,9 +35,8 @@ namespace open3d {
 PinholeCameraIntrinsic::PinholeCameraIntrinsic()
     : width_(-1), height_(-1), intrinsic_matrix_(Eigen::Matrix3d::Zero()) {}
 
-PinholeCameraIntrinsic::PinholeCameraIntrinsic(int width, int height, double fx,
-                                               double fy, double cx,
-                                               double cy) {
+PinholeCameraIntrinsic::PinholeCameraIntrinsic(
+        int width, int height, double fx, double fy, double cx, double cy) {
     SetIntrinsics(width, height, fx, fy, cx, cy);
 }
 

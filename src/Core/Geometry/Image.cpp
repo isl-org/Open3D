@@ -55,7 +55,8 @@ Eigen::Vector2d Image::GetMaxBound() const {
     return Eigen::Vector2d(width_, height_);
 }
 
-bool Image::TestImageBoundary(double u, double v,
+bool Image::TestImageBoundary(double u,
+                              double v,
                               double inner_margin /* = 0.0 */) const {
     return (u >= inner_margin && u < width_ - inner_margin &&
             v >= inner_margin && v < height_ - inner_margin);
@@ -100,11 +101,14 @@ T *PointerAt(const Image &image, int u, int v, int ch) {
 template float *PointerAt<float>(const Image &image, int u, int v, int ch);
 template int *PointerAt<int>(const Image &image, int u, int v, int ch);
 template uint8_t *PointerAt<uint8_t>(const Image &image, int u, int v, int ch);
-template uint16_t *PointerAt<uint16_t>(const Image &image, int u, int v,
+template uint16_t *PointerAt<uint16_t>(const Image &image,
+                                       int u,
+                                       int v,
                                        int ch);
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(
-        const Image &depth, double depth_scale /* = 1000.0*/,
+        const Image &depth,
+        double depth_scale /* = 1000.0*/,
         double depth_trunc /* = 3.0*/) {
     // don't need warning message about image type
     // as we call CreateFloatImageFromImage
@@ -119,7 +123,8 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(
     return output;
 }
 
-void ClipIntensityImage(Image &input, double min /* = 0.0*/,
+void ClipIntensityImage(Image &input,
+                        double min /* = 0.0*/,
                         double max /* = 1.0*/) {
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[ClipIntensityImage] Unsupported image format.\n");
@@ -134,7 +139,8 @@ void ClipIntensityImage(Image &input, double min /* = 0.0*/,
     }
 }
 
-void LinearTransformImage(Image &input, double scale,
+void LinearTransformImage(Image &input,
+                          double scale,
                           double offset /* = 0.0*/) {
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[LinearTransformImage] Unsupported image format.\n");

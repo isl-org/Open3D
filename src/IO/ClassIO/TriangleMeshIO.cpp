@@ -35,15 +35,17 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, TriangleMesh &)>>
+        std::string,
+        std::function<bool(const std::string &, TriangleMesh &)>>
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
         };
 
-static const std::unordered_map<
-        std::string,
-        std::function<bool(const std::string &, const TriangleMesh &,
-                           const bool, const bool)>>
+static const std::unordered_map<std::string,
+                                std::function<bool(const std::string &,
+                                                   const TriangleMesh &,
+                                                   const bool,
+                                                   const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"ply", WriteTriangleMeshToPLY},
         };
@@ -80,7 +82,8 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh) {
     return success;
 }
 
-bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
+bool WriteTriangleMesh(const std::string &filename,
+                       const TriangleMesh &mesh,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     std::string filename_ext =

@@ -35,7 +35,8 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, Image &)>>
+        std::string,
+        std::function<bool(const std::string &, Image &)>>
         file_extension_to_image_read_function{
                 {"png", ReadImageFromPNG},
                 {"jpg", ReadImageFromJPG},
@@ -74,7 +75,8 @@ bool ReadImage(const std::string &filename, Image &image) {
     return map_itr->second(filename, image);
 }
 
-bool WriteImage(const std::string &filename, const Image &image,
+bool WriteImage(const std::string &filename,
+                const Image &image,
                 int quality /* = 90*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);

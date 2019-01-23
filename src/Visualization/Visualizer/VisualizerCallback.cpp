@@ -77,7 +77,9 @@ void Visualizer::MouseScrollCallback(GLFWwindow *window, double x, double y) {
     is_redraw_required_ = true;
 }
 
-void Visualizer::MouseButtonCallback(GLFWwindow *window, int button, int action,
+void Visualizer::MouseButtonCallback(GLFWwindow *window,
+                                     int button,
+                                     int action,
                                      int mods) {
     double x, y;
     glfwGetCursorPos(window, &x, &y);
@@ -107,8 +109,8 @@ void Visualizer::MouseButtonCallback(GLFWwindow *window, int button, int action,
     }
 }
 
-void Visualizer::KeyPressCallback(GLFWwindow *window, int key, int scancode,
-                                  int action, int mods) {
+void Visualizer::KeyPressCallback(
+        GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
     }

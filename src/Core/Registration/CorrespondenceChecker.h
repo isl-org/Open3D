@@ -50,7 +50,8 @@ class CorrespondenceChecker {
   public:
     /// Function to check if two points can be aligned. The two input point
     /// clouds must have exact the same number of points.
-    virtual bool Check(const PointCloud &source, const PointCloud &target,
+    virtual bool Check(const PointCloud &source,
+                       const PointCloud &target,
                        const CorrespondenceSet &corres,
                        const Eigen::Matrix4d &transformation) const = 0;
 
@@ -71,7 +72,8 @@ class CorrespondenceCheckerBasedOnEdgeLength : public CorrespondenceChecker {
     ~CorrespondenceCheckerBasedOnEdgeLength() override {}
 
   public:
-    bool Check(const PointCloud &source, const PointCloud &target,
+    bool Check(const PointCloud &source,
+               const PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
@@ -88,7 +90,8 @@ class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
     ~CorrespondenceCheckerBasedOnDistance() override {}
 
   public:
-    bool Check(const PointCloud &source, const PointCloud &target,
+    bool Check(const PointCloud &source,
+               const PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
@@ -105,7 +108,8 @@ class CorrespondenceCheckerBasedOnNormal : public CorrespondenceChecker {
     ~CorrespondenceCheckerBasedOnNormal() override {}
 
   public:
-    bool Check(const PointCloud &source, const PointCloud &target,
+    bool Check(const PointCloud &source,
+               const PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 

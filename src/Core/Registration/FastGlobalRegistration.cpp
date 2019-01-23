@@ -232,7 +232,8 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
 
 Eigen::Matrix4d OptimizePairwiseRegistration(
         const std::vector<PointCloud>& point_cloud_vec,
-        const std::vector<std::pair<int, int>>& corres, double scale_start,
+        const std::vector<std::pair<int, int>>& corres,
+        double scale_start,
         const FastGlobalRegistrationOption& option) {
     PrintDebug("Pairwise rigid pose optimization\n");
     double par = scale_start;
@@ -332,8 +333,10 @@ Eigen::Matrix4d GetTransformationOriginalScale(
 }  // unnamed namespace
 
 RegistrationResult FastGlobalRegistration(
-        const PointCloud& source, const PointCloud& target,
-        const Feature& source_feature, const Feature& target_feature,
+        const PointCloud& source,
+        const PointCloud& target,
+        const Feature& source_feature,
+        const Feature& target_feature,
         const FastGlobalRegistrationOption& option /* =
         FastGlobalRegistrationOption()*/) {
     std::vector<PointCloud> point_cloud_vec;

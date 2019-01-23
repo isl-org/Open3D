@@ -102,7 +102,8 @@ struct hash : std::unary_function<T, size_t> {
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
-void SplitString(std::vector<std::string>& tokens, const std::string& str,
+void SplitString(std::vector<std::string>& tokens,
+                 const std::string& str,
                  const std::string& delimiters = " ",
                  bool trim_empty_str = true);
 

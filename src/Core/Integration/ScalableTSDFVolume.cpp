@@ -35,7 +35,8 @@
 
 namespace open3d {
 
-ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length, double sdf_trunc,
+ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length,
+                                       double sdf_trunc,
                                        TSDFVolumeColorType color_type,
                                        int volume_unit_resolution /* = 16*/,
                                        int depth_sampling_stride /* = 4*/)

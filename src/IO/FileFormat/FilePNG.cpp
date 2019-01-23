@@ -72,7 +72,8 @@ bool ReadImageFromPNG(const std::string &filename, Image &image) {
     return true;
 }
 
-bool WriteImageToPNG(const std::string &filename, const Image &image,
+bool WriteImageToPNG(const std::string &filename,
+                     const Image &image,
                      int quality) {
     if (image.HasData() == false) {
         PrintWarning("Write PNG failed: image has no data.\n");

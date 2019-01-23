@@ -129,8 +129,10 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForPointCloud::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
@@ -193,8 +195,10 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForLineSet::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::LineSet) {
         PrintShaderWarning("Rendering type is not LineSet.");
@@ -249,8 +253,10 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForTriangleMesh::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not TriangleMesh.");
@@ -323,8 +329,10 @@ bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForVoxelGrid::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
         PrintShaderWarning("Rendering type is not VoxelGrid.");

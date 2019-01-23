@@ -82,7 +82,8 @@ void VisualizerWithCustomAnimation::UpdateWindowTitle() {
 }
 
 void VisualizerWithCustomAnimation::Play(
-        bool recording /* = false*/, bool recording_depth /* = false*/,
+        bool recording /* = false*/,
+        bool recording_depth /* = false*/,
         bool close_window_when_animation_ends /* = false*/) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.NumOfFrames() == 0) {
@@ -165,9 +166,8 @@ bool VisualizerWithCustomAnimation::InitViewControl() {
     return true;
 }
 
-void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
-                                                     int key, int scancode,
-                                                     int action, int mods) {
+void VisualizerWithCustomAnimation::KeyPressCallback(
+        GLFWwindow *window, int key, int scancode, int action, int mods) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (action == GLFW_RELEASE || view_control.IsPlaying()) {
         return;
@@ -263,7 +263,8 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 }
 
 void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow *window,
-                                                      double x, double y) {
+                                                      double x,
+                                                      double y) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.IsPreviewing()) {
     } else if (view_control.IsPlaying()) {
@@ -273,7 +274,8 @@ void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow *window,
 }
 
 void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow *window,
-                                                        double x, double y) {
+                                                        double x,
+                                                        double y) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.IsPreviewing()) {
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
@@ -289,7 +291,8 @@ void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow *window,
 }
 
 void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow *window,
-                                                        int button, int action,
+                                                        int button,
+                                                        int action,
                                                         int mods) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.IsPreviewing()) {

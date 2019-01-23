@@ -89,7 +89,8 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 /// vector.
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType &, double &)> f, int iteration_num,
+        std::function<void(int, VecType &, double &)> f,
+        int iteration_num,
         bool verbose = true);
 
 /// Function to compute JTJ and Jtr
@@ -99,10 +100,11 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 /// vector.
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(
-                int, std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
-                std::vector<double> &)>
-                f,
-        int iteration_num, bool verbose = true);
+        std::function<
+                void(int,
+                     std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &)> f,
+        int iteration_num,
+        bool verbose = true);
 
 }  // namespace open3d

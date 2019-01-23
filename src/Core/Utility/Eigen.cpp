@@ -33,7 +33,8 @@ namespace open3d {
 
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
-        const Eigen::MatrixXd &A, const Eigen::VectorXd &b,
+        const Eigen::MatrixXd &A,
+        const Eigen::VectorXd &b,
         bool check_det /* = true */) {
     if (check_det) {
         bool solution_exist = true;
@@ -130,7 +131,8 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int, VecType &, double &)> f, int iteration_num,
+        std::function<void(int, VecType &, double &)> f,
+        int iteration_num,
         bool verbose /*=true*/) {
     MatType JTJ;
     VecType JTr;
@@ -177,11 +179,12 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(
-                int, std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
-                std::vector<double> &)>
-                f,
-        int iteration_num, bool verbose /*=true*/) {
+        std::function<
+                void(int,
+                     std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &)> f,
+        int iteration_num,
+        bool verbose /*=true*/) {
     MatType JTJ;
     VecType JTr;
     double r2_sum = 0.0;

@@ -93,16 +93,19 @@ class PointCloud : public Geometry3D {
 /// to support (fast) coarse point cloud extraction.
 /// Return an empty pointcloud if the conversion fails.
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
-        const Image &depth, const PinholeCameraIntrinsic &intrinsic,
+        const Image &depth,
+        const PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
-        double depth_scale = 1000.0, double depth_trunc = 1000.0,
+        double depth_scale = 1000.0,
+        double depth_trunc = 1000.0,
         int stride = 1);
 
 /// Factory function to create a pointcloud from an RGB-D image and a camera
 /// model (PointCloudFactory.cpp)
 /// Return an empty pointcloud if the conversion fails.
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
-        const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
+        const RGBDImage &image,
+        const PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
 
 /// Function to select points from \param input pointcloud into
@@ -122,7 +125,8 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
 /// Function to downsample using VoxelDownSample, but specialized for
 /// Surface convolution project. Experimental function.
 std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
-VoxelDownSampleAndTrace(const PointCloud &input, double voxel_size,
+VoxelDownSampleAndTrace(const PointCloud &input,
+                        double voxel_size,
                         const Eigen::Vector3d &min_bound,
                         const Eigen::Vector3d &max_bound,
                         bool approximate_class = false);
@@ -142,13 +146,15 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
 /// Function to remove points that have less than \param nb_points in a sphere
 /// of radius \param search_radius
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-RemoveRadiusOutliers(const PointCloud &input, size_t nb_points,
+RemoveRadiusOutliers(const PointCloud &input,
+                     size_t nb_points,
                      double search_radius);
 
 /// Function to remove points that are further away from their
 /// \param nb_neighbour neighbours in average.
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbours,
+RemoveStatisticalOutliers(const PointCloud &input,
+                          size_t nb_neighbours,
                           double std_ratio);
 
 /// Function to compute the normals of a point cloud
@@ -156,15 +162,17 @@ RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbours,
 /// Normals are oriented with respect to the input point cloud if normals exist
 /// in the input.
 /// \param search_param The KDTree search parameters
-bool EstimateNormals(PointCloud &cloud, const KDTreeSearchParam &search_param =
-                                                KDTreeSearchParamKNN());
+bool EstimateNormals(
+        PointCloud &cloud,
+        const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
 /// Function to orient the normals of a point cloud
 /// \param cloud is the input point cloud. It must have normals.
 /// Normals are oriented with respect to \param orientation_reference
 bool OrientNormalsToAlignWithDirection(
         PointCloud &cloud,
-        const Eigen::Vector3d &orientation_reference = Eigen::Vector3d(0.0, 0.0,
+        const Eigen::Vector3d &orientation_reference = Eigen::Vector3d(0.0,
+                                                                       0.0,
                                                                        1.0));
 
 /// Function to orient the normals of a point cloud

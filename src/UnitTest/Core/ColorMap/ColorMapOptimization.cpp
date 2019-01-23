@@ -46,9 +46,11 @@ visible to UnitTest.
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-vector<Image> GenerateImages(const int& width, const int& height,
+vector<Image> GenerateImages(const int& width,
+                             const int& height,
                              const int& num_of_channels,
-                             const int& bytes_per_channel, const size_t& size) {
+                             const int& bytes_per_channel,
+                             const size_t& size) {
     vector<Image> images;
     for (size_t i = 0; i < size; i++) {
         Image image;
@@ -88,7 +90,8 @@ vector<shared_ptr<Image>> GenerateSharedImages(const int& width,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-vector<RGBDImage> GenerateRGBDImages(const int& width, const int& height,
+vector<RGBDImage> GenerateRGBDImages(const int& width,
+                                     const int& height,
                                      const size_t& size) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
@@ -113,7 +116,8 @@ vector<RGBDImage> GenerateRGBDImages(const int& width, const int& height,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-PinholeCameraTrajectory GenerateCamera(const int& width, const int& height,
+PinholeCameraTrajectory GenerateCamera(const int& width,
+                                       const int& height,
                                        const Eigen::Vector3d& pose) {
     PinholeCameraTrajectory camera;
     camera.parameters_.resize(1);

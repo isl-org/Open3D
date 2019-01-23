@@ -51,27 +51,34 @@ class RGBDImage {
 
 /// Factory function to create an RGBD Image from color and depth Images
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
-        const Image &color, const Image &depth, double depth_scale = 1000.0,
-        double depth_trunc = 3.0, bool convert_rgb_to_intensity = true);
+        const Image &color,
+        const Image &depth,
+        double depth_scale = 1000.0,
+        double depth_trunc = 3.0,
+        bool convert_rgb_to_intensity = true);
 
 /// Factory function to create an RGBD Image from Redwood dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromRedwoodFormat(
-        const Image &color, const Image &depth,
+        const Image &color,
+        const Image &depth,
         bool convert_rgb_to_intensity = true);
 
 /// Factory function to create an RGBD Image from TUM dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromTUMFormat(
-        const Image &color, const Image &depth,
+        const Image &color,
+        const Image &depth,
         bool convert_rgb_to_intensity = true);
 
 /// Factory function to create an RGBD Image from SUN3D dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromSUNFormat(
-        const Image &color, const Image &depth,
+        const Image &color,
+        const Image &depth,
         bool convert_rgb_to_intensity = true);
 
 /// Factory function to create an RGBD Image from NYU dataset
 std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
-        const Image &color, const Image &depth,
+        const Image &color,
+        const Image &depth,
         bool convert_rgb_to_intensity = true);
 
 /// Typedef and functions for RGBDImagePyramid
@@ -81,7 +88,8 @@ RGBDImagePyramid FilterRGBDImagePyramid(
         const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type);
 
 RGBDImagePyramid CreateRGBDImagePyramid(
-        const RGBDImage &rgbd_image, size_t num_of_levels,
+        const RGBDImage &rgbd_image,
+        size_t num_of_levels,
         bool with_gaussian_filter_for_color = true,
         bool with_gaussian_filter_for_depth = false);
 

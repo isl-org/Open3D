@@ -79,7 +79,8 @@ bool KDTreeFlann::SetFeature(const Feature &feature) {
 }
 
 template <typename T>
-int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param,
+int KDTreeFlann::Search(const T &query,
+                        const KDTreeSearchParam &param,
                         std::vector<int> &indices,
                         std::vector<double> &distance2) const {
     switch (param.GetSearchType()) {
@@ -102,7 +103,9 @@ int KDTreeFlann::Search(const T &query, const KDTreeSearchParam &param,
 }
 
 template <typename T>
-int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
+int KDTreeFlann::SearchKNN(const T &query,
+                           int knn,
+                           std::vector<int> &indices,
                            std::vector<double> &distance2) const {
     // This is optimized code for heavily repeated search.
     // Other flann::Index::knnSearch() implementations lose performance due to
@@ -124,7 +127,8 @@ int KDTreeFlann::SearchKNN(const T &query, int knn, std::vector<int> &indices,
 }
 
 template <typename T>
-int KDTreeFlann::SearchRadius(const T &query, double radius,
+int KDTreeFlann::SearchRadius(const T &query,
+                              double radius,
                               std::vector<int> &indices,
                               std::vector<double> &distance2) const {
     // This is optimized code for heavily repeated search.
@@ -147,7 +151,9 @@ int KDTreeFlann::SearchRadius(const T &query, double radius,
 }
 
 template <typename T>
-int KDTreeFlann::SearchHybrid(const T &query, double radius, int max_nn,
+int KDTreeFlann::SearchHybrid(const T &query,
+                              double radius,
+                              int max_nn,
                               std::vector<int> &indices,
                               std::vector<double> &distance2) const {
     // This is optimized code for heavily repeated search.
@@ -192,30 +198,48 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
 }
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(
-        const Eigen::Vector3d &query, const open3d::KDTreeSearchParam &param,
-        std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::Vector3d &query,
+        const open3d::KDTreeSearchParam &param,
+        std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::Vector3d>(
-        const Eigen::Vector3d &query, int knn, std::vector<int> &indices,
+        const Eigen::Vector3d &query,
+        int knn,
+        std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
-        const Eigen::Vector3d &query, double radius, std::vector<int> &indices,
+        const Eigen::Vector3d &query,
+        double radius,
+        std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchHybrid<Eigen::Vector3d>(
-        const Eigen::Vector3d &query, double radius, int max_nn,
-        std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::Vector3d &query,
+        double radius,
+        int max_nn,
+        std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 
 template int KDTreeFlann::Search<Eigen::VectorXd>(
-        const Eigen::VectorXd &query, const open3d::KDTreeSearchParam &param,
-        std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::VectorXd &query,
+        const open3d::KDTreeSearchParam &param,
+        std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::VectorXd>(
-        const Eigen::VectorXd &query, int knn, std::vector<int> &indices,
+        const Eigen::VectorXd &query,
+        int knn,
+        std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::VectorXd>(
-        const Eigen::VectorXd &query, double radius, std::vector<int> &indices,
+        const Eigen::VectorXd &query,
+        double radius,
+        std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchHybrid<Eigen::VectorXd>(
-        const Eigen::VectorXd &query, double radius, int max_nn,
-        std::vector<int> &indices, std::vector<double> &distance2) const;
+        const Eigen::VectorXd &query,
+        double radius,
+        int max_nn,
+        std::vector<int> &indices,
+        std::vector<double> &distance2) const;
 
 }  // namespace open3d
 

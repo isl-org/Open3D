@@ -71,10 +71,13 @@ class GlobalOptimizationOption {
 class GlobalOptimizationConvergenceCriteria {
   public:
     GlobalOptimizationConvergenceCriteria(
-            int max_iteration = 100, double min_relative_increment = 1e-6,
+            int max_iteration = 100,
+            double min_relative_increment = 1e-6,
             double min_relative_residual_increment = 1e-6,
-            double min_right_term = 1e-6, double min_residual = 1e-6,
-            int max_iteration_lm = 20, double upper_scale_factor = 2. / 3.,
+            double min_right_term = 1e-6,
+            double min_residual = 1e-6,
+            int max_iteration_lm = 20,
+            double upper_scale_factor = 2. / 3.,
             double lower_scale_factor = 1. / 3.)
         : max_iteration_(max_iteration),
           min_relative_increment_(min_relative_increment),

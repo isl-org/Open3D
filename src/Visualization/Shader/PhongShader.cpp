@@ -198,8 +198,10 @@ bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 }
 
 bool PhongShaderForPointCloud::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
@@ -282,8 +284,10 @@ bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 }
 
 bool PhongShaderForTriangleMesh::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {

@@ -51,10 +51,12 @@ class PoseGraphNode : public IJsonConvertible {
 class PoseGraphEdge : public IJsonConvertible {
   public:
     PoseGraphEdge(
-            int source_node_id = -1, int target_node_id = -1,
+            int source_node_id = -1,
+            int target_node_id = -1,
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
             const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
-            bool uncertain = false, double confidence = 1.0)
+            bool uncertain = false,
+            double confidence = 1.0)
         : source_node_id_(source_node_id),
           target_node_id_(target_node_id),
           transformation_(transformation),

@@ -50,7 +50,8 @@ class ShaderWrapper {
     /// The geometry is updated in a passive manner (bind only when needed).
     /// Thus this function compiles shaders if not yet, binds geometry if not
     /// yet, then do the rendering.
-    bool Render(const Geometry &geometry, const RenderOption &option,
+    bool Render(const Geometry &geometry,
+                const RenderOption &option,
                 const ViewControl &view);
 
     /// Function to invalidate the geometry (set the dirty flag and release

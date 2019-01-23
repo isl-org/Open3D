@@ -219,7 +219,9 @@ std::string GetCurrentTimeStamp() {
 }
 
 std::string GetProgramOptionAsString(
-        int argc, char **argv, const std::string &option,
+        int argc,
+        char **argv,
+        const std::string &option,
         const std::string &default_value /* = ""*/) {
     char **itr = std::find(argv, argv + argc, option);
     if (itr != argv + argc && ++itr != argv + argc) {
@@ -228,7 +230,9 @@ std::string GetProgramOptionAsString(
     return default_value;
 }
 
-int GetProgramOptionAsInt(int argc, char **argv, const std::string &option,
+int GetProgramOptionAsInt(int argc,
+                          char **argv,
+                          const std::string &option,
                           const int default_value /* = 0*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
     if (str.length() == 0) {
@@ -247,7 +251,8 @@ int GetProgramOptionAsInt(int argc, char **argv, const std::string &option,
     return (int)l;
 }
 
-double GetProgramOptionAsDouble(int argc, char **argv,
+double GetProgramOptionAsDouble(int argc,
+                                char **argv,
                                 const std::string &option,
                                 const double default_value /* = 0.0*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
@@ -266,7 +271,9 @@ double GetProgramOptionAsDouble(int argc, char **argv,
 }
 
 Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
-        int argc, char **argv, const std::string &option,
+        int argc,
+        char **argv,
+        const std::string &option,
         const Eigen::VectorXd default_value /* =
         Eigen::VectorXd::Zero()*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
@@ -296,7 +303,8 @@ bool ProgramOptionExists(int argc, char **argv, const std::string &option) {
     return std::find(argv, argv + argc, option) != argv + argc;
 }
 
-bool ProgramOptionExistsAny(int argc, char **argv,
+bool ProgramOptionExistsAny(int argc,
+                            char **argv,
                             const std::vector<std::string> &options) {
     for (const auto &option : options) {
         if (ProgramOptionExists(argc, argv, option)) {

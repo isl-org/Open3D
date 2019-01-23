@@ -35,14 +35,17 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, VoxelGrid &)>>
+        std::string,
+        std::function<bool(const std::string &, VoxelGrid &)>>
         file_extension_to_voxelgrid_read_function{
                 {"ply", ReadVoxelGridFromPLY},
         };
 
-static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, const VoxelGrid &,
-                                        const bool, const bool)>>
+static const std::unordered_map<std::string,
+                                std::function<bool(const std::string &,
+                                                   const VoxelGrid &,
+                                                   const bool,
+                                                   const bool)>>
         file_extension_to_voxelgrid_write_function{
                 {"ply", WriteVoxelGridToPLY},
         };
@@ -55,7 +58,8 @@ std::shared_ptr<VoxelGrid> CreateVoxelGridFromFile(const std::string &filename,
     return voxelgrid;
 }
 
-bool ReadVoxelGrid(const std::string &filename, VoxelGrid &voxelgrid,
+bool ReadVoxelGrid(const std::string &filename,
+                   VoxelGrid &voxelgrid,
                    const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
@@ -77,7 +81,8 @@ bool ReadVoxelGrid(const std::string &filename, VoxelGrid &voxelgrid,
     return success;
 }
 
-bool WriteVoxelGrid(const std::string &filename, const VoxelGrid &voxelgrid,
+bool WriteVoxelGrid(const std::string &filename,
+                    const VoxelGrid &voxelgrid,
                     bool write_ascii /* = false*/,
                     bool compressed /* = false*/) {
     std::string filename_ext =

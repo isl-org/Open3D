@@ -58,9 +58,8 @@ bool VisualizerForAlignment::AddSourceAndTarget(
     return AddGeometry(source_copy_ptr_) && AddGeometry(target_copy_ptr_);
 }
 
-void VisualizerForAlignment::KeyPressCallback(GLFWwindow *window, int key,
-                                              int scancode, int action,
-                                              int mods) {
+void VisualizerForAlignment::KeyPressCallback(
+        GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL)) {
         const char *filename;
         const char *pattern[1] = {"*.json"};

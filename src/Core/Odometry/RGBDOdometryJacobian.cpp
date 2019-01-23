@@ -40,11 +40,16 @@ const double LAMBDA_HYBRID_DEPTH = 0.968;
 }  // unnamed namespace
 
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
-        int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-        std::vector<double> &r, const RGBDImage &source,
-        const RGBDImage &target, const Image &source_xyz,
-        const RGBDImage &target_dx, const RGBDImage &target_dy,
-        const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+        int row,
+        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+        std::vector<double> &r,
+        const RGBDImage &source,
+        const RGBDImage &target,
+        const Image &source_xyz,
+        const RGBDImage &target_dx,
+        const RGBDImage &target_dy,
+        const Eigen::Matrix3d &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
         const CorrespondenceSetPixelWise &corresps) const {
     Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
     Eigen::Vector3d t = extrinsic.block<3, 1>(0, 3);
@@ -78,11 +83,16 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 }
 
 void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
-        int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-        std::vector<double> &r, const RGBDImage &source,
-        const RGBDImage &target, const Image &source_xyz,
-        const RGBDImage &target_dx, const RGBDImage &target_dy,
-        const Eigen::Matrix3d &intrinsic, const Eigen::Matrix4d &extrinsic,
+        int row,
+        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+        std::vector<double> &r,
+        const RGBDImage &source,
+        const RGBDImage &target,
+        const Image &source_xyz,
+        const RGBDImage &target_dx,
+        const RGBDImage &target_dy,
+        const Eigen::Matrix3d &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
         const CorrespondenceSetPixelWise &corresps) const {
     double sqrt_lamba_dep, sqrt_lambda_img;
     sqrt_lamba_dep = sqrt(LAMBDA_HYBRID_DEPTH);

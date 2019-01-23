@@ -59,8 +59,11 @@ class KDTreeFlannFeature {
         return true;
     }
 
-    int SearchKNN(std::vector<float> &data, int i, int knn,
-                  std::vector<int> &indices, std::vector<float> &distance2) {
+    int SearchKNN(std::vector<float> &data,
+                  int i,
+                  int knn,
+                  std::vector<int> &indices,
+                  std::vector<float> &distance2) {
         flann::Matrix<float> query_flann(
                 ((float *)data.data()) + i * dimension_, 1, dimension_);
         indices.resize(knn);

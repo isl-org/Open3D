@@ -55,8 +55,9 @@ static const std::unordered_map<
         };
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &,
-                                        const PinholeCameraTrajectory &)>>
+        std::string,
+        std::function<bool(const std::string &,
+                           const PinholeCameraTrajectory &)>>
         file_extension_to_trajectory_write_function{
                 {"log", WritePinholeCameraTrajectoryToLOG},
                 {"json", WritePinholeCameraTrajectoryToJSON},

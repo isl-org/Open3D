@@ -46,7 +46,8 @@ class Feature;
 class ICPConvergenceCriteria {
   public:
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
-                           double relative_rmse = 1e-6, int max_iteration = 30)
+                           double relative_rmse = 1e-6,
+                           int max_iteration = 30)
         : relative_fitness_(relative_fitness),
           relative_rmse_(relative_rmse),
           max_iteration_(max_iteration) {}
@@ -93,13 +94,15 @@ class RegistrationResult {
 
 /// Function for evaluation
 RegistrationResult EvaluateRegistration(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
 
 /// Functions for ICP registration
 RegistrationResult RegistrationICP(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
         const TransformationEstimation &estimation =
@@ -109,8 +112,10 @@ RegistrationResult RegistrationICP(
 /// Function for global RANSAC registration based on a given set of
 /// correspondences
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
-        const PointCloud &source, const PointCloud &target,
-        const CorrespondenceSet &corres, double max_correspondence_distance,
+        const PointCloud &source,
+        const PointCloud &target,
+        const CorrespondenceSet &corres,
+        double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),
         int ransac_n = 6,
@@ -119,8 +124,10 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 
 /// Function for global RANSAC registration based on feature matching
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
-        const PointCloud &source, const PointCloud &target,
-        const Feature &source_feature, const Feature &target_feature,
+        const PointCloud &source,
+        const PointCloud &target,
+        const Feature &source_feature,
+        const Feature &target_feature,
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(false),
@@ -132,7 +139,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
 /// Function for computing information matrix from RegistrationResult
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation);
 

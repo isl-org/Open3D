@@ -48,7 +48,8 @@ enum class TSDFVolumeColorType {
 /// In SIGGRAPH, 1996
 class TSDFVolume {
   public:
-    TSDFVolume(double voxel_length, double sdf_trunc,
+    TSDFVolume(double voxel_length,
+               double sdf_trunc,
                TSDFVolumeColorType color_type)
         : voxel_length_(voxel_length),
           sdf_trunc_(sdf_trunc),

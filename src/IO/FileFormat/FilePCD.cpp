@@ -231,7 +231,8 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
     return true;
 }
 
-double UnpackBinaryPCDElement(const char *data_ptr, const char type,
+double UnpackBinaryPCDElement(const char *data_ptr,
+                              const char type,
                               const int size) {
     if (type == 'I') {
         if (size == 1) {
@@ -277,7 +278,8 @@ double UnpackBinaryPCDElement(const char *data_ptr, const char type,
     return 0.0;
 }
 
-Eigen::Vector3d UnpackBinaryPCDColor(const char *data_ptr, const char type,
+Eigen::Vector3d UnpackBinaryPCDColor(const char *data_ptr,
+                                     const char type,
                                      const int size) {
     if (size == 4) {
         std::uint8_t data[4];
@@ -290,7 +292,8 @@ Eigen::Vector3d UnpackBinaryPCDColor(const char *data_ptr, const char type,
     }
 }
 
-double UnpackASCIIPCDElement(const char *data_ptr, const char type,
+double UnpackASCIIPCDElement(const char *data_ptr,
+                             const char type,
                              const int size) {
     char *end;
     if (type == 'I') {
@@ -303,7 +306,8 @@ double UnpackASCIIPCDElement(const char *data_ptr, const char type,
     return 0.0;
 }
 
-Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr, const char type,
+Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr,
+                                    const char type,
                                     const int size) {
     if (size == 4) {
         std::uint8_t data[4];
@@ -529,8 +533,10 @@ void RemoveNanData(PointCloud &pointcloud) {
                (int)(old_point_num - k));
 }
 
-bool GenerateHeader(const PointCloud &pointcloud, const bool write_ascii,
-                    const bool compressed, PCDHeader &header) {
+bool GenerateHeader(const PointCloud &pointcloud,
+                    const bool write_ascii,
+                    const bool compressed,
+                    PCDHeader &header) {
     if (pointcloud.HasPoints() == false) {
         return false;
     }
@@ -633,7 +639,8 @@ float ConvertRGBToFloat(const Eigen::Vector3d &color) {
     return value;
 }
 
-bool WritePCDData(FILE *file, const PCDHeader &header,
+bool WritePCDData(FILE *file,
+                  const PCDHeader &header,
                   const PointCloud &pointcloud) {
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();

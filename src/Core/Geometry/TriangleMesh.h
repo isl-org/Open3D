@@ -126,7 +126,8 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
 std::shared_ptr<TriangleMesh> CropTriangleMesh(
-        const TriangleMesh &input, const Eigen::Vector3d &min_bound,
+        const TriangleMesh &input,
+        const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound);
 
 /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
@@ -173,10 +174,13 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
 /// The \param cylinder_height will be split into \param cylinder_split
 /// segments. The \param cone_height will be split into \param cone_split
 /// segments.
-std::shared_ptr<TriangleMesh> CreateMeshArrow(
-        double cylinder_radius = 1.0, double cone_radius = 1.5,
-        double cylinder_height = 5.0, double cone_height = 4.0,
-        int resolution = 20, int cylinder_split = 4, int cone_split = 1);
+std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius = 1.0,
+                                              double cone_radius = 1.5,
+                                              double cylinder_height = 5.0,
+                                              double cone_height = 4.0,
+                                              int resolution = 20,
+                                              int cylinder_split = 4,
+                                              int cone_split = 1);
 
 /// Factory function to create a coordinate frame mesh (TriangleMeshFactory.cpp)
 /// The coordinate frame will be centered at \param origin

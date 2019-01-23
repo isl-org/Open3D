@@ -145,7 +145,8 @@ template std::shared_ptr<Image> CreateImageFromFloatImage<uint8_t>(
 template std::shared_ptr<Image> CreateImageFromFloatImage<uint16_t>(
         const Image &input);
 
-ImagePyramid CreateImagePyramid(const Image &input, size_t num_of_levels,
+ImagePyramid CreateImagePyramid(const Image &input,
+                                size_t num_of_levels,
                                 bool with_gaussian_filter /*= true*/) {
     std::vector<std::shared_ptr<Image>> pyramid_image;
     pyramid_image.clear();

@@ -35,7 +35,8 @@ namespace open3d {
 namespace {
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, PointCloud &)>>
+        std::string,
+        std::function<bool(const std::string &, PointCloud &)>>
         file_extension_to_pointcloud_read_function{
                 {"xyz", ReadPointCloudFromXYZ},
                 {"xyzn", ReadPointCloudFromXYZN},
@@ -45,9 +46,11 @@ static const std::unordered_map<
                 {"pts", ReadPointCloudFromPTS},
         };
 
-static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, const PointCloud &,
-                                        const bool, const bool)>>
+static const std::unordered_map<std::string,
+                                std::function<bool(const std::string &,
+                                                   const PointCloud &,
+                                                   const bool,
+                                                   const bool)>>
         file_extension_to_pointcloud_write_function{
                 {"xyz", WritePointCloudToXYZ},
                 {"xyzn", WritePointCloudToXYZN},
@@ -65,7 +68,8 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFile(
     return pointcloud;
 }
 
-bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud,
+bool ReadPointCloud(const std::string &filename,
+                    PointCloud &pointcloud,
                     const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
@@ -89,7 +93,8 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud,
     return success;
 }
 
-bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
+bool WritePointCloud(const std::string &filename,
+                     const PointCloud &pointcloud,
                      bool write_ascii /* = false*/,
                      bool compressed /* = false*/) {
     std::string filename_ext =

@@ -32,7 +32,8 @@
 namespace open3d {
 
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-        const PointCloud &cloud0, const PointCloud &cloud1,
+        const PointCloud &cloud0,
+        const PointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences) {
     auto lineset_ptr = std::make_shared<LineSet>();
     size_t point0_size = cloud0.points_.size();

@@ -112,7 +112,8 @@ void Simple2DShader::UnbindGeometry() {
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareRendering(
-        const Geometry &geometry, const RenderOption &option,
+        const Geometry &geometry,
+        const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
@@ -125,8 +126,10 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");

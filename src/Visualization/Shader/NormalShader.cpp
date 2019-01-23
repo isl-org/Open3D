@@ -130,8 +130,10 @@ bool NormalShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 }
 
 bool NormalShaderForPointCloud::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not PointCloud.");
@@ -184,8 +186,10 @@ bool NormalShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 }
 
 bool NormalShaderForTriangleMesh::PrepareBinding(
-        const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view, std::vector<Eigen::Vector3f> &points,
+        const Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals) {
     if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not TriangleMesh.");

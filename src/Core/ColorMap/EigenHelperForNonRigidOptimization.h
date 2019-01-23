@@ -46,10 +46,14 @@ namespace open3d {
 /// Note: this function is almost identical to the functions in
 /// Utility/Eigen.h/cpp, but this function takes additional multiplication
 /// pattern that can produce JTJ having hundreds of rows and columns.
-template <typename VecInTypeDouble, typename VecInTypeInt, typename MatOutType,
+template <typename VecInTypeDouble,
+          typename VecInTypeInt,
+          typename MatOutType,
           typename VecOutType>
 std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
         std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
-        int iteration_num, int nonrigidval, bool verbose = true);
+        int iteration_num,
+        int nonrigidval,
+        bool verbose = true);
 
 }  // namespace open3d

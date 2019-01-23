@@ -49,9 +49,8 @@ void VisualizerWithKeyCallback::RegisterKeyCallback(
     key_to_callback_[key] = callback;
 }
 
-void VisualizerWithKeyCallback::KeyPressCallback(GLFWwindow *window, int key,
-                                                 int scancode, int action,
-                                                 int mods) {
+void VisualizerWithKeyCallback::KeyPressCallback(
+        GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
     }

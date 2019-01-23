@@ -45,7 +45,8 @@ bool WritePoseGraphToJSON(const std::string &filename,
 }
 
 static const std::unordered_map<
-        std::string, std::function<bool(const std::string &, PoseGraph &)>>
+        std::string,
+        std::function<bool(const std::string &, PoseGraph &)>>
         file_extension_to_pose_graph_read_function{
                 {"json", ReadPoseGraphFromJSON},
         };

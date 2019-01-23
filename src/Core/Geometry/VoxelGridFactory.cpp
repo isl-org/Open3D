@@ -42,7 +42,8 @@ class PointCloudVoxel {
     PointCloudVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 
   public:
-    void AddPoint(const Eigen::Vector3i &voxel_index, const PointCloud &cloud,
+    void AddPoint(const Eigen::Vector3i &voxel_index,
+                  const PointCloud &cloud,
                   int index) {
         coordinate_ = voxel_index;
         if (cloud.HasColors()) {

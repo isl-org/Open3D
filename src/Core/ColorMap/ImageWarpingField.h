@@ -34,7 +34,8 @@ class ImageWarpingField : public IJsonConvertible {
   public:
     ImageWarpingField();
     ImageWarpingField(int width, int height, int number_of_vertical_anchors);
-    void InitializeWarpingFields(int width, int height,
+    void InitializeWarpingFields(int width,
+                                 int height,
                                  int number_of_vertical_anchors);
     Eigen::Vector2d QueryFlow(int i, int j) const;
     Eigen::Vector2d GetImageWarpingField(double u, double v) const;

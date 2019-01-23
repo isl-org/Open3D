@@ -248,7 +248,9 @@ void ViewControl::Scale(double scale) {
     SetProjectionParameters();
 }
 
-void ViewControl::Rotate(double x, double y, double xo /* = 0.0*/,
+void ViewControl::Rotate(double x,
+                         double y,
+                         double xo /* = 0.0*/,
                          double yo /* = 0.0*/) {
     // some black magic to do rotation
     double alpha = x * ROTATION_RADIAN_PER_PIXEL;
@@ -260,7 +262,9 @@ void ViewControl::Rotate(double x, double y, double xo /* = 0.0*/,
     SetProjectionParameters();
 }
 
-void ViewControl::Translate(double x, double y, double xo /* = 0.0*/,
+void ViewControl::Translate(double x,
+                            double y,
+                            double xo /* = 0.0*/,
                             double yo /* = 0.0*/) {
     Eigen::Vector3d shift = right_ * (-x) / window_height_ * view_ratio_ * 2.0 +
                             up_ * y / window_height_ * view_ratio_ * 2.0;

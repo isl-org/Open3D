@@ -46,7 +46,8 @@ RGBDImagePyramid FilterRGBDImagePyramid(
 }
 
 RGBDImagePyramid CreateRGBDImagePyramid(
-        const RGBDImage& rgbd_image, size_t num_of_levels,
+        const RGBDImage& rgbd_image,
+        size_t num_of_levels,
         bool with_gaussian_filter_for_color /* = true */,
         bool with_gaussian_filter_for_depth /* = false */) {
     ImagePyramid color_pyramid = CreateImagePyramid(

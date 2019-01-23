@@ -89,7 +89,8 @@ bool ReadImageFromJPG(const std::string &filename, Image &image) {
     return true;
 }
 
-bool WriteImageToJPG(const std::string &filename, const Image &image,
+bool WriteImageToJPG(const std::string &filename,
+                     const Image &image,
                      int quality /* = 90*/) {
     if (image.HasData() == false) {
         PrintWarning("Write JPG failed: image has no data.\n");

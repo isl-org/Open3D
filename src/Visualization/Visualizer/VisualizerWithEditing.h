@@ -42,7 +42,8 @@ class VisualizerWithEditing : public Visualizer {
     };
 
   public:
-    VisualizerWithEditing(double voxel_size = -1.0, bool use_dialog = true,
+    VisualizerWithEditing(double voxel_size = -1.0,
+                          bool use_dialog = true,
                           const std::string &directory = "")
         : voxel_size_(voxel_size),
           use_dialog_(use_dialog),
@@ -65,9 +66,14 @@ class VisualizerWithEditing : public Visualizer {
     void WindowResizeCallback(GLFWwindow *window, int w, int h) override;
     void MouseMoveCallback(GLFWwindow *window, double x, double y) override;
     void MouseScrollCallback(GLFWwindow *window, double x, double y) override;
-    void MouseButtonCallback(GLFWwindow *window, int button, int action,
+    void MouseButtonCallback(GLFWwindow *window,
+                             int button,
+                             int action,
                              int mods) override;
-    void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
+    void KeyPressCallback(GLFWwindow *window,
+                          int key,
+                          int scancode,
+                          int action,
                           int mods) override;
     void InvalidateSelectionPolygon();
     void InvalidatePicking();

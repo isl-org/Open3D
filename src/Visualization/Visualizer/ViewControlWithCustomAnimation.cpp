@@ -64,14 +64,18 @@ void ViewControlWithCustomAnimation::Scale(double scale) {
     }
 }
 
-void ViewControlWithCustomAnimation::Rotate(double x, double y, double xo,
+void ViewControlWithCustomAnimation::Rotate(double x,
+                                            double y,
+                                            double xo,
                                             double yo) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewControl::Rotate(x, y, xo, yo);
     }
 }
 
-void ViewControlWithCustomAnimation::Translate(double x, double y, double xo,
+void ViewControlWithCustomAnimation::Translate(double x,
+                                               double y,
+                                               double xo,
                                                double yo) {
     if (animation_mode_ == AnimationMode::FreeMode) {
         ViewControl::Translate(x, y, xo, yo);

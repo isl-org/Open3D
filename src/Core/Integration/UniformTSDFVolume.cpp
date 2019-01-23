@@ -35,7 +35,9 @@
 namespace open3d {
 
 UniformTSDFVolume::UniformTSDFVolume(
-        double length, int resolution, double sdf_trunc,
+        double length,
+        int resolution,
+        double sdf_trunc,
         TSDFVolumeColorType color_type,
         const Eigen::Vector3d &origin /* = Eigen::Vector3d::Zero()*/)
     : TSDFVolume(length / (double)resolution, sdf_trunc, color_type),
@@ -251,7 +253,8 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud() {
 }
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
-        const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
+        const RGBDImage &image,
+        const PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
         const Image &depth_to_camera_distance_multiplier) {
     const float fx = static_cast<float>(intrinsic.GetFocalLength().first);

@@ -87,7 +87,9 @@ class point_cubic_id {
 
 class AccumulatedPointForTrace : public AccumulatedPoint {
   public:
-    void AddPoint(const PointCloud &cloud, size_t index, int cubic_index,
+    void AddPoint(const PointCloud &cloud,
+                  size_t index,
+                  int cubic_index,
                   bool approximate_class) {
         point_ += cloud.points_[index];
         if (cloud.HasNormals()) {
@@ -281,7 +283,8 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
 }
 
 std::tuple<std::shared_ptr<PointCloud>, Eigen::MatrixXi>
-VoxelDownSampleAndTrace(const PointCloud &input, double voxel_size,
+VoxelDownSampleAndTrace(const PointCloud &input,
+                        double voxel_size,
                         const Eigen::Vector3d &min_bound,
                         const Eigen::Vector3d &max_bound,
                         bool approximate_class) {
@@ -382,7 +385,8 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-RemoveRadiusOutliers(const PointCloud &input, size_t nb_points,
+RemoveRadiusOutliers(const PointCloud &input,
+                     size_t nb_points,
                      double search_radius) {
     if (nb_points < 1 || search_radius <= 0) {
         PrintDebug(
@@ -414,7 +418,8 @@ RemoveRadiusOutliers(const PointCloud &input, size_t nb_points,
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbors,
+RemoveStatisticalOutliers(const PointCloud &input,
+                          size_t nb_neighbors,
                           double std_ratio) {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         PrintDebug(
@@ -474,7 +479,8 @@ RemoveStatisticalOutliers(const PointCloud &input, size_t nb_neighbors,
 }
 
 std::shared_ptr<TriangleMesh> CropTriangleMesh(
-        const TriangleMesh &input, const Eigen::Vector3d &min_bound,
+        const TriangleMesh &input,
+        const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound) {
     if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
         min_bound(2) > max_bound(2)) {

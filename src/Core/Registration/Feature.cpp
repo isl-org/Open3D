@@ -70,7 +70,8 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
 }
 
 std::shared_ptr<Feature> ComputeSPFHFeature(
-        const PointCloud &input, const KDTreeFlann &kdtree,
+        const PointCloud &input,
+        const KDTreeFlann &kdtree,
         const KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());

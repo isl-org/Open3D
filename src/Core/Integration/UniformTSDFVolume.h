@@ -32,7 +32,9 @@ namespace open3d {
 
 class UniformTSDFVolume : public TSDFVolume {
   public:
-    UniformTSDFVolume(double length, int resolution, double sdf_trunc,
+    UniformTSDFVolume(double length,
+                      int resolution,
+                      double sdf_trunc,
                       TSDFVolumeColorType color_type,
                       const Eigen::Vector3d &origin = Eigen::Vector3d::Zero());
     ~UniformTSDFVolume() override;
@@ -51,7 +53,8 @@ class UniformTSDFVolume : public TSDFVolume {
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
     /// precomputed from camera intrinsic
     void IntegrateWithDepthToCameraDistanceMultiplier(
-            const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
+            const RGBDImage &image,
+            const PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const Image &depth_to_camera_distance_multiplier);
 

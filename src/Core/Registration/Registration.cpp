@@ -39,8 +39,10 @@ namespace open3d {
 namespace {
 
 RegistrationResult GetRegistrationResultAndCorrespondences(
-        const PointCloud &source, const PointCloud &target,
-        const KDTreeFlann &target_kdtree, double max_correspondence_distance,
+        const PointCloud &source,
+        const PointCloud &target,
+        const KDTreeFlann &target_kdtree,
+        double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
@@ -95,8 +97,10 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 }
 
 RegistrationResult EvaluateRANSACBasedOnCorrespondence(
-        const PointCloud &source, const PointCloud &target,
-        const CorrespondenceSet &corres, double max_correspondence_distance,
+        const PointCloud &source,
+        const PointCloud &target,
+        const CorrespondenceSet &corres,
+        double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
     RegistrationResult result(transformation);
     double error2 = 0.0;
@@ -123,7 +127,8 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
 }  // unnamed namespace
 
 RegistrationResult EvaluateRegistration(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d
                 &transformation /* = Eigen::Matrix4d::Identity()*/) {
@@ -138,7 +143,8 @@ RegistrationResult EvaluateRegistration(
 }
 
 RegistrationResult RegistrationICP(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const TransformationEstimation &estimation
@@ -190,11 +196,14 @@ RegistrationResult RegistrationICP(
 }
 
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
-        const PointCloud &source, const PointCloud &target,
-        const CorrespondenceSet &corres, double max_correspondence_distance,
+        const PointCloud &source,
+        const PointCloud &target,
+        const CorrespondenceSet &corres,
+        double max_correspondence_distance,
         const TransformationEstimation &estimation
         /* = TransformationEstimationPointToPoint(false)*/,
-        int ransac_n /* = 6*/, const RANSACConvergenceCriteria &criteria
+        int ransac_n /* = 6*/,
+        const RANSACConvergenceCriteria &criteria
         /* = RANSACConvergenceCriteria()*/) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
@@ -229,8 +238,10 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 }
 
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
-        const PointCloud &source, const PointCloud &target,
-        const Feature &source_feature, const Feature &target_feature,
+        const PointCloud &source,
+        const PointCloud &target,
+        const Feature &source_feature,
+        const Feature &target_feature,
         double max_correspondence_distance,
         const TransformationEstimation &estimation
         /* = TransformationEstimationPointToPoint(false)*/,
@@ -359,7 +370,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 }
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
-        const PointCloud &source, const PointCloud &target,
+        const PointCloud &source,
+        const PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
     PointCloud pcd = source;

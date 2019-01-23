@@ -106,7 +106,9 @@ void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo) {
     }
 }
 
-void ViewControlWithEditing::Translate(double x, double y, double xo,
+void ViewControlWithEditing::Translate(double x,
+                                       double y,
+                                       double xo,
                                        double yo) {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
