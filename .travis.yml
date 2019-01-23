@@ -87,19 +87,6 @@ matrix:
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
-    # Default environment of macOS 10.12 Sierra
-    # compiled using clang shipped with xcode8.3
-    - os: osx
-      osx_image: xcode8.3
-      script: travis_wait 30 ./util/scripts/run-travis.sh
-      before_install: ./util/scripts/setup-osx.sh
-
-    - os: osx
-      osx_image: xcode8.3
-      env: SHARED=ON
-      before_install: ./util/scripts/setup-osx.sh
-      script: travis_wait 30 ./util/scripts/run-travis.sh
-
     # Default environment of macOS 10.13 High Sierra
     # compiled using clang shipped with xcode10.1
     - os: osx
