@@ -32,13 +32,13 @@
 namespace open3d {
 
 class Geometry2D : public Geometry {
-  public:
+public:
     ~Geometry2D() override {}
 
-  protected:
+protected:
     Geometry2D(GeometryType type) : Geometry(type, 2) {}
 
-  public:
+public:
     void Clear() override = 0;
     bool IsEmpty() const override = 0;
     virtual Eigen::Vector2d GetMinBound() const = 0;

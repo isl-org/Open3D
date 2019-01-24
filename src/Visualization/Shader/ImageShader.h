@@ -34,13 +34,13 @@ namespace open3d {
 namespace glsl {
 
 class ImageShader : public ShaderWrapper {
-  public:
+public:
     ~ImageShader() override { Release(); }
 
-  protected:
+protected:
     ImageShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -51,7 +51,7 @@ class ImageShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -60,7 +60,7 @@ class ImageShader : public ShaderWrapper {
                                 const ViewControl &view,
                                 Image &image) = 0;
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_UV_;
@@ -73,10 +73,10 @@ class ImageShader : public ShaderWrapper {
 };
 
 class ImageShaderForImage : public ImageShader {
-  public:
+public:
     ImageShaderForImage() : ImageShader("ImageShaderForImage") {}
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) final;

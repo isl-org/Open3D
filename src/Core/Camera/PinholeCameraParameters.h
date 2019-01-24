@@ -34,15 +34,15 @@
 namespace open3d {
 
 class PinholeCameraParameters : public IJsonConvertible {
-  public:
+public:
     PinholeCameraParameters();
     ~PinholeCameraParameters() override;
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     PinholeCameraIntrinsic intrinsic_;
     Eigen::Matrix4d_u extrinsic_;
 };

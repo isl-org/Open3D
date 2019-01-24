@@ -40,10 +40,10 @@ class ImageWarpingField;
 class TriangleMesh;
 
 class ColorMapOptimizationJacobian {
-  public:
+public:
     ColorMapOptimizationJacobian() {}
 
-  public:
+public:
     /// Function to compute i-th row of J and r
     /// the vector form of J_r is basically 6x1 matrix, but it can be
     /// easily extendable to 6xn matrix.

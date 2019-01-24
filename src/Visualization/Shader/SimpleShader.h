@@ -35,13 +35,13 @@ namespace open3d {
 namespace glsl {
 
 class SimpleShader : public ShaderWrapper {
-  public:
+public:
     ~SimpleShader() override { Release(); }
 
-  protected:
+protected:
     SimpleShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -52,7 +52,7 @@ class SimpleShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -62,7 +62,7 @@ class SimpleShader : public ShaderWrapper {
                                 std::vector<Eigen::Vector3f> &points,
                                 std::vector<Eigen::Vector3f> &colors) = 0;
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_color_;
@@ -71,10 +71,10 @@ class SimpleShader : public ShaderWrapper {
 };
 
 class SimpleShaderForPointCloud : public SimpleShader {
-  public:
+public:
     SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
@@ -86,10 +86,10 @@ class SimpleShaderForPointCloud : public SimpleShader {
 };
 
 class SimpleShaderForLineSet : public SimpleShader {
-  public:
+public:
     SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
@@ -101,11 +101,11 @@ class SimpleShaderForLineSet : public SimpleShader {
 };
 
 class SimpleShaderForTriangleMesh : public SimpleShader {
-  public:
+public:
     SimpleShaderForTriangleMesh()
         : SimpleShader("SimpleShaderForTriangleMesh") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
@@ -117,10 +117,10 @@ class SimpleShaderForTriangleMesh : public SimpleShader {
 };
 
 class SimpleShaderForVoxelGrid : public SimpleShader {
-  public:
+public:
     SimpleShaderForVoxelGrid() : SimpleShader("SimpleShaderForVoxelGrid") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;

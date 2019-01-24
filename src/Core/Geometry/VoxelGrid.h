@@ -37,29 +37,29 @@ class PointCloud;
 class TriangleMesh;
 
 class VoxelGrid : public Geometry3D {
-  public:
+public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid){};
     ~VoxelGrid() override{};
 
-  public:
+public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     void Transform(const Eigen::Matrix4d &transformation) override;
 
-  public:
+public:
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
-  public:
+public:
     bool HasVoxels() const { return voxels_.size() > 0; }
 
     bool HasColors() const {
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
     }
 
-  public:
+public:
     double voxel_size_;
     Eigen::Vector3d origin_;
     std::vector<Eigen::Vector3i> voxels_;

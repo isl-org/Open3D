@@ -34,15 +34,15 @@ namespace open3d {
 namespace glsl {
 
 class ImageMaskShader : public ShaderWrapper {
-  public:
+public:
     ~ImageMaskShader() override { Release(); }
 
-  protected:
+protected:
     ImageMaskShader(const std::string &name) : ShaderWrapper(name) {
         Compile();
     }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -53,7 +53,7 @@ class ImageMaskShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -62,7 +62,7 @@ class ImageMaskShader : public ShaderWrapper {
                                 const ViewControl &view,
                                 Image &image) = 0;
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_UV_;
@@ -77,10 +77,10 @@ class ImageMaskShader : public ShaderWrapper {
 };
 
 class ImageMaskShaderForImage : public ImageMaskShader {
-  public:
+public:
     ImageMaskShaderForImage() : ImageMaskShader("ImageMaskShaderForImage") {}
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) final;

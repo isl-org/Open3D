@@ -45,9 +45,9 @@ class TriangleMesh;
 class Image;
 
 class Visualizer {
-  public:
+public:
     struct MouseControl {
-      public:
+    public:
         bool is_mouse_left_button_down = false;
         bool is_mouse_middle_button_down = false;
         bool is_control_key_down = false;
@@ -58,14 +58,14 @@ class Visualizer {
         double mouse_position_y = 0.0;
     };
 
-  public:
+public:
     Visualizer();
     virtual ~Visualizer();
     Visualizer(Visualizer &&) = delete;
     Visualizer(const Visualizer &) = delete;
     Visualizer &operator=(const Visualizer &) = delete;
 
-  public:
+public:
     /// Function to create a window and initialize GLFW
     /// This function MUST be called from the main thread.
     bool CreateVisualizerWindow(const std::string &window_name = "Open3D",
@@ -143,7 +143,7 @@ class Visualizer {
 
     const std::string &GetWindowName() const { return window_name_; }
 
-  protected:
+protected:
     /// Function to initialize OpenGL
     virtual bool InitOpenGL();
 
@@ -175,7 +175,7 @@ class Visualizer {
             GLFWwindow *window, int key, int scancode, int action, int mods);
     virtual void WindowCloseCallback(GLFWwindow *window);
 
-  protected:
+protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";

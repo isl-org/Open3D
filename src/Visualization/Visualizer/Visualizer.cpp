@@ -33,19 +33,19 @@ namespace open3d {
 namespace {
 
 class GLFWEnvironmentSingleton {
-  private:
+private:
     GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n"); }
     GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
     GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
             delete;
 
-  public:
+public:
     ~GLFWEnvironmentSingleton() {
         glfwTerminate();
         PrintDebug("GLFW destruct.\n");
     }
 
-  public:
+public:
     static GLFWEnvironmentSingleton &GetInstance() {
         static GLFWEnvironmentSingleton singleton;
         return singleton;

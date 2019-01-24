@@ -38,7 +38,7 @@ namespace open3d {
 class PinholeCameraIntrinsic;
 
 class Image : public Geometry2D {
-  public:
+public:
     enum class ColorToIntensityConversionType {
         Equal,
         Weighted,
@@ -52,18 +52,18 @@ class Image : public Geometry2D {
         Sobel3Dy
     };
 
-  public:
+public:
     Image() : Geometry2D(Geometry::GeometryType::Image){};
     ~Image() override{};
 
-  public:
+public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector2d GetMinBound() const override;
     Eigen::Vector2d GetMaxBound() const override;
     bool TestImageBoundary(double u, double v, double inner_margin = 0.0) const;
 
-  public:
+public:
     virtual bool HasData() const {
         return width_ > 0 && height_ > 0 &&
                data_.size() == height_ * BytesPerLine();
@@ -88,12 +88,12 @@ class Image : public Geometry2D {
     /// (single-channel) float image
     std::pair<bool, double> FloatValueAt(double u, double v) const;
 
-  protected:
+protected:
     void AllocateDataBuffer() {
         data_.resize(width_ * height_ * num_of_channels_ * bytes_per_channel_);
     }
 
-  public:
+public:
     int width_ = 0;
     int height_ = 0;
     int num_of_channels_ = 0;

@@ -37,7 +37,7 @@ using namespace open3d;
 
 template <class GlobalOptimizationMethodBase = GlobalOptimizationMethod>
 class PyGlobalOptimizationMethod : public GlobalOptimizationMethodBase {
-  public:
+public:
     using GlobalOptimizationMethodBase::GlobalOptimizationMethodBase;
     void OptimizePoseGraph(
             PoseGraph &pose_graph,

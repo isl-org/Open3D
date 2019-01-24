@@ -29,7 +29,7 @@
 namespace open3d {
 
 class GlobalOptimizationOption {
-  public:
+public:
     GlobalOptimizationOption(double max_correspondence_distance = 0.075,
                              double edge_prune_threshold = 0.25,
                              double preference_loop_closure = 1.0,
@@ -50,7 +50,7 @@ class GlobalOptimizationOption {
     };
     ~GlobalOptimizationOption(){};
 
-  public:
+public:
     /// See reference list in GlobalOptimization.h
     /// Identifies which distance value is used for finding neighboring points
     /// when making information matrix. According to [Choi et al 2015],
@@ -69,7 +69,7 @@ class GlobalOptimizationOption {
 };
 
 class GlobalOptimizationConvergenceCriteria {
-  public:
+public:
     GlobalOptimizationConvergenceCriteria(
             int max_iteration = 100,
             double min_relative_increment = 1e-6,
@@ -98,7 +98,7 @@ class GlobalOptimizationConvergenceCriteria {
     };
     ~GlobalOptimizationConvergenceCriteria(){};
 
-  public:
+public:
     /// maximum iteration number for iterative optmization module.
     int max_iteration_;
     /// several convergence criteria to determine

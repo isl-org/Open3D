@@ -33,16 +33,16 @@
 namespace open3d {
 
 class RenderOptionWithEditing : public RenderOption {
-  public:
+public:
     static const double PICKER_SPHERE_SIZE_MIN;
     static const double PICKER_SPHERE_SIZE_MAX;
     static const double PICKER_SPHERE_SIZE_DEFAULT;
 
-  public:
+public:
     RenderOptionWithEditing() {}
     ~RenderOptionWithEditing() override {}
 
-  public:
+public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
     void IncreaseSphereSize() {
@@ -54,7 +54,7 @@ class RenderOptionWithEditing : public RenderOption {
                 pointcloud_picker_sphere_size_ * 0.5, PICKER_SPHERE_SIZE_MIN);
     }
 
-  public:
+public:
     // Selection polygon
     Eigen::Vector3d selection_polygon_boundary_color_ =
             Eigen::Vector3d(0.3, 0.3, 0.3);

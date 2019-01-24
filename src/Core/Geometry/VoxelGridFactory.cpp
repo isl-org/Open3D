@@ -38,10 +38,10 @@ namespace open3d {
 namespace {
 
 class PointCloudVoxel {
-  public:
+public:
     PointCloudVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 
-  public:
+public:
     void AddPoint(const Eigen::Vector3i &voxel_index,
                   const PointCloud &cloud,
                   int index) {
@@ -58,7 +58,7 @@ class PointCloudVoxel {
         return color_ / double(num_of_points_);
     }
 
-  public:
+public:
     int num_of_points_;
     Eigen::Vector3i coordinate_;
     Eigen::Vector3d color_;

@@ -35,13 +35,13 @@ namespace open3d {
 namespace glsl {
 
 class PickingShader : public ShaderWrapper {
-  public:
+public:
     ~PickingShader() override { Release(); }
 
-  protected:
+protected:
     PickingShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
 
-  protected:
+protected:
     bool Compile() final;
     void Release() final;
     bool BindGeometry(const Geometry &geometry,
@@ -52,7 +52,7 @@ class PickingShader : public ShaderWrapper {
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
-  protected:
+protected:
     virtual bool PrepareRendering(const Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
@@ -62,7 +62,7 @@ class PickingShader : public ShaderWrapper {
                                 std::vector<Eigen::Vector3f> &points,
                                 std::vector<float> &indices) = 0;
 
-  protected:
+protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_index_;
@@ -71,11 +71,11 @@ class PickingShader : public ShaderWrapper {
 };
 
 class PickingShaderForPointCloud : public PickingShader {
-  public:
+public:
     PickingShaderForPointCloud()
         : PickingShader("PickingShaderForPointCloud") {}
 
-  protected:
+protected:
     bool PrepareRendering(const Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;

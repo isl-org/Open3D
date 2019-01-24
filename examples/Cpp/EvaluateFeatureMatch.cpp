@@ -34,11 +34,11 @@
 #include <Visualization/Visualization.h>
 
 class KDTreeFlannFeature {
-  public:
+public:
     KDTreeFlannFeature() {}
     ~KDTreeFlannFeature() {}
 
-  public:
+public:
     bool LoadFromFile(const std::string &filename) {
         FILE *fid = fopen(filename.c_str(), "rb");
         fread(&dataset_size_, sizeof(int), 1, fid);
@@ -75,7 +75,7 @@ class KDTreeFlannFeature {
                                        knn, flann::SearchParams(-1, 0.0));
     }
 
-  public:
+public:
     std::vector<float> data_;
     std::unique_ptr<flann::Matrix<float>> flann_dataset_;
     std::unique_ptr<flann::Index<flann::L2<float>>> flann_index_;

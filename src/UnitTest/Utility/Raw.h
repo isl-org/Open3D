@@ -34,33 +34,33 @@
 namespace unit_test {
 // Class for "generating" data.
 class Raw {
-  public:
+public:
     Raw() : index(0), step(1) {}
     Raw(const int &seed)
         : index(abs(seed) % SIZE), step((seed <= 0) ? 1 : seed) {}
 
-  private:
+private:
     // size of the raw data
     static const int SIZE = 1021;
 
     // raw data
     static std::vector<uint8_t> data_;
 
-  public:
+public:
     // low end of the range
     static const uint8_t VMIN = 0;
 
     // high end of the range
     static const uint8_t VMAX = 255;
 
-  private:
+private:
     // step through the raw data
     int step;
 
     // index into the raw data
     int index;
 
-  public:
+public:
     // Get the next value.
     template <class T>
     T Next() {

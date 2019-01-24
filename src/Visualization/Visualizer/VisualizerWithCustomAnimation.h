@@ -31,7 +31,7 @@
 namespace open3d {
 
 class VisualizerWithCustomAnimation : public Visualizer {
-  public:
+public:
     VisualizerWithCustomAnimation();
     ~VisualizerWithCustomAnimation() override;
     VisualizerWithCustomAnimation(const VisualizerWithCustomAnimation &) =
@@ -39,7 +39,7 @@ class VisualizerWithCustomAnimation : public Visualizer {
     VisualizerWithCustomAnimation &operator=(
             const VisualizerWithCustomAnimation &) = delete;
 
-  public:
+public:
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void Play(bool recording = false,
@@ -60,7 +60,7 @@ class VisualizerWithCustomAnimation : public Visualizer {
         recording_depth_trajectory_filename_ = trajectory;
     }
 
-  protected:
+protected:
     bool InitViewControl() override;
     void MouseMoveCallback(GLFWwindow *window, double x, double y) override;
     void MouseScrollCallback(GLFWwindow *window, double x, double y) override;
@@ -74,7 +74,7 @@ class VisualizerWithCustomAnimation : public Visualizer {
                           int action,
                           int mods) override;
 
-  protected:
+protected:
     std::string recording_image_basedir_ = "image/";
     std::string recording_image_filename_format_ = "image_%06d.png";
     std::string recording_image_trajectory_filename_ = "image_trajectory.json";

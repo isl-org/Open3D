@@ -39,11 +39,11 @@ class GlobalOptimizationConvergenceCriteria;
 class GlobalOptimizationOption;
 
 class GlobalOptimizationMethod {
-  public:
+public:
     GlobalOptimizationMethod() {}
     virtual ~GlobalOptimizationMethod() {}
 
-  public:
+public:
     virtual void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,
@@ -51,11 +51,11 @@ class GlobalOptimizationMethod {
 };
 
 class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
-  public:
+public:
     GlobalOptimizationGaussNewton() {}
     ~GlobalOptimizationGaussNewton() override {}
 
-  public:
+public:
     void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,
@@ -63,11 +63,11 @@ class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
 };
 
 class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
-  public:
+public:
     GlobalOptimizationLevenbergMarquardt() {}
     ~GlobalOptimizationLevenbergMarquardt() override {}
 
-  public:
+public:
     void OptimizePoseGraph(
             PoseGraph &pose_graph,
             const GlobalOptimizationConvergenceCriteria &criteria,

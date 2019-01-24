@@ -31,7 +31,7 @@
 namespace open3d {
 
 class ViewControlWithEditing : public ViewControl {
-  public:
+public:
     enum EditingMode {
         FreeMode = 0,
         OrthoPositiveX = 1,
@@ -42,7 +42,7 @@ class ViewControlWithEditing : public ViewControl {
         OrthoNegativeZ = 6,
     };
 
-  public:
+public:
     void Reset() override;
     void ChangeFieldOfView(double step) override;
     void Scale(double scale) override;
@@ -80,7 +80,7 @@ class ViewControlWithEditing : public ViewControl {
     void ToggleLocking() { is_view_locked_ = !is_view_locked_; }
     bool IsLocked() const { return is_view_locked_; }
 
-  protected:
+protected:
     EditingMode editing_mode_ = FreeMode;
     ViewParameters view_status_backup_;
     bool is_view_locked_ = false;

@@ -31,35 +31,35 @@
 namespace open3d {
 
 class Timer {
-  public:
+public:
     Timer();
     ~Timer();
 
-  public:
+public:
     static double GetSystemTimeInMilliseconds();
 
-  public:
+public:
     void Start();
     void Stop();
     void Print(const std::string &timer_info) const;
     double GetDuration() const;
 
-  private:
+private:
     double start_time_in_milliseconds_;
     double end_time_in_milliseconds_;
 };
 
 class ScopeTimer : public Timer {
-  public:
+public:
     ScopeTimer(const std::string &scope_timer_info = "");
     ~ScopeTimer();
 
-  private:
+private:
     std::string scope_timer_info_;
 };
 
 class FPSTimer : public Timer {
-  public:
+public:
     FPSTimer(const std::string &fps_timer_info = "",
              int expectation = -1,
              double time_to_print = 3000.0,
@@ -70,7 +70,7 @@ class FPSTimer : public Timer {
     /// time_to_print_, or event has been signaled events_to_print_ times.
     void Signal();
 
-  private:
+private:
     std::string fps_timer_info_;
     int expectation_;
     double time_to_print_;

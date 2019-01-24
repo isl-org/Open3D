@@ -40,22 +40,22 @@ class RGBDImage;
 class PinholeCameraIntrinsic;
 
 class PointCloud : public Geometry3D {
-  public:
+public:
     PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud){};
     ~PointCloud() override{};
 
-  public:
+public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     void Transform(const Eigen::Matrix4d &transformation) override;
 
-  public:
+public:
     PointCloud &operator+=(const PointCloud &cloud);
     PointCloud operator+(const PointCloud &cloud) const;
 
-  public:
+public:
     bool HasPoints() const { return points_.size() > 0; }
 
     bool HasNormals() const {
@@ -79,7 +79,7 @@ class PointCloud : public Geometry3D {
         }
     }
 
-  public:
+public:
     std::vector<Eigen::Vector3d> points_;
     std::vector<Eigen::Vector3d> normals_;
     std::vector<Eigen::Vector3d> colors_;

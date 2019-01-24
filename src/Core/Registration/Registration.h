@@ -44,7 +44,7 @@ class Feature;
 /// relative_fitness_ and relative_rmse_ individually, or the iteration number
 /// exceeds max_iteration_.
 class ICPConvergenceCriteria {
-  public:
+public:
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
                            double relative_rmse = 1e-6,
                            int max_iteration = 30)
@@ -53,7 +53,7 @@ class ICPConvergenceCriteria {
           max_iteration_(max_iteration) {}
     ~ICPConvergenceCriteria() {}
 
-  public:
+public:
     double relative_fitness_;
     double relative_rmse_;
     int max_iteration_;
@@ -66,26 +66,26 @@ class ICPConvergenceCriteria {
 /// iteration. Most iterations do not do full validation. It is crucial to
 /// control max_validation_ so that the computation time is acceptable.
 class RANSACConvergenceCriteria {
-  public:
+public:
     RANSACConvergenceCriteria(int max_iteration = 1000,
                               int max_validation = 1000)
         : max_iteration_(max_iteration), max_validation_(max_validation) {}
     ~RANSACConvergenceCriteria() {}
 
-  public:
+public:
     int max_iteration_;
     int max_validation_;
 };
 
 /// Class that contains the registration result
 class RegistrationResult {
-  public:
+public:
     RegistrationResult(
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
     ~RegistrationResult() {}
 
-  public:
+public:
     Eigen::Matrix4d_u transformation_;
     CorrespondenceSet correspondence_set_;
     double inlier_rmse_;

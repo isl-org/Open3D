@@ -33,7 +33,7 @@
 namespace open3d {
 
 class VisualizerForAlignment : public Visualizer {
-  public:
+public:
     VisualizerForAlignment(VisualizerWithEditing &source,
                            VisualizerWithEditing &target,
                            double voxel_size = -1.0,
@@ -52,12 +52,12 @@ class VisualizerForAlignment : public Visualizer {
           default_directory_(directory) {}
     ~VisualizerForAlignment() override {}
 
-  public:
+public:
     void PrintVisualizerHelp() override;
     bool AddSourceAndTarget(std::shared_ptr<PointCloud> source,
                             std::shared_ptr<PointCloud> target);
 
-  protected:
+protected:
     void KeyPressCallback(GLFWwindow *window,
                           int key,
                           int scancode,
@@ -69,7 +69,7 @@ class VisualizerForAlignment : public Visualizer {
     void PrintTransformation();
     void EvaluateAlignmentAndSave(const std::string &filename);
 
-  protected:
+protected:
     VisualizerWithEditing &source_visualizer_;
     VisualizerWithEditing &target_visualizer_;
     double voxel_size_ = -1.0;

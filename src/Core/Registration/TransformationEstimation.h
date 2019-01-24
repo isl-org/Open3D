@@ -48,11 +48,11 @@ enum class TransformationEstimationType {
 /// The virtual function ComputeTransformation() must be implemented in
 /// subclasses.
 class TransformationEstimation {
-  public:
+public:
     TransformationEstimation() {}
     virtual ~TransformationEstimation() {}
 
-  public:
+public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
     virtual double ComputeRMSE(const PointCloud &source,
@@ -66,12 +66,12 @@ class TransformationEstimation {
 
 /// Estimate a transformation for point to point distance
 class TransformationEstimationPointToPoint : public TransformationEstimation {
-  public:
+public:
     TransformationEstimationPointToPoint(bool with_scaling = false)
         : with_scaling_(with_scaling) {}
     ~TransformationEstimationPointToPoint() override {}
 
-  public:
+public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
@@ -84,21 +84,21 @@ class TransformationEstimationPointToPoint : public TransformationEstimation {
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-  public:
+public:
     bool with_scaling_ = false;
 
-  private:
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPoint;
 };
 
 /// Estimate a transformation for point to plane distance
 class TransformationEstimationPointToPlane : public TransformationEstimation {
-  public:
+public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
-  public:
+public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
@@ -111,7 +111,7 @@ class TransformationEstimationPointToPlane : public TransformationEstimation {
             const PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
-  private:
+private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
 };

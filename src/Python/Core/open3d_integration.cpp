@@ -35,7 +35,7 @@ using namespace open3d;
 
 template <class TSDFVolumeBase = TSDFVolume>
 class PyTSDFVolume : public TSDFVolumeBase {
-  public:
+public:
     using TSDFVolumeBase::TSDFVolumeBase;
     void Reset() override { PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, ); }
     void Integrate(const RGBDImage &image,

@@ -36,22 +36,22 @@ namespace open3d {
 class PointCloud;
 
 class LineSet : public Geometry3D {
-  public:
+public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
     ~LineSet() override {}
 
-  public:
+public:
     void Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     void Transform(const Eigen::Matrix4d &transformation) override;
 
-  public:
+public:
     LineSet &operator+=(const LineSet &lineset);
     LineSet operator+(const LineSet &lineset) const;
 
-  public:
+public:
     bool HasPoints() const { return points_.size() > 0; }
 
     bool HasLines() const { return HasPoints() && lines_.size() > 0; }
@@ -65,7 +65,7 @@ class LineSet : public Geometry3D {
         return std::make_pair(points_[lines_[i][0]], points_[lines_[i][1]]);
     }
 
-  public:
+public:
     std::vector<Eigen::Vector3d> points_;
     std::vector<Eigen::Vector2i> lines_;
     std::vector<Eigen::Vector3d> colors_;

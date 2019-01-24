@@ -46,7 +46,7 @@ class Index;
 namespace open3d {
 
 class KDTreeFlann {
-  public:
+public:
     KDTreeFlann();
     KDTreeFlann(const Eigen::MatrixXd &data);
     KDTreeFlann(const Geometry &geometry);
@@ -55,7 +55,7 @@ class KDTreeFlann {
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 
-  public:
+public:
     bool SetMatrixData(const Eigen::MatrixXd &data);
     bool SetGeometry(const Geometry &geometry);
     bool SetFeature(const Feature &feature);
@@ -85,10 +85,10 @@ class KDTreeFlann {
                      std::vector<int> &indices,
                      std::vector<double> &distance2) const;
 
-  private:
+private:
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
-  protected:
+protected:
     std::vector<double> data_;
     std::unique_ptr<flann::Matrix<double>> flann_dataset_;
     std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;

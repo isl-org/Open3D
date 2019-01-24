@@ -35,7 +35,7 @@
 namespace open3d {
 
 class ViewControl {
-  public:
+public:
     static const double FIELD_OF_VIEW_MAX;
     static const double FIELD_OF_VIEW_MIN;
     static const double FIELD_OF_VIEW_DEFAULT;
@@ -53,7 +53,7 @@ class ViewControl {
         Orthogonal = 1,
     };
 
-  public:
+public:
     /// Function to set view points
     /// This function obtains OpenGL context and calls OpenGL functions to set
     /// the view point.
@@ -133,7 +133,7 @@ class ViewControl {
     double GetZNear() const { return z_near_; }
     double GetZFar() const { return z_far_; }
 
-  protected:
+protected:
     int window_width_ = 0;
     int window_height_ = 0;
     BoundingBox bounding_box_;

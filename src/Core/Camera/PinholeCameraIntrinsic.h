@@ -38,14 +38,14 @@ enum class PinholeCameraIntrinsicParameters {
 };
 
 class PinholeCameraIntrinsic : public IJsonConvertible {
-  public:
+public:
     PinholeCameraIntrinsic();
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);
     PinholeCameraIntrinsic(
             int width, int height, double fx, double fy, double cx, double cy);
     ~PinholeCameraIntrinsic() override;
 
-  public:
+public:
     void SetIntrinsics(
             int width, int height, double fx, double fy, double cx, double cy) {
         width_ = width;
@@ -72,7 +72,7 @@ class PinholeCameraIntrinsic : public IJsonConvertible {
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
-  public:
+public:
     int width_ = -1;
     int height_ = -1;
     Eigen::Matrix3d intrinsic_matrix_;

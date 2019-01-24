@@ -36,7 +36,7 @@ using namespace open3d;
 
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase {
-  public:
+public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
     void ComputeJacobianAndResidual(
             int row,

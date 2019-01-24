@@ -39,7 +39,7 @@ using namespace open3d;
 
 template <class TransformationEstimationBase = TransformationEstimation>
 class PyTransformationEstimation : public TransformationEstimationBase {
-  public:
+public:
     using TransformationEstimationBase::TransformationEstimationBase;
     TransformationEstimationType GetTransformationEstimationType()
             const override {
@@ -63,7 +63,7 @@ class PyTransformationEstimation : public TransformationEstimationBase {
 
 template <class CorrespondenceCheckerBase = CorrespondenceChecker>
 class PyCorrespondenceChecker : public CorrespondenceCheckerBase {
-  public:
+public:
     using CorrespondenceCheckerBase::CorrespondenceCheckerBase;
     bool Check(const PointCloud &source,
                const PointCloud &target,

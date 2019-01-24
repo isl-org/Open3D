@@ -35,7 +35,7 @@ namespace open3d {
 /// viewed from the same view, of the same resolution.
 /// If you have other format, convert it first.
 class RGBDImage {
-  public:
+public:
     RGBDImage(){};
     RGBDImage(const Image &color, const Image &depth)
         : color_(color), depth_(depth){};
@@ -44,7 +44,7 @@ class RGBDImage {
         depth_.Clear();
     };
 
-  public:
+public:
     Image color_;
     Image depth_;
 };

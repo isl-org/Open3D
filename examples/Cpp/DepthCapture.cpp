@@ -35,7 +35,7 @@
 using namespace open3d;
 
 class VisualizerWithDepthCapture : public VisualizerWithCustomAnimation {
-  protected:
+protected:
     void KeyPressCallback(GLFWwindow *window,
                           int key,
                           int scancode,
