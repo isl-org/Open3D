@@ -66,6 +66,10 @@ public:
         return bool(geometry_ptr_);
     }
 
+    bool HasGeometry(std::shared_ptr<const Geometry> geometry_ptr) const {
+        return geometry_ptr_ == geometry_ptr;
+    }
+
     bool IsVisible() const { return is_visible_; }
     void SetVisible(bool visible) { is_visible_ = visible; };
     
