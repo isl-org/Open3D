@@ -356,7 +356,7 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
     ResetViewPoint();
     PrintDebug("Add geometry and update bounding box to %s\n",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
-    return UpdateGeometry();
+    return UpdateGeometry(geometry_ptr);
 }
 
 bool Visualizer::UpdateGeometry(std::shared_ptr<const Geometry> geometry_ptr)
