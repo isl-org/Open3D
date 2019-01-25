@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
-        DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
+        DrawGeometries({mesh_ptr}, "Mesh",    1600, 900);
     } else if (option == "spin") {
         auto mesh_ptr = std::make_shared<TriangleMesh>();
         if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
