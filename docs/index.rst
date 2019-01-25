@@ -3,6 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: _static/open3d_logo_horizontal.png
+    :alt: Open3D logo
+    :width: 320px
+    :align: center
+
+-----------
 
 Open3D: A Modern Library for 3D Data Processing
 ===================================================================

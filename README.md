@@ -1,3 +1,7 @@
+<p align="center">
+<img src="docs/_static/open3d_logo_horizontal.png" width="320" />
+</p>
+
 # Open3D: A Modern Library for 3D Data Processing
 
 [![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
