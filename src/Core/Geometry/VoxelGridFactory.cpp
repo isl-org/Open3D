@@ -115,4 +115,34 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     return output;
 }
 
+std::shared_ptr<VoxelGrid> CreateVoxelGrid(
+        double w, double h, double d, double voxel_size,
+        const Eigen::Vector3d origin) {
+    auto output = std::make_shared<VoxelGrid>();
+    int num_w = std::round(w / voxel_size);
+    int num_h = std::round(h / voxel_size);
+    int num_d = std::round(d / voxel_size);
+    PrintError("CreateVoxelGrid : %f, %f, %f, %f, [%f, %f, %f]\n", 
+            h, w, d, voxel_size, origin(0), origin(1), origin(2));
+    if (num_w * num_h * num_d > 512 * 512 * 512) {
+        PrintWarning("Too many voxels were requested");
+        return output;
+    }
+    output->origin_ = origin;
+    output->voxel_size_ = voxel_size;
+    output->voxels_.resize(num_w * num_h * num_d);
+    int cnt = 0;
+    for (int i=0; i<num_w; i++) {
+        for (int j=0; j<num_h; j++) {
+            for (int k=0; k<num_d; k++) {
+                output->voxels_[cnt](0) = i;
+                output->voxels_[cnt](1) = j;
+                output->voxels_[cnt](2) = k;
+                cnt++;
+            }
+        }
+    }
+    return output;
+}
+
 }   // namespace open3d

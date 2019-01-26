@@ -30,6 +30,7 @@
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
+#include <Core/Geometry/VoxelGrid.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 #include <IO/ClassIO/PointCloudIO.h>
 using namespace open3d;
@@ -88,6 +89,9 @@ void pybind_pointcloud_methods(py::module &m)
             "    y = (v - cy) * z / fy",
             "image"_a, "intrinsic"_a,
             "extrinsic"_a = Eigen::Matrix4d::Identity());
+    m.def("create_point_cloud_from_voxel_grid", &CreatePointCloudFromVoxelGrid,
+            "Factory function to create a pointcloud from an voxel grid",
+            "voxel_grid"_a);
     m.def("select_down_sample", &SelectDownSample,
             "Function to select points from input pointcloud into output pointcloud",
             "input"_a, "indices"_a, "invert"_a = false);

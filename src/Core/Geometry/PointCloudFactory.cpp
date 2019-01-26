@@ -30,6 +30,7 @@
 #include <Core/Utility/Console.h>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/RGBDImage.h>
+#include <Core/Geometry/VoxelGrid.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d{
@@ -156,6 +157,21 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
     }
     PrintDebug("[CreatePointCloudFromRGBDImage] Unsupported image format.\n");
     return std::make_shared<PointCloud>();
+}
+
+std::shared_ptr<PointCloud> CreatePointCloudFromVoxelGrid(
+        const VoxelGrid& voxel_grid)
+{
+    auto output = std::make_shared<PointCloud>();
+    output->points_.resize(voxel_grid.voxels_.size());
+    if (voxel_grid.HasColors())
+        output->colors_.resize(voxel_grid.colors_.size());
+    for (auto i=0; i<voxel_grid.voxels_.size(); i++) {
+        output->points_[i] = voxel_grid.GetOriginalCoordinate(i);
+        if (voxel_grid.HasColors())
+            output->colors_[i] = voxel_grid.colors_[i];
+    }
+    return output;
 }
 
 }    // namespace open3d

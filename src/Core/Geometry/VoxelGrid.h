@@ -33,8 +33,10 @@
 
 namespace open3d {
 
+class Image;
 class PointCloud;
 class TriangleMesh;
+class PinholeCameraParameters;
 
 class VoxelGrid : public Geometry3D
 {
@@ -57,9 +59,12 @@ public:
     bool HasVoxels() const {
         return voxels_.size() > 0;
     }
-
     bool HasColors() const {
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
+    }
+    Eigen::Vector3d GetOriginalCoordinate(int id) const {
+        return ((voxels_[id].cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5))
+                * voxel_size_) + origin_;
     }
 
 public:
@@ -72,5 +77,19 @@ public:
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input, double voxel_size);
+
+std::shared_ptr<VoxelGrid> CreateVoxelGrid(
+        double w, double h, double d, double voxel_size,
+        const Eigen::Vector3d origin);
+
+std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap (
+        VoxelGrid &input, const Image &silhouette_mask,
+        const PinholeCameraParameters &camera_parameter);
+
+void CarveVoxelGridUsingSilhouette (
+        VoxelGrid &input, const Image &silhouette_mask,
+        const PinholeCameraParameters &camera_parameter);
+
+void Test (const std::shared_ptr<PinholeCameraParameters> &camera_parameter);
 
 }

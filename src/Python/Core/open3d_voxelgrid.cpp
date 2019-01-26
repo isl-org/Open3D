@@ -27,9 +27,12 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
+#include <Core/Camera/PinholeCameraParameters.h>
+#include <Core/Geometry/Image.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Geometry/VoxelGrid.h>
 #include <IO/ClassIO/VoxelGridIO.h>
+
 using namespace open3d;
 
 void pybind_voxelgrid(py::module &m)
@@ -58,6 +61,13 @@ void pybind_voxelgrid_methods(py::module &m)
             &CreateSurfaceVoxelGridFromPointCloud,
             "Function to make voxels from scanned point cloud", "point_cloud"_a,
             "voxel_size"_a);
+    m.def("create_voxel_grid", &CreateVoxelGrid,
+            "Function to create regular voxel grid",
+            "w"_a, "h"_a, "d"_a, "voxel_size"_a, "origin"_a);
+    m.def("carve_voxel_grid_using_depth_map", &CarveVoxelGridUsingDepthMap,
+            "voxel_grid"_a, "depth_map"_a, "camera_parameter"_a);
+    m.def("carve_voxel_grid_using_silhouette", &CarveVoxelGridUsingSilhouette,
+            "voxel_grid"_a, "silhouette_mask"_a, "camera_parameter"_a);
     m.def("read_voxel_grid", [](const std::string &filename,
             const std::string &format) {
         VoxelGrid voxel_grid;

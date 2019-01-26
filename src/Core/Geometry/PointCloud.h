@@ -37,6 +37,7 @@ namespace open3d {
 
 class Image;
 class RGBDImage;
+class VoxelGrid;
 class PinholeCameraIntrinsic;
 
 class PointCloud : public Geometry3D
@@ -195,5 +196,12 @@ std::vector<double> ComputePointCloudMahalanobisDistance(
 /// \param input point cloud
 std::vector<double> ComputePointCloudNearestNeighborDistance(
         const PointCloud &input);
+
+/// Function to create a point cloud from the voxel grid.
+/// It transforms discrete voxel domain to original point cloud coordinate.
+/// \param input voxel grid
+/// \param output point cloud
+std::shared_ptr<PointCloud> CreatePointCloudFromVoxelGrid(
+    const VoxelGrid &voxel_grid);
 
 }   // namespace open3d
