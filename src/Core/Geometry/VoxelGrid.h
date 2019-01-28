@@ -66,8 +66,9 @@ public:
         return ((voxels_[id].cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5))
                 * voxel_size_) + origin_;
     }
+    std::vector<Eigen::Vector3d> GetBoundingPointsOfVoxel(int index);
 
-public:
+public : 
     double voxel_size_;
     Eigen::Vector3d origin_;
     std::vector<Eigen::Vector3i> voxels_;

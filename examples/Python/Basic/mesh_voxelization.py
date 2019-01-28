@@ -62,9 +62,15 @@ def preprocess(model):
     return model
 
 sphere = read_triangle_mesh("../../TestData/sphere.ply")
-model = read_triangle_mesh("../../TestData/bathtub_0154.ply")
+model = read_triangle_mesh("../../TestData/knot.ply")
 print("visualize model")
-draw_geometries([model])
+# draw_geometries([model])
+
+# make voxels
+cubic_size = 2.0
+voxel_grid_carving = create_voxel_grid(
+    w=cubic_size, h=cubic_size, d=cubic_size, voxel_size=cubic_size/40.0,
+    origin=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0])
 
 # rescale geometry 
 sphere = preprocess(sphere)
@@ -99,6 +105,11 @@ for xyz in sphere.vertices:
     depth = vis.capture_depth_float_buffer(False)
     pcd_agg += depth_to_pcd(depth,
             param.intrinsic.intrinsic_matrix, trans, w, h)
+    
+    # depth map carving method
+    depth_image = Image(depth)
+    voxel_grid_carving = carve_voxel_grid_using_depth_map(
+            voxel_grid_carving, depth, param)
 
 vis.destroy_window()
 
@@ -108,14 +119,18 @@ centers.points = Vector3dVector(centers_pts)
 draw_geometries([centers, model])
 
 print("voxelize dense point cloud")
-voxel = create_surface_voxel_grid_from_point_cloud(pcd_agg, voxel_size=0.05)
-print(voxel)
-draw_geometries([voxel])
+voxel_surface = create_surface_voxel_grid_from_point_cloud(pcd_agg, voxel_size=0.05)
+print(voxel_surface)
+draw_geometries([voxel_surface])
+
+print("voxel carving using depth map")
+print(voxel_grid_carving)
+draw_geometries([voxel_grid_carving])
 
 print("save and load VoxelGrid")
-write_voxel_grid("voxel_grid_test.ply", voxel)
-voxel_read = read_voxel_grid("voxel_grid_test.ply")
-print(voxel_read)
+write_voxel_grid("voxel_grid_test.ply", voxel_surface)
+voxel_surface_read = read_voxel_grid("voxel_grid_test.ply")
+print(voxel_surface_read)
 
 print("visualize original model and voxels together")
-draw_geometries([voxel_read, model])
+draw_geometries([voxel_surface_read, model])

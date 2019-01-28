@@ -93,13 +93,31 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const
     return (VoxelGrid(*this) += voxelgrid);
 }
 
+std::vector<Eigen::Vector3d> VoxelGrid::GetBoundingPointsOfVoxel(int id)
+{
+    double r = voxel_size_ / 2.0;
+    auto x = GetOriginalCoordinate(id);
+    std::vector<Eigen::Vector3d> points;
+    points.push_back(x + Eigen::Vector3d(-r, -r, -r));
+    points.push_back(x + Eigen::Vector3d(-r, -r, r));
+    points.push_back(x + Eigen::Vector3d(r, -r, -r));
+    points.push_back(x + Eigen::Vector3d(r, -r, r));
+    points.push_back(x + Eigen::Vector3d(-r, r, -r));
+    points.push_back(x + Eigen::Vector3d(-r, r, r));
+    points.push_back(x + Eigen::Vector3d(r, r, -r));
+    points.push_back(x + Eigen::Vector3d(r, r, r));
+    return std::move(points);
+}
+
 std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
     VoxelGrid& voxel_grid,
     const Image& depth_map,
     const PinholeCameraParameters& camera_parameter)
 {
-    auto voxel_pcd = CreatePointCloudFromVoxelGrid(voxel_grid);
-    // voxel_pcd->Transform(camera_parameter.extrinsic_.inverse());
+    auto rot = camera_parameter.extrinsic_.block<3, 3>(0, 0);
+    auto trans = camera_parameter.extrinsic_.block<3, 1>(0, 3);
+    auto intrinsic = camera_parameter.intrinsic_.intrinsic_matrix_;
+    
     if (voxel_grid.HasColors())
         assert(voxel_grid.voxels_.size() == voxel_grid.colors_.size());
     assert(depth_map.height_ == 
@@ -107,34 +125,42 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
     assert(depth_map.width_ ==
             camera_parameter.intrinsic_.width_);
     size_t n_voxels = voxel_grid.voxels_.size();
-    std::vector<bool> valid_id(n_voxels);
-    for (size_t i=0; i<n_voxels; i++)
-        valid_id[i] = true;
+    std::vector<bool> valid(n_voxels, true);
     for (size_t i = 0; i < n_voxels; i++) {
-        Eigen::Vector3d& x = voxel_pcd->points_[i];
-        auto uvz = camera_parameter.
-                intrinsic_.intrinsic_matrix_ * x;
-        if (depth_map.TestImageBoundary(uvz(0), uvz(1), 0.0)) {
-            PrintError("Inside\n");
-            int u = std::round(uvz(0));
-            int v = std::round(uvz(1));
+        auto pts = voxel_grid.GetBoundingPointsOfVoxel(i);
+        std::vector<bool> valid_i(8, true);
+        int cnt = 0;
+        for (auto& x : pts) {
+            auto x_trans = rot * x + trans;
+            auto uvz = intrinsic * x_trans;
             double z = uvz(2);
-            double d = *PointerAt<float>(depth_map, u, v);
-            if ((z == 0.0f) || (z < d)) {
-                PrintError("Inside2\n");
-                valid_id[i] = false;
+            int u = std::round(uvz(0) / z);
+            int v = std::round(uvz(1) / z);
+            if (depth_map.TestImageBoundary(u, v, 0.0)) {
+                double d = *PointerAt<float>(depth_map, u, v);
+                if ((d == 0.0f) || (z > 0.0 && z < d)) { 
+                    valid_i[cnt] = false; 
+                }
             }
+            cnt++;
+        }
+        if (std::all_of(valid_i.begin(), valid_i.end(),
+                [](bool v) { return !v; })) {
+            valid[i] = false;
         }
     }
     auto voxel_grid_output = std::make_shared<VoxelGrid>();
+    voxel_grid_output->voxel_size_ = voxel_grid.voxel_size_;
+    voxel_grid_output->origin_ = voxel_grid.origin_;
     for (size_t i=0; i<n_voxels; i++) {
-        if (valid_id[i]) {
-            voxel_grid.voxels_.push_back(voxel_grid.voxels_[i]);
+        if (valid[i]) {
+            voxel_grid_output->voxels_.push_back(
+                    voxel_grid.voxels_[i]);
             if (voxel_grid.HasColors())
-                voxel_grid.colors_.push_back(voxel_grid.colors_[i]);
+                voxel_grid_output->colors_.push_back(
+                        voxel_grid.colors_[i]);
         }
     }
-    PrintError("Inside3\n");
     return voxel_grid_output;
 }
 
