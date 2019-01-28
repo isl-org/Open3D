@@ -52,7 +52,8 @@ int main(int argc, char **args) {
     }
 
     auto pcd = CreatePointCloudFromFile(args[1]);
-    auto voxel = CreateSurfaceVoxelGridFromPointCloud(*pcd, 0.05);
+    Eigen::Vector3d min_bound(0, 0, 0), max_bound(1, 1, 1);
+    auto voxel = CreateSurfaceVoxelGridFromPointCloud(*pcd, 0.05, min_bound, max_bound);
     PrintVoxelGridInformation(*voxel);
     DrawGeometries({pcd, voxel});
     WriteVoxelGrid(args[2], *voxel, true);

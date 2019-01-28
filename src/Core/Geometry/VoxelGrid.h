@@ -76,8 +76,13 @@ public :
 
 };
 
+// std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
+//         const PointCloud &input, double voxel_size);
+
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input, double voxel_size);
+        const PointCloud &input, double voxel_size,
+        const Eigen::Vector3d voxel_min_bound, 
+        const Eigen::Vector3d voxel_max_bound);
 
 std::shared_ptr<VoxelGrid> CreateVoxelGrid(
         double w, double h, double d, double voxel_size,
@@ -90,7 +95,5 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap (
 void CarveVoxelGridUsingSilhouette (
         VoxelGrid &input, const Image &silhouette_mask,
         const PinholeCameraParameters &camera_parameter);
-
-void Test (const std::shared_ptr<PinholeCameraParameters> &camera_parameter);
 
 }

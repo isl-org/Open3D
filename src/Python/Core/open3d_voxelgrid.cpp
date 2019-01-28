@@ -60,7 +60,7 @@ void pybind_voxelgrid_methods(py::module &m)
     m.def("create_surface_voxel_grid_from_point_cloud",
             &CreateSurfaceVoxelGridFromPointCloud,
             "Function to make voxels from scanned point cloud", "point_cloud"_a,
-            "voxel_size"_a);
+            "voxel_size"_a, "min_bound"_a, "max_bound"_a);
     m.def("create_voxel_grid", &CreateVoxelGrid,
             "Function to create regular voxel grid",
             "w"_a, "h"_a, "d"_a, "voxel_size"_a, "origin"_a);

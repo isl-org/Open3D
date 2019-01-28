@@ -75,17 +75,15 @@ public:
 }
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input, double voxel_size)
+        const PointCloud &input, double voxel_size, 
+        const Eigen::Vector3d voxel_min_bound, 
+        const Eigen::Vector3d voxel_max_bound)
 {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
         return output;
     }
-    Eigen::Vector3d voxel_size3 =
-            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
-    Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
             (voxel_max_bound - voxel_min_bound).maxCoeff()) {
         PrintDebug("[VoxelGridFromPointCloud] voxel_size is too small.\n");
@@ -114,6 +112,16 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
             (int)input.points_.size(), (int)output->voxels_.size());
     return output;
 }
+
+// std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
+//         const PointCloud &input, double voxel_size) {
+//     Eigen::Vector3d voxel_size3 =
+//             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+//     Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
+//     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
+//     return CreateSurfaceVoxelGridFromPointCloud(input, voxel_size, 
+//             voxel_min_bound, voxel_max_bound);
+// }
 
 std::shared_ptr<VoxelGrid> CreateVoxelGrid(
         double w, double h, double d, double voxel_size,

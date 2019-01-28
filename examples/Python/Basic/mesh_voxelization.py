@@ -62,9 +62,10 @@ def preprocess(model):
     return model
 
 sphere = read_triangle_mesh("../../TestData/sphere.ply")
-model = read_triangle_mesh("../../TestData/knot.ply")
+model = read_triangle_mesh("../../TestData/bathtub_0154.ply")
+model.compute_vertex_normals()
 print("visualize model")
-# draw_geometries([model])
+draw_geometries([model])
 
 # make voxels
 cubic_size = 2.0
@@ -119,7 +120,10 @@ centers.points = Vector3dVector(centers_pts)
 draw_geometries([centers, model])
 
 print("voxelize dense point cloud")
-voxel_surface = create_surface_voxel_grid_from_point_cloud(pcd_agg, voxel_size=0.05)
+voxel_surface = create_surface_voxel_grid_from_point_cloud(
+        pcd_agg, voxel_size=cubic_size/40.0, 
+        min_bound=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0],
+        max_bound=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0])
 print(voxel_surface)
 draw_geometries([voxel_surface])
 
@@ -127,10 +131,13 @@ print("voxel carving using depth map")
 print(voxel_grid_carving)
 draw_geometries([voxel_grid_carving])
 
+print("Combine voxel_surface and voxel_grid_carving")
+voxel_combine = voxel_surface + voxel_grid_carving
+
 print("save and load VoxelGrid")
 write_voxel_grid("voxel_grid_test.ply", voxel_surface)
 voxel_surface_read = read_voxel_grid("voxel_grid_test.ply")
 print(voxel_surface_read)
 
 print("visualize original model and voxels together")
-draw_geometries([voxel_surface_read, model])
+draw_geometries([voxel_combine, model])

@@ -25,10 +25,13 @@
 // ----------------------------------------------------------------------------
 
 #include "VoxelGrid.h"
+#include <numeric>
+#include <unordered_map>
 #include <Eigen/Dense>
 #include <Core/Geometry/Image.h>
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Camera/PinholeCameraParameters.h>
+#include <Core/Utility/Helper.h>
 
 namespace open3d {
 
@@ -82,10 +85,73 @@ void VoxelGrid::Transform(const Eigen::Matrix4d &transformation)
     // not implemented.
 }
 
+class PointCloudVoxel
+{
+public:
+    PointCloudVoxel() :
+        num_of_points_(0),
+        color_(0.0, 0.0, 0.0)
+    {
+    }
+
+public:
+    void AddVoxel(const Eigen::Vector3i &voxel_index,
+            const VoxelGrid &voxelgrid, int index)
+    {
+        coordinate_ = voxel_index;
+        if (voxelgrid.HasColors()) {
+            color_ += voxelgrid.colors_[index];
+        }
+        num_of_points_++;
+    }
+
+    Eigen::Vector3i GetVoxelCoordinate() const {
+        return coordinate_;
+    }
+
+    Eigen::Vector3d GetAverageColor() const
+    {
+        return color_ / double(num_of_points_);
+    }
+
+public:
+    int num_of_points_;
+    Eigen::Vector3i coordinate_;
+    Eigen::Vector3d color_;
+};
+
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid)
 {
-    // not implemented.
-    return (*this);
+    assert(voxel_size_ == voxelgrid.voxel_size_);
+    assert(origin_ == voxelgrid.origin_);
+    assert(*this.HasColors() == voxelgrid.HasColors());
+    // auto output = std::make_shared<VoxelGrid>();
+    std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
+            hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
+    Eigen::Vector3d ref_coord;
+    Eigen::Vector3i voxel_index;
+    int i = 0;
+    for (auto& voxel : voxelgrid.voxels_) {
+        voxel_index << voxel(0), voxel(1), voxel(2);
+        voxelindex_to_accpoint[voxel_index].AddVoxel(voxel_index, voxelgrid, i++);
+    }
+    i = 0;
+    for (auto& voxel : voxels_) {
+        voxel_index << voxel(0), voxel(1), voxel(2);
+        voxelindex_to_accpoint[voxel_index].AddVoxel(voxel_index, *this, i++);
+    }
+    this->voxels_.clear();
+    this->colors_.clear();
+    bool has_colors = voxelgrid.HasColors();
+    for (auto accpoint : voxelindex_to_accpoint) {
+        this->voxels_.push_back(accpoint.second.GetVoxelCoordinate());
+        if (has_colors) {
+            this->colors_.push_back(accpoint.second.GetAverageColor());
+        }
+    }
+    // PrintDebug("Pointcloud is voxelized from %d points to %d voxels.\n",
+    //         (int)input.points_.size(), (int)output->voxels_.size());
+    return *this;
 }
 
 VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const
@@ -134,12 +200,13 @@ std::shared_ptr<VoxelGrid> CarveVoxelGridUsingDepthMap(
             auto x_trans = rot * x + trans;
             auto uvz = intrinsic * x_trans;
             double z = uvz(2);
-            int u = std::round(uvz(0) / z);
-            int v = std::round(uvz(1) / z);
-            if (depth_map.TestImageBoundary(u, v, 0.0)) {
-                double d = *PointerAt<float>(depth_map, u, v);
-                if ((d == 0.0f) || (z > 0.0 && z < d)) { 
-                    valid_i[cnt] = false; 
+            double u = uvz(0) / z;
+            double v = uvz(1) / z;
+            double d; bool boundary;
+            std::tie(boundary, d) = depth_map.FloatValueAt(u, v);
+            if (boundary) {
+                if ((d == 0.0) || (z > 0.0 && z < d)) {
+                    valid_i[cnt] = false;
                 }
             }
             cnt++;
