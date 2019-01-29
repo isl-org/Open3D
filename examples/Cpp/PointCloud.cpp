@@ -32,27 +32,24 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintPointCloud(const open3d::PointCloud &pointcloud)
-{
+void PrintPointCloud(const open3d::PointCloud &pointcloud) {
     using namespace open3d;
 
     bool pointcloud_has_normal = pointcloud.HasNormals();
-    PrintInfo("Pointcloud has %d points.\n",
-            (int)pointcloud.points_.size());
+    PrintInfo("Pointcloud has %d points.\n", (int)pointcloud.points_.size());
 
     Eigen::Vector3d min_bound = pointcloud.GetMinBound();
     Eigen::Vector3d max_bound = pointcloud.GetMaxBound();
     PrintInfo("Bounding box is: (%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)\n",
-            min_bound(0), min_bound(1), min_bound(2),
-            max_bound(0), max_bound(1), max_bound(2));
+              min_bound(0), min_bound(1), min_bound(2), max_bound(0),
+              max_bound(1), max_bound(2));
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         if (pointcloud_has_normal) {
             const Eigen::Vector3d &point = pointcloud.points_[i];
             const Eigen::Vector3d &normal = pointcloud.normals_[i];
-            PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n",
-                    point(0), point(1), point(2),
-                    normal(0), normal(1), normal(2));
+            PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n", point(0), point(1),
+                       point(2), normal(0), normal(1), normal(2));
         } else {
             const Eigen::Vector3d &point = pointcloud.points_[i];
             PrintDebug("%.6f %.6f %.6f\n", point(0), point(1), point(2));
@@ -61,8 +58,7 @@ void PrintPointCloud(const open3d::PointCloud &pointcloud)
     PrintDebug("End of the list.\n\n");
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
@@ -70,17 +66,15 @@ int main(int argc, char *argv[])
     auto pcd = CreatePointCloudFromFile(argv[1]);
     {
         ScopeTimer timer("FPFH estimation with Radius 0.25");
-        //for (int i = 0; i < 20; i++) {
-            ComputeFPFHFeature(*pcd,
-                    open3d::KDTreeSearchParamRadius(0.25));
+        // for (int i = 0; i < 20; i++) {
+        ComputeFPFHFeature(*pcd, open3d::KDTreeSearchParamRadius(0.25));
         //}
     }
 
     {
         ScopeTimer timer("Normal estimation with KNN20");
         for (int i = 0; i < 20; i++) {
-            EstimateNormals(*pcd,
-                    open3d::KDTreeSearchParamKNN(20));
+            EstimateNormals(*pcd, open3d::KDTreeSearchParamKNN(20));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -89,8 +83,7 @@ int main(int argc, char *argv[])
     {
         ScopeTimer timer("Normal estimation with Radius 0.01666");
         for (int i = 0; i < 20; i++) {
-            EstimateNormals(*pcd,
-                    open3d::KDTreeSearchParamRadius(0.01666));
+            EstimateNormals(*pcd, open3d::KDTreeSearchParamRadius(0.01666));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -99,8 +92,7 @@ int main(int argc, char *argv[])
     {
         ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
         for (int i = 0; i < 20; i++) {
-            EstimateNormals(*pcd,
-                    open3d::KDTreeSearchParamHybrid(0.01666, 60));
+            EstimateNormals(*pcd, open3d::KDTreeSearchParamHybrid(0.01666, 60));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -163,8 +155,8 @@ int main(int argc, char *argv[])
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 3>(0, 0) = static_cast<Eigen::Matrix3d>(
             Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitX()));
-    pointcloud_transformed_ptr->Transform(
-            trans_to_origin.inverse() * transformation * trans_to_origin);
+    pointcloud_transformed_ptr->Transform(trans_to_origin.inverse() *
+                                          transformation * trans_to_origin);
 
     visualizer.CreateVisualizerWindow("Open3D", 1600, 900);
     visualizer.AddGeometry(pointcloud_ptr);
@@ -181,15 +173,17 @@ int main(int argc, char *argv[])
     DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
     // 6. test normal estimation
-    DrawGeometriesWithKeyCallbacks({pointcloud_ptr},
-            {{GLFW_KEY_SPACE, [&](Visualizer *vis) {
-                //EstimateNormals(*pointcloud_ptr,
-                //        open3d::KDTreeSearchParamKNN(20));
-                EstimateNormals(*pointcloud_ptr,
-                        open3d::KDTreeSearchParamRadius(0.05));
-                PrintInfo("Done.\n");
-                return true;
-            }}},
+    DrawGeometriesWithKeyCallbacks(
+            {pointcloud_ptr},
+            {{GLFW_KEY_SPACE,
+              [&](Visualizer *vis) {
+                  // EstimateNormals(*pointcloud_ptr,
+                  //        open3d::KDTreeSearchParamKNN(20));
+                  EstimateNormals(*pointcloud_ptr,
+                                  open3d::KDTreeSearchParamRadius(0.05));
+                  PrintInfo("Done.\n");
+                  return true;
+              }}},
             "Press Space to Estimate Normal", 1600, 900);
 
     // n. test end

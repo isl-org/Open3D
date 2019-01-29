@@ -29,7 +29,6 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraParameters, DISABLED_ConvertToFromJsonValue)
-{
+TEST(PinholeCameraParameters, DISABLED_ConvertToFromJsonValue) {
     unit_test::NotImplemented();
 }

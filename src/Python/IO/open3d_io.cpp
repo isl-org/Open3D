@@ -26,6 +26,4 @@
 
 #include "open3d_io.h"
 
-void pybind_io(py::module &m)
-{
-}
+void pybind_io(py::module &m) {}

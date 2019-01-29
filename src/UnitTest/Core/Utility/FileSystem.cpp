@@ -38,8 +38,7 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 // Get the file extension and convert to lower case.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileExtensionInLowerCase)
-{
+TEST(FileSystem, GetFileExtensionInLowerCase) {
     string path;
     string result;
 
@@ -97,8 +96,7 @@ TEST(FileSystem, GetFileExtensionInLowerCase)
 // Should return the file name only, without extension.
 // What it actually does is return the full path without the extension.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileNameWithoutExtension)
-{
+TEST(FileSystem, GetFileNameWithoutExtension) {
     string path;
     string result;
 
@@ -140,8 +138,7 @@ TEST(FileSystem, GetFileNameWithoutExtension)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileNameWithoutDirectory)
-{
+TEST(FileSystem, GetFileNameWithoutDirectory) {
     string path;
     string result;
 
@@ -183,8 +180,7 @@ TEST(FileSystem, GetFileNameWithoutDirectory)
 // ----------------------------------------------------------------------------
 // Get parent directory, terminated in '/'.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetFileParentDirectory)
-{
+TEST(FileSystem, GetFileParentDirectory) {
     string path;
     string result;
 
@@ -226,8 +222,7 @@ TEST(FileSystem, GetFileParentDirectory)
 // ----------------------------------------------------------------------------
 // Add '/' at the end of the input path, if missing.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, GetRegularizedDirectoryName)
-{
+TEST(FileSystem, GetRegularizedDirectoryName) {
     string path;
     string result;
 
@@ -247,8 +242,7 @@ TEST(FileSystem, GetRegularizedDirectoryName)
 // ----------------------------------------------------------------------------
 // Get/Change the working directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, ChangeWorkingDirectory)
-{
+TEST(FileSystem, ChangeWorkingDirectory) {
     string path = "test";
 
     bool status;
@@ -273,8 +267,7 @@ TEST(FileSystem, ChangeWorkingDirectory)
 // ----------------------------------------------------------------------------
 // Check if a path exists.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DirectoryExists)
-{
+TEST(FileSystem, DirectoryExists) {
     string path = "test/filesystem";
 
     bool status;
@@ -310,8 +303,7 @@ TEST(FileSystem, DirectoryExists)
 // Return true if the directory was created.
 // Return false otherwise. This could mean that the directory already exists.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, MakeDirectory)
-{
+TEST(FileSystem, MakeDirectory) {
     string path = "test";
 
     bool status;
@@ -329,8 +321,7 @@ TEST(FileSystem, MakeDirectory)
 // ----------------------------------------------------------------------------
 // Make a hierarchy of directories. Equivalent to 'mkdir -p ...'.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, MakeDirectoryHierarchy)
-{
+TEST(FileSystem, MakeDirectoryHierarchy) {
     string path = "test/filesystem";
 
     bool status;
@@ -355,8 +346,7 @@ TEST(FileSystem, MakeDirectoryHierarchy)
 // ----------------------------------------------------------------------------
 // Note: DeleteDirectory can delete one dir at a time.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, DeleteDirectory)
-{
+TEST(FileSystem, DeleteDirectory) {
     string path = "test";
 
     bool status;
@@ -374,8 +364,7 @@ TEST(FileSystem, DeleteDirectory)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FileSystem, File_Exists_Remove)
-{
+TEST(FileSystem, File_Exists_Remove) {
     string path = "test/filesystem";
     string fileName = "fileName.ext";
 
@@ -418,13 +407,10 @@ TEST(FileSystem, File_Exists_Remove)
 // ----------------------------------------------------------------------------
 // List all files in the specified directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, ListFilesInDirectory)
-{
+TEST(FileSystem, ListFilesInDirectory) {
     string path = "test/filesystem";
-    vector<string> fileNames = { "fileName00.ext",
-                                 "fileName01.ext",
-                                 "fileName02.ext",
-                                 "fileName03.ext" };
+    vector<string> fileNames = {"fileName00.ext", "fileName01.ext",
+                                "fileName02.ext", "fileName03.ext"};
 
     bool status;
 
@@ -443,15 +429,13 @@ TEST(FileSystem, ListFilesInDirectory)
 
     sort(list.begin(), list.end());
 
-    for (size_t i = 0; i < fileNames.size(); i++)
-    {
+    for (size_t i = 0; i < fileNames.size(); i++) {
         EXPECT_EQ(fileNames[i],
                   filesystem::GetFileNameWithoutDirectory(list[i]));
     }
 
     // clean-up
-    for (size_t i = 0; i < fileNames.size(); i++)
-    {
+    for (size_t i = 0; i < fileNames.size(); i++) {
         status = filesystem::RemoveFile(fileNames[i]);
         EXPECT_TRUE(status);
     }
@@ -473,17 +457,12 @@ TEST(FileSystem, ListFilesInDirectory)
 // ----------------------------------------------------------------------------
 // List all files of a specific extension in the specified directory.
 // ----------------------------------------------------------------------------
-TEST(FileSystem, ListFilesInDirectoryWithExtension)
-{
+TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     string path = "test/filesystem";
-    vector<string> fileNames = { "fileName00.ext0",
-                                 "fileName01.ext0",
-                                 "fileName02.ext0",
-                                 "fileName03.ext0",
-                                 "fileName04.ext1",
-                                 "fileName05.ext1",
-                                 "fileName06.ext1",
-                                 "fileName07.ext1" };
+    vector<string> fileNames = {"fileName00.ext0", "fileName01.ext0",
+                                "fileName02.ext0", "fileName03.ext0",
+                                "fileName04.ext1", "fileName05.ext1",
+                                "fileName06.ext1", "fileName07.ext1"};
 
     bool status;
 
@@ -502,15 +481,13 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension)
 
     sort(list.begin(), list.end());
 
-    for (size_t i = 0; i < list.size(); i++)
-    {
+    for (size_t i = 0; i < list.size(); i++) {
         EXPECT_EQ(fileNames[i],
                   filesystem::GetFileNameWithoutDirectory(list[i]));
     }
 
     // clean-up
-    for (size_t i = 0; i < fileNames.size(); i++)
-    {
+    for (size_t i = 0; i < fileNames.size(); i++) {
         status = filesystem::RemoveFile(fileNames[i]);
         EXPECT_TRUE(status);
     }

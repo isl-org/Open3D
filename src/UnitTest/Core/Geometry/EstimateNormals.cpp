@@ -29,15 +29,9 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_FastEigen3x3)
-{
-    unit_test::NotImplemented();
-}
+TEST(EstimateNormals, DISABLED_FastEigen3x3) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(EstimateNormals, DISABLED_ComputeNormal)
-{
-    unit_test::NotImplemented();
-}
+TEST(EstimateNormals, DISABLED_ComputeNormal) { unit_test::NotImplemented(); }

@@ -34,28 +34,30 @@ namespace open3d {
 /// Factory function to create a voxelgrid from a file.
 /// \return return an empty voxelgrid if fail to read the file.
 std::shared_ptr<VoxelGrid> CreateVoxelGridFromFile(
-    const std::string &filename, const std::string &format = "auto");
+        const std::string &filename, const std::string &format = "auto");
 
 /// The general entrance for reading a VoxelGrid from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadVoxelGrid(const std::string &filename, VoxelGrid &voxelgrid,
-        const std::string &format = "auto");
+bool ReadVoxelGrid(const std::string &filename,
+                   VoxelGrid &voxelgrid,
+                   const std::string &format = "auto");
 
 /// The general entrance for writing a VoxelGrid to a file
 /// The function calls write functions based on the extension name of filename.
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
-bool WriteVoxelGrid(const std::string &filename, const VoxelGrid &voxelgrid,
-        bool write_ascii = false, bool compressed = false);
+bool WriteVoxelGrid(const std::string &filename,
+                    const VoxelGrid &voxelgrid,
+                    bool write_ascii = false,
+                    bool compressed = false);
 
-bool ReadVoxelGridFromPLY(
-        const std::string &filename,
-        VoxelGrid &voxelgrid);
+bool ReadVoxelGridFromPLY(const std::string &filename, VoxelGrid &voxelgrid);
 
 bool WriteVoxelGridToPLY(const std::string &filename,
-        const VoxelGrid &voxelgrid, bool write_ascii = false,
-        bool compressed = false);
+                         const VoxelGrid &voxelgrid,
+                         bool write_ascii = false,
+                         bool compressed = false);
 
-}    // namespace open3d
+}  // namespace open3d

@@ -29,31 +29,27 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption)
-{
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_GlobalOptimizationOption) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Destructor)
-{
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Constructor)
-{
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GlobalOptimizationConvergenceCriteria, DISABLED_MemberData)
-{
+TEST(GlobalOptimizationConvergenceCriteria, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }

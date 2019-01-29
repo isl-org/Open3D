@@ -29,87 +29,56 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_Compile)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_Compile) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_Release)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_Release) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_BindGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_BindGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_RenderGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_RenderGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_UnbindGeometry)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_UnbindGeometry) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_PrepareRendering)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_PrepareRendering) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_PrepareBinding)
-{
-    unit_test::NotImplemented();
-}
+TEST(PickingShader, DISABLED_PrepareBinding) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PickingShader, DISABLED_PickingShaderForPointCloud)
-{
+TEST(PickingShader, DISABLED_PickingShaderForPointCloud) {
     unit_test::NotImplemented();
 }

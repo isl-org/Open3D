@@ -36,8 +36,7 @@ namespace open3d {
 class PointCloud;
 class TriangleMesh;
 
-class VoxelGrid : public Geometry3D
-{
+class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid){};
     ~VoxelGrid() override{};
@@ -54,9 +53,7 @@ public:
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
 
 public:
-    bool HasVoxels() const {
-        return voxels_.size() > 0;
-    }
+    bool HasVoxels() const { return voxels_.size() > 0; }
 
     bool HasColors() const {
         return voxels_.size() > 0 && colors_.size() == voxels_.size();
@@ -67,10 +64,9 @@ public:
     Eigen::Vector3d origin_;
     std::vector<Eigen::Vector3i> voxels_;
     std::vector<Eigen::Vector3d> colors_;
-
 };
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input, double voxel_size);
 
-}
+}  // namespace open3d

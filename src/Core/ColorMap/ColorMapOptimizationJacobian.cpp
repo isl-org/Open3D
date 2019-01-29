@@ -34,17 +34,18 @@
 namespace open3d {
 
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
-        int row, Eigen::Vector6d &J_r, double &r,
+        int row,
+        Eigen::Vector6d& J_r,
+        double& r,
         const TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
         const std::shared_ptr<Image>& images_gray,
         const std::shared_ptr<Image>& images_dx,
         const std::shared_ptr<Image>& images_dy,
-        const Eigen::Matrix4d &intrinsic,
-        const Eigen::Matrix4d &extrinsic,
+        const Eigen::Matrix4d& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
         const std::vector<int>& visiblity_image_to_vertex,
-        const int image_boundary_margin)
-{
+        const int image_boundary_margin) {
     J_r.setZero();
     r = 0;
     int vid = visiblity_image_to_vertex[row];
@@ -53,14 +54,13 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
     Eigen::Vector4d uv = intrinsic * g;
     double u = uv(0) / uv(2);
     double v = uv(1) / uv(2);
-    if (!images_gray->TestImageBoundary(u, v, image_boundary_margin))
-        return;
-    bool valid; double gray, dIdx, dIdy;
+    if (!images_gray->TestImageBoundary(u, v, image_boundary_margin)) return;
+    bool valid;
+    double gray, dIdx, dIdy;
     std::tie(valid, gray) = images_gray->FloatValueAt(u, v);
     std::tie(valid, dIdx) = images_dx->FloatValueAt(u, v);
     std::tie(valid, dIdy) = images_dy->FloatValueAt(u, v);
-    if (gray == -1.0)
-        return;
+    if (gray == -1.0) return;
     double invz = 1. / g(2);
     double v0 = dIdx * intrinsic(0, 0) * invz;
     double v1 = dIdy * intrinsic(1, 1) * invz;
@@ -75,7 +75,10 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
 }
 
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
-        int row, Eigen::Vector14d &J_r, double &r, Eigen::Vector14i &pattern,
+        int row,
+        Eigen::Vector14d& J_r,
+        double& r,
+        Eigen::Vector14i& pattern,
         const TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
         const std::shared_ptr<Image>& images_gray,
@@ -83,11 +86,10 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
         const std::shared_ptr<Image>& images_dy,
         const ImageWarpingField& warping_fields,
         const ImageWarpingField& warping_fields_init,
-        const Eigen::Matrix4d &intrinsic,
-        const Eigen::Matrix4d &extrinsic,
+        const Eigen::Matrix4d& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
         const std::vector<int>& visiblity_image_to_vertex,
-        const int image_boundary_margin)
-{
+        const int image_boundary_margin) {
     J_r.setZero();
     pattern.setZero();
     r = 0;
@@ -99,8 +101,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     Eigen::Vector4d L = intrinsic * G;
     double u = L(0) / L(2);
     double v = L(1) / L(2);
-    if (!images_gray->TestImageBoundary(u, v,
-            image_boundary_margin)) {
+    if (!images_gray->TestImageBoundary(u, v, image_boundary_margin)) {
         return;
     }
     int ii = (int)(u / anchor_step);
@@ -108,30 +109,31 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     double p = (u - ii * anchor_step) / anchor_step;
     double q = (v - jj * anchor_step) / anchor_step;
     Eigen::Vector2d grids[4] = {
-        warping_fields.QueryFlow(ii, jj),
-        warping_fields.QueryFlow(ii, jj + 1),
-        warping_fields.QueryFlow(ii + 1, jj),
-        warping_fields.QueryFlow(ii + 1, jj + 1),
+            warping_fields.QueryFlow(ii, jj),
+            warping_fields.QueryFlow(ii, jj + 1),
+            warping_fields.QueryFlow(ii + 1, jj),
+            warping_fields.QueryFlow(ii + 1, jj + 1),
     };
-    Eigen::Vector2d uuvv = (1 - p) * (1 - q) * grids[0]
-        + (1 - p) * (q)* grids[1]
-        + (p)* (1 - q) * grids[2]
-        + (p)* (q)* grids[3];
+    Eigen::Vector2d uuvv = (1 - p) * (1 - q) * grids[0] +
+                           (1 - p) * (q)*grids[1] + (p) * (1 - q) * grids[2] +
+                           (p) * (q)*grids[3];
     double uu = uuvv(0);
     double vv = uuvv(1);
-    if (!images_gray->TestImageBoundary(uu, vv,
-            image_boundary_margin)) {
+    if (!images_gray->TestImageBoundary(uu, vv, image_boundary_margin)) {
         return;
     }
-    bool valid; double gray, dIdfx, dIdfy;
+    bool valid;
+    double gray, dIdfx, dIdfy;
     std::tie(valid, gray) = images_gray->FloatValueAt(uu, vv);
     std::tie(valid, dIdfx) = images_dx->FloatValueAt(uu, vv);
     std::tie(valid, dIdfy) = images_dy->FloatValueAt(uu, vv);
     Eigen::Vector2d dIdf(dIdfx, dIdfy);
-    Eigen::Vector2d dfdx = ((grids[2] - grids[0]) * (1 - q) +
-            (grids[3] - grids[1]) * q) / anchor_step;
-    Eigen::Vector2d dfdy = ((grids[1] - grids[0]) * (1 - p) +
-            (grids[3] - grids[2]) * p) / anchor_step;
+    Eigen::Vector2d dfdx =
+            ((grids[2] - grids[0]) * (1 - q) + (grids[3] - grids[1]) * q) /
+            anchor_step;
+    Eigen::Vector2d dfdy =
+            ((grids[1] - grids[0]) * (1 - p) + (grids[3] - grids[2]) * p) /
+            anchor_step;
     double dIdx = dIdf.dot(dfdx);
     double dIdy = dIdf.dot(dfdy);
     double invz = 1. / G(2);
@@ -169,4 +171,4 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     r = (gray - proxy_intensity[vid]);
 }
 
-}    // namespace open3d
+}  // namespace open3d

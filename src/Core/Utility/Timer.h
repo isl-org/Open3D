@@ -30,8 +30,7 @@
 
 namespace open3d {
 
-class Timer
-{
+class Timer {
 public:
     Timer();
     ~Timer();
@@ -50,8 +49,7 @@ private:
     double end_time_in_milliseconds_;
 };
 
-class ScopeTimer : public Timer
-{
+class ScopeTimer : public Timer {
 public:
     ScopeTimer(const std::string &scope_timer_info = "");
     ~ScopeTimer();
@@ -60,11 +58,12 @@ private:
     std::string scope_timer_info_;
 };
 
-class FPSTimer : public Timer
-{
+class FPSTimer : public Timer {
 public:
-    FPSTimer(const std::string &fps_timer_info = "", int expectation = -1,
-            double time_to_print = 3000.0, int events_to_print = 100);
+    FPSTimer(const std::string &fps_timer_info = "",
+             int expectation = -1,
+             double time_to_print = 3000.0,
+             int events_to_print = 100);
 
     /// Function to signal an event
     /// It automatically prints FPS information when duration is more than
@@ -80,4 +79,4 @@ private:
     int event_total_count_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

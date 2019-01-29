@@ -34,8 +34,7 @@
 
 namespace open3d {
 
-class ViewTrajectory : public IJsonConvertible
-{
+class ViewTrajectory : public IJsonConvertible {
 public:
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;
@@ -59,8 +58,7 @@ public:
 
     void ChangeInterval(int change) {
         int new_interval = interval_ + change * INTERVAL_STEP;
-        if (new_interval >= INTERVAL_MIN && new_interval <= INTERVAL_MAX)
-        {
+        if (new_interval >= INTERVAL_MIN && new_interval <= INTERVAL_MAX) {
             interval_ = new_interval;
         }
     }
@@ -69,8 +67,8 @@ public:
         if (view_status_.empty()) {
             return 0;
         } else {
-            return is_loop_ ? (interval_ + 1) * view_status_.size() :
-                    (interval_ + 1) * (view_status_.size() - 1) + 1;
+            return is_loop_ ? (interval_ + 1) * view_status_.size()
+                            : (interval_ + 1) * (view_status_.size() - 1) + 1;
         }
     }
 
@@ -90,7 +88,8 @@ public:
     bool is_loop_ = false;
     int interval_ = INTERVAL_DEFAULT;
     std::vector<ViewParameters::Matrix17x4d,
-                ViewParameters::Matrix17x4d_allocator> coeff_;
+                ViewParameters::Matrix17x4d_allocator>
+            coeff_;
 };
 
-}   // namespace open3d
+}  // namespace open3d

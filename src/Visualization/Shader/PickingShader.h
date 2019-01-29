@@ -33,31 +33,34 @@
 namespace open3d {
 
 namespace glsl {
-    
-class PickingShader : public ShaderWrapper
-{
+
+class PickingShader : public ShaderWrapper {
 public:
     ~PickingShader() override { Release(); }
 
 protected:
     PickingShader(const std::string &name) : ShaderWrapper(name) { Compile(); }
-    
+
 protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry, const RenderOption &option,
-            const ViewControl &view) final;
+    bool BindGeometry(const Geometry &geometry,
+                      const RenderOption &option,
+                      const ViewControl &view) final;
+    bool RenderGeometry(const Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view) final;
     void UnbindGeometry() final;
 
 protected:
     virtual bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) = 0;
+                                  const RenderOption &option,
+                                  const ViewControl &view) = 0;
     virtual bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points,
-            std::vector<float> &indices) = 0;
+                                const RenderOption &option,
+                                const ViewControl &view,
+                                std::vector<Eigen::Vector3f> &points,
+                                std::vector<float> &indices) = 0;
 
 protected:
     GLuint vertex_position_;
@@ -67,21 +70,22 @@ protected:
     GLuint MVP_;
 };
 
-class PickingShaderForPointCloud : public PickingShader
-{
+class PickingShaderForPointCloud : public PickingShader {
 public:
-    PickingShaderForPointCloud() :
-            PickingShader("PickingShaderForPointCloud") {}
-    
+    PickingShaderForPointCloud()
+        : PickingShader("PickingShaderForPointCloud") {}
+
 protected:
     bool PrepareRendering(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view) final;
+                          const RenderOption &option,
+                          const ViewControl &view) final;
     bool PrepareBinding(const Geometry &geometry,
-            const RenderOption &option, const ViewControl &view,
-            std::vector<Eigen::Vector3f> &points,
-            std::vector<float> &indices) final;
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        std::vector<Eigen::Vector3f> &points,
+                        std::vector<float> &indices) final;
 };
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

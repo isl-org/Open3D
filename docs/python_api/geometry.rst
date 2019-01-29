@@ -1,10 +1,10 @@
 Geometry
 ----------
-.. currentmodule:: open3d.open3d
+.. currentmodule:: open3d
 
-.. autosummary:: 
+.. autosummary::
     open3d.geometry
 
-.. automodule:: open3d.open3d.geometry
+.. automodule:: open3d.geometry
     :members:
-    
+    :undoc-members:

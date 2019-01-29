@@ -34,19 +34,15 @@
 #include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 
-namespace open3d{
+namespace open3d {
 
-VisualizerWithCustomAnimation::VisualizerWithCustomAnimation()
-{
-}
+VisualizerWithCustomAnimation::VisualizerWithCustomAnimation() {}
 
-VisualizerWithCustomAnimation::~VisualizerWithCustomAnimation()
-{
-}
+VisualizerWithCustomAnimation::~VisualizerWithCustomAnimation() {}
 
-void VisualizerWithCustomAnimation::PrintVisualizerHelp()
-{
+void VisualizerWithCustomAnimation::PrintVisualizerHelp() {
     Visualizer::PrintVisualizerHelp();
+    // clang-format off
     PrintInfo("  -- Animation control --\n");
     PrintInfo("    Ctrl + F     : Enter freeview (editing) mode.\n");
     PrintInfo("    Ctrl + W     : Enter preview mode.\n");
@@ -72,23 +68,23 @@ void VisualizerWithCustomAnimation::PrintVisualizerHelp()
     PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
     PrintInfo("    Ctrl + [/]   : Go to beginning/end of the camera path.\n");
     PrintInfo("\n");
+    // clang-format on
 }
 
-void VisualizerWithCustomAnimation::UpdateWindowTitle()
-{
+void VisualizerWithCustomAnimation::UpdateWindowTitle() {
     if (window_ != NULL) {
-        auto &view_control = (ViewControlWithCustomAnimation &)
-                (*view_control_ptr_);
-        std::string new_window_title = window_name_ + " - " +
-                view_control.GetStatusString();
+        auto &view_control =
+                (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+        std::string new_window_title =
+                window_name_ + " - " + view_control.GetStatusString();
         glfwSetWindowTitle(window_, new_window_title.c_str());
     }
 }
 
-void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
-        bool recording_depth/* = false*/,
-        bool close_window_when_animation_ends/* = false*/)
-{
+void VisualizerWithCustomAnimation::Play(
+        bool recording /* = false*/,
+        bool recording_depth /* = false*/,
+        bool close_window_when_animation_ends /* = false*/) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.NumOfFrames() == 0) {
         PrintInfo("Abort playing due to empty trajectory.\n");
@@ -109,73 +105,69 @@ void VisualizerWithCustomAnimation::Play(bool recording/* = false*/,
             filesystem::MakeDirectoryHierarchy(recording_image_basedir_);
         }
     }
-    RegisterAnimationCallback(
-            [=](Visualizer *vis) {
-                // The lambda function captures no references to avoid dangling
-                // references
-                auto &view_control =
-                        (ViewControlWithCustomAnimation &)(*view_control_ptr_);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                recording_file_index_++;
-                if (recording) {
-                    if (recording_trajectory) {
-                        auto parameter = PinholeCameraParameters();
-                        view_control.ConvertToPinholeCameraParameters(parameter);
-                        trajectory_ptr->parameters_.push_back(parameter);
-                    }
-                    char buffer[DEFAULT_IO_BUFFER_SIZE];
-                    if (recording_depth) {
-                        sprintf(buffer,
-                                recording_depth_filename_format_.c_str(),
-                                recording_file_index_);
-                        CaptureDepthImage(recording_depth_basedir_ +
-                                std::string(buffer), false);
-                    } else {
-                        sprintf(buffer,
-                                recording_image_filename_format_.c_str(),
-                                recording_file_index_);
-                        CaptureScreenImage(recording_image_basedir_ +
-                                std::string(buffer), false);
-                    }
-                }
-                view_control.Step(1.0);
-                AdvanceConsoleProgress();
-                if (view_control.IsPlayingEnd(recording_file_index_)) {
-                    view_control.SetAnimationMode(
-                            ViewControlWithCustomAnimation::
-                            AnimationMode::FreeMode);
-                    RegisterAnimationCallback(nullptr);
-                    if (recording && recording_trajectory) {
-                        if (recording_depth) {
-                            WriteIJsonConvertible(recording_depth_basedir_ +
+    RegisterAnimationCallback([=](Visualizer *vis) {
+        // The lambda function captures no references to avoid dangling
+        // references
+        auto &view_control =
+                (ViewControlWithCustomAnimation &)(*view_control_ptr_);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        recording_file_index_++;
+        if (recording) {
+            if (recording_trajectory) {
+                auto parameter = PinholeCameraParameters();
+                view_control.ConvertToPinholeCameraParameters(parameter);
+                trajectory_ptr->parameters_.push_back(parameter);
+            }
+            char buffer[DEFAULT_IO_BUFFER_SIZE];
+            if (recording_depth) {
+                sprintf(buffer, recording_depth_filename_format_.c_str(),
+                        recording_file_index_);
+                CaptureDepthImage(
+                        recording_depth_basedir_ + std::string(buffer), false);
+            } else {
+                sprintf(buffer, recording_image_filename_format_.c_str(),
+                        recording_file_index_);
+                CaptureScreenImage(
+                        recording_image_basedir_ + std::string(buffer), false);
+            }
+        }
+        view_control.Step(1.0);
+        AdvanceConsoleProgress();
+        if (view_control.IsPlayingEnd(recording_file_index_)) {
+            view_control.SetAnimationMode(
+                    ViewControlWithCustomAnimation::AnimationMode::FreeMode);
+            RegisterAnimationCallback(nullptr);
+            if (recording && recording_trajectory) {
+                if (recording_depth) {
+                    WriteIJsonConvertible(
+                            recording_depth_basedir_ +
                                     recording_depth_trajectory_filename_,
-                                    *trajectory_ptr);
-                        } else {
-                            WriteIJsonConvertible(recording_image_basedir_ +
+                            *trajectory_ptr);
+                } else {
+                    WriteIJsonConvertible(
+                            recording_image_basedir_ +
                                     recording_image_trajectory_filename_,
-                                    *trajectory_ptr);
-                        }
-                    }
-                    if (close_window_when_animation_ends) {
-                        Close();
-                    }
+                            *trajectory_ptr);
                 }
-                UpdateWindowTitle();
-                return false;
-            });
+            }
+            if (close_window_when_animation_ends) {
+                Close();
+            }
+        }
+        UpdateWindowTitle();
+        return false;
+    });
 }
 
-bool VisualizerWithCustomAnimation::InitViewControl()
-{
+bool VisualizerWithCustomAnimation::InitViewControl() {
     view_control_ptr_ = std::unique_ptr<ViewControlWithCustomAnimation>(
             new ViewControlWithCustomAnimation);
     ResetViewPoint();
     return true;
 }
 
-void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
-        int key, int scancode, int action, int mods)
-{
+void VisualizerWithCustomAnimation::KeyPressCallback(
+        GLFWwindow *window, int key, int scancode, int action, int mods) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (action == GLFW_RELEASE || view_control.IsPlaying()) {
         return;
@@ -183,81 +175,85 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
 
     if (mods & GLFW_MOD_CONTROL) {
         switch (key) {
-        case GLFW_KEY_F:
-            view_control.SetAnimationMode(
-                    ViewControlWithCustomAnimation::AnimationMode::FreeMode);
-            PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
-            break;
-        case GLFW_KEY_W:
-            view_control.SetAnimationMode(
-                    ViewControlWithCustomAnimation::AnimationMode::PreviewMode);
-            PrintDebug("[Visualizer] Enter preview mode.\n");
-            break;
-        case GLFW_KEY_P:
-            Play(false);
-            break;
-        case GLFW_KEY_R:
-            Play(true, false);
-            break;
-        case GLFW_KEY_G:
-            Play(true, true);
-            break;
-        case GLFW_KEY_S:
-            view_control.CaptureTrajectory();
-            break;
-        case GLFW_KEY_LEFT:
-            view_control.Step(-1.0);
-            break;
-        case GLFW_KEY_RIGHT:
-            view_control.Step(1.0);
-            break;
-        case GLFW_KEY_LEFT_BRACKET:
-            view_control.GoToFirst();
-            break;
-        case GLFW_KEY_RIGHT_BRACKET:
-            view_control.GoToLast();
-            break;
-        case GLFW_KEY_EQUAL:
-            view_control.ChangeTrajectoryInterval(1);
-            PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
-                view_control.GetTrajectoryInterval());
-            break;
-        case GLFW_KEY_MINUS:
-            view_control.ChangeTrajectoryInterval(-1);
-            PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
-                view_control.GetTrajectoryInterval());
-            break;
-        case GLFW_KEY_L:
-            view_control.ToggleTrajectoryLoop();
-            break;
-        case GLFW_KEY_A:
-            view_control.AddKeyFrame();
-            PrintDebug("[Visualizer] Insert key frame; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
-            break;
-        case GLFW_KEY_U:
-            view_control.UpdateKeyFrame();
-            PrintDebug("[Visualizer] Update key frame; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
-            break;
-        case GLFW_KEY_D:
-            view_control.DeleteKeyFrame();
-            PrintDebug("[Visualizer] Delete last key frame; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
-            break;
-        case GLFW_KEY_N:
-            view_control.AddSpinKeyFrames();
-            PrintDebug("[Visualizer] Insert spin key frames; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
-            break;
-        case GLFW_KEY_E:
-            view_control.ClearAllKeyFrames();
-            PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
-                    view_control.NumOfKeyFrames());
-            break;
-        default:
-            Visualizer::KeyPressCallback(window, key, scancode, action, mods);
-            break;
+            case GLFW_KEY_F:
+                view_control.SetAnimationMode(ViewControlWithCustomAnimation::
+                                                      AnimationMode::FreeMode);
+                PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
+                break;
+            case GLFW_KEY_W:
+                view_control.SetAnimationMode(
+                        ViewControlWithCustomAnimation::AnimationMode::
+                                PreviewMode);
+                PrintDebug("[Visualizer] Enter preview mode.\n");
+                break;
+            case GLFW_KEY_P:
+                Play(false);
+                break;
+            case GLFW_KEY_R:
+                Play(true, false);
+                break;
+            case GLFW_KEY_G:
+                Play(true, true);
+                break;
+            case GLFW_KEY_S:
+                view_control.CaptureTrajectory();
+                break;
+            case GLFW_KEY_LEFT:
+                view_control.Step(-1.0);
+                break;
+            case GLFW_KEY_RIGHT:
+                view_control.Step(1.0);
+                break;
+            case GLFW_KEY_LEFT_BRACKET:
+                view_control.GoToFirst();
+                break;
+            case GLFW_KEY_RIGHT_BRACKET:
+                view_control.GoToLast();
+                break;
+            case GLFW_KEY_EQUAL:
+                view_control.ChangeTrajectoryInterval(1);
+                PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
+                           view_control.GetTrajectoryInterval());
+                break;
+            case GLFW_KEY_MINUS:
+                view_control.ChangeTrajectoryInterval(-1);
+                PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
+                           view_control.GetTrajectoryInterval());
+                break;
+            case GLFW_KEY_L:
+                view_control.ToggleTrajectoryLoop();
+                break;
+            case GLFW_KEY_A:
+                view_control.AddKeyFrame();
+                PrintDebug("[Visualizer] Insert key frame; %d remaining.\n",
+                           view_control.NumOfKeyFrames());
+                break;
+            case GLFW_KEY_U:
+                view_control.UpdateKeyFrame();
+                PrintDebug("[Visualizer] Update key frame; %d remaining.\n",
+                           view_control.NumOfKeyFrames());
+                break;
+            case GLFW_KEY_D:
+                view_control.DeleteKeyFrame();
+                PrintDebug(
+                        "[Visualizer] Delete last key frame; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
+                break;
+            case GLFW_KEY_N:
+                view_control.AddSpinKeyFrames();
+                PrintDebug(
+                        "[Visualizer] Insert spin key frames; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
+                break;
+            case GLFW_KEY_E:
+                view_control.ClearAllKeyFrames();
+                PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
+                           view_control.NumOfKeyFrames());
+                break;
+            default:
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
+                break;
         }
         is_redraw_required_ = true;
         UpdateWindowTitle();
@@ -266,9 +262,9 @@ void VisualizerWithCustomAnimation::KeyPressCallback(GLFWwindow *window,
     }
 }
 
-void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window,
-        double x, double y)
-{
+void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow *window,
+                                                      double x,
+                                                      double y) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.IsPreviewing()) {
     } else if (view_control.IsPlaying()) {
@@ -277,13 +273,13 @@ void VisualizerWithCustomAnimation::MouseMoveCallback(GLFWwindow* window,
     }
 }
 
-void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow* window,
-        double x, double y)
-{
+void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow *window,
+                                                        double x,
+                                                        double y) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.IsPreviewing()) {
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-                glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+            glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
             view_control.Step(y);
             is_redraw_required_ = true;
             UpdateWindowTitle();
@@ -294,9 +290,10 @@ void VisualizerWithCustomAnimation::MouseScrollCallback(GLFWwindow* window,
     }
 }
 
-void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow* window,
-        int button, int action, int mods)
-{
+void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow *window,
+                                                        int button,
+                                                        int action,
+                                                        int mods) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.IsPreviewing()) {
     } else if (view_control.IsPlaying()) {
@@ -305,4 +302,4 @@ void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow* window,
     }
 }
 
-}    // namespace open3d
+}  // namespace open3d

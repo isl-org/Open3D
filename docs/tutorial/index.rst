@@ -14,5 +14,5 @@ For the C++ interface see :ref:`cplusplus_interface_tutorial`.
   Advanced/index
   ReconstructionSystem/index
   C++/cplusplus_interface
-  docker/docker
+  docker/index
   reference

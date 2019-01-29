@@ -28,23 +28,21 @@
 
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-class GlobalColorMapSingleton
-{
+class GlobalColorMapSingleton {
 private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
         PrintDebug("Global colormap init.\n");
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
-    GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) = 
+    GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
             delete;
+
 public:
-    ~GlobalColorMapSingleton() {
-        PrintDebug("Global colormap destruct.\n");
-    }
+    ~GlobalColorMapSingleton() { PrintDebug("Global colormap destruct.\n"); }
 
 public:
     static GlobalColorMapSingleton &GetInstance() {
@@ -56,44 +54,34 @@ public:
     std::shared_ptr<const ColorMap> color_map_;
 };
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-Eigen::Vector3d ColorMapGray::GetColor(double value) const
-{
+Eigen::Vector3d ColorMapGray::GetColor(double value) const {
     return Eigen::Vector3d(value, value, value);
 }
 
-Eigen::Vector3d ColorMapJet::GetColor(double value) const
-{
-    return Eigen::Vector3d(
-            JetBase(value * 2.0 - 1.5),        // red
-            JetBase(value * 2.0 - 1.0),        // green
-            JetBase(value * 2.0 - 0.5));    // blue
+Eigen::Vector3d ColorMapJet::GetColor(double value) const {
+    return Eigen::Vector3d(JetBase(value * 2.0 - 1.5),   // red
+                           JetBase(value * 2.0 - 1.0),   // green
+                           JetBase(value * 2.0 - 0.5));  // blue
 }
 
-Eigen::Vector3d ColorMapSummer::GetColor(double value) const
-{
-    return Eigen::Vector3d(
-            Interpolate(value, 0.0, 0.0, 1.0, 1.0),
-            Interpolate(value, 0.5, 0.0, 1.0, 1.0),
-            0.4);
+Eigen::Vector3d ColorMapSummer::GetColor(double value) const {
+    return Eigen::Vector3d(Interpolate(value, 0.0, 0.0, 1.0, 1.0),
+                           Interpolate(value, 0.5, 0.0, 1.0, 1.0), 0.4);
 }
 
-Eigen::Vector3d ColorMapWinter::GetColor(double value) const
-{
-    return Eigen::Vector3d(
-            0.0,
-            Interpolate(value, 0.0, 0.0, 1.0, 1.0),
-            Interpolate(value, 1.0, 0.0, 0.5, 1.0));
+Eigen::Vector3d ColorMapWinter::GetColor(double value) const {
+    return Eigen::Vector3d(0.0, Interpolate(value, 0.0, 0.0, 1.0, 1.0),
+                           Interpolate(value, 1.0, 0.0, 0.5, 1.0));
 }
 
-Eigen::Vector3d ColorMapHot::GetColor(double value) const
-{
+Eigen::Vector3d ColorMapHot::GetColor(double value) const {
     Eigen::Vector3d edges[4] = {
-        Eigen::Vector3d(1.0, 1.0, 1.0),
-        Eigen::Vector3d(1.0, 1.0, 0.0),
-        Eigen::Vector3d(1.0, 0.0, 0.0),
-        Eigen::Vector3d(0.0, 0.0, 0.0),
+            Eigen::Vector3d(1.0, 1.0, 1.0),
+            Eigen::Vector3d(1.0, 1.0, 0.0),
+            Eigen::Vector3d(1.0, 0.0, 0.0),
+            Eigen::Vector3d(0.0, 0.0, 0.0),
     };
     if (value < 0.0) {
         return edges[0];
@@ -108,36 +96,34 @@ Eigen::Vector3d ColorMapHot::GetColor(double value) const
     }
 }
 
-const std::shared_ptr<const ColorMap> GetGlobalColorMap()
-{
+const std::shared_ptr<const ColorMap> GetGlobalColorMap() {
     return GlobalColorMapSingleton::GetInstance().color_map_;
 }
 
-void SetGlobalColorMap(ColorMap::ColorMapOption option)
-{
+void SetGlobalColorMap(ColorMap::ColorMapOption option) {
     switch (option) {
-    case ColorMap::ColorMapOption::Gray:
-        GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapGray);
-        break;
-    case ColorMap::ColorMapOption::Summer:
-        GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapSummer);
-        break;
-    case ColorMap::ColorMapOption::Winter:
-        GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapWinter);
-        break;
-    case ColorMap::ColorMapOption::Hot:
-        GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapHot);
-        break;
-    case ColorMap::ColorMapOption::Jet:
-    default:
-        GlobalColorMapSingleton::GetInstance().color_map_.reset(
-                new ColorMapJet);
-        break;
+        case ColorMap::ColorMapOption::Gray:
+            GlobalColorMapSingleton::GetInstance().color_map_.reset(
+                    new ColorMapGray);
+            break;
+        case ColorMap::ColorMapOption::Summer:
+            GlobalColorMapSingleton::GetInstance().color_map_.reset(
+                    new ColorMapSummer);
+            break;
+        case ColorMap::ColorMapOption::Winter:
+            GlobalColorMapSingleton::GetInstance().color_map_.reset(
+                    new ColorMapWinter);
+            break;
+        case ColorMap::ColorMapOption::Hot:
+            GlobalColorMapSingleton::GetInstance().color_map_.reset(
+                    new ColorMapHot);
+            break;
+        case ColorMap::ColorMapOption::Jet:
+        default:
+            GlobalColorMapSingleton::GetInstance().color_map_.reset(
+                    new ColorMapJet);
+            break;
     }
 }
 
-}    // namespace open3d
+}  // namespace open3d

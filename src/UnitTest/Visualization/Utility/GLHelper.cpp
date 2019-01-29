@@ -29,47 +29,29 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GLHelper, DISABLED_LookAt)
-{
-    unit_test::NotImplemented();
-}
+TEST(GLHelper, DISABLED_LookAt) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GLHelper, DISABLED_Perspective)
-{
-    unit_test::NotImplemented();
-}
+TEST(GLHelper, DISABLED_Perspective) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GLHelper, DISABLED_Ortho)
-{
-    unit_test::NotImplemented();
-}
+TEST(GLHelper, DISABLED_Ortho) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GLHelper, DISABLED_Project)
-{
-    unit_test::NotImplemented();
-}
+TEST(GLHelper, DISABLED_Project) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GLHelper, DISABLED_Unproject)
-{
-    unit_test::NotImplemented();
-}
+TEST(GLHelper, DISABLED_Unproject) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(GLHelper, DISABLED_ColorCodeToPickIndex)
-{
-    unit_test::NotImplemented();
-}
+TEST(GLHelper, DISABLED_ColorCodeToPickIndex) { unit_test::NotImplemented(); }

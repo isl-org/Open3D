@@ -33,8 +33,7 @@
 
 namespace open3d {
 
-class PinholeCameraTrajectory : public IJsonConvertible
-{
+class PinholeCameraTrajectory : public IJsonConvertible {
 public:
     PinholeCameraTrajectory();
     ~PinholeCameraTrajectory() override;
@@ -47,4 +46,4 @@ public:
     std::vector<PinholeCameraParameters> parameters_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

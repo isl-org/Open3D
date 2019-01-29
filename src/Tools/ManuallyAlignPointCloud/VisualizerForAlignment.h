@@ -32,31 +32,37 @@
 
 namespace open3d {
 
-class VisualizerForAlignment : public Visualizer
-{
+class VisualizerForAlignment : public Visualizer {
 public:
     VisualizerForAlignment(VisualizerWithEditing &source,
-            VisualizerWithEditing &target, double voxel_size = -1.0,
-            double max_correspondence_distance = -1.0,
-            bool with_scaling = true, bool use_dialog = true,
-            const std::string &polygon_filename = "",
-            const std::string &directory = "") :
-            source_visualizer_(source), target_visualizer_(target),
-            voxel_size_(voxel_size),
-            max_correspondence_distance_(max_correspondence_distance),
-            with_scaling_(with_scaling), use_dialog_(use_dialog),
-            polygon_filename_(polygon_filename), default_directory_(directory)
-            {}
+                           VisualizerWithEditing &target,
+                           double voxel_size = -1.0,
+                           double max_correspondence_distance = -1.0,
+                           bool with_scaling = true,
+                           bool use_dialog = true,
+                           const std::string &polygon_filename = "",
+                           const std::string &directory = "")
+        : source_visualizer_(source),
+          target_visualizer_(target),
+          voxel_size_(voxel_size),
+          max_correspondence_distance_(max_correspondence_distance),
+          with_scaling_(with_scaling),
+          use_dialog_(use_dialog),
+          polygon_filename_(polygon_filename),
+          default_directory_(directory) {}
     ~VisualizerForAlignment() override {}
 
 public:
     void PrintVisualizerHelp() override;
     bool AddSourceAndTarget(std::shared_ptr<PointCloud> source,
-            std::shared_ptr<PointCloud> target);
+                            std::shared_ptr<PointCloud> target);
 
 protected:
-    void KeyPressCallback(GLFWwindow *window, int key, int scancode, int action,
-            int mods) override;
+    void KeyPressCallback(GLFWwindow *window,
+                          int key,
+                          int scancode,
+                          int action,
+                          int mods) override;
     bool SaveSessionToFile(const std::string &filename);
     bool LoadSessionFromFile(const std::string &filename);
     bool AlignWithManualAnnotation();
@@ -78,4 +84,4 @@ protected:
     std::string default_directory_;
 };
 
-}        // namespace open3d
+}  // namespace open3d

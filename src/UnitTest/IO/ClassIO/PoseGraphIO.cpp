@@ -29,23 +29,16 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraphIO, DISABLED_CreatePoseGraphFromFile)
-{
+TEST(PoseGraphIO, DISABLED_CreatePoseGraphFromFile) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraphIO, DISABLED_ReadPoseGraph)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraphIO, DISABLED_ReadPoseGraph) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraphIO, DISABLED_WritePoseGraph)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraphIO, DISABLED_WritePoseGraph) { unit_test::NotImplemented(); }

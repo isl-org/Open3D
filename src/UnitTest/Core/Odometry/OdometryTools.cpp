@@ -39,14 +39,10 @@ shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
                                                 const int& bytes_per_channel,
                                                 const float& vmin,
                                                 const float& vmax,
-                                                const int& seed)
-{
+                                                const int& seed) {
     shared_ptr<Image> image = make_shared<Image>();
 
-    image->PrepareImage(width,
-                        height,
-                        num_of_channels,
-                        bytes_per_channel);
+    image->PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     float* const depthData = Cast<float>(&image->data_[0]);
     Rand(depthData, width * height, vmin, vmax, seed);
@@ -57,8 +53,7 @@ shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
 // ----------------------------------------------------------------------------
 // Shift the pixels left with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step)
-{
+void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step) {
     int width = image->width_;
     int height = image->height_;
     int num_of_channels = image->num_of_channels_;
@@ -67,14 +62,14 @@ void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step)
     float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
-            float_data[h * width + w] = float_data[h * width + (w + step) % width];
+            float_data[h * width + w] =
+                    float_data[h * width + (w + step) % width];
 }
 
 // ----------------------------------------------------------------------------
 // Shift the pixels up with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step)
-{
+void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step) {
     int width = image->width_;
     int height = image->height_;
     int num_of_channels = image->num_of_channels_;
@@ -83,7 +78,8 @@ void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step)
     float* const float_data = Cast<float>(&image->data_[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
-            float_data[h * width + w] = float_data[((h + step) % height) * width + w];
+            float_data[h * width + w] =
+                    float_data[((h + step) % height) * width + w];
 }
 
 // ----------------------------------------------------------------------------
@@ -93,17 +89,13 @@ shared_ptr<Image> odometry_tools::CorrespondenceMap(const int& width,
                                                     const int& height,
                                                     const int& vmin,
                                                     const int& vmax,
-                                                    const int& seed)
-{
+                                                    const int& seed) {
     int num_of_channels = 2;
     int bytes_per_channel = 4;
 
     shared_ptr<Image> image = make_shared<Image>();
 
-    image->PrepareImage(width,
-                        height,
-                        num_of_channels,
-                        bytes_per_channel);
+    image->PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     int* const int_data = Cast<int>(&image->data_[0]);
     size_t image_size = image->data_.size() / sizeof(int);
@@ -119,17 +111,13 @@ shared_ptr<Image> odometry_tools::DepthBuffer(const int& width,
                                               const int& height,
                                               const float& vmin,
                                               const float& vmax,
-                                              const int& seed)
-{
+                                              const int& seed) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
     shared_ptr<Image> image = make_shared<Image>();
 
-    image->PrepareImage(width,
-                        height,
-                        num_of_channels,
-                        bytes_per_channel);
+    image->PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
     float* const float_data = Cast<float>(&image->data_[0]);
     size_t image_size = image->data_.size() / sizeof(float);

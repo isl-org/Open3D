@@ -34,60 +34,67 @@ namespace open3d {
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
 /// Return an empty pointcloud if fail to read the file.
 std::shared_ptr<PointCloud> CreatePointCloudFromFile(
-    const std::string &filename, const std::string &format = "auto");
+        const std::string &filename, const std::string &format = "auto");
 
 /// The general entrance for reading a PointCloud from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud,
-        const std::string &format = "auto");
+bool ReadPointCloud(const std::string &filename,
+                    PointCloud &pointcloud,
+                    const std::string &format = "auto");
 
 /// The general entrance for writing a PointCloud to a file
 /// The function calls write functions based on the extension name of filename.
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
-bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
-        bool write_ascii = false, bool compressed = false);
+bool WritePointCloud(const std::string &filename,
+                     const PointCloud &pointcloud,
+                     bool write_ascii = false,
+                     bool compressed = false);
 
 bool ReadPointCloudFromXYZ(const std::string &filename, PointCloud &pointcloud);
 
 bool WritePointCloudToXYZ(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii = false,
-        bool compressed = false);
+                          const PointCloud &pointcloud,
+                          bool write_ascii = false,
+                          bool compressed = false);
 
 bool ReadPointCloudFromXYZN(const std::string &filename,
-        PointCloud &pointcloud);
+                            PointCloud &pointcloud);
 
 bool WritePointCloudToXYZN(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii = false,
-        bool compressed = false);
+                           const PointCloud &pointcloud,
+                           bool write_ascii = false,
+                           bool compressed = false);
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
-        PointCloud &pointcloud);
+                              PointCloud &pointcloud);
 
 bool WritePointCloudToXYZRGB(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii = false,
-        bool compressed = false);
+                             const PointCloud &pointcloud,
+                             bool write_ascii = false,
+                             bool compressed = false);
 
-bool ReadPointCloudFromPLY(
-        const std::string &filename,
-        PointCloud &pointcloud);
+bool ReadPointCloudFromPLY(const std::string &filename, PointCloud &pointcloud);
 
 bool WritePointCloudToPLY(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii = false,
-        bool compressed = false);
+                          const PointCloud &pointcloud,
+                          bool write_ascii = false,
+                          bool compressed = false);
 
 bool ReadPointCloudFromPCD(const std::string &filename, PointCloud &pointcloud);
 
 bool WritePointCloudToPCD(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii = false,
-        bool compressed = false);
+                          const PointCloud &pointcloud,
+                          bool write_ascii = false,
+                          bool compressed = false);
 
 bool ReadPointCloudFromPTS(const std::string &filename, PointCloud &pointcloud);
 
 bool WritePointCloudToPTS(const std::string &filename,
-        const PointCloud &pointcloud, bool write_ascii = false,
-        bool compressed = false);
+                          const PointCloud &pointcloud,
+                          bool write_ascii = false,
+                          bool compressed = false);
 
-}    // namespace open3d
+}  // namespace open3d

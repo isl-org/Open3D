@@ -28,27 +28,27 @@
 
 namespace open3d {
 
-class GlobalOptimizationOption
-{
+class GlobalOptimizationOption {
 public:
-    GlobalOptimizationOption(
-            double max_correspondence_distance = 0.075,
-            double edge_prune_threshold = 0.25,
-            double preference_loop_closure = 1.0,
-            int reference_node = -1) :
-            max_correspondence_distance_(max_correspondence_distance),
-            edge_prune_threshold_(edge_prune_threshold),
-            preference_loop_closure_(preference_loop_closure),
-            reference_node_(reference_node) {
+    GlobalOptimizationOption(double max_correspondence_distance = 0.075,
+                             double edge_prune_threshold = 0.25,
+                             double preference_loop_closure = 1.0,
+                             int reference_node = -1)
+        : max_correspondence_distance_(max_correspondence_distance),
+          edge_prune_threshold_(edge_prune_threshold),
+          preference_loop_closure_(preference_loop_closure),
+          reference_node_(reference_node) {
         max_correspondence_distance_ = max_correspondence_distance < 0.0
-                ? 0.075 : max_correspondence_distance;
+                                               ? 0.075
+                                               : max_correspondence_distance;
         edge_prune_threshold_ =
                 edge_prune_threshold < 0.0 || edge_prune_threshold > 1.0
-                ? 0.25 : edge_prune_threshold;
-        preference_loop_closure_ = preference_loop_closure < 0.0
-                ? 1.0 : preference_loop_closure;
+                        ? 0.25
+                        : edge_prune_threshold;
+        preference_loop_closure_ =
+                preference_loop_closure < 0.0 ? 1.0 : preference_loop_closure;
     };
-    ~GlobalOptimizationOption() {};
+    ~GlobalOptimizationOption(){};
 
 public:
     /// See reference list in GlobalOptimization.h
@@ -59,43 +59,44 @@ public:
     /// According to [Choi et al 2015],
     /// line_process weight < edge_prune_threshold_ (0.25) is pruned.
     double edge_prune_threshold_;
-    /// Balancing parameter to decide which one is more reliable: odometry vs loop-closure.
-    /// [0,1] -> try to unchange odometry edges, [1) -> try to utilize loop-closure.
-    /// Recommendation: 0.1 for RGBD Odometry, 2.0 for fragment registration
+    /// Balancing parameter to decide which one is more reliable: odometry vs
+    /// loop-closure. [0,1] -> try to unchange odometry edges, [1) -> try to
+    /// utilize loop-closure. Recommendation: 0.1 for RGBD Odometry, 2.0 for
+    /// fragment registration
     double preference_loop_closure_;
     /// The pose of this node is unchanged after optimization
     int reference_node_;
 };
 
-class GlobalOptimizationConvergenceCriteria
-{
+class GlobalOptimizationConvergenceCriteria {
 public:
     GlobalOptimizationConvergenceCriteria(
-        int max_iteration = 100,
-        double min_relative_increment = 1e-6,
-        double min_relative_residual_increment = 1e-6,
-        double min_right_term = 1e-6,
-        double min_residual = 1e-6,
-        int max_iteration_lm = 20,
-        double upper_scale_factor = 2. / 3.,
-        double lower_scale_factor = 1. / 3.) :
-        max_iteration_(max_iteration),
-        min_relative_increment_(min_relative_increment),
-        min_relative_residual_increment_(min_relative_residual_increment),
-        min_right_term_(min_right_term),
-        min_residual_(min_residual),
-        max_iteration_lm_(max_iteration_lm),
-        upper_scale_factor_(upper_scale_factor),
-        lower_scale_factor_(lower_scale_factor)
-    {
+            int max_iteration = 100,
+            double min_relative_increment = 1e-6,
+            double min_relative_residual_increment = 1e-6,
+            double min_right_term = 1e-6,
+            double min_residual = 1e-6,
+            int max_iteration_lm = 20,
+            double upper_scale_factor = 2. / 3.,
+            double lower_scale_factor = 1. / 3.)
+        : max_iteration_(max_iteration),
+          min_relative_increment_(min_relative_increment),
+          min_relative_residual_increment_(min_relative_residual_increment),
+          min_right_term_(min_right_term),
+          min_residual_(min_residual),
+          max_iteration_lm_(max_iteration_lm),
+          upper_scale_factor_(upper_scale_factor),
+          lower_scale_factor_(lower_scale_factor) {
         upper_scale_factor_ =
                 upper_scale_factor < 0.0 || upper_scale_factor > 1.0
-                ? 2. / 3. : upper_scale_factor;
+                        ? 2. / 3.
+                        : upper_scale_factor;
         lower_scale_factor_ =
                 lower_scale_factor < 0.0 || lower_scale_factor > 1.0
-                ? 1. / 3. : lower_scale_factor;
+                        ? 1. / 3.
+                        : lower_scale_factor;
     };
-    ~GlobalOptimizationConvergenceCriteria() {};
+    ~GlobalOptimizationConvergenceCriteria(){};
 
 public:
     /// maximum iteration number for iterative optmization module.
@@ -116,4 +117,4 @@ public:
     double lower_scale_factor_;
 };
 
-}
+}  // namespace open3d

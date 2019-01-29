@@ -42,15 +42,15 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 typedef Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Matrix6d_u;
 typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
 
-}    // namespace Eigen
+}  // namespace Eigen
 
 namespace open3d {
-    using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;
-    using Matrix6d_allocator = Eigen::aligned_allocator<Eigen::Matrix6d>;
-    using Vector2d_allocator = Eigen::aligned_allocator<Eigen::Vector2d>;
-    using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
-    using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
-    using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
+using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;
+using Matrix6d_allocator = Eigen::aligned_allocator<Eigen::Matrix6d>;
+using Vector2d_allocator = Eigen::aligned_allocator<Eigen::Vector2d>;
+using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
+using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
+using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
 
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:
@@ -60,47 +60,51 @@ Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input);
 /// Function to transform 4D motion matrix to 6D motion vector
 /// this is consistent with the matlab function in
 /// the Aerospace Toolbox
-/// Reference: https://github.com/qianyizh/ElasticReconstruction/blob/master/Matlab_Toolbox/Core/mrEvaluateRegistration.m
+/// Reference:
+/// https://github.com/qianyizh/ElasticReconstruction/blob/master/Matlab_Toolbox/Core/mrEvaluateRegistration.m
 Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input);
 
 /// Function to solve Ax=b
-std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
-    const Eigen::MatrixXd &A, const Eigen::VectorXd &b, bool check_det = true);
+std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(const Eigen::MatrixXd &A,
+                                                    const Eigen::VectorXd &b,
+                                                    bool check_det = true);
 
 /// Function to solve Jacobian system
 /// Input: 6x6 Jacobian matrix and 6-dim residual vector.
 /// Output: tuple of is_success, 4x4 extrinsic matrices.
-std::tuple<bool, Eigen::Matrix4d>
-        SolveJacobianSystemAndObtainExtrinsicMatrix(
+std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
         const Eigen::Matrix6d &JTJ, const Eigen::Vector6d &JTr);
 
 /// Function to solve Jacobian system
 /// Input: 6nx6n Jacobian matrix and 6n-dim residual vector.
 /// Output: tuple of is_success, n 4x4 motion matrices.
 std::tuple<bool, std::vector<Eigen::Matrix4d, Matrix4d_allocator>>
-        SolveJacobianSystemAndObtainExtrinsicMatrixArray(
-        const Eigen::MatrixXd &JTJ, const Eigen::VectorXd &JTr);
+SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
+                                                 const Eigen::VectorXd &JTr);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
 /// Output: JTJ, JTr, sum of r^2
-/// Note: f takes index of row, and outputs corresponding residual and row vector.
-template<typename MatType, typename VecType>
+/// Note: f takes index of row, and outputs corresponding residual and row
+/// vector.
+template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<void(int, VecType &, double &)> f,
-        int iteration_num, bool verbose = true);
+        int iteration_num,
+        bool verbose = true);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
 /// Output: JTJ, JTr, sum of r^2
-/// Note: f takes index of row, and outputs corresponding residual and row vector.
-template<typename MatType, typename VecType>
+/// Note: f takes index of row, and outputs corresponding residual and row
+/// vector.
+template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
-        std::function<void(int,
-                           std::vector<VecType,
-                           Eigen::aligned_allocator<VecType>> &,
-                           std::vector<double> &)> f,
+        std::function<
+                void(int,
+                     std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+                     std::vector<double> &)> f,
         int iteration_num,
-	bool verbose = true);
+        bool verbose = true);
 
-}    // namespace open3d
+}  // namespace open3d

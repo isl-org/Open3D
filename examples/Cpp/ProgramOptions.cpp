@@ -27,16 +27,16 @@
 #include <Core/Core.h>
 #include <Core/Utility/Helper.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage :\n");
     PrintInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]\n");
+    // clang-format on
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
     if (argc == 1 || ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
@@ -44,20 +44,20 @@ int main(int argc, char *argv[])
     }
 
     PrintInfo("Switch is %s.\n",
-            ProgramOptionExists(argc, argv, "--switch") ? "ON" : "OFF");
+              ProgramOptionExists(argc, argv, "--switch") ? "ON" : "OFF");
     PrintInfo("Int is %d\n", GetProgramOptionAsInt(argc, argv, "--int"));
     PrintInfo("Double is %.10f\n",
-            GetProgramOptionAsDouble(argc, argv, "--double"));
+              GetProgramOptionAsDouble(argc, argv, "--double"));
     PrintInfo("String is %s\n",
-            GetProgramOptionAsString(argc, argv, "--string").c_str());
+              GetProgramOptionAsString(argc, argv, "--string").c_str());
     std::vector<std::string> strs;
     SplitString(strs, GetProgramOptionAsString(argc, argv, "--string"), ",.",
-            true);
+                true);
     for (auto &str : strs) {
         PrintInfo("\tSubstring : %s\n", str.c_str());
     }
-    Eigen::VectorXd vec = GetProgramOptionAsEigenVectorXd(argc, argv,
-            "--vector");
+    Eigen::VectorXd vec =
+            GetProgramOptionAsEigenVectorXd(argc, argv, "--vector");
     PrintInfo("Vector is (");
     for (auto i = 0; i < vec.size(); i++) {
         if (i == 0) {

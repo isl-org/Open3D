@@ -34,25 +34,25 @@
 #include <Visualization/Utility/PointCloudPicker.h>
 #include <Visualization/Visualizer/RenderOptionWithEditing.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
 bool PointCloudRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                                const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
     bool success = true;
     if (pointcloud.HasNormals()) {
-        if (option.point_color_option_ == RenderOption::PointColorOption::Normal) {
+        if (option.point_color_option_ ==
+            RenderOption::PointColorOption::Normal) {
             success &= normal_point_shader_.Render(pointcloud, option, view);
         } else {
             success &= phong_point_shader_.Render(pointcloud, option, view);
         }
         if (option.point_show_normal_) {
-            success &= simpleblack_normal_shader_.Render(pointcloud, option,
-                    view);
+            success &=
+                    simpleblack_normal_shader_.Render(pointcloud, option, view);
         }
     } else {
         success &= simple_point_shader_.Render(pointcloud, option, view);
@@ -61,18 +61,15 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr)
-{
-    if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool PointCloudRenderer::UpdateGeometry()
-{
+bool PointCloudRenderer::UpdateGeometry() {
     simple_point_shader_.InvalidateGeometry();
     phong_point_shader_.InvalidateGeometry();
     normal_point_shader_.InvalidateGeometry();
@@ -81,85 +78,74 @@ bool PointCloudRenderer::UpdateGeometry()
 }
 
 bool PointCloudPickingRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                                       const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
     return picking_shader_.Render(pointcloud, option, view);
 }
 
 bool PointCloudPickingRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr)
-{
-    if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+        std::shared_ptr<const Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool PointCloudPickingRenderer::UpdateGeometry()
-{
+bool PointCloudPickingRenderer::UpdateGeometry() {
     picking_shader_.InvalidateGeometry();
     return true;
 }
 
 bool VoxelGridRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                               const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     return simple_voxelgrid_shader_.Render(*geometry_ptr_, option, view);
 }
 
-bool VoxelGridRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
-{
-    if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::VoxelGrid) {
+bool VoxelGridRenderer::AddGeometry(
+        std::shared_ptr<const Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool VoxelGridRenderer::UpdateGeometry()
-{
+bool VoxelGridRenderer::UpdateGeometry() {
     simple_voxelgrid_shader_.InvalidateGeometry();
     return true;
 }
 
 bool LineSetRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                             const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     return simple_lineset_shader_.Render(*geometry_ptr_, option, view);
 }
 
-bool LineSetRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
-{
-    if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::LineSet) {
+bool LineSetRenderer::AddGeometry(
+        std::shared_ptr<const Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::LineSet) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool LineSetRenderer::UpdateGeometry()
-{
+bool LineSetRenderer::UpdateGeometry() {
     simple_lineset_shader_.InvalidateGeometry();
     return true;
 }
 
 bool TriangleMeshRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                                  const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
     bool success = true;
     if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
         if (option.mesh_color_option_ ==
-                RenderOption::MeshColorOption::Normal) {
+            RenderOption::MeshColorOption::Normal) {
             success &= normal_mesh_shader_.Render(mesh, option, view);
         } else {
             success &= phong_mesh_shader_.Render(mesh, option, view);
@@ -174,18 +160,16 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 }
 
 bool TriangleMeshRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr)
-{
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::TriangleMesh) {
+        Geometry::GeometryType::TriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool TriangleMeshRenderer::UpdateGeometry()
-{
+bool TriangleMeshRenderer::UpdateGeometry() {
     simple_mesh_shader_.InvalidateGeometry();
     phong_mesh_shader_.InvalidateGeometry();
     normal_mesh_shader_.InvalidateGeometry();
@@ -193,31 +177,27 @@ bool TriangleMeshRenderer::UpdateGeometry()
     return true;
 }
 
-bool ImageRenderer::Render(const RenderOption &option, const ViewControl &view)
-{
+bool ImageRenderer::Render(const RenderOption &option,
+                           const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     return image_shader_.Render(*geometry_ptr_, option, view);
 }
 
-bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr)
-{
-    if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::Image) {
+bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::Image) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool ImageRenderer::UpdateGeometry()
-{
+bool ImageRenderer::UpdateGeometry() {
     image_shader_.InvalidateGeometry();
     return true;
 }
 
 bool CoordinateFrameRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                                     const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     if (option.show_coordinate_frame_ == false) return true;
     const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
@@ -225,62 +205,56 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
 }
 
 bool CoordinateFrameRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr)
-{
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::TriangleMesh) {
+        Geometry::GeometryType::TriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool CoordinateFrameRenderer::UpdateGeometry()
-{
+bool CoordinateFrameRenderer::UpdateGeometry() {
     phong_shader_.InvalidateGeometry();
     return true;
 }
 
 bool SelectionPolygonRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                                      const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &polygon = (const SelectionPolygon &)(*geometry_ptr_);
     if (polygon.IsEmpty()) return true;
     if (simple2d_shader_.Render(polygon, option, view) == false) return false;
     if (polygon.polygon_interior_mask_.IsEmpty()) return true;
     return image_mask_shader_.Render(polygon.polygon_interior_mask_, option,
-            view);
+                                     view);
 }
 
 bool SelectionPolygonRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr)
-{
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::Unspecified) {
+        Geometry::GeometryType::Unspecified) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool SelectionPolygonRenderer::UpdateGeometry()
-{
+bool SelectionPolygonRenderer::UpdateGeometry() {
     simple2d_shader_.InvalidateGeometry();
     image_mask_shader_.InvalidateGeometry();
     return true;
 }
 
 bool PointCloudPickerRenderer::Render(const RenderOption &option,
-        const ViewControl &view)
-{
+                                      const ViewControl &view) {
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
-        Eigen::Vector3d(255, 180, 0) / 255.0,
-        Eigen::Vector3d(0, 166, 237) / 255.0,
-        Eigen::Vector3d(246, 81, 29) / 255.0,
-        Eigen::Vector3d(127, 184, 0) / 255.0,
-        Eigen::Vector3d(13, 44, 84) / 255.0,
+            Eigen::Vector3d(255, 180, 0) / 255.0,
+            Eigen::Vector3d(0, 166, 237) / 255.0,
+            Eigen::Vector3d(246, 81, 29) / 255.0,
+            Eigen::Vector3d(127, 184, 0) / 255.0,
+            Eigen::Vector3d(13, 44, 84) / 255.0,
     };
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &picker = (const PointCloudPicker &)(*geometry_ptr_);
@@ -289,11 +263,13 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
         if (index < pointcloud.points_.size()) {
-            auto sphere = CreateMeshSphere(view.GetBoundingBox().GetSize() *
-                    _option.pointcloud_picker_sphere_size_);
+            auto sphere =
+                    CreateMeshSphere(view.GetBoundingBox().GetSize() *
+                                     _option.pointcloud_picker_sphere_size_);
             sphere->ComputeVertexNormals();
             sphere->vertex_colors_.clear();
-            sphere->vertex_colors_.resize(sphere->vertices_.size(),
+            sphere->vertex_colors_.resize(
+                    sphere->vertices_.size(),
                     color_palette[i % NUM_OF_COLOR_PALETTE]);
             Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
             trans.block<3, 1>(0, 3) = pointcloud.points_[index];
@@ -308,23 +284,21 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudPickerRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr)
-{
+        std::shared_ptr<const Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-            Geometry::GeometryType::Unspecified) {
+        Geometry::GeometryType::Unspecified) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
     return UpdateGeometry();
 }
 
-bool PointCloudPickerRenderer::UpdateGeometry()
-{
+bool PointCloudPickerRenderer::UpdateGeometry() {
     // The geometry is updated on-the-fly
     // It is always in an invalidated status
     return true;
 }
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

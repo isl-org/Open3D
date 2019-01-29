@@ -43,8 +43,7 @@ class SelectionPolygonVolume;
 /// It is a utility class for Visualization
 /// The coordinates in SelectionPolygon are lower-left corner based (the OpenGL
 /// convention).
-class SelectionPolygon : public Geometry2D
-{
+class SelectionPolygon : public Geometry2D {
 public:
     enum class SectionPolygonType {
         Unfilled = 0,
@@ -62,10 +61,10 @@ public:
     Eigen::Vector2d GetMinBound() const final;
     Eigen::Vector2d GetMaxBound() const final;
     void FillPolygon(int width, int height);
-    std::shared_ptr<PointCloud> CropPointCloud(
-            const PointCloud &input, const ViewControl &view);
-    std::shared_ptr<TriangleMesh> CropTriangleMesh(
-            const TriangleMesh &input, const ViewControl &view);
+    std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
+                                               const ViewControl &view);
+    std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
+                                                   const ViewControl &view);
     std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
             const ViewControl &view);
 
@@ -80,8 +79,8 @@ private:
             const TriangleMesh &input, const ViewControl &view);
     std::vector<size_t> CropInRectangle(
             const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
-    std::vector<size_t> CropInPolygon(
-            const std::vector<Eigen::Vector3d> &input, const ViewControl &view);
+    std::vector<size_t> CropInPolygon(const std::vector<Eigen::Vector3d> &input,
+                                      const ViewControl &view);
 
 public:
     std::vector<Eigen::Vector2d> polygon_;
@@ -90,4 +89,4 @@ public:
     SectionPolygonType polygon_type_ = SectionPolygonType::Unfilled;
 };
 
-}    // namespace open3d
+}  // namespace open3d

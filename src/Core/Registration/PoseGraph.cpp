@@ -29,14 +29,11 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-PoseGraphNode::~PoseGraphNode()
-{
-}
+PoseGraphNode::~PoseGraphNode() {}
 
-bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const
-{
+bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "PoseGraphNode";
     value["version_major"] = 1;
     value["version_minor"] = 0;
@@ -49,33 +46,30 @@ bool PoseGraphNode::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool PoseGraphNode::ConvertFromJsonValue(const Json::Value &value)
-{
+bool PoseGraphNode::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("PoseGraphNode read JSON failed: unsupported json format.\n");
+        PrintWarning(
+                "PoseGraphNode read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraphNode" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning("PoseGraphNode read JSON failed: unsupported json format.\n");
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning(
+                "PoseGraphNode read JSON failed: unsupported json format.\n");
         return false;
     }
 
     const Json::Value &pose_object = value["pose"];
-    if (EigenMatrix4dFromJsonArray(pose_,
-        pose_object) == false) {
+    if (EigenMatrix4dFromJsonArray(pose_, pose_object) == false) {
         return false;
     }
     return true;
 }
 
-PoseGraphEdge::~PoseGraphEdge()
-{
-}
+PoseGraphEdge::~PoseGraphEdge() {}
 
-bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
-{
+bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "PoseGraphEdge";
     value["version_major"] = 1;
     value["version_minor"] = 0;
@@ -85,7 +79,8 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
     value["uncertain"] = uncertain_;
     value["confidence"] = confidence_;
     Json::Value transformation_object;
-    if (EigenMatrix4dToJsonArray(transformation_, transformation_object) == false) {
+    if (EigenMatrix4dToJsonArray(transformation_, transformation_object) ==
+        false) {
         return false;
     }
     value["transformation"] = transformation_object;
@@ -97,16 +92,17 @@ bool PoseGraphEdge::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value)
-{
+bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("PoseGraphEdge read JSON failed: unsupported json format.\n");
+        PrintWarning(
+                "PoseGraphEdge read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraphEdge" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning("PoseGraphEdge read JSON failed: unsupported json format.\n");
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning(
+                "PoseGraphEdge read JSON failed: unsupported json format.\n");
         return false;
     }
 
@@ -115,28 +111,22 @@ bool PoseGraphEdge::ConvertFromJsonValue(const Json::Value &value)
     uncertain_ = value.get("uncertain", false).asBool();
     confidence_ = value.get("confidence", 1.0).asDouble();
     const Json::Value &transformation_object = value["transformation"];
-    if (EigenMatrix4dFromJsonArray(transformation_,
-            transformation_object) == false) {
+    if (EigenMatrix4dFromJsonArray(transformation_, transformation_object) ==
+        false) {
         return false;
     }
     const Json::Value &information_object = value["information"];
-    if (EigenMatrix6dFromJsonArray(information_,
-            information_object) == false) {
+    if (EigenMatrix6dFromJsonArray(information_, information_object) == false) {
         return false;
     }
     return true;
 }
 
-PoseGraph::PoseGraph()
-{
-}
+PoseGraph::PoseGraph() {}
 
-PoseGraph::~PoseGraph()
-{
-}
+PoseGraph::~PoseGraph() {}
 
-bool PoseGraph::ConvertToJsonValue(Json::Value &value) const
-{
+bool PoseGraph::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "PoseGraph";
     value["version_major"] = 1;
     value["version_minor"] = 0;
@@ -163,15 +153,14 @@ bool PoseGraph::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
-{
+bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
         PrintWarning("PoseGraph read JSON failed: unsupported json format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PoseGraph" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
         PrintWarning("PoseGraph read JSON failed: unsupported json format.\n");
         return false;
     }
@@ -207,4 +196,4 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value)
     }
     return true;
 }
-}    // namespace open3d
+}  // namespace open3d

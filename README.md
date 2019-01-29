@@ -1,3 +1,7 @@
+<p align="center">
+<img src="docs/_static/open3d_logo_horizontal.png" width="320" />
+</p>
+
 # Open3D: A Modern Library for 3D Data Processing
 
 [![Build Status](https://travis-ci.org/IntelVCL/Open3D.svg?branch=master)](https://travis-ci.org/IntelVCL/Open3D)
@@ -35,6 +39,7 @@ Please cite our work if you use Open3D.
 ## Open3D ecosystem
 
 * [Open3D-PointNet:](https://github.com/IntelVCL/Open3D-PointNet) A fork of PyTorch PointNet for point cloud classification and semantic segmentation compatible with Open3D.
+* [Open3D-PointNet++:](https://github.com/IntelVCL/Open3D-PointNet2-Semantic3D) A re-implementation of PointNet++ using Open3D to enable real-time semantic segmentation of LIDAR point clouds.
 
 
 ## Resources

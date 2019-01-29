@@ -39,12 +39,11 @@ class Image;
 
 class RGBDImage;
 
-typedef std::vector<Eigen::Vector4i,
-                    Vector4i_allocator> CorrespondenceSetPixelWise;
+typedef std::vector<Eigen::Vector4i, Vector4i_allocator>
+        CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
-class RGBDOdometryJacobian
-{
+class RGBDOdometryJacobian {
 public:
     RGBDOdometryJacobian() {}
     virtual ~RGBDOdometryJacobian() {}
@@ -55,11 +54,14 @@ public:
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source, const RGBDImage &target,
+            const RGBDImage &source,
+            const RGBDImage &target,
             const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const = 0;
@@ -71,19 +73,21 @@ public:
 /// F. Steinbrucker, J. Sturm, and D. Cremers.
 /// Real-time visual odometry from dense RGB-D images.
 /// In ICCV Workshops, 2011.
-class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian
-{
+class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 public:
     RGBDOdometryJacobianFromColorTerm() {}
     ~RGBDOdometryJacobianFromColorTerm() override {}
 
 public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source, const RGBDImage &target,
+            const RGBDImage &source,
+            const RGBDImage &target,
             const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
@@ -94,22 +98,24 @@ public:
 /// reference:
 /// J. Park, Q.-Y. Zhou, and V. Koltun
 /// anonymous submission
-class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian
-{
+class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
     RGBDOdometryJacobianFromHybridTerm() {}
     ~RGBDOdometryJacobianFromHybridTerm() override {}
 
 public:
     void ComputeJacobianAndResidual(
-            int row, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            int row,
+            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source, const RGBDImage &target,
+            const RGBDImage &source,
+            const RGBDImage &target,
             const Image &source_xyz,
-            const RGBDImage &target_dx, const RGBDImage &target_dy,
+            const RGBDImage &target_dx,
+            const RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
-}    // namespace open3d
+}  // namespace open3d

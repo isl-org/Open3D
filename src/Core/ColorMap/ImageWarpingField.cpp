@@ -31,17 +31,16 @@
 
 namespace open3d {
 
-ImageWarpingField::ImageWarpingField () {
-    InitializeWarpingFields(0, 0, 0);
-}
+ImageWarpingField::ImageWarpingField() { InitializeWarpingFields(0, 0, 0); }
 
-ImageWarpingField::ImageWarpingField (
-        int width, int height, int number_of_vertical_anchors) {
+ImageWarpingField::ImageWarpingField(int width,
+                                     int height,
+                                     int number_of_vertical_anchors) {
     InitializeWarpingFields(width, height, number_of_vertical_anchors);
 }
 
-void ImageWarpingField::InitializeWarpingFields(int width, int height,
-        int number_of_vertical_anchors) {
+void ImageWarpingField::InitializeWarpingFields(
+        int width, int height, int number_of_vertical_anchors) {
     anchor_h_ = number_of_vertical_anchors;
     anchor_step_ = double(height) / (anchor_h_ - 1);
     anchor_w_ = int(std::ceil(double(width) / anchor_step_) + 1);
@@ -64,20 +63,19 @@ Eigen::Vector2d ImageWarpingField::QueryFlow(int i, int j) const {
         return Eigen::Vector2d(flow_(baseidx), flow_(baseidx + 1));
 }
 
-Eigen::Vector2d ImageWarpingField::GetImageWarpingField(
-        double u, double v) const {
+Eigen::Vector2d ImageWarpingField::GetImageWarpingField(double u,
+                                                        double v) const {
     int i = (int)(u / anchor_step_);
     int j = (int)(v / anchor_step_);
     double p = (u - i * anchor_step_) / anchor_step_;
     double q = (v - j * anchor_step_) / anchor_step_;
-    return (1 - p) * (1 - q) * QueryFlow(i, j)
-        + (1 - p) * (q)* QueryFlow(i, j + 1)
-        + (p)* (1 - q) * QueryFlow(i + 1, j)
-        + (p)* (q)* QueryFlow(i + 1, j + 1);
+    return (1 - p) * (1 - q) * QueryFlow(i, j) +
+           (1 - p) * (q)*QueryFlow(i, j + 1) +
+           (p) * (1 - q) * QueryFlow(i + 1, j) +
+           (p) * (q)*QueryFlow(i + 1, j + 1);
 }
 
-bool ImageWarpingField::ConvertToJsonValue(Json::Value &value) const
-{
+bool ImageWarpingField::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "ImageWarpingField";
     value["version_major"] = 1;
     value["version_minor"] = 0;
@@ -91,16 +89,19 @@ bool ImageWarpingField::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value)
-{
+bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("ImageWarpingField read JSON failed: unsupported json format.\n");
+        PrintWarning(
+                "ImageWarpingField read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "ImageWarpingField" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning("ImageWarpingField read JSON failed: unsupported json format.\n");
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning(
+                "ImageWarpingField read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
     anchor_w_ = value.get("anchor_w", 1).asInt();
@@ -108,7 +109,7 @@ bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value)
 
     const Json::Value flow_array = value["flow"];
     if (flow_array.size() == 0 ||
-            flow_array.size() != (anchor_w_ * anchor_h_ * 2)) {
+        flow_array.size() != (anchor_w_ * anchor_h_ * 2)) {
         PrintWarning("ImageWarpingField read JSON failed: invalid flow.\n");
         return false;
     }
@@ -119,4 +120,4 @@ bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value)
     return true;
 }
 
-}	// namespace open3d
+}  // namespace open3d

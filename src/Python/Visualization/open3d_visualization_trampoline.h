@@ -32,9 +32,8 @@
 
 using namespace open3d;
 
-template <class VisualizerBase = Visualizer> class PyVisualizer :
-        public VisualizerBase
-{
+template <class VisualizerBase = Visualizer>
+class PyVisualizer : public VisualizerBase {
 public:
     using VisualizerBase::VisualizerBase;
     bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override {
@@ -60,20 +59,17 @@ public:
     }
 };
 
-template <class ViewControlBase = ViewControl> class PyViewControl :
-        public ViewControlBase
-{
+template <class ViewControlBase = ViewControl>
+class PyViewControl : public ViewControlBase {
 public:
     using ViewControlBase::ViewControlBase;
-    void Reset() override {
-        PYBIND11_OVERLOAD(void, ViewControlBase, Reset, );
-    }
+    void Reset() override { PYBIND11_OVERLOAD(void, ViewControlBase, Reset, ); }
     void ChangeFieldOfView(double step) override {
         PYBIND11_OVERLOAD(void, ViewControlBase, ChangeFieldOfView, step);
     }
     void ChangeWindowSize(int width, int height) override {
         PYBIND11_OVERLOAD(void, ViewControlBase, ChangeWindowSize, width,
-                height);
+                          height);
     }
     void Scale(double scale) override {
         PYBIND11_OVERLOAD(void, ViewControlBase, Scale, scale);

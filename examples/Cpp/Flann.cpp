@@ -32,8 +32,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
@@ -66,7 +65,7 @@ int main(int argc, char **argv)
 
     int nn = std::min(20, (int)cloud_ptr->points_.size() - 1);
     Matrix<double> dataset((double *)cloud_ptr->points_.data(),
-            cloud_ptr->points_.size(), 3 );
+                           cloud_ptr->points_.size(), 3);
     Matrix<double> query((double *)cloud_ptr->points_.data(), 1, 3);
     std::vector<int> indices_vec(nn);
     std::vector<double> dists_vec(nn);
@@ -86,7 +85,7 @@ int main(int argc, char **argv)
     float r = float(sqrt(dists_vec[nn - 1]) * 2.0);
     Matrix<double> query1((double *)cloud_ptr->points_.data() + 3 * 99, 1, 3);
     int k = index.radiusSearch(query1, indices, dists, r * r,
-            SearchParams(-1, 0.0));
+                               SearchParams(-1, 0.0));
 
     PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {
@@ -121,8 +120,8 @@ int main(int argc, char **argv)
     kdtree.SetGeometry(*new_cloud_ptr);
     std::vector<int> new_indices_vec(nn);
     std::vector<double> new_dists_vec(nn);
-    kdtree.SearchKNN(new_cloud_ptr->points_[0], nn,
-            new_indices_vec, new_dists_vec);
+    kdtree.SearchKNN(new_cloud_ptr->points_[0], nn, new_indices_vec,
+                     new_dists_vec);
 
     for (size_t i = 0; i < new_indices_vec.size(); i++) {
         PrintInfo("%d, %f\n", (int)new_indices_vec[i], sqrt(new_dists_vec[i]));
@@ -133,7 +132,7 @@ int main(int argc, char **argv)
     new_cloud_ptr->colors_[0] = Eigen::Vector3d(0.0, 1.0, 0.0);
 
     k = kdtree.SearchRadius(new_cloud_ptr->points_[99], r, new_indices_vec,
-            new_dists_vec);
+                            new_dists_vec);
 
     PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {
@@ -144,7 +143,7 @@ int main(int argc, char **argv)
     new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
     k = kdtree.Search(new_cloud_ptr->points_[199], KDTreeSearchParamRadius(r),
-            new_indices_vec, new_dists_vec);
+                      new_indices_vec, new_dists_vec);
 
     PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {

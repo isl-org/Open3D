@@ -36,10 +36,9 @@ class RGBDImage;
 class Image;
 class PinholeCameraTrajectory;
 
-class ColorMapOptimizationOption
-{
+class ColorMapOptimizationOption {
 public:
-	ColorMapOptimizationOption(
+    ColorMapOptimizationOption(
             bool non_rigid_camera_coordinate = false,
             int number_of_vertical_anchors = 16,
             double non_rigid_anchor_point_weight = 0.316,
@@ -48,21 +47,20 @@ public:
             double depth_threshold_for_visiblity_check = 0.03,
             double depth_threshold_for_discontinuity_check = 0.1,
             int half_dilation_kernel_size_for_discontinuity_map = 3,
-            int image_boundary_margin = 10) :
-            non_rigid_camera_coordinate_(non_rigid_camera_coordinate),
-            number_of_vertical_anchors_(number_of_vertical_anchors),
-            non_rigid_anchor_point_weight_(non_rigid_anchor_point_weight),
-            maximum_iteration_(maximum_iteration),
-            maximum_allowable_depth_(maximum_allowable_depth),
-            depth_threshold_for_visiblity_check_(
-            depth_threshold_for_visiblity_check),
-            depth_threshold_for_discontinuity_check_(
-            depth_threshold_for_discontinuity_check),
-            half_dilation_kernel_size_for_discontinuity_map_(
-            half_dilation_kernel_size_for_discontinuity_map),
-            image_boundary_margin_(
-            image_boundary_margin) {}
-	~ColorMapOptimizationOption() {}
+            int image_boundary_margin = 10)
+        : non_rigid_camera_coordinate_(non_rigid_camera_coordinate),
+          number_of_vertical_anchors_(number_of_vertical_anchors),
+          non_rigid_anchor_point_weight_(non_rigid_anchor_point_weight),
+          maximum_iteration_(maximum_iteration),
+          maximum_allowable_depth_(maximum_allowable_depth),
+          depth_threshold_for_visiblity_check_(
+                  depth_threshold_for_visiblity_check),
+          depth_threshold_for_discontinuity_check_(
+                  depth_threshold_for_discontinuity_check),
+          half_dilation_kernel_size_for_discontinuity_map_(
+                  half_dilation_kernel_size_for_discontinuity_map),
+          image_boundary_margin_(image_boundary_margin) {}
+    ~ColorMapOptimizationOption() {}
 
 public:
     bool non_rigid_camera_coordinate_;
@@ -80,9 +78,10 @@ public:
 /// Q.-Y. Zhou and V. Koltun,
 /// Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
 /// SIGGRAPH 2014
-void ColorMapOptimization(TriangleMesh& mesh,
+void ColorMapOptimization(
+        TriangleMesh& mesh,
         const std::vector<std::shared_ptr<RGBDImage>>& imgs_rgbd,
         PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option =
-        ColorMapOptimizationOption());
-}	// namespace open3d
+                ColorMapOptimizationOption());
+}  // namespace open3d

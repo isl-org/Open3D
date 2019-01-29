@@ -31,11 +31,11 @@
 #include <Core/Utility/Console.h>
 #include <IO/IO.h>
 
-void PrintHelp(char* argv[])
-{
+void PrintHelp(char* argv[]) {
     using namespace open3d;
 
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo(">    OdometryRGBD [color_source] [source_target] [color_target] [depth_target] [options]\n");
     PrintInfo("     Given RGBD image pair, estimate 6D odometry.\n");
@@ -44,30 +44,31 @@ void PrintHelp(char* argv[])
     PrintInfo("     --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)\n");
     PrintInfo("     --verbose : indicate this to display detailed information\n");
     PrintInfo("     --hybrid : compute odometry using hybrid objective\n");
+    // clang-format on
     PrintInfo("\n");
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
     using namespace open3d;
 
     if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp(argv);
         return 1;
     }
 
     std::string intrinsic_path;
-    if(ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
-        intrinsic_path = GetProgramOptionAsString(
-                argc, argv, "--camera_intrinsic").c_str();
+    if (ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
+        intrinsic_path =
+                GetProgramOptionAsString(argc, argv, "--camera_intrinsic")
+                        .c_str();
         PrintInfo("Camera intrinsic path %s\n", intrinsic_path.c_str());
     } else {
         PrintInfo("Camera intrinsic path is not given\n");
     }
     PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
-            !ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+        !ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         PrintWarning("Failed to read intrinsic parameters for depth image.\n");
         PrintWarning("Use default value for Primesense camera.\n");
         intrinsic = PinholeCameraIntrinsic(
@@ -82,13 +83,18 @@ int main(int argc, char *argv[])
     auto depth_source = CreateImageFromFile(argv[2]);
     auto color_target = CreateImageFromFile(argv[3]);
     auto depth_target = CreateImageFromFile(argv[4]);
-    std::shared_ptr<RGBDImage> (*CreateRGBDImage) (const Image&, const Image&,
-            bool);
-    if (rgbd_type == 0) CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
-    else if (rgbd_type == 1) CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
-    else if (rgbd_type == 2) CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
-    else if (rgbd_type == 3) CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
-    else CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
+    std::shared_ptr<RGBDImage> (*CreateRGBDImage)(const Image&, const Image&,
+                                                  bool);
+    if (rgbd_type == 0)
+        CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
+    else if (rgbd_type == 1)
+        CreateRGBDImage = &CreateRGBDImageFromTUMFormat;
+    else if (rgbd_type == 2)
+        CreateRGBDImage = &CreateRGBDImageFromSUNFormat;
+    else if (rgbd_type == 3)
+        CreateRGBDImage = &CreateRGBDImageFromNYUFormat;
+    else
+        CreateRGBDImage = &CreateRGBDImageFromRedwoodFormat;
     auto source = CreateRGBDImage(*color_source, *depth_source, true);
     auto target = CreateRGBDImage(*color_target, *depth_target, true);
 
@@ -99,12 +105,12 @@ int main(int argc, char *argv[])
     bool is_success;
     if (ProgramOptionExists(argc, argv, "--hybrid")) {
         RGBDOdometryJacobianFromHybridTerm jacobian_method;
-        std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
-                (*source, *target, intrinsic, odo_init, jacobian_method, option);
+        std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry(
+                *source, *target, intrinsic, odo_init, jacobian_method, option);
     } else {
         RGBDOdometryJacobianFromColorTerm jacobian_method;
-        std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry
-                (*source, *target, intrinsic, odo_init, jacobian_method, option);
+        std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry(
+                *source, *target, intrinsic, odo_init, jacobian_method, option);
     }
     std::cout << "Estimated 4x4 motion matrix : " << std::endl;
     std::cout << trans_odo << std::endl;

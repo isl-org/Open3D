@@ -29,20 +29,15 @@
 #include <Core/Geometry/PointCloud.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-void PointCloudPicker::Clear()
-{
-    picked_indices_.clear();
-}
+void PointCloudPicker::Clear() { picked_indices_.clear(); }
 
-bool PointCloudPicker::IsEmpty() const
-{
+bool PointCloudPicker::IsEmpty() const {
     return (!pointcloud_ptr_ || picked_indices_.empty());
 }
 
-Eigen::Vector3d PointCloudPicker::GetMinBound() const
-{
+Eigen::Vector3d PointCloudPicker::GetMinBound() const {
     if (pointcloud_ptr_) {
         return ((const PointCloud &)(*pointcloud_ptr_)).GetMinBound();
     } else {
@@ -50,8 +45,7 @@ Eigen::Vector3d PointCloudPicker::GetMinBound() const
     }
 }
 
-Eigen::Vector3d PointCloudPicker::GetMaxBound() const
-{
+Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     if (pointcloud_ptr_) {
         return ((const PointCloud &)(*pointcloud_ptr_)).GetMaxBound();
     } else {
@@ -59,19 +53,16 @@ Eigen::Vector3d PointCloudPicker::GetMaxBound() const
     }
 }
 
-void PointCloudPicker::Transform(const Eigen::Matrix4d &/*transformation*/)
-{
+void PointCloudPicker::Transform(const Eigen::Matrix4d & /*transformation*/) {
     // Do nothing
 }
 
-bool PointCloudPicker::SetPointCloud(std::shared_ptr<const Geometry> ptr)
-{
-    if (!ptr || ptr->GetGeometryType() !=
-            Geometry::GeometryType::PointCloud) {
+bool PointCloudPicker::SetPointCloud(std::shared_ptr<const Geometry> ptr) {
+    if (!ptr || ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
         return false;
     }
     pointcloud_ptr_ = ptr;
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

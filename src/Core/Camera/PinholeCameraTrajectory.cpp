@@ -30,18 +30,13 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-PinholeCameraTrajectory::PinholeCameraTrajectory()
-{
-}
+PinholeCameraTrajectory::PinholeCameraTrajectory() {}
 
-PinholeCameraTrajectory::~PinholeCameraTrajectory()
-{
-}
+PinholeCameraTrajectory::~PinholeCameraTrajectory() {}
 
-bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
-{
+bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "PinholeCameraTrajectory";
     value["version_major"] = 1;
     value["version_minor"] = 0;
@@ -56,38 +51,43 @@ bool PinholeCameraTrajectory::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value)
-{
+bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
+        PrintWarning(
+                "PinholeCameraTrajectory read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
     if (value.get("class_name", "").asString() != "PinholeCameraTrajectory" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning("PinholeCameraTrajectory read JSON failed: unsupported json format.\n");
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning(
+                "PinholeCameraTrajectory read JSON failed: unsupported json "
+                "format.\n");
         return false;
     }
 
     const Json::Value parameter_array = value["parameters"];
 
     if (parameter_array.size() == 0) {
-        PrintWarning("PinholeCameraTrajectory read JSON failed: empty trajectory.\n");
+        PrintWarning(
+                "PinholeCameraTrajectory read JSON failed: empty "
+                "trajectory.\n");
         return false;
     }
     parameters_.resize(parameter_array.size());
     for (auto i = 0; i < parameter_array.size(); i++) {
         const Json::Value &status_object = parameter_array[i];
         if (parameters_[i].intrinsic_.ConvertFromJsonValue(
-                status_object["intrinsic"]) == false) {
+                    status_object["intrinsic"]) == false) {
             return false;
         }
         if (EigenMatrix4dFromJsonArray(parameters_[i].extrinsic_,
-                status_object["extrinsic"]) == false) {
+                                       status_object["extrinsic"]) == false) {
             return false;
         }
     }
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

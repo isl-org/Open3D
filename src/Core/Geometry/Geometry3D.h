@@ -31,8 +31,7 @@
 
 namespace open3d {
 
-class Geometry3D : public Geometry
-{
+class Geometry3D : public Geometry {
 public:
     ~Geometry3D() override {}
 
@@ -47,4 +46,4 @@ public:
     virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
 };
 
-}    // namespace open3d
+}  // namespace open3d
