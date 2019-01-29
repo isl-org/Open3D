@@ -61,83 +61,94 @@ def preprocess(model):
     model.vertices = Vector3dVector(vertices / scale)
     return model
 
-sphere = read_triangle_mesh("../../TestData/sphere.ply")
-model = read_triangle_mesh("../../TestData/bathtub_0154.ply")
-model.compute_vertex_normals()
-print("visualize model")
-draw_geometries([model])
+def mesh_voxelization(input_filename, output_filename, camera_sphere, 
+        mesh, cubic_size, voxel_resolution, w=300, h=300, visualization=False):
 
-# make voxels
-cubic_size = 2.0
-voxel_grid_carving = create_voxel_grid(
-    w=cubic_size, h=cubic_size, d=cubic_size, voxel_size=cubic_size/40.0,
-    origin=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0])
+    voxel_grid_carving = create_voxel_grid(
+            w=cubic_size, h=cubic_size, d=cubic_size, 
+            voxel_size=cubic_size/voxel_resolution,
+            origin=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0])
 
-# rescale geometry 
-sphere = preprocess(sphere)
-model = preprocess(model)
+    # rescale geometry 
+    camera_sphere = preprocess(camera_sphere)
+    mesh = preprocess(mesh)
 
-w = 320
-h = 320
-vis = Visualizer()
-vis.create_window(width = w, height = h)
-vis.add_geometry(model)
-vis.get_render_option().mesh_show_back_face = True
+    vis = Visualizer()
+    vis.create_window(width = w, height = h)
+    vis.add_geometry(mesh)
+    vis.get_render_option().mesh_show_back_face = True
 
-ctr = vis.get_view_control()
-param = ctr.convert_to_pinhole_camera_parameters()
+    ctr = vis.get_view_control()
+    param = ctr.convert_to_pinhole_camera_parameters()
 
-pcd_agg = PointCloud()
-n_pts = len(sphere.vertices)
-centers_pts = np.zeros((n_pts,3))
-i = 0
-for xyz in sphere.vertices:
-    # get new camera pose
-    trans = get_extrinsic(xyz)
-    param.extrinsic = trans
-    c = np.linalg.inv(trans).dot(np.asarray([0,0,0,1]).transpose())
-    centers_pts[i,:] = c[:3]
-    i += 1
-    ctr.convert_from_pinhole_camera_parameters(param)
+    pcd_agg = PointCloud()
+    centers_pts = np.zeros((len(camera_sphere.vertices), 3))
+    i = 0
+    for xyz in camera_sphere.vertices:
+        # get new camera pose
+        trans = get_extrinsic(xyz)
+        param.extrinsic = trans
+        c = np.linalg.inv(trans).dot(np.asarray([0,0,0,1]).transpose())
+        centers_pts[i,:] = c[:3]
+        i += 1
+        ctr.convert_from_pinhole_camera_parameters(param)
+        
+        # capture depth image and make a point cloud
+        vis.poll_events()
+        vis.update_renderer()
+        depth = vis.capture_depth_float_buffer(False)
+        pcd_agg += depth_to_pcd(depth,
+                param.intrinsic.intrinsic_matrix, trans, w, h)
+        
+        # depth map carving method
+        depth_image = Image(depth)
+        voxel_grid_carving = carve_voxel_grid_using_depth_map(
+                voxel_grid_carving, depth, param)
+
+    vis.destroy_window()
+
+    voxel_surface = create_surface_voxel_grid_from_point_cloud(
+            pcd_agg, voxel_size=cubic_size/voxel_resolution,
+            min_bound=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0],
+            max_bound=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0])
+
+    voxel_combine = voxel_surface + voxel_grid_carving
+
+    if (visualization):
+        print("visualize camera center")
+        centers = PointCloud()
+        centers.points = Vector3dVector(centers_pts)
+        draw_geometries([centers, mesh])
+
+        print("surface voxels")
+        print(voxel_surface)
+        draw_geometries([voxel_surface])
+
+        print("carved voxels")
+        print(voxel_grid_carving)
+        draw_geometries([voxel_grid_carving])
+
+        print("combined voxels")
+        print(voxel_combine)
+        draw_geometries([voxel_combine])
+
+        print("visualize original model and voxels together")
+        draw_geometries([voxel_combine, mesh])
     
-    # capture depth image and make a point cloud
-    vis.poll_events()
-    vis.update_renderer()
-    depth = vis.capture_depth_float_buffer(False)
-    pcd_agg += depth_to_pcd(depth,
-            param.intrinsic.intrinsic_matrix, trans, w, h)
-    
-    # depth map carving method
-    depth_image = Image(depth)
-    voxel_grid_carving = carve_voxel_grid_using_depth_map(
-            voxel_grid_carving, depth, param)
+    return voxel_combine
 
-vis.destroy_window()
+if __name__ == '__main__':
+    input_filename = "../../TestData/bathtub_0154.ply"
+    output_filename = "../../TestData/bathtub_0154_voxel.ply"
+    camera_sphere = read_triangle_mesh("../../TestData/sphere.ply")
+    mesh = read_triangle_mesh(input_filename)
+    mesh.compute_vertex_normals()
+    visualization = True
+    cubic_size = 2.0
+    voxel_resolution = 128.0
 
-print("visualize camera center")
-centers = PointCloud()
-centers.points = Vector3dVector(centers_pts)
-draw_geometries([centers, model])
-
-print("voxelize dense point cloud")
-voxel_surface = create_surface_voxel_grid_from_point_cloud(
-        pcd_agg, voxel_size=cubic_size/40.0, 
-        min_bound=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0],
-        max_bound=[-cubic_size/2.0, -cubic_size/2.0, -cubic_size/2.0])
-print(voxel_surface)
-draw_geometries([voxel_surface])
-
-print("voxel carving using depth map")
-print(voxel_grid_carving)
-draw_geometries([voxel_grid_carving])
-
-print("Combine voxel_surface and voxel_grid_carving")
-voxel_combine = voxel_surface + voxel_grid_carving
-
-print("save and load VoxelGrid")
-write_voxel_grid("voxel_grid_test.ply", voxel_surface)
-voxel_surface_read = read_voxel_grid("voxel_grid_test.ply")
-print(voxel_surface_read)
-
-print("visualize original model and voxels together")
-draw_geometries([voxel_combine, model])
+    voxels = mesh_voxelization(input_filename, output_filename, camera_sphere,
+            mesh, cubic_size, voxel_resolution, visualization=True)
+    write_voxel_grid(output_filename, voxels)
+    voxels_read = read_voxel_grid(output_filename)
+    draw_geometries([voxels_read])
