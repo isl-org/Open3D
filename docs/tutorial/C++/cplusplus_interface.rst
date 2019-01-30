@@ -70,6 +70,23 @@ In order for CMake to find the Open3D installed files you need to set ``Open3D_D
 
 5. Generate. Open the TestVisualizer project and build.
 
+Alternatively, this can be done by calling CMake from the console:
+
+.. code-block:: bat
+
+    cd Open3D
+    mkdir build
+    cd build
+    cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=C:\open3d_install ..
+    cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release --target install
+
+    cd ..\docs\_static\C++\
+    mkdir build
+    cd build
+    cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=C:\open3d_install ..
+    cmake --build . --parallel %NUMBER_OF_PROCESSORS% --config Release
+    Release\TestVisualizer.exe
+
 Highlights
 ``````````
 
