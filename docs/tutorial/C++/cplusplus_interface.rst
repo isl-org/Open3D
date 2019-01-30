@@ -19,8 +19,8 @@ For installing from source see :ref:`compilation`.
 Create C++ project
 ==================
 
-Ubuntu
-``````
+Ubuntu/MacOs
+````````````
 
 Let's create a basic C++ project based on CMake and Open3D installed libraries and headers.
 
