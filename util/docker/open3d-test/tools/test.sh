@@ -36,7 +36,7 @@ echo
 
 if [ "${3}" = "py2" ] || [ "${3}" = "py3" ]; then
     docker container exec -it ${CONTAINER_NAME} /bin/bash -c '\
-        git clone --recursive https://github.com/IntelVCL/Open3D.git open3d && \
+        git clone -b dockerUnitTest --recursive https://github.com/takanokage/Open3D.git open3d && \
         ./test.sh Release ${LINK_TYPE} $ENV_TYPE'
 elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
     # the conda settings in .bashrc only work with interactive shells
@@ -47,7 +47,12 @@ elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
         ./test.sh Release ${LINK_TYPE} $ENV_TYPE'
 fi
 
+# docker exec is returning the result of the tests
+TEST_RESULT=$?
+
 echo "stopping the ${CONTAINER_HOSTNAME} container..."
 date
 docker container stop -t 0 ${CONTAINER_NAME} >/dev/null 2>&1
 echo
+
+exit ${TEST_RESULT}
