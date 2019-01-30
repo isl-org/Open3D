@@ -1,4 +1,5 @@
 from open3d import *
+from os.path import abspath
 import math
 import numpy as np
 import numpy.matlib
@@ -101,9 +102,8 @@ def mesh_voxelization(input_filename, output_filename, camera_sphere,
                 param.intrinsic.intrinsic_matrix, trans, w, h)
         
         # depth map carving method
-        depth_image = Image(depth)
         voxel_grid_carving = carve_voxel_grid_using_depth_map(
-                voxel_grid_carving, depth, param)
+                voxel_grid_carving, Image(depth), param)
 
     vis.destroy_window()
 
@@ -138,9 +138,9 @@ def mesh_voxelization(input_filename, output_filename, camera_sphere,
     return voxel_combine
 
 if __name__ == '__main__':
-    input_filename = "../../TestData/bathtub_0154.ply"
-    output_filename = "../../TestData/bathtub_0154_voxel.ply"
-    camera_sphere = read_triangle_mesh("../../TestData/sphere.ply")
+    input_filename = abspath("../../TestData/bathtub_0154.ply")
+    output_filename = abspath("../../TestData/bathtub_0154_voxel.ply")
+    camera_sphere = read_triangle_mesh(abspath("../../TestData/sphere.ply"))
     mesh = read_triangle_mesh(input_filename)
     mesh.compute_vertex_normals()
     visualization = True
