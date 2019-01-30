@@ -19,7 +19,8 @@ For installing from source see :ref:`compilation`.
 Create C++ project
 ==================
 
-.. warning:: The following is supported at this time only on Ubuntu with all dependencies installed.
+Ubuntu
+``````
 
 Let's create a basic C++ project based on CMake and Open3D installed libraries and headers.
 
@@ -31,8 +32,43 @@ Let's create a basic C++ project based on CMake and Open3D installed libraries a
 
     mkdir -p build
     cd build
-    cmake ..
+    cmake -DCMAKE_PREFIX_PATH="<Open3D_install_path>/lib/cmake/" ..
     make -j
+
+The ``CMAKE_PREFIX_PATH`` option is used to tell the CMake where to look for the Open3D installed files.
+For example, if Open3D was installed to ``~/open3d_install``, the cmake command would look like this:
+
+.. code-block:: bash
+
+    cmake -DCMAKE_PREFIX_PATH="~/open3d_install/lib/cmake/" ..
+
+Windows
+```````
+
+The steps for creating a C++ project based on the Open3D installed libraries and headers on Windows is very similar.
+
+1. Copy the ``TestVisualizer.cpp`` and ``CMakeLists.txt`` files to ``C:/testVisualizer``.
+2. Open CMake GUI and set the source folder to ``C:/testVisualizer`` and the binaries folder to ``C:/testVisualizer/build``.
+3. Configure.
+
+At this time you will see that CMake is unable to find Open3D.
+
+.. image:: ../../_static/C++/cpp_project_win.01.Open3D_not_found.png
+    :width: 600px
+
+For simplicity the Open3D install location is ``C:/open3d_install``.
+
+.. image:: ../../_static/C++/cpp_project_win.02.Open3D_install_folder.png
+    :width: 150px
+
+In order for CMake to find the Open3D installed files you need to set ``Open3D_DIR`` to the location of the Open3D installed CMake files which is ``C:/open3d_install/CMake``.
+
+4. Configure. CMake finds Open3D.
+
+.. image:: ../../_static/C++/cpp_project_win.03.Open3D_found.png
+    :width: 600px
+
+5. Generate. Open the TestVisualizer project and build.
 
 Highlights
 ``````````
