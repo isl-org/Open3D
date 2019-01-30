@@ -74,7 +74,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
     EXPECT_EQ(424, intrinsic.height_);
 
     Matrix3d reference;
-    reference << 254.878, 0.0, 365.456, 0.0, 205.395, 365.456, 0.0, 0.0, 1.0;
+    reference << 365.456, 0.0, 254.878, 0.0, 365.456, 205.395, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
