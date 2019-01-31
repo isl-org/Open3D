@@ -5,6 +5,9 @@ import numpy as np
 import numpy.matlib
 import matplotlib.pyplot as plt
 
+from joblib import Parallel, delayed
+import multiprocessing
+
 def get_extrinsic(xyz):
     rvec = xyz_spherical(xyz)
     r = get_rotation_matrix(rvec[1], rvec[2])
@@ -62,8 +65,12 @@ def preprocess(model):
     model.vertices = Vector3dVector(vertices / scale)
     return model
 
-def mesh_voxelization(input_filename, output_filename, camera_sphere, 
-        mesh, cubic_size, voxel_resolution, w=300, h=300, visualization=False):
+def mesh_voxelization(mid, input_filename, output_filename, camera_path, 
+        cubic_size, voxel_resolution, w=300, h=300, visualization=False):
+
+    camera_sphere = read_triangle_mesh(camera_path)
+    mesh = read_triangle_mesh(input_filename)
+    mesh.compute_vertex_normals()
 
     voxel_grid_carving = create_voxel_grid(
             w=cubic_size, h=cubic_size, d=cubic_size, 
@@ -75,7 +82,7 @@ def mesh_voxelization(input_filename, output_filename, camera_sphere,
     mesh = preprocess(mesh)
 
     vis = Visualizer()
-    vis.create_window(width = w, height = h)
+    vis.create_window(width=w, height=h, visible=False)
     vis.add_geometry(mesh)
     vis.get_render_option().mesh_show_back_face = True
 
@@ -85,7 +92,7 @@ def mesh_voxelization(input_filename, output_filename, camera_sphere,
     pcd_agg = PointCloud()
     centers_pts = np.zeros((len(camera_sphere.vertices), 3))
     i = 0
-    for xyz in camera_sphere.vertices:
+    for cid, xyz in enumerate(camera_sphere.vertices):
         # get new camera pose
         trans = get_extrinsic(xyz)
         param.extrinsic = trans
@@ -104,6 +111,8 @@ def mesh_voxelization(input_filename, output_filename, camera_sphere,
         # depth map carving method
         voxel_grid_carving = carve_voxel_grid_using_depth_map(
                 voxel_grid_carving, Image(depth), param)
+        print("Depth carving %05d, view %03d/%03d" %
+              (mid, cid, len(camera_sphere.vertices)))
 
     vis.destroy_window()
 
@@ -135,20 +144,19 @@ def mesh_voxelization(input_filename, output_filename, camera_sphere,
         print("visualize original model and voxels together")
         draw_geometries([voxel_combine, mesh])
     
-    return voxel_combine
+    write_voxel_grid(output_filename, voxel_combine)
 
 if __name__ == '__main__':
-    input_filename = abspath("../../TestData/bathtub_0154.ply")
-    output_filename = abspath("../../TestData/bathtub_0154_voxel.ply")
-    camera_sphere = read_triangle_mesh(abspath("../../TestData/sphere.ply"))
-    mesh = read_triangle_mesh(input_filename)
-    mesh.compute_vertex_normals()
+
+    n_models = 10
+    input_filename = [abspath("../../TestData/bathtub_0154.ply")] * n_parallel
+    output_filename = [abspath("../../TestData/bathtub_0154_voxel.ply")] * n_parallel
+    camera_path = abspath("../../TestData/sphere.ply")
+    
     visualization = True
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    voxels = mesh_voxelization(input_filename, output_filename, camera_sphere,
-            mesh, cubic_size, voxel_resolution, visualization=True)
-    write_voxel_grid(output_filename, voxels)
-    voxels_read = read_voxel_grid(output_filename)
-    draw_geometries([voxels_read])
+    num_cores = multiprocessing.cpu_count()
+    Parallel(n_jobs=num_cores)(delayed(mesh_voxelization)(i, input_filename[i], output_filename[i], camera_path,
+                                cubic_size, voxel_resolution, visualization=False) for i in range(n_parallel))
