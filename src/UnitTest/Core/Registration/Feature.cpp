@@ -29,39 +29,24 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Feature, DISABLED_Resize)
-{
-    unit_test::NotImplemented();
-}
+TEST(Feature, DISABLED_Resize) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Feature, DISABLED_Dimension)
-{
-    unit_test::NotImplemented();
-}
+TEST(Feature, DISABLED_Dimension) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Feature, DISABLED_Num)
-{
-    unit_test::NotImplemented();
-}
+TEST(Feature, DISABLED_Num) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Feature, DISABLED_ComputeFPFHFeature)
-{
-    unit_test::NotImplemented();
-}
+TEST(Feature, DISABLED_ComputeFPFHFeature) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Feature, DISABLED_KDTreeSearchParamKNN)
-{
-    unit_test::NotImplemented();
-}
+TEST(Feature, DISABLED_KDTreeSearchParamKNN) { unit_test::NotImplemented(); }

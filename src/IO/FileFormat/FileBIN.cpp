@@ -30,12 +30,11 @@
 #include <memory>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-bool ReadMatrixXdFromBINFile(FILE *file, Eigen::MatrixXd &mat)
-{
+bool ReadMatrixXdFromBINFile(FILE *file, Eigen::MatrixXd &mat) {
     uint32_t rows, cols;
     if (fread(&rows, sizeof(uint32_t), 1, file) < 1) {
         PrintWarning("Read BIN failed: unexpected EOF.\n");
@@ -53,8 +52,7 @@ bool ReadMatrixXdFromBINFile(FILE *file, Eigen::MatrixXd &mat)
     return true;
 }
 
-bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat)
-{
+bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat) {
     uint32_t rows = (uint32_t)mat.rows();
     uint32_t cols = (uint32_t)mat.cols();
     if (fwrite(&rows, sizeof(uint32_t), 1, file) < 1) {
@@ -72,13 +70,13 @@ bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat)
     return true;
 }
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-bool ReadFeatureFromBIN(const std::string &filename, Feature &feature)
-{
+bool ReadFeatureFromBIN(const std::string &filename, Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "rb");
     if (fid == NULL) {
-        PrintWarning("Read BIN failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Read BIN failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
     bool success = ReadMatrixXdFromBINFile(fid, feature.data_);
@@ -86,11 +84,11 @@ bool ReadFeatureFromBIN(const std::string &filename, Feature &feature)
     return success;
 }
 
-bool WriteFeatureToBIN(const std::string &filename, const Feature &feature)
-{
+bool WriteFeatureToBIN(const std::string &filename, const Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "wb");
     if (fid == NULL) {
-        PrintWarning("Write BIN failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Write BIN failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
     bool success = WriteMatrixXdToBINFile(fid, feature.data_);
@@ -98,4 +96,4 @@ bool WriteFeatureToBIN(const std::string &filename, const Feature &feature)
     return success;
 }
 
-}    // namespace open3d
+}  // namespace open3d

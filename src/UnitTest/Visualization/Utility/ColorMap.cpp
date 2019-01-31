@@ -29,63 +29,39 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_GetColor)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_GetColor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_Interpolate)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_Interpolate) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_JetBase)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_JetBase) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_GetGlobalColorMap)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_GetGlobalColorMap) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColorMap, DISABLED_SetGlobalColorMap)
-{
-    unit_test::NotImplemented();
-}
+TEST(ColorMap, DISABLED_SetGlobalColorMap) { unit_test::NotImplemented(); }

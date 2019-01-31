@@ -29,15 +29,13 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColoredICP, DISABLED_RegistrationColoredICP)
-{
+TEST(ColoredICP, DISABLED_RegistrationColoredICP) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ColoredICP, DISABLED_ICPConvergenceCriteria)
-{
+TEST(ColoredICP, DISABLED_ICPConvergenceCriteria) {
     unit_test::NotImplemented();
 }

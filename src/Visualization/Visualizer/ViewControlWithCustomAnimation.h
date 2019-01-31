@@ -32,8 +32,7 @@
 
 namespace open3d {
 
-class ViewControlWithCustomAnimation : public ViewControl
-{
+class ViewControlWithCustomAnimation : public ViewControl {
 public:
     enum AnimationMode {
         FreeMode = 0,
@@ -53,15 +52,11 @@ public:
     void UpdateKeyFrame();
     void DeleteKeyFrame();
     void AddSpinKeyFrames(int num_of_key_frames = 20);
-    void ClearAllKeyFrames() {
-        view_trajectory_.view_status_.clear();
-    }
+    void ClearAllKeyFrames() { view_trajectory_.view_status_.clear(); }
     size_t NumOfKeyFrames() const {
         return view_trajectory_.view_status_.size();
     }
-    size_t NumOfFrames() const {
-        return view_trajectory_.NumOfFrames();
-    }
+    size_t NumOfFrames() const { return view_trajectory_.NumOfFrames(); }
     void ToggleTrajectoryLoop() {
         if (animation_mode_ == AnimationMode::FreeMode) {
             view_trajectory_.is_loop_ = !view_trajectory_.is_loop_;
@@ -72,9 +67,7 @@ public:
             view_trajectory_.ChangeInterval(change);
         }
     }
-    int GetTrajectoryInterval() const {
-        return view_trajectory_.interval_;
-    }
+    int GetTrajectoryInterval() const { return view_trajectory_.interval_; }
     std::string GetStatusString() const;
     void Step(double change);
     void GoToFirst();
@@ -84,7 +77,8 @@ public:
     bool LoadTrajectoryFromCameraTrajectory(
             const PinholeCameraTrajectory &camera_trajectory);
     bool IsPreviewing() {
-        return animation_mode_ == AnimationMode::PreviewMode; }
+        return animation_mode_ == AnimationMode::PreviewMode;
+    }
     bool IsPlaying() { return animation_mode_ == AnimationMode::PlayMode; }
     bool IsPlayingEnd(size_t num) {
         return (IsPlaying() && num >= view_trajectory_.NumOfFrames());
@@ -94,8 +88,9 @@ public:
 protected:
     size_t CurrentFrame() const { return (size_t)round(current_frame_); }
     size_t CurrentKeyframe() const { return (size_t)round(current_keyframe_); }
-    double RegularizeFrameIndex(double current_frame, size_t num_of_frames,
-            bool is_loop);
+    double RegularizeFrameIndex(double current_frame,
+                                size_t num_of_frames,
+                                bool is_loop);
     void SetViewControlFromTrajectory();
 
 protected:
@@ -105,4 +100,4 @@ protected:
     double current_keyframe_ = 0.0;
 };
 
-}    // namespace open3d
+}  // namespace open3d

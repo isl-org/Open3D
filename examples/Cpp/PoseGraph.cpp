@@ -33,12 +33,12 @@
 
 using namespace open3d;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
     if (argc != 2) {
         PrintOpen3DVersion();
+        // clang-format off
         PrintInfo("Usage:\n");
         PrintInfo("    > PoseGraph [posegraph_for_optimization].json\n");
         PrintInfo("    The program will :\n");
@@ -49,6 +49,7 @@ int main(int argc, char **argv)
         PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
         PrintInfo("    6) Optimize PoseGraph\n");
         PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
+        // clang-format on
         return 1;
     }
 
@@ -56,10 +57,12 @@ int main(int argc, char **argv)
     PoseGraph pose_graph_test;
     pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
     pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-    pose_graph_test.edges_.push_back(PoseGraphEdge(0, 1,
-            Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), false, 1.0));
-    pose_graph_test.edges_.push_back(PoseGraphEdge(0, 2,
-            Eigen::Matrix4d::Random(), Eigen::Matrix6d::Random(), true, 0.2));
+    pose_graph_test.edges_.push_back(
+            PoseGraphEdge(0, 1, Eigen::Matrix4d::Random(),
+                          Eigen::Matrix6d::Random(), false, 1.0));
+    pose_graph_test.edges_.push_back(
+            PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
+                          Eigen::Matrix6d::Random(), true, 0.2));
     WritePoseGraph("test_pose_graph.json", pose_graph_test);
     PoseGraph pose_graph;
     ReadPoseGraph("test_pose_graph.json", pose_graph);
@@ -70,10 +73,10 @@ int main(int argc, char **argv)
     GlobalOptimizationConvergenceCriteria criteria;
     GlobalOptimizationOption option;
     GlobalOptimizationLevenbergMarquardt optimization_method;
-    GlobalOptimization(*pose_graph_input, optimization_method,
-            criteria, option);
-    auto pose_graph_input_prunned = CreatePoseGraphWithoutInvalidEdges(
-            *pose_graph_input, option);
+    GlobalOptimization(*pose_graph_input, optimization_method, criteria,
+                       option);
+    auto pose_graph_input_prunned =
+            CreatePoseGraphWithoutInvalidEdges(*pose_graph_input, option);
     WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
 
     return 0;

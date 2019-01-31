@@ -28,23 +28,24 @@
 
 namespace open3d {
 
-class Geometry
-{
+class Geometry {
 public:
     enum class GeometryType {
         Unspecified = 0,
         PointCloud = 1,
-        LineSet = 2,
-        TriangleMesh = 3,
-        Image = 4,
+        VoxelGrid = 2,
+        Octree = 3,
+        LineSet = 4,
+        TriangleMesh = 5,
+        Image = 6,
     };
 
 public:
     virtual ~Geometry() {}
 
 protected:
-    Geometry(GeometryType type, int dimension) : geometry_type_(type),
-            dimension_(dimension) {}
+    Geometry(GeometryType type, int dimension)
+        : geometry_type_(type), dimension_(dimension) {}
 
 public:
     virtual void Clear() = 0;
@@ -57,4 +58,4 @@ private:
     int dimension_ = 3;
 };
 
-}    // namespace open3d
+}  // namespace open3d

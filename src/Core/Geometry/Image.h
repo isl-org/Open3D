@@ -37,8 +37,7 @@ namespace open3d {
 
 class PinholeCameraIntrinsic;
 
-class Image : public Geometry2D
-{
+class Image : public Geometry2D {
 public:
     enum class ColorToIntensityConversionType {
         Equal,
@@ -54,8 +53,8 @@ public:
     };
 
 public:
-    Image() : Geometry2D(Geometry::GeometryType::Image) {};
-    ~Image() override {};
+    Image() : Geometry2D(Geometry::GeometryType::Image){};
+    ~Image() override{};
 
 public:
     void Clear() override;
@@ -67,11 +66,13 @@ public:
 public:
     virtual bool HasData() const {
         return width_ > 0 && height_ > 0 &&
-                data_.size() == height_ * BytesPerLine();
+               data_.size() == height_ * BytesPerLine();
     }
 
-    void PrepareImage(int width, int height, int num_of_channels,
-            int bytes_per_channel) {
+    void PrepareImage(int width,
+                      int height,
+                      int num_of_channels,
+                      int bytes_per_channel) {
         width_ = width;
         height_ = height;
         num_of_channels_ = num_of_channels;
@@ -116,15 +117,16 @@ std::shared_ptr<Image> CreateFloatImageFromImage(
                 Image::ColorToIntensityConversionType::Weighted);
 
 /// Function to access the raw data of a single-channel Image
-template<typename T>
+template <typename T>
 T *PointerAt(const Image &image, int u, int v);
 
 /// Function to access the raw data of a multi-channel Image
-template<typename T>
+template <typename T>
 T *PointerAt(const Image &image, int u, int v, int ch);
 
 std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
-        double depth_scale = 1000.0, double depth_trunc = 3.0);
+                                                double depth_scale = 1000.0,
+                                                double depth_trunc = 3.0);
 
 std::shared_ptr<Image> FlipImage(const Image &input);
 
@@ -133,22 +135,24 @@ std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type);
 
 /// Function to filter image with arbitrary dx, dy separable filters
 std::shared_ptr<Image> FilterImage(const Image &input,
-        const std::vector<double> &dx, const std::vector<double> &dy);
+                                   const std::vector<double> &dx,
+                                   const std::vector<double> &dy);
 
-std::shared_ptr<Image> FilterHorizontalImage(
-        const Image &input, const std::vector<double> &kernel);
+std::shared_ptr<Image> FilterHorizontalImage(const Image &input,
+                                             const std::vector<double> &kernel);
 
 /// Function to 2x image downsample using simple 2x2 averaging
 std::shared_ptr<Image> DownsampleImage(const Image &input);
 
 /// Function to dilate 8bit mask map
 std::shared_ptr<Image> DilateImage(const Image &input,
-        int half_kernel_size = 1);
+                                   int half_kernel_size = 1);
 
 /// Function to linearly transform pixel intensities
 /// image_new = scale * image + offset
 void LinearTransformImage(Image &input,
-        double scale = 1.0, double offset = 0.0);
+                          double scale = 1.0,
+                          double offset = 0.0);
 
 /// Function to clipping pixel intensities
 /// min is lower bound
@@ -166,16 +170,17 @@ typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
 /// Function to filter image pyramid
 ImagePyramid FilterImagePyramid(const ImagePyramid &input,
-        Image::FilterType type);
+                                Image::FilterType type);
 
 /// Function to create image pyramid
-ImagePyramid CreateImagePyramid(const Image& image,
-        size_t num_of_levels, bool with_gaussian_filter = true);
+ImagePyramid CreateImagePyramid(const Image &image,
+                                size_t num_of_levels,
+                                bool with_gaussian_filter = true);
 
 /// Function to create a depthmap boundary mask from depth image
 std::shared_ptr<Image> CreateDepthBoundaryMask(
-        const Image& depth_image_input,
+        const Image &depth_image_input,
         double depth_threshold_for_discontinuity_check = 0.1,
         int half_dilation_kernel_size_for_discontinuity_map = 3);
 
-}    // namespace open3d
+}  // namespace open3d

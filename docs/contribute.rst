@@ -56,3 +56,139 @@ We generally follow the `Google C++ Style Guide <https://google.github.io/styleg
 * C++11 features are recommended.
 
 Another good reading for modern C++ coding style is `C++ Core Guidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_
+
+
+Automated style Checker
+========================
+
+Open3D's CI checks for code formatting based on the style specified in the
+``.clang-format`` file.  Please build the ``check-style`` and ``apply-style``
+CMake target before submitting a pull request, or use your editor's
+`clang-format` integration to format the source code automatically.
+
+Different ``clang-format`` versions may produce slightly different
+formatting results. For standardization, ``clang-format`` version
+``5.0`` shall be used.
+
+.. _1-installing-clang-format-50:
+
+Installing ``clang-format-5.0``
+----------------------------------
+
+By default, the make system tries to detect either ``clang-format-5.0``
+or ``clang-format`` from PATH.
+
+.. _11-ubuntu:
+
+Ubuntu
+~~~~~~~~~~
+
+.. code:: bash
+
+   # Ubuntu 14.04
+   sudo apt update
+   sudo apt install wget software-properties-common -y
+   sudo wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+   sudo apt-add-repository "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main"
+   sudo apt update
+   sudo apt install clang-format-5.0 -y
+   clang-format-5.0 --version
+
+   # Ubuntu 16.04
+   sudo apt update
+   sudo apt install clang-format-5.0
+   clang-format-5.0 --version
+
+   # Ubuntu 18.04
+   sudo apt update
+   sudo apt install clang-format-5.0
+   clang-format-5.0 --version
+
+.. _12-macos:
+
+macOS
+~~~~~~~~~
+
+.. code:: bash
+
+   curl https://gist.githubusercontent.com/ffeu/6ffb75d8e8c7d92c0fbeb4b036599c33/raw/7004b4955961528a22b4642c125d395ef7e054c7/clang-format@5.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
+   brew install clang-format@5
+   clang-format --version
+
+   # (Optional) If another clang-format version was previously installed, we can keep
+   # both versions and switch the default to version 5
+   brew unlink clang-format
+   brew link clang-format@5
+
+   # (Optional) If you'd like to uninstall
+   brew uninstall clang-format@5
+
+Alternatively, download the clang-5.0 macOS package from `LLVM Download Page`_,
+unzip and add the directory containing ``clang-format`` to ``PATH``.
+
+.. _13-windows:
+
+Windows
+~~~~~~~~~~~
+
+Download clang-5.0 Windows package from `LLVM Download Page`_. During
+installation, select the option which allows adding clang toolchains to
+``PATH``. After installation, open a CMD terminal and try
+
+.. code:: batch
+
+   clang-format --version
+
+
+.. _2-checking-and-applying-format:
+
+Checking and applying format
+-------------------------------
+
+Before starting, check your ``clang-format`` version by
+
+.. code:: bash
+
+   # In most cases
+   clang-format --version
+
+   # Or, when installed as clang-format-5.0, e.g. on Ubuntu
+   clang-format-5.0 --version
+
+and make sure that version ``5.0`` is installed.
+
+.. _21-ubuntu--macos:
+
+Ubuntu & macOS
+~~~~~~~~~~~~~~~~~~
+
+After CMake config, to check style, run
+
+.. code:: bash
+
+   make check-style
+
+After CMake config, to apply proper style, run
+
+.. code:: bash
+
+   make apply-style
+
+.. _22-windows:
+
+Windows
+~~~~~~~~~~~
+
+After CMake config, to check style, run
+
+.. code:: batch
+
+   cmake --build . --target check-style
+
+After CMake config, to apply the proper style, run
+
+.. code:: batch
+
+   cmake --build . --target apply-style
+
+.. _LLVM Download Page: http://releases.llvm.org/download.html

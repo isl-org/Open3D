@@ -36,14 +36,14 @@ namespace open3d {
 
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
-        const PinholeCameraTrajectory& camera, int camid)
-{
+        const PinholeCameraTrajectory& camera,
+        int camid) {
     std::pair<double, double> f =
             camera.parameters_[camid].intrinsic_.GetFocalLength();
     std::pair<double, double> p =
             camera.parameters_[camid].intrinsic_.GetPrincipalPoint();
     Eigen::Vector4d Vt = camera.parameters_[camid].extrinsic_ *
-            Eigen::Vector4d(X(0), X(1), X(2), 1);
+                         Eigen::Vector4d(X(0), X(1), X(2), 1);
     float u = float((Vt(0) * f.first) / Vt(2) + p.first);
     float v = float((Vt(1) * f.second) / Vt(2) + p.second);
     float z = float(Vt(2));
@@ -51,13 +51,13 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 }
 
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
-        CreateVertexAndImageVisibility(const TriangleMesh& mesh,
+CreateVertexAndImageVisibility(
+        const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_depth,
         const std::vector<std::shared_ptr<Image>>& images_mask,
         const PinholeCameraTrajectory& camera,
         double maximum_allowable_depth,
-        double depth_threshold_for_visiblity_check)
-{
+        double depth_threshold_for_visiblity_check) {
     auto n_camera = camera.parameters_.size();
     auto n_vertex = mesh.vertices_.size();
     std::vector<std::vector<int>> visiblity_vertex_to_image;
@@ -77,12 +77,10 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
             if (d < 0.0 || !images_depth[c]->TestImageBoundary(u_d, v_d))
                 continue;
             float d_sensor = *PointerAt<float>(*images_depth[c], u_d, v_d);
-            if (d_sensor > maximum_allowable_depth)
-                continue;
+            if (d_sensor > maximum_allowable_depth) continue;
             if (*PointerAt<unsigned char>(*images_depth[c], u_d, v_d) == 255)
                 continue;
-            if (std::fabs(d - d_sensor) <
-                    depth_threshold_for_visiblity_check) {
+            if (std::fabs(d - d_sensor) < depth_threshold_for_visiblity_check) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
@@ -93,70 +91,73 @@ std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
                 }
             }
         }
-        PrintDebug("[cam %d] %.5f percents are visible\n",
-                c, double(viscnt) / n_vertex * 100); fflush(stdout);
+        PrintDebug("[cam %d] %.5f percents are visible\n", c,
+                   double(viscnt) / n_vertex * 100);
+        fflush(stdout);
     }
-    return std::move(std::make_tuple(
-            visiblity_vertex_to_image, visiblity_image_to_vertex));
+    return std::move(std::make_tuple(visiblity_vertex_to_image,
+                                     visiblity_image_to_vertex));
 }
 
-template<typename T>
-std::tuple<bool, T> QueryImageIntensity(
-        const Image& img, const Eigen::Vector3d& V,
-        const PinholeCameraTrajectory& camera, int camid,
-        int ch/*= -1*/, int image_boundary_margin/*= 10*/)
-{
+template <typename T>
+std::tuple<bool, T> QueryImageIntensity(const Image& img,
+                                        const Eigen::Vector3d& V,
+                                        const PinholeCameraTrajectory& camera,
+                                        int camid,
+                                        int ch /*= -1*/,
+                                        int image_boundary_margin /*= 10*/) {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
     if (img.TestImageBoundary(u, v, image_boundary_margin)) {
         int u_round = int(round(u));
         int v_round = int(round(v));
         if (ch == -1) {
-            return std::make_tuple(true,
-                    *PointerAt<T>(img, u_round, v_round));
+            return std::make_tuple(true, *PointerAt<T>(img, u_round, v_round));
         } else {
             return std::make_tuple(true,
-                    *PointerAt<T>(img, u_round, v_round, ch));
+                                   *PointerAt<T>(img, u_round, v_round, ch));
         }
     } else {
         return std::make_tuple(false, 0);
     }
 }
 
-template<typename T>
-std::tuple<bool, T> QueryImageIntensity(
-        const Image& img, const ImageWarpingField& field,
-        const Eigen::Vector3d& V,
-        const PinholeCameraTrajectory& camera, int camid,
-        int ch/*= -1*/, int image_boundary_margin/*= 10*/)
-{
+template <typename T>
+std::tuple<bool, T> QueryImageIntensity(const Image& img,
+                                        const ImageWarpingField& field,
+                                        const Eigen::Vector3d& V,
+                                        const PinholeCameraTrajectory& camera,
+                                        int camid,
+                                        int ch /*= -1*/,
+                                        int image_boundary_margin /*= 10*/) {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
     if (img.TestImageBoundary(u, v, image_boundary_margin)) {
         Eigen::Vector2d uv_shift = field.GetImageWarpingField(u, v);
         if (img.TestImageBoundary(uv_shift(0), uv_shift(1),
-                image_boundary_margin)) {
+                                  image_boundary_margin)) {
             int u_shift = int(round(uv_shift(0)));
             int v_shift = int(round(uv_shift(1)));
             if (ch == -1) {
                 return std::make_tuple(true,
-                        *PointerAt<T>(img, u_shift, v_shift));
+                                       *PointerAt<T>(img, u_shift, v_shift));
             } else {
-                return std::make_tuple(true,
-                        *PointerAt<T>(img, u_shift, v_shift, ch));
+                return std::make_tuple(
+                        true, *PointerAt<T>(img, u_shift, v_shift, ch));
             }
         }
     }
     return std::make_tuple(false, 0);
 }
 
-void SetProxyIntensityForVertex(const TriangleMesh& mesh,
+void SetProxyIntensityForVertex(
+        const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const std::vector<ImageWarpingField>& warping_field,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        std::vector<double>& proxy_intensity, int image_boundary_margin)
-{
+        std::vector<double>& proxy_intensity,
+        int image_boundary_margin) {
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
@@ -167,13 +168,13 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
         for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
-                iter++) {
+             iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
-                    *images_gray[j], warping_field[j],
-                    mesh.vertices_[i], camera, j, -1, image_boundary_margin);
+                    *images_gray[j], warping_field[j], mesh.vertices_[i],
+                    camera, j, -1, image_boundary_margin);
             if (valid) {
                 sum += 1.0;
                 proxy_intensity[i] += gray;
@@ -185,12 +186,13 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     }
 }
 
-void SetProxyIntensityForVertex(const TriangleMesh& mesh,
+void SetProxyIntensityForVertex(
+        const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        std::vector<double>& proxy_intensity, int image_boundary_margin)
-{
+        std::vector<double>& proxy_intensity,
+        int image_boundary_margin) {
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
@@ -201,13 +203,13 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
         for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
-                iter++) {
+             iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             float gray;
             bool valid = false;
             std::tie(valid, gray) = QueryImageIntensity<float>(
-                    *images_gray[j], mesh.vertices_[i], camera, j,
-                    -1, image_boundary_margin);
+                    *images_gray[j], mesh.vertices_[i], camera, j, -1,
+                    image_boundary_margin);
             if (valid) {
                 sum += 1.0;
                 proxy_intensity[i] += gray;
@@ -219,12 +221,12 @@ void SetProxyIntensityForVertex(const TriangleMesh& mesh,
     }
 }
 
-void SetGeometryColorAverage(TriangleMesh& mesh,
+void SetGeometryColorAverage(
+        TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_color,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        int image_boundary_margin/*= 10*/)
-{
+        int image_boundary_margin /*= 10*/) {
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
@@ -235,19 +237,19 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
         for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
-                iter++) {
+             iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], mesh.vertices_[i], camera,
-                    j, 0, image_boundary_margin);
+                    *images_color[j], mesh.vertices_[i], camera, j, 0,
+                    image_boundary_margin);
             std::tie(valid, g_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], mesh.vertices_[i], camera,
-                    j, 1, image_boundary_margin);
+                    *images_color[j], mesh.vertices_[i], camera, j, 1,
+                    image_boundary_margin);
             std::tie(valid, b_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], mesh.vertices_[i], camera,
-                    j, 2, image_boundary_margin);
+                    *images_color[j], mesh.vertices_[i], camera, j, 2,
+                    image_boundary_margin);
             float r = (float)r_temp / 255.0f;
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;
@@ -262,13 +264,13 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     }
 }
 
-void SetGeometryColorAverage(TriangleMesh& mesh,
+void SetGeometryColorAverage(
+        TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_color,
         const std::vector<ImageWarpingField>& warping_fields,
         const PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
-        int image_boundary_margin/*= 10*/)
-{
+        int image_boundary_margin /*= 10*/) {
     auto n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
@@ -279,19 +281,19 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
         for (auto iter = 0; iter < visiblity_vertex_to_image[i].size();
-                iter++) {
+             iter++) {
             int j = visiblity_vertex_to_image[i][iter];
             unsigned char r_temp, g_temp, b_temp;
             bool valid = false;
             std::tie(valid, r_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], warping_fields[j],
-                    mesh.vertices_[i], camera, j, 0, image_boundary_margin);
+                    *images_color[j], warping_fields[j], mesh.vertices_[i],
+                    camera, j, 0, image_boundary_margin);
             std::tie(valid, g_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], warping_fields[j],
-                    mesh.vertices_[i], camera, j, 1, image_boundary_margin);
+                    *images_color[j], warping_fields[j], mesh.vertices_[i],
+                    camera, j, 1, image_boundary_margin);
             std::tie(valid, b_temp) = QueryImageIntensity<unsigned char>(
-                    *images_color[j], warping_fields[j],
-                    mesh.vertices_[i], camera, j, 2, image_boundary_margin);
+                    *images_color[j], warping_fields[j], mesh.vertices_[i],
+                    camera, j, 2, image_boundary_margin);
             float r = (float)r_temp / 255.0f;
             float g = (float)g_temp / 255.0f;
             float b = (float)b_temp / 255.0f;
@@ -306,4 +308,4 @@ void SetGeometryColorAverage(TriangleMesh& mesh,
     }
 }
 
-}   // namespace open3d
+}  // namespace open3d

@@ -3,6 +3,7 @@ env:
   global:
     - SHARED=OFF
     - BUILD_DEPENDENCY_FROM_SOURCE=OFF
+    - NPROC=2
 
 notifications:
   email:
@@ -12,6 +13,30 @@ notifications:
 matrix:
 
   include:
+    # Style check only
+    - os: linux
+      dist: trusty
+      sudo: true
+      language: python
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - gcc-4.8
+            - g++-4.8
+            - cmake-data # to use cmake 3.0 or more recent
+            - cmake
+            - clang-format-5.0
+      before_install: ./util/scripts/setup-linux.sh
+      script:
+        - mkdir build
+        - cd build
+        - cmake ..
+        - make check-style
+
     # Default environment of Ubuntu 14.04
     - os: linux
       dist: trusty
@@ -27,6 +52,8 @@ matrix:
             - g++-4.8
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     - os: linux
       dist: trusty
@@ -43,6 +70,8 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env: SHARED=ON
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     - os: linux
       dist: trusty
@@ -59,6 +88,8 @@ matrix:
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
     # Similar environment of Ubuntu 16.04 (gcc 5.4)
     # travis ci only supports Ubuntu 14.04 (trusty) gcc-5 and 6
@@ -77,98 +108,26 @@ matrix:
             - g++-6
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+      before_install: ./util/scripts/setup-linux.sh
+      script: ./util/scripts/run-travis.sh
 
-    # Default environment of MacOS El Capitan
-    # compiled using clang shipped with xcode8
-    - os: osx
-      osx_image: xcode8
-
-    - os: osx
-      osx_image: xcode8
-      env: SHARED=ON
-
-    # Default environment of MacOS 10.13
+    # Default environment of macOS 10.13 High Sierra
     # compiled using clang shipped with xcode10.1
     - os: osx
       osx_image: xcode10.1
+      script: travis_wait 30 ./util/scripts/run-travis.sh
+      before_install: ./util/scripts/setup-osx.sh
 
     - os: osx
       osx_image: xcode10.1
       env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+      script: travis_wait 30 ./util/scripts/run-travis.sh
+      before_install: ./util/scripts/setup-osx.sh
 
-before_install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      ./util/scripts/install-deps-ubuntu.sh;
-      ./util/scripts/make-documentation.sh;
-      ./util/scripts/install-gtest.sh;
-    fi
-  # scripts/install-deps-osx.sh works well
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      ./util/scripts/install-deps-osx.sh;
-      ./util/scripts/install-gtest.sh;
-    fi
+    - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=STATIC
+      script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
+      before_install: sudo apt-get update && sudo apt-get install -y realpath
 
-  # for reference, display cmake and python version
-  - python -V
-  - cmake --version
-  - export nproc=2
-  # - pip install numpy
-
-script:
-  # Build and install to CMake's default install path
-  - python -V
-  - git submodule update --init --recursive
-  - mkdir build
-  - cd build
-  - if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON ..;
-    else
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON
-            -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON
-            -DBUILD_PNG=ON ..;
-    fi
-  # make -j brings 'virtual memory exhausted: Cannot allocate memory' message
-  # this is presumably due to limited memory space of travis-ci
-  # also set the time limit to 30 mins, this is a fix to issue #557
-  - travis_wait 30 sudo make install -j$nproc
-  - ./bin/unitTests
-  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST`
-  - if [ "$test" == "Open3D found." ]; then
-      echo "PASSED find_package(Open3D) in default install path.";
-    else
-      echo "FAILED find_package(Open3D) in default install path.";
-      exit 1;
-    fi
-
-  # Reconfig and install in a specified CMAKE_INSTALL_PREFIX
-  - sudo make uninstall
-  - if [ "$BUILD_DEPENDENCY_FROM_SOURCE" == "OFF" ]; then
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON
-            -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
-    else
-      cmake -DBUILD_SHARED_LIBS=$SHARED -DBUILD_UNIT_TESTS=ON -DBUILD_EIGEN3=ON
-            -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_JPEG=ON -DBUILD_JSONCPP=ON
-            -DBUILD_PNG=ON -DCMAKE_INSTALL_PREFIX=~/open3d_install ..;
-    fi
-  - travis_wait 30 sudo make install -j$nproc
-  - test=`cmake --find-package -DNAME=Open3D -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST
-                -DCMAKE_PREFIX_PATH="~/open3d_install/lib/cmake"`
-  - if [ "$test" == "Open3D found." ]; then
-      echo "PASSED find_package(Open3D) in specified install path.";
-    else
-      echo "FAILED find_package(Open3D) in specified install path.";
-      exit 1;
-    fi
-
-  # Test building example with installed Open3D
-  - cd ../docs/_static/C++
-  - mkdir build
-  - cd build
-  - cmake -DCMAKE_INSTALL_PREFIX=~/open3d_install ..
-  - make
-  - ./TestVisualizer
-
-  # The following script has issues on SHARED = "ON"
-  # - if [ "$SHARED" == "OFF" ]; then
-  #     cd lib/Tutorial/Basic/ && python file_io.py
-  #   fi
+    - env: DOCKER=YES UBUNTU=16.04 BUNDLE=deps ENV=py3 LINK=SHARED
+      script: ./util/docker/open3d-test/tools/test.sh $UBUNTU $BUNDLE $ENV $LINK
+      before_install: sudo apt-get update && sudo apt-get install -y realpath

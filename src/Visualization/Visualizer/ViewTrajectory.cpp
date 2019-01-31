@@ -30,15 +30,14 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
 const int ViewTrajectory::INTERVAL_MAX = 59;
 const int ViewTrajectory::INTERVAL_MIN = 0;
 const int ViewTrajectory::INTERVAL_STEP = 1;
 const int ViewTrajectory::INTERVAL_DEFAULT = 29;
 
-void ViewTrajectory::ComputeInterpolationCoefficients()
-{
+void ViewTrajectory::ComputeInterpolationCoefficients() {
     if (view_status_.empty()) {
         return;
     }
@@ -57,10 +56,10 @@ void ViewTrajectory::ComputeInterpolationCoefficients()
     if (n == 1) {
         return;
     } else if (n == 2) {
-        coeff_[0].block<17, 1>(0, 1) = coeff_[1].block<17, 1>(0, 0) - 
-                coeff_[0].block<17, 1>(0, 0);
-        coeff_[1].block<17, 1>(0, 1) = coeff_[0].block<17, 1>(0, 0) - 
-                coeff_[1].block<17, 1>(0, 0);
+        coeff_[0].block<17, 1>(0, 1) =
+                coeff_[1].block<17, 1>(0, 0) - coeff_[0].block<17, 1>(0, 0);
+        coeff_[1].block<17, 1>(0, 1) =
+                coeff_[0].block<17, 1>(0, 0) - coeff_[1].block<17, 1>(0, 0);
         return;
     }
 
@@ -69,7 +68,7 @@ void ViewTrajectory::ComputeInterpolationCoefficients()
 
     // Set matrix A first
     A.setZero();
-    
+
     // Set first and last line
     if (is_loop_) {
         A(0, 0) = 4.0;
@@ -114,37 +113,36 @@ void ViewTrajectory::ComputeInterpolationCoefficients()
 
         // Solve the linear system
         Eigen::VectorXd x = llt_solver.solve(b);
-    
+
         for (int i = 0; i < n; i++) {
             int i1 = (i + 1) % n;
             coeff_[i](k, 1) = x(i);
-            coeff_[i](k, 2) = 3.0 * (coeff_[i1](k, 0) - coeff_[i](k, 0))
-                    - 2.0 * x(i) - x(i1);
-            coeff_[i](k, 3) = 2.0 * (coeff_[i](k, 0) - coeff_[i1](k, 0))
-                    + x(i) + x(i1);
+            coeff_[i](k, 2) = 3.0 * (coeff_[i1](k, 0) - coeff_[i](k, 0)) -
+                              2.0 * x(i) - x(i1);
+            coeff_[i](k, 3) =
+                    2.0 * (coeff_[i](k, 0) - coeff_[i1](k, 0)) + x(i) + x(i1);
         }
     }
 }
 
-std::tuple<bool, ViewParameters> ViewTrajectory::GetInterpolatedFrame(size_t k)
-{
+std::tuple<bool, ViewParameters> ViewTrajectory::GetInterpolatedFrame(
+        size_t k) {
     ViewParameters status;
     if (view_status_.empty() || k >= NumOfFrames()) {
         return std::make_tuple(false, status);
     }
     size_t segment_index = k / (interval_ + 1);
-    double segment_fraction = double(k - segment_index * (interval_ + 1)) / 
-            double(interval_ + 1);
-    Eigen::Vector4d s(1.0, segment_fraction, 
-            segment_fraction * segment_fraction,
-            segment_fraction * segment_fraction * segment_fraction);
+    double segment_fraction =
+            double(k - segment_index * (interval_ + 1)) / double(interval_ + 1);
+    Eigen::Vector4d s(1.0, segment_fraction,
+                      segment_fraction * segment_fraction,
+                      segment_fraction * segment_fraction * segment_fraction);
     ViewParameters::Vector17d status_in_vector = coeff_[segment_index] * s;
     status.ConvertFromVector17d(status_in_vector);
     return std::make_tuple(true, status);
 }
 
-bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const
-{
+bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const {
     Json::Value trajectory_array;
     for (const auto &status : view_status_) {
         Json::Value status_object;
@@ -162,16 +160,17 @@ bool ViewTrajectory::ConvertToJsonValue(Json::Value &value) const
     return true;
 }
 
-bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value)
-{
+bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("ViewTrajectory read JSON failed: unsupported json format.\n");
-        return false;        
+        PrintWarning(
+                "ViewTrajectory read JSON failed: unsupported json format.\n");
+        return false;
     }
     if (value.get("class_name", "").asString() != "ViewTrajectory" ||
-            value.get("version_major", 1).asInt() != 1 ||
-            value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning("ViewTrajectory read JSON failed: unsupported json format.\n");
+        value.get("version_major", 1).asInt() != 1 ||
+        value.get("version_minor", 0).asInt() != 0) {
+        PrintWarning(
+                "ViewTrajectory read JSON failed: unsupported json format.\n");
         return false;
     }
     is_loop_ = value.get("is_loop", false).asBool();
@@ -193,4 +192,4 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value)
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

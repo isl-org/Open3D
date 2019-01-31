@@ -58,21 +58,25 @@ public:
     struct VolumeUnit {
     public:
         VolumeUnit() : volume_(NULL) {}
+
     public:
         std::shared_ptr<UniformTSDFVolume> volume_;
         Eigen::Vector3i index_;
     };
+
 public:
-    ScalableTSDFVolume(double voxel_length, double sdf_trunc,
-            TSDFVolumeColorType color_type, int volume_unit_resolution = 16,
-            int depth_sampling_stride = 4);
+    ScalableTSDFVolume(double voxel_length,
+                       double sdf_trunc,
+                       TSDFVolumeColorType color_type,
+                       int volume_unit_resolution = 16,
+                       int depth_sampling_stride = 4);
     ~ScalableTSDFVolume() override;
 
 public:
     void Reset() override;
     void Integrate(const RGBDImage &image,
-            const PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic) override;
+                   const PinholeCameraIntrinsic &intrinsic,
+                   const Eigen::Matrix4d &extrinsic) override;
     std::shared_ptr<PointCloud> ExtractPointCloud() override;
     std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
     std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
@@ -85,14 +89,16 @@ public:
     /// Assume the index of the volume unit is (x, y, z), then the unit spans
     /// from (x, y, z) * volume_unit_length_
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
-    std::unordered_map<Eigen::Vector3i, VolumeUnit,
-            hash_eigen::hash<Eigen::Vector3i>> volume_units_;
+    std::unordered_map<Eigen::Vector3i,
+                       VolumeUnit,
+                       hash_eigen::hash<Eigen::Vector3i>>
+            volume_units_;
 
 private:
     Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3d &point) {
         return Eigen::Vector3i((int)std::floor(point(0) / volume_unit_length_),
-                (int)std::floor(point(1) / volume_unit_length_),
-                (int)std::floor(point(2) / volume_unit_length_));
+                               (int)std::floor(point(1) / volume_unit_length_),
+                               (int)std::floor(point(2) / volume_unit_length_));
     }
 
     std::shared_ptr<UniformTSDFVolume> OpenVolumeUnit(
@@ -103,4 +109,4 @@ private:
     double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
-}    // namespace open3d
+}  // namespace open3d

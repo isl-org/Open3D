@@ -35,14 +35,12 @@ using namespace std;
 using namespace unit_test;
 
 // ----------------------------------------------------------------------------
-//
+// Test the conversion of Eigen::Vector3d to and from JsonArray.
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenVector3dToFromJsonArray)
-{
+TEST(IJsonConvertible, EigenVector3dToFromJsonArray) {
     int loops = 10000;
-    srand((unsigned int) time(0));
-    for (int i = 0; i < loops; i++)
-    {
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
         Vector3d v3d = Vector3d::Random();
 
         bool status = false;
@@ -60,14 +58,12 @@ TEST(IJsonConvertible, EigenVector3dToFromJsonArray)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Test the conversion of Eigen::Vector4d to and from JsonArray.
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenVector4dToFromJsonArray)
-{
+TEST(IJsonConvertible, EigenVector4dToFromJsonArray) {
     int loops = 10000;
-    srand((unsigned int) time(0));
-    for (int i = 0; i < loops; i++)
-    {
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
         Vector4d v4d = Vector4d::Random();
 
         bool status = false;
@@ -85,14 +81,12 @@ TEST(IJsonConvertible, EigenVector4dToFromJsonArray)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Test the conversion of Eigen::Matrix3d to and from JsonArray.
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray)
-{
+TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray) {
     int loops = 10000;
-    srand((unsigned int) time(0));
-    for (int i = 0; i < loops; i++)
-    {
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
         Matrix3d m3d = Matrix3d::Random();
 
         bool status = false;
@@ -110,14 +104,12 @@ TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Test the conversion of Eigen::Matrix4d to and from JsonArray.
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray)
-{
+TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray) {
     int loops = 10000;
-    srand((unsigned int) time(0));
-    for (int i = 0; i < loops; i++)
-    {
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
         Matrix4d m4d = Matrix4d::Random();
 
         bool status = false;
@@ -135,14 +127,35 @@ TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray)
 }
 
 // ----------------------------------------------------------------------------
-//
+// Test the conversion of unaligned Eigen::Matrix4d to and from JsonArray.
 // ----------------------------------------------------------------------------
-TEST(IJsonConvertible, EigenMatrix6dToFromJsonArray)
-{
+TEST(IJsonConvertible, EigenMatrix4d_uToFromJsonArray) {
     int loops = 10000;
-    srand((unsigned int) time(0));
-    for (int i = 0; i < loops; i++)
-    {
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
+        Matrix4d_u m4d_u = Matrix4d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Matrix4d_u ref;
+
+        status = IJsonConvertible::EigenMatrix4dToJsonArray(m4d_u, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenMatrix4dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, m4d_u);
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Test the conversion of Eigen::Matrix6d to and from JsonArray.
+// ----------------------------------------------------------------------------
+TEST(IJsonConvertible, EigenMatrix6dToFromJsonArray) {
+    int loops = 10000;
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
         Matrix6d m6d = Matrix6d::Random();
 
         bool status = false;
@@ -156,5 +169,28 @@ TEST(IJsonConvertible, EigenMatrix6dToFromJsonArray)
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, m6d);
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Test the conversion of unaligned Eigen::Matrix6d to and from JsonArray.
+// ----------------------------------------------------------------------------
+TEST(IJsonConvertible, EigenMatrix6d_uToFromJsonArray) {
+    int loops = 10000;
+    srand((unsigned int)time(0));
+    for (int i = 0; i < loops; i++) {
+        Matrix6d_u m6d_u = Matrix6d::Random();
+
+        bool status = false;
+        Json::Value json_value;
+        Matrix6d_u ref;
+
+        status = IJsonConvertible::EigenMatrix6dToJsonArray(m6d_u, json_value);
+        EXPECT_TRUE(status);
+
+        status = IJsonConvertible::EigenMatrix6dFromJsonArray(ref, json_value);
+        EXPECT_TRUE(status);
+
+        ExpectEQ(ref, m6d_u);
     }
 }

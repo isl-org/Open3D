@@ -26,18 +26,14 @@
 
 #include "open3d_visualization.h"
 
-void pybind_visualization_classes(py::module &m)
-{
-    pybind_renderoption(m);
-    pybind_viewcontrol(m);
-    pybind_visualizer(m);
-    pybind_utility(m);
-}
-
-void pybind_visualization_methods(py::module &m)
-{
-    pybind_renderoption_method(m);
-    pybind_viewcontrol_method(m);
-    pybind_visualizer_method(m);
-    pybind_utility_methods(m);
+void pybind_visualization(py::module &m) {
+    py::module m_visualization = m.def_submodule("visualization");
+    pybind_renderoption(m_visualization);
+    pybind_viewcontrol(m_visualization);
+    pybind_visualizer(m_visualization);
+    pybind_utility(m_visualization);
+    pybind_renderoption_method(m_visualization);
+    pybind_viewcontrol_method(m_visualization);
+    pybind_visualizer_method(m_visualization);
+    pybind_utility_methods(m_visualization);
 }

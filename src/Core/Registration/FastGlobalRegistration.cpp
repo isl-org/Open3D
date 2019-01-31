@@ -42,15 +42,13 @@ namespace {
 std::vector<std::pair<int, int>> AdvancedMatching(
         const std::vector<PointCloud>& point_cloud_vec,
         const std::vector<Feature>& features_vec,
-        const FastGlobalRegistrationOption& option)
-{
+        const FastGlobalRegistrationOption& option) {
     // STEP 0) Swap source and target if necessary
     int fi = 0, fj = 1;
     PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
     bool swapped = false;
-    if (point_cloud_vec[fj].points_.size() > 
-            point_cloud_vec[fi].points_.size())
-    {
+    if (point_cloud_vec[fj].points_.size() >
+        point_cloud_vec[fi].points_.size()) {
         int temp = fi;
         fi = fj;
         fj = temp;
@@ -70,12 +68,12 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     std::vector<int> i_to_j(nPti, -1);
     for (int j = 0; j < nPtj; j++) {
         feature_tree_i.SearchKNN(Eigen::VectorXd(features_vec[fj].data_.col(j)),
-                1, corresK, dis);
+                                 1, corresK, dis);
         int i = corresK[0];
         if (i_to_j[i] == -1) {
             feature_tree_j.SearchKNN(
-                    Eigen::VectorXd(features_vec[fi].data_.col(i)),
-                    1, corresK, dis);
+                    Eigen::VectorXd(features_vec[fi].data_.col(i)), 1, corresK,
+                    dis);
             int ij = corresK[0];
             i_to_j[i] = ij;
         }
@@ -88,26 +86,24 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorres_ij = int(corres_ij.size());
     int ncorres_ji = int(corres_ji.size());
     for (int i = 0; i < ncorres_ij; ++i)
-        corres.push_back(std::pair<int, int>(
-                corres_ij[i].first, corres_ij[i].second));
+        corres.push_back(
+                std::pair<int, int>(corres_ij[i].first, corres_ij[i].second));
     for (int j = 0; j < ncorres_ji; ++j)
-        corres.push_back(std::pair<int, int>(
-                corres_ji[j].first, corres_ji[j].second));
+        corres.push_back(
+                std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
     PrintDebug("points are remained : %d\n", (int)corres.size());
 
-    // STEP 2) CROSS CHECK    
+    // STEP 2) CROSS CHECK
     PrintDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
     std::vector<std::vector<int>> Mi(nPti), Mj(nPtj);
     int ci, cj;
-    for (int i = 0; i < ncorres_ij; ++i)
-    {
+    for (int i = 0; i < ncorres_ij; ++i) {
         ci = corres_ij[i].first;
         cj = corres_ij[i].second;
         Mi[ci].push_back(cj);
     }
-    for (int j = 0; j < ncorres_ji; ++j)
-    {
+    for (int j = 0; j < ncorres_ji; ++j) {
         ci = corres_ji[j].first;
         cj = corres_ji[j].second;
         Mj[cj].push_back(ci);
@@ -125,7 +121,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 
     // STEP 3) TUPLE CONSTRAINT
     PrintDebug("\t[tuple constraint] ");
-    std::srand((unsigned int)std::time(0));    
+    std::srand((unsigned int)std::time(0));
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
     double scale = option.tuple_scale_;
@@ -160,24 +156,22 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         double lj2 = (ptj2 - ptj0).norm();
 
         // check tuple constraint
-        if ((li0 * scale < lj0) && (lj0 < li0 / scale) &&
-            (li1 * scale < lj1) && (lj1 < li1 / scale) &&
-            (li2 * scale < lj2) && (lj2 < li2 / scale)) {
+        if ((li0 * scale < lj0) && (lj0 < li0 / scale) && (li1 * scale < lj1) &&
+            (lj1 < li1 / scale) && (li2 * scale < lj2) && (lj2 < li2 / scale)) {
             corres_tuple.push_back(std::pair<int, int>(idi0, idj0));
             corres_tuple.push_back(std::pair<int, int>(idi1, idj1));
             corres_tuple.push_back(std::pair<int, int>(idi2, idj2));
             cnt++;
         }
-        if (cnt >= option.maximum_tuple_count_)
-            break;
+        if (cnt >= option.maximum_tuple_count_) break;
     }
     PrintDebug("%d tuples (%d trial, %d actual).\n", cnt, number_of_trial, i);
 
     if (swapped) {
         std::vector<std::pair<int, int>> temp;
         for (int i = 0; i < corres_tuple.size(); i++)
-            temp.push_back(std::pair<int, int>
-            (corres_tuple[i].second, corres_tuple[i].first));
+            temp.push_back(std::pair<int, int>(corres_tuple[i].second,
+                                               corres_tuple[i].first));
         corres_tuple.clear();
         corres_tuple = temp;
     }
@@ -188,8 +182,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 // Normalize scale of points. X' = (X-\mu)/scale
 std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         std::vector<PointCloud>& point_cloud_vec,
-        const FastGlobalRegistrationOption& option)
-{
+        const FastGlobalRegistrationOption& option) {
     int num = 2;
     double scale = 0;
     std::vector<Eigen::Vector3d> pcd_mean_vec;
@@ -206,19 +199,17 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         mean = mean / npti;
         pcd_mean_vec.push_back(mean);
 
-        PrintDebug("normalize points :: mean = [%f %f %f]\n", 
-                mean(0), mean(1), mean(2));
+        PrintDebug("normalize points :: mean = [%f %f %f]\n", mean(0), mean(1),
+                   mean(2));
         for (int ii = 0; ii < npti; ++ii)
             point_cloud_vec[i].points_[ii] -= mean;
-        
+
         for (int ii = 0; ii < npti; ++ii) {
             Eigen::Vector3d p(point_cloud_vec[i].points_[ii]);
             double temp = p.norm();
-            if (temp > max_scale)
-                max_scale = temp;
+            if (temp > max_scale) max_scale = temp;
         }
-        if (max_scale > scale)
-            scale = max_scale;
+        if (max_scale > scale) scale = max_scale;
     }
 
     if (option.use_absolute_scale_) {
@@ -241,18 +232,17 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
 
 Eigen::Matrix4d OptimizePairwiseRegistration(
         const std::vector<PointCloud>& point_cloud_vec,
-        const std::vector<std::pair<int, int>>& corres, double scale_start,
-        const FastGlobalRegistrationOption& option)
-{
+        const std::vector<std::pair<int, int>>& corres,
+        double scale_start,
+        const FastGlobalRegistrationOption& option) {
     PrintDebug("Pairwise rigid pose optimization\n");
     double par = scale_start;
     int numIter = option.iteration_number_;
-    
+
     int i = 0, j = 1;
     PointCloud point_cloud_copy_j = point_cloud_vec[j];
-    
-    if (corres.size() < 10)
-        return Eigen::Matrix4d::Identity();
+
+    if (corres.size() < 10) return Eigen::Matrix4d::Identity();
 
     std::vector<double> s(corres.size(), 1.0);
     Eigen::Matrix4d trans;
@@ -327,29 +317,28 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
 // Below line indicates how the transformation matrix aligns two point clouds
 // e.g. T * point_cloud_vec[1] is aligned with point_cloud_vec[0].
 Eigen::Matrix4d GetTransformationOriginalScale(
-        const Eigen::Matrix4d& transformation, 
-        const std::vector<Eigen::Vector3d>& pcd_mean_vec, 
-        const double scale_global)
-{
+        const Eigen::Matrix4d& transformation,
+        const std::vector<Eigen::Vector3d>& pcd_mean_vec,
+        const double scale_global) {
     Eigen::Matrix3d R = transformation.block<3, 3>(0, 0);
     Eigen::Vector3d t = transformation.block<3, 1>(0, 3);
     Eigen::Matrix4d transtemp = Eigen::Matrix4d::Zero();
     transtemp.block<3, 3>(0, 0) = R;
-    transtemp.block<3, 1>(0, 3) = 
-            -R*pcd_mean_vec[1] + t*scale_global + pcd_mean_vec[0];
+    transtemp.block<3, 1>(0, 3) =
+            -R * pcd_mean_vec[1] + t * scale_global + pcd_mean_vec[0];
     transtemp(3, 3) = 1;
     return transtemp;
 }
 
-}    // unnamed namespace
-
+}  // unnamed namespace
 
 RegistrationResult FastGlobalRegistration(
-        const PointCloud &source, const PointCloud &target,
-        const Feature &source_feature, const Feature &target_feature,
-        const FastGlobalRegistrationOption &option/* =
-        FastGlobalRegistrationOption()*/)
-{
+        const PointCloud& source,
+        const PointCloud& target,
+        const Feature& source_feature,
+        const Feature& target_feature,
+        const FastGlobalRegistrationOption& option /* =
+        FastGlobalRegistrationOption()*/) {
     std::vector<PointCloud> point_cloud_vec;
     point_cloud_vec.push_back(source);
     point_cloud_vec.push_back(target);
@@ -360,18 +349,21 @@ RegistrationResult FastGlobalRegistration(
 
     double scale_global, scale_start;
     std::vector<Eigen::Vector3d> pcd_mean_vec;
-    std::tie(pcd_mean_vec, scale_global, scale_start) = 
+    std::tie(pcd_mean_vec, scale_global, scale_start) =
             NormalizePointCloud(point_cloud_vec, option);
     std::vector<std::pair<int, int>> corres;
     corres = AdvancedMatching(point_cloud_vec, features_vec, option);
     Eigen::Matrix4d transformation;
-    transformation = OptimizePairwiseRegistration(
-            point_cloud_vec, corres, scale_global, option);
+    transformation = OptimizePairwiseRegistration(point_cloud_vec, corres,
+                                                  scale_global, option);
 
-    // as the original code T * point_cloud_vec[1] is aligned with 
+    // as the original code T * point_cloud_vec[1] is aligned with
     // point_cloud_vec[0] matrix inverse is applied here.
-    return RegistrationResult(GetTransformationOriginalScale(
-            transformation, pcd_mean_vec, scale_global).inverse());
+    // clang-format off
+    return RegistrationResult(GetTransformationOriginalScale(transformation,
+                                                             pcd_mean_vec,
+                                                             scale_global).inverse());
+    // clang-format on
 }
 
 }  // namespace open3d

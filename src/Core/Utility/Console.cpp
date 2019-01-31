@@ -42,7 +42,7 @@
 
 #include <Core/Utility/Helper.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
@@ -64,34 +64,31 @@ static VerbosityLevel global_verbosity_level = VerbosityLevel::VerboseInfo;
 /// \param text_color, from 0 to 7, they are black, red, green, yellow, blue,
 /// magenta, cyan, white
 /// \param emphasis_text is 0 or 1
-void ChangeConsoleColor(TextColor text_color, int highlight_text)
-{
+void ChangeConsoleColor(TextColor text_color, int highlight_text) {
 #ifdef _WIN32
-    const WORD EMPHASIS_MASK[2] = { 0, FOREGROUND_INTENSITY };
+    const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
     const WORD COLOR_MASK[8] = {
-        0,
-        FOREGROUND_RED,
-        FOREGROUND_GREEN,
-        FOREGROUND_GREEN | FOREGROUND_RED,
-        FOREGROUND_BLUE,
-        FOREGROUND_RED | FOREGROUND_BLUE,
-        FOREGROUND_GREEN | FOREGROUND_BLUE,
-        FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED
-    };
+            0,
+            FOREGROUND_RED,
+            FOREGROUND_GREEN,
+            FOREGROUND_GREEN | FOREGROUND_RED,
+            FOREGROUND_BLUE,
+            FOREGROUND_RED | FOREGROUND_BLUE,
+            FOREGROUND_GREEN | FOREGROUND_BLUE,
+            FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED};
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(h,
-            EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
+    SetConsoleTextAttribute(
+            h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
 #else
     printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
 #endif
 }
 
-void ResetConsoleColor()
-{
+void ResetConsoleColor() {
 #ifdef _WIN32
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(h,
-            FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+    SetConsoleTextAttribute(
+            h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
 #else
     printf("%c[0;m", 0x1B);
 #endif
@@ -107,42 +104,39 @@ static std::string console_progress_info = "";
 
 static const int CONSOLE_PROGRESS_RESOLUTION = 40;
 
-void PrintConsoleProgress()
-{
+void PrintConsoleProgress() {
     if (current_console_progress == expected_console_count) {
         PrintInfo("%s[%s] 100%%\n", console_progress_info.c_str(),
-                std::string(CONSOLE_PROGRESS_RESOLUTION, '=').c_str());
+                  std::string(CONSOLE_PROGRESS_RESOLUTION, '=').c_str());
     } else {
-        int new_console_progress_pixel = int(current_console_progress *
-                CONSOLE_PROGRESS_RESOLUTION / expected_console_count);
+        int new_console_progress_pixel =
+                int(current_console_progress * CONSOLE_PROGRESS_RESOLUTION /
+                    expected_console_count);
         if (new_console_progress_pixel > current_console_progress_pixel) {
             current_console_progress_pixel = new_console_progress_pixel;
-            int percent = int(current_console_progress *
-                    100 / expected_console_count);
+            int percent = int(current_console_progress * 100 /
+                              expected_console_count);
             PrintInfo("%s[%s>%s] %d%%\r", console_progress_info.c_str(),
-                    std::string(current_console_progress_pixel, '=').c_str(),
-                    std::string(CONSOLE_PROGRESS_RESOLUTION - 1 -
-                    current_console_progress_pixel, ' ').c_str(),
-                    percent);
+                      std::string(current_console_progress_pixel, '=').c_str(),
+                      std::string(CONSOLE_PROGRESS_RESOLUTION - 1 -
+                                          current_console_progress_pixel,
+                                  ' ')
+                              .c_str(),
+                      percent);
             fflush(stdout);
         }
     }
 }
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-void SetVerbosityLevel(VerbosityLevel verbosity_level)
-{
+void SetVerbosityLevel(VerbosityLevel verbosity_level) {
     global_verbosity_level = verbosity_level;
 }
 
-VerbosityLevel GetVerbosityLevel()
-{
-    return global_verbosity_level;
-}
+VerbosityLevel GetVerbosityLevel() { return global_verbosity_level; }
 
-void PrintError(const char *format, ...)
-{
+void PrintError(const char *format, ...) {
     if (global_verbosity_level >= VerbosityLevel::VerboseError) {
         ChangeConsoleColor(TextColor::Red, 1);
         va_list args;
@@ -153,8 +147,7 @@ void PrintError(const char *format, ...)
     }
 }
 
-void PrintWarning(const char *format, ...)
-{
+void PrintWarning(const char *format, ...) {
     if (global_verbosity_level >= VerbosityLevel::VerboseWarning) {
         ChangeConsoleColor(TextColor::Yellow, 1);
         va_list args;
@@ -165,8 +158,7 @@ void PrintWarning(const char *format, ...)
     }
 }
 
-void PrintInfo(const char *format, ...)
-{
+void PrintInfo(const char *format, ...) {
     if (global_verbosity_level >= VerbosityLevel::VerboseInfo) {
         va_list args;
         va_start(args, format);
@@ -175,8 +167,7 @@ void PrintInfo(const char *format, ...)
     }
 }
 
-void PrintDebug(const char *format, ...)
-{
+void PrintDebug(const char *format, ...) {
     if (global_verbosity_level >= VerbosityLevel::VerboseDebug) {
         ChangeConsoleColor(TextColor::Green, 0);
         va_list args;
@@ -187,8 +178,7 @@ void PrintDebug(const char *format, ...)
     }
 }
 
-void PrintAlways(const char *format, ...)
-{
+void PrintAlways(const char *format, ...) {
     if (global_verbosity_level >= VerbosityLevel::VerboseAlways) {
         ChangeConsoleColor(TextColor::Blue, 0);
         va_list args;
@@ -200,8 +190,7 @@ void PrintAlways(const char *format, ...)
 }
 
 void ResetConsoleProgress(const int64_t expected_count,
-        const std::string &progress_info/* = ""*/)
-{
+                          const std::string &progress_info /* = ""*/) {
     if (expected_count > 0) {
         expected_console_count = expected_count;
         current_console_progress = 0;
@@ -214,14 +203,12 @@ void ResetConsoleProgress(const int64_t expected_count,
     PrintConsoleProgress();
 }
 
-void AdvanceConsoleProgress()
-{
+void AdvanceConsoleProgress() {
     current_console_progress++;
     PrintConsoleProgress();
 }
 
-std::string GetCurrentTimeStamp()
-{
+std::string GetCurrentTimeStamp() {
     time_t rawtime;
     struct tm *timeinfo;
     char buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -231,9 +218,11 @@ std::string GetCurrentTimeStamp()
     return std::string(buffer);
 }
 
-std::string GetProgramOptionAsString(int argc, char **argv,
-        const std::string &option, const std::string &default_value/* = ""*/)
-{
+std::string GetProgramOptionAsString(
+        int argc,
+        char **argv,
+        const std::string &option,
+        const std::string &default_value /* = ""*/) {
     char **itr = std::find(argv, argv + argc, option);
     if (itr != argv + argc && ++itr != argv + argc) {
         return std::string(*itr);
@@ -241,9 +230,10 @@ std::string GetProgramOptionAsString(int argc, char **argv,
     return default_value;
 }
 
-int GetProgramOptionAsInt(int argc, char **argv,
-        const std::string &option, const int default_value/* = 0*/)
-{
+int GetProgramOptionAsInt(int argc,
+                          char **argv,
+                          const std::string &option,
+                          const int default_value /* = 0*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
     if (str.length() == 0) {
         return default_value;
@@ -261,9 +251,10 @@ int GetProgramOptionAsInt(int argc, char **argv,
     return (int)l;
 }
 
-double GetProgramOptionAsDouble(int argc, char **argv,
-        const std::string &option, const double default_value/* = 0.0*/)
-{
+double GetProgramOptionAsDouble(int argc,
+                                char **argv,
+                                const std::string &option,
+                                const double default_value /* = 0.0*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
     if (str.length() == 0) {
         return default_value;
@@ -279,14 +270,16 @@ double GetProgramOptionAsDouble(int argc, char **argv,
     return l;
 }
 
-Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv,
-        const std::string &option, const Eigen::VectorXd default_value/* =
-        Eigen::VectorXd::Zero()*/)
-{
+Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
+        int argc,
+        char **argv,
+        const std::string &option,
+        const Eigen::VectorXd default_value /* =
+        Eigen::VectorXd::Zero()*/) {
     std::string str = GetProgramOptionAsString(argc, argv, option, "");
     if (str.length() == 0 || (!(str.front() == '(' && str.back() == ')') &&
-            !(str.front() == '[' && str.back() == ']') &&
-            !(str.front() == '<' && str.back() == '>'))) {
+                              !(str.front() == '[' && str.back() == ']') &&
+                              !(str.front() == '<' && str.back() == '>'))) {
         return default_value;
     }
     std::vector<std::string> tokens;
@@ -306,14 +299,13 @@ Eigen::VectorXd GetProgramOptionAsEigenVectorXd(int argc, char **argv,
     return vec;
 }
 
-bool ProgramOptionExists(int argc, char **argv, const std::string &option)
-{
+bool ProgramOptionExists(int argc, char **argv, const std::string &option) {
     return std::find(argv, argv + argc, option) != argv + argc;
 }
 
-bool ProgramOptionExistsAny(int argc, char **argv,
-        const std::vector<std::string> &options)
-{
+bool ProgramOptionExistsAny(int argc,
+                            char **argv,
+                            const std::vector<std::string> &options) {
     for (const auto &option : options) {
         if (ProgramOptionExists(argc, argv, option)) {
             return true;
@@ -322,4 +314,4 @@ bool ProgramOptionExistsAny(int argc, char **argv,
     return false;
 }
 
-}    // namespace open3d
+}  // namespace open3d

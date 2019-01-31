@@ -33,42 +33,39 @@
 
 using namespace open3d;
 
-void PrintHelp()
-{
+void PrintHelp() {
     PrintOpen3DVersion();
     PrintInfo("Usage :\n");
     PrintInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]\n");
 }
 
 std::shared_ptr<RGBDImage> ReadRGBDImage(
-        const char* color_filename, const char* depth_filename,
-        const PinholeCameraIntrinsic &intrinsic,
-        bool visualize)
-{
+        const char* color_filename,
+        const char* depth_filename,
+        const PinholeCameraIntrinsic& intrinsic,
+        bool visualize) {
     Image color, depth;
     ReadImage(color_filename, color);
     ReadImage(depth_filename, depth);
     PrintDebug("Reading RGBD image : \n");
     PrintDebug("     Color : %d x %d x %d (%d bits per channel)\n",
-            color.width_, color.height_,
-            color.num_of_channels_, color.bytes_per_channel_ * 8);
+               color.width_, color.height_, color.num_of_channels_,
+               color.bytes_per_channel_ * 8);
     PrintDebug("     Depth : %d x %d x %d (%d bits per channel)\n",
-            depth.width_, depth.height_,
-            depth.num_of_channels_, depth.bytes_per_channel_ * 8);
+               depth.width_, depth.height_, depth.num_of_channels_,
+               depth.bytes_per_channel_ * 8);
     double depth_scale = 1000.0, depth_trunc = 3.0;
     bool convert_rgb_to_intensity = true;
-    std::shared_ptr<RGBDImage> rgbd_image =
-            CreateRGBDImageFromColorAndDepth(color, depth,
-            depth_scale, depth_trunc, convert_rgb_to_intensity);
-    if (visualize){
+    std::shared_ptr<RGBDImage> rgbd_image = CreateRGBDImageFromColorAndDepth(
+            color, depth, depth_scale, depth_trunc, convert_rgb_to_intensity);
+    if (visualize) {
         auto pcd = CreatePointCloudFromRGBDImage(*rgbd_image, intrinsic);
         DrawGeometries({pcd});
     }
     return rgbd_image;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
     if (argc == 1 || ProgramOptionExists(argc, argv, "--help") || argc != 5) {
         PrintHelp();
         return 1;
@@ -83,8 +80,8 @@ int main(int argc, char *argv[])
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> rgbd_odo =
             ComputeRGBDOdometry(*source, *target, intrinsic, odo_init,
-            RGBDOdometryJacobianFromHybridTerm(),
-            OdometryOption());
+                                RGBDOdometryJacobianFromHybridTerm(),
+                                OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
     return 0;

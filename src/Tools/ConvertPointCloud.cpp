@@ -29,10 +29,10 @@
 
 #include <limits>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo("    > ConvertPointCloud source_file target_file [options]\n");
     PrintInfo("    > ConvertPointCloud source_directory target_directory [options]\n");
@@ -63,11 +63,13 @@ void PrintHelp()
     PrintInfo("                                direction.\n");
     PrintInfo("    --orient_normals [x,y,z]  : Orient the normals w.r.t the direction [x,y,z].\n");
     PrintInfo("    --camera_location [x,y,z] : Orient the normals w.r.t camera location [x,y,z].\n");
+    // clang-format on
 }
 
-void convert(int argc, char **argv, const std::string &file_in,
-        const std::string &file_out)
-{
+void convert(int argc,
+             char **argv,
+             const std::string &file_in,
+             const std::string &file_out) {
     using namespace open3d;
     using namespace open3d::filesystem;
     auto pointcloud_ptr = CreatePointCloudFromFile(file_in.c_str());
@@ -75,31 +77,36 @@ void convert(int argc, char **argv, const std::string &file_in,
     bool processed = false;
 
     // clip
-    if (ProgramOptionExistsAny(argc, argv, {"--clip_x_min", "--clip_x_max",
-            "--clip_y_min", "--clip_y_max", "--clip_z_min", "--clip_z_max"})) {
+    if (ProgramOptionExistsAny(
+                argc, argv,
+                {"--clip_x_min", "--clip_x_max", "--clip_y_min", "--clip_y_max",
+                 "--clip_z_min", "--clip_z_max"})) {
         Eigen::Vector3d min_bound, max_bound;
-        min_bound(0) = GetProgramOptionAsDouble(argc, argv, "--clip_x_min",
-                std::numeric_limits<double>::lowest());
-        min_bound(1) = GetProgramOptionAsDouble(argc, argv, "--clip_y_min",
-                std::numeric_limits<double>::lowest());
-        min_bound(2) = GetProgramOptionAsDouble(argc, argv, "--clip_z_min",
-                std::numeric_limits<double>::lowest());
-        max_bound(0) = GetProgramOptionAsDouble(argc, argv, "--clip_x_max",
-                std::numeric_limits<double>::max());
-        max_bound(1) = GetProgramOptionAsDouble(argc, argv, "--clip_y_max",
-                std::numeric_limits<double>::max());
-        max_bound(2) = GetProgramOptionAsDouble(argc, argv, "--clip_z_max",
-                std::numeric_limits<double>::max());
+        min_bound(0) =
+                GetProgramOptionAsDouble(argc, argv, "--clip_x_min",
+                                         std::numeric_limits<double>::lowest());
+        min_bound(1) =
+                GetProgramOptionAsDouble(argc, argv, "--clip_y_min",
+                                         std::numeric_limits<double>::lowest());
+        min_bound(2) =
+                GetProgramOptionAsDouble(argc, argv, "--clip_z_min",
+                                         std::numeric_limits<double>::lowest());
+        max_bound(0) = GetProgramOptionAsDouble(
+                argc, argv, "--clip_x_max", std::numeric_limits<double>::max());
+        max_bound(1) = GetProgramOptionAsDouble(
+                argc, argv, "--clip_y_max", std::numeric_limits<double>::max());
+        max_bound(2) = GetProgramOptionAsDouble(
+                argc, argv, "--clip_z_max", std::numeric_limits<double>::max());
         pointcloud_ptr = CropPointCloud(*pointcloud_ptr, min_bound, max_bound);
         processed = true;
     }
 
     // filter_mahalanobis
-    double mahalanobis_threshold = GetProgramOptionAsDouble(argc, argv,
-            "--filter_mahalanobis", 0.0);
+    double mahalanobis_threshold =
+            GetProgramOptionAsDouble(argc, argv, "--filter_mahalanobis", 0.0);
     if (mahalanobis_threshold > 0.0) {
-        auto mahalanobis = ComputePointCloudMahalanobisDistance(
-                *pointcloud_ptr);
+        auto mahalanobis =
+                ComputePointCloudMahalanobisDistance(*pointcloud_ptr);
         std::vector<size_t> indices;
         for (size_t i = 0; i < pointcloud_ptr->points_.size(); i++) {
             if (mahalanobis[i] < mahalanobis_threshold) {
@@ -108,33 +115,33 @@ void convert(int argc, char **argv, const std::string &file_in,
         }
         auto pcd = SelectDownSample(*pointcloud_ptr, indices);
         PrintDebug("Based on Mahalanobis distance, %d points were filtered.\n",
-                (int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
+                   (int)(pointcloud_ptr->points_.size() - pcd->points_.size()));
         pointcloud_ptr = pcd;
     }
 
     // uniform_downsample
-    int every_k = GetProgramOptionAsInt(argc, argv, "--uniform_sample_every",
-            0);
+    int every_k =
+            GetProgramOptionAsInt(argc, argv, "--uniform_sample_every", 0);
     if (every_k > 1) {
         PrintDebug("Downsample point cloud uniformly every %d points.\n",
-                every_k);
+                   every_k);
         pointcloud_ptr = UniformDownSample(*pointcloud_ptr, every_k);
         processed = true;
     }
 
     // voxel_downsample
-    double voxel_size = GetProgramOptionAsDouble(argc, argv, "--voxel_sample",
-            0.0);
+    double voxel_size =
+            GetProgramOptionAsDouble(argc, argv, "--voxel_sample", 0.0);
     if (voxel_size > 0.0) {
         PrintDebug("Downsample point cloud with voxel size %.4f.\n",
-                voxel_size);
+                   voxel_size);
         pointcloud_ptr = VoxelDownSample(*pointcloud_ptr, voxel_size);
         processed = true;
     }
 
     // estimate_normals
-    double radius = GetProgramOptionAsDouble(argc, argv, "--estimate_normals",
-            0.0);
+    double radius =
+            GetProgramOptionAsDouble(argc, argv, "--estimate_normals", 0.0);
     if (radius > 0.0) {
         PrintDebug("Estimate normals with search radius %.4f.\n", radius);
         EstimateNormals(*pointcloud_ptr, KDTreeSearchParamRadius(radius));
@@ -149,20 +156,20 @@ void convert(int argc, char **argv, const std::string &file_in,
     }
 
     // orient_normals
-    Eigen::VectorXd direction = GetProgramOptionAsEigenVectorXd(argc, argv,
-            "--orient_normals");
+    Eigen::VectorXd direction =
+            GetProgramOptionAsEigenVectorXd(argc, argv, "--orient_normals");
     if (direction.size() == 3 && pointcloud_ptr->HasNormals()) {
         PrintDebug("Orient normals to [%.2f, %.2f, %.2f].\n", direction(0),
-                direction(1), direction(2));
+                   direction(1), direction(2));
         Eigen::Vector3d dir(direction);
         OrientNormalsToAlignWithDirection(*pointcloud_ptr, dir);
         processed = true;
     }
-    Eigen::VectorXd camera_loc = GetProgramOptionAsEigenVectorXd(argc, argv,
-            "--camera_location");
+    Eigen::VectorXd camera_loc =
+            GetProgramOptionAsEigenVectorXd(argc, argv, "--camera_location");
     if (camera_loc.size() == 3 && pointcloud_ptr->HasNormals()) {
         PrintDebug("Orient normals towards [%.2f, %.2f, %.2f].\n",
-                camera_loc(0), camera_loc(1), camera_loc(2));
+                   camera_loc(0), camera_loc(1), camera_loc(2));
         Eigen::Vector3d loc(camera_loc);
         OrientNormalsTowardsCameraLocation(*pointcloud_ptr, loc);
         processed = true;
@@ -171,18 +178,17 @@ void convert(int argc, char **argv, const std::string &file_in,
     size_t point_num_out = pointcloud_ptr->points_.size();
     if (processed) {
         PrintInfo("Processed point cloud from %d points to %d points.\n",
-                (int)point_num_in, (int)point_num_out);
+                  (int)point_num_in, (int)point_num_out);
     }
     WritePointCloud(file_out.c_str(), *pointcloud_ptr, false, true);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::filesystem;
 
     if (argc < 3 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 0;
     }
@@ -197,8 +203,9 @@ int main(int argc, char **argv)
         std::vector<std::string> filenames;
         ListFilesInDirectory(argv[1], filenames);
         for (const auto &fn : filenames) {
-            convert(argc, argv, fn, GetRegularizedDirectoryName(argv[2]) +
-                    GetFileNameWithoutDirectory(fn));
+            convert(argc, argv, fn,
+                    GetRegularizedDirectoryName(argv[2]) +
+                            GetFileNameWithoutDirectory(fn));
         }
     } else {
         PrintError("File or directory does not exist.\n");

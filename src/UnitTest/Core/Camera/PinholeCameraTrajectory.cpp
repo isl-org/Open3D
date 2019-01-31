@@ -37,16 +37,14 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, DISABLED_MemberData)
-{
+TEST(PinholeCameraTrajectory, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
-{
+TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
     PinholeCameraTrajectory src;
     PinholeCameraTrajectory dst;
 
@@ -54,8 +52,7 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
     int height = 480;
 
     src.parameters_.resize(2);
-    for (size_t i = 0; i < src.parameters_.size(); i++)
-    {
+    for (size_t i = 0; i < src.parameters_.size(); i++) {
         PinholeCameraIntrinsic intrinsic;
         intrinsic.width_ = width;
         intrinsic.height_ = height;
@@ -74,8 +71,7 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
 
     EXPECT_EQ(src.parameters_.size(), dst.parameters_.size());
 
-    for (size_t i = 0; i < src.parameters_.size(); i++)
-    {
+    for (size_t i = 0; i < src.parameters_.size(); i++) {
         PinholeCameraParameters src_params = src.parameters_[i];
         PinholeCameraParameters dst_params = dst.parameters_[i];
 
@@ -83,7 +79,7 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue)
         EXPECT_EQ(src_params.intrinsic_.height_, dst_params.intrinsic_.height_);
 
         ExpectEQ(src_params.intrinsic_.intrinsic_matrix_,
-                dst_params.intrinsic_.intrinsic_matrix_);
+                 dst_params.intrinsic_.intrinsic_matrix_);
 
         ExpectEQ(src_params.extrinsic_, dst_params.extrinsic_);
     }

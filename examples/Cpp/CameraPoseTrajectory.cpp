@@ -32,8 +32,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
@@ -44,11 +43,11 @@ int main(int argc, char *argv[])
     }
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
-        Eigen::Vector3d(255, 180, 0) / 255.0,
-        Eigen::Vector3d(0, 166, 237) / 255.0,
-        Eigen::Vector3d(246, 81, 29) / 255.0,
-        Eigen::Vector3d(127, 184, 0) / 255.0,
-        Eigen::Vector3d(13, 44, 84) / 255.0,
+            Eigen::Vector3d(255, 180, 0) / 255.0,
+            Eigen::Vector3d(0, 166, 237) / 255.0,
+            Eigen::Vector3d(246, 81, 29) / 255.0,
+            Eigen::Vector3d(127, 184, 0) / 255.0,
+            Eigen::Vector3d(13, 44, 84) / 255.0,
     };
 
     PinholeCameraTrajectory trajectory;
@@ -62,12 +61,12 @@ int main(int argc, char *argv[])
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
             pcd->colors_.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {
-                pcd->colors_.resize(pcd->points_.size(),
-                        color_palette[i]);
+                pcd->colors_.resize(pcd->points_.size(), color_palette[i]);
             } else {
                 pcd->colors_.resize(pcd->points_.size(),
-                        (Eigen::Vector3d::Random() +
-                        Eigen::Vector3d::Constant(1.0)) * 0.5);
+                                    (Eigen::Vector3d::Random() +
+                                     Eigen::Vector3d::Constant(1.0)) *
+                                            0.5);
             }
             pcds.push_back(pcd);
         }

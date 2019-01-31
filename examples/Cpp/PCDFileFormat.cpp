@@ -28,8 +28,7 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
@@ -37,12 +36,14 @@ int main(int argc, char **argv)
 
     if (argc < 2) {
         PrintOpen3DVersion();
+        // clang-format off
         PrintInfo("Usage:\n");
         PrintInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1. load the pointcloud in [filename].\n");
         PrintInfo("    2. visualize the point cloud.\n");
         PrintInfo("    3. if a save method is specified, write the point cloud into data.pcd.\n");
+        // clang-format on
         return 0;
     }
 

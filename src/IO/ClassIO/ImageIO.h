@@ -45,17 +45,20 @@ bool ReadImage(const std::string &filename, Image &image);
 /// If the write function supports quality, the parameter will be used.
 /// Otherwise it will be ignored.
 /// \return return true if the write function is successful, false otherwise.
-bool WriteImage(const std::string &filename, const Image &image,
-        int quality = 90);
+bool WriteImage(const std::string &filename,
+                const Image &image,
+                int quality = 90);
 
 bool ReadImageFromPNG(const std::string &filename, Image &image);
 
-bool WriteImageToPNG(const std::string &filename, const Image &image,
-        int quality);
+bool WriteImageToPNG(const std::string &filename,
+                     const Image &image,
+                     int quality);
 
 bool ReadImageFromJPG(const std::string &filename, Image &image);
 
-bool WriteImageToJPG(const std::string &filename, const Image &image,
-        int quality = 90);
+bool WriteImageToJPG(const std::string &filename,
+                     const Image &image,
+                     int quality = 90);
 
-}    // namespace open3d
+}  // namespace open3d

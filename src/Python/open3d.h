@@ -35,16 +35,20 @@
 #include <pybind11/functional.h>
 
 #include <Core/Registration/PoseGraph.h>
+#include <Core/Utility/Eigen.h>
 
 namespace py = pybind11;
 using namespace py::literals;
+
+typedef std::vector<Eigen::Matrix4d, open3d::Matrix4d_allocator>
+        temp_eigen_matrix4d;
 
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<double>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
-PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Matrix4d>);
+PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
 PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphEdge>);
 PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphNode>);
 
@@ -54,33 +58,21 @@ namespace detail {
 
 template <typename T, typename Class_>
 void bind_default_constructor(Class_ &cl) {
-    cl.def(py::init([]() {
-        return new T();
-    }), "Default constructor");
+    cl.def(py::init([]() { return new T(); }), "Default constructor");
 }
 
 template <typename T, typename Class_>
 void bind_copy_functions(Class_ &cl) {
-    cl.def(py::init([](const T &cp) {
-        return new T(cp);
-    }), "Copy constructor");
-    cl.def("__copy__", [](T &v) {
-        return T(v);
-    });
-    cl.def("__deepcopy__", [](T &v, py::dict &memo) {
-        return T(v);
-    });
+    cl.def(py::init([](const T &cp) { return new T(cp); }), "Copy constructor");
+    cl.def("__copy__", [](T &v) { return T(v); });
+    cl.def("__deepcopy__", [](T &v, py::dict &memo) { return T(v); });
 }
 
-}    // namespace pybind11::detail
-}    // namespace pybind11
+}  // namespace detail
+}  // namespace pybind11
 
 void pybind_eigen(py::module &m);
 
-void pybind_core_classes(py::module &m);
-void pybind_io_classes(py::module &m);
-void pybind_visualization_classes(py::module &m);
-
-void pybind_core_methods(py::module &m);
-void pybind_io_methods(py::module &m);
-void pybind_visualization_methods(py::module &m);
+void pybind_core(py::module &m);
+void pybind_io(py::module &m);
+void pybind_visualization(py::module &m);

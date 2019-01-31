@@ -29,39 +29,24 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePTS, DISABLED_ReadPointCloudFromPTS)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePTS, DISABLED_ReadPointCloudFromPTS) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePTS, DISABLED_ResetConsoleProgress)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePTS, DISABLED_ResetConsoleProgress) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePTS, DISABLED_SplitString)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePTS, DISABLED_SplitString) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePTS, DISABLED_AdvanceConsoleProgress)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePTS, DISABLED_AdvanceConsoleProgress) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(FilePTS, DISABLED_WritePointCloudToPTS)
-{
-    unit_test::NotImplemented();
-}
+TEST(FilePTS, DISABLED_WritePointCloudToPTS) { unit_test::NotImplemented(); }

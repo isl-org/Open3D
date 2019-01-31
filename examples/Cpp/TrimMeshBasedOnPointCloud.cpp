@@ -27,10 +27,10 @@
 #include <Core/Core.h>
 #include <IO/IO.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo("    > TrimMeshBasedOnPointCloud [options]\n");
     PrintInfo("      Trim a mesh baesd on distance to a point cloud.\n");
@@ -42,14 +42,14 @@ void PrintHelp()
     PrintInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
     PrintInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
     PrintInfo("    --distance d              : Maximum distance. MUST HAVE.\n");
+    // clang-format on
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
     if (argc < 4 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 1;
     }
@@ -91,20 +91,18 @@ int main(int argc, char *argv[])
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        {
-            AdvanceConsoleProgress();
-        }
+        { AdvanceConsoleProgress(); }
     }
 
     std::vector<int> index_old_to_new(mesh->vertices_.size());
     bool has_vert_normal = mesh->HasVertexNormals();
     bool has_vert_color = mesh->HasVertexColors();
     size_t old_vertex_num = mesh->vertices_.size();
-    size_t k = 0;                                            // new index
+    size_t k = 0;  // new index
     bool has_tri_normal = mesh->HasTriangleNormals();
     size_t old_triangle_num = mesh->triangles_.size();
     size_t kt = 0;
-    for (size_t i = 0; i < old_vertex_num; i++) {            // old index
+    for (size_t i = 0; i < old_vertex_num; i++) {  // old index
         if (remove_vertex_mask[i] == false) {
             mesh->vertices_[k] = mesh->vertices_[i];
             if (has_vert_normal)
@@ -136,7 +134,9 @@ int main(int argc, char *argv[])
         mesh->triangles_.resize(kt);
         if (has_tri_normal) mesh->triangle_normals_.resize(kt);
     }
-    PrintDebug("[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have been removed.\n",
+    PrintDebug(
+            "[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have "
+            "been removed.\n",
             old_vertex_num - k, old_triangle_num - kt);
     WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;

@@ -30,10 +30,9 @@
 #include <json/json.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-ViewParameters::Vector17d ViewParameters::ConvertToVector17d()
-{
+ViewParameters::Vector17d ViewParameters::ConvertToVector17d() {
     ViewParameters::Vector17d v;
     v(0) = field_of_view_;
     v(1) = zoom_;
@@ -45,8 +44,7 @@ ViewParameters::Vector17d ViewParameters::ConvertToVector17d()
     return v;
 }
 
-void ViewParameters::ConvertFromVector17d(const ViewParameters::Vector17d &v)
-{
+void ViewParameters::ConvertFromVector17d(const ViewParameters::Vector17d &v) {
     field_of_view_ = v(0);
     zoom_ = v(1);
     lookat_ = v.block<3, 1>(2, 0);
@@ -56,35 +54,34 @@ void ViewParameters::ConvertFromVector17d(const ViewParameters::Vector17d &v)
     boundingbox_max_ = v.block<3, 1>(14, 0);
 }
 
-bool ViewParameters::ConvertToJsonValue(Json::Value &value) const
-{
+bool ViewParameters::ConvertToJsonValue(Json::Value &value) const {
     value["field_of_view"] = field_of_view_;
     value["zoom"] = zoom_;
-    if (EigenVector3dToJsonArray(lookat_, value["lookat"]) == false ) {
+    if (EigenVector3dToJsonArray(lookat_, value["lookat"]) == false) {
         return false;
     }
-    if (EigenVector3dToJsonArray(up_, value["up"]) == false ) {
+    if (EigenVector3dToJsonArray(up_, value["up"]) == false) {
         return false;
     }
-    if (EigenVector3dToJsonArray(front_, value["front"]) == false ) {
+    if (EigenVector3dToJsonArray(front_, value["front"]) == false) {
         return false;
     }
-    if (EigenVector3dToJsonArray(boundingbox_min_, value["boundingbox_min"]) == 
-            false ) {
+    if (EigenVector3dToJsonArray(boundingbox_min_, value["boundingbox_min"]) ==
+        false) {
         return false;
     }
     if (EigenVector3dToJsonArray(boundingbox_max_, value["boundingbox_max"]) ==
-            false ) {
+        false) {
         return false;
     }
     return true;
 }
 
-bool ViewParameters::ConvertFromJsonValue(const Json::Value &value)
-{
+bool ViewParameters::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning("ViewParameters read JSON failed: unsupported json format.\n");
-        return false;        
+        PrintWarning(
+                "ViewParameters read JSON failed: unsupported json format.\n");
+        return false;
     }
     field_of_view_ = value.get("field_of_view", 60.0).asDouble();
     zoom_ = value.get("zoom", 0.7).asDouble();
@@ -100,17 +97,17 @@ bool ViewParameters::ConvertFromJsonValue(const Json::Value &value)
         PrintWarning("ViewParameters read JSON failed: wrong format.\n");
         return false;
     }
-    if (EigenVector3dFromJsonArray(boundingbox_min_, 
-            value["boundingbox_min"]) == false) {
+    if (EigenVector3dFromJsonArray(boundingbox_min_,
+                                   value["boundingbox_min"]) == false) {
         PrintWarning("ViewParameters read JSON failed: wrong format.\n");
         return false;
     }
-    if (EigenVector3dFromJsonArray(boundingbox_max_, 
-            value["boundingbox_max"]) == false) {
+    if (EigenVector3dFromJsonArray(boundingbox_max_,
+                                   value["boundingbox_max"]) == false) {
         PrintWarning("ViewParameters read JSON failed: wrong format.\n");
         return false;
     }
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

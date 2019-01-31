@@ -29,18 +29,17 @@
 namespace {
 /// Isotropic 2D kernels are separable:
 /// two 1D kernels are applied in x and y direction.
-const std::vector<double> Gaussian3 = { 0.25, 0.5, 0.25 };
-const std::vector<double> Gaussian5 = { 0.0625, 0.25, 0.375, 0.25, 0.0625 };
-const std::vector<double> Gaussian7 =
-        { 0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125 };
-const std::vector<double> Sobel31 = { -1.0, 0.0, 1.0 };
-const std::vector<double> Sobel32 = { 1.0, 2.0, 1.0 };
-}    //unnamed namespace
+const std::vector<double> Gaussian3 = {0.25, 0.5, 0.25};
+const std::vector<double> Gaussian5 = {0.0625, 0.25, 0.375, 0.25, 0.0625};
+const std::vector<double> Gaussian7 = {0.03125, 0.109375, 0.21875, 0.28125,
+                                       0.21875, 0.109375, 0.03125};
+const std::vector<double> Sobel31 = {-1.0, 0.0, 1.0};
+const std::vector<double> Sobel32 = {1.0, 2.0, 1.0};
+}  // unnamed namespace
 
 namespace open3d {
 
-void Image::Clear()
-{
+void Image::Clear() {
     width_ = 0;
     height_ = 0;
     num_of_channels_ = 0;
@@ -48,76 +47,69 @@ void Image::Clear()
     data_.clear();
 }
 
-bool Image::IsEmpty() const
-{
-    return !HasData();
-}
+bool Image::IsEmpty() const { return !HasData(); }
 
-Eigen::Vector2d Image::GetMinBound() const
-{
-    return Eigen::Vector2d(0.0, 0.0);
-}
+Eigen::Vector2d Image::GetMinBound() const { return Eigen::Vector2d(0.0, 0.0); }
 
-Eigen::Vector2d Image::GetMaxBound() const
-{
+Eigen::Vector2d Image::GetMaxBound() const {
     return Eigen::Vector2d(width_, height_);
 }
 
-bool Image::TestImageBoundary(double u, double v,
-        double inner_margin/* = 0.0 */) const
-{
+bool Image::TestImageBoundary(double u,
+                              double v,
+                              double inner_margin /* = 0.0 */) const {
     return (u >= inner_margin && u < width_ - inner_margin &&
-        v >= inner_margin && v < height_ - inner_margin);
+            v >= inner_margin && v < height_ - inner_margin);
 }
 
-std::pair<bool, double> Image::FloatValueAt(double u, double v) const
-{
+std::pair<bool, double> Image::FloatValueAt(double u, double v) const {
     if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4) ||
-        (u < 0.0 || u >(double)(width_ - 1) ||
-        v < 0.0 || v >(double)(height_ - 1))) {
+        (u < 0.0 || u > (double)(width_ - 1) || v < 0.0 ||
+         v > (double)(height_ - 1))) {
         return std::make_pair(false, 0.0);
     }
     int ui = std::max(std::min((int)u, width_ - 2), 0);
     int vi = std::max(std::min((int)v, height_ - 2), 0);
     double pu = u - ui;
     double pv = v - vi;
-    float value[4] = {
-        *PointerAt<float>(*this, ui, vi),
-        *PointerAt<float>(*this, ui, vi + 1),
-        *PointerAt<float>(*this, ui + 1, vi),
-        *PointerAt<float>(*this, ui + 1, vi + 1)
-    };
+    float value[4] = {*PointerAt<float>(*this, ui, vi),
+                      *PointerAt<float>(*this, ui, vi + 1),
+                      *PointerAt<float>(*this, ui + 1, vi),
+                      *PointerAt<float>(*this, ui + 1, vi + 1)};
     return std::make_pair(true,
-        (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
-        (value[2] * (1 - pv) + value[3] * pv) * pu);
+                          (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
+                                  (value[2] * (1 - pv) + value[3] * pv) * pu);
 }
 
-template<typename T>
+template <typename T>
 T *PointerAt(const Image &image, int u, int v) {
-    return (T *)(image.data_.data() +
-            (v * image.width_ + u) * sizeof(T));
+    return (T *)(image.data_.data() + (v * image.width_ + u) * sizeof(T));
 }
 
-template float * PointerAt<float>(const Image &image, int u, int v);
-template int * PointerAt<int>(const Image &image, int u, int v);
-template uint8_t * PointerAt<uint8_t>(const Image &image, int u, int v);
-template uint16_t * PointerAt<uint16_t>(const Image &image, int u, int v);
+template float *PointerAt<float>(const Image &image, int u, int v);
+template int *PointerAt<int>(const Image &image, int u, int v);
+template uint8_t *PointerAt<uint8_t>(const Image &image, int u, int v);
+template uint16_t *PointerAt<uint16_t>(const Image &image, int u, int v);
 
-template<typename T>
+template <typename T>
 T *PointerAt(const Image &image, int u, int v, int ch) {
     return (T *)(image.data_.data() +
-            ((v * image.width_ + u) * image.num_of_channels_ + ch) * sizeof(T));
+                 ((v * image.width_ + u) * image.num_of_channels_ + ch) *
+                         sizeof(T));
 }
 
-template float * PointerAt<float>(const Image &image, int u, int v, int ch);
-template int * PointerAt<int>(const Image &image, int u, int v, int ch);
-template uint8_t * PointerAt<uint8_t>(const Image &image, int u, int v, int ch);
-template uint16_t * PointerAt<uint16_t>(const Image &image, int u, int v,
-        int ch);
+template float *PointerAt<float>(const Image &image, int u, int v, int ch);
+template int *PointerAt<int>(const Image &image, int u, int v, int ch);
+template uint8_t *PointerAt<uint8_t>(const Image &image, int u, int v, int ch);
+template uint16_t *PointerAt<uint16_t>(const Image &image,
+                                       int u,
+                                       int v,
+                                       int ch);
 
-std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
-        double depth_scale/* = 1000.0*/, double depth_trunc/* = 3.0*/)
-{
+std::shared_ptr<Image> ConvertDepthToFloatImage(
+        const Image &depth,
+        double depth_scale /* = 1000.0*/,
+        double depth_trunc /* = 3.0*/) {
     // don't need warning message about image type
     // as we call CreateFloatImageFromImage
     auto output = CreateFloatImageFromImage(depth);
@@ -125,16 +117,15 @@ std::shared_ptr<Image> ConvertDepthToFloatImage(const Image &depth,
         for (int x = 0; x < output->width_; x++) {
             float *p = PointerAt<float>(*output, x, y);
             *p /= (float)depth_scale;
-            if (*p >= depth_trunc)
-                *p = 0.0f;
+            if (*p >= depth_trunc) *p = 0.0f;
         }
     }
     return output;
 }
 
-void ClipIntensityImage(Image &input, double min/* = 0.0*/,
-        double max/* = 1.0*/)
-{
+void ClipIntensityImage(Image &input,
+                        double min /* = 0.0*/,
+                        double max /* = 1.0*/) {
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[ClipIntensityImage] Unsupported image format.\n");
         return;
@@ -142,16 +133,15 @@ void ClipIntensityImage(Image &input, double min/* = 0.0*/,
     for (int y = 0; y < input.height_; y++) {
         for (int x = 0; x < input.width_; x++) {
             float *p = PointerAt<float>(input, x, y);
-            if (*p > max)
-                *p = (float)max;
-            if (*p < min)
-                *p = (float)min;
+            if (*p > max) *p = (float)max;
+            if (*p < min) *p = (float)min;
         }
     }
 }
 
-void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
-{
+void LinearTransformImage(Image &input,
+                          double scale,
+                          double offset /* = 0.0*/) {
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[LinearTransformImage] Unsupported image format.\n");
         return;
@@ -164,8 +154,7 @@ void LinearTransformImage(Image &input, double scale, double offset/* = 0.0*/)
     }
 }
 
-std::shared_ptr<Image> DownsampleImage(const Image &input)
-{
+std::shared_ptr<Image> DownsampleImage(const Image &input) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[DownsampleImage] Unsupported image format.\n");
@@ -192,12 +181,13 @@ std::shared_ptr<Image> DownsampleImage(const Image &input)
 }
 
 std::shared_ptr<Image> FilterHorizontalImage(
-        const Image &input, const std::vector<double> &kernel)
-{
+        const Image &input, const std::vector<double> &kernel) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4 ||
-            kernel.size() % 2 != 1) {
-        PrintWarning("[FilterHorizontalImage] Unsupported image format or kernel size.\n");
+        kernel.size() % 2 != 1) {
+        PrintWarning(
+                "[FilterHorizontalImage] Unsupported image format or kernel "
+                "size.\n");
         return output;
     }
     output->PrepareImage(input.width_, input.height_, 1, 4);
@@ -208,15 +198,13 @@ std::shared_ptr<Image> FilterHorizontalImage(
 #endif
     for (int y = 0; y < input.height_; y++) {
         for (int x = 0; x < input.width_; x++) {
-            float* po = PointerAt<float>(*output, x, y, 0);
+            float *po = PointerAt<float>(*output, x, y, 0);
             double temp = 0;
             for (int i = -half_kernel_size; i <= half_kernel_size; i++) {
                 int x_shift = x + i;
-                if (x_shift < 0)
-                    x_shift = 0;
-                if (x_shift > input.width_ - 1)
-                    x_shift = input.width_ - 1;
-                float* pi = PointerAt<float>(input, x_shift, y, 0);
+                if (x_shift < 0) x_shift = 0;
+                if (x_shift > input.width_ - 1) x_shift = input.width_ - 1;
+                float *pi = PointerAt<float>(input, x_shift, y, 0);
                 temp += (*pi * (float)kernel[i + half_kernel_size]);
             }
             *po = (float)temp;
@@ -225,8 +213,7 @@ std::shared_ptr<Image> FilterHorizontalImage(
     return output;
 }
 
-std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type)
-{
+std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[FilterImage] Unsupported image format.\n");
@@ -234,31 +221,30 @@ std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type)
     }
 
     switch (type) {
-    case Image::FilterType::Gaussian3:
-        output = FilterImage(input, Gaussian3, Gaussian3);
-        break;
-    case Image::FilterType::Gaussian5:
-        output = FilterImage(input, Gaussian5, Gaussian5);
-        break;
-    case Image::FilterType::Gaussian7:
-        output = FilterImage(input, Gaussian7, Gaussian7);
-        break;
-    case Image::FilterType::Sobel3Dx:
-        output = FilterImage(input, Sobel31, Sobel32);
-        break;
-    case Image::FilterType::Sobel3Dy:
-        output = FilterImage(input, Sobel32, Sobel31);
-        break;
-    default:
-        PrintWarning("[FilterImage] Unsupported filter type.\n");
-        break;
+        case Image::FilterType::Gaussian3:
+            output = FilterImage(input, Gaussian3, Gaussian3);
+            break;
+        case Image::FilterType::Gaussian5:
+            output = FilterImage(input, Gaussian5, Gaussian5);
+            break;
+        case Image::FilterType::Gaussian7:
+            output = FilterImage(input, Gaussian7, Gaussian7);
+            break;
+        case Image::FilterType::Sobel3Dx:
+            output = FilterImage(input, Sobel31, Sobel32);
+            break;
+        case Image::FilterType::Sobel3Dy:
+            output = FilterImage(input, Sobel32, Sobel31);
+            break;
+        default:
+            PrintWarning("[FilterImage] Unsupported filter type.\n");
+            break;
     }
     return output;
 }
 
 ImagePyramid FilterImagePyramid(const ImagePyramid &input,
-        Image::FilterType type)
-{
+                                Image::FilterType type) {
     std::vector<std::shared_ptr<Image>> output;
     for (size_t i = 0; i < input.size(); i++) {
         auto layer_filtered = FilterImage(*input[i], type);
@@ -268,8 +254,8 @@ ImagePyramid FilterImagePyramid(const ImagePyramid &input,
 }
 
 std::shared_ptr<Image> FilterImage(const Image &input,
-        const std::vector<double> &dx, const std::vector<double> &dy)
-{
+                                   const std::vector<double> &dx,
+                                   const std::vector<double> &dy) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[FilterImage] Unsupported image format.\n");
@@ -283,8 +269,7 @@ std::shared_ptr<Image> FilterImage(const Image &input,
     return temp4;
 }
 
-std::shared_ptr<Image> FlipImage(const Image &input)
-{
+std::shared_ptr<Image> FlipImage(const Image &input) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
         PrintWarning("[FilpImage] Unsupported image format.\n");
@@ -297,8 +282,8 @@ std::shared_ptr<Image> FlipImage(const Image &input)
 #endif
     for (int y = 0; y < input.height_; y++) {
         for (int x = 0; x < input.width_; x++) {
-            float* pi = PointerAt<float>(input, x, y, 0);
-            float* po = PointerAt<float>(*output, y, x, 0);
+            float *pi = PointerAt<float>(input, x, y, 0);
+            float *po = PointerAt<float>(*output, y, x, 0);
             *po = *pi;
         }
     }
@@ -306,8 +291,7 @@ std::shared_ptr<Image> FlipImage(const Image &input)
 }
 
 std::shared_ptr<Image> DilateImage(const Image &input,
-        int half_kernel_size/* = 1 */)
-{
+                                   int half_kernel_size /* = 1 */) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 1) {
         PrintWarning("[DilateImage] Unsupported image format.\n");
@@ -322,9 +306,9 @@ std::shared_ptr<Image> DilateImage(const Image &input,
         for (int x = 0; x < input.width_; x++) {
             for (int yy = -half_kernel_size; yy <= half_kernel_size; yy++) {
                 for (int xx = -half_kernel_size; xx <= half_kernel_size; xx++) {
-                    unsigned char* pi;
-                    if (input.TestImageBoundary(x+xx, y+yy)) {
-                        pi = PointerAt<unsigned char>(input, x+xx, y+yy);
+                    unsigned char *pi;
+                    if (input.TestImageBoundary(x + xx, y + yy)) {
+                        pi = PointerAt<unsigned char>(input, x + xx, y + yy);
                         if (*pi == 255) {
                             *PointerAt<unsigned char>(*output, x, y, 0) = 255;
                             xx = half_kernel_size;
@@ -339,25 +323,25 @@ std::shared_ptr<Image> DilateImage(const Image &input,
 }
 
 std::shared_ptr<Image> CreateDepthBoundaryMask(
-        const Image& depth_image_input,
+        const Image &depth_image_input,
         double depth_threshold_for_discontinuity_check,
-        int half_dilation_kernel_size_for_discontinuity_map)
-{
-    auto depth_image = CreateFloatImageFromImage(depth_image_input); // necessary?
+        int half_dilation_kernel_size_for_discontinuity_map) {
+    auto depth_image =
+            CreateFloatImageFromImage(depth_image_input);  // necessary?
     int width = depth_image->width_;
     int height = depth_image->height_;
-    auto depth_image_gradient_dx = FilterImage(*depth_image,
-            Image::FilterType::Sobel3Dx);
-    auto depth_image_gradient_dy = FilterImage(*depth_image,
-            Image::FilterType::Sobel3Dy);
+    auto depth_image_gradient_dx =
+            FilterImage(*depth_image, Image::FilterType::Sobel3Dx);
+    auto depth_image_gradient_dy =
+            FilterImage(*depth_image, Image::FilterType::Sobel3Dy);
     auto mask = std::make_shared<Image>();
     mask->PrepareImage(width, height, 1, 1);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int v=0; v<height; v++) {
-        for (int u=0; u<width; u++) {
+    for (int v = 0; v < height; v++) {
+        for (int u = 0; u < width; u++) {
             double dx = *PointerAt<float>(*depth_image_gradient_dx, u, v);
             double dy = *PointerAt<float>(*depth_image_gradient_dy, u, v);
             double mag = sqrt(dx * dx + dy * dy);
@@ -369,12 +353,12 @@ std::shared_ptr<Image> CreateDepthBoundaryMask(
         }
     }
     if (half_dilation_kernel_size_for_discontinuity_map >= 1) {
-        auto mask_dilated = DilateImage(*mask,
-        half_dilation_kernel_size_for_discontinuity_map);
+        auto mask_dilated = DilateImage(
+                *mask, half_dilation_kernel_size_for_discontinuity_map);
         return mask_dilated;
     } else {
         return mask;
     }
 }
 
-}    // namespace open3d
+}  // namespace open3d

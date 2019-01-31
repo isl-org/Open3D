@@ -29,8 +29,6 @@
 
 namespace open3d {
 
-void PrintOpen3DVersion() {
-    PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-}
+void PrintOpen3DVersion() { PrintInfo("Open3D %s\n", OPEN3D_VERSION); }
 
-}   // namespace open3d
+}  // namespace open3d

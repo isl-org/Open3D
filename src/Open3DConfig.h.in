@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// clang-format off
 // Open3D version
 #define OPEN3D_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define OPEN3D_VERSION_MINOR @PROJECT_VERSION_MINOR@
@@ -42,3 +43,4 @@ namespace open3d {
     void PrintOpen3DVersion();
 
 }
+// clang-format on

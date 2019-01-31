@@ -33,8 +33,7 @@
 
 namespace open3d {
 
-class PinholeCameraParameters : public IJsonConvertible
-{
+class PinholeCameraParameters : public IJsonConvertible {
 public:
     PinholeCameraParameters();
     ~PinholeCameraParameters() override;
@@ -45,7 +44,7 @@ public:
 
 public:
     PinholeCameraIntrinsic intrinsic_;
-    Eigen::Matrix4d extrinsic_;
+    Eigen::Matrix4d_u extrinsic_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

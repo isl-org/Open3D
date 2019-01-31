@@ -29,17 +29,17 @@
 #include <jpeglib.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-bool ReadImageFromJPG(const std::string &filename, Image &image)
-{
+bool ReadImageFromJPG(const std::string &filename, Image &image) {
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
     FILE *file_in;
     JSAMPARRAY buffer;
 
     if ((file_in = fopen(filename.c_str(), "rb")) == NULL) {
-        PrintWarning("Read JPG failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Read JPG failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
 
@@ -52,31 +52,31 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
     int num_of_channels = 3;
     int bytes_per_channel = 1;
     switch (cinfo.jpeg_color_space) {
-    case JCS_RGB:
-    case JCS_YCbCr:
-        cinfo.out_color_space = JCS_RGB;
-        cinfo.out_color_components = 3;
-        num_of_channels = 3;
-        break;
-    case JCS_GRAYSCALE:
-        cinfo.jpeg_color_space = JCS_GRAYSCALE;
-        cinfo.out_color_components = 1;
-        num_of_channels = 1;
-        break;
-    case JCS_CMYK:
-    case JCS_YCCK:
-    default:
-        PrintWarning("Read JPG failed: color space not supported.\n");
-        jpeg_destroy_decompress(&cinfo);
-        fclose(file_in);
-        return false;
+        case JCS_RGB:
+        case JCS_YCbCr:
+            cinfo.out_color_space = JCS_RGB;
+            cinfo.out_color_components = 3;
+            num_of_channels = 3;
+            break;
+        case JCS_GRAYSCALE:
+            cinfo.jpeg_color_space = JCS_GRAYSCALE;
+            cinfo.out_color_components = 1;
+            num_of_channels = 1;
+            break;
+        case JCS_CMYK:
+        case JCS_YCCK:
+        default:
+            PrintWarning("Read JPG failed: color space not supported.\n");
+            jpeg_destroy_decompress(&cinfo);
+            fclose(file_in);
+            return false;
     }
     jpeg_start_decompress(&cinfo);
-    image.PrepareImage(cinfo.output_width, cinfo.output_height,
-            num_of_channels, bytes_per_channel);
+    image.PrepareImage(cinfo.output_width, cinfo.output_height, num_of_channels,
+                       bytes_per_channel);
     int row_stride = cinfo.output_width * cinfo.output_components;
-    buffer = (*cinfo.mem->alloc_sarray)
-            ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
+    buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
+                                        row_stride, 1);
     uint8_t *pdata = image.data_.data();
     while (cinfo.output_scanline < cinfo.output_height) {
         jpeg_read_scanlines(&cinfo, buffer, 1);
@@ -89,15 +89,15 @@ bool ReadImageFromJPG(const std::string &filename, Image &image)
     return true;
 }
 
-bool WriteImageToJPG(const std::string &filename, const Image &image,
-        int quality/* = 90*/)
-{
+bool WriteImageToJPG(const std::string &filename,
+                     const Image &image,
+                     int quality /* = 90*/) {
     if (image.HasData() == false) {
         PrintWarning("Write JPG failed: image has no data.\n");
         return false;
     }
     if (image.bytes_per_channel_ != 1 ||
-            (image.num_of_channels_ != 1 && image.num_of_channels_ != 3)) {
+        (image.num_of_channels_ != 1 && image.num_of_channels_ != 3)) {
         PrintWarning("Write JPG failed: unsupported image data.\n");
         return false;
     }
@@ -107,7 +107,8 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
     JSAMPROW row_pointer[1];
 
     if ((file_out = fopen(filename.c_str(), "wb")) == NULL) {
-        PrintWarning("Write JPG failed: unable to open file: %s\n", filename.c_str());
+        PrintWarning("Write JPG failed: unable to open file: %s\n",
+                     filename.c_str());
         return false;
     }
 
@@ -137,4 +138,4 @@ bool WriteImageToJPG(const std::string &filename, const Image &image,
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

@@ -29,103 +29,82 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_Reset)
-{
+TEST(ViewControlWithEditing, DISABLED_Reset) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithEditing, DISABLED_ChangeFieldOfView) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_ChangeFieldOfView)
-{
+TEST(ViewControlWithEditing, DISABLED_Scale) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithEditing, DISABLED_Rotate) { unit_test::NotImplemented(); }
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+TEST(ViewControlWithEditing, DISABLED_Translate) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_Scale)
-{
+TEST(ViewControlWithEditing, DISABLED_SetEditingMode) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_Rotate)
-{
+TEST(ViewControlWithEditing, DISABLED_GetStatusString) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_Translate)
-{
+TEST(ViewControlWithEditing, DISABLED_GetEditingMode) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_SetEditingMode)
-{
+TEST(ViewControlWithEditing, DISABLED_ToggleEditingX) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_GetStatusString)
-{
+TEST(ViewControlWithEditing, DISABLED_ToggleEditingY) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_GetEditingMode)
-{
+TEST(ViewControlWithEditing, DISABLED_ToggleEditingZ) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_ToggleEditingX)
-{
+TEST(ViewControlWithEditing, DISABLED_ToggleLocking) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_ToggleEditingY)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_ToggleEditingZ)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_ToggleLocking)
-{
-    unit_test::NotImplemented();
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-TEST(ViewControlWithEditing, DISABLED_IsLocked)
-{
-    unit_test::NotImplemented();
-}
+TEST(ViewControlWithEditing, DISABLED_IsLocked) { unit_test::NotImplemented(); }

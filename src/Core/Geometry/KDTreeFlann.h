@@ -35,15 +35,17 @@
 #include <Core/Registration/Feature.h>
 
 namespace flann {
-template <typename T> class Matrix;
-template <typename T> struct L2;
-template <typename T> class Index;
-}    // namespace flann
+template <typename T>
+class Matrix;
+template <typename T>
+struct L2;
+template <typename T>
+class Index;
+}  // namespace flann
 
 namespace open3d {
 
-class KDTreeFlann
-{
+class KDTreeFlann {
 public:
     KDTreeFlann();
     KDTreeFlann(const Eigen::MatrixXd &data);
@@ -58,21 +60,30 @@ public:
     bool SetGeometry(const Geometry &geometry);
     bool SetFeature(const Feature &feature);
 
-    template<typename T>
-    int Search(const T &query, const KDTreeSearchParam &param,
-            std::vector<int> &indices, std::vector<double> &distance2) const;
+    template <typename T>
+    int Search(const T &query,
+               const KDTreeSearchParam &param,
+               std::vector<int> &indices,
+               std::vector<double> &distance2) const;
 
-    template<typename T>
-    int SearchKNN(const T &query, int knn, std::vector<int> &indices,
-            std::vector<double> &distance2) const;
+    template <typename T>
+    int SearchKNN(const T &query,
+                  int knn,
+                  std::vector<int> &indices,
+                  std::vector<double> &distance2) const;
 
-    template<typename T>
-    int SearchRadius(const T &query, double radius, std::vector<int> &indices,
-            std::vector<double> &distance2) const;
+    template <typename T>
+    int SearchRadius(const T &query,
+                     double radius,
+                     std::vector<int> &indices,
+                     std::vector<double> &distance2) const;
 
-    template<typename T>
-    int SearchHybrid(const T &query, double radius, int max_nn,
-            std::vector<int> &indices, std::vector<double> &distance2) const;
+    template <typename T>
+    int SearchHybrid(const T &query,
+                     double radius,
+                     int max_nn,
+                     std::vector<int> &indices,
+                     std::vector<double> &distance2) const;
 
 private:
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
@@ -85,4 +96,4 @@ protected:
     size_t dataset_size_ = 0;
 };
 
-}    // namespace open3d
+}  // namespace open3d

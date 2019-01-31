@@ -44,55 +44,44 @@ namespace open3d {
 namespace hash_tuple {
 
 template <typename TT>
-struct hash
-{
-    size_t operator()(TT const& tt) const
-    {
-        return std::hash<TT>()(tt);
-    }
+struct hash {
+    size_t operator()(TT const& tt) const { return std::hash<TT>()(tt); }
 };
 
 namespace {
 
 template <class T>
-inline void hash_combine(std::size_t& seed, T const& v)
-{
-    seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+inline void hash_combine(std::size_t& seed, T const& v) {
+    seed ^= hash_tuple::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
-struct HashValueImpl
-{
-    static void apply(size_t& seed, Tuple const& tuple)
-    {
+struct HashValueImpl {
+    static void apply(size_t& seed, Tuple const& tuple) {
         HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
         hash_combine(seed, std::get<Index>(tuple));
     }
 };
 
 template <class Tuple>
-struct HashValueImpl<Tuple, 0>
-{
-    static void apply(size_t& seed, Tuple const& tuple)
-    {
+struct HashValueImpl<Tuple, 0> {
+    static void apply(size_t& seed, Tuple const& tuple) {
         hash_combine(seed, std::get<0>(tuple));
     }
 };
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-template <typename ... TT>
-struct hash<std::tuple<TT...>>
-{
-    size_t operator()(std::tuple<TT...> const& tt) const
-    {
+template <typename... TT>
+struct hash<std::tuple<TT...>> {
+    size_t operator()(std::tuple<TT...> const& tt) const {
         size_t seed = 0;
-        HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
+        HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
         return seed;
     }
 };
 
-}    // namespace hash_tuple
+}  // namespace hash_tuple
 
 namespace hash_eigen {
 
@@ -109,11 +98,13 @@ struct hash : std::unary_function<T, size_t> {
     }
 };
 
-}    // namespace hash_eigen
+}  // namespace hash_eigen
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
-void SplitString(std::vector<std::string> &tokens, const std::string &str,
-        const std::string &delimiters = " ", bool trim_empty_str = true);
+void SplitString(std::vector<std::string>& tokens,
+                 const std::string& str,
+                 const std::string& delimiters = " ",
+                 bool trim_empty_str = true);
 
-}    // namespace open3d
+}  // namespace open3d
