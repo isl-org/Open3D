@@ -49,6 +49,8 @@ public:
                                  int maximum_tuple_count = 1000)
         : division_factor_(division_factor),
           use_absolute_scale_(use_absolute_scale),
+          decrease_mu_(decrease_mu),
+          maximum_correspondence_distance_(maximum_correspondence_distance),
           iteration_number_(iteration_number),
           tuple_scale_(tuple_scale),
           maximum_tuple_count_(maximum_tuple_count) {}

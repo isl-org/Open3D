@@ -47,7 +47,12 @@ elif [ "${3}" = "mc2" ] || [ "${3}" = "mc3" ]; then
         ./test.sh Release ${LINK_TYPE} $ENV_TYPE'
 fi
 
+# docker exec is returning the result of the tests
+TEST_RESULT=$?
+
 echo "stopping the ${CONTAINER_HOSTNAME} container..."
 date
 docker container stop -t 0 ${CONTAINER_NAME} >/dev/null 2>&1
 echo
+
+exit ${TEST_RESULT}
