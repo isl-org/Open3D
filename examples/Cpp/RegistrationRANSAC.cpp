@@ -71,8 +71,7 @@ int main(int argc, char *argv[]) {
     }
 
     bool visualize = false;
-    if (ProgramOptionExists(argc, argv, "--visualize"))
-        visualize = true;
+    if (ProgramOptionExists(argc, argv, "--visualize")) visualize = true;
 
     std::shared_ptr<PointCloud> source, target;
     std::shared_ptr<Feature> source_fpfh, target_fpfh;
@@ -94,12 +93,11 @@ int main(int argc, char *argv[]) {
     auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
             *source, *target, *source_fpfh, *target_fpfh, 0.075,
             TransformationEstimationPointToPoint(false), 4,
-            correspondence_checker,
-            RANSACConvergenceCriteria(4000000, 1000));
+            correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
 
     if (visualize)
-            VisualizeRegistration(*source, *target,
-                    registration_result.transformation_);
+        VisualizeRegistration(*source, *target,
+                              registration_result.transformation_);
 
     return 0;
 }
