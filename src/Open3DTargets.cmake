@@ -49,7 +49,8 @@ if (NOT TARGET Open3D::Open3D)
     else()
         # Remove Open3D itself from the list of libraries
         set(Open3D_OTHER_LIBRARIES ${Open3D_LIBRARIES})
-        list(REMOVE_ITEM Open3D_OTHER_LIBRARIES Open3D)
+        # disabled, trying something
+        # list(REMOVE_ITEM Open3D_OTHER_LIBRARIES Open3D)
 
         set_target_properties(Open3D::Open3D PROPERTIES
             IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
