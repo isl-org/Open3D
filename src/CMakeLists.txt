@@ -37,9 +37,23 @@ else ()
     target_link_libraries(${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif ()
 
-target_link_libraries(${CMAKE_PROJECT_NAME}
-                      ${3RDPARTY_LIBRARIES}
-                      ${OMP_LIBRARIES})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${3RDPARTY_LIBRARIES})
+
+# OpenMP
+if (WITH_OPENMP)
+    find_package(OpenMP QUIET COMPONENTS CXX)
+    if(TARGET OpenMP::OpenMP_CXX)
+        message(STATUS "Using installed OpenMP ${OpenMP_CXX_VERSION}")
+        target_link_libraries(${CMAKE_PROJECT_NAME} OpenMP::OpenMP_CXX)
+        # list(APPEND CONFIG_Open3D_LIBRARY_DIRS ???)
+        # technically we only need OpenMP_CXX_LIBRARIES
+        # which should be empty on most compilers
+        list(APPEND CONFIG_Open3D_LIBRARIES ${OpenMP_CXX_LIB_NAMES})
+        set(CONFIG_Open3D_CXX_FLAGS ${OpenMP_CXX_FLAGS})
+    else ()
+        message(STATUS "OpenMP NOT found")
+    endif ()
+endif ()
 
 # input_dirs: a list of absolute paths in the source dir
 # output_dirs: a list of relative paths in the install dir
@@ -102,7 +116,7 @@ list(SORT CONFIG_Open3D_INCLUDE_DIRS)
 #           1) Open3D
 #           2) Pre-installed 3rd-party libraries
 #           3) Built-from-source 3rd-party libraries
-list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}" ${OMP_LIBRARIES})
+list(APPEND CONFIG_Open3D_LIBRARIES ${CMAKE_PROJECT_NAME})
 if (BUILD_SHARED_LIBS)
     list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
 else ()
@@ -134,8 +148,7 @@ endif()
 # set Open3D library directories
 list(APPEND CONFIG_Open3D_LIBRARY_DIRS
     "${CMAKE_INSTALL_PREFIX}/lib"
-    ${3RDPARTY_LIBRARY_DIRS}
-    ${OMP_LIBRARY_DIRS})
+    ${3RDPARTY_LIBRARY_DIRS})
 
 set(CONFIG_Open3D_BINARY_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 
