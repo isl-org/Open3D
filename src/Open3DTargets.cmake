@@ -56,16 +56,11 @@ if (NOT TARGET Open3D::Open3D)
             INTERFACE_INCLUDE_DIRECTORIES     "${Open3D_INCLUDE_DIRS}"
             INTERFACE_LINK_DIRECTORIES        "${Open3D_LIBRARY_DIRS}" # CMake 3.13+
             INTERFACE_LINK_LIBRARIES          "${Open3D_OTHER_LIBRARIES}"
-            INTERFACE_COMPILE_OPTIONS         "${Open3D_CXX_FLAGS}"
-            INTERFACE_LINK_OPTIONS            "${Open3D_CXX_FLAGS}") # CMake 3.13+
+            INTERFACE_COMPILE_OPTIONS         "${Open3D_CXX_FLAGS}")
 
         if(${CMAKE_VERSION} VERSION_LESS "3.13.0")
             # CMake 3.13 added INTERFACE_LINK_DIRECTORIES
             link_directories(${Open3D_LIBRARY_DIRS})
-            # CMake 3.13 added INTERFACE_LINK_OPTIONS
-            # on previous versions, set target link libraries to set linker flags
-            # this is documented behaviour
-            set_property(TARGET Open3D::Open3D APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${Open3D_CXX_FLAGS}")
         endif()
 
         unset(Open3D_OTHER_LIBRARIES)
