@@ -33,6 +33,7 @@
 #include <Visualization/Visualization.h>
 
 #include <Core/Utility/Timer.h>
+#include <Core/Utility/Console.h>
 
 using namespace open3d;
 
@@ -62,49 +63,41 @@ int main(int argc, char *argv[]) {
 
     SetVerbosityLevel(VerbosityLevel::VerboseAlways);
 
-    if (argc != 3) {
+    if (argc != 3 && argc != 4) {
         PrintDebug(
                 "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
-                "[path_to_second_point_cloud]\n");
+                "[path_to_second_point_cloud] --visualize\n");
         return 1;
     }
 
-    bool visualization = false;
+    bool visualize = false;
+    if (ProgramOptionExists(argc, argv, "--visualize")) visualize = true;
 
-#ifdef _OPENMP
-    PrintDebug("OpenMP is supported. Using %d threads.", omp_get_num_threads());
-#endif
+    std::shared_ptr<PointCloud> source, target;
+    std::shared_ptr<Feature> source_fpfh, target_fpfh;
+    std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
+    std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
-    for (int i = 0; i < 50000; i++) {
-        ScopeTimer t("one iteration");
+    std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+            correspondence_checker;
+    auto correspondence_checker_edge_length =
+            CorrespondenceCheckerBasedOnEdgeLength(0.9);
+    auto correspondence_checker_distance =
+            CorrespondenceCheckerBasedOnDistance(0.075);
+    auto correspondence_checker_normal =
+            CorrespondenceCheckerBasedOnNormal(0.52359878);
 
-        std::shared_ptr<PointCloud> source, target;
-        std::shared_ptr<Feature> source_fpfh, target_fpfh;
-        std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
-        std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
+    correspondence_checker.push_back(correspondence_checker_edge_length);
+    correspondence_checker.push_back(correspondence_checker_distance);
+    correspondence_checker.push_back(correspondence_checker_normal);
+    auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
+            *source, *target, *source_fpfh, *target_fpfh, 0.075,
+            TransformationEstimationPointToPoint(false), 4,
+            correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
 
-        std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-                correspondence_checker;
-        auto correspondence_checker_edge_length =
-                CorrespondenceCheckerBasedOnEdgeLength(0.9);
-        auto correspondence_checker_distance =
-                CorrespondenceCheckerBasedOnDistance(0.075);
-        auto correspondence_checker_normal =
-                CorrespondenceCheckerBasedOnNormal(0.52359878);
-
-        correspondence_checker.push_back(correspondence_checker_edge_length);
-        correspondence_checker.push_back(correspondence_checker_distance);
-        correspondence_checker.push_back(correspondence_checker_normal);
-        auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
-                *source, *target, *source_fpfh, *target_fpfh, 0.075,
-                TransformationEstimationPointToPoint(false), 4,
-                correspondence_checker,
-                RANSACConvergenceCriteria(4000000, 1000));
-
-        if (visualization)
-            VisualizeRegistration(*source, *target,
-                                  registration_result.transformation_);
-    }
+    if (visualize)
+        VisualizeRegistration(*source, *target,
+                              registration_result.transformation_);
 
     return 0;
 }
