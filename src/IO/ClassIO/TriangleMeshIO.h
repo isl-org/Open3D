@@ -57,4 +57,11 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool write_ascii = false,
                             bool compressed = false);
 
+bool ReadTriangleMeshFromSTL(const std::string &filename, TriangleMesh &mesh);
+
+bool WriteTriangleMeshToSTL(const std::string &filename,
+                            const TriangleMesh &mesh,
+                            bool write_ascii = false,
+                            bool compressed = false);
+
 }  // namespace open3d
