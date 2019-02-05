@@ -30,46 +30,10 @@
 #include <vector>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
-namespace {
-    
-    void four_byte_buffer_to_float(char* buffer, int n_elements, 
-            float* output) {
-        for (int i = 0; i < n_elements; i++) {
-            char temp[4];
-            for (int j = 0; j < 4; j++){
-                temp[j] = buffer[i * 4 + j];
-            }
-            output[i] = *((float *)temp);
-        }
-    }
-
-    void float_to_four_byte_buffer(float *input, int n_elements, 
-            char *buffer) {
-        for (int i = 0; i < n_elements; i++) {
-            char* temp = (char *)(&input[i]);
-            for (int j = 0; j < 4; j++){
-                buffer[i * 4 + j] = temp[j];
-            }
-        }
-    }
-
-    Eigen::Vector3d float_array_to_vector3d(float* temp) {
-        return (Eigen::Map<Eigen::Vector3f>(temp)).cast<double>();
-    }
-
-    void vector3d_to_float_array(Eigen::Vector3d temp, float* ouput) {
-        auto temp_float = (temp).cast<float>();
-        for (int i = 0; i < 3; i++)
-            ouput[i] = temp_float(i);
-    }
-
-}   // unnamed namespace
-
-bool ReadTriangleMeshFromSTL(const std::string &filename, 
-        TriangleMesh &TriangleMesh)
-{
+bool ReadTriangleMeshFromSTL(const std::string &filename,
+                             TriangleMesh &TriangleMesh) {
     std::ifstream myFile(filename.c_str(), std::ios::in | std::ios::binary);
 
     if (!myFile) {
@@ -84,8 +48,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         myFile.read(header, 80);
         myFile.read(buffer, 4);
         num_of_triangles = (int)(*((unsigned long *)buffer));
-        PrintError("header : %s\n", header);
-        PrintError("num_of_triangles : %d\n", num_of_triangles);
+        PrintInfo("header : %s\n", header);
     } else {
         PrintWarning("Read STL failed: unable to read header.\n");
         return false;
@@ -106,24 +69,22 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
     ResetConsoleProgress(num_of_triangles, "Reading STL: ");
     for (int i = 0; i < num_of_triangles; i++) {
         char buffer[50];
-        float float_buffer[3];
+        float *float_buffer;
         if (myFile) {
             myFile.read(buffer, 50);
 
-            four_byte_buffer_to_float(buffer + 0, 3, float_buffer);
+            float_buffer = reinterpret_cast<float *>(buffer);
             TriangleMesh.triangle_normals_[i] =
-                    float_array_to_vector3d(float_buffer);
-            
+                Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
             for (int j = 0; j < 3; j++) {
-                four_byte_buffer_to_float(buffer + 12 * (j + 1), 
-                        3, float_buffer);
+                float_buffer = reinterpret_cast<float *>(buffer + 12 * (j + 1));
                 TriangleMesh.vertices_[i * 3 + j] =
-                        float_array_to_vector3d(float_buffer);
+                    Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
             }
             TriangleMesh.triangles_[i] =
                 Eigen::Vector3i(i * 3 + 0, i * 3 + 1, i * 3 + 2);
             // ignore buffer[48] and buffer [49] because it is rarely used.
-            
+
         } else {
             PrintWarning("Read STL failed: not enough triangles.\n");
             return false;
@@ -134,9 +95,9 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 }
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
-        const TriangleMesh &TriangleMesh, bool write_ascii/* = false*/,
-        bool compressed/* = false*/)
-{
+                            const TriangleMesh &TriangleMesh,
+                            bool write_ascii /* = false*/,
+                            bool compressed /* = false*/) {
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
 
     if (!myFile) {
@@ -158,19 +119,16 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     ResetConsoleProgress(num_of_triangles, "Writing STL: ");
     for (int i = 0; i < num_of_triangles; i++) {
         char char_buffer[12];
-        char blank[2] = {0,0};
-        float float_buffer[3];
+        char blank[2] = {0, 0};
 
-        vector3d_to_float_array(
-                TriangleMesh.triangle_normals_[i], float_buffer);
-        float_to_four_byte_buffer(float_buffer, 3, char_buffer);
-        myFile.write(char_buffer, 12);
-
+        Eigen::Vector3f float_vector3f =
+            TriangleMesh.triangle_normals_[i].cast<float>();
+        myFile.write(reinterpret_cast<const char *>(float_vector3f.data()), 12);
         for (int j = 0; j < 3; j++) {
-            vector3d_to_float_array(
-                TriangleMesh.vertices_[i * 3 + j], float_buffer);
-            float_to_four_byte_buffer(float_buffer, 3, char_buffer);
-            myFile.write(char_buffer, 12);
+            Eigen::Vector3f float_vector3f =
+                TriangleMesh.vertices_[i * 3 + j].cast<float>();
+            myFile.write(reinterpret_cast<const char *>(float_vector3f.data()),
+                         12);
         }
         myFile.write(blank, 2);
         AdvanceConsoleProgress();
@@ -179,4 +137,4 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d
