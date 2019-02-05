@@ -48,7 +48,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         myFile.read(header, 80);
         myFile.read(buffer, 4);
         num_of_triangles = (int)(*((unsigned long *)buffer));
-        PrintInfo("header : %s\n", header);
+        // PrintInfo("header : %s\n", header);
     } else {
         PrintWarning("Read STL failed: unable to read header.\n");
         return false;
@@ -72,17 +72,17 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         float *float_buffer;
         if (myFile) {
             myFile.read(buffer, 50);
-
             float_buffer = reinterpret_cast<float *>(buffer);
             TriangleMesh.triangle_normals_[i] =
-                Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
+                    Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
             for (int j = 0; j < 3; j++) {
                 float_buffer = reinterpret_cast<float *>(buffer + 12 * (j + 1));
                 TriangleMesh.vertices_[i * 3 + j] =
-                    Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
+                        Eigen::Map<Eigen::Vector3f>(float_buffer)
+                                .cast<double>();
             }
             TriangleMesh.triangles_[i] =
-                Eigen::Vector3i(i * 3 + 0, i * 3 + 1, i * 3 + 2);
+                    Eigen::Vector3i(i * 3 + 0, i * 3 + 1, i * 3 + 2);
             // ignore buffer[48] and buffer [49] because it is rarely used.
 
         } else {
@@ -114,26 +114,21 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     myFile.write(header, 80);
     myFile.write((char *)(&num_of_triangles), 4);
 
-    PrintError("num_of_triangles : %d", num_of_triangles);
-
     ResetConsoleProgress(num_of_triangles, "Writing STL: ");
     for (int i = 0; i < num_of_triangles; i++) {
-        char char_buffer[12];
-        char blank[2] = {0, 0};
-
         Eigen::Vector3f float_vector3f =
-            TriangleMesh.triangle_normals_[i].cast<float>();
+                TriangleMesh.triangle_normals_[i].cast<float>();
         myFile.write(reinterpret_cast<const char *>(float_vector3f.data()), 12);
         for (int j = 0; j < 3; j++) {
             Eigen::Vector3f float_vector3f =
-                TriangleMesh.vertices_[i * 3 + j].cast<float>();
+                    TriangleMesh.vertices_[i * 3 + j].cast<float>();
             myFile.write(reinterpret_cast<const char *>(float_vector3f.data()),
                          12);
         }
+        char blank[2] = {0, 0};
         myFile.write(blank, 2);
         AdvanceConsoleProgress();
     }
-
     return true;
 }
 
