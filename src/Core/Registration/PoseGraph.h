@@ -34,11 +34,10 @@
 
 namespace open3d {
 
-class PoseGraphNode : public IJsonConvertible
-{
+class PoseGraphNode : public IJsonConvertible {
 public:
-    PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity()) :
-            pose_(pose) {};
+    PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
+        : pose_(pose){};
     ~PoseGraphNode();
 
 public:
@@ -49,21 +48,21 @@ public:
     Eigen::Matrix4d_u pose_;
 };
 
-class PoseGraphEdge : public IJsonConvertible
-{
+class PoseGraphEdge : public IJsonConvertible {
 public:
     PoseGraphEdge(
-            int source_node_id = -1, int target_node_id = -1,
+            int source_node_id = -1,
+            int target_node_id = -1,
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity(),
             const Eigen::Matrix6d &information = Eigen::Matrix6d::Identity(),
             bool uncertain = false,
-            double confidence = 1.0) :
-            source_node_id_(source_node_id),
-            target_node_id_(target_node_id),
-            transformation_(transformation),
-            information_(information),
-            uncertain_(uncertain),
-            confidence_(confidence) {};
+            double confidence = 1.0)
+        : source_node_id_(source_node_id),
+          target_node_id_(target_node_id),
+          transformation_(transformation),
+          information_(information),
+          uncertain_(uncertain),
+          confidence_(confidence){};
     ~PoseGraphEdge();
 
 public:
@@ -85,8 +84,7 @@ public:
     double confidence_;
 };
 
-class PoseGraph : public IJsonConvertible
-{
+class PoseGraph : public IJsonConvertible {
 public:
     PoseGraph();
     ~PoseGraph() override;
@@ -99,4 +97,4 @@ public:
     std::vector<PoseGraphNode> nodes_;
     std::vector<PoseGraphEdge> edges_;
 };
-}    // namespace open3d
+}  // namespace open3d

@@ -28,8 +28,7 @@
 
 namespace open3d {
 
-class Geometry
-{
+class Geometry {
 public:
     enum class GeometryType {
         Unspecified = 0,
@@ -45,8 +44,8 @@ public:
     virtual ~Geometry() {}
 
 protected:
-    Geometry(GeometryType type, int dimension) : geometry_type_(type),
-            dimension_(dimension) {}
+    Geometry(GeometryType type, int dimension)
+        : geometry_type_(type), dimension_(dimension) {}
 
 public:
     virtual void Clear() = 0;
@@ -59,4 +58,4 @@ private:
     int dimension_ = 3;
 };
 
-}    // namespace open3d
+}  // namespace open3d

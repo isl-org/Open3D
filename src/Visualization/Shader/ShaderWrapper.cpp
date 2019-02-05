@@ -29,13 +29,13 @@
 #include <Core/Geometry/Geometry.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace glsl {
 
-bool ShaderWrapper::Render(const Geometry &geometry, const RenderOption &option,
-        const ViewControl &view)
-{
+bool ShaderWrapper::Render(const Geometry &geometry,
+                           const RenderOption &option,
+                           const ViewControl &view) {
     if (compiled_ == false) {
         Compile();
     }
@@ -49,23 +49,19 @@ bool ShaderWrapper::Render(const Geometry &geometry, const RenderOption &option,
     return RenderGeometry(geometry, option, view);
 }
 
-void ShaderWrapper::InvalidateGeometry()
-{
+void ShaderWrapper::InvalidateGeometry() {
     if (bound_) {
         UnbindGeometry();
     }
 }
 
-void ShaderWrapper::PrintShaderWarning(const std::string &message) const
-{
+void ShaderWrapper::PrintShaderWarning(const std::string &message) const {
     PrintWarning("[%s] %s\n", GetShaderName().c_str(), message.c_str());
 }
 
-bool ShaderWrapper::CompileShaders(
-        const char * const vertex_shader_code,
-        const char * const geometry_shader_code,
-        const char * const fragment_shader_code)
-{
+bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
+                                   const char *const geometry_shader_code,
+                                   const char *const fragment_shader_code) {
     if (compiled_) {
         return true;
     }
@@ -79,7 +75,7 @@ bool ShaderWrapper::CompileShaders(
             return false;
         }
     }
-    
+
     if (geometry_shader_code != NULL) {
         geometry_shader_ = glCreateShader(GL_GEOMETRY_SHADER);
         const GLchar *geometry_shader_code_buffer = geometry_shader_code;
@@ -89,7 +85,7 @@ bool ShaderWrapper::CompileShaders(
             return false;
         }
     }
-    
+
     if (fragment_shader_code != NULL) {
         fragment_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
         const GLchar *fragment_shader_code_buffer = fragment_shader_code;
@@ -99,7 +95,7 @@ bool ShaderWrapper::CompileShaders(
             return false;
         }
     }
-    
+
     program_ = glCreateProgram();
     if (vertex_shader_code != NULL) {
         glAttachShader(program_, vertex_shader_);
@@ -114,7 +110,7 @@ bool ShaderWrapper::CompileShaders(
     if (ValidateProgram(program_) == false) {
         return false;
     }
-    
+
     // Mark shader objects as deletable.
     // They will be released as soon as program is deleted.
     if (vertex_shader_code != NULL) {
@@ -126,21 +122,19 @@ bool ShaderWrapper::CompileShaders(
     if (fragment_shader_code != NULL) {
         glDeleteShader(fragment_shader_);
     }
-    
+
     compiled_ = true;
     return true;
 }
 
-void ShaderWrapper::ReleaseProgram()
-{
+void ShaderWrapper::ReleaseProgram() {
     if (compiled_) {
         glDeleteProgram(program_);
         compiled_ = false;
     }
 }
 
-bool ShaderWrapper::ValidateShader(GLuint shader_index)
-{
+bool ShaderWrapper::ValidateShader(GLuint shader_index) {
     GLint result = GL_FALSE;
     int info_log_length;
     glGetShaderiv(shader_index, GL_COMPILE_STATUS, &result);
@@ -149,7 +143,7 @@ bool ShaderWrapper::ValidateShader(GLuint shader_index)
         if (info_log_length > 0) {
             std::vector<char> error_message(info_log_length + 1);
             glGetShaderInfoLog(shader_index, info_log_length, NULL,
-                    &error_message[0]);
+                               &error_message[0]);
             PrintError("Shader error: %s\n", &error_message[0]);
         }
         return false;
@@ -157,8 +151,7 @@ bool ShaderWrapper::ValidateShader(GLuint shader_index)
     return true;
 }
 
-bool ShaderWrapper::ValidateProgram(GLuint program_index)
-{
+bool ShaderWrapper::ValidateProgram(GLuint program_index) {
     GLint result = GL_FALSE;
     int info_log_length;
     glGetProgramiv(program_index, GL_LINK_STATUS, &result);
@@ -167,7 +160,7 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index)
         if (info_log_length > 0) {
             std::vector<char> error_message(info_log_length + 1);
             glGetShaderInfoLog(program_index, info_log_length, NULL,
-                    &error_message[0]);
+                               &error_message[0]);
             PrintError("Shader error: %s\n", &error_message[0]);
         }
         return false;
@@ -175,6 +168,6 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index)
     return true;
 }
 
-}    // namespace open3d::glsl
+}  // namespace glsl
 
-}    // namespace open3d
+}  // namespace open3d

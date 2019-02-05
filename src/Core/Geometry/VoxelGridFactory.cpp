@@ -37,19 +37,14 @@ namespace open3d {
 
 namespace {
 
-class PointCloudVoxel
-{
+class PointCloudVoxel {
 public:
-    PointCloudVoxel() :
-        num_of_points_(0),
-        color_(0.0, 0.0, 0.0)
-    {
-    }
+    PointCloudVoxel() : num_of_points_(0), color_(0.0, 0.0, 0.0) {}
 
 public:
     void AddPoint(const Eigen::Vector3i &voxel_index,
-            const PointCloud &cloud, int index)
-    {
+                  const PointCloud &cloud,
+                  int index) {
         coordinate_ = voxel_index;
         if (cloud.HasColors()) {
             color_ += cloud.colors_[index];
@@ -57,12 +52,9 @@ public:
         num_of_points_++;
     }
 
-    Eigen::Vector3i GetVoxelCoordinate() const {
-        return coordinate_;
-    }
+    Eigen::Vector3i GetVoxelCoordinate() const { return coordinate_; }
 
-    Eigen::Vector3d GetAverageColor() const
-    {
+    Eigen::Vector3d GetAverageColor() const {
         return color_ / double(num_of_points_);
     }
 
@@ -72,11 +64,10 @@ public:
     Eigen::Vector3d color_;
 };
 
-}
+}  // namespace
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
-        const PointCloud &input, double voxel_size)
-{
+        const PointCloud &input, double voxel_size) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
@@ -87,20 +78,21 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     Eigen::Vector3d voxel_min_bound = input.GetMinBound() - voxel_size3 * 0.5;
     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
-            (voxel_max_bound - voxel_min_bound).maxCoeff()) {
+        (voxel_max_bound - voxel_min_bound).maxCoeff()) {
         PrintDebug("[VoxelGridFromPointCloud] voxel_size is too small.\n");
         return output;
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = voxel_min_bound;
     std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
-            hash_eigen::hash<Eigen::Vector3i>> voxelindex_to_accpoint;
+                       hash_eigen::hash<Eigen::Vector3i>>
+            voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
     for (int i = 0; i < (int)input.points_.size(); i++) {
         ref_coord = (input.points_[i] - voxel_min_bound) / voxel_size;
-        voxel_index << int(floor(ref_coord(0))),
-                int(floor(ref_coord(1))), int(floor(ref_coord(2)));
+        voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
+                int(floor(ref_coord(2)));
         voxelindex_to_accpoint[voxel_index].AddPoint(voxel_index, input, i);
     }
     bool has_colors = input.HasColors();
@@ -111,8 +103,8 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         }
     }
     PrintDebug("Pointcloud is voxelized from %d points to %d voxels.\n",
-            (int)input.points_.size(), (int)output->voxels_.size());
+               (int)input.points_.size(), (int)output->voxels_.size());
     return output;
 }
 
-}   // namespace open3d
+}  // namespace open3d

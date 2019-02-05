@@ -31,8 +31,7 @@
 
 namespace open3d {
 
-class Geometry2D : public Geometry
-{
+class Geometry2D : public Geometry {
 public:
     ~Geometry2D() override {}
 
@@ -46,4 +45,4 @@ public:
     virtual Eigen::Vector2d GetMaxBound() const = 0;
 };
 
-}    // namespace open3d
+}  // namespace open3d

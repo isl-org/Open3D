@@ -34,8 +34,7 @@
 
 namespace open3d {
 
-class ViewControl
-{
+class ViewControl {
 public:
     static const double FIELD_OF_VIEW_MAX;
     static const double FIELD_OF_VIEW_MIN;
@@ -67,8 +66,7 @@ public:
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view)
-    bool ConvertToPinholeCameraParameters(
-            PinholeCameraParameters &parameters);
+    bool ConvertToPinholeCameraParameters(PinholeCameraParameters &parameters);
     bool ConvertFromPinholeCameraParameters(
             const PinholeCameraParameters &parameters);
 
@@ -96,8 +94,10 @@ public:
     /// cursor started to move from.
     /// Coordinates are measured in screen coordinates relative to the top-left
     /// corner of the window client area.
-    virtual void Translate(double x, double y, double xo = 0.0,
-            double yo = 0.0);
+    virtual void Translate(double x,
+                           double y,
+                           double xo = 0.0,
+                           double yo = 0.0);
 
     // Function to process rolling
     /// \param x is the distances the mouse cursor has moved.
@@ -105,13 +105,9 @@ public:
     /// corner of the window client area.
     virtual void Roll(double x);
 
-    const BoundingBox &GetBoundingBox() const {
-        return bounding_box_;
-    }
+    const BoundingBox &GetBoundingBox() const { return bounding_box_; }
 
-    void ResetBoundingBox() {
-        bounding_box_.Reset();
-    }
+    void ResetBoundingBox() { bounding_box_.Reset(); }
 
     void FitInGeometry(const Geometry &geometry) {
         if (geometry.Dimension() == 3) {
@@ -159,4 +155,4 @@ protected:
     GLHelper::GLMatrix4f MVP_matrix_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

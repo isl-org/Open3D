@@ -39,23 +39,34 @@ typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
 typedef Eigen::Matrix<GLfloat, 4, 1, Eigen::ColMajor> GLVector4f;
 typedef Eigen::Matrix<GLfloat, 4, 4, Eigen::ColMajor> GLMatrix4f;
 
-GLMatrix4f LookAt(const Eigen::Vector3d &eye, const Eigen::Vector3d &lookat,
-        const Eigen::Vector3d &up);
-    
-GLMatrix4f Perspective(double field_of_view_, double aspect, double z_near, 
-        double z_far);
+GLMatrix4f LookAt(const Eigen::Vector3d &eye,
+                  const Eigen::Vector3d &lookat,
+                  const Eigen::Vector3d &up);
 
-GLMatrix4f Ortho(double left, double right, double bottom, double top,
-        double z_near, double z_far);
+GLMatrix4f Perspective(double field_of_view_,
+                       double aspect,
+                       double z_near,
+                       double z_far);
 
-Eigen::Vector3d Project(const Eigen::Vector3d &point, 
-        const GLMatrix4f &mvp_matrix, const int width, const int height);
+GLMatrix4f Ortho(double left,
+                 double right,
+                 double bottom,
+                 double top,
+                 double z_near,
+                 double z_far);
+
+Eigen::Vector3d Project(const Eigen::Vector3d &point,
+                        const GLMatrix4f &mvp_matrix,
+                        const int width,
+                        const int height);
 
 Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
-        const GLMatrix4f &mvp_matrix, const int width, const int height);
+                          const GLMatrix4f &mvp_matrix,
+                          const int width,
+                          const int height);
 
 int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 
-}    // namespace GLHelper
+}  // namespace GLHelper
 
-}    // namespace open3d
+}  // namespace open3d

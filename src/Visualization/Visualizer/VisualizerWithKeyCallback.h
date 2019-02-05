@@ -31,8 +31,7 @@
 
 namespace open3d {
 
-class VisualizerWithKeyCallback : public Visualizer
-{
+class VisualizerWithKeyCallback : public Visualizer {
 public:
     typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;
 
@@ -40,21 +39,24 @@ public:
     VisualizerWithKeyCallback();
     ~VisualizerWithKeyCallback() override;
     VisualizerWithKeyCallback(const VisualizerWithKeyCallback &) = delete;
-    VisualizerWithKeyCallback &operator=(const VisualizerWithKeyCallback &) = 
+    VisualizerWithKeyCallback &operator=(const VisualizerWithKeyCallback &) =
             delete;
 
 public:
     void PrintVisualizerHelp() override;
-    void RegisterKeyCallback(int key, 
-            std::function<bool(Visualizer *)> callback);
+    void RegisterKeyCallback(int key,
+                             std::function<bool(Visualizer *)> callback);
 
 protected:
     void KeyPressCallback(GLFWwindow *window,
-            int key, int scancode, int action, int mods) override;
+                          int key,
+                          int scancode,
+                          int action,
+                          int mods) override;
     std::string PrintKeyToString(int key);
 
 protected:
     std::map<int, std::function<bool(Visualizer *)>> key_to_callback_;
 };
 
-}    // namespace open3d
+}  // namespace open3d

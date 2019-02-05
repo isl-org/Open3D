@@ -29,55 +29,34 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_PoseGraphNode)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_PoseGraphNode) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_ConvertToJsonValue)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_ConvertToJsonValue) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_ConvertFromJsonValue)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_ConvertFromJsonValue) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PoseGraph, DISABLED_PoseGraphEdge)
-{
-    unit_test::NotImplemented();
-}
+TEST(PoseGraph, DISABLED_PoseGraphEdge) { unit_test::NotImplemented(); }

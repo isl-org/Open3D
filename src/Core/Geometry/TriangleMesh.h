@@ -34,11 +34,10 @@
 
 namespace open3d {
 
-class TriangleMesh : public Geometry3D
-{
+class TriangleMesh : public Geometry3D {
 public:
-    TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh) {};
-    ~TriangleMesh() override {};
+    TriangleMesh() : Geometry3D(Geometry::GeometryType::TriangleMesh){};
+    ~TriangleMesh() override{};
 
 public:
     void Clear() override;
@@ -67,9 +66,7 @@ protected:
     void RemoveNonManifoldTriangles();
 
 public:
-    bool HasVertices() const {
-        return vertices_.size() > 0;
-    }
+    bool HasVertices() const { return vertices_.size() > 0; }
 
     bool HasTriangles() const {
         return vertices_.size() > 0 && triangles_.size() > 0;
@@ -77,17 +74,16 @@ public:
 
     bool HasVertexNormals() const {
         return vertices_.size() > 0 &&
-                vertex_normals_.size() == vertices_.size();
+               vertex_normals_.size() == vertices_.size();
     }
 
     bool HasVertexColors() const {
         return vertices_.size() > 0 &&
-                vertex_colors_.size() == vertices_.size();
+               vertex_colors_.size() == vertices_.size();
     }
 
     bool HasTriangleNormals() const {
-        return HasTriangles() &&
-                triangles_.size() == triangle_normals_.size();
+        return HasTriangles() && triangles_.size() == triangle_normals_.size();
     }
 
     void NormalizeNormals() {
@@ -123,21 +119,24 @@ public:
 /// Function to select points from \param input TriangleMesh into
 /// \return output TriangleMesh
 /// Vertices with indices in \param indices are selected.
-std::shared_ptr<TriangleMesh> SelectDownSample(const TriangleMesh &input,
-        const std::vector<size_t> &indices);
+std::shared_ptr<TriangleMesh> SelectDownSample(
+        const TriangleMesh &input, const std::vector<size_t> &indices);
 
 /// Function to crop \param input tringlemesh into output tringlemesh
 /// All points with coordinates less than \param min_bound or larger than
 /// \param max_bound are clipped.
-std::shared_ptr<TriangleMesh> CropTriangleMesh(const TriangleMesh &input,
-        const Eigen::Vector3d &min_bound, const Eigen::Vector3d &max_bound);
+std::shared_ptr<TriangleMesh> CropTriangleMesh(
+        const TriangleMesh &input,
+        const Eigen::Vector3d &min_bound,
+        const Eigen::Vector3d &max_bound);
 
 /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
 /// The left bottom corner on the front will be placed at (0, 0, 0).
 /// The \param width is x-directional length, and \param height and \param depth
 /// are y- and z-directional lengths respectively.
 std::shared_ptr<TriangleMesh> CreateMeshBox(double width = 1.0,
-        double height = 1.0, double depth = 1.0);
+                                            double height = 1.0,
+                                            double depth = 1.0);
 
 /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
 /// The sphere with \param radius will be centered at (0, 0, 0).
@@ -145,21 +144,25 @@ std::shared_ptr<TriangleMesh> CreateMeshBox(double width = 1.0,
 /// The longitudes will be split into \param resolution segments.
 /// The latitudes will be split into \param resolution * 2 segments.
 std::shared_ptr<TriangleMesh> CreateMeshSphere(double radius = 1.0,
-        int resolution = 20);
+                                               int resolution = 20);
 
 /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
 /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0, height/2).
 /// The circle with \param radius will be split into \param resolution segments.
 /// The \param height will be split into \param split segments.
 std::shared_ptr<TriangleMesh> CreateMeshCylinder(double radius = 1.0,
-        double height = 2.0, int resolution = 20, int split = 4);
+                                                 double height = 2.0,
+                                                 int resolution = 20,
+                                                 int split = 4);
 
 /// Factory function to create a cone mesh (TriangleMeshFactory.cpp)
 /// The axis of the cone will be from (0, 0, 0) to (0, 0, \param height).
 /// The circle with \param radius will be split into \param resolution segments.
 /// The height will be split into \param split segments.
 std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
-        double height = 2.0, int resolution = 20, int split = 1);
+                                             double height = 2.0,
+                                             int resolution = 20,
+                                             int split = 1);
 
 /// Factory function to create an arrow mesh (TriangleMeshFactory.cpp)
 /// The axis of the cone with \param cone_radius will be along the z-axis.
@@ -168,18 +171,23 @@ std::shared_ptr<TriangleMesh> CreateMeshCone(double radius = 1.0,
 /// the cone is from (0, 0, cylinder_height)
 /// to (0, 0, cylinder_height + cone_height).
 /// The cone will be split into \param resolution segments.
-/// The \param cylinder_height will be split into \param cylinder_split segments.
-/// The \param cone_height will be split into \param cone_split segments.
+/// The \param cylinder_height will be split into \param cylinder_split
+/// segments. The \param cone_height will be split into \param cone_split
+/// segments.
 std::shared_ptr<TriangleMesh> CreateMeshArrow(double cylinder_radius = 1.0,
-        double cone_radius = 1.5, double cylinder_height = 5.0,
-        double cone_height = 4.0, int resolution = 20, int cylinder_split = 4,
-        int cone_split = 1);
+                                              double cone_radius = 1.5,
+                                              double cylinder_height = 5.0,
+                                              double cone_height = 4.0,
+                                              int resolution = 20,
+                                              int cylinder_split = 4,
+                                              int cone_split = 1);
 
 /// Factory function to create a coordinate frame mesh (TriangleMeshFactory.cpp)
 /// The coordinate frame will be centered at \param origin
-/// The x, y, z axis will be rendered as red, green, and blue arrows respectively.
-/// \param size is the length of the axes.
-std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(double size = 1.0,
+/// The x, y, z axis will be rendered as red, green, and blue arrows
+/// respectively. \param size is the length of the axes.
+std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
+        double size = 1.0,
         const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
-}   // namespace open3d
+}  // namespace open3d

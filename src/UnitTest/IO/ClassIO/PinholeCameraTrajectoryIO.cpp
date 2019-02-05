@@ -29,39 +29,35 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectoryIO, DISABLED_CreatePinholeCameraTrajectoryFromFile)
-{
+TEST(PinholeCameraTrajectoryIO,
+     DISABLED_CreatePinholeCameraTrajectoryFromFile) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectory)
-{
+TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectory) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectory)
-{
+TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectory) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectoryFromLOG)
-{
+TEST(PinholeCameraTrajectoryIO, DISABLED_ReadPinholeCameraTrajectoryFromLOG) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectoryToLOG)
-{
+TEST(PinholeCameraTrajectoryIO, DISABLED_WritePinholeCameraTrajectoryToLOG) {
     unit_test::NotImplemented();
 }

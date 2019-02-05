@@ -31,14 +31,13 @@
 
 namespace Json {
 class Value;
-}    // namespace Json
+}  // namespace Json
 
 namespace open3d {
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
-class IJsonConvertible
-{
+class IJsonConvertible {
 public:
     virtual ~IJsonConvertible() {}
 
@@ -48,33 +47,33 @@ public:
 
 public:
     static bool EigenVector3dFromJsonArray(Eigen::Vector3d &vec,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenVector3dToJsonArray(const Eigen::Vector3d &vec,
-            Json::Value &value);
+                                         Json::Value &value);
     static bool EigenVector4dFromJsonArray(Eigen::Vector4d &vec,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenVector4dToJsonArray(const Eigen::Vector4d &vec,
-            Json::Value &value);
+                                         Json::Value &value);
     static bool EigenMatrix3dFromJsonArray(Eigen::Matrix3d &mat,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenMatrix3dToJsonArray(const Eigen::Matrix3d &mat,
-            Json::Value &value);
+                                         Json::Value &value);
     static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d &mat,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d &mat,
-            Json::Value &value);
+                                         Json::Value &value);
     static bool EigenMatrix4dFromJsonArray(Eigen::Matrix4d_u &mat,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenMatrix4dToJsonArray(const Eigen::Matrix4d_u &mat,
-            Json::Value &value);
+                                         Json::Value &value);
     static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d &mat,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d &mat,
-            Json::Value &value);
+                                         Json::Value &value);
     static bool EigenMatrix6dFromJsonArray(Eigen::Matrix6d_u &mat,
-            const Json::Value &value);
+                                           const Json::Value &value);
     static bool EigenMatrix6dToJsonArray(const Eigen::Matrix6d_u &mat,
-            Json::Value &value);
+                                         Json::Value &value);
 };
 
-}    // namespace open3d
+}  // namespace open3d

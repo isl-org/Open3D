@@ -37,8 +37,7 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, Constructor_Default)
-{
+TEST(PinholeCameraIntrinsic, Constructor_Default) {
     PinholeCameraIntrinsic intrinsic;
 
     EXPECT_EQ(-1, intrinsic.width_);
@@ -51,10 +50,9 @@ TEST(PinholeCameraIntrinsic, Constructor_Default)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault)
-{
+TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault) {
     PinholeCameraIntrinsic intrinsic(
-        PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     EXPECT_EQ(640, intrinsic.width_);
     EXPECT_EQ(480, intrinsic.height_);
@@ -68,16 +66,15 @@ TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault)
-{
+TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
     PinholeCameraIntrinsic intrinsic(
-        PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault);
+            PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault);
 
     EXPECT_EQ(512, intrinsic.width_);
     EXPECT_EQ(424, intrinsic.height_);
 
     Matrix3d reference;
-    reference << 254.878, 0.0, 365.456, 0.0, 205.395, 365.456, 0.0, 0.0, 1.0;
+    reference << 365.456, 0.0, 254.878, 0.0, 365.456, 205.395, 0.0, 0.0, 1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
@@ -85,18 +82,16 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault)
-{
+TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault) {
     PinholeCameraIntrinsic intrinsic(
-        PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault);
+            PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault);
 
     EXPECT_EQ(1920, intrinsic.width_);
     EXPECT_EQ(1080, intrinsic.height_);
 
     Matrix3d reference;
-    reference << 1059.9718,       0.0, 975.7193,
-                       0.0, 1059.9718, 545.9533,
-                       0.0,       0.0,      1.0;
+    reference << 1059.9718, 0.0, 975.7193, 0.0, 1059.9718, 545.9533, 0.0, 0.0,
+            1.0;
 
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
@@ -104,8 +99,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, Constructor_Init)
-{
+TEST(PinholeCameraIntrinsic, Constructor_Init) {
     int width = 640;
     int height = 480;
 
@@ -129,16 +123,14 @@ TEST(PinholeCameraIntrinsic, Constructor_Init)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, DISABLED_MemberData)
-{
+TEST(PinholeCameraIntrinsic, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, SetIntrinsics)
-{
+TEST(PinholeCameraIntrinsic, SetIntrinsics) {
     PinholeCameraIntrinsic intrinsic;
 
     EXPECT_EQ(-1, intrinsic.width_);
@@ -169,8 +161,7 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, GetFocalLength)
-{
+TEST(PinholeCameraIntrinsic, GetFocalLength) {
     PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
@@ -196,8 +187,7 @@ TEST(PinholeCameraIntrinsic, GetFocalLength)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, GetPrincipalPoint)
-{
+TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
     PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
@@ -223,8 +213,7 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, GetSkew)
-{
+TEST(PinholeCameraIntrinsic, GetSkew) {
     PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
@@ -249,8 +238,7 @@ TEST(PinholeCameraIntrinsic, GetSkew)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, IsValid)
-{
+TEST(PinholeCameraIntrinsic, IsValid) {
     PinholeCameraIntrinsic intrinsic;
 
     EXPECT_FALSE(intrinsic.IsValid());
@@ -272,8 +260,7 @@ TEST(PinholeCameraIntrinsic, IsValid)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue)
-{
+TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
     PinholeCameraIntrinsic src;
     PinholeCameraIntrinsic dst;
 

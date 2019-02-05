@@ -35,8 +35,7 @@ namespace open3d {
 
 class PointCloud;
 
-class LineSet : public Geometry3D
-{
+class LineSet : public Geometry3D {
 public:
     LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
     ~LineSet() override {}
@@ -53,13 +52,9 @@ public:
     LineSet operator+(const LineSet &lineset) const;
 
 public:
-    bool HasPoints() const {
-        return points_.size() > 0;
-    }
+    bool HasPoints() const { return points_.size() > 0; }
 
-    bool HasLines() const {
-        return HasPoints() && lines_.size() > 0;
-    }
+    bool HasLines() const { return HasPoints() && lines_.size() > 0; }
 
     bool HasColors() const {
         return HasLines() && colors_.size() == lines_.size();
@@ -67,8 +62,7 @@ public:
 
     std::pair<Eigen::Vector3d, Eigen::Vector3d> GetLineCoordinate(
             size_t i) const {
-        return std::make_pair(points_[lines_[i][0]],
-                points_[lines_[i][1]]);
+        return std::make_pair(points_[lines_[i][0]], points_[lines_[i][1]]);
     }
 
 public:
@@ -80,7 +74,8 @@ public:
 /// Factory function to create a lineset from two pointclouds and a
 /// correspondence set (LineSetFactory.cpp)
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
-        const PointCloud &cloud0, const PointCloud &cloud1,
+        const PointCloud &cloud0,
+        const PointCloud &cloud1,
         const std::vector<std::pair<int, int>> &correspondences);
 
-}    // namespace open3d
+}  // namespace open3d

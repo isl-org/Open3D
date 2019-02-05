@@ -30,13 +30,13 @@
 
 namespace open3d {
 
-class ImageWarpingField : public IJsonConvertible
-{
+class ImageWarpingField : public IJsonConvertible {
 public:
     ImageWarpingField();
-    ImageWarpingField (int width, int height, int number_of_vertical_anchors);
-    void InitializeWarpingFields(int width, int height,
-            int number_of_vertical_anchors);
+    ImageWarpingField(int width, int height, int number_of_vertical_anchors);
+    void InitializeWarpingFields(int width,
+                                 int height,
+                                 int number_of_vertical_anchors);
     Eigen::Vector2d QueryFlow(int i, int j) const;
     Eigen::Vector2d GetImageWarpingField(double u, double v) const;
 
@@ -51,4 +51,4 @@ public:
     double anchor_step_;
 };
 
-}	// namespace open3d
+}  // namespace open3d

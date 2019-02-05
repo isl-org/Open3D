@@ -27,6 +27,17 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
                                            ".${OPEN3D_VERSION_MINOR}"
                                            ".${OPEN3D_VERSION_PATCH}")
 
+# pypi package name controls specifies the repository name on pypi
+# possbie names include:
+# - open3d: default name when building from source and for conda
+# - open3d-python: for PyPI
+# - py3d
+# - open3d-original
+# - open3d-official
+# - open-3d
+if(NOT DEFINED PYPI_PACKAGE_NAME)
+    set(PYPI_PACKAGE_NAME "open3d")
+endif()
 
 # set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
@@ -206,12 +217,16 @@ add_subdirectory(src)
 # Examples
 add_subdirectory(examples)
 
-# `make check-style` returns non-zero exit code if styling is not compliant
+# `make check-style` errors if styling is not compliant
 add_custom_target(check-style
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.sh
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/check-style.cmake
 )
 
 # `make apply-style` runs clang-format to format all source code
 add_custom_target(apply-style
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.sh
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/util/scripts/apply-style.cmake
 )

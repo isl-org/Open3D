@@ -30,8 +30,7 @@
 
 namespace open3d {
 
-class ViewControlWithEditing : public ViewControl
-{
+class ViewControlWithEditing : public ViewControl {
 public:
     enum EditingMode {
         FreeMode = 0,
@@ -87,4 +86,4 @@ protected:
     bool is_view_locked_ = false;
 };
 
-}    // namespace open3d
+}  // namespace open3d

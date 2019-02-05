@@ -38,8 +38,7 @@ class GlobalOptimizationConvergenceCriteria;
 
 class GlobalOptimizationOption;
 
-class GlobalOptimizationMethod
-{
+class GlobalOptimizationMethod {
 public:
     GlobalOptimizationMethod() {}
     virtual ~GlobalOptimizationMethod() {}
@@ -51,8 +50,7 @@ public:
             const GlobalOptimizationOption &option) const = 0;
 };
 
-class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod
-{
+class GlobalOptimizationGaussNewton : public GlobalOptimizationMethod {
 public:
     GlobalOptimizationGaussNewton() {}
     ~GlobalOptimizationGaussNewton() override {}
@@ -64,8 +62,7 @@ public:
             const GlobalOptimizationOption &option) const override;
 };
 
-class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod
-{
+class GlobalOptimizationLevenbergMarquardt : public GlobalOptimizationMethod {
 public:
     GlobalOptimizationLevenbergMarquardt() {}
     ~GlobalOptimizationLevenbergMarquardt() override {}
@@ -77,4 +74,4 @@ public:
             const GlobalOptimizationOption &option) const override;
 };
 
-}    // namespace open3d
+}  // namespace open3d

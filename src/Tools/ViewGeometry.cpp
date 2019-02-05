@@ -28,10 +28,10 @@
 #include <IO/IO.h>
 #include <Visualization/Visualization.h>
 
-void PrintHelp()
-{
+void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
+    // clang-format off
     PrintInfo("Usage:\n");
     PrintInfo("    > ViewGeometry [options]\n");
     PrintInfo("      Open a window to view geometry.\n");
@@ -62,17 +62,17 @@ void PrintHelp()
     PrintInfo("    --width n                 : Set window width.\n");
     PrintInfo("    --top n                   : Set window top edge.\n");
     PrintInfo("    --left n                  : Set window left edge.\n");
+    // clang-format on
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     using namespace open3d;
     using namespace open3d::filesystem;
 
     int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
     SetVerbosityLevel((VerbosityLevel)verbose);
     if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
-            ProgramOptionExists(argc, argv, "-h")) {
+        ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 0;
     }
@@ -82,31 +82,31 @@ int main(int argc, char **argv)
     int height = GetProgramOptionAsInt(argc, argv, "--height", 1080);
     int top = GetProgramOptionAsInt(argc, argv, "--top", 200);
     int left = GetProgramOptionAsInt(argc, argv, "--left", 200);
-    std::string window_name = GetProgramOptionAsString(argc, argv,
-            "--window_name", "ViewGeometry");
+    std::string window_name = GetProgramOptionAsString(
+            argc, argv, "--window_name", "ViewGeometry");
     std::string mesh_filename = GetProgramOptionAsString(argc, argv, "--mesh");
-    std::string pcd_filename = GetProgramOptionAsString(argc, argv,
-            "--pointcloud");
-    std::string lineset_filename = GetProgramOptionAsString(argc, argv,
-            "--lineset");
-    std::string image_filename = GetProgramOptionAsString(argc, argv,
-            "--image");
-    std::string depth_filename = GetProgramOptionAsString(argc, argv,
-            "--depth");
-    std::string depth_parameter_filename = GetProgramOptionAsString(argc, argv,
-            "--depth_camera");
-    std::string render_filename = GetProgramOptionAsString(argc, argv,
-            "--render_option");
-    std::string view_filename = GetProgramOptionAsString(argc, argv,
-            "--view_trajectory");
-    std::string camera_filename = GetProgramOptionAsString(argc, argv,
-            "--camera_trajectory");
-    bool show_coordinate_frame = ProgramOptionExists(argc, argv,
-            "--show_frame");
+    std::string pcd_filename =
+            GetProgramOptionAsString(argc, argv, "--pointcloud");
+    std::string lineset_filename =
+            GetProgramOptionAsString(argc, argv, "--lineset");
+    std::string image_filename =
+            GetProgramOptionAsString(argc, argv, "--image");
+    std::string depth_filename =
+            GetProgramOptionAsString(argc, argv, "--depth");
+    std::string depth_parameter_filename =
+            GetProgramOptionAsString(argc, argv, "--depth_camera");
+    std::string render_filename =
+            GetProgramOptionAsString(argc, argv, "--render_option");
+    std::string view_filename =
+            GetProgramOptionAsString(argc, argv, "--view_trajectory");
+    std::string camera_filename =
+            GetProgramOptionAsString(argc, argv, "--camera_trajectory");
+    bool show_coordinate_frame =
+            ProgramOptionExists(argc, argv, "--show_frame");
 
     VisualizerWithCustomAnimation visualizer;
-    if (visualizer.CreateVisualizerWindow(window_name, width, height, left, top) ==
-            false) {
+    if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
+                                          top) == false) {
         PrintWarning("Failed creating OpenGL window.\n");
         return 0;
     }
@@ -142,15 +142,16 @@ int main(int argc, char **argv)
     if (!depth_filename.empty()) {
         PinholeCameraParameters parameters;
         if (depth_parameter_filename.empty() ||
-                !ReadIJsonConvertible(depth_parameter_filename, parameters)) {
-            PrintWarning("Failed to read intrinsic parameters for depth image.\n");
+            !ReadIJsonConvertible(depth_parameter_filename, parameters)) {
+            PrintWarning(
+                    "Failed to read intrinsic parameters for depth image.\n");
             PrintWarning("Use default value for Primesense camera.\n");
             parameters.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
-                    239.5);
+                                                239.5);
         }
         auto image_ptr = CreateImageFromFile(depth_filename);
-        auto pointcloud_ptr = CreatePointCloudFromDepthImage(*image_ptr,
-                parameters.intrinsic_, parameters.extrinsic_);
+        auto pointcloud_ptr = CreatePointCloudFromDepthImage(
+                *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             PrintWarning("Failed adding depth image.\n");
         }
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
 
     if (!render_filename.empty()) {
         if (ReadIJsonConvertible(render_filename,
-                visualizer.GetRenderOption()) == false) {
+                                 visualizer.GetRenderOption()) == false) {
             PrintWarning("Failed loading rendering settings.\n");
         }
     }
@@ -181,10 +182,12 @@ int main(int argc, char **argv)
             PrintWarning("Failed loading camera trajectory.\n");
         } else {
             auto &view_control = (ViewControlWithCustomAnimation &)
-                    visualizer.GetViewControl();
+                                         visualizer.GetViewControl();
             if (view_control.LoadTrajectoryFromCameraTrajectory(
-                    camera_trajectory) == false) {
-                PrintWarning("Failed converting camera trajectory to view trajectory.\n");
+                        camera_trajectory) == false) {
+                PrintWarning(
+                        "Failed converting camera trajectory to view "
+                        "trajectory.\n");
             }
         }
     }
@@ -192,8 +195,8 @@ int main(int argc, char **argv)
     visualizer.GetRenderOption().show_coordinate_frame_ = show_coordinate_frame;
 
     if (ProgramOptionExists(argc, argv, "--auto_recording")) {
-        std::string mode = GetProgramOptionAsString(argc, argv,
-                "--auto_recording");
+        std::string mode =
+                GetProgramOptionAsString(argc, argv, "--auto_recording");
         if (mode == "i") {
             visualizer.Play(true, false, true);
         } else if (mode == "d") {

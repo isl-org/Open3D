@@ -45,19 +45,23 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh);
 /// If the write function supports binary encoding and compression, the later
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
-bool WriteTriangleMesh(const std::string &filename, const TriangleMesh &mesh,
-        bool write_ascii = false, bool compressed = false);
+bool WriteTriangleMesh(const std::string &filename,
+                       const TriangleMesh &mesh,
+                       bool write_ascii = false,
+                       bool compressed = false);
 
 bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh);
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
-        const TriangleMesh &mesh, bool write_ascii = false,
-        bool compressed = false);
+                            const TriangleMesh &mesh,
+                            bool write_ascii = false,
+                            bool compressed = false);
 
 bool ReadTriangleMeshFromSTL(const std::string &filename, TriangleMesh &mesh);
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
-        const TriangleMesh &mesh, bool write_ascii = false,
-        bool compressed = false);
+                            const TriangleMesh &mesh,
+                            bool write_ascii = false,
+                            bool compressed = false);
 
-}    // namespace open3d
+}  // namespace open3d

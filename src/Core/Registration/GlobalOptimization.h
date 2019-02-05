@@ -49,16 +49,14 @@ class PoseGraph;
 void GlobalOptimization(
         PoseGraph &pose_graph,
         const GlobalOptimizationMethod &method =
-        GlobalOptimizationLevenbergMarquardt(),
+                GlobalOptimizationLevenbergMarquardt(),
         const GlobalOptimizationConvergenceCriteria &criteria =
-        GlobalOptimizationConvergenceCriteria(),
-        const GlobalOptimizationOption &option =
-        GlobalOptimizationOption());
+                GlobalOptimizationConvergenceCriteria(),
+        const GlobalOptimizationOption &option = GlobalOptimizationOption());
 
 /// Function to prune out uncertain edges having
 /// confidence_ < .edge_prune_threshold_
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
-        const PoseGraph &pose_graph,
-        const GlobalOptimizationOption &option);
+        const PoseGraph &pose_graph, const GlobalOptimizationOption &option);
 
-}    // namespace open3d
+}  // namespace open3d

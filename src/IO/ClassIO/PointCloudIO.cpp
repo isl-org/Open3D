@@ -30,45 +30,47 @@
 #include <Core/Utility/Console.h>
 #include <Core/Utility/FileSystem.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-static const std::unordered_map<std::string,
+static const std::unordered_map<
+        std::string,
         std::function<bool(const std::string &, PointCloud &)>>
-        file_extension_to_pointcloud_read_function
-        {{"xyz", ReadPointCloudFromXYZ},
-        {"xyzn", ReadPointCloudFromXYZN},
-        {"xyzrgb", ReadPointCloudFromXYZRGB},
-        {"ply", ReadPointCloudFromPLY},
-        {"pcd", ReadPointCloudFromPCD},
-        {"pts", ReadPointCloudFromPTS},
+        file_extension_to_pointcloud_read_function{
+                {"xyz", ReadPointCloudFromXYZ},
+                {"xyzn", ReadPointCloudFromXYZN},
+                {"xyzrgb", ReadPointCloudFromXYZRGB},
+                {"ply", ReadPointCloudFromPLY},
+                {"pcd", ReadPointCloudFromPCD},
+                {"pts", ReadPointCloudFromPTS},
         };
 
 static const std::unordered_map<std::string,
-        std::function<bool(const std::string &, const PointCloud &,
-        const bool, const bool)>>
-        file_extension_to_pointcloud_write_function
-        {{"xyz", WritePointCloudToXYZ},
-        {"xyzn", WritePointCloudToXYZN},
-        {"xyzrgb", WritePointCloudToXYZRGB},
-        {"ply", WritePointCloudToPLY},
-        {"pcd", WritePointCloudToPCD},
-        {"pts", WritePointCloudToPTS},
+                                std::function<bool(const std::string &,
+                                                   const PointCloud &,
+                                                   const bool,
+                                                   const bool)>>
+        file_extension_to_pointcloud_write_function{
+                {"xyz", WritePointCloudToXYZ},
+                {"xyzn", WritePointCloudToXYZN},
+                {"xyzrgb", WritePointCloudToXYZRGB},
+                {"ply", WritePointCloudToPLY},
+                {"pcd", WritePointCloudToPCD},
+                {"pts", WritePointCloudToPTS},
         };
-}    // unnamed namespace
+}  // unnamed namespace
 
 std::shared_ptr<PointCloud> CreatePointCloudFromFile(
-    const std::string &filename, const std::string &format)
-{
+        const std::string &filename, const std::string &format) {
     auto pointcloud = std::make_shared<PointCloud>();
     ReadPointCloud(filename, *pointcloud, format);
     return pointcloud;
 }
 
-bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud,
-        const std::string &format)
-{
+bool ReadPointCloud(const std::string &filename,
+                    PointCloud &pointcloud,
+                    const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
         filename_ext = filesystem::GetFileExtensionInLowerCase(filename);
@@ -87,13 +89,14 @@ bool ReadPointCloud(const std::string &filename, PointCloud &pointcloud,
     }
     bool success = map_itr->second(filename, pointcloud);
     PrintDebug("Read PointCloud: %d vertices.\n",
-            (int)pointcloud.points_.size());
+               (int)pointcloud.points_.size());
     return success;
 }
 
-bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
-        bool write_ascii/* = false*/, bool compressed/* = false*/)
-{
+bool WritePointCloud(const std::string &filename,
+                     const PointCloud &pointcloud,
+                     bool write_ascii /* = false*/,
+                     bool compressed /* = false*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
@@ -106,11 +109,11 @@ bool WritePointCloud(const std::string &filename, const PointCloud &pointcloud,
         PrintWarning("Write PointCloud failed: unknown file extension.\n");
         return false;
     }
-    bool success = map_itr->second(filename, pointcloud, write_ascii,
-            compressed);
+    bool success =
+            map_itr->second(filename, pointcloud, write_ascii, compressed);
     PrintDebug("Write PointCloud: %d vertices.\n",
-            (int)pointcloud.points_.size());
+               (int)pointcloud.points_.size());
     return success;
 }
 
-}    // namespace open3d
+}  // namespace open3d

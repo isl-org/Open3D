@@ -31,7 +31,4 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(AccumulatedPoint, DISABLED_Default)
-{
-    unit_test::NotImplemented();
-}
+TEST(AccumulatedPoint, DISABLED_Default) { unit_test::NotImplemented(); }

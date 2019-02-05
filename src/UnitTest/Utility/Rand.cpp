@@ -37,12 +37,10 @@ using namespace unit_test;
 // Initialize an Vector3d.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    Vector3d &v,
-    const Vector3d &vmin,
-    const Vector3d &vmax,
-    const int& seed)
-{
+void unit_test::Rand(Vector3d &v,
+                     const Vector3d &vmin,
+                     const Vector3d &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     Vector3d factor;
@@ -59,12 +57,10 @@ void unit_test::Rand(
 // Initialize an Vector3d.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    Vector3d &v,
-    const double &vmin,
-    const double &vmax,
-    const int& seed)
-{
+void unit_test::Rand(Vector3d &v,
+                     const double &vmin,
+                     const double &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     double factor;
@@ -79,20 +75,17 @@ void unit_test::Rand(
 // Initialize an Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<Vector2i> &v,
-    const Vector2i &vmin,
-    const Vector2i &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<Vector2i> &v,
+                     const Vector2i &vmin,
+                     const Vector2i &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     Vector2d factor;
     factor(0, 0) = (double)(vmax(0, 0) - vmin(0, 0)) / Raw::VMAX;
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
 
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         v[i](0, 0) = vmin(0, 0) + (int)(raw.Next<int>() * factor(0, 0));
         v[i](1, 0) = vmin(1, 0) + (int)(raw.Next<int>() * factor(1, 0));
     }
@@ -102,12 +95,10 @@ void unit_test::Rand(
 // Initialize an Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<Vector3i> &v,
-    const Vector3i &vmin,
-    const Vector3i &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<Vector3i> &v,
+                     const Vector3i &vmin,
+                     const Vector3i &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     Vector3d factor;
@@ -115,8 +106,7 @@ void unit_test::Rand(
     factor(1, 0) = (double)(vmax(1, 0) - vmin(1, 0)) / Raw::VMAX;
     factor(2, 0) = (double)(vmax(2, 0) - vmin(2, 0)) / Raw::VMAX;
 
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         v[i](0, 0) = vmin(0, 0) + (int)(raw.Next<int>() * factor(0, 0));
         v[i](1, 0) = vmin(1, 0) + (int)(raw.Next<int>() * factor(1, 0));
         v[i](2, 0) = vmin(2, 0) + (int)(raw.Next<int>() * factor(2, 0));
@@ -127,20 +117,17 @@ void unit_test::Rand(
 // Initialize an Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<Vector2d, open3d::Vector2d_allocator> &v,
-    const Vector2d &vmin,
-    const Vector2d &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<Vector2d, open3d::Vector2d_allocator> &v,
+                     const Vector2d &vmin,
+                     const Vector2d &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     Vector2d factor;
     factor(0, 0) = vmax(0, 0) - vmin(0, 0);
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
 
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         v[i](0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
         v[i](1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
     }
@@ -150,12 +137,10 @@ void unit_test::Rand(
 // Initialize an Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<Vector3d> &v,
-    const Vector3d &vmin,
-    const Vector3d &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<Vector3d> &v,
+                     const Vector3d &vmin,
+                     const Vector3d &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     Vector3d factor;
@@ -163,8 +148,7 @@ void unit_test::Rand(
     factor(1, 0) = vmax(1, 0) - vmin(1, 0);
     factor(2, 0) = vmax(2, 0) - vmin(2, 0);
 
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         v[i](0, 0) = vmin(0, 0) + raw.Next<double>() * factor(0, 0);
         v[i](1, 0) = vmin(1, 0) + raw.Next<double>() * factor(1, 0);
         v[i](2, 0) = vmin(2, 0) + raw.Next<double>() * factor(2, 0);
@@ -175,18 +159,15 @@ void unit_test::Rand(
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<Vector4i, open3d::Vector4i_allocator> &v,
-    const int &vmin,
-    const int &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<Vector4i, open3d::Vector4i_allocator> &v,
+                     const int &vmin,
+                     const int &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     double factor = (double)(vmax - vmin) / Raw::VMAX;
 
-    for (size_t i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++) {
         v[i](0, 0) = vmin + (int)(raw.Next<int>() * factor);
         v[i](1, 0) = vmin + (int)(raw.Next<int>() * factor);
         v[i](2, 0) = vmin + (int)(raw.Next<int>() * factor);
@@ -198,12 +179,10 @@ void unit_test::Rand(
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<uint8_t> &v,
-    const uint8_t &vmin,
-    const uint8_t &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<uint8_t> &v,
+                     const uint8_t &vmin,
+                     const uint8_t &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     double factor = (double)(vmax - vmin) / Raw::VMAX;
@@ -216,13 +195,11 @@ void unit_test::Rand(
 // Initialize a int vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    int* const v,
-    const size_t& size,
-    const int &vmin,
-    const int &vmax,
-    const int& seed)
-{
+void unit_test::Rand(int *const v,
+                     const size_t &size,
+                     const int &vmin,
+                     const int &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     double factor = (double)(vmax - vmin) / Raw::VMAX;
@@ -235,12 +212,10 @@ void unit_test::Rand(
 // Initialize an int vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<int> &v,
-    const int &vmin,
-    const int &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<int> &v,
+                     const int &vmin,
+                     const int &vmax,
+                     const int &seed) {
     Rand(&v[0], v.size(), vmin, vmax, seed);
 }
 
@@ -248,12 +223,10 @@ void unit_test::Rand(
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<size_t> &v,
-    const size_t &vmin,
-    const size_t &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<size_t> &v,
+                     const size_t &vmin,
+                     const size_t &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     double factor = (double)(vmax - vmin) / Raw::VMAX;
@@ -266,31 +239,26 @@ void unit_test::Rand(
 // Initialize an array of float.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    float* const v,
-    const size_t& size,
-    const float &vmin,
-    const float &vmax,
-    const int& seed)
-{
+void unit_test::Rand(float *const v,
+                     const size_t &size,
+                     const float &vmin,
+                     const float &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     float factor = vmax - vmin;
 
-    for (size_t i = 0; i < size; i++)
-        v[i] = vmin + raw.Next<float>() * factor;
+    for (size_t i = 0; i < size; i++) v[i] = vmin + raw.Next<float>() * factor;
 }
 
 // ----------------------------------------------------------------------------
 // Initialize a float vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<float> &v,
-    const float &vmin,
-    const float &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<float> &v,
+                     const float &vmin,
+                     const float &vmax,
+                     const int &seed) {
     Rand(&v[0], v.size(), vmin, vmax, seed);
 }
 
@@ -298,30 +266,25 @@ void unit_test::Rand(
 // Initialize an array of double.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    double* const v,
-    const size_t& size,
-    const double &vmin,
-    const double &vmax,
-    const int& seed)
-{
+void unit_test::Rand(double *const v,
+                     const size_t &size,
+                     const double &vmin,
+                     const double &vmax,
+                     const int &seed) {
     Raw raw(seed);
 
     double factor = vmax - vmin;
 
-    for (size_t i = 0; i < size; i++)
-        v[i] = vmin + raw.Next<double>() * factor;
+    for (size_t i = 0; i < size; i++) v[i] = vmin + raw.Next<double>() * factor;
 }
 
 // ----------------------------------------------------------------------------
 // Initialize a double vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(
-    vector<double> &v,
-    const double &vmin,
-    const double &vmax,
-    const int& seed)
-{
+void unit_test::Rand(vector<double> &v,
+                     const double &vmin,
+                     const double &vmax,
+                     const int &seed) {
     Rand(&v[0], v.size(), vmin, vmax, seed);
 }

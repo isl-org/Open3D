@@ -29,12 +29,11 @@
 #include <png.h>
 #include <Core/Utility/Console.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-void SetPNGImageFromImage(const Image &image, png_image &pngimage)
-{
+void SetPNGImageFromImage(const Image &image, png_image &pngimage) {
     pngimage.width = image.width_;
     pngimage.height = image.height_;
     pngimage.format = 0;
@@ -46,10 +45,9 @@ void SetPNGImageFromImage(const Image &image, png_image &pngimage)
     }
 }
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-bool ReadImageFromPNG(const std::string &filename, Image &image)
-{
+bool ReadImageFromPNG(const std::string &filename, Image &image) {
     png_image pngimage;
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
@@ -62,20 +60,21 @@ bool ReadImageFromPNG(const std::string &filename, Image &image)
     // There is no alpha channel.
     // bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
     image.PrepareImage(pngimage.width, pngimage.height,
-            (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
-            (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
+                       (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
+                       (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
     SetPNGImageFromImage(image, pngimage);
-    if (png_image_finish_read(&pngimage, NULL, image.data_.data(),
-            0, NULL) == 0) {
-        PrintWarning("Read PNG failed: unable to read file: %s\n", filename.c_str());
+    if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
+        0) {
+        PrintWarning("Read PNG failed: unable to read file: %s\n",
+                     filename.c_str());
         return false;
     }
     return true;
 }
 
-bool WriteImageToPNG(const std::string &filename, const Image &image,
-        int quality)
-{
+bool WriteImageToPNG(const std::string &filename,
+                     const Image &image,
+                     int quality) {
     if (image.HasData() == false) {
         PrintWarning("Write PNG failed: image has no data.\n");
         return false;
@@ -85,11 +84,12 @@ bool WriteImageToPNG(const std::string &filename, const Image &image,
     pngimage.version = PNG_IMAGE_VERSION;
     SetPNGImageFromImage(image, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
-            image.data_.data(), 0, NULL) == 0) {
-        PrintWarning("Write PNG failed: unable to write file: %s\n", filename.c_str());
+                                image.data_.data(), 0, NULL) == 0) {
+        PrintWarning("Write PNG failed: unable to write file: %s\n",
+                     filename.c_str());
         return false;
     }
     return true;
 }
 
-}    // namespace open3d
+}  // namespace open3d

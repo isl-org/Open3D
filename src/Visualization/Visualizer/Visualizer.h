@@ -44,8 +44,7 @@ namespace open3d {
 class TriangleMesh;
 class Image;
 
-class Visualizer
-{
+class Visualizer {
 public:
     struct MouseControl {
     public:
@@ -70,8 +69,11 @@ public:
     /// Function to create a window and initialize GLFW
     /// This function MUST be called from the main thread.
     bool CreateVisualizerWindow(const std::string &window_name = "Open3D",
-            const int width = 640, const int height = 480,
-            const int left = 50, const int top = 50, const bool visible = true);
+                                const int width = 640,
+                                const int height = 480,
+                                const int left = 50,
+                                const int top = 50,
+                                const bool visible = true);
 
     /// Function to destroy a window
     /// This function MUST be called from the main thread.
@@ -128,18 +130,18 @@ public:
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
     std::shared_ptr<Image> CaptureScreenFloatBuffer(bool do_render = true);
     void CaptureScreenImage(const std::string &filename = "",
-            bool do_render = true);
+                            bool do_render = true);
     std::shared_ptr<Image> CaptureDepthFloatBuffer(bool do_render = true);
     void CaptureDepthImage(const std::string &filename = "",
-            bool do_render = true, double depth_scale = 1000.0);
+                           bool do_render = true,
+                           double depth_scale = 1000.0);
     void CaptureDepthPointCloud(const std::string &filename = "",
-            bool do_render = true, bool convert_to_world_coordinate = false);
+                                bool do_render = true,
+                                bool convert_to_world_coordinate = false);
     void CaptureRenderOption(const std::string &filename = "");
     void ResetViewPoint(bool reset_bounding_box = false);
 
-    const std::string &GetWindowName() const {
-        return window_name_;
-    }
+    const std::string &GetWindowName() const { return window_name_; }
 
 protected:
     /// Function to initialize OpenGL
@@ -163,25 +165,27 @@ protected:
     // callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
     virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
-    virtual void MouseMoveCallback(GLFWwindow* window, double x, double y);
-    virtual void MouseScrollCallback(GLFWwindow* window, double x, double y);
-    virtual void MouseButtonCallback(GLFWwindow* window,
-            int button, int action, int mods);
-    virtual void KeyPressCallback(GLFWwindow *window,
-            int key, int scancode, int action, int mods);
+    virtual void MouseMoveCallback(GLFWwindow *window, double x, double y);
+    virtual void MouseScrollCallback(GLFWwindow *window, double x, double y);
+    virtual void MouseButtonCallback(GLFWwindow *window,
+                                     int button,
+                                     int action,
+                                     int mods);
+    virtual void KeyPressCallback(
+            GLFWwindow *window, int key, int scancode, int action, int mods);
     virtual void WindowCloseCallback(GLFWwindow *window);
 
 protected:
     // window
-    GLFWwindow* window_ = NULL;
+    GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
     // Auxiliary internal backup of the callback function.
     // It copies animation_callback_func_ in each PollEvent() or WaitEvent()
     // so that even if user calls RegisterAnimationCallback() within the
     // callback function it is still safe.
-    std::function<bool(Visualizer *)> animation_callback_func_in_loop_
-        = nullptr;
+    std::function<bool(Visualizer *)> animation_callback_func_in_loop_ =
+            nullptr;
 
     // control
     MouseControl mouse_control_;
@@ -217,7 +221,7 @@ protected:
     // coordinates to pixels. Thus we hack it back.
     // http://www.glfw.org/faq.html#why-is-my-output-in-the-lower-left-corner-of-the-window
     double pixel_to_screen_coordinate_ = 1.0;
-#endif //__APPLE__
+#endif  //__APPLE__
 };
 
-}    // namespace open3d
+}  // namespace open3d

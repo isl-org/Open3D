@@ -26,8 +26,7 @@
 
 #include "open3d_core.h"
 
-void pybind_core(py::module &m)
-{
+void pybind_core(py::module &m) {
     py::module m_camera = m.def_submodule("camera");
     py::module m_geometry = m.def_submodule("geometry");
     py::module m_odometry = m.def_submodule("odometry");
@@ -51,13 +50,13 @@ void pybind_core(py::module &m)
     pybind_registration(m_registration);
     pybind_global_optimization(m_registration);
     pybind_colormap_optimization(m_registration);
-    
+
     pybind_odometry(m_odometry);
-    
+
     pybind_integration(m_integration);
 
     pybind_camera_methods(m_camera);
-    
+
     pybind_pointcloud_methods(m_geometry);
     pybind_voxelgrid_methods(m_geometry);
     pybind_lineset_methods(m_geometry);

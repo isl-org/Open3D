@@ -26,30 +26,23 @@
 
 #include "BoundingBox.h"
 
-namespace open3d{
+namespace open3d {
 
-BoundingBox::BoundingBox()
-{
-}
+BoundingBox::BoundingBox() {}
 
-BoundingBox::BoundingBox(const Geometry3D &geometry)
-{
+BoundingBox::BoundingBox(const Geometry3D &geometry) {
     FitInGeometry(geometry);
 }
 
-BoundingBox::~BoundingBox()
-{
-}
+BoundingBox::~BoundingBox() {}
 
-void BoundingBox::Reset()
-{
+void BoundingBox::Reset() {
     min_bound_.setZero();
     max_bound_.setZero();
 }
 
-void BoundingBox::FitInGeometry(const Geometry3D &geometry)
-{
-    if (GetSize() == 0.0) {    // empty box
+void BoundingBox::FitInGeometry(const Geometry3D &geometry) {
+    if (GetSize() == 0.0) {  // empty box
         min_bound_ = geometry.GetMinBound();
         max_bound_ = geometry.GetMaxBound();
     } else {
@@ -64,4 +57,4 @@ void BoundingBox::FitInGeometry(const Geometry3D &geometry)
     }
 }
 
-}    // namespace open3d
+}  // namespace open3d

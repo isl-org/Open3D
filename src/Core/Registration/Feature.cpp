@@ -36,9 +36,9 @@ namespace open3d {
 namespace {
 
 Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
-        const Eigen::Vector3d &n1, const Eigen::Vector3d &p2,
-        const Eigen::Vector3d &n2)
-{
+                                    const Eigen::Vector3d &n1,
+                                    const Eigen::Vector3d &p2,
+                                    const Eigen::Vector3d &n2) {
     Eigen::Vector4d result;
     Eigen::Vector3d dp2p1 = p2 - p1;
     result(3) = dp2p1.norm();
@@ -69,9 +69,10 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
     return result;
 }
 
-std::shared_ptr<Feature> ComputeSPFHFeature(const PointCloud &input,
-        const KDTreeFlann &kdtree, const KDTreeSearchParam &search_param)
-{
+std::shared_ptr<Feature> ComputeSPFHFeature(
+        const PointCloud &input,
+        const KDTreeFlann &kdtree,
+        const KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
 #ifdef _OPENMP
@@ -88,7 +89,8 @@ std::shared_ptr<Feature> ComputeSPFHFeature(const PointCloud &input,
             for (size_t k = 1; k < indices.size(); k++) {
                 // skip the point itself, compute histogram
                 auto pf = ComputePairFeatures(point, normal,
-                        input.points_[indices[k]], input.normals_[indices[k]]);
+                                              input.points_[indices[k]],
+                                              input.normals_[indices[k]]);
                 int h_index = (int)(floor(11 * (pf(0) + M_PI) / (2.0 * M_PI)));
                 if (h_index < 0) h_index = 0;
                 if (h_index >= 11) h_index = 10;
@@ -107,15 +109,17 @@ std::shared_ptr<Feature> ComputeSPFHFeature(const PointCloud &input,
     return feature;
 }
 
-}    // unnamed namespace
+}  // unnamed namespace
 
-std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
-        const KDTreeSearchParam &search_param/* = KDTreeSearchParamKNN()*/)
-{
+std::shared_ptr<Feature> ComputeFPFHFeature(
+        const PointCloud &input,
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
     if (input.HasNormals() == false) {
-        PrintDebug("[ComputeFPFHFeature] Failed because input point cloud has no normal.\n");
+        PrintDebug(
+                "[ComputeFPFHFeature] Failed because input point cloud has no "
+                "normal.\n");
         return feature;
     }
     KDTreeFlann kdtree(input);
@@ -132,8 +136,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
             for (size_t k = 1; k < indices.size(); k++) {
                 // skip the point itself
                 double dist = distance2[k];
-                if (dist == 0.0)
-                    continue;
+                if (dist == 0.0) continue;
                 for (int j = 0; j < 33; j++) {
                     double val = spfh->data_(j, indices[k]) / dist;
                     sum[j / 11] += val;
@@ -156,4 +159,4 @@ std::shared_ptr<Feature> ComputeFPFHFeature(const PointCloud &input,
     return feature;
 }
 
-}    // namespace open3d
+}  // namespace open3d

@@ -29,55 +29,48 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_Constructor)
-{
+TEST(RenderOptionWithEditing, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_Destructor)
-{
+TEST(RenderOptionWithEditing, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_MemberData)
-{
+TEST(RenderOptionWithEditing, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_ConvertToJsonValue)
-{
+TEST(RenderOptionWithEditing, DISABLED_ConvertToJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_ConvertFromJsonValue)
-{
+TEST(RenderOptionWithEditing, DISABLED_ConvertFromJsonValue) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_IncreaseSphereSize)
-{
+TEST(RenderOptionWithEditing, DISABLED_IncreaseSphereSize) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(RenderOptionWithEditing, DISABLED_DecreaseSphereSize)
-{
+TEST(RenderOptionWithEditing, DISABLED_DecreaseSphereSize) {
     unit_test::NotImplemented();
 }

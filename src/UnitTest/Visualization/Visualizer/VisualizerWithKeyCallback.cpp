@@ -29,55 +29,48 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_Constructor)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_Constructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_Destructor)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_Destructor) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_MemberData)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_MemberData) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_PrintVisualizerHelp)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_PrintVisualizerHelp) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_RegisterKeyCallback)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_RegisterKeyCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_KeyPressCallback)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_KeyPressCallback) {
     unit_test::NotImplemented();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(VisualizerWithKeyCallback, DISABLED_PrintKeyToString)
-{
+TEST(VisualizerWithKeyCallback, DISABLED_PrintKeyToString) {
     unit_test::NotImplemented();
 }

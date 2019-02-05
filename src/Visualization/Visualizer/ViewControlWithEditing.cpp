@@ -26,10 +26,9 @@
 
 #include "ViewControlWithEditing.h"
 
-namespace open3d{
+namespace open3d {
 
-void ViewControlWithEditing::Reset()
-{
+void ViewControlWithEditing::Reset() {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
         ViewControl::Reset();
@@ -38,39 +37,38 @@ void ViewControlWithEditing::Reset()
         zoom_ = ZOOM_DEFAULT;
         lookat_ = bounding_box_.GetCenter();
         switch (editing_mode_) {
-        case EditingMode::OrthoPositiveX:
-            up_ = Eigen::Vector3d(0.0, 0.0, 1.0);
-            front_ = Eigen::Vector3d(1.0, 0.0, 0.0);
-            break;
-        case EditingMode::OrthoNegativeX:
-            up_ = Eigen::Vector3d(0.0, 0.0, 1.0);
-            front_ = Eigen::Vector3d(-1.0, 0.0, 0.0);
-            break;
-        case EditingMode::OrthoPositiveY:
-            up_ = Eigen::Vector3d(1.0, 0.0, 0.0);
-            front_ = Eigen::Vector3d(0.0, 1.0, 0.0);
-            break;
-        case EditingMode::OrthoNegativeY:
-            up_ = Eigen::Vector3d(1.0, 0.0, 0.0);
-            front_ = Eigen::Vector3d(0.0, -1.0, 0.0);
-            break;
-        case EditingMode::OrthoPositiveZ:
-            up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
-            front_ = Eigen::Vector3d(0.0, 0.0, 1.0);
-            break;
-        case EditingMode::OrthoNegativeZ:
-            up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
-            front_ = Eigen::Vector3d(0.0, 0.0, -1.0);
-            break;
-        default:
-            break;
+            case EditingMode::OrthoPositiveX:
+                up_ = Eigen::Vector3d(0.0, 0.0, 1.0);
+                front_ = Eigen::Vector3d(1.0, 0.0, 0.0);
+                break;
+            case EditingMode::OrthoNegativeX:
+                up_ = Eigen::Vector3d(0.0, 0.0, 1.0);
+                front_ = Eigen::Vector3d(-1.0, 0.0, 0.0);
+                break;
+            case EditingMode::OrthoPositiveY:
+                up_ = Eigen::Vector3d(1.0, 0.0, 0.0);
+                front_ = Eigen::Vector3d(0.0, 1.0, 0.0);
+                break;
+            case EditingMode::OrthoNegativeY:
+                up_ = Eigen::Vector3d(1.0, 0.0, 0.0);
+                front_ = Eigen::Vector3d(0.0, -1.0, 0.0);
+                break;
+            case EditingMode::OrthoPositiveZ:
+                up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
+                front_ = Eigen::Vector3d(0.0, 0.0, 1.0);
+                break;
+            case EditingMode::OrthoNegativeZ:
+                up_ = Eigen::Vector3d(0.0, 1.0, 0.0);
+                front_ = Eigen::Vector3d(0.0, 0.0, -1.0);
+                break;
+            default:
+                break;
         }
         SetProjectionParameters();
     }
 }
 
-void ViewControlWithEditing::ChangeFieldOfView(double step)
-{
+void ViewControlWithEditing::ChangeFieldOfView(double step) {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
         ViewControl::ChangeFieldOfView(step);
@@ -79,8 +77,7 @@ void ViewControlWithEditing::ChangeFieldOfView(double step)
     }
 }
 
-void ViewControlWithEditing::Scale(double scale)
-{
+void ViewControlWithEditing::Scale(double scale) {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
         ViewControl::Scale(scale);
@@ -89,8 +86,7 @@ void ViewControlWithEditing::Scale(double scale)
     }
 }
 
-void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
-{
+void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo) {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
         ViewControl::Rotate(x, y);
@@ -110,8 +106,10 @@ void ViewControlWithEditing::Rotate(double x, double y, double xo, double yo)
     }
 }
 
-void ViewControlWithEditing::Translate(double x, double y, double xo, double yo)
-{
+void ViewControlWithEditing::Translate(double x,
+                                       double y,
+                                       double xo,
+                                       double yo) {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
         ViewControl::Translate(x, y, xo, yo);
@@ -120,8 +118,7 @@ void ViewControlWithEditing::Translate(double x, double y, double xo, double yo)
     }
 }
 
-void ViewControlWithEditing::SetEditingMode(EditingMode mode)
-{
+void ViewControlWithEditing::SetEditingMode(EditingMode mode) {
     if (IsLocked()) return;
     if (editing_mode_ == EditingMode::FreeMode) {
         ConvertToViewParameters(view_status_backup_);
@@ -134,27 +131,26 @@ void ViewControlWithEditing::SetEditingMode(EditingMode mode)
     }
 }
 
-std::string ViewControlWithEditing::GetStatusString() const
-{
+std::string ViewControlWithEditing::GetStatusString() const {
     std::string prefix;
     switch (editing_mode_) {
-    case EditingMode::FreeMode:
-        prefix = "free view";
-        break;
-    case EditingMode::OrthoPositiveX:
-    case EditingMode::OrthoNegativeX:
-        prefix = "orthogonal X asix";
-        break;
-    case EditingMode::OrthoPositiveY:
-    case EditingMode::OrthoNegativeY:
-        prefix = "orthogonal Y asix";
-        break;
-    case EditingMode::OrthoPositiveZ:
-    case EditingMode::OrthoNegativeZ:
-        prefix = "orthogonal Z asix";
-        break;
+        case EditingMode::FreeMode:
+            prefix = "free view";
+            break;
+        case EditingMode::OrthoPositiveX:
+        case EditingMode::OrthoNegativeX:
+            prefix = "orthogonal X asix";
+            break;
+        case EditingMode::OrthoPositiveY:
+        case EditingMode::OrthoNegativeY:
+            prefix = "orthogonal Y asix";
+            break;
+        case EditingMode::OrthoPositiveZ:
+        case EditingMode::OrthoNegativeZ:
+            prefix = "orthogonal Z asix";
+            break;
     }
     return prefix + (IsLocked() ? ", lock camera for editing" : "");
 }
 
-}    // namespace open3d
+}  // namespace open3d

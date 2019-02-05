@@ -29,71 +29,44 @@
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_Constructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_Constructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_Destructor)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_Destructor) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_MemberData)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_MemberData) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_Clear)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_Clear) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_IsEmpty)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_IsEmpty) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_GetMinBound)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_GetMinBound) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_GetMaxBound)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_GetMaxBound) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_Transform)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_Transform) { unit_test::NotImplemented(); }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(PointCloudPicker, DISABLED_SetPointCloud)
-{
-    unit_test::NotImplemented();
-}
+TEST(PointCloudPicker, DISABLED_SetPointCloud) { unit_test::NotImplemented(); }

@@ -32,27 +32,26 @@
 #include <Core/Geometry/RGBDImage.h>
 #include <Core/Camera/PinholeCameraIntrinsic.h>
 
-namespace open3d{
+namespace open3d {
 
 namespace {
 
-int CountValidDepthPixels(const Image &depth, int stride)
-{
+int CountValidDepthPixels(const Image &depth, int stride) {
     int num_valid_pixels = 0;
     for (int i = 0; i < depth.height_; i += stride) {
         for (int j = 0; j < depth.width_; j += stride) {
             const float *p = PointerAt<float>(depth, j, i);
-            if (*p > 0)
-                num_valid_pixels += 1;
+            if (*p > 0) num_valid_pixels += 1;
         }
     }
     return num_valid_pixels;
 }
 
 std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
-        const Image &depth, const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic, int stride)
-{
+        const Image &depth,
+        const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic,
+        int stride) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
@@ -65,12 +64,11 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
             const float *p = PointerAt<float>(depth, j, i);
             if (*p > 0) {
                 double z = (double)(*p);
-                double x = (j - principal_point.first) * z /
-                        focal_length.first;
-                double y = (i - principal_point.second) * z /
-                        focal_length.second;
-                Eigen::Vector4d point = camera_pose *
-                        Eigen::Vector4d(x, y, z, 1.0);
+                double x = (j - principal_point.first) * z / focal_length.first;
+                double y =
+                        (i - principal_point.second) * z / focal_length.second;
+                Eigen::Vector4d point =
+                        camera_pose * Eigen::Vector4d(x, y, z, 1.0);
                 pointcloud->points_[cnt++] = point.block<3, 1>(0, 0);
             }
         }
@@ -78,11 +76,11 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     return pointcloud;
 }
 
-template<typename TC, int NC>
+template <typename TC, int NC>
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
-        const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic)
-{
+        const RGBDImage &image,
+        const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
@@ -94,44 +92,45 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
     int cnt = 0;
     for (int i = 0; i < image.depth_.height_; i++) {
         float *p = (float *)(image.depth_.data_.data() +
-                i * image.depth_.BytesPerLine());
+                             i * image.depth_.BytesPerLine());
         TC *pc = (TC *)(image.color_.data_.data() +
-                i * image.color_.BytesPerLine());
+                        i * image.color_.BytesPerLine());
         for (int j = 0; j < image.depth_.width_; j++, p++, pc += NC) {
             if (*p > 0) {
                 double z = (double)(*p);
-                double x = (j - principal_point.first) * z /
-                        focal_length.first;
-                double y = (i - principal_point.second) * z /
-                        focal_length.second;
-                Eigen::Vector4d point = camera_pose *
-                        Eigen::Vector4d(x, y, z, 1.0);
+                double x = (j - principal_point.first) * z / focal_length.first;
+                double y =
+                        (i - principal_point.second) * z / focal_length.second;
+                Eigen::Vector4d point =
+                        camera_pose * Eigen::Vector4d(x, y, z, 1.0);
                 pointcloud->points_[cnt] = point.block<3, 1>(0, 0);
-                pointcloud->colors_[cnt++] = Eigen::Vector3d(
-                        pc[0], pc[(NC - 1) / 2], pc[NC - 1]) / scale;
+                pointcloud->colors_[cnt++] =
+                        Eigen::Vector3d(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) /
+                        scale;
             }
         }
     }
     return pointcloud;
 }
 
-}    // unnamed namespace
+}  // unnamed namespace
 
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
-        const Image &depth, const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic/* = Eigen::Matrix4d::Identity()*/,
-        double depth_scale/* = 1000.0*/, double depth_trunc/* = 1000.0*/,
-        int stride/* = 1*/)
-{
+        const Image &depth,
+        const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
+        double depth_scale /* = 1000.0*/,
+        double depth_trunc /* = 1000.0*/,
+        int stride /* = 1*/) {
     if (depth.num_of_channels_ == 1) {
         if (depth.bytes_per_channel_ == 2) {
-            auto float_depth = ConvertDepthToFloatImage(depth, depth_scale,
-                    depth_trunc);
+            auto float_depth =
+                    ConvertDepthToFloatImage(depth, depth_scale, depth_trunc);
             return CreatePointCloudFromFloatDepthImage(*float_depth, intrinsic,
-                    extrinsic, stride);
+                                                       extrinsic, stride);
         } else if (depth.bytes_per_channel_ == 4) {
             return CreatePointCloudFromFloatDepthImage(depth, intrinsic,
-                    extrinsic, stride);
+                                                       extrinsic, stride);
         }
     }
     PrintDebug("[CreatePointCloudFromDepthImage] Unsupported image format.\n");
@@ -139,23 +138,23 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 }
 
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
-        const RGBDImage &image, const PinholeCameraIntrinsic &intrinsic,
-        const Eigen::Matrix4d &extrinsic/* = Eigen::Matrix4d::Identity()*/)
-{
+        const RGBDImage &image,
+        const PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/) {
     if (image.depth_.num_of_channels_ == 1 &&
-            image.depth_.bytes_per_channel_ == 4) {
+        image.depth_.bytes_per_channel_ == 4) {
         if (image.color_.bytes_per_channel_ == 1 &&
-                image.color_.num_of_channels_ == 3) {
-            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
-                    image, intrinsic, extrinsic);
+            image.color_.num_of_channels_ == 3) {
+            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(image, intrinsic,
+                                                              extrinsic);
         } else if (image.color_.bytes_per_channel_ == 4 &&
-                image.color_.num_of_channels_ == 1) {
-            return CreatePointCloudFromRGBDImageT<float, 1>(
-                    image, intrinsic, extrinsic);
+                   image.color_.num_of_channels_ == 1) {
+            return CreatePointCloudFromRGBDImageT<float, 1>(image, intrinsic,
+                                                            extrinsic);
         }
     }
     PrintDebug("[CreatePointCloudFromRGBDImage] Unsupported image format.\n");
     return std::make_shared<PointCloud>();
 }
 
-}    // namespace open3d
+}  // namespace open3d

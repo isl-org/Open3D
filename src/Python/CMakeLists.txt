@@ -65,6 +65,7 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # 3) Configured files and supporting files
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
+message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
@@ -79,7 +80,7 @@ add_custom_target(python-package
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${PROJECT_VERSION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
-            -DPYPI_PACKAGE_NAME=open3d  # `open3d` is used in building from source
+            -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 
@@ -116,24 +117,4 @@ add_custom_target(conda-package
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
-)
-
-################################################################################
-# Warning: Internal use only, consider droping this in the future
-# Use `make all-pip-packages` to create the pip package in the build directory
-# This creates: open3d-python, py3d, open3d-original, open3d-official, open-3d
-#               pip wheels
-add_custom_target(all-pip-packages
-    COMMAND ${CMAKE_COMMAND}
-        -DPYTHON_PACKAGE_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Package
-        -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-        -DPYTHON_COMPILED_MODULE_PATH=$<TARGET_FILE:${PACKAGE_NAME}>
-        -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-        -DPROJECT_EMAIL=${PROJECT_EMAIL}
-        -DPROJECT_HOME=${PROJECT_HOME}
-        -DPROJECT_DOCS=${PROJECT_DOCS}
-        -DPROJECT_CODE=${PROJECT_CODE}
-        -DPROJECT_ISSUES=${PROJECT_ISSUES}
-        -DPROJECT_VERSION=${PROJECT_VERSION}
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/make_all_pip_packages.cmake
 )

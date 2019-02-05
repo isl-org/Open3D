@@ -34,110 +34,124 @@
 #include <IO/ClassIO/PointCloudIO.h>
 using namespace open3d;
 
-void pybind_pointcloud(py::module &m)
-{
+void pybind_pointcloud(py::module &m) {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
-            std::shared_ptr<PointCloud>, Geometry3D> pointcloud(m,
-            "PointCloud", "PointCloud");
+               std::shared_ptr<PointCloud>, Geometry3D>
+            pointcloud(m, "PointCloud", "PointCloud");
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
-        .def("__repr__", [](const PointCloud &pcd) {
-            return std::string("PointCloud with ") +
-                    std::to_string(pcd.points_.size()) + " points.";
-        })
-        .def(py::self + py::self)
-        .def(py::self += py::self)
-        .def("has_points", &PointCloud::HasPoints)
-        .def("has_normals", &PointCloud::HasNormals)
-        .def("has_colors", &PointCloud::HasColors)
-        .def("normalize_normals", &PointCloud::NormalizeNormals)
-        .def("paint_uniform_color", &PointCloud::PaintUniformColor)
-        .def_readwrite("points", &PointCloud::points_)
-        .def_readwrite("normals", &PointCloud::normals_)
-        .def_readwrite("colors", &PointCloud::colors_);
+            .def("__repr__",
+                 [](const PointCloud &pcd) {
+                     return std::string("PointCloud with ") +
+                            std::to_string(pcd.points_.size()) + " points.";
+                 })
+            .def(py::self + py::self)
+            .def(py::self += py::self)
+            .def("has_points", &PointCloud::HasPoints)
+            .def("has_normals", &PointCloud::HasNormals)
+            .def("has_colors", &PointCloud::HasColors)
+            .def("normalize_normals", &PointCloud::NormalizeNormals)
+            .def("paint_uniform_color", &PointCloud::PaintUniformColor)
+            .def_readwrite("points", &PointCloud::points_)
+            .def_readwrite("normals", &PointCloud::normals_)
+            .def_readwrite("colors", &PointCloud::colors_);
 }
 
-void pybind_pointcloud_methods(py::module &m)
-{
-    m.def("read_point_cloud", [](const std::string &filename,
-            const std::string &format) {
-        PointCloud pcd;
-        ReadPointCloud(filename, pcd, format);
-        return pcd;
-    }, "Function to read PointCloud from file", "filename"_a, "format"_a = "auto");
-    m.def("write_point_cloud", [](const std::string &filename,
-            const PointCloud &pointcloud, bool write_ascii, bool compressed) {
-        return WritePointCloud(filename, pointcloud, write_ascii, compressed);
-    }, "Function to write PointCloud to file", "filename"_a, "pointcloud"_a,
-            "write_ascii"_a = false, "compressed"_a = false);
-    m.def("create_point_cloud_from_depth_image", &CreatePointCloudFromDepthImage,
-            "Factory function to create a pointcloud from a depth image and a camera.\n"
-            "Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
-            "    z = d / depth_scale\n"
-            "    x = (u - cx) * z / fx\n"
-            "    y = (v - cy) * z / fy",
-            "depth"_a, "intrinsic"_a,
-            "extrinsic"_a = Eigen::Matrix4d::Identity(),
-            "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0, "stride"_a = 1);
+void pybind_pointcloud_methods(py::module &m) {
+    m.def("read_point_cloud",
+          [](const std::string &filename, const std::string &format) {
+              PointCloud pcd;
+              ReadPointCloud(filename, pcd, format);
+              return pcd;
+          },
+          "Function to read PointCloud from file", "filename"_a,
+          "format"_a = "auto");
+    m.def("write_point_cloud",
+          [](const std::string &filename, const PointCloud &pointcloud,
+             bool write_ascii, bool compressed) {
+              return WritePointCloud(filename, pointcloud, write_ascii,
+                                     compressed);
+          },
+          "Function to write PointCloud to file", "filename"_a, "pointcloud"_a,
+          "write_ascii"_a = false, "compressed"_a = false);
+    m.def("create_point_cloud_from_depth_image",
+          &CreatePointCloudFromDepthImage,
+          "Factory function to create a pointcloud from a depth image and a "
+          "camera.\n"
+          "Given depth value d at (u, v) image coordinate, the corresponding "
+          "3d point is:\n"
+          "    z = d / depth_scale\n"
+          "    x = (u - cx) * z / fx\n"
+          "    y = (v - cy) * z / fy",
+          "depth"_a, "intrinsic"_a, "extrinsic"_a = Eigen::Matrix4d::Identity(),
+          "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0, "stride"_a = 1);
     m.def("create_point_cloud_from_rgbd_image", &CreatePointCloudFromRGBDImage,
-            "Factory function to create a pointcloud from an RGB-D image and a camera.\n"
-            "Given depth value d at (u, v) image coordinate, the corresponding 3d point is:\n"
-            "    z = d / depth_scale\n"
-            "    x = (u - cx) * z / fx\n"
-            "    y = (v - cy) * z / fy",
-            "image"_a, "intrinsic"_a,
-            "extrinsic"_a = Eigen::Matrix4d::Identity());
+          "Factory function to create a pointcloud from an RGB-D image and a "
+          "camera.\n"
+          "Given depth value d at (u, v) image coordinate, the corresponding "
+          "3d point is:\n"
+          "    z = d / depth_scale\n"
+          "    x = (u - cx) * z / fx\n"
+          "    y = (v - cy) * z / fy",
+          "image"_a, "intrinsic"_a,
+          "extrinsic"_a = Eigen::Matrix4d::Identity());
     m.def("select_down_sample", &SelectDownSample,
-            "Function to select points from input pointcloud into output pointcloud",
-            "input"_a, "indices"_a, "invert"_a = false);
+          "Function to select points from input pointcloud into output "
+          "pointcloud",
+          "input"_a, "indices"_a, "invert"_a = false);
     m.def("voxel_down_sample", &VoxelDownSample,
-            "Function to downsample input pointcloud into output pointcloud with a voxel",
-            "input"_a, "voxel_size"_a);
+          "Function to downsample input pointcloud into output pointcloud with "
+          "a voxel",
+          "input"_a, "voxel_size"_a);
     m.def("voxel_down_sample_and_trace", &VoxelDownSampleAndTrace,
-          "Function to downsample using VoxelDownSample also records point cloud index before downsampling",
+          "Function to downsample using VoxelDownSample also records point "
+          "cloud index before downsampling",
           "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
           "approximate_class"_a = false);
     m.def("uniform_down_sample", &UniformDownSample,
-            "Function to downsample input pointcloud into output pointcloud uniformly",
-            "input"_a, "every_k_points"_a);
+          "Function to downsample input pointcloud into output pointcloud "
+          "uniformly",
+          "input"_a, "every_k_points"_a);
     m.def("crop_point_cloud", &CropPointCloud,
-            "Function to crop input pointcloud into output pointcloud",
-            "input"_a, "min_bound"_a, "max_bound"_a);
+          "Function to crop input pointcloud into output pointcloud", "input"_a,
+          "min_bound"_a, "max_bound"_a);
     m.def("radius_outlier_removal", &RemoveRadiusOutliers,
-            "Function to remove points that have less than nb_points"
-            " in a given sphere of a given radius",
-            "input"_a, "nb_points"_a, "radius"_a);
+          "Function to remove points that have less than nb_points"
+          " in a given sphere of a given radius",
+          "input"_a, "nb_points"_a, "radius"_a);
     m.def("statistical_outlier_removal", &RemoveStatisticalOutliers,
-            "Function to remove points that are further away from their "
-            "neighbours in average",
-            "input"_a, "nb_neighbors"_a, "std_ratio"_a);
+          "Function to remove points that are further away from their "
+          "neighbours in average",
+          "input"_a, "nb_neighbors"_a, "std_ratio"_a);
     m.def("estimate_normals", &EstimateNormals,
-            "Function to compute the normals of a point cloud",
-            "cloud"_a, "search_param"_a = KDTreeSearchParamKNN());
+          "Function to compute the normals of a point cloud", "cloud"_a,
+          "search_param"_a = KDTreeSearchParamKNN());
     m.def("orient_normals_to_align_with_direction",
-            &OrientNormalsToAlignWithDirection,
-            "Function to orient the normals of a point cloud",
-            "cloud"_a, "orientation_reference"_a =
-            Eigen::Vector3d(0.0, 0.0, 1.0));
+          &OrientNormalsToAlignWithDirection,
+          "Function to orient the normals of a point cloud", "cloud"_a,
+          "orientation_reference"_a = Eigen::Vector3d(0.0, 0.0, 1.0));
     m.def("orient_normals_towards_camera_location",
-            &OrientNormalsTowardsCameraLocation,
-            "Function to orient the normals of a point cloud",
-            "cloud"_a, "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
+          &OrientNormalsTowardsCameraLocation,
+          "Function to orient the normals of a point cloud", "cloud"_a,
+          "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
     m.def("compute_point_cloud_to_point_cloud_distance",
-            &ComputePointCloudToPointCloudDistance,
-            "Function to compute the ponit to point distances between point clouds",
-            "source"_a, "target"_a);
+          &ComputePointCloudToPointCloudDistance,
+          "Function to compute the ponit to point distances between point "
+          "clouds",
+          "source"_a, "target"_a);
     m.def("compute_point_cloud_mean_and_covariance",
-            &ComputePointCloudMeanAndCovariance,
-            "Function to compute the mean and covariance matrix of a point cloud",
-            "input"_a);
+          &ComputePointCloudMeanAndCovariance,
+          "Function to compute the mean and covariance matrix of a point cloud",
+          "input"_a);
     m.def("compute_point_cloud_mahalanobis_distance",
-            &ComputePointCloudMahalanobisDistance,
-            "Function to compute the Mahalanobis distance for points in a point cloud",
-            "input"_a);
+          &ComputePointCloudMahalanobisDistance,
+          "Function to compute the Mahalanobis distance for points in a point "
+          "cloud",
+          "input"_a);
     m.def("compute_point_cloud_nearest_neighbor_distance",
-            &ComputePointCloudNearestNeighborDistance,
-            "Function to compute the distance from a point to its nearest neighbor in the point cloud",
-            "input"_a);
+          &ComputePointCloudNearestNeighborDistance,
+          "Function to compute the distance from a point to its nearest "
+          "neighbor in the point cloud",
+          "input"_a);
 }

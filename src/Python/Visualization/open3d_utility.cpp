@@ -35,96 +35,114 @@
 #include <IO/ClassIO/IJsonConvertibleIO.h>
 using namespace open3d;
 
-void pybind_utility(py::module &m)
-{
-    py::class_<SelectionPolygonVolume> selection_volume(m,
-            "SelectionPolygonVolume");
+void pybind_utility(py::module &m) {
+    py::class_<SelectionPolygonVolume> selection_volume(
+            m, "SelectionPolygonVolume");
     py::detail::bind_default_constructor<SelectionPolygonVolume>(
             selection_volume);
     py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
     selection_volume
-        .def("crop_point_cloud", [](const SelectionPolygonVolume &s,
-                const PointCloud &input) {
-            return s.CropPointCloud(input);
-        }, "input"_a)
-        .def("crop_triangle_mesh", [](const SelectionPolygonVolume &s,
-                const TriangleMesh &input) {
-            return s.CropTriangleMesh(input);
-        }, "input"_a)
-        .def("__repr__", [](const SelectionPolygonVolume &s) {
-            return std::string("SelectionPolygonVolume, access its members:\n"
-                    "orthogonal_axis, bounding_polygon, axis_min, axis_max");
-        })
-        .def_readwrite("orthogonal_axis",
-                &SelectionPolygonVolume::orthogonal_axis_)
-        .def_readwrite("bounding_polygon",
-                &SelectionPolygonVolume::bounding_polygon_)
-        .def_readwrite("axis_min", &SelectionPolygonVolume::axis_min_)
-        .def_readwrite("axis_max", &SelectionPolygonVolume::axis_max_);
+            .def("crop_point_cloud",
+                 [](const SelectionPolygonVolume &s, const PointCloud &input) {
+                     return s.CropPointCloud(input);
+                 },
+                 "input"_a)
+            .def("crop_triangle_mesh",
+                 [](const SelectionPolygonVolume &s,
+                    const TriangleMesh &input) {
+                     return s.CropTriangleMesh(input);
+                 },
+                 "input"_a)
+            .def("__repr__",
+                 [](const SelectionPolygonVolume &s) {
+                     return std::string(
+                             "SelectionPolygonVolume, access its members:\n"
+                             "orthogonal_axis, bounding_polygon, axis_min, "
+                             "axis_max");
+                 })
+            .def_readwrite("orthogonal_axis",
+                           &SelectionPolygonVolume::orthogonal_axis_)
+            .def_readwrite("bounding_polygon",
+                           &SelectionPolygonVolume::bounding_polygon_)
+            .def_readwrite("axis_min", &SelectionPolygonVolume::axis_min_)
+            .def_readwrite("axis_max", &SelectionPolygonVolume::axis_max_);
 }
 
-void pybind_utility_methods(py::module &m)
-{
+void pybind_utility_methods(py::module &m) {
     m.def("draw_geometries",
-    [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-            const std::string &window_name, int width, int height,
-            int left, int top) {
-        std::string current_dir = filesystem::GetWorkingDirectory();
-        DrawGeometries(geometry_ptrs, window_name, width, height, left, top);
-        filesystem::ChangeWorkingDirectory(current_dir);
-    }, "Function to draw a list of Geometry objects",
-            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-            "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+             const std::string &window_name, int width, int height, int left,
+             int top) {
+              std::string current_dir = filesystem::GetWorkingDirectory();
+              DrawGeometries(geometry_ptrs, window_name, width, height, left,
+                             top);
+              filesystem::ChangeWorkingDirectory(current_dir);
+          },
+          "Function to draw a list of Geometry objects", "geometry_list"_a,
+          "window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
+          "left"_a = 50, "top"_a = 50);
     m.def("draw_geometries_with_custom_animation",
-    [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-            const std::string &window_name, int width, int height,
-            int left, int top, const std::string &json_filename) {
-        std::string current_dir = filesystem::GetWorkingDirectory();
-        DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name, width,
-                height, left, top, json_filename);
-        filesystem::ChangeWorkingDirectory(current_dir);
-    }, "Function to draw a list of Geometry objects with a GUI that supports animation",
-            "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
-            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-            "optional_view_trajectory_json_file"_a = "");
+          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+             const std::string &window_name, int width, int height, int left,
+             int top, const std::string &json_filename) {
+              std::string current_dir = filesystem::GetWorkingDirectory();
+              DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name,
+                                                width, height, left, top,
+                                                json_filename);
+              filesystem::ChangeWorkingDirectory(current_dir);
+          },
+          "Function to draw a list of Geometry objects with a GUI that "
+          "supports animation",
+          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+          "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+          "optional_view_trajectory_json_file"_a = "");
     m.def("draw_geometries_with_animation_callback",
-    [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-            std::function<bool(Visualizer *)> callback_func,
-            const std::string &window_name, int width, int height,
-            int left, int top) {
-        std::string current_dir = filesystem::GetWorkingDirectory();
-        DrawGeometriesWithAnimationCallback(geometry_ptrs, callback_func,
-                window_name, width, height, left, top);
-        filesystem::ChangeWorkingDirectory(current_dir);
-    }, "Function to draw a list of Geometry objects with a customized animation callback function",
-            "geometry_list"_a, "callback_function"_a,
-            "window_name"_a = "Open3D", "width"_a = 1920,
-            "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-            py::return_value_policy::reference);
+          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+             std::function<bool(Visualizer *)> callback_func,
+             const std::string &window_name, int width, int height, int left,
+             int top) {
+              std::string current_dir = filesystem::GetWorkingDirectory();
+              DrawGeometriesWithAnimationCallback(geometry_ptrs, callback_func,
+                                                  window_name, width, height,
+                                                  left, top);
+              filesystem::ChangeWorkingDirectory(current_dir);
+          },
+          "Function to draw a list of Geometry objects with a customized "
+          "animation callback function",
+          "geometry_list"_a, "callback_function"_a, "window_name"_a = "Open3D",
+          "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+          py::return_value_policy::reference);
     m.def("draw_geometries_with_key_callbacks",
-    [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-            const std::map<int, std::function<bool(Visualizer *)>>
-            &key_to_callback, const std::string &window_name, int width,
-            int height, int left, int top) {
-        std::string current_dir = filesystem::GetWorkingDirectory();
-        DrawGeometriesWithKeyCallbacks(geometry_ptrs, key_to_callback,
-                window_name, width, height, left, top);
-        filesystem::ChangeWorkingDirectory(current_dir);
-    }, "Function to draw a list of Geometry objects with a customized key-callback mapping",
-            "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
-            "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+             const std::map<int, std::function<bool(Visualizer *)>>
+                     &key_to_callback,
+             const std::string &window_name, int width, int height, int left,
+             int top) {
+              std::string current_dir = filesystem::GetWorkingDirectory();
+              DrawGeometriesWithKeyCallbacks(geometry_ptrs, key_to_callback,
+                                             window_name, width, height, left,
+                                             top);
+              filesystem::ChangeWorkingDirectory(current_dir);
+          },
+          "Function to draw a list of Geometry objects with a customized "
+          "key-callback mapping",
+          "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
+          "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     m.def("draw_geometries_with_editing",
-    [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-            const std::string &window_name, int width,
-            int height, int left, int top) {
-        DrawGeometriesWithEditing(geometry_ptrs, window_name,
-                width, height, left, top);
-    }, "Function to draw a list of Geometry providing user interaction",
-            "geometry_list"_a, "window_name"_a = "Open3D",
-            "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
-    m.def("read_selection_polygon_volume", [](const std::string &filename) {
-        SelectionPolygonVolume vol;
-        ReadIJsonConvertible(filename, vol);
-        return vol;
-    }, "Function to read SelectionPolygonVolume from file", "filename"_a);
+          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+             const std::string &window_name, int width, int height, int left,
+             int top) {
+              DrawGeometriesWithEditing(geometry_ptrs, window_name, width,
+                                        height, left, top);
+          },
+          "Function to draw a list of Geometry providing user interaction",
+          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+          "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+    m.def("read_selection_polygon_volume",
+          [](const std::string &filename) {
+              SelectionPolygonVolume vol;
+              ReadIJsonConvertible(filename, vol);
+              return vol;
+          },
+          "Function to read SelectionPolygonVolume from file", "filename"_a);
 }
