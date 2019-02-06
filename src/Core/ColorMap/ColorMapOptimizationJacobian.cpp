@@ -94,7 +94,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     pattern.setZero();
     r = 0;
     int anchor_w = warping_fields.anchor_w_;
-    int anchor_step = warping_fields.anchor_step_;
+    double anchor_step = warping_fields.anchor_step_;
     int vid = visiblity_image_to_vertex[row];
     Eigen::Vector3d V = mesh.vertices_[vid];
     Eigen::Vector4d G = extrinsic * Eigen::Vector4d(V(0), V(1), V(2), 1);
