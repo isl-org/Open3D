@@ -148,7 +148,7 @@ def mesh_voxelization(mid, input_filename, output_filename, camera_path,
 
 if __name__ == '__main__':
 
-    n_models = 10
+    n_parallel = 10
     input_filename = [abspath("../../TestData/bathtub_0154.ply")] * n_parallel
     output_filename = [abspath("../../TestData/bathtub_0154_voxel.ply")] * n_parallel
     camera_path = abspath("../../TestData/sphere.ply")
