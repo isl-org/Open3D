@@ -106,6 +106,10 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     }
     int ii = (int)(u / anchor_step);
     int jj = (int)(v / anchor_step);
+    if (ii >= warping_fields.anchor_w_ - 1 ||
+        jj >= warping_fields.anchor_h_ - 1) {
+        return;
+    }
     double p = (u - ii * anchor_step) / anchor_step;
     double q = (v - jj * anchor_step) / anchor_step;
     Eigen::Vector2d grids[4] = {
