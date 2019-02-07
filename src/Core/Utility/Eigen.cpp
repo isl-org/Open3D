@@ -33,7 +33,7 @@
 namespace open3d {
 
 /// Function to solve Ax=b
-std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
+std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
         const Eigen::MatrixXd &A,
         const Eigen::VectorXd &b,
         bool prefer_sparse /* = false */,
@@ -66,12 +66,12 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
             x = A_chol.solve(b);
             if (A_chol.info() != Eigen::Success) {
                 PrintInfo(
-                        "[SolveLinearSystem] sparse solver couldn't "
+                        "[SolveLinearSystemPSD] sparse solver couldn't "
                         "solve !! switching to dense solver\n");
             }
         } else {
             PrintInfo(
-                    "[SolveLinearSystem] Cholesky Decomposition Failed "
+                    "[SolveLinearSystemPSD] Cholesky Decomposition Failed "
                     "!! switching to dense solver\n");
         }
     } else {
@@ -117,7 +117,7 @@ std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
 
     bool solution_exist;
     Eigen::Vector6d x;
-    std::tie(solution_exist, x) = SolveLinearSystem(JTJ, -JTr);
+    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
 
     if (solution_exist) {
         Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);
@@ -141,7 +141,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 
     bool solution_exist;
     Eigen::VectorXd x;
-    std::tie(solution_exist, x) = SolveLinearSystem(JTJ, JTr);
+    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, JTr);
 
     if (solution_exist) {
         int nposes = (int)x.rows() / 6;

@@ -71,7 +71,7 @@ TEST(Eigen, TransformMatrix4dToVector6d) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, SolveLinearSystem) {
+TEST(Eigen, SolveLinearSystemPSD) {
     Matrix3d A;
     Vector3d b;
     Vector3d x;
@@ -82,9 +82,9 @@ TEST(Eigen, SolveLinearSystem) {
     A << 3, 2, 1, 30, 20, 10, -1, 0.5, -1;
     b << 1, -2, 0;
     x_ref << 0, 0, 0;
-    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
-                                       /*check_det=*/true,
-                                       /*check_psd=*/false);
+    tie(status, x) = SolveLinearSystemPSD(A, b, /*prefer_sparse=*/false,
+                                          /*check_det=*/true,
+                                          /*check_psd=*/false);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
 
@@ -92,9 +92,9 @@ TEST(Eigen, SolveLinearSystem) {
     A << 3, 2, -1, 2, -2, 4, -1, 0.5, -1;
     b << 1, -2, 0;
     x_ref << 0, 0, 0;
-    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
-                                       /*check_det=*/false,
-                                       /*check_psd=*/true);
+    tie(status, x) = SolveLinearSystemPSD(A, b, /*prefer_sparse=*/false,
+                                          /*check_det=*/false,
+                                          /*check_psd=*/true);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
 
@@ -103,8 +103,9 @@ TEST(Eigen, SolveLinearSystem) {
     A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
     b << 39, 34, 26;
     x_ref << 0, 0, 0;  // 9.25, 4.25, 2.75 if solved in general form
-    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
-                                       /*check_det=*/false, /*check_psd=*/true);
+    tie(status, x) =
+            SolveLinearSystemPSD(A, b, /*prefer_sparse=*/false,
+                                 /*check_det=*/false, /*check_psd=*/true);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
 
@@ -112,14 +113,16 @@ TEST(Eigen, SolveLinearSystem) {
     A << 3, 0, 1, 0, 3, 0, 1, 0, 3;
     b << 18, 15, 22;
     x_ref << 4, 5, 6;
-    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
-                                       /*check_det=*/true, /*check_psd=*/true);
+    tie(status, x) =
+            SolveLinearSystemPSD(A, b, /*prefer_sparse=*/false,
+                                 /*check_det=*/true, /*check_psd=*/true);
     EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
 
     // The sparse solver shall work in as well
-    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/true,
-                                       /*check_det=*/true, /*check_psd=*/true);
+    tie(status, x) =
+            SolveLinearSystemPSD(A, b, /*prefer_sparse=*/true,
+                                 /*check_det=*/true, /*check_psd=*/true);
     EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
 }
