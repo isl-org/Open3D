@@ -37,21 +37,13 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
         const Eigen::VectorXd &b,
         bool check_det /* = true */) {
     if (check_det) {
-        bool solution_exist = true;
         double det = A.determinant();
-        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
-            solution_exist = false;
-        if (solution_exist) {
-            // Robust Cholesky decomposition of a matrix with pivoting.
-            Eigen::MatrixXd x = A.ldlt().solve(b);
-            return std::make_tuple(solution_exist, std::move(x));
-        } else {
+        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
-    } else {
-        Eigen::MatrixXd x = A.ldlt().solve(b);
-        return std::make_tuple(true, std::move(x));
     }
+    Eigen::MatrixXd x = A.ldlt().solve(b);
+    return std::make_tuple(true, std::move(x));
 }
 
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input) {
