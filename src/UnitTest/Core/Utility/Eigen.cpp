@@ -83,7 +83,8 @@ TEST(Eigen, SolveLinearSystem) {
     b << 1, -2, 0;
     x_ref << 0, 0, 0;
     tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
-                                       /*check_det=*/true, /*check_psd=*/false);
+                                       /*check_det=*/true,
+                                       /*check_psd=*/false);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
 
@@ -92,32 +93,21 @@ TEST(Eigen, SolveLinearSystem) {
     b << 1, -2, 0;
     x_ref << 0, 0, 0;
     tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
-                                       /*check_det=*/false, /*check_psd=*/true);
+                                       /*check_det=*/false,
+                                       /*check_psd=*/true);
     EXPECT_EQ(status, false);
     ExpectEQ(x, x_ref);
 
-    // Matrix4d A = Matrix4d::Random();
-
-    // // make sure A is positive semi-definite
-    // A = A.transpose() * A;
-
-    // // make sure det(A) != 0
-    // A = A + Matrix4d::Identity();
-
-    // bool status = false;
-    // Vector4d result;
-
-    // int loops = 10000;
-    // srand((unsigned int)time(0));
-    // for (int i = 0; i < loops; i++) {
-    //     Vector4d x = Vector4d::Random();
-
-    //     Vector4d b = A * x;
-
-    //     tie(status, result) = SolveLinearSystem(A, b);
-
-    //     ExpectEQ(result, x);
-    // }
+    // Rank == 3, "fake PSD" (eigen values >= 0 and full rank but not symmetric)
+    // Numbers taken from: The Nine Chapters on the Mathematical Art, Chapter 8
+    // This shall be solvable in the general form, but not for Eigen's ldlt
+    A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
+    b << 39, 34, 26;
+    x_ref << 0, 0, 0;  // 9.25, 4.25, 2.75 if solved in general form
+    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
+                                       /*check_det=*/false, /*check_psd=*/true);
+    EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
 }
 
 // ----------------------------------------------------------------------------

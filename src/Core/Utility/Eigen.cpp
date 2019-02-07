@@ -48,7 +48,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 
     if (check_psd) {
         Eigen::LLT<Eigen::MatrixXd> A_llt(A);
-        if (A_llt.info() == Eigen::NumericalIssue) {
+        if (A.transpose() != A || A_llt.info() == Eigen::NumericalIssue) {
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
