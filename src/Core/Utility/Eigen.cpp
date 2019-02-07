@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Eigen.h"
+#include <Eigen/Sparse>
 
 #include <Eigen/Geometry>
 #include <Core/Utility/Console.h>
@@ -35,14 +36,37 @@ namespace open3d {
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
         const Eigen::MatrixXd &A,
         const Eigen::VectorXd &b,
-        bool check_det /* = true */) {
+        bool check_det /* = true */,
+        bool prefer_sparse /* = false */) {
     if (check_det) {
         double det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
-    Eigen::MatrixXd x = A.ldlt().solve(b);
+
+    Eigen::VectorXd x(b.size());
+    if (prefer_sparse) {
+        Eigen::SparseMatrix<double> A_sparse = A.sparseView();
+        Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> A_chol;
+        A_chol.compute(A_sparse);
+        if (A_chol.info() == Eigen::Success) {
+            x = A_chol.solve(b);
+            if (A_chol.info() == Eigen::Success) {
+                return std::make_tuple(true, std::move(x));
+            } else {
+                PrintInfo(
+                        "[SolveLinearSystem] sparse solver couldn't "
+                        "solve !! switching to dense solver");
+            }
+        } else {
+            PrintInfo(
+                    "[GlobalOptimizationLM] Cholesky Decomposition Failed "
+                    "!! switching to dense solver");
+        }
+    }
+
+    x = A.ldlt().solve(b);
     return std::make_tuple(true, std::move(x));
 }
 
