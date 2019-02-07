@@ -57,12 +57,12 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
             } else {
                 PrintInfo(
                         "[SolveLinearSystem] sparse solver couldn't "
-                        "solve !! switching to dense solver");
+                        "solve !! switching to dense solver\n");
             }
         } else {
             PrintInfo(
-                    "[GlobalOptimizationLM] Cholesky Decomposition Failed "
-                    "!! switching to dense solver");
+                    "[SolveLinearSystem] Cholesky Decomposition Failed "
+                    "!! switching to dense solver\n");
         }
     }
 
