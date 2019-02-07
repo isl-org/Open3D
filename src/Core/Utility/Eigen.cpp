@@ -36,8 +36,9 @@ namespace open3d {
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
         const Eigen::MatrixXd &A,
         const Eigen::VectorXd &b,
-        bool check_det /* = true */,
-        bool prefer_sparse /* = false */) {
+        bool prefer_sparse /* = false */,
+        bool check_det /* = false */,
+        bool check_psd /* = false */) {
     if (check_det) {
         double det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
@@ -45,7 +46,15 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
         }
     }
 
+    if (check_psd) {
+        Eigen::LLT<Eigen::MatrixXd> A_llt(A);
+        if (A_llt.info() == Eigen::NumericalIssue) {
+            return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
+        }
+    }
+
     Eigen::VectorXd x(b.size());
+
     if (prefer_sparse) {
         Eigen::SparseMatrix<double> A_sparse = A.sparseView();
         Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> A_chol;

@@ -67,8 +67,9 @@ Eigen::Vector6d TransformMatrix4dToVector6d(const Eigen::Matrix4d &input);
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(const Eigen::MatrixXd &A,
                                                     const Eigen::VectorXd &b,
-                                                    bool check_det = true,
-                                                    bool prefer_sparse = false);
+                                                    bool prefer_sparse = false,
+                                                    bool check_det = false,
+                                                    bool check_psd = false);
 
 /// Function to solve Jacobian system
 /// Input: 6x6 Jacobian matrix and 6-dim residual vector.

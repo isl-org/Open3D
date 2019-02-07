@@ -72,28 +72,52 @@ TEST(Eigen, TransformMatrix4dToVector6d) {
 //
 // ----------------------------------------------------------------------------
 TEST(Eigen, SolveLinearSystem) {
-    Matrix4d A = Matrix4d::Random();
-
-    // make sure A is positive semi-definite
-    A = A.transpose() * A;
-
-    // make sure det(A) != 0
-    A = A + Matrix4d::Identity();
-
+    Matrix3d A;
+    Vector3d b;
+    Vector3d x;
+    Vector3d x_ref;
     bool status = false;
-    Vector4d result;
 
-    int loops = 10000;
-    srand((unsigned int)time(0));
-    for (int i = 0; i < loops; i++) {
-        Vector4d x = Vector4d::Random();
+    // Rank == 2, check_det == true, should return error
+    A << 3, 2, 1, 30, 20, 10, -1, 0.5, -1;
+    b << 1, -2, 0;
+    x_ref << 0, 0, 0;
+    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
+                                       /*check_det=*/true, /*check_psd=*/false);
+    EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
 
-        Vector4d b = A * x;
+    // Rank == 3, not PSD, check_psd == true, should return error
+    A << 3, 2, -1, 2, -2, 4, -1, 0.5, -1;
+    b << 1, -2, 0;
+    x_ref << 0, 0, 0;
+    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
+                                       /*check_det=*/false, /*check_psd=*/true);
+    EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
 
-        tie(status, result) = SolveLinearSystem(A, b);
+    // Matrix4d A = Matrix4d::Random();
 
-        ExpectEQ(result, x);
-    }
+    // // make sure A is positive semi-definite
+    // A = A.transpose() * A;
+
+    // // make sure det(A) != 0
+    // A = A + Matrix4d::Identity();
+
+    // bool status = false;
+    // Vector4d result;
+
+    // int loops = 10000;
+    // srand((unsigned int)time(0));
+    // for (int i = 0; i < loops; i++) {
+    //     Vector4d x = Vector4d::Random();
+
+    //     Vector4d b = A * x;
+
+    //     tie(status, result) = SolveLinearSystem(A, b);
+
+    //     ExpectEQ(result, x);
+    // }
 }
 
 // ----------------------------------------------------------------------------
