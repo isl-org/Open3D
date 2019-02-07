@@ -150,7 +150,7 @@ TEST(Eigen, SolveJacobianSystemAndObtainExtrinsicMatrixArray) {
         Vector6d JTr = JTJ * x;
 
         tie(status, result) =
-                SolveJacobianSystemAndObtainExtrinsicMatrixArray(JTJ, JTr);
+                SolveJacobianSystemAndObtainExtrinsicMatrixArray(JTJ, -JTr);
 
         Vector6d r = TransformMatrix4dToVector6d(result[0]);
 
