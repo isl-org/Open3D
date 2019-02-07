@@ -37,8 +37,16 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
         const Eigen::MatrixXd &A,
         const Eigen::VectorXd &b,
         bool prefer_sparse /* = false */,
+        bool check_symmetric /* = false */,
         bool check_det /* = false */,
         bool check_psd /* = false */) {
+    // PSD implies symmetric
+    check_symmetric = check_symmetric || check_psd;
+    if (check_symmetric && !A.isApprox(A.transpose())) {
+        PrintInfo("check_symmetric failed, empty vector will be returned\n");
+        return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
+    }
+
     if (check_det) {
         double det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
@@ -50,8 +58,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
     // Check PSD: https://stackoverflow.com/a/54569657/1255535
     if (check_psd) {
         Eigen::LLT<Eigen::MatrixXd> A_llt(A);
-        if (!A.isApprox(A.transpose()) ||
-            A_llt.info() == Eigen::NumericalIssue) {
+        if (A_llt.info() == Eigen::NumericalIssue) {
             PrintInfo("check_psd failed, empty vector will be returned\n");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }

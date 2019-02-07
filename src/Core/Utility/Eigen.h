@@ -69,6 +69,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
         const Eigen::MatrixXd &A,
         const Eigen::VectorXd &b,
         bool prefer_sparse = false,
+        bool check_symmetric = false,
         bool check_det = false,
         bool check_psd = false);
 

@@ -606,7 +606,7 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
 
             // Solve H_LM @ delta == b using a sparse solver
             std::tie(solver_success, delta) = SolveLinearSystemPSD(
-                    H_LM, b, /*prefer_sparse=*/true,
+                    H_LM, b, /*prefer_sparse=*/true, /*check_symmetric=*/false,
                     /*check_det=*/false, /*check_psd=*/false);
 
             stop = stop || CheckRelativeIncrement(delta, x, criteria);
