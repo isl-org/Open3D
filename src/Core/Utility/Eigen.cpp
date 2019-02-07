@@ -62,9 +62,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
         A_chol.compute(A_sparse);
         if (A_chol.info() == Eigen::Success) {
             x = A_chol.solve(b);
-            if (A_chol.info() == Eigen::Success) {
-                return std::make_tuple(true, std::move(x));
-            } else {
+            if (A_chol.info() != Eigen::Success) {
                 PrintInfo(
                         "[SolveLinearSystem] sparse solver couldn't "
                         "solve !! switching to dense solver\n");
@@ -74,9 +72,10 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
                     "[SolveLinearSystem] Cholesky Decomposition Failed "
                     "!! switching to dense solver\n");
         }
+    } else {
+        x = A.ldlt().solve(b);
     }
 
-    x = A.ldlt().solve(b);
     return std::make_tuple(true, std::move(x));
 }
 
