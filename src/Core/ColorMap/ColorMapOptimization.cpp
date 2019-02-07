@@ -111,7 +111,10 @@ void OptimizeImageCoorNonrigid(
 
             bool success;
             Eigen::VectorXd result;
-            std::tie(success, result) = SolveLinearSystem(JTJ, -JTr, false);
+            std::tie(success, result) = SolveLinearSystemPSD(
+                    JTJ, -JTr, /*prefer_sparse=*/false,
+                    /*check_symmetric=*/false,
+                    /*check_det=*/false, /*check_psd=*/false);
             Eigen::Vector6d result_pose;
             result_pose << result.block(0, 0, 6, 1);
             auto delta = TransformVector6dToMatrix4d(result_pose);

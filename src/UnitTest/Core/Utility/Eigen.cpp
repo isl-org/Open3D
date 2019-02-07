@@ -71,29 +71,52 @@ TEST(Eigen, TransformMatrix4dToVector6d) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-TEST(Eigen, SolveLinearSystem) {
-    Matrix4d A = Matrix4d::Random();
-
-    // make sure A is positive semi-definite
-    A = A.transpose() * A;
-
-    // make sure det(A) != 0
-    A = A + Matrix4d::Identity();
-
+TEST(Eigen, SolveLinearSystemPSD) {
+    Matrix3d A;
+    Vector3d b;
+    Vector3d x;
+    Vector3d x_ref;
     bool status = false;
-    Vector4d result;
 
-    int loops = 10000;
-    srand((unsigned int)time(0));
-    for (int i = 0; i < loops; i++) {
-        Vector4d x = Vector4d::Random();
+    // API: SolveLinearSystemPSD(A, b, prefer_sparse,
+    //                           check_symmetric, check_det, check_psd)
+    // Rank == 2, check_det == true, should return error
+    A << 3, 2, 1, 30, 20, 10, -1, 0.5, -1;
+    b << 1, -2, 0;
+    x_ref << 0, 0, 0;
+    tie(status, x) = SolveLinearSystemPSD(A, b, false, false, true, false);
+    EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
 
-        Vector4d b = A * x;
+    // Rank == 3, not PSD, check_psd == true, should return error
+    A << 3, 2, -1, 2, -2, 4, -1, 0.5, -1;
+    b << 1, -2, 0;
+    x_ref << 0, 0, 0;
+    tie(status, x) = SolveLinearSystemPSD(A, b, false, false, false, true);
+    EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
 
-        tie(status, result) = SolveLinearSystem(A, b);
+    // Rank == 3, "fake PSD" (eigen values >= 0 and full rank but not symmetric)
+    // check_psd == true, should return error
+    A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
+    b << 39, 34, 26;
+    x_ref << 0, 0, 0;  // 9.25, 4.25, 2.75 if solved in general form
+    tie(status, x) = SolveLinearSystemPSD(A, b, false, false, false, true);
+    EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
 
-        ExpectEQ(result, x);
-    }
+    // A regular PSD case
+    A << 3, 0, 1, 0, 3, 0, 1, 0, 3;
+    b << 18, 15, 22;
+    x_ref << 4, 5, 6;
+    tie(status, x) = SolveLinearSystemPSD(A, b, false, false, true, true);
+    EXPECT_EQ(status, true);
+    ExpectEQ(x, x_ref);
+
+    // The sparse solver shall work as well
+    tie(status, x) = SolveLinearSystemPSD(A, b, true, false, true, true);
+    EXPECT_EQ(status, true);
+    ExpectEQ(x, x_ref);
 }
 
 // ----------------------------------------------------------------------------

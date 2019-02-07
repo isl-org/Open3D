@@ -129,7 +129,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             bool is_success;
             Eigen::MatrixXd x;
             std::tie(is_success, x) =
-                    SolveLinearSystem(A.transpose() * A, A.transpose() * b);
+                    SolveLinearSystemPSD(A.transpose() * A, A.transpose() * b);
             if (is_success) {
                 output->color_gradient_[k] = x;
             }

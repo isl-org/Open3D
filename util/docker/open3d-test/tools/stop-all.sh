@@ -12,7 +12,9 @@ for ubuntu in ${ubuntu_version[@]}; do
         ${REAL_PATH}/stop.sh ${ubuntu} ${bundle}
 
         for env in ${env_type[@]}; do
-            ${REAL_PATH}/stop.sh ${ubuntu} ${bundle} ${env}
+            for link in ${link_type[@]}; do
+                ${REAL_PATH}/stop.sh ${ubuntu} ${bundle} ${env} ${link}
+            done
         done
     done
 done

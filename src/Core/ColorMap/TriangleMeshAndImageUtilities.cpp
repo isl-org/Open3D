@@ -78,7 +78,7 @@ CreateVertexAndImageVisibility(
                 continue;
             float d_sensor = *PointerAt<float>(*images_depth[c], u_d, v_d);
             if (d_sensor > maximum_allowable_depth) continue;
-            if (*PointerAt<unsigned char>(*images_depth[c], u_d, v_d) == 255)
+            if (*PointerAt<unsigned char>(*images_mask[c], u_d, v_d) == 255)
                 continue;
             if (std::fabs(d - d_sensor) < depth_threshold_for_visiblity_check) {
 #ifdef _OPENMP

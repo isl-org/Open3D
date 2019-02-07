@@ -1,6 +1,9 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
+about: Suggest an idea for Open3D
+title: ''
+labels: feature request
+assignees: ''
 
 ---
 

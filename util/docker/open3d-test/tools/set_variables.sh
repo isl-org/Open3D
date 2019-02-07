@@ -89,7 +89,10 @@ CONTAINER_HOSTNAME=${NAME}-${TAG//.}
 
 # build the container name
 # suffix with the link type in order to avoid container name collisions
-CONTAINER_NAME=${NAME}-${TAG//.}-${4}
+CONTAINER_NAME=${NAME}-${TAG//.}
+if [ "${4}" != "" ]; then
+    CONTAINER_NAME=${NAME}-${TAG//.}-${4}
+fi
 
 # python version
 PYTHON=""

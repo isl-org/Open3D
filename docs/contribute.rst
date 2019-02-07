@@ -111,7 +111,7 @@ macOS
 
 .. code:: bash
 
-   curl https://gist.githubusercontent.com/ffeu/6ffb75d8e8c7d92c0fbeb4b036599c33/raw/7004b4955961528a22b4642c125d395ef7e054c7/clang-format@5.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
+   curl https://raw.githubusercontent.com/IntelVCL/Open3D-3rdparty/master/clang-format/clang-format%405.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@5.rb
    brew install clang-format@5
    clang-format --version
 

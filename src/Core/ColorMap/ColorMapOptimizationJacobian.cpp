@@ -94,7 +94,7 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     pattern.setZero();
     r = 0;
     int anchor_w = warping_fields.anchor_w_;
-    int anchor_step = warping_fields.anchor_step_;
+    double anchor_step = warping_fields.anchor_step_;
     int vid = visiblity_image_to_vertex[row];
     Eigen::Vector3d V = mesh.vertices_[vid];
     Eigen::Vector4d G = extrinsic * Eigen::Vector4d(V(0), V(1), V(2), 1);
@@ -106,6 +106,10 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     }
     int ii = (int)(u / anchor_step);
     int jj = (int)(v / anchor_step);
+    if (ii >= warping_fields.anchor_w_ - 1 ||
+        jj >= warping_fields.anchor_h_ - 1) {
+        return;
+    }
     double p = (u - ii * anchor_step) / anchor_step;
     double q = (v - jj * anchor_step) / anchor_step;
     Eigen::Vector2d grids[4] = {

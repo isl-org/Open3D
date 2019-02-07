@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Eigen.h"
+#include <Eigen/Sparse>
 
 #include <Eigen/Geometry>
 #include <Core/Utility/Console.h>
@@ -32,26 +33,59 @@
 namespace open3d {
 
 /// Function to solve Ax=b
-std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
+std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
         const Eigen::MatrixXd &A,
         const Eigen::VectorXd &b,
-        bool check_det /* = true */) {
+        bool prefer_sparse /* = false */,
+        bool check_symmetric /* = false */,
+        bool check_det /* = false */,
+        bool check_psd /* = false */) {
+    // PSD implies symmetric
+    check_symmetric = check_symmetric || check_psd;
+    if (check_symmetric && !A.isApprox(A.transpose())) {
+        PrintInfo("check_symmetric failed, empty vector will be returned\n");
+        return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
+    }
+
     if (check_det) {
-        bool solution_exist = true;
         double det = A.determinant();
-        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det))
-            solution_exist = false;
-        if (solution_exist) {
-            // Robust Cholesky decomposition of a matrix with pivoting.
-            Eigen::MatrixXd x = A.ldlt().solve(b);
-            return std::make_tuple(solution_exist, std::move(x));
-        } else {
+        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
+            PrintInfo("check_det failed, empty vector will be returned\n");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
-    } else {
-        Eigen::MatrixXd x = A.ldlt().solve(b);
-        return std::make_tuple(true, std::move(x));
     }
+
+    // Check PSD: https://stackoverflow.com/a/54569657/1255535
+    if (check_psd) {
+        Eigen::LLT<Eigen::MatrixXd> A_llt(A);
+        if (A_llt.info() == Eigen::NumericalIssue) {
+            PrintInfo("check_psd failed, empty vector will be returned\n");
+            return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
+        }
+    }
+
+    Eigen::VectorXd x(b.size());
+
+    if (prefer_sparse) {
+        Eigen::SparseMatrix<double> A_sparse = A.sparseView();
+        // TODO: avoid deprecated API SimplicialCholesky
+        Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> A_chol;
+        A_chol.compute(A_sparse);
+        if (A_chol.info() == Eigen::Success) {
+            x = A_chol.solve(b);
+            if (A_chol.info() == Eigen::Success) {
+                // Both decompose and solve are successful
+                return std::make_tuple(true, std::move(x));
+            } else {
+                PrintInfo("Cholesky solve failed, switched to dense solver\n");
+            }
+        } else {
+            PrintInfo("Cholesky decompose failed, switched to dense solver\n");
+        }
+    }
+
+    x = A.ldlt().solve(b);
+    return std::make_tuple(true, std::move(x));
 }
 
 Eigen::Matrix4d TransformVector6dToMatrix4d(const Eigen::Vector6d &input) {
@@ -90,7 +124,7 @@ std::tuple<bool, Eigen::Matrix4d> SolveJacobianSystemAndObtainExtrinsicMatrix(
 
     bool solution_exist;
     Eigen::Vector6d x;
-    std::tie(solution_exist, x) = SolveLinearSystem(JTJ, -JTr);
+    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
 
     if (solution_exist) {
         Eigen::Matrix4d extrinsic = TransformVector6dToMatrix4d(x);
@@ -114,7 +148,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 
     bool solution_exist;
     Eigen::VectorXd x;
-    std::tie(solution_exist, x) = SolveLinearSystem(JTJ, -JTr);
+    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
 
     if (solution_exist) {
         int nposes = (int)x.rows() / 6;

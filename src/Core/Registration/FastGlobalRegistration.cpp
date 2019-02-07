@@ -299,7 +299,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         }
         bool success;
         Eigen::VectorXd result;
-        std::tie(success, result) = SolveLinearSystem(-JTJ, JTr);
+        std::tie(success, result) = SolveLinearSystemPSD(-JTJ, JTr);
         Eigen::Matrix4d delta = TransformVector6dToMatrix4d(result);
         trans = delta * trans;
         point_cloud_copy_j.Transform(delta);
