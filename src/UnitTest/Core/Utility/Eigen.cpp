@@ -99,8 +99,8 @@ TEST(Eigen, SolveLinearSystem) {
     ExpectEQ(x, x_ref);
 
     // Rank == 3, "fake PSD" (eigen values >= 0 and full rank but not symmetric)
-    // Numbers taken from: The Nine Chapters on the Mathematical Art, Chapter 8
-    // This shall be solvable in the general form, but not for Eigen's ldlt
+    // check_psd == true, should return error
+    // Numbers from: "The Nine Chapters on the Mathematical Art", Chapter 8
     A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
     b << 39, 34, 26;
     x_ref << 0, 0, 0;  // 9.25, 4.25, 2.75 if solved in general form
