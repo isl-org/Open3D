@@ -112,7 +112,7 @@ void OptimizeImageCoorNonrigid(
             bool success;
             Eigen::VectorXd result;
             std::tie(success, result) =
-                    SolveLinearSystem(JTJ, -JTr, /*prefer_sparse=*/true,
+                    SolveLinearSystem(JTJ, -JTr, /*prefer_sparse=*/false,
                                       /*check_det=*/false, /*check_psd=*/false);
             Eigen::Vector6d result_pose;
             result_pose << result.block(0, 0, 6, 1);

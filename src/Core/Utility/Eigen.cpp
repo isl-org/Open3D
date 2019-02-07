@@ -59,6 +59,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
 
     if (prefer_sparse) {
         Eigen::SparseMatrix<double> A_sparse = A.sparseView();
+        // TODO: avoid deprecated API SimplicialCholesky
         Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> A_chol;
         A_chol.compute(A_sparse);
         if (A_chol.info() == Eigen::Success) {
