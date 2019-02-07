@@ -42,6 +42,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
     if (check_det) {
         double det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
+            PrintInfo("check_det failed, empty vector will be returned\n");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
@@ -51,6 +52,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
         Eigen::LLT<Eigen::MatrixXd> A_llt(A);
         if (!A.isApprox(A.transpose()) ||
             A_llt.info() == Eigen::NumericalIssue) {
+            PrintInfo("check_psd failed, empty vector will be returned\n");
             return std::make_tuple(false, Eigen::VectorXd::Zero(b.rows()));
         }
     }
