@@ -64,20 +64,18 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
         A_chol.compute(A_sparse);
         if (A_chol.info() == Eigen::Success) {
             x = A_chol.solve(b);
-            if (A_chol.info() != Eigen::Success) {
-                PrintInfo(
-                        "[SolveLinearSystemPSD] sparse solver couldn't "
-                        "solve !! switching to dense solver\n");
+            if (A_chol.info() == Eigen::Success) {
+                // Both decompose and solve are successful
+                return std::make_tuple(true, std::move(x));
+            } else {
+                PrintInfo("Cholesky solve failed, switched to dense solver\n");
             }
         } else {
-            PrintInfo(
-                    "[SolveLinearSystemPSD] Cholesky Decomposition Failed "
-                    "!! switching to dense solver\n");
+            PrintInfo("Cholesky decompose failed, switched to dense solver\n");
         }
-    } else {
-        x = A.ldlt().solve(b);
     }
 
+    x = A.ldlt().solve(b);
     return std::make_tuple(true, std::move(x));
 }
 
