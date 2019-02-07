@@ -99,14 +99,29 @@ TEST(Eigen, SolveLinearSystem) {
     ExpectEQ(x, x_ref);
 
     // Rank == 3, "fake PSD" (eigen values >= 0 and full rank but not symmetric)
+    // https://stackoverflow.com/a/54569657/1255535
     // check_psd == true, should return error
-    // Numbers from: "The Nine Chapters on the Mathematical Art", Chapter 8
     A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
     b << 39, 34, 26;
     x_ref << 0, 0, 0;  // 9.25, 4.25, 2.75 if solved in general form
     tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
                                        /*check_det=*/false, /*check_psd=*/true);
     EXPECT_EQ(status, false);
+    ExpectEQ(x, x_ref);
+
+    // A regular PSD case
+    A << 3, 0, 1, 0, 3, 0, 1, 0, 3;
+    b << 18, 15, 22;
+    x_ref << 4, 5, 6;
+    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/false,
+                                       /*check_det=*/true, /*check_psd=*/true);
+    EXPECT_EQ(status, true);
+    ExpectEQ(x, x_ref);
+
+    // The sparse solver shall work in as well
+    tie(status, x) = SolveLinearSystem(A, b, /*prefer_sparse=*/true,
+                                       /*check_det=*/true, /*check_psd=*/true);
+    EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
 }
 
