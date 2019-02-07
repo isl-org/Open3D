@@ -78,7 +78,7 @@ TEST(Eigen, SolveLinearSystemPSD) {
     Vector3d x_ref;
     bool status = false;
 
-    // API:SolveLinearSystemPSD(A, b, prefer_sparse, check_det, check_psd)
+    // API: SolveLinearSystemPSD(A, b, prefer_sparse, check_det, check_psd)
     // Rank == 2, check_det == true, should return error
     A << 3, 2, 1, 30, 20, 10, -1, 0.5, -1;
     b << 1, -2, 0;
@@ -112,7 +112,7 @@ TEST(Eigen, SolveLinearSystemPSD) {
     EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
 
-    // The sparse solver shall work in as well
+    // The sparse solver shall work as well
     tie(status, x) = SolveLinearSystemPSD(A, b, true, true, true);
     EXPECT_EQ(status, true);
     ExpectEQ(x, x_ref);
