@@ -99,7 +99,6 @@ TEST(Eigen, SolveLinearSystem) {
     ExpectEQ(x, x_ref);
 
     // Rank == 3, "fake PSD" (eigen values >= 0 and full rank but not symmetric)
-    // https://stackoverflow.com/a/54569657/1255535
     // check_psd == true, should return error
     A << 3, 2, 1, 2, 3, 1, 1, 2, 3;
     b << 39, 34, 26;

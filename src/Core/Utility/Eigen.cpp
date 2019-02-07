@@ -46,6 +46,7 @@ std::tuple<bool, Eigen::VectorXd> SolveLinearSystem(
         }
     }
 
+    // Check PSD: https://stackoverflow.com/a/54569657/1255535
     if (check_psd) {
         Eigen::LLT<Eigen::MatrixXd> A_llt(A);
         if (!A.isApprox(A.transpose()) ||
