@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "GlobalOptimization.h"
+#include "Eigen.h"
 
 #include <vector>
 #include <tuple>
@@ -601,26 +602,12 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
         do {
             Eigen::MatrixXd H_LM = H + current_lambda * H_I;
             Eigen::VectorXd delta(H_LM.cols());
+            bool solver_success = false;
 
-            // Using a sparse solver
-            Eigen::SparseMatrix<double> H_LM_sparse = H_LM.sparseView();
-            Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> chol;
-            chol.compute(H_LM_sparse);
-
-            if (chol.info() == Eigen::Success) {
-                delta = chol.solve(b);
-                if (chol.info() != Eigen::Success) {
-                    PrintInfo(
-                            "[GlobalOptimizationLM] sparse solver couldn't "
-                            "solve !! switching to dense solver");
-                    delta = H_LM.ldlt().solve(b);
-                }
-            } else {
-                PrintInfo(
-                        "[GlobalOptimizationLM] Cholesky Decomposition Failed "
-                        "!! switching to dense solver");
-                delta = H_LM.ldlt().solve(b);
-            }
+            // Solve H_LM @ delta == b using a sparse solver
+            std::tie(solver_success, delta) = SolveLinearSystemPSD(
+                    H_LM, b, /*prefer_sparse=*/true, /*check_symmetric=*/false,
+                    /*check_det=*/false, /*check_psd=*/false);
 
             stop = stop || CheckRelativeIncrement(delta, x, criteria);
             if (!stop) {
