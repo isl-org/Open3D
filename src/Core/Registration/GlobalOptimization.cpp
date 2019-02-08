@@ -508,7 +508,13 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
         Timer timer_iter;
         timer_iter.Start();
 
-        Eigen::VectorXd delta = H.ldlt().solve(b);
+        Eigen::VectorXd delta(H.cols());
+        bool solver_success = false;
+
+        // Solve H_LM @ delta == b using a sparse solver
+        std::tie(solver_success, delta) = SolveLinearSystemPSD(
+                H, b, /*prefer_sparse=*/true, /*check_symmetric=*/false,
+                /*check_det=*/false, /*check_psd=*/false);
 
         stop = stop || CheckRelativeIncrement(delta, x, criteria);
         if (stop) {

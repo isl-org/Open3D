@@ -148,7 +148,7 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
 
     bool solution_exist;
     Eigen::VectorXd x;
-    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, JTr);
+    std::tie(solution_exist, x) = SolveLinearSystemPSD(JTJ, -JTr);
 
     if (solution_exist) {
         int nposes = (int)x.rows() / 6;
