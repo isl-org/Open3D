@@ -1,7 +1,7 @@
-#version 120
+#version 400
 
-attribute vec3 vertex_position;
-attribute vec3 vertex_color;
+in vec3 vertex_position;
+in vec3 vertex_color;
 
 varying vec3 fragment_color;
 

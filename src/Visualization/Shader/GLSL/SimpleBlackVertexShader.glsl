@@ -1,6 +1,6 @@
-#version 120
+#version 400
 
-attribute vec3 vertex_position;
+in vec3 vertex_position;
 uniform mat4 MVP;
 
 void main()

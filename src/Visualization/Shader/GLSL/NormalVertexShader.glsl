@@ -1,7 +1,7 @@
-#version 120
+#version 400
 
-attribute vec3 vertex_position;
-attribute vec3 vertex_normal;
+in vec3 vertex_position;
+in vec3 vertex_normal;
 
 varying vec3 vertex_normal_camera;
 

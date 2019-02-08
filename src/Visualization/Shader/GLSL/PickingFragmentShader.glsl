@@ -1,4 +1,4 @@
-#version 120
+#version 400
 
 varying vec4 fragment_color;
 

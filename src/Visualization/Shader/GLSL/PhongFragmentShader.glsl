@@ -1,4 +1,4 @@
-#version 120
+#version 400
 
 varying vec3 vertex_position_world;
 varying vec3 vertex_normal_camera;

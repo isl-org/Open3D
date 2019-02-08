@@ -1,4 +1,4 @@
-#version 120
+#version 400
 
 varying vec2 UV;
 uniform sampler2D image_texture;
