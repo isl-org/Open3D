@@ -3,7 +3,7 @@
 in vec3 vertex_position;
 in vec2 vertex_UV;
 
-varying vec2 UV;
+out vec2 UV;
 
 uniform vec3 vertex_scale;
 
