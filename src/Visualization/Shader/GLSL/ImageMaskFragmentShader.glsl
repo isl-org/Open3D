@@ -1,6 +1,6 @@
-#version 400
+#version 330 core
 
-in vec2 UV;
+layout(location = 0) in vec2 UV;
 uniform sampler2D image_texture;
 
 uniform vec3 mask_color;

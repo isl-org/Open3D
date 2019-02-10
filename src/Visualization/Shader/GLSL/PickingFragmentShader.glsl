@@ -1,4 +1,4 @@
-#version 400
+#version 330 core
 
 varying vec4 fragment_color;
 out vec4 FragColor;

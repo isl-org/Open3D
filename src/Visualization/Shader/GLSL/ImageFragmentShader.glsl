@@ -1,6 +1,6 @@
-#version 400
+#version 330 core
 
-in vec2 UV;
+layout(location = 0) in vec2 UV;
 uniform sampler2D image_texture;
 
 out vec4 FragColor;
