@@ -39,10 +39,14 @@
 namespace open3d {
 
 bool Visualizer::InitOpenGL() {
+    glewExperimental = true;
     if (glewInit() != GLEW_OK) {
         PrintError("Failed to initialize GLEW.\n");
         return false;
     }
+
+    glGenVertexArrays(1, &vao_id_);
+    glBindVertexArray(vao_id_);
 
     // depth test
     glEnable(GL_DEPTH_TEST);

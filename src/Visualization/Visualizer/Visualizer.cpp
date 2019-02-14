@@ -201,6 +201,7 @@ bool Visualizer::CreateVisualizerWindow(
 
 void Visualizer::DestroyVisualizerWindow() {
     is_initialized_ = false;
+    glDeleteVertexArrays(1, &vao_id_);
     glfwDestroyWindow(window_);
 }
 
