@@ -57,6 +57,9 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
+            .def("compute_adjacency_list", &TriangleMesh::ComputeAdjacencyList,
+                 "Function to compute adjacency list, call before adjacency "
+                 "list is needed")
             .def("purge", &TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
@@ -65,6 +68,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("has_vertex_normals", &TriangleMesh::HasVertexNormals)
             .def("has_vertex_colors", &TriangleMesh::HasVertexColors)
             .def("has_triangle_normals", &TriangleMesh::HasTriangleNormals)
+            .def("has_adjacency_list", &TriangleMesh::HasAdjacencyList)
             .def("normalize_normals", &TriangleMesh::NormalizeNormals)
             .def("paint_uniform_color", &TriangleMesh::PaintUniformColor)
             .def_readwrite("vertices", &TriangleMesh::vertices_)
