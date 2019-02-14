@@ -185,6 +185,18 @@ void TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     }
 }
 
+void TriangleMesh::ComputeAdjacencyList() {
+    adjacency_list_.resize(vertices_.size());
+    for (const auto &triangle : triangles_) {
+        adjacency_list_[triangle(0)].insert(triangle(1));
+        adjacency_list_[triangle(0)].insert(triangle(2));
+        adjacency_list_[triangle(1)].insert(triangle(0));
+        adjacency_list_[triangle(1)].insert(triangle(2));
+        adjacency_list_[triangle(2)].insert(triangle(0));
+        adjacency_list_[triangle(2)].insert(triangle(1));
+    }
+}
+
 void TriangleMesh::Purge() {
     RemoveDuplicatedVertices();
     RemoveDuplicatedTriangles();
