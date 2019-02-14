@@ -1,6 +1,6 @@
-#version 330 core
+#version 330
 
-varying vec4 fragment_color;
+in vec4 fragment_color;
 out vec4 FragColor;
 
 void main()

@@ -1,4 +1,4 @@
-#version 330 core
+#version 330
 
 in vec3 vertex_position;
 in vec3 vertex_color;

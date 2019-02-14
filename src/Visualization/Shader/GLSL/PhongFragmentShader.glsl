@@ -1,4 +1,4 @@
-#version 330 core
+#version 330
 
 in vec3 vertex_position_world;
 in vec3 vertex_normal_camera;
