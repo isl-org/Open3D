@@ -191,6 +191,7 @@ protected:
     MouseControl mouse_control_;
     bool is_redraw_required_ = true;
     bool is_initialized_ = false;
+    GLuint vao_id_;
 
     // view control
     std::unique_ptr<ViewControl> view_control_ptr_;
