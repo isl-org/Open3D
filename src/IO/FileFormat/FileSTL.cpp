@@ -32,8 +32,7 @@
 
 namespace open3d {
 
-bool ReadTriangleMeshFromSTL(const std::string &filename,
-                             TriangleMesh &TriangleMesh) {
+bool ReadTriangleMeshFromSTL(const std::string &filename, TriangleMesh &mesh) {
     std::ifstream myFile(filename.c_str(), std::ios::in | std::ios::binary);
 
     if (!myFile) {
@@ -59,12 +58,12 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         return false;
     }
 
-    TriangleMesh.vertices_.clear();
-    TriangleMesh.triangles_.clear();
-    TriangleMesh.triangle_normals_.clear();
-    TriangleMesh.vertices_.resize(num_of_triangles * 3);
-    TriangleMesh.triangles_.resize(num_of_triangles);
-    TriangleMesh.triangle_normals_.resize(num_of_triangles);
+    mesh.vertices_.clear();
+    mesh.triangles_.clear();
+    mesh.triangle_normals_.clear();
+    mesh.vertices_.resize(num_of_triangles * 3);
+    mesh.triangles_.resize(num_of_triangles);
+    mesh.triangle_normals_.resize(num_of_triangles);
 
     ResetConsoleProgress(num_of_triangles, "Reading STL: ");
     for (int i = 0; i < num_of_triangles; i++) {
@@ -73,15 +72,15 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
         if (myFile) {
             myFile.read(buffer, 50);
             float_buffer = reinterpret_cast<float *>(buffer);
-            TriangleMesh.triangle_normals_[i] =
+            mesh.triangle_normals_[i] =
                     Eigen::Map<Eigen::Vector3f>(float_buffer).cast<double>();
             for (int j = 0; j < 3; j++) {
                 float_buffer = reinterpret_cast<float *>(buffer + 12 * (j + 1));
-                TriangleMesh.vertices_[i * 3 + j] =
+                mesh.vertices_[i * 3 + j] =
                         Eigen::Map<Eigen::Vector3f>(float_buffer)
                                 .cast<double>();
             }
-            TriangleMesh.triangles_[i] =
+            mesh.triangles_[i] =
                     Eigen::Vector3i(i * 3 + 0, i * 3 + 1, i * 3 + 2);
             // ignore buffer[48] and buffer [49] because it is rarely used.
 
@@ -95,7 +94,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename,
 }
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
-                            const TriangleMesh &TriangleMesh,
+                            const TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
                             bool compressed /* = false*/) {
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);
@@ -105,7 +104,7 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
         return false;
     }
 
-    unsigned long num_of_triangles = TriangleMesh.triangles_.size();
+    size_t num_of_triangles = mesh.triangles_.size();
     if (num_of_triangles == 0) {
         PrintWarning("Write STL failed: empty file.\n");
         return false;
@@ -117,11 +116,11 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     ResetConsoleProgress(num_of_triangles, "Writing STL: ");
     for (int i = 0; i < num_of_triangles; i++) {
         Eigen::Vector3f float_vector3f =
-                TriangleMesh.triangle_normals_[i].cast<float>();
+                mesh.triangle_normals_[i].cast<float>();
         myFile.write(reinterpret_cast<const char *>(float_vector3f.data()), 12);
         for (int j = 0; j < 3; j++) {
             Eigen::Vector3f float_vector3f =
-                    TriangleMesh.vertices_[i * 3 + j].cast<float>();
+                    mesh.vertices_[mesh.triangles_[i][j]].cast<float>();
             myFile.write(reinterpret_cast<const char *>(float_vector3f.data()),
                          12);
         }
