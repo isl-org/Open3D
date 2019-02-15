@@ -28,16 +28,10 @@
 
 void pybind_core(py::module &m) {
     py::module m_camera = m.def_submodule("camera");
-    py::module m_geometry = m.def_submodule("geometry");
-    py::module m_odometry = m.def_submodule("odometry");
-    py::module m_registration = m.def_submodule("registration");
-    py::module m_integration = m.def_submodule("integration");
-    py::module m_utility = m.def_submodule("utility");
-
     pybind_camera(m_camera);
+    pybind_camera_methods(m_camera);
 
-    pybind_console(m_utility);
-
+    py::module m_geometry = m.def_submodule("geometry");
     pybind_geometry(m_geometry);
     pybind_pointcloud(m_geometry);
     pybind_voxelgrid(m_geometry);
@@ -45,30 +39,30 @@ void pybind_core(py::module &m) {
     pybind_trianglemesh(m_geometry);
     pybind_image(m_geometry);
     pybind_kdtreeflann(m_geometry);
-
-    pybind_feature(m_registration);
-    pybind_registration(m_registration);
-    pybind_global_optimization(m_registration);
-    pybind_colormap_optimization(m_registration);
-
-    pybind_odometry(m_odometry);
-
-    pybind_integration(m_integration);
-
-    pybind_camera_methods(m_camera);
-
     pybind_pointcloud_methods(m_geometry);
     pybind_voxelgrid_methods(m_geometry);
     pybind_lineset_methods(m_geometry);
     pybind_trianglemesh_methods(m_geometry);
     pybind_image_methods(m_geometry);
 
+    py::module m_odometry = m.def_submodule("odometry");
+    pybind_odometry(m_odometry);
+    pybind_odometry_methods(m_odometry);
+
+    py::module m_registration = m.def_submodule("registration");
+    pybind_feature(m_registration);
+    pybind_registration(m_registration);
+    pybind_global_optimization(m_registration);
+    pybind_colormap_optimization(m_registration);
     pybind_feature_methods(m_registration);
     pybind_registration_methods(m_registration);
     pybind_global_optimization_methods(m_registration);
     pybind_colormap_optimization_methods(m_registration);
 
-    pybind_odometry_methods(m_odometry);
-
+    py::module m_integration = m.def_submodule("integration");
+    pybind_integration(m_integration);
     pybind_integration_methods(m_integration);
+
+    py::module m_utility = m.def_submodule("utility");
+    pybind_console(m_utility);
 }
