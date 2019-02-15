@@ -75,8 +75,8 @@ void pybind_trianglemesh(py::module &m) {
             .def_readwrite("vertex_normals", &TriangleMesh::vertex_normals_)
             .def_readwrite("vertex_colors", &TriangleMesh::vertex_colors_)
             .def_readwrite("triangles", &TriangleMesh::triangles_)
-            .def_readwrite("triangle_normals",
-                           &TriangleMesh::triangle_normals_);
+            .def_readwrite("triangle_normals", &TriangleMesh::triangle_normals_)
+            .def_readwrite("adjacency_list", &TriangleMesh::adjacency_list_);
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
