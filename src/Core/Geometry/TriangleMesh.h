@@ -27,6 +27,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 #include <memory>
 #include <Eigen/Core>
 
@@ -55,6 +56,9 @@ public:
 
     /// Function to compute vertex normals, usually called before rendering
     void ComputeVertexNormals(bool normalized = true);
+
+    /// Function to compute adjacency list, call before adjacency list is needed
+    void ComputeAdjacencyList();
 
     /// Function to remove duplicated and non-manifold vertices/triangles
     void Purge();
@@ -86,6 +90,11 @@ public:
         return HasTriangles() && triangles_.size() == triangle_normals_.size();
     }
 
+    bool HasAdjacencyList() const {
+        return vertices_.size() > 0 &&
+               adjacency_list_.size() == vertices_.size();
+    }
+
     void NormalizeNormals() {
         for (size_t i = 0; i < vertex_normals_.size(); i++) {
             vertex_normals_[i].normalize();
@@ -114,6 +123,7 @@ public:
     std::vector<Eigen::Vector3d> vertex_colors_;
     std::vector<Eigen::Vector3i> triangles_;
     std::vector<Eigen::Vector3d> triangle_normals_;
+    std::vector<std::unordered_set<int>> adjacency_list_;
 };
 
 /// Function to select points from \param input TriangleMesh into
