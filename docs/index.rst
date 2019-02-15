@@ -22,9 +22,18 @@ Open3D: A Modern Library for 3D Data Processing
     introduction
     getting_started
     compilation
-    tutorial/index
     contribute
 
+.. toctree::
+    :maxdepth: 1
+    :caption: Tutorial
+
+    tutorial/Basic/index
+    tutorial/Advanced/index
+    tutorial/ReconstructionSystem/index
+    tutorial/C++/cplusplus_interface
+    tutorial/docker/index
+    tutorial/reference
 
 .. toctree::
     :maxdepth: 1
