@@ -485,6 +485,40 @@ TEST(TriangleMesh, ComputeVertexNormals) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+TEST(TriangleMesh, ComputeAdjacencyList) {
+    // 4-sided pyramid with A as top vertex, bottom has two triangles
+    Eigen::Vector3d A(0, 0, 1);    // 0
+    Eigen::Vector3d B(1, 1, 0);    // 1
+    Eigen::Vector3d C(-1, 1, 0);   // 2
+    Eigen::Vector3d D(-1, -1, 0);  // 3
+    Eigen::Vector3d E(1, -1, 0);   // 4
+    std::vector<Eigen::Vector3d> vertices{A, B, C, D, E};
+
+    TriangleMesh tm;
+    tm.vertices_.insert(tm.vertices_.end(), std::begin(vertices),
+                        std::end(vertices));
+    tm.triangles_ = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 2, 3),
+                     Eigen::Vector3i(0, 3, 4), Eigen::Vector3i(0, 4, 1),
+                     Eigen::Vector3i(1, 2, 4), Eigen::Vector3i(2, 3, 4)};
+    EXPECT_FALSE(tm.HasAdjacencyList());
+    tm.ComputeAdjacencyList();
+    EXPECT_TRUE(tm.HasAdjacencyList());
+
+    // A
+    EXPECT_TRUE(tm.adjacency_list_[0] == std::unordered_set<int>({1, 2, 3, 4}));
+    // B
+    EXPECT_TRUE(tm.adjacency_list_[1] == std::unordered_set<int>({0, 2, 4}));
+    // C
+    EXPECT_TRUE(tm.adjacency_list_[2] == std::unordered_set<int>({0, 1, 3, 4}));
+    // D
+    EXPECT_TRUE(tm.adjacency_list_[3] == std::unordered_set<int>({0, 2, 4}));
+    // E
+    EXPECT_TRUE(tm.adjacency_list_[4] == std::unordered_set<int>({0, 1, 2, 3}));
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(TriangleMesh, Purge) {
     vector<Vector3d> ref_vertices = {{839.215686, 392.156863, 780.392157},
                                      {796.078431, 909.803922, 196.078431},
