@@ -1,5 +1,6 @@
-Integration
------------
+open3d.integration
+------------------
+
 .. currentmodule:: open3d
 
 .. autosummary::

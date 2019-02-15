@@ -1,5 +1,6 @@
-Registration
-------------
+open3d.registration
+-------------------
+
 .. currentmodule:: open3d
 
 .. autosummary::

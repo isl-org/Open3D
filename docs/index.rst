@@ -30,5 +30,11 @@ Open3D: A Modern Library for 3D Data Processing
     :maxdepth: 1
     :caption: Python API
 
-    python_api/index
+    python_api/geometry
+    python_api/registration
+    python_api/camera
+    python_api/odometry
+    python_api/visualization
+    python_api/integration
+    python_api/utility
 
