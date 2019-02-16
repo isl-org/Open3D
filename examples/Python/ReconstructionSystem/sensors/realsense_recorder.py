@@ -1,3 +1,7 @@
+# Might need these lines aswell on macOS Mojave 10.14.3
+# import sys
+# sys.path.append('/usr/local/lib')
+
 # pyrealsense2 is required.
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python
 import pyrealsense2 as rs
@@ -93,7 +97,7 @@ if __name__ == "__main__":
     if args.record_imgs or args.record_rosbag:
         # note: using 640 x 480 depth resolution produces smooth depth boundaries
         #       using rs.format.bgr8 for color image format for OpenCV based image visualization
-        config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+        config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
         config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         if args.record_rosbag:
             config.enable_record_to_file(path_bag)
