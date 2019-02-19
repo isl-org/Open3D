@@ -1,5 +1,6 @@
-Odometry
-------------
+open3d.odometry
+---------------
+
 .. currentmodule:: open3d
 
 .. autosummary::

@@ -11,17 +11,39 @@
 -----------
 
 Open3D: A Modern Library for 3D Data Processing
-===================================================================
+===============================================
 
 .. only: not latex
 
-   Contents:
+    Contents:
 
 .. toctree::
 
-  introduction
-  getting_started
-  compilation
-  tutorial/index
-  python_api/index
-  contribute
+    introduction
+    getting_started
+    compilation
+    contribute
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Tutorial
+
+    tutorial/Basic/index
+    tutorial/Advanced/index
+    tutorial/ReconstructionSystem/index
+    tutorial/C++/cplusplus_interface
+    tutorial/docker/index
+    tutorial/reference
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Python API
+
+    python_api/geometry
+    python_api/registration
+    python_api/camera
+    python_api/odometry
+    python_api/visualization
+    python_api/integration
+    python_api/utility
+
