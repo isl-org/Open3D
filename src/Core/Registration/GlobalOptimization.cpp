@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "GlobalOptimization.h"
-#include "Eigen.h"
+#include "Core/Utility/Eigen.h"
 
 #include <vector>
 #include <tuple>
