@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "GlobalOptimization.h"
-#include "Eigen.h"
 
 #include <vector>
 #include <tuple>
@@ -33,6 +32,7 @@
 #include <Eigen/Sparse>
 #include <Core/Utility/Console.h>
 #include <Core/Utility/Timer.h>
+#include <Core/Utility/Eigen.h>
 #include <Core/Registration/PoseGraph.h>
 #include <Core/Registration/GlobalOptimizationMethod.h>
 #include <Core/Registration/GlobalOptimizationConvergenceCriteria.h>

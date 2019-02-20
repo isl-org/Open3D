@@ -72,21 +72,15 @@ function(SourcePath2InstallPath input_dirs output_dirs input_base_dir)
 endfunction()
 
 # build a list of include folders
-SourcePath2InstallPath("${CMAKE_CURRENT_SOURCE_DIR}"   INSTALL_PROJECT_INCLUDE_DIR        ${CMAKE_CURRENT_SOURCE_DIR})
-SourcePath2InstallPath("${CORE_INCLUDE_DIRS}"          INSTALL_CORE_INCLUDE_DIRS          ${CMAKE_CURRENT_SOURCE_DIR})
-SourcePath2InstallPath("${IO_INCLUDE_DIRS}"            INSTALL_IO_INCLUDE_DIRS            ${CMAKE_CURRENT_SOURCE_DIR})
-SourcePath2InstallPath("${VISUALIZATION_INCLUDE_DIRS}" INSTALL_VISUALIZATION_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 SourcePath2InstallPath("${3RDPARTY_INCLUDE_DIRS}"      INSTALL_3RDPARTY_INCLUDE_DIRS      ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # set Open3D include directories
 list(APPEND CONFIG_Open3D_INCLUDE_DIRS
-     ${INSTALL_PROJECT_INCLUDE_DIR}
-     ${INSTALL_CORE_INCLUDE_DIRS}
-     ${INSTALL_IO_INCLUDE_DIRS}
-     ${INSTALL_VISUALIZATION_INCLUDE_DIRS}
-     ${INSTALL_3RDPARTY_INCLUDE_DIRS})
+    ${CMAKE_INSTALL_PREFIX}/include/Open3D
+    ${INSTALL_3RDPARTY_INCLUDE_DIRS}
+)
 list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
-list(SORT CONFIG_Open3D_INCLUDE_DIRS)
+
 
 # set Open3D libraries
 # If Open3D is a shared library
