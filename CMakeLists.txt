@@ -88,13 +88,6 @@ if (NOT CMAKE_BUILD_TYPE)
         FORCE)
 endif ()
 
-# set include directories
-include_directories(
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/3rdparty
-    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
-    )
-
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -207,9 +200,15 @@ endmacro(ADD_SOURCE_GROUP)
 
 # Handling dependencies
 add_subdirectory(3rdparty)
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${3RDPARTY_INCLUDE_DIRS})
 link_directories(${3RDPARTY_LIBRARY_DIRS})
+
+# set include directories
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/3rdparty
+    ${3RDPARTY_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+)
 
 # Open3D library
 add_subdirectory(src)
