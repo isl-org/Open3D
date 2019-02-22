@@ -1,7 +1,7 @@
 build*/
 _build/
 src/Sandbox/
-src/Visualization/Shader/Shader.h
+src/Open3D/Visualization/Shader/Shader.h
 doxygen/
 .vs/
 .vscode/
