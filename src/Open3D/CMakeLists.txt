@@ -1,7 +1,6 @@
 ################################################################################
 # build
 file(GLOB_RECURSE CORE_ALL_SOURCE_FILES
-    "Camera/*.cpp"
     "ColorMap/*.cpp"
     "Geometry/*.cpp"
     "Integration/*.cpp"
@@ -10,7 +9,6 @@ file(GLOB_RECURSE CORE_ALL_SOURCE_FILES
     "Utility/*.cpp"
 )
 file(GLOB_RECURSE CORE_ALL_HEADER_FILES
-    "Camera/*.h"
     "ColorMap/*.h"
     "Geometry/*.h"
     "Integration/*.h"
@@ -29,6 +27,7 @@ install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         PATTERN     "*.txt" EXCLUDE)
 ################################################################################
 
+add_subdirectory(Camera)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
@@ -45,6 +44,7 @@ ADD_SOURCE_GROUP(Visualization)
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 add_library(${CMAKE_PROJECT_NAME} Open3DConfig.h Open3DConfig.cpp
+            $<TARGET_OBJECTS:Camera>
             $<TARGET_OBJECTS:Core>
             $<TARGET_OBJECTS:IO>
             $<TARGET_OBJECTS:Visualization>)
