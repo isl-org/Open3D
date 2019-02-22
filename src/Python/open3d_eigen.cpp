@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d.h"
+#include "open3d_python.h"
 
 namespace pybind11 {
 

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Python/open3d.h>
+#include <Python/open3d_python.h>
 
 void pybind_console(py::module &m);
 void pybind_geometry(py::module &m);
