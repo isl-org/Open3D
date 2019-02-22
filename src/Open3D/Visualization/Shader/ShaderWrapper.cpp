@@ -26,8 +26,8 @@
 
 #include "ShaderWrapper.h"
 
-#include <Core/Geometry/Geometry.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Geometry/Geometry.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

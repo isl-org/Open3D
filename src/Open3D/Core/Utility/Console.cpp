@@ -40,7 +40,7 @@
 #include <windows.h>
 #endif
 
-#include <Core/Utility/Helper.h>
+#include <Open3D/Core/Utility/Helper.h>
 
 namespace open3d {
 

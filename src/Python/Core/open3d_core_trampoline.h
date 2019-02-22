@@ -27,9 +27,9 @@
 #pragma once
 
 #include <Python/open3d.h>
-#include <Core/Geometry/Geometry.h>
-#include <Core/Geometry/Geometry2D.h>
-#include <Core/Geometry/Geometry3D.h>
+#include <Open3D/Core/Geometry/Geometry.h>
+#include <Open3D/Core/Geometry/Geometry2D.h>
+#include <Open3D/Core/Geometry/Geometry3D.h>
 using namespace open3d;
 
 template <class GeometryBase = Geometry>

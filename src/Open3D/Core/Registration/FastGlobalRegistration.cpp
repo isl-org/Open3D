@@ -28,12 +28,12 @@
 
 #include <ctime>
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/KDTreeFlann.h>
-#include <Core/Registration/Registration.h>
-#include <Core/Registration/Feature.h>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Eigen.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/KDTreeFlann.h>
+#include <Open3D/Core/Registration/Registration.h>
+#include <Open3D/Core/Registration/Feature.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Eigen.h>
 
 namespace open3d {
 

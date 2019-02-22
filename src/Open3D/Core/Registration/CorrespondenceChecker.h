@@ -31,7 +31,7 @@
 #include <string>
 #include <Eigen/Core>
 
-#include <Core/Registration/TransformationEstimation.h>
+#include <Open3D/Core/Registration/TransformationEstimation.h>
 
 namespace open3d {
 

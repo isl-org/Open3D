@@ -28,12 +28,12 @@
 #include <memory>
 #include <Eigen/Dense>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include <Open3D/Core/Core.h>
+#include <Open3D/IO/IO.h>
+#include <Open3D/Visualization/Visualization.h>
 
-#include <Core/Utility/Timer.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Timer.h>
+#include <Open3D/Core/Utility/Console.h>
 
 using namespace open3d;
 

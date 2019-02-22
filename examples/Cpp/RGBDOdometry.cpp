@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <IO/IO.h>
-#include <Core/Core.h>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Utility/Helper.h>
-#include <Visualization/Visualization.h>
+#include <Open3D/IO/IO.h>
+#include <Open3D/Core/Core.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/RGBDImage.h>
+#include <Open3D/Core/Utility/Helper.h>
+#include <Open3D/Visualization/Visualization.h>
 
 using namespace open3d;
 

@@ -26,9 +26,9 @@
 
 #include "Simple2DShader.h"
 
-#include <Visualization/Shader/Shader.h>
-#include <Visualization/Utility/SelectionPolygon.h>
-#include <Visualization/Visualizer/RenderOptionWithEditing.h>
+#include <Open3D/Visualization/Shader/Shader.h>
+#include <Open3D/Visualization/Utility/SelectionPolygon.h>
+#include <Open3D/Visualization/Visualizer/RenderOptionWithEditing.h>
 
 namespace open3d {
 

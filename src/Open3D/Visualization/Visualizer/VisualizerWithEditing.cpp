@@ -27,20 +27,20 @@
 #include "VisualizerWithEditing.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/LineSet.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Core/Geometry/Image.h>
-#include <Core/Utility/FileSystem.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
-#include <IO/ClassIO/PointCloudIO.h>
-#include <IO/ClassIO/TriangleMeshIO.h>
-#include <Visualization/Visualizer/ViewControlWithEditing.h>
-#include <Visualization/Visualizer/RenderOptionWithEditing.h>
-#include <Visualization/Utility/SelectionPolygon.h>
-#include <Visualization/Utility/SelectionPolygonVolume.h>
-#include <Visualization/Utility/PointCloudPicker.h>
-#include <Visualization/Utility/GLHelper.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/LineSet.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Core/Utility/FileSystem.h>
+#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
+#include <Open3D/IO/ClassIO/PointCloudIO.h>
+#include <Open3D/IO/ClassIO/TriangleMeshIO.h>
+#include <Open3D/Visualization/Visualizer/ViewControlWithEditing.h>
+#include <Open3D/Visualization/Visualizer/RenderOptionWithEditing.h>
+#include <Open3D/Visualization/Utility/SelectionPolygon.h>
+#include <Open3D/Visualization/Utility/SelectionPolygonVolume.h>
+#include <Open3D/Visualization/Utility/PointCloudPicker.h>
+#include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
 

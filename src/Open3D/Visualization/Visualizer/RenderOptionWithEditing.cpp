@@ -26,7 +26,7 @@
 
 #include "RenderOptionWithEditing.h"
 
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Console.h>
 #include <json/json.h>
 
 namespace open3d {

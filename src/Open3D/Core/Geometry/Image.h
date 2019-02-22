@@ -30,8 +30,8 @@
 #include <memory>
 #include <Eigen/Core>
 
-#include <Core/Geometry/Geometry2D.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Geometry/Geometry2D.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

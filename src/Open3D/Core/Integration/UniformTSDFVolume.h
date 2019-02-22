@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Core/Integration/TSDFVolume.h>
+#include <Open3D/Core/Integration/TSDFVolume.h>
 
 namespace open3d {
 

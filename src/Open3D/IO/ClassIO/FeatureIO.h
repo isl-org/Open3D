@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Core/Registration/Feature.h>
+#include <Open3D/Core/Registration/Feature.h>
 
 namespace open3d {
 

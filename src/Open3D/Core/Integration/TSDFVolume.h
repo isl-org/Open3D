@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/Core/Geometry/RGBDImage.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d {
 

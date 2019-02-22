@@ -27,8 +27,8 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Core/Geometry/TriangleMesh.h>
-#include <IO/ClassIO/TriangleMeshIO.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/IO/ClassIO/TriangleMeshIO.h>
 using namespace open3d;
 
 void pybind_trianglemesh(py::module &m) {

@@ -28,7 +28,7 @@
 
 #include <memory>
 #include <string>
-#include <Core/ColorMap/ImageWarpingField.h>
+#include <Open3D/Core/ColorMap/ImageWarpingField.h>
 
 namespace open3d {
 

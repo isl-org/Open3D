@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Visualization/Visualizer/ViewControl.h>
+#include <Open3D/Visualization/Visualizer/ViewControl.h>
 
 namespace open3d {
 

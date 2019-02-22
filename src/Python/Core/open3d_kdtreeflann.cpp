@@ -27,7 +27,7 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Core/Geometry/KDTreeFlann.h>
+#include <Open3D/Core/Geometry/KDTreeFlann.h>
 using namespace open3d;
 
 void pybind_kdtreeflann(py::module &m) {

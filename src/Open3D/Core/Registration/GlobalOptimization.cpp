@@ -30,12 +30,12 @@
 #include <tuple>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Timer.h>
-#include <Core/Utility/Eigen.h>
-#include <Core/Registration/PoseGraph.h>
-#include <Core/Registration/GlobalOptimizationMethod.h>
-#include <Core/Registration/GlobalOptimizationConvergenceCriteria.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Timer.h>
+#include <Open3D/Core/Utility/Eigen.h>
+#include <Open3D/Core/Registration/PoseGraph.h>
+#include <Open3D/Core/Registration/GlobalOptimizationMethod.h>
+#include <Open3D/Core/Registration/GlobalOptimizationConvergenceCriteria.h>
 
 namespace open3d {
 

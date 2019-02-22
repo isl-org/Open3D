@@ -27,13 +27,13 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Registration/Feature.h>
-#include <Core/Registration/CorrespondenceChecker.h>
-#include <Core/Registration/TransformationEstimation.h>
-#include <Core/Registration/Registration.h>
-#include <Core/Registration/FastGlobalRegistration.h>
-#include <Core/Registration/ColoredICP.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Registration/Feature.h>
+#include <Open3D/Core/Registration/CorrespondenceChecker.h>
+#include <Open3D/Core/Registration/TransformationEstimation.h>
+#include <Open3D/Core/Registration/Registration.h>
+#include <Open3D/Core/Registration/FastGlobalRegistration.h>
+#include <Open3D/Core/Registration/ColoredICP.h>
 
 using namespace open3d;
 

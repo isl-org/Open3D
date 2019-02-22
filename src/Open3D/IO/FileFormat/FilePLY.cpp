@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <IO/ClassIO/LineSetIO.h>
-#include <IO/ClassIO/PointCloudIO.h>
-#include <IO/ClassIO/VoxelGridIO.h>
-#include <IO/ClassIO/TriangleMeshIO.h>
+#include <Open3D/IO/ClassIO/LineSetIO.h>
+#include <Open3D/IO/ClassIO/PointCloudIO.h>
+#include <Open3D/IO/ClassIO/VoxelGridIO.h>
+#include <Open3D/IO/ClassIO/TriangleMeshIO.h>
 
 #include <rply/rply.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

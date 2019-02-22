@@ -28,7 +28,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-#include <Core/Utility/IJsonConvertible.h>
+#include <Open3D/Core/Utility/IJsonConvertible.h>
 
 namespace open3d {
 

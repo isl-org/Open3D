@@ -27,11 +27,11 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Camera/PinholeCameraIntrinsic.h>
-#include <IO/ClassIO/PointCloudIO.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Core/Geometry/RGBDImage.h>
+#include <Open3D/Core/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/IO/ClassIO/PointCloudIO.h>
 using namespace open3d;
 
 void pybind_pointcloud(py::module &m) {

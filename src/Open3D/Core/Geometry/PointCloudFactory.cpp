@@ -27,10 +27,10 @@
 #include "PointCloud.h"
 
 #include <Eigen/Dense>
-#include <Core/Utility/Console.h>
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Core/Geometry/RGBDImage.h>
+#include <Open3D/Core/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d {
 

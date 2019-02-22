@@ -32,9 +32,9 @@
 #include "KDTreeFlann.h"
 
 #include <flann/flann.hpp>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

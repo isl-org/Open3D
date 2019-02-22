@@ -30,8 +30,8 @@
 #include <tuple>
 
 #include <Eigen/Dense>
-#include <Core/Utility/Helper.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Helper.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

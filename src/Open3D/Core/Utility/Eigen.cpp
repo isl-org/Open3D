@@ -28,7 +28,7 @@
 #include <Eigen/Sparse>
 
 #include <Eigen/Geometry>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

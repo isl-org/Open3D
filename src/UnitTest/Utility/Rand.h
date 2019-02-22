@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Core/Utility/Eigen.h>
+#include <Open3D/Core/Utility/Eigen.h>
 
 #include <Eigen/Core>
 #include <vector>

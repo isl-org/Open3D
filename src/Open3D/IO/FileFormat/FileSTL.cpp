@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <IO/ClassIO/TriangleMeshIO.h>
+#include <Open3D/IO/ClassIO/TriangleMeshIO.h>
 
 #include <fstream>
 #include <vector>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

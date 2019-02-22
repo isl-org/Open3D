@@ -28,7 +28,7 @@
 
 #include <memory>
 #include <vector>
-#include <Core/Utility/Eigen.h>
+#include <Open3D/Core/Utility/Eigen.h>
 
 namespace open3d {
 

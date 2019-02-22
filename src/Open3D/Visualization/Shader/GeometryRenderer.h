@@ -26,16 +26,16 @@
 
 #pragma once
 
-#include <Core/Geometry/Geometry.h>
+#include <Open3D/Core/Geometry/Geometry.h>
 
-#include <Visualization/Shader/SimpleShader.h>
-#include <Visualization/Shader/SimpleBlackShader.h>
-#include <Visualization/Shader/PhongShader.h>
-#include <Visualization/Shader/NormalShader.h>
-#include <Visualization/Shader/ImageShader.h>
-#include <Visualization/Shader/Simple2DShader.h>
-#include <Visualization/Shader/ImageMaskShader.h>
-#include <Visualization/Shader/PickingShader.h>
+#include <Open3D/Visualization/Shader/SimpleShader.h>
+#include <Open3D/Visualization/Shader/SimpleBlackShader.h>
+#include <Open3D/Visualization/Shader/PhongShader.h>
+#include <Open3D/Visualization/Shader/NormalShader.h>
+#include <Open3D/Visualization/Shader/ImageShader.h>
+#include <Open3D/Visualization/Shader/Simple2DShader.h>
+#include <Open3D/Visualization/Shader/ImageMaskShader.h>
+#include <Open3D/Visualization/Shader/PickingShader.h>
 
 namespace open3d {
 

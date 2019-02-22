@@ -28,11 +28,11 @@
 
 #include <thread>
 
-#include <Core/Utility/FileSystem.h>
-#include <Core/Utility/Console.h>
-#include <Core/Camera/PinholeCameraTrajectory.h>
-#include <Visualization/Visualizer/ViewControlWithCustomAnimation.h>
-#include <IO/ClassIO/IJsonConvertibleIO.h>
+#include <Open3D/Core/Utility/FileSystem.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Camera/PinholeCameraTrajectory.h>
+#include <Open3D/Visualization/Visualizer/ViewControlWithCustomAnimation.h>
+#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace open3d {
 

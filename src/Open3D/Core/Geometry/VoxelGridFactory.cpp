@@ -29,9 +29,9 @@
 #include <numeric>
 #include <unordered_map>
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Helper.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Helper.h>
 
 namespace open3d {
 

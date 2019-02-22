@@ -26,9 +26,9 @@
 
 #include "Odometry.h"
 
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Odometry/RGBDOdometryJacobian.h>
+#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Core/Geometry/RGBDImage.h>
+#include <Open3D/Core/Odometry/RGBDOdometryJacobian.h>
 
 namespace open3d {
 

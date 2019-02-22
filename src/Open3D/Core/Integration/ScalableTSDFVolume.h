@@ -28,8 +28,8 @@
 
 #include <memory>
 #include <unordered_map>
-#include <Core/Integration/TSDFVolume.h>
-#include <Core/Utility/Helper.h>
+#include <Open3D/Core/Integration/TSDFVolume.h>
+#include <Open3D/Core/Utility/Helper.h>
 
 namespace open3d {
 

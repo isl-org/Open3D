@@ -28,10 +28,10 @@
 
 #include <unordered_set>
 
-#include <Core/Utility/Console.h>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Integration/UniformTSDFVolume.h>
-#include <Core/Integration/MarchingCubesConst.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Integration/UniformTSDFVolume.h>
+#include <Open3D/Core/Integration/MarchingCubesConst.h>
 
 namespace open3d {
 

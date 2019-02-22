@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Core/Utility/IJsonConvertible.h>
+#include <Open3D/Core/Utility/IJsonConvertible.h>
 
 namespace open3d {
 

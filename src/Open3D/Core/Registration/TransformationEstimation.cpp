@@ -27,8 +27,8 @@
 #include "TransformationEstimation.h"
 
 #include <Eigen/Geometry>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Utility/Eigen.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Utility/Eigen.h>
 
 namespace open3d {
 

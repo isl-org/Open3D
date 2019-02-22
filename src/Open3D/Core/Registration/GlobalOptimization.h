@@ -27,8 +27,8 @@
 #pragma once
 
 #include <memory>
-#include <Core/Registration/GlobalOptimizationMethod.h>
-#include <Core/Registration/GlobalOptimizationConvergenceCriteria.h>
+#include <Open3D/Core/Registration/GlobalOptimizationMethod.h>
+#include <Open3D/Core/Registration/GlobalOptimizationConvergenceCriteria.h>
 
 namespace open3d {
 

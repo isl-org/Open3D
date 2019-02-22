@@ -27,13 +27,13 @@
 #include "ColoredICP.h"
 
 #include <Eigen/Dense>
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/KDTreeFlann.h>
-#include <Core/Geometry/KDTreeSearchParam.h>
-#include <Core/Utility/Eigen.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/KDTreeFlann.h>
+#include <Open3D/Core/Geometry/KDTreeSearchParam.h>
+#include <Open3D/Core/Utility/Eigen.h>
 
 #include <iostream>
-#include <Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Console.h>
 
 namespace open3d {
 

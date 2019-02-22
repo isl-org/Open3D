@@ -27,8 +27,8 @@
 #include "IJsonConvertibleIO.h"
 
 #include <unordered_map>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/FileSystem.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/FileSystem.h>
 
 namespace open3d {
 

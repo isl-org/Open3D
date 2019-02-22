@@ -28,8 +28,8 @@
 
 #include <memory>
 #include <vector>
-#include <Core/ColorMap/EigenHelperForNonRigidOptimization.h>
-#include <Core/Utility/Eigen.h>
+#include <Open3D/Core/ColorMap/EigenHelperForNonRigidOptimization.h>
+#include <Open3D/Core/Utility/Eigen.h>
 
 namespace open3d {
 

@@ -26,9 +26,9 @@
 
 #include "NormalShader.h"
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Visualization/Shader/Shader.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/Visualization/Shader/Shader.h>
 
 namespace open3d {
 

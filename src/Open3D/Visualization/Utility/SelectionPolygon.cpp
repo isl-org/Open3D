@@ -26,13 +26,13 @@
 
 #include "SelectionPolygon.h"
 
-#include <Core/Geometry/PointCloud.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Core/Utility/Console.h>
-#include <Visualization/Visualizer/ViewControl.h>
-#include <Visualization/Visualizer/ViewControlWithEditing.h>
-#include <Visualization/Utility/SelectionPolygonVolume.h>
-#include <Visualization/Utility/GLHelper.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Visualization/Visualizer/ViewControl.h>
+#include <Open3D/Visualization/Visualizer/ViewControlWithEditing.h>
+#include <Open3D/Visualization/Utility/SelectionPolygonVolume.h>
+#include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
 

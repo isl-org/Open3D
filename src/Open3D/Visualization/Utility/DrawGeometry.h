@@ -31,7 +31,7 @@
 #include <vector>
 #include <map>
 #include <functional>
-#include <Core/Geometry/Geometry.h>
+#include <Open3D/Core/Geometry/Geometry.h>
 
 namespace open3d {
 

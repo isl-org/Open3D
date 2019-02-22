@@ -27,8 +27,8 @@
 #include "CorrespondenceChecker.h"
 
 #include <Eigen/Dense>
-#include <Core/Utility/Console.h>
-#include <Core/Geometry/PointCloud.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Geometry/PointCloud.h>
 
 namespace open3d {
 

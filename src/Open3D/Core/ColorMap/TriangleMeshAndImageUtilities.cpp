@@ -26,11 +26,11 @@
 
 #include "TriangleMeshAndImageUtilities.h"
 
-#include <Core/Camera/PinholeCameraTrajectory.h>
-#include <Core/ColorMap/ImageWarpingField.h>
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Geometry/TriangleMesh.h>
+#include <Open3D/Core/Camera/PinholeCameraTrajectory.h>
+#include <Open3D/Core/ColorMap/ImageWarpingField.h>
+#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Core/Geometry/RGBDImage.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
 
 namespace open3d {
 

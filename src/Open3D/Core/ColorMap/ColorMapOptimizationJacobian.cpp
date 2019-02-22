@@ -26,10 +26,10 @@
 
 #include "ColorMapOptimizationJacobian.h"
 
-#include <Core/ColorMap/ImageWarpingField.h>
-#include <Core/ColorMap/EigenHelperForNonRigidOptimization.h>
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/TriangleMesh.h>
+#include <Open3D/Core/ColorMap/ImageWarpingField.h>
+#include <Open3D/Core/ColorMap/EigenHelperForNonRigidOptimization.h>
+#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Core/Geometry/TriangleMesh.h>
 
 namespace open3d {
 

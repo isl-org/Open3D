@@ -24,14 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <IO/ClassIO/PointCloudIO.h>
+#include <Open3D/IO/ClassIO/PointCloudIO.h>
 
 #include <cstdio>
 #include <sstream>
 #include <cstdint>
 #include <liblzf/lzf.h>
-#include <Core/Utility/Console.h>
-#include <Core/Utility/Helper.h>
+#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Core/Utility/Helper.h>
 
 // References for PCD file IO
 // http://pointclouds.org/documentation/tutorials/pcd_file_format.php
