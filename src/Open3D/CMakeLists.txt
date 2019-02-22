@@ -1,33 +1,11 @@
-################################################################################
-# build
-file(GLOB_RECURSE CORE_ALL_SOURCE_FILES
-    "ColorMap/*.cpp"
-    "Geometry/*.cpp"
-    "Integration/*.cpp"
-    "Odometry/*.cpp"
-    "Registration/*.cpp"
-    "Utility/*.cpp"
-)
-file(GLOB_RECURSE CORE_ALL_HEADER_FILES
-    "ColorMap/*.h"
-    "Geometry/*.h"
-    "Integration/*.h"
-    "Odometry/*.h"
-    "Registration/*.h"
-    "Utility/*.h"
-)
-
-# create object library
-add_library(Core OBJECT ${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES})
-
-#install headers
-install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
-        PATTERN     "*.cpp" EXCLUDE
-        PATTERN     "*.txt" EXCLUDE)
-################################################################################
-
+# Subdirectories
 add_subdirectory(Camera)
+add_subdirectory(ColorMap)
+add_subdirectory(Geometry)
+add_subdirectory(Integration)
+add_subdirectory(Odometry)
+add_subdirectory(Registration)
+add_subdirectory(Utility)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
@@ -43,11 +21,19 @@ ADD_SOURCE_GROUP(Visualization)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-add_library(${CMAKE_PROJECT_NAME} Open3DConfig.h Open3DConfig.cpp
-            $<TARGET_OBJECTS:Camera>
-            $<TARGET_OBJECTS:Core>
-            $<TARGET_OBJECTS:IO>
-            $<TARGET_OBJECTS:Visualization>)
+add_library(${CMAKE_PROJECT_NAME}
+    Open3DConfig.h
+    Open3DConfig.cpp
+    $<TARGET_OBJECTS:Camera>
+    $<TARGET_OBJECTS:ColorMap>
+    $<TARGET_OBJECTS:Geometry>
+    $<TARGET_OBJECTS:Integration>
+    $<TARGET_OBJECTS:Odometry>
+    $<TARGET_OBJECTS:Registration>
+    $<TARGET_OBJECTS:Utility>
+    $<TARGET_OBJECTS:IO>
+    $<TARGET_OBJECTS:Visualization>
+)
 
 # headless rendering
 if (ENABLE_HEADLESS_RENDERING)
