@@ -1,6 +1,22 @@
 # build
-file(GLOB_RECURSE CORE_ALL_SOURCE_FILES "*.cpp")
-file(GLOB_RECURSE CORE_ALL_HEADER_FILES "*.h")
+file(GLOB_RECURSE CORE_ALL_SOURCE_FILES
+    "Camera/*.cpp"
+    "ColorMap/*.cpp"
+    "Geometry/*.cpp"
+    "Integration/*.cpp"
+    "Odometry/*.cpp"
+    "Registration/*.cpp"
+    "Utility/*.cpp"
+)
+file(GLOB_RECURSE CORE_ALL_HEADER_FILES
+    "Camera/*.h"
+    "ColorMap/*.h"
+    "Geometry/*.h"
+    "Integration/*.h"
+    "Odometry/*.h"
+    "Registration/*.h"
+    "Utility/*.h"
+)
 
 # create object library
 add_library(Core OBJECT ${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES})
