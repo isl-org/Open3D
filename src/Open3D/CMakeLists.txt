@@ -22,7 +22,7 @@ ADD_SOURCE_GROUP(Visualization)
 
 # Install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
         PATTERN     "Visualization/Shader/GLSL" EXCLUDE
         PATTERN     "*.cpp" EXCLUDE
         PATTERN     "*.txt" EXCLUDE)
