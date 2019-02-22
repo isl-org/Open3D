@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-// #include "Core/ColorMap/ColorMapOptimizationOption.h"
+// #include "Open3D/Core/ColorMap/ColorMapOptimizationOption.h"
 
 /* TODO
 As the ColorMapOptimization subcomponents go back into hiding several lines of

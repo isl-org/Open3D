@@ -27,8 +27,8 @@
 #include "Utility/UnitTest.h"
 #include "OdometryTools.h"
 
-#include "Core/Geometry/RGBDImage.h"
-#include "Core/Odometry/RGBDOdometryJacobian.h"
+#include "Open3D/Core/Geometry/RGBDImage.h"
+#include "Open3D/Core/Odometry/RGBDOdometryJacobian.h"
 
 using namespace Eigen;
 using namespace odometry_tools;

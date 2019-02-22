@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include "Utility/UnitTest.h"
-#include "Core/Geometry/PointCloud.h"
-#include "Core/Geometry/Image.h"
-#include "Core/Geometry/RGBDImage.h"
-#include "Core/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Core/Geometry/PointCloud.h"
+#include "Open3D/Core/Geometry/Image.h"
+#include "Open3D/Core/Geometry/RGBDImage.h"
+#include "Open3D/Core/Camera/PinholeCameraIntrinsic.h"
 
 #include <algorithm>
 

@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Core/Utility/FileSystem.h"
+#include "Open3D/Core/Utility/FileSystem.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <algorithm>

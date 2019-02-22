@@ -28,7 +28,7 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Core/Geometry/Image.h"
+#include "Open3D/Core/Geometry/Image.h"
 
 namespace odometry_tools {
 std::shared_ptr<open3d::Image> GenerateImage(const int& width,
