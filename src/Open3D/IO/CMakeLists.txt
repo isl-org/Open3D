@@ -10,10 +10,3 @@ add_library(IO OBJECT
             ${IO_ALL_SOURCE_FILES}
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
-
-#install headers
-install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
-        PATTERN     "FileFormat" EXCLUDE
-        PATTERN     "*.cpp" EXCLUDE
-        PATTERN     "*.txt" EXCLUDE)

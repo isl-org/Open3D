@@ -9,6 +9,7 @@ add_subdirectory(Utility)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
 
+# Source group for Visual Studio
 ADD_SOURCE_GROUP(Camera)
 ADD_SOURCE_GROUP(ColorMap)
 ADD_SOURCE_GROUP(Geometry)
@@ -18,6 +19,13 @@ ADD_SOURCE_GROUP(Registration)
 ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
 ADD_SOURCE_GROUP(Visualization)
+
+# Install headers
+install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
+        PATTERN     "Visualization/Shader/GLSL" EXCLUDE
+        PATTERN     "*.cpp" EXCLUDE
+        PATTERN     "*.txt" EXCLUDE)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries

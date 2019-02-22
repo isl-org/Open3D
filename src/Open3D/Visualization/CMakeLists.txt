@@ -35,10 +35,3 @@ add_library(Visualization OBJECT
 source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
 
 add_dependencies(Visualization ShaderFileTarget)
-
-#install headers
-install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
-        PATTERN     "Shader/GLSL" EXCLUDE
-        PATTERN     "*.cpp" EXCLUDE
-        PATTERN     "*.txt" EXCLUDE)
