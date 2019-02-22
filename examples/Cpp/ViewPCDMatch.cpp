@@ -29,8 +29,6 @@
 
 #include <Eigen/Dense>
 #include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
 
 bool ReadLogFile(const std::string &filename,
                  std::vector<std::tuple<int, int, int>> &metadata,

@@ -27,8 +27,6 @@
 #include <thread>
 
 #include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
 
 #include "VisualizerForAlignment.h"
 

@@ -30,8 +30,6 @@
 #include <flann/flann.hpp>
 
 #include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
 
 class KDTreeFlannFeature {
 public:

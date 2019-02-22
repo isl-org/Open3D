@@ -29,8 +29,6 @@
 #include <Eigen/Dense>
 
 #include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
-#include <Open3D/Open3D.h>
 
 #include <Open3D/Utility/Timer.h>
 #include <Open3D/Utility/Console.h>
