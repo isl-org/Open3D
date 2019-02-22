@@ -1,10 +1,3 @@
-macro(ADD_OPEN3D_MODULE MODULE_NAME)
-    file(GLOB MODULE_HEADER_FILES "${MODULE_NAME}/*.h")
-    source_group("Header Files\\Open3D\\${PATH}" FILES ${MODULE_HEADER_FILES})
-    file(GLOB MODULE_SOURCE_FILES "${MODULE_NAME}/*.cpp")
-    source_group("Source Files\\Open3D\\${PATH}" FILES ${MODULE_SOURCE_FILES})
-endmacro(ADD_OPEN3D_MODULE)
-
 add_subdirectory(Core)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
