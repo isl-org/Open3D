@@ -27,7 +27,7 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Geometry/LineSet.h>
+#include <Open3D/Geometry/LineSet.h>
 #include <Open3D/IO/ClassIO/LineSetIO.h>
 using namespace open3d;
 

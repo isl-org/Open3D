@@ -27,7 +27,7 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Core.h>
+#include <Open3D/Core.h>
 using namespace open3d;
 
 void pybind_geometry(py::module &m) {

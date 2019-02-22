@@ -27,11 +27,11 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Geometry/Image.h>
-#include <Open3D/Core/Geometry/RGBDImage.h>
-#include <Open3D/Core/Odometry/Odometry.h>
-#include <Open3D/Core/Odometry/OdometryOption.h>
-#include <Open3D/Core/Odometry/RGBDOdometryJacobian.h>
+#include <Open3D/Geometry/Image.h>
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Odometry/Odometry.h>
+#include <Open3D/Odometry/OdometryOption.h>
+#include <Open3D/Odometry/RGBDOdometryJacobian.h>
 using namespace open3d;
 
 template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>

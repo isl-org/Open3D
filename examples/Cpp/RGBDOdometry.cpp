@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #include <Open3D/IO/IO.h>
-#include <Open3D/Core/Core.h>
-#include <Open3D/Core/Geometry/PointCloud.h>
-#include <Open3D/Core/Geometry/RGBDImage.h>
-#include <Open3D/Core/Utility/Helper.h>
+#include <Open3D/Core.h>
+#include <Open3D/Geometry/PointCloud.h>
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Utility/Helper.h>
 #include <Open3D/Visualization/Visualization.h>
 
 using namespace open3d;

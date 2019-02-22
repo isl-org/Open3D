@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Open3D/Core/Registration/PoseGraph.h>
+#include <Open3D/Registration/PoseGraph.h>
 
 namespace open3d {
 

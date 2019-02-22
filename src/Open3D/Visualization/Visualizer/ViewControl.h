@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <Open3D/Core/Geometry/Geometry.h>
-#include <Open3D/Core/Camera/PinholeCameraParameters.h>
+#include <Open3D/Geometry/Geometry.h>
+#include <Open3D/Camera/PinholeCameraParameters.h>
 #include <Open3D/Visualization/Visualizer/ViewParameters.h>
 #include <Open3D/Visualization/Utility/BoundingBox.h>
 #include <Open3D/Visualization/Utility/GLHelper.h>

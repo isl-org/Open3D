@@ -27,9 +27,9 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Integration/TSDFVolume.h>
-#include <Open3D/Core/Integration/UniformTSDFVolume.h>
-#include <Open3D/Core/Integration/ScalableTSDFVolume.h>
+#include <Open3D/Integration/TSDFVolume.h>
+#include <Open3D/Integration/UniformTSDFVolume.h>
+#include <Open3D/Integration/ScalableTSDFVolume.h>
 
 using namespace open3d;
 

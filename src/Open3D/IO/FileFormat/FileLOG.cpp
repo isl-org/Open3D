@@ -27,7 +27,7 @@
 #include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
 #include <Eigen/Dense>
-#include <Open3D/Core/Utility/Console.h>
+#include <Open3D/Utility/Console.h>
 
 // The log file is the redwood-data format for camera trajectories
 // See these pages for details:

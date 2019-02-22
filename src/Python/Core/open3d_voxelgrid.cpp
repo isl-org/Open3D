@@ -27,8 +27,8 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Geometry/PointCloud.h>
-#include <Open3D/Core/Geometry/VoxelGrid.h>
+#include <Open3D/Geometry/PointCloud.h>
+#include <Open3D/Geometry/VoxelGrid.h>
 #include <Open3D/IO/ClassIO/VoxelGridIO.h>
 using namespace open3d;
 

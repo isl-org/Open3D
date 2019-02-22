@@ -28,7 +28,7 @@
 #include <memory>
 #include <thread>
 
-#include <Open3D/Core/Core.h>
+#include <Open3D/Core.h>
 #include <Open3D/IO/IO.h>
 #include <Open3D/Visualization/Visualization.h>
 

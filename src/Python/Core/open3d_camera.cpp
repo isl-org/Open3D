@@ -27,8 +27,8 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Camera/PinholeCameraIntrinsic.h>
-#include <Open3D/Core/Camera/PinholeCameraTrajectory.h>
+#include <Open3D/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/Camera/PinholeCameraTrajectory.h>
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 #include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
 using namespace open3d;

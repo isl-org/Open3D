@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Geometry/Image.h>
 
 namespace open3d {
 

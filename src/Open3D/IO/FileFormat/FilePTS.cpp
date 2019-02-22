@@ -27,8 +27,8 @@
 #include <Open3D/IO/ClassIO/PointCloudIO.h>
 
 #include <cstdio>
-#include <Open3D/Core/Utility/Console.h>
-#include <Open3D/Core/Utility/Helper.h>
+#include <Open3D/Utility/Console.h>
+#include <Open3D/Utility/Helper.h>
 
 namespace open3d {
 

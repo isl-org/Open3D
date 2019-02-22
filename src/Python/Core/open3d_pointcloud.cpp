@@ -27,10 +27,10 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Geometry/PointCloud.h>
-#include <Open3D/Core/Geometry/Image.h>
-#include <Open3D/Core/Geometry/RGBDImage.h>
-#include <Open3D/Core/Camera/PinholeCameraIntrinsic.h>
+#include <Open3D/Geometry/PointCloud.h>
+#include <Open3D/Geometry/Image.h>
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Camera/PinholeCameraIntrinsic.h>
 #include <Open3D/IO/ClassIO/PointCloudIO.h>
 using namespace open3d;
 

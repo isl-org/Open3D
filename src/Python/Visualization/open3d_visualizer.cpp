@@ -27,7 +27,7 @@
 #include "open3d_visualization.h"
 #include "open3d_visualization_trampoline.h"
 
-#include <Open3D/Core/Geometry/Image.h>
+#include <Open3D/Geometry/Image.h>
 #include <Open3D/Visualization/Visualizer/Visualizer.h>
 #include <Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h>
 #include <Open3D/Visualization/Visualizer/VisualizerWithEditing.h>

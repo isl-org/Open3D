@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Open3D/Core/Geometry/VoxelGrid.h>
+#include <Open3D/Geometry/VoxelGrid.h>
 
 namespace open3d {
 

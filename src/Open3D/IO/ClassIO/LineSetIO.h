@@ -27,7 +27,7 @@
 #pragma once
 
 #include <string>
-#include <Open3D/Core/Geometry/LineSet.h>
+#include <Open3D/Geometry/LineSet.h>
 
 namespace open3d {
 

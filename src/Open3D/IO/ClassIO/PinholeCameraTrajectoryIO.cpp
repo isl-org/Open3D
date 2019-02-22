@@ -27,8 +27,8 @@
 #include "PinholeCameraTrajectoryIO.h"
 
 #include <unordered_map>
-#include <Open3D/Core/Utility/Console.h>
-#include <Open3D/Core/Utility/FileSystem.h>
+#include <Open3D/Utility/Console.h>
+#include <Open3D/Utility/FileSystem.h>
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace open3d {

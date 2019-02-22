@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Open3D/Core/Geometry/Geometry.h>
+#include <Open3D/Geometry/Geometry.h>
 
 #include <Open3D/Visualization/Shader/SimpleShader.h>
 #include <Open3D/Visualization/Shader/SimpleBlackShader.h>

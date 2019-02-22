@@ -26,8 +26,8 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Open3D/Core/Geometry/Image.h"
-#include "Open3D/Core/Camera/PinholeCameraIntrinsic.h"
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Camera/PinholeCameraIntrinsic.h"
 
 using namespace Eigen;
 using namespace open3d;

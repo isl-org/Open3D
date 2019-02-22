@@ -26,9 +26,9 @@
 
 #include "open3d_visualization.h"
 
-#include <Open3D/Core/Utility/FileSystem.h>
-#include <Open3D/Core/Geometry/PointCloud.h>
-#include <Open3D/Core/Geometry/TriangleMesh.h>
+#include <Open3D/Utility/FileSystem.h>
+#include <Open3D/Geometry/PointCloud.h>
+#include <Open3D/Geometry/TriangleMesh.h>
 #include <Open3D/Visualization/Utility/SelectionPolygonVolume.h>
 #include <Open3D/Visualization/Utility/DrawGeometry.h>
 #include <Open3D/Visualization/Visualizer/Visualizer.h>

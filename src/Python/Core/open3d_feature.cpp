@@ -27,8 +27,8 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Open3D/Core/Geometry/PointCloud.h>
-#include <Open3D/Core/Registration/Feature.h>
+#include <Open3D/Geometry/PointCloud.h>
+#include <Open3D/Registration/Feature.h>
 #include <Open3D/IO/ClassIO/FeatureIO.h>
 using namespace open3d;
 

@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Open3D/Core/Utility/IJsonConvertible.h"
+#include "Open3D/Utility/IJsonConvertible.h"
 #include <json/json.h>
 
 using namespace Eigen;

@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Open3D/Core/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
 #include <json/json.h>
 
 using namespace Eigen;

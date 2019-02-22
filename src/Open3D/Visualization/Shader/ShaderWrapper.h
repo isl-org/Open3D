@@ -27,7 +27,7 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <Open3D/Core/Geometry/Geometry.h>
+#include <Open3D/Geometry/Geometry.h>
 
 #include <Open3D/Visualization/Visualizer/ViewControl.h>
 #include <Open3D/Visualization/Visualizer/RenderOption.h>
