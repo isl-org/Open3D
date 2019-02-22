@@ -25,6 +25,7 @@ install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
         PATTERN     "Visualization/Shader/GLSL" EXCLUDE
         PATTERN     "*.cpp" EXCLUDE
+        PATTERN     "*.in" EXCLUDE
         PATTERN     "*.txt" EXCLUDE)
 
 # note: adding at least one real source file to any target that references
