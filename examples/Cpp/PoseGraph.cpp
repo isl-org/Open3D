@@ -26,8 +26,8 @@
 
 #include <cstdio>
 
-#include <Open3D/Core.h>
-#include <Open3D/IO/IO.h>
+#include <Open3D/Open3D.h>
+#include <Open3D/Open3D.h>
 #include <Open3D/Registration/PoseGraph.h>
 #include <Open3D/Registration/GlobalOptimization.h>
 

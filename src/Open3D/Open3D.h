@@ -26,15 +26,14 @@
 
 #pragma once
 
+// Core
 #include "Utility/Helper.h"
 #include "Utility/Console.h"
 #include "Utility/Timer.h"
 #include "Utility/FileSystem.h"
 #include "Utility/Eigen.h"
-
 #include "ColorMap/ColorMapOptimization.h"
 #include "ColorMap/ImageWarpingField.h"
-
 #include "Geometry/Geometry.h"
 #include "Geometry/PointCloud.h"
 #include "Geometry/VoxelGrid.h"
@@ -43,19 +42,39 @@
 #include "Geometry/Image.h"
 #include "Geometry/RGBDImage.h"
 #include "Geometry/KDTreeFlann.h"
-
 #include "Camera/PinholeCameraIntrinsic.h"
 #include "Camera/PinholeCameraParameters.h"
 #include "Camera/PinholeCameraTrajectory.h"
-
 #include "Registration/Feature.h"
 #include "Registration/Registration.h"
 #include "Registration/TransformationEstimation.h"
-
 #include "Odometry/Odometry.h"
-
 #include "Integration/TSDFVolume.h"
 #include "Integration/UniformTSDFVolume.h"
 #include "Integration/ScalableTSDFVolume.h"
+
+// IO
+#include "IO/ClassIO/PointCloudIO.h"
+#include "IO/ClassIO/VoxelGridIO.h"
+#include "IO/ClassIO/TriangleMeshIO.h"
+#include "IO/ClassIO/LineSetIO.h"
+#include "IO/ClassIO/ImageIO.h"
+#include "IO/ClassIO/PinholeCameraTrajectoryIO.h"
+#include "IO/ClassIO/IJsonConvertibleIO.h"
+#include "IO/ClassIO/FeatureIO.h"
+#include "IO/ClassIO/PoseGraphIO.h"
+
+// Visualization
+#include "Visualization/Utility/BoundingBox.h"
+#include "Visualization/Utility/SelectionPolygon.h"
+#include "Visualization/Utility/SelectionPolygonVolume.h"
+#include "Visualization/Utility/DrawGeometry.h"
+#include "Visualization/Visualizer/Visualizer.h"
+#include "Visualization/Visualizer/VisualizerWithCustomAnimation.h"
+#include "Visualization/Visualizer/VisualizerWithEditing.h"
+#include "Visualization/Visualizer/VisualizerWithKeyCallback.h"
+#include "Visualization/Visualizer/ViewControl.h"
+#include "Visualization/Visualizer/ViewControlWithCustomAnimation.h"
+#include "Visualization/Visualizer/ViewControlWithEditing.h"
 
 #include "Open3DConfig.h"

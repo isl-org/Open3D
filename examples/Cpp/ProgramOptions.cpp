@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Open3D/Core.h>
+#include <Open3D/Open3D.h>
 #include <Open3D/Utility/Helper.h>
 
 void PrintHelp() {

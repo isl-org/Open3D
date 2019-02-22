@@ -26,8 +26,8 @@
 
 #include <vector>
 
-#include <Open3D/Core.h>
-#include <Open3D/IO/IO.h>
+#include <Open3D/Open3D.h>
+#include <Open3D/Open3D.h>
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
