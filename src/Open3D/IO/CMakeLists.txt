@@ -11,9 +11,6 @@ add_library(IO OBJECT
             ${RPLY_SOURCE_FILES}
             ${LIBLZF_SOURCE_FILES})
 
-ADD_SOURCE_GROUP(ClassIO)
-ADD_SOURCE_GROUP(FileFormat)
-
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"

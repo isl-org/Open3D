@@ -22,15 +22,6 @@ file(GLOB_RECURSE CORE_ALL_HEADER_FILES
 # create object library
 add_library(Core OBJECT ${CORE_ALL_HEADER_FILES} ${CORE_ALL_SOURCE_FILES})
 
-# create subgroups
-ADD_SOURCE_GROUP(Camera)
-ADD_SOURCE_GROUP(ColorMap)
-ADD_SOURCE_GROUP(Geometry)
-ADD_SOURCE_GROUP(Integration)
-ADD_SOURCE_GROUP(Odometry)
-ADD_SOURCE_GROUP(Registration)
-ADD_SOURCE_GROUP(Utility)
-
 #install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME}"
@@ -40,6 +31,16 @@ install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
 
 add_subdirectory(IO)
 add_subdirectory(Visualization)
+
+ADD_SOURCE_GROUP(Camera)
+ADD_SOURCE_GROUP(ColorMap)
+ADD_SOURCE_GROUP(Geometry)
+ADD_SOURCE_GROUP(Integration)
+ADD_SOURCE_GROUP(Odometry)
+ADD_SOURCE_GROUP(Registration)
+ADD_SOURCE_GROUP(Utility)
+ADD_SOURCE_GROUP(IO)
+ADD_SOURCE_GROUP(Visualization)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
