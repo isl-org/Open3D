@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Core/Utility/Eigen.h"
+#include "Open3D/Utility/Eigen.h"
 
 using namespace Eigen;
 using namespace open3d;

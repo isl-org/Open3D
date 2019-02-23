@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Python/open3d.h>
+#include <Python/open3d_python.h>
 
 void pybind_renderoption(py::module &m);
 void pybind_viewcontrol(py::module &m);

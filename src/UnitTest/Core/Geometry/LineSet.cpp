@@ -27,8 +27,8 @@
 #include "Utility/UnitTest.h"
 #include "Utility/Raw.h"
 
-#include "Core/Geometry/LineSet.h"
-#include "Core/Geometry/PointCloud.h"
+#include "Open3D/Geometry/LineSet.h"
+#include "Open3D/Geometry/PointCloud.h"
 
 using namespace Eigen;
 using namespace open3d;

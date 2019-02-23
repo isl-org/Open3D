@@ -28,9 +28,7 @@
 #include <memory>
 
 #include <Eigen/Dense>
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include <Open3D/Open3D.h>
 
 bool ReadLogFile(const std::string &filename,
                  std::vector<std::tuple<int, int, int>> &metadata,

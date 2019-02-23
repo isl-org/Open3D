@@ -26,7 +26,7 @@
 
 #include "open3d_core.h"
 
-#include <Core/Utility/Console.h>
+#include <Open3D/Utility/Console.h>
 using namespace open3d;
 
 void pybind_console(py::module &m) {

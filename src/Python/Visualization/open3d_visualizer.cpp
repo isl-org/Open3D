@@ -27,10 +27,10 @@
 #include "open3d_visualization.h"
 #include "open3d_visualization_trampoline.h"
 
-#include <Core/Geometry/Image.h>
-#include <Visualization/Visualizer/Visualizer.h>
-#include <Visualization/Visualizer/VisualizerWithKeyCallback.h>
-#include <Visualization/Visualizer/VisualizerWithEditing.h>
+#include <Open3D/Geometry/Image.h>
+#include <Open3D/Visualization/Visualizer/Visualizer.h>
+#include <Open3D/Visualization/Visualizer/VisualizerWithKeyCallback.h>
+#include <Open3D/Visualization/Visualizer/VisualizerWithEditing.h>
 
 using namespace open3d;
 

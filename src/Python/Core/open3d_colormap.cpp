@@ -27,10 +27,10 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Core/Geometry/RGBDImage.h>
-#include <Core/Geometry/TriangleMesh.h>
-#include <Core/ColorMap/ColorMapOptimization.h>
-#include <Core/Camera/PinholeCameraTrajectory.h>
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/Geometry/TriangleMesh.h>
+#include <Open3D/ColorMap/ColorMapOptimization.h>
+#include <Open3D/Camera/PinholeCameraTrajectory.h>
 
 using namespace open3d;
 

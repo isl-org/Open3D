@@ -26,9 +26,9 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Core/Geometry/PointCloud.h"
-#include "Core/Geometry/TriangleMesh.h"
-#include "Core/Geometry/KDTreeFlann.h"
+#include "Open3D/Geometry/PointCloud.h"
+#include "Open3D/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/KDTreeFlann.h"
 
 using namespace Eigen;
 using namespace open3d;

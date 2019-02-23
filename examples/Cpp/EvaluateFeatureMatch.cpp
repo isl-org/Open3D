@@ -29,9 +29,7 @@
 
 #include <flann/flann.hpp>
 
-#include <Core/Core.h>
-#include <IO/IO.h>
-#include <Visualization/Visualization.h>
+#include <Open3D/Open3D.h>
 
 class KDTreeFlannFeature {
 public:

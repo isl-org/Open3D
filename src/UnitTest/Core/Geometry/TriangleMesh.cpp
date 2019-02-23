@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-#include "Core/Geometry/TriangleMesh.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 using namespace Eigen;
 using namespace open3d;

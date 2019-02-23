@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <Core/Core.h>
-#include <IO/IO.h>
+#include <Open3D/Open3D.h>
 
 void PrintHelp() {
     using namespace open3d;

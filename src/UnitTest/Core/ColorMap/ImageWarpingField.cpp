@@ -26,7 +26,7 @@
 
 #include "Utility/UnitTest.h"
 
-// #include "Core/ColorMap/ImageWarpingField.h"
+// #include "Open3D/ColorMap/ImageWarpingField.h"
 
 using namespace std;
 

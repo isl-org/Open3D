@@ -32,8 +32,8 @@
 #endif
 #include <Eigen/Dense>
 #include <Eigen/SVD>
-#include <Core/Core.h>
-#include <Core/Utility/Console.h>
+#include <Open3D/Open3D.h>
+#include <Open3D/Utility/Console.h>
 
 #define NUM_THREADS 4
 #define NUM_START 1

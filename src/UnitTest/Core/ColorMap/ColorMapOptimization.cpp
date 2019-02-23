@@ -26,11 +26,11 @@
 
 #include "Utility/UnitTest.h"
 
-// #include "Core/ColorMap/ColorMapOptimization.h"
-#include "Core/Camera/PinholeCameraTrajectory.h"
-#include "Core/Geometry/Image.h"
-#include "Core/Geometry/RGBDImage.h"
-#include "Core/Geometry/TriangleMesh.h"
+// #include "Open3D/ColorMap/ColorMapOptimization.h"
+#include "Open3D/Camera/PinholeCameraTrajectory.h"
+#include "Open3D/Geometry/Image.h"
+#include "Open3D/Geometry/RGBDImage.h"
+#include "Open3D/Geometry/TriangleMesh.h"
 
 using namespace open3d;
 using namespace std;

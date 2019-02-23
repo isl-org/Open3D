@@ -27,9 +27,9 @@
 #include "open3d_core.h"
 #include "open3d_core_trampoline.h"
 
-#include <Core/Geometry/Image.h>
-#include <Core/Geometry/RGBDImage.h>
-#include <IO/ClassIO/ImageIO.h>
+#include <Open3D/Geometry/Image.h>
+#include <Open3D/Geometry/RGBDImage.h>
+#include <Open3D/IO/ClassIO/ImageIO.h>
 using namespace open3d;
 
 void pybind_image(py::module &m) {
