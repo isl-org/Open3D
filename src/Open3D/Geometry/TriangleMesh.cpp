@@ -107,9 +107,6 @@ void TriangleMesh::Transform(const Eigen::Matrix4d &transformation) {
                                                  triangle_normal(2), 0.0);
         triangle_normal = new_normal.block<3, 1>(0, 0);
     }
-    if (HasAdjacencyList()) {
-        ComputeAdjacencyList();
-    }
 }
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
