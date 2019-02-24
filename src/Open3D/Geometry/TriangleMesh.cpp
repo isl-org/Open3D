@@ -149,6 +149,9 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     for (size_t i = 0; i < add_tri_num; i++) {
         triangles_[old_tri_num + i] = mesh.triangles_[i] + index_shift;
     }
+    if (HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
     return (*this);
 }
 
@@ -236,6 +239,9 @@ void TriangleMesh::RemoveDuplicatedVertices() {
             triangle(1) = index_old_to_new[triangle(1)];
             triangle(2) = index_old_to_new[triangle(2)];
         }
+        if (HasAdjacencyList()) {
+            ComputeAdjacencyList();
+        }
     }
     PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n",
                (int)(old_vertex_num - k));
@@ -278,6 +284,9 @@ void TriangleMesh::RemoveDuplicatedTriangles() {
     }
     triangles_.resize(k);
     if (has_tri_normal) triangle_normals_.resize(k);
+    if (k < old_triangle_num && HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
     PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
                (int)(old_triangle_num - k));
 }
@@ -316,6 +325,9 @@ void TriangleMesh::RemoveNonManifoldVertices() {
             triangle(1) = index_old_to_new[triangle(1)];
             triangle(2) = index_old_to_new[triangle(2)];
         }
+        if (HasAdjacencyList()) {
+            ComputeAdjacencyList();
+        }
     }
     PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n",
                (int)(old_vertex_num - k));
@@ -339,6 +351,9 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
     }
     triangles_.resize(k);
     if (has_tri_normal) triangle_normals_.resize(k);
+    if (k < old_triangle_num && HasAdjacencyList()) {
+        ComputeAdjacencyList();
+    }
     PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
                (int)(old_triangle_num - k));
 }
