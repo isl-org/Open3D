@@ -26,9 +26,9 @@
 
 #include <gtest/gtest.h>
 
-#include "Utility/Print.h"
-#include "Utility/Rand.h"
-#include "Utility/Raw.h"
+#include "TestUtility/Print.h"
+#include "TestUtility/Rand.h"
+#include "TestUtility/Raw.h"
 
 #include <string>
 using namespace std;
