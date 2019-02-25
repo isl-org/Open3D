@@ -24,16 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_visualization.h"
+#include "core.h"
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_utility_methods(m_visualization);
+#include <Open3D/Utility/Console.h>
+using namespace open3d;
+
+void pybind_console(py::module &m) {
+    py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic(),
+                              "VerbosityLevel")
+            .value("Error", VerbosityLevel::VerboseError)
+            .value("Warning", VerbosityLevel::VerboseWarning)
+            .value("Info", VerbosityLevel::VerboseInfo)
+            .value("Debug", VerbosityLevel::VerboseDebug)
+            .value("Always", VerbosityLevel::VerboseAlways)
+            .export_values();
+    m.def("set_verbosity_level", &SetVerbosityLevel,
+          "Set global verbosity level of open3d", py::arg("verbosity_level"));
+    m.def("get_verbosity_level", &GetVerbosityLevel,
+          "Get global verbosity level of open3d");
 }

@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_visualization.h"
-#include "open3d_visualization_trampoline.h"
+#include "visualization.h"
+#include "visualization_trampoline.h"
 
 #include <Open3D/Visualization/Visualizer/RenderOption.h>
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>

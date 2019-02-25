@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_core.h"
+#include "core.h"
 
 void pybind_core(py::module &m) {
     py::module m_camera = m.def_submodule("camera");

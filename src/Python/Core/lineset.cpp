@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_core.h"
-#include "open3d_core_trampoline.h"
+#include "core.h"
+#include "core_trampoline.h"
 
 #include <Open3D/Geometry/LineSet.h>
 #include <Open3D/IO/ClassIO/LineSetIO.h>

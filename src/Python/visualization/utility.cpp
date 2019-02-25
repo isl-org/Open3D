@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_visualization.h"
+#include "visualization.h"
 
 #include <Open3D/Utility/FileSystem.h>
 #include <Open3D/Geometry/PointCloud.h>

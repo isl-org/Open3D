@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d_core.h"
-#include "open3d_core_trampoline.h"
+#include "core.h"
+#include "core_trampoline.h"
 
 #include <Open3D/Geometry/TriangleMesh.h>
 #include <Open3D/IO/ClassIO/TriangleMeshIO.h>
