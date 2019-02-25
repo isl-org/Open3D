@@ -26,4 +26,4 @@
 
 #pragma once
 
-#include <Python/open3d_python.h>
+#include <Python/py_open3d.h>

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Python/open3d_python.h>
+#include <Python/py_open3d.h>
 #include <Open3D/Geometry/Geometry.h>
 #include <Open3D/Geometry/Geometry2D.h>
 #include <Open3D/Geometry/Geometry3D.h>
