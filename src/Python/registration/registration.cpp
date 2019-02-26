@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/registration/registration.h"
 
 #include <Open3D/Geometry/PointCloud.h>
 #include <Open3D/Registration/Feature.h>
@@ -74,7 +73,7 @@ public:
     }
 };
 
-void pybind_registration(py::module &m) {
+void pybind_registration_classes(py::module &m) {
     py::class_<ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria", "ICPConvergenceCriteria");
     py::detail::bind_copy_functions<ICPConvergenceCriteria>(
@@ -356,4 +355,16 @@ void pybind_registration_methods(py::module &m) {
           "Function for computing information matrix from RegistrationResult",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation_result"_a);
+}
+
+void pybind_registration(py::module &m) {
+    py::module m_submodule = m.def_submodule("registration");
+    pybind_registration_classes(m_submodule);
+    pybind_registration_methods(m_submodule);
+    pybind_feature(m_submodule);
+    pybind_feature_methods(m_submodule);
+    pybind_registration(m_submodule);
+    pybind_global_optimization(m_submodule);
+    pybind_registration_methods(m_submodule);
+    pybind_global_optimization_methods(m_submodule);
 }

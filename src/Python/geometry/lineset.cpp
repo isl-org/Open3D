@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/geometry/geometry_trampoline.h"
+#include "Python/geometry/geometry.h"
 
 #include <Open3D/Geometry/LineSet.h>
 #include <Open3D/IO/ClassIO/LineSetIO.h>

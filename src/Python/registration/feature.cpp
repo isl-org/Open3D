@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/registration/registration.h"
 
 #include <Open3D/Geometry/PointCloud.h>
 #include <Open3D/Registration/Feature.h>

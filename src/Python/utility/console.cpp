@@ -24,8 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Python/open3d_pybind.h"
+#include "Open3D/Utility/Console.h"
 
-#include <Python/open3d_pybind.h>
+using namespace open3d;
 
-void pybind_io(py::module& m);
+void pybind_console(py::module &m) {
+    py::enum_<VerbosityLevel>(m, "VerbosityLevel", py::arithmetic(),
+                              "VerbosityLevel")
+            .value("Error", VerbosityLevel::VerboseError)
+            .value("Warning", VerbosityLevel::VerboseWarning)
+            .value("Info", VerbosityLevel::VerboseInfo)
+            .value("Debug", VerbosityLevel::VerboseDebug)
+            .value("Always", VerbosityLevel::VerboseAlways)
+            .export_values();
+    m.def("set_verbosity_level", &SetVerbosityLevel,
+          "Set global verbosity level of open3d", py::arg("verbosity_level"));
+    m.def("get_verbosity_level", &GetVerbosityLevel,
+          "Get global verbosity level of open3d");
+}

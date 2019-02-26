@@ -26,45 +26,47 @@
 
 #pragma once
 
-#include <Python/py_open3d.h>
-#include <Open3D/Geometry/Geometry.h>
-#include <Open3D/Geometry/Geometry2D.h>
-#include <Open3D/Geometry/Geometry3D.h>
-using namespace open3d;
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+#include <pybind11/numpy.h>
+#include <pybind11/operators.h>
+#include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
-    void Clear() override { PYBIND11_OVERLOAD_PURE(void, GeometryBase, ); }
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
+#include <Open3D/Registration/PoseGraph.h>
+#include <Open3D/Utility/Eigen.h>
 
-template <class Geometry3DBase = Geometry3D>
-class PyGeometry3D : public PyGeometry<Geometry3DBase> {
-public:
-    using PyGeometry<Geometry3DBase>::PyGeometry;
-    Eigen::Vector3d GetMinBound() const override {
-        PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
-    }
-    Eigen::Vector3d GetMaxBound() const override {
-        PYBIND11_OVERLOAD_PURE(Eigen::Vector3d, Geometry3DBase, );
-    }
-    void Transform(const Eigen::Matrix4d &transformation) override {
-        PYBIND11_OVERLOAD_PURE(void, Geometry3DBase, transformation);
-    }
-};
+namespace py = pybind11;
+using namespace py::literals;
 
-template <class Geometry2DBase = Geometry2D>
-class PyGeometry2D : public PyGeometry<Geometry2DBase> {
-public:
-    using PyGeometry<Geometry2DBase>::PyGeometry;
-    Eigen::Vector2d GetMinBound() const override {
-        PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
-    }
-    Eigen::Vector2d GetMaxBound() const override {
-        PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
-    }
-};
+typedef std::vector<Eigen::Matrix4d, open3d::Matrix4d_allocator>
+        temp_eigen_matrix4d;
+
+PYBIND11_MAKE_OPAQUE(std::vector<int>);
+PYBIND11_MAKE_OPAQUE(std::vector<double>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
+PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
+PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphEdge>);
+PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphNode>);
+
+// some helper functions
+namespace pybind11 {
+namespace detail {
+
+template <typename T, typename Class_>
+void bind_default_constructor(Class_ &cl) {
+    cl.def(py::init([]() { return new T(); }), "Default constructor");
+}
+
+template <typename T, typename Class_>
+void bind_copy_functions(Class_ &cl) {
+    cl.def(py::init([](const T &cp) { return new T(cp); }), "Copy constructor");
+    cl.def("__copy__", [](T &v) { return T(v); });
+    cl.def("__deepcopy__", [](T &v, py::dict &memo) { return T(v); });
+}
+
+}  // namespace detail
+}  // namespace pybind11

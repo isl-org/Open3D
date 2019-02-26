@@ -35,7 +35,7 @@
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 using namespace open3d;
 
-void pybind_utility(py::module &m) {
+void pybind_visualization_utility(py::module &m) {
     py::class_<SelectionPolygonVolume> selection_volume(
             m, "SelectionPolygonVolume");
     py::detail::bind_default_constructor<SelectionPolygonVolume>(
@@ -68,7 +68,7 @@ void pybind_utility(py::module &m) {
             .def_readwrite("axis_max", &SelectionPolygonVolume::axis_max_);
 }
 
-void pybind_utility_methods(py::module &m) {
+void pybind_visualization_utility_methods(py::module &m) {
     m.def("draw_geometries",
           [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,

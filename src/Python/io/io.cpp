@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "io.h"
+#include "Python/io/io.h"
 
-void pybind_io(py::module &m) {}
+void pybind_io(py::module &m) {
+    // This submodule is currently blank
+    py::module m_submodule = m.def_submodule("io");
+}

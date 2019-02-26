@@ -26,53 +26,9 @@
 
 #pragma once
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/eigen.h>
-#include <pybind11/functional.h>
+#include "Python/open3d_pybind.h"
 
-#include <Open3D/Registration/PoseGraph.h>
-#include <Open3D/Utility/Eigen.h>
+void pybind_utility(py::module &m);
 
-namespace py = pybind11;
-using namespace py::literals;
-
-typedef std::vector<Eigen::Matrix4d, open3d::Matrix4d_allocator>
-        temp_eigen_matrix4d;
-
-PYBIND11_MAKE_OPAQUE(std::vector<int>);
-PYBIND11_MAKE_OPAQUE(std::vector<double>);
-PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
-PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
-PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
-PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
-PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphEdge>);
-PYBIND11_MAKE_OPAQUE(std::vector<open3d::PoseGraphNode>);
-
-// some helper functions
-namespace pybind11 {
-namespace detail {
-
-template <typename T, typename Class_>
-void bind_default_constructor(Class_ &cl) {
-    cl.def(py::init([]() { return new T(); }), "Default constructor");
-}
-
-template <typename T, typename Class_>
-void bind_copy_functions(Class_ &cl) {
-    cl.def(py::init([](const T &cp) { return new T(cp); }), "Copy constructor");
-    cl.def("__copy__", [](T &v) { return T(v); });
-    cl.def("__deepcopy__", [](T &v, py::dict &memo) { return T(v); });
-}
-
-}  // namespace detail
-}  // namespace pybind11
-
+void pybind_console(py::module &m);
 void pybind_eigen(py::module &m);
-
-void pybind_core(py::module &m);
-void pybind_io(py::module &m);
-void pybind_visualization(py::module &m);

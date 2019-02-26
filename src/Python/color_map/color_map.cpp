@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/color_map/color_map.h"
 
 #include <Open3D/Geometry/RGBDImage.h>
 #include <Open3D/Geometry/TriangleMesh.h>
@@ -34,7 +33,7 @@
 
 using namespace open3d;
 
-void pybind_colormap_optimization(py::module &m) {
+void pybind_color_map_classes(py::module &m) {
     py::class_<ColorMapOptimizationOption> color_map_optimization_option(
             m, "ColorMapOptimizationOption", "ColorMapOptimizationOption");
     py::detail::bind_default_constructor<ColorMapOptimizationOption>(
@@ -97,9 +96,15 @@ void pybind_colormap_optimization(py::module &m) {
             });
 }
 
-void pybind_colormap_optimization_methods(py::module &m) {
+void pybind_color_map_methods(py::module &m) {
     m.def("color_map_optimization", &ColorMapOptimization,
           "Function for color mapping of reconstructed scenes via optimization",
           "mesh"_a, "imgs_rgbd"_a, "camera"_a,
           "option"_a = ColorMapOptimizationOption());
+}
+
+void pybind_color_map(py::module &m) {
+    py::module m_submodule = m.def_submodule("color_map");
+    pybind_color_map_classes(m_submodule);
+    pybind_color_map_methods(m_submodule);
 }

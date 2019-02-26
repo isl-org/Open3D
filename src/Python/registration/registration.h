@@ -26,6 +26,13 @@
 
 #pragma once
 
-#include <Python/open3d_pybind.h>
+#include "Python/open3d_pybind.h"
 
-void pybind_io(py::module& m);
+void pybind_registration(py::module &m);
+
+void pybind_feature(py::module &m);
+void pybind_feature_methods(py::module &m);
+void pybind_registration(py::module &m);
+void pybind_global_optimization(py::module &m);
+void pybind_registration_methods(py::module &m);
+void pybind_global_optimization_methods(py::module &m);

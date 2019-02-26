@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/registration/registration.h"
 
 #include <Open3D/Registration/PoseGraph.h>
 #include <Open3D/Registration/GlobalOptimization.h>

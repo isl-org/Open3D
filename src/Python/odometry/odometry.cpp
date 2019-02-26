@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/odometry/odometry.h"
 
 #include <Open3D/Geometry/Image.h>
 #include <Open3D/Geometry/RGBDImage.h>
@@ -56,7 +55,7 @@ public:
     }
 };
 
-void pybind_odometry(py::module &m) {
+void pybind_odometry_classes(py::module &m) {
     py::class_<OdometryOption> odometry_option(m, "OdometryOption",
                                                "OdometryOption");
     odometry_option
@@ -143,4 +142,10 @@ void pybind_odometry_methods(py::module &m) {
           "odo_init"_a = Eigen::Matrix4d::Identity(),
           "jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
           "option"_a = OdometryOption());
+}
+
+void pybind_odometry(py::module &m) {
+    py::module m_submodule = m.def_submodule("odometry");
+    pybind_odometry_classes(m_submodule);
+    pybind_odometry_methods(m_submodule);
 }

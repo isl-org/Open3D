@@ -24,13 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/geometry/geometry.h"
+#include "Python/geometry/geometry_trampoline.h"
 
 #include <Open3D/Open3D.h>
 using namespace open3d;
 
-void pybind_geometry(py::module &m) {
+void pybind_geometry_classes(py::module &m) {
     py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
             geometry(m, "Geometry", "Geometry");
     geometry.def("clear", &Geometry::Clear)
@@ -58,4 +58,20 @@ void pybind_geometry(py::module &m) {
             geometry2d(m, "Geometry2D", "Geometry2D");
     geometry2d.def("get_min_bound", &Geometry2D::GetMinBound)
             .def("get_max_bound", &Geometry2D::GetMaxBound);
+}
+
+void pybind_geometry(py::module &m) {
+    py::module m_submodule = m.def_submodule("geometry");
+    pybind_geometry_classes(m_submodule);
+    pybind_pointcloud(m_submodule);
+    pybind_voxelgrid(m_submodule);
+    pybind_lineset(m_submodule);
+    pybind_trianglemesh(m_submodule);
+    pybind_image(m_submodule);
+    pybind_kdtreeflann(m_submodule);
+    pybind_pointcloud_methods(m_submodule);
+    pybind_voxelgrid_methods(m_submodule);
+    pybind_lineset_methods(m_submodule);
+    pybind_trianglemesh_methods(m_submodule);
+    pybind_image_methods(m_submodule);
 }

@@ -24,14 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "py_open3d.h"
+#pragma once
 
-PYBIND11_MODULE(open3d, m) {
-    m.doc() = "Python binding of Open3D";
+#include "Python/open3d_pybind.h"
 
-    pybind_eigen(m);
-
-    pybind_core(m);
-    pybind_io(m);
-    pybind_visualization(m);
-}
+void pybind_camera(py::module &m);

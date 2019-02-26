@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/geometry/geometry_trampoline.h"
+#include "Python/geometry/geometry.h"
 
 #include <Open3D/Geometry/KDTreeFlann.h>
 using namespace open3d;

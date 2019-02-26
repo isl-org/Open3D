@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
+#include "Python/integration/integration.h"
 
 #include <Open3D/Integration/TSDFVolume.h>
 #include <Open3D/Integration/UniformTSDFVolume.h>
@@ -52,7 +51,7 @@ public:
     }
 };
 
-void pybind_integration(py::module &m) {
+void pybind_integration_classes(py::module &m) {
     py::enum_<TSDFVolumeColorType>(m, "TSDFVolumeColorType", py::arithmetic())
             .value("None", TSDFVolumeColorType::None)
             .value("RGB8", TSDFVolumeColorType::RGB8)
@@ -122,4 +121,12 @@ void pybind_integration(py::module &m) {
                  &ScalableTSDFVolume::ExtractVoxelPointCloud);
 }
 
-void pybind_integration_methods(py::module &m) {}
+void pybind_integration_methods(py::module &m) {
+    // Currently empty
+}
+
+void pybind_integration(py::module &m) {
+    py::module m_submodule = m.def_submodule("integration");
+    pybind_integration_classes(m_submodule);
+    pybind_integration_methods(m_submodule);
+}

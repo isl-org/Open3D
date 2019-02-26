@@ -31,9 +31,9 @@ void pybind_visualization(py::module &m) {
     pybind_renderoption(m_visualization);
     pybind_viewcontrol(m_visualization);
     pybind_visualizer(m_visualization);
-    pybind_utility(m_visualization);
+    pybind_visualization_utility(m_visualization);
     pybind_renderoption_method(m_visualization);
     pybind_viewcontrol_method(m_visualization);
     pybind_visualizer_method(m_visualization);
-    pybind_utility_methods(m_visualization);
+    pybind_visualization_utility_methods(m_visualization);
 }

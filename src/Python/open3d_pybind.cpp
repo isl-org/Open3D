@@ -24,8 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "Python/open3d_pybind.h"
 
-#include <Python/open3d_pybind.h>
+#include "Python/camera/camera.h"
+#include "Python/color_map/color_map.h"
+#include "Python/geometry/geometry.h"
+#include "Python/integration/integration.h"
+#include "Python/io/io.h"
+#include "Python/odometry/odometry.h"
+#include "Python/registration/registration.h"
+#include "Python/utility/utility.h"
+#include "Python/visualization/visualization.h"
 
-void pybind_io(py::module& m);
+PYBIND11_MODULE(open3d, m) {
+    m.doc() = "Python binding of Open3D";
+    pybind_camera(m);
+    pybind_color_map(m);
+    pybind_geometry(m);
+    pybind_integration(m);
+    pybind_io(m);
+    pybind_odometry(m);
+    pybind_registration(m);
+    pybind_utility(m);
+    pybind_visualization(m);
+}

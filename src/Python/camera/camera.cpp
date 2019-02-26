@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "core.h"
-#include "core_trampoline.h"
-
 #include <Open3D/Camera/PinholeCameraIntrinsic.h>
 #include <Open3D/Camera/PinholeCameraTrajectory.h>
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 #include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
+
+#include "Python/camera/camera.h"
+
 using namespace open3d;
 
-void pybind_camera(py::module &m) {
+void pybind_camera_classes(py::module &m) {
     py::class_<PinholeCameraIntrinsic> pinhole_intr(m, "PinholeCameraIntrinsic",
                                                     "PinholeCameraIntrinsic");
     py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
@@ -147,4 +147,10 @@ void pybind_camera_methods(py::module &m) {
           },
           "Function to write PinholeCameraTrajectory to file", "filename"_a,
           "trajectory"_a);
+}
+
+void pybind_camera(py::module &m) {
+    py::module m_submodule = m.def_submodule("camera");
+    pybind_camera_classes(m_submodule);
+    pybind_camera_methods(m_submodule);
 }
