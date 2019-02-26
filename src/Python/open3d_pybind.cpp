@@ -38,13 +38,16 @@
 
 PYBIND11_MODULE(open3d, m) {
     m.doc() = "Python binding of Open3D";
+
+    // Register this first, other submodule (e.g. odometry) might depend on this
+    pybind_utility(m);
+
     pybind_camera(m);
     pybind_color_map(m);
     pybind_geometry(m);
     pybind_integration(m);
     pybind_io(m);
-    pybind_odometry(m);
     pybind_registration(m);
-    pybind_utility(m);
+    pybind_odometry(m);
     pybind_visualization(m);
 }
