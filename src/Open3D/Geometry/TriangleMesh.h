@@ -64,6 +64,8 @@ public:
     void Purge();
 
 protected:
+    // Forward child class type to avoid indirect nonvirtual base
+    TriangleMesh(Geometry::GeometryType type) : Geometry3D(type){};
     void RemoveDuplicatedVertices();
     void RemoveDuplicatedTriangles();
     void RemoveNonManifoldVertices();
