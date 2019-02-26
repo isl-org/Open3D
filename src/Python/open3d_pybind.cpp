@@ -43,7 +43,7 @@ PYBIND11_MODULE(open3d, m) {
     pybind_geometry(m);
     pybind_integration(m);
     pybind_io(m);
-    pybind_odometry(m);
+    // pybind_odometry(m);
     pybind_registration(m);
     pybind_utility(m);
     pybind_visualization(m);

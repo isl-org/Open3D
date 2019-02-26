@@ -361,10 +361,9 @@ void pybind_registration(py::module &m) {
     py::module m_submodule = m.def_submodule("registration");
     pybind_registration_classes(m_submodule);
     pybind_registration_methods(m_submodule);
+
     pybind_feature(m_submodule);
     pybind_feature_methods(m_submodule);
-    pybind_registration(m_submodule);
     pybind_global_optimization(m_submodule);
-    pybind_registration_methods(m_submodule);
     pybind_global_optimization_methods(m_submodule);
 }
