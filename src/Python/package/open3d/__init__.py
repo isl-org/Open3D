@@ -28,7 +28,7 @@ import importlib
 from .open3d import * # py2 py3 compatible
 from .open3d.camera import *
 from .open3d.geometry import *
-from .open3d.odometry import *
+# from .open3d.odometry import *
 from .open3d.registration import *
 from .open3d.integration import *
 from .open3d.utility import *
