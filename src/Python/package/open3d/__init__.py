@@ -36,7 +36,7 @@ from .open3d.visualization import *
 
 globals().update(importlib.import_module('open3d.open3d.camera').__dict__)
 globals().update(importlib.import_module('open3d.open3d.geometry').__dict__)
-globals().update(importlib.import_module('open3d.open3d.odometry').__dict__)
+# globals().update(importlib.import_module('open3d.open3d.odometry').__dict__)
 globals().update(importlib.import_module('open3d.open3d.registration').__dict__)
 globals().update(importlib.import_module('open3d.open3d.integration').__dict__)
 globals().update(importlib.import_module('open3d.open3d.utility').__dict__)
