@@ -36,10 +36,8 @@ namespace open3d {
 
 namespace geometry {
 class PointCloud;
-}
-namespace geometry {
 class TriangleMesh;
-}
+}  // namespace geometry
 
 namespace visualization {
 class ViewControl;

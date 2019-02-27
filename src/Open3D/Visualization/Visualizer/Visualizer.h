@@ -43,10 +43,8 @@ namespace open3d {
 
 namespace geometry {
 class TriangleMesh;
-}
-namespace geometry {
 class Image;
-}
+}  // namespace geometry
 
 namespace visualization {
 class Visualizer {
