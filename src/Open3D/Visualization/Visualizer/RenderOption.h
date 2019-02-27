@@ -31,6 +31,7 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace visualization {
 
 class RenderOption : public utility::IJsonConvertible {
 public:
@@ -194,4 +195,5 @@ public:
     bool show_coordinate_frame_ = false;
 };
 
+}  // namespace visualization
 }  // namespace open3d

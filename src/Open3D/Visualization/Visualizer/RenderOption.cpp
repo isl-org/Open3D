@@ -30,6 +30,7 @@
 #include <json/json.h>
 
 namespace open3d {
+namespace visualization {
 
 bool RenderOption::ConvertToJsonValue(Json::Value &value) const {
     value["class_name"] = "RenderOption";
@@ -249,4 +250,5 @@ bool RenderOption::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
+}  // namespace visualization
 }  // namespace open3d

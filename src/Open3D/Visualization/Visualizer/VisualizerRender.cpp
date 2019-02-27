@@ -37,6 +37,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 bool Visualizer::InitOpenGL() {
     if (glewInit() != GLEW_OK) {
@@ -453,4 +454,5 @@ void Visualizer::CaptureRenderOption(const std::string &filename /* = ""*/) {
     io::WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 
+}  // namespace visualization
 }  // namespace open3d

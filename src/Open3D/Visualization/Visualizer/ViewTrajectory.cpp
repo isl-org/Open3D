@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace visualization {
 
 const int ViewTrajectory::INTERVAL_MAX = 59;
 const int ViewTrajectory::INTERVAL_MIN = 0;
@@ -193,4 +194,5 @@ bool ViewTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
+}  // namespace visualization
 }  // namespace open3d

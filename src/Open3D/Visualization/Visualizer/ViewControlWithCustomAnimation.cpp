@@ -29,6 +29,7 @@
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace open3d {
+namespace visualization {
 
 void ViewControlWithCustomAnimation::Reset() {
     if (animation_mode_ == AnimationMode::FreeMode) {
@@ -340,4 +341,5 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory() {
     }
 }
 
+}  // namespace visualization
 }  // namespace open3d

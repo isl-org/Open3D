@@ -31,6 +31,7 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewParameters : public utility::IJsonConvertible {
 public:
@@ -58,4 +59,5 @@ public:
     Eigen::Vector3d boundingbox_max_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

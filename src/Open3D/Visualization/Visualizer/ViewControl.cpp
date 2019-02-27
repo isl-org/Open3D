@@ -32,6 +32,7 @@
 #include <cmath>  // jspark
 
 namespace open3d {
+namespace visualization {
 
 const double ViewControl::FIELD_OF_VIEW_MAX = 90.0;
 const double ViewControl::FIELD_OF_VIEW_MIN = 5.0;
@@ -283,4 +284,5 @@ void ViewControl::Roll(double x) {
     SetProjectionParameters();
 }
 
+}  // namespace visualization
 }  // namespace open3d

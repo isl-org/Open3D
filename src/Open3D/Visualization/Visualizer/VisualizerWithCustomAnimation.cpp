@@ -35,6 +35,7 @@
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace open3d {
+namespace visualization {
 
 VisualizerWithCustomAnimation::VisualizerWithCustomAnimation() {}
 
@@ -311,4 +312,5 @@ void VisualizerWithCustomAnimation::MouseButtonCallback(GLFWwindow *window,
     }
 }
 
+}  // namespace visualization
 }  // namespace open3d

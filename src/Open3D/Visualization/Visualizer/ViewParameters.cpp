@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace visualization {
 
 ViewParameters::Vector17d ViewParameters::ConvertToVector17d() {
     ViewParameters::Vector17d v;
@@ -115,4 +116,5 @@ bool ViewParameters::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
+}  // namespace visualization
 }  // namespace open3d

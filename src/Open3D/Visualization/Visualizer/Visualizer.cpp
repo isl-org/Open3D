@@ -63,6 +63,8 @@ public:
 
 }  // unnamed namespace
 
+namespace visualization {
+
 Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
@@ -418,4 +420,5 @@ void Visualizer::PrintVisualizerHelp() {
     utility::PrintInfo("\n");
     // clang-format on
 }
+}  // namespace visualization
 }  // namespace open3d

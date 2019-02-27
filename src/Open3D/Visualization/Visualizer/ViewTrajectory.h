@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Visualizer/ViewParameters.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewTrajectory : public utility::IJsonConvertible {
 public:
@@ -92,4 +93,5 @@ public:
             coeff_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

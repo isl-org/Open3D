@@ -43,6 +43,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 bool VisualizerWithEditing::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
@@ -668,4 +669,5 @@ void VisualizerWithEditing::SaveCroppingResult(
                     GetViewControl()));
 }
 
+}  // namespace visualization
 }  // namespace open3d

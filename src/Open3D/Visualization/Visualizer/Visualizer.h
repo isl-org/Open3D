@@ -48,6 +48,7 @@ namespace geometry {
 class Image;
 }
 
+namespace visualization {
 class Visualizer {
 public:
     struct MouseControl {
@@ -231,4 +232,5 @@ protected:
 #endif  //__APPLE__
 };
 
+}  // namespace visualization
 }  // namespace open3d

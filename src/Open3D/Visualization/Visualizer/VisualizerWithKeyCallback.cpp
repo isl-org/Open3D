@@ -28,6 +28,8 @@
 
 namespace open3d {
 
+namespace visualization {
+
 VisualizerWithKeyCallback::VisualizerWithKeyCallback() {}
 
 VisualizerWithKeyCallback::~VisualizerWithKeyCallback() {}
@@ -116,4 +118,5 @@ std::string VisualizerWithKeyCallback::PrintKeyToString(int key) {
     return std::string("Unknown");
 }
 
+}  // namespace visualization
 }  // namespace open3d

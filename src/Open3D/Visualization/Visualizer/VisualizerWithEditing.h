@@ -33,6 +33,8 @@ namespace open3d {
 class SelectionPolygon;
 class PointCloudPicker;
 
+namespace visualization {
+
 class VisualizerWithEditing : public Visualizer {
 public:
     enum class SelectionMode {
@@ -100,4 +102,5 @@ protected:
     unsigned int crop_action_count_ = 0;
 };
 
+}  // namespace visualization
 }  // namespace open3d

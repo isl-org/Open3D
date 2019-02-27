@@ -27,6 +27,7 @@
 #include "ViewControlWithEditing.h"
 
 namespace open3d {
+namespace visualization {
 
 void ViewControlWithEditing::Reset() {
     if (IsLocked()) return;
@@ -153,4 +154,5 @@ std::string ViewControlWithEditing::GetStatusString() const {
     return prefix + (IsLocked() ? ", lock camera for editing" : "");
 }
 
+}  // namespace visualization
 }  // namespace open3d

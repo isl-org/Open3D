@@ -31,6 +31,7 @@
 #include <Open3D/Visualization/Visualizer/ViewTrajectory.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewControlWithCustomAnimation : public ViewControl {
 public:
@@ -100,4 +101,5 @@ protected:
     double current_keyframe_ = 0.0;
 };
 
+}  // namespace visualization
 }  // namespace open3d

@@ -27,6 +27,7 @@
 #include "Visualizer.h"
 
 namespace open3d {
+namespace visualization {
 
 void Visualizer::WindowRefreshCallback(GLFWwindow *window) {
     if (is_redraw_required_) {
@@ -351,4 +352,5 @@ void Visualizer::WindowCloseCallback(GLFWwindow *window) {
     // happens when user click the close icon to close the window
 }
 
+}  // namespace visualization
 }  // namespace open3d

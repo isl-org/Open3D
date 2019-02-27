@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewControl {
 public:
@@ -156,4 +157,5 @@ protected:
     GLHelper::GLMatrix4f MVP_matrix_;
 };
 
+}  // namespace visualization
 }  // namespace open3d
