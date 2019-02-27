@@ -1,5 +1,6 @@
-Visualization
--------------
+open3d.visualization
+--------------------
+
 .. currentmodule:: open3d
 
 .. autosummary::

@@ -26,10 +26,10 @@
 
 #include <iostream>
 #include <memory>
-#include <Core/Core.h>
-#include <Core/Odometry/Odometry.h>
-#include <Core/Utility/Console.h>
-#include <IO/IO.h>
+#include <Open3D/Open3D.h>
+#include <Open3D/Odometry/Odometry.h>
+#include <Open3D/Utility/Console.h>
+#include <Open3D/Open3D.h>
 
 void PrintHelp(char* argv[]) {
     using namespace open3d;

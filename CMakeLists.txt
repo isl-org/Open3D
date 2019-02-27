@@ -9,7 +9,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.1")
 endif()
 
 # central location for specifying the Open3D version
-file(STRINGS "src/version.txt" OPEN3D_VERSION_READ)
+file(STRINGS "src/Open3D/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
   if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
     set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
@@ -47,8 +47,8 @@ set(PROJECT_CODE    "https://github.com/IntelVCL/Open3D")
 set(PROJECT_ISSUES  "https://github.com/IntelVCL/Open3D/issues")
 
 # configure a header file to pass the version settings to the source code
-configure_file("${PROJECT_SOURCE_DIR}/src/Open3DConfig.h.in"
-               "${PROJECT_SOURCE_DIR}/src/Open3DConfig.h")
+configure_file("${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h.in"
+               "${PROJECT_SOURCE_DIR}/src/Open3D/Open3DConfig.h")
 
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
@@ -87,13 +87,6 @@ if (NOT CMAKE_BUILD_TYPE)
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
 endif ()
-
-# set include directories
-include_directories(
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/3rdparty
-    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
-    )
 
 # if dynamic link is added, use if (WIN32) macro
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -207,9 +200,15 @@ endmacro(ADD_SOURCE_GROUP)
 
 # Handling dependencies
 add_subdirectory(3rdparty)
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${3RDPARTY_INCLUDE_DIRS})
 link_directories(${3RDPARTY_LIBRARY_DIRS})
+
+# set include directories
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/3rdparty
+    ${3RDPARTY_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+)
 
 # Open3D library
 add_subdirectory(src)

@@ -1,5 +1,6 @@
-Geometry
-----------
+open3d.geometry
+---------------
+
 .. currentmodule:: open3d
 
 .. autosummary::

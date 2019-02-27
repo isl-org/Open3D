@@ -1,5 +1,6 @@
-Camera
-----------
+open3d.camera
+-------------
+
 .. currentmodule:: open3d
 
 .. autosummary::

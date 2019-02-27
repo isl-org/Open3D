@@ -3,11 +3,11 @@ file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 
 # Create python pacakge. It contains:
-# 1) Pure-python code and misc files, copied from src/Python/Package
+# 1) Pure-python code and misc files, copied from src/Python/package
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 # 3) Configured files and supporting files
 
-# 1) Pure-python code and misc files, copied from src/Python/Package
+# 1) Pure-python code and misc files, copied from src/Python/package
 file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}
 )

@@ -1,5 +1,6 @@
-Utility
-----------
+open3d.utility
+--------------
+
 .. currentmodule:: open3d
 
 .. autosummary::
