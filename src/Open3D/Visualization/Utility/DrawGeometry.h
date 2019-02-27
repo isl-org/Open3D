@@ -34,6 +34,7 @@
 #include <Open3D/Geometry/Geometry.h>
 
 namespace open3d {
+namespace visualization {
 
 class Visualizer;
 
@@ -89,4 +90,5 @@ bool DrawGeometriesWithEditing(
         int left = 50,
         int top = 50);
 
+}  // namespace visualization
 }  // namespace open3d

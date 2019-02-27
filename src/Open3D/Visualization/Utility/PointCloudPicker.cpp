@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace visualization {
 
 void PointCloudPicker::Clear() { picked_indices_.clear(); }
 
@@ -67,4 +68,5 @@ bool PointCloudPicker::SetPointCloud(
     return true;
 }
 
+}  // namespace visualization
 }  // namespace open3d

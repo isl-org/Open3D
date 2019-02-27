@@ -58,6 +58,7 @@ public:
 
 }  // unnamed namespace
 
+namespace visualization {
 Eigen::Vector3d ColorMapGray::GetColor(double value) const {
     return Eigen::Vector3d(value, value, value);
 }
@@ -128,4 +129,5 @@ void SetGlobalColorMap(ColorMap::ColorMapOption option) {
     }
 }
 
+}  // namespace visualization
 }  // namespace open3d

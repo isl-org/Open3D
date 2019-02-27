@@ -35,6 +35,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 void SelectionPolygon::Clear() {
     polygon_.clear();
@@ -292,4 +293,5 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     return output_index;
 }
 
+}  // namespace visualization
 }  // namespace open3d

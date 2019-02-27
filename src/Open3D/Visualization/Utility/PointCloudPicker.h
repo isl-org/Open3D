@@ -36,6 +36,7 @@ namespace open3d {
 namespace geometry {
 class PointCloud;
 }
+namespace visualization {
 
 /// A utility class to store picked points of a pointcloud
 class PointCloudPicker : public geometry::Geometry3D {
@@ -57,4 +58,5 @@ public:
     std::vector<size_t> picked_indices_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

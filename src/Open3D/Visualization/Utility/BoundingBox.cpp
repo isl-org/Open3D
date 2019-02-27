@@ -27,6 +27,7 @@
 #include "BoundingBox.h"
 
 namespace open3d {
+namespace visualization {
 
 BoundingBox::BoundingBox() {}
 
@@ -57,4 +58,5 @@ void BoundingBox::FitInGeometry(const geometry::Geometry3D &geometry) {
     }
 }
 
+}  // namespace visualization
 }  // namespace open3d

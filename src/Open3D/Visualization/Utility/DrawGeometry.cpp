@@ -34,6 +34,7 @@
 #include <Open3D/Visualization/Visualizer/ViewControlWithEditing.h>
 
 namespace open3d {
+namespace visualization {
 
 bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                             &geometry_ptrs,
@@ -211,4 +212,5 @@ bool DrawGeometriesWithEditing(
     return true;
 }
 
+}  // namespace visualization
 }  // namespace open3d

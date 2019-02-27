@@ -32,6 +32,7 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 
 namespace open3d {
+namespace visualization {
 
 bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const {
     Json::Value polygon_array;
@@ -168,4 +169,5 @@ std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
     return output_index;
 }
 
+}  // namespace visualization
 }  // namespace open3d

@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace visualization {
 
 /// A 3D bounding box class
 /// It is a utility class for Visualization
@@ -76,4 +77,5 @@ public:
     Eigen::Vector3d max_bound_ = Eigen::Vector3d::Zero();
 };
 
+}  // namespace visualization
 }  // namespace open3d

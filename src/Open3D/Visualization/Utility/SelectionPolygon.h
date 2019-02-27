@@ -40,6 +40,8 @@ class PointCloud;
 namespace geometry {
 class TriangleMesh;
 }
+
+namespace visualization {
 class ViewControl;
 class SelectionPolygonVolume;
 
@@ -94,4 +96,5 @@ public:
     SectionPolygonType polygon_type_ = SectionPolygonType::Unfilled;
 };
 
+}  // namespace visualization
 }  // namespace open3d

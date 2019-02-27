@@ -44,6 +44,8 @@ namespace geometry {
 class TriangleMesh;
 }
 
+namespace visualization {
+
 class SelectionPolygonVolume : public utility::IJsonConvertible {
 public:
     ~SelectionPolygonVolume() override {}
@@ -71,4 +73,5 @@ public:
     double axis_max_ = 0.0;
 };
 
+}  // namespace visualization
 }  // namespace open3d
