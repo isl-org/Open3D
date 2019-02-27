@@ -94,8 +94,8 @@ void OptimizeImageCoorNonrigid(
             Eigen::VectorXd JTr;
             double r2;
             std::tie(JTJ, JTr, r2) =
-                    ComputeJTJandJTr<Eigen::Vector14d, Eigen::Vector14i,
-                                     Eigen::MatrixXd, Eigen::VectorXd>(
+                    ComputeJTJandJTrNonRigid<Eigen::Vector14d, Eigen::Vector14i,
+                                             Eigen::MatrixXd, Eigen::VectorXd>(
                             f_lambda, visiblity_image_to_vertex[c].size(),
                             nonrigidval, false);
 

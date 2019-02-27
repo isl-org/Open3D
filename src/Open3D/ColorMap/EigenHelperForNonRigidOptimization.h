@@ -50,7 +50,7 @@ template <typename VecInTypeDouble,
           typename VecInTypeInt,
           typename MatOutType,
           typename VecOutType>
-std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
+std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
         int iteration_num,
         int nonrigidval,
