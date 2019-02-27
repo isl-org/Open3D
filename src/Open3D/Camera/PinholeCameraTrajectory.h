@@ -32,6 +32,7 @@
 #include <Open3D/Camera/PinholeCameraParameters.h>
 
 namespace open3d {
+namespace camera {
 
 class PinholeCameraTrajectory : public IJsonConvertible {
 public:
@@ -46,4 +47,5 @@ public:
     std::vector<PinholeCameraParameters> parameters_;
 };
 
+}  // namespace camera
 }  // namespace open3d

@@ -30,7 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
-
+namespace camera {
 PinholeCameraParameters::PinholeCameraParameters() {}
 
 PinholeCameraParameters::~PinholeCameraParameters() {}
@@ -72,5 +72,5 @@ bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value) {
     }
     return true;
 }
-
+}  // namespace camera
 }  // namespace open3d

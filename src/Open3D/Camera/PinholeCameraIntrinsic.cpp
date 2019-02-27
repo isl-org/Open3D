@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace camera {
 
 PinholeCameraIntrinsic::PinholeCameraIntrinsic()
     : width_(-1), height_(-1), intrinsic_matrix_(Eigen::Matrix3d::Zero()) {}
@@ -81,5 +82,5 @@ bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
     }
     return true;
 }
-
+}  // namespace camera
 }  // namespace open3d

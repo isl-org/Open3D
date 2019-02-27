@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace camera {
 
 PinholeCameraTrajectory::PinholeCameraTrajectory() {}
 
@@ -89,5 +90,5 @@ bool PinholeCameraTrajectory::ConvertFromJsonValue(const Json::Value &value) {
     }
     return true;
 }
-
+}  // namespace camera
 }  // namespace open3d
