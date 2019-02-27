@@ -32,6 +32,7 @@
 #include <Open3D/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d {
+namespace integration {
 
 enum class TSDFVolumeColorType {
     None = 0,
@@ -79,4 +80,5 @@ public:
     TSDFVolumeColorType color_type_;
 };
 
+}  // namespace integration
 }  // namespace open3d

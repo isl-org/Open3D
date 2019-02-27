@@ -29,6 +29,7 @@
 #include <Open3D/Integration/TSDFVolume.h>
 
 namespace open3d {
+namespace integration {
 
 class UniformTSDFVolume : public TSDFVolume {
 public:
@@ -81,4 +82,5 @@ private:
     double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
+}  // namespace integration
 }  // namespace open3d

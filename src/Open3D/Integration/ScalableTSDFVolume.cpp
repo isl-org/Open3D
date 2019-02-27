@@ -34,6 +34,7 @@
 #include <Open3D/Integration/MarchingCubesConst.h>
 
 namespace open3d {
+namespace integration {
 
 ScalableTSDFVolume::ScalableTSDFVolume(double voxel_length,
                                        double sdf_trunc,
@@ -428,4 +429,5 @@ double ScalableTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
                    r(1) * ((1 - r(2)) * f[2] + r(2) * f[6]));
 }
 
+}  // namespace integration
 }  // namespace open3d

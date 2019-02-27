@@ -33,6 +33,7 @@
 #include <Open3D/Integration/MarchingCubesConst.h>
 
 namespace open3d {
+namespace integration {
 
 UniformTSDFVolume::UniformTSDFVolume(
         double length,
@@ -398,4 +399,5 @@ double UniformTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
     // clang-format on
 }
 
+}  // namespace integration
 }  // namespace open3d
