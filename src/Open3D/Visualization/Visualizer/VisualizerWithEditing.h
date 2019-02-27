@@ -30,10 +30,9 @@
 
 namespace open3d {
 
+namespace visualization {
 class SelectionPolygon;
 class PointCloudPicker;
-
-namespace visualization {
 
 class VisualizerWithEditing : public Visualizer {
 public:
