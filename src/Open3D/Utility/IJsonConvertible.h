@@ -34,6 +34,7 @@ class Value;
 }  // namespace Json
 
 namespace open3d {
+namespace utility {
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.
@@ -76,4 +77,5 @@ public:
                                          Json::Value &value);
 };
 
+}  // namespace utility
 }  // namespace open3d

@@ -45,6 +45,7 @@
 namespace open3d {
 
 namespace {
+using namespace utility;
 
 enum class TextColor {
     Black = 0,
@@ -130,6 +131,7 @@ void PrintConsoleProgress() {
 
 }  // unnamed namespace
 
+namespace utility {
 void SetVerbosityLevel(VerbosityLevel verbosity_level) {
     global_verbosity_level = verbosity_level;
 }
@@ -314,4 +316,5 @@ bool ProgramOptionExistsAny(int argc,
     return false;
 }
 
+}  // namespace utility
 }  // namespace open3d

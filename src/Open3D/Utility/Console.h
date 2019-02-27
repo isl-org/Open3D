@@ -30,10 +30,10 @@
 #include <string>
 
 #include <Eigen/Core>
+#define DEFAULT_IO_BUFFER_SIZE 1024
 
 namespace open3d {
-
-#define DEFAULT_IO_BUFFER_SIZE 1024
+namespace utility {
 
 enum class VerbosityLevel {
     VerboseError = 0,
@@ -90,5 +90,5 @@ bool ProgramOptionExists(int argc, char **argv, const std::string &option);
 bool ProgramOptionExistsAny(int argc,
                             char **argv,
                             const std::vector<std::string> &options);
-
+}  // namespace utility
 }  // namespace open3d

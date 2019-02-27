@@ -45,6 +45,8 @@ typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
 }  // namespace Eigen
 
 namespace open3d {
+namespace utility {
+
 using Matrix4d_allocator = Eigen::aligned_allocator<Eigen::Matrix4d>;
 using Matrix6d_allocator = Eigen::aligned_allocator<Eigen::Matrix6d>;
 using Vector2d_allocator = Eigen::aligned_allocator<Eigen::Vector2d>;
@@ -111,4 +113,5 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         int iteration_num,
         bool verbose = true);
 
+}  // namespace utility
 }  // namespace open3d

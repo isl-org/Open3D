@@ -43,7 +43,7 @@
 #endif
 
 namespace open3d {
-
+namespace utility {
 namespace filesystem {
 
 std::string GetFileExtensionInLowerCase(const std::string &filename) {
@@ -200,5 +200,5 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 }
 
 }  // namespace filesystem
-
+}  // namespace utility
 }  // namespace open3d

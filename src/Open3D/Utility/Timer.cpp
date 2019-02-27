@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace utility {
 
 Timer::Timer()
     : start_time_in_milliseconds_(0.0), end_time_in_milliseconds_(0.0) {}
@@ -106,4 +107,5 @@ void FPSTimer::Signal() {
     }
 }
 
+}  // namespace utility
 }  // namespace open3d
