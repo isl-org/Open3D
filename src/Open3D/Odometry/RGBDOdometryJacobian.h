@@ -45,7 +45,7 @@ class RGBDImage;
 
 namespace odometry {
 
-typedef std::vector<Eigen::Vector4i, Vector4i_allocator>
+typedef std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
         CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
@@ -61,7 +61,7 @@ public:
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             const geometry::RGBDImage &source,
             const geometry::RGBDImage &target,
@@ -87,7 +87,7 @@ public:
 public:
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             const geometry::RGBDImage &source,
             const geometry::RGBDImage &target,
@@ -112,7 +112,7 @@ public:
 public:
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
             const geometry::RGBDImage &source,
             const geometry::RGBDImage &target,

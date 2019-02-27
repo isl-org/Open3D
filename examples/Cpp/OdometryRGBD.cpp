@@ -36,49 +36,52 @@ void PrintHelp(char* argv[]) {
 
     PrintOpen3DVersion();
     // clang-format off
-    PrintInfo("Usage:\n");
-    PrintInfo(">    OdometryRGBD [color_source] [source_target] [color_target] [depth_target] [options]\n");
-    PrintInfo("     Given RGBD image pair, estimate 6D odometry.\n");
-    PrintInfo("     [options]\n");
-    PrintInfo("     --camera_intrinsic [intrinsic_path]\n");
-    PrintInfo("     --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)\n");
-    PrintInfo("     --verbose : indicate this to display detailed information\n");
-    PrintInfo("     --hybrid : compute odometry using hybrid objective\n");
+    utility::PrintInfo("Usage:\n");
+    utility::PrintInfo(">    OdometryRGBD [color_source] [source_target] [color_target] [depth_target] [options]\n");
+    utility::PrintInfo("     Given RGBD image pair, estimate 6D odometry.\n");
+    utility::PrintInfo("     [options]\n");
+    utility::PrintInfo("     --camera_intrinsic [intrinsic_path]\n");
+    utility::PrintInfo("     --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)\n");
+    utility::PrintInfo("     --verbose : indicate this to display detailed information\n");
+    utility::PrintInfo("     --hybrid : compute odometry using hybrid objective\n");
     // clang-format on
-    PrintInfo("\n");
+    utility::PrintInfo("\n");
 }
 
 int main(int argc, char* argv[]) {
     using namespace open3d;
 
-    if (argc <= 4 || ProgramOptionExists(argc, argv, "--help") ||
-        ProgramOptionExists(argc, argv, "-h")) {
+    if (argc <= 4 || utility::ProgramOptionExists(argc, argv, "--help") ||
+        utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp(argv);
         return 1;
     }
 
     std::string intrinsic_path;
-    if (ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
-        intrinsic_path =
-                GetProgramOptionAsString(argc, argv, "--camera_intrinsic")
-                        .c_str();
-        PrintInfo("Camera intrinsic path %s\n", intrinsic_path.c_str());
+    if (utility::ProgramOptionExists(argc, argv, "--camera_intrinsic")) {
+        intrinsic_path = utility::GetProgramOptionAsString(argc, argv,
+                                                           "--camera_intrinsic")
+                                 .c_str();
+        utility::PrintInfo("Camera intrinsic path %s\n",
+                           intrinsic_path.c_str());
     } else {
-        PrintInfo("Camera intrinsic path is not given\n");
+        utility::PrintInfo("Camera intrinsic path is not given\n");
     }
     camera::PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
         !ReadIJsonConvertible(intrinsic_path, intrinsic)) {
-        PrintWarning("Failed to read intrinsic parameters for depth image.\n");
-        PrintWarning("Use default value for Primesense camera.\n");
+        utility::PrintWarning(
+                "Failed to read intrinsic parameters for depth image.\n");
+        utility::PrintWarning("Use default value for Primesense camera.\n");
         intrinsic = camera::PinholeCameraIntrinsic(
                 camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
 
-    if (ProgramOptionExists(argc, argv, "--verbose"))
-        SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    if (utility::ProgramOptionExists(argc, argv, "--verbose"))
+        utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
-    int rgbd_type = GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
+    int rgbd_type =
+            utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
     auto color_source = CreateImageFromFile(argv[1]);
     auto depth_source = CreateImageFromFile(argv[2]);
     auto color_target = CreateImageFromFile(argv[3]);
@@ -103,7 +106,7 @@ int main(int argc, char* argv[]) {
     Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
     Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
     bool is_success;
-    if (ProgramOptionExists(argc, argv, "--hybrid")) {
+    if (utility::ProgramOptionExists(argc, argv, "--hybrid")) {
         odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;
         std::tie(is_success, trans_odo, info_odo) =
                 odometry::ComputeRGBDOdometry(*source, *target, intrinsic,

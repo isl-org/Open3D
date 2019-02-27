@@ -32,11 +32,12 @@
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc != 3) {
-        PrintInfo("Usage :\n");
-        PrintInfo(">    CameraPoseTrajectory trajectory_file pcds_dir\n");
+        utility::PrintInfo("Usage :\n");
+        utility::PrintInfo(
+                ">    CameraPoseTrajectory trajectory_file pcds_dir\n");
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         char buff[DEFAULT_IO_BUFFER_SIZE];
         sprintf(buff, "%scloud_bin_%d.pcd", argv[2], (int)i);
-        if (filesystem::FileExists(buff)) {
+        if (utility::filesystem::FileExists(buff)) {
             auto pcd = CreatePointCloudFromFile(buff);
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
             pcd->colors_.clear();

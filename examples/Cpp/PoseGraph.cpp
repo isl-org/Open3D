@@ -33,21 +33,21 @@
 using namespace open3d;
 
 int main(int argc, char **argv) {
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc != 2) {
         PrintOpen3DVersion();
         // clang-format off
-        PrintInfo("Usage:\n");
-        PrintInfo("    > PoseGraph [posegraph_for_optimization].json\n");
-        PrintInfo("    The program will :\n");
-        PrintInfo("    1) Generate random PoseGraph\n");
-        PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
-        PrintInfo("    3) Reads PoseGraph from test_pose_graph.json\n");
-        PrintInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json\n");
-        PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
-        PrintInfo("    6) Optimize PoseGraph\n");
-        PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > PoseGraph [posegraph_for_optimization].json\n");
+        utility::PrintInfo("    The program will :\n");
+        utility::PrintInfo("    1) Generate random PoseGraph\n");
+        utility::PrintInfo("    2) Save random PoseGraph as test_pose_graph.json\n");
+        utility::PrintInfo("    3) Reads PoseGraph from test_pose_graph.json\n");
+        utility::PrintInfo("    4) Save loaded PoseGraph as test_pose_graph_copy.json\n");
+        utility::PrintInfo("    5) Load PoseGraph from [posegraph_for_optimization].json\n");
+        utility::PrintInfo("    6) Optimize PoseGraph\n");
+        utility::PrintInfo("    7) Save PoseGraph to pose_graph_optimized.json\n");
         // clang-format on
         return 1;
     }

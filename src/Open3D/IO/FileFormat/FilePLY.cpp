@@ -61,7 +61,7 @@ int ReadVertexCallback(p_ply_argument argument) {
     state_ptr->pointcloud_ptr->points_[state_ptr->vertex_index](index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -130,7 +130,7 @@ int ReadVertexCallback(p_ply_argument argument) {
     state_ptr->mesh_ptr->vertices_[state_ptr->vertex_index](index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -188,7 +188,7 @@ int ReadFaceCallBack(p_ply_argument argument) {
     }
     if (index == 2) {  // reading 'triangles_[n](2)'
         state_ptr->triangle_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -220,7 +220,7 @@ int ReadVertexCallback(p_ply_argument argument) {
     state_ptr->lineset_ptr->points_[state_ptr->vertex_index](index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->vertex_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -238,7 +238,7 @@ int ReadLineCallback(p_ply_argument argument) {
     state_ptr->lineset_ptr->lines_[state_ptr->line_index](index) = value;
     if (index == 1) {  // reading 'vertex2'
         state_ptr->line_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -257,7 +257,7 @@ int ReadColorCallback(p_ply_argument argument) {
             value / 255.0;
     if (index == 2) {  // reading 'blue'
         state_ptr->color_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -309,7 +309,7 @@ int ReadVoxelCallback(p_ply_argument argument) {
     state_ptr->voxelgrid_ptr->voxels_[state_ptr->voxel_index](index) = value;
     if (index == 2) {  // reading 'z'
         state_ptr->voxel_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -328,7 +328,7 @@ int ReadColorCallback(p_ply_argument argument) {
             value / 255.0;
     if (index == 2) {  // reading 'blue'
         state_ptr->color_index++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     return 1;
 }
@@ -343,12 +343,12 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Read PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     if (!ply_read_header(ply_file)) {
-        PrintWarning("Read PLY failed: unable to parse header.\n");
+        utility::PrintWarning("Read PLY failed: unable to parse header.\n");
         ply_close(ply_file);
         return false;
     }
@@ -371,7 +371,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
 
     if (state.vertex_num <= 0) {
-        PrintWarning("Read PLY failed: number of vertex <= 0.\n");
+        utility::PrintWarning("Read PLY failed: number of vertex <= 0.\n");
         ply_close(ply_file);
         return false;
     }
@@ -385,17 +385,17 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     pointcloud.normals_.resize(state.normal_num);
     pointcloud.colors_.resize(state.color_num);
 
-    ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
+    utility::ResetConsoleProgress(state.vertex_num + 1, "Reading PLY: ");
 
     if (!ply_read(ply_file)) {
-        PrintWarning("Read PLY failed: unable to read file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to read file: %s\n",
+                              filename.c_str());
         ply_close(ply_file);
         return false;
     }
 
     ply_close(ply_file);
-    AdvanceConsoleProgress();
+    utility::AdvanceConsoleProgress();
     return true;
 }
 
@@ -404,7 +404,7 @@ bool WritePointCloudToPLY(const std::string &filename,
                           bool write_ascii /* = false*/,
                           bool compressed /* = false*/) {
     if (pointcloud.IsEmpty()) {
-        PrintWarning("Write PLY failed: point cloud has 0 points.\n");
+        utility::PrintWarning("Write PLY failed: point cloud has 0 points.\n");
         return false;
     }
 
@@ -412,8 +412,8 @@ bool WritePointCloudToPLY(const std::string &filename,
                                 write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
                                 NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Write PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     ply_add_comment(ply_file, "Created by Open3D");
@@ -433,13 +433,13 @@ bool WritePointCloudToPLY(const std::string &filename,
         ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
     }
     if (!ply_write_header(ply_file)) {
-        PrintWarning("Write PLY failed: unable to write header.\n");
+        utility::PrintWarning("Write PLY failed: unable to write header.\n");
         ply_close(ply_file);
         return false;
     }
 
-    ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
-                         "Writing PLY: ");
+    utility::ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
+                                  "Writing PLY: ");
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const Eigen::Vector3d &point = pointcloud.points_[i];
@@ -461,7 +461,7 @@ bool WritePointCloudToPLY(const std::string &filename,
             ply_write(ply_file,
                       std::min(255.0, std::max(0.0, color(2) * 255.0)));
         }
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
 
     ply_close(ply_file);
@@ -474,12 +474,12 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Read PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     if (!ply_read_header(ply_file)) {
-        PrintWarning("Read PLY failed: unable to parse header.\n");
+        utility::PrintWarning("Read PLY failed: unable to parse header.\n");
         ply_close(ply_file);
         return false;
     }
@@ -502,7 +502,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "vertex", "blue", ReadColorCallback, &state, 2);
 
     if (state.vertex_num <= 0) {
-        PrintWarning("Read PLY failed: number of vertex <= 0.\n");
+        utility::PrintWarning("Read PLY failed: number of vertex <= 0.\n");
         ply_close(ply_file);
         return false;
     }
@@ -525,12 +525,12 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
     mesh.vertex_colors_.resize(state.color_num);
     mesh.triangles_.resize(state.triangle_num);
 
-    ResetConsoleProgress(state.vertex_num + state.triangle_num,
-                         "Reading PLY: ");
+    utility::ResetConsoleProgress(state.vertex_num + state.triangle_num,
+                                  "Reading PLY: ");
 
     if (!ply_read(ply_file)) {
-        PrintWarning("Read PLY failed: unable to read file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to read file: %s\n",
+                              filename.c_str());
         ply_close(ply_file);
         return false;
     }
@@ -544,7 +544,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool write_ascii /* = false*/,
                             bool compressed /* = false*/) {
     if (mesh.IsEmpty()) {
-        PrintWarning("Write PLY failed: mesh has 0 vertices.\n");
+        utility::PrintWarning("Write PLY failed: mesh has 0 vertices.\n");
         return false;
     }
 
@@ -552,8 +552,8 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                                 write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
                                 NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Write PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     ply_add_comment(ply_file, "Created by Open3D");
@@ -576,12 +576,12 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                     static_cast<long>(mesh.triangles_.size()));
     ply_add_property(ply_file, "vertex_indices", PLY_LIST, PLY_UCHAR, PLY_UINT);
     if (!ply_write_header(ply_file)) {
-        PrintWarning("Write PLY failed: unable to write header.\n");
+        utility::PrintWarning("Write PLY failed: unable to write header.\n");
         ply_close(ply_file);
         return false;
     }
 
-    ResetConsoleProgress(
+    utility::ResetConsoleProgress(
             static_cast<int>(mesh.vertices_.size() + mesh.triangles_.size()),
             "Writing PLY: ");
     for (size_t i = 0; i < mesh.vertices_.size(); i++) {
@@ -601,7 +601,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
             ply_write(ply_file, color(1) * 255.0);
             ply_write(ply_file, color(2) * 255.0);
         }
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     for (size_t i = 0; i < mesh.triangles_.size(); i++) {
         const auto &triangle = mesh.triangles_[i];
@@ -609,7 +609,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
         ply_write(ply_file, triangle(0));
         ply_write(ply_file, triangle(1));
         ply_write(ply_file, triangle(2));
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
 
     ply_close(ply_file);
@@ -622,12 +622,12 @@ bool ReadLineSetFromPLY(const std::string &filename,
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Read PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     if (!ply_read_header(ply_file)) {
-        PrintWarning("Read PLY failed: unable to parse header.\n");
+        utility::PrintWarning("Read PLY failed: unable to parse header.\n");
         ply_close(ply_file);
         return false;
     }
@@ -649,12 +649,12 @@ bool ReadLineSetFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "edge", "blue", ReadColorCallback, &state, 2);
 
     if (state.vertex_num <= 0) {
-        PrintWarning("Read PLY failed: number of vertex <= 0.\n");
+        utility::PrintWarning("Read PLY failed: number of vertex <= 0.\n");
         ply_close(ply_file);
         return false;
     }
     if (state.line_num <= 0) {
-        PrintWarning("Read PLY failed: number of edges <= 0.\n");
+        utility::PrintWarning("Read PLY failed: number of edges <= 0.\n");
         ply_close(ply_file);
         return false;
     }
@@ -668,12 +668,13 @@ bool ReadLineSetFromPLY(const std::string &filename,
     lineset.lines_.resize(state.line_num);
     lineset.colors_.resize(state.color_num);
 
-    ResetConsoleProgress(state.vertex_num + state.line_num + state.color_num,
-                         "Reading PLY: ");
+    utility::ResetConsoleProgress(
+            state.vertex_num + state.line_num + state.color_num,
+            "Reading PLY: ");
 
     if (!ply_read(ply_file)) {
-        PrintWarning("Read PLY failed: unable to read file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to read file: %s\n",
+                              filename.c_str());
         ply_close(ply_file);
         return false;
     }
@@ -687,11 +688,11 @@ bool WriteLineSetToPLY(const std::string &filename,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     if (lineset.IsEmpty()) {
-        PrintWarning("Write PLY failed: line set has 0 points.\n");
+        utility::PrintWarning("Write PLY failed: line set has 0 points.\n");
         return false;
     }
     if (!lineset.HasLines()) {
-        PrintWarning("Write PLY failed: line set has 0 lines.\n");
+        utility::PrintWarning("Write PLY failed: line set has 0 lines.\n");
         return false;
     }
 
@@ -699,8 +700,8 @@ bool WriteLineSetToPLY(const std::string &filename,
                                 write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
                                 NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Write PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     ply_add_comment(ply_file, "Created by Open3D");
@@ -718,12 +719,12 @@ bool WriteLineSetToPLY(const std::string &filename,
         ply_add_property(ply_file, "blue", PLY_UCHAR, PLY_UCHAR, PLY_UCHAR);
     }
     if (!ply_write_header(ply_file)) {
-        PrintWarning("Write PLY failed: unable to write header.\n");
+        utility::PrintWarning("Write PLY failed: unable to write header.\n");
         ply_close(ply_file);
         return false;
     }
 
-    ResetConsoleProgress(
+    utility::ResetConsoleProgress(
             static_cast<int>(lineset.points_.size() + lineset.lines_.size()),
             "Writing PLY: ");
 
@@ -732,7 +733,7 @@ bool WriteLineSetToPLY(const std::string &filename,
         ply_write(ply_file, point(0));
         ply_write(ply_file, point(1));
         ply_write(ply_file, point(2));
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     for (size_t i = 0; i < lineset.lines_.size(); i++) {
         const Eigen::Vector2i &line = lineset.lines_[i];
@@ -747,7 +748,7 @@ bool WriteLineSetToPLY(const std::string &filename,
             ply_write(ply_file,
                       std::min(255.0, std::max(0.0, color(2) * 255.0)));
         }
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
 
     ply_close(ply_file);
@@ -760,12 +761,12 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Read PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     if (!ply_read_header(ply_file)) {
-        PrintWarning("Read PLY failed: unable to parse header.\n");
+        utility::PrintWarning("Read PLY failed: unable to parse header.\n");
         ply_close(ply_file);
         return false;
     }
@@ -778,7 +779,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "vertex", "z", ReadVoxelCallback, &state, 2);
 
     if (state.voxel_num <= 0) {
-        PrintWarning("Read PLY failed: number of vertex <= 0.\n");
+        utility::PrintWarning("Read PLY failed: number of vertex <= 0.\n");
         ply_close(ply_file);
         return false;
     }
@@ -801,11 +802,12 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     voxelgrid.voxels_.resize(state.voxel_num);
     voxelgrid.colors_.resize(state.color_num);
 
-    ResetConsoleProgress(state.voxel_num + state.color_num, "Reading PLY: ");
+    utility::ResetConsoleProgress(state.voxel_num + state.color_num,
+                                  "Reading PLY: ");
 
     if (!ply_read(ply_file)) {
-        PrintWarning("Read PLY failed: unable to read file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read PLY failed: unable to read file: %s\n",
+                              filename.c_str());
         ply_close(ply_file);
         return false;
     }
@@ -819,7 +821,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
                          bool write_ascii /* = false*/,
                          bool compressed /* = false*/) {
     if (voxelgrid.IsEmpty()) {
-        PrintWarning("Write PLY failed: voxelgrid has 0 voxels.\n");
+        utility::PrintWarning("Write PLY failed: voxelgrid has 0 voxels.\n");
         return false;
     }
 
@@ -827,8 +829,8 @@ bool WriteVoxelGridToPLY(const std::string &filename,
                                 write_ascii ? PLY_ASCII : PLY_LITTLE_ENDIAN,
                                 NULL, 0, NULL);
     if (!ply_file) {
-        PrintWarning("Write PLY failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write PLY failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     ply_add_comment(ply_file, "Created by Open3D");
@@ -853,13 +855,13 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     }
 
     if (!ply_write_header(ply_file)) {
-        PrintWarning("Write PLY failed: unable to write header.\n");
+        utility::PrintWarning("Write PLY failed: unable to write header.\n");
         ply_close(ply_file);
         return false;
     }
 
-    ResetConsoleProgress(static_cast<int>(voxelgrid.voxels_.size()),
-                         "Writing PLY: ");
+    utility::ResetConsoleProgress(static_cast<int>(voxelgrid.voxels_.size()),
+                                  "Writing PLY: ");
 
     const Eigen::Vector3d &origin = voxelgrid.origin_;
     ply_write(ply_file, origin(0));
@@ -881,7 +883,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
             ply_write(ply_file,
                       std::min(255.0, std::max(0.0, color(2) * 255.0)));
         }
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
 
     ply_close(ply_file);

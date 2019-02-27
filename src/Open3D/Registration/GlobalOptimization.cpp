@@ -52,25 +52,116 @@ using namespace registration;
 /// It is from sin(x) \approx x and cos(x) \approx 1 when x is almost zero.
 /// See [Choi et al 2015] for more detail. Reference list in
 /// GlobalOptimization.h
-const std::vector<Eigen::Matrix4d, Matrix4d_allocator> jacobian_operator = {
-        // for alpha
-        (Eigen::Matrix4d() << 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0)
-                .finished(),
-        // for beta
-        (Eigen::Matrix4d() << 0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0)
-                .finished(),
-        // for gamma
-        (Eigen::Matrix4d() << 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-                .finished(),
-        // for a
-        (Eigen::Matrix4d() << 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-                .finished(),
-        // for b
-        (Eigen::Matrix4d() << 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
-                .finished(),
-        // for c
-        (Eigen::Matrix4d() << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
-                .finished()};
+const std::vector<Eigen::Matrix4d, utility::Matrix4d_allocator>
+        jacobian_operator = {
+                // for alpha
+                (Eigen::Matrix4d() << 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 -1,
+                 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0)
+                        .finished(),
+                // for beta
+                (Eigen::Matrix4d() << 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 -1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0)
+                        .finished(),
+                // for gamma
+                (Eigen::Matrix4d() << 0,
+                 -1,
+                 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0)
+                        .finished(),
+                // for a
+                (Eigen::Matrix4d() << 0,
+                 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0)
+                        .finished(),
+                // for b
+                (Eigen::Matrix4d() << 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0)
+                        .finished(),
+                // for c
+                (Eigen::Matrix4d() << 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0)
+                        .finished()};
 
 /// This function is intended for linearized form of SE(3).
 /// It is an approximate form. See [Choi et al 2015] for derivation.
@@ -233,8 +324,8 @@ Eigen::VectorXd UpdatePoseVector(const PoseGraph &pose_graph) {
     int n_nodes = (int)pose_graph.nodes_.size();
     Eigen::VectorXd output(n_nodes * 6);
     for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
-        Eigen::Vector6d output_iter =
-                TransformMatrix4dToVector6d(pose_graph.nodes_[iter_node].pose_);
+        Eigen::Vector6d output_iter = utility::TransformMatrix4dToVector6d(
+                pose_graph.nodes_[iter_node].pose_);
         output.block<6, 1>(iter_node * 6, 0) = output_iter;
     }
     return std::move(output);
@@ -249,7 +340,7 @@ std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
     for (int iter_node = 0; iter_node < n_nodes; iter_node++) {
         Eigen::Vector6d delta_iter = delta.block<6, 1>(iter_node * 6, 0);
         pose_graph_updated->nodes_[iter_node].pose_ =
-                TransformVector6dToMatrix4d(delta_iter) *
+                utility::TransformVector6dToMatrix4d(delta_iter) *
                 pose_graph_updated->nodes_[iter_node].pose_;
     }
     return pose_graph_updated;
@@ -258,8 +349,8 @@ std::shared_ptr<PoseGraph> UpdatePoseGraph(const PoseGraph &pose_graph,
 bool CheckRightTerm(const Eigen::VectorXd &right_term,
                     const GlobalOptimizationConvergenceCriteria &criteria) {
     if (right_term.maxCoeff() < criteria.min_right_term_) {
-        PrintDebug("Maximum coefficient of right term < %e\n",
-                   criteria.min_right_term_);
+        utility::PrintDebug("Maximum coefficient of right term < %e\n",
+                            criteria.min_right_term_);
         return true;
     }
     return false;
@@ -271,9 +362,9 @@ bool CheckRelativeIncrement(
         const GlobalOptimizationConvergenceCriteria &criteria) {
     if (delta.norm() < criteria.min_relative_increment_ *
                                (x.norm() + criteria.min_relative_increment_)) {
-        PrintDebug("Delta.norm() < %e * (x.norm() + %e)\n",
-                   criteria.min_relative_increment_,
-                   criteria.min_relative_increment_);
+        utility::PrintDebug("Delta.norm() < %e * (x.norm() + %e)\n",
+                            criteria.min_relative_increment_,
+                            criteria.min_relative_increment_);
         return true;
     }
     return false;
@@ -285,8 +376,9 @@ bool CheckRelativeResidualIncrement(
         const GlobalOptimizationConvergenceCriteria &criteria) {
     if (current_residual - new_residual <
         criteria.min_relative_residual_increment_ * current_residual) {
-        PrintDebug("Current_residual - new_residual < %e * current_residual\n",
-                   criteria.min_relative_residual_increment_);
+        utility::PrintDebug(
+                "Current_residual - new_residual < %e * current_residual\n",
+                criteria.min_relative_residual_increment_);
         return true;
     }
     return false;
@@ -295,7 +387,7 @@ bool CheckRelativeResidualIncrement(
 bool CheckResidual(double residual,
                    const GlobalOptimizationConvergenceCriteria &criteria) {
     if (residual < criteria.min_residual_) {
-        PrintDebug("Current_residual < %e\n", criteria.min_residual_);
+        utility::PrintDebug("Current_residual < %e\n", criteria.min_residual_);
         return true;
     }
     return false;
@@ -304,8 +396,8 @@ bool CheckResidual(double residual,
 bool CheckMaxIteration(int iteration,
                        const GlobalOptimizationConvergenceCriteria &criteria) {
     if (iteration >= criteria.max_iteration_) {
-        PrintDebug("Reached maximum number of iterations (%d)\n",
-                   criteria.max_iteration_);
+        utility::PrintDebug("Reached maximum number of iterations (%d)\n",
+                            criteria.max_iteration_);
         return true;
     }
     return false;
@@ -314,8 +406,8 @@ bool CheckMaxIteration(int iteration,
 bool CheckMaxIterationLM(
         int iteration, const GlobalOptimizationConvergenceCriteria &criteria) {
     if (iteration >= criteria.max_iteration_lm_) {
-        PrintDebug("Reached maximum number of iterations (%d)\n",
-                   criteria.max_iteration_lm_);
+        utility::PrintDebug("Reached maximum number of iterations (%d)\n",
+                            criteria.max_iteration_lm_);
         return true;
     }
     return false;
@@ -346,8 +438,8 @@ double ComputeLineProcessWeight(const PoseGraph &pose_graph,
 void CompensateReferencePoseGraphNode(PoseGraph &pose_graph_new,
                                       const PoseGraph &pose_graph_orig,
                                       int reference_node) {
-    PrintDebug("CompensateReferencePoseGraphNode : reference : %d\n",
-               reference_node);
+    utility::PrintDebug("CompensateReferencePoseGraphNode : reference : %d\n",
+                        reference_node);
     int n_nodes = (int)pose_graph_new.nodes_.size();
     if (reference_node < 0 || reference_node >= n_nodes) {
         return;
@@ -407,12 +499,13 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
     int n_edges = (int)pose_graph.edges_.size();
 
     if (!ValidatePoseGraphConnectivity(pose_graph, false)) {
-        PrintError("Invalid PoseGraph - graph is not connected.\n");
+        utility::PrintError("Invalid PoseGraph - graph is not connected.\n");
         return false;
     }
 
     if (!ValidatePoseGraphConnectivity(pose_graph, true)) {
-        PrintWarning("Certain-edge subset of PoseGraph is not connected.\n");
+        utility::PrintWarning(
+                "Certain-edge subset of PoseGraph is not connected.\n");
     }
 
     for (int j = 0; j < n_edges; j++) {
@@ -422,7 +515,7 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
             t.target_node_id_ >= 0 && t.target_node_id_ < n_nodes)
             valid = true;
         if (!valid) {
-            PrintError(
+            utility::PrintError(
                     "Invalid PoseGraph - an edge references an invalide "
                     "node.\n");
             return false;
@@ -431,13 +524,13 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
     for (int j = 0; j < n_edges; j++) {
         const PoseGraphEdge &t = pose_graph.edges_[j];
         if (!t.uncertain_ && t.confidence_ != 1.0) {
-            PrintError(
+            utility::PrintError(
                     "Invalid PoseGraph - the certain edge does not have 1.0 as "
                     "a confidence.\n");
             return false;
         }
     }
-    PrintInfo("Validating PoseGraph - finished.\n");
+    utility::PrintInfo("Validating PoseGraph - finished.\n");
     return true;
 }
 
@@ -476,11 +569,11 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
     int n_edges = (int)pose_graph.edges_.size();
     double line_process_weight = ComputeLineProcessWeight(pose_graph, option);
 
-    PrintDebug(
+    utility::PrintDebug(
             "[GlobalOptimizationGaussNewton] Optimizing PoseGraph having %d "
             "nodes and %d edges. \n",
             n_nodes, n_edges);
-    PrintDebug("Line process weight : %f\n", line_process_weight);
+    utility::PrintDebug("Line process weight : %f\n", line_process_weight);
 
     Eigen::VectorXd zeta = ComputeZeta(pose_graph);
     double current_residual, new_residual;
@@ -498,23 +591,23 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
 
     std::tie(H, b) = ComputeLinearSystem(pose_graph, zeta);
 
-    PrintDebug("[Initial     ] residual : %e\n", current_residual);
+    utility::PrintDebug("[Initial     ] residual : %e\n", current_residual);
 
     bool stop = false;
     if (stop || CheckRightTerm(b, criteria)) return;
 
-    Timer timer_overall;
+    utility::Timer timer_overall;
     timer_overall.Start();
     int iter;
     for (iter = 0; !stop; iter++) {
-        Timer timer_iter;
+        utility::Timer timer_iter;
         timer_iter.Start();
 
         Eigen::VectorXd delta(H.cols());
         bool solver_success = false;
 
         // Solve H_LM @ delta == b using a sparse solver
-        std::tie(solver_success, delta) = SolveLinearSystemPSD(
+        std::tie(solver_success, delta) = utility::SolveLinearSystemPSD(
                 H, b, /*prefer_sparse=*/true, /*check_symmetric=*/false,
                 /*check_det=*/false, /*check_psd=*/false);
 
@@ -545,7 +638,7 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
             if (stop) break;
         }
         timer_iter.Stop();
-        PrintDebug(
+        utility::PrintDebug(
                 "[Iteration %02d] residual : %e, valid edges : %d, time : %.3f "
                 "sec.\n",
                 iter, current_residual, valid_edges_num,
@@ -554,8 +647,9 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
                CheckMaxIteration(iter, criteria);
     }  // end for
     timer_overall.Stop();
-    PrintDebug("[GlobalOptimizationGaussNewton] total time : %.3f sec.\n",
-               timer_overall.GetDuration() / 1000.0);
+    utility::PrintDebug(
+            "[GlobalOptimizationGaussNewton] total time : %.3f sec.\n",
+            timer_overall.GetDuration() / 1000.0);
 }
 
 void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
@@ -566,11 +660,11 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
     int n_edges = (int)pose_graph.edges_.size();
     double line_process_weight = ComputeLineProcessWeight(pose_graph, option);
 
-    PrintDebug(
+    utility::PrintDebug(
             "[GlobalOptimizationLM] Optimizing PoseGraph having %d nodes and "
             "%d edges. \n",
             n_nodes, n_edges);
-    PrintDebug("Line process weight : %f\n", line_process_weight);
+    utility::PrintDebug("Line process weight : %f\n", line_process_weight);
 
     Eigen::VectorXd zeta = ComputeZeta(pose_graph);
     double current_residual, new_residual;
@@ -594,17 +688,17 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
     double ni = 2.0;
     double rho = 0.0;
 
-    PrintDebug("[Initial     ] residual : %e, lambda : %e\n", current_residual,
-               current_lambda);
+    utility::PrintDebug("[Initial     ] residual : %e, lambda : %e\n",
+                        current_residual, current_lambda);
 
     bool stop = false;
     stop = stop || CheckRightTerm(b, criteria);
     if (stop) return;
 
-    Timer timer_overall;
+    utility::Timer timer_overall;
     timer_overall.Start();
     for (int iter = 0; !stop; iter++) {
-        Timer timer_iter;
+        utility::Timer timer_iter;
         timer_iter.Start();
         int lm_count = 0;
         do {
@@ -613,7 +707,7 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
             bool solver_success = false;
 
             // Solve H_LM @ delta == b using a sparse solver
-            std::tie(solver_success, delta) = SolveLinearSystemPSD(
+            std::tie(solver_success, delta) = utility::SolveLinearSystemPSD(
                     H_LM, b, /*prefer_sparse=*/true, /*check_symmetric=*/false,
                     /*check_det=*/false, /*check_psd=*/false);
 
@@ -660,7 +754,7 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
         } while (!((rho > 0) || stop));
         timer_iter.Stop();
         if (!stop) {
-            PrintDebug(
+            utility::PrintDebug(
                     "[Iteration %02d] residual : %e, valid edges : %d, time : "
                     "%.3f sec.\n",
                     iter, current_residual, valid_edges_num,
@@ -670,8 +764,8 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
                CheckMaxIteration(iter, criteria);
     }  // end for
     timer_overall.Stop();
-    PrintDebug("[GlobalOptimizationLM] total time : %.3f sec.\n",
-               timer_overall.GetDuration() / 1000.0);
+    utility::PrintDebug("[GlobalOptimizationLM] total time : %.3f sec.\n",
+                        timer_overall.GetDuration() / 1000.0);
 }
 
 void GlobalOptimization(PoseGraph &pose_graph,

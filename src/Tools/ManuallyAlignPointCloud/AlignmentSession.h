@@ -29,7 +29,7 @@
 
 namespace open3d {
 
-class AlignmentSession : public IJsonConvertible {
+class AlignmentSession : public utility::IJsonConvertible {
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;

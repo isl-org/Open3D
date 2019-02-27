@@ -37,16 +37,16 @@ namespace {
 bool ReadMatrixXdFromBINFile(FILE *file, Eigen::MatrixXd &mat) {
     uint32_t rows, cols;
     if (fread(&rows, sizeof(uint32_t), 1, file) < 1) {
-        PrintWarning("Read BIN failed: unexpected EOF.\n");
+        utility::PrintWarning("Read BIN failed: unexpected EOF.\n");
         return false;
     }
     if (fread(&cols, sizeof(uint32_t), 1, file) < 1) {
-        PrintWarning("Read BIN failed: unexpected EOF.\n");
+        utility::PrintWarning("Read BIN failed: unexpected EOF.\n");
         return false;
     }
     mat.resize(rows, cols);
     if (fread(mat.data(), sizeof(double), rows * cols, file) < rows * cols) {
-        PrintWarning("Read BIN failed: unexpected EOF.\n");
+        utility::PrintWarning("Read BIN failed: unexpected EOF.\n");
         return false;
     }
     return true;
@@ -56,15 +56,15 @@ bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat) {
     uint32_t rows = (uint32_t)mat.rows();
     uint32_t cols = (uint32_t)mat.cols();
     if (fwrite(&rows, sizeof(uint32_t), 1, file) < 1) {
-        PrintWarning("Write BIN failed: unexpected error.\n");
+        utility::PrintWarning("Write BIN failed: unexpected error.\n");
         return false;
     }
     if (fwrite(&cols, sizeof(uint32_t), 1, file) < 1) {
-        PrintWarning("Write BIN failed: unexpected error.\n");
+        utility::PrintWarning("Write BIN failed: unexpected error.\n");
         return false;
     }
     if (fwrite(mat.data(), sizeof(double), rows * cols, file) < rows * cols) {
-        PrintWarning("Write BIN failed: unexpected error.\n");
+        utility::PrintWarning("Write BIN failed: unexpected error.\n");
         return false;
     }
     return true;
@@ -76,8 +76,8 @@ bool ReadFeatureFromBIN(const std::string &filename,
                         registration::Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "rb");
     if (fid == NULL) {
-        PrintWarning("Read BIN failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read BIN failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     bool success = ReadMatrixXdFromBINFile(fid, feature.data_);
@@ -89,8 +89,8 @@ bool WriteFeatureToBIN(const std::string &filename,
                        const registration::Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "wb");
     if (fid == NULL) {
-        PrintWarning("Write BIN failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write BIN failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     bool success = WriteMatrixXdToBINFile(fid, feature.data_);

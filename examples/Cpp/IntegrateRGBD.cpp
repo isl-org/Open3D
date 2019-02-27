@@ -33,56 +33,60 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    PrintInfo("Usage:\n");
-    PrintInfo("    > IntegrateRGBD [options]\n");
-    PrintInfo("      Integrate RGBD stream and extract geometry.\n");
-    PrintInfo("\n");
-    PrintInfo("Basic options:\n");
-    PrintInfo("    --help, -h                : Print help information.\n");
-    PrintInfo("    --match file              : The match file of an RGBD stream. Must have.\n");
-    PrintInfo("    --log file                : The log trajectory file. Must have.\n");
-    PrintInfo("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
-    PrintInfo("    --save_mesh               : Save a mesh created by marching cubes.\n");
-    PrintInfo("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
-    PrintInfo("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
-    PrintInfo("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
-    PrintInfo("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
-    PrintInfo("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
-    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::PrintInfo("Usage:\n");
+    utility::PrintInfo("    > IntegrateRGBD [options]\n");
+    utility::PrintInfo("      Integrate RGBD stream and extract geometry.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("Basic options:\n");
+    utility::PrintInfo("    --help, -h                : Print help information.\n");
+    utility::PrintInfo("    --match file              : The match file of an RGBD stream. Must have.\n");
+    utility::PrintInfo("    --log file                : The log trajectory file. Must have.\n");
+    utility::PrintInfo("    --save_pointcloud         : Save a point cloud created by marching cubes.\n");
+    utility::PrintInfo("    --save_mesh               : Save a mesh created by marching cubes.\n");
+    utility::PrintInfo("    --save_voxel              : Save a point cloud of the TSDF voxel.\n");
+    utility::PrintInfo("    --every_k_frames k        : Save/reset every k frames. Default: 0 (none).\n");
+    utility::PrintInfo("    --length l                : Length of the volume, in meters. Default: 4.0.\n");
+    utility::PrintInfo("    --resolution r            : Resolution of the voxel grid. Default: 512.\n");
+    utility::PrintInfo("    --sdf_trunc_percentage t  : TSDF truncation percentage, of the volume length. Default: 0.01.\n");
+    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
     // clang-format on
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    if (argc <= 1 || ProgramOptionExists(argc, argv, "--help") ||
-        ProgramOptionExists(argc, argv, "-h")) {
+    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
+        utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 1;
     }
 
     std::string match_filename =
-            GetProgramOptionAsString(argc, argv, "--match");
-    std::string log_filename = GetProgramOptionAsString(argc, argv, "--log");
-    bool save_pointcloud = ProgramOptionExists(argc, argv, "--save_pointcloud");
-    bool save_mesh = ProgramOptionExists(argc, argv, "--save_mesh");
-    bool save_voxel = ProgramOptionExists(argc, argv, "--save_voxel");
+            utility::GetProgramOptionAsString(argc, argv, "--match");
+    std::string log_filename =
+            utility::GetProgramOptionAsString(argc, argv, "--log");
+    bool save_pointcloud =
+            utility::ProgramOptionExists(argc, argv, "--save_pointcloud");
+    bool save_mesh = utility::ProgramOptionExists(argc, argv, "--save_mesh");
+    bool save_voxel = utility::ProgramOptionExists(argc, argv, "--save_voxel");
     int every_k_frames =
-            GetProgramOptionAsInt(argc, argv, "--every_k_frames", 0);
-    double length = GetProgramOptionAsDouble(argc, argv, "--length", 4.0);
-    int resolution = GetProgramOptionAsInt(argc, argv, "--resolution", 512);
-    double sdf_trunc_percentage = GetProgramOptionAsDouble(
+            utility::GetProgramOptionAsInt(argc, argv, "--every_k_frames", 0);
+    double length =
+            utility::GetProgramOptionAsDouble(argc, argv, "--length", 4.0);
+    int resolution =
+            utility::GetProgramOptionAsInt(argc, argv, "--resolution", 512);
+    double sdf_trunc_percentage = utility::GetProgramOptionAsDouble(
             argc, argv, "--sdf_trunc_percentage", 0.01);
-    int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    SetVerbosityLevel((VerbosityLevel)verbose);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
 
     auto camera_trajectory =
             CreatePinholeCameraTrajectoryFromFile(log_filename);
     std::string dir_name =
-            filesystem::GetFileParentDirectory(match_filename).c_str();
+            utility::filesystem::GetFileParentDirectory(match_filename).c_str();
     FILE *file = fopen(match_filename.c_str(), "r");
     if (file == NULL) {
-        PrintError("Unable to open file %s\n", match_filename.c_str());
+        utility::PrintError("Unable to open file %s\n", match_filename.c_str());
         fclose(file);
         return 0;
     }
@@ -92,14 +96,14 @@ int main(int argc, char *argv[]) {
     integration::ScalableTSDFVolume volume(
             length / (double)resolution, length * sdf_trunc_percentage,
             integration::TSDFVolumeColorType::RGB8);
-    FPSTimer timer("Process RGBD stream",
-                   (int)camera_trajectory->parameters_.size());
+    utility::FPSTimer timer("Process RGBD stream",
+                            (int)camera_trajectory->parameters_.size());
     geometry::Image depth, color;
     while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         std::vector<std::string> st;
-        SplitString(st, buffer, "\t\r\n ");
+        utility::SplitString(st, buffer, "\t\r\n ");
         if (st.size() >= 2) {
-            PrintDebug("Processing frame %d ...\n", index);
+            utility::PrintDebug("Processing frame %d ...\n", index);
             ReadImage(dir_name + st[0], depth);
             ReadImage(dir_name + st[1], color);
             auto rgbd = geometry::CreateRGBDImageFromColorAndDepth(
@@ -114,21 +118,22 @@ int main(int argc, char *argv[]) {
             index++;
             if (index == (int)camera_trajectory->parameters_.size() ||
                 (every_k_frames > 0 && index % every_k_frames == 0)) {
-                PrintDebug("Saving fragment %d ...\n", save_index);
+                utility::PrintDebug("Saving fragment %d ...\n", save_index);
                 std::string save_index_str = std::to_string(save_index);
                 if (save_pointcloud) {
-                    PrintDebug("Saving pointcloud %d ...\n", save_index);
+                    utility::PrintDebug("Saving pointcloud %d ...\n",
+                                        save_index);
                     auto pcd = volume.ExtractPointCloud();
                     WritePointCloud("pointcloud_" + save_index_str + ".ply",
                                     *pcd);
                 }
                 if (save_mesh) {
-                    PrintDebug("Saving mesh %d ...\n", save_index);
+                    utility::PrintDebug("Saving mesh %d ...\n", save_index);
                     auto mesh = volume.ExtractTriangleMesh();
                     WriteTriangleMesh("mesh_" + save_index_str + ".ply", *mesh);
                 }
                 if (save_voxel) {
-                    PrintDebug("Saving voxel %d ...\n", save_index);
+                    utility::PrintDebug("Saving voxel %d ...\n", save_index);
                     auto voxel = volume.ExtractVoxelPointCloud();
                     WritePointCloud("voxel_" + save_index_str + ".ply", *voxel);
                 }

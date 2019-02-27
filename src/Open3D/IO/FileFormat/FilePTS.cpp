@@ -36,7 +36,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
-        PrintWarning("Read PTS failed: unable to open file.\n");
+        utility::PrintWarning("Read PTS failed: unable to open file.\n");
         return false;
     }
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -45,20 +45,21 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         sscanf(line_buffer, "%d", &num_of_pts);
     }
     if (num_of_pts <= 0) {
-        PrintWarning("Read PTS failed: unable to read header.\n");
+        utility::PrintWarning("Read PTS failed: unable to read header.\n");
         fclose(file);
         return false;
     }
-    ResetConsoleProgress(num_of_pts, "Reading PTS: ");
+    utility::ResetConsoleProgress(num_of_pts, "Reading PTS: ");
     int idx = 0;
     while (idx < num_of_pts &&
            fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         if (num_of_fields == 0) {
             std::vector<std::string> st;
-            SplitString(st, line_buffer, " ");
+            utility::SplitString(st, line_buffer, " ");
             num_of_fields = (int)st.size();
             if (num_of_fields < 3) {
-                PrintWarning("Read PTS failed: insufficient data fields.\n");
+                utility::PrintWarning(
+                        "Read PTS failed: insufficient data fields.\n");
                 fclose(file);
                 return false;
             }
@@ -82,7 +83,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             }
         }
         idx++;
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     fclose(file);
     return true;
@@ -94,12 +95,12 @@ bool WritePointCloudToPTS(const std::string &filename,
                           bool compressed /* = false*/) {
     FILE *file = fopen(filename.c_str(), "w");
     if (file == NULL) {
-        PrintWarning("Write PTS failed: unable to open file.\n");
+        utility::PrintWarning("Write PTS failed: unable to open file.\n");
         return false;
     }
     fprintf(file, "%d\r\n", (int)pointcloud.points_.size());
-    ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
-                         "Writinging PTS: ");
+    utility::ResetConsoleProgress(static_cast<int>(pointcloud.points_.size()),
+                                  "Writinging PTS: ");
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         const auto &point = pointcloud.points_[i];
         if (pointcloud.HasColors() == false) {
@@ -111,7 +112,7 @@ bool WritePointCloudToPTS(const std::string &filename,
                     point(1), point(2), 0, (int)color(0), (int)color(1),
                     (int)(color(2)));
         }
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
     }
     fclose(file);
     return true;

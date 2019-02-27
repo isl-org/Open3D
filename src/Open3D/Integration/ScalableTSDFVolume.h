@@ -92,7 +92,7 @@ public:
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
     std::unordered_map<Eigen::Vector3i,
                        VolumeUnit,
-                       hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             volume_units_;
 
 private:

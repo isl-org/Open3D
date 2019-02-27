@@ -34,36 +34,40 @@ void PrintPointCloud(const open3d::geometry::PointCloud &pointcloud) {
     using namespace open3d;
 
     bool pointcloud_has_normal = pointcloud.HasNormals();
-    PrintInfo("Pointcloud has %d points.\n", (int)pointcloud.points_.size());
+    utility::PrintInfo("Pointcloud has %d points.\n",
+                       (int)pointcloud.points_.size());
 
     Eigen::Vector3d min_bound = pointcloud.GetMinBound();
     Eigen::Vector3d max_bound = pointcloud.GetMaxBound();
-    PrintInfo("Bounding box is: (%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)\n",
-              min_bound(0), min_bound(1), min_bound(2), max_bound(0),
-              max_bound(1), max_bound(2));
+    utility::PrintInfo(
+            "Bounding box is: (%.4f, %.4f, %.4f) - (%.4f, %.4f, %.4f)\n",
+            min_bound(0), min_bound(1), min_bound(2), max_bound(0),
+            max_bound(1), max_bound(2));
 
     for (size_t i = 0; i < pointcloud.points_.size(); i++) {
         if (pointcloud_has_normal) {
             const Eigen::Vector3d &point = pointcloud.points_[i];
             const Eigen::Vector3d &normal = pointcloud.normals_[i];
-            PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n", point(0), point(1),
-                       point(2), normal(0), normal(1), normal(2));
+            utility::PrintDebug("%.6f %.6f %.6f %.6f %.6f %.6f\n", point(0),
+                                point(1), point(2), normal(0), normal(1),
+                                normal(2));
         } else {
             const Eigen::Vector3d &point = pointcloud.points_[i];
-            PrintDebug("%.6f %.6f %.6f\n", point(0), point(1), point(2));
+            utility::PrintDebug("%.6f %.6f %.6f\n", point(0), point(1),
+                                point(2));
         }
     }
-    PrintDebug("End of the list.\n\n");
+    utility::PrintDebug("End of the list.\n\n");
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     auto pcd = CreatePointCloudFromFile(argv[1]);
     {
-        ScopeTimer timer("FPFH estimation with Radius 0.25");
+        utility::ScopeTimer timer("FPFH estimation with Radius 0.25");
         // for (int i = 0; i < 20; i++) {
         registration::ComputeFPFHFeature(
                 *pcd, open3d::geometry::KDTreeSearchParamRadius(0.25));
@@ -71,7 +75,7 @@ int main(int argc, char *argv[]) {
     }
 
     {
-        ScopeTimer timer("Normal estimation with KNN20");
+        utility::ScopeTimer timer("Normal estimation with KNN20");
         for (int i = 0; i < 20; i++) {
             geometry::EstimateNormals(
                     *pcd, open3d::geometry::KDTreeSearchParamKNN(20));
@@ -81,7 +85,7 @@ int main(int argc, char *argv[]) {
     std::cout << pcd->normals_[10] << std::endl;
 
     {
-        ScopeTimer timer("Normal estimation with Radius 0.01666");
+        utility::ScopeTimer timer("Normal estimation with Radius 0.01666");
         for (int i = 0; i < 20; i++) {
             geometry::EstimateNormals(
                     *pcd, open3d::geometry::KDTreeSearchParamRadius(0.01666));
@@ -91,7 +95,7 @@ int main(int argc, char *argv[]) {
     std::cout << pcd->normals_[10] << std::endl;
 
     {
-        ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
+        utility::ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
         for (int i = 0; i < 20; i++) {
             geometry::EstimateNormals(
                     *pcd,
@@ -120,26 +124,26 @@ int main(int argc, char *argv[]) {
     const std::string filename_ply("test.ply");
 
     if (ReadPointCloud(argv[1], pointcloud)) {
-        PrintWarning("Successfully read %s\n", argv[1]);
+        utility::PrintWarning("Successfully read %s\n", argv[1]);
 
         /*
         geometry::PointCloud pointcloud_copy;
         pointcloud_copy.CloneFrom(pointcloud);
 
         if (WritePointCloud(filename_xyz, pointcloud)) {
-            PrintWarning("Successfully wrote %s\n\n", filename_xyz.c_str());
-        } else {
-            PrintError("Failed to write %s\n\n", filename_xyz.c_str());
+            utility::PrintWarning("Successfully wrote %s\n\n",
+        filename_xyz.c_str()); } else { utility::PrintError("Failed to write
+        %s\n\n", filename_xyz.c_str());
         }
 
         if (WritePointCloud(filename_ply, pointcloud_copy)) {
-            PrintWarning("Successfully wrote %s\n\n", filename_ply.c_str());
-        } else {
-            PrintError("Failed to write %s\n\n", filename_ply.c_str());
+            utility::PrintWarning("Successfully wrote %s\n\n",
+        filename_ply.c_str()); } else { utility::PrintError("Failed to write
+        %s\n\n", filename_ply.c_str());
         }
          */
     } else {
-        PrintError("Failed to read %s\n\n", argv[1]);
+        utility::PrintError("Failed to read %s\n\n", argv[1]);
     }
 
     // 3. test pointcloud visualization
@@ -187,13 +191,13 @@ int main(int argc, char *argv[]) {
                   geometry::EstimateNormals(
                           *pointcloud_ptr,
                           open3d::geometry::KDTreeSearchParamRadius(0.05));
-                  PrintInfo("Done.\n");
+                  utility::PrintInfo("Done.\n");
                   return true;
               }}},
             "Press Space to Estimate Normal", 1600, 900);
 
     // n. test end
 
-    PrintAlways("End of the test.\n");
+    utility::PrintAlways("End of the test.\n");
     return 0;
 }

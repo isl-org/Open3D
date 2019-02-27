@@ -32,7 +32,7 @@
 
 namespace open3d {
 
-class RenderOption : public IJsonConvertible {
+class RenderOption : public utility::IJsonConvertible {
 public:
     // Global options
     enum class TextureInterpolationOption {

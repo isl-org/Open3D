@@ -143,7 +143,7 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
         std::vector<int> indices(1);
         std::vector<double> dists(1);
         if (kdtree.SearchKNN(source.points_[i], 1, indices, dists) == 0) {
-            PrintDebug(
+            utility::PrintDebug(
                     "[ComputePointCloudToPointCloudDistance] Found a point "
                     "without neighbors.\n");
             distances[i] = 0.0;
@@ -219,7 +219,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
         std::vector<int> indices(2);
         std::vector<double> dists(2);
         if (kdtree.SearchKNN(input.points_[i], 2, indices, dists) <= 1) {
-            PrintDebug(
+            utility::PrintDebug(
                     "[ComputePointCloudNearestNeighborDistance] Found a point "
                     "without neighbors.\n");
             nn_dis[i] = 0.0;

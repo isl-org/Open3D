@@ -77,9 +77,9 @@ CreatePinholeCameraTrajectoryFromFile(const std::string &filename) {
 bool ReadPinholeCameraTrajectory(const std::string &filename,
                                  camera::PinholeCameraTrajectory &trajectory) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.\n");
         return false;
@@ -87,7 +87,7 @@ bool ReadPinholeCameraTrajectory(const std::string &filename,
     auto map_itr =
             file_extension_to_trajectory_read_function.find(filename_ext);
     if (map_itr == file_extension_to_trajectory_read_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.\n");
         return false;
@@ -99,9 +99,9 @@ bool WritePinholeCameraTrajectory(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.\n");
         return false;
@@ -109,7 +109,7 @@ bool WritePinholeCameraTrajectory(
     auto map_itr =
             file_extension_to_trajectory_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trajectory_write_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write camera::PinholeCameraTrajectory failed: unknown file "
                 "extension.\n");
         return false;

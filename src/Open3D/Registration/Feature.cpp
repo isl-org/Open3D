@@ -120,7 +120,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
     if (input.HasNormals() == false) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[ComputeFPFHFeature] Failed because input point cloud has no "
                 "normal.\n");
         return feature;

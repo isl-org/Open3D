@@ -65,9 +65,9 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read geometry::TriangleMesh failed: unknown file "
                 "extension.\n");
         return false;
@@ -75,16 +75,17 @@ bool ReadTriangleMesh(const std::string &filename,
     auto map_itr =
             file_extension_to_trianglemesh_read_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read geometry::TriangleMesh failed: unknown file "
                 "extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, mesh);
-    PrintDebug("Read geometry::TriangleMesh: %d triangles and %d vertices.\n",
-               (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+    utility::PrintDebug(
+            "Read geometry::TriangleMesh: %d triangles and %d vertices.\n",
+            (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     if (mesh.HasVertices() && !mesh.HasTriangles()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "geometry::TriangleMesh appears to be a geometry::PointCloud "
                 "(only contains "
                 "vertices, but no triangles).\n");
@@ -97,9 +98,9 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write geometry::TriangleMesh failed: unknown file "
                 "extension.\n");
         return false;
@@ -107,14 +108,15 @@ bool WriteTriangleMesh(const std::string &filename,
     auto map_itr =
             file_extension_to_trianglemesh_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write geometry::TriangleMesh failed: unknown file "
                 "extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, mesh, write_ascii, compressed);
-    PrintDebug("Write geometry::TriangleMesh: %d triangles and %d vertices.\n",
-               (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+    utility::PrintDebug(
+            "Write geometry::TriangleMesh: %d triangles and %d vertices.\n",
+            (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     return success;
 }
 

@@ -117,7 +117,7 @@ void unit_test::Rand(vector<Vector3i> &v,
 // Initialize an Vector2d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(vector<Vector2d, open3d::Vector2d_allocator> &v,
+void unit_test::Rand(vector<Vector2d, open3d::utility::Vector2d_allocator> &v,
                      const Vector2d &vmin,
                      const Vector2d &vmax,
                      const int &seed) {
@@ -159,7 +159,7 @@ void unit_test::Rand(vector<Vector3d> &v,
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(vector<Vector4i, open3d::Vector4i_allocator> &v,
+void unit_test::Rand(vector<Vector4i, open3d::utility::Vector4i_allocator> &v,
                      const int &vmin,
                      const int &vmax,
                      const int &seed) {

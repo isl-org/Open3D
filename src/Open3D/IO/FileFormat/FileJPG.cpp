@@ -38,8 +38,8 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     JSAMPARRAY buffer;
 
     if ((file_in = fopen(filename.c_str(), "rb")) == NULL) {
-        PrintWarning("Read JPG failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read JPG failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
 
@@ -66,7 +66,8 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
         case JCS_CMYK:
         case JCS_YCCK:
         default:
-            PrintWarning("Read JPG failed: color space not supported.\n");
+            utility::PrintWarning(
+                    "Read JPG failed: color space not supported.\n");
             jpeg_destroy_decompress(&cinfo);
             fclose(file_in);
             return false;
@@ -93,12 +94,12 @@ bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
                      int quality /* = 90*/) {
     if (image.HasData() == false) {
-        PrintWarning("Write JPG failed: image has no data.\n");
+        utility::PrintWarning("Write JPG failed: image has no data.\n");
         return false;
     }
     if (image.bytes_per_channel_ != 1 ||
         (image.num_of_channels_ != 1 && image.num_of_channels_ != 3)) {
-        PrintWarning("Write JPG failed: unsupported image data.\n");
+        utility::PrintWarning("Write JPG failed: unsupported image data.\n");
         return false;
     }
     struct jpeg_compress_struct cinfo;
@@ -107,8 +108,8 @@ bool WriteImageToJPG(const std::string &filename,
     JSAMPROW row_pointer[1];
 
     if ((file_out = fopen(filename.c_str(), "wb")) == NULL) {
-        PrintWarning("Write JPG failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write JPG failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
 

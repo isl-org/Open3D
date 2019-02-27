@@ -35,7 +35,7 @@
 namespace open3d {
 namespace registration {
 
-class PoseGraphNode : public IJsonConvertible {
+class PoseGraphNode : public utility::IJsonConvertible {
 public:
     PoseGraphNode(const Eigen::Matrix4d &pose = Eigen::Matrix4d::Identity())
         : pose_(pose){};
@@ -49,7 +49,7 @@ public:
     Eigen::Matrix4d_u pose_;
 };
 
-class PoseGraphEdge : public IJsonConvertible {
+class PoseGraphEdge : public utility::IJsonConvertible {
 public:
     PoseGraphEdge(
             int source_node_id = -1,
@@ -85,7 +85,7 @@ public:
     double confidence_;
 };
 
-class PoseGraph : public IJsonConvertible {
+class PoseGraph : public utility::IJsonConvertible {
 public:
     PoseGraph();
     ~PoseGraph() override;

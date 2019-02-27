@@ -62,17 +62,18 @@ void VisualizeRegistration(const open3d::geometry::PointCloud &source,
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc != 3 && argc != 4) {
-        PrintDebug(
+        utility::PrintDebug(
                 "Usage : RegistrationRANSAC [path_to_first_point_cloud] "
                 "[path_to_second_point_cloud] --visualize\n");
         return 1;
     }
 
     bool visualize = false;
-    if (ProgramOptionExists(argc, argv, "--visualize")) visualize = true;
+    if (utility::ProgramOptionExists(argc, argv, "--visualize"))
+        visualize = true;
 
     std::shared_ptr<geometry::PointCloud> source, target;
     std::shared_ptr<registration::Feature> source_fpfh, target_fpfh;

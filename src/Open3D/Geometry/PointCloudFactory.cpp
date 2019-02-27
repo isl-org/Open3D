@@ -135,7 +135,8 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
                                                        extrinsic, stride);
         }
     }
-    PrintDebug("[CreatePointCloudFromDepthImage] Unsupported image format.\n");
+    utility::PrintDebug(
+            "[CreatePointCloudFromDepthImage] Unsupported image format.\n");
     return std::make_shared<PointCloud>();
 }
 
@@ -155,7 +156,8 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
                                                             extrinsic);
         }
     }
-    PrintDebug("[CreatePointCloudFromRGBDImage] Unsupported image format.\n");
+    utility::PrintDebug(
+            "[CreatePointCloudFromRGBDImage] Unsupported image format.\n");
     return std::make_shared<PointCloud>();
 }
 }  // namespace geometry

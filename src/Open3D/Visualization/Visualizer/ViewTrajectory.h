@@ -34,7 +34,7 @@
 
 namespace open3d {
 
-class ViewTrajectory : public IJsonConvertible {
+class ViewTrajectory : public utility::IJsonConvertible {
 public:
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;

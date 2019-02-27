@@ -143,7 +143,7 @@ std::shared_ptr<geometry::TriangleMesh> SelectionPolygon::CropTriangleMesh(
         return std::make_shared<geometry::TriangleMesh>();
     }
     if (input.HasVertices() && !input.HasTriangles()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "geometry::TriangleMesh contains vertices, but no triangles; "
                 "cropping will always yield an empty "
                 "geometry::TriangleMesh.\n");
@@ -237,9 +237,9 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
     double half_height = (double)view.GetWindowHeight() * 0.5;
     auto min_bound = GetMinBound();
     auto max_bound = GetMaxBound();
-    ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
     for (size_t i = 0; i < input.size(); i++) {
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
         const auto &point = input[i];
         Eigen::Vector4d pos =
                 mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
@@ -262,9 +262,9 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     double half_width = (double)view.GetWindowWidth() * 0.5;
     double half_height = (double)view.GetWindowHeight() * 0.5;
     std::vector<double> nodes;
-    ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
     for (size_t k = 0; k < input.size(); k++) {
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
         const auto &point = input[k];
         Eigen::Vector4d pos =
                 mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);

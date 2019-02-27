@@ -35,14 +35,16 @@ namespace {
 class GlobalColorMapSingleton {
 private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
-        PrintDebug("Global colormap init.\n");
+        utility::PrintDebug("Global colormap init.\n");
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
             delete;
 
 public:
-    ~GlobalColorMapSingleton() { PrintDebug("Global colormap destruct.\n"); }
+    ~GlobalColorMapSingleton() {
+        utility::PrintDebug("Global colormap destruct.\n");
+    }
 
 public:
     static GlobalColorMapSingleton &GetInstance() {

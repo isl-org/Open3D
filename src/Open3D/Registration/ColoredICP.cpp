@@ -78,7 +78,7 @@ private:
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         const geometry::PointCloud &target,
         const geometry::KDTreeSearchParamHybrid &search_param) {
-    PrintDebug("InitializePointCloudForColoredICP\n");
+    utility::PrintDebug("InitializePointCloudForColoredICP\n");
 
     geometry::KDTreeFlann tree;
     tree.SetGeometry(target);
@@ -130,8 +130,8 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             // solving linear equation
             bool is_success;
             Eigen::MatrixXd x;
-            std::tie(is_success, x) =
-                    SolveLinearSystemPSD(A.transpose() * A, A.transpose() * b);
+            std::tie(is_success, x) = utility::SolveLinearSystemPSD(
+                    A.transpose() * A, A.transpose() * b);
             if (is_success) {
                 output->color_gradient_[k] = x;
             }
@@ -155,7 +155,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     const auto &target_c = (const PointCloudForColoredICP &)target;
 
     auto compute_jacobian_and_residual =
-            [&](int i, std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            [&](int i,
+                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
                 std::vector<double> &r) {
                 size_t cs = corres[i][0];
                 size_t ct = corres[i][1];
@@ -198,13 +199,14 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
-    std::tie(JTJ, JTr, r2) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-            compute_jacobian_and_residual, (int)corres.size());
+    std::tie(JTJ, JTr, r2) =
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-            SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }

@@ -42,7 +42,7 @@ const double LAMBDA_HYBRID_DEPTH = 0.968;
 namespace odometry {
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
         int row,
-        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+        std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
         std::vector<double> &r,
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
@@ -88,7 +88,7 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
 
 void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
         int row,
-        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+        std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
         std::vector<double> &r,
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,

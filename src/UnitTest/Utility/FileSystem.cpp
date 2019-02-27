@@ -44,51 +44,51 @@ TEST(FileSystem, GetFileExtensionInLowerCase) {
 
     // empty
     path = "";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("", result);
 
     // no folder tree
     path = "fileName.EXT";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // just a dot
     path = "fileName.";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("", result);
 
     path = "test/test_dir/fileName.EXT";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // no extension
     path = "test/test_dir/fileName";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("", result);
 
     // multiple extensions
     path = "test/test_dir/fileName.EXT.EXT";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // multiple dots
     path = "test/test_dir/fileName..EXT";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // dot before the /
-    path = "test/filesystem.EXT/fileName";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    path = "test/utility::filesystem.EXT/fileName";
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("", result);
 
     // space in file name
     path = "test/test_dir/fileName .EXT";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // space in extension
     path = "test/test_dir/fileName. EXT";
-    result = filesystem::GetFileExtensionInLowerCase(path);
+    result = utility::filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ(" ext", result);
 }
 
@@ -102,36 +102,36 @@ TEST(FileSystem, GetFileNameWithoutExtension) {
 
     // empty
     path = "";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("", result);
 
     // no folder tree
     path = "fileName.EXT";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("fileName", result);
 
     path = "test/test_dir/fileName.EXT";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("test/test_dir/fileName", result);
 
     // no extension
     path = "test/test_dir/fileName";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("test/test_dir/fileName", result);
 
     // multiple extensions
     path = "test/test_dir/fileName.EXT.EXT";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("test/test_dir/fileName.EXT", result);
 
     // multiple dots
     path = "test/test_dir/fileName..EXT";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("test/test_dir/fileName.", result);
 
     // space in file name
     path = "test/test_dir/fileName .EXT";
-    result = filesystem::GetFileNameWithoutExtension(path);
+    result = utility::filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("test/test_dir/fileName ", result);
 }
 
@@ -144,36 +144,36 @@ TEST(FileSystem, GetFileNameWithoutDirectory) {
 
     // empty
     path = "";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("", result);
 
     // no folder tree
     path = "fileName.EXT";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName.EXT", result);
 
     path = "test/test_dir/fileName.EXT";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName.EXT", result);
 
     // no extension
     path = "test/test_dir/fileName";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName", result);
 
     // multiple extensions
     path = "test/test_dir/fileName.EXT.EXT";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName.EXT.EXT", result);
 
     // multiple dots
     path = "test/test_dir/fileName..EXT";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName..EXT", result);
 
     // space in file name
     path = "test/test_dir/fileName .EXT";
-    result = filesystem::GetFileNameWithoutDirectory(path);
+    result = utility::filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName .EXT", result);
 }
 
@@ -186,36 +186,36 @@ TEST(FileSystem, GetFileParentDirectory) {
 
     // empty
     path = "";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("", result);
 
     // no folder tree
     path = "fileName.EXT";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("", result);
 
     path = "test/test_dir/fileName.EXT";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("test/test_dir/", result);
 
     // no extension
     path = "test/test_dir/fileName";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("test/test_dir/", result);
 
     // multiple extensions
     path = "test/test_dir/fileName.EXT.EXT";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("test/test_dir/", result);
 
     // multiple dots
     path = "test/test_dir/fileName..EXT";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("test/test_dir/", result);
 
     // space in file name
     path = "test/test_dir/fileName .EXT";
-    result = filesystem::GetFileParentDirectory(path);
+    result = utility::filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("test/test_dir/", result);
 }
 
@@ -227,15 +227,15 @@ TEST(FileSystem, GetRegularizedDirectoryName) {
     string result;
 
     path = "";
-    result = filesystem::GetRegularizedDirectoryName(path);
+    result = utility::filesystem::GetRegularizedDirectoryName(path);
     EXPECT_EQ("/", result);
 
     path = "test/test_dir";
-    result = filesystem::GetRegularizedDirectoryName(path);
+    result = utility::filesystem::GetRegularizedDirectoryName(path);
     EXPECT_EQ("test/test_dir/", result);
 
     path = "test/test_dir/";
-    result = filesystem::GetRegularizedDirectoryName(path);
+    result = utility::filesystem::GetRegularizedDirectoryName(path);
     EXPECT_EQ("test/test_dir/", result);
 }
 
@@ -247,20 +247,20 @@ TEST(FileSystem, ChangeWorkingDirectory) {
 
     bool status;
 
-    status = filesystem::MakeDirectoryHierarchy(path);
+    status = utility::filesystem::MakeDirectoryHierarchy(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory(path);
+    status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
-    string cwd = filesystem::GetWorkingDirectory();
+    string cwd = utility::filesystem::GetWorkingDirectory();
 
-    EXPECT_EQ(path, filesystem::GetFileNameWithoutDirectory(cwd));
+    EXPECT_EQ(path, utility::filesystem::GetFileNameWithoutDirectory(cwd));
 
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
 
@@ -273,28 +273,28 @@ TEST(FileSystem, DirectoryExists) {
     bool status;
 
     // path doesn't exist yet
-    status = filesystem::DirectoryExists(path);
+    status = utility::filesystem::DirectoryExists(path);
     EXPECT_FALSE(status);
 
     // create the path
-    status = filesystem::MakeDirectoryHierarchy(path);
+    status = utility::filesystem::MakeDirectoryHierarchy(path);
     EXPECT_TRUE(status);
 
     // path exists
-    status = filesystem::DirectoryExists(path);
+    status = utility::filesystem::DirectoryExists(path);
     EXPECT_TRUE(status);
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    status = filesystem::ChangeWorkingDirectory("test");
+    status = utility::filesystem::ChangeWorkingDirectory("test");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test_dir");
+    status = utility::filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
 
@@ -308,13 +308,13 @@ TEST(FileSystem, MakeDirectory) {
 
     bool status;
 
-    status = filesystem::MakeDirectory(path);
+    status = utility::filesystem::MakeDirectory(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::MakeDirectory(path);
+    status = utility::filesystem::MakeDirectory(path);
     EXPECT_FALSE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
 
@@ -326,20 +326,20 @@ TEST(FileSystem, MakeDirectoryHierarchy) {
 
     bool status;
 
-    status = filesystem::MakeDirectoryHierarchy(path);
+    status = utility::filesystem::MakeDirectoryHierarchy(path);
     EXPECT_TRUE(status);
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    status = filesystem::ChangeWorkingDirectory("test");
+    status = utility::filesystem::ChangeWorkingDirectory("test");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test_dir");
+    status = utility::filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
 
@@ -351,13 +351,13 @@ TEST(FileSystem, DeleteDirectory) {
 
     bool status;
 
-    status = filesystem::MakeDirectory(path);
+    status = utility::filesystem::MakeDirectory(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory(path);
+    status = utility::filesystem::DeleteDirectory(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory(path);
+    status = utility::filesystem::DeleteDirectory(path);
     EXPECT_FALSE(status);
 }
 
@@ -370,37 +370,37 @@ TEST(FileSystem, File_Exists_Remove) {
 
     bool status;
 
-    status = filesystem::MakeDirectoryHierarchy(path);
+    status = utility::filesystem::MakeDirectoryHierarchy(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory(path);
+    status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::FileExists(fileName);
+    status = utility::filesystem::FileExists(fileName);
     EXPECT_FALSE(status);
 
     creat(fileName.c_str(), 0);
 
-    status = filesystem::FileExists(fileName);
+    status = utility::filesystem::FileExists(fileName);
     EXPECT_TRUE(status);
 
-    status = filesystem::RemoveFile(fileName);
+    status = utility::filesystem::RemoveFile(fileName);
     EXPECT_TRUE(status);
 
-    status = filesystem::FileExists(fileName);
+    status = utility::filesystem::FileExists(fileName);
     EXPECT_FALSE(status);
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test_dir");
+    status = utility::filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
 
@@ -414,43 +414,43 @@ TEST(FileSystem, ListFilesInDirectory) {
 
     bool status;
 
-    status = filesystem::MakeDirectoryHierarchy(path);
+    status = utility::filesystem::MakeDirectoryHierarchy(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory(path);
+    status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
     for (size_t i = 0; i < fileNames.size(); i++)
         creat(fileNames[i].c_str(), 0);
 
     vector<string> list;
-    status = filesystem::ListFilesInDirectory(".", list);
+    status = utility::filesystem::ListFilesInDirectory(".", list);
     EXPECT_TRUE(status);
 
     sort(list.begin(), list.end());
 
     for (size_t i = 0; i < fileNames.size(); i++) {
         EXPECT_EQ(fileNames[i],
-                  filesystem::GetFileNameWithoutDirectory(list[i]));
+                  utility::filesystem::GetFileNameWithoutDirectory(list[i]));
     }
 
     // clean-up
     for (size_t i = 0; i < fileNames.size(); i++) {
-        status = filesystem::RemoveFile(fileNames[i]);
+        status = utility::filesystem::RemoveFile(fileNames[i]);
         EXPECT_TRUE(status);
     }
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test_dir");
+    status = utility::filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }
 
@@ -466,42 +466,42 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
 
     bool status;
 
-    status = filesystem::MakeDirectoryHierarchy(path);
+    status = utility::filesystem::MakeDirectoryHierarchy(path);
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory(path);
+    status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
     for (size_t i = 0; i < fileNames.size(); i++)
         creat(fileNames[i].c_str(), 0);
 
     vector<string> list;
-    status = filesystem::ListFilesInDirectory(".", list);
+    status = utility::filesystem::ListFilesInDirectory(".", list);
     EXPECT_TRUE(status);
 
     sort(list.begin(), list.end());
 
     for (size_t i = 0; i < list.size(); i++) {
         EXPECT_EQ(fileNames[i],
-                  filesystem::GetFileNameWithoutDirectory(list[i]));
+                  utility::filesystem::GetFileNameWithoutDirectory(list[i]));
     }
 
     // clean-up
     for (size_t i = 0; i < fileNames.size(); i++) {
-        status = filesystem::RemoveFile(fileNames[i]);
+        status = utility::filesystem::RemoveFile(fileNames[i]);
         EXPECT_TRUE(status);
     }
 
     // clean-up in reverse order, DeleteDirectory can delete one dir at a time.
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test_dir");
+    status = utility::filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
-    status = filesystem::ChangeWorkingDirectory("..");
+    status = utility::filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("test");
+    status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
 }

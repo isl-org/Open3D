@@ -75,9 +75,9 @@ std::shared_ptr<color_map::ImageWarpingField> CreateImageWarpingFieldFromFile(
 bool ReadImageWarpingField(const std::string &filename,
                            color_map::ImageWarpingField &warping_field) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read color_map::ImageWarpingField failed: unknown file "
                 "extension.\n");
         return false;
@@ -85,7 +85,7 @@ bool ReadImageWarpingField(const std::string &filename,
     auto map_itr =
             file_extension_to_warping_field_read_function.find(filename_ext);
     if (map_itr == file_extension_to_warping_field_read_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read color_map::ImageWarpingField failed: unknown file "
                 "extension.\n");
         return false;
@@ -96,9 +96,9 @@ bool ReadImageWarpingField(const std::string &filename,
 bool WriteImageWarpingField(const std::string &filename,
                             const color_map::ImageWarpingField &trajectory) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write color_map::ImageWarpingField failed: unknown file "
                 "extension.\n");
         return false;
@@ -106,7 +106,7 @@ bool WriteImageWarpingField(const std::string &filename,
     auto map_itr =
             file_extension_to_warping_field_write_function.find(filename_ext);
     if (map_itr == file_extension_to_warping_field_write_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write color_map::ImageWarpingField failed: unknown file "
                 "extension.\n");
         return false;

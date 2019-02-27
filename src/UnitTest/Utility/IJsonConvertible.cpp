@@ -47,10 +47,12 @@ TEST(IJsonConvertible, EigenVector3dToFromJsonArray) {
         Json::Value json_value;
         Vector3d ref;
 
-        status = IJsonConvertible::EigenVector3dToJsonArray(v3d, json_value);
+        status = utility::IJsonConvertible::EigenVector3dToJsonArray(
+                v3d, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenVector3dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenVector3dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, v3d);
@@ -70,10 +72,12 @@ TEST(IJsonConvertible, EigenVector4dToFromJsonArray) {
         Json::Value json_value;
         Vector4d ref;
 
-        status = IJsonConvertible::EigenVector4dToJsonArray(v4d, json_value);
+        status = utility::IJsonConvertible::EigenVector4dToJsonArray(
+                v4d, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenVector4dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenVector4dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, v4d);
@@ -93,10 +97,12 @@ TEST(IJsonConvertible, EigenMatrix3dToFromJsonArray) {
         Json::Value json_value;
         Matrix3d ref;
 
-        status = IJsonConvertible::EigenMatrix3dToJsonArray(m3d, json_value);
+        status = utility::IJsonConvertible::EigenMatrix3dToJsonArray(
+                m3d, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenMatrix3dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenMatrix3dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, m3d);
@@ -116,10 +122,12 @@ TEST(IJsonConvertible, EigenMatrix4dToFromJsonArray) {
         Json::Value json_value;
         Matrix4d ref;
 
-        status = IJsonConvertible::EigenMatrix4dToJsonArray(m4d, json_value);
+        status = utility::IJsonConvertible::EigenMatrix4dToJsonArray(
+                m4d, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenMatrix4dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenMatrix4dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, m4d);
@@ -139,10 +147,12 @@ TEST(IJsonConvertible, EigenMatrix4d_uToFromJsonArray) {
         Json::Value json_value;
         Matrix4d_u ref;
 
-        status = IJsonConvertible::EigenMatrix4dToJsonArray(m4d_u, json_value);
+        status = utility::IJsonConvertible::EigenMatrix4dToJsonArray(
+                m4d_u, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenMatrix4dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenMatrix4dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, m4d_u);
@@ -162,10 +172,12 @@ TEST(IJsonConvertible, EigenMatrix6dToFromJsonArray) {
         Json::Value json_value;
         Matrix6d ref;
 
-        status = IJsonConvertible::EigenMatrix6dToJsonArray(m6d, json_value);
+        status = utility::IJsonConvertible::EigenMatrix6dToJsonArray(
+                m6d, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenMatrix6dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenMatrix6dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, m6d);
@@ -185,10 +197,12 @@ TEST(IJsonConvertible, EigenMatrix6d_uToFromJsonArray) {
         Json::Value json_value;
         Matrix6d_u ref;
 
-        status = IJsonConvertible::EigenMatrix6dToJsonArray(m6d_u, json_value);
+        status = utility::IJsonConvertible::EigenMatrix6dToJsonArray(
+                m6d_u, json_value);
         EXPECT_TRUE(status);
 
-        status = IJsonConvertible::EigenMatrix6dFromJsonArray(ref, json_value);
+        status = utility::IJsonConvertible::EigenMatrix6dFromJsonArray(
+                ref, json_value);
         EXPECT_TRUE(status);
 
         ExpectEQ(ref, m6d_u);

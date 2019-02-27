@@ -32,7 +32,7 @@
 
 namespace open3d {
 
-class ViewParameters : public IJsonConvertible {
+class ViewParameters : public utility::IJsonConvertible {
 public:
     typedef Eigen::Matrix<double, 17, 4, Eigen::RowMajor> Matrix17x4d;
     typedef Eigen::Matrix<double, 17, 1> Vector17d;

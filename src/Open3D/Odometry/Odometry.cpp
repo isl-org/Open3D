@@ -208,7 +208,8 @@ std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
-        PrintDebug("[ConvertDepthImageToXYZImage] Unsupported image format.\n");
+        utility::PrintDebug(
+                "[ConvertDepthImageToXYZImage] Unsupported image format.\n");
         return image_xyz;
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
@@ -311,7 +312,7 @@ void NormalizeIntensity(geometry::Image &image_s,
                         CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        PrintError(
+        utility::PrintError(
                 "[NormalizeIntensity] Size of two input images should be "
                 "same\n");
         return;
@@ -420,26 +421,29 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
     int corresps_count = (int)correspondence->size();
 
-    auto f_lambda = [&](int i,
-                        std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
-                        std::vector<double> &r) {
-        jacobian_method.ComputeJacobianAndResidual(
-                i, J_r, r, source, target, source_xyz, target_dx, target_dy,
-                intrinsic, extrinsic_initial, *correspondence);
-    };
-    PrintDebug("Iter : %d, Level : %d, ", iter, level);
+    auto f_lambda =
+            [&](int i,
+                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
+                std::vector<double> &r) {
+                jacobian_method.ComputeJacobianAndResidual(
+                        i, J_r, r, source, target, source_xyz, target_dx,
+                        target_dy, intrinsic, extrinsic_initial,
+                        *correspondence);
+            };
+    utility::PrintDebug("Iter : %d, Level : %d, ", iter, level);
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
-    std::tie(JTJ, JTr, r2) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-            f_lambda, corresps_count);
+    std::tie(JTJ, JTr, r2) =
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    f_lambda, corresps_count);
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-            SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
     if (!is_success) {
-        PrintWarning("[ComputeOdometry] no solution!\n");
+        utility::PrintWarning("[ComputeOdometry] no solution!\n");
         return std::make_tuple(false, Eigen::Matrix4d::Identity());
     } else {
         return std::make_tuple(true, extrinsic);
@@ -496,7 +500,7 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
             result_odo = curr_odo * result_odo;
 
             if (!is_success) {
-                PrintWarning("[ComputeOdometry] no solution!\n");
+                utility::PrintWarning("[ComputeOdometry] no solution!\n");
                 return std::make_tuple(false, Eigen::Matrix4d::Identity());
             }
         }
@@ -518,7 +522,8 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         /*=RGBDOdometryJacobianFromHybridTerm*/,
         const OdometryOption &option /*= OdometryOption()*/) {
     if (!CheckRGBDImagePair(source, target)) {
-        PrintError("[RGBDOdometry] Two RGBD pairs should be same in size.\n");
+        utility::PrintError(
+                "[RGBDOdometry] Two RGBD pairs should be same in size.\n");
         return std::make_tuple(false, Eigen::Matrix4d::Identity(),
                                Eigen::Matrix6d::Zero());
     }

@@ -34,21 +34,21 @@ int main(int argc, char **argv) {
     using namespace open3d;
     using namespace flann;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc < 2) {
         PrintOpen3DVersion();
         // clang-format off
-        PrintInfo("Usage:\n");
-        PrintInfo("    > geometry::LineSet [filename]\n");
-        PrintInfo("    The program will :\n");
-        PrintInfo("    1. load the pointcloud in [filename].\n");
-        PrintInfo("    2. use geometry::KDTreeFlann to compute 50 nearest neighbors of point0.\n");
-        PrintInfo("    3. convert the correspondences to geometry::LineSet and render it.\n");
-        PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
-        PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
-        PrintInfo("    6. convert to geometry::LineSet and render it.\n");
-        PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
+        utility::PrintInfo("Usage:\n");
+        utility::PrintInfo("    > geometry::LineSet [filename]\n");
+        utility::PrintInfo("    The program will :\n");
+        utility::PrintInfo("    1. load the pointcloud in [filename].\n");
+        utility::PrintInfo("    2. use geometry::KDTreeFlann to compute 50 nearest neighbors of point0.\n");
+        utility::PrintInfo("    3. convert the correspondences to geometry::LineSet and render it.\n");
+        utility::PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
+        utility::PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
+        utility::PrintInfo("    6. convert to geometry::LineSet and render it.\n");
+        utility::PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
         // clang-format on
         return 1;
     }

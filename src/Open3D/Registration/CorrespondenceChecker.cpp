@@ -79,7 +79,7 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     if (source.HasNormals() == false || target.HasNormals() == false) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no "
                 "normals.\n");
         return true;

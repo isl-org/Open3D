@@ -49,7 +49,7 @@ void ViewControl::SetViewMatrices(
         const Eigen::Matrix4d
                 &model_matrix /* = Eigen::Matrix4d::Identity()*/) {
     if (window_height_ <= 0 || window_width_ <= 0) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[ViewControl] SetViewPoint() failed because window height and "
                 "width are not set.");
         return;
@@ -109,13 +109,13 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
 bool ViewControl::ConvertToPinholeCameraParameters(
         camera::PinholeCameraParameters &parameters) {
     if (window_height_ <= 0 || window_width_ <= 0) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[ViewControl] ConvertToPinholeCameraParameters() failed "
                 "because window height and width are not set.\n");
         return false;
     }
     if (GetProjectionType() == ProjectionType::Orthogonal) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[ViewControl] ConvertToPinholeCameraParameters() failed "
                 "because orthogonal view cannot be translated to a pinhole "
                 "camera.\n");
@@ -160,7 +160,7 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
                 (double)window_width_ / 2.0 - 0.5 ||
         intrinsic.intrinsic_matrix_(1, 2) !=
                 (double)window_height_ / 2.0 - 0.5) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
                 "because window height and width do not match.\n");
         return false;
@@ -174,7 +174,7 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
                      FIELD_OF_VIEW_MIN);
     if (GetProjectionType() == ProjectionType::Orthogonal) {
         field_of_view_ = old_fov;
-        PrintWarning(
+        utility::PrintWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
                 "because field of view is impossible.\n");
         return false;

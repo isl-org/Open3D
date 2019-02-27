@@ -63,14 +63,16 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 
 bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Read geometry::Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::Image failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_image_read_function.find(filename_ext);
     if (map_itr == file_extension_to_image_read_function.end()) {
-        PrintWarning("Read geometry::Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::Image failed: unknown file extension.\n");
         return false;
     }
     return map_itr->second(filename, image);
@@ -80,14 +82,16 @@ bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
                 int quality /* = 90*/) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write geometry::Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::Image failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_image_write_function.find(filename_ext);
     if (map_itr == file_extension_to_image_write_function.end()) {
-        PrintWarning("Write geometry::Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::Image failed: unknown file extension.\n");
         return false;
     }
     return map_itr->second(filename, image, quality);

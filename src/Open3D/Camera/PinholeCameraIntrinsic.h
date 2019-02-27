@@ -38,7 +38,7 @@ enum class PinholeCameraIntrinsicParameters {
     Kinect2ColorCameraDefault = 2,
 };
 
-class PinholeCameraIntrinsic : public IJsonConvertible {
+class PinholeCameraIntrinsic : public utility::IJsonConvertible {
 public:
     PinholeCameraIntrinsic();
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);

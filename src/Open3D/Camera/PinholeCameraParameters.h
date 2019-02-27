@@ -34,7 +34,7 @@
 namespace open3d {
 namespace camera {
 
-class PinholeCameraParameters : public IJsonConvertible {
+class PinholeCameraParameters : public utility::IJsonConvertible {
 public:
     PinholeCameraParameters();
     ~PinholeCameraParameters() override;

@@ -72,9 +72,9 @@ std::shared_ptr<registration::PoseGraph> CreatePoseGraphFromFile(
 bool ReadPoseGraph(const std::string &filename,
                    registration::PoseGraph &pose_graph) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read registration::PoseGraph failed: unknown file "
                 "extension.\n");
         return false;
@@ -82,7 +82,7 @@ bool ReadPoseGraph(const std::string &filename,
     auto map_itr =
             file_extension_to_pose_graph_read_function.find(filename_ext);
     if (map_itr == file_extension_to_pose_graph_read_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read registration::PoseGraph failed: unknown file "
                 "extension.\n");
         return false;
@@ -93,9 +93,9 @@ bool ReadPoseGraph(const std::string &filename,
 bool WritePoseGraph(const std::string &filename,
                     const registration::PoseGraph &pose_graph) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write registration::PoseGraph failed: unknown file "
                 "extension.\n");
         return false;
@@ -103,7 +103,7 @@ bool WritePoseGraph(const std::string &filename,
     auto map_itr =
             file_extension_to_pose_graph_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pose_graph_write_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write registration::PoseGraph failed: unknown file "
                 "extension.\n");
         return false;

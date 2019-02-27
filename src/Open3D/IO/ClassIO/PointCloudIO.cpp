@@ -73,25 +73,26 @@ bool ReadPointCloud(const std::string &filename,
                     const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
-        filename_ext = filesystem::GetFileExtensionInLowerCase(filename);
+        filename_ext =
+                utility::filesystem::GetFileExtensionInLowerCase(filename);
     } else {
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_read_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, pointcloud);
-    PrintDebug("Read geometry::PointCloud: %d vertices.\n",
-               (int)pointcloud.points_.size());
+    utility::PrintDebug("Read geometry::PointCloud: %d vertices.\n",
+                        (int)pointcloud.points_.size());
     return success;
 }
 
@@ -100,23 +101,23 @@ bool WritePointCloud(const std::string &filename,
                      bool write_ascii /* = false*/,
                      bool compressed /* = false*/) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     bool success =
             map_itr->second(filename, pointcloud, write_ascii, compressed);
-    PrintDebug("Write geometry::PointCloud: %d vertices.\n",
-               (int)pointcloud.points_.size());
+    utility::PrintDebug("Write geometry::PointCloud: %d vertices.\n",
+                        (int)pointcloud.points_.size());
     return success;
 }
 

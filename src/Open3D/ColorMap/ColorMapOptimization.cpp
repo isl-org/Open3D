@@ -61,7 +61,7 @@ void OptimizeImageCoorNonrigid(
                                visiblity_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
-        PrintDebug("[Iteration %04d] ", itr + 1);
+        utility::PrintDebug("[Iteration %04d] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
 #ifdef _OPENMP
@@ -112,13 +112,13 @@ void OptimizeImageCoorNonrigid(
 
             bool success;
             Eigen::VectorXd result;
-            std::tie(success, result) = SolveLinearSystemPSD(
+            std::tie(success, result) = utility::SolveLinearSystemPSD(
                     JTJ, -JTr, /*prefer_sparse=*/false,
                     /*check_symmetric=*/false,
                     /*check_det=*/false, /*check_psd=*/false);
             Eigen::Vector6d result_pose;
             result_pose << result.block(0, 0, 6, 1);
-            auto delta = TransformVector6dToMatrix4d(result_pose);
+            auto delta = utility::TransformVector6dToMatrix4d(result_pose);
             pose = delta * pose;
 
             for (int j = 0; j < nonrigidval; j++) {
@@ -134,8 +134,8 @@ void OptimizeImageCoorNonrigid(
                 residual_reg += rr_reg;
             }
         }
-        PrintDebug("Residual error : %.6f, reg : %.6f\n", residual,
-                   residual_reg);
+        utility::PrintDebug("Residual error : %.6f, reg : %.6f\n", residual,
+                            residual_reg);
         SetProxyIntensityForVertex(mesh, images_gray, warping_fields, camera,
                                    visiblity_vertex_to_image, proxy_intensity,
                                    option.image_boundary_margin_);
@@ -158,7 +158,7 @@ void OptimizeImageCoorRigid(
                                visiblity_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
-        PrintDebug("[Iteration %04d] ", itr + 1);
+        utility::PrintDebug("[Iteration %04d] ", itr + 1);
         double residual = 0.0;
         total_num_ = 0;
 #ifdef _OPENMP
@@ -186,14 +186,15 @@ void OptimizeImageCoorRigid(
             Eigen::Vector6d JTr;
             double r2;
             std::tie(JTJ, JTr, r2) =
-                    ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
                             f_lambda, visiblity_image_to_vertex[c].size(),
                             false);
 
             bool is_success;
             Eigen::Matrix4d delta;
             std::tie(is_success, delta) =
-                    SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+                    utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ,
+                                                                         JTr);
             pose = delta * pose;
             camera.parameters_[c].extrinsic_ = pose;
 #ifdef _OPENMP
@@ -204,8 +205,8 @@ void OptimizeImageCoorRigid(
                 total_num_ += visiblity_image_to_vertex[c].size();
             }
         }
-        PrintDebug("Residual error : %.6f (avg : %.6f)\n", residual,
-                   residual / total_num_);
+        utility::PrintDebug("Residual error : %.6f (avg : %.6f)\n", residual,
+                            residual / total_num_);
         SetProxyIntensityForVertex(mesh, images_gray, camera,
                                    visiblity_vertex_to_image, proxy_intensity,
                                    option.image_boundary_margin_);
@@ -248,7 +249,8 @@ std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
     auto n_images = images_depth.size();
     std::vector<std::shared_ptr<geometry::Image>> masks;
     for (auto i = 0; i < n_images; i++) {
-        PrintDebug("[MakeDepthMasks] geometry::Image %d/%d\n", i, n_images);
+        utility::PrintDebug("[MakeDepthMasks] geometry::Image %d/%d\n", i,
+                            n_images);
         masks.push_back(geometry::CreateDepthBoundaryMask(
                 *images_depth[i],
                 option.depth_threshold_for_discontinuity_check_,
@@ -279,16 +281,16 @@ void ColorMapOptimization(
         camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option
         /* = ColorMapOptimizationOption()*/) {
-    PrintDebug("[ColorMapOptimization]\n");
+    utility::PrintDebug("[ColorMapOptimization]\n");
     std::vector<std::shared_ptr<geometry::Image>> images_gray, images_dx,
             images_dy, images_color, images_depth;
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
             CreateGradientImages(images_rgbd);
 
-    PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
+    utility::PrintDebug("[ColorMapOptimization] :: MakingMasks\n");
     auto images_mask = CreateDepthBoundaryMasks(images_depth, option);
 
-    PrintDebug("[ColorMapOptimization] :: VisibilityCheck\n");
+    utility::PrintDebug("[ColorMapOptimization] :: VisibilityCheck\n");
     std::vector<std::vector<int>> visiblity_vertex_to_image;
     std::vector<std::vector<int>> visiblity_image_to_vertex;
     std::tie(visiblity_vertex_to_image, visiblity_image_to_vertex) =
@@ -299,7 +301,8 @@ void ColorMapOptimization(
 
     std::vector<double> proxy_intensity;
     if (option.non_rigid_camera_coordinate_) {
-        PrintDebug("[ColorMapOptimization] :: Non-Rigid Optimization\n");
+        utility::PrintDebug(
+                "[ColorMapOptimization] :: Non-Rigid Optimization\n");
         auto warping_uv_ = CreateWarpingFields(images_gray, option);
         auto warping_uv_init_ = CreateWarpingFields(images_gray, option);
         OptimizeImageCoorNonrigid(
@@ -310,7 +313,7 @@ void ColorMapOptimization(
                                 visiblity_vertex_to_image,
                                 option.image_boundary_margin_);
     } else {
-        PrintDebug("[ColorMapOptimization] :: Rigid Optimization\n");
+        utility::PrintDebug("[ColorMapOptimization] :: Rigid Optimization\n");
         OptimizeImageCoorRigid(mesh, images_gray, images_dx, images_dy, camera,
                                visiblity_vertex_to_image,
                                visiblity_image_to_vertex, proxy_intensity,

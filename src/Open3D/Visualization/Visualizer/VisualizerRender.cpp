@@ -40,7 +40,7 @@ namespace open3d {
 
 bool Visualizer::InitOpenGL() {
     if (glewInit() != GLEW_OK) {
-        PrintError("Failed to initialize GLEW.\n");
+        utility::PrintError("Failed to initialize GLEW.\n");
         return false;
     }
 
@@ -104,7 +104,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
     if (view_control_ptr_->ConvertToViewParameters(current_status) == false) {
-        PrintInfo("Something is wrong copying view status.\n");
+        utility::PrintInfo("Something is wrong copying view status.\n");
         return;
     }
     ViewTrajectory trajectory;
@@ -112,7 +112,7 @@ void Visualizer::CopyViewStatusToClipboard() {
     std::string clipboard_string;
     if (WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {
-        PrintInfo("Something is wrong copying view status.\n");
+        utility::PrintInfo("Something is wrong copying view status.\n");
         return;
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());
@@ -125,11 +125,11 @@ void Visualizer::CopyViewStatusFromClipboard() {
         ViewTrajectory trajectory;
         if (ReadIJsonConvertibleFromJSONString(clipboard_string, trajectory) ==
             false) {
-            PrintInfo("Something is wrong copying view status.\n");
+            utility::PrintInfo("Something is wrong copying view status.\n");
             return;
         }
         if (trajectory.view_status_.size() != 1) {
-            PrintInfo("Something is wrong copying view status.\n");
+            utility::PrintInfo("Something is wrong copying view status.\n");
             return;
         }
         view_control_ptr_->ConvertFromViewParameters(
@@ -171,7 +171,7 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     std::string png_filename = filename;
     std::string camera_filename;
     if (png_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         png_filename = "ScreenCapture_" + timestamp + ".png";
         camera_filename = "ScreenCamera_" + timestamp + ".json";
     }
@@ -200,11 +200,12 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
                bytes_per_line);
     }
 
-    PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
+    utility::PrintDebug("[Visualizer] Screen capture to %s\n",
+                        png_filename.c_str());
     WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
-        PrintDebug("[Visualizer] Screen camera capture to %s\n",
-                   camera_filename.c_str());
+        utility::PrintDebug("[Visualizer] Screen camera capture to %s\n",
+                            camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
         WriteIJsonConvertible(camera_filename, parameter);
@@ -281,7 +282,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
     std::string png_filename = filename;
     std::string camera_filename;
     if (png_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         png_filename = "DepthCapture_" + timestamp + ".png";
         camera_filename = "DepthCamera_" + timestamp + ".json";
     }
@@ -347,11 +348,12 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
         }
     }
 
-    PrintDebug("[Visualizer] Depth capture to %s\n", png_filename.c_str());
+    utility::PrintDebug("[Visualizer] Depth capture to %s\n",
+                        png_filename.c_str());
     WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
-        PrintDebug("[Visualizer] Depth camera capture to %s\n",
-                   camera_filename.c_str());
+        utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
+                            camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
         WriteIJsonConvertible(camera_filename, parameter);
@@ -365,7 +367,7 @@ void Visualizer::CaptureDepthPointCloud(
     std::string ply_filename = filename;
     std::string camera_filename;
     if (ply_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         ply_filename = "DepthCapture_" + timestamp + ".ply";
         camera_filename = "DepthCamera_" + timestamp + ".json";
     }
@@ -428,12 +430,12 @@ void Visualizer::CaptureDepthPointCloud(
         }
     }
 
-    PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
-               ply_filename.c_str());
+    utility::PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
+                        ply_filename.c_str());
     WritePointCloud(ply_filename, depth_pointcloud);
     if (!camera_filename.empty()) {
-        PrintDebug("[Visualizer] Depth camera capture to %s\n",
-                   camera_filename.c_str());
+        utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
+                            camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
         WriteIJsonConvertible(camera_filename, parameter);
@@ -443,11 +445,11 @@ void Visualizer::CaptureDepthPointCloud(
 void Visualizer::CaptureRenderOption(const std::string &filename /* = ""*/) {
     std::string json_filename = filename;
     if (json_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         json_filename = "RenderOption_" + timestamp + ".json";
     }
-    PrintDebug("[Visualizer] Render option capture to %s\n",
-               json_filename.c_str());
+    utility::PrintDebug("[Visualizer] Render option capture to %s\n",
+                        json_filename.c_str());
     WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 

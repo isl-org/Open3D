@@ -75,10 +75,11 @@ void pybind_visualization_utility_methods(py::module &m) {
                      &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
              int top) {
-              std::string current_dir = filesystem::GetWorkingDirectory();
+              std::string current_dir =
+                      utility::filesystem::GetWorkingDirectory();
               DrawGeometries(geometry_ptrs, window_name, width, height, left,
                              top);
-              filesystem::ChangeWorkingDirectory(current_dir);
+              utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
@@ -88,11 +89,12 @@ void pybind_visualization_utility_methods(py::module &m) {
                      &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
              int top, const std::string &json_filename) {
-              std::string current_dir = filesystem::GetWorkingDirectory();
+              std::string current_dir =
+                      utility::filesystem::GetWorkingDirectory();
               DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name,
                                                 width, height, left, top,
                                                 json_filename);
-              filesystem::ChangeWorkingDirectory(current_dir);
+              utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects with a GUI "
           "that "
@@ -106,11 +108,12 @@ void pybind_visualization_utility_methods(py::module &m) {
              std::function<bool(Visualizer *)> callback_func,
              const std::string &window_name, int width, int height, int left,
              int top) {
-              std::string current_dir = filesystem::GetWorkingDirectory();
+              std::string current_dir =
+                      utility::filesystem::GetWorkingDirectory();
               DrawGeometriesWithAnimationCallback(geometry_ptrs, callback_func,
                                                   window_name, width, height,
                                                   left, top);
-              filesystem::ChangeWorkingDirectory(current_dir);
+              utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects with a "
           "customized "
@@ -125,11 +128,12 @@ void pybind_visualization_utility_methods(py::module &m) {
                      &key_to_callback,
              const std::string &window_name, int width, int height, int left,
              int top) {
-              std::string current_dir = filesystem::GetWorkingDirectory();
+              std::string current_dir =
+                      utility::filesystem::GetWorkingDirectory();
               DrawGeometriesWithKeyCallbacks(geometry_ptrs, key_to_callback,
                                              window_name, width, height, left,
                                              top);
-              filesystem::ChangeWorkingDirectory(current_dir);
+              utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects with a "
           "customized "

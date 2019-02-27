@@ -30,16 +30,16 @@
 
 void PrintHelp() {
     using namespace open3d;
-    PrintInfo("Usage :\n");
-    PrintInfo("    > FileSystem ls [dir]\n");
-    PrintInfo("    > FileSystem mkdir [dir]\n");
-    PrintInfo("    > FileSystem rmdir [dir]\n");
-    PrintInfo("    > FileSystem rmfile [file]\n");
-    PrintInfo("    > FileSystem fileexists [file]\n");
+    utility::PrintInfo("Usage :\n");
+    utility::PrintInfo("    > FileSystem ls [dir]\n");
+    utility::PrintInfo("    > FileSystem mkdir [dir]\n");
+    utility::PrintInfo("    > FileSystem rmdir [dir]\n");
+    utility::PrintInfo("    > FileSystem rmfile [file]\n");
+    utility::PrintInfo("    > FileSystem fileexists [file]\n");
 }
 
 int main(int argc, char **args) {
-    using namespace open3d::filesystem;
+    using namespace open3d::utility::filesystem;
 
     std::string directory, function;
     if (argc <= 1) {

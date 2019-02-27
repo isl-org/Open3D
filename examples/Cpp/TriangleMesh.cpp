@@ -30,10 +30,10 @@
 
 void PrintHelp() {
     using namespace open3d;
-    PrintInfo("Usage :\n");
-    PrintInfo("    > geometry::TriangleMesh sphere\n");
-    PrintInfo("    > geometry::TriangleMesh merge <file1> <file2>\n");
-    PrintInfo("    > geometry::TriangleMesh normal <file1> <file2>\n");
+    utility::PrintInfo("Usage :\n");
+    utility::PrintInfo("    > geometry::TriangleMesh sphere\n");
+    utility::PrintInfo("    > geometry::TriangleMesh merge <file1> <file2>\n");
+    utility::PrintInfo("    > geometry::TriangleMesh normal <file1> <file2>\n");
 }
 
 void PaintMesh(open3d::geometry::TriangleMesh &mesh,
@@ -47,7 +47,7 @@ void PaintMesh(open3d::geometry::TriangleMesh &mesh,
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc < 2) {
         PrintHelp();
@@ -91,15 +91,16 @@ int main(int argc, char *argv[]) {
     } else if (option == "merge") {
         auto mesh1 = CreateMeshFromFile(argv[2]);
         auto mesh2 = CreateMeshFromFile(argv[3]);
-        PrintInfo("Mesh1 has %d vertices, %d triangles.\n",
-                  mesh1->vertices_.size(), mesh1->triangles_.size());
-        PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
-                  mesh2->vertices_.size(), mesh2->triangles_.size());
+        utility::PrintInfo("Mesh1 has %d vertices, %d triangles.\n",
+                           mesh1->vertices_.size(), mesh1->triangles_.size());
+        utility::PrintInfo("Mesh2 has %d vertices, %d triangles.\n",
+                           mesh2->vertices_.size(), mesh2->triangles_.size());
         *mesh1 += *mesh2;
-        PrintInfo("After merge, Mesh1 has %d vertices, %d triangles.\n",
-                  mesh1->vertices_.size(), mesh1->triangles_.size());
+        utility::PrintInfo(
+                "After merge, Mesh1 has %d vertices, %d triangles.\n",
+                mesh1->vertices_.size(), mesh1->triangles_.size());
         mesh1->Purge();
-        PrintInfo(
+        utility::PrintInfo(
                 "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
         DrawGeometries({mesh1});
@@ -147,8 +148,8 @@ int main(int argc, char *argv[]) {
             mesh1->vertex_colors_[i] = Eigen::Vector3d(color, color, color);
             r += sqrt(dists[0]);
         }
-        PrintInfo("Average distance is %.6f.\n",
-                  r / (double)mesh1->vertices_.size());
+        utility::PrintInfo("Average distance is %.6f.\n",
+                           r / (double)mesh1->vertices_.size());
         if (argc > 5) {
             WriteTriangleMesh(argv[5], *mesh1);
         }
@@ -167,8 +168,8 @@ int main(int argc, char *argv[]) {
         mesh->ComputeVertexNormals();
         camera::PinholeCameraTrajectory trajectory;
         ReadIJsonConvertible(argv[3], trajectory);
-        if (filesystem::DirectoryExists("image") == false) {
-            PrintWarning("No image!\n");
+        if (utility::filesystem::DirectoryExists("image") == false) {
+            utility::PrintWarning("No image!\n");
             return 0;
         }
         int idx = 3000;
@@ -202,7 +203,7 @@ int main(int argc, char *argv[]) {
             std::cout << pt_in_plane / pt_in_plane(2) << std::endl;
             auto result = fimage->FloatValueAt(uv(0), uv(1));
             if (result.first) {
-                PrintWarning("%.6f\n", result.second);
+                utility::PrintWarning("%.6f\n", result.second);
             }
             DrawGeometries({fimage}, "Test", 1920, 1080);
         }

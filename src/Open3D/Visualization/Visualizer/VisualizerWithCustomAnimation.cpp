@@ -43,31 +43,31 @@ VisualizerWithCustomAnimation::~VisualizerWithCustomAnimation() {}
 void VisualizerWithCustomAnimation::PrintVisualizerHelp() {
     Visualizer::PrintVisualizerHelp();
     // clang-format off
-    PrintInfo("  -- Animation control --\n");
-    PrintInfo("    Ctrl + F     : Enter freeview (editing) mode.\n");
-    PrintInfo("    Ctrl + W     : Enter preview mode.\n");
-    PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
-    PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
-    PrintInfo("    Ctrl + G     : Enter animation mode, play animation, and record depth.\n");
-    PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
-    PrintInfo("\n");
-    PrintInfo("    -- In free view mode --\n");
-    PrintInfo("    Ctrl + <-/-> : Go backward/forward a keyframe.\n");
-    PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
-    PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
-    PrintInfo("    Ctrl + +/-   : Increase/decrease interval between keyframes.\n");
-    PrintInfo("    Ctrl + L     : Turn on/off camera path as a loop.\n");
-    PrintInfo("    Ctrl + A     : Add a keyframe right after the current keyframe.\n");
-    PrintInfo("    Ctrl + U     : Update the current keyframe.\n");
-    PrintInfo("    Ctrl + D     : Delete the current keyframe.\n");
-    PrintInfo("    Ctrl + N     : Add 360 spin right after the current keyframe.\n");
-    PrintInfo("    Ctrl + E     : Erase the entire camera path.\n");
-    PrintInfo("\n");
-    PrintInfo("    -- In preview mode --\n");
-    PrintInfo("    Ctrl + <-/-> : Go backward/forward a frame.\n");
-    PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
-    PrintInfo("    Ctrl + [/]   : Go to beginning/end of the camera path.\n");
-    PrintInfo("\n");
+    utility::PrintInfo("  -- Animation control --\n");
+    utility::PrintInfo("    Ctrl + F     : Enter freeview (editing) mode.\n");
+    utility::PrintInfo("    Ctrl + W     : Enter preview mode.\n");
+    utility::PrintInfo("    Ctrl + P     : Enter animation mode and play animation from beginning.\n");
+    utility::PrintInfo("    Ctrl + R     : Enter animation mode, play animation, and record screen.\n");
+    utility::PrintInfo("    Ctrl + G     : Enter animation mode, play animation, and record depth.\n");
+    utility::PrintInfo("    Ctrl + S     : Save the camera path into a json file.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("    -- In free view mode --\n");
+    utility::PrintInfo("    Ctrl + <-/-> : Go backward/forward a keyframe.\n");
+    utility::PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
+    utility::PrintInfo("    Ctrl + [/]   : Go to the first/last keyframe.\n");
+    utility::PrintInfo("    Ctrl + +/-   : Increase/decrease interval between keyframes.\n");
+    utility::PrintInfo("    Ctrl + L     : Turn on/off camera path as a loop.\n");
+    utility::PrintInfo("    Ctrl + A     : Add a keyframe right after the current keyframe.\n");
+    utility::PrintInfo("    Ctrl + U     : Update the current keyframe.\n");
+    utility::PrintInfo("    Ctrl + D     : Delete the current keyframe.\n");
+    utility::PrintInfo("    Ctrl + N     : Add 360 spin right after the current keyframe.\n");
+    utility::PrintInfo("    Ctrl + E     : Erase the entire camera path.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("    -- In preview mode --\n");
+    utility::PrintInfo("    Ctrl + <-/-> : Go backward/forward a frame.\n");
+    utility::PrintInfo("    Ctrl + Wheel : Same as Ctrl + <-/->.\n");
+    utility::PrintInfo("    Ctrl + [/]   : Go to beginning/end of the camera path.\n");
+    utility::PrintInfo("\n");
     // clang-format on
 }
 
@@ -87,7 +87,7 @@ void VisualizerWithCustomAnimation::Play(
         bool close_window_when_animation_ends /* = false*/) {
     auto &view_control = (ViewControlWithCustomAnimation &)(*view_control_ptr_);
     if (view_control.NumOfFrames() == 0) {
-        PrintInfo("Abort playing due to empty trajectory.\n");
+        utility::PrintInfo("Abort playing due to empty trajectory.\n");
         return;
     }
     view_control.SetAnimationMode(
@@ -95,14 +95,17 @@ void VisualizerWithCustomAnimation::Play(
     is_redraw_required_ = true;
     UpdateWindowTitle();
     recording_file_index_ = 0;
-    ResetConsoleProgress(view_control.NumOfFrames(), "Play animation: ");
+    utility::ResetConsoleProgress(view_control.NumOfFrames(),
+                                  "Play animation: ");
     auto trajectory_ptr = std::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {
         if (recording_depth) {
-            filesystem::MakeDirectoryHierarchy(recording_depth_basedir_);
+            utility::filesystem::MakeDirectoryHierarchy(
+                    recording_depth_basedir_);
         } else {
-            filesystem::MakeDirectoryHierarchy(recording_image_basedir_);
+            utility::filesystem::MakeDirectoryHierarchy(
+                    recording_image_basedir_);
         }
     }
     RegisterAnimationCallback([=](Visualizer *vis) {
@@ -132,7 +135,7 @@ void VisualizerWithCustomAnimation::Play(
             }
         }
         view_control.Step(1.0);
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
         if (view_control.IsPlayingEnd(recording_file_index_)) {
             view_control.SetAnimationMode(
                     ViewControlWithCustomAnimation::AnimationMode::FreeMode);
@@ -178,13 +181,14 @@ void VisualizerWithCustomAnimation::KeyPressCallback(
             case GLFW_KEY_F:
                 view_control.SetAnimationMode(ViewControlWithCustomAnimation::
                                                       AnimationMode::FreeMode);
-                PrintDebug("[Visualizer] Enter freeview (editing) mode.\n");
+                utility::PrintDebug(
+                        "[Visualizer] Enter freeview (editing) mode.\n");
                 break;
             case GLFW_KEY_W:
                 view_control.SetAnimationMode(
                         ViewControlWithCustomAnimation::AnimationMode::
                                 PreviewMode);
-                PrintDebug("[Visualizer] Enter preview mode.\n");
+                utility::PrintDebug("[Visualizer] Enter preview mode.\n");
                 break;
             case GLFW_KEY_P:
                 Play(false);
@@ -212,43 +216,48 @@ void VisualizerWithCustomAnimation::KeyPressCallback(
                 break;
             case GLFW_KEY_EQUAL:
                 view_control.ChangeTrajectoryInterval(1);
-                PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
-                           view_control.GetTrajectoryInterval());
+                utility::PrintDebug(
+                        "[Visualizer] Trajectory interval set to %d.\n",
+                        view_control.GetTrajectoryInterval());
                 break;
             case GLFW_KEY_MINUS:
                 view_control.ChangeTrajectoryInterval(-1);
-                PrintDebug("[Visualizer] Trajectory interval set to %d.\n",
-                           view_control.GetTrajectoryInterval());
+                utility::PrintDebug(
+                        "[Visualizer] Trajectory interval set to %d.\n",
+                        view_control.GetTrajectoryInterval());
                 break;
             case GLFW_KEY_L:
                 view_control.ToggleTrajectoryLoop();
                 break;
             case GLFW_KEY_A:
                 view_control.AddKeyFrame();
-                PrintDebug("[Visualizer] Insert key frame; %d remaining.\n",
-                           view_control.NumOfKeyFrames());
+                utility::PrintDebug(
+                        "[Visualizer] Insert key frame; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
                 break;
             case GLFW_KEY_U:
                 view_control.UpdateKeyFrame();
-                PrintDebug("[Visualizer] Update key frame; %d remaining.\n",
-                           view_control.NumOfKeyFrames());
+                utility::PrintDebug(
+                        "[Visualizer] Update key frame; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
                 break;
             case GLFW_KEY_D:
                 view_control.DeleteKeyFrame();
-                PrintDebug(
+                utility::PrintDebug(
                         "[Visualizer] Delete last key frame; %d remaining.\n",
                         view_control.NumOfKeyFrames());
                 break;
             case GLFW_KEY_N:
                 view_control.AddSpinKeyFrames();
-                PrintDebug(
+                utility::PrintDebug(
                         "[Visualizer] Insert spin key frames; %d remaining.\n",
                         view_control.NumOfKeyFrames());
                 break;
             case GLFW_KEY_E:
                 view_control.ClearAllKeyFrames();
-                PrintDebug("[Visualizer] Clear key frames; %d remaining.\n",
-                           view_control.NumOfKeyFrames());
+                utility::PrintDebug(
+                        "[Visualizer] Clear key frames; %d remaining.\n",
+                        view_control.NumOfKeyFrames());
                 break;
             default:
                 Visualizer::KeyPressCallback(window, key, scancode, action,

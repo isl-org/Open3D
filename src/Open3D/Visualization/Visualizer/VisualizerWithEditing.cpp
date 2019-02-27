@@ -104,34 +104,35 @@ bool VisualizerWithEditing::AddGeometry(
     geometry_ptrs_.push_back(editing_geometry_ptr_);
     geometry_renderer_ptrs_.push_back(editing_geometry_renderer_ptr_);
     ResetViewPoint(true);
-    PrintDebug("Add geometry and update bounding box to %s\n",
-               view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    utility::PrintDebug(
+            "Add geometry and update bounding box to %s\n",
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
 void VisualizerWithEditing::PrintVisualizerHelp() {
     Visualizer::PrintVisualizerHelp();
     // clang-format off
-    PrintInfo("  -- Editing control --\n");
-    PrintInfo("    F            : Enter freeview mode.\n");
-    PrintInfo("    X            : Enter orthogonal view along X axis, press again to flip.\n");
-    PrintInfo("    Y            : Enter orthogonal view along Y axis, press again to flip.\n");
-    PrintInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.\n");
-    PrintInfo("    K            : Lock / unlock camera.\n");
-    PrintInfo("    Ctrl + D     : Downsample point cloud with a voxel grid.\n");
-    PrintInfo("    Ctrl + R     : Reset geometry to its initial state.\n");
-    PrintInfo("    Shift + +/-  : Increase/decrease picked point size..\n");
-    PrintInfo("    Shift + mouse left button   : Pick a point and add in queue.\n");
-    PrintInfo("    Shift + mouse right button  : Remove last picked point from queue.\n");
-    PrintInfo("\n");
-    PrintInfo("    -- When camera is locked --\n");
-    PrintInfo("    Mouse left button + drag    : Create a selection rectangle.\n");
-    PrintInfo("    Ctrl + mouse buttons + drag : Hold Ctrl key to draw a selection polygon.\n");
-    PrintInfo("                                  Left mouse button to add point. Right mouse\n");
-    PrintInfo("                                  button to remove point. Release Ctrl key to\n");
-    PrintInfo("                                  close the polygon.\n");
-    PrintInfo("    C                           : Crop the geometry with selection region.\n");
-    PrintInfo("\n");
+    utility::PrintInfo("  -- Editing control --\n");
+    utility::PrintInfo("    F            : Enter freeview mode.\n");
+    utility::PrintInfo("    X            : Enter orthogonal view along X axis, press again to flip.\n");
+    utility::PrintInfo("    Y            : Enter orthogonal view along Y axis, press again to flip.\n");
+    utility::PrintInfo("    Z            : Enter orthogonal view along Z axis, press again to flip.\n");
+    utility::PrintInfo("    K            : Lock / unlock camera.\n");
+    utility::PrintInfo("    Ctrl + D     : Downsample point cloud with a voxel grid.\n");
+    utility::PrintInfo("    Ctrl + R     : Reset geometry to its initial state.\n");
+    utility::PrintInfo("    Shift + +/-  : Increase/decrease picked point size..\n");
+    utility::PrintInfo("    Shift + mouse left button   : Pick a point and add in queue.\n");
+    utility::PrintInfo("    Shift + mouse right button  : Remove last picked point from queue.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("    -- When camera is locked --\n");
+    utility::PrintInfo("    Mouse left button + drag    : Create a selection rectangle.\n");
+    utility::PrintInfo("    Ctrl + mouse buttons + drag : Hold Ctrl key to draw a selection polygon.\n");
+    utility::PrintInfo("                                  Left mouse button to add point. Right mouse\n");
+    utility::PrintInfo("                                  button to remove point. Release Ctrl key to\n");
+    utility::PrintInfo("                                  close the polygon.\n");
+    utility::PrintInfo("    C                           : Crop the geometry with selection region.\n");
+    utility::PrintInfo("\n");
     // clang-format on
 }
 
@@ -293,25 +294,28 @@ void VisualizerWithEditing::KeyPressCallback(
         case GLFW_KEY_F:
             view_control.SetEditingMode(
                     ViewControlWithEditing::EditingMode::FreeMode);
-            PrintDebug("[Visualizer] Enter freeview mode.\n");
+            utility::PrintDebug("[Visualizer] Enter freeview mode.\n");
             break;
         case GLFW_KEY_X:
             view_control.ToggleEditingX();
-            PrintDebug("[Visualizer] Enter orthogonal X editing mode.\n");
+            utility::PrintDebug(
+                    "[Visualizer] Enter orthogonal X editing mode.\n");
             break;
         case GLFW_KEY_Y:
             view_control.ToggleEditingY();
-            PrintDebug("[Visualizer] Enter orthogonal Y editing mode.\n");
+            utility::PrintDebug(
+                    "[Visualizer] Enter orthogonal Y editing mode.\n");
             break;
         case GLFW_KEY_Z:
             view_control.ToggleEditingZ();
-            PrintDebug("[Visualizer] Enter orthogonal Z editing mode.\n");
+            utility::PrintDebug(
+                    "[Visualizer] Enter orthogonal Z editing mode.\n");
             break;
         case GLFW_KEY_K:
             view_control.ToggleLocking();
             InvalidateSelectionPolygon();
-            PrintDebug("[Visualizer] Camera %s.\n",
-                       view_control.IsLocked() ? "Lock" : "Unlock");
+            utility::PrintDebug("[Visualizer] Camera %s.\n",
+                                view_control.IsLocked() ? "Lock" : "Unlock");
             break;
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
@@ -333,14 +337,15 @@ void VisualizerWithEditing::KeyPressCallback(
                             "Set voxel size (ignored if it is non-positive)",
                             buff);
                     if (str == NULL) {
-                        PrintDebug("Illegal input, use default voxel size.\n");
+                        utility::PrintDebug(
+                                "Illegal input, use default voxel size.\n");
                     } else {
                         char *end;
                         errno = 0;
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            PrintDebug(
+                            utility::PrintDebug(
                                     "Illegal input, use default voxel size.\n");
                         } else {
                             voxel_size_ = l;
@@ -350,14 +355,15 @@ void VisualizerWithEditing::KeyPressCallback(
                 if (voxel_size_ > 0.0 && editing_geometry_ptr_ &&
                     editing_geometry_ptr_->GetGeometryType() ==
                             geometry::Geometry::GeometryType::PointCloud) {
-                    PrintInfo("Voxel downsample with voxel size %.4f.\n",
-                              voxel_size_);
+                    utility::PrintInfo(
+                            "Voxel downsample with voxel size %.4f.\n",
+                            voxel_size_);
                     geometry::PointCloud &pcd =
                             (geometry::PointCloud &)*editing_geometry_ptr_;
                     pcd = *geometry::VoxelDownSample(pcd, voxel_size_);
                     UpdateGeometry();
                 } else {
-                    PrintInfo(
+                    utility::PrintInfo(
                             "No voxel downsample performed due to illegal "
                             "voxel size.\n");
                 }
@@ -391,7 +397,8 @@ void VisualizerWithEditing::KeyPressCallback(
                         filename = default_filename.c_str();
                     }
                     if (filename == NULL) {
-                        PrintInfo("No filename is given. Abort saving.\n");
+                        utility::PrintInfo(
+                                "No filename is given. Abort saving.\n");
                     } else {
                         SaveCroppingResult(filename);
                         crop_action_count_++;
@@ -422,7 +429,8 @@ void VisualizerWithEditing::KeyPressCallback(
                         filename = default_filename.c_str();
                     }
                     if (filename == NULL) {
-                        PrintInfo("No filename is given. Abort saving.\n");
+                        utility::PrintInfo(
+                                "No filename is given. Abort saving.\n");
                     } else {
                         SaveCroppingResult(filename);
                         crop_action_count_++;
@@ -594,12 +602,12 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
 #endif
             int index = PickPoint(x, y);
             if (index == -1) {
-                PrintInfo("No point has been picked.\n");
+                utility::PrintInfo("No point has been picked.\n");
             } else {
                 const auto &point =
                         ((const geometry::PointCloud &)(*geometry_ptrs_[0]))
                                 .points_[index];
-                PrintInfo(
+                utility::PrintInfo(
                         "Picked point #%d (%.2f, %.2f, %.2f) to add in "
                         "queue.\n",
                         index, point(0), point(1), point(2));
@@ -610,8 +618,9 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT &&
                    action == GLFW_RELEASE && (mods & GLFW_MOD_SHIFT)) {
             if (pointcloud_picker_ptr_->picked_indices_.empty() == false) {
-                PrintInfo("Remove picked point #%d from pick queue.\n",
-                          pointcloud_picker_ptr_->picked_indices_.back());
+                utility::PrintInfo(
+                        "Remove picked point #%d from pick queue.\n",
+                        pointcloud_picker_ptr_->picked_indices_.back());
                 pointcloud_picker_ptr_->picked_indices_.pop_back();
                 is_redraw_required_ = true;
             }
@@ -642,7 +651,8 @@ void VisualizerWithEditing::SaveCroppingResult(
         ply_filename = "CroppedGeometry.ply";
     }
     std::string volume_filename =
-            filesystem::GetFileNameWithoutExtension(filename) + ".json";
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
+            ".json";
     if (geometry_ptrs_[0]->GetGeometryType() ==
         geometry::Geometry::GeometryType::PointCloud)
         WritePointCloud(ply_filename,
