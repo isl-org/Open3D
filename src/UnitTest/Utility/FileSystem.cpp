@@ -57,22 +57,22 @@ TEST(FileSystem, GetFileExtensionInLowerCase) {
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("", result);
 
-    path = "test/filesystem/fileName.EXT";
+    path = "test/test_dir/fileName.EXT";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // no extension
-    path = "test/filesystem/fileName";
+    path = "test/test_dir/fileName";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("", result);
 
     // multiple extensions
-    path = "test/filesystem/fileName.EXT.EXT";
+    path = "test/test_dir/fileName.EXT.EXT";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // multiple dots
-    path = "test/filesystem/fileName..EXT";
+    path = "test/test_dir/fileName..EXT";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
@@ -82,12 +82,12 @@ TEST(FileSystem, GetFileExtensionInLowerCase) {
     EXPECT_EQ("", result);
 
     // space in file name
-    path = "test/filesystem/fileName .EXT";
+    path = "test/test_dir/fileName .EXT";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ("ext", result);
 
     // space in extension
-    path = "test/filesystem/fileName. EXT";
+    path = "test/test_dir/fileName. EXT";
     result = filesystem::GetFileExtensionInLowerCase(path);
     EXPECT_EQ(" ext", result);
 }
@@ -110,29 +110,29 @@ TEST(FileSystem, GetFileNameWithoutExtension) {
     result = filesystem::GetFileNameWithoutExtension(path);
     EXPECT_EQ("fileName", result);
 
-    path = "test/filesystem/fileName.EXT";
+    path = "test/test_dir/fileName.EXT";
     result = filesystem::GetFileNameWithoutExtension(path);
-    EXPECT_EQ("test/filesystem/fileName", result);
+    EXPECT_EQ("test/test_dir/fileName", result);
 
     // no extension
-    path = "test/filesystem/fileName";
+    path = "test/test_dir/fileName";
     result = filesystem::GetFileNameWithoutExtension(path);
-    EXPECT_EQ("test/filesystem/fileName", result);
+    EXPECT_EQ("test/test_dir/fileName", result);
 
     // multiple extensions
-    path = "test/filesystem/fileName.EXT.EXT";
+    path = "test/test_dir/fileName.EXT.EXT";
     result = filesystem::GetFileNameWithoutExtension(path);
-    EXPECT_EQ("test/filesystem/fileName.EXT", result);
+    EXPECT_EQ("test/test_dir/fileName.EXT", result);
 
     // multiple dots
-    path = "test/filesystem/fileName..EXT";
+    path = "test/test_dir/fileName..EXT";
     result = filesystem::GetFileNameWithoutExtension(path);
-    EXPECT_EQ("test/filesystem/fileName.", result);
+    EXPECT_EQ("test/test_dir/fileName.", result);
 
     // space in file name
-    path = "test/filesystem/fileName .EXT";
+    path = "test/test_dir/fileName .EXT";
     result = filesystem::GetFileNameWithoutExtension(path);
-    EXPECT_EQ("test/filesystem/fileName ", result);
+    EXPECT_EQ("test/test_dir/fileName ", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -152,27 +152,27 @@ TEST(FileSystem, GetFileNameWithoutDirectory) {
     result = filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName.EXT", result);
 
-    path = "test/filesystem/fileName.EXT";
+    path = "test/test_dir/fileName.EXT";
     result = filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName.EXT", result);
 
     // no extension
-    path = "test/filesystem/fileName";
+    path = "test/test_dir/fileName";
     result = filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName", result);
 
     // multiple extensions
-    path = "test/filesystem/fileName.EXT.EXT";
+    path = "test/test_dir/fileName.EXT.EXT";
     result = filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName.EXT.EXT", result);
 
     // multiple dots
-    path = "test/filesystem/fileName..EXT";
+    path = "test/test_dir/fileName..EXT";
     result = filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName..EXT", result);
 
     // space in file name
-    path = "test/filesystem/fileName .EXT";
+    path = "test/test_dir/fileName .EXT";
     result = filesystem::GetFileNameWithoutDirectory(path);
     EXPECT_EQ("fileName .EXT", result);
 }
@@ -194,29 +194,29 @@ TEST(FileSystem, GetFileParentDirectory) {
     result = filesystem::GetFileParentDirectory(path);
     EXPECT_EQ("", result);
 
-    path = "test/filesystem/fileName.EXT";
+    path = "test/test_dir/fileName.EXT";
     result = filesystem::GetFileParentDirectory(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 
     // no extension
-    path = "test/filesystem/fileName";
+    path = "test/test_dir/fileName";
     result = filesystem::GetFileParentDirectory(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 
     // multiple extensions
-    path = "test/filesystem/fileName.EXT.EXT";
+    path = "test/test_dir/fileName.EXT.EXT";
     result = filesystem::GetFileParentDirectory(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 
     // multiple dots
-    path = "test/filesystem/fileName..EXT";
+    path = "test/test_dir/fileName..EXT";
     result = filesystem::GetFileParentDirectory(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 
     // space in file name
-    path = "test/filesystem/fileName .EXT";
+    path = "test/test_dir/fileName .EXT";
     result = filesystem::GetFileParentDirectory(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -230,13 +230,13 @@ TEST(FileSystem, GetRegularizedDirectoryName) {
     result = filesystem::GetRegularizedDirectoryName(path);
     EXPECT_EQ("/", result);
 
-    path = "test/filesystem";
+    path = "test/test_dir";
     result = filesystem::GetRegularizedDirectoryName(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 
-    path = "test/filesystem/";
+    path = "test/test_dir/";
     result = filesystem::GetRegularizedDirectoryName(path);
-    EXPECT_EQ("test/filesystem/", result);
+    EXPECT_EQ("test/test_dir/", result);
 }
 
 // ----------------------------------------------------------------------------
@@ -268,7 +268,7 @@ TEST(FileSystem, ChangeWorkingDirectory) {
 // Check if a path exists.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DirectoryExists) {
-    string path = "test/filesystem";
+    string path = "test/test_dir";
 
     bool status;
 
@@ -288,7 +288,7 @@ TEST(FileSystem, DirectoryExists) {
     status = filesystem::ChangeWorkingDirectory("test");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("filesystem");
+    status = filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
     status = filesystem::ChangeWorkingDirectory("..");
@@ -322,7 +322,7 @@ TEST(FileSystem, MakeDirectory) {
 // Make a hierarchy of directories. Equivalent to 'mkdir -p ...'.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, MakeDirectoryHierarchy) {
-    string path = "test/filesystem";
+    string path = "test/test_dir";
 
     bool status;
 
@@ -333,7 +333,7 @@ TEST(FileSystem, MakeDirectoryHierarchy) {
     status = filesystem::ChangeWorkingDirectory("test");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("filesystem");
+    status = filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
     status = filesystem::ChangeWorkingDirectory("..");
@@ -365,7 +365,7 @@ TEST(FileSystem, DeleteDirectory) {
 //
 // ----------------------------------------------------------------------------
 TEST(FileSystem, File_Exists_Remove) {
-    string path = "test/filesystem";
+    string path = "test/test_dir";
     string fileName = "fileName.ext";
 
     bool status;
@@ -394,7 +394,7 @@ TEST(FileSystem, File_Exists_Remove) {
     status = filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("filesystem");
+    status = filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
     status = filesystem::ChangeWorkingDirectory("..");
@@ -408,7 +408,7 @@ TEST(FileSystem, File_Exists_Remove) {
 // List all files in the specified directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ListFilesInDirectory) {
-    string path = "test/filesystem";
+    string path = "test/test_dir";
     vector<string> fileNames = {"fileName00.ext", "fileName01.ext",
                                 "fileName02.ext", "fileName03.ext"};
 
@@ -444,7 +444,7 @@ TEST(FileSystem, ListFilesInDirectory) {
     status = filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("filesystem");
+    status = filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
     status = filesystem::ChangeWorkingDirectory("..");
@@ -458,7 +458,7 @@ TEST(FileSystem, ListFilesInDirectory) {
 // List all files of a specific extension in the specified directory.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, ListFilesInDirectoryWithExtension) {
-    string path = "test/filesystem";
+    string path = "test/test_dir";
     vector<string> fileNames = {"fileName00.ext0", "fileName01.ext0",
                                 "fileName02.ext0", "fileName03.ext0",
                                 "fileName04.ext1", "fileName05.ext1",
@@ -496,7 +496,7 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     status = filesystem::ChangeWorkingDirectory("..");
     EXPECT_TRUE(status);
 
-    status = filesystem::DeleteDirectory("filesystem");
+    status = filesystem::DeleteDirectory("test_dir");
     EXPECT_TRUE(status);
 
     status = filesystem::ChangeWorkingDirectory("..");
