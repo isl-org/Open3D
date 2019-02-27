@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Visualizer/RenderOption.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -109,4 +110,5 @@ private:
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

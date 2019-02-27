@@ -35,6 +35,7 @@
 #include <Open3D/Visualization/Visualizer/RenderOptionWithEditing.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -308,4 +309,5 @@ bool PointCloudPickerRenderer::UpdateGeometry() {
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

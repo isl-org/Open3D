@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Utility/ColorMap.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -268,4 +269,5 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

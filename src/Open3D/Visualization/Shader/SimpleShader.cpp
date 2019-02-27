@@ -34,6 +34,7 @@
 #include <Open3D/Visualization/Utility/ColorMap.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -431,4 +432,5 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

@@ -31,6 +31,7 @@
 #include <Open3D/Visualization/Shader/Shader.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -238,4 +239,5 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

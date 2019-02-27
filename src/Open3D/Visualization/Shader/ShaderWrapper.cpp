@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -171,4 +172,5 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index) {
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

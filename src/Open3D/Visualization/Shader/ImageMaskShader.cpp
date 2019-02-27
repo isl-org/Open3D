@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Visualizer/RenderOptionWithEditing.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -200,4 +201,5 @@ bool ImageMaskShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

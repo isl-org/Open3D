@@ -32,6 +32,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -160,4 +161,5 @@ bool PickingShaderForPointCloud::PrepareBinding(
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

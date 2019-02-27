@@ -31,6 +31,7 @@
 #include <Open3D/Visualization/Shader/ShaderWrapper.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -133,4 +134,6 @@ protected:
 
 }  // namespace glsl
 
+}  // namespace visualization
+}  // namespace open3d
 }  // namespace open3d
