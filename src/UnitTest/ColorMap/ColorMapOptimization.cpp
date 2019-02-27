@@ -116,10 +116,10 @@ vector<RGBDImage> GenerateRGBDImages(const int& width,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-PinholeCameraTrajectory GenerateCamera(const int& width,
-                                       const int& height,
-                                       const Eigen::Vector3d& pose) {
-    PinholeCameraTrajectory camera;
+camera::PinholeCameraTrajectory GenerateCamera(const int& width,
+                                               const int& height,
+                                               const Eigen::Vector3d& pose) {
+    camera::PinholeCameraTrajectory camera;
     camera.parameters_.resize(1);
 
     double fx = 0.5;
@@ -172,7 +172,8 @@ TEST(ColorMapOptimization, DISABLED_Project3DPointAndGetUVDepth) {
         // change the pose randomly
         Eigen::Vector3d pose;
         Rand(pose, 0.0, 10.0, i);
-        PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+        camera::PinholeCameraTrajectory camera =
+                GenerateCamera(width, height, pose);
         int camid = 0;
 
         float u, v, d;
@@ -220,7 +221,8 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
                                                bytes_per_channel, size);
 
     Eigen::Vector3d pose(-30, -15, -13);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
 
     // ColorMapOptimizationOption option(false, 4, 0.316, 30, 15, 120, 0.1, 3);
 
@@ -328,7 +330,8 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
     Rand(depthData, width * height, 10.0, 100.0, 0);
 
     Eigen::Vector3d pose(62.5, 37.5, 1.85);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
     int camid = 0;
     int ch = -1;
 
@@ -417,7 +420,8 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     // open3d::ImageWarpingField field(width, height, nr_anchors);
 
     Eigen::Vector3d pose(62.5, 37.5, 1.85);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
     int camid = 0;
     int ch = -1;
 
@@ -507,7 +511,8 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
@@ -586,7 +591,8 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
@@ -649,7 +655,8 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     // }
 
     Eigen::Vector3d pose(60, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
     size_t n_camera = camera.parameters_.size();
@@ -714,7 +721,8 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
 
     size_t n_vertex = mesh->vertices_.size();
     size_t n_camera = camera.parameters_.size();
@@ -782,7 +790,8 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
@@ -846,7 +855,8 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
     int camid = 0;
 
     int n_vertex = mesh->vertices_.size();
@@ -1107,7 +1117,8 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     vector<RGBDImage> rgbdImages = GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(60, 15, 0.3);
-    PinholeCameraTrajectory camera = GenerateCamera(width, height, pose);
+    camera::PinholeCameraTrajectory camera =
+            GenerateCamera(width, height, pose);
 
     // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95,
     // 3);

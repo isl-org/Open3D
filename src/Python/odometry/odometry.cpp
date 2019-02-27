@@ -138,7 +138,7 @@ void pybind_odometry_methods(py::module &m) {
     m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
           "Function to estimate 6D rigid motion from two RGBD image pairs",
           "rgbd_source"_a, "rgbd_target"_a,
-          "pinhole_camera_intrinsic"_a = PinholeCameraIntrinsic(),
+          "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
           "odo_init"_a = Eigen::Matrix4d::Identity(),
           "jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
           "option"_a = OdometryOption());

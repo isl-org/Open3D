@@ -37,7 +37,9 @@ namespace open3d {
 
 class Image;
 class RGBDImage;
+namespace camera {
 class PinholeCameraIntrinsic;
+}
 
 class PointCloud : public Geometry3D {
 public:
@@ -94,7 +96,7 @@ public:
 /// Return an empty pointcloud if the conversion fails.
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
         const Image &depth,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
         double depth_scale = 1000.0,
         double depth_trunc = 1000.0,
@@ -105,7 +107,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 /// Return an empty pointcloud if the conversion fails.
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
         const RGBDImage &image,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
 
 /// Function to select points from \param input pointcloud into

@@ -34,7 +34,9 @@ namespace open3d {
 class TriangleMesh;
 class RGBDImage;
 class Image;
+namespace camera {
 class PinholeCameraTrajectory;
+}
 
 class ColorMapOptimizationOption {
 public:
@@ -81,7 +83,7 @@ public:
 void ColorMapOptimization(
         TriangleMesh& mesh,
         const std::vector<std::shared_ptr<RGBDImage>>& imgs_rgbd,
-        PinholeCameraTrajectory& camera,
+        camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option =
                 ColorMapOptimizationOption());
 }  // namespace open3d

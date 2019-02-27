@@ -254,7 +254,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
-        const PinholeCameraTrajectory &camera_trajectory) {
+        const camera::PinholeCameraTrajectory &camera_trajectory) {
     current_keyframe_ = 0.0;
     current_frame_ = 0.0;
     view_trajectory_.Reset();

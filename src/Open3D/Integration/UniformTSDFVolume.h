@@ -42,7 +42,7 @@ public:
 public:
     void Reset() override;
     void Integrate(const RGBDImage &image,
-                   const PinholeCameraIntrinsic &intrinsic,
+                   const camera::PinholeCameraIntrinsic &intrinsic,
                    const Eigen::Matrix4d &extrinsic) override;
     std::shared_ptr<PointCloud> ExtractPointCloud() override;
     std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
@@ -54,7 +54,7 @@ public:
     /// precomputed from camera intrinsic
     void IntegrateWithDepthToCameraDistanceMultiplier(
             const RGBDImage &image,
-            const PinholeCameraIntrinsic &intrinsic,
+            const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const Image &depth_to_camera_distance_multiplier);
 

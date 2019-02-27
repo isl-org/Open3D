@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
             Eigen::Vector3d(13, 44, 84) / 255.0,
     };
 
-    PinholeCameraTrajectory trajectory;
+    camera::PinholeCameraTrajectory trajectory;
     ReadPinholeCameraTrajectory(argv[1], trajectory);
     std::vector<std::shared_ptr<const Geometry>> pcds;
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {

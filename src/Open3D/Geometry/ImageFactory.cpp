@@ -31,7 +31,7 @@
 namespace open3d {
 
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
-        const PinholeCameraIntrinsic &intrinsic) {
+        const camera::PinholeCameraIntrinsic &intrinsic) {
     auto fimage = std::make_shared<Image>();
     fimage->PrepareImage(intrinsic.width_, intrinsic.height_, 1, 4);
     float ffl_inv[2] = {

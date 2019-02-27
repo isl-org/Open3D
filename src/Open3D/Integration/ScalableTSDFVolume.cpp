@@ -49,9 +49,10 @@ ScalableTSDFVolume::~ScalableTSDFVolume() {}
 
 void ScalableTSDFVolume::Reset() { volume_units_.clear(); }
 
-void ScalableTSDFVolume::Integrate(const RGBDImage &image,
-                                   const PinholeCameraIntrinsic &intrinsic,
-                                   const Eigen::Matrix4d &extrinsic) {
+void ScalableTSDFVolume::Integrate(
+        const RGBDImage &image,
+        const camera::PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic) {
     if ((image.depth_.num_of_channels_ != 1) ||
         (image.depth_.bytes_per_channel_ != 4) ||
         (image.depth_.width_ != intrinsic.width_) ||

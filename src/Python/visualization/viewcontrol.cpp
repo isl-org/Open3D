@@ -42,11 +42,12 @@ void pybind_viewcontrol(py::module &m) {
                  })
             .def("convert_to_pinhole_camera_parameters",
                  [](ViewControl &vc) {
-                     PinholeCameraParameters parameter;
+                     camera::PinholeCameraParameters parameter;
                      vc.ConvertToPinholeCameraParameters(parameter);
                      return parameter;
                  },
-                 "Function to convert ViewControl to PinholeCameraParameters")
+                 "Function to convert ViewControl to "
+                 "camera::PinholeCameraParameters")
             .def("convert_from_pinhole_camera_parameters",
                  &ViewControl::ConvertFromPinholeCameraParameters,
                  "parameter"_a)

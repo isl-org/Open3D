@@ -223,7 +223,8 @@ std::shared_ptr<Image> ConvertDepthImageToXYZImage(
 }
 
 std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
-        const PinholeCameraIntrinsic &pinhole_camera_intrinsic, int levels) {
+        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
+        int levels) {
     std::vector<Eigen::Matrix3d> pyramid_camera_matrix;
     pyramid_camera_matrix.reserve(levels);
     for (int i = 0; i < levels; i++) {
@@ -240,7 +241,7 @@ std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
 
 Eigen::Matrix6d CreateInformationMatrix(
         const Eigen::Matrix4d &extrinsic,
-        const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
+        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Image &depth_s,
         const Image &depth_t,
         const OdometryOption &option) {
@@ -363,11 +364,12 @@ inline bool CheckRGBDImagePair(const RGBDImage &source,
 }
 
 std::tuple<std::shared_ptr<RGBDImage>, std::shared_ptr<RGBDImage>>
-InitializeRGBDOdometry(const RGBDImage &source,
-                       const RGBDImage &target,
-                       const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
-                       const Eigen::Matrix4d &odo_init,
-                       const OdometryOption &option) {
+InitializeRGBDOdometry(
+        const RGBDImage &source,
+        const RGBDImage &target,
+        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
+        const Eigen::Matrix4d &odo_init,
+        const OdometryOption &option) {
     auto source_gray = FilterImage(source.color_, Image::FilterType::Gaussian3);
     auto target_gray = FilterImage(target.color_, Image::FilterType::Gaussian3);
     auto source_depth_preprocessed = PreprocessDepth(source.depth_, option);
@@ -432,7 +434,7 @@ std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
 std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
         const RGBDImage &source,
         const RGBDImage &target,
-        const PinholeCameraIntrinsic &pinhole_camera_intrinsic,
+        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Eigen::Matrix4d &extrinsic_initial,
         const RGBDOdometryJacobian &jacobian_method,
         const OdometryOption &option) {
@@ -492,8 +494,8 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const RGBDImage &source,
         const RGBDImage &target,
-        const PinholeCameraIntrinsic &pinhole_camera_intrinsic
-        /*= PinholeCameraIntrinsic()*/,
+        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
+        /*= camera::PinholeCameraIntrinsic()*/,
         const Eigen::Matrix4d &odo_init /*= Eigen::Matrix4d::Identity()*/,
         const RGBDOdometryJacobian &jacobian_method
         /*=RGBDOdometryJacobianFromHybridTerm*/,

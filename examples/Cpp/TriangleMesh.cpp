@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     } else if (option == "colormapping") {
         auto mesh = CreateMeshFromFile(argv[2]);
         mesh->ComputeVertexNormals();
-        PinholeCameraTrajectory trajectory;
+        camera::PinholeCameraTrajectory trajectory;
         ReadIJsonConvertible(argv[3], trajectory);
         if (filesystem::DirectoryExists("image") == false) {
             PrintWarning("No image!\n");

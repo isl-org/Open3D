@@ -975,8 +975,8 @@ TEST(PointCloud, CreatePointCloudFromDepthImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto output_pc = CreatePointCloudFromDepthImage(image, intrinsic);
 
@@ -1016,8 +1016,8 @@ void TEST_CreatePointCloudFromRGBDImage(const int& color_num_of_channels,
 
     RGBDImage rgbd_image(color, *depth);
 
-    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto output_pc = CreatePointCloudFromRGBDImage(rgbd_image, intrinsic);
 

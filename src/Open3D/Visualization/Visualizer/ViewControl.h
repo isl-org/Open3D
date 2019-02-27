@@ -66,9 +66,10 @@ public:
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view)
-    bool ConvertToPinholeCameraParameters(PinholeCameraParameters &parameters);
+    bool ConvertToPinholeCameraParameters(
+            camera::PinholeCameraParameters &parameters);
     bool ConvertFromPinholeCameraParameters(
-            const PinholeCameraParameters &parameters);
+            const camera::PinholeCameraParameters &parameters);
 
     ProjectionType GetProjectionType() const;
     void SetProjectionParameters();

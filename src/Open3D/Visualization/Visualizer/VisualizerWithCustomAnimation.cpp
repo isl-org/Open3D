@@ -96,7 +96,7 @@ void VisualizerWithCustomAnimation::Play(
     UpdateWindowTitle();
     recording_file_index_ = 0;
     ResetConsoleProgress(view_control.NumOfFrames(), "Play animation: ");
-    auto trajectory_ptr = std::make_shared<PinholeCameraTrajectory>();
+    auto trajectory_ptr = std::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {
         if (recording_depth) {
@@ -114,7 +114,7 @@ void VisualizerWithCustomAnimation::Play(
         recording_file_index_++;
         if (recording) {
             if (recording_trajectory) {
-                auto parameter = PinholeCameraParameters();
+                auto parameter = camera::PinholeCameraParameters();
                 view_control.ConvertToPinholeCameraParameters(parameter);
                 trajectory_ptr->parameters_.push_back(parameter);
             }

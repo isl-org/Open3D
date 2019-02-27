@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
                        image_ptr->height_);
     } else if (option == "depth") {
         auto image_ptr = CreateImageFromFile(argv[2]);
-        PinholeCameraIntrinsic camera;
+        camera::PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
                 CreatePointCloudFromDepthImage(*image_ptr, camera);

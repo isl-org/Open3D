@@ -35,7 +35,9 @@
 
 namespace open3d {
 
+namespace camera {
 class PinholeCameraIntrinsic;
+}
 
 class Image : public Geometry2D {
 public:
@@ -108,7 +110,7 @@ public:
 /// This function is used as a convenient function for performance optimization
 /// in volumetric integration (see Core/Integration/TSDFVolume.h).
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
-        const PinholeCameraIntrinsic &intrinsic);
+        const camera::PinholeCameraIntrinsic &intrinsic);
 
 /// Return a gray scaled float type image.
 std::shared_ptr<Image> CreateFloatImageFromImage(

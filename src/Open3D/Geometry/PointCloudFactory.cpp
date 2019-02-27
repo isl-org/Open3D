@@ -49,7 +49,7 @@ int CountValidDepthPixels(const Image &depth, int stride) {
 
 std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
         const Image &depth,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
         int stride) {
     auto pointcloud = std::make_shared<PointCloud>();
@@ -79,7 +79,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
 template <typename TC, int NC>
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4d camera_pose = extrinsic.inverse();
@@ -117,7 +117,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
 
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
         const Image &depth,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/,
         double depth_scale /* = 1000.0*/,
         double depth_trunc /* = 1000.0*/,
@@ -139,7 +139,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
 
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
         const RGBDImage &image,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic /* = Eigen::Matrix4d::Identity()*/) {
     if (image.depth_.num_of_channels_ == 1 &&
         image.depth_.bytes_per_channel_ == 4) {

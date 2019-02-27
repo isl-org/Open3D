@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
         }
     }
     if (!depth_filename.empty()) {
-        PinholeCameraParameters parameters;
+        camera::PinholeCameraParameters parameters;
         if (depth_parameter_filename.empty() ||
             !ReadIJsonConvertible(depth_parameter_filename, parameters)) {
             PrintWarning(
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
             PrintWarning("Failed loading view trajectory.\n");
         }
     } else if (!camera_filename.empty()) {
-        PinholeCameraTrajectory camera_trajectory;
+        camera::PinholeCameraTrajectory camera_trajectory;
         if (ReadIJsonConvertible(camera_filename, camera_trajectory) == false) {
             PrintWarning("Failed loading camera trajectory.\n");
         } else {

@@ -49,7 +49,7 @@ void OptimizeImageCoorNonrigid(
         const std::vector<std::shared_ptr<Image>>& images_dy,
         std::vector<ImageWarpingField>& warping_fields,
         const std::vector<ImageWarpingField>& warping_fields_init,
-        PinholeCameraTrajectory& camera,
+        camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
@@ -146,7 +146,7 @@ void OptimizeImageCoorRigid(
         const std::vector<std::shared_ptr<Image>>& images_gray,
         const std::vector<std::shared_ptr<Image>>& images_dx,
         const std::vector<std::shared_ptr<Image>>& images_dy,
-        PinholeCameraTrajectory& camera,
+        camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
         std::vector<double>& proxy_intensity,
@@ -274,7 +274,7 @@ std::vector<ImageWarpingField> CreateWarpingFields(
 void ColorMapOptimization(
         TriangleMesh& mesh,
         const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd,
-        PinholeCameraTrajectory& camera,
+        camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option
         /* = ColorMapOptimizationOption()*/) {
     PrintDebug("[ColorMapOptimization]\n");

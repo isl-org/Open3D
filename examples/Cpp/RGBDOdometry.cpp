@@ -41,7 +41,7 @@ void PrintHelp() {
 std::shared_ptr<RGBDImage> ReadRGBDImage(
         const char* color_filename,
         const char* depth_filename,
-        const PinholeCameraIntrinsic& intrinsic,
+        const camera::PinholeCameraIntrinsic& intrinsic,
         bool visualize) {
     Image color, depth;
     ReadImage(color_filename, color);
@@ -70,8 +70,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     SetVerbosityLevel(VerbosityLevel::VerboseDebug);
-    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     bool visualize = true;
     auto source = ReadRGBDImage(argv[1], argv[2], intrinsic, visualize);
     auto target = ReadRGBDImage(argv[3], argv[4], intrinsic, visualize);

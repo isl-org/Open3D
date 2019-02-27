@@ -107,7 +107,7 @@ bool ViewControl::ConvertFromViewParameters(const ViewParameters &status) {
 }
 
 bool ViewControl::ConvertToPinholeCameraParameters(
-        PinholeCameraParameters &parameters) {
+        camera::PinholeCameraParameters &parameters) {
     if (window_height_ <= 0 || window_width_ <= 0) {
         PrintWarning(
                 "[ViewControl] ConvertToPinholeCameraParameters() failed "
@@ -122,7 +122,7 @@ bool ViewControl::ConvertToPinholeCameraParameters(
         return false;
     }
     SetProjectionParameters();
-    auto intrinsic = PinholeCameraIntrinsic();
+    auto intrinsic = camera::PinholeCameraIntrinsic();
     intrinsic.width_ = window_width_;
     intrinsic.height_ = window_height_;
     intrinsic.intrinsic_matrix_.setIdentity();
@@ -150,7 +150,7 @@ bool ViewControl::ConvertToPinholeCameraParameters(
 }
 
 bool ViewControl::ConvertFromPinholeCameraParameters(
-        const PinholeCameraParameters &parameters) {
+        const camera::PinholeCameraParameters &parameters) {
     auto intrinsic = parameters.intrinsic_;
     auto extrinsic = parameters.extrinsic_;
     if (window_height_ <= 0 || window_width_ <= 0 ||

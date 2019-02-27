@@ -38,7 +38,7 @@ using namespace unit_test;
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Default) {
-    PinholeCameraIntrinsic intrinsic;
+    camera::PinholeCameraIntrinsic intrinsic;
 
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
@@ -51,8 +51,8 @@ TEST(PinholeCameraIntrinsic, Constructor_Default) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault) {
-    PinholeCameraIntrinsic intrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     EXPECT_EQ(640, intrinsic.width_);
     EXPECT_EQ(480, intrinsic.height_);
@@ -67,8 +67,9 @@ TEST(PinholeCameraIntrinsic, Constructor_PrimeSenseDefault) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
-    PinholeCameraIntrinsic intrinsic(
-            PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault);
+    camera::PinholeCameraIntrinsic intrinsic(
+            camera::PinholeCameraIntrinsicParameters::
+                    Kinect2DepthCameraDefault);
 
     EXPECT_EQ(512, intrinsic.width_);
     EXPECT_EQ(424, intrinsic.height_);
@@ -83,8 +84,9 @@ TEST(PinholeCameraIntrinsic, Constructor_Kinect2DepthCameraDefault) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, Constructor_Kinect2ColorCameraDefault) {
-    PinholeCameraIntrinsic intrinsic(
-            PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault);
+    camera::PinholeCameraIntrinsic intrinsic(
+            camera::PinholeCameraIntrinsicParameters::
+                    Kinect2ColorCameraDefault);
 
     EXPECT_EQ(1920, intrinsic.width_);
     EXPECT_EQ(1080, intrinsic.height_);
@@ -109,7 +111,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Init) {
     double cx = 0.75;
     double cy = 0.35;
 
-    PinholeCameraIntrinsic intrinsic(width, height, fx, fy, cx, cy);
+    camera::PinholeCameraIntrinsic intrinsic(width, height, fx, fy, cx, cy);
 
     EXPECT_EQ(width, intrinsic.width_);
     EXPECT_EQ(height, intrinsic.height_);
@@ -131,7 +133,7 @@ TEST(PinholeCameraIntrinsic, DISABLED_MemberData) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, SetIntrinsics) {
-    PinholeCameraIntrinsic intrinsic;
+    camera::PinholeCameraIntrinsic intrinsic;
 
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
@@ -162,7 +164,7 @@ TEST(PinholeCameraIntrinsic, SetIntrinsics) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetFocalLength) {
-    PinholeCameraIntrinsic intrinsic;
+    camera::PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -188,7 +190,7 @@ TEST(PinholeCameraIntrinsic, GetFocalLength) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
-    PinholeCameraIntrinsic intrinsic;
+    camera::PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -214,7 +216,7 @@ TEST(PinholeCameraIntrinsic, GetPrincipalPoint) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, GetSkew) {
-    PinholeCameraIntrinsic intrinsic;
+    camera::PinholeCameraIntrinsic intrinsic;
 
     int width = 640;
     int height = 480;
@@ -239,7 +241,7 @@ TEST(PinholeCameraIntrinsic, GetSkew) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, IsValid) {
-    PinholeCameraIntrinsic intrinsic;
+    camera::PinholeCameraIntrinsic intrinsic;
 
     EXPECT_FALSE(intrinsic.IsValid());
 
@@ -261,8 +263,8 @@ TEST(PinholeCameraIntrinsic, IsValid) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraIntrinsic, ConvertToFromJsonValue) {
-    PinholeCameraIntrinsic src;
-    PinholeCameraIntrinsic dst;
+    camera::PinholeCameraIntrinsic src;
+    camera::PinholeCameraIntrinsic dst;
 
     int width = 640;
     int height = 480;

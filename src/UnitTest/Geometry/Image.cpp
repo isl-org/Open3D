@@ -208,8 +208,8 @@ TEST(Image, DISABLED_MemberData) {
 //
 // ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
-    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
     auto image = CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
 

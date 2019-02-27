@@ -45,15 +45,15 @@ TEST(PinholeCameraTrajectory, DISABLED_MemberData) {
 //
 // ----------------------------------------------------------------------------
 TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
-    PinholeCameraTrajectory src;
-    PinholeCameraTrajectory dst;
+    camera::PinholeCameraTrajectory src;
+    camera::PinholeCameraTrajectory dst;
 
     int width = 640;
     int height = 480;
 
     src.parameters_.resize(2);
     for (size_t i = 0; i < src.parameters_.size(); i++) {
-        PinholeCameraIntrinsic intrinsic;
+        camera::PinholeCameraIntrinsic intrinsic;
         intrinsic.width_ = width;
         intrinsic.height_ = height;
         intrinsic.intrinsic_matrix_ = Matrix3d::Random();
@@ -72,8 +72,8 @@ TEST(PinholeCameraTrajectory, ConvertToFromJsonValue) {
     EXPECT_EQ(src.parameters_.size(), dst.parameters_.size());
 
     for (size_t i = 0; i < src.parameters_.size(); i++) {
-        PinholeCameraParameters src_params = src.parameters_[i];
-        PinholeCameraParameters dst_params = dst.parameters_[i];
+        camera::PinholeCameraParameters src_params = src.parameters_[i];
+        camera::PinholeCameraParameters dst_params = dst.parameters_[i];
 
         EXPECT_EQ(src_params.intrinsic_.width_, dst_params.intrinsic_.width_);
         EXPECT_EQ(src_params.intrinsic_.height_, dst_params.intrinsic_.height_);

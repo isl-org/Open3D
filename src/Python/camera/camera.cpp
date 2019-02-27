@@ -34,72 +34,86 @@
 using namespace open3d;
 
 void pybind_camera_classes(py::module &m) {
-    py::class_<PinholeCameraIntrinsic> pinhole_intr(m, "PinholeCameraIntrinsic",
-                                                    "PinholeCameraIntrinsic");
-    py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
-    py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
+    py::class_<camera::PinholeCameraIntrinsic> pinhole_intr(
+            m, "PinholeCameraIntrinsic", "PinholeCameraIntrinsic");
+    py::detail::bind_default_constructor<camera::PinholeCameraIntrinsic>(
+            pinhole_intr);
+    py::detail::bind_copy_functions<camera::PinholeCameraIntrinsic>(
+            pinhole_intr);
     pinhole_intr
             .def(py::init([](int w, int h, double fx, double fy, double cx,
                              double cy) {
-                     return new PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
+                     return new camera::PinholeCameraIntrinsic(w, h, fx, fy, cx,
+                                                               cy);
                  }),
                  "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
-            .def(py::init([](PinholeCameraIntrinsicParameters param) {
-                     return new PinholeCameraIntrinsic(param);
+            .def(py::init([](camera::PinholeCameraIntrinsicParameters param) {
+                     return new camera::PinholeCameraIntrinsic(param);
                  }),
                  "param"_a)
-            .def("set_intrinsics", &PinholeCameraIntrinsic::SetIntrinsics,
-                 "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
-            .def("get_focal_length", &PinholeCameraIntrinsic::GetFocalLength)
+            .def("set_intrinsics",
+                 &camera::PinholeCameraIntrinsic::SetIntrinsics, "width"_a,
+                 "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
+            .def("get_focal_length",
+                 &camera::PinholeCameraIntrinsic::GetFocalLength)
             .def("get_principal_point",
-                 &PinholeCameraIntrinsic::GetPrincipalPoint)
-            .def("get_skew", &PinholeCameraIntrinsic::GetSkew)
-            .def("is_valid", &PinholeCameraIntrinsic::IsValid)
-            .def_readwrite("width", &PinholeCameraIntrinsic::width_)
-            .def_readwrite("height", &PinholeCameraIntrinsic::height_)
+                 &camera::PinholeCameraIntrinsic::GetPrincipalPoint)
+            .def("get_skew", &camera::PinholeCameraIntrinsic::GetSkew)
+            .def("is_valid", &camera::PinholeCameraIntrinsic::IsValid)
+            .def_readwrite("width", &camera::PinholeCameraIntrinsic::width_)
+            .def_readwrite("height", &camera::PinholeCameraIntrinsic::height_)
             .def_readwrite("intrinsic_matrix",
-                           &PinholeCameraIntrinsic::intrinsic_matrix_)
-            .def("__repr__", [](const PinholeCameraIntrinsic &c) {
-                return std::string("PinholeCameraIntrinsic with width = ") +
+                           &camera::PinholeCameraIntrinsic::intrinsic_matrix_)
+            .def("__repr__", [](const camera::PinholeCameraIntrinsic &c) {
+                return std::string(
+                               "camera::PinholeCameraIntrinsic with width = ") +
                        std::to_string(c.width_) +
                        std::string(" and height = ") +
                        std::to_string(c.height_) +
                        std::string(
                                ".\nAccess intrinsics with intrinsic_matrix.");
             });
-    py::enum_<PinholeCameraIntrinsicParameters>(
+    py::enum_<camera::PinholeCameraIntrinsicParameters>(
             m, "PinholeCameraIntrinsicParameters", py::arithmetic(),
             "PinholeCameraIntrinsicParameters")
             .value("PrimeSenseDefault",
-                   PinholeCameraIntrinsicParameters::PrimeSenseDefault)
+                   camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault)
             .value("Kinect2DepthCameraDefault",
-                   PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault)
+                   camera::PinholeCameraIntrinsicParameters::
+                           Kinect2DepthCameraDefault)
             .value("Kinect2ColorCameraDefault",
-                   PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault)
+                   camera::PinholeCameraIntrinsicParameters::
+                           Kinect2ColorCameraDefault)
             .export_values();
 
-    py::class_<PinholeCameraParameters> pinhole_param(
+    py::class_<camera::PinholeCameraParameters> pinhole_param(
             m, "PinholeCameraParameters", "PinholeCameraParameters");
-    py::detail::bind_default_constructor<PinholeCameraParameters>(
+    py::detail::bind_default_constructor<camera::PinholeCameraParameters>(
             pinhole_param);
-    py::detail::bind_copy_functions<PinholeCameraParameters>(pinhole_param);
+    py::detail::bind_copy_functions<camera::PinholeCameraParameters>(
+            pinhole_param);
     pinhole_param
-            .def_readwrite("intrinsic", &PinholeCameraParameters::intrinsic_)
-            .def_readwrite("extrinsic", &PinholeCameraParameters::extrinsic_)
-            .def("__repr__", [](const PinholeCameraParameters &c) {
-                return std::string("PinholeCameraParameters class.\n") +
+            .def_readwrite("intrinsic",
+                           &camera::PinholeCameraParameters::intrinsic_)
+            .def_readwrite("extrinsic",
+                           &camera::PinholeCameraParameters::extrinsic_)
+            .def("__repr__", [](const camera::PinholeCameraParameters &c) {
+                return std::string("camera::PinholeCameraParameters class.\n") +
                        std::string(
                                "Access its data via intrinsic and extrinsic.");
             });
 
-    py::class_<PinholeCameraTrajectory> pinhole_traj(
+    py::class_<camera::PinholeCameraTrajectory> pinhole_traj(
             m, "PinholeCameraTrajectory", "PinholeCameraTrajectory");
-    py::detail::bind_default_constructor<PinholeCameraTrajectory>(pinhole_traj);
-    py::detail::bind_copy_functions<PinholeCameraTrajectory>(pinhole_traj);
+    py::detail::bind_default_constructor<camera::PinholeCameraTrajectory>(
+            pinhole_traj);
+    py::detail::bind_copy_functions<camera::PinholeCameraTrajectory>(
+            pinhole_traj);
     pinhole_traj
-            .def_readwrite("parameters", &PinholeCameraTrajectory::parameters_)
-            .def("__repr__", [](const PinholeCameraTrajectory &c) {
-                return std::string("PinholeCameraTrajectory class.\n") +
+            .def_readwrite("parameters",
+                           &camera::PinholeCameraTrajectory::parameters_)
+            .def("__repr__", [](const camera::PinholeCameraTrajectory &c) {
+                return std::string("camera::PinholeCameraTrajectory class.\n") +
                        std::string("Access its data via camera_parameters.");
             });
 }
@@ -107,46 +121,49 @@ void pybind_camera_classes(py::module &m) {
 void pybind_camera_methods(py::module &m) {
     m.def("read_pinhole_camera_intrinsic",
           [](const std::string &filename) {
-              PinholeCameraIntrinsic intrinsic;
+              camera::PinholeCameraIntrinsic intrinsic;
               ReadIJsonConvertible(filename, intrinsic);
               return intrinsic;
           },
-          "Function to read PinholeCameraIntrinsic from file", "filename"_a);
+          "Function to read camera::PinholeCameraIntrinsic from file",
+          "filename"_a);
     m.def("write_pinhole_camera_intrinsic",
           [](const std::string &filename,
-             const PinholeCameraIntrinsic &intrinsic) {
+             const camera::PinholeCameraIntrinsic &intrinsic) {
               return WriteIJsonConvertible(filename, intrinsic);
           },
-          "Function to write PinholeCameraIntrinsic to file", "filename"_a,
-          "intrinsic"_a);
+          "Function to write camera::PinholeCameraIntrinsic to file",
+          "filename"_a, "intrinsic"_a);
     m.def("read_pinhole_camera_parameters",
           [](const std::string &filename) {
-              PinholeCameraParameters parameters;
+              camera::PinholeCameraParameters parameters;
               ReadIJsonConvertible(filename, parameters);
               return parameters;
           },
-          "Function to read PinholeCameraParameters from file", "filename"_a);
+          "Function to read camera::PinholeCameraParameters from file",
+          "filename"_a);
     m.def("write_pinhole_camera_parameters",
           [](const std::string &filename,
-             const PinholeCameraParameters &parameters) {
+             const camera::PinholeCameraParameters &parameters) {
               return WriteIJsonConvertible(filename, parameters);
           },
-          "Function to write PinholeCameraParameters to file", "filename"_a,
-          "parameters"_a);
+          "Function to write camera::PinholeCameraParameters to file",
+          "filename"_a, "parameters"_a);
     m.def("read_pinhole_camera_trajectory",
           [](const std::string &filename) {
-              PinholeCameraTrajectory trajectory;
+              camera::PinholeCameraTrajectory trajectory;
               ReadPinholeCameraTrajectory(filename, trajectory);
               return trajectory;
           },
-          "Function to read PinholeCameraTrajectory from file", "filename"_a);
+          "Function to read camera::PinholeCameraTrajectory from file",
+          "filename"_a);
     m.def("write_pinhole_camera_trajectory",
           [](const std::string &filename,
-             const PinholeCameraTrajectory &trajectory) {
+             const camera::PinholeCameraTrajectory &trajectory) {
               return WritePinholeCameraTrajectory(filename, trajectory);
           },
-          "Function to write PinholeCameraTrajectory to file", "filename"_a,
-          "trajectory"_a);
+          "Function to write camera::PinholeCameraTrajectory to file",
+          "filename"_a, "trajectory"_a);
 }
 
 void pybind_camera(py::module &m) {

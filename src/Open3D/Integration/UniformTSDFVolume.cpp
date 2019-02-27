@@ -60,9 +60,10 @@ void UniformTSDFVolume::Reset() {
     }
 }
 
-void UniformTSDFVolume::Integrate(const RGBDImage &image,
-                                  const PinholeCameraIntrinsic &intrinsic,
-                                  const Eigen::Matrix4d &extrinsic) {
+void UniformTSDFVolume::Integrate(
+        const RGBDImage &image,
+        const camera::PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic) {
     // This function goes through the voxels, and scan convert the relative
     // depth/color value into the voxel.
     // The following implementation is a highly optimized version.
@@ -254,7 +255,7 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud() {
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
         const RGBDImage &image,
-        const PinholeCameraIntrinsic &intrinsic,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
         const Image &depth_to_camera_distance_multiplier) {
     const float fx = static_cast<float>(intrinsic.GetFocalLength().first);

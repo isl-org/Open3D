@@ -36,15 +36,16 @@
 
 namespace open3d {
 
-bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
-                                        PinholeCameraTrajectory &trajectory) {
-    PinholeCameraIntrinsic intrinsic;
+bool ReadPinholeCameraTrajectoryFromLOG(
+        const std::string &filename,
+        camera::PinholeCameraTrajectory &trajectory) {
+    camera::PinholeCameraIntrinsic intrinsic;
     if (trajectory.parameters_.size() >= 1 &&
         trajectory.parameters_[0].intrinsic_.IsValid()) {
         intrinsic = trajectory.parameters_[0].intrinsic_;
     } else {
-        intrinsic = PinholeCameraIntrinsic(
-                PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+        intrinsic = camera::PinholeCameraIntrinsic(
+                camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     }
     trajectory.parameters_.clear();
     FILE *f = fopen(filename.c_str(), "r");
@@ -95,7 +96,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
                 sscanf(line_buffer, "%lf %lf %lf %lf", &trans(3, 0),
                        &trans(3, 1), &trans(3, 2), &trans(3, 3));
             }
-            auto param = PinholeCameraParameters();
+            auto param = camera::PinholeCameraParameters();
             param.intrinsic_ = intrinsic;
             param.extrinsic_ = trans.inverse();
             trajectory.parameters_.push_back(param);
@@ -107,7 +108,7 @@ bool ReadPinholeCameraTrajectoryFromLOG(const std::string &filename,
 
 bool WritePinholeCameraTrajectoryToLOG(
         const std::string &filename,
-        const PinholeCameraTrajectory &trajectory) {
+        const camera::PinholeCameraTrajectory &trajectory) {
     FILE *f = fopen(filename.c_str(), "w");
     if (f == NULL) {
         PrintWarning("Write LOG failed: unable to open file: %s\n",

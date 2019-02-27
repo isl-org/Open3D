@@ -38,7 +38,7 @@ public:
     using TSDFVolumeBase::TSDFVolumeBase;
     void Reset() override { PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, ); }
     void Integrate(const RGBDImage &image,
-                   const PinholeCameraIntrinsic &intrinsic,
+                   const camera::PinholeCameraIntrinsic &intrinsic,
                    const Eigen::Matrix4d &extrinsic) override {
         PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, image, intrinsic,
                                extrinsic);

@@ -45,7 +45,7 @@ protected:
         if (key == GLFW_KEY_S) {
             CaptureDepthImage("depth.png");
             CaptureDepthPointCloud("depth.ply");
-            PinholeCameraTrajectory camera;
+            camera::PinholeCameraTrajectory camera;
             camera.parameters_.resize(1);
             view_control_ptr_->ConvertToPinholeCameraParameters(
                     camera.parameters_[0]);
@@ -53,7 +53,7 @@ protected:
         } else if (key == GLFW_KEY_L) {
             if (filesystem::FileExists("depth.png") &&
                 filesystem::FileExists("camera.json")) {
-                PinholeCameraTrajectory camera;
+                camera::PinholeCameraTrajectory camera;
                 ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = CreateImageFromFile("depth.png");
                 auto pointcloud_ptr = CreatePointCloudFromDepthImage(
@@ -69,7 +69,7 @@ protected:
         } else if (key == GLFW_KEY_P) {
             if (filesystem::FileExists("depth.png") &&
                 filesystem::FileExists("camera.json")) {
-                PinholeCameraTrajectory camera;
+                camera::PinholeCameraTrajectory camera;
                 ReadIJsonConvertible("camera.json", camera);
                 view_control_ptr_->ConvertFromPinholeCameraParameters(
                         camera.parameters_[0]);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
     auto image_ptr = CreateImageFromFile("depth.png");
     DrawGeometries({image_ptr});
 
-    PinholeCameraTrajectory camera;
+    camera::PinholeCameraTrajectory camera;
     ReadIJsonConvertible("camera.json", camera);
     auto pointcloud_ptr = CreatePointCloudFromDepthImage(
             *image_ptr, camera.parameters_[0].intrinsic_,

@@ -205,7 +205,7 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     if (!camera_filename.empty()) {
         PrintDebug("[Visualizer] Screen camera capture to %s\n",
                    camera_filename.c_str());
-        PinholeCameraParameters parameter;
+        camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
         WriteIJsonConvertible(camera_filename, parameter);
     }
@@ -352,7 +352,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
     if (!camera_filename.empty()) {
         PrintDebug("[Visualizer] Depth camera capture to %s\n",
                    camera_filename.c_str());
-        PinholeCameraParameters parameter;
+        camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
         WriteIJsonConvertible(camera_filename, parameter);
     }
@@ -434,7 +434,7 @@ void Visualizer::CaptureDepthPointCloud(
     if (!camera_filename.empty()) {
         PrintDebug("[Visualizer] Depth camera capture to %s\n",
                    camera_filename.c_str());
-        PinholeCameraParameters parameter;
+        camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
         WriteIJsonConvertible(camera_filename, parameter);
     }
