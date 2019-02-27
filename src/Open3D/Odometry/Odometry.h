@@ -42,6 +42,7 @@ namespace geometry {
 class RGBDImage;
 }
 
+namespace odometry {
 /// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
@@ -54,4 +55,5 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
                 RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
 
+}  // namespace odometry
 }  // namespace open3d

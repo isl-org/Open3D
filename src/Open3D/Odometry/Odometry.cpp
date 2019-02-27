@@ -36,6 +36,7 @@
 namespace open3d {
 
 namespace {
+using namespace odometry;
 
 std::tuple<std::shared_ptr<geometry::Image>, std::shared_ptr<geometry::Image>>
 InitializeCorrespondenceMap(int width, int height) {
@@ -505,6 +506,8 @@ std::tuple<bool, Eigen::Matrix4d> ComputeMultiscale(
 
 }  // unnamed namespace
 
+namespace odometry {
+
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
@@ -542,4 +545,5 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
     }
 }
 
+}  // namespace odometry
 }  // namespace open3d

@@ -39,6 +39,7 @@ const double LAMBDA_HYBRID_DEPTH = 0.968;
 
 }  // unnamed namespace
 
+namespace odometry {
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
         int row,
         std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
@@ -161,4 +162,5 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     r[1] = r_geo;
 }
 
+}  // namespace odometry
 }  // namespace open3d

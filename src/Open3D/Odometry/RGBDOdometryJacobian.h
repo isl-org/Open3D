@@ -43,6 +43,8 @@ namespace geometry {
 class RGBDImage;
 }
 
+namespace odometry {
+
 typedef std::vector<Eigen::Vector4i, Vector4i_allocator>
         CorrespondenceSetPixelWise;
 
@@ -122,4 +124,5 @@ public:
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
+}  // namespace odometry
 }  // namespace open3d
