@@ -98,7 +98,7 @@ void pybind_kdtreeflann(py::module &m) {
             .def(py::init<const geometry::Geometry &>(), "geometry"_a)
             .def("set_geometry", &geometry::KDTreeFlann::SetGeometry,
                  "geometry"_a)
-            .def(py::init<const Feature &>(), "feature"_a)
+            .def(py::init<const registration::Feature &>(), "feature"_a)
             .def("set_feature", &geometry::KDTreeFlann::SetFeature, "feature"_a)
             // Although these C++ style functions are fast by orders of
             // magnitudes when similar queries are performed for a large number

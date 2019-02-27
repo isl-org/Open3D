@@ -33,14 +33,17 @@ namespace open3d {
 
 /// The general entrance for reading a Feature from a file
 /// \return If the read function is successful.
-bool ReadFeature(const std::string &filename, Feature &feature);
+bool ReadFeature(const std::string &filename, registration::Feature &feature);
 
 /// The general entrance for writing a Feature to a file
 /// \return If the write function is successful.
-bool WriteFeature(const std::string &filename, const Feature &feature);
+bool WriteFeature(const std::string &filename,
+                  const registration::Feature &feature);
 
-bool ReadFeatureFromBIN(const std::string &filename, Feature &feature);
+bool ReadFeatureFromBIN(const std::string &filename,
+                        registration::Feature &feature);
 
-bool WriteFeatureToBIN(const std::string &filename, const Feature &feature);
+bool WriteFeatureToBIN(const std::string &filename,
+                       const registration::Feature &feature);
 
 }  // namespace open3d

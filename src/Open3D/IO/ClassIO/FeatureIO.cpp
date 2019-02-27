@@ -31,11 +31,12 @@
 
 namespace open3d {
 
-bool ReadFeature(const std::string &filename, Feature &feature) {
+bool ReadFeature(const std::string &filename, registration::Feature &feature) {
     return ReadFeatureFromBIN(filename, feature);
 }
 
-bool WriteFeature(const std::string &filename, const Feature &feature) {
+bool WriteFeature(const std::string &filename,
+                  const registration::Feature &feature) {
     return WriteFeatureToBIN(filename, feature);
 }
 

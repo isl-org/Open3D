@@ -51,7 +51,7 @@ public:
     KDTreeFlann();
     KDTreeFlann(const Eigen::MatrixXd &data);
     KDTreeFlann(const Geometry &geometry);
-    KDTreeFlann(const Feature &feature);
+    KDTreeFlann(const registration::Feature &feature);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
@@ -59,7 +59,7 @@ public:
 public:
     bool SetMatrixData(const Eigen::MatrixXd &data);
     bool SetGeometry(const Geometry &geometry);
-    bool SetFeature(const Feature &feature);
+    bool SetFeature(const registration::Feature &feature);
 
     template <typename T>
     int Search(const T &query,

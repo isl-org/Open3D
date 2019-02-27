@@ -65,8 +65,8 @@ int main(int argc, char *argv[]) {
     {
         ScopeTimer timer("FPFH estimation with Radius 0.25");
         // for (int i = 0; i < 20; i++) {
-        ComputeFPFHFeature(*pcd,
-                           open3d::geometry::KDTreeSearchParamRadius(0.25));
+        registration::ComputeFPFHFeature(
+                *pcd, open3d::geometry::KDTreeSearchParamRadius(0.25));
         //}
     }
 

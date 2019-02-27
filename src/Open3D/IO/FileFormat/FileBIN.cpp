@@ -72,7 +72,8 @@ bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat) {
 
 }  // unnamed namespace
 
-bool ReadFeatureFromBIN(const std::string &filename, Feature &feature) {
+bool ReadFeatureFromBIN(const std::string &filename,
+                        registration::Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "rb");
     if (fid == NULL) {
         PrintWarning("Read BIN failed: unable to open file: %s\n",
@@ -84,7 +85,8 @@ bool ReadFeatureFromBIN(const std::string &filename, Feature &feature) {
     return success;
 }
 
-bool WriteFeatureToBIN(const std::string &filename, const Feature &feature) {
+bool WriteFeatureToBIN(const std::string &filename,
+                       const registration::Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "wb");
     if (fid == NULL) {
         PrintWarning("Write BIN failed: unable to open file: %s\n",

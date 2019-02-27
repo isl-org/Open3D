@@ -53,29 +53,32 @@ int main(int argc, char **argv) {
     }
 
     // test posegraph read and write
-    PoseGraph pose_graph_test;
-    pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
-    pose_graph_test.nodes_.push_back(PoseGraphNode(Eigen::Matrix4d::Random()));
+    registration::PoseGraph pose_graph_test;
+    pose_graph_test.nodes_.push_back(
+            registration::PoseGraphNode(Eigen::Matrix4d::Random()));
+    pose_graph_test.nodes_.push_back(
+            registration::PoseGraphNode(Eigen::Matrix4d::Random()));
     pose_graph_test.edges_.push_back(
-            PoseGraphEdge(0, 1, Eigen::Matrix4d::Random(),
-                          Eigen::Matrix6d::Random(), false, 1.0));
+            registration::PoseGraphEdge(0, 1, Eigen::Matrix4d::Random(),
+                                        Eigen::Matrix6d::Random(), false, 1.0));
     pose_graph_test.edges_.push_back(
-            PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
-                          Eigen::Matrix6d::Random(), true, 0.2));
+            registration::PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
+                                        Eigen::Matrix6d::Random(), true, 0.2));
     WritePoseGraph("test_pose_graph.json", pose_graph_test);
-    PoseGraph pose_graph;
+    registration::PoseGraph pose_graph;
     ReadPoseGraph("test_pose_graph.json", pose_graph);
     WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
     // testing posegraph optimization
     auto pose_graph_input = CreatePoseGraphFromFile(argv[1]);
-    GlobalOptimizationConvergenceCriteria criteria;
-    GlobalOptimizationOption option;
-    GlobalOptimizationLevenbergMarquardt optimization_method;
-    GlobalOptimization(*pose_graph_input, optimization_method, criteria,
-                       option);
+    registration::GlobalOptimizationConvergenceCriteria criteria;
+    registration::GlobalOptimizationOption option;
+    registration::GlobalOptimizationLevenbergMarquardt optimization_method;
+    registration::GlobalOptimization(*pose_graph_input, optimization_method,
+                                     criteria, option);
     auto pose_graph_input_prunned =
-            CreatePoseGraphWithoutInvalidEdges(*pose_graph_input, option);
+            registration::CreatePoseGraphWithoutInvalidEdges(*pose_graph_input,
+                                                             option);
     WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
 
     return 0;

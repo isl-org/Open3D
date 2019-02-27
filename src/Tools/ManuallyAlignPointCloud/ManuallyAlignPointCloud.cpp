@@ -122,11 +122,11 @@ int main(int argc, char **argv) {
         if (max_corres_distance > 0.0) {
             PrintInfo("ICP with max correspondence distance %.4f.\n",
                       max_corres_distance);
-            auto result = RegistrationICP(
+            auto result = registration::RegistrationICP(
                     *source_ptr, *target_ptr, max_corres_distance,
                     Eigen::Matrix4d::Identity(),
-                    TransformationEstimationPointToPoint(true),
-                    ICPConvergenceCriteria(1e-6, 1e-6, 30));
+                    registration::TransformationEstimationPointToPoint(true),
+                    registration::ICPConvergenceCriteria(1e-6, 1e-6, 30));
             PrintInfo(
                     "Registration finished with fitness %.4f and RMSE %.4f.\n",
                     result.fitness_, result.inlier_rmse_);

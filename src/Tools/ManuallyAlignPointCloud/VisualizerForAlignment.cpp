@@ -137,12 +137,14 @@ void VisualizerForAlignment::KeyPressCallback(
                 if (max_correspondence_distance_ > 0.0) {
                     PrintInfo("ICP with max correspondence distance %.4f.\n",
                               max_correspondence_distance_);
-                    auto result = RegistrationICP(
+                    auto result = registration::RegistrationICP(
                             *source_copy_ptr_, *target_copy_ptr_,
                             max_correspondence_distance_,
                             Eigen::Matrix4d::Identity(),
-                            TransformationEstimationPointToPoint(true),
-                            ICPConvergenceCriteria(1e-6, 1e-6, 30));
+                            registration::TransformationEstimationPointToPoint(
+                                    true),
+                            registration::ICPConvergenceCriteria(1e-6, 1e-6,
+                                                                 30));
                     PrintInfo(
                             "Registration finished with fitness %.4f and RMSE "
                             "%.4f.\n",
@@ -279,8 +281,8 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
                 (int)source_idx.size(), (int)target_idx.size());
         return false;
     }
-    TransformationEstimationPointToPoint p2p(with_scaling_);
-    CorrespondenceSet corres;
+    registration::TransformationEstimationPointToPoint p2p(with_scaling_);
+    registration::CorrespondenceSet corres;
     for (size_t i = 0; i < source_idx.size(); i++) {
         corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
     }

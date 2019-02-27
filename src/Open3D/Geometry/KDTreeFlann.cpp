@@ -45,7 +45,9 @@ KDTreeFlann::KDTreeFlann(const Eigen::MatrixXd &data) { SetMatrixData(data); }
 
 KDTreeFlann::KDTreeFlann(const Geometry &geometry) { SetGeometry(geometry); }
 
-KDTreeFlann::KDTreeFlann(const Feature &feature) { SetFeature(feature); }
+KDTreeFlann::KDTreeFlann(const registration::Feature &feature) {
+    SetFeature(feature);
+}
 
 KDTreeFlann::~KDTreeFlann() {}
 
@@ -75,7 +77,7 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
     }
 }
 
-bool KDTreeFlann::SetFeature(const Feature &feature) {
+bool KDTreeFlann::SetFeature(const registration::Feature &feature) {
     return SetMatrixData(feature.data_);
 }
 

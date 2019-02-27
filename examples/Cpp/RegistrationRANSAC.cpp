@@ -35,13 +35,14 @@
 
 using namespace open3d;
 
-std::tuple<std::shared_ptr<geometry::PointCloud>, std::shared_ptr<Feature>>
+std::tuple<std::shared_ptr<geometry::PointCloud>,
+           std::shared_ptr<registration::Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = open3d::CreatePointCloudFromFile(file_name);
     auto pcd_down = geometry::VoxelDownSample(*pcd, 0.05);
     geometry::EstimateNormals(
             *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
-    auto pcd_fpfh = ComputeFPFHFeature(
+    auto pcd_fpfh = registration::ComputeFPFHFeature(
             *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
@@ -74,26 +75,29 @@ int main(int argc, char *argv[]) {
     if (ProgramOptionExists(argc, argv, "--visualize")) visualize = true;
 
     std::shared_ptr<geometry::PointCloud> source, target;
-    std::shared_ptr<Feature> source_fpfh, target_fpfh;
+    std::shared_ptr<registration::Feature> source_fpfh, target_fpfh;
     std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
     std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
 
-    std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+    std::vector<
+            std::reference_wrapper<const registration::CorrespondenceChecker>>
             correspondence_checker;
     auto correspondence_checker_edge_length =
-            CorrespondenceCheckerBasedOnEdgeLength(0.9);
+            registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
     auto correspondence_checker_distance =
-            CorrespondenceCheckerBasedOnDistance(0.075);
+            registration::CorrespondenceCheckerBasedOnDistance(0.075);
     auto correspondence_checker_normal =
-            CorrespondenceCheckerBasedOnNormal(0.52359878);
+            registration::CorrespondenceCheckerBasedOnNormal(0.52359878);
 
     correspondence_checker.push_back(correspondence_checker_edge_length);
     correspondence_checker.push_back(correspondence_checker_distance);
     correspondence_checker.push_back(correspondence_checker_normal);
-    auto registration_result = RegistrationRANSACBasedOnFeatureMatching(
-            *source, *target, *source_fpfh, *target_fpfh, 0.075,
-            TransformationEstimationPointToPoint(false), 4,
-            correspondence_checker, RANSACConvergenceCriteria(4000000, 1000));
+    auto registration_result =
+            registration::RegistrationRANSACBasedOnFeatureMatching(
+                    *source, *target, *source_fpfh, *target_fpfh, 0.075,
+                    registration::TransformationEstimationPointToPoint(false),
+                    4, correspondence_checker,
+                    registration::RANSACConvergenceCriteria(4000000, 1000));
 
     if (visualize)
         VisualizeRegistration(*source, *target,
