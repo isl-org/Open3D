@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
@@ -54,6 +55,8 @@ static const std::unordered_map<
         };
 
 }  // unnamed namespace
+
+namespace io {
 
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename) {
@@ -120,4 +123,5 @@ bool WriteTriangleMesh(const std::string &filename,
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

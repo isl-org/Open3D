@@ -34,6 +34,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 bool ReadImageWarpingFieldFromJSON(
         const std::string &filename,
@@ -64,6 +65,8 @@ static const std::unordered_map<
         };
 
 }  // unnamed namespace
+
+namespace io {
 
 std::shared_ptr<color_map::ImageWarpingField> CreateImageWarpingFieldFromFile(
         const std::string &filename) {
@@ -114,4 +117,5 @@ bool WriteImageWarpingField(const std::string &filename,
     return map_itr->second(filename, trajectory);
 }
 
+}  // namespace io
 }  // namespace open3d

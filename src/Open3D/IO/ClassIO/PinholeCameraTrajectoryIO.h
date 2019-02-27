@@ -30,6 +30,7 @@
 #include <Open3D/Camera/PinholeCameraTrajectory.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create a PinholeCameraTrajectory from a file
 /// (PinholeCameraTrajectoryFactory.cpp)
@@ -58,4 +59,5 @@ bool WritePinholeCameraTrajectoryToLOG(
         const std::string &filename,
         const camera::PinholeCameraTrajectory &trajectory);
 
+}  // namespace io
 }  // namespace open3d

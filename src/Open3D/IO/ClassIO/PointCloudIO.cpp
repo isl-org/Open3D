@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
@@ -60,6 +61,8 @@ static const std::unordered_map<std::string,
                 {"pts", WritePointCloudToPTS},
         };
 }  // unnamed namespace
+
+namespace io {
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename, const std::string &format) {
@@ -121,4 +124,5 @@ bool WritePointCloud(const std::string &filename,
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

@@ -35,6 +35,7 @@
 // https://github.com/qianyizh/ElasticReconstruction/blob/f986e81a46201e28c0408a5f6303b4d3cdac7423/GraphOptimizer/helper.h
 
 namespace open3d {
+namespace io {
 
 bool ReadPinholeCameraTrajectoryFromLOG(
         const std::string &filename,
@@ -136,4 +137,5 @@ bool WritePinholeCameraTrajectoryToLOG(
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

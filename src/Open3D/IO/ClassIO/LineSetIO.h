@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/LineSet.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create a lineset from a file.
 /// \return return an empty lineset if fail to read the file.
@@ -61,4 +62,5 @@ bool WriteLineSetToPLY(const std::string &filename,
                        bool write_ascii = false,
                        bool compressed = false);
 
+}  // namespace io
 }  // namespace open3d

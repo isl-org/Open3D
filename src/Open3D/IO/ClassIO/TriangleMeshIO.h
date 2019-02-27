@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
 /// Return an empty mesh if fail to read the file.
@@ -68,4 +69,5 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
                             bool write_ascii = false,
                             bool compressed = false);
 
+}  // namespace io
 }  // namespace open3d

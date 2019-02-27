@@ -30,6 +30,7 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace io {
 
 /// The general entrance for reading an IJsonConvertible from a file
 /// The function calls read functions based on the extension name of filename.
@@ -55,4 +56,5 @@ bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
 bool WriteIJsonConvertibleToJSONString(std::string &json_string,
                                        const utility::IJsonConvertible &object);
 
+}  // namespace io
 }  // namespace open3d

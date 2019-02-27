@@ -30,6 +30,7 @@
 #include <Open3D/Registration/Feature.h>
 
 namespace open3d {
+namespace io {
 
 /// The general entrance for reading a Feature from a file
 /// \return If the read function is successful.
@@ -46,4 +47,5 @@ bool ReadFeatureFromBIN(const std::string &filename,
 bool WriteFeatureToBIN(const std::string &filename,
                        const registration::Feature &feature);
 
+}  // namespace io
 }  // namespace open3d

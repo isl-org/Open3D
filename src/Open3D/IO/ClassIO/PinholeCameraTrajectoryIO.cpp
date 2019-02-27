@@ -34,6 +34,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 bool ReadPinholeCameraTrajectoryFromJSON(
         const std::string &filename,
@@ -66,6 +67,8 @@ static const std::unordered_map<
         };
 
 }  // unnamed namespace
+
+namespace io {
 
 std::shared_ptr<camera::PinholeCameraTrajectory>
 CreatePinholeCameraTrajectoryFromFile(const std::string &filename) {
@@ -117,4 +120,5 @@ bool WritePinholeCameraTrajectory(
     return map_itr->second(filename, trajectory);
 }
 
+}  // namespace io
 }  // namespace open3d

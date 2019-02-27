@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 bool ReadMatrixXdFromBINFile(FILE *file, Eigen::MatrixXd &mat) {
     uint32_t rows, cols;
@@ -72,6 +73,8 @@ bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat) {
 
 }  // unnamed namespace
 
+namespace io {
+
 bool ReadFeatureFromBIN(const std::string &filename,
                         registration::Feature &feature) {
     FILE *fid = fopen(filename.c_str(), "rb");
@@ -98,4 +101,5 @@ bool WriteFeatureToBIN(const std::string &filename,
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

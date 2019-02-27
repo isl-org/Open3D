@@ -35,6 +35,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 namespace ply_pointcloud_reader {
 
@@ -336,6 +337,8 @@ int ReadColorCallback(p_ply_argument argument) {
 }  // namespace ply_voxelgrid_reader
 
 }  // unnamed namespace
+
+namespace io {
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud) {
@@ -890,4 +893,5 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

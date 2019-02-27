@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace io {
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
                               geometry::PointCloud &pointcloud) {
@@ -88,4 +89,5 @@ bool WritePointCloudToXYZRGB(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

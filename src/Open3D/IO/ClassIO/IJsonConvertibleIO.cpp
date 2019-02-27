@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
@@ -50,6 +51,8 @@ static const std::unordered_map<
         };
 
 }  // unnamed namespace
+
+namespace io {
 
 bool ReadIJsonConvertible(const std::string &filename,
                           utility::IJsonConvertible &object) {
@@ -93,4 +96,5 @@ bool WriteIJsonConvertible(const std::string &filename,
     return map_itr->second(filename, object);
 }
 
+}  // namespace io
 }  // namespace open3d

@@ -30,6 +30,7 @@
 #include <Open3D/Registration/PoseGraph.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create a PoseGraph from a file
 /// (PinholeCameraTrajectoryFactory.cpp)
@@ -49,4 +50,5 @@ bool ReadPoseGraph(const std::string &filename,
 bool WritePoseGraph(const std::string &filename,
                     const registration::PoseGraph &pose_graph);
 
+}  // namespace io
 }  // namespace open3d

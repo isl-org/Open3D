@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace io {
 
 bool ReadTriangleMeshFromSTL(const std::string &filename,
                              geometry::TriangleMesh &mesh) {
@@ -132,4 +133,5 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

@@ -32,6 +32,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 void SetPNGImageFromImage(const geometry::Image &image, png_image &pngimage) {
     pngimage.width = image.width_;
@@ -46,6 +47,8 @@ void SetPNGImageFromImage(const geometry::Image &image, png_image &pngimage) {
 }
 
 }  // unnamed namespace
+
+namespace io {
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     png_image pngimage;
@@ -92,4 +95,5 @@ bool WriteImageToPNG(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

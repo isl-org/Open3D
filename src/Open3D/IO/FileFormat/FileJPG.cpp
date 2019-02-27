@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace io {
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     struct jpeg_decompress_struct cinfo;
@@ -139,4 +140,5 @@ bool WriteImageToJPG(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

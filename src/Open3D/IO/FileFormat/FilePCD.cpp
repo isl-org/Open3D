@@ -41,6 +41,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 enum PCDDataType {
     PCD_DATA_ASCII = 0,
@@ -729,6 +730,7 @@ bool WritePCDData(FILE *file,
 
 }  // unnamed namespace
 
+namespace io {
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud) {
     PCDHeader header;
@@ -795,4 +797,5 @@ bool WritePointCloudToPCD(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

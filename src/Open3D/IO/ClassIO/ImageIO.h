@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/Image.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create an image from a file (ImageFactory.cpp)
 /// Return an empty image if fail to read the file.
@@ -62,4 +63,5 @@ bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
                      int quality = 90);
 
+}  // namespace io
 }  // namespace open3d

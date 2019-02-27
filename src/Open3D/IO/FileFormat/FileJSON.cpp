@@ -34,6 +34,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
                                         utility::IJsonConvertible &object) {
@@ -65,6 +66,8 @@ bool WriteIJsonConvertibleToJSONStream(
 }
 
 }  // unnamed namespace
+
+namespace io {
 
 bool ReadIJsonConvertibleFromJSON(const std::string &filename,
                                   utility::IJsonConvertible &object) {
@@ -106,4 +109,5 @@ bool WriteIJsonConvertibleToJSONString(
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

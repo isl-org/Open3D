@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/VoxelGrid.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create a voxelgrid from a file.
 /// \return return an empty voxelgrid if fail to read the file.
@@ -61,4 +62,5 @@ bool WriteVoxelGridToPLY(const std::string &filename,
                          bool write_ascii = false,
                          bool compressed = false);
 
+}  // namespace io
 }  // namespace open3d

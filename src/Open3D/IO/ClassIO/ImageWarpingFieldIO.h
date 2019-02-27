@@ -36,6 +36,8 @@ namespace color_map {
 class ImageWarpingField;
 }
 
+namespace io {
+
 /// Factory function to create a ImageWarpingField from a file
 /// Return an empty PinholeCameraTrajectory if fail to read the file.
 std::shared_ptr<color_map::ImageWarpingField> CreateImageWarpingFieldFromFile(
@@ -51,4 +53,5 @@ bool ReadImageWarpingField(const std::string &filename,
 bool WriteImageWarpingField(const std::string &filename,
                             const color_map::ImageWarpingField &warping_field);
 
+}  // namespace io
 }  // namespace open3d

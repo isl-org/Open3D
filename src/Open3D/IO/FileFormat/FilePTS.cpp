@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Helper.h>
 
 namespace open3d {
+namespace io {
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud) {
@@ -118,4 +119,5 @@ bool WritePointCloudToPTS(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

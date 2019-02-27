@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/PointCloud.h>
 
 namespace open3d {
+namespace io {
 
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
 /// Return an empty pointcloud if fail to read the file.
@@ -101,4 +102,5 @@ bool WritePointCloudToPTS(const std::string &filename,
                           bool write_ascii = false,
                           bool compressed = false);
 
+}  // namespace io
 }  // namespace open3d

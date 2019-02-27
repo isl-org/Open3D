@@ -34,6 +34,7 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 bool ReadPoseGraphFromJSON(const std::string &filename,
                            registration::PoseGraph &pose_graph) {
@@ -62,6 +63,7 @@ static const std::unordered_map<
 
 }  // unnamed namespace
 
+namespace io {
 std::shared_ptr<registration::PoseGraph> CreatePoseGraphFromFile(
         const std::string &filename) {
     auto pose_graph = std::make_shared<registration::PoseGraph>();
@@ -111,4 +113,5 @@ bool WritePoseGraph(const std::string &filename,
     return map_itr->second(filename, pose_graph);
 }
 
+}  // namespace io
 }  // namespace open3d
