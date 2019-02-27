@@ -33,8 +33,8 @@
 namespace open3d {
 
 double TransformationEstimationPointToPoint::ComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty()) return 0.0;
     double err = 0.0;
@@ -45,8 +45,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 }
 
 Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty()) return Eigen::Matrix4d::Identity();
     Eigen::MatrixXd source_mat(3, corres.size());
@@ -59,8 +59,8 @@ Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false) return 0.0;
     double err = 0.0, r;
@@ -73,8 +73,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 }
 
 Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false)
         return Eigen::Matrix4d::Identity();

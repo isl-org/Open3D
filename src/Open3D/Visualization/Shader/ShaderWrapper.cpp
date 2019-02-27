@@ -33,7 +33,7 @@ namespace open3d {
 
 namespace glsl {
 
-bool ShaderWrapper::Render(const Geometry &geometry,
+bool ShaderWrapper::Render(const geometry::Geometry &geometry,
                            const RenderOption &option,
                            const ViewControl &view) {
     if (compiled_ == false) {

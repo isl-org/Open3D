@@ -39,7 +39,7 @@ bool PointCloudPicker::IsEmpty() const {
 
 Eigen::Vector3d PointCloudPicker::GetMinBound() const {
     if (pointcloud_ptr_) {
-        return ((const PointCloud &)(*pointcloud_ptr_)).GetMinBound();
+        return ((const geometry::PointCloud &)(*pointcloud_ptr_)).GetMinBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
@@ -47,7 +47,7 @@ Eigen::Vector3d PointCloudPicker::GetMinBound() const {
 
 Eigen::Vector3d PointCloudPicker::GetMaxBound() const {
     if (pointcloud_ptr_) {
-        return ((const PointCloud &)(*pointcloud_ptr_)).GetMaxBound();
+        return ((const geometry::PointCloud &)(*pointcloud_ptr_)).GetMaxBound();
     } else {
         return Eigen::Vector3d(0.0, 0.0, 0.0);
     }
@@ -57,8 +57,10 @@ void PointCloudPicker::Transform(const Eigen::Matrix4d & /*transformation*/) {
     // Do nothing
 }
 
-bool PointCloudPicker::SetPointCloud(std::shared_ptr<const Geometry> ptr) {
-    if (!ptr || ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
+bool PointCloudPicker::SetPointCloud(
+        std::shared_ptr<const geometry::Geometry> ptr) {
+    if (!ptr || ptr->GetGeometryType() !=
+                        geometry::Geometry::GeometryType::PointCloud) {
         return false;
     }
     pointcloud_ptr_ = ptr;

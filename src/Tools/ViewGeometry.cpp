@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    std::vector<std::shared_ptr<Geometry>> geometry_ptrs;
+    std::vector<std::shared_ptr<geometry::Geometry>> geometry_ptrs;
     int width = GetProgramOptionAsInt(argc, argv, "--width", 1920);
     int height = GetProgramOptionAsInt(argc, argv, "--height", 1080);
     int top = GetProgramOptionAsInt(argc, argv, "--top", 200);
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
                                                 239.5);
         }
         auto image_ptr = CreateImageFromFile(depth_filename);
-        auto pointcloud_ptr = CreatePointCloudFromDepthImage(
+        auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             PrintWarning("Failed adding depth image.\n");

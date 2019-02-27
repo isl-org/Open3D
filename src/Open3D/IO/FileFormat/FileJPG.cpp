@@ -31,7 +31,7 @@
 
 namespace open3d {
 
-bool ReadImageFromJPG(const std::string &filename, Image &image) {
+bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
     FILE *file_in;
@@ -90,7 +90,7 @@ bool ReadImageFromJPG(const std::string &filename, Image &image) {
 }
 
 bool WriteImageToJPG(const std::string &filename,
-                     const Image &image,
+                     const geometry::Image &image,
                      int quality /* = 90*/) {
     if (image.HasData() == false) {
         PrintWarning("Write JPG failed: image has no data.\n");

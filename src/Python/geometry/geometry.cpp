@@ -31,33 +31,36 @@
 using namespace open3d;
 
 void pybind_geometry_classes(py::module &m) {
-    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
+    py::class_<geometry::Geometry, PyGeometry<geometry::Geometry>,
+               std::shared_ptr<geometry::Geometry>>
             geometry(m, "Geometry", "Geometry");
-    geometry.def("clear", &Geometry::Clear)
-            .def("is_empty", &Geometry::IsEmpty)
-            .def("get_geometry_type", &Geometry::GetGeometryType)
-            .def("dimension", &Geometry::Dimension);
-    py::enum_<Geometry::GeometryType>(geometry, "Type", py::arithmetic())
-            .value("Unspecified", Geometry::GeometryType::Unspecified)
-            .value("PointCloud", Geometry::GeometryType::PointCloud)
-            .value("VoxelGrid", Geometry::GeometryType::VoxelGrid)
-            .value("LineSet", Geometry::GeometryType::LineSet)
-            .value("TriangleMesh", Geometry::GeometryType::TriangleMesh)
-            .value("Image", Geometry::GeometryType::Image)
+    geometry.def("clear", &geometry::Geometry::Clear)
+            .def("is_empty", &geometry::Geometry::IsEmpty)
+            .def("get_geometry_type", &geometry::Geometry::GetGeometryType)
+            .def("dimension", &geometry::Geometry::Dimension);
+    py::enum_<geometry::Geometry::GeometryType>(geometry, "Type",
+                                                py::arithmetic())
+            .value("Unspecified", geometry::Geometry::GeometryType::Unspecified)
+            .value("PointCloud", geometry::Geometry::GeometryType::PointCloud)
+            .value("VoxelGrid", geometry::Geometry::GeometryType::VoxelGrid)
+            .value("LineSet", geometry::Geometry::GeometryType::LineSet)
+            .value("TriangleMesh",
+                   geometry::Geometry::GeometryType::TriangleMesh)
+            .value("Image", geometry::Geometry::GeometryType::Image)
             .export_values();
 
-    py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
-               std::shared_ptr<Geometry3D>, Geometry>
+    py::class_<geometry::Geometry3D, PyGeometry3D<geometry::Geometry3D>,
+               std::shared_ptr<geometry::Geometry3D>, geometry::Geometry>
             geometry3d(m, "Geometry3D", "Geometry3D");
-    geometry3d.def("get_min_bound", &Geometry3D::GetMinBound)
-            .def("get_max_bound", &Geometry3D::GetMaxBound)
-            .def("transform", &Geometry3D::Transform);
+    geometry3d.def("get_min_bound", &geometry::Geometry3D::GetMinBound)
+            .def("get_max_bound", &geometry::Geometry3D::GetMaxBound)
+            .def("transform", &geometry::Geometry3D::Transform);
 
-    py::class_<Geometry2D, PyGeometry2D<Geometry2D>,
-               std::shared_ptr<Geometry2D>, Geometry>
+    py::class_<geometry::Geometry2D, PyGeometry2D<geometry::Geometry2D>,
+               std::shared_ptr<geometry::Geometry2D>, geometry::Geometry>
             geometry2d(m, "Geometry2D", "Geometry2D");
-    geometry2d.def("get_min_bound", &Geometry2D::GetMinBound)
-            .def("get_max_bound", &Geometry2D::GetMaxBound);
+    geometry2d.def("get_min_bound", &geometry::Geometry2D::GetMinBound)
+            .def("get_max_bound", &geometry::Geometry2D::GetMaxBound);
 }
 
 void pybind_geometry(py::module &m) {

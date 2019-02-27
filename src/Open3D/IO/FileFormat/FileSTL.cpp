@@ -32,7 +32,8 @@
 
 namespace open3d {
 
-bool ReadTriangleMeshFromSTL(const std::string &filename, TriangleMesh &mesh) {
+bool ReadTriangleMeshFromSTL(const std::string &filename,
+                             geometry::TriangleMesh &mesh) {
     std::ifstream myFile(filename.c_str(), std::ios::in | std::ios::binary);
 
     if (!myFile) {
@@ -94,7 +95,7 @@ bool ReadTriangleMeshFromSTL(const std::string &filename, TriangleMesh &mesh) {
 }
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
-                            const TriangleMesh &mesh,
+                            const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
                             bool compressed /* = false*/) {
     std::ofstream myFile(filename.c_str(), std::ios::out | std::ios::binary);

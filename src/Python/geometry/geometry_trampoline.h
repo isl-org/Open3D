@@ -35,7 +35,7 @@
 
 using namespace open3d;
 
-template <class GeometryBase = Geometry>
+template <class GeometryBase = geometry::Geometry>
 class PyGeometry : public GeometryBase {
 public:
     using GeometryBase::GeometryBase;
@@ -45,7 +45,7 @@ public:
     }
 };
 
-template <class Geometry3DBase = Geometry3D>
+template <class Geometry3DBase = geometry::Geometry3D>
 class PyGeometry3D : public PyGeometry<Geometry3DBase> {
 public:
     using PyGeometry<Geometry3DBase>::PyGeometry;
@@ -60,7 +60,7 @@ public:
     }
 };
 
-template <class Geometry2DBase = Geometry2D>
+template <class Geometry2DBase = geometry::Geometry2D>
 class PyGeometry2D : public PyGeometry<Geometry2DBase> {
 public:
     using PyGeometry<Geometry2DBase>::PyGeometry;

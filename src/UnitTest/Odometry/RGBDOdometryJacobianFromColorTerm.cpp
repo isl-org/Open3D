@@ -76,11 +76,11 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     ShiftLeft(dxColor, 10);
     ShiftUp(dyColor, 5);
 
-    RGBDImage source(*srcColor, *srcDepth);
-    RGBDImage target(*tgtColor, *tgtDepth);
+    geometry::RGBDImage source(*srcColor, *srcDepth);
+    geometry::RGBDImage target(*tgtColor, *tgtDepth);
     auto source_xyz = GenerateImage(width, height, 3, 4, 0.0f, 1.0f, 0);
-    RGBDImage target_dx(*dxColor, *tgtDepth);
-    RGBDImage target_dy(*dyColor, *tgtDepth);
+    geometry::RGBDImage target_dx(*dxColor, *tgtDepth);
+    geometry::RGBDImage target_dy(*dyColor, *tgtDepth);
 
     Matrix3d intrinsic = Matrix3d::Zero();
     intrinsic(0, 0) = 0.5;

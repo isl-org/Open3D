@@ -43,11 +43,11 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
         int row,
         std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
         std::vector<double> &r,
-        const RGBDImage &source,
-        const RGBDImage &target,
-        const Image &source_xyz,
-        const RGBDImage &target_dx,
-        const RGBDImage &target_dy,
+        const geometry::RGBDImage &source,
+        const geometry::RGBDImage &target,
+        const geometry::Image &source_xyz,
+        const geometry::RGBDImage &target_dx,
+        const geometry::RGBDImage &target_dy,
         const Eigen::Matrix3d &intrinsic,
         const Eigen::Matrix4d &extrinsic,
         const CorrespondenceSetPixelWise &corresps) const {
@@ -58,13 +58,16 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     int v_s = corresps[row](1);
     int u_t = corresps[row](2);
     int v_t = corresps[row](3);
-    double diff = *PointerAt<float>(target.color_, u_t, v_t) -
-                  *PointerAt<float>(source.color_, u_s, v_s);
-    double dIdx = SOBEL_SCALE * (*PointerAt<float>(target_dx.color_, u_t, v_t));
-    double dIdy = SOBEL_SCALE * (*PointerAt<float>(target_dy.color_, u_t, v_t));
-    Eigen::Vector3d p3d_mat(*PointerAt<float>(source_xyz, u_s, v_s, 0),
-                            *PointerAt<float>(source_xyz, u_s, v_s, 1),
-                            *PointerAt<float>(source_xyz, u_s, v_s, 2));
+    double diff = *geometry::PointerAt<float>(target.color_, u_t, v_t) -
+                  *geometry::PointerAt<float>(source.color_, u_s, v_s);
+    double dIdx = SOBEL_SCALE *
+                  (*geometry::PointerAt<float>(target_dx.color_, u_t, v_t));
+    double dIdy = SOBEL_SCALE *
+                  (*geometry::PointerAt<float>(target_dy.color_, u_t, v_t));
+    Eigen::Vector3d p3d_mat(
+            *geometry::PointerAt<float>(source_xyz, u_s, v_s, 0),
+            *geometry::PointerAt<float>(source_xyz, u_s, v_s, 1),
+            *geometry::PointerAt<float>(source_xyz, u_s, v_s, 2));
     Eigen::Vector3d p3d_trans = R * p3d_mat + t;
     double invz = 1. / p3d_trans(2);
     double c0 = dIdx * intrinsic(0, 0) * invz;
@@ -86,11 +89,11 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
         int row,
         std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
         std::vector<double> &r,
-        const RGBDImage &source,
-        const RGBDImage &target,
-        const Image &source_xyz,
-        const RGBDImage &target_dx,
-        const RGBDImage &target_dy,
+        const geometry::RGBDImage &source,
+        const geometry::RGBDImage &target,
+        const geometry::Image &source_xyz,
+        const geometry::RGBDImage &target_dx,
+        const geometry::RGBDImage &target_dy,
         const Eigen::Matrix3d &intrinsic,
         const Eigen::Matrix4d &extrinsic,
         const CorrespondenceSetPixelWise &corresps) const {
@@ -107,20 +110,26 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     int v_s = corresps[row](1);
     int u_t = corresps[row](2);
     int v_t = corresps[row](3);
-    double diff_photo = (*PointerAt<float>(target.color_, u_t, v_t) -
-                         *PointerAt<float>(source.color_, u_s, v_s));
-    double dIdx = SOBEL_SCALE * (*PointerAt<float>(target_dx.color_, u_t, v_t));
-    double dIdy = SOBEL_SCALE * (*PointerAt<float>(target_dy.color_, u_t, v_t));
-    double dDdx = SOBEL_SCALE * (*PointerAt<float>(target_dx.depth_, u_t, v_t));
-    double dDdy = SOBEL_SCALE * (*PointerAt<float>(target_dy.depth_, u_t, v_t));
+    double diff_photo = (*geometry::PointerAt<float>(target.color_, u_t, v_t) -
+                         *geometry::PointerAt<float>(source.color_, u_s, v_s));
+    double dIdx = SOBEL_SCALE *
+                  (*geometry::PointerAt<float>(target_dx.color_, u_t, v_t));
+    double dIdy = SOBEL_SCALE *
+                  (*geometry::PointerAt<float>(target_dy.color_, u_t, v_t));
+    double dDdx = SOBEL_SCALE *
+                  (*geometry::PointerAt<float>(target_dx.depth_, u_t, v_t));
+    double dDdy = SOBEL_SCALE *
+                  (*geometry::PointerAt<float>(target_dy.depth_, u_t, v_t));
     if (std::isnan(dDdx)) dDdx = 0;
     if (std::isnan(dDdy)) dDdy = 0;
-    Eigen::Vector3d p3d_mat(*PointerAt<float>(source_xyz, u_s, v_s, 0),
-                            *PointerAt<float>(source_xyz, u_s, v_s, 1),
-                            *PointerAt<float>(source_xyz, u_s, v_s, 2));
+    Eigen::Vector3d p3d_mat(
+            *geometry::PointerAt<float>(source_xyz, u_s, v_s, 0),
+            *geometry::PointerAt<float>(source_xyz, u_s, v_s, 1),
+            *geometry::PointerAt<float>(source_xyz, u_s, v_s, 2));
     Eigen::Vector3d p3d_trans = R * p3d_mat + t;
 
-    double diff_geo = *PointerAt<float>(target.depth_, u_t, v_t) - p3d_trans(2);
+    double diff_geo =
+            *geometry::PointerAt<float>(target.depth_, u_t, v_t) - p3d_trans(2);
     double invz = 1. / p3d_trans(2);
     double c0 = dIdx * fx * invz;
     double c1 = dIdy * fy * invz;

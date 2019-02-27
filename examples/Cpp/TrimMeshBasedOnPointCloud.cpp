@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*pcd);
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
     ResetConsoleProgress(mesh->vertices_.size(), "Prune vetices: ");

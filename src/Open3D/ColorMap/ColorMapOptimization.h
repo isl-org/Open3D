@@ -31,9 +31,15 @@
 
 namespace open3d {
 
+namespace geometry {
 class TriangleMesh;
+}
+namespace geometry {
 class RGBDImage;
+}
+namespace geometry {
 class Image;
+}
 namespace camera {
 class PinholeCameraTrajectory;
 }
@@ -83,8 +89,8 @@ public:
 /// Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
 /// SIGGRAPH 2014
 void ColorMapOptimization(
-        TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<RGBDImage>>& imgs_rgbd,
+        geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::RGBDImage>>& imgs_rgbd,
         camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option =
                 ColorMapOptimizationOption());

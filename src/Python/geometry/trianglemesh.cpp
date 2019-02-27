@@ -32,15 +32,15 @@
 using namespace open3d;
 
 void pybind_trianglemesh(py::module &m) {
-    py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
-               std::shared_ptr<TriangleMesh>, Geometry3D>
+    py::class_<geometry::TriangleMesh, PyGeometry3D<geometry::TriangleMesh>,
+               std::shared_ptr<geometry::TriangleMesh>, geometry::Geometry3D>
             trianglemesh(m, "TriangleMesh", "TriangleMesh");
-    py::detail::bind_default_constructor<TriangleMesh>(trianglemesh);
-    py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
+    py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
+    py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
     trianglemesh
             .def("__repr__",
-                 [](const TriangleMesh &mesh) {
-                     return std::string("TriangleMesh with ") +
+                 [](const geometry::TriangleMesh &mesh) {
+                     return std::string("geometry::TriangleMesh with ") +
                             std::to_string(mesh.vertices_.size()) +
                             " points and " +
                             std::to_string(mesh.triangles_.size()) +
@@ -49,75 +49,86 @@ void pybind_trianglemesh(py::module &m) {
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("compute_triangle_normals",
-                 &TriangleMesh::ComputeTriangleNormals,
+                 &geometry::TriangleMesh::ComputeTriangleNormals,
                  "Function to compute triangle normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_vertex_normals", &TriangleMesh::ComputeVertexNormals,
+            .def("compute_vertex_normals",
+                 &geometry::TriangleMesh::ComputeVertexNormals,
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_adjacency_list", &TriangleMesh::ComputeAdjacencyList,
+            .def("compute_adjacency_list",
+                 &geometry::TriangleMesh::ComputeAdjacencyList,
                  "Function to compute adjacency list, call before adjacency "
                  "list is needed")
-            .def("purge", &TriangleMesh::Purge,
+            .def("purge", &geometry::TriangleMesh::Purge,
                  "Function to remove duplicated and non-manifold "
                  "vertices/triangles")
-            .def("has_vertices", &TriangleMesh::HasVertices)
-            .def("has_triangles", &TriangleMesh::HasTriangles)
-            .def("has_vertex_normals", &TriangleMesh::HasVertexNormals)
-            .def("has_vertex_colors", &TriangleMesh::HasVertexColors)
-            .def("has_triangle_normals", &TriangleMesh::HasTriangleNormals)
-            .def("has_adjacency_list", &TriangleMesh::HasAdjacencyList)
-            .def("normalize_normals", &TriangleMesh::NormalizeNormals)
-            .def("paint_uniform_color", &TriangleMesh::PaintUniformColor)
-            .def_readwrite("vertices", &TriangleMesh::vertices_)
-            .def_readwrite("vertex_normals", &TriangleMesh::vertex_normals_)
-            .def_readwrite("vertex_colors", &TriangleMesh::vertex_colors_)
-            .def_readwrite("triangles", &TriangleMesh::triangles_)
-            .def_readwrite("triangle_normals", &TriangleMesh::triangle_normals_)
-            .def_readwrite("adjacency_list", &TriangleMesh::adjacency_list_);
+            .def("has_vertices", &geometry::TriangleMesh::HasVertices)
+            .def("has_triangles", &geometry::TriangleMesh::HasTriangles)
+            .def("has_vertex_normals",
+                 &geometry::TriangleMesh::HasVertexNormals)
+            .def("has_vertex_colors", &geometry::TriangleMesh::HasVertexColors)
+            .def("has_triangle_normals",
+                 &geometry::TriangleMesh::HasTriangleNormals)
+            .def("has_adjacency_list",
+                 &geometry::TriangleMesh::HasAdjacencyList)
+            .def("normalize_normals", &geometry::TriangleMesh::NormalizeNormals)
+            .def("paint_uniform_color",
+                 &geometry::TriangleMesh::PaintUniformColor)
+            .def_readwrite("vertices", &geometry::TriangleMesh::vertices_)
+            .def_readwrite("vertex_normals",
+                           &geometry::TriangleMesh::vertex_normals_)
+            .def_readwrite("vertex_colors",
+                           &geometry::TriangleMesh::vertex_colors_)
+            .def_readwrite("triangles", &geometry::TriangleMesh::triangles_)
+            .def_readwrite("triangle_normals",
+                           &geometry::TriangleMesh::triangle_normals_)
+            .def_readwrite("adjacency_list",
+                           &geometry::TriangleMesh::adjacency_list_);
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
     m.def("read_triangle_mesh",
           [](const std::string &filename) {
-              TriangleMesh mesh;
+              geometry::TriangleMesh mesh;
               ReadTriangleMesh(filename, mesh);
               return mesh;
           },
-          "Function to read TriangleMesh from file", "filename"_a);
+          "Function to read geometry::TriangleMesh from file", "filename"_a);
     m.def("write_triangle_mesh",
-          [](const std::string &filename, const TriangleMesh &mesh,
+          [](const std::string &filename, const geometry::TriangleMesh &mesh,
              bool write_ascii, bool compressed) {
               return WriteTriangleMesh(filename, mesh, write_ascii, compressed);
           },
-          "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
-          "write_ascii"_a = false, "compressed"_a = false);
-    m.def("select_down_sample", &SelectDownSample,
+          "Function to write geometry::TriangleMesh to file", "filename"_a,
+          "mesh"_a, "write_ascii"_a = false, "compressed"_a = false);
+    m.def("select_down_sample", &geometry::SelectDownSample,
           "Function to select mesh from input triangle mesh into output "
           "triangle mesh",
           "input"_a, "indices"_a);
-    m.def("crop_triangle_mesh", &CropTriangleMesh,
+    m.def("crop_triangle_mesh", &geometry::CropTriangleMesh,
           "Function to crop input triangle mesh into output triangle mesh",
           "input"_a, "min_bound"_a, "max_bound"_a);
-    m.def("create_mesh_box", &CreateMeshBox, "Factory function to create a box",
-          "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0);
-    m.def("create_mesh_sphere", &CreateMeshSphere,
+    m.def("create_mesh_box", &geometry::CreateMeshBox,
+          "Factory function to create a box", "width"_a = 1.0, "height"_a = 1.0,
+          "depth"_a = 1.0);
+    m.def("create_mesh_sphere", &geometry::CreateMeshSphere,
           "Factory function to create a sphere mesh", "radius"_a = 1.0,
           "resolution"_a = 20);
-    m.def("create_mesh_cylinder", &CreateMeshCylinder,
+    m.def("create_mesh_cylinder", &geometry::CreateMeshCylinder,
           "Factory function to create a cylinder mesh", "radius"_a = 1.0,
           "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4);
-    m.def("create_mesh_cone", &CreateMeshCone,
+    m.def("create_mesh_cone", &geometry::CreateMeshCone,
           "Factory function to create a cone mesh", "radius"_a = 1.0,
           "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1);
-    m.def("create_mesh_arrow", &CreateMeshArrow,
+    m.def("create_mesh_arrow", &geometry::CreateMeshArrow,
           "Factory function to create an arrow mesh", "cylinder_radius"_a = 1.0,
           "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,
           "cone_height"_a = 4.0, "resolution"_a = 20, "cylinder_split"_a = 4,
           "cone_split"_a = 1);
-    m.def("create_mesh_coordinate_frame", &CreateMeshCoordinateFrame,
+    m.def("create_mesh_coordinate_frame", &geometry::CreateMeshCoordinateFrame,
           "Factory function to create a coordinate frame mesh", "size"_a = 1.0,
           "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
 }

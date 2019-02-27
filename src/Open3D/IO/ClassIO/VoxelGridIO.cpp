@@ -36,14 +36,14 @@ namespace {
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, VoxelGrid &)>>
+        std::function<bool(const std::string &, geometry::VoxelGrid &)>>
         file_extension_to_voxelgrid_read_function{
                 {"ply", ReadVoxelGridFromPLY},
         };
 
 static const std::unordered_map<std::string,
                                 std::function<bool(const std::string &,
-                                                   const VoxelGrid &,
+                                                   const geometry::VoxelGrid &,
                                                    const bool,
                                                    const bool)>>
         file_extension_to_voxelgrid_write_function{
@@ -51,15 +51,15 @@ static const std::unordered_map<std::string,
         };
 }  // unnamed namespace
 
-std::shared_ptr<VoxelGrid> CreateVoxelGridFromFile(const std::string &filename,
-                                                   const std::string &format) {
-    auto voxelgrid = std::make_shared<VoxelGrid>();
+std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridFromFile(
+        const std::string &filename, const std::string &format) {
+    auto voxelgrid = std::make_shared<geometry::VoxelGrid>();
     ReadVoxelGrid(filename, *voxelgrid, format);
     return voxelgrid;
 }
 
 bool ReadVoxelGrid(const std::string &filename,
-                   VoxelGrid &voxelgrid,
+                   geometry::VoxelGrid &voxelgrid,
                    const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
@@ -68,38 +68,44 @@ bool ReadVoxelGrid(const std::string &filename,
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        PrintWarning("Read VoxelGrid failed: unknown file extension.\n");
+        PrintWarning(
+                "Read geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_voxelgrid_read_function.find(filename_ext);
     if (map_itr == file_extension_to_voxelgrid_read_function.end()) {
-        PrintWarning("Read VoxelGrid failed: unknown file extension.\n");
+        PrintWarning(
+                "Read geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, voxelgrid);
-    PrintDebug("Read VoxelGrid: %d voxels.\n", (int)voxelgrid.voxels_.size());
+    PrintDebug("Read geometry::VoxelGrid: %d voxels.\n",
+               (int)voxelgrid.voxels_.size());
     return success;
 }
 
 bool WriteVoxelGrid(const std::string &filename,
-                    const VoxelGrid &voxelgrid,
+                    const geometry::VoxelGrid &voxelgrid,
                     bool write_ascii /* = false*/,
                     bool compressed /* = false*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write VoxelGrid failed: unknown file extension.\n");
+        PrintWarning(
+                "Write geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_voxelgrid_write_function.find(filename_ext);
     if (map_itr == file_extension_to_voxelgrid_write_function.end()) {
-        PrintWarning("Write VoxelGrid failed: unknown file extension.\n");
+        PrintWarning(
+                "Write geometry::VoxelGrid failed: unknown file extension.\n");
         return false;
     }
     bool success =
             map_itr->second(filename, voxelgrid, write_ascii, compressed);
-    PrintDebug("Write VoxelGrid: %d voxels.\n", (int)voxelgrid.voxels_.size());
+    PrintDebug("Write geometry::VoxelGrid: %d voxels.\n",
+               (int)voxelgrid.voxels_.size());
     return success;
 }
 

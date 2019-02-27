@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     std::string option(argv[1]);
     if (option == "mesh") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
         mesh_ptr->ComputeVertexNormals();
         DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
     } else if (option == "spin") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
                 },
                 "Spin", 1600, 900);
     } else if (option == "slowspin") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
                   }}},
                 "Press Space key to spin", 1600, 900);
     } else if (option == "pointcloud") {
-        auto cloud_ptr = std::make_shared<PointCloud>();
+        auto cloud_ptr = std::make_shared<geometry::PointCloud>();
         if (ReadPointCloud(argv[2], *cloud_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
         cloud_ptr->NormalizeNormals();
         DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
     } else if (option == "rainbow") {
-        auto cloud_ptr = std::make_shared<PointCloud>();
+        auto cloud_ptr = std::make_shared<geometry::PointCloud>();
         if (ReadPointCloud(argv[2], *cloud_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
                 },
                 "Rainbow", 1600, 900);
     } else if (option == "image") {
-        auto image_ptr = std::make_shared<Image>();
+        auto image_ptr = std::make_shared<geometry::Image>();
         if (ReadImage(argv[2], *image_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {
@@ -147,14 +147,15 @@ int main(int argc, char *argv[]) {
         camera::PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
-                CreatePointCloudFromDepthImage(*image_ptr, camera);
-        DrawGeometries({pointcloud_ptr}, "PointCloud from Depth Image", 1920,
+                geometry::CreatePointCloudFromDepthImage(*image_ptr, camera);
+        DrawGeometries({pointcloud_ptr},
+                       "geometry::PointCloud from Depth geometry::Image", 1920,
                        1080);
     } else if (option == "editing") {
         auto pcd = CreatePointCloudFromFile(argv[2]);
         DrawGeometriesWithEditing({pcd}, "Editing", 1920, 1080);
     } else if (option == "animation") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
             PrintWarning("Successfully read %s\n", argv[2]);
         } else {

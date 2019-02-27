@@ -121,10 +121,10 @@ void SelectionPolygon::FillPolygon(int width, int height) {
     }
 }
 
-std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
-        const PointCloud &input, const ViewControl &view) {
+std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloud(
+        const geometry::PointCloud &input, const ViewControl &view) {
     if (IsEmpty()) {
-        return std::make_shared<PointCloud>();
+        return std::make_shared<geometry::PointCloud>();
     }
     switch (polygon_type_) {
         case SectionPolygonType::Rectangle:
@@ -133,20 +133,21 @@ std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
             return CropPointCloudInPolygon(input, view);
         case SectionPolygonType::Unfilled:
         default:
-            return std::shared_ptr<PointCloud>();
+            return std::shared_ptr<geometry::PointCloud>();
     }
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
-        const TriangleMesh &input, const ViewControl &view) {
+std::shared_ptr<geometry::TriangleMesh> SelectionPolygon::CropTriangleMesh(
+        const geometry::TriangleMesh &input, const ViewControl &view) {
     if (IsEmpty()) {
-        return std::make_shared<TriangleMesh>();
+        return std::make_shared<geometry::TriangleMesh>();
     }
     if (input.HasVertices() && !input.HasTriangles()) {
         PrintWarning(
-                "TriangleMesh contains vertices, but no triangles; "
-                "cropping will always yield an empty TriangleMesh.\n");
-        return std::make_shared<TriangleMesh>();
+                "geometry::TriangleMesh contains vertices, but no triangles; "
+                "cropping will always yield an empty "
+                "geometry::TriangleMesh.\n");
+        return std::make_shared<geometry::TriangleMesh>();
     }
     switch (polygon_type_) {
         case SectionPolygonType::Rectangle:
@@ -155,7 +156,7 @@ std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
             return CropTriangleMeshInPolygon(input, view);
         case SectionPolygonType::Unfilled:
         default:
-            return std::shared_ptr<TriangleMesh>();
+            return std::shared_ptr<geometry::TriangleMesh>();
     }
 }
 
@@ -201,24 +202,31 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
     return volume;
 }
 
-std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInRectangle(
-        const PointCloud &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInRectangle(input.points_, view));
+std::shared_ptr<geometry::PointCloud>
+SelectionPolygon::CropPointCloudInRectangle(const geometry::PointCloud &input,
+                                            const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInRectangle(input.points_, view));
 }
 
-std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInPolygon(
-        const PointCloud &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInPolygon(input.points_, view));
+std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloudInPolygon(
+        const geometry::PointCloud &input, const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInPolygon(input.points_, view));
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInRectangle(
-        const TriangleMesh &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInRectangle(input.vertices_, view));
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygon::CropTriangleMeshInRectangle(
+        const geometry::TriangleMesh &input, const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInRectangle(input.vertices_, view));
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInPolygon(
-        const TriangleMesh &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInPolygon(input.vertices_, view));
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygon::CropTriangleMeshInPolygon(const geometry::TriangleMesh &input,
+                                            const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInPolygon(input.vertices_, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(

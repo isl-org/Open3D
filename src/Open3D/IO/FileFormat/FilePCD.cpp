@@ -329,7 +329,9 @@ Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr,
     }
 }
 
-bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud) {
+bool ReadPCDData(FILE *file,
+                 const PCDHeader &header,
+                 geometry::PointCloud &pointcloud) {
     // The header should have been checked
     if (header.has_points) {
         pointcloud.points_.resize(header.points);
@@ -511,7 +513,7 @@ bool ReadPCDData(FILE *file, const PCDHeader &header, PointCloud &pointcloud) {
     return true;
 }
 
-void RemoveNanData(PointCloud &pointcloud) {
+void RemoveNanData(geometry::PointCloud &pointcloud) {
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();
     size_t old_point_num = pointcloud.points_.size();
@@ -533,7 +535,7 @@ void RemoveNanData(PointCloud &pointcloud) {
                (int)(old_point_num - k));
 }
 
-bool GenerateHeader(const PointCloud &pointcloud,
+bool GenerateHeader(const geometry::PointCloud &pointcloud,
                     const bool write_ascii,
                     const bool compressed,
                     PCDHeader &header) {
@@ -641,7 +643,7 @@ float ConvertRGBToFloat(const Eigen::Vector3d &color) {
 
 bool WritePCDData(FILE *file,
                   const PCDHeader &header,
-                  const PointCloud &pointcloud) {
+                  const geometry::PointCloud &pointcloud) {
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();
     if (header.datatype == PCD_DATA_ASCII) {
@@ -724,7 +726,7 @@ bool WritePCDData(FILE *file,
 }  // unnamed namespace
 
 bool ReadPointCloudFromPCD(const std::string &filename,
-                           PointCloud &pointcloud) {
+                           geometry::PointCloud &pointcloud) {
     PCDHeader header;
     FILE *file = fopen(filename.c_str(), "rb");
     if (file == NULL) {
@@ -762,7 +764,7 @@ bool ReadPointCloudFromPCD(const std::string &filename,
 }
 
 bool WritePointCloudToPCD(const std::string &filename,
-                          const PointCloud &pointcloud,
+                          const geometry::PointCloud &pointcloud,
                           bool write_ascii /* = false*/,
                           bool compressed /* = false*/) {
     PCDHeader header;

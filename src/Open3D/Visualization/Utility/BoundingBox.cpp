@@ -30,7 +30,7 @@ namespace open3d {
 
 BoundingBox::BoundingBox() {}
 
-BoundingBox::BoundingBox(const Geometry3D &geometry) {
+BoundingBox::BoundingBox(const geometry::Geometry3D &geometry) {
     FitInGeometry(geometry);
 }
 
@@ -41,7 +41,7 @@ void BoundingBox::Reset() {
     max_bound_.setZero();
 }
 
-void BoundingBox::FitInGeometry(const Geometry3D &geometry) {
+void BoundingBox::FitInGeometry(const geometry::Geometry3D &geometry) {
     if (GetSize() == 0.0) {  // empty box
         min_bound_ = geometry.GetMinBound();
         max_bound_ = geometry.GetMaxBound();

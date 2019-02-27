@@ -221,7 +221,7 @@ void Visualizer::KeyPressCallback(
             render_option_ptr_->ToggleInterpolationOption();
             UpdateGeometry();
             PrintDebug(
-                    "[Visualizer] Image interpolation mode is %s.\n",
+                    "[Visualizer] geometry::Image interpolation mode is %s.\n",
                     render_option_ptr_->interpolation_option_ ==
                                     RenderOption::TextureInterpolationOption::
                                             Nearest
@@ -230,7 +230,7 @@ void Visualizer::KeyPressCallback(
             break;
         case GLFW_KEY_T:
             render_option_ptr_->ToggleImageStretchOption();
-            PrintDebug("[Visualizer] Image stretch mode is #%d.\n",
+            PrintDebug("[Visualizer] geometry::Image stretch mode is #%d.\n",
                        int(render_option_ptr_->image_stretch_option_));
             break;
         case GLFW_KEY_0:

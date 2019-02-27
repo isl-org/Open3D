@@ -50,7 +50,7 @@ ScalableTSDFVolume::~ScalableTSDFVolume() {}
 void ScalableTSDFVolume::Reset() { volume_units_.clear(); }
 
 void ScalableTSDFVolume::Integrate(
-        const RGBDImage &image,
+        const geometry::RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic) {
     if ((image.depth_.num_of_channels_ != 1) ||
@@ -74,10 +74,11 @@ void ScalableTSDFVolume::Integrate(
         return;
     }
     auto depth2cameradistance =
-            CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
-    auto pointcloud = CreatePointCloudFromDepthImage(image.depth_, intrinsic,
-                                                     extrinsic, 1000.0, 1000.0,
-                                                     depth_sampling_stride_);
+            geometry::CreateDepthToCameraDistanceMultiplierFloatImage(
+                    intrinsic);
+    auto pointcloud = geometry::CreatePointCloudFromDepthImage(
+            image.depth_, intrinsic, extrinsic, 1000.0, 1000.0,
+            depth_sampling_stride_);
     std::unordered_set<Eigen::Vector3i, hash_eigen::hash<Eigen::Vector3i>>
             touched_volume_units_;
     for (const auto &point : pointcloud->points_) {
@@ -103,8 +104,8 @@ void ScalableTSDFVolume::Integrate(
     }
 }
 
-std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
-    auto pointcloud = std::make_shared<PointCloud>();
+std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
+    auto pointcloud = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     float w0, w1, f0, f1;
     Eigen::Vector3f c0, c1;
@@ -197,10 +198,11 @@ std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
     return pointcloud;
 }
 
-std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
+std::shared_ptr<geometry::TriangleMesh>
+ScalableTSDFVolume::ExtractTriangleMesh() {
     // implementation of marching cubes, based on
     // http://paulbourke.net/geometry/polygonise/
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     double half_voxel_length = voxel_length_ * 0.5;
     std::unordered_map<
             Eigen::Vector4i, int, hash_eigen::hash<Eigen::Vector4i>,
@@ -339,8 +341,9 @@ std::shared_ptr<TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh() {
     return mesh;
 }
 
-std::shared_ptr<PointCloud> ScalableTSDFVolume::ExtractVoxelPointCloud() {
-    auto voxel = std::make_shared<PointCloud>();
+std::shared_ptr<geometry::PointCloud>
+ScalableTSDFVolume::ExtractVoxelPointCloud() {
+    auto voxel = std::make_shared<geometry::PointCloud>();
     for (auto &unit : volume_units_) {
         if (unit.second.volume_) {
             auto v = unit.second.volume_->ExtractVoxelPointCloud();

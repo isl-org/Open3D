@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto cloud_ptr = std::make_shared<PointCloud>();
+    auto cloud_ptr = std::make_shared<geometry::PointCloud>();
     if (ReadPointCloud(argv[1], *cloud_ptr)) {
         PrintWarning("Successfully read %s\n", argv[1]);
     } else {
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 
     DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
-    auto new_cloud_ptr = std::make_shared<PointCloud>();
+    auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     if (ReadPointCloud(argv[1], *new_cloud_ptr)) {
         PrintWarning("Successfully read %s\n", argv[1]);
     } else {
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*new_cloud_ptr);
     std::vector<int> new_indices_vec(nn);
     std::vector<double> new_dists_vec(nn);
@@ -140,8 +140,9 @@ int main(int argc, char **argv) {
     }
     new_cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
-    k = kdtree.Search(new_cloud_ptr->points_[199], KDTreeSearchParamRadius(r),
-                      new_indices_vec, new_dists_vec);
+    k = kdtree.Search(new_cloud_ptr->points_[199],
+                      geometry::KDTreeSearchParamRadius(r), new_indices_vec,
+                      new_dists_vec);
 
     PrintInfo("======== %d, %f ========\n", k, r);
     for (int i = 0; i < k; i++) {

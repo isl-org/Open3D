@@ -52,8 +52,8 @@ public:
 
 public:
     void PrintVisualizerHelp() override;
-    bool AddSourceAndTarget(std::shared_ptr<PointCloud> source,
-                            std::shared_ptr<PointCloud> target);
+    bool AddSourceAndTarget(std::shared_ptr<geometry::PointCloud> source,
+                            std::shared_ptr<geometry::PointCloud> target);
 
 protected:
     void KeyPressCallback(GLFWwindow *window,
@@ -76,8 +76,8 @@ protected:
     bool use_dialog_ = true;
     Eigen::Matrix4d transformation_ = Eigen::Matrix4d::Identity();
     std::string polygon_filename_ = "";
-    std::shared_ptr<PointCloud> source_copy_ptr_;
-    std::shared_ptr<PointCloud> target_copy_ptr_;
+    std::shared_ptr<geometry::PointCloud> source_copy_ptr_;
+    std::shared_ptr<geometry::PointCloud> target_copy_ptr_;
     AlignmentSession alignment_session_;
     std::string default_directory_;
 };

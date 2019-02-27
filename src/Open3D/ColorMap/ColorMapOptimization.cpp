@@ -44,10 +44,10 @@ namespace {
 
 using namespace color_map;
 void OptimizeImageCoorNonrigid(
-        const TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_gray,
-        const std::vector<std::shared_ptr<Image>>& images_dx,
-        const std::vector<std::shared_ptr<Image>>& images_dy,
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_dx,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_dy,
         std::vector<ImageWarpingField>& warping_fields,
         const std::vector<ImageWarpingField>& warping_fields_init,
         camera::PinholeCameraTrajectory& camera,
@@ -143,10 +143,10 @@ void OptimizeImageCoorNonrigid(
 }
 
 void OptimizeImageCoorRigid(
-        const TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_gray,
-        const std::vector<std::shared_ptr<Image>>& images_dx,
-        const std::vector<std::shared_ptr<Image>>& images_dy,
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_dx,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_dy,
         camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         const std::vector<std::vector<int>>& visiblity_image_to_vertex,
@@ -212,29 +212,29 @@ void OptimizeImageCoorRigid(
     }
 }
 
-std::tuple<std::vector<std::shared_ptr<Image>>,
-           std::vector<std::shared_ptr<Image>>,
-           std::vector<std::shared_ptr<Image>>,
-           std::vector<std::shared_ptr<Image>>,
-           std::vector<std::shared_ptr<Image>>>
+std::tuple<std::vector<std::shared_ptr<geometry::Image>>,
+           std::vector<std::shared_ptr<geometry::Image>>,
+           std::vector<std::shared_ptr<geometry::Image>>,
+           std::vector<std::shared_ptr<geometry::Image>>,
+           std::vector<std::shared_ptr<geometry::Image>>>
 CreateGradientImages(
-        const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd) {
-    std::vector<std::shared_ptr<Image>> images_gray;
-    std::vector<std::shared_ptr<Image>> images_dx;
-    std::vector<std::shared_ptr<Image>> images_dy;
-    std::vector<std::shared_ptr<Image>> images_color;
-    std::vector<std::shared_ptr<Image>> images_depth;
+        const std::vector<std::shared_ptr<geometry::RGBDImage>>& images_rgbd) {
+    std::vector<std::shared_ptr<geometry::Image>> images_gray;
+    std::vector<std::shared_ptr<geometry::Image>> images_dx;
+    std::vector<std::shared_ptr<geometry::Image>> images_dy;
+    std::vector<std::shared_ptr<geometry::Image>> images_color;
+    std::vector<std::shared_ptr<geometry::Image>> images_depth;
     for (auto i = 0; i < images_rgbd.size(); i++) {
         auto gray_image = CreateFloatImageFromImage(images_rgbd[i]->color_);
-        auto gray_image_filtered =
-                FilterImage(*gray_image, Image::FilterType::Gaussian3);
+        auto gray_image_filtered = geometry::FilterImage(
+                *gray_image, geometry::Image::FilterType::Gaussian3);
         images_gray.push_back(gray_image_filtered);
-        images_dx.push_back(
-                FilterImage(*gray_image_filtered, Image::FilterType::Sobel3Dx));
-        images_dy.push_back(
-                FilterImage(*gray_image_filtered, Image::FilterType::Sobel3Dy));
-        auto color = std::make_shared<Image>(images_rgbd[i]->color_);
-        auto depth = std::make_shared<Image>(images_rgbd[i]->depth_);
+        images_dx.push_back(geometry::FilterImage(
+                *gray_image_filtered, geometry::Image::FilterType::Sobel3Dx));
+        images_dy.push_back(geometry::FilterImage(
+                *gray_image_filtered, geometry::Image::FilterType::Sobel3Dy));
+        auto color = std::make_shared<geometry::Image>(images_rgbd[i]->color_);
+        auto depth = std::make_shared<geometry::Image>(images_rgbd[i]->depth_);
         images_color.push_back(color);
         images_depth.push_back(depth);
     }
@@ -242,14 +242,14 @@ CreateGradientImages(
                                      images_color, images_depth));
 }
 
-std::vector<std::shared_ptr<Image>> CreateDepthBoundaryMasks(
-        const std::vector<std::shared_ptr<Image>>& images_depth,
+std::vector<std::shared_ptr<geometry::Image>> CreateDepthBoundaryMasks(
+        const std::vector<std::shared_ptr<geometry::Image>>& images_depth,
         const ColorMapOptimizationOption& option) {
     auto n_images = images_depth.size();
-    std::vector<std::shared_ptr<Image>> masks;
+    std::vector<std::shared_ptr<geometry::Image>> masks;
     for (auto i = 0; i < n_images; i++) {
-        PrintDebug("[MakeDepthMasks] Image %d/%d\n", i, n_images);
-        masks.push_back(CreateDepthBoundaryMask(
+        PrintDebug("[MakeDepthMasks] geometry::Image %d/%d\n", i, n_images);
+        masks.push_back(geometry::CreateDepthBoundaryMask(
                 *images_depth[i],
                 option.depth_threshold_for_discontinuity_check_,
                 option.half_dilation_kernel_size_for_discontinuity_map_));
@@ -258,7 +258,7 @@ std::vector<std::shared_ptr<Image>> CreateDepthBoundaryMasks(
 }
 
 std::vector<ImageWarpingField> CreateWarpingFields(
-        const std::vector<std::shared_ptr<Image>>& images,
+        const std::vector<std::shared_ptr<geometry::Image>>& images,
         const ColorMapOptimizationOption& option) {
     std::vector<ImageWarpingField> fields;
     for (auto i = 0; i < images.size(); i++) {
@@ -274,14 +274,14 @@ std::vector<ImageWarpingField> CreateWarpingFields(
 
 namespace color_map {
 void ColorMapOptimization(
-        TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd,
+        geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::RGBDImage>>& images_rgbd,
         camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option
         /* = ColorMapOptimizationOption()*/) {
     PrintDebug("[ColorMapOptimization]\n");
-    std::vector<std::shared_ptr<Image>> images_gray, images_dx, images_dy,
-            images_color, images_depth;
+    std::vector<std::shared_ptr<geometry::Image>> images_gray, images_dx,
+            images_dy, images_color, images_depth;
     std::tie(images_gray, images_dx, images_dy, images_color, images_depth) =
             CreateGradientImages(images_rgbd);
 

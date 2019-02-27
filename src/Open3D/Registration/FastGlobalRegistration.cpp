@@ -40,7 +40,7 @@ namespace open3d {
 namespace {
 
 std::vector<std::pair<int, int>> AdvancedMatching(
-        const std::vector<PointCloud>& point_cloud_vec,
+        const std::vector<geometry::PointCloud>& point_cloud_vec,
         const std::vector<Feature>& features_vec,
         const FastGlobalRegistrationOption& option) {
     // STEP 0) Swap source and target if necessary
@@ -58,8 +58,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     // STEP 1) Initial matching
     int nPti = int(point_cloud_vec[fi].points_.size());
     int nPtj = int(point_cloud_vec[fj].points_.size());
-    KDTreeFlann feature_tree_i(features_vec[fi]);
-    KDTreeFlann feature_tree_j(features_vec[fj]);
+    geometry::KDTreeFlann feature_tree_i(features_vec[fi]);
+    geometry::KDTreeFlann feature_tree_j(features_vec[fj]);
     std::vector<int> corresK;
     std::vector<double> dis;
     std::vector<std::pair<int, int>> corres;
@@ -181,7 +181,7 @@ std::vector<std::pair<int, int>> AdvancedMatching(
 
 // Normalize scale of points. X' = (X-\mu)/scale
 std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
-        std::vector<PointCloud>& point_cloud_vec,
+        std::vector<geometry::PointCloud>& point_cloud_vec,
         const FastGlobalRegistrationOption& option) {
     int num = 2;
     double scale = 0;
@@ -231,7 +231,7 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
 }
 
 Eigen::Matrix4d OptimizePairwiseRegistration(
-        const std::vector<PointCloud>& point_cloud_vec,
+        const std::vector<geometry::PointCloud>& point_cloud_vec,
         const std::vector<std::pair<int, int>>& corres,
         double scale_start,
         const FastGlobalRegistrationOption& option) {
@@ -240,7 +240,7 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
     int numIter = option.iteration_number_;
 
     int i = 0, j = 1;
-    PointCloud point_cloud_copy_j = point_cloud_vec[j];
+    geometry::PointCloud point_cloud_copy_j = point_cloud_vec[j];
 
     if (corres.size() < 10) return Eigen::Matrix4d::Identity();
 
@@ -333,13 +333,13 @@ Eigen::Matrix4d GetTransformationOriginalScale(
 }  // unnamed namespace
 
 RegistrationResult FastGlobalRegistration(
-        const PointCloud& source,
-        const PointCloud& target,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
         const Feature& source_feature,
         const Feature& target_feature,
         const FastGlobalRegistrationOption& option /* =
         FastGlobalRegistrationOption()*/) {
-    std::vector<PointCloud> point_cloud_vec;
+    std::vector<geometry::PointCloud> point_cloud_vec;
     point_cloud_vec.push_back(source);
     point_cloud_vec.push_back(target);
 

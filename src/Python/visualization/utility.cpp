@@ -43,13 +43,14 @@ void pybind_visualization_utility(py::module &m) {
     py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
     selection_volume
             .def("crop_point_cloud",
-                 [](const SelectionPolygonVolume &s, const PointCloud &input) {
+                 [](const SelectionPolygonVolume &s,
+                    const geometry::PointCloud &input) {
                      return s.CropPointCloud(input);
                  },
                  "input"_a)
             .def("crop_triangle_mesh",
                  [](const SelectionPolygonVolume &s,
-                    const TriangleMesh &input) {
+                    const geometry::TriangleMesh &input) {
                      return s.CropTriangleMesh(input);
                  },
                  "input"_a)
@@ -70,7 +71,8 @@ void pybind_visualization_utility(py::module &m) {
 
 void pybind_visualization_utility_methods(py::module &m) {
     m.def("draw_geometries",
-          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                     &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
              int top) {
               std::string current_dir = filesystem::GetWorkingDirectory();
@@ -78,11 +80,12 @@ void pybind_visualization_utility_methods(py::module &m) {
                              top);
               filesystem::ChangeWorkingDirectory(current_dir);
           },
-          "Function to draw a list of Geometry objects", "geometry_list"_a,
-          "window_name"_a = "Open3D", "width"_a = 1920, "height"_a = 1080,
-          "left"_a = 50, "top"_a = 50);
+          "Function to draw a list of geometry::Geometry objects",
+          "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
+          "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     m.def("draw_geometries_with_custom_animation",
-          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                     &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
              int top, const std::string &json_filename) {
               std::string current_dir = filesystem::GetWorkingDirectory();
@@ -91,13 +94,15 @@ void pybind_visualization_utility_methods(py::module &m) {
                                                 json_filename);
               filesystem::ChangeWorkingDirectory(current_dir);
           },
-          "Function to draw a list of Geometry objects with a GUI that "
+          "Function to draw a list of geometry::Geometry objects with a GUI "
+          "that "
           "supports animation",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50,
           "optional_view_trajectory_json_file"_a = "");
     m.def("draw_geometries_with_animation_callback",
-          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                     &geometry_ptrs,
              std::function<bool(Visualizer *)> callback_func,
              const std::string &window_name, int width, int height, int left,
              int top) {
@@ -107,13 +112,15 @@ void pybind_visualization_utility_methods(py::module &m) {
                                                   left, top);
               filesystem::ChangeWorkingDirectory(current_dir);
           },
-          "Function to draw a list of Geometry objects with a customized "
+          "Function to draw a list of geometry::Geometry objects with a "
+          "customized "
           "animation callback function",
           "geometry_list"_a, "callback_function"_a, "window_name"_a = "Open3D",
           "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50,
           py::return_value_policy::reference);
     m.def("draw_geometries_with_key_callbacks",
-          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                     &geometry_ptrs,
              const std::map<int, std::function<bool(Visualizer *)>>
                      &key_to_callback,
              const std::string &window_name, int width, int height, int left,
@@ -124,18 +131,21 @@ void pybind_visualization_utility_methods(py::module &m) {
                                              top);
               filesystem::ChangeWorkingDirectory(current_dir);
           },
-          "Function to draw a list of Geometry objects with a customized "
+          "Function to draw a list of geometry::Geometry objects with a "
+          "customized "
           "key-callback mapping",
           "geometry_list"_a, "key_to_callback"_a, "window_name"_a = "Open3D",
           "width"_a = 1920, "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     m.def("draw_geometries_with_editing",
-          [](const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+          [](const std::vector<std::shared_ptr<const geometry::Geometry>>
+                     &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
              int top) {
               DrawGeometriesWithEditing(geometry_ptrs, window_name, width,
                                         height, left, top);
           },
-          "Function to draw a list of Geometry providing user interaction",
+          "Function to draw a list of geometry::Geometry providing user "
+          "interaction",
           "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
           "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     m.def("read_selection_polygon_volume",

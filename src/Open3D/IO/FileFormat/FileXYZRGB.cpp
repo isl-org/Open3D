@@ -32,7 +32,7 @@
 namespace open3d {
 
 bool ReadPointCloudFromXYZRGB(const std::string &filename,
-                              PointCloud &pointcloud) {
+                              geometry::PointCloud &pointcloud) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
         PrintWarning("Read XYZRGB failed: unable to open file: %s\n",
@@ -57,7 +57,7 @@ bool ReadPointCloudFromXYZRGB(const std::string &filename,
 }
 
 bool WritePointCloudToXYZRGB(const std::string &filename,
-                             const PointCloud &pointcloud,
+                             const geometry::PointCloud &pointcloud,
                              bool write_ascii /* = false*/,
                              bool compressed /* = false*/) {
     if (pointcloud.HasColors() == false) {

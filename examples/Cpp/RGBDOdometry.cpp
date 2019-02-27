@@ -38,12 +38,12 @@ void PrintHelp() {
     PrintInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]\n");
 }
 
-std::shared_ptr<RGBDImage> ReadRGBDImage(
+std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
         const char* color_filename,
         const char* depth_filename,
         const camera::PinholeCameraIntrinsic& intrinsic,
         bool visualize) {
-    Image color, depth;
+    geometry::Image color, depth;
     ReadImage(color_filename, color);
     ReadImage(depth_filename, depth);
     PrintDebug("Reading RGBD image : \n");
@@ -55,10 +55,13 @@ std::shared_ptr<RGBDImage> ReadRGBDImage(
                depth.bytes_per_channel_ * 8);
     double depth_scale = 1000.0, depth_trunc = 3.0;
     bool convert_rgb_to_intensity = true;
-    std::shared_ptr<RGBDImage> rgbd_image = CreateRGBDImageFromColorAndDepth(
-            color, depth, depth_scale, depth_trunc, convert_rgb_to_intensity);
+    std::shared_ptr<geometry::RGBDImage> rgbd_image =
+            geometry::CreateRGBDImageFromColorAndDepth(
+                    color, depth, depth_scale, depth_trunc,
+                    convert_rgb_to_intensity);
     if (visualize) {
-        auto pcd = CreatePointCloudFromRGBDImage(*rgbd_image, intrinsic);
+        auto pcd =
+                geometry::CreatePointCloudFromRGBDImage(*rgbd_image, intrinsic);
         DrawGeometries({pcd});
     }
     return rgbd_image;

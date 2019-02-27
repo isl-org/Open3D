@@ -33,7 +33,7 @@
 namespace open3d {
 
 bool ReadPointCloudFromPTS(const std::string &filename,
-                           PointCloud &pointcloud) {
+                           geometry::PointCloud &pointcloud) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
         PrintWarning("Read PTS failed: unable to open file.\n");
@@ -89,7 +89,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 }
 
 bool WritePointCloudToPTS(const std::string &filename,
-                          const PointCloud &pointcloud,
+                          const geometry::PointCloud &pointcloud,
                           bool write_ascii /* = false*/,
                           bool compressed /* = false*/) {
     FILE *file = fopen(filename.c_str(), "w");

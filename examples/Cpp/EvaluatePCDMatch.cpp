@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> pcd_names;
     filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
                                                   pcd_names);
-    std::vector<PointCloud> pcds(pcd_names.size());
-    std::vector<KDTreeFlann> kdtrees(pcd_names.size());
+    std::vector<geometry::PointCloud> pcds(pcd_names.size());
+    std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
     for (auto i = 0; i < pcd_names.size(); i++) {
         ReadPointCloud(pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
                        pcds[i]);
@@ -146,9 +146,9 @@ int main(int argc, char *argv[]) {
     int positive = 0;
     double positive_rmse = 0;
     for (auto k = 0; k < pair_ids.size(); k++) {
-        PointCloud source = pcds[pair_ids[k].second];
+        geometry::PointCloud source = pcds[pair_ids[k].second];
         source.Transform(transformations[k]);
-        PointCloud gtsource = pcds[pair_ids[k].second];
+        geometry::PointCloud gtsource = pcds[pair_ids[k].second];
         gtsource.Transform(gt_trans[k]);
         std::vector<int> indices(1);
         std::vector<double> distance2(1);

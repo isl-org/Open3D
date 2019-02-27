@@ -41,8 +41,12 @@
 
 namespace open3d {
 
+namespace geometry {
 class TriangleMesh;
+}
+namespace geometry {
 class Image;
+}
 
 class Visualizer {
 public:
@@ -111,7 +115,8 @@ public:
     /// undefined. Programmers are responsible for calling UpdateGeometry() to
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
-    virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr);
+    virtual bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
     /// Function to update geometry
     /// This function must be called when geometry has been changed. Otherwise
@@ -128,10 +133,12 @@ public:
 
     ViewControl &GetViewControl() { return *view_control_ptr_; }
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
-    std::shared_ptr<Image> CaptureScreenFloatBuffer(bool do_render = true);
+    std::shared_ptr<geometry::Image> CaptureScreenFloatBuffer(
+            bool do_render = true);
     void CaptureScreenImage(const std::string &filename = "",
                             bool do_render = true);
-    std::shared_ptr<Image> CaptureDepthFloatBuffer(bool do_render = true);
+    std::shared_ptr<geometry::Image> CaptureDepthFloatBuffer(
+            bool do_render = true);
     void CaptureDepthImage(const std::string &filename = "",
                            bool do_render = true,
                            double depth_scale = 1000.0);
@@ -199,20 +206,20 @@ protected:
     std::unique_ptr<RenderOption> render_option_ptr_;
 
     // geometry to be rendered
-    std::vector<std::shared_ptr<const Geometry>> geometry_ptrs_;
+    std::vector<std::shared_ptr<const geometry::Geometry>> geometry_ptrs_;
 
     // geometry renderers
     std::vector<std::shared_ptr<glsl::GeometryRenderer>>
             geometry_renderer_ptrs_;
 
     // utilities owned by the Visualizer
-    std::vector<std::shared_ptr<const Geometry>> utility_ptrs_;
+    std::vector<std::shared_ptr<const geometry::Geometry>> utility_ptrs_;
 
     // utility renderers
     std::vector<std::shared_ptr<glsl::GeometryRenderer>> utility_renderer_ptrs_;
 
     // coordinate frame
-    std::shared_ptr<TriangleMesh> coordinate_frame_mesh_ptr_;
+    std::shared_ptr<geometry::TriangleMesh> coordinate_frame_mesh_ptr_;
     std::shared_ptr<glsl::CoordinateFrameRenderer>
             coordinate_frame_mesh_renderer_ptr_;
 

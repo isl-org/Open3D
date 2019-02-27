@@ -33,7 +33,7 @@ namespace open3d {
 
 namespace {
 
-void SetPNGImageFromImage(const Image &image, png_image &pngimage) {
+void SetPNGImageFromImage(const geometry::Image &image, png_image &pngimage) {
     pngimage.width = image.width_;
     pngimage.height = image.height_;
     pngimage.format = 0;
@@ -47,7 +47,7 @@ void SetPNGImageFromImage(const Image &image, png_image &pngimage) {
 
 }  // unnamed namespace
 
-bool ReadImageFromPNG(const std::string &filename, Image &image) {
+bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     png_image pngimage;
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
@@ -73,7 +73,7 @@ bool ReadImageFromPNG(const std::string &filename, Image &image) {
 }
 
 bool WriteImageToPNG(const std::string &filename,
-                     const Image &image,
+                     const geometry::Image &image,
                      int quality) {
     if (image.HasData() == false) {
         PrintWarning("Write PNG failed: image has no data.\n");

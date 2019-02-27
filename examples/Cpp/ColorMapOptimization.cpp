@@ -46,14 +46,14 @@ int main(int argc, char *argv[]) {
     ListFilesInDirectoryWithExtension(data_path + "/image/", "jpg",
                                       color_filenames);
     assert(depth_filenames.size() == color_filenames.size());
-    std::vector<std::shared_ptr<RGBDImage>> rgbd_images;
+    std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for (int i = 0; i < depth_filenames.size(); i++) {
         PrintDebug("reading %s...\n", depth_filenames[i].c_str());
         auto depth = CreateImageFromFile(depth_filenames[i]);
         PrintDebug("reading %s...\n", color_filenames[i].c_str());
         auto color = CreateImageFromFile(color_filenames[i]);
-        auto rgbd_image = CreateRGBDImageFromColorAndDepth(*color, *depth,
-                                                           1000.0, 3.0, false);
+        auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(
+                *color, *depth, 1000.0, 3.0, false);
         rgbd_images.push_back(rgbd_image);
     }
     auto camera =

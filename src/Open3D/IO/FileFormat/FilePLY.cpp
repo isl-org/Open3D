@@ -39,7 +39,7 @@ namespace {
 namespace ply_pointcloud_reader {
 
 struct PLYReaderState {
-    PointCloud *pointcloud_ptr;
+    geometry::PointCloud *pointcloud_ptr;
     long vertex_index;
     long vertex_num;
     long normal_index;
@@ -106,7 +106,7 @@ int ReadColorCallback(p_ply_argument argument) {
 namespace ply_trianglemesh_reader {
 
 struct PLYReaderState {
-    TriangleMesh *mesh_ptr;
+    geometry::TriangleMesh *mesh_ptr;
     long vertex_index;
     long vertex_num;
     long normal_index;
@@ -198,7 +198,7 @@ int ReadFaceCallBack(p_ply_argument argument) {
 namespace ply_lineset_reader {
 
 struct PLYReaderState {
-    LineSet *lineset_ptr;
+    geometry::LineSet *lineset_ptr;
     long vertex_index;
     long vertex_num;
     long line_index;
@@ -267,7 +267,7 @@ int ReadColorCallback(p_ply_argument argument) {
 namespace ply_voxelgrid_reader {
 
 struct PLYReaderState {
-    VoxelGrid *voxelgrid_ptr;
+    geometry::VoxelGrid *voxelgrid_ptr;
     long voxel_index;
     long voxel_num;
     long color_index;
@@ -338,7 +338,7 @@ int ReadColorCallback(p_ply_argument argument) {
 }  // unnamed namespace
 
 bool ReadPointCloudFromPLY(const std::string &filename,
-                           PointCloud &pointcloud) {
+                           geometry::PointCloud &pointcloud) {
     using namespace ply_pointcloud_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -400,7 +400,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 }
 
 bool WritePointCloudToPLY(const std::string &filename,
-                          const PointCloud &pointcloud,
+                          const geometry::PointCloud &pointcloud,
                           bool write_ascii /* = false*/,
                           bool compressed /* = false*/) {
     if (pointcloud.IsEmpty()) {
@@ -468,7 +468,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     return true;
 }
 
-bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh) {
+bool ReadTriangleMeshFromPLY(const std::string &filename,
+                             geometry::TriangleMesh &mesh) {
     using namespace ply_trianglemesh_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -539,7 +540,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh) {
 }
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
-                            const TriangleMesh &mesh,
+                            const geometry::TriangleMesh &mesh,
                             bool write_ascii /* = false*/,
                             bool compressed /* = false*/) {
     if (mesh.IsEmpty()) {
@@ -615,7 +616,8 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
     return true;
 }
 
-bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset) {
+bool ReadLineSetFromPLY(const std::string &filename,
+                        geometry::LineSet &lineset) {
     using namespace ply_lineset_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -681,7 +683,7 @@ bool ReadLineSetFromPLY(const std::string &filename, LineSet &lineset) {
 }
 
 bool WriteLineSetToPLY(const std::string &filename,
-                       const LineSet &lineset,
+                       const geometry::LineSet &lineset,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     if (lineset.IsEmpty()) {
@@ -752,7 +754,8 @@ bool WriteLineSetToPLY(const std::string &filename,
     return true;
 }
 
-bool ReadVoxelGridFromPLY(const std::string &filename, VoxelGrid &voxelgrid) {
+bool ReadVoxelGridFromPLY(const std::string &filename,
+                          geometry::VoxelGrid &voxelgrid) {
     using namespace ply_voxelgrid_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -812,7 +815,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename, VoxelGrid &voxelgrid) {
 }
 
 bool WriteVoxelGridToPLY(const std::string &filename,
-                         const VoxelGrid &voxelgrid,
+                         const geometry::VoxelGrid &voxelgrid,
                          bool write_ascii /* = false*/,
                          bool compressed /* = false*/) {
     if (voxelgrid.IsEmpty()) {

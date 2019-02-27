@@ -33,12 +33,14 @@ namespace open3d {
 
 /// Factory function to create a mesh from a file (TriangleMeshFactory.cpp)
 /// Return an empty mesh if fail to read the file.
-std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename);
+std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
+        const std::string &filename);
 
 /// The general entrance for reading a TriangleMesh from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh);
+bool ReadTriangleMesh(const std::string &filename,
+                      geometry::TriangleMesh &mesh);
 
 /// The general entrance for writing a TriangleMesh to a file
 /// The function calls write functions based on the extension name of filename.
@@ -46,21 +48,23 @@ bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh);
 /// two parameters will be used. Otherwise they will be ignored.
 /// \return return true if the write function is successful, false otherwise.
 bool WriteTriangleMesh(const std::string &filename,
-                       const TriangleMesh &mesh,
+                       const geometry::TriangleMesh &mesh,
                        bool write_ascii = false,
                        bool compressed = false);
 
-bool ReadTriangleMeshFromPLY(const std::string &filename, TriangleMesh &mesh);
+bool ReadTriangleMeshFromPLY(const std::string &filename,
+                             geometry::TriangleMesh &mesh);
 
 bool WriteTriangleMeshToPLY(const std::string &filename,
-                            const TriangleMesh &mesh,
+                            const geometry::TriangleMesh &mesh,
                             bool write_ascii = false,
                             bool compressed = false);
 
-bool ReadTriangleMeshFromSTL(const std::string &filename, TriangleMesh &mesh);
+bool ReadTriangleMeshFromSTL(const std::string &filename,
+                             geometry::TriangleMesh &mesh);
 
 bool WriteTriangleMeshToSTL(const std::string &filename,
-                            const TriangleMesh &mesh,
+                            const geometry::TriangleMesh &mesh,
                             bool write_ascii = false,
                             bool compressed = false);
 

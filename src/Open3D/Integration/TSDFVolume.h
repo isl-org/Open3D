@@ -61,17 +61,17 @@ public:
     virtual void Reset() = 0;
 
     /// Function to integrate an RGB-D image into the volume
-    virtual void Integrate(const RGBDImage &image,
+    virtual void Integrate(const geometry::RGBDImage &image,
                            const camera::PinholeCameraIntrinsic &intrinsic,
                            const Eigen::Matrix4d &extrinsic) = 0;
 
     /// Function to extract a point cloud with normals, using the marching cubes
     /// algorithm (https://en.wikipedia.org/wiki/Marching_cubes)
-    virtual std::shared_ptr<PointCloud> ExtractPointCloud() = 0;
+    virtual std::shared_ptr<geometry::PointCloud> ExtractPointCloud() = 0;
 
     /// Function to extract a triangle mesh, using the marching cubes algorithm
     /// (https://en.wikipedia.org/wiki/Marching_cubes)
-    virtual std::shared_ptr<TriangleMesh> ExtractTriangleMesh() = 0;
+    virtual std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() = 0;
 
 public:
     double voxel_length_;

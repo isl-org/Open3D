@@ -64,7 +64,7 @@ void PhongShader::Release() {
     ReleaseProgram();
 }
 
-bool PhongShader::BindGeometry(const Geometry &geometry,
+bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
                                const RenderOption &option,
                                const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -102,7 +102,7 @@ bool PhongShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool PhongShader::RenderGeometry(const Geometry &geometry,
+bool PhongShader::RenderGeometry(const geometry::Geometry &geometry,
                                  const RenderOption &option,
                                  const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -183,11 +183,13 @@ void PhongShader::SetLighting(const ViewControl &view,
     }
 }
 
-bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-                                                const RenderOption &option,
-                                                const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+bool PhongShaderForPointCloud::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
     glEnable(GL_DEPTH_TEST);
@@ -198,17 +200,19 @@ bool PhongShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 }
 
 bool PhongShaderForPointCloud::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    const PointCloud &pointcloud = (const PointCloud &)geometry;
+    const geometry::PointCloud &pointcloud =
+            (const geometry::PointCloud &)geometry;
     if (pointcloud.HasPoints() == false) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
@@ -258,11 +262,13 @@ bool PhongShaderForPointCloud::PrepareBinding(
     return true;
 }
 
-bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
-                                                  const RenderOption &option,
-                                                  const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        PrintShaderWarning("Rendering type is not TriangleMesh.");
+bool PhongShaderForTriangleMesh::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::TriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
     if (option.mesh_show_back_face_) {
@@ -284,17 +290,19 @@ bool PhongShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 }
 
 bool PhongShaderForTriangleMesh::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        PrintShaderWarning("Rendering type is not TriangleMesh.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::TriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
-    const TriangleMesh &mesh = (const TriangleMesh &)geometry;
+    const geometry::TriangleMesh &mesh =
+            (const geometry::TriangleMesh &)geometry;
     if (mesh.HasTriangles() == false) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;

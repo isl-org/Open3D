@@ -30,7 +30,7 @@
 
 #include <Open3D/Open3D.h>
 
-void PrintPointCloud(const open3d::PointCloud &pointcloud) {
+void PrintPointCloud(const open3d::geometry::PointCloud &pointcloud) {
     using namespace open3d;
 
     bool pointcloud_has_normal = pointcloud.HasNormals();
@@ -65,14 +65,16 @@ int main(int argc, char *argv[]) {
     {
         ScopeTimer timer("FPFH estimation with Radius 0.25");
         // for (int i = 0; i < 20; i++) {
-        ComputeFPFHFeature(*pcd, open3d::KDTreeSearchParamRadius(0.25));
+        ComputeFPFHFeature(*pcd,
+                           open3d::geometry::KDTreeSearchParamRadius(0.25));
         //}
     }
 
     {
         ScopeTimer timer("Normal estimation with KNN20");
         for (int i = 0; i < 20; i++) {
-            EstimateNormals(*pcd, open3d::KDTreeSearchParamKNN(20));
+            geometry::EstimateNormals(
+                    *pcd, open3d::geometry::KDTreeSearchParamKNN(20));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -81,7 +83,8 @@ int main(int argc, char *argv[]) {
     {
         ScopeTimer timer("Normal estimation with Radius 0.01666");
         for (int i = 0; i < 20; i++) {
-            EstimateNormals(*pcd, open3d::KDTreeSearchParamRadius(0.01666));
+            geometry::EstimateNormals(
+                    *pcd, open3d::geometry::KDTreeSearchParamRadius(0.01666));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
@@ -90,17 +93,19 @@ int main(int argc, char *argv[]) {
     {
         ScopeTimer timer("Normal estimation with Hybrid 0.01666, 60");
         for (int i = 0; i < 20; i++) {
-            EstimateNormals(*pcd, open3d::KDTreeSearchParamHybrid(0.01666, 60));
+            geometry::EstimateNormals(
+                    *pcd,
+                    open3d::geometry::KDTreeSearchParamHybrid(0.01666, 60));
         }
     }
     std::cout << pcd->normals_[0] << std::endl;
     std::cout << pcd->normals_[10] << std::endl;
 
-    auto downpcd = VoxelDownSample(*pcd, 0.05);
+    auto downpcd = geometry::VoxelDownSample(*pcd, 0.05);
 
     // 1. test basic pointcloud functions.
 
-    PointCloud pointcloud;
+    geometry::PointCloud pointcloud;
     PrintPointCloud(pointcloud);
 
     pointcloud.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
@@ -118,7 +123,7 @@ int main(int argc, char *argv[]) {
         PrintWarning("Successfully read %s\n", argv[1]);
 
         /*
-        PointCloud pointcloud_copy;
+        geometry::PointCloud pointcloud_copy;
         pointcloud_copy.CloneFrom(pointcloud);
 
         if (WritePointCloud(filename_xyz, pointcloud)) {
@@ -140,13 +145,15 @@ int main(int argc, char *argv[]) {
     // 3. test pointcloud visualization
 
     Visualizer visualizer;
-    std::shared_ptr<PointCloud> pointcloud_ptr(new PointCloud);
+    std::shared_ptr<geometry::PointCloud> pointcloud_ptr(
+            new geometry::PointCloud);
     *pointcloud_ptr = pointcloud;
     pointcloud_ptr->NormalizeNormals();
     BoundingBox bounding_box;
     bounding_box.FitInGeometry(*pointcloud_ptr);
 
-    std::shared_ptr<PointCloud> pointcloud_transformed_ptr(new PointCloud);
+    std::shared_ptr<geometry::PointCloud> pointcloud_transformed_ptr(
+            new geometry::PointCloud);
     *pointcloud_transformed_ptr = *pointcloud_ptr;
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
@@ -167,7 +174,7 @@ int main(int argc, char *argv[]) {
     DrawGeometries({pointcloud_transformed_ptr}, "Combined Pointcloud");
 
     // 5. test downsample
-    auto downsampled = VoxelDownSample(*pointcloud_ptr, 0.05);
+    auto downsampled = geometry::VoxelDownSample(*pointcloud_ptr, 0.05);
     DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
     // 6. test normal estimation
@@ -177,8 +184,9 @@ int main(int argc, char *argv[]) {
               [&](Visualizer *vis) {
                   // EstimateNormals(*pointcloud_ptr,
                   //        open3d::KDTreeSearchParamKNN(20));
-                  EstimateNormals(*pointcloud_ptr,
-                                  open3d::KDTreeSearchParamRadius(0.05));
+                  geometry::EstimateNormals(
+                          *pointcloud_ptr,
+                          open3d::geometry::KDTreeSearchParamRadius(0.05));
                   PrintInfo("Done.\n");
                   return true;
               }}},

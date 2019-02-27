@@ -31,12 +31,13 @@
 void PrintHelp() {
     using namespace open3d;
     PrintInfo("Usage :\n");
-    PrintInfo("    > TriangleMesh sphere\n");
-    PrintInfo("    > TriangleMesh merge <file1> <file2>\n");
-    PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
+    PrintInfo("    > geometry::TriangleMesh sphere\n");
+    PrintInfo("    > geometry::TriangleMesh merge <file1> <file2>\n");
+    PrintInfo("    > geometry::TriangleMesh normal <file1> <file2>\n");
 }
 
-void PaintMesh(open3d::TriangleMesh &mesh, const Eigen::Vector3d &color) {
+void PaintMesh(open3d::geometry::TriangleMesh &mesh,
+               const Eigen::Vector3d &color) {
     mesh.vertex_colors_.resize(mesh.vertices_.size());
     for (size_t i = 0; i < mesh.vertices_.size(); i++) {
         mesh.vertex_colors_[i] = color;
@@ -55,35 +56,35 @@ int main(int argc, char *argv[]) {
 
     std::string option(argv[1]);
     if (option == "sphere") {
-        auto mesh = CreateMeshSphere(0.05);
+        auto mesh = geometry::CreateMeshSphere(0.05);
         mesh->ComputeVertexNormals();
         DrawGeometries({mesh});
         WriteTriangleMesh("sphere.ply", *mesh, true, true);
     } else if (option == "cylinder") {
-        auto mesh = CreateMeshCylinder(0.5, 2.0);
+        auto mesh = geometry::CreateMeshCylinder(0.5, 2.0);
         mesh->ComputeVertexNormals();
         DrawGeometries({mesh});
         WriteTriangleMesh("cylinder.ply", *mesh, true, true);
     } else if (option == "cone") {
-        auto mesh = CreateMeshCone(0.5, 2.0, 20, 3);
+        auto mesh = geometry::CreateMeshCone(0.5, 2.0, 20, 3);
         mesh->ComputeVertexNormals();
         DrawGeometries({mesh});
         WriteTriangleMesh("cone.ply", *mesh, true, true);
     } else if (option == "arrow") {
-        auto mesh = CreateMeshArrow();
+        auto mesh = geometry::CreateMeshArrow();
         mesh->ComputeVertexNormals();
         DrawGeometries({mesh});
         WriteTriangleMesh("arrow.ply", *mesh, true, true);
     } else if (option == "frame") {
         if (argc < 3) {
-            auto mesh = CreateMeshCoordinateFrame();
+            auto mesh = geometry::CreateMeshCoordinateFrame();
             DrawGeometries({mesh});
             WriteTriangleMesh("frame.ply", *mesh, true, true);
         } else {
             auto mesh = CreateMeshFromFile(argv[2]);
             mesh->ComputeVertexNormals();
             BoundingBox boundingbox(*mesh);
-            auto mesh_frame = CreateMeshCoordinateFrame(
+            auto mesh_frame = geometry::CreateMeshCoordinateFrame(
                     boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
             DrawGeometries({mesh, mesh_frame});
         }
@@ -135,7 +136,7 @@ int main(int argc, char *argv[]) {
         auto mesh2 = CreateMeshFromFile(argv[3]);
         double scale = std::stod(argv[4]);
         mesh1->vertex_colors_.resize(mesh1->vertices_.size());
-        KDTreeFlann kdtree;
+        geometry::KDTreeFlann kdtree;
         kdtree.SetGeometry(*mesh2);
         std::vector<int> indices(1);
         std::vector<double> dists(1);
@@ -157,7 +158,7 @@ int main(int argc, char *argv[]) {
         PaintMesh(*mesh1, Eigen::Vector3d(1.0, 0.75, 0.0));
         auto mesh2 = CreateMeshFromFile(argv[3]);
         PaintMesh(*mesh2, Eigen::Vector3d(0.25, 0.25, 1.0));
-        std::vector<std::shared_ptr<const Geometry>> meshes;
+        std::vector<std::shared_ptr<const geometry::Geometry>> meshes;
         meshes.push_back(mesh1);
         meshes.push_back(mesh2);
         DrawGeometries(meshes);
@@ -171,9 +172,9 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         int idx = 3000;
-        std::vector<std::shared_ptr<const Geometry>> ptrs;
+        std::vector<std::shared_ptr<const geometry::Geometry>> ptrs;
         ptrs.push_back(mesh);
-        auto mesh_sphere = CreateMeshSphere(0.05);
+        auto mesh_sphere = geometry::CreateMeshSphere(0.05);
         Eigen::Matrix4d trans;
         trans.setIdentity();
         trans.block<3, 1>(0, 3) = mesh->vertices_[idx];

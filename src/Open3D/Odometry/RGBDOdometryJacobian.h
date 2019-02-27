@@ -35,9 +35,13 @@
 
 namespace open3d {
 
+namespace geometry {
 class Image;
+}
 
+namespace geometry {
 class RGBDImage;
+}
 
 typedef std::vector<Eigen::Vector4i, Vector4i_allocator>
         CorrespondenceSetPixelWise;
@@ -57,11 +61,11 @@ public:
             int row,
             std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source,
-            const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx,
-            const RGBDImage &target_dy,
+            const geometry::RGBDImage &source,
+            const geometry::RGBDImage &target,
+            const geometry::Image &source_xyz,
+            const geometry::RGBDImage &target_dx,
+            const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const = 0;
@@ -83,11 +87,11 @@ public:
             int row,
             std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source,
-            const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx,
-            const RGBDImage &target_dy,
+            const geometry::RGBDImage &source,
+            const geometry::RGBDImage &target,
+            const geometry::Image &source_xyz,
+            const geometry::RGBDImage &target_dx,
+            const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
@@ -108,11 +112,11 @@ public:
             int row,
             std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source,
-            const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx,
-            const RGBDImage &target_dy,
+            const geometry::RGBDImage &source,
+            const geometry::RGBDImage &target,
+            const geometry::Image &source_xyz,
+            const geometry::RGBDImage &target_dx,
+            const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;

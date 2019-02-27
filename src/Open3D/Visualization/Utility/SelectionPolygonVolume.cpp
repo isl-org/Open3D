@@ -87,34 +87,38 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
-std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloud(
-        const PointCloud &input) const {
+std::shared_ptr<geometry::PointCloud> SelectionPolygonVolume::CropPointCloud(
+        const geometry::PointCloud &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
-        return std::make_shared<PointCloud>();
+        return std::make_shared<geometry::PointCloud>();
     return CropPointCloudInPolygon(input);
 }
 
-std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
-        const PointCloud &input) const {
-    return SelectDownSample(input, CropInPolygon(input.points_));
+std::shared_ptr<geometry::PointCloud>
+SelectionPolygonVolume::CropPointCloudInPolygon(
+        const geometry::PointCloud &input) const {
+    return geometry::SelectDownSample(input, CropInPolygon(input.points_));
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMesh(
-        const TriangleMesh &input) const {
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygonVolume::CropTriangleMesh(
+        const geometry::TriangleMesh &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
-        return std::make_shared<TriangleMesh>();
+        return std::make_shared<geometry::TriangleMesh>();
     if (input.HasVertices() && !input.HasTriangles()) {
         PrintWarning(
-                "TriangleMesh contains vertices, but no triangles; "
-                "cropping will always yield an empty TriangleMesh.\n");
-        return std::make_shared<TriangleMesh>();
+                "geometry::TriangleMesh contains vertices, but no triangles; "
+                "cropping will always yield an empty "
+                "geometry::TriangleMesh.\n");
+        return std::make_shared<geometry::TriangleMesh>();
     }
     return CropTriangleMeshInPolygon(input);
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
-        const TriangleMesh &input) const {
-    return SelectDownSample(input, CropInPolygon(input.vertices_));
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygonVolume::CropTriangleMeshInPolygon(
+        const geometry::TriangleMesh &input) const {
+    return geometry::SelectDownSample(input, CropInPolygon(input.vertices_));
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(

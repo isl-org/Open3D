@@ -70,9 +70,9 @@ Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
 }
 
 std::shared_ptr<Feature> ComputeSPFHFeature(
-        const PointCloud &input,
-        const KDTreeFlann &kdtree,
-        const KDTreeSearchParam &search_param) {
+        const geometry::PointCloud &input,
+        const geometry::KDTreeFlann &kdtree,
+        const geometry::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
 #ifdef _OPENMP
@@ -112,8 +112,9 @@ std::shared_ptr<Feature> ComputeSPFHFeature(
 }  // unnamed namespace
 
 std::shared_ptr<Feature> ComputeFPFHFeature(
-        const PointCloud &input,
-        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+        const geometry::PointCloud &input,
+        const geometry::KDTreeSearchParam
+                &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
     if (input.HasNormals() == false) {
@@ -122,7 +123,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
                 "normal.\n");
         return feature;
     }
-    KDTreeFlann kdtree(input);
+    geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)

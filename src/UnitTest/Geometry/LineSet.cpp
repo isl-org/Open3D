@@ -39,10 +39,10 @@ using namespace unit_test;
 //
 // ----------------------------------------------------------------------------
 TEST(LineSet, Constructor) {
-    LineSet ls;
+    geometry::LineSet ls;
 
     // inherited from Geometry2D
-    EXPECT_EQ(Geometry::GeometryType::LineSet, ls.GetGeometryType());
+    EXPECT_EQ(geometry::Geometry::GeometryType::LineSet, ls.GetGeometryType());
     EXPECT_EQ(3, ls.Dimension());
 
     // public member variables
@@ -78,7 +78,7 @@ TEST(LineSet, Clear) {
     Vector2i imin(0, 0);
     Vector2i imax(1000, 1000);
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     ls.points_.resize(size);
     ls.lines_.resize(size);
@@ -118,7 +118,7 @@ TEST(LineSet, IsEmpty) {
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     EXPECT_TRUE(ls.IsEmpty());
 
@@ -138,7 +138,7 @@ TEST(LineSet, GetMinBound) {
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     ls.points_.resize(size);
 
@@ -158,7 +158,7 @@ TEST(LineSet, GetMaxBound) {
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(1000.0, 1000.0, 1000.0);
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     ls.points_.resize(size);
 
@@ -189,7 +189,7 @@ TEST(LineSet, Transform) {
             {474, 627}, {364, 509}, {949, 913}, {635, 713}, {141, 603}};
 
     int size = 10;
-    LineSet ls;
+    geometry::LineSet ls;
 
     Vector3d dmin(0.0, 0.0, 0.0);
     Vector3d dmax(1000.0, 1000.0, 1000.0);
@@ -219,8 +219,8 @@ TEST(LineSet, Transform) {
 TEST(LineSet, OperatorAppend) {
     int size = 100;
 
-    LineSet ls0;
-    LineSet ls1;
+    geometry::LineSet ls0;
+    geometry::LineSet ls1;
 
     ls0.points_.resize(size);
     ls0.lines_.resize(size);
@@ -250,7 +250,7 @@ TEST(LineSet, OperatorAppend) {
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
-    LineSet ls(ls0);
+    geometry::LineSet ls(ls0);
     ls += ls1;
 
     EXPECT_EQ(2 * size, ls.points_.size());
@@ -281,8 +281,8 @@ TEST(LineSet, OperatorAppend) {
 TEST(LineSet, OperatorADD) {
     int size = 100;
 
-    LineSet ls0;
-    LineSet ls1;
+    geometry::LineSet ls0;
+    geometry::LineSet ls1;
 
     ls0.points_.resize(size);
     ls0.lines_.resize(size);
@@ -312,7 +312,7 @@ TEST(LineSet, OperatorADD) {
     c.insert(c.end(), ls0.colors_.begin(), ls0.colors_.end());
     c.insert(c.end(), ls1.colors_.begin(), ls1.colors_.end());
 
-    LineSet ls = ls0 + ls1;
+    geometry::LineSet ls = ls0 + ls1;
 
     EXPECT_EQ(2 * size, ls.points_.size());
     for (size_t i = 0; i < size; i++) {
@@ -342,7 +342,7 @@ TEST(LineSet, OperatorADD) {
 TEST(LineSet, HasPoints) {
     int size = 100;
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     EXPECT_FALSE(ls.HasPoints());
 
@@ -357,7 +357,7 @@ TEST(LineSet, HasPoints) {
 TEST(LineSet, HasLines) {
     int size = 100;
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     EXPECT_FALSE(ls.HasLines());
 
@@ -373,7 +373,7 @@ TEST(LineSet, HasLines) {
 TEST(LineSet, HasColors) {
     int size = 100;
 
-    LineSet ls;
+    geometry::LineSet ls;
 
     EXPECT_FALSE(ls.HasColors());
 
@@ -411,7 +411,7 @@ TEST(LineSet, GetLineCoordinate) {
              {913.725490, 635.294118, 713.725490}}};
 
     int size = 10;
-    LineSet ls;
+    geometry::LineSet ls;
 
     Vector3d dmin(0.0, 0.0, 0.0);
     Vector3d dmax(1000.0, 1000.0, 1000.0);
@@ -464,8 +464,8 @@ TEST(LineSet, CreateLineSetFromPointCloudCorrespondences) {
     vector<Vector2i> ref_lines = {{8, 13}, {7, 17}, {9, 11}, {3, 17}, {2, 15},
                                   {4, 16}, {3, 15}, {9, 19}, {6, 17}, {1, 16}};
 
-    PointCloud pc0;
-    PointCloud pc1;
+    geometry::PointCloud pc0;
+    geometry::PointCloud pc1;
     vector<pair<int, int>> correspondence(size);
 
     pc0.points_.resize(size);

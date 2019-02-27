@@ -37,17 +37,19 @@ class PyTSDFVolume : public TSDFVolumeBase {
 public:
     using TSDFVolumeBase::TSDFVolumeBase;
     void Reset() override { PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, ); }
-    void Integrate(const RGBDImage &image,
+    void Integrate(const geometry::RGBDImage &image,
                    const camera::PinholeCameraIntrinsic &intrinsic,
                    const Eigen::Matrix4d &extrinsic) override {
         PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, image, intrinsic,
                                extrinsic);
     }
-    std::shared_ptr<PointCloud> ExtractPointCloud() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<PointCloud>, TSDFVolumeBase, );
+    std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::PointCloud>,
+                               TSDFVolumeBase, );
     }
-    std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<TriangleMesh>, TSDFVolumeBase, );
+    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::TriangleMesh>,
+                               TSDFVolumeBase, );
     }
 };
 

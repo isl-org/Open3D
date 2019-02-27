@@ -45,15 +45,15 @@ public:
         PYBIND11_OVERLOAD_PURE(TransformationEstimationType,
                                TransformationEstimationBase, void);
     }
-    double ComputeRMSE(const PointCloud &source,
-                       const PointCloud &target,
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override {
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
                                target, corres);
     }
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source,
-            const PointCloud &target,
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Matrix4d, TransformationEstimationBase,
                                source, target, corres);
@@ -64,8 +64,8 @@ template <class CorrespondenceCheckerBase = CorrespondenceChecker>
 class PyCorrespondenceChecker : public CorrespondenceCheckerBase {
 public:
     using CorrespondenceCheckerBase::CorrespondenceCheckerBase;
-    bool Check(const PointCloud &source,
-               const PointCloud &target,
+    bool Check(const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override {
         PYBIND11_OVERLOAD_PURE(bool, CorrespondenceCheckerBase, source, target,

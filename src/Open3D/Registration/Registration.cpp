@@ -39,9 +39,9 @@ namespace open3d {
 namespace {
 
 RegistrationResult GetRegistrationResultAndCorrespondences(
-        const PointCloud &source,
-        const PointCloud &target,
-        const KDTreeFlann &target_kdtree,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const geometry::KDTreeFlann &target_kdtree,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
     RegistrationResult result(transformation);
@@ -97,8 +97,8 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 }
 
 RegistrationResult EvaluateRANSACBasedOnCorrespondence(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
@@ -127,14 +127,14 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
 }  // unnamed namespace
 
 RegistrationResult EvaluateRegistration(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d
                 &transformation /* = Eigen::Matrix4d::Identity()*/) {
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
-    PointCloud pcd = source;
+    geometry::PointCloud pcd = source;
     if (transformation.isIdentity() == false) {
         pcd.Transform(transformation);
     }
@@ -143,8 +143,8 @@ RegistrationResult EvaluateRegistration(
 }
 
 RegistrationResult RegistrationICP(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const TransformationEstimation &estimation
@@ -165,9 +165,9 @@ RegistrationResult RegistrationICP(
     }
 
     Eigen::Matrix4d transformation = init;
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
-    PointCloud pcd = source;
+    geometry::PointCloud pcd = source;
     if (init.isIdentity() == false) {
         pcd.Transform(init);
     }
@@ -196,8 +196,8 @@ RegistrationResult RegistrationICP(
 }
 
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         double max_correspondence_distance,
         const TransformationEstimation &estimation
@@ -221,7 +221,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         }
         transformation =
                 estimation.ComputeTransformation(source, target, ransac_corres);
-        PointCloud pcd = source;
+        geometry::PointCloud pcd = source;
         pcd.Transform(transformation);
         auto this_result = EvaluateRANSACBasedOnCorrespondence(
                 pcd, target, corres, max_correspondence_distance,
@@ -238,8 +238,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 }
 
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const Feature &source_feature,
         const Feature &target_feature,
         double max_correspondence_distance,
@@ -265,8 +265,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     {
 #endif
         CorrespondenceSet ransac_corres(ransac_n);
-        KDTreeFlann kdtree(target);
-        KDTreeFlann kdtree_feature(target_feature);
+        geometry::KDTreeFlann kdtree(target);
+        geometry::KDTreeFlann kdtree_feature(target_feature);
         RegistrationResult result_private;
         unsigned int seed_number;
 #ifdef _OPENMP
@@ -330,7 +330,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                     }
                 }
                 if (check == false) continue;
-                PointCloud pcd = source;
+                geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
                 auto this_result = GetRegistrationResultAndCorrespondences(
                         pcd, target, kdtree, max_correspondence_distance,
@@ -370,16 +370,16 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 }
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
-    PointCloud pcd = source;
+    geometry::PointCloud pcd = source;
     if (transformation.isIdentity() == false) {
         pcd.Transform(transformation);
     }
     RegistrationResult result;
-    KDTreeFlann target_kdtree(target);
+    geometry::KDTreeFlann target_kdtree(target);
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, target_kdtree, max_correspondence_distance,
             transformation);

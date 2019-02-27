@@ -45,19 +45,19 @@
 namespace open3d {
 
 bool VisualizerWithEditing::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (is_initialized_ == false || geometry_ptrs_.empty() == false) {
         return false;
     }
     glfwMakeContextCurrent(window_);
     original_geometry_ptr_ = geometry_ptr;
     if (geometry_ptr->GetGeometryType() ==
-        Geometry::GeometryType::Unspecified) {
+        geometry::Geometry::GeometryType::Unspecified) {
         return false;
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::PointCloud) {
-        auto ptr = std::make_shared<PointCloud>();
-        *ptr = (const PointCloud &)*original_geometry_ptr_;
+               geometry::Geometry::GeometryType::PointCloud) {
+        auto ptr = std::make_shared<geometry::PointCloud>();
+        *ptr = (const geometry::PointCloud &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 std::make_shared<glsl::PointCloudRenderer>();
@@ -66,9 +66,9 @@ bool VisualizerWithEditing::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::LineSet) {
-        auto ptr = std::make_shared<LineSet>();
-        *ptr = (const LineSet &)*original_geometry_ptr_;
+               geometry::Geometry::GeometryType::LineSet) {
+        auto ptr = std::make_shared<geometry::LineSet>();
+        *ptr = (const geometry::LineSet &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 std::make_shared<glsl::LineSetRenderer>();
@@ -77,9 +77,9 @@ bool VisualizerWithEditing::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::TriangleMesh) {
-        auto ptr = std::make_shared<TriangleMesh>();
-        *ptr = (const TriangleMesh &)*original_geometry_ptr_;
+               geometry::Geometry::GeometryType::TriangleMesh) {
+        auto ptr = std::make_shared<geometry::TriangleMesh>();
+        *ptr = (const geometry::TriangleMesh &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 std::make_shared<glsl::TriangleMeshRenderer>();
@@ -88,9 +88,9 @@ bool VisualizerWithEditing::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::Image) {
-        auto ptr = std::make_shared<Image>();
-        *ptr = (const Image &)*original_geometry_ptr_;
+               geometry::Geometry::GeometryType::Image) {
+        auto ptr = std::make_shared<geometry::Image>();
+        *ptr = (const geometry::Image &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
         editing_geometry_renderer_ptr_ =
                 std::make_shared<glsl::ImageRenderer>();
@@ -315,8 +315,8 @@ void VisualizerWithEditing::KeyPressCallback(
             break;
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
-                (PointCloud &)*editing_geometry_ptr_ =
-                        (const PointCloud &)*original_geometry_ptr_;
+                (geometry::PointCloud &)*editing_geometry_ptr_ =
+                        (const geometry::PointCloud &)*original_geometry_ptr_;
                 editing_geometry_renderer_ptr_->UpdateGeometry();
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
@@ -349,11 +349,12 @@ void VisualizerWithEditing::KeyPressCallback(
                 }
                 if (voxel_size_ > 0.0 && editing_geometry_ptr_ &&
                     editing_geometry_ptr_->GetGeometryType() ==
-                            Geometry::GeometryType::PointCloud) {
+                            geometry::Geometry::GeometryType::PointCloud) {
                     PrintInfo("Voxel downsample with voxel size %.4f.\n",
                               voxel_size_);
-                    PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
-                    pcd = *VoxelDownSample(pcd, voxel_size_);
+                    geometry::PointCloud &pcd =
+                            (geometry::PointCloud &)*editing_geometry_ptr_;
+                    pcd = *geometry::VoxelDownSample(pcd, voxel_size_);
                     UpdateGeometry();
                 } else {
                     PrintInfo(
@@ -369,9 +370,10 @@ void VisualizerWithEditing::KeyPressCallback(
             if (view_control.IsLocked() && selection_polygon_ptr_) {
                 if (editing_geometry_ptr_ &&
                     editing_geometry_ptr_->GetGeometryType() ==
-                            Geometry::GeometryType::PointCloud) {
+                            geometry::Geometry::GeometryType::PointCloud) {
                     glfwMakeContextCurrent(window_);
-                    PointCloud &pcd = (PointCloud &)*editing_geometry_ptr_;
+                    geometry::PointCloud &pcd =
+                            (geometry::PointCloud &)*editing_geometry_ptr_;
                     pcd = *selection_polygon_ptr_->CropPointCloud(pcd,
                                                                   view_control);
                     editing_geometry_renderer_ptr_->UpdateGeometry();
@@ -382,8 +384,9 @@ void VisualizerWithEditing::KeyPressCallback(
                             std::to_string(crop_action_count_ + 1) + ".ply";
                     if (use_dialog_) {
                         filename = tinyfd_saveFileDialog(
-                                "PointCloud file", default_filename.c_str(), 1,
-                                pattern, "Polygon File Format (*.ply)");
+                                "geometry::PointCloud file",
+                                default_filename.c_str(), 1, pattern,
+                                "Polygon File Format (*.ply)");
                     } else {
                         filename = default_filename.c_str();
                     }
@@ -398,9 +401,11 @@ void VisualizerWithEditing::KeyPressCallback(
                     InvalidatePicking();
                 } else if (editing_geometry_ptr_ &&
                            editing_geometry_ptr_->GetGeometryType() ==
-                                   Geometry::GeometryType::TriangleMesh) {
+                                   geometry::Geometry::GeometryType::
+                                           TriangleMesh) {
                     glfwMakeContextCurrent(window_);
-                    TriangleMesh &mesh = (TriangleMesh &)*editing_geometry_ptr_;
+                    geometry::TriangleMesh &mesh =
+                            (geometry::TriangleMesh &)*editing_geometry_ptr_;
                     mesh = *selection_polygon_ptr_->CropTriangleMesh(
                             mesh, view_control);
                     editing_geometry_renderer_ptr_->UpdateGeometry();
@@ -591,8 +596,9 @@ void VisualizerWithEditing::MouseButtonCallback(GLFWwindow *window,
             if (index == -1) {
                 PrintInfo("No point has been picked.\n");
             } else {
-                const auto &point = ((const PointCloud &)(*geometry_ptrs_[0]))
-                                            .points_[index];
+                const auto &point =
+                        ((const geometry::PointCloud &)(*geometry_ptrs_[0]))
+                                .points_[index];
                 PrintInfo(
                         "Picked point #%d (%.2f, %.2f, %.2f) to add in "
                         "queue.\n",
@@ -638,12 +644,13 @@ void VisualizerWithEditing::SaveCroppingResult(
     std::string volume_filename =
             filesystem::GetFileNameWithoutExtension(filename) + ".json";
     if (geometry_ptrs_[0]->GetGeometryType() ==
-        Geometry::GeometryType::PointCloud)
-        WritePointCloud(ply_filename, (const PointCloud &)(*geometry_ptrs_[0]));
+        geometry::Geometry::GeometryType::PointCloud)
+        WritePointCloud(ply_filename,
+                        (const geometry::PointCloud &)(*geometry_ptrs_[0]));
     else if (geometry_ptrs_[0]->GetGeometryType() ==
-             Geometry::GeometryType::TriangleMesh)
+             geometry::Geometry::GeometryType::TriangleMesh)
         WriteTriangleMesh(ply_filename,
-                          (const TriangleMesh &)(*geometry_ptrs_[0]));
+                          (const geometry::TriangleMesh &)(*geometry_ptrs_[0]));
     WriteIJsonConvertible(volume_filename,
                           *selection_polygon_ptr_->CreateSelectionPolygonVolume(
                                   GetViewControl()));

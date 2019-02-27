@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
                               TSDFVolumeColorType::RGB8);
     FPSTimer timer("Process RGBD stream",
                    (int)camera_trajectory->parameters_.size());
-    Image depth, color;
+    geometry::Image depth, color;
     while (fgets(buffer, DEFAULT_IO_BUFFER_SIZE, file)) {
         std::vector<std::string> st;
         SplitString(st, buffer, "\t\r\n ");
@@ -102,8 +102,8 @@ int main(int argc, char *argv[]) {
             PrintDebug("Processing frame %d ...\n", index);
             ReadImage(dir_name + st[0], depth);
             ReadImage(dir_name + st[1], color);
-            auto rgbd = CreateRGBDImageFromColorAndDepth(color, depth, 1000.0,
-                                                         4.0, false);
+            auto rgbd = geometry::CreateRGBDImageFromColorAndDepth(
+                    color, depth, 1000.0, 4.0, false);
             if (index == 0 ||
                 (every_k_frames > 0 && index % every_k_frames == 0)) {
                 volume.Reset();

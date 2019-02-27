@@ -52,7 +52,7 @@ void PickingShader::Release() {
     ReleaseProgram();
 }
 
-bool PickingShader::BindGeometry(const Geometry &geometry,
+bool PickingShader::BindGeometry(const geometry::Geometry &geometry,
                                  const RenderOption &option,
                                  const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -85,7 +85,7 @@ bool PickingShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool PickingShader::RenderGeometry(const Geometry &geometry,
+bool PickingShader::RenderGeometry(const geometry::Geometry &geometry,
                                    const RenderOption &option,
                                    const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -114,11 +114,13 @@ void PickingShader::UnbindGeometry() {
     }
 }
 
-bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-                                                  const RenderOption &option,
-                                                  const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+bool PickingShaderForPointCloud::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
     glPointSize(GLfloat(option.point_size_));
@@ -128,16 +130,18 @@ bool PickingShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 }
 
 bool PickingShaderForPointCloud::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<float> &indices) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    const PointCloud &pointcloud = (const PointCloud &)geometry;
+    const geometry::PointCloud &pointcloud =
+            (const geometry::PointCloud &)geometry;
     if (pointcloud.HasPoints() == false) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;

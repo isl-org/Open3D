@@ -55,7 +55,7 @@ void ImageMaskShader::Release() {
     ReleaseProgram();
 }
 
-bool ImageMaskShader::BindGeometry(const Geometry &geometry,
+bool ImageMaskShader::BindGeometry(const geometry::Geometry &geometry,
                                    const RenderOption &option,
                                    const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -67,7 +67,7 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    Image render_image;
+    geometry::Image render_image;
     if (PrepareBinding(geometry, option, view, render_image) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
@@ -112,7 +112,7 @@ bool ImageMaskShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool ImageMaskShader::RenderGeometry(const Geometry &geometry,
+bool ImageMaskShader::RenderGeometry(const geometry::Geometry &geometry,
                                      const RenderOption &option,
                                      const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -148,14 +148,15 @@ void ImageMaskShader::UnbindGeometry() {
     }
 }
 
-bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
-                                               const RenderOption &option,
-                                               const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
-        PrintShaderWarning("Rendering type is not Image.");
+bool ImageMaskShaderForImage::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Image) {
+        PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;
     }
-    const Image &image = (const Image &)geometry;
+    const geometry::Image &image = (const geometry::Image &)geometry;
     if (image.width_ != view.GetWindowWidth() ||
         image.height_ != view.GetWindowHeight()) {
         PrintShaderWarning("Mask image does not match framebuffer size.");
@@ -170,15 +171,15 @@ bool ImageMaskShaderForImage::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool ImageMaskShaderForImage::PrepareBinding(const Geometry &geometry,
+bool ImageMaskShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
                                              const RenderOption &option,
                                              const ViewControl &view,
-                                             Image &render_image) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
-        PrintShaderWarning("Rendering type is not Image.");
+                                             geometry::Image &render_image) {
+    if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Image) {
+        PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;
     }
-    const Image &image = (const Image &)geometry;
+    const geometry::Image &image = (const geometry::Image &)geometry;
     if (image.HasData() == false) {
         PrintShaderWarning("Binding failed with empty image.");
         return false;

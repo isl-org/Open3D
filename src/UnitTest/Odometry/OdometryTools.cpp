@@ -33,14 +33,15 @@ using namespace unit_test;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
-                                                const int& height,
-                                                const int& num_of_channels,
-                                                const int& bytes_per_channel,
-                                                const float& vmin,
-                                                const float& vmax,
-                                                const int& seed) {
-    shared_ptr<Image> image = make_shared<Image>();
+shared_ptr<geometry::Image> odometry_tools::GenerateImage(
+        const int& width,
+        const int& height,
+        const int& num_of_channels,
+        const int& bytes_per_channel,
+        const float& vmin,
+        const float& vmax,
+        const int& seed) {
+    shared_ptr<geometry::Image> image = make_shared<geometry::Image>();
 
     image->PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
@@ -53,7 +54,8 @@ shared_ptr<Image> odometry_tools::GenerateImage(const int& width,
 // ----------------------------------------------------------------------------
 // Shift the pixels left with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step) {
+void odometry_tools::ShiftLeft(shared_ptr<geometry::Image> image,
+                               const int& step) {
     int width = image->width_;
     int height = image->height_;
     int num_of_channels = image->num_of_channels_;
@@ -69,7 +71,8 @@ void odometry_tools::ShiftLeft(shared_ptr<Image> image, const int& step) {
 // ----------------------------------------------------------------------------
 // Shift the pixels up with a specified step.
 // ----------------------------------------------------------------------------
-void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step) {
+void odometry_tools::ShiftUp(shared_ptr<geometry::Image> image,
+                             const int& step) {
     int width = image->width_;
     int height = image->height_;
     int num_of_channels = image->num_of_channels_;
@@ -85,15 +88,15 @@ void odometry_tools::ShiftUp(shared_ptr<Image> image, const int& step) {
 // ----------------------------------------------------------------------------
 // Create dummy correspondence map object.
 // ----------------------------------------------------------------------------
-shared_ptr<Image> odometry_tools::CorrespondenceMap(const int& width,
-                                                    const int& height,
-                                                    const int& vmin,
-                                                    const int& vmax,
-                                                    const int& seed) {
+shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(const int& width,
+                                                              const int& height,
+                                                              const int& vmin,
+                                                              const int& vmax,
+                                                              const int& seed) {
     int num_of_channels = 2;
     int bytes_per_channel = 4;
 
-    shared_ptr<Image> image = make_shared<Image>();
+    shared_ptr<geometry::Image> image = make_shared<geometry::Image>();
 
     image->PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
@@ -107,15 +110,15 @@ shared_ptr<Image> odometry_tools::CorrespondenceMap(const int& width,
 // ----------------------------------------------------------------------------
 // Create dummy depth buffer object.
 // ----------------------------------------------------------------------------
-shared_ptr<Image> odometry_tools::DepthBuffer(const int& width,
-                                              const int& height,
-                                              const float& vmin,
-                                              const float& vmax,
-                                              const int& seed) {
+shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
+                                                        const int& height,
+                                                        const float& vmin,
+                                                        const float& vmax,
+                                                        const int& seed) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<Image> image = make_shared<Image>();
+    shared_ptr<geometry::Image> image = make_shared<geometry::Image>();
 
     image->PrepareImage(width, height, num_of_channels, bytes_per_channel);
 

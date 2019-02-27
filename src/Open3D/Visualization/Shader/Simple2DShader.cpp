@@ -50,7 +50,7 @@ void Simple2DShader::Release() {
     ReleaseProgram();
 }
 
-bool Simple2DShader::BindGeometry(const Geometry &geometry,
+bool Simple2DShader::BindGeometry(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -83,7 +83,7 @@ bool Simple2DShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool Simple2DShader::RenderGeometry(const Geometry &geometry,
+bool Simple2DShader::RenderGeometry(const geometry::Geometry &geometry,
                                     const RenderOption &option,
                                     const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -112,10 +112,11 @@ void Simple2DShader::UnbindGeometry() {
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareRendering(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
         return false;
     }
@@ -126,12 +127,13 @@ bool Simple2DShaderForSelectionPolygon::PrepareRendering(
 }
 
 bool Simple2DShaderForSelectionPolygon::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::Unspecified) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Unspecified) {
         PrintShaderWarning("Rendering type is illegal.");
         return false;
     }

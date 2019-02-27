@@ -33,12 +33,15 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
 
 /// A utility class to store picked points of a pointcloud
-class PointCloudPicker : public Geometry3D {
+class PointCloudPicker : public geometry::Geometry3D {
 public:
-    PointCloudPicker() : Geometry3D(Geometry::GeometryType::Unspecified) {}
+    PointCloudPicker()
+        : geometry::Geometry3D(geometry::Geometry::GeometryType::Unspecified) {}
     ~PointCloudPicker() override {}
 
 public:
@@ -47,10 +50,10 @@ public:
     Eigen::Vector3d GetMinBound() const final;
     Eigen::Vector3d GetMaxBound() const final;
     void Transform(const Eigen::Matrix4d& transformation) override;
-    bool SetPointCloud(std::shared_ptr<const Geometry> ptr);
+    bool SetPointCloud(std::shared_ptr<const geometry::Geometry> ptr);
 
 public:
-    std::shared_ptr<const Geometry> pointcloud_ptr_;
+    std::shared_ptr<const geometry::Geometry> pointcloud_ptr_;
     std::vector<size_t> picked_indices_;
 };
 

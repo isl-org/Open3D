@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> pcd_names;
     filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
                                                   pcd_names);
-    std::vector<PointCloud> pcds(pcd_names.size());
-    std::vector<KDTreeFlann> kdtrees(pcd_names.size());
+    std::vector<geometry::PointCloud> pcds(pcd_names.size());
+    std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
     for (auto i = 0; i < pcd_names.size(); i++) {
         ReadPointCloud(pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
                        pcds[i]);
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     int total_point_num = 0;
     int total_correspondence_num = 0;
     for (auto k = 0; k < pair_ids.size(); k++) {
-        PointCloud source = pcds[pair_ids[k].second];
+        geometry::PointCloud source = pcds[pair_ids[k].second];
         source.Transform(transformations[k]);
         std::vector<int> indices(1);
         std::vector<double> distance2(1);
@@ -242,14 +242,14 @@ int main(int argc, char *argv[]) {
         int total_positive = 0;
 
         for (auto k = 0; k < pair_ids.size(); k++) {
-            PointCloud source = pcds[pair_ids[k].second];
+            geometry::PointCloud source = pcds[pair_ids[k].second];
             total_point_num += (int)source.points_.size();
         }
         std::vector<double> true_dis(total_point_num, -1.0);
         total_point_num = 0;
 
         for (auto k = 0; k < pair_ids.size(); k++) {
-            PointCloud source = pcds[pair_ids[k].second];
+            geometry::PointCloud source = pcds[pair_ids[k].second];
             source.Transform(transformations[k]);
             std::vector<int> indices(1);
             std::vector<double> distance2(1);

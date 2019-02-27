@@ -36,7 +36,8 @@ template <class VisualizerBase = Visualizer>
 class PyVisualizer : public VisualizerBase {
 public:
     using VisualizerBase::VisualizerBase;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override {
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override {
         PYBIND11_OVERLOAD(bool, VisualizerBase, AddGeometry, geometry_ptr);
     }
     bool UpdateGeometry() override {

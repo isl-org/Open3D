@@ -39,7 +39,7 @@ namespace open3d {
 
 namespace {
 
-class PointCloudForColoredICP : public PointCloud {
+class PointCloudForColoredICP : public geometry::PointCloud {
 public:
     std::vector<Eigen::Vector3d> color_gradient_;
 };
@@ -58,12 +58,12 @@ public:
     ~TransformationEstimationForColoredICP() override {}
 
 public:
-    double ComputeRMSE(const PointCloud &source,
-                       const PointCloud &target,
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source,
-            const PointCloud &target,
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
 public:
@@ -75,10 +75,11 @@ private:
 };
 
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
-        const PointCloud &target, const KDTreeSearchParamHybrid &search_param) {
+        const geometry::PointCloud &target,
+        const geometry::KDTreeSearchParamHybrid &search_param) {
     PrintDebug("InitializePointCloudForColoredICP\n");
 
-    KDTreeFlann tree;
+    geometry::KDTreeFlann tree;
     tree.SetGeometry(target);
 
     auto output = std::make_shared<PointCloudForColoredICP>();
@@ -139,8 +140,8 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
 }
 
 Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false ||
         target.HasColors() == false || source.HasColors() == false)
@@ -208,8 +209,8 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
 }
 
 double TransformationEstimationForColoredICP::ComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;
@@ -243,14 +244,14 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 }  // unnamed namespace
 
 RegistrationResult RegistrationColoredICP(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
         double lambda_geometric /* = 0.968*/) {
     auto target_c = InitializePointCloudForColoredICP(
-            target, KDTreeSearchParamHybrid(max_distance * 2.0, 30));
+            target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
     return RegistrationICP(
             source, *target_c, max_distance, init,
             TransformationEstimationForColoredICP(lambda_geometric), criteria);

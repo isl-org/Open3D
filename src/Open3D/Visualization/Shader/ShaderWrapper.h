@@ -50,7 +50,7 @@ public:
     /// The geometry is updated in a passive manner (bind only when needed).
     /// Thus this function compiles shaders if not yet, binds geometry if not
     /// yet, then do the rendering.
-    bool Render(const Geometry &geometry,
+    bool Render(const geometry::Geometry &geometry,
                 const RenderOption &option,
                 const ViewControl &view);
 
@@ -73,10 +73,10 @@ protected:
     /// the destructor.
     virtual void Release() = 0;
 
-    virtual bool BindGeometry(const Geometry &geometry,
+    virtual bool BindGeometry(const geometry::Geometry &geometry,
                               const RenderOption &option,
                               const ViewControl &view) = 0;
-    virtual bool RenderGeometry(const Geometry &geometry,
+    virtual bool RenderGeometry(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view) = 0;
     virtual void UnbindGeometry() = 0;

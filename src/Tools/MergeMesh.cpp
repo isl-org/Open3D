@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
     std::vector<std::string> filenames;
     ListFilesInDirectory(directory, filenames);
 
-    auto merged_mesh_ptr = std::make_shared<TriangleMesh>();
+    auto merged_mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     for (const auto &filename : filenames) {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
         if (ReadTriangleMesh(filename, *mesh_ptr)) {
             *merged_mesh_ptr += *mesh_ptr;
         }

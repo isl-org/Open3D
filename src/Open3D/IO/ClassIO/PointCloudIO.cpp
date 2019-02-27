@@ -36,7 +36,7 @@ namespace {
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, PointCloud &)>>
+        std::function<bool(const std::string &, geometry::PointCloud &)>>
         file_extension_to_pointcloud_read_function{
                 {"xyz", ReadPointCloudFromXYZ},
                 {"xyzn", ReadPointCloudFromXYZN},
@@ -48,7 +48,7 @@ static const std::unordered_map<
 
 static const std::unordered_map<std::string,
                                 std::function<bool(const std::string &,
-                                                   const PointCloud &,
+                                                   const geometry::PointCloud &,
                                                    const bool,
                                                    const bool)>>
         file_extension_to_pointcloud_write_function{
@@ -61,15 +61,15 @@ static const std::unordered_map<std::string,
         };
 }  // unnamed namespace
 
-std::shared_ptr<PointCloud> CreatePointCloudFromFile(
+std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename, const std::string &format) {
-    auto pointcloud = std::make_shared<PointCloud>();
+    auto pointcloud = std::make_shared<geometry::PointCloud>();
     ReadPointCloud(filename, *pointcloud, format);
     return pointcloud;
 }
 
 bool ReadPointCloud(const std::string &filename,
-                    PointCloud &pointcloud,
+                    geometry::PointCloud &pointcloud,
                     const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
@@ -78,40 +78,44 @@ bool ReadPointCloud(const std::string &filename,
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        PrintWarning("Read PointCloud failed: unknown file extension.\n");
+        PrintWarning(
+                "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_read_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        PrintWarning("Read PointCloud failed: unknown file extension.\n");
+        PrintWarning(
+                "Read geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, pointcloud);
-    PrintDebug("Read PointCloud: %d vertices.\n",
+    PrintDebug("Read geometry::PointCloud: %d vertices.\n",
                (int)pointcloud.points_.size());
     return success;
 }
 
 bool WritePointCloud(const std::string &filename,
-                     const PointCloud &pointcloud,
+                     const geometry::PointCloud &pointcloud,
                      bool write_ascii /* = false*/,
                      bool compressed /* = false*/) {
     std::string filename_ext =
             filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write PointCloud failed: unknown file extension.\n");
+        PrintWarning(
+                "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_pointcloud_write_function.find(filename_ext);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        PrintWarning("Write PointCloud failed: unknown file extension.\n");
+        PrintWarning(
+                "Write geometry::PointCloud failed: unknown file extension.\n");
         return false;
     }
     bool success =
             map_itr->second(filename, pointcloud, write_ascii, compressed);
-    PrintDebug("Write PointCloud: %d vertices.\n",
+    PrintDebug("Write geometry::PointCloud: %d vertices.\n",
                (int)pointcloud.points_.size());
     return success;
 }

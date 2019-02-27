@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     camera::PinholeCameraTrajectory trajectory;
     ReadPinholeCameraTrajectory(argv[1], trajectory);
-    std::vector<std::shared_ptr<const Geometry>> pcds;
+    std::vector<std::shared_ptr<const geometry::Geometry>> pcds;
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         char buff[DEFAULT_IO_BUFFER_SIZE];
         sprintf(buff, "%scloud_bin_%d.pcd", argv[2], (int)i);

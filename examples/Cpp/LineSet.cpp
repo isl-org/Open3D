@@ -40,14 +40,14 @@ int main(int argc, char **argv) {
         PrintOpen3DVersion();
         // clang-format off
         PrintInfo("Usage:\n");
-        PrintInfo("    > LineSet [filename]\n");
+        PrintInfo("    > geometry::LineSet [filename]\n");
         PrintInfo("    The program will :\n");
         PrintInfo("    1. load the pointcloud in [filename].\n");
-        PrintInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.\n");
-        PrintInfo("    3. convert the correspondences to LineSet and render it.\n");
+        PrintInfo("    2. use geometry::KDTreeFlann to compute 50 nearest neighbors of point0.\n");
+        PrintInfo("    3. convert the correspondences to geometry::LineSet and render it.\n");
         PrintInfo("    4. rotate the point cloud slightly to get another point cloud.\n");
         PrintInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.\n");
-        PrintInfo("    6. convert to LineSet and render it.\n");
+        PrintInfo("    6. convert to geometry::LineSet and render it.\n");
         PrintInfo("    7. distance below 0.05 are rendered as red, others as black.\n");
         // clang-format on
         return 1;
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     std::vector<std::pair<int, int>> correspondences;
 
     const int nn = 50;
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*cloud_ptr);
     std::vector<int> indices_vec(nn);
     std::vector<double> dists_vec(nn);
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
             *cloud_ptr, *cloud_ptr, correspondences);
     DrawGeometries({cloud_ptr, lineset_ptr});
 
-    auto new_cloud_ptr = std::make_shared<PointCloud>();
+    auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     *new_cloud_ptr = *cloud_ptr;
     BoundingBox bounding_box;
     bounding_box.FitInGeometry(*new_cloud_ptr);

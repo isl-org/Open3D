@@ -46,14 +46,14 @@ subcomponents visible to UnitTest.
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-vector<Image> GenerateImages(const int& width,
-                             const int& height,
-                             const int& num_of_channels,
-                             const int& bytes_per_channel,
-                             const size_t& size) {
-    vector<Image> images;
+vector<geometry::Image> GenerateImages(const int& width,
+                                       const int& height,
+                                       const int& num_of_channels,
+                                       const int& bytes_per_channel,
+                                       const size_t& size) {
+    vector<geometry::Image> images;
     for (size_t i = 0; i < size; i++) {
-        Image image;
+        geometry::Image image;
 
         image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
@@ -72,17 +72,18 @@ vector<Image> GenerateImages(const int& width,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-vector<shared_ptr<Image>> GenerateSharedImages(const int& width,
-                                               const int& height,
-                                               const int& num_of_channels,
-                                               const int& bytes_per_channel,
-                                               const size_t& size) {
-    vector<Image> images = GenerateImages(width, height, num_of_channels,
-                                          bytes_per_channel, size);
+vector<shared_ptr<geometry::Image>> GenerateSharedImages(
+        const int& width,
+        const int& height,
+        const int& num_of_channels,
+        const int& bytes_per_channel,
+        const size_t& size) {
+    vector<geometry::Image> images = GenerateImages(
+            width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<shared_ptr<Image>> output;
+    vector<shared_ptr<geometry::Image>> output;
     for (size_t i = 0; i < size; i++)
-        output.push_back(make_shared<Image>(images[i]));
+        output.push_back(make_shared<geometry::Image>(images[i]));
 
     return output;
 }
@@ -90,23 +91,24 @@ vector<shared_ptr<Image>> GenerateSharedImages(const int& width,
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-vector<RGBDImage> GenerateRGBDImages(const int& width,
-                                     const int& height,
-                                     const size_t& size) {
+vector<geometry::RGBDImage> GenerateRGBDImages(const int& width,
+                                               const int& height,
+                                               const size_t& size) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
     int depth_num_of_channels = 1;
     int depth_bytes_per_channel = 4;
 
-    vector<Image> depths = GenerateImages(width, height, depth_num_of_channels,
-                                          depth_bytes_per_channel, size);
+    vector<geometry::Image> depths =
+            GenerateImages(width, height, depth_num_of_channels,
+                           depth_bytes_per_channel, size);
 
-    vector<Image> colors = GenerateImages(width, height, num_of_channels,
-                                          bytes_per_channel, size);
+    vector<geometry::Image> colors = GenerateImages(
+            width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<RGBDImage> rgbdImages;
+    vector<geometry::RGBDImage> rgbdImages;
     for (size_t i = 0; i < size; i++) {
-        RGBDImage rgbdImage(colors[i], depths[i]);
+        geometry::RGBDImage rgbdImage(colors[i], depths[i]);
         rgbdImages.push_back(rgbdImage);
     }
 
@@ -215,10 +217,12 @@ TEST(ColorMapOptimization, DISABLED_MakeVertexAndImageVisibility) {
     int bytes_per_channel = 1;
     size_t size = 10;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 20);
-    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
-    vector<Image> images_mask = GenerateImages(width, height, num_of_channels,
-                                               bytes_per_channel, size);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 20);
+    vector<geometry::RGBDImage> images_rgbd =
+            GenerateRGBDImages(width, height, size);
+    vector<geometry::Image> images_mask = GenerateImages(
+            width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(-30, -15, -13);
     camera::PinholeCameraTrajectory camera =
@@ -266,7 +270,7 @@ TEST(ColorMapOptimization, DISABLED_MakeWarpingFields) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
 
-    vector<shared_ptr<Image>> images = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
     // ColorMapOptimizationOption option(false, 4, 0.316, 30, 2.5, 0.03, 0.1,
@@ -324,7 +328,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity) {
     int num_of_channels = 3;
     int bytes_per_channel = 4;
 
-    Image img;
+    geometry::Image img;
     img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
     float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
     Rand(depthData, width * height, 10.0, 100.0, 0);
@@ -409,7 +413,7 @@ TEST(ColorMapOptimization, DISABLED_QueryImageIntensity_WarpingField) {
     int num_of_channels = 3;
     int bytes_per_channel = 4;
 
-    Image img;
+    geometry::Image img;
     img.PrepareImage(width, height, num_of_channels, bytes_per_channel);
     float* const depthData = reinterpret_cast<float*>(&img.data_[0]);
     Rand(depthData, width * height, 10.0, 100.0, 0);
@@ -505,9 +509,10 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 10);
 
-    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
@@ -575,7 +580,8 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 10);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 10);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
@@ -587,7 +593,7 @@ TEST(ColorMapOptimization, DISABLED_SetProxyIntensityForVertex_WarpingField) {
     //     fields.push_back(field);
     // }
 
-    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
@@ -630,15 +636,16 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorNonrigid) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 5);
 
-    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<shared_ptr<Image>> images_dx = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_dx = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<shared_ptr<Image>> images_dy = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_dy = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
     // int nr_anchors = 6;
     // vector<ImageWarpingField> warping_fields;
@@ -709,15 +716,16 @@ TEST(ColorMapOptimization, DISABLED_OptimizeImageCoorRigid) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 5);
 
-    vector<shared_ptr<Image>> images_gray = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_gray = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<shared_ptr<Image>> images_dx = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_dx = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
-    vector<shared_ptr<Image>> images_dy = GenerateSharedImages(
+    vector<shared_ptr<geometry::Image>> images_dy = GenerateSharedImages(
             width, height, num_of_channels, bytes_per_channel, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
@@ -785,9 +793,11 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage) {
     int width = 320;
     int height = 240;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 5);
 
-    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+    vector<geometry::RGBDImage> images_rgbd =
+            GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     camera::PinholeCameraTrajectory camera =
@@ -840,7 +850,8 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     int width = 320;
     int height = 240;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 5);
 
     // TODO: change the initialization in such a way that the fields have an
     // effect on the outcome of QueryImageIntensity.
@@ -852,7 +863,8 @@ TEST(ColorMapOptimization, DISABLED_SetGeometryColorAverage_WarpingFields) {
     //     fields.push_back(field);
     // }
 
-    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+    vector<geometry::RGBDImage> images_rgbd =
+            GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(30, 15, 0.3);
     camera::PinholeCameraTrajectory camera =
@@ -938,11 +950,12 @@ TEST(ColorMapOptimization, DISABLED_MakeGradientImages) {
     int width = 5;
     int height = 5;
 
-    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+    vector<geometry::RGBDImage> images_rgbd =
+            GenerateRGBDImages(width, height, size);
 
-    vector<shared_ptr<Image>> images0;
-    vector<shared_ptr<Image>> images1;
-    vector<shared_ptr<Image>> images2;
+    vector<shared_ptr<geometry::Image>> images0;
+    vector<shared_ptr<geometry::Image>> images1;
+    vector<shared_ptr<geometry::Image>> images2;
 
     // tie(images0, images1, images2) = MakeGradientImages(images_rgbd);
 
@@ -994,7 +1007,8 @@ TEST(ColorMapOptimization, DISABLED_MakeDepthMasks) {
     int width = 10;
     int height = 10;
 
-    vector<RGBDImage> images_rgbd = GenerateRGBDImages(width, height, size);
+    vector<geometry::RGBDImage> images_rgbd =
+            GenerateRGBDImages(width, height, size);
 
     // ColorMapOptimizationOption option(false, 62, 0.316, 30, 2.5, 0.03, 0.95,
     // 3);
@@ -1112,9 +1126,11 @@ TEST(ColorMapOptimization, DISABLED_ColorMapOptimization) {
     int num_of_channels = 1;
     int bytes_per_channel = 4;
 
-    shared_ptr<TriangleMesh> mesh = CreateMeshSphere(10.0, 5);
+    shared_ptr<geometry::TriangleMesh> mesh =
+            geometry::CreateMeshSphere(10.0, 5);
 
-    vector<RGBDImage> rgbdImages = GenerateRGBDImages(width, height, size);
+    vector<geometry::RGBDImage> rgbdImages =
+            GenerateRGBDImages(width, height, size);
 
     Eigen::Vector3d pose(60, 15, 0.3);
     camera::PinholeCameraTrajectory camera =

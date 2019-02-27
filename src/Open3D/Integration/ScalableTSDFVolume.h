@@ -74,12 +74,12 @@ public:
 
 public:
     void Reset() override;
-    void Integrate(const RGBDImage &image,
+    void Integrate(const geometry::RGBDImage &image,
                    const camera::PinholeCameraIntrinsic &intrinsic,
                    const Eigen::Matrix4d &extrinsic) override;
-    std::shared_ptr<PointCloud> ExtractPointCloud() override;
-    std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
-    std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
+    std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override;
+    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override;
+    std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud();
 
 public:
     int volume_unit_resolution_;

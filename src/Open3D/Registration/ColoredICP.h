@@ -31,7 +31,9 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
 class RegistrationResult;
 
 /// Function to align colored point clouds
@@ -39,8 +41,8 @@ class RegistrationResult;
 /// J. Park, Q.-Y. Zhou, V. Koltun,
 /// Colored Point Cloud Registration Revisited, ICCV 2017
 RegistrationResult RegistrationColoredICP(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_distance,
         const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),

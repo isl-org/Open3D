@@ -35,21 +35,23 @@
 
 using namespace open3d;
 
-std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<Feature>>
+std::tuple<std::shared_ptr<geometry::PointCloud>, std::shared_ptr<Feature>>
 PreprocessPointCloud(const char *file_name) {
     auto pcd = open3d::CreatePointCloudFromFile(file_name);
-    auto pcd_down = VoxelDownSample(*pcd, 0.05);
-    EstimateNormals(*pcd_down, open3d::KDTreeSearchParamHybrid(0.1, 30));
+    auto pcd_down = geometry::VoxelDownSample(*pcd, 0.05);
+    geometry::EstimateNormals(
+            *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
     auto pcd_fpfh = ComputeFPFHFeature(
-            *pcd_down, open3d::KDTreeSearchParamHybrid(0.25, 100));
+            *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.25, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
-void VisualizeRegistration(const open3d::PointCloud &source,
-                           const open3d::PointCloud &target,
+void VisualizeRegistration(const open3d::geometry::PointCloud &source,
+                           const open3d::geometry::PointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
-    std::shared_ptr<PointCloud> source_transformed_ptr(new PointCloud);
-    std::shared_ptr<PointCloud> target_ptr(new PointCloud);
+    std::shared_ptr<geometry::PointCloud> source_transformed_ptr(
+            new geometry::PointCloud);
+    std::shared_ptr<geometry::PointCloud> target_ptr(new geometry::PointCloud);
     *source_transformed_ptr = source;
     *target_ptr = target;
     source_transformed_ptr->Transform(Transformation);
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
     bool visualize = false;
     if (ProgramOptionExists(argc, argv, "--visualize")) visualize = true;
 
-    std::shared_ptr<PointCloud> source, target;
+    std::shared_ptr<geometry::PointCloud> source, target;
     std::shared_ptr<Feature> source_fpfh, target_fpfh;
     std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
     std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);

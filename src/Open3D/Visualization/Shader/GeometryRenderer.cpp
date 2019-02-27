@@ -41,7 +41,7 @@ namespace glsl {
 bool PointCloudRenderer::Render(const RenderOption &option,
                                 const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
-    const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
+    const auto &pointcloud = (const geometry::PointCloud &)(*geometry_ptr_);
     bool success = true;
     if (pointcloud.HasNormals()) {
         if (option.point_color_option_ ==
@@ -61,8 +61,9 @@ bool PointCloudRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
-    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -80,13 +81,14 @@ bool PointCloudRenderer::UpdateGeometry() {
 bool PointCloudPickingRenderer::Render(const RenderOption &option,
                                        const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
-    const auto &pointcloud = (const PointCloud &)(*geometry_ptr_);
+    const auto &pointcloud = (const geometry::PointCloud &)(*geometry_ptr_);
     return picking_shader_.Render(pointcloud, option, view);
 }
 
 bool PointCloudPickingRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
-    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::PointCloud) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -105,8 +107,9 @@ bool VoxelGridRenderer::Render(const RenderOption &option,
 }
 
 bool VoxelGridRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
-    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -125,8 +128,9 @@ bool LineSetRenderer::Render(const RenderOption &option,
 }
 
 bool LineSetRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
-    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::LineSet) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -141,7 +145,7 @@ bool LineSetRenderer::UpdateGeometry() {
 bool TriangleMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
-    const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
+    const auto &mesh = (const geometry::TriangleMesh &)(*geometry_ptr_);
     bool success = true;
     if (mesh.HasTriangleNormals() && mesh.HasVertexNormals()) {
         if (option.mesh_color_option_ ==
@@ -160,9 +164,9 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 }
 
 bool TriangleMeshRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-        Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -183,8 +187,10 @@ bool ImageRenderer::Render(const RenderOption &option,
     return image_shader_.Render(*geometry_ptr_, option, view);
 }
 
-bool ImageRenderer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) {
-    if (geometry_ptr->GetGeometryType() != Geometry::GeometryType::Image) {
+bool ImageRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::Image) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -200,14 +206,14 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
                                      const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     if (option.show_coordinate_frame_ == false) return true;
-    const auto &mesh = (const TriangleMesh &)(*geometry_ptr_);
+    const auto &mesh = (const geometry::TriangleMesh &)(*geometry_ptr_);
     return phong_shader_.Render(mesh, option, view);
 }
 
 bool CoordinateFrameRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-        Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -231,9 +237,9 @@ bool SelectionPolygonRenderer::Render(const RenderOption &option,
 }
 
 bool SelectionPolygonRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-        Geometry::GeometryType::Unspecified) {
+        geometry::Geometry::GeometryType::Unspecified) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -258,14 +264,15 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
     };
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     const auto &picker = (const PointCloudPicker &)(*geometry_ptr_);
-    const auto &pointcloud = (const PointCloud &)(*picker.pointcloud_ptr_);
+    const auto &pointcloud =
+            (const geometry::PointCloud &)(*picker.pointcloud_ptr_);
     const auto &_option = (const RenderOptionWithEditing &)option;
     for (size_t i = 0; i < picker.picked_indices_.size(); i++) {
         size_t index = picker.picked_indices_[i];
         if (index < pointcloud.points_.size()) {
-            auto sphere =
-                    CreateMeshSphere(view.GetBoundingBox().GetSize() *
-                                     _option.pointcloud_picker_sphere_size_);
+            auto sphere = geometry::CreateMeshSphere(
+                    view.GetBoundingBox().GetSize() *
+                    _option.pointcloud_picker_sphere_size_);
             sphere->ComputeVertexNormals();
             sphere->vertex_colors_.clear();
             sphere->vertex_colors_.resize(
@@ -284,9 +291,9 @@ bool PointCloudPickerRenderer::Render(const RenderOption &option,
 }
 
 bool PointCloudPickerRenderer::AddGeometry(
-        std::shared_ptr<const Geometry> geometry_ptr) {
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-        Geometry::GeometryType::Unspecified) {
+        geometry::Geometry::GeometryType::Unspecified) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;

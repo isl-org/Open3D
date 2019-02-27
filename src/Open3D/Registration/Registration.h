@@ -36,7 +36,9 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
 class Feature;
 
 /// Class that defines the convergence criteria of ICP
@@ -94,15 +96,15 @@ public:
 
 /// Function for evaluation
 RegistrationResult EvaluateRegistration(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity());
 
 /// Functions for ICP registration
 RegistrationResult RegistrationICP(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
         const TransformationEstimation &estimation =
@@ -112,8 +114,8 @@ RegistrationResult RegistrationICP(
 /// Function for global RANSAC registration based on a given set of
 /// correspondences
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         double max_correspondence_distance,
         const TransformationEstimation &estimation =
@@ -124,8 +126,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 
 /// Function for global RANSAC registration based on feature matching
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const Feature &source_feature,
         const Feature &target_feature,
         double max_correspondence_distance,
@@ -139,8 +141,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
 /// Function for computing information matrix from RegistrationResult
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation);
 

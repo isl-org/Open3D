@@ -53,7 +53,8 @@ public:
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
 
 public:
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     void PrintVisualizerHelp() override;
     void UpdateWindowTitle() override;
     void BuildUtilities() override;
@@ -89,8 +90,8 @@ protected:
     std::shared_ptr<glsl::PointCloudPickerRenderer>
             pointcloud_picker_renderer_ptr_;
 
-    std::shared_ptr<const Geometry> original_geometry_ptr_;
-    std::shared_ptr<Geometry> editing_geometry_ptr_;
+    std::shared_ptr<const geometry::Geometry> original_geometry_ptr_;
+    std::shared_ptr<geometry::Geometry> editing_geometry_ptr_;
     std::shared_ptr<glsl::GeometryRenderer> editing_geometry_renderer_ptr_;
 
     double voxel_size_ = -1.0;

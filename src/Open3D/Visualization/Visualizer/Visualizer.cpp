@@ -229,7 +229,7 @@ void Visualizer::BuildUtilities() {
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
-    coordinate_frame_mesh_ptr_ = CreateMeshCoordinateFrame(
+    coordinate_frame_mesh_ptr_ = geometry::CreateMeshCoordinateFrame(
             boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
@@ -288,45 +288,46 @@ bool Visualizer::PollEvents() {
     return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) {
+bool Visualizer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (is_initialized_ == false) {
         return false;
     }
 
     glfwMakeContextCurrent(window_);
     if (geometry_ptr->GetGeometryType() ==
-        Geometry::GeometryType::Unspecified) {
+        geometry::Geometry::GeometryType::Unspecified) {
         return false;
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::PointCloud) {
+               geometry::Geometry::GeometryType::PointCloud) {
         auto renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::VoxelGrid) {
+               geometry::Geometry::GeometryType::VoxelGrid) {
         auto renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::LineSet) {
+               geometry::Geometry::GeometryType::LineSet) {
         auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::TriangleMesh) {
+               geometry::Geometry::GeometryType::TriangleMesh) {
         auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::Image) {
+               geometry::Geometry::GeometryType::Image) {
         auto renderer_ptr = std::make_shared<glsl::ImageRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
@@ -383,7 +384,7 @@ void Visualizer::PrintVisualizerHelp() {
     PrintInfo("  -- Render mode control --\n");
     PrintInfo("    L            : Turn on/off lighting.\n");
     PrintInfo("    +/-          : Increase/decrease point size.\n");
-    PrintInfo("    Ctrl + +/-   : Increase/decrease width of LineSet.\n");
+    PrintInfo("    Ctrl + +/-   : Increase/decrease width of geometry::LineSet.\n");
     PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
     PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
     PrintInfo("    W            : Turn on/off mesh wireframe.\n");

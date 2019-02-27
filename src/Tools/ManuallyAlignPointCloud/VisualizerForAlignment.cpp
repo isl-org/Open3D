@@ -46,13 +46,13 @@ void VisualizerForAlignment::PrintVisualizerHelp() {
 }
 
 bool VisualizerForAlignment::AddSourceAndTarget(
-        std::shared_ptr<PointCloud> source,
-        std::shared_ptr<PointCloud> target) {
+        std::shared_ptr<geometry::PointCloud> source,
+        std::shared_ptr<geometry::PointCloud> target) {
     GetRenderOption().point_size_ = 1.0;
     alignment_session_.source_ptr_ = source;
     alignment_session_.target_ptr_ = target;
-    source_copy_ptr_ = std::make_shared<PointCloud>();
-    target_copy_ptr_ = std::make_shared<PointCloud>();
+    source_copy_ptr_ = std::make_shared<geometry::PointCloud>();
+    target_copy_ptr_ = std::make_shared<geometry::PointCloud>();
     *source_copy_ptr_ = *source;
     *target_copy_ptr_ = *target;
     return AddGeometry(source_copy_ptr_) && AddGeometry(target_copy_ptr_);
@@ -188,8 +188,8 @@ void VisualizerForAlignment::KeyPressCallback(
                 if (voxel_size_ > 0.0) {
                     PrintInfo("Voxel downsample with voxel size %.4f.\n",
                               voxel_size_);
-                    *source_copy_ptr_ =
-                            *VoxelDownSample(*source_copy_ptr_, voxel_size_);
+                    *source_copy_ptr_ = *geometry::VoxelDownSample(
+                            *source_copy_ptr_, voxel_size_);
                     UpdateGeometry();
                 } else {
                     PrintInfo(
@@ -329,14 +329,14 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     FILE *f;
 
     WritePointCloud(source_filename, *source_copy_ptr_);
-    auto source_dis = ComputePointCloudToPointCloudDistance(*source_copy_ptr_,
-                                                            *target_copy_ptr_);
+    auto source_dis = geometry::ComputePointCloudToPointCloudDistance(
+            *source_copy_ptr_, *target_copy_ptr_);
     f = fopen(source_binname.c_str(), "wb");
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
     WritePointCloud(target_filename, *target_copy_ptr_);
-    auto target_dis = ComputePointCloudToPointCloudDistance(*target_copy_ptr_,
-                                                            *source_copy_ptr_);
+    auto target_dis = geometry::ComputePointCloudToPointCloudDistance(
+            *target_copy_ptr_, *source_copy_ptr_);
     f = fopen(target_binname.c_str(), "wb");
     fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
     fclose(f);

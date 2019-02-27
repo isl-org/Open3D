@@ -56,7 +56,7 @@ protected:
                 camera::PinholeCameraTrajectory camera;
                 ReadIJsonConvertible("camera.json", camera);
                 auto image_ptr = CreateImageFromFile("depth.png");
-                auto pointcloud_ptr = CreatePointCloudFromDepthImage(
+                auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
                         *image_ptr, camera.parameters_[0].intrinsic_,
                         camera.parameters_[0].extrinsic_);
                 AddGeometry(pointcloud_ptr);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     camera::PinholeCameraTrajectory camera;
     ReadIJsonConvertible("camera.json", camera);
-    auto pointcloud_ptr = CreatePointCloudFromDepthImage(
+    auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
             *image_ptr, camera.parameters_[0].intrinsic_,
             camera.parameters_[0].extrinsic_);
     VisualizerWithDepthCapture visualizer1;

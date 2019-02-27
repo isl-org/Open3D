@@ -36,12 +36,12 @@ namespace open3d {
 class BoundingBox {
 public:
     BoundingBox();
-    BoundingBox(const Geometry3D &geometry);
+    BoundingBox(const geometry::Geometry3D &geometry);
     ~BoundingBox();
 
 public:
     void Reset();
-    void FitInGeometry(const Geometry3D &geometry);
+    void FitInGeometry(const geometry::Geometry3D &geometry);
 
 public:
     Eigen::Vector3d GetCenter() const {
