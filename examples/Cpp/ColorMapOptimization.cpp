@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     if (argc != 2) {
         PrintInfo("Usage :\n");
-        PrintInfo(">    ColorMapOptimization data_dir\n");
+        PrintInfo(">    color_map::ColorMapOptimization data_dir\n");
         return 1;
     }
     // Read RGBD images
@@ -65,10 +65,10 @@ int main(int argc, char *argv[]) {
     // Q.-Y. Zhou and V. Koltun,
     // Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     // SIGGRAPH 2014
-    ColorMapOptimizationOption option;
+    color_map::ColorMapOptimizationOption option;
     option.maximum_iteration_ = 300;
     option.non_rigid_camera_coordinate_ = true;
-    ColorMapOptimization(*mesh, rgbd_images, *camera, option);
+    color_map::ColorMapOptimization(*mesh, rgbd_images, *camera, option);
     WriteTriangleMesh("color_map_after_optimization.ply", *mesh);
 
     return 0;
