@@ -31,6 +31,7 @@
 namespace open3d {
 
 namespace {
+using namespace visualization;
 
 class GlobalColorMapSingleton {
 private:
