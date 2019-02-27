@@ -64,13 +64,13 @@ int main(int argc, char **argv) {
     pose_graph_test.edges_.push_back(
             registration::PoseGraphEdge(0, 2, Eigen::Matrix4d::Random(),
                                         Eigen::Matrix6d::Random(), true, 0.2));
-    WritePoseGraph("test_pose_graph.json", pose_graph_test);
+    io::WritePoseGraph("test_pose_graph.json", pose_graph_test);
     registration::PoseGraph pose_graph;
-    ReadPoseGraph("test_pose_graph.json", pose_graph);
-    WritePoseGraph("test_pose_graph_copy.json", pose_graph);
+    io::ReadPoseGraph("test_pose_graph.json", pose_graph);
+    io::WritePoseGraph("test_pose_graph_copy.json", pose_graph);
 
     // testing posegraph optimization
-    auto pose_graph_input = CreatePoseGraphFromFile(argv[1]);
+    auto pose_graph_input = io::CreatePoseGraphFromFile(argv[1]);
     registration::GlobalOptimizationConvergenceCriteria criteria;
     registration::GlobalOptimizationOption option;
     registration::GlobalOptimizationLevenbergMarquardt optimization_method;
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     auto pose_graph_input_prunned =
             registration::CreatePoseGraphWithoutInvalidEdges(*pose_graph_input,
                                                              option);
-    WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
+    io::WritePoseGraph("pose_graph_optimized.json", *pose_graph_input_prunned);
 
     return 0;
 }

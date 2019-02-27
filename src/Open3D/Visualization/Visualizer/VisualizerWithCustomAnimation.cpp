@@ -142,12 +142,12 @@ void VisualizerWithCustomAnimation::Play(
             RegisterAnimationCallback(nullptr);
             if (recording && recording_trajectory) {
                 if (recording_depth) {
-                    WriteIJsonConvertible(
+                    io::WriteIJsonConvertible(
                             recording_depth_basedir_ +
                                     recording_depth_trajectory_filename_,
                             *trajectory_ptr);
                 } else {
-                    WriteIJsonConvertible(
+                    io::WriteIJsonConvertible(
                             recording_image_basedir_ +
                                     recording_image_trajectory_filename_,
                             *trajectory_ptr);

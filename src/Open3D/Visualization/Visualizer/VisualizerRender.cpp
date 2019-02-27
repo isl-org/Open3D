@@ -110,7 +110,7 @@ void Visualizer::CopyViewStatusToClipboard() {
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
     std::string clipboard_string;
-    if (WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
+    if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {
         utility::PrintInfo("Something is wrong copying view status.\n");
         return;
@@ -123,8 +123,8 @@ void Visualizer::CopyViewStatusFromClipboard() {
     if (clipboard_string_buffer != NULL) {
         std::string clipboard_string(clipboard_string_buffer);
         ViewTrajectory trajectory;
-        if (ReadIJsonConvertibleFromJSONString(clipboard_string, trajectory) ==
-            false) {
+        if (io::ReadIJsonConvertibleFromJSONString(clipboard_string,
+                                                   trajectory) == false) {
             utility::PrintInfo("Something is wrong copying view status.\n");
             return;
         }
@@ -202,13 +202,13 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
 
     utility::PrintDebug("[Visualizer] Screen capture to %s\n",
                         png_filename.c_str());
-    WriteImage(png_filename, png_image);
+    io::WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
         utility::PrintDebug("[Visualizer] Screen camera capture to %s\n",
                             camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
-        WriteIJsonConvertible(camera_filename, parameter);
+        io::WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
@@ -350,13 +350,13 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
 
     utility::PrintDebug("[Visualizer] Depth capture to %s\n",
                         png_filename.c_str());
-    WriteImage(png_filename, png_image);
+    io::WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
         utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
                             camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
-        WriteIJsonConvertible(camera_filename, parameter);
+        io::WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
@@ -432,13 +432,13 @@ void Visualizer::CaptureDepthPointCloud(
 
     utility::PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
                         ply_filename.c_str());
-    WritePointCloud(ply_filename, depth_pointcloud);
+    io::WritePointCloud(ply_filename, depth_pointcloud);
     if (!camera_filename.empty()) {
         utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
                             camera_filename.c_str());
         camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
-        WriteIJsonConvertible(camera_filename, parameter);
+        io::WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
@@ -450,7 +450,7 @@ void Visualizer::CaptureRenderOption(const std::string &filename /* = ""*/) {
     }
     utility::PrintDebug("[Visualizer] Render option capture to %s\n",
                         json_filename.c_str());
-    WriteIJsonConvertible(json_filename, *render_option_ptr_);
+    io::WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 
 }  // namespace open3d

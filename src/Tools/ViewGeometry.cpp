@@ -111,14 +111,14 @@ int main(int argc, char **argv) {
     }
 
     if (!mesh_filename.empty()) {
-        auto mesh_ptr = CreateMeshFromFile(mesh_filename);
+        auto mesh_ptr = io::CreateMeshFromFile(mesh_filename);
         mesh_ptr->ComputeVertexNormals();
         if (visualizer.AddGeometry(mesh_ptr) == false) {
             utility::PrintWarning("Failed adding triangle mesh.\n");
         }
     }
     if (!pcd_filename.empty()) {
-        auto pointcloud_ptr = CreatePointCloudFromFile(pcd_filename);
+        auto pointcloud_ptr = io::CreatePointCloudFromFile(pcd_filename);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
             utility::PrintWarning("Failed adding point cloud.\n");
         }
@@ -127,13 +127,13 @@ int main(int argc, char **argv) {
         }
     }
     if (!lineset_filename.empty()) {
-        auto lineset_ptr = CreateLineSetFromFile(lineset_filename);
+        auto lineset_ptr = io::CreateLineSetFromFile(lineset_filename);
         if (visualizer.AddGeometry(lineset_ptr) == false) {
             utility::PrintWarning("Failed adding line set.\n");
         }
     }
     if (!image_filename.empty()) {
-        auto image_ptr = CreateImageFromFile(image_filename);
+        auto image_ptr = io::CreateImageFromFile(image_filename);
         if (visualizer.AddGeometry(image_ptr) == false) {
             utility::PrintWarning("Failed adding image.\n");
         }
@@ -141,14 +141,14 @@ int main(int argc, char **argv) {
     if (!depth_filename.empty()) {
         camera::PinholeCameraParameters parameters;
         if (depth_parameter_filename.empty() ||
-            !ReadIJsonConvertible(depth_parameter_filename, parameters)) {
+            !io::ReadIJsonConvertible(depth_parameter_filename, parameters)) {
             utility::PrintWarning(
                     "Failed to read intrinsic parameters for depth image.\n");
             utility::PrintWarning("Use default value for Primesense camera.\n");
             parameters.intrinsic_.SetIntrinsics(640, 480, 525.0, 525.0, 319.5,
                                                 239.5);
         }
-        auto image_ptr = CreateImageFromFile(depth_filename);
+        auto image_ptr = io::CreateImageFromFile(depth_filename);
         auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
         if (visualizer.AddGeometry(pointcloud_ptr) == false) {
@@ -163,8 +163,8 @@ int main(int argc, char **argv) {
     }
 
     if (!render_filename.empty()) {
-        if (ReadIJsonConvertible(render_filename,
-                                 visualizer.GetRenderOption()) == false) {
+        if (io::ReadIJsonConvertible(render_filename,
+                                     visualizer.GetRenderOption()) == false) {
             utility::PrintWarning("Failed loading rendering settings.\n");
         }
     }
@@ -177,7 +177,8 @@ int main(int argc, char **argv) {
         }
     } else if (!camera_filename.empty()) {
         camera::PinholeCameraTrajectory camera_trajectory;
-        if (ReadIJsonConvertible(camera_filename, camera_trajectory) == false) {
+        if (io::ReadIJsonConvertible(camera_filename, camera_trajectory) ==
+            false) {
             utility::PrintWarning("Failed loading camera trajectory.\n");
         } else {
             auto &view_control = (ViewControlWithCustomAnimation &)

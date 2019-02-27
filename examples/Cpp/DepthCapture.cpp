@@ -49,13 +49,13 @@ protected:
             camera.parameters_.resize(1);
             view_control_ptr_->ConvertToPinholeCameraParameters(
                     camera.parameters_[0]);
-            WriteIJsonConvertible("camera.json", camera);
+            io::WriteIJsonConvertible("camera.json", camera);
         } else if (key == GLFW_KEY_L) {
             if (utility::filesystem::FileExists("depth.png") &&
                 utility::filesystem::FileExists("camera.json")) {
                 camera::PinholeCameraTrajectory camera;
-                ReadIJsonConvertible("camera.json", camera);
-                auto image_ptr = CreateImageFromFile("depth.png");
+                io::ReadIJsonConvertible("camera.json", camera);
+                auto image_ptr = io::CreateImageFromFile("depth.png");
                 auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
                         *image_ptr, camera.parameters_[0].intrinsic_,
                         camera.parameters_[0].extrinsic_);
@@ -63,14 +63,14 @@ protected:
             }
         } else if (key == GLFW_KEY_K) {
             if (utility::filesystem::FileExists("depth.ply")) {
-                auto pointcloud_ptr = CreatePointCloudFromFile("depth.ply");
+                auto pointcloud_ptr = io::CreatePointCloudFromFile("depth.ply");
                 AddGeometry(pointcloud_ptr);
             }
         } else if (key == GLFW_KEY_P) {
             if (utility::filesystem::FileExists("depth.png") &&
                 utility::filesystem::FileExists("camera.json")) {
                 camera::PinholeCameraTrajectory camera;
-                ReadIJsonConvertible("camera.json", camera);
+                io::ReadIJsonConvertible("camera.json", camera);
                 view_control_ptr_->ConvertFromPinholeCameraParameters(
                         camera.parameters_[0]);
             }
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto mesh_ptr = CreateMeshFromFile(argv[1]);
+    auto mesh_ptr = io::CreateMeshFromFile(argv[1]);
     mesh_ptr->ComputeVertexNormals();
     utility::PrintWarning("Press S to capture a depth image.\n");
     VisualizerWithDepthCapture visualizer;
@@ -106,11 +106,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto image_ptr = CreateImageFromFile("depth.png");
+    auto image_ptr = io::CreateImageFromFile("depth.png");
     DrawGeometries({image_ptr});
 
     camera::PinholeCameraTrajectory camera;
-    ReadIJsonConvertible("camera.json", camera);
+    io::ReadIJsonConvertible("camera.json", camera);
     auto pointcloud_ptr = geometry::CreatePointCloudFromDepthImage(
             *image_ptr, camera.parameters_[0].intrinsic_,
             camera.parameters_[0].extrinsic_);

@@ -45,17 +45,17 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    auto cloud_ptr = CreatePointCloudFromFile(argv[1]);
+    auto cloud_ptr = io::CreatePointCloudFromFile(argv[1]);
     DrawGeometries({cloud_ptr}, "TestPCDFileFormat", 1920, 1080);
 
     if (argc >= 3) {
         std::string method(argv[2]);
         if (method == "ascii") {
-            WritePointCloud("data.pcd", *cloud_ptr, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, true);
         } else if (method == "binary") {
-            WritePointCloud("data.pcd", *cloud_ptr, false, false);
+            io::WritePointCloud("data.pcd", *cloud_ptr, false, false);
         } else if (method == "compressed") {
-            WritePointCloud("data.pcd", *cloud_ptr, false, true);
+            io::WritePointCloud("data.pcd", *cloud_ptr, false, true);
         }
     }
 

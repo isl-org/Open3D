@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     }
 
     auto cloud_ptr = std::make_shared<geometry::PointCloud>();
-    if (ReadPointCloud(argv[1], *cloud_ptr)) {
+    if (io::ReadPointCloud(argv[1], *cloud_ptr)) {
         utility::PrintWarning("Successfully read %s\n", argv[1]);
     } else {
         utility::PrintError("Failed to read %s\n\n", argv[1]);
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
     auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
-    if (ReadPointCloud(argv[1], *new_cloud_ptr)) {
+    if (io::ReadPointCloud(argv[1], *new_cloud_ptr)) {
         utility::PrintWarning("Successfully read %s\n", argv[1]);
     } else {
         utility::PrintError("Failed to read %s\n\n", argv[1]);

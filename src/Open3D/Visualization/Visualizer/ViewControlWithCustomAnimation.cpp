@@ -239,12 +239,12 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
     }
     utility::PrintDebug("[Visualizer] Trejactory capture to %s\n",
                         json_filename.c_str());
-    return WriteIJsonConvertible(json_filename, view_trajectory_);
+    return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
         const std::string &filename) {
-    bool success = ReadIJsonConvertible(filename, view_trajectory_);
+    bool success = io::ReadIJsonConvertible(filename, view_trajectory_);
     if (success == false) {
         view_trajectory_.Reset();
     }

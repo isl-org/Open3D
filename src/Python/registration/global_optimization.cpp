@@ -287,14 +287,14 @@ void pybind_global_optimization_methods(py::module &m) {
     m.def("read_pose_graph",
           [](const std::string &filename) {
               registration::PoseGraph pose_graph;
-              ReadPoseGraph(filename, pose_graph);
+              io::ReadPoseGraph(filename, pose_graph);
               return pose_graph;
           },
           "Function to read registration::PoseGraph from file", "filename"_a);
     m.def("write_pose_graph",
           [](const std::string &filename,
              const registration::PoseGraph pose_graph) {
-              WritePoseGraph(filename, pose_graph);
+              io::WritePoseGraph(filename, pose_graph);
           },
           "Function to write registration::PoseGraph to file", "filename"_a,
           "pose_graph"_a);

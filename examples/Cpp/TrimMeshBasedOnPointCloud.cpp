@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
         utility::PrintWarning("Missing file names.\n");
         return 1;
     }
-    auto mesh = CreateMeshFromFile(in_mesh_file);
-    auto pcd = CreatePointCloudFromFile(pcd_file);
+    auto mesh = io::CreateMeshFromFile(in_mesh_file);
+    auto pcd = io::CreatePointCloudFromFile(pcd_file);
     if (mesh->IsEmpty() || pcd->IsEmpty()) {
         utility::PrintWarning("Empty geometry.\n");
         return 1;
@@ -140,6 +140,6 @@ int main(int argc, char *argv[]) {
             "[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have "
             "been removed.\n",
             old_vertex_num - k, old_triangle_num - kt);
-    WriteTriangleMesh(out_mesh_file, *mesh);
+    io::WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;
 }

@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     }
     camera::PinholeCameraIntrinsic intrinsic;
     if (intrinsic_path.empty() ||
-        !ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+        !io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         utility::PrintWarning(
                 "Failed to read intrinsic parameters for depth image.\n");
         utility::PrintWarning("Use default value for Primesense camera.\n");
@@ -82,10 +82,10 @@ int main(int argc, char* argv[]) {
 
     int rgbd_type =
             utility::GetProgramOptionAsInt(argc, argv, "--rgbd_type", 0);
-    auto color_source = CreateImageFromFile(argv[1]);
-    auto depth_source = CreateImageFromFile(argv[2]);
-    auto color_target = CreateImageFromFile(argv[3]);
-    auto depth_target = CreateImageFromFile(argv[4]);
+    auto color_source = io::CreateImageFromFile(argv[1]);
+    auto depth_source = io::CreateImageFromFile(argv[2]);
+    auto color_target = io::CreateImageFromFile(argv[3]);
+    auto depth_target = io::CreateImageFromFile(argv[4]);
     std::shared_ptr<geometry::RGBDImage> (*CreateRGBDImage)(
             const geometry::Image&, const geometry::Image&, bool);
     if (rgbd_type == 0)

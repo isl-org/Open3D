@@ -155,7 +155,7 @@ void pybind_visualization_utility_methods(py::module &m) {
     m.def("read_selection_polygon_volume",
           [](const std::string &filename) {
               SelectionPolygonVolume vol;
-              ReadIJsonConvertible(filename, vol);
+              io::ReadIJsonConvertible(filename, vol);
               return vol;
           },
           "Function to read SelectionPolygonVolume from file", "filename"_a);

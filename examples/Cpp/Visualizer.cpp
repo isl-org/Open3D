@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     std::string option(argv[1]);
     if (option == "mesh") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
     } else if (option == "spin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
                 "Spin", 1600, 900);
     } else if (option == "slowspin") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
                 "Press Space key to spin", 1600, 900);
     } else if (option == "pointcloud") {
         auto cloud_ptr = std::make_shared<geometry::PointCloud>();
-        if (ReadPointCloud(argv[2], *cloud_ptr)) {
+        if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
     } else if (option == "rainbow") {
         auto cloud_ptr = std::make_shared<geometry::PointCloud>();
-        if (ReadPointCloud(argv[2], *cloud_ptr)) {
+        if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
                 "Rainbow", 1600, 900);
     } else if (option == "image") {
         auto image_ptr = std::make_shared<geometry::Image>();
-        if (ReadImage(argv[2], *image_ptr)) {
+        if (io::ReadImage(argv[2], *image_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
         DrawGeometries({image_ptr}, "Image", image_ptr->width_,
                        image_ptr->height_);
     } else if (option == "depth") {
-        auto image_ptr = CreateImageFromFile(argv[2]);
+        auto image_ptr = io::CreateImageFromFile(argv[2]);
         camera::PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
@@ -152,11 +152,11 @@ int main(int argc, char *argv[]) {
                        "geometry::PointCloud from Depth geometry::Image", 1920,
                        1080);
     } else if (option == "editing") {
-        auto pcd = CreatePointCloudFromFile(argv[2]);
+        auto pcd = io::CreatePointCloudFromFile(argv[2]);
         DrawGeometriesWithEditing({pcd}, "Editing", 1920, 1080);
     } else if (option == "animation") {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
             utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
             utility::PrintError("Failed to read %s\n\n", argv[2]);

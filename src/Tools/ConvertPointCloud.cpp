@@ -71,7 +71,7 @@ void convert(int argc,
              const std::string &file_out) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
-    auto pointcloud_ptr = CreatePointCloudFromFile(file_in.c_str());
+    auto pointcloud_ptr = io::CreatePointCloudFromFile(file_in.c_str());
     size_t point_num_in = pointcloud_ptr->points_.size();
     bool processed = false;
 
@@ -186,7 +186,7 @@ void convert(int argc,
                 "Processed point cloud from %d points to %d points.\n",
                 (int)point_num_in, (int)point_num_out);
     }
-    WritePointCloud(file_out.c_str(), *pointcloud_ptr, false, true);
+    io::WritePointCloud(file_out.c_str(), *pointcloud_ptr, false, true);
 }
 
 int main(int argc, char **argv) {

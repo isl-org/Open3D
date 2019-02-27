@@ -54,14 +54,14 @@ void pybind_feature_methods(py::module &m) {
     m.def("read_feature",
           [](const std::string &filename) {
               registration::Feature feature;
-              ReadFeature(filename, feature);
+              io::ReadFeature(filename, feature);
               return feature;
           },
           "Function to read registration::Feature from file", "filename"_a);
     m.def("write_feature",
           [](const std::string &filename,
              const registration::Feature &feature) {
-              return WriteFeature(filename, feature);
+              return io::WriteFeature(filename, feature);
           },
           "Function to write registration::Feature to file", "filename"_a,
           "feature"_a);

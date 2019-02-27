@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     double max_distance = utility::GetProgramOptionAsDouble(
             argc, argv, "--max_distance", 0.0);
-    auto pcd = CreatePointCloudFromFile(argv[1]);
+    auto pcd = io::CreatePointCloudFromFile(argv[1]);
     if (pcd->IsEmpty()) {
         utility::PrintInfo("Empty point cloud.\n");
         return 1;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
         pcd->colors_[i] = colormap.GetColor(distances[i] / max_distance);
     }
     if (utility::ProgramOptionExists(argc, argv, "--write_color_back")) {
-        WritePointCloud(argv[1], *pcd);
+        io::WritePointCloud(argv[1], *pcd);
     }
     if (!utility::ProgramOptionExists(argc, argv, "--without_gui")) {
         DrawGeometries({pcd}, "Point Cloud", 1920, 1080);

@@ -53,27 +53,28 @@ int main(int argc, char **argv) {
     const std::string filename_depth(argv[2]);
 
     geometry::Image color_image_8bit;
-    if (ReadImage(filename_rgb, color_image_8bit)) {
+    if (io::ReadImage(filename_rgb, color_image_8bit)) {
         utility::PrintDebug("RGB image size : %d x %d\n",
                             color_image_8bit.width_, color_image_8bit.height_);
         auto gray_image = CreateFloatImageFromImage(color_image_8bit);
-        WriteImage("gray.png",
-                   *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image));
+        io::WriteImage(
+                "gray.png",
+                *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image));
 
         utility::PrintDebug("Gaussian Filtering\n");
         auto gray_image_b3 = geometry::FilterImage(
                 *gray_image, geometry::Image::FilterType::Gaussian3);
-        WriteImage(
+        io::WriteImage(
                 "gray_blur3.png",
                 *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_b3));
         auto gray_image_b5 = geometry::FilterImage(
                 *gray_image, geometry::Image::FilterType::Gaussian5);
-        WriteImage(
+        io::WriteImage(
                 "gray_blur5.png",
                 *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_b5));
         auto gray_image_b7 = geometry::FilterImage(
                 *gray_image, geometry::Image::FilterType::Gaussian7);
-        WriteImage(
+        io::WriteImage(
                 "gray_blur7.png",
                 *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_b7));
 
@@ -83,14 +84,14 @@ int main(int argc, char **argv) {
         // make [-1,1] to [0,1].
         geometry::LinearTransformImage(*gray_image_dx, 0.5, 0.5);
         geometry::ClipIntensityImage(*gray_image_dx);
-        WriteImage(
+        io::WriteImage(
                 "gray_sobel_dx.png",
                 *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_dx));
         auto gray_image_dy = geometry::FilterImage(
                 *gray_image, geometry::Image::FilterType::Sobel3Dy);
         geometry::LinearTransformImage(*gray_image_dy, 0.5, 0.5);
         geometry::ClipIntensityImage(*gray_image_dy);
-        WriteImage(
+        io::WriteImage(
                 "gray_sobel_dy.png",
                 *geometry::CreateImageFromFloatImage<uint8_t>(*gray_image_dy));
 
@@ -102,37 +103,38 @@ int main(int argc, char **argv) {
                     geometry::CreateImageFromFloatImage<uint8_t>(*level);
             std::string outputname =
                     "gray_pyramid_level" + std::to_string(i) + ".png";
-            WriteImage(outputname, *level_8bit);
+            io::WriteImage(outputname, *level_8bit);
         }
     } else {
         utility::PrintError("Failed to read %s\n\n", filename_rgb.c_str());
     }
 
     geometry::Image depth_image_16bit;
-    if (ReadImage(filename_depth, depth_image_16bit)) {
+    if (io::ReadImage(filename_depth, depth_image_16bit)) {
         utility::PrintDebug("Depth image size : %d x %d\n",
                             depth_image_16bit.width_,
                             depth_image_16bit.height_);
         auto depth_image = CreateFloatImageFromImage(depth_image_16bit);
-        WriteImage("depth.png", *geometry::CreateImageFromFloatImage<uint16_t>(
-                                        *depth_image));
+        io::WriteImage(
+                "depth.png",
+                *geometry::CreateImageFromFloatImage<uint16_t>(*depth_image));
 
         utility::PrintDebug("Gaussian Filtering\n");
         auto depth_image_b3 = geometry::FilterImage(
                 *depth_image, geometry::Image::FilterType::Gaussian3);
-        WriteImage("depth_blur3.png",
-                   *geometry::CreateImageFromFloatImage<uint16_t>(
-                           *depth_image_b3));
+        io::WriteImage("depth_blur3.png",
+                       *geometry::CreateImageFromFloatImage<uint16_t>(
+                               *depth_image_b3));
         auto depth_image_b5 = geometry::FilterImage(
                 *depth_image, geometry::Image::FilterType::Gaussian5);
-        WriteImage("depth_blur5.png",
-                   *geometry::CreateImageFromFloatImage<uint16_t>(
-                           *depth_image_b5));
+        io::WriteImage("depth_blur5.png",
+                       *geometry::CreateImageFromFloatImage<uint16_t>(
+                               *depth_image_b5));
         auto depth_image_b7 = geometry::FilterImage(
                 *depth_image, geometry::Image::FilterType::Gaussian7);
-        WriteImage("depth_blur7.png",
-                   *geometry::CreateImageFromFloatImage<uint16_t>(
-                           *depth_image_b7));
+        io::WriteImage("depth_blur7.png",
+                       *geometry::CreateImageFromFloatImage<uint16_t>(
+                               *depth_image_b7));
 
         utility::PrintDebug("Sobel Filtering\n");
         auto depth_image_dx = geometry::FilterImage(
@@ -140,16 +142,16 @@ int main(int argc, char **argv) {
         // make [-65536,65536] to [0,13107.2]. // todo: need to test this
         geometry::LinearTransformImage(*depth_image_dx, 0.1, 6553.6);
         geometry::ClipIntensityImage(*depth_image_dx, 0.0, 13107.2);
-        WriteImage("depth_sobel_dx.png",
-                   *geometry::CreateImageFromFloatImage<uint16_t>(
-                           *depth_image_dx));
+        io::WriteImage("depth_sobel_dx.png",
+                       *geometry::CreateImageFromFloatImage<uint16_t>(
+                               *depth_image_dx));
         auto depth_image_dy = geometry::FilterImage(
                 *depth_image, geometry::Image::FilterType::Sobel3Dy);
         geometry::LinearTransformImage(*depth_image_dy, 0.1, 6553.6);
         geometry::ClipIntensityImage(*depth_image_dx, 0.0, 13107.2);
-        WriteImage("depth_sobel_dy.png",
-                   *geometry::CreateImageFromFloatImage<uint16_t>(
-                           *depth_image_dy));
+        io::WriteImage("depth_sobel_dy.png",
+                       *geometry::CreateImageFromFloatImage<uint16_t>(
+                               *depth_image_dy));
 
         utility::PrintDebug("Build Pyramid\n");
         auto pyramid = geometry::CreateImagePyramid(*depth_image, 4);
@@ -159,7 +161,7 @@ int main(int argc, char **argv) {
                     geometry::CreateImageFromFloatImage<uint16_t>(*level);
             std::string outputname =
                     "depth_pyramid_level" + std::to_string(i) + ".png";
-            WriteImage(outputname, *level_16bit);
+            io::WriteImage(outputname, *level_16bit);
         }
     } else {
         utility::PrintError("Failed to read %s\n\n", filename_depth.c_str());

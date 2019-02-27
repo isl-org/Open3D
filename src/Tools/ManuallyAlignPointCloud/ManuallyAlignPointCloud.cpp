@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
     std::string default_directory =
             utility::filesystem::GetFileParentDirectory(argv[1]);
 
-    auto source_ptr = CreatePointCloudFromFile(argv[1]);
-    auto target_ptr = CreatePointCloudFromFile(argv[2]);
+    auto source_ptr = io::CreatePointCloudFromFile(argv[1]);
+    auto target_ptr = io::CreatePointCloudFromFile(argv[2]);
     if (source_ptr->IsEmpty() || target_ptr->IsEmpty()) {
         utility::PrintWarning("Failed to read one of the point clouds.\n");
         return 0;
@@ -110,14 +110,15 @@ int main(int argc, char **argv) {
 
     if (!alignment_filename.empty()) {
         AlignmentSession session;
-        if (ReadIJsonConvertible(alignment_filename, session) == false) {
+        if (io::ReadIJsonConvertible(alignment_filename, session) == false) {
             return 0;
         }
         session.voxel_size_ = voxel_size;
         session.max_correspondence_distance_ = max_corres_distance;
         source_ptr->Transform(session.transformation_);
         auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
-        if (ReadIJsonConvertible(default_polygon_filename, *polygon_volume)) {
+        if (io::ReadIJsonConvertible(default_polygon_filename,
+                                     *polygon_volume)) {
             utility::PrintInfo("Crop point cloud.\n");
             source_ptr = polygon_volume->CropPointCloud(*source_ptr);
         }
@@ -144,18 +145,19 @@ int main(int argc, char **argv) {
                 source_ptr->Transform(result.transformation_);
             }
         }
-        WriteIJsonConvertible(alignment_filename, session);
+        io::WriteIJsonConvertible(alignment_filename, session);
         return 1;
     }
 
     if (!eval_filename.empty()) {
         AlignmentSession session;
-        if (ReadIJsonConvertible(eval_filename, session) == false) {
+        if (io::ReadIJsonConvertible(eval_filename, session) == false) {
             return 0;
         }
         source_ptr->Transform(session.transformation_);
         auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
-        if (ReadIJsonConvertible(default_polygon_filename, *polygon_volume)) {
+        if (io::ReadIJsonConvertible(default_polygon_filename,
+                                     *polygon_volume)) {
             utility::PrintInfo("Crop point cloud.\n");
             source_ptr = polygon_volume->CropPointCloud(*source_ptr);
         }
@@ -182,13 +184,13 @@ int main(int argc, char **argv) {
                 ".target.bin";
         FILE *f;
 
-        WritePointCloud(source_filename, *source_ptr);
+        io::WritePointCloud(source_filename, *source_ptr);
         auto source_dis = geometry::ComputePointCloudToPointCloudDistance(
                 *source_ptr, *target_ptr);
         f = fopen(source_binname.c_str(), "wb");
         fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
         fclose(f);
-        WritePointCloud(target_filename, *target_ptr);
+        io::WritePointCloud(target_filename, *target_ptr);
         auto target_dis = geometry::ComputePointCloudToPointCloudDistance(
                 *target_ptr, *source_ptr);
         f = fopen(target_binname.c_str(), "wb");

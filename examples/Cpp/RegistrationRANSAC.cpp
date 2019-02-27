@@ -38,7 +38,7 @@ using namespace open3d;
 std::tuple<std::shared_ptr<geometry::PointCloud>,
            std::shared_ptr<registration::Feature>>
 PreprocessPointCloud(const char *file_name) {
-    auto pcd = open3d::CreatePointCloudFromFile(file_name);
+    auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
     auto pcd_down = geometry::VoxelDownSample(*pcd, 0.05);
     geometry::EstimateNormals(
             *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));

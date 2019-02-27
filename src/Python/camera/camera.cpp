@@ -122,7 +122,7 @@ void pybind_camera_methods(py::module &m) {
     m.def("read_pinhole_camera_intrinsic",
           [](const std::string &filename) {
               camera::PinholeCameraIntrinsic intrinsic;
-              ReadIJsonConvertible(filename, intrinsic);
+              io::ReadIJsonConvertible(filename, intrinsic);
               return intrinsic;
           },
           "Function to read camera::PinholeCameraIntrinsic from file",
@@ -130,14 +130,14 @@ void pybind_camera_methods(py::module &m) {
     m.def("write_pinhole_camera_intrinsic",
           [](const std::string &filename,
              const camera::PinholeCameraIntrinsic &intrinsic) {
-              return WriteIJsonConvertible(filename, intrinsic);
+              return io::WriteIJsonConvertible(filename, intrinsic);
           },
           "Function to write camera::PinholeCameraIntrinsic to file",
           "filename"_a, "intrinsic"_a);
     m.def("read_pinhole_camera_parameters",
           [](const std::string &filename) {
               camera::PinholeCameraParameters parameters;
-              ReadIJsonConvertible(filename, parameters);
+              io::ReadIJsonConvertible(filename, parameters);
               return parameters;
           },
           "Function to read camera::PinholeCameraParameters from file",
@@ -145,14 +145,14 @@ void pybind_camera_methods(py::module &m) {
     m.def("write_pinhole_camera_parameters",
           [](const std::string &filename,
              const camera::PinholeCameraParameters &parameters) {
-              return WriteIJsonConvertible(filename, parameters);
+              return io::WriteIJsonConvertible(filename, parameters);
           },
           "Function to write camera::PinholeCameraParameters to file",
           "filename"_a, "parameters"_a);
     m.def("read_pinhole_camera_trajectory",
           [](const std::string &filename) {
               camera::PinholeCameraTrajectory trajectory;
-              ReadPinholeCameraTrajectory(filename, trajectory);
+              io::ReadPinholeCameraTrajectory(filename, trajectory);
               return trajectory;
           },
           "Function to read camera::PinholeCameraTrajectory from file",
@@ -160,7 +160,7 @@ void pybind_camera_methods(py::module &m) {
     m.def("write_pinhole_camera_trajectory",
           [](const std::string &filename,
              const camera::PinholeCameraTrajectory &trajectory) {
-              return WritePinholeCameraTrajectory(filename, trajectory);
+              return io::WritePinholeCameraTrajectory(filename, trajectory);
           },
           "Function to write camera::PinholeCameraTrajectory to file",
           "filename"_a, "trajectory"_a);

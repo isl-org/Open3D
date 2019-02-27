@@ -214,7 +214,8 @@ void VisualizerForAlignment::KeyPressCallback(
                 }
                 auto polygon_volume =
                         std::make_shared<SelectionPolygonVolume>();
-                if (ReadIJsonConvertible(polygon_filename_, *polygon_volume)) {
+                if (io::ReadIJsonConvertible(polygon_filename_,
+                                             *polygon_volume)) {
                     *source_copy_ptr_ =
                             *polygon_volume->CropPointCloud(*source_copy_ptr_);
                     ResetViewPoint(true);
@@ -251,11 +252,11 @@ bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {
             max_correspondence_distance_;
     alignment_session_.with_scaling_ = with_scaling_;
     alignment_session_.transformation_ = transformation_;
-    return WriteIJsonConvertible(filename, alignment_session_);
+    return io::WriteIJsonConvertible(filename, alignment_session_);
 }
 
 bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
-    if (ReadIJsonConvertible(filename, alignment_session_) == false) {
+    if (io::ReadIJsonConvertible(filename, alignment_session_) == false) {
         return false;
     }
     source_visualizer_.GetPickedPoints() = alignment_session_.source_indices_;
@@ -338,13 +339,13 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
             ".target.bin";
     FILE *f;
 
-    WritePointCloud(source_filename, *source_copy_ptr_);
+    io::WritePointCloud(source_filename, *source_copy_ptr_);
     auto source_dis = geometry::ComputePointCloudToPointCloudDistance(
             *source_copy_ptr_, *target_copy_ptr_);
     f = fopen(source_binname.c_str(), "wb");
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
-    WritePointCloud(target_filename, *target_copy_ptr_);
+    io::WritePointCloud(target_filename, *target_copy_ptr_);
     auto target_dis = geometry::ComputePointCloudToPointCloudDistance(
             *target_copy_ptr_, *source_copy_ptr_);
     f = fopen(target_binname.c_str(), "wb");

@@ -49,16 +49,16 @@ int main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for (int i = 0; i < depth_filenames.size(); i++) {
         utility::PrintDebug("reading %s...\n", depth_filenames[i].c_str());
-        auto depth = CreateImageFromFile(depth_filenames[i]);
+        auto depth = io::CreateImageFromFile(depth_filenames[i]);
         utility::PrintDebug("reading %s...\n", color_filenames[i].c_str());
-        auto color = CreateImageFromFile(color_filenames[i]);
+        auto color = io::CreateImageFromFile(color_filenames[i]);
         auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(
                 *color, *depth, 1000.0, 3.0, false);
         rgbd_images.push_back(rgbd_image);
     }
-    auto camera =
-            CreatePinholeCameraTrajectoryFromFile(data_path + "/scene/key.log");
-    auto mesh = CreateMeshFromFile(data_path + "/scene/integrated.ply");
+    auto camera = io::CreatePinholeCameraTrajectoryFromFile(data_path +
+                                                            "/scene/key.log");
+    auto mesh = io::CreateMeshFromFile(data_path + "/scene/integrated.ply");
 
     // Optimize texture and save the mesh as texture_mapped.ply
     // This is implementation of following paper
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     option.maximum_iteration_ = 300;
     option.non_rigid_camera_coordinate_ = true;
     color_map::ColorMapOptimization(*mesh, rgbd_images, *camera, option);
-    WriteTriangleMesh("color_map_after_optimization.ply", *mesh);
+    io::WriteTriangleMesh("color_map_after_optimization.ply", *mesh);
 
     return 0;
 }

@@ -155,13 +155,13 @@ void pybind_image_methods(py::module &m) {
     m.def("read_image",
           [](const std::string &filename) {
               geometry::Image image;
-              ReadImage(filename, image);
+              io::ReadImage(filename, image);
               return image;
           },
           "Function to read geometry::Image from file", "filename"_a);
     m.def("write_image",
           [](const std::string &filename, const geometry::Image &image,
-             int quality) { return WriteImage(filename, image, quality); },
+             int quality) { return io::WriteImage(filename, image, quality); },
           "Function to write geometry::Image to file", "filename"_a, "image"_a,
           "quality"_a = 90);
     py::enum_<geometry::Image::FilterType>(m, "ImageFilterType")

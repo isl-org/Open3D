@@ -655,15 +655,17 @@ void VisualizerWithEditing::SaveCroppingResult(
             ".json";
     if (geometry_ptrs_[0]->GetGeometryType() ==
         geometry::Geometry::GeometryType::PointCloud)
-        WritePointCloud(ply_filename,
-                        (const geometry::PointCloud &)(*geometry_ptrs_[0]));
+        io::WritePointCloud(ply_filename,
+                            (const geometry::PointCloud &)(*geometry_ptrs_[0]));
     else if (geometry_ptrs_[0]->GetGeometryType() ==
              geometry::Geometry::GeometryType::TriangleMesh)
-        WriteTriangleMesh(ply_filename,
-                          (const geometry::TriangleMesh &)(*geometry_ptrs_[0]));
-    WriteIJsonConvertible(volume_filename,
-                          *selection_polygon_ptr_->CreateSelectionPolygonVolume(
-                                  GetViewControl()));
+        io::WriteTriangleMesh(
+                ply_filename,
+                (const geometry::TriangleMesh &)(*geometry_ptrs_[0]));
+    io::WriteIJsonConvertible(
+            volume_filename,
+            *selection_polygon_ptr_->CreateSelectionPolygonVolume(
+                    GetViewControl()));
 }
 
 }  // namespace open3d

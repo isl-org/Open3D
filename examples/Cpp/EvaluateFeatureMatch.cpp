@@ -199,8 +199,9 @@ int main(int argc, char *argv[]) {
     std::vector<geometry::PointCloud> pcds(pcd_names.size());
     std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
     for (auto i = 0; i < pcd_names.size(); i++) {
-        ReadPointCloud(pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
-                       pcds[i]);
+        io::ReadPointCloud(
+                pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
+                pcds[i]);
         kdtrees[i].SetGeometry(pcds[i]);
     }
 

@@ -42,12 +42,12 @@ void pybind_renderoption(py::module &m) {
                  })
             .def("load_from_json",
                  [](RenderOption &ro, const std::string &filename) {
-                     ReadIJsonConvertible(filename, ro);
+                     io::ReadIJsonConvertible(filename, ro);
                  },
                  "Function to load RenderOption from a JSON file", "filename"_a)
             .def("save_to_json",
                  [](RenderOption &ro, const std::string &filename) {
-                     WriteIJsonConvertible(filename, ro);
+                     io::WriteIJsonConvertible(filename, ro);
                  },
                  "Function to save RenderOption to a JSON file", "filename"_a)
             .def_readwrite("background_color", &RenderOption::background_color_)

@@ -143,13 +143,13 @@ int main(int argc, char *argv[]) {
     for (auto k = 0; k < metadata.size(); k++) {
         auto i = std::get<0>(metadata[k]), j = std::get<1>(metadata[k]);
         utility::PrintInfo("Showing matched point cloud #%d and #%d.\n", i, j);
-        auto pcd_target = CreatePointCloudFromFile(pcd_dirname + "cloud_bin_" +
-                                                   std::to_string(i) + ".pcd");
+        auto pcd_target = io::CreatePointCloudFromFile(
+                pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd");
         pcd_target->colors_.clear();
         pcd_target->colors_.resize(pcd_target->points_.size(),
                                    color_palette[0]);
-        auto pcd_source = CreatePointCloudFromFile(pcd_dirname + "cloud_bin_" +
-                                                   std::to_string(j) + ".pcd");
+        auto pcd_source = io::CreatePointCloudFromFile(
+                pcd_dirname + "cloud_bin_" + std::to_string(j) + ".pcd");
         pcd_source->colors_.clear();
         pcd_source->colors_.resize(pcd_source->points_.size(),
                                    color_palette[1]);

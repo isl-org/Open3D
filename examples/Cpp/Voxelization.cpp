@@ -52,13 +52,13 @@ int main(int argc, char** args) {
         return 1;
     }
 
-    auto pcd = CreatePointCloudFromFile(args[1]);
+    auto pcd = io::CreatePointCloudFromFile(args[1]);
     auto voxel = geometry::CreateSurfaceVoxelGridFromPointCloud(*pcd, 0.05);
     PrintVoxelGridInformation(*voxel);
     DrawGeometries({pcd, voxel});
-    WriteVoxelGrid(args[2], *voxel, true);
+    io::WriteVoxelGrid(args[2], *voxel, true);
 
-    auto voxel_read = CreateVoxelGridFromFile(args[2]);
+    auto voxel_read = io::CreateVoxelGridFromFile(args[2]);
     PrintVoxelGridInformation(*voxel_read);
     DrawGeometries({pcd, voxel_read});
 }

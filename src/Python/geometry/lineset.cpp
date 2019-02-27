@@ -57,7 +57,7 @@ void pybind_lineset_methods(py::module &m) {
     m.def("read_line_set",
           [](const std::string &filename, const std::string &format) {
               geometry::LineSet line_set;
-              ReadLineSet(filename, line_set, format);
+              io::ReadLineSet(filename, line_set, format);
               return line_set;
           },
           "Function to read geometry::LineSet from file", "filename"_a,
@@ -65,7 +65,8 @@ void pybind_lineset_methods(py::module &m) {
     m.def("write_line_set",
           [](const std::string &filename, const geometry::LineSet &line_set,
              bool write_ascii, bool compressed) {
-              return WriteLineSet(filename, line_set, write_ascii, compressed);
+              return io::WriteLineSet(filename, line_set, write_ascii,
+                                      compressed);
           },
           "Function to write geometry::LineSet to file", "filename"_a,
           "line_set"_a, "write_ascii"_a = false, "compressed"_a = false);

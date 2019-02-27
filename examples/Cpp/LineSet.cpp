@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto cloud_ptr = CreatePointCloudFromFile(argv[1]);
+    auto cloud_ptr = io::CreatePointCloudFromFile(argv[1]);
     std::vector<std::pair<int, int>> correspondences;
 
     const int nn = 50;

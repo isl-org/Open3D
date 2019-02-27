@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
-    auto pcd = CreatePointCloudFromFile(argv[1]);
+    auto pcd = io::CreatePointCloudFromFile(argv[1]);
     {
         utility::ScopeTimer timer("FPFH estimation with Radius 0.25");
         // for (int i = 0; i < 20; i++) {
@@ -123,20 +123,20 @@ int main(int argc, char *argv[]) {
     const std::string filename_xyz("test.xyz");
     const std::string filename_ply("test.ply");
 
-    if (ReadPointCloud(argv[1], pointcloud)) {
+    if (io::ReadPointCloud(argv[1], pointcloud)) {
         utility::PrintWarning("Successfully read %s\n", argv[1]);
 
         /*
         geometry::PointCloud pointcloud_copy;
         pointcloud_copy.CloneFrom(pointcloud);
 
-        if (WritePointCloud(filename_xyz, pointcloud)) {
+        if (io::WritePointCloud(filename_xyz, pointcloud)) {
             utility::PrintWarning("Successfully wrote %s\n\n",
         filename_xyz.c_str()); } else { utility::PrintError("Failed to write
         %s\n\n", filename_xyz.c_str());
         }
 
-        if (WritePointCloud(filename_ply, pointcloud_copy)) {
+        if (io::WritePointCloud(filename_ply, pointcloud_copy)) {
             utility::PrintWarning("Successfully wrote %s\n\n",
         filename_ply.c_str()); } else { utility::PrintError("Failed to write
         %s\n\n", filename_ply.c_str());

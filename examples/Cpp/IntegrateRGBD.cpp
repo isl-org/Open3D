@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
 
     auto camera_trajectory =
-            CreatePinholeCameraTrajectoryFromFile(log_filename);
+            io::CreatePinholeCameraTrajectoryFromFile(log_filename);
     std::string dir_name =
             utility::filesystem::GetFileParentDirectory(match_filename).c_str();
     FILE *file = fopen(match_filename.c_str(), "r");
@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
         utility::SplitString(st, buffer, "\t\r\n ");
         if (st.size() >= 2) {
             utility::PrintDebug("Processing frame %d ...\n", index);
-            ReadImage(dir_name + st[0], depth);
-            ReadImage(dir_name + st[1], color);
+            io::ReadImage(dir_name + st[0], depth);
+            io::ReadImage(dir_name + st[1], color);
             auto rgbd = geometry::CreateRGBDImageFromColorAndDepth(
                     color, depth, 1000.0, 4.0, false);
             if (index == 0 ||
@@ -124,18 +124,20 @@ int main(int argc, char *argv[]) {
                     utility::PrintDebug("Saving pointcloud %d ...\n",
                                         save_index);
                     auto pcd = volume.ExtractPointCloud();
-                    WritePointCloud("pointcloud_" + save_index_str + ".ply",
-                                    *pcd);
+                    io::WritePointCloud("pointcloud_" + save_index_str + ".ply",
+                                        *pcd);
                 }
                 if (save_mesh) {
                     utility::PrintDebug("Saving mesh %d ...\n", save_index);
                     auto mesh = volume.ExtractTriangleMesh();
-                    WriteTriangleMesh("mesh_" + save_index_str + ".ply", *mesh);
+                    io::WriteTriangleMesh("mesh_" + save_index_str + ".ply",
+                                          *mesh);
                 }
                 if (save_voxel) {
                     utility::PrintDebug("Saving voxel %d ...\n", save_index);
                     auto voxel = volume.ExtractVoxelPointCloud();
-                    WritePointCloud("voxel_" + save_index_str + ".ply", *voxel);
+                    io::WritePointCloud("voxel_" + save_index_str + ".ply",
+                                        *voxel);
                 }
                 save_index++;
             }

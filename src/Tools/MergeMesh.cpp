@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     auto merged_mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     for (const auto &filename : filenames) {
         auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
-        if (ReadTriangleMesh(filename, *mesh_ptr)) {
+        if (io::ReadTriangleMesh(filename, *mesh_ptr)) {
             *merged_mesh_ptr += *mesh_ptr;
         }
     }
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     if (utility::ProgramOptionExists(argc, argv, "--purge")) {
         merged_mesh_ptr->Purge();
     }
-    WriteTriangleMesh(argv[2], *merged_mesh_ptr);
+    io::WriteTriangleMesh(argv[2], *merged_mesh_ptr);
 
     return 1;
 }

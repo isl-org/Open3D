@@ -63,7 +63,7 @@ void pybind_pointcloud_methods(py::module &m) {
     m.def("read_point_cloud",
           [](const std::string &filename, const std::string &format) {
               geometry::PointCloud pcd;
-              ReadPointCloud(filename, pcd, format);
+              io::ReadPointCloud(filename, pcd, format);
               return pcd;
           },
           "Function to read geometry::PointCloud from file", "filename"_a,
@@ -72,8 +72,8 @@ void pybind_pointcloud_methods(py::module &m) {
           [](const std::string &filename,
              const geometry::PointCloud &pointcloud, bool write_ascii,
              bool compressed) {
-              return WritePointCloud(filename, pointcloud, write_ascii,
-                                     compressed);
+              return io::WritePointCloud(filename, pointcloud, write_ascii,
+                                         compressed);
           },
           "Function to write geometry::PointCloud to file", "filename"_a,
           "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false);

@@ -45,8 +45,8 @@ std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
         const camera::PinholeCameraIntrinsic& intrinsic,
         bool visualize) {
     geometry::Image color, depth;
-    ReadImage(color_filename, color);
-    ReadImage(depth_filename, depth);
+    io::ReadImage(color_filename, color);
+    io::ReadImage(depth_filename, depth);
     utility::PrintDebug("Reading RGBD image : \n");
     utility::PrintDebug("     Color : %d x %d x %d (%d bits per channel)\n",
                         color.width_, color.height_, color.num_of_channels_,
