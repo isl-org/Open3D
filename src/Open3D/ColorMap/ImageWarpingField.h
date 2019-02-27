@@ -29,6 +29,7 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace color_map {
 
 class ImageWarpingField : public IJsonConvertible {
 public:
@@ -51,4 +52,5 @@ public:
     double anchor_step_;
 };
 
+}  // namespace color_map
 }  // namespace open3d

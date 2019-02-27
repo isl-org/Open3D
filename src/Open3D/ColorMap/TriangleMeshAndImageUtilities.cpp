@@ -33,7 +33,7 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 
 namespace open3d {
-
+namespace color_map {
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
         const camera::PinholeCameraTrajectory& camera,
@@ -309,5 +309,5 @@ void SetGeometryColorAverage(
         }
     }
 }
-
+}  // namespace color_map
 }  // namespace open3d

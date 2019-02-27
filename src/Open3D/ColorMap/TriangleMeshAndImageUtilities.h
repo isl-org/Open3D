@@ -35,11 +35,14 @@ namespace open3d {
 class Image;
 class RGBDImage;
 class TriangleMesh;
-class ImageWarpingField;
-class ColorMapOptimizationOption;
 namespace camera {
 class PinholeCameraTrajectory;
 }
+
+namespace color_map {
+
+class ImageWarpingField;
+class ColorMapOptimizationOption;
 
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
@@ -105,5 +108,5 @@ void SetGeometryColorAverage(
         const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         int image_boundary_margin = 10);
-
+}  // namespace color_map
 }  // namespace open3d

@@ -42,6 +42,7 @@ namespace open3d {
 
 namespace {
 
+using namespace color_map;
 void OptimizeImageCoorNonrigid(
         const TriangleMesh& mesh,
         const std::vector<std::shared_ptr<Image>>& images_gray,
@@ -271,6 +272,7 @@ std::vector<ImageWarpingField> CreateWarpingFields(
 
 }  // unnamed namespace
 
+namespace color_map {
 void ColorMapOptimization(
         TriangleMesh& mesh,
         const std::vector<std::shared_ptr<RGBDImage>>& images_rgbd,
@@ -318,5 +320,5 @@ void ColorMapOptimization(
                                 option.image_boundary_margin_);
     }
 }
-
+}  // namespace color_map
 }  // namespace open3d

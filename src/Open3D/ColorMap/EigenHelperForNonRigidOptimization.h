@@ -39,6 +39,7 @@ typedef Eigen::Matrix<int, 14, 1> Vector14i;
 }  // namespace Eigen
 
 namespace open3d {
+namespace color_map {
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
@@ -56,4 +57,5 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         int nonrigidval,
         bool verbose = true);
 
+}  // namespace color_map
 }  // namespace open3d

@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace color_map {
 
 ImageWarpingField::ImageWarpingField() { InitializeWarpingFields(0, 0, 0); }
 
@@ -120,4 +121,5 @@ bool ImageWarpingField::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
+}  // namespace color_map
 }  // namespace open3d

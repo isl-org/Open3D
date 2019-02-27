@@ -38,6 +38,8 @@ namespace camera {
 class PinholeCameraTrajectory;
 }
 
+namespace color_map {
+
 class ColorMapOptimizationOption {
 public:
     ColorMapOptimizationOption(
@@ -86,4 +88,5 @@ void ColorMapOptimization(
         camera::PinholeCameraTrajectory& camera,
         const ColorMapOptimizationOption& option =
                 ColorMapOptimizationOption());
+}  // namespace color_map
 }  // namespace open3d
