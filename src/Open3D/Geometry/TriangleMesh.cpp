@@ -34,6 +34,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace geometry {
 
 void TriangleMesh::Clear() {
     vertices_.clear();
@@ -358,4 +359,5 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
                (int)(old_triangle_num - k));
 }
 
+}  // namespace geometry
 }  // namespace open3d

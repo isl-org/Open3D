@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/Geometry.h>
 
 namespace open3d {
+namespace geometry {
 
 class Geometry2D : public Geometry {
 public:
@@ -45,4 +46,5 @@ public:
     virtual Eigen::Vector2d GetMaxBound() const = 0;
 };
 
+}  // namespace geometry
 }  // namespace open3d

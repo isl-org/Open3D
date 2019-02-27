@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace {
+using namespace geometry;
 
 double sqr(double x) { return x * x; }
 
@@ -114,6 +115,8 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 }
 
 }  // unnamed namespace
+
+namespace geometry {
 
 bool EstimateNormals(
         PointCloud &cloud,
@@ -203,5 +206,5 @@ bool OrientNormalsTowardsCameraLocation(
     }
     return true;
 }
-
+}  // namespace geometry
 }  // namespace open3d

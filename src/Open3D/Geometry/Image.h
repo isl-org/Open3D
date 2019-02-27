@@ -39,6 +39,8 @@ namespace camera {
 class PinholeCameraIntrinsic;
 }
 
+namespace geometry {
+
 class Image : public Geometry2D {
 public:
     enum class ColorToIntensityConversionType {
@@ -185,4 +187,5 @@ std::shared_ptr<Image> CreateDepthBoundaryMask(
         double depth_threshold_for_discontinuity_check = 0.1,
         int half_dilation_kernel_size_for_discontinuity_map = 3);
 
+}  // namespace geometry
 }  // namespace open3d

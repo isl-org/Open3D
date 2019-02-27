@@ -37,6 +37,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace geometry {
 
 KDTreeFlann::KDTreeFlann() {}
 
@@ -199,7 +200,7 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
 
 template int KDTreeFlann::Search<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
-        const open3d::KDTreeSearchParam &param,
+        const KDTreeSearchParam &param,
         std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::Vector3d>(
@@ -221,7 +222,7 @@ template int KDTreeFlann::SearchHybrid<Eigen::Vector3d>(
 
 template int KDTreeFlann::Search<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
-        const open3d::KDTreeSearchParam &param,
+        const KDTreeSearchParam &param,
         std::vector<int> &indices,
         std::vector<double> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::VectorXd>(
@@ -241,6 +242,7 @@ template int KDTreeFlann::SearchHybrid<Eigen::VectorXd>(
         std::vector<int> &indices,
         std::vector<double> &distance2) const;
 
+}  // namespace geometry
 }  // namespace open3d
 
 #ifdef _MSC_VER

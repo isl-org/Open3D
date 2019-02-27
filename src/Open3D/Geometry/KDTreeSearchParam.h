@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace geometry {
 
 class KDTreeSearchParam {
 public:
@@ -79,4 +80,5 @@ public:
     int max_nn_;
 };
 
+}  // namespace geometry
 }  // namespace open3d

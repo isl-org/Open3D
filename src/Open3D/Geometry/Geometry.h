@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace geometry {
 
 class Geometry {
 public:
@@ -58,4 +59,5 @@ private:
     int dimension_ = 3;
 };
 
+}  // namespace geometry
 }  // namespace open3d

@@ -38,6 +38,8 @@ namespace open3d {
 
 namespace {
 
+using namespace geometry;
+
 class AccumulatedPoint {
 public:
     AccumulatedPoint()
@@ -139,6 +141,7 @@ private:
 
 }  // unnamed namespace
 
+namespace geometry {
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
                                              const std::vector<size_t> &indices,
                                              bool invert /* = false */) {
@@ -498,5 +501,5 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
     }
     return SelectDownSample(input, indices);
 }
-
+}  // namespace geometry
 }  // namespace open3d

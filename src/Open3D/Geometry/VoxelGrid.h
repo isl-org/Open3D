@@ -32,6 +32,7 @@
 #include <Open3D/Geometry/Geometry3D.h>
 
 namespace open3d {
+namespace geometry {
 
 class PointCloud;
 class TriangleMesh;
@@ -69,4 +70,5 @@ public:
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input, double voxel_size);
 
+}  // namespace geometry
 }  // namespace open3d

@@ -31,6 +31,7 @@
 #include <Open3D/Geometry/KDTreeFlann.h>
 
 namespace open3d {
+namespace geometry {
 
 void PointCloud::Clear() {
     points_.clear();
@@ -229,4 +230,5 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     return nn_dis;
 }
 
+}  // namespace geometry
 }  // namespace open3d

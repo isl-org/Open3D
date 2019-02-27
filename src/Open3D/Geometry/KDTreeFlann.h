@@ -44,6 +44,7 @@ class Index;
 }  // namespace flann
 
 namespace open3d {
+namespace geometry {
 
 class KDTreeFlann {
 public:
@@ -96,4 +97,5 @@ protected:
     size_t dataset_size_ = 0;
 };
 
+}  // namespace geometry
 }  // namespace open3d

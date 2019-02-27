@@ -38,6 +38,7 @@ const std::vector<double> Sobel32 = {1.0, 2.0, 1.0};
 }  // unnamed namespace
 
 namespace open3d {
+namespace geometry {
 
 void Image::Clear() {
     width_ = 0;
@@ -361,4 +362,5 @@ std::shared_ptr<Image> CreateDepthBoundaryMask(
     }
 }
 
+}  // namespace geometry
 }  // namespace open3d

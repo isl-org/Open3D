@@ -27,6 +27,7 @@
 #include "RGBDImage.h"
 
 namespace open3d {
+namespace geometry {
 
 std::shared_ptr<RGBDImage> CreateRGBDImageFromColorAndDepth(
         const Image &color,
@@ -123,4 +124,5 @@ std::shared_ptr<RGBDImage> CreateRGBDImageFromNYUFormat(
                                             convert_rgb_to_intensity);
 }
 
+}  // namespace geometry
 }  // namespace open3d

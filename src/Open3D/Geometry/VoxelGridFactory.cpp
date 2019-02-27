@@ -36,6 +36,7 @@
 namespace open3d {
 
 namespace {
+using namespace geometry;
 
 class PointCloudVoxel {
 public:
@@ -65,6 +66,8 @@ public:
 };
 
 }  // namespace
+
+namespace geometry {
 
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input, double voxel_size) {
@@ -107,4 +110,5 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     return output;
 }
 
+}  // namespace geometry
 }  // namespace open3d

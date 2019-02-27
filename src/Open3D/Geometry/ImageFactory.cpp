@@ -29,6 +29,7 @@
 #include <Open3D/Camera/PinholeCameraIntrinsic.h>
 
 namespace open3d {
+namespace geometry {
 
 std::shared_ptr<Image> CreateDepthToCameraDistanceMultiplierFloatImage(
         const camera::PinholeCameraIntrinsic &intrinsic) {
@@ -176,4 +177,5 @@ ImagePyramid CreateImagePyramid(const Image &input,
     return pyramid_image;
 }
 
+}  // namespace geometry
 }  // namespace open3d

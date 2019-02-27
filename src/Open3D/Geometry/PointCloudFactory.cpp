@@ -35,6 +35,7 @@
 namespace open3d {
 
 namespace {
+using namespace geometry;
 
 int CountValidDepthPixels(const Image &depth, int stride) {
     int num_valid_pixels = 0;
@@ -115,6 +116,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
 
 }  // unnamed namespace
 
+namespace geometry {
 std::shared_ptr<PointCloud> CreatePointCloudFromDepthImage(
         const Image &depth,
         const camera::PinholeCameraIntrinsic &intrinsic,
@@ -156,5 +158,5 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImage(
     PrintDebug("[CreatePointCloudFromRGBDImage] Unsupported image format.\n");
     return std::make_shared<PointCloud>();
 }
-
+}  // namespace geometry
 }  // namespace open3d

@@ -35,11 +35,14 @@
 
 namespace open3d {
 
-class Image;
-class RGBDImage;
 namespace camera {
 class PinholeCameraIntrinsic;
 }
+
+namespace geometry {
+
+class Image;
+class RGBDImage;
 
 class PointCloud : public Geometry3D {
 public:
@@ -208,4 +211,5 @@ std::vector<double> ComputePointCloudMahalanobisDistance(
 std::vector<double> ComputePointCloudNearestNeighborDistance(
         const PointCloud &input);
 
+}  // namespace geometry
 }  // namespace open3d

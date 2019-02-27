@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/PointCloud.h>
 
 namespace open3d {
+namespace geometry {
 
 std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
         const PointCloud &cloud0,
@@ -53,4 +54,5 @@ std::shared_ptr<LineSet> CreateLineSetFromPointCloudCorrespondences(
     return lineset_ptr;
 }
 
+}  // namespace geometry
 }  // namespace open3d

@@ -27,6 +27,7 @@
 #include "TriangleMesh.h"
 
 namespace open3d {
+namespace geometry {
 
 std::shared_ptr<TriangleMesh> CreateMeshBox(double width /* = 1.0*/,
                                             double height /* = 1.0*/,
@@ -246,4 +247,5 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
     return mesh_frame;
 }
 
+}  // namespace geometry
 }  // namespace open3d

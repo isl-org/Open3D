@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/Image.h>
 
 namespace open3d {
+namespace geometry {
 
 /// RGBDImage is for a pair of registered color and depth images,
 /// viewed from the same view, of the same resolution.
@@ -93,4 +94,5 @@ RGBDImagePyramid CreateRGBDImagePyramid(
         bool with_gaussian_filter_for_color = true,
         bool with_gaussian_filter_for_depth = false);
 
+}  // namespace geometry
 }  // namespace open3d
