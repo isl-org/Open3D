@@ -136,4 +136,3 @@ protected:
 
 }  // namespace visualization
 }  // namespace open3d
-}  // namespace open3d
