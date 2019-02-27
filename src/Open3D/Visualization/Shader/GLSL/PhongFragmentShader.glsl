@@ -1,16 +1,18 @@
-#version 120
+#version 330
 
-varying vec3 vertex_position_world;
-varying vec3 vertex_normal_camera;
-varying vec3 eye_dir_camera;
-varying mat4 light_dir_camera_4;
-varying vec3 fragment_color;
+in vec3 vertex_position_world;
+in vec3 vertex_normal_camera;
+in vec3 eye_dir_camera;
+in mat4 light_dir_camera_4;
+in vec3 fragment_color;
 
 uniform mat4 light_color_4;
 uniform vec4 light_diffuse_power_4;
 uniform vec4 light_specular_power_4;
 uniform vec4 light_specular_shininess_4;
 uniform vec4 light_ambient;
+
+out vec4 FragColor;
 
 void main()
 {
@@ -43,7 +45,7 @@ void main()
     cos_theta[3] = clamp(dot(n, l), 0, 1);
     cos_alpha[3] = clamp(dot(e, r), 0, 1);
 
-    gl_FragColor.rgb = ambient_color + 
+    FragColor = vec4(ambient_color + 
             diffuse_color * light_color_4[0].xyz * light_diffuse_power_4[0] * cos_theta[0] +
             specular_color * light_color_4[0].xyz * light_specular_power_4[0] * pow(cos_alpha[0], light_specular_shininess_4[0]) +
             diffuse_color * light_color_4[1].xyz * light_diffuse_power_4[1] * cos_theta[1] +
@@ -51,5 +53,5 @@ void main()
             diffuse_color * light_color_4[2].xyz * light_diffuse_power_4[2] * cos_theta[2] +
             specular_color * light_color_4[2].xyz * light_specular_power_4[2] * pow(cos_alpha[2], light_specular_shininess_4[2]) +
             diffuse_color * light_color_4[3].xyz * light_diffuse_power_4[3] * cos_theta[3] +
-            specular_color * light_color_4[3].xyz * light_specular_power_4[3] * pow(cos_alpha[3], light_specular_shininess_4[3]);
+            specular_color * light_color_4[3].xyz * light_specular_power_4[3] * pow(cos_alpha[3], light_specular_shininess_4[3]), 1);
 }

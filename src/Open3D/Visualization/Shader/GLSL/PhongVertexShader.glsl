@@ -1,14 +1,14 @@
-#version 120
+#version 330
 
-attribute vec3 vertex_position;
-attribute vec3 vertex_normal;
-attribute vec3 vertex_color;
+in vec3 vertex_position;
+in vec3 vertex_normal;
+in vec3 vertex_color;
 
-varying vec3 vertex_position_world;
-varying vec3 vertex_normal_camera;
-varying vec3 eye_dir_camera;
-varying vec3 fragment_color;
-varying mat4 light_dir_camera_4;
+out vec3 vertex_position_world;
+out vec3 vertex_normal_camera;
+out vec3 eye_dir_camera;
+out mat4 light_dir_camera_4;
+out vec3 fragment_color;
 
 uniform mat4 MVP;
 uniform mat4 V;

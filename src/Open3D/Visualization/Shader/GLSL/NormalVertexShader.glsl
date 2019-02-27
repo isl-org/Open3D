@@ -1,9 +1,9 @@
-#version 120
+#version 330
 
-attribute vec3 vertex_position;
-attribute vec3 vertex_normal;
+in vec3 vertex_position;
+in vec3 vertex_normal;
 
-varying vec3 vertex_normal_camera;
+out vec3 vertex_normal_camera;
 
 uniform mat4 MVP;
 uniform mat4 V;

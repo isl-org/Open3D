@@ -1,8 +1,9 @@
-#version 120
+#version 330
 
-varying vec3 vertex_normal_camera;
+in vec3 vertex_normal_camera;
+out vec4 FragColor;
 
 void main()
 {
-    gl_FragColor.rgb = vertex_normal_camera * 0.5 + 0.5;
+    FragColor = vec4(vertex_normal_camera * 0.5 + 0.5, 1);
 }

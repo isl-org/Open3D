@@ -1,10 +1,10 @@
-#version 120
+#version 330
 
-attribute vec3 vertex_position;
-attribute vec3 vertex_color;
+in vec3 vertex_position;
+in vec3 vertex_color;
 uniform mat4 MVP;
 
-varying vec3 fragment_color;
+out vec3 fragment_color;
 
 void main()
 {

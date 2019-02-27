@@ -1,9 +1,9 @@
-#version 120
+#version 330
 
-attribute vec3 vertex_position;
-attribute vec2 vertex_UV;
+in vec3 vertex_position;
+in vec2 vertex_UV;
 
-varying vec2 UV;
+out vec2 UV;
 
 void main()
 {

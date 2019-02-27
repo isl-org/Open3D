@@ -101,8 +101,10 @@ bool Visualizer::CreateVisualizerWindow(
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
@@ -201,6 +203,7 @@ bool Visualizer::CreateVisualizerWindow(
 
 void Visualizer::DestroyVisualizerWindow() {
     is_initialized_ = false;
+    glDeleteVertexArrays(1, &vao_id_);
     glfwDestroyWindow(window_);
 }
 
