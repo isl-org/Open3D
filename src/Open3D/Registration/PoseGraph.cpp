@@ -30,6 +30,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace registration {
 
 PoseGraphNode::~PoseGraphNode() {}
 
@@ -196,4 +197,6 @@ bool PoseGraph::ConvertFromJsonValue(const Json::Value &value) {
     }
     return true;
 }
+
+}  // namespace registration
 }  // namespace open3d

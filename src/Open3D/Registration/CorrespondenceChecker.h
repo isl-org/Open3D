@@ -39,6 +39,7 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace registration {
 /// Base class that checks if two (small) point clouds can be aligned
 /// This class is used in feature based matching algorithms (such as RANSAC and
 /// FastGlobalRegistration) to prune out outlier correspondences.
@@ -119,4 +120,5 @@ public:
     double normal_angle_threshold_;
 };
 
+}  // namespace registration
 }  // namespace open3d

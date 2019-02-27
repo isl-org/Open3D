@@ -31,6 +31,7 @@
 #include <Open3D/Geometry/PointCloud.h>
 
 namespace open3d {
+namespace registration {
 
 bool CorrespondenceCheckerBasedOnEdgeLength::Check(
         const geometry::PointCloud &source,
@@ -98,4 +99,5 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
     return true;
 }
 
+}  // namespace registration
 }  // namespace open3d

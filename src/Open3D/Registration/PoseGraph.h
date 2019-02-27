@@ -33,6 +33,7 @@
 #include <Open3D/Utility/Eigen.h>
 
 namespace open3d {
+namespace registration {
 
 class PoseGraphNode : public IJsonConvertible {
 public:
@@ -97,4 +98,6 @@ public:
     std::vector<PoseGraphNode> nodes_;
     std::vector<PoseGraphEdge> edges_;
 };
+
+}  // namespace registration
 }  // namespace open3d

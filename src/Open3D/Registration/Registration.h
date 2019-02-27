@@ -39,6 +39,8 @@ namespace open3d {
 namespace geometry {
 class PointCloud;
 }
+
+namespace registration {
 class Feature;
 
 /// Class that defines the convergence criteria of ICP
@@ -146,4 +148,5 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation);
 
+}  // namespace registration
 }  // namespace open3d

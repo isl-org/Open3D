@@ -37,6 +37,8 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace registration {
+
 class Feature {
 public:
     void Resize(int dim, int n) {
@@ -56,4 +58,5 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::KDTreeSearchParam &search_param =
                 geometry::KDTreeSearchParamKNN());
 
+}  // namespace registration
 }  // namespace open3d

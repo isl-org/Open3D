@@ -37,6 +37,8 @@ namespace geometry {
 class PointCloud;
 }
 
+namespace registration {
+
 typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
 enum class TransformationEstimationType {
@@ -118,4 +120,5 @@ private:
             TransformationEstimationType::PointToPlane;
 };
 
+}  // namespace registration
 }  // namespace open3d

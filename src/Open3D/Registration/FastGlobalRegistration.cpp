@@ -38,6 +38,7 @@
 namespace open3d {
 
 namespace {
+using namespace registration;
 
 std::vector<std::pair<int, int>> AdvancedMatching(
         const std::vector<geometry::PointCloud>& point_cloud_vec,
@@ -332,6 +333,7 @@ Eigen::Matrix4d GetTransformationOriginalScale(
 
 }  // unnamed namespace
 
+namespace registration {
 RegistrationResult FastGlobalRegistration(
         const geometry::PointCloud& source,
         const geometry::PointCloud& target,
@@ -366,4 +368,5 @@ RegistrationResult FastGlobalRegistration(
     // clang-format on
 }
 
+}  // namespace registration
 }  // namespace open3d

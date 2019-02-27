@@ -27,6 +27,7 @@
 #pragma once
 
 namespace open3d {
+namespace registration {
 
 class GlobalOptimizationOption {
 public:
@@ -117,4 +118,5 @@ public:
     double lower_scale_factor_;
 };
 
+}  // namespace registration
 }  // namespace open3d

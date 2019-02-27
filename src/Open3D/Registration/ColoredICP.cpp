@@ -38,6 +38,7 @@
 namespace open3d {
 
 namespace {
+using namespace registration;
 
 class PointCloudForColoredICP : public geometry::PointCloud {
 public:
@@ -243,6 +244,8 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 
 }  // unnamed namespace
 
+namespace registration {
+
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -257,4 +260,5 @@ RegistrationResult RegistrationColoredICP(
             TransformationEstimationForColoredICP(lambda_geometric), criteria);
 }
 
+}  // namespace registration
 }  // namespace open3d

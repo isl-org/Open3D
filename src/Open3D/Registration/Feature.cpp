@@ -34,6 +34,7 @@
 namespace open3d {
 
 namespace {
+using namespace registration;
 
 Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
                                     const Eigen::Vector3d &n1,
@@ -111,6 +112,7 @@ std::shared_ptr<Feature> ComputeSPFHFeature(
 
 }  // unnamed namespace
 
+namespace registration {
 std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam
@@ -160,4 +162,5 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     return feature;
 }
 
+}  // namespace registration
 }  // namespace open3d

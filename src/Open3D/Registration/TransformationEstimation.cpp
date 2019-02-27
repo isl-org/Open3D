@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Eigen.h>
 
 namespace open3d {
+namespace registration {
 
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
@@ -103,4 +104,5 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
+}  // namespace registration
 }  // namespace open3d

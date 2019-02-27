@@ -37,6 +37,7 @@
 namespace open3d {
 
 namespace {
+using namespace registration;
 
 RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
@@ -126,6 +127,7 @@ RegistrationResult EvaluateRANSACBasedOnCorrespondence(
 
 }  // unnamed namespace
 
+namespace registration {
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -428,4 +430,5 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     return std::move(GTG);
 }
 
+}  // namespace registration
 }  // namespace open3d

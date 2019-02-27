@@ -40,6 +40,7 @@
 namespace open3d {
 
 namespace {
+using namespace registration;
 
 /// Definition of linear operators used for computing Jacobian matrix.
 /// If the relative transform of the two geometry is reasonably small,
@@ -442,6 +443,7 @@ bool ValidatePoseGraph(const PoseGraph &pose_graph) {
 
 }  // unnamed namespace
 
+namespace registration {
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
         const PoseGraph &pose_graph, const GlobalOptimizationOption &option) {
     std::shared_ptr<PoseGraph> pose_graph_pruned =
@@ -693,4 +695,5 @@ void GlobalOptimization(PoseGraph &pose_graph,
     pose_graph = *pose_graph_pre_pruned_2;
 }
 
+}  // namespace registration
 }  // namespace open3d
