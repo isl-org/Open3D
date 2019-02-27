@@ -32,16 +32,16 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 
 namespace open3d {
-
+namespace color_map {
 void ColorMapOptimizationJacobian::ComputeJacobianAndResidualRigid(
         int row,
         Eigen::Vector6d& J_r,
         double& r,
-        const TriangleMesh& mesh,
+        const geometry::TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
-        const std::shared_ptr<Image>& images_gray,
-        const std::shared_ptr<Image>& images_dx,
-        const std::shared_ptr<Image>& images_dy,
+        const std::shared_ptr<geometry::Image>& images_gray,
+        const std::shared_ptr<geometry::Image>& images_dx,
+        const std::shared_ptr<geometry::Image>& images_dy,
         const Eigen::Matrix4d& intrinsic,
         const Eigen::Matrix4d& extrinsic,
         const std::vector<int>& visiblity_image_to_vertex,
@@ -79,11 +79,11 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
         Eigen::Vector14d& J_r,
         double& r,
         Eigen::Vector14i& pattern,
-        const TriangleMesh& mesh,
+        const geometry::TriangleMesh& mesh,
         const std::vector<double>& proxy_intensity,
-        const std::shared_ptr<Image>& images_gray,
-        const std::shared_ptr<Image>& images_dx,
-        const std::shared_ptr<Image>& images_dy,
+        const std::shared_ptr<geometry::Image>& images_gray,
+        const std::shared_ptr<geometry::Image>& images_dx,
+        const std::shared_ptr<geometry::Image>& images_dy,
         const ImageWarpingField& warping_fields,
         const ImageWarpingField& warping_fields_init,
         const Eigen::Matrix4d& intrinsic,
@@ -174,5 +174,5 @@ void ColorMapOptimizationJacobian::ComputeJacobianAndResidualNonRigid(
     pattern(13) = 6 + ((ii + 1) + (jj + 1) * anchor_w) * 2 + 1;
     r = (gray - proxy_intensity[vid]);
 }
-
+}  // namespace color_map
 }  // namespace open3d

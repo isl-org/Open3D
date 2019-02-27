@@ -38,6 +38,7 @@
 #include <Open3D/Visualization/Shader/PickingShader.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -55,7 +56,8 @@ public:
     /// the renderer.
     /// 3. If an added geometry is changed, programmer must call
     /// UpdateGeometry() to notify the renderer.
-    virtual bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) = 0;
+    virtual bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) = 0;
 
     /// Function to update geometry
     /// Programmer must call this function to notify a change of the geometry
@@ -67,7 +69,7 @@ public:
     void SetVisible(bool visible) { is_visible_ = visible; };
 
 protected:
-    std::shared_ptr<const Geometry> geometry_ptr_;
+    std::shared_ptr<const geometry::Geometry> geometry_ptr_;
     bool is_visible_ = true;
 };
 
@@ -77,7 +79,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -93,7 +96,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -106,7 +110,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -119,7 +124,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -135,7 +141,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -148,7 +155,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -161,7 +169,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -174,7 +183,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -188,7 +198,8 @@ public:
 
 public:
     bool Render(const RenderOption &option, const ViewControl &view) override;
-    bool AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
     bool UpdateGeometry() override;
 
 protected:
@@ -197,4 +208,5 @@ protected:
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

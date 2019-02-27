@@ -32,6 +32,7 @@
 #include <string>
 
 namespace open3d {
+namespace utility {
 
 /// The namespace hash_tuple defines a general hash function for std::tuple
 /// See this post for details:
@@ -107,4 +108,5 @@ void SplitString(std::vector<std::string>& tokens,
                  const std::string& delimiters = " ",
                  bool trim_empty_str = true);
 
+}  // namespace utility
 }  // namespace open3d

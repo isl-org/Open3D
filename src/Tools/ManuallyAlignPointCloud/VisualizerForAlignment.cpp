@@ -31,28 +31,28 @@
 namespace open3d {
 
 void VisualizerForAlignment::PrintVisualizerHelp() {
-    Visualizer::PrintVisualizerHelp();
+    visualization::Visualizer::PrintVisualizerHelp();
     // clang-format off
-    PrintInfo("  -- Alignment control --\n");
-    PrintInfo("    Ctrl + R     : Reset source and target to initial state.\n");
-    PrintInfo("    Ctrl + S     : Save current alignment session into a JSON file.\n");
-    PrintInfo("    Ctrl + O     : Load current alignment session from a JSON file.\n");
-    PrintInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
-    PrintInfo("    Ctrl + I     : Run ICP refinement.\n");
-    PrintInfo("    Ctrl + D     : Run voxel downsample for both source and target.\n");
-    PrintInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.\n");
-    PrintInfo("    Ctrl + E     : Evaluate error and save to files.\n");
+    utility::PrintInfo("  -- Alignment control --\n");
+    utility::PrintInfo("    Ctrl + R     : Reset source and target to initial state.\n");
+    utility::PrintInfo("    Ctrl + S     : Save current alignment session into a JSON file.\n");
+    utility::PrintInfo("    Ctrl + O     : Load current alignment session from a JSON file.\n");
+    utility::PrintInfo("    Ctrl + A     : Align point clouds based on manually annotations.\n");
+    utility::PrintInfo("    Ctrl + I     : Run ICP refinement.\n");
+    utility::PrintInfo("    Ctrl + D     : Run voxel downsample for both source and target.\n");
+    utility::PrintInfo("    Ctrl + K     : Load a polygon from a JSON file and crop source.\n");
+    utility::PrintInfo("    Ctrl + E     : Evaluate error and save to files.\n");
     // clang-format on
 }
 
 bool VisualizerForAlignment::AddSourceAndTarget(
-        std::shared_ptr<PointCloud> source,
-        std::shared_ptr<PointCloud> target) {
+        std::shared_ptr<geometry::PointCloud> source,
+        std::shared_ptr<geometry::PointCloud> target) {
     GetRenderOption().point_size_ = 1.0;
     alignment_session_.source_ptr_ = source;
     alignment_session_.target_ptr_ = target;
-    source_copy_ptr_ = std::make_shared<PointCloud>();
-    target_copy_ptr_ = std::make_shared<PointCloud>();
+    source_copy_ptr_ = std::make_shared<geometry::PointCloud>();
+    target_copy_ptr_ = std::make_shared<geometry::PointCloud>();
     *source_copy_ptr_ = *source;
     *target_copy_ptr_ = *target;
     return AddGeometry(source_copy_ptr_) && AddGeometry(target_copy_ptr_);
@@ -118,7 +118,7 @@ void VisualizerForAlignment::KeyPressCallback(
                             "if it is non-positive)",
                             buff);
                     if (str == NULL) {
-                        PrintDebug("Dialog closed.\n");
+                        utility::PrintDebug("Dialog closed.\n");
                         return;
                     } else {
                         char *end;
@@ -126,7 +126,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            PrintDebug(
+                            utility::PrintDebug(
                                     "Illegal input, use default max "
                                     "correspondence distance.\n");
                         } else {
@@ -135,15 +135,18 @@ void VisualizerForAlignment::KeyPressCallback(
                     }
                 }
                 if (max_correspondence_distance_ > 0.0) {
-                    PrintInfo("ICP with max correspondence distance %.4f.\n",
-                              max_correspondence_distance_);
-                    auto result = RegistrationICP(
+                    utility::PrintInfo(
+                            "ICP with max correspondence distance %.4f.\n",
+                            max_correspondence_distance_);
+                    auto result = registration::RegistrationICP(
                             *source_copy_ptr_, *target_copy_ptr_,
                             max_correspondence_distance_,
                             Eigen::Matrix4d::Identity(),
-                            TransformationEstimationPointToPoint(true),
-                            ICPConvergenceCriteria(1e-6, 1e-6, 30));
-                    PrintInfo(
+                            registration::TransformationEstimationPointToPoint(
+                                    true),
+                            registration::ICPConvergenceCriteria(1e-6, 1e-6,
+                                                                 30));
+                    utility::PrintInfo(
                             "Registration finished with fitness %.4f and RMSE "
                             "%.4f.\n",
                             result.fitness_, result.inlier_rmse_);
@@ -155,7 +158,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         UpdateGeometry();
                     }
                 } else {
-                    PrintInfo(
+                    utility::PrintInfo(
                             "No ICP performed due to illegal max "
                             "correspondence distance.\n");
                 }
@@ -170,7 +173,7 @@ void VisualizerForAlignment::KeyPressCallback(
                             "Set voxel size (ignored if it is non-positive)",
                             buff);
                     if (str == NULL) {
-                        PrintDebug("Dialog closed.\n");
+                        utility::PrintDebug("Dialog closed.\n");
                         return;
                     } else {
                         char *end;
@@ -178,7 +181,7 @@ void VisualizerForAlignment::KeyPressCallback(
                         double l = std::strtod(str, &end);
                         if (errno == ERANGE &&
                             (l == HUGE_VAL || l == -HUGE_VAL)) {
-                            PrintDebug(
+                            utility::PrintDebug(
                                     "Illegal input, use default voxel size.\n");
                         } else {
                             voxel_size_ = l;
@@ -186,20 +189,21 @@ void VisualizerForAlignment::KeyPressCallback(
                     }
                 }
                 if (voxel_size_ > 0.0) {
-                    PrintInfo("Voxel downsample with voxel size %.4f.\n",
-                              voxel_size_);
-                    *source_copy_ptr_ =
-                            *VoxelDownSample(*source_copy_ptr_, voxel_size_);
+                    utility::PrintInfo(
+                            "Voxel downsample with voxel size %.4f.\n",
+                            voxel_size_);
+                    *source_copy_ptr_ = *geometry::VoxelDownSample(
+                            *source_copy_ptr_, voxel_size_);
                     UpdateGeometry();
                 } else {
-                    PrintInfo(
+                    utility::PrintInfo(
                             "No voxel downsample performed due to illegal "
                             "voxel size.\n");
                 }
                 return;
             }
             case GLFW_KEY_K: {
-                if (!filesystem::FileExists(polygon_filename_)) {
+                if (!utility::filesystem::FileExists(polygon_filename_)) {
                     if (use_dialog_) {
                         polygon_filename_ = tinyfd_openFileDialog(
                                 "Bounding polygon", "polygon.json", 0, NULL,
@@ -208,9 +212,10 @@ void VisualizerForAlignment::KeyPressCallback(
                         polygon_filename_ = "polygon.json";
                     }
                 }
-                auto polygon_volume =
-                        std::make_shared<SelectionPolygonVolume>();
-                if (ReadIJsonConvertible(polygon_filename_, *polygon_volume)) {
+                auto polygon_volume = std::make_shared<
+                        visualization::SelectionPolygonVolume>();
+                if (io::ReadIJsonConvertible(polygon_filename_,
+                                             *polygon_volume)) {
                     *source_copy_ptr_ =
                             *polygon_volume->CropPointCloud(*source_copy_ptr_);
                     ResetViewPoint(true);
@@ -236,7 +241,8 @@ void VisualizerForAlignment::KeyPressCallback(
             }
         }
     }
-    Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+    visualization::Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                mods);
 }
 
 bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {
@@ -247,11 +253,11 @@ bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {
             max_correspondence_distance_;
     alignment_session_.with_scaling_ = with_scaling_;
     alignment_session_.transformation_ = transformation_;
-    return WriteIJsonConvertible(filename, alignment_session_);
+    return io::WriteIJsonConvertible(filename, alignment_session_);
 }
 
 bool VisualizerForAlignment::LoadSessionFromFile(const std::string &filename) {
-    if (ReadIJsonConvertible(filename, alignment_session_) == false) {
+    if (io::ReadIJsonConvertible(filename, alignment_session_) == false) {
         return false;
     }
     source_visualizer_.GetPickedPoints() = alignment_session_.source_indices_;
@@ -274,69 +280,75 @@ bool VisualizerForAlignment::AlignWithManualAnnotation() {
     const auto &target_idx = target_visualizer_.GetPickedPoints();
     if (source_idx.empty() || target_idx.empty() ||
         source_idx.size() != target_idx.size()) {
-        PrintWarning(
+        utility::PrintWarning(
                 "# of picked points mismatch: %d in source, %d in target.\n",
                 (int)source_idx.size(), (int)target_idx.size());
         return false;
     }
-    TransformationEstimationPointToPoint p2p(with_scaling_);
-    CorrespondenceSet corres;
+    registration::TransformationEstimationPointToPoint p2p(with_scaling_);
+    registration::CorrespondenceSet corres;
     for (size_t i = 0; i < source_idx.size(); i++) {
         corres.push_back(Eigen::Vector2i(source_idx[i], target_idx[i]));
     }
-    PrintInfo("Error is %.4f before alignment.\n",
-              p2p.ComputeRMSE(*alignment_session_.source_ptr_,
-                              *alignment_session_.target_ptr_, corres));
+    utility::PrintInfo(
+            "Error is %.4f before alignment.\n",
+            p2p.ComputeRMSE(*alignment_session_.source_ptr_,
+                            *alignment_session_.target_ptr_, corres));
     transformation_ =
             p2p.ComputeTransformation(*alignment_session_.source_ptr_,
                                       *alignment_session_.target_ptr_, corres);
     PrintTransformation();
     *source_copy_ptr_ = *alignment_session_.source_ptr_;
     source_copy_ptr_->Transform(transformation_);
-    PrintInfo("Error is %.4f before alignment.\n",
-              p2p.ComputeRMSE(*source_copy_ptr_,
-                              *alignment_session_.target_ptr_, corres));
+    utility::PrintInfo(
+            "Error is %.4f before alignment.\n",
+            p2p.ComputeRMSE(*source_copy_ptr_, *alignment_session_.target_ptr_,
+                            corres));
     return true;
 }
 
 void VisualizerForAlignment::PrintTransformation() {
-    PrintInfo("Current transformation is:\n");
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(0, 0),
-              transformation_(0, 1), transformation_(0, 2),
-              transformation_(0, 3));
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(1, 0),
-              transformation_(1, 1), transformation_(1, 2),
-              transformation_(1, 3));
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(2, 0),
-              transformation_(2, 1), transformation_(2, 2),
-              transformation_(2, 3));
-    PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(3, 0),
-              transformation_(3, 1), transformation_(3, 2),
-              transformation_(3, 3));
+    utility::PrintInfo("Current transformation is:\n");
+    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(0, 0),
+                       transformation_(0, 1), transformation_(0, 2),
+                       transformation_(0, 3));
+    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(1, 0),
+                       transformation_(1, 1), transformation_(1, 2),
+                       transformation_(1, 3));
+    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(2, 0),
+                       transformation_(2, 1), transformation_(2, 2),
+                       transformation_(2, 3));
+    utility::PrintInfo("\t%.6f %.6f %.6f %.6f\n", transformation_(3, 0),
+                       transformation_(3, 1), transformation_(3, 2),
+                       transformation_(3, 3));
 }
 
 void VisualizerForAlignment::EvaluateAlignmentAndSave(
         const std::string &filename) {
     // Evaluate source_copy_ptr_ and target_copy_ptr_
     std::string source_filename =
-            filesystem::GetFileNameWithoutExtension(filename) + ".source.ply";
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
+            ".source.ply";
     std::string target_filename =
-            filesystem::GetFileNameWithoutExtension(filename) + ".target.ply";
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
+            ".target.ply";
     std::string source_binname =
-            filesystem::GetFileNameWithoutExtension(filename) + ".source.bin";
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
+            ".source.bin";
     std::string target_binname =
-            filesystem::GetFileNameWithoutExtension(filename) + ".target.bin";
+            utility::filesystem::GetFileNameWithoutExtension(filename) +
+            ".target.bin";
     FILE *f;
 
-    WritePointCloud(source_filename, *source_copy_ptr_);
-    auto source_dis = ComputePointCloudToPointCloudDistance(*source_copy_ptr_,
-                                                            *target_copy_ptr_);
+    io::WritePointCloud(source_filename, *source_copy_ptr_);
+    auto source_dis = geometry::ComputePointCloudToPointCloudDistance(
+            *source_copy_ptr_, *target_copy_ptr_);
     f = fopen(source_binname.c_str(), "wb");
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
-    WritePointCloud(target_filename, *target_copy_ptr_);
-    auto target_dis = ComputePointCloudToPointCloudDistance(*target_copy_ptr_,
-                                                            *source_copy_ptr_);
+    io::WritePointCloud(target_filename, *target_copy_ptr_);
+    auto target_dis = geometry::ComputePointCloudToPointCloudDistance(
+            *target_copy_ptr_, *source_copy_ptr_);
     f = fopen(target_binname.c_str(), "wb");
     fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
     fclose(f);

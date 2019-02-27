@@ -33,7 +33,11 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
+
+namespace registration {
 
 class Feature {
 public:
@@ -50,7 +54,9 @@ public:
 
 /// Function to compute FPFH feature for a point cloud
 std::shared_ptr<Feature> ComputeFPFHFeature(
-        const PointCloud &input,
-        const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+        const geometry::PointCloud &input,
+        const geometry::KDTreeSearchParam &search_param =
+                geometry::KDTreeSearchParamKNN());
 
+}  // namespace registration
 }  // namespace open3d

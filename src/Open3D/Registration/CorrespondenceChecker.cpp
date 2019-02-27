@@ -31,10 +31,11 @@
 #include <Open3D/Geometry/PointCloud.h>
 
 namespace open3d {
+namespace registration {
 
 bool CorrespondenceCheckerBasedOnEdgeLength::Check(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d & /*transformation*/) const {
     for (auto i = 0; i < corres.size(); i++) {
@@ -56,8 +57,8 @@ bool CorrespondenceCheckerBasedOnEdgeLength::Check(
 }
 
 bool CorrespondenceCheckerBasedOnDistance::Check(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     for (const auto &c : corres) {
@@ -73,12 +74,12 @@ bool CorrespondenceCheckerBasedOnDistance::Check(
 }
 
 bool CorrespondenceCheckerBasedOnNormal::Check(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
     if (source.HasNormals() == false || target.HasNormals() == false) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[CorrespondenceCheckerBasedOnNormal::Check] Pointcloud has no "
                 "normals.\n");
         return true;
@@ -98,4 +99,5 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
     return true;
 }
 
+}  // namespace registration
 }  // namespace open3d

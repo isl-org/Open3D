@@ -31,10 +31,11 @@
 #include <Open3D/Utility/Eigen.h>
 
 namespace open3d {
+namespace registration {
 
 double TransformationEstimationPointToPoint::ComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty()) return 0.0;
     double err = 0.0;
@@ -45,8 +46,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 }
 
 Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty()) return Eigen::Matrix4d::Identity();
     Eigen::MatrixXd source_mat(3, corres.size());
@@ -59,8 +60,8 @@ Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false) return 0.0;
     double err = 0.0, r;
@@ -73,8 +74,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 }
 
 Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || target.HasNormals() == false)
         return Eigen::Matrix4d::Identity();
@@ -92,15 +93,17 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
     Eigen::Matrix6d JTJ;
     Eigen::Vector6d JTr;
     double r2;
-    std::tie(JTJ, JTr, r2) = ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-            compute_jacobian_and_residual, (int)corres.size());
+    std::tie(JTJ, JTr, r2) =
+            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
+                    compute_jacobian_and_residual, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4d extrinsic;
     std::tie(is_success, extrinsic) =
-            SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
+}  // namespace registration
 }  // namespace open3d

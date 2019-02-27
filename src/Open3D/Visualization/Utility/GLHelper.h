@@ -32,7 +32,7 @@
 #include <GLFW/glfw3.h>
 
 namespace open3d {
-
+namespace visualization {
 namespace GLHelper {
 
 typedef Eigen::Matrix<GLfloat, 3, 1, Eigen::ColMajor> GLVector3f;
@@ -68,5 +68,5 @@ Eigen::Vector3d Unproject(const Eigen::Vector3d &screen_point,
 int ColorCodeToPickIndex(const Eigen::Vector4i &color);
 
 }  // namespace GLHelper
-
+}  // namespace visualization
 }  // namespace open3d

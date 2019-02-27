@@ -32,6 +32,7 @@
 #include <Open3D/Visualization/Utility/ColorMap.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -51,7 +52,7 @@ void SimpleBlackShader::Release() {
     ReleaseProgram();
 }
 
-bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
+bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
                                      const RenderOption &option,
                                      const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -79,7 +80,7 @@ bool SimpleBlackShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool SimpleBlackShader::RenderGeometry(const Geometry &geometry,
+bool SimpleBlackShader::RenderGeometry(const geometry::Geometry &geometry,
                                        const RenderOption &option,
                                        const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -104,11 +105,12 @@ void SimpleBlackShader::UnbindGeometry() {
 }
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
     glEnable(GL_DEPTH_TEST);
@@ -117,15 +119,17 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
 }
 
 bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    const PointCloud &pointcloud = (const PointCloud &)geometry;
+    const geometry::PointCloud &pointcloud =
+            (const geometry::PointCloud &)geometry;
     if (pointcloud.HasPoints() == false) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
@@ -145,11 +149,12 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        PrintShaderWarning("Rendering type is not TriangleMesh.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::TriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
     glLineWidth(1.0f);
@@ -161,17 +166,19 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        PrintShaderWarning("Rendering type is not TriangleMesh.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::TriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
-    const TriangleMesh &mesh = (const TriangleMesh &)geometry;
+    const geometry::TriangleMesh &mesh =
+            (const geometry::TriangleMesh &)geometry;
     if (mesh.HasTriangles() == false) {
-        PrintShaderWarning("Binding failed with empty TriangleMesh.");
+        PrintShaderWarning("Binding failed with empty geometry::TriangleMesh.");
         return false;
     }
     points.resize(mesh.triangles_.size() * 3);
@@ -191,4 +198,5 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

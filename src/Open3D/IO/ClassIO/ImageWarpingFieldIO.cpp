@@ -34,76 +34,88 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
-bool ReadImageWarpingFieldFromJSON(const std::string &filename,
-                                   ImageWarpingField &warping_field) {
+bool ReadImageWarpingFieldFromJSON(
+        const std::string &filename,
+        color_map::ImageWarpingField &warping_field) {
     return ReadIJsonConvertible(filename, warping_field);
 }
 
-bool WriteImageWarpingFieldToJSON(const std::string &filename,
-                                  const ImageWarpingField &warping_field) {
+bool WriteImageWarpingFieldToJSON(
+        const std::string &filename,
+        const color_map::ImageWarpingField &warping_field) {
     return WriteIJsonConvertibleToJSON(filename, warping_field);
 }
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, ImageWarpingField &)>>
+        std::function<bool(const std::string &,
+                           color_map::ImageWarpingField &)>>
         file_extension_to_warping_field_read_function{
                 {"json", ReadImageWarpingFieldFromJSON},
         };
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, const ImageWarpingField &)>>
+        std::function<bool(const std::string &,
+                           const color_map::ImageWarpingField &)>>
         file_extension_to_warping_field_write_function{
                 {"json", WriteImageWarpingFieldToJSON},
         };
 
 }  // unnamed namespace
 
-std::shared_ptr<ImageWarpingField> CreateImageWarpingFieldFromFile(
+namespace io {
+
+std::shared_ptr<color_map::ImageWarpingField> CreateImageWarpingFieldFromFile(
         const std::string &filename) {
-    auto warping_field = std::make_shared<ImageWarpingField>();
+    auto warping_field = std::make_shared<color_map::ImageWarpingField>();
     ReadImageWarpingField(filename, *warping_field);
     return warping_field;
 }
 
 bool ReadImageWarpingField(const std::string &filename,
-                           ImageWarpingField &warping_field) {
+                           color_map::ImageWarpingField &warping_field) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
-                "Read ImageWarpingField failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read color_map::ImageWarpingField failed: unknown file "
+                "extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_warping_field_read_function.find(filename_ext);
     if (map_itr == file_extension_to_warping_field_read_function.end()) {
-        PrintWarning(
-                "Read ImageWarpingField failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read color_map::ImageWarpingField failed: unknown file "
+                "extension.\n");
         return false;
     }
     return map_itr->second(filename, warping_field);
 }
 
 bool WriteImageWarpingField(const std::string &filename,
-                            const ImageWarpingField &trajectory) {
+                            const color_map::ImageWarpingField &trajectory) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning(
-                "Write ImageWarpingField failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write color_map::ImageWarpingField failed: unknown file "
+                "extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_warping_field_write_function.find(filename_ext);
     if (map_itr == file_extension_to_warping_field_write_function.end()) {
-        PrintWarning(
-                "Write ImageWarpingField failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write color_map::ImageWarpingField failed: unknown file "
+                "extension.\n");
         return false;
     }
     return map_itr->second(filename, trajectory);
 }
 
+}  // namespace io
 }  // namespace open3d

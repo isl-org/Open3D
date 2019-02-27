@@ -33,71 +33,83 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, LineSet &)>>
+        std::function<bool(const std::string &, geometry::LineSet &)>>
         file_extension_to_lineset_read_function{
                 {"ply", ReadLineSetFromPLY},
         };
 
-static const std::unordered_map<
-        std::string,
-        std::function<bool(
-                const std::string &, const LineSet &, const bool, const bool)>>
+static const std::unordered_map<std::string,
+                                std::function<bool(const std::string &,
+                                                   const geometry::LineSet &,
+                                                   const bool,
+                                                   const bool)>>
         file_extension_to_lineset_write_function{
                 {"ply", WriteLineSetToPLY},
         };
 }  // unnamed namespace
 
-std::shared_ptr<LineSet> CreateLineSetFromFile(const std::string &filename,
-                                               const std::string &format) {
-    auto lineset = std::make_shared<LineSet>();
+namespace io {
+
+std::shared_ptr<geometry::LineSet> CreateLineSetFromFile(
+        const std::string &filename, const std::string &format) {
+    auto lineset = std::make_shared<geometry::LineSet>();
     ReadLineSet(filename, *lineset, format);
     return lineset;
 }
 
 bool ReadLineSet(const std::string &filename,
-                 LineSet &lineset,
+                 geometry::LineSet &lineset,
                  const std::string &format) {
     std::string filename_ext;
     if (format == "auto") {
-        filename_ext = filesystem::GetFileExtensionInLowerCase(filename);
+        filename_ext =
+                utility::filesystem::GetFileExtensionInLowerCase(filename);
     } else {
         filename_ext = format;
     }
     if (filename_ext.empty()) {
-        PrintWarning("Read LineSet failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_lineset_read_function.find(filename_ext);
     if (map_itr == file_extension_to_lineset_read_function.end()) {
-        PrintWarning("Read LineSet failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, lineset);
-    PrintDebug("Read LineSet: %d vertices.\n", (int)lineset.points_.size());
+    utility::PrintDebug("Read geometry::LineSet: %d vertices.\n",
+                        (int)lineset.points_.size());
     return success;
 }
 
 bool WriteLineSet(const std::string &filename,
-                  const LineSet &lineset,
+                  const geometry::LineSet &lineset,
                   bool write_ascii /* = false*/,
                   bool compressed /* = false*/) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write LineSet failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_lineset_write_function.find(filename_ext);
     if (map_itr == file_extension_to_lineset_write_function.end()) {
-        PrintWarning("Write LineSet failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::LineSet failed: unknown file extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, lineset, write_ascii, compressed);
-    PrintDebug("Write LineSet: %d vertices.\n", (int)lineset.points_.size());
+    utility::PrintDebug("Write geometry::LineSet: %d vertices.\n",
+                        (int)lineset.points_.size());
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

@@ -30,46 +30,46 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    PrintInfo("Usage:\n");
-    PrintInfo("    > MergeMesh source_directory target_file [option]\n");
-    PrintInfo("      Merge mesh files under <source_directory>.\n");
-    PrintInfo("\n");
-    PrintInfo("Options (listed in the order of execution priority):\n");
-    PrintInfo("    --help, -h                : Print help information.\n");
-    PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
-    PrintInfo("    --purge                   : Clear duplicated and non-manifold vertices and\n");
-    PrintInfo("                                triangles.\n");
+    utility::PrintInfo("Usage:\n");
+    utility::PrintInfo("    > MergeMesh source_directory target_file [option]\n");
+    utility::PrintInfo("      Merge mesh files under <source_directory>.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("Options (listed in the order of execution priority):\n");
+    utility::PrintInfo("    --help, -h                : Print help information.\n");
+    utility::PrintInfo("    --verbose n               : Set verbose level (0-4).\n");
+    utility::PrintInfo("    --purge                   : Clear duplicated and non-manifold vertices and\n");
+    utility::PrintInfo("                                triangles.\n");
     // clang-format on
 }
 
 int main(int argc, char **argv) {
     using namespace open3d;
-    using namespace open3d::filesystem;
+    using namespace open3d::utility::filesystem;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
-    if (argc <= 2 || ProgramOptionExists(argc, argv, "--help")) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
+    if (argc <= 2 || utility::ProgramOptionExists(argc, argv, "--help")) {
         PrintHelp();
         return 0;
     }
-    int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    SetVerbosityLevel((VerbosityLevel)verbose);
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
 
     std::string directory(argv[1]);
     std::vector<std::string> filenames;
     ListFilesInDirectory(directory, filenames);
 
-    auto merged_mesh_ptr = std::make_shared<TriangleMesh>();
+    auto merged_mesh_ptr = std::make_shared<geometry::TriangleMesh>();
     for (const auto &filename : filenames) {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
-        if (ReadTriangleMesh(filename, *mesh_ptr)) {
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(filename, *mesh_ptr)) {
             *merged_mesh_ptr += *mesh_ptr;
         }
     }
 
-    if (ProgramOptionExists(argc, argv, "--purge")) {
+    if (utility::ProgramOptionExists(argc, argv, "--purge")) {
         merged_mesh_ptr->Purge();
     }
-    WriteTriangleMesh(argv[2], *merged_mesh_ptr);
+    io::WriteTriangleMesh(argv[2], *merged_mesh_ptr);
 
     return 1;
 }

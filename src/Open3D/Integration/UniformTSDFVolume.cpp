@@ -33,6 +33,7 @@
 #include <Open3D/Integration/MarchingCubesConst.h>
 
 namespace open3d {
+namespace integration {
 
 UniformTSDFVolume::UniformTSDFVolume(
         double length,
@@ -60,9 +61,10 @@ void UniformTSDFVolume::Reset() {
     }
 }
 
-void UniformTSDFVolume::Integrate(const RGBDImage &image,
-                                  const PinholeCameraIntrinsic &intrinsic,
-                                  const Eigen::Matrix4d &extrinsic) {
+void UniformTSDFVolume::Integrate(
+        const geometry::RGBDImage &image,
+        const camera::PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4d &extrinsic) {
     // This function goes through the voxels, and scan convert the relative
     // depth/color value into the voxel.
     // The following implementation is a highly optimized version.
@@ -82,18 +84,19 @@ void UniformTSDFVolume::Integrate(const RGBDImage &image,
          image.color_.width_ != intrinsic.width_) ||
         (color_type_ != TSDFVolumeColorType::None &&
          image.color_.height_ != intrinsic.height_)) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[UniformTSDFVolume::Integrate] Unsupported image format.\n");
         return;
     }
     auto depth2cameradistance =
-            CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
+            geometry::CreateDepthToCameraDistanceMultiplierFloatImage(
+                    intrinsic);
     IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic, extrinsic,
                                                  *depth2cameradistance);
 }
 
-std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud() {
-    auto pointcloud = std::make_shared<PointCloud>();
+std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
+    auto pointcloud = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     for (int x = 1; x < resolution_ - 1; x++) {
         for (int y = 1; y < resolution_ - 1; y++) {
@@ -146,13 +149,14 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     return pointcloud;
 }
 
-std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh() {
+std::shared_ptr<geometry::TriangleMesh>
+UniformTSDFVolume::ExtractTriangleMesh() {
     // implementation of marching cubes, based on
     // http://paulbourke.net/geometry/polygonise/
-    auto mesh = std::make_shared<TriangleMesh>();
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     double half_voxel_length = voxel_length_ * 0.5;
     std::unordered_map<
-            Eigen::Vector4i, int, hash_eigen::hash<Eigen::Vector4i>,
+            Eigen::Vector4i, int, utility::hash_eigen::hash<Eigen::Vector4i>,
             std::equal_to<Eigen::Vector4i>,
             Eigen::aligned_allocator<std::pair<const Eigen::Vector4i, int>>>
             edgeindex_to_vertexindex;
@@ -228,8 +232,9 @@ std::shared_ptr<TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh() {
     return mesh;
 }
 
-std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud() {
-    auto voxel = std::make_shared<PointCloud>();
+std::shared_ptr<geometry::PointCloud>
+UniformTSDFVolume::ExtractVoxelPointCloud() {
+    auto voxel = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     float *p_tsdf = (float *)tsdf_.data();
     float *p_weight = (float *)weight_.data();
@@ -253,10 +258,10 @@ std::shared_ptr<PointCloud> UniformTSDFVolume::ExtractVoxelPointCloud() {
 }
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
-        const RGBDImage &image,
-        const PinholeCameraIntrinsic &intrinsic,
+        const geometry::RGBDImage &image,
+        const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4d &extrinsic,
-        const Image &depth_to_camera_distance_multiplier) {
+        const geometry::Image &depth_to_camera_distance_multiplier) {
     const float fx = static_cast<float>(intrinsic.GetFocalLength().first);
     const float fy = static_cast<float>(intrinsic.GetFocalLength().second);
     const float cx = static_cast<float>(intrinsic.GetPrincipalPoint().first);
@@ -301,11 +306,12 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                         v_f >= 0.0001f && v_f < safe_height_f) {
                         int u = (int)u_f;
                         int v = (int)v_f;
-                        float d = *PointerAt<float>(image.depth_, u, v);
+                        float d =
+                                *geometry::PointerAt<float>(image.depth_, u, v);
                         if (d > 0.0f) {
                             float sdf =
                                     (d - voxel_pt_camera(2)) *
-                                    (*PointerAt<float>(
+                                    (*geometry::PointerAt<float>(
                                             depth_to_camera_distance_multiplier,
                                             u, v));
                             if (sdf > -sdf_trunc_f) {
@@ -315,8 +321,9 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                 *p_tsdf = ((*p_tsdf) * (*p_weight) + tsdf) /
                                           (*p_weight + 1.0f);
                                 if (color_type_ == TSDFVolumeColorType::RGB8) {
-                                    const uint8_t *rgb = PointerAt<uint8_t>(
-                                            image.color_, u, v, 0);
+                                    const uint8_t *rgb =
+                                            geometry::PointerAt<uint8_t>(
+                                                    image.color_, u, v, 0);
                                     p_color[0] = (p_color[0] * (*p_weight) +
                                                   rgb[0]) /
                                                  (*p_weight + 1.0f);
@@ -328,8 +335,9 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
                                                  (*p_weight + 1.0f);
                                 } else if (color_type_ ==
                                            TSDFVolumeColorType::Gray32) {
-                                    const float *intensity = PointerAt<float>(
-                                            image.color_, u, v, 0);
+                                    const float *intensity =
+                                            geometry::PointerAt<float>(
+                                                    image.color_, u, v, 0);
                                     // PrintError("intensity : %f\n",
                                     // *intensity);
                                     p_color[0] = (p_color[0] * (*p_weight) +
@@ -391,4 +399,5 @@ double UniformTSDFVolume::GetTSDFAt(const Eigen::Vector3d &p) {
     // clang-format on
 }
 
+}  // namespace integration
 }  // namespace open3d

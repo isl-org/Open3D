@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/Geometry.h>
 
 namespace open3d {
+namespace geometry {
 
 class Geometry3D : public Geometry {
 public:
@@ -46,4 +47,5 @@ public:
     virtual void Transform(const Eigen::Matrix4d &transformation) = 0;
 };
 
+}  // namespace geometry
 }  // namespace open3d

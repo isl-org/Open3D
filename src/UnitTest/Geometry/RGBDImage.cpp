@@ -40,8 +40,8 @@ using namespace unit_test;
 //
 // ----------------------------------------------------------------------------
 TEST(RGBDImage, Constructor) {
-    Image image;
-    Image color;
+    geometry::Image image;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -65,9 +65,9 @@ TEST(RGBDImage, Constructor) {
     Rand(image.data_, 100, 150, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto depth = ConvertDepthToFloatImage(image);
+    auto depth = geometry::ConvertDepthToFloatImage(image);
 
-    RGBDImage rgbd_image(color, *depth);
+    geometry::RGBDImage rgbd_image(color, *depth);
 
     ExpectEQ(color.data_, rgbd_image.color_.data_);
     ExpectEQ(depth->data_, rgbd_image.depth_.data_);
@@ -102,8 +102,8 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
             30,  58,  5,   150, 131, 55,  249, 213, 122, 57,  101, 207, 11,
             57,  68,  190, 82,  58,  214, 94,  32,  57};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -128,7 +128,7 @@ TEST(RGBDImage, CreateRGBDImageFromColorAndDepth) {
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
+    auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -158,8 +158,8 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
             30,  58,  5,   150, 131, 55,  249, 213, 122, 57,  101, 207, 11,
             57,  68,  190, 82,  58,  214, 94,  32,  57};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -184,7 +184,7 @@ TEST(RGBDImage, CreateRGBDImageFromRedwoodFormat) {
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = CreateRGBDImageFromRedwoodFormat(color, depth);
+    auto rgbd_image = geometry::CreateRGBDImageFromRedwoodFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -214,8 +214,8 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
             253, 56,  162, 137, 82,  54,  45,  171, 72,  56,  60,  178, 223,
             55,  54,  152, 40,  57,  222, 75,  0,   56};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -240,7 +240,7 @@ TEST(RGBDImage, CreateRGBDImageFromTUMFormat) {
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = CreateRGBDImageFromTUMFormat(color, depth);
+    auto rgbd_image = geometry::CreateRGBDImageFromTUMFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -270,8 +270,8 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
             30,  58,  5,   150, 131, 55,  249, 213, 122, 57,  101, 207, 11,
             57,  68,  190, 82,  58,  214, 94,  32,  57};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -296,7 +296,7 @@ TEST(RGBDImage, CreateRGBDImageFromSUNFormat) {
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = CreateRGBDImageFromSUNFormat(color, depth);
+    auto rgbd_image = geometry::CreateRGBDImageFromSUNFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -326,8 +326,8 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
             30,  58,  5,   150, 131, 55,  249, 213, 122, 57,  101, 207, 11,
             57,  68,  190, 82,  58,  214, 94,  32,  57};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -352,7 +352,7 @@ TEST(RGBDImage, CreateRGBDImageFromNYUFormat) {
     Rand(float_data, depth_width * depth_height, 0.0, 1.0, 0);
     Rand(color.data_, 130, 200, 0);
 
-    auto rgbd_image = CreateRGBDImageFromNYUFormat(color, depth);
+    auto rgbd_image = geometry::CreateRGBDImageFromNYUFormat(color, depth);
 
     ExpectEQ(ref_color, rgbd_image->color_.data_);
     ExpectEQ(ref_depth, rgbd_image->depth_.data_);
@@ -385,8 +385,8 @@ TEST(RGBDImage, FilterRGBDImagePyramid) {
             {196, 181, 8, 58, 174, 43, 22, 58, 190, 83, 23, 58, 152, 174, 7,
              58}};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -412,10 +412,10 @@ TEST(RGBDImage, FilterRGBDImagePyramid) {
     Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
-    auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
-    auto pyramid = CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
-    auto filtered =
-            FilterRGBDImagePyramid(pyramid, Image::FilterType::Gaussian3);
+    auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(color, depth);
+    auto pyramid = geometry::CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
+    auto filtered = geometry::FilterRGBDImagePyramid(
+            pyramid, geometry::Image::FilterType::Gaussian3);
 
     for (size_t j = 0; j < num_of_levels; j++) {
         ExpectEQ(ref_color[j], filtered[j]->color_.data_);
@@ -451,8 +451,8 @@ TEST(RGBDImage, CreateRGBDImagePyramid) {
             {30, 202, 230, 57, 240, 107, 43, 58, 18, 188, 45, 58, 111, 173, 226,
              57}};
 
-    Image depth;
-    Image color;
+    geometry::Image depth;
+    geometry::Image color;
 
     const int size = 5;
 
@@ -478,8 +478,8 @@ TEST(RGBDImage, CreateRGBDImagePyramid) {
     Rand(color.data_, 130, 200, 0);
 
     size_t num_of_levels = 2;
-    auto rgbd_image = CreateRGBDImageFromColorAndDepth(color, depth);
-    auto pyramid = CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
+    auto rgbd_image = geometry::CreateRGBDImageFromColorAndDepth(color, depth);
+    auto pyramid = geometry::CreateRGBDImagePyramid(*rgbd_image, num_of_levels);
 
     for (size_t j = 0; j < num_of_levels; j++) {
         EXPECT_EQ(ref_color[j], pyramid[j]->color_.data_);

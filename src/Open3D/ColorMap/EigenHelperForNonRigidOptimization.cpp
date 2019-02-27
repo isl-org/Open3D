@@ -29,12 +29,13 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace color_map {
 
 template <typename VecInTypeDouble,
           typename VecInTypeInt,
           typename MatOutType,
           typename VecOutType>
-std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
+std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         std::function<void(int, VecInTypeDouble &, double &, VecInTypeInt &)> f,
         int iteration_num,
         int nonrigidval,
@@ -83,17 +84,19 @@ std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTr(
     }
 #endif
     if (verbose) {
-        PrintDebug("Residual : %.2e (# of elements : %d)\n",
-                   r2_sum / (double)iteration_num, iteration_num);
+        utility::PrintDebug("Residual : %.2e (# of elements : %d)\n",
+                            r2_sum / (double)iteration_num, iteration_num);
     }
     return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
 }
 
-template std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double> ComputeJTJandJTr(
+template std::tuple<Eigen::MatrixXd, Eigen::VectorXd, double>
+ComputeJTJandJTrNonRigid(
         std::function<
                 void(int, Eigen::Vector14d &, double &, Eigen::Vector14i &)> f,
         int iteration_num,
         int nonrigidval,
         bool verbose);
 
+}  // namespace color_map
 }  // namespace open3d

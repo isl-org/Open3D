@@ -34,6 +34,7 @@
 #include <Open3D/Geometry/Geometry3D.h>
 
 namespace open3d {
+namespace geometry {
 
 class TriangleMesh : public Geometry3D {
 public:
@@ -200,4 +201,5 @@ std::shared_ptr<TriangleMesh> CreateMeshCoordinateFrame(
         double size = 1.0,
         const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
+}  // namespace geometry
 }  // namespace open3d

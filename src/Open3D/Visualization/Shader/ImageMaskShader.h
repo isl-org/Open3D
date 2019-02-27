@@ -30,6 +30,7 @@
 #include <Open3D/Visualization/Shader/ShaderWrapper.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -45,22 +46,22 @@ protected:
 protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry,
+    bool BindGeometry(const geometry::Geometry &geometry,
                       const RenderOption &option,
                       const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry,
+    bool RenderGeometry(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
 protected:
-    virtual bool PrepareRendering(const Geometry &geometry,
+    virtual bool PrepareRendering(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
-    virtual bool PrepareBinding(const Geometry &geometry,
+    virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                Image &image) = 0;
+                                geometry::Image &image) = 0;
 
 protected:
     GLuint vertex_position_;
@@ -81,15 +82,16 @@ public:
     ImageMaskShaderForImage() : ImageMaskShader("ImageMaskShaderForImage") {}
 
 protected:
-    virtual bool PrepareRendering(const Geometry &geometry,
+    virtual bool PrepareRendering(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) final;
-    virtual bool PrepareBinding(const Geometry &geometry,
+    virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                Image &render_image) final;
+                                geometry::Image &render_image) final;
 };
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

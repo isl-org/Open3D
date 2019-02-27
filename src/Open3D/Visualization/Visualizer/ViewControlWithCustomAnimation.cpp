@@ -29,6 +29,7 @@
 #include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
 
 namespace open3d {
+namespace visualization {
 
 void ViewControlWithCustomAnimation::Reset() {
     if (animation_mode_ == AnimationMode::FreeMode) {
@@ -234,16 +235,17 @@ bool ViewControlWithCustomAnimation::CaptureTrajectory(
     }
     std::string json_filename = filename;
     if (json_filename.empty()) {
-        json_filename = "ViewTrajectory_" + GetCurrentTimeStamp() + ".json";
+        json_filename =
+                "ViewTrajectory_" + utility::GetCurrentTimeStamp() + ".json";
     }
-    PrintDebug("[Visualizer] Trejactory capture to %s\n",
-               json_filename.c_str());
-    return WriteIJsonConvertible(json_filename, view_trajectory_);
+    utility::PrintDebug("[Visualizer] Trejactory capture to %s\n",
+                        json_filename.c_str());
+    return io::WriteIJsonConvertible(json_filename, view_trajectory_);
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
         const std::string &filename) {
-    bool success = ReadIJsonConvertible(filename, view_trajectory_);
+    bool success = io::ReadIJsonConvertible(filename, view_trajectory_);
     if (success == false) {
         view_trajectory_.Reset();
     }
@@ -254,7 +256,7 @@ bool ViewControlWithCustomAnimation::LoadTrajectoryFromJsonFile(
 }
 
 bool ViewControlWithCustomAnimation::LoadTrajectoryFromCameraTrajectory(
-        const PinholeCameraTrajectory &camera_trajectory) {
+        const camera::PinholeCameraTrajectory &camera_trajectory) {
     current_keyframe_ = 0.0;
     current_frame_ = 0.0;
     view_trajectory_.Reset();
@@ -339,4 +341,5 @@ void ViewControlWithCustomAnimation::SetViewControlFromTrajectory() {
     }
 }
 
+}  // namespace visualization
 }  // namespace open3d

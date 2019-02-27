@@ -27,6 +27,7 @@
 #include "RGBDImage.h"
 
 namespace open3d {
+namespace geometry {
 
 RGBDImagePyramid FilterRGBDImagePyramid(
         const RGBDImagePyramid& rgbd_image_pyramid, Image::FilterType type) {
@@ -64,4 +65,5 @@ RGBDImagePyramid CreateRGBDImagePyramid(
     return rgbd_image_pyramid;
 }
 
+}  // namespace geometry
 }  // namespace open3d

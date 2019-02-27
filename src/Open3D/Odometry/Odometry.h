@@ -38,18 +38,22 @@
 
 namespace open3d {
 
+namespace geometry {
 class RGBDImage;
+}
 
+namespace odometry {
 /// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
-        const RGBDImage &source,
-        const RGBDImage &target,
-        const PinholeCameraIntrinsic &pinhole_camera_intrinsic =
-                PinholeCameraIntrinsic(),
+        const geometry::RGBDImage &source,
+        const geometry::RGBDImage &target,
+        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic =
+                camera::PinholeCameraIntrinsic(),
         const Eigen::Matrix4d &odo_init = Eigen::Matrix4d::Identity(),
         const RGBDOdometryJacobian &jacobian_method =
                 RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
 
+}  // namespace odometry
 }  // namespace open3d

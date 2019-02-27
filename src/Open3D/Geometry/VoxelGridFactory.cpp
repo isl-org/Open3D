@@ -36,6 +36,7 @@
 namespace open3d {
 
 namespace {
+using namespace geometry;
 
 class PointCloudVoxel {
 public:
@@ -66,11 +67,13 @@ public:
 
 }  // namespace
 
+namespace geometry {
+
 std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
         const PointCloud &input, double voxel_size) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
+        utility::PrintDebug("[VoxelGridFromPointCloud] voxel_size <= 0.\n");
         return output;
     }
     Eigen::Vector3d voxel_size3 =
@@ -79,13 +82,14 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        PrintDebug("[VoxelGridFromPointCloud] voxel_size is too small.\n");
+        utility::PrintDebug(
+                "[VoxelGridFromPointCloud] voxel_size is too small.\n");
         return output;
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = voxel_min_bound;
     std::unordered_map<Eigen::Vector3i, PointCloudVoxel,
-                       hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
@@ -102,9 +106,11 @@ std::shared_ptr<VoxelGrid> CreateSurfaceVoxelGridFromPointCloud(
             output->colors_.push_back(accpoint.second.GetAverageColor());
         }
     }
-    PrintDebug("Pointcloud is voxelized from %d points to %d voxels.\n",
-               (int)input.points_.size(), (int)output->voxels_.size());
+    utility::PrintDebug(
+            "Pointcloud is voxelized from %d points to %d voxels.\n",
+            (int)input.points_.size(), (int)output->voxels_.size());
     return output;
 }
 
+}  // namespace geometry
 }  // namespace open3d

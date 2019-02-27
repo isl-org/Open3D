@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Utility/ColorMap.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -66,7 +67,7 @@ void ImageShader::Release() {
     ReleaseProgram();
 }
 
-bool ImageShader::BindGeometry(const Geometry &geometry,
+bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
                                const RenderOption &option,
                                const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -78,7 +79,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    Image render_image;
+    geometry::Image render_image;
     if (PrepareBinding(geometry, option, view, render_image) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
@@ -123,7 +124,7 @@ bool ImageShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool ImageShader::RenderGeometry(const Geometry &geometry,
+bool ImageShader::RenderGeometry(const geometry::Geometry &geometry,
                                  const RenderOption &option,
                                  const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -158,14 +159,14 @@ void ImageShader::UnbindGeometry() {
     }
 }
 
-bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
+bool ImageShaderForImage::PrepareRendering(const geometry::Geometry &geometry,
                                            const RenderOption &option,
                                            const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
-        PrintShaderWarning("Rendering type is not Image.");
+    if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Image) {
+        PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;
     }
-    const Image &image = (const Image &)geometry;
+    const geometry::Image &image = (const geometry::Image &)geometry;
     GLfloat ratio_x, ratio_y;
     switch (option.image_stretch_option_) {
         case RenderOption::ImageStretchOption::StretchKeepRatio:
@@ -196,15 +197,15 @@ bool ImageShaderForImage::PrepareRendering(const Geometry &geometry,
     return true;
 }
 
-bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
+bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
                                          const RenderOption &option,
                                          const ViewControl &view,
-                                         Image &render_image) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::Image) {
-        PrintShaderWarning("Rendering type is not Image.");
+                                         geometry::Image &render_image) {
+    if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Image) {
+        PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;
     }
-    const Image &image = (const Image &)geometry;
+    const geometry::Image &image = (const geometry::Image &)geometry;
     if (image.HasData() == false) {
         PrintShaderWarning("Binding failed with empty image.");
         return false;
@@ -268,4 +269,5 @@ bool ImageShaderForImage::PrepareBinding(const Geometry &geometry,
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

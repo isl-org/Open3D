@@ -27,6 +27,7 @@
 #include "LineSet.h"
 
 namespace open3d {
+namespace geometry {
 
 void LineSet::Clear() {
     points_.clear();
@@ -123,4 +124,5 @@ LineSet LineSet::operator+(const LineSet &lineset) const {
     return (LineSet(*this) += lineset);
 }
 
+}  // namespace geometry
 }  // namespace open3d

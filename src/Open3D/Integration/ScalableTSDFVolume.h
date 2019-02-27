@@ -32,6 +32,7 @@
 #include <Open3D/Utility/Helper.h>
 
 namespace open3d {
+namespace integration {
 
 class UniformTSDFVolume;
 
@@ -74,12 +75,12 @@ public:
 
 public:
     void Reset() override;
-    void Integrate(const RGBDImage &image,
-                   const PinholeCameraIntrinsic &intrinsic,
+    void Integrate(const geometry::RGBDImage &image,
+                   const camera::PinholeCameraIntrinsic &intrinsic,
                    const Eigen::Matrix4d &extrinsic) override;
-    std::shared_ptr<PointCloud> ExtractPointCloud() override;
-    std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override;
-    std::shared_ptr<PointCloud> ExtractVoxelPointCloud();
+    std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override;
+    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override;
+    std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud();
 
 public:
     int volume_unit_resolution_;
@@ -91,7 +92,7 @@ public:
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
     std::unordered_map<Eigen::Vector3i,
                        VolumeUnit,
-                       hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             volume_units_;
 
 private:
@@ -109,4 +110,5 @@ private:
     double GetTSDFAt(const Eigen::Vector3d &p);
 };
 
+}  // namespace integration
 }  // namespace open3d

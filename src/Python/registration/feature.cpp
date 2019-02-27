@@ -32,16 +32,18 @@
 using namespace open3d;
 
 void pybind_feature(py::module &m) {
-    py::class_<Feature, std::shared_ptr<Feature>> feature(m, "Feature",
-                                                          "Feature");
-    py::detail::bind_default_constructor<Feature>(feature);
-    py::detail::bind_copy_functions<Feature>(feature);
-    feature.def("resize", &Feature::Resize, "dim"_a, "n"_a)
-            .def("dimension", &Feature::Dimension)
-            .def("num", &Feature::Num)
-            .def_readwrite("data", &Feature::data_)
-            .def("__repr__", [](const Feature &f) {
-                return std::string("Feature class with dimension = ") +
+    py::class_<registration::Feature, std::shared_ptr<registration::Feature>>
+            feature(m, "Feature", "Feature");
+    py::detail::bind_default_constructor<registration::Feature>(feature);
+    py::detail::bind_copy_functions<registration::Feature>(feature);
+    feature.def("resize", &registration::Feature::Resize, "dim"_a, "n"_a)
+            .def("dimension", &registration::Feature::Dimension)
+            .def("num", &registration::Feature::Num)
+            .def_readwrite("data", &registration::Feature::data_)
+            .def("__repr__", [](const registration::Feature &f) {
+                return std::string(
+                               "registration::Feature class with dimension "
+                               "= ") +
                        std::to_string(f.Dimension()) +
                        std::string(" and num = ") + std::to_string(f.Num()) +
                        std::string("\nAccess its data via data member.");
@@ -51,17 +53,19 @@ void pybind_feature(py::module &m) {
 void pybind_feature_methods(py::module &m) {
     m.def("read_feature",
           [](const std::string &filename) {
-              Feature feature;
-              ReadFeature(filename, feature);
+              registration::Feature feature;
+              io::ReadFeature(filename, feature);
               return feature;
           },
-          "Function to read Feature from file", "filename"_a);
+          "Function to read registration::Feature from file", "filename"_a);
     m.def("write_feature",
-          [](const std::string &filename, const Feature &feature) {
-              return WriteFeature(filename, feature);
+          [](const std::string &filename,
+             const registration::Feature &feature) {
+              return io::WriteFeature(filename, feature);
           },
-          "Function to write Feature to file", "filename"_a, "feature"_a);
-    m.def("compute_fpfh_feature", &ComputeFPFHFeature,
+          "Function to write registration::Feature to file", "filename"_a,
+          "feature"_a);
+    m.def("compute_fpfh_feature", &registration::ComputeFPFHFeature,
           "Function to compute FPFH feature for a point cloud", "input"_a,
           "search_param"_a);
 }

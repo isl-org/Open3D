@@ -33,20 +33,22 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, TriangleMesh &)>>
+        std::function<bool(const std::string &, geometry::TriangleMesh &)>>
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
                 {"stl", ReadTriangleMeshFromSTL},
         };
 
-static const std::unordered_map<std::string,
-                                std::function<bool(const std::string &,
-                                                   const TriangleMesh &,
-                                                   const bool,
-                                                   const bool)>>
+static const std::unordered_map<
+        std::string,
+        std::function<bool(const std::string &,
+                           const geometry::TriangleMesh &,
+                           const bool,
+                           const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"ply", WriteTriangleMeshToPLY},
                 {"stl", WriteTriangleMeshToSTL},
@@ -54,56 +56,72 @@ static const std::unordered_map<std::string,
 
 }  // unnamed namespace
 
-std::shared_ptr<TriangleMesh> CreateMeshFromFile(const std::string &filename) {
-    auto mesh = std::make_shared<TriangleMesh>();
+namespace io {
+
+std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
+        const std::string &filename) {
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
     ReadTriangleMesh(filename, *mesh);
     return mesh;
 }
 
-bool ReadTriangleMesh(const std::string &filename, TriangleMesh &mesh) {
+bool ReadTriangleMesh(const std::string &filename,
+                      geometry::TriangleMesh &mesh) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::TriangleMesh failed: unknown file "
+                "extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_trianglemesh_read_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
-        PrintWarning("Read TriangleMesh failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::TriangleMesh failed: unknown file "
+                "extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, mesh);
-    PrintDebug("Read TriangleMesh: %d triangles and %d vertices.\n",
-               (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+    utility::PrintDebug(
+            "Read geometry::TriangleMesh: %d triangles and %d vertices.\n",
+            (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     if (mesh.HasVertices() && !mesh.HasTriangles()) {
-        PrintWarning(
-                "TriangleMesh appears to be a PointCloud (only contains "
+        utility::PrintWarning(
+                "geometry::TriangleMesh appears to be a geometry::PointCloud "
+                "(only contains "
                 "vertices, but no triangles).\n");
     }
     return success;
 }
 
 bool WriteTriangleMesh(const std::string &filename,
-                       const TriangleMesh &mesh,
+                       const geometry::TriangleMesh &mesh,
                        bool write_ascii /* = false*/,
                        bool compressed /* = false*/) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::TriangleMesh failed: unknown file "
+                "extension.\n");
         return false;
     }
     auto map_itr =
             file_extension_to_trianglemesh_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
-        PrintWarning("Write TriangleMesh failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::TriangleMesh failed: unknown file "
+                "extension.\n");
         return false;
     }
     bool success = map_itr->second(filename, mesh, write_ascii, compressed);
-    PrintDebug("Write TriangleMesh: %d triangles and %d vertices.\n",
-               (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
+    utility::PrintDebug(
+            "Write geometry::TriangleMesh: %d triangles and %d vertices.\n",
+            (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

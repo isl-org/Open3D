@@ -29,6 +29,7 @@
 #include <string>
 
 namespace open3d {
+namespace odometry {
 
 class OdometryOption {
 public:
@@ -53,4 +54,5 @@ public:
     double max_depth_;
 };
 
+}  // namespace odometry
 }  // namespace open3d

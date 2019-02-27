@@ -30,13 +30,14 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace io {
 
 bool ReadPointCloudFromXYZ(const std::string &filename,
-                           PointCloud &pointcloud) {
+                           geometry::PointCloud &pointcloud) {
     FILE *file = fopen(filename.c_str(), "r");
     if (file == NULL) {
-        PrintWarning("Read XYZ failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read XYZ failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
 
@@ -55,13 +56,13 @@ bool ReadPointCloudFromXYZ(const std::string &filename,
 }
 
 bool WritePointCloudToXYZ(const std::string &filename,
-                          const PointCloud &pointcloud,
+                          const geometry::PointCloud &pointcloud,
                           bool write_ascii /* = false*/,
                           bool compressed /* = false*/) {
     FILE *file = fopen(filename.c_str(), "w");
     if (file == NULL) {
-        PrintWarning("Write XYZ failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write XYZ failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
 
@@ -69,8 +70,9 @@ bool WritePointCloudToXYZ(const std::string &filename,
         const Eigen::Vector3d &point = pointcloud.points_[i];
         if (fprintf(file, "%.10f %.10f %.10f\n", point(0), point(1), point(2)) <
             0) {
-            PrintWarning("Write XYZ failed: unable to write file: %s\n",
-                         filename.c_str());
+            utility::PrintWarning(
+                    "Write XYZ failed: unable to write file: %s\n",
+                    filename.c_str());
             fclose(file);
             return false;  // error happens during writing.
         }
@@ -80,4 +82,5 @@ bool WritePointCloudToXYZ(const std::string &filename,
     return true;
 }
 
+}  // namespace io
 }  // namespace open3d

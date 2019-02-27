@@ -30,6 +30,7 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace camera {
 
 enum class PinholeCameraIntrinsicParameters {
     PrimeSenseDefault = 0,
@@ -37,7 +38,7 @@ enum class PinholeCameraIntrinsicParameters {
     Kinect2ColorCameraDefault = 2,
 };
 
-class PinholeCameraIntrinsic : public IJsonConvertible {
+class PinholeCameraIntrinsic : public utility::IJsonConvertible {
 public:
     PinholeCameraIntrinsic();
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters);
@@ -77,5 +78,5 @@ public:
     int height_ = -1;
     Eigen::Matrix3d intrinsic_matrix_;
 };
-
+}  // namespace camera
 }  // namespace open3d

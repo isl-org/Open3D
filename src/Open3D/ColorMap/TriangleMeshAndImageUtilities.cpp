@@ -33,10 +33,10 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 
 namespace open3d {
-
+namespace color_map {
 inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
         const Eigen::Vector3d X,
-        const PinholeCameraTrajectory& camera,
+        const camera::PinholeCameraTrajectory& camera,
         int camid) {
     std::pair<double, double> f =
             camera.parameters_[camid].intrinsic_.GetFocalLength();
@@ -52,10 +52,10 @@ inline std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 
 std::tuple<std::vector<std::vector<int>>, std::vector<std::vector<int>>>
 CreateVertexAndImageVisibility(
-        const TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_depth,
-        const std::vector<std::shared_ptr<Image>>& images_mask,
-        const PinholeCameraTrajectory& camera,
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_depth,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_mask,
+        const camera::PinholeCameraTrajectory& camera,
         double maximum_allowable_depth,
         double depth_threshold_for_visiblity_check) {
     auto n_camera = camera.parameters_.size();
@@ -76,9 +76,11 @@ CreateVertexAndImageVisibility(
             int u_d = int(round(u)), v_d = int(round(v));
             if (d < 0.0 || !images_depth[c]->TestImageBoundary(u_d, v_d))
                 continue;
-            float d_sensor = *PointerAt<float>(*images_depth[c], u_d, v_d);
+            float d_sensor =
+                    *geometry::PointerAt<float>(*images_depth[c], u_d, v_d);
             if (d_sensor > maximum_allowable_depth) continue;
-            if (*PointerAt<unsigned char>(*images_mask[c], u_d, v_d) == 255)
+            if (*geometry::PointerAt<unsigned char>(*images_mask[c], u_d,
+                                                    v_d) == 255)
                 continue;
             if (std::fabs(d - d_sensor) < depth_threshold_for_visiblity_check) {
 #ifdef _OPENMP
@@ -91,8 +93,8 @@ CreateVertexAndImageVisibility(
                 }
             }
         }
-        PrintDebug("[cam %d] %.5f percents are visible\n", c,
-                   double(viscnt) / n_vertex * 100);
+        utility::PrintDebug("[cam %d] %.5f percents are visible\n", c,
+                            double(viscnt) / n_vertex * 100);
         fflush(stdout);
     }
     return std::move(std::make_tuple(visiblity_vertex_to_image,
@@ -100,22 +102,24 @@ CreateVertexAndImageVisibility(
 }
 
 template <typename T>
-std::tuple<bool, T> QueryImageIntensity(const Image& img,
-                                        const Eigen::Vector3d& V,
-                                        const PinholeCameraTrajectory& camera,
-                                        int camid,
-                                        int ch /*= -1*/,
-                                        int image_boundary_margin /*= 10*/) {
+std::tuple<bool, T> QueryImageIntensity(
+        const geometry::Image& img,
+        const Eigen::Vector3d& V,
+        const camera::PinholeCameraTrajectory& camera,
+        int camid,
+        int ch /*= -1*/,
+        int image_boundary_margin /*= 10*/) {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
     if (img.TestImageBoundary(u, v, image_boundary_margin)) {
         int u_round = int(round(u));
         int v_round = int(round(v));
         if (ch == -1) {
-            return std::make_tuple(true, *PointerAt<T>(img, u_round, v_round));
+            return std::make_tuple(
+                    true, *geometry::PointerAt<T>(img, u_round, v_round));
         } else {
-            return std::make_tuple(true,
-                                   *PointerAt<T>(img, u_round, v_round, ch));
+            return std::make_tuple(
+                    true, *geometry::PointerAt<T>(img, u_round, v_round, ch));
         }
     } else {
         return std::make_tuple(false, 0);
@@ -123,13 +127,14 @@ std::tuple<bool, T> QueryImageIntensity(const Image& img,
 }
 
 template <typename T>
-std::tuple<bool, T> QueryImageIntensity(const Image& img,
-                                        const ImageWarpingField& field,
-                                        const Eigen::Vector3d& V,
-                                        const PinholeCameraTrajectory& camera,
-                                        int camid,
-                                        int ch /*= -1*/,
-                                        int image_boundary_margin /*= 10*/) {
+std::tuple<bool, T> QueryImageIntensity(
+        const geometry::Image& img,
+        const ImageWarpingField& field,
+        const Eigen::Vector3d& V,
+        const camera::PinholeCameraTrajectory& camera,
+        int camid,
+        int ch /*= -1*/,
+        int image_boundary_margin /*= 10*/) {
     float u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera, camid);
     if (img.TestImageBoundary(u, v, image_boundary_margin)) {
@@ -139,11 +144,12 @@ std::tuple<bool, T> QueryImageIntensity(const Image& img,
             int u_shift = int(round(uv_shift(0)));
             int v_shift = int(round(uv_shift(1)));
             if (ch == -1) {
-                return std::make_tuple(true,
-                                       *PointerAt<T>(img, u_shift, v_shift));
+                return std::make_tuple(
+                        true, *geometry::PointerAt<T>(img, u_shift, v_shift));
             } else {
                 return std::make_tuple(
-                        true, *PointerAt<T>(img, u_shift, v_shift, ch));
+                        true,
+                        *geometry::PointerAt<T>(img, u_shift, v_shift, ch));
             }
         }
     }
@@ -151,10 +157,10 @@ std::tuple<bool, T> QueryImageIntensity(const Image& img,
 }
 
 void SetProxyIntensityForVertex(
-        const TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_gray,
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
         const std::vector<ImageWarpingField>& warping_field,
-        const PinholeCameraTrajectory& camera,
+        const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         std::vector<double>& proxy_intensity,
         int image_boundary_margin) {
@@ -187,9 +193,9 @@ void SetProxyIntensityForVertex(
 }
 
 void SetProxyIntensityForVertex(
-        const TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_gray,
-        const PinholeCameraTrajectory& camera,
+        const geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_gray,
+        const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         std::vector<double>& proxy_intensity,
         int image_boundary_margin) {
@@ -222,9 +228,9 @@ void SetProxyIntensityForVertex(
 }
 
 void SetGeometryColorAverage(
-        TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_color,
-        const PinholeCameraTrajectory& camera,
+        geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_color,
+        const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         int image_boundary_margin /*= 10*/) {
     auto n_vertex = mesh.vertices_.size();
@@ -265,10 +271,10 @@ void SetGeometryColorAverage(
 }
 
 void SetGeometryColorAverage(
-        TriangleMesh& mesh,
-        const std::vector<std::shared_ptr<Image>>& images_color,
+        geometry::TriangleMesh& mesh,
+        const std::vector<std::shared_ptr<geometry::Image>>& images_color,
         const std::vector<ImageWarpingField>& warping_fields,
-        const PinholeCameraTrajectory& camera,
+        const camera::PinholeCameraTrajectory& camera,
         const std::vector<std::vector<int>>& visiblity_vertex_to_image,
         int image_boundary_margin /*= 10*/) {
     auto n_vertex = mesh.vertices_.size();
@@ -307,5 +313,5 @@ void SetGeometryColorAverage(
         }
     }
 }
-
+}  // namespace color_map
 }  // namespace open3d

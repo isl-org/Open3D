@@ -31,6 +31,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace utility {
 
 /// Function to solve Ax=b
 std::tuple<bool, Eigen::VectorXd> SolveLinearSystemPSD(
@@ -275,4 +276,6 @@ template std::tuple<Eigen::Matrix6d, Eigen::Vector6d, double> ComputeJTJandJTr(
                            std::vector<double> &)> f,
         int iteration_num, bool verbose);
 // clang-format on
+
+}  // namespace utility
 }  // namespace open3d

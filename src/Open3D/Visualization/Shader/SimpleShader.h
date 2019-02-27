@@ -31,6 +31,7 @@
 #include <Open3D/Visualization/Shader/ShaderWrapper.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -44,19 +45,19 @@ protected:
 protected:
     bool Compile() final;
     void Release() final;
-    bool BindGeometry(const Geometry &geometry,
+    bool BindGeometry(const geometry::Geometry &geometry,
                       const RenderOption &option,
                       const ViewControl &view) final;
-    bool RenderGeometry(const Geometry &geometry,
+    bool RenderGeometry(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view) final;
     void UnbindGeometry() final;
 
 protected:
-    virtual bool PrepareRendering(const Geometry &geometry,
+    virtual bool PrepareRendering(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
-    virtual bool PrepareBinding(const Geometry &geometry,
+    virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
                                 std::vector<Eigen::Vector3f> &points,
@@ -75,10 +76,10 @@ public:
     SimpleShaderForPointCloud() : SimpleShader("SimpleShaderForPointCloud") {}
 
 protected:
-    bool PrepareRendering(const Geometry &geometry,
+    bool PrepareRendering(const geometry::Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry,
+    bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
@@ -90,10 +91,10 @@ public:
     SimpleShaderForLineSet() : SimpleShader("SimpleShaderForLineSet") {}
 
 protected:
-    bool PrepareRendering(const Geometry &geometry,
+    bool PrepareRendering(const geometry::Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry,
+    bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
@@ -106,10 +107,10 @@ public:
         : SimpleShader("SimpleShaderForTriangleMesh") {}
 
 protected:
-    bool PrepareRendering(const Geometry &geometry,
+    bool PrepareRendering(const geometry::Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry,
+    bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
@@ -121,10 +122,10 @@ public:
     SimpleShaderForVoxelGrid() : SimpleShader("SimpleShaderForVoxelGrid") {}
 
 protected:
-    bool PrepareRendering(const Geometry &geometry,
+    bool PrepareRendering(const geometry::Geometry &geometry,
                           const RenderOption &option,
                           const ViewControl &view) final;
-    bool PrepareBinding(const Geometry &geometry,
+    bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
                         std::vector<Eigen::Vector3f> &points,
@@ -133,4 +134,5 @@ protected:
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

@@ -31,8 +31,9 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace visualization {
 
-class RenderOption : public IJsonConvertible {
+class RenderOption : public utility::IJsonConvertible {
 public:
     // Global options
     enum class TextureInterpolationOption {
@@ -194,4 +195,5 @@ public:
     bool show_coordinate_frame_ = false;
 };
 
+}  // namespace visualization
 }  // namespace open3d

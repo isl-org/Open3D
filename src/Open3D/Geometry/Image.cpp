@@ -38,6 +38,7 @@ const std::vector<double> Sobel32 = {1.0, 2.0, 1.0};
 }  // unnamed namespace
 
 namespace open3d {
+namespace geometry {
 
 void Image::Clear() {
     width_ = 0;
@@ -127,7 +128,8 @@ void ClipIntensityImage(Image &input,
                         double min /* = 0.0*/,
                         double max /* = 1.0*/) {
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
-        PrintWarning("[ClipIntensityImage] Unsupported image format.\n");
+        utility::PrintWarning(
+                "[ClipIntensityImage] Unsupported image format.\n");
         return;
     }
     for (int y = 0; y < input.height_; y++) {
@@ -143,7 +145,8 @@ void LinearTransformImage(Image &input,
                           double scale,
                           double offset /* = 0.0*/) {
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
-        PrintWarning("[LinearTransformImage] Unsupported image format.\n");
+        utility::PrintWarning(
+                "[LinearTransformImage] Unsupported image format.\n");
         return;
     }
     for (int y = 0; y < input.height_; y++) {
@@ -157,7 +160,7 @@ void LinearTransformImage(Image &input,
 std::shared_ptr<Image> DownsampleImage(const Image &input) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
-        PrintWarning("[DownsampleImage] Unsupported image format.\n");
+        utility::PrintWarning("[DownsampleImage] Unsupported image format.\n");
         return output;
     }
     int half_width = (int)floor((double)input.width_ / 2.0);
@@ -185,7 +188,7 @@ std::shared_ptr<Image> FilterHorizontalImage(
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[FilterHorizontalImage] Unsupported image format or kernel "
                 "size.\n");
         return output;
@@ -216,7 +219,7 @@ std::shared_ptr<Image> FilterHorizontalImage(
 std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
-        PrintWarning("[FilterImage] Unsupported image format.\n");
+        utility::PrintWarning("[FilterImage] Unsupported image format.\n");
         return output;
     }
 
@@ -237,7 +240,7 @@ std::shared_ptr<Image> FilterImage(const Image &input, Image::FilterType type) {
             output = FilterImage(input, Sobel32, Sobel31);
             break;
         default:
-            PrintWarning("[FilterImage] Unsupported filter type.\n");
+            utility::PrintWarning("[FilterImage] Unsupported filter type.\n");
             break;
     }
     return output;
@@ -258,7 +261,7 @@ std::shared_ptr<Image> FilterImage(const Image &input,
                                    const std::vector<double> &dy) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
-        PrintWarning("[FilterImage] Unsupported image format.\n");
+        utility::PrintWarning("[FilterImage] Unsupported image format.\n");
         return output;
     }
 
@@ -272,7 +275,7 @@ std::shared_ptr<Image> FilterImage(const Image &input,
 std::shared_ptr<Image> FlipImage(const Image &input) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 4) {
-        PrintWarning("[FilpImage] Unsupported image format.\n");
+        utility::PrintWarning("[FilpImage] Unsupported image format.\n");
         return output;
     }
     output->PrepareImage(input.height_, input.width_, 1, 4);
@@ -294,7 +297,7 @@ std::shared_ptr<Image> DilateImage(const Image &input,
                                    int half_kernel_size /* = 1 */) {
     auto output = std::make_shared<Image>();
     if (input.num_of_channels_ != 1 || input.bytes_per_channel_ != 1) {
-        PrintWarning("[DilateImage] Unsupported image format.\n");
+        utility::PrintWarning("[DilateImage] Unsupported image format.\n");
         return output;
     }
     output->PrepareImage(input.width_, input.height_, 1, 1);
@@ -361,4 +364,5 @@ std::shared_ptr<Image> CreateDepthBoundaryMask(
     }
 }
 
+}  // namespace geometry
 }  // namespace open3d

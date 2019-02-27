@@ -33,6 +33,7 @@
 namespace open3d {
 
 namespace {
+using namespace geometry;
 
 double sqr(double x) { return x * x; }
 
@@ -115,6 +116,8 @@ Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
 
 }  // unnamed namespace
 
+namespace geometry {
+
 bool EstimateNormals(
         PointCloud &cloud,
         const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
@@ -157,7 +160,7 @@ bool OrientNormalsToAlignWithDirection(
         PointCloud &cloud, const Eigen::Vector3d &orientation_reference
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (cloud.HasNormals() == false) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.\n");
     }
@@ -179,7 +182,7 @@ bool OrientNormalsTowardsCameraLocation(
         PointCloud &cloud,
         const Eigen::Vector3d &camera_location /* = Eigen::Vector3d::Zero()*/) {
     if (cloud.HasNormals() == false) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.\n");
     }
@@ -203,5 +206,5 @@ bool OrientNormalsTowardsCameraLocation(
     }
     return true;
 }
-
+}  // namespace geometry
 }  // namespace open3d

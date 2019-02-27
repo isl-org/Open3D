@@ -35,8 +35,11 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
 
+namespace registration {
 /// Base class that checks if two (small) point clouds can be aligned
 /// This class is used in feature based matching algorithms (such as RANSAC and
 /// FastGlobalRegistration) to prune out outlier correspondences.
@@ -50,8 +53,8 @@ public:
 public:
     /// Function to check if two points can be aligned. The two input point
     /// clouds must have exact the same number of points.
-    virtual bool Check(const PointCloud &source,
-                       const PointCloud &target,
+    virtual bool Check(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
                        const CorrespondenceSet &corres,
                        const Eigen::Matrix4d &transformation) const = 0;
 
@@ -72,8 +75,8 @@ public:
     ~CorrespondenceCheckerBasedOnEdgeLength() override {}
 
 public:
-    bool Check(const PointCloud &source,
-               const PointCloud &target,
+    bool Check(const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
@@ -90,8 +93,8 @@ public:
     ~CorrespondenceCheckerBasedOnDistance() override {}
 
 public:
-    bool Check(const PointCloud &source,
-               const PointCloud &target,
+    bool Check(const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
@@ -108,8 +111,8 @@ public:
     ~CorrespondenceCheckerBasedOnNormal() override {}
 
 public:
-    bool Check(const PointCloud &source,
-               const PointCloud &target,
+    bool Check(const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
@@ -117,4 +120,5 @@ public:
     double normal_angle_threshold_;
 };
 
+}  // namespace registration
 }  // namespace open3d

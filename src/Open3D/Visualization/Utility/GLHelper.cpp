@@ -30,7 +30,7 @@
 #include <Eigen/Dense>
 
 namespace open3d {
-
+namespace visualization {
 namespace GLHelper {
 
 GLMatrix4f LookAt(const Eigen::Vector3d &eye,
@@ -124,5 +124,5 @@ int ColorCodeToPickIndex(const Eigen::Vector4i &color) {
 }
 
 }  // namespace GLHelper
-
+}  // namespace visualization
 }  // namespace open3d

@@ -33,7 +33,11 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
+
+namespace registration {
 
 typedef std::vector<Eigen::Vector2i> CorrespondenceSet;
 
@@ -55,12 +59,12 @@ public:
 public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
-    virtual double ComputeRMSE(const PointCloud &source,
-                               const PointCloud &target,
+    virtual double ComputeRMSE(const geometry::PointCloud &source,
+                               const geometry::PointCloud &target,
                                const CorrespondenceSet &corres) const = 0;
     virtual Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source,
-            const PointCloud &target,
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
 };
 
@@ -76,12 +80,12 @@ public:
             const override {
         return type_;
     };
-    double ComputeRMSE(const PointCloud &source,
-                       const PointCloud &target,
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source,
-            const PointCloud &target,
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
 public:
@@ -103,12 +107,12 @@ public:
             const override {
         return type_;
     };
-    double ComputeRMSE(const PointCloud &source,
-                       const PointCloud &target,
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
     Eigen::Matrix4d ComputeTransformation(
-            const PointCloud &source,
-            const PointCloud &target,
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
 private:
@@ -116,4 +120,5 @@ private:
             TransformationEstimationType::PointToPlane;
 };
 
+}  // namespace registration
 }  // namespace open3d

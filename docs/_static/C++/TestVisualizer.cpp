@@ -33,14 +33,14 @@
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
     if (argc < 3) {
         // clang-format off
-        PrintInfo("Open3D %s\n", OPEN3D_VERSION);
-		PrintInfo("\n");
-		PrintInfo("Usage:\n");
-		PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-		PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
+        utility::PrintInfo("Open3D %s\n", OPEN3D_VERSION);
+		utility::PrintInfo("\n");
+		utility::PrintInfo("Usage:\n");
+		utility::PrintInfo("    > TestVisualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
+		utility::PrintInfo("    > TestVisualizer [animation] [filename] [trajectoryfile]\n");
         // clang-format on
         // CI will call this file without input files, return 0 to pass
         return 0;
@@ -48,45 +48,45 @@ int main(int argc, char *argv[]) {
 
     std::string option(argv[1]);
     if (option == "mesh") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
-        DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
+        visualization::DrawGeometries({mesh_ptr}, "Mesh", 1600, 900);
     } else if (option == "spin") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
-        DrawGeometriesWithAnimationCallback(
+        visualization::DrawGeometriesWithAnimationCallback(
                 {mesh_ptr},
-                [&](Visualizer *vis) {
+                [&](visualization::Visualizer *vis) {
                     vis->GetViewControl().Rotate(10, 0);
                     std::this_thread::sleep_for(std::chrono::milliseconds(30));
                     return false;
                 },
                 "Spin", 1600, 900);
     } else if (option == "slowspin") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
-        DrawGeometriesWithKeyCallbacks(
+        visualization::DrawGeometriesWithKeyCallbacks(
                 {mesh_ptr},
                 {{GLFW_KEY_SPACE,
-                  [&](Visualizer *vis) {
+                  [&](visualization::Visualizer *vis) {
                       vis->GetViewControl().Rotate(10, 0);
                       std::this_thread::sleep_for(
                               std::chrono::milliseconds(30));
@@ -94,21 +94,21 @@ int main(int argc, char *argv[]) {
                   }}},
                 "Press Space key to spin", 1600, 900);
     } else if (option == "pointcloud") {
-        auto cloud_ptr = std::make_shared<PointCloud>();
-        if (ReadPointCloud(argv[2], *cloud_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto cloud_ptr = std::make_shared<geometry::PointCloud>();
+        if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
-        DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
+        visualization::DrawGeometries({cloud_ptr}, "PointCloud", 1600, 900);
     } else if (option == "rainbow") {
-        auto cloud_ptr = std::make_shared<PointCloud>();
-        if (ReadPointCloud(argv[2], *cloud_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto cloud_ptr = std::make_shared<geometry::PointCloud>();
+        if (io::ReadPointCloud(argv[2], *cloud_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
         cloud_ptr->NormalizeNormals();
@@ -117,16 +117,16 @@ int main(int argc, char *argv[]) {
         double color_index_step = 0.05;
 
         auto update_colors_func = [&cloud_ptr](double index) {
-            auto color_map_ptr = GetGlobalColorMap();
+            auto color_map_ptr = visualization::GetGlobalColorMap();
             for (auto &c : cloud_ptr->colors_) {
                 c = color_map_ptr->GetColor(index);
             }
         };
         update_colors_func(1.0);
 
-        DrawGeometriesWithAnimationCallback(
+        visualization::DrawGeometriesWithAnimationCallback(
                 {cloud_ptr},
-                [&](Visualizer *vis) {
+                [&](visualization::Visualizer *vis) {
                     color_index += color_index_step;
                     if (color_index > 2.0) color_index -= 2.0;
                     update_colors_func(fabs(color_index - 1.0));
@@ -135,45 +135,46 @@ int main(int argc, char *argv[]) {
                 },
                 "Rainbow", 1600, 900);
     } else if (option == "image") {
-        auto image_ptr = std::make_shared<Image>();
-        if (ReadImage(argv[2], *image_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto image_ptr = std::make_shared<geometry::Image>();
+        if (io::ReadImage(argv[2], *image_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
-        DrawGeometries({image_ptr}, "Image", image_ptr->width_,
-                       image_ptr->height_);
+        visualization::DrawGeometries({image_ptr}, "Image", image_ptr->width_,
+                                      image_ptr->height_);
     } else if (option == "depth") {
-        auto image_ptr = CreateImageFromFile(argv[2]);
-        PinholeCameraIntrinsic camera;
+        auto image_ptr = io::CreateImageFromFile(argv[2]);
+        camera::PinholeCameraIntrinsic camera;
         camera.SetIntrinsics(640, 480, 575.0, 575.0, 319.5, 239.5);
         auto pointcloud_ptr =
-                CreatePointCloudFromDepthImage(*image_ptr, camera);
-        DrawGeometries({pointcloud_ptr}, "PointCloud from Depth Image", 1920,
-                       1080);
+                geometry::CreatePointCloudFromDepthImage(*image_ptr, camera);
+        visualization::DrawGeometries(
+                {pointcloud_ptr},
+                "geometry::PointCloud from Depth geometry::Image", 1920, 1080);
     } else if (option == "editing") {
-        auto pcd = CreatePointCloudFromFile(argv[2]);
-        DrawGeometriesWithEditing({pcd}, "Editing", 1920, 1080);
+        auto pcd = io::CreatePointCloudFromFile(argv[2]);
+        visualization::DrawGeometriesWithEditing({pcd}, "Editing", 1920, 1080);
     } else if (option == "animation") {
-        auto mesh_ptr = std::make_shared<TriangleMesh>();
-        if (ReadTriangleMesh(argv[2], *mesh_ptr)) {
-            PrintWarning("Successfully read %s\n", argv[2]);
+        auto mesh_ptr = std::make_shared<geometry::TriangleMesh>();
+        if (io::ReadTriangleMesh(argv[2], *mesh_ptr)) {
+            utility::PrintWarning("Successfully read %s\n", argv[2]);
         } else {
-            PrintError("Failed to read %s\n\n", argv[2]);
+            utility::PrintError("Failed to read %s\n\n", argv[2]);
             return 1;
         }
         mesh_ptr->ComputeVertexNormals();
         if (argc == 3) {
-            DrawGeometriesWithCustomAnimation({mesh_ptr}, "Animation", 1920,
-                                              1080);
+            visualization::DrawGeometriesWithCustomAnimation(
+                    {mesh_ptr}, "Animation", 1920, 1080);
         } else {
-            DrawGeometriesWithCustomAnimation({mesh_ptr}, "Animation", 1600,
-                                              900, 50, 50, argv[3]);
+            visualization::DrawGeometriesWithCustomAnimation(
+                    {mesh_ptr}, "Animation", 1600, 900, 50, 50, argv[3]);
         }
     }
 
-    PrintInfo("End of the test.\n");
+    utility::PrintInfo("End of the test.\n");
 
     return 0;
 }

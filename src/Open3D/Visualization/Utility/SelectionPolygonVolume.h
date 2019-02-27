@@ -34,26 +34,31 @@
 
 namespace open3d {
 
+namespace geometry {
 class Geometry;
 class PointCloud;
 class TriangleMesh;
+}  // namespace geometry
 
-class SelectionPolygonVolume : public IJsonConvertible {
+namespace visualization {
+
+class SelectionPolygonVolume : public utility::IJsonConvertible {
 public:
     ~SelectionPolygonVolume() override {}
 
 public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
-    std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input) const;
-    std::shared_ptr<TriangleMesh> CropTriangleMesh(
-            const TriangleMesh &input) const;
+    std::shared_ptr<geometry::PointCloud> CropPointCloud(
+            const geometry::PointCloud &input) const;
+    std::shared_ptr<geometry::TriangleMesh> CropTriangleMesh(
+            const geometry::TriangleMesh &input) const;
 
 private:
-    std::shared_ptr<PointCloud> CropPointCloudInPolygon(
-            const PointCloud &input) const;
-    std::shared_ptr<TriangleMesh> CropTriangleMeshInPolygon(
-            const TriangleMesh &input) const;
+    std::shared_ptr<geometry::PointCloud> CropPointCloudInPolygon(
+            const geometry::PointCloud &input) const;
+    std::shared_ptr<geometry::TriangleMesh> CropTriangleMeshInPolygon(
+            const geometry::TriangleMesh &input) const;
     std::vector<size_t> CropInPolygon(
             const std::vector<Eigen::Vector3d> &input) const;
 
@@ -64,4 +69,5 @@ public:
     double axis_max_ = 0.0;
 };
 
+}  // namespace visualization
 }  // namespace open3d

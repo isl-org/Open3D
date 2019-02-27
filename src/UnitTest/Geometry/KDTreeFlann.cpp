@@ -57,7 +57,7 @@ TEST(KDTreeFlann, SearchKNN) {
 
     int size = 100;
 
-    PointCloud pc;
+    geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(10.0, 10.0, 10.0);
@@ -65,7 +65,7 @@ TEST(KDTreeFlann, SearchKNN) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    KDTreeFlann kdtree(pc);
+    geometry::KDTreeFlann kdtree(pc);
 
     Vector3d query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
@@ -95,7 +95,7 @@ TEST(KDTreeFlann, SearchRadius) {
 
     int size = 100;
 
-    PointCloud pc;
+    geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(10.0, 10.0, 10.0);
@@ -103,7 +103,7 @@ TEST(KDTreeFlann, SearchRadius) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    KDTreeFlann kdtree(pc);
+    geometry::KDTreeFlann kdtree(pc);
 
     Vector3d query = {1.647059, 4.392157, 8.784314};
     double radius = 5.0;
@@ -133,7 +133,7 @@ TEST(KDTreeFlann, SearchHybrid) {
 
     int size = 100;
 
-    PointCloud pc;
+    geometry::PointCloud pc;
 
     Vector3d vmin(0.0, 0.0, 0.0);
     Vector3d vmax(10.0, 10.0, 10.0);
@@ -141,7 +141,7 @@ TEST(KDTreeFlann, SearchHybrid) {
     pc.points_.resize(size);
     Rand(pc.points_, vmin, vmax, 0);
 
-    KDTreeFlann kdtree(pc);
+    geometry::KDTreeFlann kdtree(pc);
 
     Vector3d query = {1.647059, 4.392157, 8.784314};
     int max_nn = 15;

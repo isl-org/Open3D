@@ -29,6 +29,7 @@
 #include <Open3D/Visualization/Visualizer/Visualizer.h>
 
 namespace open3d {
+namespace visualization {
 
 class VisualizerWithCustomAnimation : public Visualizer {
 public:
@@ -84,4 +85,5 @@ protected:
     size_t recording_file_index_ = 0;
 };
 
+}  // namespace visualization
 }  // namespace open3d

@@ -27,6 +27,7 @@
 #include "VoxelGrid.h"
 
 namespace open3d {
+namespace geometry {
 
 void VoxelGrid::Clear() {
     voxel_size_ = 0.0;
@@ -98,4 +99,5 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
     return (VoxelGrid(*this) += voxelgrid);
 }
 
+}  // namespace geometry
 }  // namespace open3d

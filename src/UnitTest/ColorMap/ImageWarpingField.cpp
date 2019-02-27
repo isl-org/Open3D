@@ -31,10 +31,10 @@
 using namespace std;
 
 /* TODO
-As the ColorMapOptimization subcomponents go back into hiding several lines of
-code had to commented out. Do not remove these lines, they may become useful
-again after a decision has been made about the way to make these subcomponents
-visible to UnitTest.
+As the color_map::ColorMapOptimization subcomponents go back into hiding several
+lines of code had to commented out. Do not remove these lines, they may become
+useful again after a decision has been made about the way to make these
+subcomponents visible to UnitTest.
 */
 
 // ----------------------------------------------------------------------------

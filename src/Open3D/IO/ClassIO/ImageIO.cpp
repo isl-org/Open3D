@@ -33,10 +33,11 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, Image &)>>
+        std::function<bool(const std::string &, geometry::Image &)>>
         file_extension_to_image_read_function{
                 {"png", ReadImageFromPNG},
                 {"jpg", ReadImageFromJPG},
@@ -45,7 +46,7 @@ static const std::unordered_map<
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, const Image &, int)>>
+        std::function<bool(const std::string &, const geometry::Image &, int)>>
         file_extension_to_image_write_function{
                 {"png", WriteImageToPNG},
                 {"jpg", WriteImageToJPG},
@@ -54,42 +55,50 @@ static const std::unordered_map<
 
 }  // unnamed namespace
 
-std::shared_ptr<Image> CreateImageFromFile(const std::string &filename) {
-    auto image = std::make_shared<Image>();
+namespace io {
+
+std::shared_ptr<geometry::Image> CreateImageFromFile(
+        const std::string &filename) {
+    auto image = std::make_shared<geometry::Image>();
     ReadImage(filename, *image);
     return image;
 }
 
-bool ReadImage(const std::string &filename, Image &image) {
+bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Read Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::Image failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_image_read_function.find(filename_ext);
     if (map_itr == file_extension_to_image_read_function.end()) {
-        PrintWarning("Read Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Read geometry::Image failed: unknown file extension.\n");
         return false;
     }
     return map_itr->second(filename, image);
 }
 
 bool WriteImage(const std::string &filename,
-                const Image &image,
+                const geometry::Image &image,
                 int quality /* = 90*/) {
     std::string filename_ext =
-            filesystem::GetFileExtensionInLowerCase(filename);
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        PrintWarning("Write Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::Image failed: unknown file extension.\n");
         return false;
     }
     auto map_itr = file_extension_to_image_write_function.find(filename_ext);
     if (map_itr == file_extension_to_image_write_function.end()) {
-        PrintWarning("Write Image failed: unknown file extension.\n");
+        utility::PrintWarning(
+                "Write geometry::Image failed: unknown file extension.\n");
         return false;
     }
     return map_itr->second(filename, image, quality);
 }
 
+}  // namespace io
 }  // namespace open3d

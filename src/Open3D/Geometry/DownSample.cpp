@@ -38,6 +38,8 @@ namespace open3d {
 
 namespace {
 
+using namespace geometry;
+
 class AccumulatedPoint {
 public:
     AccumulatedPoint()
@@ -139,6 +141,7 @@ private:
 
 }  // unnamed namespace
 
+namespace geometry {
 std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
                                              const std::vector<size_t> &indices,
                                              bool invert /* = false */) {
@@ -158,8 +161,9 @@ std::shared_ptr<PointCloud> SelectDownSample(const PointCloud &input,
             if (has_colors) output->colors_.push_back(input.colors_[i]);
         }
     }
-    PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
-               (int)input.points_.size(), (int)output->points_.size());
+    utility::PrintDebug(
+            "Pointcloud down sampled from %d points to %d points.\n",
+            (int)input.points_.size(), (int)output->points_.size());
     return output;
 }
 
@@ -230,7 +234,7 @@ std::shared_ptr<TriangleMesh> SelectDownSample(
         }
     }
     output->Purge();
-    PrintDebug(
+    utility::PrintDebug(
             "Triangle mesh sampled from %d vertices and %d triangles to %d "
             "vertices and %d triangles.\n",
             (int)input.vertices_.size(), (int)input.triangles_.size(),
@@ -242,7 +246,7 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
                                             double voxel_size) {
     auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
-        PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
+        utility::PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
         return output;
     }
     Eigen::Vector3d voxel_size3 =
@@ -251,11 +255,11 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
     Eigen::Vector3d voxel_max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
+        utility::PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
         return output;
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
-                       hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
     Eigen::Vector3d ref_coord;
@@ -277,8 +281,9 @@ std::shared_ptr<PointCloud> VoxelDownSample(const PointCloud &input,
             output->colors_.push_back(accpoint.second.GetAverageColor());
         }
     }
-    PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
-               (int)input.points_.size(), (int)output->points_.size());
+    utility::PrintDebug(
+            "Pointcloud down sampled from %d points to %d points.\n",
+            (int)input.points_.size(), (int)output->points_.size());
     return output;
 }
 
@@ -291,7 +296,7 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     auto output = std::make_shared<PointCloud>();
     Eigen::MatrixXi cubic_id;
     if (voxel_size <= 0.0) {
-        PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
+        utility::PrintDebug("[VoxelDownSample] voxel_size <= 0.\n");
         return std::make_tuple(output, cubic_id);
     }
     // Note: this is different from VoxelDownSample.
@@ -300,11 +305,11 @@ VoxelDownSampleAndTrace(const PointCloud &input,
     auto voxel_max_bound = max_bound;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
+        utility::PrintDebug("[VoxelDownSample] voxel_size is too small.\n");
         return std::make_tuple(output, cubic_id);
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
-                       hash_eigen::hash<Eigen::Vector3i>>
+                       utility::hash_eigen::hash<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     int cid_temp[3] = {1, 2, 4};
     for (size_t i = 0; i < input.points_.size(); i++) {
@@ -346,15 +351,16 @@ VoxelDownSampleAndTrace(const PointCloud &input,
         }
         cnt++;
     }
-    PrintDebug("Pointcloud down sampled from %d points to %d points.\n",
-               (int)input.points_.size(), (int)output->points_.size());
+    utility::PrintDebug(
+            "Pointcloud down sampled from %d points to %d points.\n",
+            (int)input.points_.size(), (int)output->points_.size());
     return std::make_tuple(output, cubic_id);
 }
 
 std::shared_ptr<PointCloud> UniformDownSample(const PointCloud &input,
                                               size_t every_k_points) {
     if (every_k_points == 0) {
-        PrintDebug("[UniformDownSample] Illegal sample rate.\n");
+        utility::PrintDebug("[UniformDownSample] Illegal sample rate.\n");
         return std::make_shared<PointCloud>();
     }
     std::vector<size_t> indices;
@@ -369,7 +375,8 @@ std::shared_ptr<PointCloud> CropPointCloud(const PointCloud &input,
                                            const Eigen::Vector3d &max_bound) {
     if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
         min_bound(2) > max_bound(2)) {
-        PrintDebug("[CropPointCloud] Illegal boundary clipped all points.\n");
+        utility::PrintDebug(
+                "[CropPointCloud] Illegal boundary clipped all points.\n");
         return std::make_shared<PointCloud>();
     }
     std::vector<size_t> indices;
@@ -389,7 +396,7 @@ RemoveRadiusOutliers(const PointCloud &input,
                      size_t nb_points,
                      double search_radius) {
     if (nb_points < 1 || search_radius <= 0) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
                 "number of points and radius must be positive\n");
         return std::make_tuple(std::make_shared<PointCloud>(),
@@ -422,7 +429,7 @@ RemoveStatisticalOutliers(const PointCloud &input,
                           size_t nb_neighbors,
                           double std_ratio) {
     if (nb_neighbors < 1 || std_ratio <= 0) {
-        PrintDebug(
+        utility::PrintDebug(
                 "[RemoveStatisticalOutliers] Illegal input parameters, number "
                 "of neighbors"
                 "and standard deviation ratio must be positive\n");
@@ -484,7 +491,8 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
         const Eigen::Vector3d &max_bound) {
     if (min_bound(0) > max_bound(0) || min_bound(1) > max_bound(1) ||
         min_bound(2) > max_bound(2)) {
-        PrintDebug("[CropTriangleMesh] Illegal boundary clipped all points.\n");
+        utility::PrintDebug(
+                "[CropTriangleMesh] Illegal boundary clipped all points.\n");
         return std::make_shared<TriangleMesh>();
     }
     std::vector<size_t> indices;
@@ -498,5 +506,5 @@ std::shared_ptr<TriangleMesh> CropTriangleMesh(
     }
     return SelectDownSample(input, indices);
 }
-
+}  // namespace geometry
 }  // namespace open3d

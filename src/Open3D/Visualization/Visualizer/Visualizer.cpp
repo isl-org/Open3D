@@ -34,7 +34,7 @@ namespace {
 
 class GLFWEnvironmentSingleton {
 private:
-    GLFWEnvironmentSingleton() { PrintDebug("GLFW init.\n"); }
+    GLFWEnvironmentSingleton() { utility::PrintDebug("GLFW init.\n"); }
     GLFWEnvironmentSingleton(const GLFWEnvironmentSingleton &) = delete;
     GLFWEnvironmentSingleton &operator=(const GLFWEnvironmentSingleton &) =
             delete;
@@ -42,7 +42,7 @@ private:
 public:
     ~GLFWEnvironmentSingleton() {
         glfwTerminate();
-        PrintDebug("GLFW destruct.\n");
+        utility::PrintDebug("GLFW destruct.\n");
     }
 
 public:
@@ -57,11 +57,13 @@ public:
     }
 
     static void GLFWErrorCallback(int error, const char *description) {
-        PrintError("GLFW Error: %s\n", description);
+        utility::PrintError("GLFW Error: %s\n", description);
     }
 };
 
 }  // unnamed namespace
+
+namespace visualization {
 
 Visualizer::Visualizer() {}
 
@@ -94,7 +96,7 @@ bool Visualizer::CreateVisualizerWindow(
 
     glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
     if (!GLFWEnvironmentSingleton::InitGLFW()) {
-        PrintError("Failed to initialize GLFW\n");
+        utility::PrintError("Failed to initialize GLFW\n");
         return false;
     }
 
@@ -105,7 +107,7 @@ bool Visualizer::CreateVisualizerWindow(
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
     if (!window_) {
-        PrintError("Failed to create window\n");
+        utility::PrintError("Failed to create window\n");
         return false;
     }
     glfwSetWindowPos(window_, left, top);
@@ -229,7 +231,7 @@ void Visualizer::BuildUtilities() {
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
-    coordinate_frame_mesh_ptr_ = CreateMeshCoordinateFrame(
+    coordinate_frame_mesh_ptr_ = geometry::CreateMeshCoordinateFrame(
             boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
@@ -259,7 +261,7 @@ void Visualizer::Run() {
 
 void Visualizer::Close() {
     glfwSetWindowShouldClose(window_, GL_TRUE);
-    PrintDebug("[Visualizer] Window closing.\n");
+    utility::PrintDebug("[Visualizer] Window closing.\n");
 }
 
 bool Visualizer::WaitEvents() {
@@ -288,45 +290,46 @@ bool Visualizer::PollEvents() {
     return !glfwWindowShouldClose(window_);
 }
 
-bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) {
+bool Visualizer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (is_initialized_ == false) {
         return false;
     }
 
     glfwMakeContextCurrent(window_);
     if (geometry_ptr->GetGeometryType() ==
-        Geometry::GeometryType::Unspecified) {
+        geometry::Geometry::GeometryType::Unspecified) {
         return false;
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::PointCloud) {
+               geometry::Geometry::GeometryType::PointCloud) {
         auto renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::VoxelGrid) {
+               geometry::Geometry::GeometryType::VoxelGrid) {
         auto renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::LineSet) {
+               geometry::Geometry::GeometryType::LineSet) {
         auto renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::TriangleMesh) {
+               geometry::Geometry::GeometryType::TriangleMesh) {
         auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               Geometry::GeometryType::Image) {
+               geometry::Geometry::GeometryType::Image) {
         auto renderer_ptr = std::make_shared<glsl::ImageRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
@@ -339,8 +342,9 @@ bool Visualizer::AddGeometry(std::shared_ptr<const Geometry> geometry_ptr) {
     geometry_ptrs_.push_back(geometry_ptr);
     view_control_ptr_->FitInGeometry(*geometry_ptr);
     ResetViewPoint();
-    PrintDebug("Add geometry and update bounding box to %s\n",
-               view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    utility::PrintDebug(
+            "Add geometry and update bounding box to %s\n",
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
     return UpdateGeometry();
 }
 
@@ -360,60 +364,61 @@ bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::PrintVisualizerHelp() {
     // clang-format off
-    PrintInfo("  -- Mouse view control --\n");
-    PrintInfo("    Left button + drag         : Rotate.\n");
-    PrintInfo("    Ctrl + left button + drag  : Translate.\n");
-    PrintInfo("    Wheel button + drag        : Translate.\n");
-    PrintInfo("    Shift + left button + drag : Roll.\n");
-    PrintInfo("    Wheel                      : Zoom in/out.\n");
-    PrintInfo("\n");
-    PrintInfo("  -- Keyboard view control --\n");
-    PrintInfo("    [/]          : Increase/decrease field of view.\n");
-    PrintInfo("    R            : Reset view point.\n");
-    PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
-    PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
-    PrintInfo("\n");
-    PrintInfo("  -- General control --\n");
-    PrintInfo("    Q, Esc       : Exit window.\n");
-    PrintInfo("    H            : Print help message.\n");
-    PrintInfo("    P, PrtScn    : Take a screen capture.\n");
-    PrintInfo("    D            : Take a depth capture.\n");
-    PrintInfo("    O            : Take a capture of current rendering settings.\n");
-    PrintInfo("\n");
-    PrintInfo("  -- Render mode control --\n");
-    PrintInfo("    L            : Turn on/off lighting.\n");
-    PrintInfo("    +/-          : Increase/decrease point size.\n");
-    PrintInfo("    Ctrl + +/-   : Increase/decrease width of LineSet.\n");
-    PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
-    PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
-    PrintInfo("    W            : Turn on/off mesh wireframe.\n");
-    PrintInfo("    B            : Turn on/off back face rendering.\n");
-    PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
-    PrintInfo("    T            : Toggle among image render:\n");
-    PrintInfo("                   no stretch / keep ratio / freely stretch.\n");
-    PrintInfo("\n");
-    PrintInfo("  -- Color control --\n");
-    PrintInfo("    0..4,9       : Set point cloud color option.\n");
-    PrintInfo("                   0 - Default behavior, render point color.\n");
-    PrintInfo("                   1 - Render point color.\n");
-    PrintInfo("                   2 - x coordinate as color.\n");
-    PrintInfo("                   3 - y coordinate as color.\n");
-    PrintInfo("                   4 - z coordinate as color.\n");
-    PrintInfo("                   9 - normal as color.\n");
-    PrintInfo("    Ctrl + 0..4,9: Set mesh color option.\n");
-    PrintInfo("                   0 - Default behavior, render uniform gray color.\n");
-    PrintInfo("                   1 - Render point color.\n");
-    PrintInfo("                   2 - x coordinate as color.\n");
-    PrintInfo("                   3 - y coordinate as color.\n");
-    PrintInfo("                   4 - z coordinate as color.\n");
-    PrintInfo("                   9 - normal as color.\n");
-    PrintInfo("    Shift + 0..4 : Color map options.\n");
-    PrintInfo("                   0 - Gray scale color.\n");
-    PrintInfo("                   1 - JET color map.\n");
-    PrintInfo("                   2 - SUMMER color map.\n");
-    PrintInfo("                   3 - WINTER color map.\n");
-    PrintInfo("                   4 - HOT color map.\n");
-    PrintInfo("\n");
+    utility::PrintInfo("  -- Mouse view control --\n");
+    utility::PrintInfo("    Left button + drag         : Rotate.\n");
+    utility::PrintInfo("    Ctrl + left button + drag  : Translate.\n");
+    utility::PrintInfo("    Wheel button + drag        : Translate.\n");
+    utility::PrintInfo("    Shift + left button + drag : Roll.\n");
+    utility::PrintInfo("    Wheel                      : Zoom in/out.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("  -- Keyboard view control --\n");
+    utility::PrintInfo("    [/]          : Increase/decrease field of view.\n");
+    utility::PrintInfo("    R            : Reset view point.\n");
+    utility::PrintInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.\n");
+    utility::PrintInfo("    Ctrl/Cmd + V : Paste view status from clipboard.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("  -- General control --\n");
+    utility::PrintInfo("    Q, Esc       : Exit window.\n");
+    utility::PrintInfo("    H            : Print help message.\n");
+    utility::PrintInfo("    P, PrtScn    : Take a screen capture.\n");
+    utility::PrintInfo("    D            : Take a depth capture.\n");
+    utility::PrintInfo("    O            : Take a capture of current rendering settings.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("  -- Render mode control --\n");
+    utility::PrintInfo("    L            : Turn on/off lighting.\n");
+    utility::PrintInfo("    +/-          : Increase/decrease point size.\n");
+    utility::PrintInfo("    Ctrl + +/-   : Increase/decrease width of geometry::LineSet.\n");
+    utility::PrintInfo("    N            : Turn on/off point cloud normal rendering.\n");
+    utility::PrintInfo("    S            : Toggle between mesh flat shading and smooth shading.\n");
+    utility::PrintInfo("    W            : Turn on/off mesh wireframe.\n");
+    utility::PrintInfo("    B            : Turn on/off back face rendering.\n");
+    utility::PrintInfo("    I            : Turn on/off image zoom in interpolation.\n");
+    utility::PrintInfo("    T            : Toggle among image render:\n");
+    utility::PrintInfo("                   no stretch / keep ratio / freely stretch.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("  -- Color control --\n");
+    utility::PrintInfo("    0..4,9       : Set point cloud color option.\n");
+    utility::PrintInfo("                   0 - Default behavior, render point color.\n");
+    utility::PrintInfo("                   1 - Render point color.\n");
+    utility::PrintInfo("                   2 - x coordinate as color.\n");
+    utility::PrintInfo("                   3 - y coordinate as color.\n");
+    utility::PrintInfo("                   4 - z coordinate as color.\n");
+    utility::PrintInfo("                   9 - normal as color.\n");
+    utility::PrintInfo("    Ctrl + 0..4,9: Set mesh color option.\n");
+    utility::PrintInfo("                   0 - Default behavior, render uniform gray color.\n");
+    utility::PrintInfo("                   1 - Render point color.\n");
+    utility::PrintInfo("                   2 - x coordinate as color.\n");
+    utility::PrintInfo("                   3 - y coordinate as color.\n");
+    utility::PrintInfo("                   4 - z coordinate as color.\n");
+    utility::PrintInfo("                   9 - normal as color.\n");
+    utility::PrintInfo("    Shift + 0..4 : Color map options.\n");
+    utility::PrintInfo("                   0 - Gray scale color.\n");
+    utility::PrintInfo("                   1 - JET color map.\n");
+    utility::PrintInfo("                   2 - SUMMER color map.\n");
+    utility::PrintInfo("                   3 - WINTER color map.\n");
+    utility::PrintInfo("                   4 - HOT color map.\n");
+    utility::PrintInfo("\n");
     // clang-format on
 }
+}  // namespace visualization
 }  // namespace open3d

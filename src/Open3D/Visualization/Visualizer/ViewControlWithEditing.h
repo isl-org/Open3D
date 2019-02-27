@@ -29,6 +29,7 @@
 #include <Open3D/Visualization/Visualizer/ViewControl.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewControlWithEditing : public ViewControl {
 public:
@@ -86,4 +87,5 @@ protected:
     bool is_view_locked_ = false;
 };
 
+}  // namespace visualization
 }  // namespace open3d

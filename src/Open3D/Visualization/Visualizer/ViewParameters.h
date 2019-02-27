@@ -31,8 +31,9 @@
 #include <Open3D/Utility/IJsonConvertible.h>
 
 namespace open3d {
+namespace visualization {
 
-class ViewParameters : public IJsonConvertible {
+class ViewParameters : public utility::IJsonConvertible {
 public:
     typedef Eigen::Matrix<double, 17, 4, Eigen::RowMajor> Matrix17x4d;
     typedef Eigen::Matrix<double, 17, 1> Vector17d;
@@ -58,4 +59,5 @@ public:
     Eigen::Vector3d boundingbox_max_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

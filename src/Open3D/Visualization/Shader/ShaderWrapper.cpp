@@ -30,10 +30,11 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
-bool ShaderWrapper::Render(const Geometry &geometry,
+bool ShaderWrapper::Render(const geometry::Geometry &geometry,
                            const RenderOption &option,
                            const ViewControl &view) {
     if (compiled_ == false) {
@@ -56,7 +57,8 @@ void ShaderWrapper::InvalidateGeometry() {
 }
 
 void ShaderWrapper::PrintShaderWarning(const std::string &message) const {
-    PrintWarning("[%s] %s\n", GetShaderName().c_str(), message.c_str());
+    utility::PrintWarning("[%s] %s\n", GetShaderName().c_str(),
+                          message.c_str());
 }
 
 bool ShaderWrapper::CompileShaders(const char *const vertex_shader_code,
@@ -144,7 +146,7 @@ bool ShaderWrapper::ValidateShader(GLuint shader_index) {
             std::vector<char> error_message(info_log_length + 1);
             glGetShaderInfoLog(shader_index, info_log_length, NULL,
                                &error_message[0]);
-            PrintError("Shader error: %s\n", &error_message[0]);
+            utility::PrintError("Shader error: %s\n", &error_message[0]);
         }
         return false;
     }
@@ -161,7 +163,7 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index) {
             std::vector<char> error_message(info_log_length + 1);
             glGetShaderInfoLog(program_index, info_log_length, NULL,
                                &error_message[0]);
-            PrintError("Shader error: %s\n", &error_message[0]);
+            utility::PrintError("Shader error: %s\n", &error_message[0]);
         }
         return false;
     }
@@ -170,4 +172,5 @@ bool ShaderWrapper::ValidateProgram(GLuint program_index) {
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d

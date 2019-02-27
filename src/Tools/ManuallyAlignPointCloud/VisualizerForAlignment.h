@@ -30,10 +30,10 @@
 
 namespace open3d {
 
-class VisualizerForAlignment : public Visualizer {
+class VisualizerForAlignment : public visualization::Visualizer {
 public:
-    VisualizerForAlignment(VisualizerWithEditing &source,
-                           VisualizerWithEditing &target,
+    VisualizerForAlignment(visualization::VisualizerWithEditing &source,
+                           visualization::VisualizerWithEditing &target,
                            double voxel_size = -1.0,
                            double max_correspondence_distance = -1.0,
                            bool with_scaling = true,
@@ -52,8 +52,8 @@ public:
 
 public:
     void PrintVisualizerHelp() override;
-    bool AddSourceAndTarget(std::shared_ptr<PointCloud> source,
-                            std::shared_ptr<PointCloud> target);
+    bool AddSourceAndTarget(std::shared_ptr<geometry::PointCloud> source,
+                            std::shared_ptr<geometry::PointCloud> target);
 
 protected:
     void KeyPressCallback(GLFWwindow *window,
@@ -68,16 +68,16 @@ protected:
     void EvaluateAlignmentAndSave(const std::string &filename);
 
 protected:
-    VisualizerWithEditing &source_visualizer_;
-    VisualizerWithEditing &target_visualizer_;
+    visualization::VisualizerWithEditing &source_visualizer_;
+    visualization::VisualizerWithEditing &target_visualizer_;
     double voxel_size_ = -1.0;
     double max_correspondence_distance_ = -1.0;
     bool with_scaling_ = true;
     bool use_dialog_ = true;
     Eigen::Matrix4d transformation_ = Eigen::Matrix4d::Identity();
     std::string polygon_filename_ = "";
-    std::shared_ptr<PointCloud> source_copy_ptr_;
-    std::shared_ptr<PointCloud> target_copy_ptr_;
+    std::shared_ptr<geometry::PointCloud> source_copy_ptr_;
+    std::shared_ptr<geometry::PointCloud> target_copy_ptr_;
     AlignmentSession alignment_session_;
     std::string default_directory_;
 };

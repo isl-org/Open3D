@@ -34,24 +34,26 @@
 #include <Open3D/Visualization/Visualizer/ViewControlWithEditing.h>
 
 namespace open3d {
+namespace visualization {
 
-bool DrawGeometries(
-        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
-        const std::string &window_name /* = "Open3D"*/,
-        int width /* = 640*/,
-        int height /* = 480*/,
-        int left /* = 50*/,
-        int top /* = 50*/) {
+bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
+                            &geometry_ptrs,
+                    const std::string &window_name /* = "Open3D"*/,
+                    int width /* = 640*/,
+                    int height /* = 480*/,
+                    int left /* = 50*/,
+                    int top /* = 50*/) {
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        PrintWarning("[DrawGeometries] Failed creating OpenGL window.\n");
+        utility::PrintWarning(
+                "[DrawGeometries] Failed creating OpenGL window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            PrintWarning("[DrawGeometries] Failed adding geometry.\n");
-            PrintWarning(
+            utility::PrintWarning("[DrawGeometries] Failed adding geometry.\n");
+            utility::PrintWarning(
                     "[DrawGeometries] Possibly due to bad geometry or wrong "
                     "geometry type.\n");
             return false;
@@ -63,7 +65,8 @@ bool DrawGeometries(
 }
 
 bool DrawGeometriesWithCustomAnimation(
-        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometry_ptrs,
         const std::string &window_name /* = "Open3D"*/,
         int width /* = 640*/,
         int height /* = 480*/,
@@ -73,17 +76,17 @@ bool DrawGeometriesWithCustomAnimation(
     VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[DrawGeometriesWithCustomAnimation] Failed creating OpenGL "
                 "window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed adding "
                     "geometry.\n");
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Possibly due to bad "
                     "geometry or wrong geometry type.\n");
             return false;
@@ -93,10 +96,10 @@ bool DrawGeometriesWithCustomAnimation(
             (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
     if (json_filename.empty() == false) {
         if (view_control.LoadTrajectoryFromJsonFile(json_filename) == false) {
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed loading json "
                     "file.\n");
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithCustomAnimation] Possibly due to bad "
                     "file or file does not contain trajectory.\n");
             return false;
@@ -109,7 +112,8 @@ bool DrawGeometriesWithCustomAnimation(
 }
 
 bool DrawGeometriesWithAnimationCallback(
-        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometry_ptrs,
         std::function<bool(Visualizer *)> callback_func,
         const std::string &window_name /* = "Open3D"*/,
         int width /* = 640*/,
@@ -119,17 +123,17 @@ bool DrawGeometriesWithAnimationCallback(
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[DrawGeometriesWithAnimationCallback] Failed creating OpenGL "
                 "window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithAnimationCallback] Failed adding "
                     "geometry.\n");
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithAnimationCallback] Possibly due to bad "
                     "geometry or wrong geometry type.\n");
             return false;
@@ -142,7 +146,8 @@ bool DrawGeometriesWithAnimationCallback(
 }
 
 bool DrawGeometriesWithKeyCallbacks(
-        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometry_ptrs,
         const std::map<int, std::function<bool(Visualizer *)>> &key_to_callback,
         const std::string &window_name /* = "Open3D"*/,
         int width /* = 640*/,
@@ -152,17 +157,17 @@ bool DrawGeometriesWithKeyCallbacks(
     VisualizerWithKeyCallback visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[DrawGeometriesWithKeyCallbacks] Failed creating OpenGL "
                 "window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithKeyCallbacks] Failed adding "
                     "geometry.\n");
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithKeyCallbacks] Possibly due to bad "
                     "geometry or wrong geometry type.\n");
             return false;
@@ -178,7 +183,8 @@ bool DrawGeometriesWithKeyCallbacks(
 }
 
 bool DrawGeometriesWithEditing(
-        const std::vector<std::shared_ptr<const Geometry>> &geometry_ptrs,
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometry_ptrs,
         const std::string &window_name /* = "Open3D"*/,
         int width /* = 640*/,
         int height /* = 480*/,
@@ -187,15 +193,15 @@ bool DrawGeometriesWithEditing(
     VisualizerWithEditing visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
-        PrintWarning(
+        utility::PrintWarning(
                 "[DrawGeometriesWithEditing] Failed creating OpenGL window.\n");
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
         if (visualizer.AddGeometry(geometry_ptr) == false) {
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithEditing] Failed adding geometry.\n");
-            PrintWarning(
+            utility::PrintWarning(
                     "[DrawGeometriesWithEditing] Possibly due to bad geometry "
                     "or wrong geometry type.\n");
             return false;
@@ -206,4 +212,5 @@ bool DrawGeometriesWithEditing(
     return true;
 }
 
+}  // namespace visualization
 }  // namespace open3d

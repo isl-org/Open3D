@@ -32,41 +32,42 @@
 using namespace open3d;
 
 void pybind_lineset(py::module &m) {
-    py::class_<LineSet, PyGeometry3D<LineSet>, std::shared_ptr<LineSet>,
-               Geometry3D>
+    py::class_<geometry::LineSet, PyGeometry3D<geometry::LineSet>,
+               std::shared_ptr<geometry::LineSet>, geometry::Geometry3D>
             lineset(m, "LineSet", "LineSet");
-    py::detail::bind_default_constructor<LineSet>(lineset);
-    py::detail::bind_copy_functions<LineSet>(lineset);
+    py::detail::bind_default_constructor<geometry::LineSet>(lineset);
+    py::detail::bind_copy_functions<geometry::LineSet>(lineset);
     lineset.def("__repr__",
-                [](const LineSet &lineset) {
-                    return std::string("LineSet with ") +
+                [](const geometry::LineSet &lineset) {
+                    return std::string("geometry::LineSet with ") +
                            std::to_string(lineset.lines_.size()) + " lines.";
                 })
             .def(py::self + py::self)
             .def(py::self += py::self)
-            .def("has_points", &LineSet::HasPoints)
-            .def("has_lines", &LineSet::HasLines)
-            .def("has_colors", &LineSet::HasColors)
-            .def("normalize_normals", &LineSet::GetLineCoordinate)
-            .def_readwrite("points", &LineSet::points_)
-            .def_readwrite("lines", &LineSet::lines_)
-            .def_readwrite("colors", &LineSet::colors_);
+            .def("has_points", &geometry::LineSet::HasPoints)
+            .def("has_lines", &geometry::LineSet::HasLines)
+            .def("has_colors", &geometry::LineSet::HasColors)
+            .def("normalize_normals", &geometry::LineSet::GetLineCoordinate)
+            .def_readwrite("points", &geometry::LineSet::points_)
+            .def_readwrite("lines", &geometry::LineSet::lines_)
+            .def_readwrite("colors", &geometry::LineSet::colors_);
 }
 
 void pybind_lineset_methods(py::module &m) {
     m.def("read_line_set",
           [](const std::string &filename, const std::string &format) {
-              LineSet line_set;
-              ReadLineSet(filename, line_set, format);
+              geometry::LineSet line_set;
+              io::ReadLineSet(filename, line_set, format);
               return line_set;
           },
-          "Function to read LineSet from file", "filename"_a,
+          "Function to read geometry::LineSet from file", "filename"_a,
           "format"_a = "auto");
     m.def("write_line_set",
-          [](const std::string &filename, const LineSet &line_set,
+          [](const std::string &filename, const geometry::LineSet &line_set,
              bool write_ascii, bool compressed) {
-              return WriteLineSet(filename, line_set, write_ascii, compressed);
+              return io::WriteLineSet(filename, line_set, write_ascii,
+                                      compressed);
           },
-          "Function to write LineSet to file", "filename"_a, "line_set"_a,
-          "write_ascii"_a = false, "compressed"_a = false);
+          "Function to write geometry::LineSet to file", "filename"_a,
+          "line_set"_a, "write_ascii"_a = false, "compressed"_a = false);
 }

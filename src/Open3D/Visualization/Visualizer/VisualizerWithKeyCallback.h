@@ -30,6 +30,7 @@
 #include <map>
 
 namespace open3d {
+namespace visualization {
 
 class VisualizerWithKeyCallback : public Visualizer {
 public:
@@ -59,4 +60,5 @@ protected:
     std::map<int, std::function<bool(Visualizer *)>> key_to_callback_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

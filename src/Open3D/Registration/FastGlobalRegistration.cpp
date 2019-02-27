@@ -38,14 +38,15 @@
 namespace open3d {
 
 namespace {
+using namespace registration;
 
 std::vector<std::pair<int, int>> AdvancedMatching(
-        const std::vector<PointCloud>& point_cloud_vec,
+        const std::vector<geometry::PointCloud>& point_cloud_vec,
         const std::vector<Feature>& features_vec,
         const FastGlobalRegistrationOption& option) {
     // STEP 0) Swap source and target if necessary
     int fi = 0, fj = 1;
-    PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
+    utility::PrintDebug("Advanced matching : [%d - %d]\n", fi, fj);
     bool swapped = false;
     if (point_cloud_vec[fj].points_.size() >
         point_cloud_vec[fi].points_.size()) {
@@ -58,8 +59,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     // STEP 1) Initial matching
     int nPti = int(point_cloud_vec[fi].points_.size());
     int nPtj = int(point_cloud_vec[fj].points_.size());
-    KDTreeFlann feature_tree_i(features_vec[fi]);
-    KDTreeFlann feature_tree_j(features_vec[fj]);
+    geometry::KDTreeFlann feature_tree_i(features_vec[fi]);
+    geometry::KDTreeFlann feature_tree_j(features_vec[fj]);
     std::vector<int> corresK;
     std::vector<double> dis;
     std::vector<std::pair<int, int>> corres;
@@ -91,10 +92,10 @@ std::vector<std::pair<int, int>> AdvancedMatching(
     for (int j = 0; j < ncorres_ji; ++j)
         corres.push_back(
                 std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
-    PrintDebug("points are remained : %d\n", (int)corres.size());
+    utility::PrintDebug("points are remained : %d\n", (int)corres.size());
 
     // STEP 2) CROSS CHECK
-    PrintDebug("\t[cross check] ");
+    utility::PrintDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
     std::vector<std::vector<int>> Mi(nPti), Mj(nPtj);
     int ci, cj;
@@ -117,10 +118,10 @@ std::vector<std::pair<int, int>> AdvancedMatching(
             }
         }
     }
-    PrintDebug("points are remained : %d\n", (int)corres_cross.size());
+    utility::PrintDebug("points are remained : %d\n", (int)corres_cross.size());
 
     // STEP 3) TUPLE CONSTRAINT
-    PrintDebug("\t[tuple constraint] ");
+    utility::PrintDebug("\t[tuple constraint] ");
     std::srand((unsigned int)std::time(0));
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
@@ -165,7 +166,8 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         }
         if (cnt >= option.maximum_tuple_count_) break;
     }
-    PrintDebug("%d tuples (%d trial, %d actual).\n", cnt, number_of_trial, i);
+    utility::PrintDebug("%d tuples (%d trial, %d actual).\n", cnt,
+                        number_of_trial, i);
 
     if (swapped) {
         std::vector<std::pair<int, int>> temp;
@@ -175,13 +177,13 @@ std::vector<std::pair<int, int>> AdvancedMatching(
         corres_tuple.clear();
         corres_tuple = temp;
     }
-    PrintDebug("\t[final] matches %d.\n", (int)corres_tuple.size());
+    utility::PrintDebug("\t[final] matches %d.\n", (int)corres_tuple.size());
     return corres_tuple;
 }
 
 // Normalize scale of points. X' = (X-\mu)/scale
 std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
-        std::vector<PointCloud>& point_cloud_vec,
+        std::vector<geometry::PointCloud>& point_cloud_vec,
         const FastGlobalRegistrationOption& option) {
     int num = 2;
     double scale = 0;
@@ -199,8 +201,8 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         mean = mean / npti;
         pcd_mean_vec.push_back(mean);
 
-        PrintDebug("normalize points :: mean = [%f %f %f]\n", mean(0), mean(1),
-                   mean(2));
+        utility::PrintDebug("normalize points :: mean = [%f %f %f]\n", mean(0),
+                            mean(1), mean(2));
         for (int ii = 0; ii < npti; ++ii)
             point_cloud_vec[i].points_[ii] -= mean;
 
@@ -219,7 +221,8 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
         scale_global = scale;
         scale_start = 1.0;
     }
-    PrintDebug("normalize points :: global scale : %f\n", scale_global);
+    utility::PrintDebug("normalize points :: global scale : %f\n",
+                        scale_global);
 
     for (int i = 0; i < num; ++i) {
         int npti = static_cast<int>(point_cloud_vec[i].points_.size());
@@ -231,16 +234,16 @@ std::tuple<std::vector<Eigen::Vector3d>, double, double> NormalizePointCloud(
 }
 
 Eigen::Matrix4d OptimizePairwiseRegistration(
-        const std::vector<PointCloud>& point_cloud_vec,
+        const std::vector<geometry::PointCloud>& point_cloud_vec,
         const std::vector<std::pair<int, int>>& corres,
         double scale_start,
         const FastGlobalRegistrationOption& option) {
-    PrintDebug("Pairwise rigid pose optimization\n");
+    utility::PrintDebug("Pairwise rigid pose optimization\n");
     double par = scale_start;
     int numIter = option.iteration_number_;
 
     int i = 0, j = 1;
-    PointCloud point_cloud_copy_j = point_cloud_vec[j];
+    geometry::PointCloud point_cloud_copy_j = point_cloud_vec[j];
 
     if (corres.size() < 10) return Eigen::Matrix4d::Identity();
 
@@ -299,8 +302,8 @@ Eigen::Matrix4d OptimizePairwiseRegistration(
         }
         bool success;
         Eigen::VectorXd result;
-        std::tie(success, result) = SolveLinearSystemPSD(-JTJ, JTr);
-        Eigen::Matrix4d delta = TransformVector6dToMatrix4d(result);
+        std::tie(success, result) = utility::SolveLinearSystemPSD(-JTJ, JTr);
+        Eigen::Matrix4d delta = utility::TransformVector6dToMatrix4d(result);
         trans = delta * trans;
         point_cloud_copy_j.Transform(delta);
 
@@ -332,14 +335,15 @@ Eigen::Matrix4d GetTransformationOriginalScale(
 
 }  // unnamed namespace
 
+namespace registration {
 RegistrationResult FastGlobalRegistration(
-        const PointCloud& source,
-        const PointCloud& target,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
         const Feature& source_feature,
         const Feature& target_feature,
         const FastGlobalRegistrationOption& option /* =
         FastGlobalRegistrationOption()*/) {
-    std::vector<PointCloud> point_cloud_vec;
+    std::vector<geometry::PointCloud> point_cloud_vec;
     point_cloud_vec.push_back(source);
     point_cloud_vec.push_back(target);
 
@@ -366,4 +370,5 @@ RegistrationResult FastGlobalRegistration(
     // clang-format on
 }
 
+}  // namespace registration
 }  // namespace open3d

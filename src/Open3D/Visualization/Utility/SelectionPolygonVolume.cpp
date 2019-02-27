@@ -32,6 +32,7 @@
 #include <Open3D/Geometry/TriangleMesh.h>
 
 namespace open3d {
+namespace visualization {
 
 bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const {
     Json::Value polygon_array;
@@ -54,7 +55,7 @@ bool SelectionPolygonVolume::ConvertToJsonValue(Json::Value &value) const {
 
 bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     if (value.isObject() == false) {
-        PrintWarning(
+        utility::PrintWarning(
                 "SelectionPolygonVolume read JSON failed: unsupported json "
                 "format.\n");
         return false;
@@ -62,7 +63,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     if (value.get("class_name", "").asString() != "SelectionPolygonVolume" ||
         value.get("version_major", 1).asInt() != 1 ||
         value.get("version_minor", 0).asInt() != 0) {
-        PrintWarning(
+        utility::PrintWarning(
                 "SelectionPolygonVolume read JSON failed: unsupported json "
                 "format.\n");
         return false;
@@ -72,7 +73,7 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     axis_max_ = value.get("axis_max", 0.0).asDouble();
     const Json::Value &polygon_array = value["bounding_polygon"];
     if (polygon_array.size() == 0) {
-        PrintWarning(
+        utility::PrintWarning(
                 "SelectionPolygonVolume read JSON failed: empty trajectory.\n");
         return false;
     }
@@ -87,34 +88,38 @@ bool SelectionPolygonVolume::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
-std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloud(
-        const PointCloud &input) const {
+std::shared_ptr<geometry::PointCloud> SelectionPolygonVolume::CropPointCloud(
+        const geometry::PointCloud &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
-        return std::make_shared<PointCloud>();
+        return std::make_shared<geometry::PointCloud>();
     return CropPointCloudInPolygon(input);
 }
 
-std::shared_ptr<PointCloud> SelectionPolygonVolume::CropPointCloudInPolygon(
-        const PointCloud &input) const {
-    return SelectDownSample(input, CropInPolygon(input.points_));
+std::shared_ptr<geometry::PointCloud>
+SelectionPolygonVolume::CropPointCloudInPolygon(
+        const geometry::PointCloud &input) const {
+    return geometry::SelectDownSample(input, CropInPolygon(input.points_));
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMesh(
-        const TriangleMesh &input) const {
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygonVolume::CropTriangleMesh(
+        const geometry::TriangleMesh &input) const {
     if (orthogonal_axis_ == "" || bounding_polygon_.empty())
-        return std::make_shared<TriangleMesh>();
+        return std::make_shared<geometry::TriangleMesh>();
     if (input.HasVertices() && !input.HasTriangles()) {
-        PrintWarning(
-                "TriangleMesh contains vertices, but no triangles; "
-                "cropping will always yield an empty TriangleMesh.\n");
-        return std::make_shared<TriangleMesh>();
+        utility::PrintWarning(
+                "geometry::TriangleMesh contains vertices, but no triangles; "
+                "cropping will always yield an empty "
+                "geometry::TriangleMesh.\n");
+        return std::make_shared<geometry::TriangleMesh>();
     }
     return CropTriangleMeshInPolygon(input);
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygonVolume::CropTriangleMeshInPolygon(
-        const TriangleMesh &input) const {
-    return SelectDownSample(input, CropInPolygon(input.vertices_));
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygonVolume::CropTriangleMeshInPolygon(
+        const geometry::TriangleMesh &input) const {
+    return geometry::SelectDownSample(input, CropInPolygon(input.vertices_));
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
@@ -135,9 +140,9 @@ std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
         w = 2;
     }
     std::vector<double> nodes;
-    ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
     for (size_t k = 0; k < input.size(); k++) {
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
         const auto &point = input[k];
         if (point(w) < axis_min_ || point(w) > axis_max_) continue;
         nodes.clear();
@@ -164,4 +169,5 @@ std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
     return output_index;
 }
 
+}  // namespace visualization
 }  // namespace open3d

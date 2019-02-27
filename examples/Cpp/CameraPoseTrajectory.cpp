@@ -32,11 +32,12 @@
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    SetVerbosityLevel(VerbosityLevel::VerboseAlways);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::VerboseAlways);
 
     if (argc != 3) {
-        PrintInfo("Usage :\n");
-        PrintInfo(">    CameraPoseTrajectory trajectory_file pcds_dir\n");
+        utility::PrintInfo("Usage :\n");
+        utility::PrintInfo(
+                ">    CameraPoseTrajectory trajectory_file pcds_dir\n");
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;
@@ -48,14 +49,14 @@ int main(int argc, char *argv[]) {
             Eigen::Vector3d(13, 44, 84) / 255.0,
     };
 
-    PinholeCameraTrajectory trajectory;
-    ReadPinholeCameraTrajectory(argv[1], trajectory);
-    std::vector<std::shared_ptr<const Geometry>> pcds;
+    camera::PinholeCameraTrajectory trajectory;
+    io::ReadPinholeCameraTrajectory(argv[1], trajectory);
+    std::vector<std::shared_ptr<const geometry::Geometry>> pcds;
     for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
         char buff[DEFAULT_IO_BUFFER_SIZE];
         sprintf(buff, "%scloud_bin_%d.pcd", argv[2], (int)i);
-        if (filesystem::FileExists(buff)) {
-            auto pcd = CreatePointCloudFromFile(buff);
+        if (utility::filesystem::FileExists(buff)) {
+            auto pcd = io::CreatePointCloudFromFile(buff);
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
             pcd->colors_.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
             pcds.push_back(pcd);
         }
     }
-    DrawGeometriesWithCustomAnimation(pcds);
+    visualization::DrawGeometriesWithCustomAnimation(pcds);
 
     return 0;
 }

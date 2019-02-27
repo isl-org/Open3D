@@ -32,93 +32,110 @@
 
 using namespace open3d;
 
-template <class TSDFVolumeBase = TSDFVolume>
+template <class TSDFVolumeBase = integration::TSDFVolume>
 class PyTSDFVolume : public TSDFVolumeBase {
 public:
     using TSDFVolumeBase::TSDFVolumeBase;
     void Reset() override { PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, ); }
-    void Integrate(const RGBDImage &image,
-                   const PinholeCameraIntrinsic &intrinsic,
+    void Integrate(const geometry::RGBDImage &image,
+                   const camera::PinholeCameraIntrinsic &intrinsic,
                    const Eigen::Matrix4d &extrinsic) override {
         PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, image, intrinsic,
                                extrinsic);
     }
-    std::shared_ptr<PointCloud> ExtractPointCloud() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<PointCloud>, TSDFVolumeBase, );
+    std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::PointCloud>,
+                               TSDFVolumeBase, );
     }
-    std::shared_ptr<TriangleMesh> ExtractTriangleMesh() override {
-        PYBIND11_OVERLOAD_PURE(std::shared_ptr<TriangleMesh>, TSDFVolumeBase, );
+    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override {
+        PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::TriangleMesh>,
+                               TSDFVolumeBase, );
     }
 };
 
 void pybind_integration_classes(py::module &m) {
-    py::enum_<TSDFVolumeColorType>(m, "TSDFVolumeColorType", py::arithmetic())
-            .value("None", TSDFVolumeColorType::None)
-            .value("RGB8", TSDFVolumeColorType::RGB8)
-            .value("Gray32", TSDFVolumeColorType::Gray32)
+    py::enum_<integration::TSDFVolumeColorType>(m, "TSDFVolumeColorType",
+                                                py::arithmetic())
+            .value("None", integration::TSDFVolumeColorType::None)
+            .value("RGB8", integration::TSDFVolumeColorType::RGB8)
+            .value("Gray32", integration::TSDFVolumeColorType::Gray32)
             .export_values();
 
-    py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>> tsdfvolume(m, "TSDFVolume",
-                                                                "TSDFVolume");
+    py::class_<integration::TSDFVolume, PyTSDFVolume<integration::TSDFVolume>>
+            tsdfvolume(m, "TSDFVolume", "TSDFVolume");
     tsdfvolume
-            .def("reset", &TSDFVolume::Reset,
-                 "Function to reset the TSDFVolume")
-            .def("integrate", &TSDFVolume::Integrate,
+            .def("reset", &integration::TSDFVolume::Reset,
+                 "Function to reset the integration::TSDFVolume")
+            .def("integrate", &integration::TSDFVolume::Integrate,
                  "Function to integrate an RGB-D image into the volume",
                  "image"_a, "intrinsic"_a, "extrinsic"_a)
-            .def("extract_point_cloud", &TSDFVolume::ExtractPointCloud,
+            .def("extract_point_cloud",
+                 &integration::TSDFVolume::ExtractPointCloud,
                  "Function to extract a point cloud with normals")
-            .def("extract_triangle_mesh", &TSDFVolume::ExtractTriangleMesh,
+            .def("extract_triangle_mesh",
+                 &integration::TSDFVolume::ExtractTriangleMesh,
                  "Function to extract a triangle mesh")
-            .def_readwrite("voxel_length", &TSDFVolume::voxel_length_)
-            .def_readwrite("sdf_trunc", &TSDFVolume::sdf_trunc_)
-            .def_readwrite("color_type", &TSDFVolume::color_type_);
+            .def_readwrite("voxel_length",
+                           &integration::TSDFVolume::voxel_length_)
+            .def_readwrite("sdf_trunc", &integration::TSDFVolume::sdf_trunc_)
+            .def_readwrite("color_type", &integration::TSDFVolume::color_type_);
 
-    py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
+    py::class_<integration::UniformTSDFVolume,
+               PyTSDFVolume<integration::UniformTSDFVolume>,
+               integration::TSDFVolume>
             uniform_tsdfvolume(m, "UniformTSDFVolume", "UniformTSDFVolume");
-    py::detail::bind_copy_functions<UniformTSDFVolume>(uniform_tsdfvolume);
+    py::detail::bind_copy_functions<integration::UniformTSDFVolume>(
+            uniform_tsdfvolume);
     uniform_tsdfvolume
             .def(py::init([](double length, int resolution, double sdf_trunc,
-                             TSDFVolumeColorType color_type) {
-                     return new UniformTSDFVolume(length, resolution, sdf_trunc,
-                                                  color_type);
+                             integration::TSDFVolumeColorType color_type) {
+                     return new integration::UniformTSDFVolume(
+                             length, resolution, sdf_trunc, color_type);
                  }),
                  "length"_a, "resolution"_a, "sdf_trunc"_a, "color_type"_a)
             .def("__repr__",
-                 [](const UniformTSDFVolume &vol) {
-                     return std::string("UniformTSDFVolume ") +
-                            (vol.color_type_ == TSDFVolumeColorType::None
+                 [](const integration::UniformTSDFVolume &vol) {
+                     return std::string("integration::UniformTSDFVolume ") +
+                            (vol.color_type_ ==
+                                             integration::TSDFVolumeColorType::
+                                                     None
                                      ? std::string("without color.")
                                      : std::string("with color."));
                  })  // todo: extend
             .def("extract_voxel_point_cloud",
-                 &UniformTSDFVolume::ExtractVoxelPointCloud)
-            .def_readwrite("length", &UniformTSDFVolume::length_)
-            .def_readwrite("resolution", &UniformTSDFVolume::resolution_);
+                 &integration::UniformTSDFVolume::ExtractVoxelPointCloud)
+            .def_readwrite("length", &integration::UniformTSDFVolume::length_)
+            .def_readwrite("resolution",
+                           &integration::UniformTSDFVolume::resolution_);
 
-    py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
+    py::class_<integration::ScalableTSDFVolume,
+               PyTSDFVolume<integration::ScalableTSDFVolume>,
+               integration::TSDFVolume>
             scalable_tsdfvolume(m, "ScalableTSDFVolume", "ScalableTSDFVolume");
-    py::detail::bind_copy_functions<ScalableTSDFVolume>(scalable_tsdfvolume);
+    py::detail::bind_copy_functions<integration::ScalableTSDFVolume>(
+            scalable_tsdfvolume);
     scalable_tsdfvolume
             .def(py::init([](double voxel_length, double sdf_trunc,
-                             TSDFVolumeColorType color_type,
+                             integration::TSDFVolumeColorType color_type,
                              int volume_unit_resolution,
                              int depth_sampling_stride) {
-                     return new ScalableTSDFVolume(
+                     return new integration::ScalableTSDFVolume(
                              voxel_length, sdf_trunc, color_type,
                              volume_unit_resolution, depth_sampling_stride);
                  }),
                  "voxel_length"_a, "sdf_trunc"_a, "color_type"_a,
                  "volume_unit_resolution"_a = 16, "depth_sampling_stride"_a = 4)
             .def("__repr__",
-                 [](const ScalableTSDFVolume &vol) {
-                     return std::string("ScalableTSDFVolume ") +
-                            (vol.color_type_ == TSDFVolumeColorType::None
+                 [](const integration::ScalableTSDFVolume &vol) {
+                     return std::string("integration::ScalableTSDFVolume ") +
+                            (vol.color_type_ ==
+                                             integration::TSDFVolumeColorType::
+                                                     None
                                      ? std::string("without color.")
                                      : std::string("with color."));
                  })
             .def("extract_voxel_point_cloud",
-                 &ScalableTSDFVolume::ExtractVoxelPointCloud);
+                 &integration::ScalableTSDFVolume::ExtractVoxelPointCloud);
 }
 
 void pybind_integration_methods(py::module &m) {

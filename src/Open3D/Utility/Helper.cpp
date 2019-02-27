@@ -27,6 +27,7 @@
 #include "Helper.h"
 
 namespace open3d {
+namespace utility {
 
 void SplitString(std::vector<std::string> &tokens,
                  const std::string &str,
@@ -43,4 +44,5 @@ void SplitString(std::vector<std::string> &tokens,
     }
 }
 
+}  // namespace utility
 }  // namespace open3d

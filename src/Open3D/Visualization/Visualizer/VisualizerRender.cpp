@@ -37,10 +37,11 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 bool Visualizer::InitOpenGL() {
     if (glewInit() != GLEW_OK) {
-        PrintError("Failed to initialize GLEW.\n");
+        utility::PrintError("Failed to initialize GLEW.\n");
         return false;
     }
 
@@ -92,7 +93,7 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
         }
         if (coordinate_frame_mesh_ptr_ && coordinate_frame_mesh_renderer_ptr_) {
             const auto &boundingbox = view_control_ptr_->GetBoundingBox();
-            *coordinate_frame_mesh_ptr_ = *CreateMeshCoordinateFrame(
+            *coordinate_frame_mesh_ptr_ = *geometry::CreateMeshCoordinateFrame(
                     boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
             coordinate_frame_mesh_renderer_ptr_->UpdateGeometry();
         }
@@ -104,15 +105,15 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 void Visualizer::CopyViewStatusToClipboard() {
     ViewParameters current_status;
     if (view_control_ptr_->ConvertToViewParameters(current_status) == false) {
-        PrintInfo("Something is wrong copying view status.\n");
+        utility::PrintInfo("Something is wrong copying view status.\n");
         return;
     }
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
     std::string clipboard_string;
-    if (WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
+    if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {
-        PrintInfo("Something is wrong copying view status.\n");
+        utility::PrintInfo("Something is wrong copying view status.\n");
         return;
     }
     glfwSetClipboardString(window_, clipboard_string.c_str());
@@ -123,13 +124,13 @@ void Visualizer::CopyViewStatusFromClipboard() {
     if (clipboard_string_buffer != NULL) {
         std::string clipboard_string(clipboard_string_buffer);
         ViewTrajectory trajectory;
-        if (ReadIJsonConvertibleFromJSONString(clipboard_string, trajectory) ==
-            false) {
-            PrintInfo("Something is wrong copying view status.\n");
+        if (io::ReadIJsonConvertibleFromJSONString(clipboard_string,
+                                                   trajectory) == false) {
+            utility::PrintInfo("Something is wrong copying view status.\n");
             return;
         }
         if (trajectory.view_status_.size() != 1) {
-            PrintInfo("Something is wrong copying view status.\n");
+            utility::PrintInfo("Something is wrong copying view status.\n");
             return;
         }
         view_control_ptr_->ConvertFromViewParameters(
@@ -137,9 +138,9 @@ void Visualizer::CopyViewStatusFromClipboard() {
     }
 }
 
-std::shared_ptr<Image> Visualizer::CaptureScreenFloatBuffer(
+std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
         bool do_render /* = true*/) {
-    Image screen_image;
+    geometry::Image screen_image;
     screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                               view_control_ptr_->GetWindowHeight(), 3, 4);
     if (do_render) {
@@ -153,7 +154,7 @@ std::shared_ptr<Image> Visualizer::CaptureScreenFloatBuffer(
 
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
-    auto image_ptr = std::make_shared<Image>();
+    auto image_ptr = std::make_shared<geometry::Image>();
     image_ptr->PrepareImage(view_control_ptr_->GetWindowWidth(),
                             view_control_ptr_->GetWindowHeight(), 3, 4);
     int bytes_per_line = screen_image.BytesPerLine();
@@ -171,11 +172,11 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     std::string png_filename = filename;
     std::string camera_filename;
     if (png_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         png_filename = "ScreenCapture_" + timestamp + ".png";
         camera_filename = "ScreenCamera_" + timestamp + ".json";
     }
-    Image screen_image;
+    geometry::Image screen_image;
     screen_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                               view_control_ptr_->GetWindowHeight(), 3, 1);
     if (do_render) {
@@ -189,7 +190,7 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
 
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
-    Image png_image;
+    geometry::Image png_image;
     png_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                            view_control_ptr_->GetWindowHeight(), 3, 1);
     int bytes_per_line = screen_image.BytesPerLine();
@@ -200,20 +201,21 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
                bytes_per_line);
     }
 
-    PrintDebug("[Visualizer] Screen capture to %s\n", png_filename.c_str());
-    WriteImage(png_filename, png_image);
+    utility::PrintDebug("[Visualizer] Screen capture to %s\n",
+                        png_filename.c_str());
+    io::WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
-        PrintDebug("[Visualizer] Screen camera capture to %s\n",
-                   camera_filename.c_str());
-        PinholeCameraParameters parameter;
+        utility::PrintDebug("[Visualizer] Screen camera capture to %s\n",
+                            camera_filename.c_str());
+        camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
-        WriteIJsonConvertible(camera_filename, parameter);
+        io::WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
-std::shared_ptr<Image> Visualizer::CaptureDepthFloatBuffer(
+std::shared_ptr<geometry::Image> Visualizer::CaptureDepthFloatBuffer(
         bool do_render /* = true*/) {
-    Image depth_image;
+    geometry::Image depth_image;
     depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                              view_control_ptr_->GetWindowHeight(), 1, 4);
     if (do_render) {
@@ -249,7 +251,7 @@ std::shared_ptr<Image> Visualizer::CaptureDepthFloatBuffer(
 
     // glReadPixels get the screen in a vertically flipped manner
     // We should flip it back, and convert it to the correct depth value
-    auto image_ptr = std::make_shared<Image>();
+    auto image_ptr = std::make_shared<geometry::Image>();
     double z_near = view_control_ptr_->GetZNear();
     double z_far = view_control_ptr_->GetZFar();
 
@@ -281,11 +283,11 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
     std::string png_filename = filename;
     std::string camera_filename;
     if (png_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         png_filename = "DepthCapture_" + timestamp + ".png";
         camera_filename = "DepthCamera_" + timestamp + ".json";
     }
-    Image depth_image;
+    geometry::Image depth_image;
     depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                              view_control_ptr_->GetWindowHeight(), 1, 4);
 
@@ -322,7 +324,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
 
     // glReadPixels get the screen in a vertically flipped manner
     // We should flip it back, and convert it to the correct depth value
-    Image png_image;
+    geometry::Image png_image;
     double z_near = view_control_ptr_->GetZNear();
     double z_far = view_control_ptr_->GetZFar();
 
@@ -347,14 +349,15 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
         }
     }
 
-    PrintDebug("[Visualizer] Depth capture to %s\n", png_filename.c_str());
-    WriteImage(png_filename, png_image);
+    utility::PrintDebug("[Visualizer] Depth capture to %s\n",
+                        png_filename.c_str());
+    io::WriteImage(png_filename, png_image);
     if (!camera_filename.empty()) {
-        PrintDebug("[Visualizer] Depth camera capture to %s\n",
-                   camera_filename.c_str());
-        PinholeCameraParameters parameter;
+        utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
+                            camera_filename.c_str());
+        camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
-        WriteIJsonConvertible(camera_filename, parameter);
+        io::WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
@@ -365,11 +368,11 @@ void Visualizer::CaptureDepthPointCloud(
     std::string ply_filename = filename;
     std::string camera_filename;
     if (ply_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         ply_filename = "DepthCapture_" + timestamp + ".ply";
         camera_filename = "DepthCamera_" + timestamp + ".json";
     }
-    Image depth_image;
+    geometry::Image depth_image;
     depth_image.PrepareImage(view_control_ptr_->GetWindowWidth(),
                              view_control_ptr_->GetWindowHeight(), 1, 4);
 
@@ -413,7 +416,7 @@ void Visualizer::CaptureDepthPointCloud(
 
     // glReadPixels get the screen in a vertically flipped manner
     // We should flip it back, and convert it to the correct depth value
-    PointCloud depth_pointcloud;
+    geometry::PointCloud depth_pointcloud;
     for (int i = 0; i < depth_image.height_; i++) {
         float *p_depth = (float *)(depth_image.data_.data() +
                                    depth_image.BytesPerLine() * i);
@@ -428,27 +431,28 @@ void Visualizer::CaptureDepthPointCloud(
         }
     }
 
-    PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
-               ply_filename.c_str());
-    WritePointCloud(ply_filename, depth_pointcloud);
+    utility::PrintDebug("[Visualizer] Depth point cloud capture to %s\n",
+                        ply_filename.c_str());
+    io::WritePointCloud(ply_filename, depth_pointcloud);
     if (!camera_filename.empty()) {
-        PrintDebug("[Visualizer] Depth camera capture to %s\n",
-                   camera_filename.c_str());
-        PinholeCameraParameters parameter;
+        utility::PrintDebug("[Visualizer] Depth camera capture to %s\n",
+                            camera_filename.c_str());
+        camera::PinholeCameraParameters parameter;
         view_control_ptr_->ConvertToPinholeCameraParameters(parameter);
-        WriteIJsonConvertible(camera_filename, parameter);
+        io::WriteIJsonConvertible(camera_filename, parameter);
     }
 }
 
 void Visualizer::CaptureRenderOption(const std::string &filename /* = ""*/) {
     std::string json_filename = filename;
     if (json_filename.empty()) {
-        std::string timestamp = GetCurrentTimeStamp();
+        std::string timestamp = utility::GetCurrentTimeStamp();
         json_filename = "RenderOption_" + timestamp + ".json";
     }
-    PrintDebug("[Visualizer] Render option capture to %s\n",
-               json_filename.c_str());
-    WriteIJsonConvertible(json_filename, *render_option_ptr_);
+    utility::PrintDebug("[Visualizer] Render option capture to %s\n",
+                        json_filename.c_str());
+    io::WriteIJsonConvertible(json_filename, *render_option_ptr_);
 }
 
+}  // namespace visualization
 }  // namespace open3d

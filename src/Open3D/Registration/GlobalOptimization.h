@@ -31,6 +31,7 @@
 #include <Open3D/Registration/GlobalOptimizationConvergenceCriteria.h>
 
 namespace open3d {
+namespace registration {
 
 class PoseGraph;
 
@@ -59,4 +60,5 @@ void GlobalOptimization(
 std::shared_ptr<PoseGraph> CreatePoseGraphWithoutInvalidEdges(
         const PoseGraph &pose_graph, const GlobalOptimizationOption &option);
 
+}  // namespace registration
 }  // namespace open3d

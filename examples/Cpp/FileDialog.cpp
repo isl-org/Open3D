@@ -29,8 +29,8 @@
 
 void PrintHelp() {
     using namespace open3d;
-    PrintInfo("Usage :\n");
-    PrintInfo("    > FileDialog [save|load]\n");
+    utility::PrintInfo("Usage :\n");
+    utility::PrintInfo("    > FileDialog [save|load]\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -44,11 +44,11 @@ int main(int argc, char *argv[]) {
     if (option == "load") {
         char const *str = tinyfd_openFileDialog("Find a file to load", "", 0,
                                                 NULL, NULL, 1);
-        PrintInfo("%s\n", str);
+        utility::PrintInfo("%s\n", str);
     } else if (option == "save") {
         char const *str = tinyfd_saveFileDialog("Find a file to save", "", 1,
                                                 &pattern, NULL);
-        PrintInfo("%s\n", str);
+        utility::PrintInfo("%s\n", str);
     }
     return 0;
 }

@@ -33,6 +33,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewControl {
 public:
@@ -66,9 +67,10 @@ public:
 
     /// Function to get equivalent pinhole camera parameters (does not support
     /// orthogonal since it is not a real camera view)
-    bool ConvertToPinholeCameraParameters(PinholeCameraParameters &parameters);
+    bool ConvertToPinholeCameraParameters(
+            camera::PinholeCameraParameters &parameters);
     bool ConvertFromPinholeCameraParameters(
-            const PinholeCameraParameters &parameters);
+            const camera::PinholeCameraParameters &parameters);
 
     ProjectionType GetProjectionType() const;
     void SetProjectionParameters();
@@ -109,9 +111,9 @@ public:
 
     void ResetBoundingBox() { bounding_box_.Reset(); }
 
-    void FitInGeometry(const Geometry &geometry) {
+    void FitInGeometry(const geometry::Geometry &geometry) {
         if (geometry.Dimension() == 3) {
-            bounding_box_.FitInGeometry((const Geometry3D &)geometry);
+            bounding_box_.FitInGeometry((const geometry::Geometry3D &)geometry);
         }
         SetProjectionParameters();
     }
@@ -155,4 +157,5 @@ protected:
     GLHelper::GLMatrix4f MVP_matrix_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

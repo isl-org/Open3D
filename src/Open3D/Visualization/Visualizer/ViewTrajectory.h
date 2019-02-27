@@ -33,8 +33,9 @@
 #include <Open3D/Visualization/Visualizer/ViewParameters.h>
 
 namespace open3d {
+namespace visualization {
 
-class ViewTrajectory : public IJsonConvertible {
+class ViewTrajectory : public utility::IJsonConvertible {
 public:
     static const int INTERVAL_MAX;
     static const int INTERVAL_MIN;
@@ -92,4 +93,5 @@ public:
             coeff_;
 };
 
+}  // namespace visualization
 }  // namespace open3d

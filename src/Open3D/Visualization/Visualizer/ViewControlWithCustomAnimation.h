@@ -31,6 +31,7 @@
 #include <Open3D/Visualization/Visualizer/ViewTrajectory.h>
 
 namespace open3d {
+namespace visualization {
 
 class ViewControlWithCustomAnimation : public ViewControl {
 public:
@@ -75,7 +76,7 @@ public:
     bool CaptureTrajectory(const std::string &filename = "");
     bool LoadTrajectoryFromJsonFile(const std::string &filename);
     bool LoadTrajectoryFromCameraTrajectory(
-            const PinholeCameraTrajectory &camera_trajectory);
+            const camera::PinholeCameraTrajectory &camera_trajectory);
     bool IsPreviewing() {
         return animation_mode_ == AnimationMode::PreviewMode;
     }
@@ -100,4 +101,5 @@ protected:
     double current_keyframe_ = 0.0;
 };
 
+}  // namespace visualization
 }  // namespace open3d

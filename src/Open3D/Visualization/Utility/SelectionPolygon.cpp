@@ -35,6 +35,7 @@
 #include <Open3D/Visualization/Utility/GLHelper.h>
 
 namespace open3d {
+namespace visualization {
 
 void SelectionPolygon::Clear() {
     polygon_.clear();
@@ -121,10 +122,10 @@ void SelectionPolygon::FillPolygon(int width, int height) {
     }
 }
 
-std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
-        const PointCloud &input, const ViewControl &view) {
+std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloud(
+        const geometry::PointCloud &input, const ViewControl &view) {
     if (IsEmpty()) {
-        return std::make_shared<PointCloud>();
+        return std::make_shared<geometry::PointCloud>();
     }
     switch (polygon_type_) {
         case SectionPolygonType::Rectangle:
@@ -133,20 +134,21 @@ std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloud(
             return CropPointCloudInPolygon(input, view);
         case SectionPolygonType::Unfilled:
         default:
-            return std::shared_ptr<PointCloud>();
+            return std::shared_ptr<geometry::PointCloud>();
     }
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
-        const TriangleMesh &input, const ViewControl &view) {
+std::shared_ptr<geometry::TriangleMesh> SelectionPolygon::CropTriangleMesh(
+        const geometry::TriangleMesh &input, const ViewControl &view) {
     if (IsEmpty()) {
-        return std::make_shared<TriangleMesh>();
+        return std::make_shared<geometry::TriangleMesh>();
     }
     if (input.HasVertices() && !input.HasTriangles()) {
-        PrintWarning(
-                "TriangleMesh contains vertices, but no triangles; "
-                "cropping will always yield an empty TriangleMesh.\n");
-        return std::make_shared<TriangleMesh>();
+        utility::PrintWarning(
+                "geometry::TriangleMesh contains vertices, but no triangles; "
+                "cropping will always yield an empty "
+                "geometry::TriangleMesh.\n");
+        return std::make_shared<geometry::TriangleMesh>();
     }
     switch (polygon_type_) {
         case SectionPolygonType::Rectangle:
@@ -155,7 +157,7 @@ std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMesh(
             return CropTriangleMeshInPolygon(input, view);
         case SectionPolygonType::Unfilled:
         default:
-            return std::shared_ptr<TriangleMesh>();
+            return std::shared_ptr<geometry::TriangleMesh>();
     }
 }
 
@@ -201,24 +203,31 @@ SelectionPolygon::CreateSelectionPolygonVolume(const ViewControl &view) {
     return volume;
 }
 
-std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInRectangle(
-        const PointCloud &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInRectangle(input.points_, view));
+std::shared_ptr<geometry::PointCloud>
+SelectionPolygon::CropPointCloudInRectangle(const geometry::PointCloud &input,
+                                            const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInRectangle(input.points_, view));
 }
 
-std::shared_ptr<PointCloud> SelectionPolygon::CropPointCloudInPolygon(
-        const PointCloud &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInPolygon(input.points_, view));
+std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloudInPolygon(
+        const geometry::PointCloud &input, const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInPolygon(input.points_, view));
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInRectangle(
-        const TriangleMesh &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInRectangle(input.vertices_, view));
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygon::CropTriangleMeshInRectangle(
+        const geometry::TriangleMesh &input, const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInRectangle(input.vertices_, view));
 }
 
-std::shared_ptr<TriangleMesh> SelectionPolygon::CropTriangleMeshInPolygon(
-        const TriangleMesh &input, const ViewControl &view) {
-    return SelectDownSample(input, CropInPolygon(input.vertices_, view));
+std::shared_ptr<geometry::TriangleMesh>
+SelectionPolygon::CropTriangleMeshInPolygon(const geometry::TriangleMesh &input,
+                                            const ViewControl &view) {
+    return geometry::SelectDownSample(input,
+                                      CropInPolygon(input.vertices_, view));
 }
 
 std::vector<size_t> SelectionPolygon::CropInRectangle(
@@ -229,9 +238,9 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
     double half_height = (double)view.GetWindowHeight() * 0.5;
     auto min_bound = GetMinBound();
     auto max_bound = GetMaxBound();
-    ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
     for (size_t i = 0; i < input.size(); i++) {
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
         const auto &point = input[i];
         Eigen::Vector4d pos =
                 mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
@@ -254,9 +263,9 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     double half_width = (double)view.GetWindowWidth() * 0.5;
     double half_height = (double)view.GetWindowHeight() * 0.5;
     std::vector<double> nodes;
-    ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
+    utility::ResetConsoleProgress((int64_t)input.size(), "Cropping geometry: ");
     for (size_t k = 0; k < input.size(); k++) {
-        AdvanceConsoleProgress();
+        utility::AdvanceConsoleProgress();
         const auto &point = input[k];
         Eigen::Vector4d pos =
                 mvp_matrix * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
@@ -284,4 +293,5 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     return output_index;
 }
 
+}  // namespace visualization
 }  // namespace open3d

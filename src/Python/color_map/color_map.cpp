@@ -34,39 +34,44 @@
 using namespace open3d;
 
 void pybind_color_map_classes(py::module &m) {
-    py::class_<ColorMapOptimizationOption> color_map_optimization_option(
-            m, "ColorMapOptimizationOption", "ColorMapOptimizationOption");
-    py::detail::bind_default_constructor<ColorMapOptimizationOption>(
+    py::class_<color_map::ColorMapOptimizationOption>
+            color_map_optimization_option(m, "ColorMapOptimizationOption",
+                                          "ColorMapOptimizationOption");
+    py::detail::bind_default_constructor<color_map::ColorMapOptimizationOption>(
             color_map_optimization_option);
     color_map_optimization_option
+            .def_readwrite("non_rigid_camera_coordinate",
+                           &color_map::ColorMapOptimizationOption::
+                                   non_rigid_camera_coordinate_)
+            .def_readwrite("number_of_vertical_anchors",
+                           &color_map::ColorMapOptimizationOption::
+                                   number_of_vertical_anchors_)
+            .def_readwrite("non_rigid_anchor_point_weight",
+                           &color_map::ColorMapOptimizationOption::
+                                   non_rigid_anchor_point_weight_)
             .def_readwrite(
-                    "non_rigid_camera_coordinate",
-                    &ColorMapOptimizationOption::non_rigid_camera_coordinate_)
-            .def_readwrite(
-                    "number_of_vertical_anchors",
-                    &ColorMapOptimizationOption::number_of_vertical_anchors_)
-            .def_readwrite(
-                    "non_rigid_anchor_point_weight",
-                    &ColorMapOptimizationOption::non_rigid_anchor_point_weight_)
-            .def_readwrite("maximum_iteration",
-                           &ColorMapOptimizationOption::maximum_iteration_)
-            .def_readwrite(
-                    "maximum_allowable_depth",
-                    &ColorMapOptimizationOption::maximum_allowable_depth_)
+                    "maximum_iteration",
+                    &color_map::ColorMapOptimizationOption::maximum_iteration_)
+            .def_readwrite("maximum_allowable_depth",
+                           &color_map::ColorMapOptimizationOption::
+                                   maximum_allowable_depth_)
             .def_readwrite("depth_threshold_for_visiblity_check",
-                           &ColorMapOptimizationOption::
+                           &color_map::ColorMapOptimizationOption::
                                    depth_threshold_for_visiblity_check_)
             .def_readwrite("depth_threshold_for_discontinuity_check",
-                           &ColorMapOptimizationOption::
+                           &color_map::ColorMapOptimizationOption::
                                    depth_threshold_for_discontinuity_check_)
             .def_readwrite(
                     "half_dilation_kernel_size_for_discontinuity_map",
-                    &ColorMapOptimizationOption::
+                    &color_map::ColorMapOptimizationOption::
                             half_dilation_kernel_size_for_discontinuity_map_)
             .def_readwrite("image_boundary_margin",
-                           &ColorMapOptimizationOption::image_boundary_margin_)
-            .def("__repr__", [](const ColorMapOptimizationOption &to) {
-                return std::string("ColorMapOptimizationOption with") +
+                           &color_map::ColorMapOptimizationOption::
+                                   image_boundary_margin_)
+            .def("__repr__", [](const color_map::ColorMapOptimizationOption
+                                        &to) {
+                return std::string(
+                               "color_map::ColorMapOptimizationOption with") +
                        std::string("\n- non_rigid_camera_coordinate : ") +
                        std::to_string(to.non_rigid_camera_coordinate_) +
                        std::string("\n- number_of_vertical_anchors : ") +
@@ -97,10 +102,10 @@ void pybind_color_map_classes(py::module &m) {
 }
 
 void pybind_color_map_methods(py::module &m) {
-    m.def("color_map_optimization", &ColorMapOptimization,
+    m.def("color_map_optimization", &color_map::ColorMapOptimization,
           "Function for color mapping of reconstructed scenes via optimization",
           "mesh"_a, "imgs_rgbd"_a, "camera"_a,
-          "option"_a = ColorMapOptimizationOption());
+          "option"_a = color_map::ColorMapOptimizationOption());
 }
 
 void pybind_color_map(py::module &m) {

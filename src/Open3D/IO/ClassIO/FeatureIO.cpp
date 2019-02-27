@@ -30,13 +30,16 @@
 #include <Open3D/Utility/FileSystem.h>
 
 namespace open3d {
+namespace io {
 
-bool ReadFeature(const std::string &filename, Feature &feature) {
+bool ReadFeature(const std::string &filename, registration::Feature &feature) {
     return ReadFeatureFromBIN(filename, feature);
 }
 
-bool WriteFeature(const std::string &filename, const Feature &feature) {
+bool WriteFeature(const std::string &filename,
+                  const registration::Feature &feature) {
     return WriteFeatureToBIN(filename, feature);
 }
 
+}  // namespace io
 }  // namespace open3d

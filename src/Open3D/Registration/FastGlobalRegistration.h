@@ -34,7 +34,12 @@
 
 namespace open3d {
 
+namespace geometry {
 class PointCloud;
+}
+
+namespace registration {
+
 class Feature;
 class RegistrationResult;
 
@@ -74,11 +79,12 @@ public:
 };
 
 RegistrationResult FastGlobalRegistration(
-        const PointCloud &source,
-        const PointCloud &target,
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
         const Feature &source_feature,
         const Feature &target_feature,
         const FastGlobalRegistrationOption &option =
                 FastGlobalRegistrationOption());
 
+}  // namespace registration
 }  // namespace open3d

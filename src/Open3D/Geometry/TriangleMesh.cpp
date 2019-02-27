@@ -34,6 +34,7 @@
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
+namespace geometry {
 
 void TriangleMesh::Clear() {
     vertices_.clear();
@@ -209,7 +210,8 @@ void TriangleMesh::Purge() {
 
 void TriangleMesh::RemoveDuplicatedVertices() {
     typedef std::tuple<double, double, double> Coordinate3;
-    std::unordered_map<Coordinate3, size_t, hash_tuple::hash<Coordinate3>>
+    std::unordered_map<Coordinate3, size_t,
+                       utility::hash_tuple::hash<Coordinate3>>
             point_to_old_index;
     std::vector<int> index_old_to_new(vertices_.size());
     bool has_vert_normal = HasVertexNormals();
@@ -243,13 +245,14 @@ void TriangleMesh::RemoveDuplicatedVertices() {
             ComputeAdjacencyList();
         }
     }
-    PrintDebug("[RemoveDuplicatedVertices] %d vertices have been removed.\n",
-               (int)(old_vertex_num - k));
+    utility::PrintDebug(
+            "[RemoveDuplicatedVertices] %d vertices have been removed.\n",
+            (int)(old_vertex_num - k));
 }
 
 void TriangleMesh::RemoveDuplicatedTriangles() {
     typedef std::tuple<int, int, int> Index3;
-    std::unordered_map<Index3, size_t, hash_tuple::hash<Index3>>
+    std::unordered_map<Index3, size_t, utility::hash_tuple::hash<Index3>>
             triangle_to_old_index;
     bool has_tri_normal = HasTriangleNormals();
     size_t old_triangle_num = triangles_.size();
@@ -287,8 +290,9 @@ void TriangleMesh::RemoveDuplicatedTriangles() {
     if (k < old_triangle_num && HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    PrintDebug("[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
-               (int)(old_triangle_num - k));
+    utility::PrintDebug(
+            "[RemoveDuplicatedTriangles] %d triangles have been removed.\n",
+            (int)(old_triangle_num - k));
 }
 
 void TriangleMesh::RemoveNonManifoldVertices() {
@@ -329,8 +333,9 @@ void TriangleMesh::RemoveNonManifoldVertices() {
             ComputeAdjacencyList();
         }
     }
-    PrintDebug("[RemoveNonManifoldVertices] %d vertices have been removed.\n",
-               (int)(old_vertex_num - k));
+    utility::PrintDebug(
+            "[RemoveNonManifoldVertices] %d vertices have been removed.\n",
+            (int)(old_vertex_num - k));
 }
 
 void TriangleMesh::RemoveNonManifoldTriangles() {
@@ -354,8 +359,10 @@ void TriangleMesh::RemoveNonManifoldTriangles() {
     if (k < old_triangle_num && HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    PrintDebug("[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
-               (int)(old_triangle_num - k));
+    utility::PrintDebug(
+            "[RemoveNonManifoldTriangles] %d triangles have been removed.\n",
+            (int)(old_triangle_num - k));
 }
 
+}  // namespace geometry
 }  // namespace open3d

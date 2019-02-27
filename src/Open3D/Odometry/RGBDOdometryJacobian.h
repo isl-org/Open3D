@@ -35,11 +35,17 @@
 
 namespace open3d {
 
+namespace geometry {
 class Image;
+}
 
+namespace geometry {
 class RGBDImage;
+}
 
-typedef std::vector<Eigen::Vector4i, Vector4i_allocator>
+namespace odometry {
+
+typedef std::vector<Eigen::Vector4i, utility::Vector4i_allocator>
         CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
@@ -55,13 +61,13 @@ public:
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
     virtual void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source,
-            const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx,
-            const RGBDImage &target_dy,
+            const geometry::RGBDImage &source,
+            const geometry::RGBDImage &target,
+            const geometry::Image &source_xyz,
+            const geometry::RGBDImage &target_dx,
+            const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const = 0;
@@ -81,13 +87,13 @@ public:
 public:
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source,
-            const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx,
-            const RGBDImage &target_dy,
+            const geometry::RGBDImage &source,
+            const geometry::RGBDImage &target,
+            const geometry::Image &source_xyz,
+            const geometry::RGBDImage &target_dx,
+            const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
@@ -106,16 +112,17 @@ public:
 public:
     void ComputeJacobianAndResidual(
             int row,
-            std::vector<Eigen::Vector6d, Vector6d_allocator> &J_r,
+            std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
             std::vector<double> &r,
-            const RGBDImage &source,
-            const RGBDImage &target,
-            const Image &source_xyz,
-            const RGBDImage &target_dx,
-            const RGBDImage &target_dy,
+            const geometry::RGBDImage &source,
+            const geometry::RGBDImage &target,
+            const geometry::Image &source_xyz,
+            const geometry::RGBDImage &target_dx,
+            const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
             const CorrespondenceSetPixelWise &corresps) const override;
 };
 
+}  // namespace odometry
 }  // namespace open3d

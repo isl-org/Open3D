@@ -73,6 +73,7 @@ std::string MakeString(const std::string &line) {
 
 void WriteStringHeader(const std::string &string_name, FILE *file) {
     fprintf(file, "namespace open3d {\n\n");
+    fprintf(file, "namespace visualization {\n\n");
     fprintf(file, "namespace glsl {\n\n");
     fprintf(file, "const char * const %s = \n", string_name.c_str());
 }
@@ -80,6 +81,7 @@ void WriteStringHeader(const std::string &string_name, FILE *file) {
 void WriteStringFooter(FILE *file) {
     fprintf(file, ";\n");
     fprintf(file, "\n}  // namespace open3d::glsl\n");
+    fprintf(file, "\n}  // namespace open3d::visualization\n");
     fprintf(file, "\n}  // namespace open3d\n");
     fprintf(file, "\n");
 }

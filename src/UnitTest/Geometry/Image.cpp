@@ -34,17 +34,17 @@ using namespace open3d;
 using namespace std;
 using namespace unit_test;
 
-using ConversionType = Image::ColorToIntensityConversionType;
-using FilterType = Image::FilterType;
+using ConversionType = geometry::Image::ColorToIntensityConversionType;
+using FilterType = geometry::Image::FilterType;
 
 // ----------------------------------------------------------------------------
 // test the default constructor scenario
 // ----------------------------------------------------------------------------
 TEST(Image, DefaultConstructor) {
-    Image image;
+    geometry::Image image;
 
     // inherited from Geometry2D
-    EXPECT_EQ(Geometry::GeometryType::Image, image.GetGeometryType());
+    EXPECT_EQ(geometry::Geometry::GeometryType::Image, image.GetGeometryType());
     EXPECT_EQ(2, image.Dimension());
 
     // public member variables
@@ -74,7 +74,7 @@ TEST(Image, CreateImage) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
 
-    Image image;
+    geometry::Image image;
 
     image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
@@ -107,7 +107,7 @@ TEST(Image, Clear) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
 
-    Image image;
+    geometry::Image image;
 
     image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
@@ -135,7 +135,7 @@ TEST(Image, Clear) {
 // test FloatValueAt, bilinear(?) interpolation
 // ----------------------------------------------------------------------------
 TEST(Image, FloatValueAt) {
-    Image image;
+    geometry::Image image;
 
     int width = 10;
     int height = 10;
@@ -170,7 +170,7 @@ TEST(Image, DISABLED_MemberData) {
     int num_of_channels = 3;
     int bytes_per_channel = 1;
 
-    Image image;
+    geometry::Image image;
 
     image.PrepareImage(width, height, num_of_channels, bytes_per_channel);
 
@@ -208,10 +208,11 @@ TEST(Image, DISABLED_MemberData) {
 //
 // ----------------------------------------------------------------------------
 TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
-    PinholeCameraIntrinsic intrinsic = PinholeCameraIntrinsic(
-            PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
 
-    auto image = CreateDepthToCameraDistanceMultiplierFloatImage(intrinsic);
+    auto image = geometry::CreateDepthToCameraDistanceMultiplierFloatImage(
+            intrinsic);
 
     // test image dimensions
     int width = 640;
@@ -236,8 +237,8 @@ void TEST_CreateFloatImageFromImage(
         const int& num_of_channels,
         const int& bytes_per_channel,
         const vector<uint8_t>& ref,
-        const Image::ColorToIntensityConversionType& type) {
-    Image image;
+        const geometry::Image::ColorToIntensityConversionType& type) {
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -447,7 +448,7 @@ TEST(Image, CreateFloatImageFromImage_3_4_Equal) {
 //
 // ----------------------------------------------------------------------------
 TEST(Image, PointerAt) {
-    Image image;
+    geometry::Image image;
 
     int width = 10;
     int height = 10;
@@ -463,10 +464,10 @@ TEST(Image, PointerAt) {
     im[1 * width + 0] = 2.0f;
     im[1 * width + 1] = 3.0f;
 
-    EXPECT_NEAR(0.0f, *PointerAt<float>(image, 0, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(1.0f, *PointerAt<float>(image, 1, 0), THRESHOLD_1E_6);
-    EXPECT_NEAR(2.0f, *PointerAt<float>(image, 0, 1), THRESHOLD_1E_6);
-    EXPECT_NEAR(3.0f, *PointerAt<float>(image, 1, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(0.0f, *geometry::PointerAt<float>(image, 0, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(1.0f, *geometry::PointerAt<float>(image, 1, 0), THRESHOLD_1E_6);
+    EXPECT_NEAR(2.0f, *geometry::PointerAt<float>(image, 0, 1), THRESHOLD_1E_6);
+    EXPECT_NEAR(3.0f, *geometry::PointerAt<float>(image, 1, 1), THRESHOLD_1E_6);
 }
 
 // ----------------------------------------------------------------------------
@@ -484,7 +485,7 @@ TEST(Image, ConvertDepthToFloatImage) {
             30,  58,  5,   150, 131, 55,  249, 213, 122, 57,  101, 207, 11,
             57,  68,  190, 82,  58,  214, 94,  32,  57};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -497,7 +498,7 @@ TEST(Image, ConvertDepthToFloatImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto float_image = ConvertDepthToFloatImage(image);
+    auto float_image = geometry::ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(float_image->IsEmpty());
     EXPECT_EQ(width, float_image->width_);
@@ -522,7 +523,7 @@ TEST(Image, FlipImage) {
             0,   0,   69,  238, 117, 219, 165, 205, 62,  222, 140, 136, 249,
             145, 118, 162, 118, 230, 110, 1,   179, 227};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -535,7 +536,7 @@ TEST(Image, FlipImage) {
 
     Rand(image.data_, 0, 255, 0);
 
-    auto flip_image = ConvertDepthToFloatImage(image);
+    auto flip_image = geometry::ConvertDepthToFloatImage(image);
 
     EXPECT_FALSE(flip_image->IsEmpty());
     EXPECT_EQ(width, flip_image->width_);
@@ -552,8 +553,8 @@ TEST(Image, FlipImage) {
 // 3: 1/2/4 with either Equal or Weighted type
 // ----------------------------------------------------------------------------
 void TEST_FilterImage(const vector<uint8_t>& ref,
-                      const Image::FilterType& filter) {
-    Image image;
+                      const geometry::Image::FilterType& filter) {
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -567,7 +568,7 @@ void TEST_FilterImage(const vector<uint8_t>& ref,
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto output = FilterImage(*float_image, filter);
+    auto output = geometry::FilterImage(*float_image, filter);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -682,7 +683,7 @@ TEST(Image, FilterHorizontalImage) {
             117, 90,  211, 150, 69,  226, 40,  53,  188, 226, 97,  219, 112,
             234, 229, 149, 243, 234, 12,  159, 128, 234};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -698,7 +699,7 @@ TEST(Image, FilterHorizontalImage) {
 
     const std::vector<double> Gaussian3 = {0.25, 0.5, 0.25};
 
-    auto output = FilterHorizontalImage(*float_image, Gaussian3);
+    auto output = geometry::FilterHorizontalImage(*float_image, Gaussian3);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -716,7 +717,7 @@ TEST(Image, DownsampleImage) {
     vector<uint8_t> ref = {172, 41, 59,  204, 93, 130, 242, 232,
                            22,  91, 205, 233, 49, 169, 227, 87};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -730,7 +731,7 @@ TEST(Image, DownsampleImage) {
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto output = DownsampleImage(*float_image);
+    auto output = geometry::DownsampleImage(*float_image);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ((int)(width / 2), output->width_);
@@ -755,7 +756,7 @@ TEST(Image, DilateImage) {
             0,   0,   255, 255, 255, 255, 0,   0,   0,   0,   255, 255, 255,
             255, 255, 0,   0,   0,   0,   0,   255, 255};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 10;
@@ -769,7 +770,7 @@ TEST(Image, DilateImage) {
     for (size_t i = 0; i < image.data_.size(); i++)
         if (i % 9 == 0) image.data_[i] = 255;
 
-    auto output = DilateImage(image);
+    auto output = geometry::DilateImage(image);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -794,7 +795,7 @@ TEST(Image, LinearTransformImage) {
             60,  91,  139, 24,  10,  225, 243, 71,  214, 227, 154, 153, 25,
             62,  186, 125, 10,  236, 27,  8,   73,  233};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -808,7 +809,7 @@ TEST(Image, LinearTransformImage) {
 
     auto output = CreateFloatImageFromImage(image);
 
-    LinearTransformImage(*output, 2.3, 0.15);
+    geometry::LinearTransformImage(*output, 2.3, 0.15);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -833,7 +834,7 @@ TEST(Image, ClipIntensityImage) {
             53,  63,  195, 245, 168, 62,  195, 245, 168, 62,  195, 245, 168,
             62,  195, 245, 168, 62,  195, 245, 168, 62};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 5;
@@ -847,7 +848,7 @@ TEST(Image, ClipIntensityImage) {
 
     auto output = CreateFloatImageFromImage(image);
 
-    ClipIntensityImage(*output, 0.33, 0.71);
+    geometry::ClipIntensityImage(*output, 0.33, 0.71);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -862,7 +863,7 @@ TEST(Image, ClipIntensityImage) {
 // ----------------------------------------------------------------------------
 template <typename T>
 void TEST_CreateImageFromFloatImage() {
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 10;
@@ -876,7 +877,7 @@ void TEST_CreateImageFromFloatImage() {
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto output = CreateImageFromFloatImage<T>(*float_image);
+    auto output = geometry::CreateImageFromFloatImage<T>(*float_image);
 
     EXPECT_FALSE(output->IsEmpty());
     EXPECT_EQ(width, output->width_);
@@ -925,7 +926,7 @@ TEST(Image, FilterImagePyramid) {
              115, 252, 23,  108, 93,  29,  48,  108, 107, 19,  140, 107,
              48,  19,  152, 108, 201, 182, 177, 108, 145, 200, 20,  108}};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 6;
@@ -940,9 +941,10 @@ TEST(Image, FilterImagePyramid) {
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
+    auto pyramid = geometry::CreateImagePyramid(*float_image, num_of_levels);
 
-    auto output_pyramid = FilterImagePyramid(pyramid, FilterType::Gaussian3);
+    auto output_pyramid =
+            geometry::FilterImagePyramid(pyramid, FilterType::Gaussian3);
 
     EXPECT_EQ(pyramid.size(), output_pyramid.size());
 
@@ -981,7 +983,7 @@ TEST(Image, CreateImagePyramid) {
              203, 221, 160, 107, 20, 87,  117, 108, 78, 122, 78,  234,
              177, 76,  113, 108, 85, 1,   56,  109, 21, 221, 114, 233}};
 
-    Image image;
+    geometry::Image image;
 
     // test image dimensions
     int width = 6;
@@ -996,7 +998,7 @@ TEST(Image, CreateImagePyramid) {
 
     auto float_image = CreateFloatImageFromImage(image);
 
-    auto pyramid = CreateImagePyramid(*float_image, num_of_levels);
+    auto pyramid = geometry::CreateImagePyramid(*float_image, num_of_levels);
 
     int expected_width = width;
     int expected_height = width;

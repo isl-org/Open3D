@@ -31,18 +31,21 @@
 namespace open3d {
 
 namespace {
+using namespace visualization;
 
 class GlobalColorMapSingleton {
 private:
     GlobalColorMapSingleton() : color_map_(new ColorMapJet) {
-        PrintDebug("Global colormap init.\n");
+        utility::PrintDebug("Global colormap init.\n");
     }
     GlobalColorMapSingleton(const GlobalColorMapSingleton &) = delete;
     GlobalColorMapSingleton &operator=(const GlobalColorMapSingleton &) =
             delete;
 
 public:
-    ~GlobalColorMapSingleton() { PrintDebug("Global colormap destruct.\n"); }
+    ~GlobalColorMapSingleton() {
+        utility::PrintDebug("Global colormap destruct.\n");
+    }
 
 public:
     static GlobalColorMapSingleton &GetInstance() {
@@ -56,6 +59,7 @@ public:
 
 }  // unnamed namespace
 
+namespace visualization {
 Eigen::Vector3d ColorMapGray::GetColor(double value) const {
     return Eigen::Vector3d(value, value, value);
 }
@@ -126,4 +130,5 @@ void SetGlobalColorMap(ColorMap::ColorMapOption option) {
     }
 }
 
+}  // namespace visualization
 }  // namespace open3d

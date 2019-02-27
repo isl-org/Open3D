@@ -34,9 +34,10 @@
 namespace open3d {
 
 namespace {
+using namespace io;
 
 bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
-                                        IJsonConvertible &object) {
+                                        utility::IJsonConvertible &object) {
     Json::Value root_object;
     Json::CharReaderBuilder builder;
     builder["collectComments"] = false;
@@ -44,14 +45,14 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
     bool is_parse_successful =
             parseFromStream(builder, json_stream, &root_object, &errs);
     if (is_parse_successful == false) {
-        PrintWarning("Read JSON failed: %s.\n", errs.c_str());
+        utility::PrintWarning("Read JSON failed: %s.\n", errs.c_str());
         return false;
     }
     return object.ConvertFromJsonValue(root_object);
 }
 
-bool WriteIJsonConvertibleToJSONStream(std::ostream &json_stream,
-                                       const IJsonConvertible &object) {
+bool WriteIJsonConvertibleToJSONStream(
+        std::ostream &json_stream, const utility::IJsonConvertible &object) {
     Json::Value root_object;
     if (object.ConvertToJsonValue(root_object) == false) {
         return false;
@@ -66,12 +67,14 @@ bool WriteIJsonConvertibleToJSONStream(std::ostream &json_stream,
 
 }  // unnamed namespace
 
+namespace io {
+
 bool ReadIJsonConvertibleFromJSON(const std::string &filename,
-                                  IJsonConvertible &object) {
+                                  utility::IJsonConvertible &object) {
     std::ifstream file_in(filename);
     if (file_in.is_open() == false) {
-        PrintWarning("Read JSON failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Read JSON failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     bool success = ReadIJsonConvertibleFromJSONStream(file_in, object);
@@ -80,11 +83,11 @@ bool ReadIJsonConvertibleFromJSON(const std::string &filename,
 }
 
 bool WriteIJsonConvertibleToJSON(const std::string &filename,
-                                 const IJsonConvertible &object) {
+                                 const utility::IJsonConvertible &object) {
     std::ofstream file_out(filename);
     if (file_out.is_open() == false) {
-        PrintWarning("Write JSON failed: unable to open file: %s\n",
-                     filename.c_str());
+        utility::PrintWarning("Write JSON failed: unable to open file: %s\n",
+                              filename.c_str());
         return false;
     }
     bool success = WriteIJsonConvertibleToJSONStream(file_out, object);
@@ -93,17 +96,18 @@ bool WriteIJsonConvertibleToJSON(const std::string &filename,
 }
 
 bool ReadIJsonConvertibleFromJSONString(const std::string &json_string,
-                                        IJsonConvertible &object) {
+                                        utility::IJsonConvertible &object) {
     std::istringstream iss(json_string);
     return ReadIJsonConvertibleFromJSONStream(iss, object);
 }
 
-bool WriteIJsonConvertibleToJSONString(std::string &json_string,
-                                       const IJsonConvertible &object) {
+bool WriteIJsonConvertibleToJSONString(
+        std::string &json_string, const utility::IJsonConvertible &object) {
     std::ostringstream oss;
     bool success = WriteIJsonConvertibleToJSONStream(oss, object);
     json_string = oss.str();
     return success;
 }
 
+}  // namespace io
 }  // namespace open3d

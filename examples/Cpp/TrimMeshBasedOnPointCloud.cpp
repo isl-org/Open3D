@@ -30,53 +30,56 @@ void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
     // clang-format off
-    PrintInfo("Usage:\n");
-    PrintInfo("    > TrimMeshBasedOnPointCloud [options]\n");
-    PrintInfo("      Trim a mesh baesd on distance to a point cloud.\n");
-    PrintInfo("\n");
-    PrintInfo("Basic options:\n");
-    PrintInfo("    --help, -h                : Print help information.\n");
-    PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
-    PrintInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.\n");
-    PrintInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
-    PrintInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
-    PrintInfo("    --distance d              : Maximum distance. MUST HAVE.\n");
+    utility::PrintInfo("Usage:\n");
+    utility::PrintInfo("    > TrimMeshBasedOnPointCloud [options]\n");
+    utility::PrintInfo("      Trim a mesh baesd on distance to a point cloud.\n");
+    utility::PrintInfo("\n");
+    utility::PrintInfo("Basic options:\n");
+    utility::PrintInfo("    --help, -h                : Print help information.\n");
+    utility::PrintInfo("    --verbose n               : Set verbose level (0-4). Default: 2.\n");
+    utility::PrintInfo("    --in_mesh mesh_file       : Input mesh file. MUST HAVE.\n");
+    utility::PrintInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.\n");
+    utility::PrintInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.\n");
+    utility::PrintInfo("    --distance d              : Maximum distance. MUST HAVE.\n");
     // clang-format on
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    if (argc < 4 || ProgramOptionExists(argc, argv, "--help") ||
-        ProgramOptionExists(argc, argv, "-h")) {
+    if (argc < 4 || utility::ProgramOptionExists(argc, argv, "--help") ||
+        utility::ProgramOptionExists(argc, argv, "-h")) {
         PrintHelp();
         return 1;
     }
-    int verbose = GetProgramOptionAsInt(argc, argv, "--verbose", 2);
-    SetVerbosityLevel((VerbosityLevel)verbose);
-    auto in_mesh_file = GetProgramOptionAsString(argc, argv, "--in_mesh");
-    auto out_mesh_file = GetProgramOptionAsString(argc, argv, "--out_mesh");
-    auto pcd_file = GetProgramOptionAsString(argc, argv, "--pointcloud");
-    auto distance = GetProgramOptionAsDouble(argc, argv, "--distance");
+    int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 2);
+    utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
+    auto in_mesh_file =
+            utility::GetProgramOptionAsString(argc, argv, "--in_mesh");
+    auto out_mesh_file =
+            utility::GetProgramOptionAsString(argc, argv, "--out_mesh");
+    auto pcd_file =
+            utility::GetProgramOptionAsString(argc, argv, "--pointcloud");
+    auto distance = utility::GetProgramOptionAsDouble(argc, argv, "--distance");
     if (distance <= 0.0) {
-        PrintWarning("Illegal distance.\n");
+        utility::PrintWarning("Illegal distance.\n");
         return 1;
     }
     if (in_mesh_file.empty() || out_mesh_file.empty() || pcd_file.empty()) {
-        PrintWarning("Missing file names.\n");
+        utility::PrintWarning("Missing file names.\n");
         return 1;
     }
-    auto mesh = CreateMeshFromFile(in_mesh_file);
-    auto pcd = CreatePointCloudFromFile(pcd_file);
+    auto mesh = io::CreateMeshFromFile(in_mesh_file);
+    auto pcd = io::CreatePointCloudFromFile(pcd_file);
     if (mesh->IsEmpty() || pcd->IsEmpty()) {
-        PrintWarning("Empty geometry.\n");
+        utility::PrintWarning("Empty geometry.\n");
         return 1;
     }
 
-    KDTreeFlann kdtree;
+    geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*pcd);
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
-    ResetConsoleProgress(mesh->vertices_.size(), "Prune vetices: ");
+    utility::ResetConsoleProgress(mesh->vertices_.size(), "Prune vetices: ");
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
@@ -90,7 +93,7 @@ int main(int argc, char *argv[]) {
 #ifdef _OPENMP
 #pragma omp critical
 #endif
-        { AdvanceConsoleProgress(); }
+        { utility::AdvanceConsoleProgress(); }
     }
 
     std::vector<int> index_old_to_new(mesh->vertices_.size());
@@ -133,10 +136,10 @@ int main(int argc, char *argv[]) {
         mesh->triangles_.resize(kt);
         if (has_tri_normal) mesh->triangle_normals_.resize(kt);
     }
-    PrintDebug(
+    utility::PrintDebug(
             "[TrimMeshBasedOnPointCloud] %d vertices and %d triangles have "
             "been removed.\n",
             old_vertex_num - k, old_triangle_num - kt);
-    WriteTriangleMesh(out_mesh_file, *mesh);
+    io::WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;
 }

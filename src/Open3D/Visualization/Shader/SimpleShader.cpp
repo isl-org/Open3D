@@ -34,6 +34,7 @@
 #include <Open3D/Visualization/Utility/ColorMap.h>
 
 namespace open3d {
+namespace visualization {
 
 namespace glsl {
 
@@ -54,7 +55,7 @@ void SimpleShader::Release() {
     ReleaseProgram();
 }
 
-bool SimpleShader::BindGeometry(const Geometry &geometry,
+bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -86,7 +87,7 @@ bool SimpleShader::BindGeometry(const Geometry &geometry,
     return true;
 }
 
-bool SimpleShader::RenderGeometry(const Geometry &geometry,
+bool SimpleShader::RenderGeometry(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -115,11 +116,13 @@ void SimpleShader::UnbindGeometry() {
     }
 }
 
-bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
-                                                 const RenderOption &option,
-                                                 const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+bool SimpleShaderForPointCloud::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
     glPointSize(GLfloat(option.point_size_));
@@ -129,16 +132,18 @@ bool SimpleShaderForPointCloud::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForPointCloud::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::PointCloud) {
-        PrintShaderWarning("Rendering type is not PointCloud.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::PointCloud) {
+        PrintShaderWarning("Rendering type is not geometry::PointCloud.");
         return false;
     }
-    const PointCloud &pointcloud = (const PointCloud &)geometry;
+    const geometry::PointCloud &pointcloud =
+            (const geometry::PointCloud &)geometry;
     if (pointcloud.HasPoints() == false) {
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
@@ -181,11 +186,13 @@ bool SimpleShaderForPointCloud::PrepareBinding(
     return true;
 }
 
-bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
-                                              const RenderOption &option,
-                                              const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::LineSet) {
-        PrintShaderWarning("Rendering type is not LineSet.");
+bool SimpleShaderForLineSet::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
+        PrintShaderWarning("Rendering type is not geometry::LineSet.");
         return false;
     }
     glLineWidth(GLfloat(option.line_width_));
@@ -195,18 +202,19 @@ bool SimpleShaderForLineSet::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForLineSet::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::LineSet) {
-        PrintShaderWarning("Rendering type is not LineSet.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
+        PrintShaderWarning("Rendering type is not geometry::LineSet.");
         return false;
     }
-    const LineSet &lineset = (const LineSet &)geometry;
+    const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
     if (lineset.HasLines() == false) {
-        PrintShaderWarning("Binding failed with empty LineSet.");
+        PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
     }
     points.resize(lineset.lines_.size() * 2);
@@ -228,11 +236,13 @@ bool SimpleShaderForLineSet::PrepareBinding(
     return true;
 }
 
-bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
-                                                   const RenderOption &option,
-                                                   const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        PrintShaderWarning("Rendering type is not TriangleMesh.");
+bool SimpleShaderForTriangleMesh::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::TriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
     if (option.mesh_show_back_face_) {
@@ -253,16 +263,18 @@ bool SimpleShaderForTriangleMesh::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForTriangleMesh::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::TriangleMesh) {
-        PrintShaderWarning("Rendering type is not TriangleMesh.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::TriangleMesh) {
+        PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
-    const TriangleMesh &mesh = (const TriangleMesh &)geometry;
+    const geometry::TriangleMesh &mesh =
+            (const geometry::TriangleMesh &)geometry;
     if (mesh.HasTriangles() == false) {
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
@@ -311,11 +323,13 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
     return true;
 }
 
-bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
-                                                const RenderOption &option,
-                                                const ViewControl &view) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
-        PrintShaderWarning("Rendering type is not VoxelGrid.");
+bool SimpleShaderForVoxelGrid::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
         return false;
     }
     glEnable(GL_DEPTH_TEST);
@@ -329,16 +343,18 @@ bool SimpleShaderForVoxelGrid::PrepareRendering(const Geometry &geometry,
 }
 
 bool SimpleShaderForVoxelGrid::PrepareBinding(
-        const Geometry &geometry,
+        const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &colors) {
-    if (geometry.GetGeometryType() != Geometry::GeometryType::VoxelGrid) {
-        PrintShaderWarning("Rendering type is not VoxelGrid.");
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
         return false;
     }
-    const VoxelGrid &voxelgrid = (const VoxelGrid &)geometry;
+    const geometry::VoxelGrid &voxelgrid =
+            (const geometry::VoxelGrid &)geometry;
     if (voxelgrid.HasVoxels() == false) {
         PrintShaderWarning("Binding failed with empty voxel grid.");
         return false;
@@ -416,4 +432,5 @@ bool SimpleShaderForVoxelGrid::PrepareBinding(
 
 }  // namespace glsl
 
+}  // namespace visualization
 }  // namespace open3d
