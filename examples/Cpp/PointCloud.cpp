@@ -148,12 +148,12 @@ int main(int argc, char *argv[]) {
 
     // 3. test pointcloud visualization
 
-    Visualizer visualizer;
+    visualization::Visualizer visualizer;
     std::shared_ptr<geometry::PointCloud> pointcloud_ptr(
             new geometry::PointCloud);
     *pointcloud_ptr = pointcloud;
     pointcloud_ptr->NormalizeNormals();
-    BoundingBox bounding_box;
+    visualization::BoundingBox bounding_box;
     bounding_box.FitInGeometry(*pointcloud_ptr);
 
     std::shared_ptr<geometry::PointCloud> pointcloud_transformed_ptr(
@@ -175,17 +175,18 @@ int main(int argc, char *argv[]) {
 
     // 4. test operations
     *pointcloud_transformed_ptr += *pointcloud_ptr;
-    DrawGeometries({pointcloud_transformed_ptr}, "Combined Pointcloud");
+    visualization::DrawGeometries({pointcloud_transformed_ptr},
+                                  "Combined Pointcloud");
 
     // 5. test downsample
     auto downsampled = geometry::VoxelDownSample(*pointcloud_ptr, 0.05);
-    DrawGeometries({downsampled}, "Down Sampled Pointcloud");
+    visualization::DrawGeometries({downsampled}, "Down Sampled Pointcloud");
 
     // 6. test normal estimation
-    DrawGeometriesWithKeyCallbacks(
+    visualization::DrawGeometriesWithKeyCallbacks(
             {pointcloud_ptr},
             {{GLFW_KEY_SPACE,
-              [&](Visualizer *vis) {
+              [&](visualization::Visualizer *vis) {
                   // EstimateNormals(*pointcloud_ptr,
                   //        open3d::KDTreeSearchParamKNN(20));
                   geometry::EstimateNormals(

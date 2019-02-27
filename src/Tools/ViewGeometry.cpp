@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
     bool show_coordinate_frame =
             utility::ProgramOptionExists(argc, argv, "--show_frame");
 
-    VisualizerWithCustomAnimation visualizer;
+    visualization::VisualizerWithCustomAnimation visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {
         utility::PrintWarning("Failed creating OpenGL window.\n");
@@ -170,8 +170,8 @@ int main(int argc, char **argv) {
     }
 
     if (!view_filename.empty()) {
-        auto &view_control =
-                (ViewControlWithCustomAnimation &)visualizer.GetViewControl();
+        auto &view_control = (visualization::ViewControlWithCustomAnimation &)
+                                     visualizer.GetViewControl();
         if (view_control.LoadTrajectoryFromJsonFile(view_filename) == false) {
             utility::PrintWarning("Failed loading view trajectory.\n");
         }
@@ -181,8 +181,9 @@ int main(int argc, char **argv) {
             false) {
             utility::PrintWarning("Failed loading camera trajectory.\n");
         } else {
-            auto &view_control = (ViewControlWithCustomAnimation &)
-                                         visualizer.GetViewControl();
+            auto &view_control =
+                    (visualization::ViewControlWithCustomAnimation &)
+                            visualizer.GetViewControl();
             if (view_control.LoadTrajectoryFromCameraTrajectory(
                         camera_trajectory) == false) {
                 utility::PrintWarning(

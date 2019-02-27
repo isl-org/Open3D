@@ -56,7 +56,8 @@ void VisualizeRegistration(const open3d::geometry::PointCloud &source,
     *source_transformed_ptr = source;
     *target_ptr = target;
     source_transformed_ptr->Transform(Transformation);
-    DrawGeometries({source_transformed_ptr, target_ptr}, "Registration result");
+    visualization::DrawGeometries({source_transformed_ptr, target_ptr},
+                                  "Registration result");
 }
 
 int main(int argc, char *argv[]) {

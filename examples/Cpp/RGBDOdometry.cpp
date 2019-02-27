@@ -63,7 +63,7 @@ std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
     if (visualize) {
         auto pcd =
                 geometry::CreatePointCloudFromRGBDImage(*rgbd_image, intrinsic);
-        DrawGeometries({pcd});
+        visualization::DrawGeometries({pcd});
     }
     return rgbd_image;
 }

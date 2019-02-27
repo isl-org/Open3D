@@ -55,10 +55,10 @@ int main(int argc, char** args) {
     auto pcd = io::CreatePointCloudFromFile(args[1]);
     auto voxel = geometry::CreateSurfaceVoxelGridFromPointCloud(*pcd, 0.05);
     PrintVoxelGridInformation(*voxel);
-    DrawGeometries({pcd, voxel});
+    visualization::DrawGeometries({pcd, voxel});
     io::WriteVoxelGrid(args[2], *voxel, true);
 
     auto voxel_read = io::CreateVoxelGridFromFile(args[2]);
     PrintVoxelGridInformation(*voxel_read);
-    DrawGeometries({pcd, voxel_read});
+    visualization::DrawGeometries({pcd, voxel_read});
 }

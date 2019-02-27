@@ -32,35 +32,41 @@
 using namespace open3d;
 
 void pybind_viewcontrol(py::module &m) {
-    py::class_<ViewControl, PyViewControl<>, std::shared_ptr<ViewControl>>
+    py::class_<visualization::ViewControl, PyViewControl<>,
+               std::shared_ptr<visualization::ViewControl>>
             viewcontrol(m, "ViewControl");
-    py::detail::bind_default_constructor<ViewControl>(viewcontrol);
+    py::detail::bind_default_constructor<visualization::ViewControl>(
+            viewcontrol);
     viewcontrol
             .def("__repr__",
-                 [](const ViewControl &vc) {
+                 [](const visualization::ViewControl &vc) {
                      return std::string("ViewControl");
                  })
             .def("convert_to_pinhole_camera_parameters",
-                 [](ViewControl &vc) {
+                 [](visualization::ViewControl &vc) {
                      camera::PinholeCameraParameters parameter;
                      vc.ConvertToPinholeCameraParameters(parameter);
                      return parameter;
                  },
-                 "Function to convert ViewControl to "
+                 "Function to convert visualization::ViewControl to "
                  "camera::PinholeCameraParameters")
             .def("convert_from_pinhole_camera_parameters",
-                 &ViewControl::ConvertFromPinholeCameraParameters,
+                 &visualization::ViewControl::
+                         ConvertFromPinholeCameraParameters,
                  "parameter"_a)
-            .def("scale", &ViewControl::Scale, "Function to process scaling",
-                 "scale"_a)
-            .def("rotate", &ViewControl::Rotate, "Function to process rotation",
-                 "x"_a, "y"_a, "xo"_a = 0.0, "yo"_a = 0.0)
-            .def("translate", &ViewControl::Translate,
+            .def("scale", &visualization::ViewControl::Scale,
+                 "Function to process scaling", "scale"_a)
+            .def("rotate", &visualization::ViewControl::Rotate,
+                 "Function to process rotation", "x"_a, "y"_a, "xo"_a = 0.0,
+                 "yo"_a = 0.0)
+            .def("translate", &visualization::ViewControl::Translate,
                  "Function to process translation", "x"_a, "y"_a, "xo"_a = 0.0,
                  "yo"_a = 0.0)
-            .def("get_field_of_view", &ViewControl::GetFieldOfView,
+            .def("get_field_of_view",
+                 &visualization::ViewControl::GetFieldOfView,
                  "Function to get field of view")
-            .def("change_field_of_view", &ViewControl::ChangeFieldOfView,
+            .def("change_field_of_view",
+                 &visualization::ViewControl::ChangeFieldOfView,
                  "Function to change field of view", "step"_a = 0.45);
 }
 

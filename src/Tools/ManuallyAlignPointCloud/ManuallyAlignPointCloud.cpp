@@ -116,7 +116,8 @@ int main(int argc, char **argv) {
         session.voxel_size_ = voxel_size;
         session.max_correspondence_distance_ = max_corres_distance;
         source_ptr->Transform(session.transformation_);
-        auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
+        auto polygon_volume =
+                std::make_shared<visualization::SelectionPolygonVolume>();
         if (io::ReadIJsonConvertible(default_polygon_filename,
                                      *polygon_volume)) {
             utility::PrintInfo("Crop point cloud.\n");
@@ -155,7 +156,8 @@ int main(int argc, char **argv) {
             return 0;
         }
         source_ptr->Transform(session.transformation_);
-        auto polygon_volume = std::make_shared<SelectionPolygonVolume>();
+        auto polygon_volume =
+                std::make_shared<visualization::SelectionPolygonVolume>();
         if (io::ReadIJsonConvertible(default_polygon_filename,
                                      *polygon_volume)) {
             utility::PrintInfo("Crop point cloud.\n");
@@ -199,7 +201,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    VisualizerWithEditing vis_source, vis_target;
+    visualization::VisualizerWithEditing vis_source, vis_target;
     VisualizerForAlignment vis_main(vis_source, vis_target, voxel_size,
                                     max_corres_distance, with_scaling,
                                     with_dialog, default_polygon_filename,

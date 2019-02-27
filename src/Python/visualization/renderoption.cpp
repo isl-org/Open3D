@@ -32,63 +32,86 @@
 using namespace open3d;
 
 void pybind_renderoption(py::module &m) {
-    py::class_<RenderOption, std::shared_ptr<RenderOption>> renderoption(
-            m, "RenderOption");
-    py::detail::bind_default_constructor<RenderOption>(renderoption);
+    py::class_<visualization::RenderOption,
+               std::shared_ptr<visualization::RenderOption>>
+            renderoption(m, "RenderOption");
+    py::detail::bind_default_constructor<visualization::RenderOption>(
+            renderoption);
     renderoption
             .def("__repr__",
-                 [](const RenderOption &vc) {
+                 [](const visualization::RenderOption &vc) {
                      return std::string("RenderOption");
                  })
             .def("load_from_json",
-                 [](RenderOption &ro, const std::string &filename) {
+                 [](visualization::RenderOption &ro,
+                    const std::string &filename) {
                      io::ReadIJsonConvertible(filename, ro);
                  },
-                 "Function to load RenderOption from a JSON file", "filename"_a)
+                 "Function to load visualization::RenderOption from a JSON "
+                 "file",
+                 "filename"_a)
             .def("save_to_json",
-                 [](RenderOption &ro, const std::string &filename) {
+                 [](visualization::RenderOption &ro,
+                    const std::string &filename) {
                      io::WriteIJsonConvertible(filename, ro);
                  },
-                 "Function to save RenderOption to a JSON file", "filename"_a)
-            .def_readwrite("background_color", &RenderOption::background_color_)
-            .def_readwrite("light_on", &RenderOption::light_on_)
-            .def_readwrite("point_size", &RenderOption::point_size_)
-            .def_readwrite("line_width", &RenderOption::line_width_)
+                 "Function to save visualization::RenderOption to a JSON file",
+                 "filename"_a)
+            .def_readwrite("background_color",
+                           &visualization::RenderOption::background_color_)
+            .def_readwrite("light_on", &visualization::RenderOption::light_on_)
+            .def_readwrite("point_size",
+                           &visualization::RenderOption::point_size_)
+            .def_readwrite("line_width",
+                           &visualization::RenderOption::line_width_)
             .def_readwrite("point_show_normal",
-                           &RenderOption::point_show_normal_)
+                           &visualization::RenderOption::point_show_normal_)
             .def_readwrite("show_coordinate_frame",
-                           &RenderOption::show_coordinate_frame_)
+                           &visualization::RenderOption::show_coordinate_frame_)
             .def_readwrite("mesh_show_back_face",
-                           &RenderOption::mesh_show_back_face_)
+                           &visualization::RenderOption::mesh_show_back_face_)
             .def_readwrite("point_color_option",
-                           &RenderOption::point_color_option_)
+                           &visualization::RenderOption::point_color_option_)
             .def_readwrite("mesh_shade_option",
-                           &RenderOption::mesh_shade_option_)
+                           &visualization::RenderOption::mesh_shade_option_)
             .def_readwrite("mesh_color_option",
-                           &RenderOption::mesh_color_option_);
+                           &visualization::RenderOption::mesh_color_option_);
 
-    py::enum_<RenderOption::PointColorOption>(
+    py::enum_<visualization::RenderOption::PointColorOption>(
             m, "PointColorOption", py::arithmetic(), "PointColorOption")
-            .value("Default", RenderOption::PointColorOption::Default)
-            .value("Color", RenderOption::PointColorOption::Color)
-            .value("XCoordinate", RenderOption::PointColorOption::XCoordinate)
-            .value("YCoordinate", RenderOption::PointColorOption::YCoordinate)
-            .value("ZCoordinate", RenderOption::PointColorOption::ZCoordinate)
-            .value("Normal", RenderOption::PointColorOption::Normal)
+            .value("Default",
+                   visualization::RenderOption::PointColorOption::Default)
+            .value("Color",
+                   visualization::RenderOption::PointColorOption::Color)
+            .value("XCoordinate",
+                   visualization::RenderOption::PointColorOption::XCoordinate)
+            .value("YCoordinate",
+                   visualization::RenderOption::PointColorOption::YCoordinate)
+            .value("ZCoordinate",
+                   visualization::RenderOption::PointColorOption::ZCoordinate)
+            .value("Normal",
+                   visualization::RenderOption::PointColorOption::Normal)
             .export_values();
-    py::enum_<RenderOption::MeshShadeOption>(
+    py::enum_<visualization::RenderOption::MeshShadeOption>(
             m, "MeshShadeOption", py::arithmetic(), "MeshShadeOption")
-            .value("Default", RenderOption::MeshShadeOption::FlatShade)
-            .value("Color", RenderOption::MeshShadeOption::SmoothShade)
+            .value("Default",
+                   visualization::RenderOption::MeshShadeOption::FlatShade)
+            .value("Color",
+                   visualization::RenderOption::MeshShadeOption::SmoothShade)
             .export_values();
-    py::enum_<RenderOption::MeshColorOption>(
+    py::enum_<visualization::RenderOption::MeshColorOption>(
             m, "MeshColorOption", py::arithmetic(), "MeshColorOption")
-            .value("Default", RenderOption::MeshColorOption::Default)
-            .value("Color", RenderOption::MeshColorOption::Color)
-            .value("XCoordinate", RenderOption::MeshColorOption::XCoordinate)
-            .value("YCoordinate", RenderOption::MeshColorOption::YCoordinate)
-            .value("ZCoordinate", RenderOption::MeshColorOption::ZCoordinate)
-            .value("Normal", RenderOption::MeshColorOption::Normal)
+            .value("Default",
+                   visualization::RenderOption::MeshColorOption::Default)
+            .value("Color", visualization::RenderOption::MeshColorOption::Color)
+            .value("XCoordinate",
+                   visualization::RenderOption::MeshColorOption::XCoordinate)
+            .value("YCoordinate",
+                   visualization::RenderOption::MeshColorOption::YCoordinate)
+            .value("ZCoordinate",
+                   visualization::RenderOption::MeshColorOption::ZCoordinate)
+            .value("Normal",
+                   visualization::RenderOption::MeshColorOption::Normal)
             .export_values();
 }
 

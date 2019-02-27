@@ -32,7 +32,8 @@
 
 using namespace open3d;
 
-class VisualizerWithDepthCapture : public VisualizerWithCustomAnimation {
+class VisualizerWithDepthCapture
+    : public visualization::VisualizerWithCustomAnimation {
 protected:
     void KeyPressCallback(GLFWwindow *window,
                           int key,
@@ -75,7 +76,7 @@ protected:
                         camera.parameters_[0]);
             }
         } else {
-            VisualizerWithCustomAnimation::KeyPressCallback(
+            visualization::VisualizerWithCustomAnimation::KeyPressCallback(
                     window, key, scancode, action, mods);
         }
         UpdateRender();
@@ -107,7 +108,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto image_ptr = io::CreateImageFromFile("depth.png");
-    DrawGeometries({image_ptr});
+    visualization::DrawGeometries({image_ptr});
 
     camera::PinholeCameraTrajectory camera;
     io::ReadIJsonConvertible("camera.json", camera);

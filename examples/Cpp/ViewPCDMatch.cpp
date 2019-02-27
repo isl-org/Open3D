@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
         pcd_source->colors_.resize(pcd_source->points_.size(),
                                    color_palette[1]);
         pcd_source->Transform(transformations[k]);
-        DrawGeometriesWithCustomAnimation({pcd_target, pcd_source},
-                                          "ViewPCDMatch", 1600, 900);
+        visualization::DrawGeometriesWithCustomAnimation(
+                {pcd_target, pcd_source}, "ViewPCDMatch", 1600, 900);
     }
     return 0;
 }

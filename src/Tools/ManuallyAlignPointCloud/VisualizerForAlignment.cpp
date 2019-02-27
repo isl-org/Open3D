@@ -31,7 +31,7 @@
 namespace open3d {
 
 void VisualizerForAlignment::PrintVisualizerHelp() {
-    Visualizer::PrintVisualizerHelp();
+    visualization::Visualizer::PrintVisualizerHelp();
     // clang-format off
     utility::PrintInfo("  -- Alignment control --\n");
     utility::PrintInfo("    Ctrl + R     : Reset source and target to initial state.\n");
@@ -212,8 +212,8 @@ void VisualizerForAlignment::KeyPressCallback(
                         polygon_filename_ = "polygon.json";
                     }
                 }
-                auto polygon_volume =
-                        std::make_shared<SelectionPolygonVolume>();
+                auto polygon_volume = std::make_shared<
+                        visualization::SelectionPolygonVolume>();
                 if (io::ReadIJsonConvertible(polygon_filename_,
                                              *polygon_volume)) {
                     *source_copy_ptr_ =
@@ -241,7 +241,8 @@ void VisualizerForAlignment::KeyPressCallback(
             }
         }
     }
-    Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+    visualization::Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                mods);
 }
 
 bool VisualizerForAlignment::SaveSessionToFile(const std::string &filename) {

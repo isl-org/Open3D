@@ -67,11 +67,11 @@ int main(int argc, char **argv) {
     }
     auto lineset_ptr = CreateLineSetFromPointCloudCorrespondences(
             *cloud_ptr, *cloud_ptr, correspondences);
-    DrawGeometries({cloud_ptr, lineset_ptr});
+    visualization::DrawGeometries({cloud_ptr, lineset_ptr});
 
     auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     *new_cloud_ptr = *cloud_ptr;
-    BoundingBox bounding_box;
+    visualization::BoundingBox bounding_box;
     bounding_box.FitInGeometry(*new_cloud_ptr);
     Eigen::Matrix4d trans_to_origin = Eigen::Matrix4d::Identity();
     trans_to_origin.block<3, 1>(0, 3) = bounding_box.GetCenter() * -1.0;
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
             new_lineset_ptr->colors_[i] = Eigen::Vector3d(0.0, 0.0, 0.0);
         }
     }
-    DrawGeometries({cloud_ptr, new_cloud_ptr, new_lineset_ptr});
+    visualization::DrawGeometries({cloud_ptr, new_cloud_ptr, new_lineset_ptr});
 
     return 0;
 }

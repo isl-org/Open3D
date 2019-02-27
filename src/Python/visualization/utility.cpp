@@ -36,37 +36,43 @@
 using namespace open3d;
 
 void pybind_visualization_utility(py::module &m) {
-    py::class_<SelectionPolygonVolume> selection_volume(
+    py::class_<visualization::SelectionPolygonVolume> selection_volume(
             m, "SelectionPolygonVolume");
-    py::detail::bind_default_constructor<SelectionPolygonVolume>(
+    py::detail::bind_default_constructor<visualization::SelectionPolygonVolume>(
             selection_volume);
-    py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
+    py::detail::bind_copy_functions<visualization::SelectionPolygonVolume>(
+            selection_volume);
     selection_volume
             .def("crop_point_cloud",
-                 [](const SelectionPolygonVolume &s,
+                 [](const visualization::SelectionPolygonVolume &s,
                     const geometry::PointCloud &input) {
                      return s.CropPointCloud(input);
                  },
                  "input"_a)
             .def("crop_triangle_mesh",
-                 [](const SelectionPolygonVolume &s,
+                 [](const visualization::SelectionPolygonVolume &s,
                     const geometry::TriangleMesh &input) {
                      return s.CropTriangleMesh(input);
                  },
                  "input"_a)
             .def("__repr__",
-                 [](const SelectionPolygonVolume &s) {
+                 [](const visualization::SelectionPolygonVolume &s) {
                      return std::string(
-                             "SelectionPolygonVolume, access its members:\n"
+                             "visualization::SelectionPolygonVolume, access "
+                             "its members:\n"
                              "orthogonal_axis, bounding_polygon, axis_min, "
                              "axis_max");
                  })
-            .def_readwrite("orthogonal_axis",
-                           &SelectionPolygonVolume::orthogonal_axis_)
-            .def_readwrite("bounding_polygon",
-                           &SelectionPolygonVolume::bounding_polygon_)
-            .def_readwrite("axis_min", &SelectionPolygonVolume::axis_min_)
-            .def_readwrite("axis_max", &SelectionPolygonVolume::axis_max_);
+            .def_readwrite(
+                    "orthogonal_axis",
+                    &visualization::SelectionPolygonVolume::orthogonal_axis_)
+            .def_readwrite(
+                    "bounding_polygon",
+                    &visualization::SelectionPolygonVolume::bounding_polygon_)
+            .def_readwrite("axis_min",
+                           &visualization::SelectionPolygonVolume::axis_min_)
+            .def_readwrite("axis_max",
+                           &visualization::SelectionPolygonVolume::axis_max_);
 }
 
 void pybind_visualization_utility_methods(py::module &m) {
@@ -77,8 +83,8 @@ void pybind_visualization_utility_methods(py::module &m) {
              int top) {
               std::string current_dir =
                       utility::filesystem::GetWorkingDirectory();
-              DrawGeometries(geometry_ptrs, window_name, width, height, left,
-                             top);
+              visualization::DrawGeometries(geometry_ptrs, window_name, width,
+                                            height, left, top);
               utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects",
@@ -91,9 +97,9 @@ void pybind_visualization_utility_methods(py::module &m) {
              int top, const std::string &json_filename) {
               std::string current_dir =
                       utility::filesystem::GetWorkingDirectory();
-              DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name,
-                                                width, height, left, top,
-                                                json_filename);
+              visualization::DrawGeometriesWithCustomAnimation(
+                      geometry_ptrs, window_name, width, height, left, top,
+                      json_filename);
               utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects with a GUI "
@@ -105,14 +111,14 @@ void pybind_visualization_utility_methods(py::module &m) {
     m.def("draw_geometries_with_animation_callback",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
-             std::function<bool(Visualizer *)> callback_func,
+             std::function<bool(visualization::Visualizer *)> callback_func,
              const std::string &window_name, int width, int height, int left,
              int top) {
               std::string current_dir =
                       utility::filesystem::GetWorkingDirectory();
-              DrawGeometriesWithAnimationCallback(geometry_ptrs, callback_func,
-                                                  window_name, width, height,
-                                                  left, top);
+              visualization::DrawGeometriesWithAnimationCallback(
+                      geometry_ptrs, callback_func, window_name, width, height,
+                      left, top);
               utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects with a "
@@ -124,15 +130,16 @@ void pybind_visualization_utility_methods(py::module &m) {
     m.def("draw_geometries_with_key_callbacks",
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
-             const std::map<int, std::function<bool(Visualizer *)>>
+             const std::map<int,
+                            std::function<bool(visualization::Visualizer *)>>
                      &key_to_callback,
              const std::string &window_name, int width, int height, int left,
              int top) {
               std::string current_dir =
                       utility::filesystem::GetWorkingDirectory();
-              DrawGeometriesWithKeyCallbacks(geometry_ptrs, key_to_callback,
-                                             window_name, width, height, left,
-                                             top);
+              visualization::DrawGeometriesWithKeyCallbacks(
+                      geometry_ptrs, key_to_callback, window_name, width,
+                      height, left, top);
               utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects with a "
@@ -145,8 +152,8 @@ void pybind_visualization_utility_methods(py::module &m) {
                      &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
              int top) {
-              DrawGeometriesWithEditing(geometry_ptrs, window_name, width,
-                                        height, left, top);
+              visualization::DrawGeometriesWithEditing(
+                      geometry_ptrs, window_name, width, height, left, top);
           },
           "Function to draw a list of geometry::Geometry providing user "
           "interaction",
@@ -154,9 +161,10 @@ void pybind_visualization_utility_methods(py::module &m) {
           "height"_a = 1080, "left"_a = 50, "top"_a = 50);
     m.def("read_selection_polygon_volume",
           [](const std::string &filename) {
-              SelectionPolygonVolume vol;
+              visualization::SelectionPolygonVolume vol;
               io::ReadIJsonConvertible(filename, vol);
               return vol;
           },
-          "Function to read SelectionPolygonVolume from file", "filename"_a);
+          "Function to read visualization::SelectionPolygonVolume from file",
+          "filename"_a);
 }

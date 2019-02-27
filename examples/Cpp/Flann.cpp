@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     }
     cloud_ptr->colors_[99] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
-    DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
+    visualization::DrawGeometries({cloud_ptr}, "Flann", 1600, 900);
 
     auto new_cloud_ptr = std::make_shared<geometry::PointCloud>();
     if (io::ReadPointCloud(argv[1], *new_cloud_ptr)) {
@@ -155,6 +155,6 @@ int main(int argc, char **argv) {
     }
     new_cloud_ptr->colors_[199] = Eigen::Vector3d(0.0, 1.0, 1.0);
 
-    DrawGeometries({new_cloud_ptr}, "TestKDTree", 1600, 900);
+    visualization::DrawGeometries({new_cloud_ptr}, "TestKDTree", 1600, 900);
     return 0;
 }

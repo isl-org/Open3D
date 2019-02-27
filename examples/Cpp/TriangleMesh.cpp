@@ -58,35 +58,35 @@ int main(int argc, char *argv[]) {
     if (option == "sphere") {
         auto mesh = geometry::CreateMeshSphere(0.05);
         mesh->ComputeVertexNormals();
-        DrawGeometries({mesh});
+        visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("sphere.ply", *mesh, true, true);
     } else if (option == "cylinder") {
         auto mesh = geometry::CreateMeshCylinder(0.5, 2.0);
         mesh->ComputeVertexNormals();
-        DrawGeometries({mesh});
+        visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cylinder.ply", *mesh, true, true);
     } else if (option == "cone") {
         auto mesh = geometry::CreateMeshCone(0.5, 2.0, 20, 3);
         mesh->ComputeVertexNormals();
-        DrawGeometries({mesh});
+        visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("cone.ply", *mesh, true, true);
     } else if (option == "arrow") {
         auto mesh = geometry::CreateMeshArrow();
         mesh->ComputeVertexNormals();
-        DrawGeometries({mesh});
+        visualization::DrawGeometries({mesh});
         io::WriteTriangleMesh("arrow.ply", *mesh, true, true);
     } else if (option == "frame") {
         if (argc < 3) {
             auto mesh = geometry::CreateMeshCoordinateFrame();
-            DrawGeometries({mesh});
+            visualization::DrawGeometries({mesh});
             io::WriteTriangleMesh("frame.ply", *mesh, true, true);
         } else {
             auto mesh = io::CreateMeshFromFile(argv[2]);
             mesh->ComputeVertexNormals();
-            BoundingBox boundingbox(*mesh);
+            visualization::BoundingBox boundingbox(*mesh);
             auto mesh_frame = geometry::CreateMeshCoordinateFrame(
                     boundingbox.GetSize() * 0.2, boundingbox.min_bound_);
-            DrawGeometries({mesh, mesh_frame});
+            visualization::DrawGeometries({mesh, mesh_frame});
         }
     } else if (option == "merge") {
         auto mesh1 = io::CreateMeshFromFile(argv[2]);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         utility::PrintInfo(
                 "After purge vertices, Mesh1 has %d vertices, %d triangles.\n",
                 mesh1->vertices_.size(), mesh1->triangles_.size());
-        DrawGeometries({mesh1});
+        visualization::DrawGeometries({mesh1});
         io::WriteTriangleMesh("temp.ply", *mesh1, true, true);
     } else if (option == "normal") {
         auto mesh = io::CreateMeshFromFile(argv[2]);
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     } else if (option == "unify") {
         // unify into (0, 0, 0) - (scale, scale, scale) box
         auto mesh = io::CreateMeshFromFile(argv[2]);
-        BoundingBox bbox;
+        visualization::BoundingBox bbox;
         bbox.FitInGeometry(*mesh);
         double scale1 = std::stod(argv[4]);
         double scale2 = std::stod(argv[5]);
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
         if (argc > 5) {
             io::WriteTriangleMesh(argv[5], *mesh1);
         }
-        DrawGeometries({mesh1});
+        visualization::DrawGeometries({mesh1});
     } else if (option == "showboth") {
         auto mesh1 = io::CreateMeshFromFile(argv[2]);
         PaintMesh(*mesh1, Eigen::Vector3d(1.0, 0.75, 0.0));
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
         std::vector<std::shared_ptr<const geometry::Geometry>> meshes;
         meshes.push_back(mesh1);
         meshes.push_back(mesh2);
-        DrawGeometries(meshes);
+        visualization::DrawGeometries(meshes);
     } else if (option == "colormapping") {
         auto mesh = io::CreateMeshFromFile(argv[2]);
         mesh->ComputeVertexNormals();
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
         mesh_sphere->Transform(trans);
         mesh_sphere->ComputeVertexNormals();
         ptrs.push_back(mesh_sphere);
-        DrawGeometries(ptrs);
+        visualization::DrawGeometries(ptrs);
 
         for (size_t i = 0; i < trajectory.parameters_.size(); i += 10) {
             char buffer[1024];
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
             if (result.first) {
                 utility::PrintWarning("%.6f\n", result.second);
             }
-            DrawGeometries({fimage}, "Test", 1920, 1080);
+            visualization::DrawGeometries({fimage}, "Test", 1920, 1080);
         }
     }
     return 0;

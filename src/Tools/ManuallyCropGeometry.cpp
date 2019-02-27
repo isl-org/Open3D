@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     bool with_dialog =
             !utility::ProgramOptionExists(argc, argv, "--without_dialog");
 
-    VisualizerWithEditing vis(
+    visualization::VisualizerWithEditing vis(
             voxel_size, with_dialog,
             utility::filesystem::GetFileParentDirectory(argv[1]));
     vis.CreateVisualizerWindow("Crop Point Cloud", 1920, 1080, 100, 100);

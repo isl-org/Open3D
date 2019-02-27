@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
             pcds.push_back(pcd);
         }
     }
-    DrawGeometriesWithCustomAnimation(pcds);
+    visualization::DrawGeometriesWithCustomAnimation(pcds);
 
     return 0;
 }

@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     pcd->colors_.resize(pcd->points_.size());
-    ColorMapHot colormap;
+    visualization::ColorMapHot colormap;
     for (size_t i = 0; i < pcd->points_.size(); i++) {
         pcd->colors_[i] = colormap.GetColor(distances[i] / max_distance);
     }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         io::WritePointCloud(argv[1], *pcd);
     }
     if (!utility::ProgramOptionExists(argc, argv, "--without_gui")) {
-        DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
+        visualization::DrawGeometries({pcd}, "Point Cloud", 1920, 1080);
     }
     return 0;
 }
