@@ -115,7 +115,7 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
     vector<Vector4i, Vector4i_allocator> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
-    RGBDOdometryJacobianFromHybridTerm jacobian_method;
+    odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;
 
     for (int row = 0; row < rows; row++) {
         vector<Vector6d, Vector6d_allocator> J_r;

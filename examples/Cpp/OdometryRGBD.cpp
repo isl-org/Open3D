@@ -98,19 +98,23 @@ int main(int argc, char* argv[]) {
     auto source = CreateRGBDImage(*color_source, *depth_source, true);
     auto target = CreateRGBDImage(*color_target, *depth_target, true);
 
-    OdometryOption option;
+    odometry::OdometryOption option;
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     Eigen::Matrix4d trans_odo = Eigen::Matrix4d::Identity();
     Eigen::Matrix6d info_odo = Eigen::Matrix6d::Zero();
     bool is_success;
     if (ProgramOptionExists(argc, argv, "--hybrid")) {
-        RGBDOdometryJacobianFromHybridTerm jacobian_method;
-        std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry(
-                *source, *target, intrinsic, odo_init, jacobian_method, option);
+        odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;
+        std::tie(is_success, trans_odo, info_odo) =
+                odometry::ComputeRGBDOdometry(*source, *target, intrinsic,
+                                              odo_init, jacobian_method,
+                                              option);
     } else {
-        RGBDOdometryJacobianFromColorTerm jacobian_method;
-        std::tie(is_success, trans_odo, info_odo) = ComputeRGBDOdometry(
-                *source, *target, intrinsic, odo_init, jacobian_method, option);
+        odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;
+        std::tie(is_success, trans_odo, info_odo) =
+                odometry::ComputeRGBDOdometry(*source, *target, intrinsic,
+                                              odo_init, jacobian_method,
+                                              option);
     }
     std::cout << "Estimated 4x4 motion matrix : " << std::endl;
     std::cout << trans_odo << std::endl;

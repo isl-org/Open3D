@@ -33,7 +33,7 @@
 #include <Open3D/Odometry/RGBDOdometryJacobian.h>
 using namespace open3d;
 
-template <class RGBDOdometryJacobianBase = RGBDOdometryJacobian>
+template <class RGBDOdometryJacobianBase = odometry::RGBDOdometryJacobian>
 class PyRGBDOdometryJacobian : public RGBDOdometryJacobianBase {
 public:
     using RGBDOdometryJacobianBase::RGBDOdometryJacobianBase;
@@ -48,7 +48,8 @@ public:
             const geometry::RGBDImage &target_dy,
             const Eigen::Matrix3d &intrinsic,
             const Eigen::Matrix4d &extrinsic,
-            const CorrespondenceSetPixelWise &corresps) const override {
+            const odometry::CorrespondenceSetPixelWise &corresps)
+            const override {
         PYBIND11_OVERLOAD_PURE(void, RGBDOdometryJacobianBase, row, J_r, r,
                                source, target, source_xyz, target_dx, target_dy,
                                extrinsic, corresps, intrinsic);
@@ -56,14 +57,14 @@ public:
 };
 
 void pybind_odometry_classes(py::module &m) {
-    py::class_<OdometryOption> odometry_option(m, "OdometryOption",
-                                               "OdometryOption");
+    py::class_<odometry::OdometryOption> odometry_option(m, "OdometryOption",
+                                                         "OdometryOption");
     odometry_option
             .def(py::init(
                          [](std::vector<int> iteration_number_per_pyramid_level,
                             double max_depth_diff, double min_depth,
                             double max_depth) {
-                             return new OdometryOption(
+                             return new odometry::OdometryOption(
                                      iteration_number_per_pyramid_level,
                                      max_depth_diff, min_depth, max_depth);
                          }),
@@ -72,11 +73,13 @@ void pybind_odometry_classes(py::module &m) {
                  "max_depth_diff"_a = 0.03, "min_depth"_a = 0.0,
                  "max_depth"_a = 4.0)
             .def_readwrite("iteration_number_per_pyramid_level",
-                           &OdometryOption::iteration_number_per_pyramid_level_)
-            .def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_)
-            .def_readwrite("min_depth", &OdometryOption::min_depth_)
-            .def_readwrite("max_depth", &OdometryOption::max_depth_)
-            .def("__repr__", [](const OdometryOption &c) {
+                           &odometry::OdometryOption::
+                                   iteration_number_per_pyramid_level_)
+            .def_readwrite("max_depth_diff",
+                           &odometry::OdometryOption::max_depth_diff_)
+            .def_readwrite("min_depth", &odometry::OdometryOption::min_depth_)
+            .def_readwrite("max_depth", &odometry::OdometryOption::max_depth_)
+            .def("__repr__", [](const odometry::OdometryOption &c) {
                 int num_pyramid_level =
                         (int)c.iteration_number_per_pyramid_level_.size();
                 std::string str_iteration_number_per_pyramid_level_ = "[ ";
@@ -86,7 +89,7 @@ void pybind_odometry_classes(py::module &m) {
                                     c.iteration_number_per_pyramid_level_[i]) +
                             ", ";
                 str_iteration_number_per_pyramid_level_ += "] ";
-                return std::string("OdometryOption class.") +
+                return std::string("odometry::OdometryOption class.") +
                        /*std::string("\nodo_init = ") +
                           std::to_string(c.odo_init_) +*/
                        std::string("\niteration_number_per_pyramid_level = ") +
@@ -99,49 +102,53 @@ void pybind_odometry_classes(py::module &m) {
                        std::to_string(c.max_depth_);
             });
 
-    py::class_<RGBDOdometryJacobian,
-               PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
+    py::class_<odometry::RGBDOdometryJacobian,
+               PyRGBDOdometryJacobian<odometry::RGBDOdometryJacobian>>
             jacobian(m, "RGBDOdometryJacobian", "RGBDOdometryJacobian");
     jacobian.def("compute_jacobian_and_residual",
-                 &RGBDOdometryJacobian::ComputeJacobianAndResidual);
+                 &odometry::RGBDOdometryJacobian::ComputeJacobianAndResidual);
 
-    py::class_<RGBDOdometryJacobianFromColorTerm,
-               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
-               RGBDOdometryJacobian>
+    py::class_<
+            odometry::RGBDOdometryJacobianFromColorTerm,
+            PyRGBDOdometryJacobian<odometry::RGBDOdometryJacobianFromColorTerm>,
+            odometry::RGBDOdometryJacobian>
             jacobian_color(m, "RGBDOdometryJacobianFromColorTerm",
                            "RGBDOdometryJacobianFromColorTerm");
-    py::detail::bind_default_constructor<RGBDOdometryJacobianFromColorTerm>(
-            jacobian_color);
-    py::detail::bind_copy_functions<RGBDOdometryJacobianFromColorTerm>(
-            jacobian_color);
+    py::detail::bind_default_constructor<
+            odometry::RGBDOdometryJacobianFromColorTerm>(jacobian_color);
+    py::detail::bind_copy_functions<
+            odometry::RGBDOdometryJacobianFromColorTerm>(jacobian_color);
     jacobian_color.def(
-            "__repr__", [](const RGBDOdometryJacobianFromColorTerm &te) {
+            "__repr__",
+            [](const odometry::RGBDOdometryJacobianFromColorTerm &te) {
                 return std::string("RGBDOdometryJacobianFromColorTerm");
             });
 
-    py::class_<RGBDOdometryJacobianFromHybridTerm,
-               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
-               RGBDOdometryJacobian>
+    py::class_<odometry::RGBDOdometryJacobianFromHybridTerm,
+               PyRGBDOdometryJacobian<
+                       odometry::RGBDOdometryJacobianFromHybridTerm>,
+               odometry::RGBDOdometryJacobian>
             jacobian_hybrid(m, "RGBDOdometryJacobianFromHybridTerm",
                             "RGBDOdometryJacobianFromHybridTerm");
-    py::detail::bind_default_constructor<RGBDOdometryJacobianFromHybridTerm>(
-            jacobian_hybrid);
-    py::detail::bind_copy_functions<RGBDOdometryJacobianFromHybridTerm>(
-            jacobian_hybrid);
+    py::detail::bind_default_constructor<
+            odometry::RGBDOdometryJacobianFromHybridTerm>(jacobian_hybrid);
+    py::detail::bind_copy_functions<
+            odometry::RGBDOdometryJacobianFromHybridTerm>(jacobian_hybrid);
     jacobian_hybrid.def(
-            "__repr__", [](const RGBDOdometryJacobianFromHybridTerm &te) {
+            "__repr__",
+            [](const odometry::RGBDOdometryJacobianFromHybridTerm &te) {
                 return std::string("RGBDOdometryJacobianFromHybridTerm");
             });
 }
 
 void pybind_odometry_methods(py::module &m) {
-    m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
+    m.def("compute_rgbd_odometry", &odometry::ComputeRGBDOdometry,
           "Function to estimate 6D rigid motion from two RGBD image pairs",
           "rgbd_source"_a, "rgbd_target"_a,
           "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
           "odo_init"_a = Eigen::Matrix4d::Identity(),
-          "jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
-          "option"_a = OdometryOption());
+          "jacobian"_a = odometry::RGBDOdometryJacobianFromHybridTerm(),
+          "option"_a = odometry::OdometryOption());
 }
 
 void pybind_odometry(py::module &m) {

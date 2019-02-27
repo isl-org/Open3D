@@ -81,9 +81,10 @@ int main(int argc, char* argv[]) {
 
     Eigen::Matrix4d odo_init = Eigen::Matrix4d::Identity();
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> rgbd_odo =
-            ComputeRGBDOdometry(*source, *target, intrinsic, odo_init,
-                                RGBDOdometryJacobianFromHybridTerm(),
-                                OdometryOption());
+            odometry::ComputeRGBDOdometry(
+                    *source, *target, intrinsic, odo_init,
+                    odometry::RGBDOdometryJacobianFromHybridTerm(),
+                    odometry::OdometryOption());
     std::cout << "RGBD Odometry" << std::endl;
     std::cout << std::get<1>(rgbd_odo) << std::endl;
     return 0;
