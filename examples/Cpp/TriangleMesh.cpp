@@ -31,9 +31,9 @@
 void PrintHelp() {
     using namespace open3d;
     utility::PrintInfo("Usage :\n");
-    utility::PrintInfo("    > geometry::TriangleMesh sphere\n");
-    utility::PrintInfo("    > geometry::TriangleMesh merge <file1> <file2>\n");
-    utility::PrintInfo("    > geometry::TriangleMesh normal <file1> <file2>\n");
+    utility::PrintInfo("    > TriangleMesh sphere\n");
+    utility::PrintInfo("    > TriangleMesh merge <file1> <file2>\n");
+    utility::PrintInfo("    > TriangleMesh normal <file1> <file2>\n");
 }
 
 void PaintMesh(open3d::geometry::TriangleMesh &mesh,

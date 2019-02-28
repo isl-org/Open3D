@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
         PrintOpen3DVersion();
         // clang-format off
         utility::PrintInfo("Usage:\n");
-        utility::PrintInfo("    > visualization::Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
-        utility::PrintInfo("    > visualization::Visualizer [animation] [filename] [trajectoryfile]\n");
+        utility::PrintInfo("    > Visualizer [mesh|spin|slowspin|pointcloud|rainbow|image|depth|editing] [filename]\n");
+        utility::PrintInfo("    > Visualizer [animation] [filename] [trajectoryfile]\n");
         // clang-format on
         return 1;
     }
