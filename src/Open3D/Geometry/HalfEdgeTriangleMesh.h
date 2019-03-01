@@ -39,7 +39,7 @@ class HalfEdgeTriangleMesh : public TriangleMesh {
 public:
     class HalfEdge {
     public:
-        HalfEdge(const Eigen::Vector2i& vertex_indices,
+        HalfEdge(const Eigen::Vector2i &vertex_indices,
                  int triangle_index,
                  int next,
                  int twin);
@@ -67,12 +67,23 @@ public:
     /// True if half-edges have already been computed
     bool HasHalfEdges() const;
 
-    /// Clear all data in HalfEdgeTriangleMesh
-    void Clear() override;
-
     /// Query manifold boundary
     /// If query vertex is not on boundary, empty vector will be returned
     std::vector<int> BoundaryHalfEdgesFromVertex(int vertex_index) const;
+
+    /// Clear all data in HalfEdgeTriangleMesh
+    void Clear() override;
+
+    HalfEdgeTriangleMesh &operator+=(const HalfEdgeTriangleMesh &mesh);
+
+    HalfEdgeTriangleMesh operator+(const HalfEdgeTriangleMesh &mesh) const;
+
+protected:
+    HalfEdgeTriangleMesh(Geometry::GeometryType type) : TriangleMesh(type){};
+    void RemoveDuplicatedVertices() override;
+    void RemoveDuplicatedTriangles() override;
+    void RemoveNonManifoldVertices() override;
+    void RemoveNonManifoldTriangles() override;
 
 public:
     std::vector<HalfEdge> half_edges_;
@@ -90,7 +101,7 @@ protected:
 };
 
 std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
-        const TriangleMesh& mesh);
+        const TriangleMesh &mesh);
 
 }  // namespace geometry
 }  // namespace open3d

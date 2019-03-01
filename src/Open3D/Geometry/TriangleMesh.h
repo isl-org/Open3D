@@ -67,10 +67,10 @@ public:
 protected:
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : Geometry3D(type){};
-    void RemoveDuplicatedVertices();
-    void RemoveDuplicatedTriangles();
-    void RemoveNonManifoldVertices();
-    void RemoveNonManifoldTriangles();
+    virtual void RemoveDuplicatedVertices();
+    virtual void RemoveDuplicatedTriangles();
+    virtual void RemoveNonManifoldVertices();
+    virtual void RemoveNonManifoldTriangles();
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }

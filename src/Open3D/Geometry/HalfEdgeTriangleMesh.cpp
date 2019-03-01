@@ -250,5 +250,51 @@ std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
     return half_edge_mesh;
 }
 
+void HalfEdgeTriangleMesh::RemoveDuplicatedVertices() {
+    size_t before_num = vertices_.size();
+    TriangleMesh::RemoveDuplicatedVertices();
+    if (HasHalfEdges() && vertices_.size() != before_num) {
+        ComputeHalfEdges();
+    }
+}
+
+void HalfEdgeTriangleMesh::RemoveDuplicatedTriangles() {
+    size_t before_num = triangles_.size();
+    TriangleMesh::RemoveDuplicatedTriangles();
+    if (HasHalfEdges() && triangles_.size() != before_num) {
+        ComputeHalfEdges();
+    }
+}
+
+void HalfEdgeTriangleMesh::RemoveNonManifoldVertices() {
+    size_t before_num = vertices_.size();
+    TriangleMesh::RemoveNonManifoldVertices();
+    if (HasHalfEdges() && vertices_.size() != before_num) {
+        ComputeHalfEdges();
+    }
+}
+
+void HalfEdgeTriangleMesh::RemoveNonManifoldTriangles() {
+    size_t before_num = triangles_.size();
+    TriangleMesh::RemoveNonManifoldTriangles();
+    if (HasHalfEdges() && triangles_.size() != before_num) {
+        ComputeHalfEdges();
+    }
+}
+
+HalfEdgeTriangleMesh& HalfEdgeTriangleMesh::operator+=(
+        const HalfEdgeTriangleMesh& mesh) {
+    TriangleMesh::operator+=(mesh);
+    if (HasHalfEdges()) {
+        ComputeHalfEdges();
+    }
+    return *this;
+}
+
+HalfEdgeTriangleMesh HalfEdgeTriangleMesh::operator+(
+        const HalfEdgeTriangleMesh& mesh) const {
+    return (HalfEdgeTriangleMesh(*this) += mesh);
+}
+
 }  // namespace geometry
 }  // namespace open3d
