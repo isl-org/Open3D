@@ -98,8 +98,9 @@ bool HalfEdgeTriangleMesh::ComputeHalfEdges() {
         HalfEdge& this_he = half_edges_[this_he_index];
         Eigen::Vector2i twin_end_points(this_he.vertex_indices_(1),
                                         this_he.vertex_indices_(0));
-        if (vertex_indices_to_half_edge_index.find(twin_end_points) !=
-            vertex_indices_to_half_edge_index.end()) {
+        if (this_he.twin_ == -1 &&
+            vertex_indices_to_half_edge_index.find(twin_end_points) !=
+                    vertex_indices_to_half_edge_index.end()) {
             size_t twin_he_index =
                     vertex_indices_to_half_edge_index[twin_end_points];
             HalfEdge& twin_he = half_edges_[twin_he_index];
