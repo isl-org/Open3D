@@ -38,7 +38,8 @@ public:
         Octree = 3,
         LineSet = 4,
         TriangleMesh = 5,
-        Image = 6,
+        HalfEdgeTriangleMesh = 6,
+        Image = 7,
     };
 
 public:
