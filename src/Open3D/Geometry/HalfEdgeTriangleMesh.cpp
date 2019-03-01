@@ -145,12 +145,12 @@ bool HalfEdgeTriangleMesh::ComputeHalfEdges() {
         // Push edges to ordered_half_edge_from_vertex_.
         int curr_he_index = init_half_edge_index;
         ordered_half_edge_from_vertex_[vertex_index].push_back(curr_he_index);
-        int next_next_twin_he_index = NextNextTwinHalfEdgeIndex(curr_he_index);
+        int next_next_twin_he_index = NextHalfEdgeFromVertex(curr_he_index);
         curr_he_index = next_next_twin_he_index;
         while (curr_he_index != -1 && curr_he_index != init_half_edge_index) {
             ordered_half_edge_from_vertex_[vertex_index].push_back(
                     curr_he_index);
-            next_next_twin_he_index = NextNextTwinHalfEdgeIndex(curr_he_index);
+            next_next_twin_he_index = NextHalfEdgeFromVertex(curr_he_index);
             curr_he_index = next_next_twin_he_index;
         }
     }
@@ -162,7 +162,7 @@ bool HalfEdgeTriangleMesh::HasHalfEdges() const {
            vertices_.size() == ordered_half_edge_from_vertex_.size();
 }
 
-int HalfEdgeTriangleMesh::NextNextTwinHalfEdgeIndex(int half_edge_index) const {
+int HalfEdgeTriangleMesh::NextHalfEdgeFromVertex(int half_edge_index) const {
     const HalfEdge& curr_he = half_edges_[half_edge_index];
     int next_he_index = curr_he.next_;
     const HalfEdge& next_he = half_edges_[next_he_index];

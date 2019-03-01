@@ -76,12 +76,16 @@ public:
 
 public:
     std::vector<HalfEdge> half_edges_;
-    // Counter-clockwise ordered half-edges started from each vertex
-    // If the vertex is on boundary, the starting edge must be on boundary too
+
+    /// Counter-clockwise ordered half-edges started from each vertex
+    /// If the vertex is on boundary, the starting edge must be on boundary too
     std::vector<std::vector<int>> ordered_half_edge_from_vertex_;
 
 protected:
-    int NextNextTwinHalfEdgeIndex(int init_half_edge_index) const;
+    /// Returns the next half edge from starting vertex of the input half edge,
+    /// in a counterclock wise manner. Returns -1 if when hitting a boundary.
+    /// This is done by traversing to the next, next and twin half edge.
+    int NextHalfEdgeFromVertex(int init_half_edge_index) const;
     int NextHalfEdgeOnBoundary(int curr_half_edge_index) const;
 };
 
