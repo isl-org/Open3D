@@ -201,7 +201,7 @@ void assert_ordreded_edges(
     }
     std::vector<std::vector<int>> actual_half_edge_vertices;
     for (int half_edge_index : half_edge_indices) {
-        const geometry::HalfEdge& he = mesh.half_edges_[half_edge_index];
+        const auto& he = mesh.half_edges_[half_edge_index];
         actual_half_edge_vertices.push_back(std::vector<int>(
                 {he.vertex_indices_[0], he.vertex_indices_[1]}));
     }

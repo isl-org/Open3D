@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <iostream>
-
 #include "Open3D/Geometry/HalfEdgeTriangleMesh.h"
 #include "Open3D/Utility/Helper.h"
 #include "Open3D/Utility/Console.h"
@@ -33,10 +31,10 @@
 namespace open3d {
 namespace geometry {
 
-HalfEdge::HalfEdge(const Eigen::Vector2i& vertex_indices,
-                   int triangle_index,
-                   int next,
-                   int twin)
+HalfEdgeTriangleMesh::HalfEdge::HalfEdge(const Eigen::Vector2i& vertex_indices,
+                                         int triangle_index,
+                                         int next,
+                                         int twin)
     : vertex_indices_(vertex_indices),
       triangle_index_(triangle_index),
       next_(next),

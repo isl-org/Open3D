@@ -35,26 +35,27 @@
 namespace open3d {
 namespace geometry {
 
-class HalfEdge {
-public:
-    HalfEdge(const Eigen::Vector2i& vertex_indices,
-             int triangle_index,
-             int next,
-             int twin);
-    bool IsBoundary() const { return twin_ == -1; }
-
-public:
-    // Index of the next HalfEdge
-    int next_ = -1;
-    // Index of the twin HalfEdge
-    int twin_ = -1;
-    // Index of the ordered vertices forming this half edge
-    Eigen::Vector2i vertex_indices_ = Eigen::Vector2i(-1, -1);
-    // Index of the triangle containing this half edge
-    int triangle_index_ = -1;
-};
-
 class HalfEdgeTriangleMesh : public TriangleMesh {
+public:
+    class HalfEdge {
+    public:
+        HalfEdge(const Eigen::Vector2i& vertex_indices,
+                 int triangle_index,
+                 int next,
+                 int twin);
+        bool IsBoundary() const { return twin_ == -1; }
+
+    public:
+        // Index of the next HalfEdge
+        int next_ = -1;
+        // Index of the twin HalfEdge
+        int twin_ = -1;
+        // Index of the ordered vertices forming this half edge
+        Eigen::Vector2i vertex_indices_ = Eigen::Vector2i(-1, -1);
+        // Index of the triangle containing this half edge
+        int triangle_index_ = -1;
+    };
+
 public:
     HalfEdgeTriangleMesh()
         : TriangleMesh(Geometry::GeometryType::HalfEdgeTriangleMesh){};
