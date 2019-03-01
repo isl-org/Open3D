@@ -218,14 +218,14 @@ TEST(HalfEdgeTriangleMesh, Constructor_TwoTriangles) {
 
 TEST(HalfEdgeTriangleMesh, Constructor_TwoTrianglesFlipped) {
     geometry::TriangleMesh mesh = get_mesh_two_triangles_flipped();
-    auto he_mesh = geometry::CreateHalfEdgeMeshFromMesh(mesh);
-    EXPECT_TRUE(he_mesh->IsEmpty());  // Non-manifold
+    ASSERT_THROW(geometry::CreateHalfEdgeMeshFromMesh(mesh),
+                 std::runtime_error);  // Non-manifold
 }
 
 TEST(HalfEdgeTriangleMesh, Constructo_rTwoTrianglesInvalidVertex) {
     geometry::TriangleMesh mesh = get_mesh_two_triangles_invalid_vertex();
-    auto he_mesh = geometry::CreateHalfEdgeMeshFromMesh(mesh);
-    EXPECT_TRUE(he_mesh->IsEmpty());  // Non-manifold
+    ASSERT_THROW(geometry::CreateHalfEdgeMeshFromMesh(mesh),
+                 std::runtime_error);  // Non-manifold
 }
 
 TEST(HalfEdgeTriangleMesh, Constructor_Hexagon) {
