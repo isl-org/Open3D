@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
         PrintOpen3DVersion();
         // clang-format off
         utility::PrintInfo("Usage:\n");
-        utility::PrintInfo("    > geometry::Image [image filename] [depth filename]\n");
+        utility::PrintInfo("    > Image [image filename] [depth filename]\n");
         utility::PrintInfo("    The program will :\n");
         utility::PrintInfo("    1) Read 8bit RGB and 16bit depth image\n");
         utility::PrintInfo("    2) Convert RGB image to single channel float image\n");
