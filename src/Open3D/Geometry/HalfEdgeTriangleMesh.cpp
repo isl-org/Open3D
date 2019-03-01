@@ -46,28 +46,6 @@ void HalfEdgeTriangleMesh::Clear() {
     ordered_half_edge_from_vertex_.clear();
 }
 
-HalfEdgeTriangleMesh::HalfEdgeTriangleMesh(const TriangleMesh& triangle_mesh) {
-    // Copy
-    vertices_ = triangle_mesh.vertices_;
-    vertex_normals_ = triangle_mesh.vertex_normals_;
-    vertex_colors_ = triangle_mesh.vertex_colors_;
-    triangles_ = triangle_mesh.triangles_;
-    triangle_normals_ = triangle_mesh.triangle_normals_;
-    adjacency_list_ = triangle_mesh.adjacency_list_;
-
-    // Purge to remove duplications
-    Purge();
-
-    // If the original mesh is not a manifold, we set HalfEdgeTriangleMesh to
-    // be empty. Caller to this constructor is responsible to checking
-    // HalfEdgeTriangleMesh::IsEmpty().
-    if (!ComputeHalfEdges()) {
-        utility::PrintError(
-                "Converting mesh to half-edge mesh filed, not manifold\n");
-        Clear();
-    }
-}
-
 bool HalfEdgeTriangleMesh::ComputeHalfEdges() {
     // Clean up half-edge related data structures
     half_edges_.clear();
@@ -244,6 +222,31 @@ int HalfEdgeTriangleMesh::NextHalfEdgeOnBoundary(
         return -1;
     }
     return next_half_edge_index;
+}
+
+std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
+        const TriangleMesh& mesh) {
+    auto half_edge_mesh = std::make_shared<HalfEdgeTriangleMesh>();
+
+    // Copy
+    half_edge_mesh->vertices_ = mesh.vertices_;
+    half_edge_mesh->vertex_normals_ = mesh.vertex_normals_;
+    half_edge_mesh->vertex_colors_ = mesh.vertex_colors_;
+    half_edge_mesh->triangles_ = mesh.triangles_;
+    half_edge_mesh->triangle_normals_ = mesh.triangle_normals_;
+    half_edge_mesh->adjacency_list_ = mesh.adjacency_list_;
+
+    // Purge to remove duplications
+    half_edge_mesh->Purge();
+
+    // If the original mesh is not a manifold, we set HalfEdgeTriangleMesh to
+    // be empty. Caller to this constructor is responsible to checking
+    // HalfEdgeTriangleMesh::IsEmpty().
+    if (!half_edge_mesh->ComputeHalfEdges()) {
+        throw std::runtime_error(
+                "Converting mesh to half-edge mesh filed, not manifold");
+    }
+    return half_edge_mesh;
 }
 
 }  // namespace geometry

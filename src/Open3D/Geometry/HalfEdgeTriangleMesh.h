@@ -60,9 +60,6 @@ public:
     HalfEdgeTriangleMesh()
         : TriangleMesh(Geometry::GeometryType::HalfEdgeTriangleMesh){};
 
-    /// Copy constructocr to convert TriangleMesh to HalfEdgeTriangleMesh
-    HalfEdgeTriangleMesh(const TriangleMesh& triangle_mesh);
-
     /// Compute and update half edges, half edge can only be computed if the
     /// mesh is a manifold. Returns true if half edges are computed.
     bool ComputeHalfEdges();
@@ -87,6 +84,9 @@ protected:
     int NextNextTwinHalfEdgeIndex(int init_half_edge_index) const;
     int NextHalfEdgeOnBoundary(int curr_half_edge_index) const;
 };
+
+std::shared_ptr<HalfEdgeTriangleMesh> CreateHalfEdgeMeshFromMesh(
+        const TriangleMesh& mesh);
 
 }  // namespace geometry
 }  // namespace open3d
