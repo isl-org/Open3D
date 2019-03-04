@@ -26,8 +26,6 @@
 
 #include <Open3D/Camera/PinholeCameraIntrinsic.h>
 #include <Open3D/Camera/PinholeCameraTrajectory.h>
-#include <Open3D/IO/ClassIO/IJsonConvertibleIO.h>
-#include <Open3D/IO/ClassIO/PinholeCameraTrajectoryIO.h>
 
 #include "Python/camera/camera.h"
 
@@ -118,56 +116,7 @@ void pybind_camera_classes(py::module &m) {
             });
 }
 
-void pybind_camera_methods(py::module &m) {
-    m.def("read_pinhole_camera_intrinsic",
-          [](const std::string &filename) {
-              camera::PinholeCameraIntrinsic intrinsic;
-              io::ReadIJsonConvertible(filename, intrinsic);
-              return intrinsic;
-          },
-          "Function to read camera::PinholeCameraIntrinsic from file",
-          "filename"_a);
-    m.def("write_pinhole_camera_intrinsic",
-          [](const std::string &filename,
-             const camera::PinholeCameraIntrinsic &intrinsic) {
-              return io::WriteIJsonConvertible(filename, intrinsic);
-          },
-          "Function to write camera::PinholeCameraIntrinsic to file",
-          "filename"_a, "intrinsic"_a);
-    m.def("read_pinhole_camera_parameters",
-          [](const std::string &filename) {
-              camera::PinholeCameraParameters parameters;
-              io::ReadIJsonConvertible(filename, parameters);
-              return parameters;
-          },
-          "Function to read camera::PinholeCameraParameters from file",
-          "filename"_a);
-    m.def("write_pinhole_camera_parameters",
-          [](const std::string &filename,
-             const camera::PinholeCameraParameters &parameters) {
-              return io::WriteIJsonConvertible(filename, parameters);
-          },
-          "Function to write camera::PinholeCameraParameters to file",
-          "filename"_a, "parameters"_a);
-    m.def("read_pinhole_camera_trajectory",
-          [](const std::string &filename) {
-              camera::PinholeCameraTrajectory trajectory;
-              io::ReadPinholeCameraTrajectory(filename, trajectory);
-              return trajectory;
-          },
-          "Function to read camera::PinholeCameraTrajectory from file",
-          "filename"_a);
-    m.def("write_pinhole_camera_trajectory",
-          [](const std::string &filename,
-             const camera::PinholeCameraTrajectory &trajectory) {
-              return io::WritePinholeCameraTrajectory(filename, trajectory);
-          },
-          "Function to write camera::PinholeCameraTrajectory to file",
-          "filename"_a, "trajectory"_a);
-}
-
 void pybind_camera(py::module &m) {
     py::module m_submodule = m.def_submodule("camera");
     pybind_camera_classes(m_submodule);
-    pybind_camera_methods(m_submodule);
 }

@@ -27,9 +27,8 @@
 #include "Python/geometry/geometry_trampoline.h"
 #include "Python/geometry/geometry.h"
 
-#include <Open3D/Geometry/Image.h>
 #include <Open3D/Geometry/RGBDImage.h>
-#include <Open3D/IO/ClassIO/ImageIO.h>
+
 using namespace open3d;
 
 void pybind_image(py::module &m) {
@@ -152,18 +151,6 @@ void pybind_image(py::module &m) {
 }
 
 void pybind_image_methods(py::module &m) {
-    m.def("read_image",
-          [](const std::string &filename) {
-              geometry::Image image;
-              io::ReadImage(filename, image);
-              return image;
-          },
-          "Function to read geometry::Image from file", "filename"_a);
-    m.def("write_image",
-          [](const std::string &filename, const geometry::Image &image,
-             int quality) { return io::WriteImage(filename, image, quality); },
-          "Function to write geometry::Image to file", "filename"_a, "image"_a,
-          "quality"_a = 90);
     py::enum_<geometry::Image::FilterType>(m, "ImageFilterType")
             .value("Gaussian3", geometry::Image::FilterType::Gaussian3)
             .value("Gaussian5", geometry::Image::FilterType::Gaussian5)

@@ -60,20 +60,4 @@ void pybind_voxelgrid_methods(py::module &m) {
           &geometry::CreateSurfaceVoxelGridFromPointCloud,
           "Function to make voxels from scanned point cloud", "point_cloud"_a,
           "voxel_size"_a);
-    m.def("read_voxel_grid",
-          [](const std::string &filename, const std::string &format) {
-              geometry::VoxelGrid voxel_grid;
-              io::ReadVoxelGrid(filename, voxel_grid, format);
-              return voxel_grid;
-          },
-          "Function to read geometry::VoxelGrid from file", "filename"_a,
-          "format"_a = "auto");
-    m.def("write_voxel_grid",
-          [](const std::string &filename, const geometry::VoxelGrid &voxel_grid,
-             bool write_ascii, bool compressed) {
-              return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
-                                        compressed);
-          },
-          "Function to write geometry::VoxelGrid to file", "filename"_a,
-          "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false);
 }
