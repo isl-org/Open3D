@@ -39,6 +39,7 @@ class HalfEdgeTriangleMesh : public TriangleMesh {
 public:
     class HalfEdge {
     public:
+        HalfEdge() {}
         HalfEdge(const Eigen::Vector2i &vertex_indices,
                  int triangle_index,
                  int next,
@@ -67,9 +68,16 @@ public:
     /// True if half-edges have already been computed
     bool HasHalfEdges() const;
 
-    /// Query manifold boundary
+    /// Query manifold boundary half edges
     /// If query vertex is not on boundary, empty vector will be returned
     std::vector<int> BoundaryHalfEdgesFromVertex(int vertex_index) const;
+
+    /// Query manifold boundary vertices from a starting vertex
+    /// If query vertex is not on boundary, empty vector will be returned
+    std::vector<int> BoundaryVerticesFromVertex(int vertex_index) const;
+
+    /// Returns a vector of boundaries. A boundary is a vector of vertices.
+    std::vector<std::vector<int>> GetBoundaries() const;
 
     /// Clear all data in HalfEdgeTriangleMesh
     void Clear() override;

@@ -195,6 +195,42 @@ std::vector<int> HalfEdgeTriangleMesh::BoundaryHalfEdgesFromVertex(
     return boundary_half_edge_indices;
 }
 
+std::vector<int> HalfEdgeTriangleMesh::BoundaryVerticesFromVertex(
+        int vertex_index) const {
+    std::vector<int> boundary_half_edges =
+            BoundaryHalfEdgesFromVertex(vertex_index);
+    std::vector<int> boundary_vertices;
+    for (const int& half_edge_idx : boundary_half_edges) {
+        boundary_vertices.push_back(
+                half_edges_[half_edge_idx].vertex_indices_(0));
+    }
+    return boundary_vertices;
+}
+
+std::vector<std::vector<int>> HalfEdgeTriangleMesh::GetBoundaries() const {
+    std::vector<std::vector<int>> boundaries;
+    std::unordered_set<int> visited;
+
+    for (int vertex_ind = 0; vertex_ind < int(vertices_.size()); ++vertex_ind) {
+        if (visited.find(vertex_ind) != visited.end()) {
+            continue;
+        }
+        // It is guaranteed that if a vertex in on boundary, the starting
+        // edge must be on boundary. After purging, it's also guaranteed that
+        // a vertex always have out-going half-edges after purging.
+        int first_half_edge_ind = ordered_half_edge_from_vertex_[vertex_ind][0];
+        if (half_edges_[first_half_edge_ind].IsBoundary()) {
+            std::vector<int> boundary = BoundaryVerticesFromVertex(vertex_ind);
+            boundaries.push_back(boundary);
+            for (int boundary_vertex : boundary) {
+                visited.insert(boundary_vertex);
+            }
+        }
+        visited.insert(vertex_ind);
+    }
+    return boundaries;
+}
+
 int HalfEdgeTriangleMesh::NextHalfEdgeOnBoundary(
         int curr_half_edge_index) const {
     if (!HasHalfEdges() || curr_half_edge_index >= half_edges_.size() ||

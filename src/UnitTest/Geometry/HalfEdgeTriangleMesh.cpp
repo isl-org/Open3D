@@ -53,6 +53,27 @@ geometry::TriangleMesh get_mesh_two_triangles() {
     return mesh;
 }
 
+// [0: (-1, 2)]__________[1: (1, 2)]     [4: (9, 2)]__________[5: (11, 2)]
+//             \        /\                           \        /\
+//              \  (0) /  \                           \  (0) /  \
+//               \    / (1)\                           \    / (1)\
+//                \  /      \                           \  /      \
+//      [2: (0, 0)]\/________\[3: (2, 0)]    [6: (10, 0)]\/________\[7: (12, 0)]
+geometry::TriangleMesh get_mesh_four_triangles_disconnect() {
+    std::vector<Eigen::Vector3d> vertices{
+            Eigen::Vector3d(-1, 2, 0), Eigen::Vector3d(1, 2, 0),
+            Eigen::Vector3d(0, 0, 0),  Eigen::Vector3d(2, 0, 0),
+            Eigen::Vector3d(9, 2, 0),  Eigen::Vector3d(11, 2, 0),
+            Eigen::Vector3d(10, 0, 0), Eigen::Vector3d(12, 0, 0)};
+    std::vector<Eigen::Vector3i> triangles{
+            Eigen::Vector3i(0, 2, 1), Eigen::Vector3i(1, 2, 3),
+            Eigen::Vector3i(4, 6, 5), Eigen::Vector3i(5, 6, 7)};
+    geometry::TriangleMesh mesh;
+    mesh.vertices_ = vertices;
+    mesh.triangles_ = triangles;
+    return mesh;
+}
+
 // [0: (-1, 2)]__________[1: (1, 2)]
 //             \        /\
 //              \  (0) /  \
@@ -190,6 +211,27 @@ void assert_ordreded_neighbor(
         }
     }
     EXPECT_EQ(expected_ordered_neighbors, actual_ordered_neighbors);
+}
+
+void assert_vector_eq(const std::vector<int>& actual,
+                      const std::vector<int>& expect,
+                      bool allow_rotation = false) {
+    std::vector<int> actual_copied = actual;
+    if (allow_rotation) {
+        // E.g. Actual 0, 1, 2, 3, 4
+        //      Expect 2, 3, 4, 0, 1
+        // Then left-rotate actual by 2
+        auto find_it = std::find(actual_copied.begin(), actual_copied.end(),
+                                 expect[0]);
+        if (find_it == actual_copied.end()) {
+            FAIL();
+        } else {
+            size_t offset = find_it - actual_copied.begin();
+            std::rotate(actual_copied.begin(), actual_copied.begin() + offset,
+                        actual_copied.end());
+        }
+    }
+    EXPECT_EQ(actual_copied, expect);
 }
 
 void assert_ordreded_edges(
@@ -342,4 +384,73 @@ TEST(HalfEdgeTriangleMesh, BoundaryHalfEdgesFromVertex_PartialHexagon) {
     assert_ordreded_edges(
             mesh, mesh->BoundaryHalfEdgesFromVertex(6),
             {{6, 3}, {3, 4}, {4, 1}, {1, 0}, {0, 2}, {2, 5}, {5, 6}});
+}
+
+TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_TwoTriangles) {
+    auto mesh = geometry::CreateHalfEdgeMeshFromMesh(get_mesh_two_triangles());
+    EXPECT_FALSE(mesh->IsEmpty());
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(0), {0, 2, 3, 1});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(1), {1, 0, 2, 3});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(2), {2, 3, 1, 0});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(3), {3, 1, 0, 2});
+}
+
+TEST(HalfEdgeTriangleMesh, BoundarVerticesFromVertex_Hexagon) {
+    auto mesh = geometry::CreateHalfEdgeMeshFromMesh(get_mesh_hexagon());
+    EXPECT_FALSE(mesh->IsEmpty());
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(0), {0, 2, 5, 6, 4, 1});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(1), {1, 0, 2, 5, 6, 4});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(2), {2, 5, 6, 4, 1, 0});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(3),
+             {});  // Vertex 3 is not a boundary, thus empty
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(4), {4, 1, 0, 2, 5, 6});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(5), {5, 6, 4, 1, 0, 2});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(6), {6, 4, 1, 0, 2, 5});
+}
+
+TEST(HalfEdgeTriangleMesh, BoundaryVerticesFromVertex_PartialHexagon) {
+    auto mesh =
+            geometry::CreateHalfEdgeMeshFromMesh(get_mesh_partial_hexagon());
+    EXPECT_FALSE(mesh->IsEmpty());
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(0), {0, 2, 5, 6, 3, 4, 1});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(1), {1, 0, 2, 5, 6, 3, 4});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(2), {2, 5, 6, 3, 4, 1, 0});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(3), {3, 4, 1, 0, 2, 5, 6});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(4), {4, 1, 0, 2, 5, 6, 3});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(5), {5, 6, 3, 4, 1, 0, 2});
+    ExpectEQ(mesh->BoundaryVerticesFromVertex(6), {6, 3, 4, 1, 0, 2, 5});
+}
+
+TEST(HalfEdgeTriangleMesh, GetBoundaries_TwoTriangles) {
+    auto mesh = geometry::CreateHalfEdgeMeshFromMesh(get_mesh_two_triangles());
+    EXPECT_FALSE(mesh->IsEmpty());
+    EXPECT_EQ(mesh->GetBoundaries().size(), 1);
+    assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 3, 1}, true);
+    assert_vector_eq(mesh->GetBoundaries()[0], {2, 3, 1, 0}, true);  // rotate
+}
+
+TEST(HalfEdgeTriangleMesh, GetBoundaries_Hexagon) {
+    auto mesh = geometry::CreateHalfEdgeMeshFromMesh(get_mesh_hexagon());
+    EXPECT_FALSE(mesh->IsEmpty());
+    EXPECT_EQ(mesh->GetBoundaries().size(), 1);
+    assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 5, 6, 4, 1}, true);
+    assert_vector_eq(mesh->GetBoundaries()[0], {2, 5, 6, 4, 1, 0}, true);
+}
+
+TEST(HalfEdgeTriangleMesh, GetBoundaries_PartialHexagon) {
+    auto mesh =
+            geometry::CreateHalfEdgeMeshFromMesh(get_mesh_partial_hexagon());
+    EXPECT_FALSE(mesh->IsEmpty());
+    EXPECT_EQ(mesh->GetBoundaries().size(), 1);
+    assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 5, 6, 3, 4, 1}, true);
+    assert_vector_eq(mesh->GetBoundaries()[0], {2, 5, 6, 3, 4, 1, 0}, true);
+}
+
+TEST(HalfEdgeTriangleMesh, GetBoundaries_FourTrianglesDisconnect) {
+    auto mesh = geometry::CreateHalfEdgeMeshFromMesh(
+            get_mesh_four_triangles_disconnect());
+    EXPECT_FALSE(mesh->IsEmpty());
+    EXPECT_EQ(mesh->GetBoundaries().size(), 2);
+    assert_vector_eq(mesh->GetBoundaries()[0], {0, 2, 3, 1}, true);
+    assert_vector_eq(mesh->GetBoundaries()[1], {4, 6, 7, 5}, true);
 }

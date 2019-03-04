@@ -105,7 +105,11 @@ void pybind_trianglemesh_methods(py::module &m) {
           },
           "Function to write geometry::TriangleMesh to file", "filename"_a,
           "mesh"_a, "write_ascii"_a = false, "compressed"_a = false);
-    m.def("select_down_sample", &geometry::SelectDownSample,
+    m.def("select_down_sample",
+          (std::shared_ptr<geometry::TriangleMesh>(*)(
+                  const geometry::TriangleMesh &,
+                  const std::vector<size_t> &)) &
+                  geometry::SelectDownSample,
           "Function to select mesh from input triangle mesh into output "
           "triangle mesh",
           "input"_a, "indices"_a);

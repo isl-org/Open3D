@@ -46,6 +46,8 @@ void pybind_geometry_classes(py::module &m) {
             .value("LineSet", geometry::Geometry::GeometryType::LineSet)
             .value("TriangleMesh",
                    geometry::Geometry::GeometryType::TriangleMesh)
+            .value("HalfEdgeTriangleMesh",
+                   geometry::Geometry::GeometryType::HalfEdgeTriangleMesh)
             .value("Image", geometry::Geometry::GeometryType::Image)
             .export_values();
 
@@ -70,6 +72,7 @@ void pybind_geometry(py::module &m) {
     pybind_voxelgrid(m_submodule);
     pybind_lineset(m_submodule);
     pybind_trianglemesh(m_submodule);
+    pybind_halfedgetrianglemesh(m_submodule);
     pybind_image(m_submodule);
     pybind_kdtreeflann(m_submodule);
     pybind_pointcloud_methods(m_submodule);

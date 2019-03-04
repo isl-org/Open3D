@@ -99,7 +99,11 @@ void pybind_pointcloud_methods(py::module &m) {
           "    y = (v - cy) * z / fy",
           "image"_a, "intrinsic"_a,
           "extrinsic"_a = Eigen::Matrix4d::Identity());
-    m.def("select_down_sample", &geometry::SelectDownSample,
+    m.def("select_down_sample",
+          (std::shared_ptr<geometry::PointCloud>(*)(
+                  const geometry::PointCloud &, const std::vector<size_t> &,
+                  bool)) &
+                  geometry::SelectDownSample,
           "Function to select points from input pointcloud into output "
           "pointcloud",
           "input"_a, "indices"_a, "invert"_a = false);
