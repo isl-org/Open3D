@@ -167,7 +167,9 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 bool TriangleMeshRenderer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry_ptr->GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -214,7 +216,9 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
 bool CoordinateFrameRenderer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry_ptr->GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;

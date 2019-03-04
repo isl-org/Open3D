@@ -171,7 +171,9 @@ bool NormalShaderForTriangleMesh::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -199,7 +201,9 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
         std::vector<Eigen::Vector3f> &points,
         std::vector<Eigen::Vector3f> &normals) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }

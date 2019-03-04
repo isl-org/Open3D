@@ -78,7 +78,9 @@ bool VisualizerWithEditing::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-               geometry::Geometry::GeometryType::TriangleMesh) {
+                       geometry::Geometry::GeometryType::TriangleMesh ||
+               geometry_ptr->GetGeometryType() ==
+                       geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         auto ptr = std::make_shared<geometry::TriangleMesh>();
         *ptr = (const geometry::TriangleMesh &)*original_geometry_ptr_;
         editing_geometry_ptr_ = ptr;
@@ -659,7 +661,9 @@ void VisualizerWithEditing::SaveCroppingResult(
         io::WritePointCloud(ply_filename,
                             (const geometry::PointCloud &)(*geometry_ptrs_[0]));
     else if (geometry_ptrs_[0]->GetGeometryType() ==
-             geometry::Geometry::GeometryType::TriangleMesh)
+                     geometry::Geometry::GeometryType::TriangleMesh ||
+             geometry_ptrs_[0]->GetGeometryType() ==
+                     geometry::Geometry::GeometryType::HalfEdgeTriangleMesh)
         io::WriteTriangleMesh(
                 ply_filename,
                 (const geometry::TriangleMesh &)(*geometry_ptrs_[0]));

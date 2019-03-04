@@ -268,7 +268,9 @@ bool PhongShaderForTriangleMesh::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -298,7 +300,9 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         std::vector<Eigen::Vector3f> &normals,
         std::vector<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
