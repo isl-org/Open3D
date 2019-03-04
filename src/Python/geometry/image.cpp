@@ -27,6 +27,7 @@
 #include "Python/geometry/geometry_trampoline.h"
 #include "Python/geometry/geometry.h"
 
+#include <Open3D/Geometry/Image.h>
 #include <Open3D/Geometry/RGBDImage.h>
 
 using namespace open3d;
