@@ -44,36 +44,6 @@ void pybind_io(py::module &m) {
     // This submodule is currently blank
     py::module m_submodule = m.def_submodule("io");
 
-    // open3d::registration
-    m.def("read_feature",
-          [](const std::string &filename) {
-              registration::Feature feature;
-              io::ReadFeature(filename, feature);
-              return feature;
-          },
-          "Function to read registration::Feature from file", "filename"_a);
-    m.def("write_feature",
-          [](const std::string &filename,
-             const registration::Feature &feature) {
-              return io::WriteFeature(filename, feature);
-          },
-          "Function to write registration::Feature to file", "filename"_a,
-          "feature"_a);
-    m.def("read_pose_graph",
-          [](const std::string &filename) {
-              registration::PoseGraph pose_graph;
-              io::ReadPoseGraph(filename, pose_graph);
-              return pose_graph;
-          },
-          "Function to read registration::PoseGraph from file", "filename"_a);
-    m.def("write_pose_graph",
-          [](const std::string &filename,
-             const registration::PoseGraph pose_graph) {
-              io::WritePoseGraph(filename, pose_graph);
-          },
-          "Function to write registration::PoseGraph to file", "filename"_a,
-          "pose_graph"_a);
-
     // open3d::geometry::Image
     m.def("read_image",
           [](const std::string &filename) {
@@ -206,4 +176,34 @@ void pybind_io(py::module &m) {
           },
           "Function to write camera::PinholeCameraTrajectory to file",
           "filename"_a, "trajectory"_a);
+
+    // open3d::registration
+    m.def("read_feature",
+          [](const std::string &filename) {
+              registration::Feature feature;
+              io::ReadFeature(filename, feature);
+              return feature;
+          },
+          "Function to read registration::Feature from file", "filename"_a);
+    m.def("write_feature",
+          [](const std::string &filename,
+             const registration::Feature &feature) {
+              return io::WriteFeature(filename, feature);
+          },
+          "Function to write registration::Feature to file", "filename"_a,
+          "feature"_a);
+    m.def("read_pose_graph",
+          [](const std::string &filename) {
+              registration::PoseGraph pose_graph;
+              io::ReadPoseGraph(filename, pose_graph);
+              return pose_graph;
+          },
+          "Function to read registration::PoseGraph from file", "filename"_a);
+    m.def("write_pose_graph",
+          [](const std::string &filename,
+             const registration::PoseGraph pose_graph) {
+              io::WritePoseGraph(filename, pose_graph);
+          },
+          "Function to write registration::PoseGraph to file", "filename"_a,
+          "pose_graph"_a);
 }
