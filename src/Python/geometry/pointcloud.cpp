@@ -31,7 +31,7 @@
 #include <Open3D/Geometry/Image.h>
 #include <Open3D/Geometry/RGBDImage.h>
 #include <Open3D/Camera/PinholeCameraIntrinsic.h>
-#include <Open3D/IO/ClassIO/PointCloudIO.h>
+
 using namespace open3d;
 
 void pybind_pointcloud(py::module &m) {
@@ -60,23 +60,6 @@ void pybind_pointcloud(py::module &m) {
 }
 
 void pybind_pointcloud_methods(py::module &m) {
-    m.def("read_point_cloud",
-          [](const std::string &filename, const std::string &format) {
-              geometry::PointCloud pcd;
-              io::ReadPointCloud(filename, pcd, format);
-              return pcd;
-          },
-          "Function to read geometry::PointCloud from file", "filename"_a,
-          "format"_a = "auto");
-    m.def("write_point_cloud",
-          [](const std::string &filename,
-             const geometry::PointCloud &pointcloud, bool write_ascii,
-             bool compressed) {
-              return io::WritePointCloud(filename, pointcloud, write_ascii,
-                                         compressed);
-          },
-          "Function to write geometry::PointCloud to file", "filename"_a,
-          "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false);
     m.def("create_point_cloud_from_depth_image",
           &geometry::CreatePointCloudFromDepthImage,
           "Factory function to create a pointcloud from a depth image and a "

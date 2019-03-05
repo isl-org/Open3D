@@ -30,7 +30,6 @@
 #include <Open3D/Registration/GlobalOptimization.h>
 #include <Open3D/Registration/GlobalOptimizationMethod.h>
 #include <Open3D/Registration/GlobalOptimizationConvergenceCriteria.h>
-#include <Open3D/IO/ClassIO/PoseGraphIO.h>
 
 using namespace open3d;
 
@@ -284,20 +283,6 @@ void pybind_global_optimization(py::module &m) {
 }
 
 void pybind_global_optimization_methods(py::module &m) {
-    m.def("read_pose_graph",
-          [](const std::string &filename) {
-              registration::PoseGraph pose_graph;
-              io::ReadPoseGraph(filename, pose_graph);
-              return pose_graph;
-          },
-          "Function to read registration::PoseGraph from file", "filename"_a);
-    m.def("write_pose_graph",
-          [](const std::string &filename,
-             const registration::PoseGraph pose_graph) {
-              io::WritePoseGraph(filename, pose_graph);
-          },
-          "Function to write registration::PoseGraph to file", "filename"_a,
-          "pose_graph"_a);
     m.def("global_optimization",
           [](registration::PoseGraph &pose_graph,
              const registration::GlobalOptimizationMethod &method,
