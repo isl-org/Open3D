@@ -28,7 +28,7 @@
 #include "Python/geometry/geometry.h"
 
 #include <Open3D/Geometry/TriangleMesh.h>
-#include <Open3D/IO/ClassIO/TriangleMeshIO.h>
+
 using namespace open3d;
 
 void pybind_trianglemesh(py::module &m) {
@@ -90,21 +90,6 @@ void pybind_trianglemesh(py::module &m) {
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
-    m.def("read_triangle_mesh",
-          [](const std::string &filename) {
-              geometry::TriangleMesh mesh;
-              io::ReadTriangleMesh(filename, mesh);
-              return mesh;
-          },
-          "Function to read geometry::TriangleMesh from file", "filename"_a);
-    m.def("write_triangle_mesh",
-          [](const std::string &filename, const geometry::TriangleMesh &mesh,
-             bool write_ascii, bool compressed) {
-              return io::WriteTriangleMesh(filename, mesh, write_ascii,
-                                           compressed);
-          },
-          "Function to write geometry::TriangleMesh to file", "filename"_a,
-          "mesh"_a, "write_ascii"_a = false, "compressed"_a = false);
     m.def("select_down_sample", &geometry::SelectDownSample,
           "Function to select mesh from input triangle mesh into output "
           "triangle mesh",
