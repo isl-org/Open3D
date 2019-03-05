@@ -124,7 +124,7 @@ void pybind_pointcloud_methods(py::module &m) {
           "camera_location"_a = Eigen::Vector3d(0.0, 0.0, 0.0));
     m.def("compute_point_cloud_to_point_cloud_distance",
           &geometry::ComputePointCloudToPointCloudDistance,
-          "Function to compute the ponit to point distances between point "
+          "Function to compute the point to point distances between point "
           "clouds",
           "source"_a, "target"_a);
     m.def("compute_point_cloud_mean_and_covariance",

@@ -187,7 +187,7 @@ bool OrientNormalsTowardsCameraLocation(
         PointCloud &cloud,
         const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
 
-/// Function to compute the ponit to point distances between point clouds
+/// Function to compute the point to point distances between point clouds
 /// \param source is the first point cloud.
 /// \param target is the second point cloud.
 /// \return the output distance. It has the same size as the number
