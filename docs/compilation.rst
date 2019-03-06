@@ -51,7 +51,7 @@ when running into Python binding issues.
 2.1 Select the right Python executable
 ::::::::::::::::::::::::::::::::::::::
 
-All we need to do is this step is to ensure that the default Python in the
+All we need to do in this step is to ensure that the default Python in the
 current ``PATH`` is the desired one. Specifically,
 
 - For pip virtualenv, activate it by ``source path_to_my_env/bin/activate``.

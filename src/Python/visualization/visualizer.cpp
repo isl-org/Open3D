@@ -140,7 +140,7 @@ void pybind_visualizer(py::module &m) {
                  })
             .def("get_picked_points",
                  &visualization::VisualizerWithEditing::GetPickedPoints,
-                 "Function to get a picked points");
+                 "Function to get picked points");
 }
 
 void pybind_visualizer_method(py::module &m) {}
