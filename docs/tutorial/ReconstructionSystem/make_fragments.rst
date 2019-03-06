@@ -8,7 +8,7 @@ The first step of the scene reconstruction system is to create fragments from sh
 Input arguments
 ``````````````````````````````````````
 
-The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In [config], the optional argument ``["path_intrinsic"]`` specifies path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
+The script runs with ``python run_system.py [config] --make``. In ``[config]``, ``["path_dataset"]`` should have subfolders *image* and *depth* to store the color images and depth images respectively. We assume the color images and the depth images are synchronized and registered. In ``[config]``, the optional argument ``["path_intrinsic"]`` specifies path to a json file that stores the camera intrinsic matrix (See :ref:`reading_camera_intrinsic` for details). If it is not given, the PrimeSense factory setting is used instead.
 
 .. _make_fragments_register_rgbd_image_pairs:
 

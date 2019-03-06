@@ -22,7 +22,7 @@ Preprocess point cloud
    :lines: 5,16-24
    :linenos:
 
-This function downsample point cloud to make a point cloud sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`voxel_downsampling`, :ref:`vertex_normal_estimation`, and :ref:`extract_geometric_feature` for more details.
+This function downsamples point cloud to make a point cloud sparser and regularly distributed. Normals and FPFH feature are precomputed. See :ref:`voxel_downsampling`, :ref:`vertex_normal_estimation`, and :ref:`extract_geometric_feature` for more details.
 
 
 Compute initial registration
