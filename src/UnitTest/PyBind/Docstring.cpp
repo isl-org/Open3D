@@ -30,6 +30,16 @@
 
 #include "TestUtility/UnitTest.h"
 
+// Splits
+// "create_mesh_arrow(cylinder_radius: float = 1.0) -> geometry.TriangleMesh"
+// to
+// ("create_mesh_arrow(cylinder_radius: float = 1.0)",
+//  "geometry.TriangleMesh")
+// std::pair<std::string, std::string> split_arrow(const std::string& docs) {
+//     std::size_t arrow_pos = docs.rfind(" -> ");
+//     std::string func_name_and_param = docs.substr(0, arrow_pos);
+// }
+
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
 std::pair<std::unordered_map<std::string, std::string>,
@@ -37,7 +47,17 @@ std::pair<std::unordered_map<std::string, std::string>,
 parse_pybind_function_doc(const std::string& pybind_docs) {
     std::unordered_map<std::string, std::string> map_parameter_type_docs;
     std::vector<std::string> ordered_parameters;
+
+    // Split by "->"
+
     return std::make_pair(map_parameter_type_docs, ordered_parameters);
 }
 
-TEST(parse_pybind_function_doc, test_docstring_parse) {}
+TEST(parse_pybind_function_doc, test_docstring_parse) {
+    std::string docs = R"(
+create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.open3d.geometry.TriangleMesh
+
+Factory function to create an arrow mesh
+)";
+    parse_pybind_function_doc(docs);
+}
