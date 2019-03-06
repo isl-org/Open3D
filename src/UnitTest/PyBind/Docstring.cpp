@@ -31,15 +31,33 @@
 
 #include "TestUtility/UnitTest.h"
 
+// Search and replace in string
+std::string str_replace(std::string s,
+                        const std::string& search,
+                        const std::string& replace) {
+    // https://stackoverflow.com/a/14679003/1255535
+    size_t pos = 0;
+    while ((pos = s.find(search, pos)) != std::string::npos) {
+        s.replace(pos, search.length(), replace);
+        pos += replace.length();
+    }
+    return s;
+}
+
+// Deduplicate namespace (optional)
+std::string namespace_dedup(const std::string& s) {
+    return str_replace(s, "open3d.open3d", "open3d");
+}
+
 // Similar to Python's str.strip()
-std::string str_strip(const std::string& str,
+std::string str_strip(const std::string& s,
                       const std::string& white_space = " \t\n") {
-    size_t begin_pos = str.find_first_not_of(white_space);
+    size_t begin_pos = s.find_first_not_of(white_space);
     if (begin_pos == std::string::npos) {
         return "";
     }
-    size_t end_pos = str.find_last_not_of(white_space);
-    return str.substr(begin_pos, end_pos - begin_pos + 1);
+    size_t end_pos = s.find_last_not_of(white_space);
+    return s.substr(begin_pos, end_pos - begin_pos + 1);
 }
 
 // Count the length of current word starting from start_pos
@@ -75,8 +93,8 @@ std::pair<std::string, std::string> split_arrow(const std::string& docs) {
         std::string func_name_and_params = docs.substr(0, arrow_pos);
         std::string return_type = docs.substr(
                 arrow_pos + 4, word_length(docs, arrow_pos + 4, "._"));
-        return std::make_pair(str_strip(func_name_and_params),
-                              str_strip(return_type));
+        return std::make_pair(namespace_dedup(str_strip(func_name_and_params)),
+                              namespace_dedup(str_strip(return_type)));
     } else {
         return std::make_pair(docs, "");
     }
