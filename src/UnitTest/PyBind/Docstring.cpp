@@ -31,6 +31,17 @@
 
 #include "TestUtility/UnitTest.h"
 
+// Similar to Python's str.strip()
+std::string str_strip(const std::string& str,
+                      const std::string& white_space = " \t\n") {
+    size_t begin_pos = str.find_first_not_of(white_space);
+    if (begin_pos == std::string::npos) {
+        return "";
+    }
+    size_t end_pos = str.find_last_not_of(white_space);
+    return str.substr(begin_pos, end_pos - begin_pos + 1);
+}
+
 // Count the length of current word starting from start_pos
 size_t word_length(const std::string& docs,
                    size_t start_pos,
@@ -60,10 +71,15 @@ size_t word_length(const std::string& docs,
 //  "geometry.TriangleMesh")
 std::pair<std::string, std::string> split_arrow(const std::string& docs) {
     std::size_t arrow_pos = docs.rfind(" -> ");
-    std::string func_name_and_params = docs.substr(0, arrow_pos);
-    std::string return_type =
-            docs.substr(arrow_pos + 4, word_length(docs, arrow_pos + 4, "._"));
-    return std::make_pair(func_name_and_params, return_type);
+    if (arrow_pos != std::string::npos) {
+        std::string func_name_and_params = docs.substr(0, arrow_pos);
+        std::string return_type = docs.substr(
+                arrow_pos + 4, word_length(docs, arrow_pos + 4, "._"));
+        return std::make_pair(str_strip(func_name_and_params),
+                              str_strip(return_type));
+    } else {
+        return std::make_pair(docs, "");
+    }
 }
 
 // Currently copied this function for testing
