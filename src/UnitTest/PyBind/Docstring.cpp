@@ -34,9 +34,14 @@
 // Count the length of current word starting from start_pos
 size_t word_length(const std::string& docs,
                    size_t start_pos,
-                   const std::unordered_set<char>& valid_chars = {'_'}) {
-    auto is_word_char = [&valid_chars](const char& c) {
-        return std::isalnum(c) || valid_chars.find(c) != valid_chars.end();
+                   const std::string& valid_chars = "_") {
+    std::unordered_set<char> valid_chars_set;
+    for (const char& c : valid_chars) {
+        valid_chars_set.insert(c);
+    }
+    auto is_word_char = [&valid_chars_set](const char& c) {
+        return std::isalnum(c) ||
+               valid_chars_set.find(c) != valid_chars_set.end();
     };
     size_t length = 0;
     for (size_t pos = start_pos; pos < docs.size(); ++pos) {
@@ -56,8 +61,8 @@ size_t word_length(const std::string& docs,
 std::pair<std::string, std::string> split_arrow(const std::string& docs) {
     std::size_t arrow_pos = docs.rfind(" -> ");
     std::string func_name_and_params = docs.substr(0, arrow_pos);
-    std::string return_type = docs.substr(
-            arrow_pos + 4, word_length(docs, arrow_pos + 4, {'_', '.'}));
+    std::string return_type =
+            docs.substr(arrow_pos + 4, word_length(docs, arrow_pos + 4, "._"));
     return std::make_pair(func_name_and_params, return_type);
 }
 
