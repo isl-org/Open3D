@@ -44,6 +44,7 @@ class FunctionDoc {
 public:
     std::string name_;
     std::vector<ArgumentDoc> argument_docs_;
+    ArgumentDoc return_doc_;
     std::string summary_;
     std::string body_;
 };

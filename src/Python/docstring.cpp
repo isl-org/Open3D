@@ -103,23 +103,30 @@ static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
     }
 }
 
+static void parse_doc_function_name(const std::string& pybind_doc,
+                                    FunctionDoc& function_doc) {}
+
+static void parse_doc_arguments(const std::string& pybind_doc,
+                                FunctionDoc& function_doc) {}
+
+static void parse_doc_result(const std::string& pybind_doc,
+                             FunctionDoc& function_doc) {}
+
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
-static std::pair<std::unordered_map<std::string, std::string>,
-                 std::vector<std::string>>
-parse_pybind_function_doc(const std::string& pybind_doc) {
-    std::unordered_map<std::string, std::string> map_parameter_type_docs;
-    std::vector<std::string> ordered_parameters;
+static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
+    FunctionDoc function_doc;
 
     // Split by "->"
-    std::string func_name_and_params;
+    std::string func_name_and_arguments;
     std::string return_type;
-    std::tie(func_name_and_params, return_type) = split_arrow(pybind_doc);
+    std::tie(func_name_and_arguments, return_type) = split_arrow(pybind_doc);
 
-    std::cout << "func_name_and_params " << func_name_and_params << std::endl;
-    std::cout << "return_type " << return_type << std::endl;
+    parse_doc_function_name(pybind_doc, function_doc);
+    parse_doc_arguments(pybind_doc, function_doc);
+    parse_doc_result(pybind_doc, function_doc);
 
-    return std::make_pair(map_parameter_type_docs, ordered_parameters);
+    return function_doc;
 }
 
 void function_doc_inject(
@@ -141,7 +148,7 @@ void function_doc_inject(
     // std::unordered_map<std::string, std::string> map_parameter_type_docs;
     // std::vector<std::string> ordered_parameters;
     // std::tie(map_parameter_type_docs, ordered_parameters) =
-    //         parse_pybind_function_doc(f->m_ml->ml_doc);
+    //         parse_doc_function(f->m_ml->ml_doc);
     f->m_ml->ml_doc = "read_feature(filenamelalala)";
 
     std::string doc = R"(
@@ -149,7 +156,7 @@ create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.o
 
 Factory function to create an arrow mesh
 )";
-    parse_pybind_function_doc(doc);
+    parse_doc_function(doc);
 }
 
 }  // namespace docstring
