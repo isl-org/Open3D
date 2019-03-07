@@ -124,9 +124,10 @@ protected:
 };
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings
-void FunctionDocInject(py::module& pybind_module,
-                       const std::string& function_name,
-                       const std::unordered_map<std::string, std::string>&
-                               map_parameter_docs = {});
+void FunctionDocInject(
+        py::module& pybind_module,
+        const std::string& function_name,
+        const std::unordered_map<std::string, std::string>& map_parameter_docs =
+                std::unordered_map<std::string, std::string>());
 }  // namespace docstring
 }  // namespace open3d
