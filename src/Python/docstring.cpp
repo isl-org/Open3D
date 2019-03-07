@@ -294,8 +294,12 @@ std::string FunctionDoc::to_string() const {
         rc << std::endl;
         rc << "Args:" << std::endl;
         for (const ArgumentDoc& argument_doc : argument_docs_) {
-            rc << indent << argument_doc.name_ << "(" << argument_doc.type_
-               << "): " << argument_doc.body_ << std::endl;
+            rc << indent << argument_doc.name_ << " (" << argument_doc.type_
+               << ")";
+            if (argument_doc.body_ != "") {
+                rc << ": " << argument_doc.body_;
+            }
+            rc << std::endl;
         }
     }
 
