@@ -47,8 +47,9 @@ html_favicon = "_static/open3d_logo.ico"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.mathjax',
-        'sphinx.ext.autodoc',
-        'sphinx.ext.autosummary',]
+              'sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
