@@ -52,15 +52,15 @@ void FunctionDocInject(py::module& pybind_module,
     for (const auto& it : map_parameter_body_docs) {
         fd.InjectArgumentDocBody(it.first, it.second);
     }
-    f->m_ml->ml_doc = strdup(fd.to_string().c_str());
+    f->m_ml->ml_doc = strdup(fd.ToGoogleDocString().c_str());
 }
 
 FunctionDoc::FunctionDoc(const std::string& pybind_doc)
     : pybind_doc_(pybind_doc) {
-    parse_function_name();
-    parse_summary();
-    parse_arguments();
-    parse_return();
+    ParseFunctionName();
+    ParseSummary();
+    ParseArguments();
+    ParseReturn();
 }
 
 void FunctionDoc::InjectArgumentDocBody(const std::string& argument_name,
@@ -73,7 +73,7 @@ void FunctionDoc::InjectArgumentDocBody(const std::string& argument_name,
     }
 }
 
-void FunctionDoc::parse_function_name() {
+void FunctionDoc::ParseFunctionName() {
     size_t parenthesis_pos = pybind_doc_.find("(");
     if (parenthesis_pos == std::string::npos) {
         return;
@@ -83,46 +83,46 @@ void FunctionDoc::parse_function_name() {
     }
 }
 
-void FunctionDoc::parse_summary() {
+void FunctionDoc::ParseSummary() {
     size_t arrow_pos = pybind_doc_.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
                 result_type_pos +
-                word_length(pybind_doc_, result_type_pos, "._:");
+                WordLength(pybind_doc_, result_type_pos, "._:");
         size_t summary_len = pybind_doc_.size() - summary_start_pos;
         if (summary_len > 0) {
             std::string summary =
                     pybind_doc_.substr(summary_start_pos, summary_len);
-            summary_ = str_clean_all(summary);
+            summary_ = StringCleanAll(summary);
         }
     }
 }
 
-void FunctionDoc::parse_arguments() {
+void FunctionDoc::ParseArguments() {
     // Parse docstrings of arguments
     // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
     // Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and
     //       call function to parse each argument respectively
-    std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc_);
+    std::vector<std::string> argument_tokens = GetArgumentTokens(pybind_doc_);
     argument_docs_.clear();
     for (const std::string& argument_token : argument_tokens) {
-        argument_docs_.push_back(parse_argument_token(argument_token));
+        argument_docs_.push_back(ParseArgumentToken(argument_token));
     }
 }
 
-void FunctionDoc::parse_return() {
+void FunctionDoc::ParseReturn() {
     size_t arrow_pos = pybind_doc_.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
                 result_type_pos,
-                word_length(pybind_doc_, result_type_pos, "._:"));
-        return_doc_.type_ = str_clean_all(return_type);
+                WordLength(pybind_doc_, result_type_pos, "._:"));
+        return_doc_.type_ = StringCleanAll(return_type);
     }
 }
 
-std::string FunctionDoc::to_string() const {
+std::string FunctionDoc::ToGoogleDocString() const {
     // Example Gooele style:
     // http://www.sphinx-doc.org/en/1.5/ext/example_google.html
 
@@ -181,15 +181,15 @@ std::string FunctionDoc::to_string() const {
 }
 
 // Deduplicate namespace (optional)
-std::string FunctionDoc::namespace_fix(const std::string& s) {
+std::string FunctionDoc::NamespaceFix(const std::string& s) {
     std::string rc = std::regex_replace(s, std::regex("::"), ".");
     rc = std::regex_replace(rc, std::regex("open3d\\.open3d\\."), "open3d.");
     return rc;
 }
 
 // Similar to Python's str.strip()
-std::string FunctionDoc::str_strip(const std::string& s,
-                                   const std::string& white_space) {
+std::string FunctionDoc::StringStrip(const std::string& s,
+                                     const std::string& white_space) {
     size_t begin_pos = s.find_first_not_of(white_space);
     if (begin_pos == std::string::npos) {
         return "";
@@ -199,17 +199,17 @@ std::string FunctionDoc::str_strip(const std::string& s,
 }
 
 // Run all string cleanup functions
-std::string FunctionDoc::str_clean_all(const std::string& s,
-                                       const std::string& white_space) {
-    std::string rc = str_strip(s, white_space);
-    rc = namespace_fix(rc);
+std::string FunctionDoc::StringCleanAll(const std::string& s,
+                                        const std::string& white_space) {
+    std::string rc = StringStrip(s, white_space);
+    rc = NamespaceFix(rc);
     return rc;
 }
 
 // Count the length of current word starting from start_pos
-size_t FunctionDoc::word_length(const std::string& doc,
-                                size_t start_pos,
-                                const std::string& valid_chars) {
+size_t FunctionDoc::WordLength(const std::string& doc,
+                               size_t start_pos,
+                               const std::string& valid_chars) {
     std::unordered_set<char> valid_chars_set;
     for (const char& c : valid_chars) {
         valid_chars_set.insert(c);
@@ -231,8 +231,7 @@ size_t FunctionDoc::word_length(const std::string& doc,
 // Parse docstring for a single argument
 // E.g. "cylinder_radius: float = 1.0"
 // E.g. "cylinder_radius: float"
-ArgumentDoc FunctionDoc::parse_argument_token(
-        const std::string& argument_token) {
+ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
     // std::cout << "argument_token:" << std::endl << argument_token <<
     // std::endl;
     ArgumentDoc argument_doc;
@@ -243,7 +242,7 @@ ArgumentDoc FunctionDoc::parse_argument_token(
     std::smatch matches;
     if (std::regex_search(argument_token, matches, rgx_with_default)) {
         argument_doc.name_ = matches[1].str();
-        argument_doc.type_ = namespace_fix(matches[2].str());
+        argument_doc.type_ = NamespaceFix(matches[2].str());
         argument_doc.default_ = matches[3].str();
     } else {
         // Argument without default value
@@ -251,14 +250,14 @@ ArgumentDoc FunctionDoc::parse_argument_token(
                 "([A-Za-z_][A-Za-z\\d_]*): ([A-Za-z_][A-Za-z\\d_:\\.]*)");
         if (std::regex_search(argument_token, matches, rgx_without_default)) {
             argument_doc.name_ = matches[1].str();
-            argument_doc.type_ = namespace_fix(matches[2].str());
+            argument_doc.type_ = NamespaceFix(matches[2].str());
         }
     }
 
     return argument_doc;
 }
 
-std::vector<std::string> FunctionDoc::get_argument_tokens(
+std::vector<std::string> FunctionDoc::GetArgumentTokens(
         const std::string& pybind_doc) {
     // First insert commas to make things easy
     // From:
