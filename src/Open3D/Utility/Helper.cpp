@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "Helper.h"
+#include <unordered_set>
 
 namespace open3d {
 namespace utility {
@@ -51,6 +52,28 @@ std::string StripString(const std::string &s, const std::string &white_space) {
     }
     size_t end_pos = s.find_last_not_of(white_space);
     return s.substr(begin_pos, end_pos - begin_pos + 1);
+}
+
+// Count the length of current word starting from start_pos
+size_t WordLength(const std::string &doc,
+                  size_t start_pos,
+                  const std::string &valid_chars) {
+    std::unordered_set<char> valid_chars_set;
+    for (const char &c : valid_chars) {
+        valid_chars_set.insert(c);
+    }
+    auto is_word_char = [&valid_chars_set](const char &c) {
+        return std::isalnum(c) ||
+               valid_chars_set.find(c) != valid_chars_set.end();
+    };
+    size_t length = 0;
+    for (size_t pos = start_pos; pos < doc.size(); ++pos) {
+        if (!is_word_char(doc[pos])) {
+            break;
+        }
+        length++;
+    }
+    return length;
 }
 
 }  // namespace utility

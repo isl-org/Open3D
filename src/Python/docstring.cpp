@@ -90,7 +90,7 @@ void FunctionDoc::ParseSummary() {
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
                 result_type_pos +
-                WordLength(pybind_doc_, result_type_pos, "._:");
+                utility::WordLength(pybind_doc_, result_type_pos, "._:");
         size_t summary_len = pybind_doc_.size() - summary_start_pos;
         if (summary_len > 0) {
             std::string summary =
@@ -118,7 +118,7 @@ void FunctionDoc::ParseReturn() {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
                 result_type_pos,
-                WordLength(pybind_doc_, result_type_pos, "._:"));
+                utility::WordLength(pybind_doc_, result_type_pos, "._:"));
         return_doc_.type_ = StringCleanAll(return_type);
     }
 }
@@ -194,28 +194,6 @@ std::string FunctionDoc::StringCleanAll(const std::string& s,
     std::string rc = utility::StripString(s, white_space);
     rc = NamespaceFix(rc);
     return rc;
-}
-
-// Count the length of current word starting from start_pos
-size_t FunctionDoc::WordLength(const std::string& doc,
-                               size_t start_pos,
-                               const std::string& valid_chars) {
-    std::unordered_set<char> valid_chars_set;
-    for (const char& c : valid_chars) {
-        valid_chars_set.insert(c);
-    }
-    auto is_word_char = [&valid_chars_set](const char& c) {
-        return std::isalnum(c) ||
-               valid_chars_set.find(c) != valid_chars_set.end();
-    };
-    size_t length = 0;
-    for (size_t pos = start_pos; pos < doc.size(); ++pos) {
-        if (!is_word_char(doc[pos])) {
-            break;
-        }
-        length++;
-    }
-    return length;
 }
 
 // Parse docstring for a single argument

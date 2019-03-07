@@ -98,11 +98,6 @@ protected:
     /// Parse individual argument token and returns a ArgumentDoc
     static ArgumentDoc ParseArgumentToken(const std::string& argument_token);
 
-    /// String util: find length of current word staring from a position
-    static size_t WordLength(const std::string& doc,
-                             size_t start_pos,
-                             const std::string& valid_chars = "_");
-
     /// Runs all string cleanup functions
     static std::string StringCleanAll(const std::string& s,
                                       const std::string& white_space = " \t\n");
