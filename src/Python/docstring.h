@@ -71,6 +71,7 @@ public:
 /// ```cpp
 /// std::string doc = R"(foo(arg0: int, arg1: float = 1.0) -> open3d.bar)";
 /// FunctionDoc fd(doc);
+/// fd.InjectArgumentDocBody("arg0", "The arg0 is an important argument.");
 /// std::cout << fd.ToGoogleDocString();
 /// ```
 ///
