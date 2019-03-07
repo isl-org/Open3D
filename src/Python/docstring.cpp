@@ -164,13 +164,6 @@ static std::vector<std::string> get_argument_tokens(
     return argument_tokens;
 }
 
-// Currently copied this function for testing
-// TODO: link unit test with python module to enable direct testing
-static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
-    FunctionDoc function_doc(pybind_doc);
-    return function_doc;
-}
-
 void function_doc_inject(py::module& pybind_module,
                          const std::string& function_name,
                          const std::unordered_map<std::string, std::string>
@@ -183,7 +176,7 @@ void function_doc_inject(py::module& pybind_module,
     }
     PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
 
-    FunctionDoc fd = parse_doc_function(f->m_ml->ml_doc);
+    FunctionDoc fd(f->m_ml->ml_doc);
     for (const auto& it : map_parameter_body_docs) {
         fd.inject_argument_doc_body(it.first, it.second);
     }
