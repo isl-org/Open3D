@@ -61,7 +61,7 @@ std::string str_strip(const std::string& s,
 }
 
 // Count the length of current word starting from start_pos
-size_t word_length(const std::string& docs,
+size_t word_length(const std::string& doc,
                    size_t start_pos,
                    const std::string& valid_chars = "_") {
     std::unordered_set<char> valid_chars_set;
@@ -73,8 +73,8 @@ size_t word_length(const std::string& docs,
                valid_chars_set.find(c) != valid_chars_set.end();
     };
     size_t length = 0;
-    for (size_t pos = start_pos; pos < docs.size(); ++pos) {
-        if (!is_word_char(docs[pos])) {
+    for (size_t pos = start_pos; pos < doc.size(); ++pos) {
+        if (!is_word_char(doc[pos])) {
             break;
         }
         length++;
@@ -87,16 +87,16 @@ size_t word_length(const std::string& docs,
 // to
 // ("create_mesh_arrow(cylinder_radius: float = 1.0)",
 //  "geometry.TriangleMesh")
-std::pair<std::string, std::string> split_arrow(const std::string& docs) {
-    std::size_t arrow_pos = docs.rfind(" -> ");
+std::pair<std::string, std::string> split_arrow(const std::string& doc) {
+    std::size_t arrow_pos = doc.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
-        std::string func_name_and_params = docs.substr(0, arrow_pos);
-        std::string return_type = docs.substr(
-                arrow_pos + 4, word_length(docs, arrow_pos + 4, "._"));
+        std::string func_name_and_params = doc.substr(0, arrow_pos);
+        std::string return_type = doc.substr(
+                arrow_pos + 4, word_length(doc, arrow_pos + 4, "._"));
         return std::make_pair(namespace_dedup(str_strip(func_name_and_params)),
                               namespace_dedup(str_strip(return_type)));
     } else {
-        return std::make_pair(docs, "");
+        return std::make_pair(doc, "");
     }
 }
 
@@ -104,14 +104,14 @@ std::pair<std::string, std::string> split_arrow(const std::string& docs) {
 // TODO: link unit test with python module to enable direct testing
 std::pair<std::unordered_map<std::string, std::string>,
           std::vector<std::string>>
-parse_pybind_function_doc(const std::string& pybind_docs) {
+parse_pybind_function_doc(const std::string& pybind_doc) {
     std::unordered_map<std::string, std::string> map_parameter_type_docs;
     std::vector<std::string> ordered_parameters;
 
     // Split by "->"
     std::string func_name_and_params;
     std::string return_type;
-    std::tie(func_name_and_params, return_type) = split_arrow(pybind_docs);
+    std::tie(func_name_and_params, return_type) = split_arrow(pybind_doc);
 
     std::cout << "func_name_and_params " << func_name_and_params << std::endl;
     std::cout << "return_type " << return_type << std::endl;
@@ -120,10 +120,10 @@ parse_pybind_function_doc(const std::string& pybind_docs) {
 }
 
 TEST(parse_pybind_function_doc, test_docstring_parse) {
-    std::string docs = R"(
+    std::string doc = R"(
 create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.open3d.geometry.TriangleMesh
 
 Factory function to create an arrow mesh
 )";
-    parse_pybind_function_doc(docs);
+    parse_pybind_function_doc(doc);
 }
