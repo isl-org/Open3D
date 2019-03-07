@@ -36,10 +36,10 @@
 namespace open3d {
 namespace docstring {
 
-void function_doc_inject(py::module& pybind_module,
-                         const std::string& function_name,
-                         const std::unordered_map<std::string, std::string>
-                                 map_parameter_body_docs) {
+void FunctionDocInject(py::module& pybind_module,
+                       const std::string& function_name,
+                       const std::unordered_map<std::string, std::string>
+                               map_parameter_body_docs) {
     // Get function
     PyObject* module = pybind_module.ptr();
     PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
