@@ -37,15 +37,15 @@ namespace open3d {
 namespace docstring {
 
 // Deduplicate namespace (optional)
-static std::string namespace_fix(const std::string& s) {
+std::string FunctionDoc::namespace_fix(const std::string& s) {
     std::string rc = std::regex_replace(s, std::regex("::"), ".");
     rc = std::regex_replace(rc, std::regex("open3d\\.open3d\\."), "open3d.");
     return rc;
 }
 
 // Similar to Python's str.strip()
-static std::string str_strip(const std::string& s,
-                             const std::string& white_space = " \t\n") {
+std::string FunctionDoc::str_strip(const std::string& s,
+                                   const std::string& white_space) {
     size_t begin_pos = s.find_first_not_of(white_space);
     if (begin_pos == std::string::npos) {
         return "";
@@ -55,17 +55,17 @@ static std::string str_strip(const std::string& s,
 }
 
 // Run all string cleanup functions
-static std::string str_clean_all(const std::string& s,
-                                 const std::string& white_space = " \t\n") {
+std::string FunctionDoc::str_clean_all(const std::string& s,
+                                       const std::string& white_space) {
     std::string rc = str_strip(s, white_space);
     rc = namespace_fix(rc);
     return rc;
 }
 
 // Count the length of current word starting from start_pos
-static size_t word_length(const std::string& doc,
-                          size_t start_pos,
-                          const std::string& valid_chars = "_") {
+size_t FunctionDoc::word_length(const std::string& doc,
+                                size_t start_pos,
+                                const std::string& valid_chars) {
     std::unordered_set<char> valid_chars_set;
     for (const char& c : valid_chars) {
         valid_chars_set.insert(c);
@@ -87,7 +87,8 @@ static size_t word_length(const std::string& doc,
 // Parse docstring for a single argument
 // E.g. "cylinder_radius: float = 1.0"
 // E.g. "cylinder_radius: float"
-static ArgumentDoc parse_argument_token(const std::string& argument_token) {
+ArgumentDoc FunctionDoc::parse_argument_token(
+        const std::string& argument_token) {
     // std::cout << "argument_token:" << std::endl << argument_token <<
     // std::endl;
     ArgumentDoc argument_doc;
@@ -113,7 +114,7 @@ static ArgumentDoc parse_argument_token(const std::string& argument_token) {
     return argument_doc;
 }
 
-static std::vector<std::string> get_argument_tokens(
+std::vector<std::string> FunctionDoc::get_argument_tokens(
         const std::string& pybind_doc) {
     // First insert commas to make things easy
     // From:

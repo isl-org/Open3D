@@ -79,12 +79,40 @@ public:
 protected:
     /// Parse the function name from docstring
     void parse_function_name();
+
     /// Parse the function "summary" docstring received from pybind
     void parse_summary();
+
     /// Parse ArgumentDoc for each argument
     void parse_arguments();
+
     /// Parse function return
     void parse_return();
+
+protected:
+    /// Split docstring to argument tokens
+    /// E.g. "cylinder_radius: float = 1.0", "cylinder_radius: float"
+    static std::vector<std::string> get_argument_tokens(
+            const std::string& pybind_doc);
+
+    /// Parse individual argument token and returns a ArgumentDoc
+    static ArgumentDoc parse_argument_token(const std::string& argument_token);
+
+    /// String util: find length of current word staring from a position
+    static size_t word_length(const std::string& doc,
+                              size_t start_pos,
+                              const std::string& valid_chars = "_");
+
+    /// Runs all string cleanup functions
+    static std::string str_clean_all(const std::string& s,
+                                     const std::string& white_space = " \t\n");
+
+    /// Similar to Python's strip()
+    static std::string str_strip(const std::string& s,
+                                 const std::string& white_space = " \t\n");
+
+    /// Apply fixes to namespace, e.g. "::" to "." for python
+    static std::string namespace_fix(const std::string& s);
 
 public:
     std::string name_ = "";
