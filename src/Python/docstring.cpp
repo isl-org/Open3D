@@ -124,20 +124,56 @@ static ArgumentDoc parse_single_argument(const std::string& argument_str) {
     return argument_doc;
 }
 
-void parse_regex_dummy() {
+std::vector<std::string> get_argument_tokens(const std::string& pybind_doc) {
+    // First insert commas to make things easy
+    // From:
+    // "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
+    // To:
+    // "foo(, arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
+    std::string str = pybind_doc;
+    size_t parenthesis_pos = str.find("(");
+    if (parenthesis_pos == std::string::npos) {
+        return {};
+    } else {
+        str.replace(parenthesis_pos + 1, 0, ", ");
+    }
+
+    // Get start positions
     std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
     std::smatch res;
-    std::string str =
-            "hello, cylinder_radius: float = 1.0, cone_s34plit: int = 1, "
-            "kim_il_sung5: int = 2";
-
     std::string::const_iterator start_iter(str.cbegin());
+    std::vector<size_t> argument_start_positions;
     while (std::regex_search(start_iter, str.cend(), res, pattern)) {
         std::cout << res[0] << std::endl;
         size_t pos = res.position(0) + (start_iter - str.cbegin());
         start_iter = res.suffix().first;
-        std::cout << "location " << pos << std::endl;
+        // Now the pos include ", ", which needs to be removed
+        argument_start_positions.push_back(pos + 2);
     }
+
+    // Get end positions (non-inclusive)
+    // The 1st argument's end pos is 2nd argument's start pos - 2 and etc.
+    // The last argument's end pos is the location of the parenthesis before ->
+    std::vector<size_t> argument_end_positions;
+    for (size_t i = 0; i < argument_start_positions.size() - 1; ++i) {
+        argument_start_positions.push_back(argument_start_positions[i + 1] - 2);
+    }
+    std::size_t arrow_pos = str.rfind(") -> ");
+    if (arrow_pos == std::string::npos) {
+        return {};
+    } else {
+        argument_start_positions.push_back(arrow_pos);
+    }
+
+    std::vector<std::string> argument_tokens;
+    for (size_t i = 0; i < argument_start_positions.size() - 1; ++i) {
+        std::string token = str.substr(
+                argument_start_positions[i],
+                argument_end_positions[i] - argument_start_positions[i]);
+        argument_tokens.push_back(token);
+        std::cout << token << std::endl;
+    }
+    return argument_tokens;
 }
 
 // Parse docstrings of arguments
@@ -146,23 +182,7 @@ void parse_regex_dummy() {
 //       parse_single_argument respectively
 static void parse_doc_arguments(const std::string& pybind_doc,
                                 FunctionDoc& function_doc) {
-    // First insert commas to make things easy
-    // "foo(, arg0: float, arg1: float = 1.0, arg2: int = 1, ) -> open3d.bar"
-    std::string doc = pybind_doc;
-    size_t parenthesis_pos = doc.find("(");
-    if (parenthesis_pos == std::string::npos) {
-        return;
-    } else {
-        doc.replace(parenthesis_pos + 1, 0, ", ");
-    }
-    std::size_t arrow_pos = doc.rfind(") -> ");
-    if (arrow_pos == std::string::npos) {
-        return;
-    } else {
-        doc.replace(arrow_pos, 0, ", ");
-    }
-
-    // Find begin index of each argument
+    std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc);
 }
 
 static void parse_doc_result(const std::string& pybind_doc,
