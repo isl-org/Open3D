@@ -109,7 +109,7 @@ static ArgumentDoc parse_argument_token(const std::string& argument_token) {
     std::smatch matches;
     if (std::regex_search(argument_token, matches, rgx_with_default)) {
         argument_doc.name_ = matches[1].str();
-        argument_doc.type_ = matches[2].str();
+        argument_doc.type_ = namespace_fix(matches[2].str());
         argument_doc.default_ = matches[3].str();
     } else {
         // Argument without default value
@@ -117,7 +117,7 @@ static ArgumentDoc parse_argument_token(const std::string& argument_token) {
                 "([A-Za-z_][A-Za-z\\d_]*): ([A-Za-z_][A-Za-z\\d_:\\.]*)");
         if (std::regex_search(argument_token, matches, rgx_without_default)) {
             argument_doc.name_ = matches[1].str();
-            argument_doc.type_ = matches[2].str();
+            argument_doc.type_ = namespace_fix(matches[2].str());
         }
     }
 
