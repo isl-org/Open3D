@@ -201,23 +201,6 @@ static void parse_doc_result(const std::string& pybind_doc,
     }
 }
 
-static void parse_doc_summary(const std::string& pybind_doc,
-                              FunctionDoc& function_doc) {
-    size_t arrow_pos = pybind_doc.rfind(" -> ");
-    if (arrow_pos != std::string::npos) {
-        size_t result_type_pos = arrow_pos + 4;
-        size_t summary_start_pos =
-                result_type_pos +
-                word_length(pybind_doc, result_type_pos, "._:");
-        size_t summary_len = pybind_doc.size() - summary_start_pos;
-        if (summary_len > 0) {
-            std::string summary =
-                    pybind_doc.substr(summary_start_pos, summary_len);
-            function_doc.summary_ = str_clean_all(summary);
-        }
-    }
-}
-
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
 static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
@@ -225,7 +208,6 @@ static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     parse_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
     parse_doc_result(pybind_doc, function_doc);
-    parse_doc_summary(pybind_doc, function_doc);
     return function_doc;
 }
 
@@ -260,7 +242,31 @@ void FunctionDoc::inject_argument_doc_body(
 }
 
 FunctionDoc::FunctionDoc(const std::string& pybind_doc)
-    : pybind_doc_(pybind_doc) {}
+    : pybind_doc_(pybind_doc) {
+    parse_summary();
+    parse_arguments();
+    parse_result();
+}
+
+void FunctionDoc::parse_summary() {
+    size_t arrow_pos = pybind_doc_.rfind(" -> ");
+    if (arrow_pos != std::string::npos) {
+        size_t result_type_pos = arrow_pos + 4;
+        size_t summary_start_pos =
+                result_type_pos +
+                word_length(pybind_doc_, result_type_pos, "._:");
+        size_t summary_len = pybind_doc_.size() - summary_start_pos;
+        if (summary_len > 0) {
+            std::string summary =
+                    pybind_doc_.substr(summary_start_pos, summary_len);
+            summary_ = str_clean_all(summary);
+        }
+    }
+}
+
+void FunctionDoc::parse_arguments() {}
+
+void FunctionDoc::parse_result() {}
 
 std::string FunctionDoc::to_string() const {
     // Example Gooele style:

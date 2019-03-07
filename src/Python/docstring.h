@@ -52,7 +52,7 @@ public:
 ///         - Type
 ///         - Default value
 ///     3. Return type
-///     4. Brief "summary" docstring received from Pybind
+///     4. Brief "summary" docstring received from pybind
 /// Optionally, the user can inject additional docstrings to the class.
 ///
 /// This approach was chosen in favor of writting docstring in Python files for
@@ -75,6 +75,14 @@ public:
 
     /// Generate Google style python docstring
     std::string to_string() const;
+
+protected:
+    /// Parse the function "summary" docstring received from pybind
+    void parse_summary();
+    /// Parse ArgumentDoc for each argument
+    void parse_arguments();
+    /// Parse function return
+    void parse_result();
 
 public:
     std::string name_ = "";
