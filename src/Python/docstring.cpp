@@ -29,6 +29,7 @@
 #include <tuple>
 #include <unordered_set>
 #include <sstream>
+#include <regex>
 
 #include "Python/docstring.h"
 
@@ -101,6 +102,20 @@ static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
                               namespace_dedup(str_strip(return_type)));
     } else {
         return std::make_pair(doc, "");
+    }
+}
+
+void parse_regex_dummy() {
+    std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
+    std::smatch res;
+    std::string str =
+            "cylinder_radius: float = 1.0, cone_split: int = 1, kim_il_sung: "
+            "int = 2";
+
+    std::string::const_iterator start_iter(str.cbegin());
+    while (std::regex_search(start_iter, str.cend(), res, pattern)) {
+        std::cout << res[0] << std::endl;
+        start_iter = res.suffix().first;
     }
 }
 
