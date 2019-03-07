@@ -27,6 +27,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include "Python/open3d_pybind.h"
 
