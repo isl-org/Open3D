@@ -39,7 +39,7 @@ namespace docstring {
 
 void FunctionDocInject(py::module& pybind_module,
                        const std::string& function_name,
-                       const std::unordered_map<std::string, std::string>
+                       const std::unordered_map<std::string, std::string>&
                                map_parameter_body_docs) {
     // Get function
     PyObject* module = pybind_module.ptr();
@@ -49,9 +49,15 @@ void FunctionDocInject(py::module& pybind_module,
     }
     PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
 
+    // Parse existing docstring to FunctionDoc
     FunctionDoc fd(f->m_ml->ml_doc);
-    for (const auto& it : map_parameter_body_docs) {
-        fd.InjectArgumentDocBody(it.first, it.second);
+
+    // Inject docstring
+    for (ArgumentDoc& ad : fd.argument_docs_) {
+        if (map_parameter_body_docs.find(ad.name_) !=
+            map_parameter_body_docs.end()) {
+            ad.body_ = map_parameter_body_docs.at(ad.name_);
+        }
     }
     f->m_ml->ml_doc = strdup(fd.ToGoogleDocString().c_str());
 }
@@ -62,16 +68,6 @@ FunctionDoc::FunctionDoc(const std::string& pybind_doc)
     ParseSummary();
     ParseArguments();
     ParseReturn();
-}
-
-void FunctionDoc::InjectArgumentDocBody(const std::string& argument_name,
-                                        const std::string& argument_doc_body) {
-    for (ArgumentDoc& argument_doc : argument_docs_) {
-        if (argument_doc.name_ == argument_name) {
-            argument_doc.body_ = argument_doc_body;
-            break;
-        }
-    }
 }
 
 void FunctionDoc::ParseFunctionName() {

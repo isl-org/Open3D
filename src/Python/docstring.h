@@ -79,10 +79,6 @@ class FunctionDoc {
 public:
     FunctionDoc(const std::string& pybind_doc);
 
-    /// Inject to ArgumentDoc.body_ docstring of a given argument
-    void InjectArgumentDocBody(const std::string& argument_name,
-                               const std::string& argument_doc_body);
-
     /// Generate Google style python docstring
     std::string ToGoogleDocString() const;
 
@@ -126,9 +122,10 @@ protected:
     std::string pybind_doc_ = "";
 };
 
+/// Parse pybind docstring to FunctionDoc and inject argument docstrings
 void FunctionDocInject(py::module& pybind_module,
                        const std::string& function_name,
-                       const std::unordered_map<std::string, std::string>
+                       const std::unordered_map<std::string, std::string>&
                                map_parameter_docs = {});
 }  // namespace docstring
 }  // namespace open3d
