@@ -188,7 +188,8 @@ void pybind_io(py::module &m) {
                  return feature;
              },
              "Function to read registration::Feature from file", "filename"_a);
-    function_doc_inject(m_io, "read_feature", {{"filename", "Path to file"}});
+    docstring::function_doc_inject(m_io, "read_feature",
+                                   {{"filename", "Path to file"}});
     m_io.def("write_feature",
              [](const std::string &filename,
                 const registration::Feature &feature) {
