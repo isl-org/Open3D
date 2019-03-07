@@ -120,7 +120,8 @@ static void parse_function_name(const std::string& pybind_doc,
 // E.g. "cylinder_radius: float = 1.0"
 // E.g. "cylinder_radius: float"
 static ArgumentDoc parse_argument_token(const std::string& argument_token) {
-    std::cout << "argument_token:" << std::endl << argument_token << std::endl;
+    // std::cout << "argument_token:" << std::endl << argument_token <<
+    // std::endl;
     ArgumentDoc argument_doc;
 
     // Argument with default value
@@ -247,17 +248,9 @@ void function_doc_inject(
         return;
     }
     PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
-    // f->m_ml->ml_doc = "read_feature(filenamelalala)";
 
-    std::string doc = R"(
-create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.open3d.geometry.TriangleMesh
-
-Factory function to create an arrow mesh
-)";
-    std::cout << parse_doc_function(doc).to_string();
-
-    // std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
-    // std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
+    std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
+    std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
 }
 
 std::string FunctionDoc::to_string() const {
