@@ -103,9 +103,6 @@ static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
     }
 }
 
-static void parse_doc_function_name(const std::string& pybind_doc,
-                                    FunctionDoc& function_doc) {}
-
 static void parse_doc_arguments(const std::string& pybind_doc,
                                 FunctionDoc& function_doc) {}
 
@@ -122,7 +119,6 @@ static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     std::string return_type;
     std::tie(func_name_and_arguments, return_type) = split_arrow(pybind_doc);
 
-    parse_doc_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
     parse_doc_result(pybind_doc, function_doc);
 
