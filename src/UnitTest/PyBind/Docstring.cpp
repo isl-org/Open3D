@@ -31,6 +31,21 @@
 
 #include "TestUtility/UnitTest.h"
 
+class ArgumentDoc {
+public:
+    std::string argument_name_;
+    std::string argument_type_;
+    std::string argument_default_;
+};
+
+class FunctionDoc {
+public:
+    std::string function_name_;
+    std::vector<ArgumentDoc> argument_docs_;
+    std::string summary_;
+    std::string body_;
+};
+
 // Search and replace in string
 std::string str_replace(std::string s,
                         const std::string& search,
