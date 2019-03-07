@@ -110,6 +110,7 @@ matrix:
             - g++-6
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+      env: BUILD_DEPENDENCY_FROM_SOURCE=ON CC='gcc-6' CXX='g++-6'
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
