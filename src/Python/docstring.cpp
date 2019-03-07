@@ -130,8 +130,37 @@ static void parse_function_name(const std::string& pybind_doc,
     }
 }
 
+// Parse docstring for a single argument
+// E.g. "cylinder_radius: float = 1.0"
+// E.g. "cylinder_radius: float"
+static ArgumentDoc parse_single_argument(const std::string& argument_str) {
+    ArgumentDoc argument_doc;
+    return argument_doc;
+}
+
+// Parse docstrings of arguments
+// Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
+// Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and call
+//       parse_single_argument respectively
 static void parse_doc_arguments(const std::string& pybind_doc,
-                                FunctionDoc& function_doc) {}
+                                FunctionDoc& function_doc) {
+    // First insert commas to make things easy
+    // "foo(, arg0: float, arg1: float = 1.0, arg2: int = 1, ) -> open3d.bar"
+    std::string doc = pybind_doc;
+    size_t parenthesis_pos = doc.find("(");
+    if (parenthesis_pos == std::string::npos) {
+        return;
+    } else {
+        doc.replace(parenthesis_pos + 1, 0, ", ");
+    }
+    std::size_t arrow_pos = doc.rfind(") -> ");
+    if (arrow_pos == std::string::npos) {
+        return;
+    } else {
+        doc.replace(arrow_pos, 0, ", ");
+    }
+    std::cout << doc << std::endl;
+}
 
 static void parse_doc_result(const std::string& pybind_doc,
                              FunctionDoc& function_doc) {
