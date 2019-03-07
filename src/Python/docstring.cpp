@@ -257,7 +257,7 @@ void function_doc_inject(py::module& pybind_module,
         fd.inject_argument_doc_body(it.first, it.second);
     }
     f->m_ml->ml_doc = fd.to_string().c_str();
-    std::cout << f->m_ml->ml_doc << std::endl;
+    std::cout << fd.to_string() << std::endl;
 }
 
 void FunctionDoc::inject_argument_doc_body(
