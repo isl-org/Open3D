@@ -65,6 +65,15 @@ public:
 /// accordingly. Another alternative approach is to modify pybind11 directly,
 /// although it makes some of the parsing part simpler, it could be much harder
 /// to maintain to keep track of the upstream pybind11.
+///
+/// Example usage:
+///
+/// ```cpp
+/// std::string doc = R"(foo(arg0: int, arg1: float = 1.0) -> open3d.bar)";
+/// FunctionDoc fd(doc);
+/// std::cout << fd.ToGoogleDocString();
+/// ```
+///
 class FunctionDoc {
 public:
     FunctionDoc(const std::string& pybind_doc);
