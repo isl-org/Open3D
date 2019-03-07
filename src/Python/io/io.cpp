@@ -51,7 +51,7 @@ void pybind_io(py::module &m) {
                  io::ReadImage(filename, image);
                  return image;
              },
-             "Function to read geometry::Image from file", "filename"_a);
+             "Function to read Image from file", "filename"_a);
     docstring::function_doc_inject(m_io, "read_image");
 
     m_io.def("write_image",
@@ -59,8 +59,8 @@ void pybind_io(py::module &m) {
                 int quality) {
                  return io::WriteImage(filename, image, quality);
              },
-             "Function to write geometry::Image to file", "filename"_a,
-             "image"_a, "quality"_a = 90);
+             "Function to write Image to file", "filename"_a, "image"_a,
+             "quality"_a = 90);
     docstring::function_doc_inject(m_io, "write_image");
 
     // open3d::geometry::LineSet
@@ -70,7 +70,7 @@ void pybind_io(py::module &m) {
                  io::ReadLineSet(filename, line_set, format);
                  return line_set;
              },
-             "Function to read geometry::LineSet from file", "filename"_a,
+             "Function to read LineSet from file", "filename"_a,
              "format"_a = "auto");
     docstring::function_doc_inject(m_io, "read_line_set");
 
@@ -80,8 +80,8 @@ void pybind_io(py::module &m) {
                  return io::WriteLineSet(filename, line_set, write_ascii,
                                          compressed);
              },
-             "Function to write geometry::LineSet to file", "filename"_a,
-             "line_set"_a, "write_ascii"_a = false, "compressed"_a = false);
+             "Function to write LineSet to file", "filename"_a, "line_set"_a,
+             "write_ascii"_a = false, "compressed"_a = false);
     docstring::function_doc_inject(m_io, "write_line_set");
 
     // open3d::geometry::PointCloud
@@ -91,7 +91,7 @@ void pybind_io(py::module &m) {
                  io::ReadPointCloud(filename, pcd, format);
                  return pcd;
              },
-             "Function to read geometry::PointCloud from file", "filename"_a,
+             "Function to read PointCloud from file", "filename"_a,
              "format"_a = "auto");
     docstring::function_doc_inject(m_io, "read_point_cloud");
 
@@ -102,7 +102,7 @@ void pybind_io(py::module &m) {
                  return io::WritePointCloud(filename, pointcloud, write_ascii,
                                             compressed);
              },
-             "Function to write geometry::PointCloud to file", "filename"_a,
+             "Function to write PointCloud to file", "filename"_a,
              "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false);
     docstring::function_doc_inject(m_io, "write_point_cloud");
 
@@ -113,7 +113,7 @@ void pybind_io(py::module &m) {
                  io::ReadTriangleMesh(filename, mesh);
                  return mesh;
              },
-             "Function to read geometry::TriangleMesh from file", "filename"_a);
+             "Function to read TriangleMesh from file", "filename"_a);
     docstring::function_doc_inject(m_io, "read_triangle_mesh");
 
     m_io.def("write_triangle_mesh",
@@ -122,8 +122,8 @@ void pybind_io(py::module &m) {
                  return io::WriteTriangleMesh(filename, mesh, write_ascii,
                                               compressed);
              },
-             "Function to write geometry::TriangleMesh to file", "filename"_a,
-             "mesh"_a, "write_ascii"_a = false, "compressed"_a = false);
+             "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+             "write_ascii"_a = false, "compressed"_a = false);
     docstring::function_doc_inject(m_io, "write_triangle_mesh");
 
     // open3d::geometry::VoxelGrid
@@ -133,7 +133,7 @@ void pybind_io(py::module &m) {
                  io::ReadVoxelGrid(filename, voxel_grid, format);
                  return voxel_grid;
              },
-             "Function to read geometry::VoxelGrid from file", "filename"_a,
+             "Function to read VoxelGrid from file", "filename"_a,
              "format"_a = "auto");
     docstring::function_doc_inject(m_io, "read_voxel_grid");
 
@@ -144,7 +144,7 @@ void pybind_io(py::module &m) {
                  return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
                                            compressed);
              },
-             "Function to write geometry::VoxelGrid to file", "filename"_a,
+             "Function to write VoxelGrid to file", "filename"_a,
              "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false);
     docstring::function_doc_inject(m_io, "write_voxel_grid");
 
@@ -155,8 +155,7 @@ void pybind_io(py::module &m) {
                  io::ReadIJsonConvertible(filename, intrinsic);
                  return intrinsic;
              },
-             "Function to read camera::PinholeCameraIntrinsic from file",
-             "filename"_a);
+             "Function to read PinholeCameraIntrinsic from file", "filename"_a);
     docstring::function_doc_inject(m_io, "read_pinhole_camera_intrinsic");
 
     m_io.def("write_pinhole_camera_intrinsic",
@@ -164,8 +163,8 @@ void pybind_io(py::module &m) {
                 const camera::PinholeCameraIntrinsic &intrinsic) {
                  return io::WriteIJsonConvertible(filename, intrinsic);
              },
-             "Function to write camera::PinholeCameraIntrinsic to file",
-             "filename"_a, "intrinsic"_a);
+             "Function to write PinholeCameraIntrinsic to file", "filename"_a,
+             "intrinsic"_a);
     docstring::function_doc_inject(m_io, "write_pinhole_camera_intrinsic");
 
     m_io.def("read_pinhole_camera_parameters",
@@ -174,7 +173,7 @@ void pybind_io(py::module &m) {
                  io::ReadIJsonConvertible(filename, parameters);
                  return parameters;
              },
-             "Function to read camera::PinholeCameraParameters from file",
+             "Function to read PinholeCameraParameters from file",
              "filename"_a);
     docstring::function_doc_inject(m_io, "read_pinhole_camera_parameters");
 
@@ -183,8 +182,8 @@ void pybind_io(py::module &m) {
                 const camera::PinholeCameraParameters &parameters) {
                  return io::WriteIJsonConvertible(filename, parameters);
              },
-             "Function to write camera::PinholeCameraParameters to file",
-             "filename"_a, "parameters"_a);
+             "Function to write PinholeCameraParameters to file", "filename"_a,
+             "parameters"_a);
     docstring::function_doc_inject(m_io, "write_pinhole_camera_parameters");
 
     m_io.def("read_pinhole_camera_trajectory",
@@ -193,7 +192,7 @@ void pybind_io(py::module &m) {
                  io::ReadPinholeCameraTrajectory(filename, trajectory);
                  return trajectory;
              },
-             "Function to read camera::PinholeCameraTrajectory from file",
+             "Function to read PinholeCameraTrajectory from file",
              "filename"_a);
     docstring::function_doc_inject(m_io, "read_pinhole_camera_trajectory");
 
@@ -202,8 +201,8 @@ void pybind_io(py::module &m) {
                 const camera::PinholeCameraTrajectory &trajectory) {
                  return io::WritePinholeCameraTrajectory(filename, trajectory);
              },
-             "Function to write camera::PinholeCameraTrajectory to file",
-             "filename"_a, "trajectory"_a);
+             "Function to write PinholeCameraTrajectory to file", "filename"_a,
+             "trajectory"_a);
     docstring::function_doc_inject(m_io, "write_pinhole_camera_trajectory");
 
     // open3d::registration
@@ -213,8 +212,7 @@ void pybind_io(py::module &m) {
                  io::ReadFeature(filename, feature);
                  return feature;
              },
-             "Function to read ``registration.Feature`` from file",
-             "filename"_a);
+             "Function to read registration.Feature from file", "filename"_a);
     docstring::function_doc_inject(m_io, "read_feature",
                                    {{"filename", "Path to file"}});
 
@@ -223,8 +221,7 @@ void pybind_io(py::module &m) {
                 const registration::Feature &feature) {
                  return io::WriteFeature(filename, feature);
              },
-             "Function to write registration::Feature to file", "filename"_a,
-             "feature"_a);
+             "Function to write Feature to file", "filename"_a, "feature"_a);
     docstring::function_doc_inject(m_io, "write_feature");
 
     m_io.def("read_pose_graph",
@@ -233,8 +230,7 @@ void pybind_io(py::module &m) {
                  io::ReadPoseGraph(filename, pose_graph);
                  return pose_graph;
              },
-             "Function to read registration::PoseGraph from file",
-             "filename"_a);
+             "Function to read PoseGraph from file", "filename"_a);
     docstring::function_doc_inject(m_io, "read_pose_graph");
 
     m_io.def("write_pose_graph",
@@ -242,7 +238,7 @@ void pybind_io(py::module &m) {
                 const registration::PoseGraph pose_graph) {
                  io::WritePoseGraph(filename, pose_graph);
              },
-             "Function to write registration::PoseGraph to file", "filename"_a,
+             "Function to write PoseGraph to file", "filename"_a,
              "pose_graph"_a);
     docstring::function_doc_inject(m_io, "write_pose_graph");
 }
