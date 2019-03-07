@@ -43,18 +43,19 @@ public:
 
 class FunctionDoc {
 public:
+    // Inject ArgumentDoc body_ docstring
+    void inject_argument_doc_body(const std::string& argument_name,
+                                  const std::string& argument_doc_body);
+
+    // Generate Google style python docstring
+    std::string to_string() const;
+
+public:
     std::string name_ = "";
     std::vector<ArgumentDoc> argument_docs_;
     ArgumentDoc return_doc_;
     std::string summary_ = "";
     std::string body_ = "";
-
-    // Generate Google style python docstring
-    std::string to_string() const;
-
-    // Inject ArgumentDoc body_ docstring
-    void inject_argument_doc_body(const std::string& argument_name,
-                                  const std::string& argument_doc_body);
 };
 
 void function_doc_inject(
