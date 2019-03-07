@@ -149,7 +149,7 @@ create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.o
 
 Factory function to create an arrow mesh
 )";
-    parse_doc_function(doc);
+    std::cout << parse_doc_function(doc).to_string();
 }
 
 std::string FunctionDoc::to_string() const {
@@ -194,7 +194,11 @@ std::string FunctionDoc::to_string() const {
     // Return
     rc << std::endl;
     rc << "Returns:" << std::endl;
-    rc << indent << return_doc_.type_ << ": " << return_doc_.body_ << std::endl;
+    rc << indent << return_doc_.type_;
+    if (return_doc_.body_ != "") {
+        rc << ": " << return_doc_.body_;
+    }
+    rc << std::endl;
 
     return rc.str();
 }
