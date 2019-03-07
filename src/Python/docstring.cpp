@@ -144,7 +144,6 @@ std::vector<std::string> get_argument_tokens(const std::string& pybind_doc) {
     std::string::const_iterator start_iter(str.cbegin());
     std::vector<size_t> argument_start_positions;
     while (std::regex_search(start_iter, str.cend(), res, pattern)) {
-        std::cout << res[0] << std::endl;
         size_t pos = res.position(0) + (start_iter - str.cbegin());
         start_iter = res.suffix().first;
         // Now the pos include ", ", which needs to be removed
@@ -156,22 +155,21 @@ std::vector<std::string> get_argument_tokens(const std::string& pybind_doc) {
     // The last argument's end pos is the location of the parenthesis before ->
     std::vector<size_t> argument_end_positions;
     for (size_t i = 0; i < argument_start_positions.size() - 1; ++i) {
-        argument_start_positions.push_back(argument_start_positions[i + 1] - 2);
+        argument_end_positions.push_back(argument_start_positions[i + 1] - 2);
     }
     std::size_t arrow_pos = str.rfind(") -> ");
     if (arrow_pos == std::string::npos) {
         return {};
     } else {
-        argument_start_positions.push_back(arrow_pos);
+        argument_end_positions.push_back(arrow_pos);
     }
 
     std::vector<std::string> argument_tokens;
-    for (size_t i = 0; i < argument_start_positions.size() - 1; ++i) {
+    for (size_t i = 0; i < argument_start_positions.size(); ++i) {
         std::string token = str.substr(
                 argument_start_positions[i],
                 argument_end_positions[i] - argument_start_positions[i]);
         argument_tokens.push_back(token);
-        std::cout << token << std::endl;
     }
     return argument_tokens;
 }
@@ -233,7 +231,7 @@ Factory function to create an arrow mesh
     std::cout << parse_doc_function(doc).to_string();
 
     // std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
-    std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
+    // std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
 }
 
 std::string FunctionDoc::to_string() const {
