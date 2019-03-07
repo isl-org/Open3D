@@ -36,22 +36,11 @@
 namespace open3d {
 namespace docstring {
 
-// Search and replace in string
-static std::string str_replace(std::string s,
-                               const std::string& search,
-                               const std::string& replace) {
-    // https://stackoverflow.com/a/14679003/1255535
-    size_t pos = 0;
-    while ((pos = s.find(search, pos)) != std::string::npos) {
-        s.replace(pos, search.length(), replace);
-        pos += replace.length();
-    }
-    return s;
-}
-
 // Deduplicate namespace (optional)
-static std::string namespace_dedup(const std::string& s) {
-    return str_replace(s, "open3d.open3d", "open3d");
+static std::string namespace_fix(const std::string& s) {
+    std::string rc = std::regex_replace(s, std::regex("::"), ".");
+    rc = std::regex_replace(rc, std::regex("open3d\\.open3d\\."), "open3d.");
+    return rc;
 }
 
 // Similar to Python's str.strip()
@@ -63,6 +52,14 @@ static std::string str_strip(const std::string& s,
     }
     size_t end_pos = s.find_last_not_of(white_space);
     return s.substr(begin_pos, end_pos - begin_pos + 1);
+}
+
+// Run all string cleanup functions
+static std::string str_clean_all(const std::string& s,
+                                 const std::string& white_space = " \t\n") {
+    std::string rc = str_strip(s, white_space);
+    rc = namespace_fix(rc);
+    return rc;
 }
 
 // Count the length of current word starting from start_pos
@@ -85,24 +82,6 @@ static size_t word_length(const std::string& doc,
         length++;
     }
     return length;
-}
-
-// Splits
-// "create_mesh_arrow(cylinder_radius: float = 1.0) -> geometry.TriangleMesh"
-// to
-// ("create_mesh_arrow(cylinder_radius: float = 1.0)",
-//  "geometry.TriangleMesh")
-static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
-    std::size_t arrow_pos = doc.rfind(" -> ");
-    if (arrow_pos != std::string::npos) {
-        std::string func_name_and_params = doc.substr(0, arrow_pos);
-        std::string return_type = doc.substr(
-                arrow_pos + 4, word_length(doc, arrow_pos + 4, "._:"));
-        return std::make_pair(namespace_dedup(str_strip(func_name_and_params)),
-                              namespace_dedup(str_strip(return_type)));
-    } else {
-        return std::make_pair(doc, "");
-    }
 }
 
 static void parse_function_name(const std::string& pybind_doc,
@@ -218,7 +197,7 @@ static void parse_doc_result(const std::string& pybind_doc,
         std::string return_type = pybind_doc.substr(
                 result_type_pos,
                 word_length(pybind_doc, result_type_pos, "._:"));
-        function_doc.return_doc_.type_ = return_type;
+        function_doc.return_doc_.type_ = str_clean_all(return_type);
     }
 }
 
@@ -234,7 +213,7 @@ static void parse_doc_summary(const std::string& pybind_doc,
         if (summary_len > 0) {
             std::string summary =
                     pybind_doc.substr(summary_start_pos, summary_len);
-            function_doc.summary_ = str_strip(summary);
+            function_doc.summary_ = str_clean_all(summary);
         }
     }
 }
@@ -243,17 +222,10 @@ static void parse_doc_summary(const std::string& pybind_doc,
 // TODO: link unit test with python module to enable direct testing
 static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     FunctionDoc function_doc;
-
-    // Split by "->"
-    std::string func_name_and_arguments;
-    std::string return_type;
-    std::tie(func_name_and_arguments, return_type) = split_arrow(pybind_doc);
-
     parse_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
     parse_doc_result(pybind_doc, function_doc);
     parse_doc_summary(pybind_doc, function_doc);
-
     return function_doc;
 }
 
