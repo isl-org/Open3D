@@ -119,12 +119,33 @@ static void parse_function_name(const std::string& pybind_doc,
 // Parse docstring for a single argument
 // E.g. "cylinder_radius: float = 1.0"
 // E.g. "cylinder_radius: float"
-static ArgumentDoc parse_single_argument(const std::string& argument_str) {
+static ArgumentDoc parse_argument_token(const std::string& argument_token) {
+    std::cout << "argument_token:" << std::endl << argument_token << std::endl;
     ArgumentDoc argument_doc;
+
+    // Argument with default value
+    std::regex rgx_with_default(
+            "([A-Za-z_][A-Za-z\\d_]*): ([A-Za-z_][A-Za-z\\d_:]*) = (.*)");
+    std::smatch matches;
+    if (std::regex_search(argument_token, matches, rgx_with_default)) {
+        argument_doc.name_ = matches[1].str();
+        argument_doc.type_ = matches[2].str();
+        argument_doc.default_ = matches[3].str();
+    } else {
+        // Argument without default value
+        std::regex rgx_without_default(
+                "([A-Za-z_][A-Za-z\\d_]*): ([A-Za-z_][A-Za-z\\d_:]*)");
+        if (std::regex_search(argument_token, matches, rgx_with_default)) {
+            argument_doc.name_ = matches[1].str();
+            argument_doc.type_ = matches[2].str();
+        }
+    }
+
     return argument_doc;
 }
 
-std::vector<std::string> get_argument_tokens(const std::string& pybind_doc) {
+static std::vector<std::string> get_argument_tokens(
+        const std::string& pybind_doc) {
     // First insert commas to make things easy
     // From:
     // "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
@@ -181,6 +202,11 @@ std::vector<std::string> get_argument_tokens(const std::string& pybind_doc) {
 static void parse_doc_arguments(const std::string& pybind_doc,
                                 FunctionDoc& function_doc) {
     std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc);
+    function_doc.argument_docs_.clear();
+    for (const std::string& argument_token : argument_tokens) {
+        function_doc.argument_docs_.push_back(
+                parse_argument_token(argument_token));
+    }
 }
 
 static void parse_doc_result(const std::string& pybind_doc,
