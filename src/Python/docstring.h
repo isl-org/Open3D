@@ -35,14 +35,14 @@ namespace docstring {
 
 class ArgumentDoc {
 public:
-    std::string argument_name_;
-    std::string argument_type_;
-    std::string argument_default_;
+    std::string name_;
+    std::string type_;
+    std::string default_;
 };
 
 class FunctionDoc {
 public:
-    std::string function_name_;
+    std::string name_;
     std::vector<ArgumentDoc> argument_docs_;
     std::string summary_;
     std::string body_;
