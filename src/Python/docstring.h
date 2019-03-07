@@ -35,18 +35,22 @@ namespace docstring {
 
 class ArgumentDoc {
 public:
-    std::string name_;
-    std::string type_;
-    std::string default_;
+    std::string name_ = "";
+    std::string type_ = "";
+    std::string default_ = "";
+    std::string body_ = "";
 };
 
 class FunctionDoc {
 public:
-    std::string name_;
+    std::string name_ = "";
     std::vector<ArgumentDoc> argument_docs_;
     ArgumentDoc return_doc_;
-    std::string summary_;
-    std::string body_;
+    std::string summary_ = "";
+    std::string body_ = "";
+
+    // Generate Google style python docstring
+    std::string to_string() const;
 };
 
 void function_doc_inject(

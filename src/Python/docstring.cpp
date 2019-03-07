@@ -28,6 +28,7 @@
 #include <unordered_map>
 #include <tuple>
 #include <unordered_set>
+#include <sstream>
 
 #include "Python/docstring.h"
 
@@ -149,6 +150,53 @@ create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.o
 Factory function to create an arrow mesh
 )";
     parse_doc_function(doc);
+}
+
+std::string FunctionDoc::to_string() const {
+    // Example Gooele style:
+    // http://www.sphinx-doc.org/en/1.5/ext/example_google.html
+
+    std::ostringstream rc;
+    std::string indent = "    ";
+
+    // Function signature to be parsed by Sphinx
+    rc << name_ << "(";
+    for (size_t i = 0; i < argument_docs_.size(); ++i) {
+        const ArgumentDoc& argument_doc = argument_docs_[i];
+        rc << argument_doc.name_;
+        if (argument_doc.default_ != "") {
+            rc << "=" << argument_doc.default_;
+        }
+        if (i != argument_docs_.size() - 1) {
+            rc << ", ";
+        }
+    }
+    rc << ")" << std::endl;
+
+    // Summary line, strictly speaking this shall be at the very front. However
+    // from a compiled Python module we need the function signature hints in
+    // front for Sphinx parsing and PyCharm autocomplete
+    if (summary_ != "") {
+        rc << std::endl;
+        rc << summary_ << std::endl;
+    }
+
+    // Arguments
+    if (argument_docs_.size() != 0) {
+        rc << std::endl;
+        rc << "Args:" << std::endl;
+        for (const ArgumentDoc& argument_doc : argument_docs_) {
+            rc << indent << argument_doc.name_ << "(" << argument_doc.type_
+               << "): " << argument_doc.body_ << std::endl;
+        }
+    }
+
+    // Return
+    rc << std::endl;
+    rc << "Returns:" << std::endl;
+    rc << indent << return_doc_.type_ << ": " << return_doc_.body_ << std::endl;
+
+    return rc.str();
 }
 
 }  // namespace docstring
