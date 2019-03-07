@@ -181,14 +181,12 @@ std::string FunctionDoc::ToGoogleDocString() const {
     return rc.str();
 }
 
-// Deduplicate namespace (optional)
 std::string FunctionDoc::NamespaceFix(const std::string& s) {
     std::string rc = std::regex_replace(s, std::regex("::"), ".");
     rc = std::regex_replace(rc, std::regex("open3d\\.open3d\\."), "open3d.");
     return rc;
 }
 
-// Run all string cleanup functions
 std::string FunctionDoc::StringCleanAll(const std::string& s,
                                         const std::string& white_space) {
     std::string rc = utility::StripString(s, white_space);
@@ -196,12 +194,7 @@ std::string FunctionDoc::StringCleanAll(const std::string& s,
     return rc;
 }
 
-// Parse docstring for a single argument
-// E.g. "cylinder_radius: float = 1.0"
-// E.g. "cylinder_radius: float"
 ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
-    // std::cout << "argument_token:" << std::endl << argument_token <<
-    // std::endl;
     ArgumentDoc argument_doc;
 
     // Argument with default value
