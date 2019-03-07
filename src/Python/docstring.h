@@ -82,7 +82,7 @@ protected:
     /// Parse ArgumentDoc for each argument
     void parse_arguments();
     /// Parse function return
-    void parse_result();
+    void parse_return();
 
 public:
     std::string name_ = "";

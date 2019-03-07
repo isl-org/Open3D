@@ -245,7 +245,7 @@ FunctionDoc::FunctionDoc(const std::string& pybind_doc)
     : pybind_doc_(pybind_doc) {
     parse_summary();
     parse_arguments();
-    parse_result();
+    parse_return();
 }
 
 void FunctionDoc::parse_summary() {
@@ -266,7 +266,7 @@ void FunctionDoc::parse_summary() {
 
 void FunctionDoc::parse_arguments() {}
 
-void FunctionDoc::parse_result() {}
+void FunctionDoc::parse_return() {}
 
 std::string FunctionDoc::to_string() const {
     // Example Gooele style:
