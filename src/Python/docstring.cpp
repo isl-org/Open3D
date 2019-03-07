@@ -105,20 +105,6 @@ static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
     }
 }
 
-void parse_regex_dummy() {
-    std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
-    std::smatch res;
-    std::string str =
-            "cylinder_radius: float = 1.0, cone_split: int = 1, kim_il_sung: "
-            "int = 2";
-
-    std::string::const_iterator start_iter(str.cbegin());
-    while (std::regex_search(start_iter, str.cend(), res, pattern)) {
-        std::cout << res[0] << std::endl;
-        start_iter = res.suffix().first;
-    }
-}
-
 static void parse_function_name(const std::string& pybind_doc,
                                 FunctionDoc& function_doc) {
     size_t parenthesis_pos = pybind_doc.find("(");
@@ -136,6 +122,22 @@ static void parse_function_name(const std::string& pybind_doc,
 static ArgumentDoc parse_single_argument(const std::string& argument_str) {
     ArgumentDoc argument_doc;
     return argument_doc;
+}
+
+void parse_regex_dummy() {
+    std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
+    std::smatch res;
+    std::string str =
+            "hello, cylinder_radius: float = 1.0, cone_s34plit: int = 1, "
+            "kim_il_sung5: int = 2";
+
+    std::string::const_iterator start_iter(str.cbegin());
+    while (std::regex_search(start_iter, str.cend(), res, pattern)) {
+        std::cout << res[0] << std::endl;
+        size_t pos = res.position(0) + (start_iter - str.cbegin());
+        start_iter = res.suffix().first;
+        std::cout << "location " << pos << std::endl;
+    }
 }
 
 // Parse docstrings of arguments
@@ -159,7 +161,8 @@ static void parse_doc_arguments(const std::string& pybind_doc,
     } else {
         doc.replace(arrow_pos, 0, ", ");
     }
-    std::cout << doc << std::endl;
+
+    // Find begin index of each argument
 }
 
 static void parse_doc_result(const std::string& pybind_doc,
