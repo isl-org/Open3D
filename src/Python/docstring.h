@@ -33,9 +33,24 @@
 namespace open3d {
 namespace docstring {
 
+class ArgumentDoc {
+public:
+    std::string argument_name_;
+    std::string argument_type_;
+    std::string argument_default_;
+};
+
+class FunctionDoc {
+public:
+    std::string function_name_;
+    std::vector<ArgumentDoc> argument_docs_;
+    std::string summary_;
+    std::string body_;
+};
+
 void function_doc_inject(
         py::module& pybind_module,
         const std::string& function_name,
         const std::unordered_map<std::string, std::string> map_parameter_docs);
-}
+}  // namespace docstring
 }  // namespace open3d

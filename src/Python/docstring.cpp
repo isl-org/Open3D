@@ -34,25 +34,10 @@
 namespace open3d {
 namespace docstring {
 
-class ArgumentDoc {
-public:
-    std::string argument_name_;
-    std::string argument_type_;
-    std::string argument_default_;
-};
-
-class FunctionDoc {
-public:
-    std::string function_name_;
-    std::vector<ArgumentDoc> argument_docs_;
-    std::string summary_;
-    std::string body_;
-};
-
 // Search and replace in string
-std::string str_replace(std::string s,
-                        const std::string& search,
-                        const std::string& replace) {
+static std::string str_replace(std::string s,
+                               const std::string& search,
+                               const std::string& replace) {
     // https://stackoverflow.com/a/14679003/1255535
     size_t pos = 0;
     while ((pos = s.find(search, pos)) != std::string::npos) {
@@ -63,13 +48,13 @@ std::string str_replace(std::string s,
 }
 
 // Deduplicate namespace (optional)
-std::string namespace_dedup(const std::string& s) {
+static std::string namespace_dedup(const std::string& s) {
     return str_replace(s, "open3d.open3d", "open3d");
 }
 
 // Similar to Python's str.strip()
-std::string str_strip(const std::string& s,
-                      const std::string& white_space = " \t\n") {
+static std::string str_strip(const std::string& s,
+                             const std::string& white_space = " \t\n") {
     size_t begin_pos = s.find_first_not_of(white_space);
     if (begin_pos == std::string::npos) {
         return "";
@@ -79,9 +64,9 @@ std::string str_strip(const std::string& s,
 }
 
 // Count the length of current word starting from start_pos
-size_t word_length(const std::string& doc,
-                   size_t start_pos,
-                   const std::string& valid_chars = "_") {
+static size_t word_length(const std::string& doc,
+                          size_t start_pos,
+                          const std::string& valid_chars = "_") {
     std::unordered_set<char> valid_chars_set;
     for (const char& c : valid_chars) {
         valid_chars_set.insert(c);
@@ -105,7 +90,7 @@ size_t word_length(const std::string& doc,
 // to
 // ("create_mesh_arrow(cylinder_radius: float = 1.0)",
 //  "geometry.TriangleMesh")
-std::pair<std::string, std::string> split_arrow(const std::string& doc) {
+static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
     std::size_t arrow_pos = doc.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
         std::string func_name_and_params = doc.substr(0, arrow_pos);
@@ -120,8 +105,8 @@ std::pair<std::string, std::string> split_arrow(const std::string& doc) {
 
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
-std::pair<std::unordered_map<std::string, std::string>,
-          std::vector<std::string>>
+static std::pair<std::unordered_map<std::string, std::string>,
+                 std::vector<std::string>>
 parse_pybind_function_doc(const std::string& pybind_doc) {
     std::unordered_map<std::string, std::string> map_parameter_type_docs;
     std::vector<std::string> ordered_parameters;
