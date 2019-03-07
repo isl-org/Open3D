@@ -189,25 +189,12 @@ static void parse_doc_arguments(const std::string& pybind_doc,
     }
 }
 
-static void parse_doc_result(const std::string& pybind_doc,
-                             FunctionDoc& function_doc) {
-    size_t arrow_pos = pybind_doc.rfind(" -> ");
-    if (arrow_pos != std::string::npos) {
-        size_t result_type_pos = arrow_pos + 4;
-        std::string return_type = pybind_doc.substr(
-                result_type_pos,
-                word_length(pybind_doc, result_type_pos, "._:"));
-        function_doc.return_doc_.type_ = str_clean_all(return_type);
-    }
-}
-
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
 static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     FunctionDoc function_doc(pybind_doc);
     parse_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
-    parse_doc_result(pybind_doc, function_doc);
     return function_doc;
 }
 
@@ -266,7 +253,16 @@ void FunctionDoc::parse_summary() {
 
 void FunctionDoc::parse_arguments() {}
 
-void FunctionDoc::parse_return() {}
+void FunctionDoc::parse_return() {
+    size_t arrow_pos = pybind_doc_.rfind(" -> ");
+    if (arrow_pos != std::string::npos) {
+        size_t result_type_pos = arrow_pos + 4;
+        std::string return_type = pybind_doc_.substr(
+                result_type_pos,
+                word_length(pybind_doc_, result_type_pos, "._:"));
+        return_doc_.type_ = str_clean_all(return_type);
+    }
+}
 
 std::string FunctionDoc::to_string() const {
     // Example Gooele style:
