@@ -108,5 +108,10 @@ void SplitString(std::vector<std::string>& tokens,
                  const std::string& delimiters = " ",
                  bool trim_empty_str = true);
 
+/// Strip empty charactors in front and after string. Similar to Python's
+/// str.strip()
+std::string StripString(const std::string& s,
+                        const std::string& white_space = " \t\n");
+
 }  // namespace utility
 }  // namespace open3d

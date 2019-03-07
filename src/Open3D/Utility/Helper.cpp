@@ -44,5 +44,14 @@ void SplitString(std::vector<std::string> &tokens,
     }
 }
 
+std::string StripString(const std::string &s, const std::string &white_space) {
+    size_t begin_pos = s.find_first_not_of(white_space);
+    if (begin_pos == std::string::npos) {
+        return "";
+    }
+    size_t end_pos = s.find_last_not_of(white_space);
+    return s.substr(begin_pos, end_pos - begin_pos + 1);
+}
+
 }  // namespace utility
 }  // namespace open3d

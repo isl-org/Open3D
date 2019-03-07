@@ -107,10 +107,6 @@ protected:
     static std::string StringCleanAll(const std::string& s,
                                       const std::string& white_space = " \t\n");
 
-    /// Similar to Python's strip()
-    static std::string StringStrip(const std::string& s,
-                                   const std::string& white_space = " \t\n");
-
     /// Apply fixes to namespace, e.g. "::" to "." for python
     static std::string NamespaceFix(const std::string& s);
 

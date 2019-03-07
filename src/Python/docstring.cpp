@@ -32,6 +32,7 @@
 #include <regex>
 
 #include "Python/docstring.h"
+#include "Open3D/Utility/Helper.h"
 
 namespace open3d {
 namespace docstring {
@@ -187,21 +188,10 @@ std::string FunctionDoc::NamespaceFix(const std::string& s) {
     return rc;
 }
 
-// Similar to Python's str.strip()
-std::string FunctionDoc::StringStrip(const std::string& s,
-                                     const std::string& white_space) {
-    size_t begin_pos = s.find_first_not_of(white_space);
-    if (begin_pos == std::string::npos) {
-        return "";
-    }
-    size_t end_pos = s.find_last_not_of(white_space);
-    return s.substr(begin_pos, end_pos - begin_pos + 1);
-}
-
 // Run all string cleanup functions
 std::string FunctionDoc::StringCleanAll(const std::string& s,
                                         const std::string& white_space) {
-    std::string rc = StringStrip(s, white_space);
+    std::string rc = utility::StripString(s, white_space);
     rc = NamespaceFix(rc);
     return rc;
 }
