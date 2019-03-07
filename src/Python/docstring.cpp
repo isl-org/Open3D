@@ -221,7 +221,7 @@ static void parse_doc_summary(const std::string& pybind_doc,
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
 static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
-    FunctionDoc function_doc;
+    FunctionDoc function_doc(pybind_doc);
     parse_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
     parse_doc_result(pybind_doc, function_doc);
@@ -241,9 +241,6 @@ void function_doc_inject(py::module& pybind_module,
     }
     PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
 
-    // std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
-    // std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
-
     FunctionDoc fd = parse_doc_function(f->m_ml->ml_doc);
     for (const auto& it : map_parameter_body_docs) {
         fd.inject_argument_doc_body(it.first, it.second);
@@ -261,6 +258,9 @@ void FunctionDoc::inject_argument_doc_body(
         }
     }
 }
+
+FunctionDoc::FunctionDoc(const std::string& pybind_doc)
+    : pybind_doc_(pybind_doc) {}
 
 std::string FunctionDoc::to_string() const {
     // Example Gooele style:

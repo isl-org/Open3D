@@ -67,6 +67,8 @@ public:
 /// to maintain to keep track of the upstream pybind11.
 class FunctionDoc {
 public:
+    FunctionDoc(const std::string& pybind_doc);
+
     /// Inject ArgumentDoc body_ docstring
     void inject_argument_doc_body(const std::string& argument_name,
                                   const std::string& argument_doc_body);
@@ -80,6 +82,9 @@ public:
     ArgumentDoc return_doc_;
     std::string summary_ = "";
     std::string body_ = "";
+
+protected:
+    std::string pybind_doc_ = "";
 };
 
 void function_doc_inject(py::module& pybind_module,
