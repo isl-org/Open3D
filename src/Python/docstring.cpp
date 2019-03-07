@@ -97,7 +97,7 @@ static std::pair<std::string, std::string> split_arrow(const std::string& doc) {
     if (arrow_pos != std::string::npos) {
         std::string func_name_and_params = doc.substr(0, arrow_pos);
         std::string return_type = doc.substr(
-                arrow_pos + 4, word_length(doc, arrow_pos + 4, "._"));
+                arrow_pos + 4, word_length(doc, arrow_pos + 4, "._:"));
         return std::make_pair(namespace_dedup(str_strip(func_name_and_params)),
                               namespace_dedup(str_strip(return_type)));
     } else {
@@ -119,15 +119,28 @@ void parse_regex_dummy() {
     }
 }
 
+static void parse_function_name(const std::string& pybind_doc,
+                                FunctionDoc& function_doc) {
+    size_t parenthesis_pos = pybind_doc.find("(");
+    if (parenthesis_pos == std::string::npos) {
+        return;
+    } else {
+        std::string name = pybind_doc.substr(0, parenthesis_pos);
+        function_doc.name_ = name;
+    }
+}
+
 static void parse_doc_arguments(const std::string& pybind_doc,
                                 FunctionDoc& function_doc) {}
 
 static void parse_doc_result(const std::string& pybind_doc,
                              FunctionDoc& function_doc) {
-    std::string _;
-    std::string return_type;
-    std::tie(_, return_type) = split_arrow(pybind_doc);
-    function_doc.return_doc_.type_ = return_type;
+    std::size_t arrow_pos = pybind_doc.rfind(" -> ");
+    if (arrow_pos != std::string::npos) {
+        std::string return_type = pybind_doc.substr(
+                arrow_pos + 4, word_length(pybind_doc, arrow_pos + 4, "._:"));
+        function_doc.return_doc_.type_ = return_type;
+    }
 }
 
 // Currently copied this function for testing
@@ -140,6 +153,7 @@ static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     std::string return_type;
     std::tie(func_name_and_arguments, return_type) = split_arrow(pybind_doc);
 
+    parse_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
     parse_doc_result(pybind_doc, function_doc);
 
@@ -157,7 +171,7 @@ void function_doc_inject(
         return;
     }
     PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
-    f->m_ml->ml_doc = "read_feature(filenamelalala)";
+    // f->m_ml->ml_doc = "read_feature(filenamelalala)";
 
     std::string doc = R"(
 create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.open3d.geometry.TriangleMesh
@@ -165,6 +179,9 @@ create_mesh_arrow(cylinder_radius: float = 1.0, cone_split: int = 1) -> open3d.o
 Factory function to create an arrow mesh
 )";
     std::cout << parse_doc_function(doc).to_string();
+
+    // std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
+    std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
 }
 
 std::string FunctionDoc::to_string() const {
