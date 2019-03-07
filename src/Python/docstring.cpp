@@ -237,10 +237,10 @@ static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     return function_doc;
 }
 
-void function_doc_inject(
-        py::module& pybind_module,
-        const std::string& function_name,
-        const std::unordered_map<std::string, std::string> map_parameter_docs) {
+void function_doc_inject(py::module& pybind_module,
+                         const std::string& function_name,
+                         const std::unordered_map<std::string, std::string>
+                                 map_parameter_body_docs) {
     // Get function
     PyObject* module = pybind_module.ptr();
     PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
@@ -249,8 +249,26 @@ void function_doc_inject(
     }
     PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
 
-    std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
-    std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
+    // std::cout << "f->m_ml->ml_doc " << f->m_ml->ml_doc << std::endl;
+    // std::cout << parse_doc_function(f->m_ml->ml_doc).to_string();
+
+    FunctionDoc fd = parse_doc_function(f->m_ml->ml_doc);
+    for (const auto& it : map_parameter_body_docs) {
+        fd.inject_argument_doc_body(it.first, it.second);
+    }
+    f->m_ml->ml_doc = fd.to_string().c_str();
+    std::cout << f->m_ml->ml_doc << std::endl;
+}
+
+void FunctionDoc::inject_argument_doc_body(
+        const std::string& argument_name,
+        const std::string& argument_doc_body) {
+    for (ArgumentDoc& argument_doc : argument_docs_) {
+        if (argument_doc.name_ == argument_name) {
+            argument_doc.body_ = argument_doc_body;
+            break;
+        }
+    }
 }
 
 std::string FunctionDoc::to_string() const {

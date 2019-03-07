@@ -51,6 +51,10 @@ public:
 
     // Generate Google style python docstring
     std::string to_string() const;
+
+    // Inject ArgumentDoc body_ docstring
+    void inject_argument_doc_body(const std::string& argument_name,
+                                  const std::string& argument_doc_body);
 };
 
 void function_doc_inject(
