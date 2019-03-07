@@ -30,6 +30,7 @@
 #include <Open3D/Geometry/Geometry.h>
 #include <Open3D/Geometry/Geometry2D.h>
 #include <Open3D/Geometry/Geometry3D.h>
+#include <Open3D/Geometry/TriangleMesh.h>
 
 #include "Python/geometry/geometry.h"
 
@@ -70,4 +71,22 @@ public:
     Eigen::Vector2d GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2d, Geometry2DBase, );
     }
+};
+
+template <class TriangleMeshBase = geometry::TriangleMesh>
+class PyTriangleMesh : public PyGeometry3D<TriangleMeshBase> {
+public:
+    using PyGeometry3D<TriangleMeshBase>::PyGeometry3D;
+    void RemoveDuplicatedVertices() override {
+        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveDuplicatedVertices, );
+    };
+    void RemoveDuplicatedTriangles() override {
+        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveDuplicatedTriangles, );
+    };
+    void RemoveNonManifoldVertices() override {
+        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveNonManifoldVertices, );
+    };
+    void RemoveNonManifoldTriangles() override {
+        PYBIND11_OVERLOAD(void, TriangleMeshBase, RemoveNonManifoldTriangles, );
+    };
 };

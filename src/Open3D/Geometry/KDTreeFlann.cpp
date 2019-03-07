@@ -34,6 +34,7 @@
 #include <flann/flann.hpp>
 #include <Open3D/Geometry/PointCloud.h>
 #include <Open3D/Geometry/TriangleMesh.h>
+#include <Open3D/Geometry/HalfEdgeTriangleMesh.h>
 #include <Open3D/Utility/Console.h>
 
 namespace open3d {
@@ -64,6 +65,7 @@ bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
                             .points_.data(),
                     3, ((const PointCloud &)geometry).points_.size()));
         case Geometry::GeometryType::TriangleMesh:
+        case Geometry::GeometryType::HalfEdgeTriangleMesh:
             return SetRawData(Eigen::Map<const Eigen::MatrixXd>(
                     (const double *)((const TriangleMesh &)geometry)
                             .vertices_.data(),

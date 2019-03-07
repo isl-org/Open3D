@@ -34,6 +34,7 @@ void pybind_pointcloud(py::module &m);
 void pybind_voxelgrid(py::module &m);
 void pybind_lineset(py::module &m);
 void pybind_trianglemesh(py::module &m);
+void pybind_halfedgetrianglemesh(py::module &m);
 void pybind_image(py::module &m);
 void pybind_kdtreeflann(py::module &m);
 void pybind_pointcloud_methods(py::module &m);

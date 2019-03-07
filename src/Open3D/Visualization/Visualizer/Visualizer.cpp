@@ -325,7 +325,9 @@ bool Visualizer::AddGeometry(
         }
         geometry_renderer_ptrs_.push_back(renderer_ptr);
     } else if (geometry_ptr->GetGeometryType() ==
-               geometry::Geometry::GeometryType::TriangleMesh) {
+                       geometry::Geometry::GeometryType::TriangleMesh ||
+               geometry_ptr->GetGeometryType() ==
+                       geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         auto renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;

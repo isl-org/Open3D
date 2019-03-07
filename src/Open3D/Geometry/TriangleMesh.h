@@ -65,10 +65,12 @@ public:
     void Purge();
 
 protected:
-    void RemoveDuplicatedVertices();
-    void RemoveDuplicatedTriangles();
-    void RemoveNonManifoldVertices();
-    void RemoveNonManifoldTriangles();
+    // Forward child class type to avoid indirect nonvirtual base
+    TriangleMesh(Geometry::GeometryType type) : Geometry3D(type){};
+    virtual void RemoveDuplicatedVertices();
+    virtual void RemoveDuplicatedTriangles();
+    virtual void RemoveNonManifoldVertices();
+    virtual void RemoveNonManifoldTriangles();
 
 public:
     bool HasVertices() const { return vertices_.size() > 0; }

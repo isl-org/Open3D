@@ -38,7 +38,11 @@ namespace geometry {
 
 void TriangleMesh::Clear() {
     vertices_.clear();
+    vertex_normals_.clear();
+    vertex_colors_.clear();
     triangles_.clear();
+    triangle_normals_.clear();
+    adjacency_list_.clear();
 }
 
 bool TriangleMesh::IsEmpty() const { return !HasVertices(); }
@@ -190,6 +194,7 @@ void TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
 }
 
 void TriangleMesh::ComputeAdjacencyList() {
+    adjacency_list_.clear();
     adjacency_list_.resize(vertices_.size());
     for (const auto &triangle : triangles_) {
         adjacency_list_[triangle(0)].insert(triangle(1));

@@ -153,7 +153,9 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -171,7 +173,9 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         const ViewControl &view,
         std::vector<Eigen::Vector3f> &points) {
     if (geometry.GetGeometryType() !=
-        geometry::Geometry::GeometryType::TriangleMesh) {
+                geometry::Geometry::GeometryType::TriangleMesh &&
+        geometry.GetGeometryType() !=
+                geometry::Geometry::GeometryType::HalfEdgeTriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }

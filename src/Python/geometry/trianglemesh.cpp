@@ -90,7 +90,11 @@ void pybind_trianglemesh(py::module &m) {
 }
 
 void pybind_trianglemesh_methods(py::module &m) {
-    m.def("select_down_sample", &geometry::SelectDownSample,
+    m.def("select_down_sample",
+          (std::shared_ptr<geometry::TriangleMesh>(*)(
+                  const geometry::TriangleMesh &,
+                  const std::vector<size_t> &)) &
+                  geometry::SelectDownSample,
           "Function to select mesh from input triangle mesh into output "
           "triangle mesh",
           "input"_a, "indices"_a);

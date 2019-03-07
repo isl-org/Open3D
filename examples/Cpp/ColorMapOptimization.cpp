@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     if (argc != 2) {
         utility::PrintInfo("Usage :\n");
-        utility::PrintInfo(">    color_map::ColorMapOptimization data_dir\n");
+        utility::PrintInfo(">    ColorMapOptimization data_dir\n");
         return 1;
     }
     // Read RGBD images
