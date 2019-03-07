@@ -107,7 +107,12 @@ static void parse_doc_arguments(const std::string& pybind_doc,
                                 FunctionDoc& function_doc) {}
 
 static void parse_doc_result(const std::string& pybind_doc,
-                             FunctionDoc& function_doc) {}
+                             FunctionDoc& function_doc) {
+    std::string _;
+    std::string return_type;
+    std::tie(_, return_type) = split_arrow(pybind_doc);
+    function_doc.return_doc_.type_ = return_type;
+}
 
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
