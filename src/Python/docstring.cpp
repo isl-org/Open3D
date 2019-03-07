@@ -50,7 +50,7 @@ void FunctionDocInject(py::module& pybind_module,
 
     FunctionDoc fd(f->m_ml->ml_doc);
     for (const auto& it : map_parameter_body_docs) {
-        fd.inject_argument_doc_body(it.first, it.second);
+        fd.InjectArgumentDocBody(it.first, it.second);
     }
     f->m_ml->ml_doc = strdup(fd.to_string().c_str());
 }
@@ -63,9 +63,8 @@ FunctionDoc::FunctionDoc(const std::string& pybind_doc)
     parse_return();
 }
 
-void FunctionDoc::inject_argument_doc_body(
-        const std::string& argument_name,
-        const std::string& argument_doc_body) {
+void FunctionDoc::InjectArgumentDocBody(const std::string& argument_name,
+                                        const std::string& argument_doc_body) {
     for (ArgumentDoc& argument_doc : argument_docs_) {
         if (argument_doc.name_ == argument_name) {
             argument_doc.body_ = argument_doc_body;

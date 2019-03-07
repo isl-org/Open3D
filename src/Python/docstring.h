@@ -69,9 +69,9 @@ class FunctionDoc {
 public:
     FunctionDoc(const std::string& pybind_doc);
 
-    /// Inject ArgumentDoc body_ docstring
-    void inject_argument_doc_body(const std::string& argument_name,
-                                  const std::string& argument_doc_body);
+    /// Inject to ArgumentDoc.body_ docstring of a given argument
+    void InjectArgumentDocBody(const std::string& argument_name,
+                               const std::string& argument_doc_body);
 
     /// Generate Google style python docstring
     std::string to_string() const;
