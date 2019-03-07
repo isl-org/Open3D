@@ -212,11 +212,30 @@ static void parse_doc_arguments(const std::string& pybind_doc,
 
 static void parse_doc_result(const std::string& pybind_doc,
                              FunctionDoc& function_doc) {
-    std::size_t arrow_pos = pybind_doc.rfind(" -> ");
+    size_t arrow_pos = pybind_doc.rfind(" -> ");
     if (arrow_pos != std::string::npos) {
+        size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc.substr(
-                arrow_pos + 4, word_length(pybind_doc, arrow_pos + 4, "._:"));
+                result_type_pos,
+                word_length(pybind_doc, result_type_pos, "._:"));
         function_doc.return_doc_.type_ = return_type;
+    }
+}
+
+static void parse_doc_summary(const std::string& pybind_doc,
+                              FunctionDoc& function_doc) {
+    size_t arrow_pos = pybind_doc.rfind(" -> ");
+    if (arrow_pos != std::string::npos) {
+        size_t result_type_pos = arrow_pos + 4;
+        size_t summary_start_pos =
+                result_type_pos +
+                word_length(pybind_doc, result_type_pos, "._:");
+        size_t summary_len = pybind_doc.size() - summary_start_pos;
+        if (summary_len > 0) {
+            std::string summary =
+                    pybind_doc.substr(summary_start_pos, summary_len);
+            function_doc.summary_ = str_strip(summary);
+        }
     }
 }
 
@@ -233,6 +252,7 @@ static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     parse_function_name(pybind_doc, function_doc);
     parse_doc_arguments(pybind_doc, function_doc);
     parse_doc_result(pybind_doc, function_doc);
+    parse_doc_summary(pybind_doc, function_doc);
 
     return function_doc;
 }
