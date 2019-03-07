@@ -36,6 +36,151 @@
 namespace open3d {
 namespace docstring {
 
+void function_doc_inject(py::module& pybind_module,
+                         const std::string& function_name,
+                         const std::unordered_map<std::string, std::string>
+                                 map_parameter_body_docs) {
+    // Get function
+    PyObject* module = pybind_module.ptr();
+    PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
+    if (Py_TYPE(f_obj) != &PyCFunction_Type) {
+        return;
+    }
+    PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
+
+    FunctionDoc fd(f->m_ml->ml_doc);
+    for (const auto& it : map_parameter_body_docs) {
+        fd.inject_argument_doc_body(it.first, it.second);
+    }
+    f->m_ml->ml_doc = strdup(fd.to_string().c_str());
+}
+
+FunctionDoc::FunctionDoc(const std::string& pybind_doc)
+    : pybind_doc_(pybind_doc) {
+    parse_function_name();
+    parse_summary();
+    parse_arguments();
+    parse_return();
+}
+
+void FunctionDoc::inject_argument_doc_body(
+        const std::string& argument_name,
+        const std::string& argument_doc_body) {
+    for (ArgumentDoc& argument_doc : argument_docs_) {
+        if (argument_doc.name_ == argument_name) {
+            argument_doc.body_ = argument_doc_body;
+            break;
+        }
+    }
+}
+
+void FunctionDoc::parse_function_name() {
+    size_t parenthesis_pos = pybind_doc_.find("(");
+    if (parenthesis_pos == std::string::npos) {
+        return;
+    } else {
+        std::string name = pybind_doc_.substr(0, parenthesis_pos);
+        name_ = name;
+    }
+}
+
+void FunctionDoc::parse_summary() {
+    size_t arrow_pos = pybind_doc_.rfind(" -> ");
+    if (arrow_pos != std::string::npos) {
+        size_t result_type_pos = arrow_pos + 4;
+        size_t summary_start_pos =
+                result_type_pos +
+                word_length(pybind_doc_, result_type_pos, "._:");
+        size_t summary_len = pybind_doc_.size() - summary_start_pos;
+        if (summary_len > 0) {
+            std::string summary =
+                    pybind_doc_.substr(summary_start_pos, summary_len);
+            summary_ = str_clean_all(summary);
+        }
+    }
+}
+
+void FunctionDoc::parse_arguments() {
+    // Parse docstrings of arguments
+    // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
+    // Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and
+    //       call function to parse each argument respectively
+    std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc_);
+    argument_docs_.clear();
+    for (const std::string& argument_token : argument_tokens) {
+        argument_docs_.push_back(parse_argument_token(argument_token));
+    }
+}
+
+void FunctionDoc::parse_return() {
+    size_t arrow_pos = pybind_doc_.rfind(" -> ");
+    if (arrow_pos != std::string::npos) {
+        size_t result_type_pos = arrow_pos + 4;
+        std::string return_type = pybind_doc_.substr(
+                result_type_pos,
+                word_length(pybind_doc_, result_type_pos, "._:"));
+        return_doc_.type_ = str_clean_all(return_type);
+    }
+}
+
+std::string FunctionDoc::to_string() const {
+    // Example Gooele style:
+    // http://www.sphinx-doc.org/en/1.5/ext/example_google.html
+
+    std::ostringstream rc;
+    std::string indent = "    ";
+
+    // Function signature to be parsed by Sphinx
+    rc << name_ << "(";
+    for (size_t i = 0; i < argument_docs_.size(); ++i) {
+        const ArgumentDoc& argument_doc = argument_docs_[i];
+        rc << argument_doc.name_;
+        if (argument_doc.default_ != "") {
+            rc << "=" << argument_doc.default_;
+        }
+        if (i != argument_docs_.size() - 1) {
+            rc << ", ";
+        }
+    }
+    rc << ")" << std::endl;
+
+    // Summary line, strictly speaking this shall be at the very front. However
+    // from a compiled Python module we need the function signature hints in
+    // front for Sphinx parsing and PyCharm autocomplete
+    if (summary_ != "") {
+        rc << std::endl;
+        rc << summary_ << std::endl;
+    }
+
+    // Arguments
+    if (argument_docs_.size() != 0) {
+        rc << std::endl;
+        rc << "Args:" << std::endl;
+        for (const ArgumentDoc& argument_doc : argument_docs_) {
+            rc << indent << argument_doc.name_ << " (" << argument_doc.type_;
+            if (argument_doc.default_ != "") {
+                rc << ", optional";
+            }
+            rc << ")";
+            if (argument_doc.body_ != "") {
+                rc << ": " << argument_doc.body_;
+            }
+            rc << std::endl;
+        }
+    }
+
+    // Return
+    rc << std::endl;
+    rc << "Returns:" << std::endl;
+    rc << indent << return_doc_.type_;
+    if (return_doc_.body_ != "") {
+        rc << ": " << return_doc_.body_;
+    }
+    rc << std::endl;
+
+    return rc.str();
+}
+
 // Deduplicate namespace (optional)
 std::string FunctionDoc::namespace_fix(const std::string& s) {
     std::string rc = std::regex_replace(s, std::regex("::"), ".");
@@ -163,151 +308,6 @@ std::vector<std::string> FunctionDoc::get_argument_tokens(
         argument_tokens.push_back(token);
     }
     return argument_tokens;
-}
-
-void function_doc_inject(py::module& pybind_module,
-                         const std::string& function_name,
-                         const std::unordered_map<std::string, std::string>
-                                 map_parameter_body_docs) {
-    // Get function
-    PyObject* module = pybind_module.ptr();
-    PyObject* f_obj = PyObject_GetAttrString(module, function_name.c_str());
-    if (Py_TYPE(f_obj) != &PyCFunction_Type) {
-        return;
-    }
-    PyCFunctionObject* f = (PyCFunctionObject*)f_obj;
-
-    FunctionDoc fd(f->m_ml->ml_doc);
-    for (const auto& it : map_parameter_body_docs) {
-        fd.inject_argument_doc_body(it.first, it.second);
-    }
-    f->m_ml->ml_doc = strdup(fd.to_string().c_str());
-}
-
-FunctionDoc::FunctionDoc(const std::string& pybind_doc)
-    : pybind_doc_(pybind_doc) {
-    parse_function_name();
-    parse_summary();
-    parse_arguments();
-    parse_return();
-}
-
-void FunctionDoc::parse_function_name() {
-    size_t parenthesis_pos = pybind_doc_.find("(");
-    if (parenthesis_pos == std::string::npos) {
-        return;
-    } else {
-        std::string name = pybind_doc_.substr(0, parenthesis_pos);
-        name_ = name;
-    }
-}
-
-void FunctionDoc::parse_summary() {
-    size_t arrow_pos = pybind_doc_.rfind(" -> ");
-    if (arrow_pos != std::string::npos) {
-        size_t result_type_pos = arrow_pos + 4;
-        size_t summary_start_pos =
-                result_type_pos +
-                word_length(pybind_doc_, result_type_pos, "._:");
-        size_t summary_len = pybind_doc_.size() - summary_start_pos;
-        if (summary_len > 0) {
-            std::string summary =
-                    pybind_doc_.substr(summary_start_pos, summary_len);
-            summary_ = str_clean_all(summary);
-        }
-    }
-}
-
-void FunctionDoc::parse_arguments() {
-    // Parse docstrings of arguments
-    // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
-    // Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and
-    //       call function to parse each argument respectively
-    std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc_);
-    argument_docs_.clear();
-    for (const std::string& argument_token : argument_tokens) {
-        argument_docs_.push_back(parse_argument_token(argument_token));
-    }
-}
-
-void FunctionDoc::parse_return() {
-    size_t arrow_pos = pybind_doc_.rfind(" -> ");
-    if (arrow_pos != std::string::npos) {
-        size_t result_type_pos = arrow_pos + 4;
-        std::string return_type = pybind_doc_.substr(
-                result_type_pos,
-                word_length(pybind_doc_, result_type_pos, "._:"));
-        return_doc_.type_ = str_clean_all(return_type);
-    }
-}
-
-void FunctionDoc::inject_argument_doc_body(
-        const std::string& argument_name,
-        const std::string& argument_doc_body) {
-    for (ArgumentDoc& argument_doc : argument_docs_) {
-        if (argument_doc.name_ == argument_name) {
-            argument_doc.body_ = argument_doc_body;
-            break;
-        }
-    }
-}
-
-std::string FunctionDoc::to_string() const {
-    // Example Gooele style:
-    // http://www.sphinx-doc.org/en/1.5/ext/example_google.html
-
-    std::ostringstream rc;
-    std::string indent = "    ";
-
-    // Function signature to be parsed by Sphinx
-    rc << name_ << "(";
-    for (size_t i = 0; i < argument_docs_.size(); ++i) {
-        const ArgumentDoc& argument_doc = argument_docs_[i];
-        rc << argument_doc.name_;
-        if (argument_doc.default_ != "") {
-            rc << "=" << argument_doc.default_;
-        }
-        if (i != argument_docs_.size() - 1) {
-            rc << ", ";
-        }
-    }
-    rc << ")" << std::endl;
-
-    // Summary line, strictly speaking this shall be at the very front. However
-    // from a compiled Python module we need the function signature hints in
-    // front for Sphinx parsing and PyCharm autocomplete
-    if (summary_ != "") {
-        rc << std::endl;
-        rc << summary_ << std::endl;
-    }
-
-    // Arguments
-    if (argument_docs_.size() != 0) {
-        rc << std::endl;
-        rc << "Args:" << std::endl;
-        for (const ArgumentDoc& argument_doc : argument_docs_) {
-            rc << indent << argument_doc.name_ << " (" << argument_doc.type_;
-            if (argument_doc.default_ != "") {
-                rc << ", optional";
-            }
-            rc << ")";
-            if (argument_doc.body_ != "") {
-                rc << ": " << argument_doc.body_;
-            }
-            rc << std::endl;
-        }
-    }
-
-    // Return
-    rc << std::endl;
-    rc << "Returns:" << std::endl;
-    rc << indent << return_doc_.type_;
-    if (return_doc_.body_ != "") {
-        rc << ": " << return_doc_.body_;
-    }
-    rc << std::endl;
-
-    return rc.str();
 }
 
 }  // namespace docstring
