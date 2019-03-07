@@ -77,6 +77,8 @@ public:
     std::string to_string() const;
 
 protected:
+    /// Parse the function name from docstring
+    void parse_function_name();
     /// Parse the function "summary" docstring received from pybind
     void parse_summary();
     /// Parse ArgumentDoc for each argument

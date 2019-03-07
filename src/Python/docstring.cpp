@@ -84,17 +84,6 @@ static size_t word_length(const std::string& doc,
     return length;
 }
 
-static void parse_function_name(const std::string& pybind_doc,
-                                FunctionDoc& function_doc) {
-    size_t parenthesis_pos = pybind_doc.find("(");
-    if (parenthesis_pos == std::string::npos) {
-        return;
-    } else {
-        std::string name = pybind_doc.substr(0, parenthesis_pos);
-        function_doc.name_ = name;
-    }
-}
-
 // Parse docstring for a single argument
 // E.g. "cylinder_radius: float = 1.0"
 // E.g. "cylinder_radius: float"
@@ -175,26 +164,10 @@ static std::vector<std::string> get_argument_tokens(
     return argument_tokens;
 }
 
-// Parse docstrings of arguments
-// Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
-// Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and call
-//       parse_single_argument respectively
-static void parse_doc_arguments(const std::string& pybind_doc,
-                                FunctionDoc& function_doc) {
-    std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc);
-    function_doc.argument_docs_.clear();
-    for (const std::string& argument_token : argument_tokens) {
-        function_doc.argument_docs_.push_back(
-                parse_argument_token(argument_token));
-    }
-}
-
 // Currently copied this function for testing
 // TODO: link unit test with python module to enable direct testing
 static FunctionDoc parse_doc_function(const std::string& pybind_doc) {
     FunctionDoc function_doc(pybind_doc);
-    parse_function_name(pybind_doc, function_doc);
-    parse_doc_arguments(pybind_doc, function_doc);
     return function_doc;
 }
 
@@ -230,9 +203,20 @@ void FunctionDoc::inject_argument_doc_body(
 
 FunctionDoc::FunctionDoc(const std::string& pybind_doc)
     : pybind_doc_(pybind_doc) {
+    parse_function_name();
     parse_summary();
     parse_arguments();
     parse_return();
+}
+
+void FunctionDoc::parse_function_name() {
+    size_t parenthesis_pos = pybind_doc_.find("(");
+    if (parenthesis_pos == std::string::npos) {
+        return;
+    } else {
+        std::string name = pybind_doc_.substr(0, parenthesis_pos);
+        name_ = name;
+    }
 }
 
 void FunctionDoc::parse_summary() {
@@ -251,7 +235,17 @@ void FunctionDoc::parse_summary() {
     }
 }
 
-void FunctionDoc::parse_arguments() {}
+void FunctionDoc::parse_arguments() {
+    // Parse docstrings of arguments
+    // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
+    // Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and
+    //       call function to parse each argument respectively
+    std::vector<std::string> argument_tokens = get_argument_tokens(pybind_doc_);
+    argument_docs_.clear();
+    for (const std::string& argument_token : argument_tokens) {
+        argument_docs_.push_back(parse_argument_token(argument_token));
+    }
+}
 
 void FunctionDoc::parse_return() {
     size_t arrow_pos = pybind_doc_.rfind(" -> ");
