@@ -58,9 +58,9 @@ public:
     std::string body_ = "";
 };
 
-void function_doc_inject(
-        py::module& pybind_module,
-        const std::string& function_name,
-        const std::unordered_map<std::string, std::string> map_parameter_docs);
+void function_doc_inject(py::module& pybind_module,
+                         const std::string& function_name,
+                         const std::unordered_map<std::string, std::string>
+                                 map_parameter_docs = {});
 }  // namespace docstring
 }  // namespace open3d
