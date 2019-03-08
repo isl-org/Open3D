@@ -8,6 +8,7 @@ add_subdirectory(Registration)
 add_subdirectory(Utility)
 add_subdirectory(IO)
 add_subdirectory(Visualization)
+add_subdirectory(Types)
 
 # Source group for Visual Studio
 ADD_SOURCE_GROUP(Camera)
@@ -19,6 +20,7 @@ ADD_SOURCE_GROUP(Registration)
 ADD_SOURCE_GROUP(Utility)
 ADD_SOURCE_GROUP(IO)
 ADD_SOURCE_GROUP(Visualization)
+ADD_SOURCE_GROUP(Types)
 
 # Install headers
 install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -42,6 +44,7 @@ add_library(${CMAKE_PROJECT_NAME}
     $<TARGET_OBJECTS:Utility>
     $<TARGET_OBJECTS:IO>
     $<TARGET_OBJECTS:Visualization>
+    $<TARGET_OBJECTS:Types>
 )
 
 # headless rendering
