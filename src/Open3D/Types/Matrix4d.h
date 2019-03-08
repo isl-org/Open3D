@@ -19,35 +19,35 @@ typedef struct _Matrix4d {
     explicit operator double* const();
     // casting operator: readonly
     explicit operator const double* const();
-
-    bool operator==(const _Matrix4d& m);
-    bool operator!=(const _Matrix4d& m);
-    bool operator<=(const _Matrix4d& m);
-    bool operator>=(const _Matrix4d& m);
-
-    // addition
-    _Matrix4d operator+(const _Matrix4d& m) const;
-    // subtraction
-    _Matrix4d operator-(const _Matrix4d& m) const;
-    // addition assignment
-    _Matrix4d& operator+=(const _Matrix4d& m);
-    // subtraction assignment
-    _Matrix4d& operator-=(const _Matrix4d& m);
-    // addition
-    _Matrix4d operator+(const double& t) const;
-    // subtraction
-    _Matrix4d operator-(const double& t) const;
-    // multiply with scalar
-    _Matrix4d operator*(const double& t) const;
-    // divide by scalar
-    _Matrix4d operator/(const double& t) const;
-    // addition assignment
-    _Matrix4d& operator+=(const double& t);
-    // subtraction assignment
-    _Matrix4d& operator-=(const double& t);
-    // multiplication assignment
-    _Matrix4d& operator*=(const double& t);
-    // division assignment
-    _Matrix4d& operator/=(const double& t);
 } Matrix4d;
+
+    bool operator==(const Matrix4d& m0, const Matrix4d& m1);
+    bool operator!=(const Matrix4d& m0, const Matrix4d& m1);
+    bool operator<=(const Matrix4d& m0, const Matrix4d& m1);
+    bool operator>=(const Matrix4d& m0, const Matrix4d& m1);
+
+    // addition
+    Matrix4d operator+(const Matrix4d& m0, const Matrix4d& m1);
+    // subtraction
+    Matrix4d operator-(const Matrix4d& m0, const Matrix4d& m1);
+    // addition assignment
+    Matrix4d& operator+=(Matrix4d& m0, const Matrix4d& m1);
+    // subtraction assignment
+    Matrix4d& operator-=(Matrix4d& m0, const Matrix4d& m1);
+    // addition
+    Matrix4d operator+(const Matrix4d& m, const double& t);
+    // subtraction
+    Matrix4d operator-(const Matrix4d& m, const double& t);
+    // multiply with scalar
+    Matrix4d operator*(const Matrix4d& m, const double& t);
+    // divide by scalar
+    Matrix4d operator/(const Matrix4d& m, const double& t);
+    // addition assignment
+    Matrix4d& operator+=(Matrix4d& m, const double& t);
+    // subtraction assignment
+    Matrix4d& operator-=(Matrix4d& m, const double& t);
+    // multiplication assignment
+    Matrix4d& operator*=(Matrix4d& m, const double& t);
+    // division assignment
+    Matrix4d& operator/=(Matrix4d& m, const double& t);
 }  // namespace open3d
