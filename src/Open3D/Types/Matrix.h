@@ -16,14 +16,12 @@ struct Matrix {
 
         // subscript operator: readwrite
         T *operator[](const uint &i) {
-            // catch error in debug mode
             assert(i < ROWS);
 
             return (T *)&s[i];
         }
         // subscript operator: readonly
         const T *operator[](const uint &i) const {
-            // catch error in debug mode
             assert(i < ROWS);
 
             return (const T *const) & s[i];
@@ -165,14 +163,12 @@ struct Matrix<T, 1, COLS> {
 
         // subscript operator: readwrite
         T &operator[](const uint &i) {
-            // catch error in debug mode
             assert(i < COLS);
 
             return s[i];
         }
         // subscript operator: readonly
         const T &operator[](const uint &i) const {
-            // catch error in debug mode
             assert(i < COLS);
 
             return s[i];

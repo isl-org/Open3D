@@ -21,33 +21,33 @@ typedef struct _Matrix6f {
     explicit operator const float* const();
 } Matrix6f;
 
-    bool operator==(const Matrix6f& m0, const Matrix6f& m1);
-    bool operator!=(const Matrix6f& m0, const Matrix6f& m1);
-    bool operator<=(const Matrix6f& m0, const Matrix6f& m1);
-    bool operator>=(const Matrix6f& m0, const Matrix6f& m1);
+bool operator==(const Matrix6f& m0, const Matrix6f& m1);
+bool operator!=(const Matrix6f& m0, const Matrix6f& m1);
+bool operator<=(const Matrix6f& m0, const Matrix6f& m1);
+bool operator>=(const Matrix6f& m0, const Matrix6f& m1);
 
-    // addition
-    Matrix6f operator+(const Matrix6f& m0, const Matrix6f& m1);
-    // subtraction
-    Matrix6f operator-(const Matrix6f& m0, const Matrix6f& m1);
-    // addition assignment
-    Matrix6f& operator+=(Matrix6f& m0, const Matrix6f& m1);
-    // subtraction assignment
-    Matrix6f& operator-=(Matrix6f& m0, const Matrix6f& m1);
-    // addition
-    Matrix6f operator+(const Matrix6f& m, const float& t);
-    // subtraction
-    Matrix6f operator-(const Matrix6f& m, const float& t);
-    // multiply with scalar
-    Matrix6f operator*(const Matrix6f& m, const float& t);
-    // divide by scalar
-    Matrix6f operator/(const Matrix6f& m, const float& t);
-    // addition assignment
-    Matrix6f& operator+=(Matrix6f& m, const float& t);
-    // subtraction assignment
-    Matrix6f& operator-=(Matrix6f& m, const float& t);
-    // multiplication assignment
-    Matrix6f& operator*=(Matrix6f& m, const float& t);
-    // division assignment
-    Matrix6f& operator/=(Matrix6f& m, const float& t);
+// addition
+Matrix6f operator+(const Matrix6f& m0, const Matrix6f& m1);
+// subtraction
+Matrix6f operator-(const Matrix6f& m0, const Matrix6f& m1);
+// addition assignment
+Matrix6f& operator+=(Matrix6f& m0, const Matrix6f& m1);
+// subtraction assignment
+Matrix6f& operator-=(Matrix6f& m0, const Matrix6f& m1);
+// addition
+Matrix6f operator+(const Matrix6f& m, const float& t);
+// subtraction
+Matrix6f operator-(const Matrix6f& m, const float& t);
+// multiply with scalar
+Matrix6f operator*(const Matrix6f& m, const float& t);
+// divide by scalar
+Matrix6f operator/(const Matrix6f& m, const float& t);
+// addition assignment
+Matrix6f& operator+=(Matrix6f& m, const float& t);
+// subtraction assignment
+Matrix6f& operator-=(Matrix6f& m, const float& t);
+// multiplication assignment
+Matrix6f& operator*=(Matrix6f& m, const float& t);
+// division assignment
+Matrix6f& operator/=(Matrix6f& m, const float& t);
 }  // namespace open3d

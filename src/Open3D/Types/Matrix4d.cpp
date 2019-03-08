@@ -4,14 +4,12 @@
 #include <cassert>
 
 double *open3d::Matrix4d::operator[](const uint &i) {
-    // catch error in debug mode
     assert(i < Matrix4d::ROWS);
 
     return (double *)&s[i];
 }
 
 const double *open3d::Matrix4d::operator[](const uint &i) const {
-    // catch error in debug mode
     assert(i < Matrix4d::ROWS);
 
     return (const double *const) & s[i];
@@ -25,7 +23,7 @@ open3d::Matrix4d::operator const double *const() {
     return reinterpret_cast<const double *const>(s);
 }
 
-bool open3d::operator==(const Matrix4d& m0, const Matrix4d& m1) {
+bool open3d::operator==(const Matrix4d &m0, const Matrix4d &m1) {
     for (uint r = 0; r < Matrix4d::ROWS; r++)
         for (uint c = 0; c < Matrix4d::COLS; c++)
             if (m0[r][c] != m1[r][c]) return false;
@@ -33,11 +31,11 @@ bool open3d::operator==(const Matrix4d& m0, const Matrix4d& m1) {
     return true;
 }
 
-bool open3d::operator!=(const Matrix4d& m0, const Matrix4d& m1) {
+bool open3d::operator!=(const Matrix4d &m0, const Matrix4d &m1) {
     return !(m0 == m1);
 }
 
-bool open3d::operator<=(const Matrix4d& m0, const Matrix4d& m1) {
+bool open3d::operator<=(const Matrix4d &m0, const Matrix4d &m1) {
     for (uint r = 0; r < Matrix4d::ROWS; r++)
         for (uint c = 0; c < Matrix4d::COLS; c++)
             if (m0[r][c] > m1[r][c]) return false;
@@ -45,7 +43,7 @@ bool open3d::operator<=(const Matrix4d& m0, const Matrix4d& m1) {
     return true;
 }
 
-bool open3d::operator>=(const Matrix4d& m0, const Matrix4d& m1) {
+bool open3d::operator>=(const Matrix4d &m0, const Matrix4d &m1) {
     for (uint r = 0; r < Matrix4d::ROWS; r++)
         for (uint c = 0; c < Matrix4d::COLS; c++)
             if (m0[r][c] < m1[r][c]) return false;
