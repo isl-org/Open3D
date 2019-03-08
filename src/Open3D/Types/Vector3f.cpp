@@ -3,26 +3,26 @@
 
 #include <cassert>
 
-double &open3d::Vector3f::operator[](const uint &i) {
+float &open3d::Vector3f::operator[](const uint &i) {
     // catch error in debug mode
     assert(i < Vector3f::COLS);
 
     return s[i];
 }
 
-const double &open3d::Vector3f::operator[](const uint &i) const {
+const float &open3d::Vector3f::operator[](const uint &i) const {
     // catch error in debug mode
     assert(i < Vector3f::COLS);
 
     return s[i];
 }
 
-open3d::Vector3f::operator double *const() {
-    return reinterpret_cast<double *>(s);
+open3d::Vector3f::operator float *const() {
+    return reinterpret_cast<float *>(s);
 }
 
-open3d::Vector3f::operator const double *const() {
-    return reinterpret_cast<const double *const>(s);
+open3d::Vector3f::operator const float *const() {
+    return reinterpret_cast<const float *const>(s);
 }
 
 bool open3d::operator==(const open3d::Vector3f &v0,
@@ -84,53 +84,53 @@ open3d::Vector3f &open3d::operator-=(open3d::Vector3f &v0,
     return v0;
 }
 
-open3d::Vector3f open3d::operator+(const open3d::Vector3f &v, const double &t) {
+open3d::Vector3f open3d::operator+(const open3d::Vector3f &v, const float &t) {
     Vector3f output;
     for (uint c = 0; c < Vector3f::COLS; c++) output[c] = v[c] + t;
 
     return output;
 }
 
-open3d::Vector3f open3d::operator-(const open3d::Vector3f &v, const double &t) {
+open3d::Vector3f open3d::operator-(const open3d::Vector3f &v, const float &t) {
     Vector3f output;
     for (uint c = 0; c < Vector3f::COLS; c++) output[c] = v[c] - t;
 
     return output;
 }
 
-open3d::Vector3f open3d::operator*(const open3d::Vector3f &v, const double &t) {
+open3d::Vector3f open3d::operator*(const open3d::Vector3f &v, const float &t) {
     Vector3f output;
     for (uint c = 0; c < Vector3f::COLS; c++) output[c] = v[c] * t;
 
     return output;
 }
 
-open3d::Vector3f open3d::operator/(const open3d::Vector3f &v, const double &t) {
+open3d::Vector3f open3d::operator/(const open3d::Vector3f &v, const float &t) {
     Vector3f output;
     for (uint c = 0; c < Vector3f::COLS; c++) output[c] = v[c] / t;
 
     return output;
 }
 
-open3d::Vector3f &open3d::operator+=(open3d::Vector3f &v, const double &t) {
+open3d::Vector3f &open3d::operator+=(open3d::Vector3f &v, const float &t) {
     for (uint c = 0; c < Vector3f::COLS; c++) v[c] += t;
 
     return v;
 }
 
-open3d::Vector3f &open3d::operator-=(open3d::Vector3f &v, const double &t) {
+open3d::Vector3f &open3d::operator-=(open3d::Vector3f &v, const float &t) {
     for (uint c = 0; c < Vector3f::COLS; c++) v[c] -= t;
 
     return v;
 }
 
-open3d::Vector3f &open3d::operator*=(open3d::Vector3f &v, const double &t) {
+open3d::Vector3f &open3d::operator*=(open3d::Vector3f &v, const float &t) {
     for (uint c = 0; c < Vector3f::COLS; c++) v[c] *= t;
 
     return v;
 }
 
-open3d::Vector3f &open3d::operator/=(open3d::Vector3f &v, const double &t) {
+open3d::Vector3f &open3d::operator/=(open3d::Vector3f &v, const float &t) {
     for (uint c = 0; c < Vector3f::COLS; c++) v[c] /= t;
 
     return v;
