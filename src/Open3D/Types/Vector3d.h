@@ -4,7 +4,8 @@ typedef unsigned int uint;
 
 namespace open3d {
 // 1D tensor, row major
-typedef struct _Vector3d {
+typedef struct Vector3d {
+    static const uint ROWS = 1;
     static const uint COLS = 3;
 
     double s[COLS];
@@ -18,35 +19,35 @@ typedef struct _Vector3d {
     explicit operator double *const();
     // casting operator: readonly
     explicit operator const double *const();
-
-    bool operator==(const _Vector3d &m);
-    bool operator!=(const _Vector3d &m);
-    bool operator<=(const _Vector3d &m);
-    bool operator>=(const _Vector3d &m);
-
-    // addition
-    _Vector3d operator+(const _Vector3d &v) const;
-    // subtraction
-    _Vector3d operator-(const _Vector3d &v) const;
-    // addition assignment
-    _Vector3d &operator+=(const _Vector3d &v);
-    // subtraction assignment
-    _Vector3d &operator-=(const _Vector3d &v);
-    // addition
-    _Vector3d operator+(const double &t) const;
-    // subtraction
-    _Vector3d operator-(const double &t) const;
-    // multiply with scalar
-    _Vector3d operator*(const double &t) const;
-    // divide by scalar
-    _Vector3d operator/(const double &t) const;
-    // addition assignment
-    _Vector3d &operator+=(const double &t);
-    // subtraction assignment
-    _Vector3d &operator-=(const double &t);
-    // multiplication assignment
-    _Vector3d &operator*=(const double &t);
-    // division assignment
-    _Vector3d &operator/=(const double &t);
 } Vector3d;
+
+    bool operator==(const Vector3d &v0, const Vector3d &v1);
+    bool operator!=(const Vector3d &v0, const Vector3d &v1);
+    bool operator<=(const Vector3d &v0, const Vector3d &v1);
+    bool operator>=(const Vector3d &v0, const Vector3d &v1);
+
+    // addition
+    Vector3d operator+(const Vector3d &v0, const Vector3d &v1);
+    // subtraction
+    Vector3d operator-(const Vector3d &v0, const Vector3d &v1);
+    // addition assignment
+    Vector3d &operator+=(Vector3d &v0, const Vector3d &v1);
+    // subtraction assignment
+    Vector3d &operator-=(Vector3d &v0, const Vector3d &v1);
+    // addition
+    Vector3d operator+(const Vector3d &v, const double &t);
+    // subtraction
+    Vector3d operator-(const Vector3d &v, const double &t);
+    // multiply with scalar
+    Vector3d operator*(const Vector3d &v, const double &t);
+    // divide by scalar
+    Vector3d operator/(const Vector3d &v, const double &t);
+    // addition assignment
+    Vector3d &operator+=(Vector3d &v, const double &t);
+    // subtraction assignment
+    Vector3d &operator-=(Vector3d &v, const double &t);
+    // multiplication assignment
+    Vector3d &operator*=(Vector3d &v, const double &t);
+    // division assignment
+    Vector3d &operator/=(Vector3d &v, const double &t);
 }  // namespace open3d
