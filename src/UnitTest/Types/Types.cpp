@@ -53,4 +53,3 @@ TEST(Types, sizeof_type)
     EXPECT_EQ(    3 * sizeof(float),  sizeof(open3d::Vector3f));
     EXPECT_EQ(    3 * sizeof(int),    sizeof(open3d::Vector3i));
 }
-
