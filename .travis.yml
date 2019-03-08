@@ -25,11 +25,12 @@ matrix:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-5.0
           packages:
-            - gcc-4.8
-            - g++-4.8
+            - gcc-4.9
+            - g++-4.9
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
             - clang-format-5.0
+      env: CC='gcc-4.9' CXX='g++-4.9'
       before_install: ./util/scripts/setup-linux.sh
       script:
         - mkdir build
@@ -48,10 +49,11 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.8
-            - g++-4.8
+            - gcc-4.9
+            - g++-4.9
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+      env: CC='gcc-4.9' CXX='g++-4.9'
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
@@ -65,11 +67,11 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.8
-            - g++-4.8
+            - gcc-4.9
+            - g++-4.9
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      env: SHARED=ON
+      env: SHARED=ON CC='gcc-4.9' CXX='g++-4.9'
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
@@ -83,11 +85,11 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.8
-            - g++-4.8
+            - gcc-4.9
+            - g++-4.9
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
-      env: BUILD_DEPENDENCY_FROM_SOURCE=ON
+      env: BUILD_DEPENDENCY_FROM_SOURCE=ON CC='gcc-4.9' CXX='g++-4.9'
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 
@@ -108,6 +110,7 @@ matrix:
             - g++-6
             - cmake-data # to use cmake 3.0 or more recent
             - cmake
+      env: BUILD_DEPENDENCY_FROM_SOURCE=ON CC='gcc-6' CXX='g++-6'
       before_install: ./util/scripts/setup-linux.sh
       script: ./util/scripts/run-travis.sh
 

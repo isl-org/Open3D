@@ -108,5 +108,17 @@ void SplitString(std::vector<std::string>& tokens,
                  const std::string& delimiters = " ",
                  bool trim_empty_str = true);
 
+/// Strip empty charactors in front and after string. Similar to Python's
+/// str.strip()
+std::string StripString(const std::string& s,
+                        const std::string& white_space = " \t\n");
+
+/// String util: find length of current word staring from a position
+/// By default, alpha numeric chars and chars in valid_chars are considered
+/// as valid charactors in a word
+size_t WordLength(const std::string& doc,
+                  size_t start_pos,
+                  const std::string& valid_chars = "_");
+
 }  // namespace utility
 }  // namespace open3d

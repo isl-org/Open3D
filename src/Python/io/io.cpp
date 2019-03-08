@@ -24,8 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Python/io/io.h"
+#include <unordered_map>
+#include <string>
 
+#include "Python/io/io.h"
+#include "Python/docstring.h"
 #include "Open3D/Camera/PinholeCameraIntrinsic.h"
 #include "Open3D/Camera/PinholeCameraTrajectory.h"
 #include "Open3D/IO/ClassIO/FeatureIO.h"
@@ -40,6 +43,35 @@
 
 using namespace open3d;
 
+// IO functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_io_argument_docstrings = {
+                {"filename", "Path to file."},
+                // Write options
+                {"compressed",
+                 "Set to ``True`` to write in compressed format."},
+                {"format",
+                 "The format of the input file. When not specified or set as "
+                 "``auto``, the format is inferred from file extension name."},
+                {"quality", "Quality of the output file."},
+                {"write_ascii",
+                 "Set to ``True`` to output in ascii format, otherwise binary "
+                 "format will be used."},
+                // Entities
+                {"pointcloud", "The ``PointCloud`` object for I/O"},
+                {"mesh", "The ``TriangleMesh`` object for I/O"},
+                {"line_set", "The ``LineSet`` object for I/O"},
+                {"image", "The ``Image`` object for I/O"},
+                {"voxel_grid", "The ``VoxelGrid`` object for I/O"},
+                {"trajectory",
+                 "The ``PinholeCameraTrajectory`` object for I/O"},
+                {"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
+                {"parameters",
+                 "The ``PinholeCameraParameters`` object for I/O"},
+                {"pose_graph", "The ``PoseGraph`` object for I/O"},
+                {"feature", "The ``Feature`` object for I/O"},
+};
+
 void pybind_io(py::module &m) {
     // This submodule is currently blank
     py::module m_io = m.def_submodule("io");
@@ -51,14 +83,19 @@ void pybind_io(py::module &m) {
                  io::ReadImage(filename, image);
                  return image;
              },
-             "Function to read geometry::Image from file", "filename"_a);
+             "Function to read Image from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_image",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_image",
              [](const std::string &filename, const geometry::Image &image,
                 int quality) {
                  return io::WriteImage(filename, image, quality);
              },
-             "Function to write geometry::Image to file", "filename"_a,
-             "image"_a, "quality"_a = 90);
+             "Function to write Image to file", "filename"_a, "image"_a,
+             "quality"_a = 90);
+    docstring::FunctionDocInject(m_io, "write_image",
+                                 map_io_argument_docstrings);
 
     // open3d::geometry::LineSet
     m_io.def("read_line_set",
@@ -67,16 +104,21 @@ void pybind_io(py::module &m) {
                  io::ReadLineSet(filename, line_set, format);
                  return line_set;
              },
-             "Function to read geometry::LineSet from file", "filename"_a,
+             "Function to read LineSet from file", "filename"_a,
              "format"_a = "auto");
+    docstring::FunctionDocInject(m_io, "read_line_set",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_line_set",
              [](const std::string &filename, const geometry::LineSet &line_set,
                 bool write_ascii, bool compressed) {
                  return io::WriteLineSet(filename, line_set, write_ascii,
                                          compressed);
              },
-             "Function to write geometry::LineSet to file", "filename"_a,
-             "line_set"_a, "write_ascii"_a = false, "compressed"_a = false);
+             "Function to write LineSet to file", "filename"_a, "line_set"_a,
+             "write_ascii"_a = false, "compressed"_a = false);
+    docstring::FunctionDocInject(m_io, "write_line_set",
+                                 map_io_argument_docstrings);
 
     // open3d::geometry::PointCloud
     m_io.def("read_point_cloud",
@@ -85,8 +127,11 @@ void pybind_io(py::module &m) {
                  io::ReadPointCloud(filename, pcd, format);
                  return pcd;
              },
-             "Function to read geometry::PointCloud from file", "filename"_a,
+             "Function to read PointCloud from file", "filename"_a,
              "format"_a = "auto");
+    docstring::FunctionDocInject(m_io, "read_point_cloud",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_point_cloud",
              [](const std::string &filename,
                 const geometry::PointCloud &pointcloud, bool write_ascii,
@@ -94,8 +139,10 @@ void pybind_io(py::module &m) {
                  return io::WritePointCloud(filename, pointcloud, write_ascii,
                                             compressed);
              },
-             "Function to write geometry::PointCloud to file", "filename"_a,
+             "Function to write PointCloud to file", "filename"_a,
              "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false);
+    docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_io_argument_docstrings);
 
     // open3d::geometry::TriangleMesh
     m_io.def("read_triangle_mesh",
@@ -104,15 +151,20 @@ void pybind_io(py::module &m) {
                  io::ReadTriangleMesh(filename, mesh);
                  return mesh;
              },
-             "Function to read geometry::TriangleMesh from file", "filename"_a);
+             "Function to read TriangleMesh from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_triangle_mesh",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_triangle_mesh",
              [](const std::string &filename, const geometry::TriangleMesh &mesh,
                 bool write_ascii, bool compressed) {
                  return io::WriteTriangleMesh(filename, mesh, write_ascii,
                                               compressed);
              },
-             "Function to write geometry::TriangleMesh to file", "filename"_a,
-             "mesh"_a, "write_ascii"_a = false, "compressed"_a = false);
+             "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+             "write_ascii"_a = false, "compressed"_a = false);
+    docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_io_argument_docstrings);
 
     // open3d::geometry::VoxelGrid
     m_io.def("read_voxel_grid",
@@ -121,8 +173,11 @@ void pybind_io(py::module &m) {
                  io::ReadVoxelGrid(filename, voxel_grid, format);
                  return voxel_grid;
              },
-             "Function to read geometry::VoxelGrid from file", "filename"_a,
+             "Function to read VoxelGrid from file", "filename"_a,
              "format"_a = "auto");
+    docstring::FunctionDocInject(m_io, "read_voxel_grid",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_voxel_grid",
              [](const std::string &filename,
                 const geometry::VoxelGrid &voxel_grid, bool write_ascii,
@@ -130,8 +185,10 @@ void pybind_io(py::module &m) {
                  return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
                                            compressed);
              },
-             "Function to write geometry::VoxelGrid to file", "filename"_a,
+             "Function to write VoxelGrid to file", "filename"_a,
              "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false);
+    docstring::FunctionDocInject(m_io, "write_voxel_grid",
+                                 map_io_argument_docstrings);
 
     // open3d::camera
     m_io.def("read_pinhole_camera_intrinsic",
@@ -140,45 +197,61 @@ void pybind_io(py::module &m) {
                  io::ReadIJsonConvertible(filename, intrinsic);
                  return intrinsic;
              },
-             "Function to read camera::PinholeCameraIntrinsic from file",
-             "filename"_a);
+             "Function to read PinholeCameraIntrinsic from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_pinhole_camera_intrinsic",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_pinhole_camera_intrinsic",
              [](const std::string &filename,
                 const camera::PinholeCameraIntrinsic &intrinsic) {
                  return io::WriteIJsonConvertible(filename, intrinsic);
              },
-             "Function to write camera::PinholeCameraIntrinsic to file",
-             "filename"_a, "intrinsic"_a);
+             "Function to write PinholeCameraIntrinsic to file", "filename"_a,
+             "intrinsic"_a);
+    docstring::FunctionDocInject(m_io, "write_pinhole_camera_intrinsic",
+                                 map_io_argument_docstrings);
+
     m_io.def("read_pinhole_camera_parameters",
              [](const std::string &filename) {
                  camera::PinholeCameraParameters parameters;
                  io::ReadIJsonConvertible(filename, parameters);
                  return parameters;
              },
-             "Function to read camera::PinholeCameraParameters from file",
+             "Function to read PinholeCameraParameters from file",
              "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_pinhole_camera_parameters",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_pinhole_camera_parameters",
              [](const std::string &filename,
                 const camera::PinholeCameraParameters &parameters) {
                  return io::WriteIJsonConvertible(filename, parameters);
              },
-             "Function to write camera::PinholeCameraParameters to file",
-             "filename"_a, "parameters"_a);
+             "Function to write PinholeCameraParameters to file", "filename"_a,
+             "parameters"_a);
+    docstring::FunctionDocInject(m_io, "write_pinhole_camera_parameters",
+                                 map_io_argument_docstrings);
+
     m_io.def("read_pinhole_camera_trajectory",
              [](const std::string &filename) {
                  camera::PinholeCameraTrajectory trajectory;
                  io::ReadPinholeCameraTrajectory(filename, trajectory);
                  return trajectory;
              },
-             "Function to read camera::PinholeCameraTrajectory from file",
+             "Function to read PinholeCameraTrajectory from file",
              "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_pinhole_camera_trajectory",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_pinhole_camera_trajectory",
              [](const std::string &filename,
                 const camera::PinholeCameraTrajectory &trajectory) {
                  return io::WritePinholeCameraTrajectory(filename, trajectory);
              },
-             "Function to write camera::PinholeCameraTrajectory to file",
-             "filename"_a, "trajectory"_a);
+             "Function to write PinholeCameraTrajectory to file", "filename"_a,
+             "trajectory"_a);
+    docstring::FunctionDocInject(m_io, "write_pinhole_camera_trajectory",
+                                 map_io_argument_docstrings);
 
     // open3d::registration
     m_io.def("read_feature",
@@ -187,27 +260,36 @@ void pybind_io(py::module &m) {
                  io::ReadFeature(filename, feature);
                  return feature;
              },
-             "Function to read registration::Feature from file", "filename"_a);
+             "Function to read registration.Feature from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_feature",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_feature",
              [](const std::string &filename,
                 const registration::Feature &feature) {
                  return io::WriteFeature(filename, feature);
              },
-             "Function to write registration::Feature to file", "filename"_a,
-             "feature"_a);
+             "Function to write Feature to file", "filename"_a, "feature"_a);
+    docstring::FunctionDocInject(m_io, "write_feature",
+                                 map_io_argument_docstrings);
+
     m_io.def("read_pose_graph",
              [](const std::string &filename) {
                  registration::PoseGraph pose_graph;
                  io::ReadPoseGraph(filename, pose_graph);
                  return pose_graph;
              },
-             "Function to read registration::PoseGraph from file",
-             "filename"_a);
+             "Function to read PoseGraph from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_pose_graph",
+                                 map_io_argument_docstrings);
+
     m_io.def("write_pose_graph",
              [](const std::string &filename,
                 const registration::PoseGraph pose_graph) {
                  io::WritePoseGraph(filename, pose_graph);
              },
-             "Function to write registration::PoseGraph to file", "filename"_a,
+             "Function to write PoseGraph to file", "filename"_a,
              "pose_graph"_a);
+    docstring::FunctionDocInject(m_io, "write_pose_graph",
+                                 map_io_argument_docstrings);
 }
