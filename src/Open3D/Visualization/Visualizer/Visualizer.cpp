@@ -344,12 +344,26 @@ bool Visualizer::AddGeometry(
         return false;
     }
 
-    geometry_ptrs_.push_back(geometry_ptr);
+    geometry_ptrs_.insert(std::make_pair(geometry_ptr, geometry_id_));
     view_control_ptr_->FitInGeometry(*geometry_ptr);
     ResetViewPoint();
     utility::PrintDebug(
             "Add geometry and update bounding box to %s\n",
             view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    geometry_id_ += 1;
+    return UpdateGeometry();
+}
+
+bool Visualizer::RemoveGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (!geometry_ptrs_.erase(geometry_ptr)) {
+        return false;
+    }
+    ResetViewPoint();
+    utility::PrintDebug(
+            "Add geometry and update bounding box to %s\n",
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    geometry_id_ += 1;
     return UpdateGeometry();
 }
 

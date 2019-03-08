@@ -28,6 +28,7 @@
 
 #include <string>
 #include <memory>
+#include <map>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -115,6 +116,9 @@ public:
     /// notify the Visualizer that the geometry has been changed and the
     /// Visualizer should be updated accordingly.
     virtual bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr);
+
+    virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr);
 
     /// Function to update geometry
@@ -206,7 +210,8 @@ protected:
     std::unique_ptr<RenderOption> render_option_ptr_;
 
     // geometry to be rendered
-    std::vector<std::shared_ptr<const geometry::Geometry>> geometry_ptrs_;
+    std::map<std::shared_ptr<const geometry::Geometry>, int> geometry_ptrs_;
+    int geometry_id_;
 
     // geometry renderers
     std::vector<std::shared_ptr<glsl::GeometryRenderer>>
