@@ -25,129 +25,122 @@ open3d::Matrix3d::operator const double *const() {
     return reinterpret_cast<const double *const>(s);
 }
 
-bool open3d::Matrix3d::operator==(const typename open3d::Matrix3d &m) {
+bool open3d::operator==(const Matrix3d& m0, const Matrix3d& m1) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
         for (uint c = 0; c < Matrix3d::COLS; c++)
-            if ((*this)[r][c] != m[r][c]) return false;
+            if (m0[r][c] != m1[r][c]) return false;
 
     return true;
 }
 
-bool open3d::Matrix3d::operator!=(const typename open3d::Matrix3d &m) {
-    return !(*this == m);
+bool open3d::operator!=(const Matrix3d& m0, const Matrix3d& m1) {
+    return !(m0 == m1);
 }
 
-bool open3d::Matrix3d::operator<=(const typename open3d::Matrix3d &m) {
+bool open3d::operator<=(const Matrix3d& m0, const Matrix3d& m1) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
         for (uint c = 0; c < Matrix3d::COLS; c++)
-            if ((*this)[r][c] > m[r][c]) return false;
+            if (m0[r][c] > m1[r][c]) return false;
 
     return true;
 }
 
-bool open3d::Matrix3d::operator>=(const typename open3d::Matrix3d &m) {
+bool open3d::operator>=(const Matrix3d& m0, const Matrix3d& m1) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        if ((*this)[r] < m[r]) return false;
+        for (uint c = 0; c < Matrix3d::COLS; c++)
+            if (m0[r][c] < m1[r][c]) return false;
 
     return true;
 }
 
-typename open3d::Matrix3d open3d::Matrix3d::operator+(
-        const typename open3d::Matrix3d &m) const {
+open3d::Matrix3d open3d::operator+(const Matrix3d &m0, const Matrix3d &m1) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)
         for (uint c = 0; c < Matrix3d::COLS; c++)
-            output[r][c] = (*this)[r][c] + m[r][c];
+            output[r][c] = m0[r][c] + m1[r][c];
 
     return output;
 }
 
-typename open3d::Matrix3d open3d::Matrix3d::operator-(
-        const typename open3d::Matrix3d &m) const {
+open3d::Matrix3d open3d::operator-(const Matrix3d &m0, const Matrix3d &m1) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)
         for (uint c = 0; c < Matrix3d::COLS; c++)
-            output[r][c] = (*this)[r][c] - m[r][c];
+            output[r][c] = m0[r][c] - m1[r][c];
 
     return output;
 }
 
-typename open3d::Matrix3d &open3d::Matrix3d::operator+=(
-        const typename open3d::Matrix3d &m) {
+open3d::Matrix3d &open3d::operator+=(Matrix3d &m0, const Matrix3d &m1) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++) (*this)[r][c] += m[r][c];
+        for (uint c = 0; c < Matrix3d::COLS; c++) m0[r][c] += m1[r][c];
 
-    return *this;
+    return m0;
 }
 
-typename open3d::Matrix3d &open3d::Matrix3d::operator-=(
-        const typename open3d::Matrix3d &m) {
+open3d::Matrix3d &open3d::operator-=(Matrix3d &m0, const Matrix3d &m1) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++) (*this)[r][c] -= m[r][c];
+        for (uint c = 0; c < Matrix3d::COLS; c++) m0[r][c] -= m1[r][c];
 
-    return *this;
+    return m0;
 }
 
-typename open3d::Matrix3d open3d::Matrix3d::operator+(const double &t) const {
+open3d::Matrix3d open3d::operator+(const open3d::Matrix3d &m, const double &t) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            output[r][c] = (*this)[r][c] + t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) output[r][c] = m[r][c] + t;
 
     return output;
 }
 
-typename open3d::Matrix3d open3d::Matrix3d::operator-(const double &t) const {
+open3d::Matrix3d open3d::operator-(const open3d::Matrix3d &m, const double &t) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            output[r][c] = (*this)[r][c] - t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) output[r][c] = m[r][c] - t;
 
     return output;
 }
 
-typename open3d::Matrix3d open3d::Matrix3d::operator*(const double &t) const {
+open3d::Matrix3d open3d::operator*(const open3d::Matrix3d &m, const double &t) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            output[r][c] = (*this)[r][c] * t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) output[r][c] = m[r][c] * t;
 
     return output;
 }
 
-typename open3d::Matrix3d open3d::Matrix3d::operator/(const double &t) const {
+open3d::Matrix3d open3d::operator/(const open3d::Matrix3d &m, const double &t) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            output[r][c] = (*this)[r][c] / t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) output[r][c] = m[r][c] / t;
 
     return output;
 }
 
-typename open3d::Matrix3d &open3d::Matrix3d::operator+=(const double &t) {
+open3d::Matrix3d &open3d::operator+=(open3d::Matrix3d &m, const double &t) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++) (*this)[r][c] += t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) m[r][c] += t;
 
-    return *this;
+    return m;
 }
 
-typename open3d::Matrix3d &open3d::Matrix3d::operator-=(const double &t) {
+open3d::Matrix3d &open3d::operator-=(open3d::Matrix3d &m, const double &t) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++) (*this)[r][c] -= t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) m[r][c] -= t;
 
-    return *this;
+    return m;
 }
 
-typename open3d::Matrix3d &open3d::Matrix3d::operator*=(const double &t) {
+open3d::Matrix3d &open3d::operator*=(open3d::Matrix3d &m, const double &t) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++) (*this)[r][c] *= t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) m[r][c] *= t;
 
-    return *this;
+    return m;
 }
 
-typename open3d::Matrix3d &open3d::Matrix3d::operator/=(const double &t) {
+open3d::Matrix3d &open3d::operator/=(open3d::Matrix3d &m, const double &t) {
     for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++) (*this)[r][c] /= t;
+        for (uint c = 0; c < Matrix3d::COLS; c++) m[r][c] /= t;
 
-    return *this;
+    return m;
 }
