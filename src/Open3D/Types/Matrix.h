@@ -14,26 +14,20 @@ struct Matrix {
     typedef struct _Type {
         T s[ROWS][COLS];
 
-        // subscript operator: readwrite
         T *operator[](const uint &i) {
             assert(i < ROWS);
 
             return (T *)&s[i];
         }
-        // subscript operator: readonly
         const T *operator[](const uint &i) const {
             assert(i < ROWS);
 
             return (const T *const) & s[i];
         }
-
-        // casting operator: readwrite
         explicit operator T *const() { return reinterpret_cast<T *>(s); }
-        // casting operator: readonly
         explicit operator const T *const() {
             return reinterpret_cast<const T *const>(s);
         }
-
         bool operator==(const _Type &m) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++)
@@ -55,8 +49,6 @@ struct Matrix {
 
             return true;
         }
-
-        // addition
         _Type operator+(const _Type &m) const {
             Matrix<T, ROWS, COLS>::Type output;
             for (uint r = 0; r < ROWS; r++)
@@ -65,7 +57,6 @@ struct Matrix {
 
             return output;
         }
-        // subtraction
         _Type operator-(const _Type &m) const {
             Matrix<T, ROWS, COLS>::Type output;
             for (uint r = 0; r < ROWS; r++)
@@ -74,21 +65,18 @@ struct Matrix {
 
             return output;
         }
-        // addition assignment
         _Type &operator+=(const _Type &m) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++) (*this)[r][c] += m[r][c];
 
             return *this;
         }
-        // subtraction assignment
         _Type &operator-=(const _Type &m) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++) (*this)[r][c] -= m[r][c];
 
             return *this;
         }
-        // addition
         _Type operator+(const T &t) const {
             Matrix<T, ROWS, COLS>::Type output;
             for (uint r = 0; r < ROWS; r++)
@@ -97,7 +85,6 @@ struct Matrix {
 
             return output;
         }
-        // subtraction
         _Type operator-(const T &t) const {
             Matrix<T, ROWS, COLS>::Type output;
             for (uint r = 0; r < ROWS; r++)
@@ -106,7 +93,6 @@ struct Matrix {
 
             return output;
         }
-        // multiply with scalar
         _Type operator*(const T &t) const {
             Matrix<T, ROWS, COLS>::Type output;
             for (uint r = 0; r < ROWS; r++)
@@ -115,7 +101,6 @@ struct Matrix {
 
             return output;
         }
-        // divide by scalar
         _Type operator/(const T &t) const {
             Matrix<T, ROWS, COLS>::Type output;
             for (uint r = 0; r < ROWS; r++)
@@ -124,28 +109,24 @@ struct Matrix {
 
             return output;
         }
-        // addition assignment
         _Type &operator+=(const T &t) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++) (*this)[r][c] += t;
 
             return *this;
         }
-        // subtraction assignment
         _Type &operator-=(const T &t) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++) (*this)[r][c] -= t;
 
             return *this;
         }
-        // multiplication assignment
         _Type &operator*=(const T &t) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++) (*this)[r][c] *= t;
 
             return *this;
         }
-        // division assignment
         _Type &operator/=(const T &t) {
             for (uint r = 0; r < ROWS; r++)
                 for (uint c = 0; c < COLS; c++) (*this)[r][c] /= t;
@@ -161,26 +142,20 @@ struct Matrix<T, 1, COLS> {
     typedef struct _Type {
         T s[COLS];
 
-        // subscript operator: readwrite
         T &operator[](const uint &i) {
             assert(i < COLS);
 
             return s[i];
         }
-        // subscript operator: readonly
         const T &operator[](const uint &i) const {
             assert(i < COLS);
 
             return s[i];
         }
-
-        // casting operator: readwrite
         explicit operator T *const() { return reinterpret_cast<T *>(s); }
-        // casting operator: readonly
         explicit operator const T *const() {
             return reinterpret_cast<const T *const>(s);
         }
-
         bool operator==(const _Type &v) {
             for (uint c = 0; c < COLS; c++)
                 if ((*this)[c] != v[c]) return false;
@@ -200,80 +175,67 @@ struct Matrix<T, 1, COLS> {
 
             return true;
         }
-
-        // addition
         _Type operator+(const _Type &v) const {
             Matrix<T, 1, COLS>::Type output;
             for (uint c = 0; c < COLS; c++) output[c] = (*this)[c] + v[c];
 
             return output;
         }
-        // subtraction
         _Type operator-(const _Type &v) const {
             Matrix<T, 1, COLS>::Type output;
             for (uint c = 0; c < COLS; c++) output[c] = (*this)[c] - v[c];
 
             return output;
         }
-        // addition assignment
         _Type &operator+=(const _Type &v) {
             for (uint c = 0; c < COLS; c++) (*this)[c] += v[c];
 
             return *this;
         }
-        // subtraction assignment
         _Type &operator-=(const _Type &v) {
             for (uint c = 0; c < COLS; c++) (*this)[c] -= v[c];
 
             return *this;
         }
-        // addition
         _Type operator+(const T &t) const {
             Matrix<T, 1, COLS>::Type output;
             for (uint c = 0; c < COLS; c++) output[c] = (*this)[c] + t;
 
             return output;
         }
-        // subtraction
         _Type operator-(const T &t) const {
             Matrix<T, 1, COLS>::Type output;
             for (uint c = 0; c < COLS; c++) output[c] = (*this)[c] - t;
 
             return output;
         }
-        // multiply with scalar
         _Type operator*(const T &t) const {
             Matrix<T, 1, COLS>::Type output;
             for (uint c = 0; c < COLS; c++) output[c] = (*this)[c] * t;
 
             return output;
         }
-        // divide by scalar
         _Type operator/(const T &t) const {
             Matrix<T, 1, COLS>::Type output;
             for (uint c = 0; c < COLS; c++) output[c] = (*this)[c] / t;
 
             return output;
         }
-        // addition assignment
         _Type &operator+=(const T &t) {
             for (uint c = 0; c < COLS; c++) (*this)[c] += t;
 
             return *this;
         }
-        // subtraction assignment
         _Type &operator-=(const T &t) {
             for (uint c = 0; c < COLS; c++) (*this)[c] -= t;
 
             return *this;
         }
-        // multiplication assignment
         _Type &operator*=(const T &t) {
             for (uint c = 0; c < COLS; c++) (*this)[c] *= t;
 
             return *this;
         }
-        // division assignment
         _Type &operator/=(const T &t) {
             for (uint c = 0; c < COLS; c++) (*this)[c] /= t;
 

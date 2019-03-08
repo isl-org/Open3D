@@ -27,21 +27,17 @@ struct Vector3 {
             T r, g, b;
         };
 
-        // subscript operator: readwrite
         T &operator[](const uint &i) {
             assert(i < 3);
 
             return ((T *)this)[i];
         }
-        // subscript operator: readonly
         const T &operator[](const uint &i) const {
             assert(i < 3);
 
             return ((const T *const)this)[i];
         }
-        // casting operator: readwrite
         operator T *const() { return reinterpret_cast<T *>(this); }
-        // casting operator: readonly
         operator const T *const() {
             return reinterpret_cast<const T *const>(this);
         }
@@ -55,19 +51,16 @@ struct Vector3 {
         bool operator>=(const _Type &v) const {
             return (x >= v.x) && (y >= v.y) && (z >= v.z);
         }
-        // addtion.
         _Type operator+(const _Type &v) const {
             Vector3<T>::Type output = {x + v.x, y + v.y, z + v.z};
 
             return output;
         }
-        // subtraction.
         _Type operator-(const _Type &v) const {
             Vector3<T>::Type output = {x - v.x, y - v.y, z - v.z};
 
             return output;
         }
-        // addtion assignment.
         _Type &operator+=(const _Type &v) {
             x += v.x;
             y += v.y;
@@ -75,7 +68,6 @@ struct Vector3 {
 
             return *this;
         }
-        // subtraction assignment.
         _Type &operator-=(const _Type &v) {
             x -= v.x;
             y -= v.y;
@@ -83,31 +75,26 @@ struct Vector3 {
 
             return *this;
         }
-        // addtion.
         _Type operator+(const T &t) const {
             Vector3<T>::Type output = {x + t, y + t, z + t};
 
             return output;
         }
-        // subtraction.
         _Type operator-(const T &t) const {
             Vector3<T>::Type output = {x - t, y - t, z - t};
 
             return output;
         }
-        // multiply with scalar.
         _Type operator*(const T &t) const {
             Vector3<T>::Type output = {x * t, y * t, z * t};
 
             return output;
         }
-        // divide by scalar.
         _Type operator/(const T &t) const {
             Vector3<T>::Type output = {x / t, y / t, z / t};
 
             return output;
         }
-        // addtion assignment.
         _Type &operator+=(const T &t) {
             x += t;
             y += t;
@@ -115,7 +102,6 @@ struct Vector3 {
 
             return *this;
         }
-        // subtraction assignment.
         _Type &operator-=(const T &t) {
             x -= t;
             y -= t;
@@ -123,7 +109,6 @@ struct Vector3 {
 
             return *this;
         }
-        // multiplication assignment.
         _Type &operator*=(const T &t) {
             x *= t;
             y *= t;
@@ -131,7 +116,6 @@ struct Vector3 {
 
             return *this;
         }
-        // division assignment.
         _Type &operator/=(const T &t) {
             x /= t;
             y /= t;
@@ -139,6 +123,7 @@ struct Vector3 {
 
             return *this;
         }
+
         // Less than or equal X component.
         static bool LEX(const _Type &v0, const _Type &v1) {
             return v0.x <= v1.x;
@@ -163,7 +148,6 @@ struct Vector3 {
         static bool GEZ(const _Type &v0, const _Type &v1) {
             return v0.z >= v1.z;
         }
-
     } Type;
 };
 
