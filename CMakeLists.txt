@@ -66,6 +66,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
 option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
+option(BUILD_BENCHMARK           "Build Open3D performance tests"           OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
 option(BUILD_EIGEN3              "Build eigen3 from source"                 OFF)
@@ -215,6 +216,12 @@ add_subdirectory(src)
 
 # Examples
 add_subdirectory(examples)
+
+# Benchmark
+if (BUILD_BENCHMARK)
+    message(STATUS "Build benchmark: ON")
+    add_subdirectory(benchmark)
+endif ()
 
 # `make check-style` errors if styling is not compliant
 add_custom_target(check-style
