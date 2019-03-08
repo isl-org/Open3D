@@ -5,14 +5,14 @@
 
 float *open3d::Matrix6f::operator[](const uint &i) {
     // catch error in debug mode
-    assert(0 <= i && i < Matrix6f::ROWS);
+    assert(i < Matrix6f::ROWS);
 
     return (float *)&s[i];
 }
 
 const float *open3d::Matrix6f::operator[](const uint &i) const {
     // catch error in debug mode
-    assert(0 <= i && i < Matrix6f::ROWS);
+    assert(i < Matrix6f::ROWS);
 
     return (const float *const) & s[i];
 }

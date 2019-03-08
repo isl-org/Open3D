@@ -5,14 +5,14 @@
 
 float *open3d::Matrix4f::operator[](const uint &i) {
     // catch error in debug mode
-    assert(0 <= i && i < Matrix4f::ROWS);
+    assert(i < Matrix4f::ROWS);
 
     return (float *)&s[i];
 }
 
 const float *open3d::Matrix4f::operator[](const uint &i) const {
     // catch error in debug mode
-    assert(0 <= i && i < Matrix4f::ROWS);
+    assert(i < Matrix4f::ROWS);
 
     return (const float *const) & s[i];
 }
