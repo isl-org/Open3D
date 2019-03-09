@@ -16,11 +16,6 @@ typedef struct _Matrix6f {
     explicit operator const float* const();
 } Matrix6f;
 
-bool operator==(const Matrix6f& m0, const Matrix6f& m1);
-bool operator!=(const Matrix6f& m0, const Matrix6f& m1);
-bool operator<=(const Matrix6f& m0, const Matrix6f& m1);
-bool operator>=(const Matrix6f& m0, const Matrix6f& m1);
-
 Matrix6f operator+(const Matrix6f& m0, const Matrix6f& m1);
 Matrix6f operator-(const Matrix6f& m0, const Matrix6f& m1);
 Matrix6f& operator+=(Matrix6f& m0, const Matrix6f& m1);

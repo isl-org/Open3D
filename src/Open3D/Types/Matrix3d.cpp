@@ -23,34 +23,6 @@ open3d::Matrix3d::operator const double *const() {
     return reinterpret_cast<const double *const>(s);
 }
 
-bool open3d::operator==(const Matrix3d &m0, const Matrix3d &m1) {
-    for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            if (m0[r][c] != m1[r][c]) return false;
-
-    return true;
-}
-
-bool open3d::operator!=(const Matrix3d &m0, const Matrix3d &m1) {
-    return !(m0 == m1);
-}
-
-bool open3d::operator<=(const Matrix3d &m0, const Matrix3d &m1) {
-    for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            if (m0[r][c] > m1[r][c]) return false;
-
-    return true;
-}
-
-bool open3d::operator>=(const Matrix3d &m0, const Matrix3d &m1) {
-    for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
-            if (m0[r][c] < m1[r][c]) return false;
-
-    return true;
-}
-
 open3d::Matrix3d open3d::operator+(const Matrix3d &m0, const Matrix3d &m1) {
     Matrix3d output;
     for (uint r = 0; r < Matrix3d::ROWS; r++)

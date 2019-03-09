@@ -16,11 +16,6 @@ typedef struct _Matrix6d {
     explicit operator const double* const();
 } Matrix6d;
 
-bool operator==(const Matrix6d& m0, const Matrix6d& m1);
-bool operator!=(const Matrix6d& m0, const Matrix6d& m1);
-bool operator<=(const Matrix6d& m0, const Matrix6d& m1);
-bool operator>=(const Matrix6d& m0, const Matrix6d& m1);
-
 Matrix6d operator+(const Matrix6d& m0, const Matrix6d& m1);
 Matrix6d operator-(const Matrix6d& m0, const Matrix6d& m1);
 Matrix6d& operator+=(Matrix6d& m0, const Matrix6d& m1);

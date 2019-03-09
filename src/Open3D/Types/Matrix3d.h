@@ -16,11 +16,6 @@ typedef struct _Matrix3d {
     explicit operator const double* const();
 } Matrix3d;
 
-bool operator==(const Matrix3d& m0, const Matrix3d& m1);
-bool operator!=(const Matrix3d& m0, const Matrix3d& m1);
-bool operator<=(const Matrix3d& m0, const Matrix3d& m1);
-bool operator>=(const Matrix3d& m0, const Matrix3d& m1);
-
 Matrix3d operator+(const Matrix3d& m0, const Matrix3d& m1);
 Matrix3d operator-(const Matrix3d& m0, const Matrix3d& m1);
 Matrix3d& operator+=(Matrix3d& m0, const Matrix3d& m1);

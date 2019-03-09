@@ -16,11 +16,6 @@ typedef struct _Matrix4f {
     explicit operator const float* const();
 } Matrix4f;
 
-bool operator==(const Matrix4f& m0, const Matrix4f& m1);
-bool operator!=(const Matrix4f& m0, const Matrix4f& m1);
-bool operator<=(const Matrix4f& m0, const Matrix4f& m1);
-bool operator>=(const Matrix4f& m0, const Matrix4f& m1);
-
 Matrix4f operator+(const Matrix4f& m0, const Matrix4f& m1);
 Matrix4f operator-(const Matrix4f& m0, const Matrix4f& m1);
 Matrix4f& operator+=(Matrix4f& m0, const Matrix4f& m1);
