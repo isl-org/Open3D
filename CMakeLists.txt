@@ -153,7 +153,10 @@ elseif (UNIX)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
-    add_compile_options(-Wno-unused-result)
+
+    # had to disable this option to avoid nvcc fatal error: unknown option 'Wno-unused-result'
+    # add_compile_options(-Wno-unused-result)
+
     add_definitions(-O3)
     # disable BUILD_LIBREALSENSE since it is not fully supported on Linux
     message(STATUS "Compiling on Unix")
@@ -183,8 +186,27 @@ if (WITH_CUDA)
     include(CheckLanguage)
     check_language(CUDA)
     if (CMAKE_CUDA_COMPILER)
+        # https://gitlab.kitware.com/cmake/cmake/issues/17559#note_457076
+        set(CMAKE_CUDA_FLAGS "" CACHE STRING "")
+        if (BUILD_SHARED_LIBS)
+            if (CMAKE_CUDA_FLAGS)
+                list(REMOVE_ITEM CMAKE_CUDA_FLAGS "-cudart static")
+            endif()
+            string(APPEND CMAKE_CUDA_FLAGS "-cudart shared")
+        endif()
+
         enable_language(CUDA)
         message(STATUS "Using CUDA ${CMAKE_CUDA_COMPILER_VERSION}")
+
+        # https://gitlab.kitware.com/cmake/cmake/issues/17559#note_506364
+        if (BUILD_SHARED_LIBS)
+            if (CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES)
+                list( REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart_static")
+            endif()
+            if (CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES)
+                list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart_static")
+            endif()
+        endif()
     else()
         message(STATUS "CUDA not found.")
     endif()
