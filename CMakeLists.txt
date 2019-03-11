@@ -2,10 +2,11 @@
 # https://cmake.org/cmake/help/v3.0/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.12.2)
 
 if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
+    cmake_policy(SET CMP0072 OLD)
 endif()
 
 # central location for specifying the Open3D version
@@ -65,6 +66,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # config options
 option(BUILD_SHARED_LIBS         "Build shared libraries"                   OFF)
 option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
+option(WITH_CUDA                 "Use CUDA acceleration"                    ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
@@ -163,7 +165,7 @@ endif ()
 if (WITH_OPENMP)
     find_package(OpenMP QUIET)
     if (OPENMP_FOUND)
-        message(STATUS "Using installed OpenMP ${OpenMP_VERSION}")
+        message(STATUS "Using OpenMP ${OpenMP_VERSION}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
@@ -174,6 +176,13 @@ if (WITH_OPENMP)
     else ()
         message(STATUS "OpenMP NOT found")
     endif ()
+endif ()
+
+if (WITH_CUDA)
+    message(STATUS "Using CUDA ${CUDA_VERSION_STRING}")
+
+    # find_package(CUDA) not required, simply enable CUDA
+    enable_language(CUDA)
 endif ()
 
 # recursively parse and return the entire directory tree.
