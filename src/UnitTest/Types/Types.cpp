@@ -35,7 +35,7 @@ using namespace std;
 // Test reading/writing using the subscript operator.
 // ----------------------------------------------------------------------------
 TEST(Types, subscript_ops) {
-    open3d::Matrix3f m = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+    open3d::Matrix3f m;
 
     for (uint r = 0; r < m.ROWS; r++)
         for (uint c = 0; c < m.COLS; c++) {
@@ -43,7 +43,7 @@ TEST(Types, subscript_ops) {
             EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
         }
 
-    open3d::Vector3f v = {0.0f, 0.1f, 0.2f};
+    open3d::Vector3f v;
 
     for (uint c = 0; c < m.COLS; c++) {
         v[c] = c * 0.12f;
