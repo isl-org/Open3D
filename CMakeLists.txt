@@ -161,7 +161,7 @@ elseif (UNIX)
     set(BUILD_LIBREALSENSE OFF)
 endif ()
 
-# Set OpenMP
+# enable OpenMP
 if (WITH_OPENMP)
     find_package(OpenMP QUIET)
     if (OPENMP_FOUND)
@@ -178,11 +178,16 @@ if (WITH_OPENMP)
     endif ()
 endif ()
 
+# enable CUDA
 if (WITH_CUDA)
-    message(STATUS "Using CUDA ${CUDA_VERSION_STRING}")
-
-    # find_package(CUDA) not required, simply enable CUDA
-    enable_language(CUDA)
+    include(CheckLanguage)
+    check_language(CUDA)
+    if (CMAKE_CUDA_COMPILER)
+        enable_language(CUDA)
+        message(STATUS "Using CUDA ${CMAKE_CUDA_COMPILER_VERSION}")
+    else()
+        message(STATUS "CUDA not found.")
+    endif()
 endif ()
 
 # recursively parse and return the entire directory tree.
