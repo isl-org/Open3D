@@ -34,7 +34,7 @@ using namespace std;
 // ----------------------------------------------------------------------------
 // Make sure the types are PODs.
 // ----------------------------------------------------------------------------
-TEST(Types, is_POD) {
+TEST(BasicTypes, is_POD) {
     EXPECT_TRUE(is_pod<open3d::Matrix3d>());
     EXPECT_TRUE(is_pod<open3d::Matrix3f>());
     EXPECT_TRUE(is_pod<open3d::Matrix4d>());
@@ -50,7 +50,7 @@ TEST(Types, is_POD) {
 // ----------------------------------------------------------------------------
 // Test reading/writing using the subscript operator.
 // ----------------------------------------------------------------------------
-TEST(Types, subscript_ops) {
+TEST(BasicTypes, subscript_ops) {
     open3d::Matrix3f m;
 
     for (uint r = 0; r < m.ROWS; r++)
@@ -75,7 +75,7 @@ TEST(Types, subscript_ops) {
 // Test the cast T* operator.
 // Note: there's no need for an explicit cast operator, just use member s[...].
 // ----------------------------------------------------------------------------
-TEST(Types, cast) {
+TEST(BasicTypes, cast) {
     open3d::Matrix3f m;
     float* mf = (float*)m.s;
 
@@ -108,7 +108,7 @@ TEST(Types, cast) {
 // - without custom alignment the size matches N x sizeof(TYPE)
 // - with custom alignment the size is different than N x sizeof(TYPE)
 // ----------------------------------------------------------------------------
-TEST(Types, sizeof_type) {
+TEST(BasicTypes, sizeof_type) {
     EXPECT_EQ(3 * sizeof(double), sizeof(Eigen::Vector3d));
 
     EXPECT_EQ(3 * 3 * sizeof(double), sizeof(open3d::Matrix3d));
@@ -128,7 +128,7 @@ TEST(Types, sizeof_type) {
 // ----------------------------------------------------------------------------
 // Test ==, !=, <=, >=.
 // ----------------------------------------------------------------------------
-TEST(Types, comparison_ops_float) {
+TEST(BasicTypes, comparison_ops_float) {
     open3d::Matrix3f m0 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
                            5.0f, 6.0f, 7.0f, 8.0f};
     open3d::Matrix3f m1 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
@@ -153,7 +153,7 @@ TEST(Types, comparison_ops_float) {
 // ----------------------------------------------------------------------------
 // Test ==, !=, <=, >=.
 // ----------------------------------------------------------------------------
-TEST(Types, comparison_ops_double) {
+TEST(BasicTypes, comparison_ops_double) {
     open3d::Matrix3d m0 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
     open3d::Matrix3d m1 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
     EXPECT_TRUE(m0 == m1);
