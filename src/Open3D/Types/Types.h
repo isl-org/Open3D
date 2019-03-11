@@ -21,12 +21,15 @@ bool operator==(const T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
         for (uint c = 0; c < T::COLS; c++)
-            if (m0[r][c] != m1[r][c]) return false;
+            if (m0.s[r][c] != m1.s[r][c]) return false;
 
     return true;
 }
@@ -41,12 +44,15 @@ bool operator<=(const T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
         for (uint c = 0; c < T::COLS; c++)
-            if (m0[r][c] > m1[r][c]) return false;
+            if (m0.s[r][c] > m1.s[r][c]) return false;
 
     return true;
 }
@@ -57,12 +63,15 @@ bool operator>=(const T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
         for (uint c = 0; c < T::COLS; c++)
-            if (m0[r][c] < m1[r][c]) return false;
+            if (m0.s[r][c] < m1.s[r][c]) return false;
 
     return true;
 }
@@ -73,12 +82,15 @@ T operator+(const T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     T output;
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) output[r][c] = m0[r][c] + m1[r][c];
+        for (uint c = 0; c < T::COLS; c++) output.s[r][c] = m0.s[r][c] + m1.s[r][c];
 
     return output;
 }
@@ -89,12 +101,15 @@ T operator-(const T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     T output;
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) output[r][c] = m0[r][c] - m1[r][c];
+        for (uint c = 0; c < T::COLS; c++) output.s[r][c] = m0.s[r][c] - m1.s[r][c];
 
     return output;
 }
@@ -105,11 +120,14 @@ T &operator+=(T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) m0[r][c] += m1[r][c];
+        for (uint c = 0; c < T::COLS; c++) m0.s[r][c] += m1.s[r][c];
 
     return m0;
 }
@@ -120,11 +138,14 @@ T &operator-=(T &m0, const T &m1) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) m0[r][c] -= m1[r][c];
+        for (uint c = 0; c < T::COLS; c++) m0.s[r][c] -= m1.s[r][c];
 
     return m0;
 }
@@ -135,12 +156,15 @@ T operator+(const T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     T output;
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] + t;
+        for (uint c = 0; c < T::COLS; c++) output.s[r][c] = m.s[r][c] + t;
 
     return output;
 }
@@ -151,12 +175,15 @@ T operator-(const T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     T output;
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] - t;
+        for (uint c = 0; c < T::COLS; c++) output.s[r][c] = m.s[r][c] - t;
 
     return output;
 }
@@ -167,12 +194,15 @@ T operator*(const T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     T output;
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] * t;
+        for (uint c = 0; c < T::COLS; c++) output.s[r][c] = m.s[r][c] * t;
 
     return output;
 }
@@ -183,12 +213,15 @@ T operator/(const T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     T output;
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] / t;
+        for (uint c = 0; c < T::COLS; c++) output.s[r][c] = m.s[r][c] / t;
 
     return output;
 }
@@ -199,11 +232,14 @@ T &operator+=(T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) m[r][c] += t;
+        for (uint c = 0; c < T::COLS; c++) m.s[r][c] += t;
 
     return m;
 }
@@ -214,11 +250,14 @@ T &operator-=(T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) m[r][c] -= t;
+        for (uint c = 0; c < T::COLS; c++) m.s[r][c] -= t;
 
     return m;
 }
@@ -229,11 +268,14 @@ T &operator*=(T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) m[r][c] *= t;
+        for (uint c = 0; c < T::COLS; c++) m.s[r][c] *= t;
 
     return m;
 }
@@ -244,11 +286,14 @@ T &operator/=(T &m, const float &t) {
                           std::is_base_of<Matrix4d, T>::value ||
                           std::is_base_of<Matrix4f, T>::value ||
                           std::is_base_of<Matrix6d, T>::value ||
-                          std::is_base_of<Matrix6f, T>::value,
+                          std::is_base_of<Matrix6f, T>::value ||
+                          std::is_base_of<Vector3d, T>::value ||
+                          std::is_base_of<Vector3f, T>::value ||
+                          std::is_base_of<Vector3i, T>::value,
                   "unsuported type");
 
     for (uint r = 0; r < T::ROWS; r++)
-        for (uint c = 0; c < T::COLS; c++) m[r][c] /= t;
+        for (uint c = 0; c < T::COLS; c++) m.s[r][c] /= t;
 
     return m;
 }
