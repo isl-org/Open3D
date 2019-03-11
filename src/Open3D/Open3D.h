@@ -39,6 +39,7 @@
 #include "Geometry/VoxelGrid.h"
 #include "Geometry/LineSet.h"
 #include "Geometry/TriangleMesh.h"
+#include "Geometry/HalfEdgeTriangleMesh.h"
 #include "Geometry/Image.h"
 #include "Geometry/RGBDImage.h"
 #include "Geometry/KDTreeFlann.h"
