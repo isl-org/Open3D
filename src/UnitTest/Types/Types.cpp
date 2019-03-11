@@ -86,6 +86,13 @@ TEST(Types, cast) {
             EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
         }
 
+    // test memcpy
+    float mcpy[9];
+    memcpy(mcpy, mf, 9 * sizeof(float));
+    for (uint r = 0; r < m.ROWS; r++)
+        for (uint c = 0; c < m.COLS; c++)
+            EXPECT_FLOAT_EQ(mcpy[r * m.COLS + c], r * 1.0f + c * 0.1f);
+
     open3d::Vector3f v;
     float* vf = (float*)v.s;
 
