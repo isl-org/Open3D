@@ -12,7 +12,5 @@ typedef struct _Matrix3f {
 
     float* operator[](const uint& i);
     const float* operator[](const uint& i) const;
-    explicit operator float* const();
-    explicit operator const float* const();
 } Matrix3f;
 }  // namespace open3d

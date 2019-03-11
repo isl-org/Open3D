@@ -32,6 +32,22 @@
 using namespace std;
 
 // ----------------------------------------------------------------------------
+// Make sure the types are PODs.
+// ----------------------------------------------------------------------------
+TEST(Types, is_POD) {
+    EXPECT_TRUE(is_pod<open3d::Matrix3d>());
+    EXPECT_TRUE(is_pod<open3d::Matrix3f>());
+    EXPECT_TRUE(is_pod<open3d::Matrix4d>());
+    EXPECT_TRUE(is_pod<open3d::Matrix4f>());
+    EXPECT_TRUE(is_pod<open3d::Matrix6d>());
+    EXPECT_TRUE(is_pod<open3d::Matrix6f>());
+
+    EXPECT_TRUE(is_pod<open3d::Vector3d>());
+    EXPECT_TRUE(is_pod<open3d::Vector3f>());
+    EXPECT_TRUE(is_pod<open3d::Vector3i>());
+}
+
+// ----------------------------------------------------------------------------
 // Test reading/writing using the subscript operator.
 // ----------------------------------------------------------------------------
 TEST(Types, subscript_ops) {
@@ -47,6 +63,31 @@ TEST(Types, subscript_ops) {
 
     for (uint c = 0; c < m.COLS; c++) {
         v[c] = c * 0.12f;
+        EXPECT_FLOAT_EQ(v[c], c * 0.12f);
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Test the cast T* operator.
+// Note: there's no need for an explicit cast operator, just use member s[...].
+// ----------------------------------------------------------------------------
+TEST(Types, cast) {
+    open3d::Matrix3f m;
+    float* mf = (float*)m.s;
+
+    for (uint r = 0; r < m.ROWS; r++)
+        for (uint c = 0; c < m.COLS; c++) {
+            mf[r * m.COLS + c] = r * 1.0f + c * 0.1f;
+            EXPECT_FLOAT_EQ(mf[r * m.COLS + c], r * 1.0f + c * 0.1f);
+            EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
+        }
+
+    open3d::Vector3f v;
+    float* vf = (float*)v.s;
+
+    for (uint c = 0; c < m.COLS; c++) {
+        vf[c] = c * 0.12f;
+        EXPECT_FLOAT_EQ(vf[c], c * 0.12f);
         EXPECT_FLOAT_EQ(v[c], c * 0.12f);
     }
 }

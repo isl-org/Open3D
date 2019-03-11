@@ -14,11 +14,3 @@ const float *open3d::Matrix4f::operator[](const uint &i) const {
 
     return (const float *const) & s[i];
 }
-
-open3d::Matrix4f::operator float *const() {
-    return reinterpret_cast<float *>(s);
-}
-
-open3d::Matrix4f::operator const float *const() {
-    return reinterpret_cast<const float *const>(s);
-}

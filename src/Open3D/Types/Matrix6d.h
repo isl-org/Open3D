@@ -12,7 +12,5 @@ typedef struct _Matrix6d {
 
     double* operator[](const uint& i);
     const double* operator[](const uint& i) const;
-    explicit operator double* const();
-    explicit operator const double* const();
 } Matrix6d;
 }  // namespace open3d

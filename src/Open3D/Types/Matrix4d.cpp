@@ -14,11 +14,3 @@ const double *open3d::Matrix4d::operator[](const uint &i) const {
 
     return (const double *const) & s[i];
 }
-
-open3d::Matrix4d::operator double *const() {
-    return reinterpret_cast<double *>(s);
-}
-
-open3d::Matrix4d::operator const double *const() {
-    return reinterpret_cast<const double *const>(s);
-}

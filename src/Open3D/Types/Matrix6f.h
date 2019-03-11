@@ -12,7 +12,5 @@ typedef struct _Matrix6f {
 
     float* operator[](const uint& i);
     const float* operator[](const uint& i) const;
-    explicit operator float* const();
-    explicit operator const float* const();
 } Matrix6f;
 }  // namespace open3d
