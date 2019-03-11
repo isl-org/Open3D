@@ -15,17 +15,4 @@ typedef struct _Matrix3d {
     explicit operator double* const();
     explicit operator const double* const();
 } Matrix3d;
-
-Matrix3d operator+(const Matrix3d& m0, const Matrix3d& m1);
-Matrix3d operator-(const Matrix3d& m0, const Matrix3d& m1);
-Matrix3d& operator+=(Matrix3d& m0, const Matrix3d& m1);
-Matrix3d& operator-=(Matrix3d& m0, const Matrix3d& m1);
-Matrix3d operator+(const Matrix3d& m, const double& t);
-Matrix3d operator-(const Matrix3d& m, const double& t);
-Matrix3d operator*(const Matrix3d& m, const double& t);
-Matrix3d operator/(const Matrix3d& m, const double& t);
-Matrix3d& operator+=(Matrix3d& m, const double& t);
-Matrix3d& operator-=(Matrix3d& m, const double& t);
-Matrix3d& operator*=(Matrix3d& m, const double& t);
-Matrix3d& operator/=(Matrix3d& m, const double& t);
 }  // namespace open3d

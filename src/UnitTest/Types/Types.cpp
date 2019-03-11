@@ -27,10 +27,29 @@
 #include "TestUtility/UnitTest.h"
 
 #include "Open3D/Types/Types.h"
-using namespace open3d;
 
 #include <iostream>
 using namespace std;
+
+// ----------------------------------------------------------------------------
+// Test reading/writing using the subscript operator.
+// ----------------------------------------------------------------------------
+TEST(Types, subscript_ops) {
+    open3d::Matrix3f m = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+
+    for (uint r = 0; r < m.ROWS; r++)
+        for (uint c = 0; c < m.COLS; c++) {
+            m[r][c] = r * 1.0f + c * 0.1f;
+            EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
+        }
+
+    open3d::Vector3f v = {0.0f, 0.1f, 0.2f};
+
+    for (uint c = 0; c < m.COLS; c++) {
+        v[c] = c * 0.12f;
+        EXPECT_FLOAT_EQ(v[c], c * 0.12f);
+    }
+}
 
 // ----------------------------------------------------------------------------
 // The data type size varies based on alignment:
@@ -40,26 +59,28 @@ using namespace std;
 TEST(Types, sizeof_type) {
     EXPECT_EQ(3 * sizeof(double), sizeof(Eigen::Vector3d));
 
-    EXPECT_EQ(3 * 3 * sizeof(double), sizeof(Matrix3d));
-    EXPECT_EQ(3 * 3 * sizeof(float), sizeof(Matrix3f));
+    EXPECT_EQ(3 * 3 * sizeof(double), sizeof(open3d::Matrix3d));
+    EXPECT_EQ(3 * 3 * sizeof(float), sizeof(open3d::Matrix3f));
 
-    EXPECT_EQ(4 * 4 * sizeof(float), sizeof(Matrix4f));
-    EXPECT_EQ(4 * 4 * sizeof(double), sizeof(Matrix4d));
+    EXPECT_EQ(4 * 4 * sizeof(float), sizeof(open3d::Matrix4f));
+    EXPECT_EQ(4 * 4 * sizeof(double), sizeof(open3d::Matrix4d));
 
-    EXPECT_EQ(6 * 6 * sizeof(float), sizeof(Matrix6f));
-    EXPECT_EQ(6 * 6 * sizeof(double), sizeof(Matrix6d));
+    EXPECT_EQ(6 * 6 * sizeof(float), sizeof(open3d::Matrix6f));
+    EXPECT_EQ(6 * 6 * sizeof(double), sizeof(open3d::Matrix6d));
 
-    EXPECT_EQ(3 * sizeof(double), sizeof(Vector3d));
-    EXPECT_EQ(3 * sizeof(float), sizeof(Vector3f));
-    EXPECT_EQ(3 * sizeof(int), sizeof(Vector3i));
+    EXPECT_EQ(3 * sizeof(double), sizeof(open3d::Vector3d));
+    EXPECT_EQ(3 * sizeof(float), sizeof(open3d::Vector3f));
+    EXPECT_EQ(3 * sizeof(int), sizeof(open3d::Vector3i));
 }
 
 // ----------------------------------------------------------------------------
 // Test ==, !=, <=, >=.
 // ----------------------------------------------------------------------------
 TEST(Types, comparison_ops_float) {
-    Matrix3f m0 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
-    Matrix3f m1 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+    open3d::Matrix3f m0 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
+                           5.0f, 6.0f, 7.0f, 8.0f};
+    open3d::Matrix3f m1 = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
+                           5.0f, 6.0f, 7.0f, 8.0f};
     EXPECT_TRUE(m0 == m1);
     EXPECT_TRUE(m0 <= m1);
 
@@ -67,8 +88,8 @@ TEST(Types, comparison_ops_float) {
     EXPECT_TRUE(m0 != m1);
     EXPECT_TRUE(m0 >= m1);
 
-    Vector3f v0 = {0.0f, 0.1f, 0.2f};
-    Vector3f v1 = {0.0f, 0.1f, 0.2f};
+    open3d::Vector3f v0 = {0.0f, 0.1f, 0.2f};
+    open3d::Vector3f v1 = {0.0f, 0.1f, 0.2f};
     EXPECT_TRUE(v0 == v1);
     EXPECT_TRUE(v0 <= v1);
 
@@ -81,8 +102,8 @@ TEST(Types, comparison_ops_float) {
 // Test ==, !=, <=, >=.
 // ----------------------------------------------------------------------------
 TEST(Types, comparison_ops_double) {
-    Matrix3d m0 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
-    Matrix3d m1 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+    open3d::Matrix3d m0 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+    open3d::Matrix3d m1 = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
     EXPECT_TRUE(m0 == m1);
     EXPECT_TRUE(m0 <= m1);
 
@@ -90,8 +111,8 @@ TEST(Types, comparison_ops_double) {
     EXPECT_TRUE(m0 != m1);
     EXPECT_TRUE(m0 >= m1);
 
-    Vector3d v0 = {0.0, 0.1, 0.2};
-    Vector3d v1 = {0.0, 0.1, 0.2};
+    open3d::Vector3d v0 = {0.0, 0.1, 0.2};
+    open3d::Vector3d v1 = {0.0, 0.1, 0.2};
     EXPECT_TRUE(v0 == v1);
     EXPECT_TRUE(v0 <= v1);
 

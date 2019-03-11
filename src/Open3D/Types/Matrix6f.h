@@ -15,17 +15,4 @@ typedef struct _Matrix6f {
     explicit operator float* const();
     explicit operator const float* const();
 } Matrix6f;
-
-Matrix6f operator+(const Matrix6f& m0, const Matrix6f& m1);
-Matrix6f operator-(const Matrix6f& m0, const Matrix6f& m1);
-Matrix6f& operator+=(Matrix6f& m0, const Matrix6f& m1);
-Matrix6f& operator-=(Matrix6f& m0, const Matrix6f& m1);
-Matrix6f operator+(const Matrix6f& m, const float& t);
-Matrix6f operator-(const Matrix6f& m, const float& t);
-Matrix6f operator*(const Matrix6f& m, const float& t);
-Matrix6f operator/(const Matrix6f& m, const float& t);
-Matrix6f& operator+=(Matrix6f& m, const float& t);
-Matrix6f& operator-=(Matrix6f& m, const float& t);
-Matrix6f& operator*=(Matrix6f& m, const float& t);
-Matrix6f& operator/=(Matrix6f& m, const float& t);
 }  // namespace open3d

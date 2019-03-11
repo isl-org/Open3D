@@ -15,7 +15,7 @@
 
 namespace open3d {
 template <typename T>
-bool operator==(const T& m0, const T& m1) {
+bool operator==(const T &m0, const T &m1) {
     static_assert(std::is_base_of<Matrix3d, T>::value ||
                           std::is_base_of<Matrix3f, T>::value ||
                           std::is_base_of<Matrix4d, T>::value ||
@@ -24,18 +24,18 @@ bool operator==(const T& m0, const T& m1) {
                           std::is_base_of<Matrix6f, T>::value,
                   "unsuported type");
 
-    for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++)
             if (m0[r][c] != m1[r][c]) return false;
 
     return true;
 }
 template <typename T>
-bool operator!=(const T& m0, const T& m1) {
+bool operator!=(const T &m0, const T &m1) {
     return !(m0 == m1);
 }
 template <typename T>
-bool operator<=(const T& m0, const T& m1) {
+bool operator<=(const T &m0, const T &m1) {
     static_assert(std::is_base_of<Matrix3d, T>::value ||
                           std::is_base_of<Matrix3f, T>::value ||
                           std::is_base_of<Matrix4d, T>::value ||
@@ -44,14 +44,14 @@ bool operator<=(const T& m0, const T& m1) {
                           std::is_base_of<Matrix6f, T>::value,
                   "unsuported type");
 
-    for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++)
             if (m0[r][c] > m1[r][c]) return false;
 
     return true;
 }
 template <typename T>
-bool operator>=(const T& m0, const T& m1) {
+bool operator>=(const T &m0, const T &m1) {
     static_assert(std::is_base_of<Matrix3d, T>::value ||
                           std::is_base_of<Matrix3f, T>::value ||
                           std::is_base_of<Matrix4d, T>::value ||
@@ -60,10 +60,196 @@ bool operator>=(const T& m0, const T& m1) {
                           std::is_base_of<Matrix6f, T>::value,
                   "unsuported type");
 
-    for (uint r = 0; r < Matrix3d::ROWS; r++)
-        for (uint c = 0; c < Matrix3d::COLS; c++)
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++)
             if (m0[r][c] < m1[r][c]) return false;
 
     return true;
+}
+template <typename T>
+T operator+(const T &m0, const T &m1) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    T output;
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) output[r][c] = m0[r][c] + m1[r][c];
+
+    return output;
+}
+template <typename T>
+T operator-(const T &m0, const T &m1) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    T output;
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) output[r][c] = m0[r][c] - m1[r][c];
+
+    return output;
+}
+template <typename T>
+T &operator+=(T &m0, const T &m1) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) m0[r][c] += m1[r][c];
+
+    return m0;
+}
+template <typename T>
+T &operator-=(T &m0, const T &m1) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) m0[r][c] -= m1[r][c];
+
+    return m0;
+}
+template <typename T>
+T operator+(const T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    T output;
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] + t;
+
+    return output;
+}
+template <typename T>
+T operator-(const T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    T output;
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] - t;
+
+    return output;
+}
+template <typename T>
+T operator*(const T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    T output;
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] * t;
+
+    return output;
+}
+template <typename T>
+T operator/(const T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    T output;
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) output[r][c] = m[r][c] / t;
+
+    return output;
+}
+template <typename T>
+T &operator+=(T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) m[r][c] += t;
+
+    return m;
+}
+template <typename T>
+T &operator-=(T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) m[r][c] -= t;
+
+    return m;
+}
+template <typename T>
+T &operator*=(T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) m[r][c] *= t;
+
+    return m;
+}
+template <typename T>
+T &operator/=(T &m, const float &t) {
+    static_assert(std::is_base_of<Matrix3d, T>::value ||
+                          std::is_base_of<Matrix3f, T>::value ||
+                          std::is_base_of<Matrix4d, T>::value ||
+                          std::is_base_of<Matrix4f, T>::value ||
+                          std::is_base_of<Matrix6d, T>::value ||
+                          std::is_base_of<Matrix6f, T>::value,
+                  "unsuported type");
+
+    for (uint r = 0; r < T::ROWS; r++)
+        for (uint c = 0; c < T::COLS; c++) m[r][c] /= t;
+
+    return m;
 }
 }  // namespace open3d
