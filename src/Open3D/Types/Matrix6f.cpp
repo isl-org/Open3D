@@ -1,16 +1,17 @@
 
 #include "Matrix6f.h"
+using namespace open3d;
 
 #include <cassert>
 
-float *open3d::Matrix6f::operator[](const uint &i) {
+Vector6f& open3d::Matrix6f::operator[](const uint &i) {
     assert(i < Matrix6f::ROWS);
 
-    return (float *)&s[i];
+    return s[i];
 }
 
-const float *open3d::Matrix6f::operator[](const uint &i) const {
+const Vector6f& open3d::Matrix6f::operator[](const uint &i) const {
     assert(i < Matrix6f::ROWS);
 
-    return (const float *const) & s[i];
+    return s[i];
 }

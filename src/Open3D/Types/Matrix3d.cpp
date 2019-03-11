@@ -1,16 +1,17 @@
 
 #include "Matrix3d.h"
+using namespace open3d;
 
 #include <cassert>
 
-double *open3d::Matrix3d::operator[](const uint &i) {
+Vector3d &open3d::Matrix3d::operator[](const uint &i) {
     assert(i < Matrix3d::ROWS);
 
-    return (double *)&s[i];
+    return s[i];
 }
 
-const double *open3d::Matrix3d::operator[](const uint &i) const {
+const Vector3d &open3d::Matrix3d::operator[](const uint &i) const {
     assert(i < Matrix3d::ROWS);
 
-    return (const double *const) & s[i];
+    return s[i];
 }

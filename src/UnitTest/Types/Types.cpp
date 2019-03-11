@@ -59,6 +59,10 @@ TEST(Types, subscript_ops) {
             EXPECT_FLOAT_EQ(m[r][c], r * 1.0f + c * 0.1f);
         }
 
+    // will fail assert in debug mode due to out of bounds accesses
+    // m[3][2] = 1.0f;
+    // m[2][3] = 2.0f;
+
     open3d::Vector3f v;
 
     for (uint c = 0; c < m.COLS; c++) {

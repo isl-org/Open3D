@@ -1,16 +1,17 @@
 
 #include "Matrix4d.h"
+using namespace open3d;
 
 #include <cassert>
 
-double *open3d::Matrix4d::operator[](const uint &i) {
+Vector4d& open3d::Matrix4d::operator[](const uint &i) {
     assert(i < Matrix4d::ROWS);
 
-    return (double *)&s[i];
+    return s[i];
 }
 
-const double *open3d::Matrix4d::operator[](const uint &i) const {
+const Vector4d& open3d::Matrix4d::operator[](const uint &i) const {
     assert(i < Matrix4d::ROWS);
 
-    return (const double *const) & s[i];
+    return s[i];
 }
