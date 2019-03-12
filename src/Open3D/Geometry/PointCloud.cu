@@ -26,17 +26,18 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <string>
 using namespace std;
 
 #include "Open3D/Types/Vector3f.h"
 using namespace open3d;
 
-bool AlocateHstMemory(float** h, const int& numElements, const std::string& name);
-bool AlocateDevMemory(float** d, const int& numElements, const std::string& name);
+bool AlocateHstMemory(float** h, const int& numElements, const string& name);
+bool AlocateDevMemory(float** d, const int& numElements, const string& name);
 void RandInit(float* h, const int& numElements);
 bool CopyHst2DevMemory(float* h, float* d, const int& numElements);
 bool CopyDev2HstMemory(float* d, float* h, const int& numElements);
-bool freeDev(float* d_A);
+bool freeDev(float** d, const string& name);
 
 // ---------------------------------------------------------------------------
 // dummy kernel
@@ -59,7 +60,7 @@ __global__ void dummy(float* data, int size, float* sums) {
 
     float value = point[0] + point[1] + point[2];
 
-    printf("value = %3.3f\n", value);
+    printf("value[%4d] = %3.3f\n", gid, value);
 }
 
 // ---------------------------------------------------------------------------
@@ -72,18 +73,12 @@ void dummyHost() {
     // Error code to check return values for CUDA calls
     cudaError_t status = cudaSuccess;
 
-    // dummy<<<10, 10>>>();
-    // cudaDeviceSynchronize();
-    // status = cudaGetLastError();
+    // nr. of dimensions
+    const int DIM = 3;
+    int nrPoints = 1 << 10;
+    cout << "nr. of points:" << nrPoints << endl;
 
-    // if (status != cudaSuccess)
-    // {
-    //     cout << "status: " << cudaGetErrorString(status) << endl;
-    //     cout << "Failed to launch dummy kernel" << endl;
-    // }
-
-    int numElements = 1 << 10;
-    cout << "nr. of points:" << numElements << endl;
+    int size = nrPoints * DIM;
 
     // host memory
     float *h_A = NULL;
@@ -93,25 +88,25 @@ void dummyHost() {
     float *d_A = NULL;
     float *d_C = NULL;
 
-    if (!AlocateHstMemory(&h_A, numElements, "h_A")) exit(1);
-    if (!AlocateHstMemory(&h_C, numElements, "h_C")) exit(1);
+    if (!AlocateHstMemory(&h_A, size, "h_A")) exit(1);
+    if (!AlocateHstMemory(&h_C, size, "h_C")) exit(1);
 
-    RandInit(h_A, numElements);
+    RandInit(h_A, size);
 
-    if (!AlocateDevMemory(&d_A, numElements, "d_A")) exit(1);
-    if (!AlocateDevMemory(&d_C, numElements, "d_C")) exit(1);
+    if (!AlocateDevMemory(&d_A, size, "d_A")) exit(1);
+    if (!AlocateDevMemory(&d_C, size, "d_C")) exit(1);
 
     // Copy input to the device
-    CopyHst2DevMemory(h_A, d_A, numElements);
+    CopyHst2DevMemory(h_A, d_A, size);
 
-    // Launch the Vector Add CUDA Kernel
+    // Launch the dummy CUDA kernel
     int threadsPerBlock = 256;
-    int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
     cout << "CUDA kernel launch with " << blocksPerGrid;
     cout << " blocks of " << threadsPerBlock << " threads" << endl;
 
-    dummy<<<blocksPerGrid, threadsPerBlock>>>(d_A, numElements, d_C);
+    dummy<<<blocksPerGrid, threadsPerBlock>>>(d_A, nrPoints, d_C);
     cudaDeviceSynchronize();
     status = cudaGetLastError();
 
@@ -123,11 +118,11 @@ void dummyHost() {
     }
 
     // Copy results to the host
-    CopyDev2HstMemory(d_C, h_C, numElements);
+    CopyDev2HstMemory(d_C, h_C, size);
 
     // Free device global memory
-    freeDev(d_A);
-    freeDev(d_C);
+    freeDev(&d_A, "d_A");
+    freeDev(&d_C, "d_C");
 
     // Free host memory
     free(h_A);
@@ -225,17 +220,20 @@ bool CopyDev2HstMemory(float* d, float* h, const int& numElements)
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-bool freeDev(float* d_A)
+bool freeDev(float** d, const string& name)
 {
     cudaError_t status = cudaSuccess;
 
-    status = cudaFree(d_A);
+    status = cudaFree(*d);
 
     if (status == cudaSuccess)
+    {
+        *d = NULL;
         return true;
+    }
 
     cout << "status: " << cudaGetErrorString(status) << endl;
-    cout << "Failed to free device vector A" << endl;
+    cout << "Failed to free device vector" << name << endl;
 
     return false;
 }
