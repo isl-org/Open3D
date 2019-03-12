@@ -33,8 +33,39 @@
 #include <string>
 using namespace std;
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+
+extern void dummyHost();
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void DeviceInfo(const int& devID)
+{
+    cudaDeviceProp deviceProp;
+
+    cudaGetDeviceProperties(&deviceProp, devID);
+
+    cout << "GPU Device " << devID << ": ";
+    cout << deviceProp.name << ", ";
+    cout << "CUDA ";
+    cout << deviceProp.major << ".";
+    cout << deviceProp.minor << endl;
+    cout << endl;
+}
+
 int main(int argc, char **argv) {
+    /*/// original
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();
+    /*/// test
+    int devID = 0;
+    cudaSetDevice(devID);
+
+    DeviceInfo(devID);
+
+    dummyHost();
+    //*///
 }
