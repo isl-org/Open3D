@@ -74,8 +74,8 @@ __global__ void dummy(float* data, int nrPoints, float* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the dummy kernel
 // ---------------------------------------------------------------------------
-void dummyHost(float* const d_A, const int& nrPoints, float* const d_C) {
-    cout << "dummyHost::START" << endl;
+void dummyGPU(float* const d_A, const int& nrPoints, float* const d_C) {
+    cout << "dummyGPU::START" << endl;
     cout << endl;
 
     // Launch the dummy CUDA kernel
@@ -89,5 +89,5 @@ void dummyHost(float* const d_A, const int& nrPoints, float* const d_C) {
     cudaDeviceSynchronize();
 
     cout << endl;
-    cout << "dummyHost::END" << endl;
+    cout << "dummyGPU::END" << endl;
 }

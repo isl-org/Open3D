@@ -42,7 +42,7 @@ using namespace open3d;
 
 #include "Open3D/Utility/CUDA.cuh"
 
-extern void dummyHost(float* const d_A, const int& nrPoints, float* const d_C);
+extern void dummyGPU(float* const d_A, const int& nrPoints, float* const d_C);
 
 // ----------------------------------------------------------------------------
 //
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     // Copy input to the device
     CopyHst2DevMemory(h_A, d_A, inputSize);
 
-    dummyHost(d_A, nrPoints, d_C);
+    dummyGPU(d_A, nrPoints, d_C);
     status = cudaGetLastError();
 
     if (status != cudaSuccess)
