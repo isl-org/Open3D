@@ -44,23 +44,6 @@ using namespace open3d;
 
 extern void dummyGPU(float* const d_A, const int& nrPoints, float* const d_C);
 
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void DeviceInfo(const int& devID)
-{
-    cudaDeviceProp deviceProp;
-
-    cudaGetDeviceProperties(&deviceProp, devID);
-
-    cout << "GPU Device " << devID << ": ";
-    cout << deviceProp.name << ", ";
-    cout << "CUDA ";
-    cout << deviceProp.major << ".";
-    cout << deviceProp.minor << endl;
-    cout << endl;
-}
-
 int main(int argc, char **argv) {
     /*/// original
     testing::InitGoogleTest(&argc, argv);

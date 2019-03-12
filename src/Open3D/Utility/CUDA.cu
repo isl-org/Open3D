@@ -4,6 +4,23 @@
 #include <iostream>
 using namespace std;
 
+// ----------------------------------------------------------------------------
+// Diplay info about the specified device.
+// ----------------------------------------------------------------------------
+void DeviceInfo(const int& devID)
+{
+    cudaDeviceProp deviceProp;
+
+    cudaGetDeviceProperties(&deviceProp, devID);
+
+    cout << "GPU Device " << devID << ": ";
+    cout << deviceProp.name << ", ";
+    cout << "CUDA ";
+    cout << deviceProp.major << ".";
+    cout << deviceProp.minor << endl;
+    cout << endl;
+}
+
 // ---------------------------------------------------------------------------
 // Alocate host memory and perform validation.
 // ---------------------------------------------------------------------------

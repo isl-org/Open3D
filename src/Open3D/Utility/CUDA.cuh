@@ -3,6 +3,7 @@
 
 #include <string>
 
+void DeviceInfo(const int& devID);
 bool AlocateHstMemory(float** h, const int& numElements, const std::string& name);
 bool AlocateDevMemory(float** d, const int& numElements, const std::string& name);
 void RandInit(float* h, const int& numElements);
