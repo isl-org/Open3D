@@ -12,7 +12,18 @@ typedef struct _Matrix3f {
 
     Vector3f s[ROWS];
 
-    Vector3f& operator[](const uint& i);
-    const Vector3f& operator[](const uint& i) const;
+    OPEN3D_FUNC_DECL inline
+    Vector3f &operator[](const uint &i) {
+        assert(i < ROWS);
+
+        return s[i];
+    }
+
+    OPEN3D_FUNC_DECL inline
+    const Vector3f &operator[](const uint &i) const {
+        assert(i < ROWS);
+
+        return s[i];
+    }
 } Matrix3f;
 }  // namespace open3d

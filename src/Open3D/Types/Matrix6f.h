@@ -12,7 +12,18 @@ typedef struct _Matrix6f {
 
     Vector6f s[ROWS];
 
-    Vector6f& operator[](const uint& i);
-    const Vector6f& operator[](const uint& i) const;
+    OPEN3D_FUNC_DECL inline
+    Vector6f& operator[](const uint &i) {
+        assert(i < ROWS);
+
+        return s[i];
+    }
+
+    OPEN3D_FUNC_DECL inline
+    const Vector6f& operator[](const uint &i) const {
+        assert(i < ROWS);
+
+        return s[i];
+    }
 } Matrix6f;
 }  // namespace open3d

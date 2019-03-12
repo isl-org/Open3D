@@ -12,7 +12,18 @@ typedef struct _Matrix4d {
 
     Vector4d s[ROWS];
 
-    Vector4d& operator[](const uint& i);
-    const Vector4d& operator[](const uint& i) const;
+    OPEN3D_FUNC_DECL inline
+    Vector4d& operator[](const uint &i) {
+        assert(i < ROWS);
+
+        return s[i];
+    }
+
+    OPEN3D_FUNC_DECL inline
+    const Vector4d& operator[](const uint &i) const {
+        assert(i < ROWS);
+
+        return s[i];
+    }
 } Matrix4d;
 }  // namespace open3d
