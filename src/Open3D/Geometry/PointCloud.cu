@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include "Open3D/Types/Vector3f.h"
+#include "Open3D/Types/Matrix3f.h"
 using namespace open3d;
 
 #include "Open3D/Utility/CUDA.cuh"
@@ -37,25 +38,39 @@ using namespace std;
 // ---------------------------------------------------------------------------
 // dummy kernel
 // ---------------------------------------------------------------------------
-__global__ void dummy(float* data, int size, float* sums) {
+__global__ void dummy(float* data, int size, float* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     Vector3f* points = (Vector3f*)data;
+    Matrix3f* cumulants = (Matrix3f*)output;
 
-    // // nr points / thread
-    // int chunkSize = size / gridDim.x / blockDim.x;
+    Vector3f p = points[gid];
+    Matrix3f c = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
-    // // index 0 of points corresponding to current thread
-    // int globalOffset = gid * chunkSize;
+    c[0][0] += p[0];
+    c[0][1] += p[1];
+    c[0][2] += p[2];
+    c[1][0] += p[0] * p[0];
+    c[1][1] += p[0] * p[1];
+    c[1][2] += p[0] * p[2];
+    c[2][0] += p[1] * p[1];
+    c[2][1] += p[1] * p[2];
+    c[2][2] += p[2] * p[2];
 
-    // Vector3f* localPoints = &points[globalOffset];
+    printf("%4d: %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n",
+        gid, c[0][0], c[0][1], c[0][2], c[1][0], c[1][1], c[1][2], c[2][0], c[2][1], c[2][2]);
 
-    // Vector3f point = localPoints[gid];
-    Vector3f point = points[gid];
+    cumulants[gid][0][0] = c[0][0];
+    cumulants[gid][0][1] = c[0][1];
+    cumulants[gid][0][2] = c[0][2];
 
-    float value = point[0] + point[1] + point[2];
+    cumulants[gid][1][0] = c[1][0];
+    cumulants[gid][1][1] = c[1][1];
+    cumulants[gid][1][2] = c[1][2];
 
-    printf("value[%4d] = %3.3f\n", gid, value);
+    cumulants[gid][2][0] = c[2][0];
+    cumulants[gid][2][1] = c[2][1];
+    cumulants[gid][2][2] = c[2][2];
 }
 
 // ---------------------------------------------------------------------------
@@ -69,11 +84,11 @@ void dummyHost() {
     cudaError_t status = cudaSuccess;
 
     // nr. of dimensions
-    const int DIM = 3;
-    int nrPoints = 1 << 10;
+    int nrPoints = 1 << 8;
     cout << "nr. of points:" << nrPoints << endl;
 
-    int size = nrPoints * DIM;
+    int inputSize = nrPoints * Vector3f::COLS;
+    int outputSize = nrPoints * Matrix3f::ROWS * Matrix3f::COLS;
 
     // host memory
     float *h_A = NULL;
@@ -83,16 +98,16 @@ void dummyHost() {
     float *d_A = NULL;
     float *d_C = NULL;
 
-    if (!AlocateHstMemory(&h_A, size, "h_A")) exit(1);
-    if (!AlocateHstMemory(&h_C, size, "h_C")) exit(1);
+    if (!AlocateHstMemory(&h_A, inputSize, "h_A")) exit(1);
+    if (!AlocateHstMemory(&h_C, outputSize, "h_C")) exit(1);
 
-    RandInit(h_A, size);
+    RandInit(h_A, inputSize);
 
-    if (!AlocateDevMemory(&d_A, size, "d_A")) exit(1);
-    if (!AlocateDevMemory(&d_C, size, "d_C")) exit(1);
+    if (!AlocateDevMemory(&d_A, inputSize, "d_A")) exit(1);
+    if (!AlocateDevMemory(&d_C, outputSize, "d_C")) exit(1);
 
     // Copy input to the device
-    CopyHst2DevMemory(h_A, d_A, size);
+    CopyHst2DevMemory(h_A, d_A, inputSize);
 
     // Launch the dummy CUDA kernel
     int threadsPerBlock = 256;
@@ -113,7 +128,17 @@ void dummyHost() {
     }
 
     // Copy results to the host
-    CopyDev2HstMemory(d_C, h_C, size);
+    CopyDev2HstMemory(d_C, h_C, outputSize);
+
+    Matrix3f* cumulants = (Matrix3f*)h_C;
+    cout << endl;
+    cout << endl;
+    for (int i = 0; i < nrPoints; i++)
+    {
+        Matrix3f c = cumulants[i];
+        printf("%4d: %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n",
+        i, c[0][0], c[0][1], c[0][2], c[1][0], c[1][1], c[1][2], c[2][0], c[2][1], c[2][2]);
+    }
 
     // Free device global memory
     freeDev(&d_A, "d_A");
