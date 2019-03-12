@@ -2,8 +2,6 @@
 
 #include "setup.h"
 
-typedef unsigned int uint;
-
 namespace open3d {
 // 1D tensor, row major
 typedef struct _Vector3f {

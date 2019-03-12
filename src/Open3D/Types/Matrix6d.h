@@ -2,8 +2,6 @@
 
 #include "Vector6d.h"
 
-typedef unsigned int uint;
-
 namespace open3d {
 // 2D tensor, row major
 typedef struct _Matrix6d {

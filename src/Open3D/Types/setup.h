@@ -8,3 +8,5 @@
 #else
 #define OPEN3D_FUNC_DECL
 #endif
+
+typedef unsigned int uint;
