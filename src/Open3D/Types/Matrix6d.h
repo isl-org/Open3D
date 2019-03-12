@@ -33,6 +33,7 @@ namespace open3d {
 typedef struct _Matrix6d {
     static const uint ROWS = 6;
     static const uint COLS = Vector6d::COLS;
+    static const uint SIZE = ROWS * COLS;
 
     Vector6d s[ROWS];
 

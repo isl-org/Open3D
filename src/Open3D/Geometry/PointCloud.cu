@@ -87,8 +87,8 @@ void dummyHost() {
     int nrPoints = 1 << 8;
     cout << "nr. of points:" << nrPoints << endl;
 
-    int inputSize = nrPoints * Vector3f::COLS;
-    int outputSize = nrPoints * Matrix3f::ROWS * Matrix3f::COLS;
+    int inputSize = nrPoints * Vector3f::SIZE;
+    int outputSize = nrPoints * Matrix3f::SIZE;
 
     // host memory
     float *h_A = NULL;

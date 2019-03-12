@@ -33,6 +33,7 @@ namespace open3d {
 typedef struct _Vector6d {
     static const uint ROWS = 1;
     static const uint COLS = 6;
+    static const uint SIZE = ROWS * COLS;
 
     double s[ROWS][COLS];
 

@@ -33,6 +33,7 @@ namespace open3d {
 typedef struct _Vector4f {
     static const uint ROWS = 1;
     static const uint COLS = 4;
+    static const uint SIZE = ROWS * COLS;
 
     float s[ROWS][COLS];
 

@@ -33,6 +33,7 @@ namespace open3d {
 typedef struct _Matrix4d {
     static const uint ROWS = 4;
     static const uint COLS = Vector4d::COLS;
+    static const uint SIZE = ROWS * COLS;
 
     Vector4d s[ROWS];
 

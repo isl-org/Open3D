@@ -33,6 +33,7 @@ namespace open3d {
 typedef struct _Matrix3f {
     static const uint ROWS = 3;
     static const uint COLS = Vector3f::COLS;
+    static const uint SIZE = ROWS * COLS;
 
     Vector3f s[ROWS];
 
