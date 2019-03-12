@@ -244,6 +244,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/3rdparty
     ${3RDPARTY_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/3rdparty/librealsense/include
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 # Open3D library
