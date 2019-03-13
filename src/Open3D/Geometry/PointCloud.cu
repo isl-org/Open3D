@@ -55,9 +55,6 @@ __global__ void dummy(float* data, int nrPoints, float* output) {
     c[2][1] += p[1] * p[2];
     c[2][2] += p[2] * p[2];
 
-    printf("%4d: %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n",
-        gid, c[0][0], c[0][1], c[0][2], c[1][0], c[1][1], c[1][2], c[2][0], c[2][1], c[2][2]);
-
     cumulants[gid][0][0] = c[0][0];
     cumulants[gid][0][1] = c[0][1];
     cumulants[gid][0][2] = c[0][2];
@@ -75,19 +72,10 @@ __global__ void dummy(float* data, int nrPoints, float* output) {
 // helper function calls the dummy kernel
 // ---------------------------------------------------------------------------
 void dummyGPU(float* const d_A, const int& nrPoints, float* const d_C) {
-    cout << "dummyGPU::START" << endl;
-    cout << endl;
-
     // Launch the dummy CUDA kernel
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
-    cout << "CUDA kernel launch with " << blocksPerGrid;
-    cout << " blocks of " << threadsPerBlock << " threads" << endl;
-
     dummy<<<blocksPerGrid, threadsPerBlock>>>(d_A, nrPoints, d_C);
     cudaDeviceSynchronize();
-
-    cout << endl;
-    cout << "dummyGPU::END" << endl;
 }

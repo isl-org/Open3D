@@ -40,9 +40,10 @@ using namespace open3d;
 #include "Open3D/Utility/CUDA.cuh"
 
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
-extern void dummyGPU(float* const d_A, const int& nrPoints, float* const d_C);
+extern void dummyGPU(float* const dPoints, const int& nrPoints, float* const dCumulants);
 
 namespace open3d {
 namespace geometry {
@@ -221,32 +222,55 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     cudaError_t status = cudaSuccess;
 
     // nr. of dimensions
-    int nrPoints = 1 << 8;
+    int nrPoints = input.points_.size();
     cout << "nr. of points:" << nrPoints << endl;
 
     int inputSize = nrPoints * Vector3f::SIZE;
     int outputSize = nrPoints * Matrix3f::SIZE;
 
     // host memory
-    float *h_A = NULL;
-    float *h_C = NULL;
+    float *hPoints = NULL;
+    float *hCumulants = NULL;
 
     // device memory
-    float *d_A = NULL;
-    float *d_C = NULL;
+    float *dPoints = NULL;
+    float *dCumulants = NULL;
 
-    if (!AlocateHstMemory(&h_A, inputSize, "h_A")) exit(1);
-    if (!AlocateHstMemory(&h_C, outputSize, "h_C")) exit(1);
+    if (!AlocateDevMemory(&hPoints, inputSize, "hPoints")) exit(1);
+    if (!AlocateHstMemory(&hCumulants, outputSize, "hCumulants")) exit(1);
+    if (!AlocateDevMemory(&dPoints, inputSize, "dPoints")) exit(1);
+    if (!AlocateDevMemory(&dCumulants, outputSize, "dCumulants")) exit(1);
 
-    RandInit(h_A, inputSize);
+    double* hPoints_double = (double*)input.points_.data();
 
-    if (!AlocateDevMemory(&d_A, inputSize, "d_A")) exit(1);
-    if (!AlocateDevMemory(&d_C, outputSize, "d_C")) exit(1);
+    /*/// v0
+    for (int i = 0; i < inputSize; i++) {
+        cout << "Hi!" << endl;
+        hPoints[i] = (float)hPoints_double[i];
+    }
+    /*/// v1
+    for (int i = 0; i < nrPoints; i++) {
+        cout << "Hi!" << endl;
+        hPoints[i * 3 + 0] = (float)input.points_[i][0];
+        hPoints[i * 3 + 1] = (float)input.points_[i][1];
+        hPoints[i * 3 + 2] = (float)input.points_[i][2];
+    }
+    //*///
+
+    cout << setw(10) << input.points_[0][0];
+    cout << setw(10) << input.points_[0][1];
+    cout << setw(10) << input.points_[0][2];
+    cout << endl;
+
+    cout << setw(10) << hPoints[0];
+    cout << setw(10) << hPoints[1];
+    cout << setw(10) << hPoints[2];
+    cout << endl;
 
     // Copy input to the device
-    CopyHst2DevMemory(h_A, d_A, inputSize);
+    CopyHst2DevMemory(hPoints, dPoints, inputSize);
 
-    dummyGPU(d_A, nrPoints, d_C);
+    dummyGPU(dPoints, nrPoints, dCumulants);
     status = cudaGetLastError();
 
     if (status != cudaSuccess)
@@ -257,25 +281,17 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceC
     }
 
     // Copy results to the host
-    CopyDev2HstMemory(d_C, h_C, outputSize);
+    CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
 
-    Matrix3f* cumulants = (Matrix3f*)h_C;
-    cout << endl;
-    cout << endl;
-    for (int i = 0; i < nrPoints; i++)
-    {
-        Matrix3f c = cumulants[i];
-        printf("%4d: %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n      %+6.3f %+6.3f %+6.3f\n",
-        i, c[0][0], c[0][1], c[0][2], c[1][0], c[1][1], c[1][2], c[2][0], c[2][1], c[2][2]);
-    }
+    Matrix3f* cumulants = (Matrix3f*)hCumulants;
 
     // Free device global memory
-    freeDev(&d_A, "d_A");
-    freeDev(&d_C, "d_C");
+    freeDev(&dPoints, "dPoints");
+    freeDev(&dCumulants, "dCumulants");
 
     // Free host memory
-    free(h_A);
-    free(h_C);
+    free(hPoints);
+    free(hCumulants);
 
     // dummy output
     Eigen::Vector3d mean;
