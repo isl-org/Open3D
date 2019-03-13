@@ -860,6 +860,32 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+TEST(PointCloud, ComputePointCloudMeanAndCovarianceCUDA) {
+    int size = 1000;
+    geometry::PointCloud pc;
+
+    Vector3d vmin(-100.0, -100.0, -100.0);
+    Vector3d vmax(+100.0, +100.0, +100.0);
+
+    pc.points_.resize(size);
+    Rand(pc.points_, vmin, vmax, 0);
+
+    auto outputCPU = geometry::ComputePointCloudMeanAndCovariance(pc);
+    auto outputGPU = geometry::ComputePointCloudMeanAndCovarianceCUDA(pc);
+
+    Vector3d meanCPU = get<0>(outputCPU);
+    Matrix3d covarianceCPU = get<1>(outputCPU);
+
+    Vector3d meanGPU = get<0>(outputGPU);
+    Matrix3d covarianceGPU = get<1>(outputGPU);
+
+    ExpectEQ(meanCPU, meanGPU);
+    ExpectEQ(covarianceCPU, covarianceGPU);
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudMahalanobisDistance) {
     vector<double> ref = {
             1.439881, 1.872615, 1.232338, 0.437462, 1.617472, 1.556793,

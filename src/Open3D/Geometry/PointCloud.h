@@ -200,6 +200,11 @@ std::vector<double> ComputePointCloudToPointCloudDistance(
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
         const PointCloud &input);
 
+/// Function to compute the mean and covariance matrix
+/// of an \param input point cloud
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceCUDA(
+        const PointCloud &input);
+
 /// Function to compute the Mahalanobis distance for points
 /// in an \param input point cloud
 /// https://en.wikipedia.org/wiki/Mahalanobis_distance
