@@ -89,7 +89,7 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     std::vector<Eigen::Vector3d> colors_;
 
-public: // cuda device pointers
+private: // cuda device pointers
     double* d_points_{};
     double* d_normals_{};
     double* d_colors_{};

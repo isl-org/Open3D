@@ -291,10 +291,6 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     // Free host memory
     free(hCumulants);
 
-    cout << "d_points_ = "  << ((input.d_points_  == NULL) ? "NULL" : "******") << endl;
-    cout << "d_normals_ = " << ((input.d_normals_ == NULL) ? "NULL" : "******") << endl;
-    cout << "d_colors_ = "  << ((input.d_colors_  == NULL) ? "NULL" : "******") << endl;
-
     return std::make_tuple(mean, covariance);
 }
 
@@ -341,14 +337,26 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 bool PointCloud::UpdateDeviceMemory() {
     cudaError_t status = cudaSuccess;
 
+    if (d_points_ != NULL) {
+        if (cudaSuccess != cudaFree(d_points_)) return false;
+        d_points_ = NULL;
+    }
     status = cudaMalloc((void **)d_points_,
                         points_.size() * sizeof(Eigen::Vector3d));
     if (status != cudaSuccess) return false;
 
+    if (d_normals_ != NULL) {
+        if (cudaSuccess != cudaFree(d_normals_)) return false;
+        d_normals_ = NULL;
+    }
     status = cudaMalloc((void **)d_normals_,
                         normals_.size() * sizeof(Eigen::Vector3d));
     if (status != cudaSuccess) return false;
 
+    if (d_colors_ != NULL) {
+        if (cudaSuccess != cudaFree(d_colors_)) return false;
+        d_colors_ = NULL;
+    }
     status = cudaMalloc((void **)d_colors_,
                         colors_.size() * sizeof(Eigen::Vector3d));
     if (status != cudaSuccess) return false;
