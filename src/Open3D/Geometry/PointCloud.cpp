@@ -41,7 +41,7 @@
 #include <iomanip>
 using namespace std;
 
-extern void dummyGPU(float *const dPoints,
+extern void cumulantGPU(float *const dPoints,
                      const int &nrPoints,
                      float *const dCumulants);
 
@@ -247,7 +247,7 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     // Copy input to the device
     CopyHst2DevMemory(hPoints, dPoints, inputSize);
 
-    dummyGPU(dPoints, nrPoints, dCumulants);
+    cumulantGPU(dPoints, nrPoints, dCumulants);
     status = cudaGetLastError();
 
     if (status != cudaSuccess) {
@@ -274,15 +274,15 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
         cumulant[2][2] += (double)cumulants[i][2][2];
     }
 
-    cumulant[0][0] /= (double)nrPoints;
-    cumulant[0][1] /= (double)nrPoints;
-    cumulant[0][2] /= (double)nrPoints;
-    cumulant[1][0] /= (double)nrPoints;
-    cumulant[1][1] /= (double)nrPoints;
-    cumulant[1][2] /= (double)nrPoints;
-    cumulant[2][0] /= (double)nrPoints;
-    cumulant[2][1] /= (double)nrPoints;
-    cumulant[2][2] /= (double)nrPoints;
+    cumulant[0][0] /= nrPoints;
+    cumulant[0][1] /= nrPoints;
+    cumulant[0][2] /= nrPoints;
+    cumulant[1][0] /= nrPoints;
+    cumulant[1][1] /= nrPoints;
+    cumulant[1][2] /= nrPoints;
+    cumulant[2][0] /= nrPoints;
+    cumulant[2][1] /= nrPoints;
+    cumulant[2][2] /= nrPoints;
 
     Eigen::Vector3d mean;
     Eigen::Matrix3d covariance;

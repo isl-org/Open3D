@@ -34,9 +34,9 @@ using namespace open3d;
 using namespace std;
 
 // ---------------------------------------------------------------------------
-// dummy kernel
+// cumulant kernel
 // ---------------------------------------------------------------------------
-__global__ void dummy(float* data, int nrPoints, float* output) {
+__global__ void cumulant(float* data, int nrPoints, float* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     Vector3f* points = (Vector3f*)data;
@@ -69,13 +69,13 @@ __global__ void dummy(float* data, int nrPoints, float* output) {
 }
 
 // ---------------------------------------------------------------------------
-// helper function calls the dummy kernel
+// helper function calls the cumulant kernel
 // ---------------------------------------------------------------------------
-void dummyGPU(float* const d_A, const int& nrPoints, float* const d_C) {
-    // Launch the dummy CUDA kernel
+void cumulantGPU(float* const d_A, const int& nrPoints, float* const d_C) {
+    // Launch the cumulant CUDA kernel
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
-    dummy<<<blocksPerGrid, threadsPerBlock>>>(d_A, nrPoints, d_C);
+    cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_A, nrPoints, d_C);
     cudaDeviceSynchronize();
 }
