@@ -26,8 +26,7 @@
 
 #include <stdio.h>
 
-#include "Open3D/Types/Vector3f.h"
-#include "Open3D/Types/Matrix3f.h"
+#include "Open3D/Types/Matrix3d.h"
 using namespace open3d;
 
 #include <iostream>
@@ -36,14 +35,14 @@ using namespace std;
 // ---------------------------------------------------------------------------
 // cumulant kernel
 // ---------------------------------------------------------------------------
-__global__ void cumulant(float* data, int nrPoints, float* output) {
+__global__ void cumulant(double* data, int nrPoints, double* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
-    Vector3f* points = (Vector3f*)data;
-    Matrix3f* cumulants = (Matrix3f*)output;
+    Vector3d* points = (Vector3d*)data;
+    Matrix3d* cumulants = (Matrix3d*)output;
 
-    Vector3f p = points[gid];
-    Matrix3f c = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    Vector3d p = points[gid];
+    Matrix3d c = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
     c[0][0] += p[0];
     c[0][1] += p[1];
@@ -71,7 +70,7 @@ __global__ void cumulant(float* data, int nrPoints, float* output) {
 // ---------------------------------------------------------------------------
 // helper function calls the cumulant kernel
 // ---------------------------------------------------------------------------
-void cumulantGPU(float* const d_A, const int& nrPoints, float* const d_C) {
+void cumulantGPU(double* const d_A, const int& nrPoints, double* const d_C) {
     // Launch the cumulant CUDA kernel
     int threadsPerBlock = 256;
     int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;

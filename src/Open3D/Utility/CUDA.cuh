@@ -4,9 +4,9 @@
 #include <string>
 
 void DeviceInfo(const int& devID);
-bool AlocateHstMemory(float** h, const int& numElements, const std::string& name);
-bool AlocateDevMemory(float** d, const int& numElements, const std::string& name);
-void RandInit(float* h, const int& numElements);
-bool CopyHst2DevMemory(float* h, float* d, const int& numElements);
-bool CopyDev2HstMemory(float* d, float* h, const int& numElements);
-bool freeDev(float** d, const std::string& name);
+bool AlocateHstMemory(double** h, const int& numElements, const std::string& name);
+bool AlocateDevMemory(double** d, const int& numElements, const std::string& name);
+void RandInit(double* h, const int& numElements);
+bool CopyHst2DevMemory(double* h, double* d, const int& numElements);
+bool CopyDev2HstMemory(double* d, double* h, const int& numElements);
+bool freeDev(double** d, const std::string& name);

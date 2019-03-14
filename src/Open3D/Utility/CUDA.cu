@@ -24,11 +24,11 @@ void DeviceInfo(const int& devID)
 // ---------------------------------------------------------------------------
 // Alocate host memory and perform validation.
 // ---------------------------------------------------------------------------
-bool AlocateHstMemory(float** h, const int& numElements, const string& name)
+bool AlocateHstMemory(double** h, const int& numElements, const string& name)
 {
-    size_t size = numElements * sizeof(float);
+    size_t size = numElements * sizeof(double);
 
-    *h = (float *)malloc(size);
+    *h = (double *)malloc(size);
 
     if (*h != NULL)
         return true;
@@ -41,11 +41,11 @@ bool AlocateHstMemory(float** h, const int& numElements, const string& name)
 // ---------------------------------------------------------------------------
 // Alocate device memory and perform validation.
 // ---------------------------------------------------------------------------
-bool AlocateDevMemory(float** d, const int& numElements, const string& name)
+bool AlocateDevMemory(double** d, const int& numElements, const string& name)
 {
     cudaError_t status = cudaSuccess;
 
-    size_t size = numElements * sizeof(float);
+    size_t size = numElements * sizeof(double);
 
     status = cudaMalloc((void **)d, size);
 
@@ -61,19 +61,19 @@ bool AlocateDevMemory(float** d, const int& numElements, const string& name)
 // ---------------------------------------------------------------------------
 // Initialize host memory.
 // ---------------------------------------------------------------------------
-void RandInit(float* h, const int& numElements)
+void RandInit(double* h, const int& numElements)
 {
     for (int i = 0; i < numElements; ++i)
-        h[i] = rand()/(float)RAND_MAX;
+        h[i] = rand()/(double)RAND_MAX;
 }
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-bool CopyHst2DevMemory(float* h, float* d, const int& numElements)
+bool CopyHst2DevMemory(double* h, double* d, const int& numElements)
 {
     cudaError_t status = cudaSuccess;
 
-    size_t size = numElements * sizeof(float);
+    size_t size = numElements * sizeof(double);
 
     status = cudaMemcpy(d, h, size, cudaMemcpyHostToDevice);
 
@@ -88,11 +88,11 @@ bool CopyHst2DevMemory(float* h, float* d, const int& numElements)
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-bool CopyDev2HstMemory(float* d, float* h, const int& numElements)
+bool CopyDev2HstMemory(double* d, double* h, const int& numElements)
 {
     cudaError_t status = cudaSuccess;
 
-    size_t size = numElements * sizeof(float);
+    size_t size = numElements * sizeof(double);
 
     status = cudaMemcpy(h, d, size, cudaMemcpyDeviceToHost);
 
@@ -107,7 +107,7 @@ bool CopyDev2HstMemory(float* d, float* h, const int& numElements)
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-bool freeDev(float** d, const string& name)
+bool freeDev(double** d, const string& name)
 {
     cudaError_t status = cudaSuccess;
 

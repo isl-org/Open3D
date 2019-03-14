@@ -33,7 +33,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Open3D/Types/Matrix3f.h"
+#include "Open3D/Types/Matrix3d.h"
 
 #include "Open3D/Utility/CUDA.cuh"
 
@@ -41,9 +41,9 @@
 #include <iomanip>
 using namespace std;
 
-extern void cumulantGPU(float *const dPoints,
+extern void cumulantGPU(double *const dPoints,
                      const int &nrPoints,
-                     float *const dCumulants);
+                     double *const dCumulants);
 
 namespace open3d {
 namespace geometry {
@@ -222,27 +222,22 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     // nr. of dimensions
     int nrPoints = input.points_.size();
 
-    int inputSize = nrPoints * Vector3f::SIZE;
-    int outputSize = nrPoints * Matrix3f::SIZE;
+    int inputSize = nrPoints * Vector3d::SIZE;
+    int outputSize = nrPoints * Matrix3d::SIZE;
 
     // host memory
-    float *hPoints = NULL;
-    float *hCumulants = NULL;
+    double *hPoints = NULL;
+    double *hCumulants = NULL;
 
     // device memory
-    float *dPoints = NULL;
-    float *dCumulants = NULL;
+    double *dPoints = NULL;
+    double *dCumulants = NULL;
 
-    if (!AlocateHstMemory(&hPoints, inputSize, "hPoints")) exit(1);
+    hPoints = (double *)input.points_.data();
     if (!AlocateHstMemory(&hCumulants, outputSize, "hCumulants")) exit(1);
     if (!AlocateDevMemory(&dPoints, inputSize, "dPoints")) exit(1);
     if (!AlocateDevMemory(&dCumulants, outputSize, "dCumulants")) exit(1);
 
-    // convert double to float
-    double *inputPoints = (double *)input.points_.data();
-    for (int i = 0; i < inputSize; i++) {
-        hPoints[i] = (float)inputPoints[i];
-    }
 
     // Copy input to the device
     CopyHst2DevMemory(hPoints, dPoints, inputSize);
@@ -259,8 +254,8 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     // Copy results to the host
     CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
 
-    Matrix3f *cumulants = (Matrix3f *)hCumulants;
-    Matrix3f cumulant = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    Matrix3d *cumulants = (Matrix3d *)hCumulants;
+    Matrix3d cumulant = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     for (int i = 0; i < nrPoints; i++)
     {
         cumulant[0][0] += (double)cumulants[i][0][0];
@@ -296,7 +291,6 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     freeDev(&dCumulants, "dCumulants");
 
     // Free host memory
-    free(hPoints);
     free(hCumulants);
 
     return std::make_tuple(mean, covariance);
