@@ -861,7 +861,7 @@ TEST(PointCloud, ComputePointCloudMeanAndCovariance) {
 //
 // ----------------------------------------------------------------------------
 TEST(PointCloud, ComputePointCloudMeanAndCovarianceCUDA) {
-    int size = (int)1e7;
+    int size = 1 << 24;
     geometry::PointCloud pc;
 
     Vector3d vmin(-1.0, -1.0, -1.0);
