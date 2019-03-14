@@ -97,6 +97,8 @@ private: // cuda device pointers
 public:
     // update cuda device pointers
     bool UpdateDeviceMemory();
+    // release the memory asigned to the device pointers
+    bool ReleaseDeviceMemory();
 };
 
 /// Factory function to create a pointcloud from a depth image and a camera

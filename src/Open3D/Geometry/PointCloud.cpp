@@ -364,5 +364,25 @@ bool PointCloud::UpdateDeviceMemory() {
     return true;
 }
 
+// release the memory asigned to the device pointers
+bool PointCloud::ReleaseDeviceMemory() {
+    if (d_points_ != NULL) {
+        if (cudaSuccess != cudaFree(d_points_)) return false;
+        d_points_ = NULL;
+    }
+
+    if (d_normals_ != NULL) {
+        if (cudaSuccess != cudaFree(d_normals_)) return false;
+        d_normals_ = NULL;
+    }
+
+    if (d_colors_ != NULL) {
+        if (cudaSuccess != cudaFree(d_colors_)) return false;
+        d_colors_ = NULL;
+    }
+
+    return true;
+}
+
 }  // namespace geometry
 }  // namespace open3d
