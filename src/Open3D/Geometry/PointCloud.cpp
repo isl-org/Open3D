@@ -30,8 +30,10 @@
 #include <Open3D/Utility/Console.h>
 #include <Open3D/Geometry/KDTreeFlann.h>
 
+#ifdef __CUDACC__
 #include <cuda.h>
 #include <cuda_runtime.h>
+#endif
 
 #include "Open3D/Types/Matrix3d.h"
 
@@ -209,10 +211,14 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
+#ifdef __CUDACC__
     if (input.IsEmpty()) {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
     }
+
+    cout << "Running CUDA..." << endl;
+
     // Error code to check return values for CUDA calls
     cudaError_t status = cudaSuccess;
 
@@ -269,6 +275,11 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     freeDev(&d_cumulants, "d_cumulants");
 
     return std::make_tuple(mean, covariance);
+#else
+    cout << "Running CPU..." << endl;
+
+    return ComputePointCloudMeanAndCovariance(input);
+#endif
 }
 
 std::vector<double> ComputePointCloudMahalanobisDistance(
@@ -313,6 +324,7 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
 // update the device memory on demand
 bool PointCloud::UpdateDeviceMemory(double **d_data,
                                     const vector<Eigen::Vector3d> &data) {
+#ifdef __CUDACC__
     cudaError_t status = cudaSuccess;
 
     if (*d_data != NULL) {
@@ -330,6 +342,7 @@ bool PointCloud::UpdateDeviceMemory(double **d_data,
 
         return true;
     }
+#endif
 
     return true;
 }  // namespace geometry
@@ -357,11 +370,13 @@ bool PointCloud::UpdateDeviceMemory() {
 
 // perform cleanup
 bool PointCloud::ReleaseDeviceMemory(double **d_data) {
+#ifdef __CUDACC__
     if (*d_data == NULL) return true;
 
     if (cudaSuccess != cudaFree(*d_data)) return false;
 
     *d_data = NULL;
+#endif
 
     return true;
 }
