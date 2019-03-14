@@ -65,7 +65,7 @@ TEST(Eigen, TransformMatrix4dToVector6d) {
     Vector6d vector6d = utility::TransformMatrix4dToVector6d(ref_matrix4d);
 
     for (int i = 0; i < 6; i++)
-        EXPECT_NEAR((i + 1) / 6.0, vector6d(i, 0), THRESHOLD_1E_6);
+        EXPECT_NEAR((i + 1) / 6.0, vector6d(i, 0), THRESHOLD);
 }
 
 // ----------------------------------------------------------------------------
