@@ -95,9 +95,21 @@ private: // cuda device pointers
     double* d_colors_{};
 
 public:
+    // update the memory assigned to d_points_
+    bool UpdateDevicePoints();
+    // update the memory assigned to d_normals_
+    bool UpdateDeviceNormals();
+    // update the memory assigned to d_colors_
+    bool UpdateDeviceColors();
     // update cuda device pointers
     bool UpdateDeviceMemory();
-    // release the memory asigned to the device pointers
+    // release the memory asigned to d_points_
+    bool ReleaseDevicePoints();
+    // release the memory asigned to d_normals_
+    bool ReleaseDeviceNormals();
+    // release the memory asigned to d_colors_
+    bool ReleaseDeviceColors();
+    // release the cuda device memory
     bool ReleaseDeviceMemory();
 };
 

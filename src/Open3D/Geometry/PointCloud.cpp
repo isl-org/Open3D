@@ -333,8 +333,8 @@ std::vector<double> ComputePointCloudNearestNeighborDistance(
     return nn_dis;
 }
 
-// update cuda device pointers
-bool PointCloud::UpdateDeviceMemory() {
+// update the memory assigned to d_points_
+bool PointCloud::UpdateDevicePoints() {
     cudaError_t status = cudaSuccess;
 
     if (d_points_ != NULL) {
@@ -344,6 +344,11 @@ bool PointCloud::UpdateDeviceMemory() {
     status = cudaMalloc((void **)d_points_,
                         points_.size() * sizeof(Eigen::Vector3d));
     if (status != cudaSuccess) return false;
+}
+
+// update the memory assigned to d_normals_
+bool PointCloud::UpdateDeviceNormals() {
+    cudaError_t status = cudaSuccess;
 
     if (d_normals_ != NULL) {
         if (cudaSuccess != cudaFree(d_normals_)) return false;
@@ -352,6 +357,11 @@ bool PointCloud::UpdateDeviceMemory() {
     status = cudaMalloc((void **)d_normals_,
                         normals_.size() * sizeof(Eigen::Vector3d));
     if (status != cudaSuccess) return false;
+}
+
+// update the memory assigned to d_colors_
+bool PointCloud::UpdateDeviceColors() {
+    cudaError_t status = cudaSuccess;
 
     if (d_colors_ != NULL) {
         if (cudaSuccess != cudaFree(d_colors_)) return false;
@@ -360,26 +370,42 @@ bool PointCloud::UpdateDeviceMemory() {
     status = cudaMalloc((void **)d_colors_,
                         colors_.size() * sizeof(Eigen::Vector3d));
     if (status != cudaSuccess) return false;
-
-    return true;
 }
 
-// release the memory asigned to the device pointers
-bool PointCloud::ReleaseDeviceMemory() {
+// update cuda device pointers
+bool PointCloud::UpdateDeviceMemory() {
+    return UpdateDevicePoints() && UpdateDeviceNormals() && UpdateDeviceColors();
+}
+
+// release the memory asigned to d_points_
+bool PointCloud::ReleaseDevicePoints() {
     if (d_points_ != NULL) {
         if (cudaSuccess != cudaFree(d_points_)) return false;
         d_points_ = NULL;
     }
+}
 
+// release the memory asigned to d_normals_
+bool PointCloud::ReleaseDeviceNormals() {
     if (d_normals_ != NULL) {
         if (cudaSuccess != cudaFree(d_normals_)) return false;
         d_normals_ = NULL;
     }
+}
 
+// release the memory asigned to d_colors_
+bool PointCloud::ReleaseDeviceColors() {
     if (d_colors_ != NULL) {
         if (cudaSuccess != cudaFree(d_colors_)) return false;
         d_colors_ = NULL;
     }
+}
+
+// release the cuda device memory
+bool PointCloud::ReleaseDeviceMemory() {
+    ReleaseDevicePoints();
+    ReleaseDeviceNormals();
+    ReleaseDeviceColors();
 
     return true;
 }
