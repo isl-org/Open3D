@@ -217,10 +217,9 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     cudaError_t status = cudaSuccess;
 
     int nrPoints = input.points_.size();
-    int chunkSize = 16;
 
     // host memory
-    vector<Matrix3d> h_cumulants(nrPoints / chunkSize);
+    vector<Matrix3d> h_cumulants(nrPoints);
 
     int outputSize = h_cumulants.size() * Matrix3d::SIZE;
 

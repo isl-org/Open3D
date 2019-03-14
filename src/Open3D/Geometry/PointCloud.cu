@@ -38,25 +38,21 @@ using namespace std;
 __global__ void cumulant(double* data, int nrPoints, double* output) {
     int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
-    int chunkSize = 16;
-
     Vector3d* points = (Vector3d*)data;
     Matrix3d* cumulants = (Matrix3d*)output;
 
     Matrix3d c = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
-    for (int i = 0; i < chunkSize; i++) {
-        Vector3d p = points[gid * chunkSize + i];
-        c[0][0] += p[0];
-        c[0][1] += p[1];
-        c[0][2] += p[2];
-        c[1][0] += p[0] * p[0];
-        c[1][1] += p[0] * p[1];
-        c[1][2] += p[0] * p[2];
-        c[2][0] += p[1] * p[1];
-        c[2][1] += p[1] * p[2];
-        c[2][2] += p[2] * p[2];
-    }
+    Vector3d p = points[gid];
+    c[0][0] += p[0];
+    c[0][1] += p[1];
+    c[0][2] += p[2];
+    c[1][0] += p[0] * p[0];
+    c[1][1] += p[0] * p[1];
+    c[1][2] += p[0] * p[2];
+    c[2][0] += p[1] * p[1];
+    c[2][1] += p[1] * p[2];
+    c[2][2] += p[2] * p[2];
 
     cumulants[gid][0][0] = c[0][0] / nrPoints;
     cumulants[gid][0][1] = c[0][1] / nrPoints;
@@ -75,9 +71,8 @@ __global__ void cumulant(double* data, int nrPoints, double* output) {
 // helper function calls the cumulant CUDA kernel
 // ---------------------------------------------------------------------------
 bool cumulantGPU(double* const d_A, const int& nrPoints, double* const d_C) {
-    int chunkSize = 16;
     int threadsPerBlock = 256;
-    int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock / chunkSize;
+    int blocksPerGrid =(nrPoints + threadsPerBlock - 1) / threadsPerBlock;
 
     cumulant<<<blocksPerGrid, threadsPerBlock>>>(d_A, nrPoints, d_C);
     cudaDeviceSynchronize();
