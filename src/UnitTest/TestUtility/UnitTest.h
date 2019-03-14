@@ -42,7 +42,7 @@
 
 namespace unit_test {
 // thresholds for comparing floating point values
-const double THRESHOLD = 1e-6;
+const double THRESHOLD = 1e-4;
 
 // Eigen Zero()
 const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();

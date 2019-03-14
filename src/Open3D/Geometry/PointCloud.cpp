@@ -217,10 +217,12 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     cudaError_t status = cudaSuccess;
 
     int nrPoints = input.points_.size();
-    int outputSize = nrPoints * Matrix3d::SIZE;
+    int chunkSize = 16;
 
     // host memory
-    vector<Matrix3d> h_cumulants(nrPoints);
+    vector<Matrix3d> h_cumulants(nrPoints / chunkSize);
+
+    int outputSize = h_cumulants.size() * Matrix3d::SIZE;
 
     // device memory
     double *d_cumulants = NULL;
@@ -235,7 +237,7 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     CopyDev2HstMemory(d_cumulants, (double *)&h_cumulants[0], outputSize);
 
     Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    for (int i = 0; i < nrPoints; i++) {
+    for (int i = 0; i < h_cumulants.size(); i++) {
         cumulant[0][0] += (double)h_cumulants[i][0][0];
         cumulant[0][1] += (double)h_cumulants[i][0][1];
         cumulant[0][2] += (double)h_cumulants[i][0][2];
