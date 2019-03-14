@@ -89,7 +89,7 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     std::vector<Eigen::Vector3d> colors_;
 
-private: // cuda device pointers
+public: // cuda device pointers
     double* d_points_{};
     double* d_normals_{};
     double* d_colors_{};
@@ -226,7 +226,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
 /// Function to compute the mean and covariance matrix
 /// of an \param input point cloud
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovarianceCUDA(
-        const PointCloud &input);
+        PointCloud &input);
 
 /// Function to compute the Mahalanobis distance for points
 /// in an \param input point cloud

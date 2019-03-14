@@ -41,9 +41,9 @@
 #include <iomanip>
 using namespace std;
 
-extern void cumulantGPU(double *const dPoints,
+extern void cumulantGPU(double *const d_points,
                         const int &nrPoints,
-                        double *const dCumulants);
+                        double *const d_cumulants);
 
 namespace open3d {
 namespace geometry {
@@ -207,7 +207,7 @@ std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputePointCloudMeanAndCovariance(
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
-ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
+ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     if (input.IsEmpty()) {
         return std::make_tuple(Eigen::Vector3d::Zero(),
                                Eigen::Matrix3d::Identity());
@@ -226,32 +226,28 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     int outputSize = nrPoints * Matrix3d::SIZE;
 
     // host memory
-    double *hPoints = NULL;
+    double *h_points = NULL;
     double *hCumulants = NULL;
 
     // device memory
-    double *dPoints = NULL;
-    double *dCumulants = NULL;
+    double *d_cumulants = NULL;
 
-    hPoints = (double *)input.points_.data();
+    h_points = (double *)input.points_.data();
     if (!AlocateHstMemory(&hCumulants, outputSize, "hCumulants")) exit(1);
-    if (!AlocateDevMemory(&dPoints, inputSize, "dPoints")) exit(1);
-    if (!AlocateDevMemory(&dCumulants, outputSize, "dCumulants")) exit(1);
+    input.UpdateDevicePoints();
+    if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants")) exit(1);
 
-    // Copy input to the device
-    CopyHst2DevMemory(hPoints, dPoints, inputSize);
-
-    cumulantGPU(dPoints, nrPoints, dCumulants);
+    cumulantGPU(input.d_points_, nrPoints, d_cumulants);
     status = cudaGetLastError();
 
-    if (status != cudaSuccess) {
+    if (cudaSuccess != status) {
         cout << "status: " << cudaGetErrorString(status) << endl;
-        cout << "Failed to launch vectorAdd kernel" << endl;
+        cout << "Failed to launch cuda kernel" << endl;
         exit(1);
     }
 
     // Copy results to the host
-    CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
+    CopyDev2HstMemory(d_cumulants, hCumulants, outputSize);
 
     Matrix3d *cumulants = (Matrix3d *)hCumulants;
     Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -285,8 +281,7 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     covariance(2, 1) = covariance(1, 2);
 
     // Free device global memory
-    freeDev(&dPoints, "dPoints");
-    freeDev(&dCumulants, "dCumulants");
+    freeDev(&d_cumulants, "d_cumulants");
 
     // Free host memory
     free(hCumulants);
@@ -343,7 +338,18 @@ bool PointCloud::UpdateDevicePoints() {
     }
     status = cudaMalloc((void **)d_points_,
                         points_.size() * sizeof(Eigen::Vector3d));
-    if (status != cudaSuccess) return false;
+    if (cudaSuccess != status) return false;
+
+    double *h_points = (double *)points_.data();
+    size_t size = points_.size() * sizeof(Eigen::Vector3d);
+    status = cudaMemcpy(d_points_, h_points, size, cudaMemcpyHostToDevice);
+    if (cudaSuccess != status) {
+        printf("%s", cudaGetErrorString(status));
+
+        return true;
+    }
+
+    return true;
 }
 
 // update the memory assigned to d_normals_
@@ -356,7 +362,18 @@ bool PointCloud::UpdateDeviceNormals() {
     }
     status = cudaMalloc((void **)d_normals_,
                         normals_.size() * sizeof(Eigen::Vector3d));
-    if (status != cudaSuccess) return false;
+    if (cudaSuccess != status) return false;
+
+    double *h_normals = (double *)normals_.data();
+    size_t size = normals_.size() * sizeof(Eigen::Vector3d);
+    status = cudaMemcpy(d_normals_, h_normals, size, cudaMemcpyHostToDevice);
+    if (cudaSuccess != status) {
+        printf("%s", cudaGetErrorString(status));
+
+        return true;
+    }
+
+    return true;
 }
 
 // update the memory assigned to d_colors_
@@ -369,7 +386,18 @@ bool PointCloud::UpdateDeviceColors() {
     }
     status = cudaMalloc((void **)d_colors_,
                         colors_.size() * sizeof(Eigen::Vector3d));
-    if (status != cudaSuccess) return false;
+    if (cudaSuccess != status) return false;
+
+    double *h_colors = (double *)colors_.data();
+    size_t size = colors_.size() * sizeof(Eigen::Vector3d);
+    status = cudaMemcpy(d_colors_, h_colors, size, cudaMemcpyHostToDevice);
+    if (cudaSuccess != status) {
+        printf("%s", cudaGetErrorString(status));
+
+        return true;
+    }
+
+    return true;
 }
 
 // update cuda device pointers
