@@ -26,12 +26,11 @@
 
 #include <stdio.h>
 
-#include "Open3D/Types/Vector3f.h"
-#include "Open3D/Types/Matrix3f.h"
-using namespace open3d;
-
 #include <iostream>
 using namespace std;
+
+typedef float Vector3f[3];
+typedef float Matrix3f[3][3];
 
 // ---------------------------------------------------------------------------
 // cumulant kernel
@@ -42,7 +41,7 @@ __global__ void cumulant(float* data, int nrPoints, float* output) {
     Vector3f* points = (Vector3f*)data;
     Matrix3f* cumulants = (Matrix3f*)output;
 
-    Vector3f p = points[gid];
+    Vector3f p = { points[gid][0], points[gid][1], points[gid][2] };
     Matrix3f c = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
     c[0][0] += p[0];
