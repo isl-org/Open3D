@@ -75,7 +75,6 @@ bool CopyHst2DevMemory(float* h, float* d, const int& numElements)
 
     size_t size = numElements * sizeof(float);
 
-    cout << "Copy host memory to the CUDA device." << endl;
     status = cudaMemcpy(d, h, size, cudaMemcpyHostToDevice);
 
     if (status == cudaSuccess)
@@ -95,7 +94,6 @@ bool CopyDev2HstMemory(float* d, float* h, const int& numElements)
 
     size_t size = numElements * sizeof(float);
 
-    cout << "Copy device memory to the host." << endl;
     status = cudaMemcpy(h, d, size, cudaMemcpyDeviceToHost);
 
     if (status == cudaSuccess)

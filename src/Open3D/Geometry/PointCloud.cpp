@@ -218,14 +218,11 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     int devID = 0;
     cudaSetDevice(devID);
 
-    DeviceInfo(devID);
-
     // Error code to check return values for CUDA calls
     cudaError_t status = cudaSuccess;
 
     // nr. of dimensions
     int nrPoints = input.points_.size();
-    cout << "nr. of points:" << nrPoints << endl;
 
     int inputSize = nrPoints * Vector3f::SIZE;
     int outputSize = nrPoints * Matrix3f::SIZE;
@@ -249,16 +246,6 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
         hPoints[i] = (float)inputPoints[i];
     }
 
-    cout << setw(10) << input.points_[0][0];
-    cout << setw(10) << input.points_[0][1];
-    cout << setw(10) << input.points_[0][2];
-    cout << endl;
-
-    cout << setw(10) << hPoints[0];
-    cout << setw(10) << hPoints[1];
-    cout << setw(10) << hPoints[2];
-    cout << endl;
-
     // Copy input to the device
     CopyHst2DevMemory(hPoints, dPoints, inputSize);
 
@@ -275,7 +262,7 @@ ComputePointCloudMeanAndCovarianceCUDA(const PointCloud &input) {
     CopyDev2HstMemory(dCumulants, hCumulants, outputSize);
 
     Matrix3f *cumulants = (Matrix3f *)hCumulants;
-    Matrix3d cumulant;
+    Matrix3f cumulant = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     for (int i = 0; i < nrPoints; i++)
     {
         cumulant[0][0] += (double)cumulants[i][0][0];
