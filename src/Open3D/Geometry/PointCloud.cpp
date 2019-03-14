@@ -219,22 +219,16 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     // Error code to check return values for CUDA calls
     cudaError_t status = cudaSuccess;
 
-    // nr. of dimensions
     int nrPoints = input.points_.size();
-
-    int inputSize = nrPoints * Vector3d::SIZE;
     int outputSize = nrPoints * Matrix3d::SIZE;
 
     // host memory
-    double *h_points = NULL;
-    double *hCumulants = NULL;
+    vector<Matrix3d> h_cumulants(nrPoints);
 
     // device memory
     double *d_cumulants = NULL;
 
-    h_points = (double *)input.points_.data();
-    if (!AlocateHstMemory(&hCumulants, outputSize, "hCumulants")) exit(1);
-    input.UpdateDeviceMemory();
+    input.UpdateDevicePoints();
     if (!AlocateDevMemory(&d_cumulants, outputSize, "d_cumulants")) exit(1);
 
     cumulantGPU(input.d_points_, nrPoints, d_cumulants);
@@ -247,20 +241,19 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
     }
 
     // Copy results to the host
-    CopyDev2HstMemory(d_cumulants, hCumulants, outputSize);
+    CopyDev2HstMemory(d_cumulants, (double*)&h_cumulants[0], outputSize);
 
-    Matrix3d *cumulants = (Matrix3d *)hCumulants;
     Matrix3d cumulant = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     for (int i = 0; i < nrPoints; i++) {
-        cumulant[0][0] += (double)cumulants[i][0][0];
-        cumulant[0][1] += (double)cumulants[i][0][1];
-        cumulant[0][2] += (double)cumulants[i][0][2];
-        cumulant[1][0] += (double)cumulants[i][1][0];
-        cumulant[1][1] += (double)cumulants[i][1][1];
-        cumulant[1][2] += (double)cumulants[i][1][2];
-        cumulant[2][0] += (double)cumulants[i][2][0];
-        cumulant[2][1] += (double)cumulants[i][2][1];
-        cumulant[2][2] += (double)cumulants[i][2][2];
+        cumulant[0][0] += (double)h_cumulants[i][0][0];
+        cumulant[0][1] += (double)h_cumulants[i][0][1];
+        cumulant[0][2] += (double)h_cumulants[i][0][2];
+        cumulant[1][0] += (double)h_cumulants[i][1][0];
+        cumulant[1][1] += (double)h_cumulants[i][1][1];
+        cumulant[1][2] += (double)h_cumulants[i][1][2];
+        cumulant[2][0] += (double)h_cumulants[i][2][0];
+        cumulant[2][1] += (double)h_cumulants[i][2][1];
+        cumulant[2][2] += (double)h_cumulants[i][2][2];
     }
 
     Eigen::Vector3d mean;
@@ -282,9 +275,6 @@ ComputePointCloudMeanAndCovarianceCUDA(PointCloud &input) {
 
     // Free device global memory
     freeDev(&d_cumulants, "d_cumulants");
-
-    // Free host memory
-    free(hCumulants);
 
     return std::make_tuple(mean, covariance);
 }
